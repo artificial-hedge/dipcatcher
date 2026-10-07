@@ -34,6 +34,7 @@ from quant_fund.cli.data_cmds import (
     build_features_cmd,
     build_labels_cmd,
     membership_coverage_cmd,
+    total_return_cmd,
 )
 from quant_fund.cli.forecast_cmds import (
     validate,
@@ -69,6 +70,11 @@ from quant_fund.cli.research_cmds import (
     replay_cmd,
     tape_pin_cmd,
     tape_verify_cmd,
+    coherence,
+    concordance,
+    multih_fleet_cmd,
+    expert_mixture_cmd,
+    compare,
 )
 from quant_fund.cli.book_cmds import (
     session_book_cmd,
@@ -161,6 +167,7 @@ __all__ = [
     "build_features_cmd",
     "build_labels_cmd",
     "membership_coverage_cmd",
+    "total_return_cmd",
     "train_callback",
     "train_ranking",
     "train_distribution",
@@ -201,6 +208,11 @@ __all__ = [
     "replay_cmd",
     "tape_pin_cmd",
     "tape_verify_cmd",
+    "coherence",
+    "concordance",
+    "multih_fleet_cmd",
+    "expert_mixture_cmd",
+    "compare",
     "session_book_cmd",
     "vendor_book_map_cmd",
     "book_panel_cmd",

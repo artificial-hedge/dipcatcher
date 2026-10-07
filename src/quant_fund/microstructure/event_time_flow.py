@@ -102,7 +102,6 @@ from quant_fund.microstructure.zi_lob_simulator import (
     ZILobSimulator,
     santa_fe_config,
 )
-from quant_fund.models.changepoint import binary_segmentation
 
 Array = NDArray[np.float64]
 IntArray = NDArray[np.intp]
@@ -1219,6 +1218,10 @@ def activity_rate_boundaries(
     structure. Fail-closed when the binned window cannot contain a split
     (< 2 * min_size buckets) or the count series is degenerate.
     """
+    from quant_fund.models.changepoint import (  # noqa: PLC0415  # layer-order: analytics-layer, imported lazily
+        binary_segmentation,
+    )
+
     tt = _check_times(times)
     dt = _pos_finite(bucket_dt, "bucket_dt")
     ms = _check_n(min_size, "min_size", 2)

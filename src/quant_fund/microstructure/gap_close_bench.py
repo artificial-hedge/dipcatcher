@@ -94,7 +94,11 @@ def gap_close_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
                 {
                     c["reveal_gap_ticks_mean"]
                     for c in cells
-                    if c["min_quote_dist"] == 10 and c["paired_pull_band"] == 4
+                    if c["min_quote_dist"] == 10
+                    and c["paired_pull_band"] == 4
+                    # None = no reveals measured; it is not a distinct
+                    # gap value, so exclude it from the cardinality.
+                    and c["reveal_gap_ticks_mean"] is not None
                 }
             )
             > 1

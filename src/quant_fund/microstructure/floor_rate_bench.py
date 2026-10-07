@@ -82,13 +82,16 @@ def floor_rate_bench(*, horizon: int = 12000, seed: int = 7) -> dict[str, Any]:
     for floor in _FLOORS:
         for flow_name, _i in _FLOWS:
             sub = [d for d in draws if d["floor"] == floor and d["flow"] == flow_name]
+            # spread_mean is None on a degenerate draw (no non-empty
+            # spread recorded) — mean over measured draws only.
+            sp_vals = [d["spread_mean"] for d in sub if d["spread_mean"] is not None]
             cell_rates.append(
                 {
                     "floor": floor,
                     "flow": flow_name,
                     "n_draws": len(sub),
                     "band_rate": round(sum(1 for d in sub if d["in_band"]) / len(sub), 4),
-                    "spread_mean": round(sum(d["spread_mean"] for d in sub) / len(sub), 4),
+                    "spread_mean": round(sum(sp_vals) / len(sp_vals), 4) if sp_vals else None,
                 }
             )
     floor_rates = {

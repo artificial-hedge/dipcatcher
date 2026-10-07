@@ -1,0 +1,29 @@
+{
+  "schema": "fx1-weights-manifest.v1",
+  "weights_file": "weights.safetensors",
+  "weights_sha256": "cae879e7d8d80ed3a897e6ad550b909976d6ec098f3d45b4424f5be2a093ca07",
+  "format": "safetensors/float32",
+  "tokenizer": "byte-level-259",
+  "arch": {
+    "kind": "tiny-byte-transformer",
+    "vocab": 259,
+    "dim": 32,
+    "ctx": 64,
+    "n_layers": 1,
+    "n_heads": 4,
+    "mlp_ratio": 4,
+    "n_params": 31392
+  },
+  "training": {
+    "corpus": "fx1_seed_corpus.jsonl",
+    "corpus_sha256": "b6068e2eddf63663810247ee0edc39ddc04eb92560517f4fa57ef5068b7e5023",
+    "steps": 3000,
+    "seq_len": 64,
+    "optimizer": "adamw lr=0.003",
+    "seed": 0,
+    "final_loss": 1.8171422481536865
+  },
+  "generator": "scripts/fx1_tiny_lm_train.py",
+  "generator_sha256": "c7b81602c4518c525fa20541c2cd81efe7a3dfaa4e69d5f3ef16990cb49f2951",
+  "created_unix": 1791324317
+}

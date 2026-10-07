@@ -63,6 +63,7 @@ from quant_fund.research.fleet_eval import (
 from quant_fund.research.receipt_v2 import build_receipt_v2, seal_receipt
 
 EXPERT_MIXTURE_SCHEMA = "expert_mixture_eval.v1"
+EXPERT_MIXTURE_KIND = "expert_mixture_eval"
 MIXERS = ("uniform", "ewa", "fixed_share")
 
 
@@ -378,7 +379,7 @@ def run_expert_mixture_eval(
     }
     payload["heads"] = sorted(factories.keys())
     receipt = build_receipt_v2(
-        kind="expert_mixture_eval",
+        kind=EXPERT_MIXTURE_KIND,
         data_label="SYNTHETIC",
         dataset={
             "name": "synthetic_shard_fleet",
@@ -393,9 +394,71 @@ def run_expert_mixture_eval(
     return frame, receipt
 
 
+#: Regret/excess are differences of CRPS values of the same order, so a fixed
+#: absolute tolerance is the right comparison — a relative one would mask a
+#: small-magnitude forgery.
+_CRPS_TOL = 1e-12
+
+
+def expert_mixture_consistency_errors(body: Mapping[str, Any]) -> list[str]:
+    """Re-derive each mixer's regret identities from the sealed expert bounds.
+
+    ``regret_vs_best_expert`` and ``excess_over_worst_expert`` are fully
+    determined by the mixer CRPS and the shard's best/worst expert CRPS, so a
+    tampered regret — the number a "the mixture beat the experts" claim rests
+    on — cannot survive this check. Also pins the bound ordering and the mixer
+    vocabulary.
+    """
+    payload = body.get("payload")
+    if not isinstance(payload, Mapping):
+        return []
+    shards = payload.get("shards")
+    if not isinstance(shards, list):
+        return []
+    errors: list[str] = []
+    for report in shards:
+        if not isinstance(report, Mapping):
+            continue
+        tag = report.get("shard", "?")
+        best = report.get("best_expert_crps")
+        worst = report.get("worst_expert_crps")
+        if not isinstance(best, (int, float)) or not isinstance(worst, (int, float)):
+            errors.append(f"expert_bounds_missing:{tag}")
+            continue
+        if float(best) > float(worst):
+            errors.append(f"expert_bounds_inverted:{tag}")
+        mixers = report.get("mixers")
+        if not isinstance(mixers, Mapping):
+            errors.append(f"mixers_missing:{tag}")
+            continue
+        for name, stats in mixers.items():
+            if name not in MIXERS:
+                errors.append(f"unknown_mixer:{tag}:{name}")
+            if not isinstance(stats, Mapping):
+                errors.append(f"mixer_stats_not_object:{tag}:{name}")
+                continue
+            crps = stats.get("crps")
+            if not isinstance(crps, (int, float)):
+                errors.append(f"mixer_crps_missing:{tag}:{name}")
+                continue
+            for key, bound in (
+                ("regret_vs_best_expert", best),
+                ("excess_over_worst_expert", worst),
+            ):
+                got = stats.get(key)
+                if got is None:
+                    continue
+                if (
+                    not isinstance(got, (int, float))
+                    or abs(float(got) - (float(crps) - float(bound))) > _CRPS_TOL
+                ):
+                    errors.append(f"{key}_mismatch:{tag}:{name}")
+    return errors
+
+
 def write_expert_mixture_receipt(receipt: Mapping[str, Any], out_dir: Path) -> Path:
     """Seal and atomically persist the mixture receipt."""
-    if receipt.get("kind") != "expert_mixture_eval" or receipt.get("data_label") != "SYNTHETIC":
+    if receipt.get("kind") != EXPERT_MIXTURE_KIND or receipt.get("data_label") != "SYNTHETIC":
         raise ValueError(
             "expert-mixture receipts must be kind=expert_mixture_eval with "
             "data_label=SYNTHETIC (honesty contract)"

@@ -346,3 +346,63 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+
+### Ops-surface audit maintenance (PR #2868)
+
+The new `ops_audit` battery (141 probes) pins the operations surface a
+load balancer, orchestrator, and operator dashboard actually poll —
+`/health`, `/ready`, `/harness/version`, `/harness/capabilities`,
+`/harness/backends`, `/harness/backends/{name}/probe`,
+`/harness/gate/check`, `/harness/score`, `/metrics`,
+`/harness/drain`, `/docs`, `/redoc`, `/openapi.json`, and `/` — using
+SYNTHETIC stub backends and an in-process ASGI client. Measured
+contracts: liveness is the single public path and reports
+presence-of-credentials flags off the live env; readiness is keyed,
+backend-blind, reflects the real inflight gauge, and 503s `draining`
+once the latch is set; version publishes `fx1.__version__` /
+`API_VERSION` from one source of truth consistent with health,
+capabilities, and the spec's info block; the metrics scrape observes
+the pre-scrape state, partitions `by_status`, keeps `uptime_s` on the
+monotonic clock, fabricates no zero backend series, and negotiates the
+Prometheus exposition only on `?format=prom` or a text/plain Accept;
+backend status reports the breaker's real circuit state and caches
+each deep-probe verdict; the probe returns `ok:false` +
+`error_class` verdicts instead of HTTP faults, stays slot-gated under
+drain, and bypasses the breaker without feeding it; the advisory
+preflights answer verdicts, resolve no backend, and survive drain;
+the spec is deterministic, declares the middleware's stamped headers
+(rate-limit headers only when the limiter exists), mirrors the route
+table's methods exactly except the undocumented `/v1/{path:path}`
+catch-all, and is credential-gated like the rest of the surface; `/`
+is a clean enveloped 404; every ops refusal class (401/403/404/405/
+422/429/503) lands in the `{detail, code}` envelope with no bare 5xx;
+`X-Request-ID` echoes well-formed ids and mints on absent/malformed;
+and `openai-version` plus the Anthropic dialect headers stay scoped to
+`/v1`.
+
+Two defects were found and fixed in `api.py`:
+
+* `_is_anthropic_surface` honored `anthropic-version` on *any* path,
+  so ops answers carried Anthropic-dialect headers (`request-id`,
+  `x-should-retry`, and — for rpm-windowed managed keys —
+  `anthropic-ratelimit-requests-*`), contradicting the documented
+  "/v1/messages tree plus /v1/* under the header" contract. The
+  surface check is now scoped to `is_openai_path`; probes pin both the
+  ops absence and the /v1 presence.
+* `POST /harness/backends/{name}/probe` returned its resolve-stage
+  verdicts (`backend_unavailable`) through an early `_verdict` that
+  skipped `record_complete`, so the documented `probe:<name>` verdict
+  series silently missed resolver failures — a monitoring scrape
+  watching only the metric could never see them. The 503 verdict
+  branch now records its own `probe:<name>` error.
+
+The battery also pins measured (pre-existing, non-defect) semantics:
+`local_fx1` probes 422 without `checkpoint_dir` (and the kwarg is
+refused on non-local backends), unknown backend names 422 on the
+path-literal, `?format=xml` on `/metrics` 422s, and `wait_s` bounds on
+drain are 0..600.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 53 to 54 and remains
+`partial`.

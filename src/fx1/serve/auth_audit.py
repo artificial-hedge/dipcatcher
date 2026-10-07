@@ -524,45 +524,51 @@ def _header_parsing_probes() -> dict[
     out["env_key_bearer_v1_admits"] = env_resp.status_code == 200
     out["env_key_bearer_unmetered"] = _H_RL_LIMIT not in {k.lower() for k in env_resp.headers}
 
-    # precedence: X-API-Key wins outright — an empty value is no header,
-    # so it falls through to Bearer; a garbage value refuses without
-    # consulting Bearer (no fallback to a second credential)
-    out["x_api_key_empty_falls_through_to_bearer"] = (
-        _models(client, {_H_KEY: "", _H_AUTH: bearer}).status_code == 200
+    # auth is not combinable: any request carrying both X-API-Key and
+    # Authorization is ambiguous and refuses 400 before auth runs —
+    # no precedence, no fall-through, no fallback to a second credential
+    out["x_api_key_empty_plus_bearer_ambiguous_400"] = (
+        _models(client, {_H_KEY: "", _H_AUTH: bearer}).status_code == 400
     )
-    out["x_api_key_garbage_no_bearer_fallback"] = (
-        _models(client, {_H_KEY: "fx1k_garbage", _H_AUTH: bearer}).status_code == 401
+    out["x_api_key_garbage_plus_bearer_ambiguous_400"] = (
+        _models(client, {_H_KEY: "fx1k_garbage", _H_AUTH: bearer}).status_code == 400
     )
-    out["x_api_key_valid_ignores_bearer_garbage"] = (
-        _models(client, {_H_KEY: k_raw, _H_AUTH: "Bearer fx1k_garbage"}).status_code == 200
+    out["x_api_key_valid_plus_garbage_bearer_ambiguous_400"] = (
+        _models(client, {_H_KEY: k_raw, _H_AUTH: "Bearer fx1k_garbage"}).status_code == 400
     )
-    out["env_x_api_key_beats_managed_bearer"] = (
-        _models(client, {_H_KEY: _ROOT, _H_AUTH: bearer}).status_code == 200
+    out["env_x_api_key_plus_bearer_ambiguous_400"] = (
+        _models(client, {_H_KEY: _ROOT, _H_AUTH: bearer}).status_code == 400
     )
 
     # whitespace on the credential itself is part of the compared bytes
     out["x_api_key_leading_ws_refused"] = _models(client, {_H_KEY: f" {k_raw}"}).status_code == 401
     out["x_api_key_trailing_ws_refused"] = _models(client, {_H_KEY: f"{k_raw} "}).status_code == 401
 
-    # duplicated header lines — the first occurrence resolves, both
-    # channels alike
-    out["dup_x_api_key_first_wins_admit"] = (
+    # duplicated auth singletons are ambiguous in either order — the
+    # fail-closed ingress refuses 400 rather than picking an occurrence
+    out["dup_x_api_key_good_first_ambiguous_400"] = (
         _dup_get(
             client, _MODELS_PATH, [(_H_KEY_LOWER, k_raw), (_H_KEY_LOWER, "fx1k_bad")]
         ).status_code
-        == 200
+        == 400
     )
-    out["dup_x_api_key_first_wins_refuse"] = (
+    out["dup_x_api_key_bad_first_ambiguous_400"] = (
         _dup_get(
             client, _MODELS_PATH, [(_H_KEY_LOWER, "fx1k_bad"), (_H_KEY_LOWER, k_raw)]
         ).status_code
-        == 401
+        == 400
     )
-    out["dup_authorization_first_wins"] = (
+    out["dup_authorization_ambiguous_400"] = (
         _dup_get(
             client, _MODELS_PATH, [(_H_AUTH, f"Bearer {k_raw}"), (_H_AUTH, "Bearer fx1k_bad")]
         ).status_code
-        == 200
+        == 400
+    )
+    # repeated *same-value* duplicates are just as ambiguous — a client that
+    # collapses them must not get through either
+    out["dup_x_api_key_same_value_ambiguous_400"] = (
+        _dup_get(client, _MODELS_PATH, [(_H_KEY_LOWER, k_raw), (_H_KEY_LOWER, k_raw)]).status_code
+        == 400
     )
     return out
 
@@ -1136,12 +1142,13 @@ def _anthropic_probes() -> dict[str, Any]:
     # on /v1/messages too
     ok2 = _messages(client, {_H_AUTH: f"Bearer {k_raw}", _H_ANTH_VER: "2023-06-01"})
     out["anthropic_bearer_admits"] = ok2.status_code == 200
-    # mixed channels under the anthropic grammar: X-API-Key still wins
+    # mixed channels under the anthropic grammar are ambiguous too —
+    # the same fail-closed 400 answers before dialect translation
     mixed = _messages(
         client,
         {_H_KEY: "fx1k_garbage", _H_AUTH: f"Bearer {k_raw}", _H_ANTH_VER: "2023-06-01"},
     )
-    out["anthropic_mixed_x_api_key_wins"] = mixed.status_code == 401
+    out["anthropic_mixed_auth_headers_ambiguous_400"] = mixed.status_code == 400
 
     # anthropic grammar on refusals: {type: "error", error: {...}},
     # request-id echoed, x-should-retry absent (401/403 are not

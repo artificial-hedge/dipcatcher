@@ -27,7 +27,7 @@
   ],
   "generated_at_commit": "dc1e47215d316108cbd403ee0c6ad2c91ee742bb",
   "inputs_sha256": "1c11a0367aa3ca772482ebd4f0e4a60ccc4c88680f185c1c19ffc5c66f081deb",
-  "kind": "calibration_audit.v1",
+  "kind": "calibration_audit.drill.v1",
   "live_pnl_claim": false,
   "n_models": 12,
   "n_shards": 1,
@@ -56,5 +56,5 @@
   },
   "receipt_sha256": "0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370",
   "research_only": true,
-  "schema": "calibration_audit.v1"
+  "schema": "calibration_audit.drill.v1"
 }

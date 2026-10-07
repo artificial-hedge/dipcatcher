@@ -20,7 +20,7 @@
       "status": "audited"
     },
     "cli": {
-      "n_modules": 15,
+      "n_modules": 16,
       "status": "audited"
     },
     "compute": {
@@ -102,7 +102,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 10396,
+      "n_modules": 10397,
       "status": "partial",
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },
@@ -177,7 +177,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 1857,
+      "n_modules": 1859,
       "status": "partial",
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },
@@ -240,12 +240,133 @@
     "backtest/event_sim/simulator.py": {
       "status": "audited"
     },
+    "microstructure/aftermath_flow_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/anchor_scan_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/band_occupancy_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/band_shape_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/cancel_gradient_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/churn_reseed_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/churn_stability_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/closure_stack_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/continuation_attr_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/crown_behind_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/crown_density_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/crown_join_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/crown_size_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/cxl_shield_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/deep_book_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/depth_tilt_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/empirical_flow_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/flee_wide_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/floor_compose_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/floor_pins_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/floor_rate_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/floor_reseed_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/floor_stability_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/flow_couple_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/full_impact_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/full_stack_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/gap_close_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/hawkes_clock_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/hidden_depth_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/hit_flee_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/hit_starve_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/ice_budget_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/ice_crown_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/iceberg_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/iid_floor_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/impact_persist_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/improve_flow_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/initiative_fade_bench.py": {
+      "status": "audited"
+    },
     "parity_leak_audit.py": {
       "status": "audited"
     },
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
+    },
+    "models/c51_rl.py": {
+      "status": "partial",
+      "reason": "C51 RL core (Bellemare 2017) with torch-free Algorithm-1, ZILobQuoteEnv adapter; wired via tests/unit/models/test_c51_rl.py (37 tests).",
+      "evidence": [
+        "tests/unit/models/test_c51_rl.py"
+      ]
     }
   },
   "schema_version": "audit-coverage/v1",

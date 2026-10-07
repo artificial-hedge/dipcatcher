@@ -36,7 +36,7 @@ def list_extensions(kind: ExtensionKind | None = None) -> list[dict[str, object]
             "feature",
         )
     )
-    return [
+    listing: list[dict[str, object]] = [
         {
             "schema": "fx1.extension-module/v1",
             "kind": extension_kind,
@@ -47,6 +47,10 @@ def list_extensions(kind: ExtensionKind | None = None) -> list[dict[str, object]
         for extension_kind in kinds
         for owner in _owners(extension_kind)
     ]
+    paths = [entry["module"] for entry in listing]
+    if len(paths) != len(set(paths)):
+        raise ValueError("extension owner collision: two owners resolve to one module path")
+    return listing
 
 
 def get_extension(kind: ExtensionKind, owner: str) -> ExtensionModule:
@@ -81,7 +85,7 @@ def extension_manifest(kind: ExtensionKind, owner: str) -> dict[str, object]:
         manifest["assets"] = spec.assets
         manifest["availability"] = cast(Any, extension).probe().model_dump(mode="json")
         manifest["operations"] = ["probe", "describe", "fetch"]
-    else:
+    elif kind == "feature":
         metadata = cast(Any, extension).metadata()
         manifest["feature"] = metadata.name
         manifest["feature_family"] = metadata.family
@@ -89,4 +93,6 @@ def extension_manifest(kind: ExtensionKind, owner: str) -> dict[str, object]:
         manifest["point_in_time_safe"] = metadata.point_in_time_safe
         manifest["synthetic_only"] = metadata.synthetic_only
         manifest["operations"] = ["metadata", "build"]
+    else:
+        raise ValueError(f"unknown extension kind {kind!r}")
     return manifest

@@ -20,6 +20,11 @@ from quant_fund.schemas.order_book import BookLevel, OrderBookSnapshot
 from quant_fund.schemas.orders import Fill, Order, OrderSide, OrderStatus
 from quant_fund.schemas.pit import FeatureIntegrity, PITRecord, assert_pit_safe
 from quant_fund.schemas.portfolio import OptimizationDiagnostics, PortfolioSnapshot
+from quant_fund.schemas.receipt import (
+    verify_receipt_bytes,
+    verify_receipt_file,
+    verify_receipt_payload,
+)
 
 __all__ = [
     "AdjustedBar",
@@ -48,4 +53,7 @@ __all__ = [
     "SecurityRecord",
     "UniverseMembership",
     "assert_pit_safe",
+    "verify_receipt_bytes",
+    "verify_receipt_file",
+    "verify_receipt_payload",
 ]

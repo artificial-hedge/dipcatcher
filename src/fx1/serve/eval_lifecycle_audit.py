@@ -51,8 +51,9 @@ Coverage map:
   GETs for terminal records, mark interrupted evals restart-failed, and
   replay idem keys to lost records; the SDK twin binds the same journals.
 - */v1/evals* — spec lifecycle (create → get → update → list → delete →
-  tombstone), item_schema validated at create, the datasource frozen
-  against updates, runs bind ``eval_spec``/``eval_model``, ``model``
+  tombstone), item_schema validated at create, the datasource hot-reloads
+  while the spec is unbound and freezes once a run binds (409), runs bind
+  ``eval_spec``/``eval_model``, ``model``
   resolves link names / ``fx1`` / ``ft:`` and fails closed on anything
   else, scoped idempotency replays per spec, output_items page per-task
   verdicts with cursors that round-trip and fail closed when foreign or
@@ -100,6 +101,7 @@ Sealed ``eval_lifecycle_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import html
 import json
 import os
 import tempfile
@@ -205,6 +207,15 @@ class _FailBackend:
         """No resources to release — the stub holds nothing."""
 
 
+def _stub_reply(content: object) -> dict[str, Any]:
+    """OpenAI-shaped chat reply with the echoed message escaped."""
+    return {
+        "choices": [
+            {"message": {"role": "assistant", "content": f"stub:{html.escape(str(content))}"}}
+        ]
+    }
+
+
 class _CliChat(BaseHTTPRequestHandler):
     """Deterministic OpenAI-compatible engine for the CLI legs — echoes the
     last user message, counts completions."""
@@ -229,9 +240,7 @@ class _CliChat(BaseHTTPRequestHandler):
         except Exception:  # noqa: BLE001 — hostile input fails closed
             self.send_error(400)
             return
-        payload = json.dumps(
-            {"choices": [{"message": {"role": "assistant", "content": f"stub:{content}"}}]}
-        ).encode()
+        payload = json.dumps(_stub_reply(content)).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(payload)))
@@ -871,7 +880,7 @@ def _store_probes() -> dict[str, Any]:
 def _receipt_probes() -> dict[str, Any]:
     """Sealed fx1_eval_record.v1 export: verifies, tamper fails closed."""
     out: dict[str, Any] = {}
-    from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+    from quant_fund.schemas.receipt import (  # noqa: PLC0415
         verify_receipt_file,
         verify_receipt_payload,
     )
@@ -1143,11 +1152,28 @@ def _v1_evals_probes() -> dict[str, Any]:
     out["spec_get_roundtrip"] = got.status_code == 200 and got.json()["id"] == spec_id
     upd = client.post(f"/v1/evals/{spec_id}", json={"name": "regression-bank-v2"})
     out["spec_update_name"] = upd.status_code == 200 and upd.json()["name"] == "regression-bank-v2"
-    frozen = client.post(
+    # hot-reload window: an unbound spec accepts a datasource rewrite and
+    # the reloaded shape answers on the wire immediately — the freeze lands
+    # only once a run binds (probed below). Seed-bump inside the same
+    # suite/backend so the run that binds next still yields items.
+    reload_ok = client.post(
+        f"/v1/evals/{spec_id}",
+        json={
+            "data_source_config": {
+                "type": "custom",
+                "item_schema": {"suite": "tooluse", "seed": 13, "backend": "byok"},
+            }
+        },
+    )
+    out["spec_datasource_reloads_unbound"] = (
+        reload_ok.status_code == 200
+        and reload_ok.json()["data_source_config"]["item_schema"]["seed"] == 13
+    )
+    shape_bad = client.post(
         f"/v1/evals/{spec_id}",
         json={"data_source_config": {"type": "custom", "item_schema": {}}},
     )
-    out["spec_datasource_frozen_422"] = frozen.status_code == 422
+    out["spec_datasource_invalid_422"] = shape_bad.status_code == 422
 
     # runs bind spec+model; scoped idem replays per spec
     run = client.post(
@@ -1162,6 +1188,33 @@ def _v1_evals_probes() -> dict[str, Any]:
     rec = _wait(client, bare)
     out["run_terminal_wire"] = rec["status"] == "succeeded"
     out["run_binding_on_record"] = rec["eval_spec"] == spec_id and rec["eval_model"] == "byok"
+
+    # bound freeze: with a run recorded the declared shape is evidence —
+    # datasource/criteria edits 409, name/metadata still edit.
+    frozen = client.post(
+        f"/v1/evals/{spec_id}",
+        json={
+            "data_source_config": {
+                "type": "custom",
+                "item_schema": {"suite": "capability", "seed": 9},
+            }
+        },
+    )
+    out["spec_datasource_frozen_409"] = (
+        frozen.status_code == 409
+        and frozen.json().get("error", {}).get("code") == "eval_spec_frozen"
+    )
+    criteria_frozen = client.post(
+        f"/v1/evals/{spec_id}", json={"testing_criteria": [{"name": "c1"}]}
+    )
+    out["spec_criteria_frozen_409"] = (
+        criteria_frozen.status_code == 409
+        and criteria_frozen.json().get("error", {}).get("code") == "eval_spec_frozen"
+    )
+    meta_ok = client.post(f"/v1/evals/{spec_id}", json={"name": "post-freeze-name"})
+    out["spec_name_edits_when_bound"] = (
+        meta_ok.status_code == 200 and meta_ok.json()["name"] == "post-freeze-name"
+    )
 
     replay = client.post(
         f"/v1/evals/{spec_id}/runs",
@@ -1363,7 +1416,7 @@ def _cli_probes() -> dict[str, Any]:
                 and wdocs[1]["schema"] == "fx1_eval_record.v1"
                 and wdocs[1]["record"]["eval_id"] == eval_id
             )
-            from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+            from quant_fund.schemas.receipt import (  # noqa: PLC0415
                 verify_receipt_payload,
             )
 

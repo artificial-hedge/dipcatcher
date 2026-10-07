@@ -45,7 +45,7 @@ _HORIZON = 1500.0
 _DRIFT_RATE = (_DRIFT_P_BUY_END - _DRIFT_P_BUY0) / _HORIZON
 
 
-def _arm(seed: int, *, p_buy: float, drift: float) -> dict[str, Any]:
+def _arm(seed: int, *, p_buy: float, drift: float, horizon: float) -> dict[str, Any]:
     cfg = replace(
         santa_fe_config(seed=seed, p_buy=p_buy),
         band=14,
@@ -58,9 +58,9 @@ def _arm(seed: int, *, p_buy: float, drift: float) -> dict[str, Any]:
         p_buy_drift=drift,
     )
     sim = ZILobSimulator(cfg)
-    while sim.t < _HORIZON:
+    while sim.t < horizon:
         sim.step()
-    edges = np.linspace(0.0, _HORIZON, 4)
+    edges = np.linspace(0.0, horizon, 4)
     buckets = []
     for i in range(3):
         lo, hi = float(edges[i]), float(edges[i + 1])
@@ -95,8 +95,8 @@ def _d(a: float, b: float) -> float:
 def initiative_fade_bench(horizon: float = _HORIZON, seed: int = 13) -> dict[str, Any]:
     """Run the flat/drift arms and seal the receipt."""
     arms = {
-        "flat": _arm(seed, p_buy=0.5, drift=0.0),
-        "drift": _arm(seed, p_buy=_DRIFT_P_BUY0, drift=_DRIFT_RATE),
+        "flat": _arm(seed, p_buy=0.5, drift=0.0, horizon=horizon),
+        "drift": _arm(seed, p_buy=_DRIFT_P_BUY0, drift=_DRIFT_RATE, horizon=horizon),
     }
     flat, drift = arms["flat"], arms["drift"]
     flat_fade = flat["thirds"][0]["buy_share"] - flat["thirds"][2]["buy_share"]
@@ -107,7 +107,13 @@ def initiative_fade_bench(horizon: float = _HORIZON, seed: int = 13) -> dict[str
         "drift_early": round(_d(drift["thirds"][0]["buy_share"], _REAL["buy_share_early"]), 3),
         "drift_late": round(_d(drift["thirds"][2]["buy_share"], _REAL["buy_share_late"]), 3),
     }
-    divergences = [f"{k}={v:+.3f}" for k, v in div.items() if abs(v) > 0.05]
+    # A NaN div entry means the arm never measured the share — log it as
+    # unmeasured rather than letting the NaN comparison fail silently.
+    divergences = [
+        f"{k}={v:+.3f}" if math.isfinite(v) else f"{k}=unmeasured"
+        for k, v in div.items()
+        if not math.isfinite(v) or abs(v) > 0.05
+    ]
     claims = {
         "flat_is_flat": abs(flat_fade) < 0.05,
         "drift_fades": drift_fade > 0.05,

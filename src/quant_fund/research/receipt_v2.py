@@ -613,6 +613,10 @@ def _inner_claimed_kinds(payload: Mapping[str, Any]) -> set[str]:
     return claims
 
 
+# Lanes dispatched on the outer ``kind`` OR on a sealed inner claim. An inner
+# claim that disagrees with the outer kind is additionally flagged
+# ``kind_fingerprint_mismatch`` — resealing an envelope is free, so renaming the
+# outer kind must not shed a lane's deep checks.
 _LANE_CONSISTENCY: dict[str, str] = {
     "distribution_fleet_eval": "quant_fund.research.fleet_eval.fleet_v2_consistency_errors",
     "capacity_overlay_eval": "quant_fund.research.capacity_overlay.capacity_v2_consistency_errors",
@@ -622,6 +626,101 @@ _LANE_CONSISTENCY: dict[str, str] = {
     "basis_carry_eval": "quant_fund.research.basis_carry.basis_carry_v2_consistency_errors",
     "crossvenue_basis": "quant_fund.research.crossvenue_basis.crossvenue_basis_v2_consistency_errors",
     "crossvenue_basis_eval": "quant_fund.research.crossvenue_basis.crossvenue_basis_v2_consistency_errors",
+}
+
+# Lane contracts declared ahead of the module that implements them. A receipt
+# claiming one of these kinds fails closed with ``<label>_lane_missing`` —
+# never "verified". Each entry requires a non-empty reason; the resolve gate in
+# tests/unit/research/test_receipt_v2_lane_targets_resolve.py fails on an
+# undocumented pending lane and on a pending lane whose module has since
+# landed (shrink-only, so this dict cannot rot).
+PENDING_LANE_CONSISTENCY: dict[str, tuple[tuple[str, str, str], str]] = {
+    "hstep_bench": (
+        (
+            "quant_fund.research.hstep_bench",
+            "hstep_bench_v2_consistency_errors",
+            "hstep_bench_v2_consistency",
+        ),
+        "multi-horizon h-step lane contract; the scored grid is served today by "
+        "research.multih_fleet (kind multih_fleet_eval) and _looks_like_hstep_eval "
+        "still fingerprints hstep_bench.v1 envelopes",
+    ),
+    "fleet_significance_eval": (
+        (
+            "quant_fund.research.fleet_significance",
+            "fleet_significance_v2_consistency_errors",
+            "fleet_significance_v2_consistency",
+        ),
+        "paired DM-matrix significance lane; research.concordance:130-134 mirrors "
+        "its ordered pairwise convention pending the module landing on main",
+    ),
+    "mixture_stability_eval": (
+        (
+            "quant_fund.research.mixture_stability",
+            "mixture_stability_consistency_errors",
+            "mixture_stability",
+        ),
+        "mixture-stability lane (weight-path stability across refits); distinct "
+        "from kind expert_mixture_eval, which research.expert_mixture serves and "
+        "whose regret identities its own checker re-derives",
+    ),
+}
+
+# The v1 schema contract for the same missing h-step lane, dispatched from
+# ``_verify_v1`` on ``schema == "hstep_bench.v1"`` or the structural
+# fingerprint. Same fail-closed rule; enumerated here so the resolve gate covers
+# every declared lane target, v1 and v2 alike.
+PENDING_V1_CONTRACT: tuple[str, str, str] = (
+    "quant_fund.research.hstep_bench",
+    "hstep_bench_v1_contract_errors",
+    "hstep_bench_v1_contract",
+)
+
+# Lanes dispatched on the outer ``kind`` alone, reached only once the
+# inner-claim pass above is clean. Value is (module, checker, label); the label
+# names the ``<label>_lane_missing`` error emitted when the module is absent.
+_LANE_CONSISTENCY_OUTER_KIND: dict[str, tuple[str, str, str]] = {
+    "identity_sweep": (
+        "quant_fund.research.identity_sweep",
+        "identity_v2_consistency_errors",
+        "identity_v2_consistency",
+    ),
+    "coherence_eval": (
+        "quant_fund.research.coherence",
+        "coherence_v2_consistency_errors",
+        "coherence_v2",
+    ),
+    "selection_concordance": (
+        "quant_fund.research.concordance",
+        "concordance_consistency_errors",
+        "concordance",
+    ),
+    "evidence_audit": (
+        "quant_fund.research.evidence_audit",
+        "evidence_audit_consistency_errors",
+        "evidence_audit",
+    ),
+    "nautilus_conformance": (
+        "quant_fund.backtest.nautilus_conformance",
+        "nautilus_conformance_consistency_errors",
+        "nautilus_conformance",
+    ),
+    "multih_fleet_eval": (
+        "quant_fund.research.multih_fleet",
+        "multih_fleet_consistency_errors",
+        "multih_fleet",
+    ),
+    "expert_mixture_eval": (
+        "quant_fund.research.expert_mixture",
+        "expert_mixture_consistency_errors",
+        "expert_mixture",
+    ),
+    "calibration_eval": (
+        "quant_fund.research.calibration_eval",
+        "calibration_v2_consistency_errors",
+        "calibration_v2",
+    ),
+    **{kind: target for kind, (target, _reason) in PENDING_LANE_CONSISTENCY.items()},
 }
 
 
@@ -670,66 +769,14 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         errors.append("kind_fingerprint_mismatch")
     if errors:
         return errors
-    if kind == "identity_sweep":
-        return _lane_checker(
-            "quant_fund.research.identity_sweep",
-            "identity_v2_consistency_errors",
-            "identity_v2_consistency",
-        )(payload)
-    if kind == "hstep_bench":
-        return _lane_checker(
-            "quant_fund.research.hstep_bench",
-            "hstep_bench_v2_consistency_errors",
-            "hstep_bench_v2_consistency",
-        )(payload)
-    if kind == "fleet_significance_eval":
-        return _lane_checker(
-            "quant_fund.research.fleet_significance",
-            "fleet_significance_v2_consistency_errors",
-            "fleet_significance_v2_consistency",
-        )(payload)
-    if kind == "coherence_eval":
-        return _lane_checker(
-            "quant_fund.research.coherence",
-            "coherence_v2_consistency_errors",
-            "coherence_v2",
-        )(payload)
-    if kind == "mixture_stability_eval":
-        return _lane_checker(
-            "quant_fund.research.mixture_stability",
-            "mixture_stability_consistency_errors",
-            "mixture_stability",
-        )(payload)
-    if kind == "selection_concordance":
-        return _lane_checker(
-            "quant_fund.research.concordance",
-            "concordance_consistency_errors",
-            "concordance",
-        )(payload)
-    if kind == "evidence_audit":
-        return _lane_checker(
-            "quant_fund.research.evidence_audit",
-            "evidence_audit_consistency_errors",
-            "evidence_audit",
-        )(payload)
-    if kind == "nautilus_conformance":
-        return _lane_checker(
-            "quant_fund.backtest.nautilus_conformance",
-            "nautilus_conformance_consistency_errors",
-            "nautilus_conformance",
-        )(payload)
-    if kind == "multih_fleet_eval":
-        return _lane_checker(
-            "quant_fund.research.multih_fleet",
-            "multih_fleet_consistency_errors",
-            "multih_fleet",
-        )(payload)
-    if kind == "calibration_eval":
-        return _lane_checker(
-            "quant_fund.research.calibration_eval",
-            "calibration_v2_consistency_errors",
-            "calibration_v2",
-        )(payload)
+    # One lane contract per envelope: the kinds are distinct, so a lookup is
+    # equivalent to the former ``if kind == ...`` chain. Lanes whose module has
+    # not landed are in PENDING_LANE_CONSISTENCY and still fail closed.
+    if isinstance(kind, str):
+        target = _LANE_CONSISTENCY_OUTER_KIND.get(kind)
+        if target is not None:
+            module, func, label = target
+            return _lane_checker(module, func, label)(payload)
     return []
 
 
@@ -887,13 +934,7 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
 
         errors.extend(data_manifest_contract_errors(payload))
     if payload.get("schema") == "hstep_bench.v1" or _looks_like_hstep_eval(payload):
-        errors.extend(
-            _lane_checker(
-                "quant_fund.research.hstep_bench",
-                "hstep_bench_v1_contract_errors",
-                "hstep_bench_v1_contract",
-            )(payload)
-        )
+        errors.extend(_lane_checker(*PENDING_V1_CONTRACT)(payload))
     elif payload.get("schema") == "calibration_eval.v1":
         from quant_fund.research.calibration_eval import calibration_contract_errors
 
