@@ -66,9 +66,7 @@ def _line_budgets() -> dict[str, int]:
     """Pinned budgets for legacy oversized modules; the pin may only shrink."""
     manifest = Path("quality/module_line_budgets.txt")
     budgets: dict[str, int] = {}
-    for line_number, raw in enumerate(
-        manifest.read_text(encoding="utf-8").splitlines(), start=1
-    ):
+    for line_number, raw in enumerate(manifest.read_text(encoding="utf-8").splitlines(), start=1):
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
@@ -80,9 +78,7 @@ def _line_budgets() -> dict[str, int]:
             raise AssertionError(f"{manifest}:{line_number}: duplicate budget for {rel}")
         count = int(count_text)
         if count <= MAX_MODULE_LINES:
-            raise AssertionError(
-                f"{manifest}:{line_number}: remove unnecessary budget for {rel}"
-            )
+            raise AssertionError(f"{manifest}:{line_number}: remove unnecessary budget for {rel}")
         budgets[rel] = count
     return budgets
 
@@ -106,9 +102,7 @@ def test_modules_stay_under_max_lines() -> None:
                         if lines <= MAX_MODULE_LINES
                         else f"lower the pin to {lines}"
                     )
-                    offenders.append(
-                        f"{rel}:{lines} below pinned budget {budget}; {action}"
-                    )
+                    offenders.append(f"{rel}:{lines} below pinned budget {budget}; {action}")
             elif lines > MAX_MODULE_LINES:
                 offenders.append(f"{rel}:{lines}")
     offenders.extend(f"stale budget pin: {rel}" for rel in sorted(set(budgets) - seen))
