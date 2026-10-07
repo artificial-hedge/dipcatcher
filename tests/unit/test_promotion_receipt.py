@@ -106,7 +106,13 @@ def _gates() -> dict[str, dict[str, str]]:
     }
 
 
-def _build(tmp_path: Path, *, data_source: str = "file") -> dict[str, object]:
+def _build(
+    tmp_path: Path,
+    *,
+    data_source: str = "file",
+    include_promotion: bool = True,
+    include_health: bool = True,
+) -> dict[str, object]:
     """Build a fully-bound artifact + report + approved decision fixture."""
     frame = _frame()
     cfg = _cfg(tmp_path)
@@ -136,6 +142,15 @@ def _build(tmp_path: Path, *, data_source: str = "file") -> dict[str, object]:
         "synthetic": False,
     }
     decision = promotion_decision(dict(metrics), PromotionConfig(min_folds=2), leakage_ok=True)
+    extra_sections: dict[str, object] = {}
+    if include_health:
+        extra_sections["health"] = {
+            "status": "ok",
+            "report": "unit-test-fixture",
+            "note": "SYNTHETIC correctness fixture; not market evidence",
+        }
+    if include_promotion:
+        extra_sections["promotion"] = decision
     report_paths = write_evidence_report(
         tmp_path,
         candidates={"ranking": {"mean_ic": 0.5}},
@@ -149,12 +164,7 @@ def _build(tmp_path: Path, *, data_source: str = "file") -> dict[str, object]:
             "git_revision": git_revision(),
             "git_worktree_sha256": git_worktree_sha256(),
         },
-        health={
-            "status": "ok",
-            "report": "unit-test-fixture",
-            "note": "SYNTHETIC correctness fixture; not market evidence",
-        },
-        promotion=decision,
+        **extra_sections,
     )
     report_path = next(path for path in report_paths.values() if path.suffix == ".json")
     return {
@@ -201,6 +211,34 @@ def test_compose_seals_immutable_receipt_with_sidecar(tmp_path: Path) -> None:
     assert sidecar.read_text(encoding="ascii").strip() == hash_file(out_path)
     with pytest.raises(PromotionCompositionError):
         _compose(tmp_path, built)  # receipts are immutable
+
+
+def test_training_time_report_stage_warning_is_resolved_by_receipt(tmp_path: Path) -> None:
+    """Stage-aware scoping: a report missing only this receipt composes.
+
+    The evidence report is written at training time; ``promotion_receipt_missing``
+    is the expected stage warning and the composed receipt resolves it. No
+    report warning is removed and ``status: complete`` is not loosened.
+    """
+    built = _build(tmp_path, include_promotion=False)
+    report = built["report"]
+    assert isinstance(report, Path)
+    body = json.loads(report.read_text(encoding="utf-8"))
+    assert body["warnings"] == ["promotion_receipt_missing"]
+    sealed = _compose(tmp_path, built)
+    payload = sealed["payload"]
+    assert isinstance(payload, dict)
+    binding = payload["evidence_report"]
+    assert binding["status_at_composition"] == "insufficient_evidence"
+    assert binding["stage_warnings"] == ["promotion_receipt_missing"]
+    assert binding["resolved_by"] == "promotion_receipt.v1"
+
+
+def test_missing_health_report_still_blocks_promotion(tmp_path: Path) -> None:
+    """health_report_missing stays blocking — only the stage warning is scoped."""
+    built = _build(tmp_path, include_promotion=False, include_health=False)
+    with pytest.raises(PromotionCompositionError):
+        _compose(tmp_path, built)
 
 
 def test_tampered_artifact_payload_blocks_promotion(tmp_path: Path) -> None:

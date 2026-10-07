@@ -983,6 +983,11 @@ PROMOTION_REQUIRED_GATES = (
 PROMOTION_DISHONEST_APPROVER_NAMES = frozenset(
     {"", "unknown", "anonymous", "none", "null", "n/a", "na", "tbd", "unspecified", "someone"}
 )
+# Stage-aware completeness, mirrored independently of proof.promotion_receipt:
+# a training-time evidence report whose only warning is the stage-expected
+# ``promotion_receipt_missing`` is resolved by the receipt under verification.
+# Every other warning keeps the report blocking.
+PROMOTION_STAGE_EXPECTED_REPORT_WARNINGS = frozenset({"promotion_receipt_missing"})
 
 
 def _promotion_looks_like_promotion_receipt(notebook: dict[str, Any]) -> bool:
@@ -1211,7 +1216,19 @@ def _promotion_evidence_report_errors(
             errors.append("promotion_evidence_report_research_only_invalid")
         if report_body.get("live_pnl_claim") is not False:
             errors.append("promotion_evidence_report_live_pnl_claim")
-        if report_body.get("status") != "complete":
+        report_status = report_body.get("status")
+        report_warnings = report_body.get("warnings")
+        warning_set = (
+            {str(item) for item in report_warnings} if isinstance(report_warnings, list) else set()
+        )
+        if report_status == "complete":
+            pass
+        elif (
+            report_status == "insufficient_evidence"
+            and warning_set <= PROMOTION_STAGE_EXPECTED_REPORT_WARNINGS
+        ):
+            pass  # resolved by the receipt itself (stage-expected warning only)
+        else:
             errors.append("promotion_evidence_report_incomplete")
         warnings = report_body.get("warnings")
         if isinstance(warnings, list) and "synthetic_evidence_not_promotable" in warnings:

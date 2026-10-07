@@ -58,6 +58,13 @@ REQUIRED_PROMOTION_GATES: tuple[str, ...] = (
 DISHONEST_APPROVER_NAMES: frozenset[str] = frozenset(
     {"", "unknown", "anonymous", "none", "null", "n/a", "na", "tbd", "unspecified", "someone"}
 )
+# Stage-aware completeness (scoping, never deleting): the evidence report is
+# written at TRAINING time, before this receipt exists. A report whose only
+# warning is the stage-expected ``promotion_receipt_missing`` is resolved BY
+# this receipt — the receipt records that resolution. Every other warning
+# (notably ``health_report_missing``) remains blocking, and the report's own
+# ``status: complete`` rule is untouched (nothing is made easier to reach).
+STAGE_EXPECTED_REPORT_WARNINGS: frozenset[str] = frozenset({"promotion_receipt_missing"})
 
 
 class PromotionCompositionError(RuntimeError):
@@ -231,15 +238,24 @@ def compose_promotion_receipt(
     )
     _require(report.get("research_only") is True, "evidence report is not research-only")
     _require(report.get("live_pnl_claim") is False, "evidence report claims live P&L")
-    _require(
-        report.get("status") == "complete",
-        "evidence report is incomplete; promotion is blocked",
-    )
     warnings = report.get("warnings")
     _require(
         not (isinstance(warnings, list) and "synthetic_evidence_not_promotable" in warnings),
         "synthetic evidence is not promotable",
     )
+    report_status = report.get("status")
+    if report_status == "complete":
+        stage_warnings: list[str] = []
+    elif (
+        report_status == "insufficient_evidence"
+        and isinstance(warnings, list)
+        and set(warnings) <= STAGE_EXPECTED_REPORT_WARNINGS
+    ):
+        # Training-time report: the only gap is this receipt's own absence,
+        # which composition is resolving right now.
+        stage_warnings = sorted(set(warnings))
+    else:
+        raise PromotionCompositionError("evidence report is incomplete; promotion is blocked")
     provenance = report.get("provenance")
     if not isinstance(provenance, Mapping):
         raise PromotionCompositionError("evidence report has no provenance")
@@ -275,6 +291,9 @@ def compose_promotion_receipt(
             "path": str(report_path),
             "sha256": report_sha,
             "schema": EVIDENCE_REPORT_SCHEMA,
+            "status_at_composition": report_status,
+            "stage_warnings": stage_warnings,
+            "resolved_by": PROMOTION_RECEIPT_SCHEMA,
         },
         "promotion_decision": dict(decision),
         "input_metrics": dict(input_metrics),
