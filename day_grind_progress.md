@@ -2076,3 +2076,14 @@ Gates: 88 tests green across the wave; ruff check clean; ruff format applied; my
 - HONESTY: gates I report are the ones I ran on the committed tree — not promises about CI runner queue saturation, which is the separate #2853 problem and requires a workflow-scoped token (or web-UI application) to widen the matrix.yml / witness_monitor.yml fan-out.
 
 Next gap left on the table: #2851 full-coverage workflow widening (blocked on `workflow` scope — see `docs/2853-actions-fanout-investigation.md` for the spec; user must apply via GitHub web UI or with a workflow-scoped token); Wave 142 HF-RV receipt JSON; any remaining devin-PR merge-conflicts still pinned on stale `main` SHAs.
+
+
+## Day follow-up — #2851 disjoint/union regression + layer housekeeping (2026-10-07)
+
+- GREEN: `test_full_coverage.py::test_lane_collected_node_ids_are_pairwise_disjoint_and_exhaustive` is the regression the issue cites ("It accepts repeated node IDs across lanes and never compares the shard union with a canonical collection inventory."). It runs the production lane command on a 12-file synthetic project, parses each lane's JUnit XML, and asserts (a) pairwise disjoint lane node IDs and (b) union equals the canonical pytest --collect-only set. New test: 54/54 in `tests/unit/test_full_coverage.py`.
+- GREEN: arch-guard at 0/19/0 after `combination` (analytics) + `flowbars` (market_data) get classified. Both packages exist with passing tests (106 tests across `tests/unit/combination/` and `tests/unit/flowbars/`) but were not in the layer config; classifying them prevents future callers from getting the unclassified fallback.
+- GREEN: `docs/ARCH_BOUNDARY_TRIAGE.md` ships on main — the original #2958 investigation doc with a Resolution section explaining what landed in #2970 plus the decay/ic_curve.py follow-up. A future reader can see both the as-found state and the resolution in one place.
+- INFLIGHT: not modified. `444468f22` + `944c3f668` + `678da7d46` are the day's three pushes.
+- HONESTY: gates are reported as measured on the committed tree (`444468f22`). The full-coverage lane widening for #2851 (workflow `.github/workflows/*.yml` change) remains blocked on the `workflow` OAuth scope.
+
+Next gap left on the table: full-coverage workflow trigger widening (workflow-scope blocked); Wave 142 HF-RV receipt JSON; the remaining devin-PR merge-conflicts still pinned on stale main SHAs.
