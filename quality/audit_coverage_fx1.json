@@ -132,6 +132,22 @@
     "selftest.py": {
       "status": "pending"
     },
+    "serve/anthropic_compat.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/chat.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/contract.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/openai_compat.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
     "tail_audit.py": {
       "status": "audited"
     }
