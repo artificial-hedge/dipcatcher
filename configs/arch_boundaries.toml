@@ -80,6 +80,9 @@ packages = [
 name = "research"
 packages = [
     "research",    # catalog/benches/agent/verify — consumes pipeline+analytics
+    "combination", # ensemble forecast combination (research subdomain)
+    "decay",       # signal decay analytics (research subdomain)
+    "flowbars",    # information-driven bars (research subdomain)
     "robustness",  # adversarial certification (paired with research)
     "leakage",     # leakage scanner/guardrails over proofcore
     "audit",       # hash-chained audit ledger over research receipts
@@ -287,12 +290,6 @@ note = "portfolio analytics import the attribution engine"
 # fix is moving the upstream signature kernel next to metrics (foundation)
 # and re-exporting it from there. See #2844 triage doc for the
 # facade-extract plan.
-[[baseline]]
-file = "src/quant_fund/metrics/signature_features.py"
-module = "quant_fund.models.path_signatures"
-rule = "layer-order"
-note = "signature_features reuses the analytics-layer path-signatures kernels; facade-extract deferred"
-
 # validation/gates.py gates research artifacts — the only upward edge of an
 # otherwise low-level validation package (walk_forward/purging/cpcv are used
 # by pipeline.train). Owner: validation/research maintainers; fix is moving
@@ -311,56 +308,15 @@ note = "validation gates reach up into research.verify"
 # schemas/ — tracked as one cleanup, delete all five entries when it lands.
 # ---------------------------------------------------------------------------
 
-[[baseline]]
-file = "src/quant_fund/registry/contract_probe.py"
-module = "quant_fund.research.receipt_v2"
-rule = "layer-order"
-note = "foundation->research: contract probe validates receipt.v2 envelopes; fix = relocate receipt_v2 to schemas/"
 
 [[baseline]]
-file = "src/quant_fund/microstructure/grammar_map.py"
-module = "quant_fund.research.receipt_v2"
+file = "src/quant_fund/realized/hf_rv.py"
+module = "quant_fund.models.realized"
 rule = "layer-order"
-note = "market_data->research: map module seals receipt.v2 evidence; fix = relocate receipt_v2 to schemas/"
-
-[[baseline]]
-file = "src/quant_fund/microstructure/wave23_map.py"
-module = "quant_fund.research.receipt_v2"
-rule = "layer-order"
-note = "market_data->research: map module seals receipt.v2 evidence; fix = relocate receipt_v2 to schemas/"
-
-[[baseline]]
-file = "src/quant_fund/microstructure/wave24_map.py"
-module = "quant_fund.research.receipt_v2"
-rule = "layer-order"
-note = "market_data->research: map module seals receipt.v2 evidence; fix = relocate receipt_v2 to schemas/"
-
-[[baseline]]
-file = "src/quant_fund/microstructure/zone_map.py"
-module = "quant_fund.research.receipt_v2"
-rule = "layer-order"
-note = "market_data->research: map module seals receipt.v2 evidence; fix = relocate receipt_v2 to schemas/"
-
-[[baseline]]
-file = "src/quant_fund/fusion/stack_watch.py"
-module = "quant_fund.research.evalues"
-rule = "layer-order"
-note = "market_data->research: stack watch reads e-value contracts for anytime-valid monitoring; fix = expose the contract via schemas/ or move stack_watch up"
+note = "market_data->analytics: realized volatility uses bipower_variation/jump detection from models; fix = move to lazy import or relocate shared math"
 
 [[baseline]]
 file = "src/quant_fund/metrics/signature_features.py"
 module = "quant_fund.models.path_signatures"
 rule = "layer-order"
-note = "metrics->models: signature feature builder reuses the path-signature transform; fix = move the shared transform down to metrics/ or a leaf math module"
-
-[[baseline]]
-file = "src/quant_fund/microstructure/event_time_flow.py"
-module = "quant_fund.models.changepoint"
-rule = "layer-order"
-note = "microstructure->models: event-time flow uses the changepoint detector; fix = move changepoint math to a leaf module both layers can import"
-
-[[baseline]]
-file = "src/quant_fund/microstructure/sigkernel_mmd.py"
-module = "quant_fund.models.sigkernel"
-rule = "layer-order"
-note = "microstructure->models: MMD two-sample test reuses the sigkernel feature map; fix = move sigkernel math to a leaf module"
+note = "market_data->analytics: signature_features reuses models.path_signatures as the only sane source of incremental-Chen signature kernels; fix = move signature kernels to foundation layer or make import lazy"
