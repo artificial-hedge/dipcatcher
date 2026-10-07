@@ -179,7 +179,6 @@ class _FlowSim(ZILobSimulator):
 
     def __init__(self, cfg: Any, flow: Any) -> None:
         self.flow_log: list[tuple[str, str, int, int]] = []
-        self._rm_kind = "?"
         super().__init__(cfg, flow)
         self.flow_log.clear()  # drop seed-book placements
 
@@ -190,23 +189,18 @@ class _FlowSim(ZILobSimulator):
     def _remove_resting_at(
         self, book: dict[int, deque[int]], level: int, idx: int, cause: str = "cancel"
     ) -> Any:
+        # The call's own ``cause`` labels the removal: "fill" for the
+        # consumed order inside ``_consume_best``, "cancel" for every
+        # other path — including the ones that fire outside any event
+        # wrapper (post-fill touch pull, hit_flee, maker expiry, the
+        # relief/requote routes). Those run between dispatched events,
+        # so a wrapper-flag scheme mislabels touch_pull removals as
+        # "fill" and logs a "?" for anything fired between events — a
+        # kind the channel cells do not contain (KeyError once armed).
+        kind = "fill" if cause == "fill" else "cxl"
         side = "buy" if book is self._bids else "sell"  # noqa: SLF001
-        self.flow_log.append((self._rm_kind, side, level, self.n_events))
+        self.flow_log.append((kind, side, level, self.n_events))
         return super()._remove_resting_at(book, level, idx, cause)
-
-    def _consume_best(self, aggressor: Side) -> Any:
-        self._rm_kind = "fill"
-        try:
-            return super()._consume_best(aggressor)
-        finally:
-            self._rm_kind = "?"
-
-    def _cancel_event(self) -> None:
-        self._rm_kind = "cxl"
-        try:
-            super()._cancel_event()
-        finally:
-            self._rm_kind = "?"
 
 
 def sim_aftermath(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
@@ -216,7 +210,10 @@ def sim_aftermath(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
     for _ in range(horizon):
         touch_before.append((sim.best_bid_level, sim.best_ask_level))
         sim.step()
-    # touch_before[e] = the book touch at the START of event e.
+    # touch_before[k] = the book touch at the START of the (k+1)-th
+    # event: it is appended before sim.step(), and flow_log event ids
+    # are 1-indexed (n_events), so the pre-event touch of event e lives
+    # at touch_before[e - 1].
     by_ev: dict[int, list[tuple[str, str, int]]] = {}
     for kind, side, lvl, ev in sim.flow_log:
         by_ev.setdefault(ev, []).append((kind, side, lvl))
@@ -230,14 +227,17 @@ def sim_aftermath(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
         # side = maker side consumed; the "hit" side of the anchor fill.
         hit_is_buy = side == "buy"
         for lo, _hi in _WINDOWS:
-            if ev + lo < horizon:
+            # sim events are numbered 1..horizon, so the window start
+            # exists iff ev + lo <= horizon (the tape side uses a strict
+            # < on a 0-indexed range — equivalent).
+            if ev + lo <= horizon:
                 n_anchor[f"{lo}_{_hi}"] += 1
-        for e2 in range(ev + 1, min(ev + 1 + horizon_max, horizon)):
+        for e2 in range(ev + 1, min(ev + 1 + horizon_max, horizon + 1)):
             wname = _window_of(e2 - ev)
             if wname is None:
                 continue
             for kind2, side2, lvl in by_ev.get(e2, ()):
-                bb, ba = touch_before[e2]
+                bb, ba = touch_before[e2 - 1]
                 own_touch = bb if side2 == "buy" else ba
                 if own_touch is None:
                     continue

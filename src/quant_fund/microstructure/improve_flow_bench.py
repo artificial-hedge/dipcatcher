@@ -32,7 +32,7 @@ _REAL = {
 }
 
 
-def _arm(seed: int, *, frac: float) -> dict[str, Any]:
+def _arm(seed: int, *, frac: float, horizon: float) -> dict[str, Any]:
     cfg = replace(
         santa_fe_config(seed=seed),
         band=14,
@@ -45,7 +45,7 @@ def _arm(seed: int, *, frac: float) -> dict[str, Any]:
         lo_improve_frac=frac,
     )
     sim = ZILobSimulator(cfg)
-    while sim.t < 1500.0:
+    while sim.t < horizon:
         sim.step()
     ec = sim.event_counts()
     n = max(int(ec["n_lo_arrivals"]), 1)
@@ -66,15 +66,21 @@ def _d(a: float, b: float) -> float:
 def improve_flow_bench(horizon: float = 1500.0, seed: int = 13) -> dict[str, Any]:
     """Run the improve-flow arms and seal the receipt."""
     arms = {
-        "deep_only": _arm(seed, frac=0.0),
-        "improve_10": _arm(seed, frac=0.10),
-        "improve_25": _arm(seed, frac=0.25),
+        "deep_only": _arm(seed, frac=0.0, horizon=horizon),
+        "improve_10": _arm(seed, frac=0.10, horizon=horizon),
+        "improve_25": _arm(seed, frac=0.25, horizon=horizon),
     }
     div = {
         f"{name}_inside": round(_d(arm["inside_spread_share"], _REAL["inside_spread_share"]), 3)
         for name, arm in arms.items()
     }
-    divergences = [f"{k}={v:+.3f}" for k, v in div.items() if abs(v) > 0.05]
+    # A NaN div entry means the arm never measured the share — log it as
+    # unmeasured rather than letting the NaN comparison fail silently.
+    divergences = [
+        f"{k}={v:+.3f}" if math.isfinite(v) else f"{k}=unmeasured"
+        for k, v in div.items()
+        if not math.isfinite(v) or abs(v) > 0.05
+    ]
     claims = {
         "deep_anchor_emits_inside_flow": arms["deep_only"]["inside_spread_share"] > 0.01,
         "improve_flow_raises_join_share": (

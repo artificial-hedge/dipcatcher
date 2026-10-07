@@ -113,14 +113,20 @@ def _shield_cell(
             continue
         hit_is_buy = side == "buy"
         for lo, _hi in _WINDOWS:
-            if ev + lo < horizon:
+            # sim events are numbered 1..horizon; the window start
+            # exists iff ev + lo <= horizon (matching sim_aftermath).
+            if ev + lo <= horizon:
                 n_anchor[f"{lo}_{_hi}"] += 1
-        for e2 in range(ev + 1, min(ev + 1 + horizon_max, horizon)):
+        for e2 in range(ev + 1, min(ev + 1 + horizon_max, horizon + 1)):
             wname = _window_of(e2 - ev)
             if wname is None:
                 continue
             for kind2, side2, lvl in by_ev.get(e2, ()):
-                bb2, ba2 = touch_before[e2]
+                # touch_before[k] is the pre-step snapshot of event
+                # k+1, so the pre-event touch of 1-indexed event e2 is
+                # touch_before[e2 - 1] (touch_before[e2] would consume
+                # the post-event state — look-ahead inside the event).
+                bb2, ba2 = touch_before[e2 - 1]
                 own_touch = bb2 if side2 == "buy" else ba2
                 if own_touch is None:
                     continue
