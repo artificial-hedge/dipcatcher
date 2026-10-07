@@ -158,3 +158,46 @@ class TestBands:
         w1 = rv_confidence_band(r1)["upper"] - rv_confidence_band(r1)["lower"]
         w2 = rv_confidence_band(r2)["upper"] - rv_confidence_band(r2)["lower"]
         assert w2 < w1
+
+
+def test_bns_uses_alpha_for_reject():
+    r = np.random.default_rng(0).normal(0.0, 1e-3, 400)
+    out = bns_jump_test(r, alpha=0.999)
+    assert "reject" in out and out["reject"] == 0.0
+
+
+def test_bns_flags_planted_jump():
+    r = np.random.default_rng(0).normal(0.0, 1e-3, 400)
+    r[200] = 0.05
+    out = bns_jump_test(r, alpha=0.99)
+    assert out["reject"] == 1.0 and out["jump_share"] > 0.0
+
+
+def test_tsrv_rejects_float_grids():
+    r = np.random.default_rng(0).normal(0.0, 1e-3, 200)
+    with pytest.raises(ValueError, match="n_grids"):
+        tsrv(r, n_grids=2.5)
+    with pytest.raises(ValueError, match="n_grids"):
+        tsrv(r, n_grids=0)
+
+
+def test_band_alpha_validation():
+    r = np.random.default_rng(0).normal(0.0, 1e-3, 400)
+    for bad in (0.0, 1.0, 1.5, -0.3):
+        with pytest.raises(ValueError, match="alpha"):
+            rv_confidence_band(r, alpha=bad)
+
+
+def test_tpq_unbiased_on_gaussian():
+    n, sigma = 3000, 0.02
+    r = np.random.default_rng(1).normal(0.0, sigma / np.sqrt(n), n)
+    assert tripower_quarticity(r) == pytest.approx(sigma**4, rel=0.25)
+
+
+def test_lee_mykland_flags_planted_and_skips_warmup():
+    r = np.random.default_rng(0).normal(0.0, 1e-3, 300)
+    r[100] = 0.06
+    out = lee_mykland_jumps(r, alpha=0.999)
+    assert 100.0 in out["jump_idx"]
+    k = max(2, int(np.floor(np.sqrt(300))))
+    assert np.all(out["stat"][:k] == 0.0)

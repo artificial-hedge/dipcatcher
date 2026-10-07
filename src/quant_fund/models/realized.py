@@ -55,7 +55,9 @@ def bipower_variation(r: Array) -> float:
 def tripower_quarticity(r: Array) -> float:
     """Podolskij–Vetter (2009) tripower quarticity — jump-robust IQ estimator.
 
-    ``TPQ = n * mu43^{-3} * sum |r_t|^{4/3}|r_{t-1}|^{4/3}|r_{t-2}|^{4/3}``
+    ``TPQ = n * (n/(n-2)) * mu43^{-3} * sum |r_t|^{4/3}|r_{t-1}|^{4/3}|r_{t-2}|^{4/3}``
+    — the ``n/(n-2)`` factor makes it exactly unbiased for IQ under
+    no jumps (the sum carries only n-2 triple products).
     """
     v = _as_returns(r, min_len=12)
     mu43 = 2.0 ** (2.0 / 3.0) * math.gamma(7.0 / 6.0) / math.gamma(0.5)
@@ -91,6 +93,7 @@ def bns_jump_test(r: Array, alpha: float = 0.999) -> dict[str, float]:
     return {
         "z": z,
         "pvalue": float(sstats.norm.sf(z)),
+        "reject": float(z > float(sstats.norm.ppf(alpha))),
         "rj": rj,
         "jump_share": max(rj, 0.0),
         "rv": rv,
@@ -143,8 +146,9 @@ def tsrv(r: Array, n_grids: int | None = None) -> float:
     n = v.size
     if n_grids is None:
         n_grids = max(2, int(round(n ** (2.0 / 3.0))))
-    if n_grids < 1 or n_grids >= n // 2:
-        raise ValueError("n_grids out of range")
+    if not isinstance(n_grids, (int, np.integer)) or n_grids < 1 or n_grids >= n // 2:
+        raise ValueError("n_grids must be an integer in [1, n//2)")
+    n_grids = int(n_grids)
     cum = np.concatenate([[0.0], np.cumsum(v)])
     rvs = []
     for g in range(n_grids):
@@ -236,6 +240,8 @@ def rv_confidence_band(r: Array, alpha: float = 0.95, robust: bool = True) -> di
     quarticity (valid under jumps), else realized quarticity.
     """
     v = _as_returns(r, min_len=20)
+    if not (0.0 < alpha < 1.0):
+        raise ValueError("alpha must be in (0, 1)")
     rv = realized_variance(v)
     if rv <= 0.0:
         raise ValueError("zero realized variance")

@@ -693,6 +693,9 @@
   "models/rd.py": {
    "status": "audited"
   },
+  "models/realized.py": {
+   "status": "audited"
+  },
   "models/realized_garch.py": {
    "status": "audited"
   },
