@@ -1,6 +1,10 @@
 # fxi — interactive CLI for fx-1
 
 `fxi` is the interactive front door to fx-1 and the dipcatcher harness.
+Bare `fxi` opens the **concierge console** — conversational orchestration
+with `/superpower` capability planning, background deep web research, and
+persistent flash-context memory. See `docs/DIP_CONCIERGE.md` for the full
+workflow; this page covers endpoints, security, and the classic shell.
 **fx1 and fx1-lite are model names** — each has one *endpoint* here: an API
 key plus a base URL, stored locally and injected into harness commands, so
 `fx1 eval`, hosted chat, and verification runs pick up your credentials

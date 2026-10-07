@@ -69,7 +69,7 @@ WINDOWS: dict[str, dict[str, Any]] = {
     "W4_2018_05_8p3y": {"symbols": MAJORS_3, "eval_tail_bars": None},
 }
 
-OUT_DIR = Path("research/chop_robustness_20261007")
+OUT_DIR = Path("research/chop_robustness_20261007b")  # re-run under the bench config
 
 
 def _slot(name: str, overrides: dict[str, Any]) -> StrategySlot:
@@ -80,13 +80,28 @@ def _slots() -> list[StrategySlot]:
     return [_slot("base", {}), *[_slot(name, diff) for name, diff in MECHANISMS.items()]]
 
 
+def _bench_config() -> AppConfig:
+    """The lane's bench config (binance_public_data source), not AppConfig() defaults.
+
+    The first sweep run (research/chop_robustness_20261007/) used AppConfig()
+    defaults, whose data_label resolves to 'synthetic' and whose risk/execution
+    defaults left the base book degenerate (0 fills) on 3 of 4 windows. This
+    re-run pins the source to the lane's bench receipts' 'binance_public_data'
+    so the base book can be checked against the historical receipt.
+    """
+    config = AppConfig()
+    return config.model_copy(
+        update={"data": config.data.model_copy(update={"source": "binance_public_data"})}
+    )
+
+
 def run_window(window_id: str, spec: dict[str, Any], slots: list[StrategySlot]) -> dict[str, Any]:
     """One pre-registered window: base + every mechanism on identical bars."""
     result = run_sim_live(
         bars_root=Path("data/raw/sources"),
         symbols=list(spec["symbols"]),
         interval="1d",
-        config=AppConfig(),
+        config=_bench_config(),
         champion=slots[0],
         challengers=slots[1:],
         eval_tail_bars=spec["eval_tail_bars"],

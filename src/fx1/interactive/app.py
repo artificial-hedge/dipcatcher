@@ -237,7 +237,7 @@ def run_cmd(
 
 @app.command("superpower")
 def superpower_cmd(
-    goal: list[str] = typer.Argument(..., help="The research goal (plain words)."),
+    goal: list[str] = typer.Argument(None, help="The research goal (plain words)."),
     sync: bool = typer.Option(False, "--sync", help="Run inline instead of in the background."),
     help_catalog: bool = typer.Option(
         False, "--capabilities", help="List the capabilities the planner may select."
@@ -249,6 +249,8 @@ def superpower_cmd(
     if help_catalog:
         typer.echo(describe_capabilities())
         raise typer.Exit()
+    if not goal:
+        raise typer.BadParameter("a research goal is required (or use --capabilities)")
     goal_text = " ".join(goal)
     operator = concierge.Concierge(model=state["model"])
     operator._slash(f"/superpower {goal_text}{' --sync' if sync else ''}")  # noqa: SLF001

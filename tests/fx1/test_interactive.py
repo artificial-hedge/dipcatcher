@@ -669,3 +669,17 @@ def test_dipcatcher_subcommand_skips_wizard(monkeypatch: pytest.MonkeyPatch) -> 
     result = CliRunner().invoke(quant_app, ["--help"])
     assert result.exit_code == 0
     assert "Dipcatcher" in result.output
+
+
+def test_cli_superpower_capabilities_catalog(isolated_store: Path) -> None:
+    result = RUNNER.invoke(fxi_app, ["superpower", "--capabilities"])
+    assert result.exit_code == 0
+    assert "available /superpower capabilities" in result.output
+    assert "web_research" in result.output
+    assert "approval-required" in result.output
+
+
+def test_cli_superpower_requires_goal(isolated_store: Path) -> None:
+    result = RUNNER.invoke(fxi_app, ["superpower"])
+    assert result.exit_code == 2
+    assert "research goal is required" in result.output
