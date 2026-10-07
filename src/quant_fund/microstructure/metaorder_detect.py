@@ -17,7 +17,7 @@ from typing import Any
 
 import numpy as np
 
-from quant_fund.microstructure.lobster import EXECUTION, parse_messages
+from quant_fund.microstructure.lobster import EXECUTION, EXECUTION_HIDDEN, parse_messages
 from quant_fund.microstructure.split_flow import SplitFlow
 from quant_fund.microstructure.zi_lob_simulator import ZILobConfig, ZILobSimulator
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -84,7 +84,7 @@ def lobster_metaorders(
     times: list[float] = []
     signs: list[int] = []
     for ev in parse_messages(msg):
-        if ev.event_type == EXECUTION:
+        if ev.event_type in (EXECUTION, EXECUTION_HIDDEN):
             times.append(ev.time_s)
             signs.append(-ev.direction)
     meta = cluster_metaorders(times, signs, gap_s=gap_s, min_len=min_len)

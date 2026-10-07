@@ -74,9 +74,11 @@ def test_measure_lobster_synth(tmp_path: Path) -> None:
     ob = tmp_path / "AMZN_x_orderbook_2.csv"
     _write_pair(msg, ob, events)
     out = measure_lobster(msg, ob, tick_units=100.0)
-    assert out["n_trades"] == 2
-    assert out["n_events"] == 5  # first row consumed as seed
-    assert out["mo_fraction"] == 2 / 5
+    assert out["n_trades"] == 3
+    # All six tape rows are consumed: row 0 as the seed, the rest applied —
+    # matching validate_reconstruction's consumed-row count.
+    assert out["n_events"] == 6
+    assert out["mo_fraction"] == 3 / 6
     assert out["spread_ticks_median"] > 0
 
 

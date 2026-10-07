@@ -197,8 +197,10 @@ def validate_reconstruction(
         for ev, ob_row in zip(parse_messages(message_path), csv.reader(f_ob), strict=True):
             asks_exp, bids_exp = parse_orderbook_row(ob_row)
             if not seeded:
+                # Row 0 is the book state AFTER message 0: seeding from it
+                # already includes event 0 — applying it would double-count
+                # the first event.
                 book.seed(asks_exp, bids_exp)
-                book.apply(ev)
                 seeded = True
                 n_events += 1
                 continue  # row 0 consumed as seed
@@ -268,11 +270,20 @@ def tape_measurements(
         ):
             asks_exp, bids_exp = parse_orderbook_row(ob_row)
             if not seeded:
+                # Row 0 is the book state AFTER message 0: seeding from it
+                # already includes event 0 — applying it would double-count
+                # the first event.
                 book.seed(asks_exp, bids_exp)
-                book.apply(ev)
                 seeded = True
+                if ev.event_type in (EXECUTION, EXECUTION_HIDDEN):
+                    signs.append(-ev.direction)
                 continue
             book.apply(ev)
+            if ev.event_type in (EXECUTION, EXECUTION_HIDDEN):
+                # MO prints include hidden-liquidity fills (type 5); record
+                # before the no-visible-book skip so the sign stream stays
+                # the full aggressor tape. Exec dir = resting side.
+                signs.append(-ev.direction)
             if ev.event_type in (EXECUTION_HIDDEN, HALT):
                 continue
             if book.top("ask", n_levels) != asks_exp or book.top("bid", n_levels) != bids_exp:
@@ -284,8 +295,6 @@ def tape_measurements(
             spreads.append(ba[0] - bb[0])
             mids.append((ba[0] + bb[0]) / 2)
             imbalances.append(ba[1] / (ba[1] + bb[1]))
-            if ev.event_type == EXECUTION:
-                signs.append(-ev.direction)  # exec dir = resting side
             if i % stride == 0:
                 depth_ask.append([s for _, s in book.top("ask", 5)])
                 depth_bid.append([s for _, s in book.top("bid", 5)])
