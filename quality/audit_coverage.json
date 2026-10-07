@@ -357,6 +357,21 @@
   "models/ait_sahalia.py": {
    "status": "audited"
   },
+  "models/american_lsm.py": {
+   "status": "audited"
+  },
+  "models/archimedean_extra.py": {
+   "status": "audited"
+  },
+  "models/asian_option.py": {
+   "status": "audited"
+  },
+  "models/asset_pricing.py": {
+   "status": "audited"
+  },
+  "models/bandits.py": {
+   "status": "audited"
+  },
   "models/bkm_moments.py": {
    "status": "audited"
   },
@@ -367,11 +382,7 @@
    "status": "audited"
   },
   "models/c51_rl.py": {
-   "evidence": [
-    "tests/unit/models/test_c51_rl.py"
-   ],
-   "reason": "C51 RL core (Bellemare 2017) with torch-free Algorithm-1, ZILobQuoteEnv adapter; wired via tests/unit/models/test_c51_rl.py (37 tests).",
-   "status": "partial"
+   "status": "audited"
   },
   "models/causal_forest.py": {
    "status": "audited"
@@ -379,7 +390,19 @@
   "models/causal_impact.py": {
    "status": "audited"
   },
+  "models/caviar.py": {
+   "status": "audited"
+  },
+  "models/ccm.py": {
+   "status": "audited"
+  },
   "models/changepoint.py": {
+   "status": "audited"
+  },
+  "models/conformal.py": {
+   "status": "audited"
+  },
+  "models/copula.py": {
    "status": "audited"
   },
   "models/count_data.py": {
@@ -388,7 +411,19 @@
   "models/cv_plus.py": {
    "status": "audited"
   },
+  "models/deep_bsde.py": {
+   "status": "audited"
+  },
+  "models/deep_hedging.py": {
+   "status": "audited"
+  },
+  "models/deep_kernel_hedging.py": {
+   "status": "audited"
+  },
   "models/deep_regime_mixture.py": {
+   "status": "audited"
+  },
+  "models/deep_rl.py": {
    "status": "audited"
   },
   "models/delayed_aci.py": {
@@ -397,7 +432,25 @@
   "models/did_diagnostics.py": {
    "status": "audited"
   },
+  "models/diffpts.py": {
+   "status": "audited"
+  },
+  "models/dml.py": {
+   "status": "audited"
+  },
   "models/double_ml.py": {
+   "status": "audited"
+  },
+  "models/duration.py": {
+   "status": "audited"
+  },
+  "models/dynamic_subspace_denoising.py": {
+   "status": "audited"
+  },
+  "models/enbpi.py": {
+   "status": "audited"
+  },
+  "models/enbpi_multihorizon.py": {
    "status": "audited"
   },
   "models/enkf.py": {
@@ -433,6 +486,24 @@
   "models/kinetic_ising.py": {
    "status": "audited"
   },
+  "models/kronos.py": {
+   "status": "audited"
+  },
+  "models/kronos_fleet.py": {
+   "status": "audited"
+  },
+  "models/malliavin_greeks.py": {
+   "status": "audited"
+  },
+  "models/martingale_ot.py": {
+   "status": "audited"
+  },
+  "models/mixture.py": {
+   "status": "audited"
+  },
+  "models/msgarch.py": {
+   "status": "audited"
+  },
   "models/nardl.py": {
    "status": "audited"
   },
@@ -448,6 +519,12 @@
   "models/ngboost_lite.py": {
    "status": "audited"
   },
+  "models/nig_vg.py": {
+   "status": "audited"
+  },
+  "models/nonlinear_filters.py": {
+   "status": "audited"
+  },
   "models/odd_residual_flows.py": {
    "status": "audited"
   },
@@ -457,22 +534,85 @@
   "models/path_signatures.py": {
    "status": "audited"
   },
+  "models/point_process.py": {
+   "status": "audited"
+  },
+  "models/qrf.py": {
+   "status": "audited"
+  },
+  "models/quantile_bandit.py": {
+   "status": "audited"
+  },
+  "models/random_projection.py": {
+   "status": "audited"
+  },
   "models/rbergomi.py": {
    "status": "audited"
   },
   "models/rd.py": {
    "status": "audited"
   },
+  "models/realized_garch.py": {
+   "status": "audited"
+  },
   "models/regime_conformal_var.py": {
+   "status": "audited"
+  },
+  "models/regime_switch.py": {
+   "status": "audited"
+  },
+  "models/rl.py": {
+   "status": "audited"
+  },
+  "models/robinhood_plus/__init__.py": {
+   "status": "audited"
+  },
+  "models/robinhood_plus/autoregress.py": {
+   "status": "audited"
+  },
+  "models/robinhood_plus/bench.py": {
+   "status": "audited"
+  },
+  "models/robinhood_plus/compare.py": {
+   "status": "audited"
+  },
+  "models/robinhood_plus/constants.py": {
+   "status": "audited"
+  },
+  "models/robinhood_plus/engine.py": {
+   "status": "audited"
+  },
+  "models/robinhood_plus/predictor.py": {
+   "status": "audited"
+  },
+  "models/robinhood_plus/tokenizer.py": {
+   "status": "audited"
+  },
+  "models/robinhood_plus/torch_backend.py": {
+   "status": "audited"
+  },
+  "models/robinhood_plus/transformer.py": {
+   "status": "audited"
+  },
+  "models/robust_cov.py": {
    "status": "audited"
   },
   "models/rolling_conformal.py": {
    "status": "audited"
   },
+  "models/rough_vol.py": {
+   "status": "audited"
+  },
   "models/rrc_filter.py": {
    "status": "audited"
   },
+  "models/rvine.py": {
+   "status": "audited"
+  },
   "models/sbi.py": {
+   "status": "audited"
+  },
+  "models/short_rate.py": {
    "status": "audited"
   },
   "models/spectral_atiyah.py": {
@@ -488,6 +628,9 @@
    "status": "audited"
   },
   "models/viterbi_decode.py": {
+   "status": "audited"
+  },
+  "models/vol_per_security.py": {
    "status": "audited"
   },
   "models/watch.py": {

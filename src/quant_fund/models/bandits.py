@@ -72,7 +72,7 @@ class UCB1(_BaseBandit):
 
 
 class EpsilonGreedy(_BaseBandit):
-    """Sutton–Barto ε-greedy; supports decaying ε via ``epsilon0 / sqrt(t)``."""
+    """Sutton–Barto ε-greedy; ``decay`` gives Auer-style ``min(1, 5 * epsilon0 * n_arms / t)``."""
 
     def __init__(
         self,

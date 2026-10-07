@@ -519,12 +519,13 @@ def deep_hedge(
     n_epochs = int(epochs)
     rate = _check_positive(lr, "lr")
 
-    torch.manual_seed(int(seed))
     torch.set_num_threads(1)
     paths_t = torch.as_tensor(arr, dtype=torch.float32)
     payoff_t = torch.as_tensor(pay, dtype=torch.float32)
     feats = _features(torch, paths_t)
-    net = _build_mlp(torch, int(feats.shape[-1]), hidden_widths)
+    with torch.random.fork_rng():
+        torch.manual_seed(int(seed))
+        net = _build_mlp(torch, int(feats.shape[-1]), hidden_widths)
     opt = torch.optim.Adam(net.parameters(), lr=rate)
     curve: list[float] = []
     net.train()

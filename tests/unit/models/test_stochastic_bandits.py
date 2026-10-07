@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from quant_fund.models.stochastic_bandits import (
     bench_stochastic_bandits,
@@ -34,3 +35,16 @@ def test_bench_keys():
         out
     )
     assert all(np.isfinite(v) for v in out.values())
+
+
+def test_eps_greedy_decay_matches_documented_formula():
+    # Docstring contract: Auer-style decay min(1, 5 * eps0 * n_arms / t) —
+    # the documented schedule must be the one the implementation applies.
+    from quant_fund.models.bandits import EpsilonGreedy
+
+    assert "n_arms" in EpsilonGreedy.__doc__
+    b = EpsilonGreedy(4, epsilon=0.2, decay=True, seed=0)
+    b.t = 10
+    assert b._eps() == pytest.approx(min(1.0, 5.0 * 0.2 * 4 / 10))
+    b.t = 2  # early decayed epsilon clamps to 1 rather than exceeding it
+    assert b._eps() == pytest.approx(1.0)

@@ -54,7 +54,7 @@ def _nll_weibull(theta: Array, x: Array) -> float:
     if omega <= 0 or alpha < 0 or beta < 0 or alpha + beta >= 0.999 or gamma <= 0.05 or gamma > 10:
         return 1e12
     psi = _psi_path(x, omega, alpha, beta)
-    lam = math.exp(gammaln(1.0 + 1.0 / gamma))  # scale for mean-1 eps
+    lam = math.exp(-gammaln(1.0 + 1.0 / gamma))  # scale for mean-1 eps: 1/Gamma(1+1/g)
     z = x / psi / lam
     # eps ~ Weibull(gamma, lam): f(e) = (g/lam)(e/lam)^{g-1} exp(-(e/lam)^g)
     # x = psi*eps -> loglik = sum[ ln g - g ln psi - g ln lam + (g-1) ln(x/psi... )
@@ -97,7 +97,8 @@ def acd_fit(
     if dist == "weibull":
         bounds.append((0.05, 10.0))
     res = optimize.minimize(nll, theta0, args=(x,), method="L-BFGS-B", bounds=bounds)
-    if not np.isfinite(res.fun):
+    # res.fun == 1e12 is the infeasible-region penalty, not a converged fit.
+    if not np.isfinite(res.fun) or res.fun >= 1e12:
         raise ValueError("ACD fit failed")
     th = res.x
     omega, alpha, beta = float(th[0]), float(th[1]), float(th[2])

@@ -53,7 +53,9 @@ def nig_fit_moments(x: Array) -> dict[str, float]:
     z = (arr - m) / np.sqrt(v)
     s = float((z**3).mean())
     k = float((z**4).mean() - 3.0)
-    r = s**2 / k if k > 0 else 0.0
+    if k <= 0.0:
+        raise ValueError("moments outside the NIG-admissible region (need k > 4 s^2/3)")
+    r = s**2 / k
     if not 0.0 <= r < 0.75:
         raise ValueError("moments outside the NIG-admissible region (need k > 4 s^2/3)")
     bar_beta2 = r / (3.0 - 4.0 * r)

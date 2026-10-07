@@ -130,7 +130,8 @@ def fit_t_copula(u: Array, nu_grid: Array | None = None) -> tuple[float, float]:
             - math.log(nu * math.pi)
             - 2.0 * (gammaln((nu + 1.0) / 2.0) - gammaln(nu / 2.0) - 0.5 * math.log(nu * math.pi))
         )
-        marg = -((nu + 1.0) / 2.0) * float(np.sum(np.log1p(z**2 / nu)))
+        # -log f_nu(z) contributes +((nu+1)/2) log1p(z^2/nu) to the copula density.
+        marg = ((nu + 1.0) / 2.0) * float(np.sum(np.log1p(z**2 / nu)))
         nll = _make_nll(z, float(nu), const, marg)
         res = opt.minimize_scalar(nll, bounds=(-0.98, 0.98), method="bounded")
         if -res.fun > best[0]:

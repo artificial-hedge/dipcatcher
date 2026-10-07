@@ -131,3 +131,14 @@ class TestTheory:
             copula_tail_dependence_theory("gumbel", 0.5)
         with pytest.raises(ValueError):
             copula_tail_dependence_theory("frank", 1.0)
+
+
+def test_fit_t_copula_selects_plausible_nu() -> None:
+    # Data from a true nu=4 t copula: the grid argmax must not collapse onto
+    # the light-tail end of the grid — the marginal term enters with a
+    # positive sign in the copula log-density.
+    u = t_copula_sim(0.5, 4.0, 4000, seed=11)
+    grid = np.array([3.0, 4.0, 6.0, 10.0, 30.0])
+    rho, nu = fit_t_copula(u, grid)
+    assert nu <= 10.0
+    assert rho == pytest.approx(0.5, abs=0.1)

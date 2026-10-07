@@ -850,19 +850,22 @@ def deep_kernel_hedge(
     z, mu, sd = standardize_features(feats)
     flat_np = z.reshape(-1, z.shape[-1])
 
-    torch.manual_seed(int(seed))
     torch.set_num_threads(1)
     flat = torch.as_tensor(flat_np, dtype=torch.float32)
     gains_t = torch.as_tensor(gains, dtype=torch.float32)
     pay_t = torch.as_tensor(pay, dtype=torch.float32)
-    net = _build_embedding(torch, int(flat.shape[1]), hidden_widths, p)
+    # Fork the global stream: the seeded embedding init + RFF draw must be
+    # reproducible here while leaving the caller's torch RNG state untouched.
+    with torch.random.fork_rng():
+        torch.manual_seed(int(seed))
+        net = _build_embedding(torch, int(flat.shape[1]), hidden_widths, p)
+        # RFF draw AFTER the network init so the seeded stream is fully determined.
+        W = torch.randn(d_feat, p, dtype=torch.float32)
+        b = torch.rand(d_feat, dtype=torch.float32) * (2.0 * math.pi)
     log_gamma = torch.tensor(math.log(g0), dtype=torch.float32, requires_grad=True)
     # zeta init: empirical (1 - alpha_cvar)-quantile of the unhedged errors.
     zeta_init = float(np.quantile(pay, 1.0 - a_cvar)) if loss == "cvar" else 0.0
     zeta = torch.tensor(zeta_init, dtype=torch.float32, requires_grad=loss == "cvar")
-    # RFF draw AFTER the network init so the seeded stream is fully determined.
-    W = torch.randn(d_feat, p, dtype=torch.float32)
-    b = torch.rand(d_feat, dtype=torch.float32) * (2.0 * math.pi)
     scale = math.sqrt(2.0 / d_feat)
     # Warm start: beta_0 is the closed-form RFF primal solve (solve_rff_beta)
     # at the initial embedding, so joint training refines an already-valid

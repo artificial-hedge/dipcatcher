@@ -739,13 +739,14 @@ def deep_bsde_solve(
                 f"hidden must be a non-empty sequence of positive widths; got {hidden!r}"
             )
 
-    torch.manual_seed(int(seed))
     torch.set_num_threads(1)
-    y0_param = torch.tensor([y_init], dtype=torch.float64, requires_grad=True)
-    z0_param = torch.nn.Parameter(
-        torch.zeros((1, d), dtype=torch.float64).uniform_(-0.1, 0.1)  # paper's Z0 init
-    )
-    nets = [_build_z_net(torch, d, hidden_widths) for _ in range(max(n_steps - 1, 0))]
+    with torch.random.fork_rng():
+        torch.manual_seed(int(seed))
+        y0_param = torch.tensor([y_init], dtype=torch.float64, requires_grad=True)
+        z0_param = torch.nn.Parameter(
+            torch.zeros((1, d), dtype=torch.float64).uniform_(-0.1, 0.1)  # paper's Z0 init
+        )
+        nets = [_build_z_net(torch, d, hidden_widths) for _ in range(max(n_steps - 1, 0))]
     params: list[Any] = [y0_param, z0_param]
     for net in nets:
         params.extend(net.parameters())

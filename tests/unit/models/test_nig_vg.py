@@ -67,3 +67,12 @@ def test_fail_closed() -> None:
         vg_pdf(np.array([0.0]), sigma=0.0, nu=1.0)
     with pytest.raises(ValueError):
         vg_rvs(sigma=1.0, nu=-1.0)
+
+
+def test_nig_fit_moments_rejects_nonpositive_kurtosis() -> None:
+    # Excess kurtosis <= 0 is outside the NIG-admissible region: the fit must
+    # fail closed rather than return NaN parameters (k in the alpha divisor).
+    rng = np.random.default_rng(4)
+    x = rng.uniform(-1.0, 1.0, size=200)  # platykurtic: excess kurtosis = -1.2
+    with pytest.raises(ValueError, match="NIG-admissible"):
+        nig_fit_moments(x)

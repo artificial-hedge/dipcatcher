@@ -7,6 +7,7 @@ loads local directories. This module never silently falls back to numpy.
 
 from __future__ import annotations
 
+import hashlib
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -171,6 +172,12 @@ def _cached_predictor(config: AppConfig) -> Any:
     return predictor
 
 
+def _forecast_seed(seed: int, asof: datetime, security_id: str) -> int:
+    """Per-name sampling seed: stable across processes (sha256, not hash())."""
+    digest = hashlib.sha256(f"{int(seed)}|{asof.isoformat()}|{security_id}".encode()).digest()
+    return int.from_bytes(digest[:8], "little") % (2**31 - 1)
+
+
 def _future_stamps(times: list[datetime], pred_len: int) -> list[datetime]:
     if len(times) >= 2:
         delta = times[-1] - times[-2]
@@ -267,15 +274,23 @@ def forecast_cross_section_torch(
             )
             continue
         try:
-            paths = _kline_paths_from_kronos(
-                predictor,
-                kline,
-                times,
-                pred_len=cfg.pred_len,
-                sample_count=cfg.sample_count,
-                temperature=cfg.temperature,
-                top_p=cfg.top_p,
-            )
+            # Official KronosPredictor.predict samples from torch's global
+            # RNG: without a seed the forecast changes every call, and one
+            # name's paths would depend on which names ran before it. Seed a
+            # forked stream per (config seed, asof, security_id) instead.
+            import torch
+
+            with torch.random.fork_rng():
+                torch.manual_seed(_forecast_seed(config.train.random_seed, asof, security_id))
+                paths = _kline_paths_from_kronos(
+                    predictor,
+                    kline,
+                    times,
+                    pred_len=cfg.pred_len,
+                    sample_count=cfg.sample_count,
+                    temperature=cfg.temperature,
+                    top_p=cfg.top_p,
+                )
         except RobinhoodPlusTorchError:
             raise
         except Exception as exc:  # noqa: BLE001 — fail closed, do not numpy-fallback

@@ -1016,15 +1016,16 @@ class C51Agent:
         self._obs_dim = dim
         self._n_actions = acts
         self._torch = torch
-        torch.manual_seed(int(config.seed))
         torch.set_num_threads(1)
         self._rng = np.random.default_rng(int(config.seed) + 424_243)
         atoms_np, dz = atom_support(config.v_min, config.v_max, config.n_atoms)
         self._atoms_np = atoms_np
         self._dz = dz
         self._atoms = torch.as_tensor(atoms_np, dtype=torch.float32)
-        self._online = self._new_net()
-        self._target = self._new_net()
+        with torch.random.fork_rng():
+            torch.manual_seed(int(config.seed))
+            self._online = self._new_net()
+            self._target = self._new_net()
         self._n_updates = 0
         self._n_decisions = 0
         self._n_target_syncs = 0

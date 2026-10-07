@@ -1066,19 +1066,21 @@ def fit_deregime(
     xs = (xx - x_mean) / x_std
     ys = (yy - y_mean) / y_std
 
-    torch.manual_seed(int(seed))
     torch.set_num_threads(1)
-    net = _DeRegiMENet(
-        torch,
-        n_features=n_features,
-        hidden=hidden_widths,
-        n_horizons=n_horizons,
-        n_regimes=r,
-        gate=gate,
-        family=family,
-        nu_min=nmin,
-        use_vres=bool(vres),
-    )
+    # Net init draws from torch's global stream; fork it so callers keep theirs.
+    with torch.random.fork_rng():
+        torch.manual_seed(int(seed))
+        net = _DeRegiMENet(
+            torch,
+            n_features=n_features,
+            hidden=hidden_widths,
+            n_horizons=n_horizons,
+            n_regimes=r,
+            gate=gate,
+            family=family,
+            nu_min=nmin,
+            use_vres=bool(vres),
+        )
     _init_regimes(torch, net, ys, r, gate, n_horizons)
     x_t = torch.as_tensor(xs, dtype=torch.float32)
     y_t = torch.as_tensor(ys, dtype=torch.float32)

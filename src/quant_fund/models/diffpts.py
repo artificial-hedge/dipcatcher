@@ -745,14 +745,16 @@ def _train(
     ``t ~ Uniform{1..T}`` and ``eps ~ N(0, I)`` come from a seeded numpy
     Generator — the same draws regardless of torch version.
     """
-    torch.manual_seed(int(seed))
     torch.set_num_threads(1)
     p = int(F.shape[1])
     n = int(F.shape[0])
     d_in = 1 + (1 + 2 * int(n_time_freqs)) + p
-    den = _build_mlp(torch, d_in, hidden, 1)
-    loc = torch.nn.Linear(p, 1)
-    scale = torch.nn.Linear(p, 1)
+    init_rng = torch.random.fork_rng()
+    with init_rng:
+        torch.manual_seed(int(seed))
+        den = _build_mlp(torch, d_in, hidden, 1)
+        loc = torch.nn.Linear(p, 1)
+        scale = torch.nn.Linear(p, 1)
     with torch.no_grad():
         loc.weight.copy_(torch.as_tensor(ridge_w[None, :], dtype=torch.float32))
         loc.bias.fill_(float(ridge_b))

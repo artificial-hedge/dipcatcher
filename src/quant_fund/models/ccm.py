@@ -64,10 +64,26 @@ def simplex_project(lib: Array, lib_y: Array, pred: Array, n_neighbors: int | No
 def _ccm_once(lib_x: Array, tgt_y: Array, lib_size: int, rng: np.random.Generator) -> float:
     """Cross-map skill (Pearson) predicting y from x's shadow manifold
     on a random library subset of ``lib_size``."""
-    idx = rng.choice(lib_x.shape[0], size=min(lib_size, lib_x.shape[0]), replace=False)
-    pred_idx = rng.choice(lib_x.shape[0], size=min(lib_size, lib_x.shape[0]), replace=False)
-    pred = simplex_project(lib_x[idx], tgt_y[idx], lib_x[pred_idx])
-    actual = tgt_y[pred_idx]
+    n = lib_x.shape[0]
+    idx = rng.choice(n, size=min(lib_size, n), replace=False)
+    rest = np.setdiff1d(np.arange(n), idx)
+    if rest.size >= 2:
+        # Library and prediction sets must be disjoint: a query that finds
+        # itself in the library has distance 0 and gets its own y back,
+        # inflating rho toward 1 even for independent series.
+        pred_idx = rng.choice(rest, size=min(lib_size, rest.size), replace=False)
+        pred = simplex_project(lib_x[idx], tgt_y[idx], lib_x[pred_idx])
+        actual = tgt_y[pred_idx]
+    else:
+        # Library covers the manifold: leave-one-out cross-mapping.
+        keep = [i for i in range(n) if int((idx != i).sum()) > lib_x.shape[1] + 1]
+        if not keep:
+            return 0.0
+        pred = np.empty(len(keep))
+        for j, i in enumerate(keep):
+            mask = idx != i
+            pred[j] = simplex_project(lib_x[idx][mask], tgt_y[idx][mask], lib_x[i : i + 1])[0]
+        actual = tgt_y[np.asarray(keep)]
     if actual.std() <= 0 or pred.std() <= 0:
         return 0.0
     return float(np.corrcoef(pred, actual)[0, 1])

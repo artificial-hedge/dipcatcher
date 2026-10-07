@@ -78,6 +78,14 @@ def geo_asian_call(
     return float(np.exp(-r * t) * (s0 * np.exp(r_g * t) * norm.cdf(d1) - k * norm.cdf(d2)))
 
 
+def _rate_integral(rate: float, t: float) -> float:
+    """``(exp(rate * t) - 1) / rate`` with the removable ``rate -> 0`` limit ``t``."""
+    u = rate * t
+    if abs(u) < 1e-12:
+        return t
+    return float(np.expm1(u) / rate)
+
+
 def tw_asian_call(
     s0: float,
     k: float,
@@ -88,16 +96,13 @@ def tw_asian_call(
     """Turnbull-Wakeman moment-matched arithmetic Asian call."""
     _check(s0, k, t, r, sigma)
     # first two moments of the arithmetic average
-    m1 = s0 * (np.exp(r * t) - 1.0) / (r * t)
+    m1 = s0 * _rate_integral(r, t) / t
     # E[A^2] = (2 S0^2 / T^2) / (r+sig^2) *
     #   [(e^{(2r+sig^2)T}-1)/(2r+sig^2) - (e^{rT}-1)/r]
     m2 = (
         (2.0 * s0**2 / t**2)
         / (r + sigma**2)
-        * (
-            (np.exp((2.0 * r + sigma**2) * t) - 1.0) / (2.0 * r + sigma**2)
-            - (np.exp(r * t) - 1.0) / r
-        )
+        * (_rate_integral(2.0 * r + sigma**2, t) - _rate_integral(r, t))
     )
     v = m2 - m1**2
     sig_tw = float(np.sqrt(np.log(1.0 + v / m1**2)))

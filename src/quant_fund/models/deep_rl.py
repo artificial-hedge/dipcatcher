@@ -54,18 +54,21 @@ class PolicyGradientRanker:
         import torch
         from torch import nn
 
-        torch.manual_seed(int(seed))
         self.n_features = int(n_features)
         self.epochs = int(epochs)
         self.entropy_weight = float(entropy_weight)
         self.seed = int(seed)
-        self.model = nn.Sequential(
-            nn.Linear(self.n_features, int(hidden[0])),
-            nn.Tanh(),
-            nn.Linear(int(hidden[0]), int(hidden[1])),
-            nn.Tanh(),
-            nn.Linear(int(hidden[1]), 1),
-        )
+        # Seed inside a fork: a library ctor must not clobber the caller's
+        # global torch RNG state.
+        with torch.random.fork_rng():
+            torch.manual_seed(self.seed)
+            self.model = nn.Sequential(
+                nn.Linear(self.n_features, int(hidden[0])),
+                nn.Tanh(),
+                nn.Linear(int(hidden[0]), int(hidden[1])),
+                nn.Tanh(),
+                nn.Linear(int(hidden[1]), 1),
+            )
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=float(learning_rate))
 
     def fit(
