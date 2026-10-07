@@ -44,6 +44,8 @@ from quant_fund.research.receipt_v2 import canonical_json_bytes
 from quant_fund.utils.hashing import hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
+_RET1_MODULE = "fx1.extensions.features.ret_1"
+
 __all__ = ["extensions_audit", "extensions_audit_bench"]
 
 _SKILLS_N = 23
@@ -77,9 +79,7 @@ def _probe_naming() -> dict[str, bool]:
         "fx1.extensions.skills.book_panel"
     )
     out["nam_path_plugin"] = naming.module_path("plugin", "imf") == ("fx1.extensions.plugins.imf")
-    out["nam_path_feature"] = naming.module_path("feature", "ret_1") == (
-        "fx1.extensions.features.ret_1"
-    )
+    out["nam_path_feature"] = naming.module_path("feature", "ret_1") == (_RET1_MODULE)
     out["nam_path_bad_kind"] = _refuses(naming.module_path, "bogus", "x")
     out["nam_dir_skill"] = naming.module_directory("skill") == "skills"
     out["nam_dir_plugin"] = naming.module_directory("plugin") == "plugins"
@@ -111,7 +111,7 @@ def _probe_contracts() -> dict[str, bool]:
         kind="feature",
         owner="ret_1",
         references=(),
-        module="fx1.extensions.features.ret_1",
+        module=_RET1_MODULE,
     )
     out["ct_kind_enforced"] = _refuses(
         contracts.SkillExtension,
@@ -125,7 +125,7 @@ def _probe_contracts() -> dict[str, bool]:
             kind="feature",
             owner="ret_1",
             references=(2,),
-            module="fx1.extensions.features.ret_1",
+            module=_RET1_MODULE,
         ).verify
     )
     # records(): bounded paging + foreign-record refusal
@@ -145,7 +145,7 @@ def _probe_contracts() -> dict[str, bool]:
         kind="feature",
         owner="ret_1",
         references=(0,),  # seed 0 belongs to skill 'doctor'
-        module="fx1.extensions.features.ret_1",
+        module=_RET1_MODULE,
     )
     out["ct_records_foreign"] = _refuses(lambda: list(foreign.records()))
     out["ct_verify_foreign"] = _refuses(foreign.verify)
@@ -155,7 +155,7 @@ def _probe_contracts() -> dict[str, bool]:
         kind="feature",
         owner="ret_1",
         references=(2,),
-        module="fx1.extensions.features.ret_1",
+        module=_RET1_MODULE,
     )
     out["ct_feature_metadata"] = feat.metadata().name == "ret_1"
     skill = cast(contracts.SkillExtension, registry.get_extension("skill", "doctor"))
@@ -198,18 +198,9 @@ def _probe_feature_catalog() -> dict[str, bool]:
     return out
 
 
-def _probe_capability_ledger() -> dict[str, bool]:
+def _resolve_probes() -> dict[str, bool]:
+    """resolve_seed_id entry surface: bounds + per-kind exemplars."""
     out: dict[str, bool] = {}
-    out["cap_tables"] = (
-        len(caps._FEATURES) == _FEATURES_N  # noqa: SLF001
-        and len(caps._SKILLS) == _SKILLS_N  # noqa: SLF001
-        and len(caps._PLUGINS) == _PLUGINS_N  # noqa: SLF001
-    )
-    refs = caps.owner_references("feature", "ret_1")
-    out["cap_refs_shape"] = len(refs) == 7408 and refs[0] == 2 and refs[-1] == 2 + 135 * 7407
-    out["cap_refs_ordered"] = all(b - a == 135 for a, b in zip(refs[:49], refs[1:50], strict=True))
-    out["cap_unknown_owner"] = _refuses(caps.owner_references, "feature", "bogus")
-    out["cap_unknown_kind"] = _refuses(caps.owner_references, "bogus", "ret_1")
     r = caps.resolve_seed_id(0)
     out["cap_resolve_zero"] = (
         r["kind"] == "skill" and r["owner"] == "doctor" and r["command"] == "doctor"
@@ -229,15 +220,11 @@ def _probe_capability_ledger() -> dict[str, bool]:
     )
     out["cap_neg"] = _refuses(caps.resolve_seed_id, -1)
     out["cap_over"] = _refuses(caps.resolve_seed_id, 1_000_001)
-    # the layout is total: strides are all ≡0 mod 3 and first seeds
-    # partition the residues, so every in-range id resolves to exactly
-    # one kind — skills ≡0, plugins ≡1, features ≡2
-    residue_kind = {0: "skill", 1: "plugin", 2: "feature"}
-    out["cap_total_layout"] = all(
-        caps.resolve_seed_id(seed)["kind"] == residue_kind[seed % 3] for seed in range(0, 999, 7)
-    )
-    # every owner's first and last seed resolve back to that owner
-    ok = True
+    return out
+
+
+def _owner_roundtrip_ok() -> bool:
+    """Every owner's first and last seed resolve back to that owner."""
     for kind, table in (
         ("feature", caps._FEATURES),  # noqa: SLF001
         ("skill", caps._SKILLS),  # noqa: SLF001
@@ -247,8 +234,31 @@ def _probe_capability_ledger() -> dict[str, bool]:
             for seed in (first, first + stride * (count - 1)):
                 entry = caps.resolve_seed_id(seed)
                 if entry["owner"] != owner or entry["kind"] != kind:
-                    ok = False
-    out["cap_roundtrip_all"] = ok
+                    return False
+    return True
+
+
+def _probe_capability_ledger() -> dict[str, bool]:
+    out: dict[str, bool] = {}
+    out["cap_tables"] = (
+        len(caps._FEATURES) == _FEATURES_N  # noqa: SLF001
+        and len(caps._SKILLS) == _SKILLS_N  # noqa: SLF001
+        and len(caps._PLUGINS) == _PLUGINS_N  # noqa: SLF001
+    )
+    refs = caps.owner_references("feature", "ret_1")
+    out["cap_refs_shape"] = len(refs) == 7408 and refs[0] == 2 and refs[-1] == 2 + 135 * 7407
+    out["cap_refs_ordered"] = all(b - a == 135 for a, b in zip(refs[:49], refs[1:50], strict=True))
+    out["cap_unknown_owner"] = _refuses(caps.owner_references, "feature", "bogus")
+    out["cap_unknown_kind"] = _refuses(caps.owner_references, "bogus", "ret_1")
+    out.update(_resolve_probes())
+    # the layout is total: strides are all ≡0 mod 3 and first seeds
+    # partition the residues, so every in-range id resolves to exactly
+    # one kind — skills ≡0, plugins ≡1, features ≡2
+    residue_kind = {0: "skill", 1: "plugin", 2: "feature"}
+    out["cap_total_layout"] = all(
+        caps.resolve_seed_id(seed)["kind"] == residue_kind[seed % 3] for seed in range(0, 999, 7)
+    )
+    out["cap_roundtrip_all"] = _owner_roundtrip_ok()
     # no seed may resolve to a different owner's field key
     out["cap_owner_field"] = all(
         "command" in caps.resolve_seed_id(first)
@@ -294,9 +304,7 @@ def _probe_registry() -> dict[str, bool]:
     out["rg_get_wrong_kind"] = _refuses(registry.get_extension, "skill", "ret_1")
     ext = registry.get_extension("feature", "ret_1")
     out["rg_get_identity"] = (
-        ext.kind == "feature"
-        and ext.owner == "ret_1"
-        and ext.module == "fx1.extensions.features.ret_1"
+        ext.kind == "feature" and ext.owner == "ret_1" and ext.module == _RET1_MODULE
     )
     mf = registry.extension_manifest("feature", "ret_1")
     out["rg_manifest_feature"] = (
