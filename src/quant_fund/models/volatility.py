@@ -11,6 +11,12 @@ from sklearn.linear_model import LinearRegression
 from quant_fund.compute.cache import FitCache
 from quant_fund.models.base import JoblibMixin, ModelMeta
 from quant_fund.models.ranking import _finite
+from quant_fund.models.vol_scope import (
+    POOLED_DATE_LEVEL_SCOPE,
+    SECURITY_LEVEL_RET_1_SCOPE,
+    UNIVARIATE_RETURN_SERIES_SCOPE,
+    assert_scope_compatible,
+)
 
 try:
     from numba import njit
@@ -178,8 +184,8 @@ _SIMULATED_MULTI_STEP_VOLS = frozenset({"egarch", "aparch"})
 _GARCH_PERSISTENCE_VOLS = frozenset({"garch", "gjr", "aparch"})
 _GARCH_SCALE = 100.0
 _GARCH_VARIANCE_FLOOR = 1e-16
-GARCH_DATE_LEVEL_SCOPE = "date_level_equal_weight_cross_section"
-GARCH_SECURITY_LEVEL_SCOPE = "security_level_ret_1"
+GARCH_DATE_LEVEL_SCOPE = POOLED_DATE_LEVEL_SCOPE
+GARCH_SECURITY_LEVEL_SCOPE = SECURITY_LEVEL_RET_1_SCOPE
 
 
 class GARCHVol(JoblibMixin):
@@ -188,7 +194,12 @@ class GARCHVol(JoblibMixin):
     The model is fitted to *decimal returns*, not to a forward realized
     variance label.  Returns are converted to percent units only at the
     ``arch`` boundary and forecast variances are converted back to decimal
-    squared units.      ``forecast`` is the explicit probabilistic API; ``predict``
+    squared units.  UNITS: ``forecast(...)['variance']`` is always a
+    **variance** (sigma^2) in decimal-squared return units
+    (``variance_units='decimal_squared'``) — never a volatility — and
+    ``forecast(...)['sigma']`` is the explicit square-root convenience in
+    decimal return units (``sigma_units='decimal'``); the two are never
+    silently interconverted.      ``forecast`` is the explicit probabilistic API; ``predict``
     remains a compatibility adapter returning the current-origin sigma.
     ``log_density`` / ``pit`` score that origin law on decimal returns.
 
@@ -402,6 +413,15 @@ class GARCHVol(JoblibMixin):
     ) -> dict[str, Any]:
         """Return horizon-indexed decimal variance, sigma and optional quantiles.
 
+        UNITS CONTRACT (explicit, never silently rescaled):
+        ``forecast(...)["variance"]`` is a **variance** (sigma^2) in
+        decimal-squared return units (``variance_units="decimal_squared"``) —
+        it is NOT a volatility.  ``forecast(...)["sigma"]`` is the documented
+        square-root convenience in decimal return units
+        (``sigma_units="decimal"``).  A variance input to any consumer of this
+        dict stays a variance; converting to or from volatility requires the
+        explicit ``quant_fund.metrics.vol_eval.rescale_units`` call.
+
         Each element is the conditional variance of the corresponding future
         return.  ``cumulative_variance`` is supplied for an h-bar realized
         variance target under the usual zero autocovariance approximation.
@@ -419,6 +439,8 @@ class GARCHVol(JoblibMixin):
                 "sigma": np.sqrt(variance),
                 "cumulative_variance": np.cumsum(variance),
                 "mean": self._mean_decimal(),
+                "variance_units": "decimal_squared",
+                "sigma_units": "decimal",
                 # Fallbacks use an explicitly Gaussian predictive law.  Keep the
                 # requested specification separate so consumers cannot mistake a
                 # t/skew-t request for calibrated non-Gaussian tail forecasts.
@@ -459,6 +481,8 @@ class GARCHVol(JoblibMixin):
             "sigma": np.sqrt(variance),
             "cumulative_variance": np.cumsum(variance),
             "mean": self._mean_decimal(),
+            "variance_units": "decimal_squared",
+            "sigma_units": "decimal",
             "distribution": self.dist,
             "requested_distribution": self.dist,
             "horizon": horizon,
@@ -569,21 +593,16 @@ class GARCHVol(JoblibMixin):
         }
 
     def assert_consumer_scope(self, consumer_scope: str) -> None:
-        """Reject a pooled artifact at a per-security volatility consumer."""
-        if not isinstance(consumer_scope, str) or not consumer_scope.strip():
-            raise ValueError("consumer_scope must be a non-empty string")
-        artifact_scope = getattr(self, "series_scope", "univariate_return_series")
-        if artifact_scope == "date_level_equal_weight_cross_section":
-            if consumer_scope != "date_level_portfolio":
-                raise ValueError(
-                    "pooled date-level GARCH artifacts are consumable only by "
-                    "date_level_portfolio risk consumers"
-                )
-            return
-        if artifact_scope != consumer_scope:
-            raise ValueError(
-                f"GARCH scope mismatch: artifact={artifact_scope!r}, consumer={consumer_scope!r}"
-            )
+        """Reject a pooled artifact at a per-security volatility consumer.
+
+        Delegates to the shared fail-closed contract in
+        ``quant_fund.models.vol_scope``: the matrix is symmetric (pooled
+        artifacts reject per-security consumers AND ``per_security`` artifacts
+        reject pooled/date-level consumers) and missing/unknown/corrupted scope
+        tokens are rejected rather than guessed.
+        """
+        artifact_scope = getattr(self, "series_scope", UNIVARIATE_RETURN_SERIES_SCOPE)
+        assert_scope_compatible(artifact_scope, consumer_scope)
 
     def in_sample_sigma_and_z(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         """Return decimal in-sample sigma and standardized residuals.

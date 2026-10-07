@@ -360,8 +360,8 @@ def identity_for_training(
         features=features,
         label=label,
         label_horizon_bars=label_horizon_bars,
-        horizon_bars=[int(bar) for bar in config.horizon.bars],
-        horizon_names=[str(name) for name in config.horizon.names],
+        horizon_bars=[int(bar) for bar in config.horizons.bars],
+        horizon_names=[str(name) for name in config.horizons.names],
         config=config,
     )
 

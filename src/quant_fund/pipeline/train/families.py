@@ -14,9 +14,10 @@ import numpy as np
 from quant_fund.config.models import AppConfig
 from quant_fund.metrics.risk import losses_from_returns
 from quant_fund.models.alpha import HistoricalMeanAlpha
-from quant_fund.models.base import artifact_identity, load_joblib_artifact, save_joblib_artifact
+from quant_fund.models.base import artifact_identity, load_joblib_artifact
 from quant_fund.models.deep_rl import PolicyGradientRanker, run_policy_gradient_panel
 from quant_fund.models.quantile_bandit import QuantileThompson
+from quant_fund.models.ranking import available_features
 from quant_fund.models.regime import GaussianHMMRegime, SingleStateRegime, VolThresholdRegime
 from quant_fund.models.rl import (
     LinearThompsonRanker,
@@ -25,6 +26,14 @@ from quant_fund.models.rl import (
     run_thompson_panel,
 )
 from quant_fund.models.tail import DrawdownClassifier, GaussianTail, HistoricalTail
+from quant_fund.pipeline.artifact_manifest import (
+    UNSUPERVISED_LABEL,
+    ArtifactManifestError,
+    identity_for_training,
+    identity_from_artifact,
+    save_training_artifact,
+    verify_artifact_manifest,
+)
 from quant_fund.pipeline.dataset import design_matrix, panel
 from quant_fund.registry.mlflow_store import attach_artifact_identity, configure_tracking, log_run
 from quant_fund.reporting.report import write_evidence_report
@@ -48,10 +57,20 @@ def train_alpha(config: AppConfig, model_name: str = "ridge") -> dict[str, Any]:
         # reuse ranking path with historical mean
         label = config.train.ranking_target
         df = panel(config, label=label)
-        x, y, _, _, _ = design_matrix(df, label)
+        x, y, _, feats, _ = design_matrix(df, label)
         m = HistoricalMeanAlpha().fit(x, y)
         path = Path(config.data.root) / "metadata" / "alpha_mean.joblib"
-        m.save(path)
+        save_training_artifact(
+            m,
+            path,
+            identity=identity_for_training(
+                df,
+                config=config,
+                label=label,
+                features=feats,
+                label_horizon_bars=_label_horizon(label),
+            ),
+        )
         return {"metrics": {"mean": float(m.mean_)}, "path": str(path)}
     return train_ranking(config, "ridge" if model_name == "ridge" else model_name)
 
@@ -88,7 +107,17 @@ def train_regime(config: AppConfig, model_name: str = "hmm") -> dict[str, Any]:
     m = make_model().fit(x)
     extra = {"oos_avg_ll": float(np.mean(heldout_ll))} if heldout_ll else {}
     path = Path(config.data.root) / "metadata" / f"regime_{model_name}.joblib"
-    m.save(path)
+    save_training_artifact(
+        m,
+        path,
+        identity=identity_for_training(
+            df,
+            config=config,
+            label=UNSUPERVISED_LABEL,
+            features=cols,
+            label_horizon_bars=1,
+        ),
+    )
     return {"metrics": extra, "path": str(path), "labels": getattr(m, "labels", {})}
 
 
@@ -143,7 +172,17 @@ def train_tail(config: AppConfig, model_name: str = "historical") -> dict[str, A
     # Persist a final estimator fit on all available history; metrics remain OOS.
     m = make_model().fit(x, y)
     path = Path(config.data.root) / "metadata" / f"tail_{model_name}.joblib"
-    m.save(path)
+    save_training_artifact(
+        m,
+        path,
+        identity=identity_for_training(
+            df,
+            config=config,
+            label=label,
+            features=tail_features,
+            label_horizon_bars=_label_horizon(label),
+        ),
+    )
     metrics: dict[str, float] = {}
     if breach_rates:
         var, es = m.predict_var_es()
@@ -237,9 +276,16 @@ def train_reinforcement(config: AppConfig, model_name: str = "linucb") -> dict[s
         tags={"data": config.data.source, "claim": "research_only"},
     )
     path = Path(config.data.root) / "metadata" / f"rl_{model_name}.joblib"
-    save_joblib_artifact(
+    save_training_artifact(
         {"policy": policy, "policy_name": model_name, "features": features, "label": label},
         path,
+        identity=identity_for_training(
+            df,
+            config=config,
+            label=label,
+            features=features,
+            label_horizon_bars=_label_horizon(label),
+        ),
     )
     return {
         "metrics": metrics,
@@ -280,7 +326,11 @@ def train_reinforcement_auto(config: AppConfig) -> dict[str, Any]:
     selected_name = Path(str(selected["path"])).stem.removeprefix("rl_")
     selected_payload["policy_name"] = selected_name
     auto_path = Path(config.data.root) / "metadata" / "rl_auto.joblib"
-    save_joblib_artifact(selected_payload, auto_path)
+    save_training_artifact(
+        selected_payload,
+        auto_path,
+        identity=identity_from_artifact(Path(str(selected["path"]))),
+    )
     candidate_diagnostics = {
         Path(str(result["path"])).stem.removeprefix("rl_"): result["metrics"] for result in results
     }
@@ -330,7 +380,7 @@ def train_quantile_bandit(config: AppConfig) -> dict[str, Any]:
         tags={"data": config.data.source, "claim": "research_only"},
     )
     path = Path(config.data.root) / "metadata" / "rl_quantile_thompson.joblib"
-    save_joblib_artifact(
+    save_training_artifact(
         {
             "policy": bandit,
             "policy_name": "quantile_thompson",
@@ -338,6 +388,13 @@ def train_quantile_bandit(config: AppConfig) -> dict[str, Any]:
             "label": label,
         },
         path,
+        identity=identity_for_training(
+            df,
+            config=config,
+            label=label,
+            features=features,
+            label_horizon_bars=_label_horizon(label),
+        ),
     )
     return {
         "metrics": metrics,
@@ -391,7 +448,7 @@ def train_policy_gradient(config: AppConfig) -> dict[str, Any]:
         tags={"data": config.data.source, "claim": "research_only"},
     )
     path = Path(config.data.root) / "metadata" / "rl_policy_gradient.joblib"
-    save_joblib_artifact(
+    save_training_artifact(
         {
             "policy": model,
             "policy_name": "policy_gradient",
@@ -399,6 +456,13 @@ def train_policy_gradient(config: AppConfig) -> dict[str, Any]:
             "label": label,
         },
         path,
+        identity=identity_for_training(
+            df,
+            config=config,
+            label=label,
+            features=features,
+            label_horizon_bars=_label_horizon(label),
+        ),
     )
     return {
         "metrics": metrics,
@@ -430,8 +494,19 @@ def train_robinhood_plus(
     )
     engine.fit(np.zeros((2, 1)), np.zeros(2))
     path = Path(config.data.root) / "metadata" / f"robinhood_plus_{model_name}.joblib"
-    engine.save(path)
     df = panel(config)
+    engine_features = available_features(list(df.columns), None)
+    save_training_artifact(
+        engine,
+        path,
+        identity=identity_for_training(
+            df,
+            config=config,
+            label=UNSUPERVISED_LABEL,
+            features=engine_features,
+            label_horizon_bars=1,
+        ),
+    )
     receipt = bench_robinhood_plus(df, config)
     return {
         "metrics": {
@@ -480,6 +555,16 @@ def train_family(config: AppConfig, family: str, model_name: str | None = None) 
         except ValueError as exc:
             result["manifest_valid"] = False
             result["artifact_identity_error"] = str(exc)
+        # Dataset identity is verified, never assumed: an artifact whose
+        # manifest carries no (or an unverified) identity is recorded loudly
+        # here and blocks promotion downstream (see proof.promotion_receipt).
+        try:
+            identity = verify_artifact_manifest(Path(artifact_path))
+            result["dataset_identity"] = identity.model_dump(mode="json")
+            result["dataset_identity_valid"] = True
+        except ArtifactManifestError as exc:
+            result["dataset_identity_valid"] = False
+            result["dataset_identity_error"] = str(exc)
         try:
             result["dataset_content_sha256"] = canonical_frame_fingerprint(panel(config))
         except (OSError, ValueError, RuntimeError) as exc:

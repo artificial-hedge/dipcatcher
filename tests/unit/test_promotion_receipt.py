@@ -150,6 +150,12 @@ def _build(tmp_path: Path, *, data_source: str = "file") -> dict[str, object]:
             "git_revision": git_revision(),
             "git_worktree_sha256": git_worktree_sha256(),
         },
+        health={
+            "status": "ok",
+            "report": "unit-test-fixture",
+            "note": "SYNTHETIC correctness fixture; not market evidence",
+        },
+        promotion=decision,
     )
     report_path = next(path for path in report_paths.values() if path.suffix == ".json")
     return {
