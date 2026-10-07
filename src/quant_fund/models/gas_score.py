@@ -93,10 +93,11 @@ def gas_t_score(y: float, sigma2: float, nu: float) -> float:
 
 
 def gas_t_fisher(sigma2: float, nu: float) -> float:
-    """Fisher information of the Student-t in σ² (Harvey 2013 eq. 2.20):
-    I = (ν+3) / (2θ²(ν+1) + ...) — the standard closed form
-    I = ((ν+3)/(2(ν+1)))·(1/(2θ²)) used in unit-information scaling."""
-    return (nu + 3.0) / (2.0 * (nu + 1.0)) / (2.0 * sigma2 * sigma2)
+    """Fisher information of the Student-t in θ = σ²:
+    I = (ν+3) / (2θ²(ν+1)), which recovers the normal limit
+    1/(2θ²) = 1/(2σ⁴) as ν → ∞ (Harvey 2013, unit-information
+    scaling)."""
+    return (nu + 3.0) / (2.0 * (nu + 1.0) * sigma2 * sigma2)
 
 
 def gas_t_volatility(
@@ -149,6 +150,8 @@ def gas_poisson(
         raise ValueError("y must be finite counts")
     if np.any(ya < 0):
         raise ValueError("counts must be non-negative")
+    if np.any(ya != np.floor(ya)):
+        raise ValueError("counts must be integer-valued")
     lam0 = float(max(ya.mean(), 0.5))
 
     def sf(yy: float, th: float) -> float:
@@ -169,11 +172,13 @@ def gas_poisson(
 def gas_t_mle(
     y: FloatArray, nu: float = 8.0, scaling: str = "unit"
 ) -> dict[str, float | FloatArray]:
-    """Profile MLE of (ω, α, β) for the GAS-t filter by grid search +
-    coordinate refinement — deterministic, derivative-free."""
+    """Profile MLE of (ω, α, β) for the GAS-t filter by deterministic
+    grid search — derivative-free."""
     ya = np.asarray(y, dtype=np.float64).ravel()
-    if ya.size < 30:
-        raise ValueError("y too short for MLE")
+    if ya.size < 30 or not np.all(np.isfinite(ya)):
+        raise ValueError("y must be finite, length >=30")
+    if nu <= 2.0:
+        raise ValueError("nu>2 required for finite variance")
 
     def fisher_(t: float) -> float:
         return gas_t_fisher(max(t, 1e-10), nu)
@@ -205,6 +210,8 @@ def gas_t_mle(
                 v = nll((w_, a_, b_))
                 if v < best[0]:
                     best = (v, (w_, a_, b_))
+    if best[0] >= 1e12:
+        raise ValueError("no admissible (omega, alpha, beta) in grid")
     w0, a0, b0 = best[1]
     return {
         "omega": w0,
@@ -218,6 +225,8 @@ def gas_t_mle(
 def synth_gas_t(n: int = 600, seed: int = 0, nu: float = 8.0) -> dict[str, FloatArray]:
     """Returns with a planted slowly-varying variance path (two-regime
     vol with smooth transitions)."""
+    if nu <= 2.0:
+        raise ValueError("nu>2 required for finite variance")
     rng = np.random.default_rng(seed)
     sig2 = np.empty(n)
     sig2[0] = 1.0

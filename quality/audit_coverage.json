@@ -504,6 +504,9 @@
   "models/fukasawa_iv.py": {
    "status": "audited"
   },
+  "models/gas_score.py": {
+   "status": "audited"
+  },
   "models/gaussian_normalized_coords.py": {
    "status": "audited"
   },
