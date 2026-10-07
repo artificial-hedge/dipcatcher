@@ -29,6 +29,18 @@ def _sha256_pattern() -> re.Pattern[str]:
     return _SHA256
 
 
+def _core_import_status() -> str:
+    """Import the core scientific stack; ``ok`` or ``fail:<reason>``."""
+    try:
+        import arch  # noqa: F401
+        import cvxpy  # noqa: F401
+        import hmmlearn  # noqa: F401
+        import sklearn  # noqa: F401
+    except ImportError as exc:
+        return f"fail:{exc}"
+    return "ok"
+
+
 def doctor(config_path: str | None = None) -> dict[str, object]:
     status: dict[str, object] = {
         "firm": __firm__,
@@ -120,15 +132,7 @@ def doctor(config_path: str | None = None) -> dict[str, object]:
     else:
         verification = verify_research_artifact(research_receipt)
         status["research_receipt"] = "ok" if verification["valid"] else "invalid"
-    try:
-        import arch  # noqa: F401
-        import cvxpy  # noqa: F401
-        import hmmlearn  # noqa: F401
-        import sklearn  # noqa: F401
-
-        status["core_imports"] = "ok"
-    except ImportError as exc:
-        status["core_imports"] = f"fail:{exc}"
+    status["core_imports"] = _core_import_status()
     status["default_fill"] = cfg.execution.fill.value
     status["core_kline_engine"] = "robinhood_plus" if cfg.robinhood_plus.enabled else "disabled"
     status["robinhood_plus_backend"] = cfg.robinhood_plus.backend.value
