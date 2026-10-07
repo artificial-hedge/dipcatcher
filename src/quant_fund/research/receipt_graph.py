@@ -542,7 +542,9 @@ def graph_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     for item in unresolvable:
         value = item["value"]
         base = value.rsplit("/", 1)[-1] if isinstance(value, str) else ""
-        resolved = value if value in members else (base if base in members else None)
+        resolved = value if value in members else None
+        if resolved is None and base in members:
+            resolved = base
         if resolved is None and base:
             candidates = [m for m in members if str(m).rsplit("/", 1)[-1] == base]
             if len(candidates) == 1:

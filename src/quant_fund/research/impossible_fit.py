@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 __all__ = [
@@ -94,6 +94,18 @@ def _token_hits(metrics: Mapping[str, Any], families: frozenset[str]) -> list[tu
     return hits
 
 
+def _flag_hits(
+    flags: set[str],
+    hits: list[tuple[str, float]],
+    tag: str,
+    keep: Callable[[float], bool],
+) -> None:
+    """Add ``<tag>:<key>`` for every hit whose value satisfies ``keep``."""
+    for key, value in hits:
+        if keep(value):
+            flags.add(f"{tag}:{key}")
+
+
 def impossible_fit_flags(metrics: Mapping[str, Any], *, n_obs: int | None = None) -> list[str]:
     """Flag metric values that are statistically impossible on honest data.
 
@@ -107,21 +119,26 @@ def impossible_fit_flags(metrics: Mapping[str, Any], *, n_obs: int | None = None
         n_obs = _extract_n_obs(metrics)
     enough = n_obs is None or n_obs >= IMPOSSIBLE_FIT_MIN_OBS
 
-    for key, value in _zero_score_hits(metrics):
-        if value == 0.0 and enough:
-            flags.add(f"exact_zero:{key}")
-
-    for key, value in _token_hits(metrics, _IC_TOKENS):
-        if math.isfinite(value) and abs(value) >= 1.0 - IC_PERFECT_EPS and enough:
-            flags.add(f"near_perfect_correlation:{key}")
-
-    for key, value in _token_hits(metrics, _AUC_TOKENS):
-        if math.isfinite(value) and value >= 1.0 and enough:
-            flags.add(f"perfect_auc:{key}")
-
-    for key, value in _token_hits(metrics, _VIOLATION_TOKENS):
-        if value == 0.0 and n_obs is not None and n_obs >= VAR_ZERO_MIN_OBS:
-            flags.add(f"zero_violations_high_n:{key}")
+    # ``not value`` is an exact-zero test (±0.0 is falsy; nan stays truthy).
+    _flag_hits(flags, _zero_score_hits(metrics), "exact_zero", lambda v: not v and enough)
+    _flag_hits(
+        flags,
+        _token_hits(metrics, _IC_TOKENS),
+        "near_perfect_correlation",
+        lambda v: math.isfinite(v) and abs(v) >= 1.0 - IC_PERFECT_EPS and enough,
+    )
+    _flag_hits(
+        flags,
+        _token_hits(metrics, _AUC_TOKENS),
+        "perfect_auc",
+        lambda v: math.isfinite(v) and v >= 1.0 and enough,
+    )
+    _flag_hits(
+        flags,
+        _token_hits(metrics, _VIOLATION_TOKENS),
+        "zero_violations_high_n",
+        lambda v: not v and n_obs is not None and n_obs >= VAR_ZERO_MIN_OBS,
+    )
 
     return sorted(flags)
 
