@@ -370,3 +370,47 @@ def test_forecast_asof_without_rgarch_keeps_return_only_garch(tmp_path: Path) ->
     assert state.garch_market_variance == pytest.approx(garch.variance)
     assert "garch_market_cross_section" in state.notes
     assert "realized_garch_market_cross_section" not in state.notes
+
+
+def _fitted_rgarch(seed: int = 17) -> RealizedGARCHVol:
+    rng = np.random.default_rng(seed)
+    returns = rng.normal(0.0, 0.011, size=140)
+    measure = parkinson_daily_variance(
+        np.exp(np.abs(returns) + 0.009), np.exp(-(np.abs(returns) + 0.009))
+    )
+    model = RealizedGARCHVol(min_obs=40, mean="Zero").fit_returns(returns, measure)
+    assert model.fit_status == "fitted"
+    return model
+
+
+def test_forecast_simulation_is_seeded_and_reports_real_method() -> None:
+    model = _fitted_rgarch()
+    a = model.forecast(horizon=6, method="simulation", simulations=256, seed=7)
+    b = model.forecast(horizon=6, method="simulation", simulations=256, seed=7)
+    c = model.forecast(horizon=6, method="simulation", simulations=256, seed=8)
+    analytic = model.forecast(horizon=6, method="analytic")
+    assert a["multi_step_method"] == "simulated_measurement_equation"
+    assert analytic["multi_step_method"] == "expected_log_variance_plugin"
+    assert np.all(a["variance"] > 0.0) and np.all(np.isfinite(a["variance"]))
+    np.testing.assert_allclose(a["variance"], b["variance"], rtol=0.0, atol=0.0)
+    # Seeded draws make the simulated path distinct from its analytic mean.
+    assert not np.allclose(a["variance"], c["variance"], rtol=1e-9)
+    # Step 0 consumes the observed last measure: both methods agree there.
+    assert float(a["variance"][0]) == pytest.approx(float(analytic["variance"][0]), rel=1e-9)
+
+
+def test_forecast_bootstrap_fails_closed() -> None:
+    model = _fitted_rgarch()
+    with pytest.raises(ValueError, match="bootstrap multi-step is not implemented"):
+        model.forecast(horizon=4, method="bootstrap")
+    unfitted = RealizedGARCHVol()
+    with pytest.raises(ValueError, match="bootstrap multi-step is not implemented"):
+        unfitted.forecast(horizon=2, method="bootstrap")
+
+
+def test_forecast_simulation_rejects_nonpositive_path_count() -> None:
+    model = _fitted_rgarch()
+    with pytest.raises(ValueError, match="simulations must be a positive integer"):
+        model.forecast(horizon=3, method="simulation", simulations=0)
+    with pytest.raises(ValueError, match="simulations must be a positive integer"):
+        model.forecast(horizon=3, method="simulation", simulations=-5)

@@ -332,12 +332,24 @@ class RealizedGARCHVol(JoblibMixin):
         quantiles: tuple[float, ...] | None = None,
         seed: int | None = None,
     ) -> dict[str, Any]:
-        """Origin-indexed decimal variance path. Multi-step uses E[log h] plugin."""
-        del simulations, seed
+        """Origin-indexed decimal variance path.
+
+        ``analytic`` multi-steps via the E[log x] plugin ``ξ + φ·log h``;
+        ``simulation`` draws the measurement equation forward
+        (``log x_t ~ ξ + φ·log h_t + σ_u·u_t``) under ``seed`` and averages
+        paths — step 0 consumes the observed last measure so both paths
+        agree there. ``bootstrap`` is refused: no residual pool is stored,
+        so resampling would fabricate an empirical innovation law.
+        """
         if isinstance(horizon, bool) or not isinstance(horizon, int) or horizon < 1:
             raise ValueError("horizon must be a positive integer")
         if method not in {"analytic", "simulation", "bootstrap"}:
             raise ValueError("method must be analytic, simulation, or bootstrap")
+        if method == "bootstrap":
+            raise ValueError(
+                "bootstrap multi-step is not implemented for RealizedGARCHVol "
+                "(no residual pool is stored); use analytic or simulation"
+            )
         if self.result is None:
             variance = np.full(horizon, max(self.last_sigma**2, _GARCH_VARIANCE_FLOOR))
             out: dict[str, Any] = {
@@ -366,13 +378,34 @@ class RealizedGARCHVol(JoblibMixin):
         params = self.result
         log_h = float(np.log(max(self._last_h_percent, _GARCH_VARIANCE_FLOOR)))
         log_x = float(np.log(max(self._last_x_percent, _GARCH_VARIANCE_FLOOR)))
-        variance_percent = np.empty(horizon, dtype=float)
-        for step in range(horizon):
-            log_h = params["omega"] + params["beta"] * log_h + params["gamma"] * log_x
-            h = float(np.exp(np.clip(log_h, *_LOG_H_BOUNDS)))
-            variance_percent[step] = max(h, _GARCH_VARIANCE_FLOOR)
-            # Future realized measures are not observed; plugin E[log x]=ξ+φ log h.
-            log_x = params["xi"] + params["phi"] * log_h
+        if method == "simulation":
+            if isinstance(simulations, bool) or not isinstance(simulations, int) or simulations < 1:
+                raise ValueError("simulations must be a positive integer")
+            rng = np.random.default_rng(0 if seed is None else seed)
+            n_paths = simulations
+            paths = np.empty((n_paths, horizon), dtype=float)
+            lh = np.full(n_paths, log_h, dtype=float)
+            lx: float | NDArray[np.float64] = float(log_x)
+            for step in range(horizon):
+                lh = params["omega"] + params["beta"] * lh + params["gamma"] * lx
+                paths[:, step] = np.exp(np.clip(lh, *_LOG_H_BOUNDS))
+                if step + 1 < horizon:
+                    lx = (
+                        params["xi"]
+                        + params["phi"] * lh
+                        + params["sigma_u"] * rng.standard_normal(n_paths)
+                    )
+            variance_percent = np.maximum(paths.mean(axis=0), _GARCH_VARIANCE_FLOOR)
+            multi_step = "simulated_measurement_equation"
+        else:
+            variance_percent = np.empty(horizon, dtype=float)
+            for step in range(horizon):
+                log_h = params["omega"] + params["beta"] * log_h + params["gamma"] * log_x
+                h = float(np.exp(np.clip(log_h, *_LOG_H_BOUNDS)))
+                variance_percent[step] = max(h, _GARCH_VARIANCE_FLOOR)
+                # Future realized measures are not observed; plugin E[log x]=ξ+φ log h.
+                log_x = params["xi"] + params["phi"] * log_h
+            multi_step = "expected_log_variance_plugin"
         variance = variance_percent / _PERCENT_VARIANCE_SCALE
         variance = np.maximum(variance, _GARCH_VARIANCE_FLOOR)
         out = {
@@ -386,7 +419,7 @@ class RealizedGARCHVol(JoblibMixin):
             "fit_status": self.fit_status,
             "realized_measure": self.realized_measure,
             "intraday_realized_variance": False,
-            "multi_step_method": "expected_log_variance_plugin",
+            "multi_step_method": multi_step,
         }
         if quantiles is not None:
             levels = np.asarray(quantiles, dtype=float)
