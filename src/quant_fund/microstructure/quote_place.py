@@ -77,8 +77,10 @@ def lobster_placement(tape_dir: Path, ticker: str = "AMZN") -> dict[str, Any]:
         for ev, ob_row in zip(parse_messages(msg), csv.reader(f_ob), strict=True):
             asks_exp, bids_exp = parse_orderbook_row(ob_row)
             if not seeded:
+                # Row 0 is the book state AFTER message 0: seeding from it
+                # already includes event 0 — applying it would double-count
+                # the first event.
                 book.seed(asks_exp, bids_exp)
-                book.apply(ev)
                 seeded = True
                 continue
             asks, bids = book.top("ask", 1), book.top("bid", 1)
@@ -114,7 +116,9 @@ def sim_placement(
     cfg = config or ZILobConfig(seed=seed)
     sim = ZILobSimulator(cfg, flow=flow)
     dist: list[float] = []
-    seen: set[int] = set()
+    # Seed orders exist before the first step; only ids appearing after a
+    # step are submissions (order ids are monotonic in the engine).
+    seen: set[int] = set(sim._orders)
     for _ in range(horizon):
         pre_bid = sim.best_bid_level
         pre_ask = sim.best_ask_level

@@ -58,7 +58,7 @@ def _aggression_stats(rel: np.ndarray, rel_own: np.ndarray, sizes: np.ndarray) -
         "mean_size_marketable": (
             float(sizes[cats["marketable"]].mean()) if cats["marketable"].any() else None
         ),
-        "mean_size_resting": (float(sizes[rel <= 0].mean()) if (rel <= 0).any() else None),
+        "mean_size_resting": (float(sizes[rel < 0].mean()) if (rel < 0).any() else None),
         "rel_median_ticks": float(np.median(rel)),
     }
 
@@ -96,25 +96,21 @@ def sim_marketable_limit(
     sizes: list[int] = []
     for _ in range(horizon):
         before = set(sim._orders)
+        # Touch BEFORE the event: an arrival's aggression is measured
+        # against the book it landed on (matches the real arm's prior
+        # orderbook row, `prev_top`).
+        pre_ba, pre_bb = sim.best_ask_level, sim.best_bid_level
         ev = sim.step()
         if ev == "limit":
             for oid in set(sim._orders) - before:
                 o = sim._orders[oid]
-                if o.side == "buy" and sim.best_ask_level is not None:
-                    rels.append(float(o.level - sim.best_ask_level))
-                    rels_own.append(
-                        float(o.level - sim.best_bid_level)
-                        if sim.best_bid_level is not None
-                        else float("nan")
-                    )
+                if o.side == "buy" and pre_ba is not None:
+                    rels.append(float(o.level - pre_ba))
+                    rels_own.append(float(o.level - pre_bb) if pre_bb is not None else float("nan"))
                     sizes.append(1)
-                elif o.side == "sell" and sim.best_bid_level is not None:
-                    rels.append(float(sim.best_bid_level - o.level))
-                    rels_own.append(
-                        float(sim.best_ask_level - o.level)
-                        if sim.best_ask_level is not None
-                        else float("nan")
-                    )
+                elif o.side == "sell" and pre_bb is not None:
+                    rels.append(float(pre_bb - o.level))
+                    rels_own.append(float(pre_ba - o.level) if pre_ba is not None else float("nan"))
                     sizes.append(1)
     rel_own = np.asarray(rels_own)
     keep = ~np.isnan(rel_own)

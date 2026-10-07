@@ -61,7 +61,8 @@ from quant_fund.utils.receipt import seal_receipt
 Array = NDArray[np.float64]
 IntArray = NDArray[np.int64]
 
-BOOK_DEPLETION_KIND = "book_depletion.v1"
+BOOK_DEPLETION_SCHEMA = "book_depletion.v1"
+BOOK_DEPLETION_KIND = "book_depletion"
 INIT_KIND = "init"
 EVENT_KINDS = frozenset({"limit", "market", "cancel"})
 
@@ -620,7 +621,7 @@ def book_depletion_bench(
     )
 
     receipt: dict[str, Any] = {
-        "schema": BOOK_DEPLETION_KIND,
+        "schema": BOOK_DEPLETION_SCHEMA,
         "kind": BOOK_DEPLETION_KIND,
         "label": "SYNTHETIC",
         "data_source": ZI_LOB_REVISION,

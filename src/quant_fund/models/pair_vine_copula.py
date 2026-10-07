@@ -32,7 +32,7 @@ import math
 import warnings
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
@@ -904,7 +904,7 @@ def vine_sample(
     if structure == "rvine" and vm.rvine_spec is not None:
         from quant_fund.models.rvine import rvine_sample as _rvine_sim
 
-        return _rvine_sim(n, cast("RVineSpec", vm.rvine_spec), rng)
+        return _rvine_sim(n, vm.rvine_spec, rng)
 
     if structure == "cvine" or (
         structure == "rvine" and np.allclose(dvals, np.arange(1, dim + 1, dtype=float)[::-1])
@@ -1145,7 +1145,7 @@ def _vine_logpdf_rows(vm: VineMatrix, u: Array) -> Array:
     if structure == "rvine" and vm.rvine_spec is not None:
         from quant_fund.models.rvine import rvine_logpdf_edges
 
-        return rvine_logpdf_edges(m, cast("RVineSpec", vm.rvine_spec))
+        return rvine_logpdf_edges(m, vm.rvine_spec)
 
     # Generic R-vine without a fitted spec: edge endpoints are variable
     # labels in vine space, and the correct arguments are conditioned

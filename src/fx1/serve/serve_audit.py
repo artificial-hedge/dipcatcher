@@ -19,15 +19,14 @@ Pinned contract:
 - ``get_backend`` fails closed on unknown kinds and lists the known set.
 - Signing: sign→verify roundtrip; artifact tamper, missing sig/manifest,
   wrong key, empty dir, missing dir all fail closed; manifest excludes
-  its own sig/manifest files.
+  its own sig/manifest files. Verification is closed-world — the
+  enumerated artifact set must equal the manifest inventory exactly, so
+  an unlisted file added after signing fails (``unlisted_artifact_refused``).
 - ``cited_complete`` runs the honesty gate on the model output and
   appends a receipt-hash footer only when hashes are provided.
 
 Flagged warts (documented, not fixed):
 
-- ``flag_unlisted_artifact_passes`` — ``verify_release`` only re-hashes
-  manifest-listed artifacts; a file *added* to the checkpoint dir after
-  signing verifies clean (manifest-scoped, not closed-world).
 - corrupt manifest fails closed via the signature check before parsing
   (``corrupt_manifest_fails``); a *validly signed* corrupt manifest would
   still raise out of ``model_validate_json`` — unreachable without the key.
@@ -111,9 +110,11 @@ def serve_audit() -> dict[str, Any]:
             captured["auth"] = req.headers.get("Authorization")
             return _Resp()
 
-        import urllib.request  # noqa: PLC0415
+        import fx1.serve.backends as _be_mod  # noqa: PLC0415
 
-        with patch.object(urllib.request, "urlopen", fake_urlopen):
+        # Hosted calls route through _openai_urlopen (redirect-refusing
+        # opener); patching urllib.request.urlopen is a dead seam here.
+        with patch.object(_be_mod, "_openai_urlopen", fake_urlopen):
             text = backend.complete([{"role": "user", "content": "hi"}])
         out["hosted_temperature_zero"] = (
             text == "answer"
@@ -208,13 +209,20 @@ def serve_audit() -> dict[str, Any]:
 
             import urllib.request  # noqa: PLC0415
 
+            import fx1.serve.backends as _be_mod  # noqa: PLC0415
+
             attached = LocalFx1Backend(
                 root,
                 require_signature=True,
                 serve_url="http://127.0.0.1:8011/v1",
                 api_key="local-key",
             )
-            with patch.object(urllib.request, "urlopen", fake_urlopen2):
+            # _engine_up probes raw urllib.request.urlopen; chat/stream
+            # calls go through _openai_urlopen — fake both seams.
+            with (
+                patch.object(urllib.request, "urlopen", fake_urlopen2),
+                patch.object(_be_mod, "_openai_urlopen", fake_urlopen2),
+            ):
                 text = attached.complete([{"role": "user", "content": "hi"}])
             out["local_attach_complete"] = text == "answer"
             out["local_temperature_zero"] = captured2["body"].get("temperature") == 0.0
@@ -225,7 +233,10 @@ def serve_audit() -> dict[str, Any]:
             )
             os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8012"
             env_be = LocalFx1Backend(root, require_signature=True)
-            with patch.object(urllib.request, "urlopen", fake_urlopen2):
+            with (
+                patch.object(urllib.request, "urlopen", fake_urlopen2),
+                patch.object(_be_mod, "_openai_urlopen", fake_urlopen2),
+            ):
                 env_be.complete([{"role": "user", "content": "hi"}])
             out["local_env_url_honored"] = any("127.0.0.1:8012" in u for u in captured2["urls"])
 
@@ -257,7 +268,10 @@ def serve_audit() -> dict[str, Any]:
                     ]
                 )
 
-            with patch.object(urllib.request, "urlopen", fake_stream):
+            with (
+                patch.object(urllib.request, "urlopen", fake_stream),
+                patch.object(_be_mod, "_openai_urlopen", fake_stream),
+            ):
                 deltas = list(attached.stream([{"role": "user", "content": "hi"}]))
             out["local_stream_deltas"] = deltas == ["hel", "lo"]
             out["local_stream_wire_flag"] = captured2["stream_body"].get("stream") is True
@@ -267,7 +281,10 @@ def serve_audit() -> dict[str, Any]:
             def fake_bad_stream(req: Any, **kw: Any) -> _StreamResp:
                 return _StreamResp([b"data: {not json\n\n"])
 
-            with patch.object(urllib.request, "urlopen", fake_bad_stream):
+            with (
+                patch.object(urllib.request, "urlopen", fake_bad_stream),
+                patch.object(_be_mod, "_openai_urlopen", fake_bad_stream),
+            ):
                 out["local_stream_malformed_fails"] = (
                     _raises(lambda: list(attached.stream([{"role": "u", "content": "x"}])))
                     == "RuntimeError"
@@ -290,7 +307,10 @@ def serve_audit() -> dict[str, Any]:
                     raise urllib.error.URLError("connection refused")
                 return fake_urlopen2(req, **kw)
 
-            with patch.object(urllib.request, "urlopen", fake_urlopen_cold):
+            with (
+                patch.object(urllib.request, "urlopen", fake_urlopen_cold),
+                patch.object(_be_mod, "_openai_urlopen", fake_urlopen_cold),
+            ):
                 spawned.complete([{"role": "user", "content": "hi"}])
             out["local_spawn_template_ran"] = spawned._proc is not None
             spawned.close()
@@ -343,6 +363,7 @@ def serve_audit() -> dict[str, Any]:
                 with (
                     patch.object(subprocess, "Popen", counting_popen),
                     patch.object(urllib.request, "urlopen", fake_urlopen_cold_locked),
+                    patch.object(_be_mod, "_openai_urlopen", fake_urlopen_cold_locked),
                     ThreadPoolExecutor(max_workers=4) as pool,
                 ):
                     list(
@@ -365,10 +386,11 @@ def serve_audit() -> dict[str, Any]:
         out["tamper_refuses"] = (
             _raises(lambda: LocalFx1Backend(root, require_signature=True)) == "RuntimeError"
         )
-        # unlisted artifact added post-sign verifies clean (manifest-scoped)
+        # unlisted artifact added post-sign fails closed — verification
+        # compares the enumerated inventory against the manifest exactly.
         sign_release(root)
         (root / "extra.bin").write_bytes(b"rogue")
-        out["flag_unlisted_artifact_passes"] = verify_release(root)
+        out["unlisted_artifact_refused"] = not verify_release(root)
         (root / "extra.bin").unlink()
         # wrong key
         os.environ["FX1_SIGNING_KEY"] = "other-key"
@@ -461,8 +483,8 @@ def serve_audit_bench() -> dict[str, Any]:
             "Local weights serve through an OpenAI-compatible engine — "
             "attach or spawn, fail-closed when neither is configured; the "
             "spawn template's checkpoint path is the verified root. "
-            "Flags: unlisted post-sign artifacts pass verification "
-            "(manifest-scoped, not closed-world); signature gate defaults "
+            "Release verification is closed-world — an unlisted "
+            "post-sign artifact fails. Flags: signature gate defaults "
             "off without FX1_SIGNING_KEY; citation footer prints "
             "unverified hashes."
             if ok

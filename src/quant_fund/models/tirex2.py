@@ -47,13 +47,13 @@ on a subset of the native grid, e.g. ``--taus 0.1,0.5,0.9``).
 
 from __future__ import annotations
 
+import shutil
+import sys
 from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-import shutil
-import sys
 
 from quant_fund.models.base import JoblibMixin, ModelMeta
 

@@ -40,7 +40,7 @@ from quant_fund.microstructure.zi_lob_simulator import (
     ZILobConfig,
     run_mm_session,
 )
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.hashing import hash_bytes, sanitize_for_json
 from quant_fund.utils.reproducibility import git_revision
 
 EXCURSION_GEO_SCHEMA = "excursion_geometry.v1"
@@ -295,6 +295,9 @@ def excursion_geometry_bench(
         if "1" in bia["levels"] and "1" in sym["levels"]
         else float("nan"),
     }
+    # Non-finite stats (quiet paths with no excursions, unhit levels)
+    # seal as strict-JSON null, never literal NaN.
+    payload = sanitize_for_json(payload)
     payload["payload_sha256"] = hash_bytes(json.dumps(payload, sort_keys=True).encode())
     return payload
 
