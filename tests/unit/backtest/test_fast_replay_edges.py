@@ -96,11 +96,12 @@ class TestInterpretedFallback:
         monkeypatch.setattr(fast_replay, "HAVE_NUMBA", False)
         try:
             out = run_backtest_fast(bars, w, _cfg(stale_price_bars=0))
-            assert 0 < out.equity.height <= 10
         except Exception as exc:
             # StaleValuationError from the interpreted loop is also correct —
             # fail-closed beats trading on dead prices either way.
             assert "stale" in str(exc).lower()
+        else:
+            assert 0 < out.equity.height <= 10
 
 
 class TestKernelBranches:
@@ -180,9 +181,10 @@ class TestKernelBranches:
         w = _weights(["A", "B"], 14, np.random.default_rng(12), lo=0.1, hi=0.5)
         try:
             out = run_backtest_fast(bars, w, _cfg(stale_price_bars=1))
-            assert 0 < out.equity.height <= 14
         except Exception as exc:
             assert "stale" in str(exc).lower()
+        else:
+            assert 0 < out.equity.height <= 14
 
     def test_market_vol_gate(self) -> None:
         bars, w = _panel()

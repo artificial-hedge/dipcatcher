@@ -39,7 +39,10 @@ def _write_series(dirpath: Path, name: str, symbol: str, n: int = 320) -> Path:
         closes[i] *= 0.85
     dates = [f"2024-{(i // 28) + 1:02d}-{(i % 28) + 1:02d}" for i in range(n)]
     df = pl.DataFrame({"event_time": dates, "symbol": [symbol] * n, "close": closes})
-    path = dirpath / name
+    root = Path(dirpath).resolve()
+    path = (root / name).resolve()
+    if path.parent != root:
+        raise ValueError(f"series name escapes the run directory: {name}")
     df.write_parquet(path)
     return path
 

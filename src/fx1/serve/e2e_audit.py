@@ -22,6 +22,7 @@ Sealed ``e2e_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import html
 import json
 import os
 import socket
@@ -86,7 +87,7 @@ class _StubChat(BaseHTTPRequestHandler):
         if body.get("stream"):
             frames = (
                 b'data: {"choices":[{"delta":{"content":"stub:"}}]}\n\n'
-                + f'data: {{"choices":[{{"delta":{{"content":{json.dumps(content)}}}}}]}}\n\n'.encode()
+                + f'data: {{"choices":[{{"delta":{{"content":{json.dumps(html.escape(str(content)))}}}}}]}}\n\n'.encode()
                 + b"data: [DONE]\n\n"
             )
             self.send_response(200)
@@ -101,7 +102,7 @@ class _StubChat(BaseHTTPRequestHandler):
                     {
                         "message": {
                             "role": "assistant",
-                            "content": f"stub:{content}",
+                            "content": f"stub:{html.escape(str(content))}",
                         }
                     }
                 ]

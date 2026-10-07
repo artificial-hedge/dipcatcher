@@ -386,7 +386,13 @@ def run_lane1_calibration(
     """
     slate, slate_sha, parent_sha = load_slate(slate_path)
     cfg = load_config(slate["evaluation"]["config"])
-    receipt_path = Path(slate["evaluation"]["lane1_receipt"])
+    spec = Path(str(slate["evaluation"]["lane1_receipt"]))
+    # Absolute specs live under the configured data root (receipt artifacts);
+    # relative specs resolve against the repository root — escapes fail closed.
+    root = Path(cfg.data.root).resolve() if spec.is_absolute() else Path.cwd().resolve()
+    receipt_path = spec.resolve() if spec.is_absolute() else (root / spec).resolve()
+    if not receipt_path.is_relative_to(root):
+        raise ValueError("lane1_receipt escapes its permitted root")
     if not receipt_path.is_file():
         raise FileNotFoundError("lane-1 receipt (ml_lane.json) not found")
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))

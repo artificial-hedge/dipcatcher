@@ -139,18 +139,24 @@ def slr_eval(tokens: list[str]) -> float:
             i += 1
         elif kind == "r":
             lhs, rhs = G[arg]
-            vals = val_stack[-len(rhs) :] if rhs else []
-            del val_stack[-len(rhs) :]
-            del sym_stack[-len(rhs) :]
-            del st_stack[-len(rhs) :]
-            if len(rhs) == 1:
+            k = len(rhs)
+            if min(len(val_stack), len(sym_stack), len(st_stack)) < k:
+                raise ValueError("reduce underflow: stack shorter than production")
+            vals = val_stack[-k:] if k else []
+            del val_stack[-k:]
+            del sym_stack[-k:]
+            del st_stack[-k:]
+            if k == 1:
                 v = vals[0]
-            elif rhs[1] == "+":
-                v = vals[0] + vals[2]
-            elif rhs[1] == "*":
-                v = vals[0] * vals[2]
-            else:  # ( E )
-                v = vals[1]
+            elif k == 3:
+                if rhs[1] == "+":
+                    v = vals[0] + vals[2]
+                elif rhs[1] == "*":
+                    v = vals[0] * vals[2]
+                else:  # ( E )
+                    v = vals[1]
+            else:
+                raise ValueError(f"unsupported production arity {k}")
             val_stack.append(v)
             sym_stack.append(lhs)
             st_stack.append(_edges_lookup(st_stack, sym_stack))

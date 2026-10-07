@@ -100,6 +100,7 @@ Sealed ``eval_lifecycle_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import html
 import json
 import os
 import tempfile
@@ -230,7 +231,16 @@ class _CliChat(BaseHTTPRequestHandler):
             self.send_error(400)
             return
         payload = json.dumps(
-            {"choices": [{"message": {"role": "assistant", "content": f"stub:{content}"}}]}
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "role": "assistant",
+                            "content": f"stub:{html.escape(str(content))}",
+                        }
+                    }
+                ]
+            }
         ).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
