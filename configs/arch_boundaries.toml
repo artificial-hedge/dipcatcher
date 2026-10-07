@@ -57,6 +57,7 @@ packages = [
     "native",       # rust/native reference wrappers over lightspeed+metrics
     "reporting",    # reports over metrics
     "validation",   # walk-forward/purging/CPCV splitters used by pipeline.train
+    "decay",        # alpha/signal decay diagnostics (IC curves, half-life, turnover)
 ]
 
 [[layers]]
