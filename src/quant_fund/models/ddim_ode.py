@@ -1,4 +1,4 @@
-"""DDIM ODE sampler (Song et al. 2021) — deterministic eta=0 DDIM on a
+"""DDIM ODE sampler (Song et al. 2021) — deterministic eta=0 DDIM on a (SYNTHETIC)
 preconditioned epsilon-net; 20-step quality vs 20-step ancestral DDPM.
 MMD comparison.
 """

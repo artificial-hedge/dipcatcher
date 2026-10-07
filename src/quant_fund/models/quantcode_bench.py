@@ -1,4 +1,4 @@
-"""QuantCode-Bench-style spec->code pipeline (Exec-Summary Feature 1).
+"""QuantCode-Bench-style spec->code pipeline (Exec-Summary Feature 1) (SYNTHETIC).
 A StrategySpec (title + params) compiles to strategy code via a
 deterministic template compiler, executes in a restricted sandbox on
 synthetic bars, and is judge-passed on run/finiteness/trade criteria.

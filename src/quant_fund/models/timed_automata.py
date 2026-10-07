@@ -1,4 +1,4 @@
-"""Timed automaton reachability via zone exploration.
+"""Timed automaton reachability via zone exploration (SYNTHETIC).
 
 Zones are DBMs over clocks {x0=0,x1,...,xn}: (lo,hi) bounds on xi-xj.
 Operations: up (unbounded elapse), reset, intersect-guard (clock cmp

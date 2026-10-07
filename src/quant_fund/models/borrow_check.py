@@ -1,4 +1,4 @@
-"""NLL-lite borrow checker over a statement-level IR.
+"""NLL-lite borrow checker over a statement-level IR (SYNTHETIC).
 
 IR: list of ops — ("borrow",x,k,loan_id) creates &k x loan, ("use",x),
 ("mut",x) mutation, ("die",x) end of x's region (last use implicit).

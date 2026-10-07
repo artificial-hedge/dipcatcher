@@ -1,4 +1,4 @@
-"""REDQ (Chen et al. 2021) — random ensembled Q: N critics, TD target =
+"""REDQ (Chen et al. 2021) — random ensembled Q: N critics, TD target = (SYNTHETIC)
 min over a random M-subset; high UTD ratio. Mean reward vs twin-Q SAC-lite.
 """
 

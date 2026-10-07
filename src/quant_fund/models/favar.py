@@ -1,4 +1,4 @@
-"""Factor-augmented VAR (Bernanke-Boivin-Eliasz 2005, two-step form).
+"""Factor-augmented VAR (Bernanke-Boivin-Eliasz 2005, two-step form) (SYNTHETIC).
 
 Step one extracts ``r`` principal-component factors from a standardized
 panel ``X`` (T x n, n >> r).  Step two fits a VAR(p) on ``[y | F]`` where

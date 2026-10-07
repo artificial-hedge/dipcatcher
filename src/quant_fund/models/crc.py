@@ -1,4 +1,4 @@
-"""Conformal Risk Control for monotone tail losses. No Sharpe.
+"""Conformal Risk Control for monotone tail losses. No Sharpe (SYNTHETIC).
 
 Angelopoulos, Bates, Fisch, Lei, Schuster (2022; ICLR 2024): choose the smallest threshold λ
 such that the finite-sample CRC statistic is at most α,

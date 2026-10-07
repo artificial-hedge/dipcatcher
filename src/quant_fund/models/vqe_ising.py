@@ -1,4 +1,4 @@
-"""VQE for transverse-field Ising ground-state energy on 4 qubits —
+"""VQE for transverse-field Ising ground-state energy on 4 qubits — (SYNTHETIC)
 hardware-efficient ansatz (Ry + CNOT ring), exact diagonalization anchor.
 """
 

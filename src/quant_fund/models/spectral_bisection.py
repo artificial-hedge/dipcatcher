@@ -1,4 +1,4 @@
-"""Fiedler-vector spectral bisection.
+"""Fiedler-vector spectral bisection (SYNTHETIC).
 
 Partitions the graph by the sign of the second-smallest Laplacian
 eigenvector; balanced by median split. Bench compares the bisection

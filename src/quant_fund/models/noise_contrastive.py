@@ -1,4 +1,4 @@
-"""Noise-contrastive estimation (Gutmann & Hyvärinen 2010) — energy net
+"""Noise-contrastive estimation (Gutmann & Hyvärinen 2010) — energy net (SYNTHETIC)
 as log-ratio classifier data-vs-noise (reference = unit Gaussian);
 samples via Langevin, MMD vs baseline.
 """

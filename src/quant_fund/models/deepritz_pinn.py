@@ -1,4 +1,4 @@
-"""DeepRitz PINN (E & Yu 2018) — energy-functional residual network
+"""DeepRitz PINN (E & Yu 2018) — energy-functional residual network (SYNTHETIC)
 for the heat equation; L2 error vs analytic + FD-style baseline.
 """
 

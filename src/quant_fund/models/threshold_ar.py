@@ -1,4 +1,4 @@
-"""Self-exciting threshold autoregression (SETAR).
+"""Self-exciting threshold autoregression (SETAR) (SYNTHETIC).
 
 The series switches AR regimes on its own lagged level:
 ``y_t = φ1·y_{t-1} + ε`` when ``y_{t-d} ≤ c``, else

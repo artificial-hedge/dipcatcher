@@ -1,4 +1,4 @@
-"""DR3 (Kumar et al. 2023) — dormancy-ratio regularizer: encourages
+"""DR3 (Kumar et al. 2023) — dormancy-ratio regularizer: encourages (SYNTHETIC)
 feature diversity by penalizing dominant-feature concentration in critic
 activations; fights dormant neurons in online RL. Mean reward vs plain.
 """

@@ -1,4 +1,4 @@
-"""Grokking tracker (Power et al. 2022) — delayed generalization:
+"""Grokking tracker (Power et al. 2022) — delayed generalization: (SYNTHETIC)
 train accuracy hits ceiling while test accuracy lags then catches up.
 Measures the lag (test-acc ≤ train-acc − 0.2 duration) on the regime
 task with heavy memorization capacity + small data.

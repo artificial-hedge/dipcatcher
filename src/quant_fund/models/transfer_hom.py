@@ -1,4 +1,4 @@
-"""Transfer homomorphism (Verlagerung) bookkeeping (SYNTHIC)."""
+"""Transfer homomorphism (Verlagerung) bookkeeping (SYNTHIC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""GradNorm (Chen et al. 2018) — task weights adapted so per-task
+"""GradNorm (Chen et al. 2018) — task weights adapted so per-task (SYNTHETIC)
 weighted gradient norms match the average times relative-inverse-rate;
 reports weight evolution and min-task acc vs naive.
 """

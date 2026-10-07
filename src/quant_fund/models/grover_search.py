@@ -1,4 +1,4 @@
-"""Grover amplitude amplification on 4 qubits: marked-state probability
+"""Grover amplitude amplification on 4 qubits: marked-state probability (SYNTHETIC)
 after optimal iterations vs O(N) classical expected queries.
 """
 

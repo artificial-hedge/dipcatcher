@@ -1,4 +1,4 @@
-"""Shared fixture for wave-185 differentiable-algorithm canon.
+"""Shared fixture for wave-185 differentiable-algorithm canon (SYNTHETIC).
 
 Top-k selection task: learn scores s (d=6) so that weighted sum of the
 top-2 selected features hits a target. Selection is discrete — the

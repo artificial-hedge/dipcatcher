@@ -1,4 +1,4 @@
-"""Lion (Chen et al. 2023) — sign-momentum update:
+"""Lion (Chen et al. 2023) — sign-momentum update: (SYNTHETIC)
 w -= lr * sign(β1·m + (1-β1)·g), m ← β2·m + (1-β2)·g.
 Memory-light vs Adam.
 """

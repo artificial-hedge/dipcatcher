@@ -1,4 +1,4 @@
-"""Signal decomposition: SSA and EMD/Hilbert–Huang.
+"""Signal decomposition: SSA and EMD/Hilbert–Huang (SYNTHETIC).
 
 Nonparametric decomposition of a series into trend/oscillation/noise
 components, plus an SSA linear-recurrent-formula forecaster.

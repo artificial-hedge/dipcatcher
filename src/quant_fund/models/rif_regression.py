@@ -1,4 +1,4 @@
-"""Recentered influence function (RIF) regression for unconditional
+"""Recentered influence function (RIF) regression for unconditional (SYNTHETIC)
 distributional effects.
 
 RIF regression (Firpo-Fortin-Lemieux) regresses the recentered influence

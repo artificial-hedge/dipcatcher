@@ -1,4 +1,4 @@
-"""Conformalized Quantile Regression (Romano et al. 2019) — split
+"""Conformalized Quantile Regression (Romano et al. 2019) — split (SYNTHETIC)
 conformal on quantile scores E = max(q_lo − y, y − q_hi); interval
 [q_lo − Q, q_hi + Q]. Coverage + width vs split conformal.
 """

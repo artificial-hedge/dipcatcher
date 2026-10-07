@@ -1,4 +1,4 @@
-"""NWJ / f-GAN MI estimator (Nguyen, Wainwright & Jordan 2010):
+"""NWJ / f-GAN MI estimator (Nguyen, Wainwright & Jordan 2010): (SYNTHETIC)
 E_joint[T] - E_marg[e^(T-1)]. Torch-gated twin-net to MINE.
 """
 

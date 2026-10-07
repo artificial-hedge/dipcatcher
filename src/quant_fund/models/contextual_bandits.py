@@ -1,4 +1,4 @@
-"""Contextual bandit canon: disjoint LinUCB (Li, Chu,
+"""Contextual bandit canon: disjoint LinUCB (Li, Chu, (SYNTHETIC)
 Langford & Schapire 2010) and linear Thompson sampling
 (Agrawal & Goyal 2013) on a synthetic linear-reward
 environment, against an epsilon-greedy linear baseline.

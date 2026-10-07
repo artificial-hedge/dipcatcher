@@ -1,4 +1,4 @@
-"""Noise-IK-lite handshake (wave 292).
+"""Noise-IK-lite handshake (wave 292) (SYNTHETIC).
 
 Toy WireGuard Noise_IK: ECDH-on-toy-group chaining —
 ck = H(ck, dh); initiator/responder derive identical session keys; a

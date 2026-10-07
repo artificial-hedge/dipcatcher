@@ -1,4 +1,4 @@
-"""Self-consistency (Wang et al. 2023) — sample-and-vote decoding.
+"""Self-consistency (Wang et al. 2023) — sample-and-vote decoding (SYNTHETIC).
 
 A noisy op-policy sampled K times at temperature τ produces diverse
 op chains; majority vote over final values beats the greedy single

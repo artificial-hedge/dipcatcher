@@ -1,4 +1,4 @@
-"""CUCB (Chen et al. 2013) — combinatorial UCB semi-bandit: pick top-m
+"""CUCB (Chen et al. 2013) — combinatorial UCB semi-bandit: pick top-m (SYNTHETIC)
 arms each round by UCB on per-arm mean estimates; observe all chosen.
 Expected reward vs random top-m.
 """

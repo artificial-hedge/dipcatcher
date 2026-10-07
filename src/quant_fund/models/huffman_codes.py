@@ -1,4 +1,4 @@
-"""Huffman optimal prefix coding (synthetic).
+"""Huffman optimal prefix coding (synthetic) (SYNTHETIC).
 
 Tree built from symbol frequencies; encode/decode bitstring.
 Verified: (i) exact round-trip; (ii) code is prefix-free;

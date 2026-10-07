@@ -1,4 +1,4 @@
-"""Merkle–Damgård iterated hash + length-extension demonstration (toy 64-bit)."""
+"""Merkle–Damgård iterated hash + length-extension demonstration (toy 64-bit) (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""MGDA (Desideri 2012) — multiple-gradient descent: min-norm point in
+"""MGDA (Desideri 2012) — multiple-gradient descent: min-norm point in (SYNTHETIC)
 the convex hull of task gradients via Franke-Wolfe; the direction
 decreases all tasks simultaneously.
 """

@@ -1,4 +1,4 @@
-"""Machine unlearning via gradient ascent + retain repair.
+"""Machine unlearning via gradient ascent + retain repair (SYNTHETIC).
 
 Model trained on forget ∪ retain. Unlearn: ascend loss on forget set
 while descending on retain — forget-set accuracy collapses toward

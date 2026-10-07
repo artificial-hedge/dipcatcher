@@ -1,4 +1,4 @@
-"""CAM pruning (Bühlmann et al. 2014) — order by residual-variance
+"""CAM pruning (Bühlmann et al. 2014) — order by residual-variance (SYNTHETIC)
 greedy search then prune edges by significance of GAM-style nonlinear
 fit; here a two-stage regression-prune implementation. SHD vs corr.
 """

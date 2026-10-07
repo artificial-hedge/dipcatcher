@@ -1,4 +1,4 @@
-"""Gibbs-method initial orbit determination from three position vectors."""
+"""Gibbs-method initial orbit determination from three position vectors (SYNTHETIC)."""
 
 from __future__ import annotations
 

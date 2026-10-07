@@ -1,4 +1,4 @@
-"""Deep SVDD (Ruff et al. 2018).
+"""Deep SVDD (Ruff et al. 2018) (SYNTHETIC).
 
 Minimize mean squared distance of normal-window embeddings to a center c;
 score = distance to c on test windows — vs reconstruction-AE and chance.

@@ -1,4 +1,4 @@
-"""MMPC/Markov-blanket selection (Tsamardinos et al. 2003) — for each
+"""MMPC/Markov-blanket selection (Tsamardinos et al. 2003) — for each (SYNTHETIC)
 variable, grow its parent-children set by max-min dependence then add
 spouses; symmetrized union gives the skeleton. F1 vs correlation.
 """

@@ -1,4 +1,4 @@
-"""Mantel test — matrix-correlation via row-permutation.
+"""Mantel test — matrix-correlation via row-permutation (SYNTHETIC).
 
 Mantel (1967): the correlation between two symmetric distance
 matrices A and B cannot be tested elementwise (the n(n-1)/2 entries

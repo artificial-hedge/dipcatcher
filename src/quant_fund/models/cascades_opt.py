@@ -1,4 +1,4 @@
-"""Cascades-style memoized optimizer: join enumeration over rule set."""
+"""Cascades-style memoized optimizer: join enumeration over rule set (SYNTHETIC)."""
 
 import itertools
 

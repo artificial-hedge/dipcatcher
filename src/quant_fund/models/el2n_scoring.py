@@ -1,4 +1,4 @@
-"""EL2N scores (Paul et al. 2021) — early-epoch L2 norm of (prob - onehot)
+"""EL2N scores (Paul et al. 2021) — early-epoch L2 norm of (prob - onehot) (SYNTHETIC)
 as difficulty score; prune top-easy EL2N examples and measure accuracy
 vs random-prune, plus Spearman with label-flip indicator.
 """

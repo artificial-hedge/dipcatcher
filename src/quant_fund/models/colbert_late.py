@@ -1,4 +1,4 @@
-"""ColBERT late interaction (Khattab & Zaharia 2020).
+"""ColBERT late interaction (Khattab & Zaharia 2020) (SYNTHETIC).
 
 Per-token encodings; score = Σ_q max_d cos(q_i, d_j) — MaxSim over
 token pairs is finer-grained than DPR's single dot product. On the

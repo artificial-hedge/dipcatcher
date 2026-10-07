@@ -1,4 +1,4 @@
-"""DARTS — differentiable architecture search (Liu et al. 2019).
+"""DARTS — differentiable architecture search (Liu et al. 2019) (SYNTHETIC).
 
 Continuous mixing weights α over candidate widths on a single-layer
 net; bilevel alternation (weights on train, α on held-out slice);

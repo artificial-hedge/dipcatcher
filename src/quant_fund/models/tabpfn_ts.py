@@ -1,4 +1,4 @@
-"""TabPFN time-series quantile head (P2.5). Research-only.
+"""TabPFN time-series quantile head (P2.5). Research-only (SYNTHETIC).
 
 Wraps PriorLabs ``tabpfn-time-series`` — pretrained TabPFN v2 adapted to
 zero-shot univariate forecasting with native quantile outputs (11M params,

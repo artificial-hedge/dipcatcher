@@ -1,4 +1,4 @@
-"""Robins marginal structural models via stabilized IPTW.
+"""Robins marginal structural models via stabilized IPTW (SYNTHETIC).
 
 Two-visit marginal structural model for time-varying
 treatment with treatment-confounder feedback. For

@@ -1,4 +1,4 @@
-"""Vision fixture: 6x6 grayscale "images" — class 0 = corner blob,
+"""Vision fixture: 6x6 grayscale "images" — class 0 = corner blob, (SYNTHETIC)
 class 1 = edge stripe; plus Gaussian noise. A CNN's locality helps;
 patch-token ViT needs more data.
 """

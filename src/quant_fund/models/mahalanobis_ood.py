@@ -1,4 +1,4 @@
-"""Mahalanobis OOD detection (Lee et al. 2018).
+"""Mahalanobis OOD detection (Lee et al. 2018) (SYNTHETIC).
 
 Per-class Gaussian on penultimate features with a shared covariance;
 score = min over classes of the Mahalanobis distance. Near-class

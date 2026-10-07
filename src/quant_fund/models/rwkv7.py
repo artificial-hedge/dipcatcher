@@ -1,4 +1,4 @@
-"""RWKV-7 (2025) — generalized delta rule with vector-valued decay:
+"""RWKV-7 (2025) — generalized delta rule with vector-valued decay: (SYNTHETIC)
 S_t = S_{t-1}(Diag(w_t) - beta_t k_t (k_t^T Diag(w_t))) + beta_t k_t v_t^T;
 state tracks and corrects itself via the delta rule. Induction recall.
 """

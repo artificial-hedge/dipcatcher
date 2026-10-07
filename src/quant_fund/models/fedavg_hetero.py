@@ -1,4 +1,4 @@
-"""FedAvg under client heterogeneity (McMahan 2017 + Li 2020).
+"""FedAvg under client heterogeneity (McMahan 2017 + Li 2020) (SYNTHETIC).
 
 IID vs non-IID client shards: non-IID FedAvg diverges relative to
 centralized training; FedProx (proximal term μ) recovers part of the

@@ -1,4 +1,4 @@
-"""TT-SVD decomposition: compression of a smooth d-tensor at rank chi —
+"""TT-SVD decomposition: compression of a smooth d-tensor at rank chi — (SYNTHETIC)
 reconstruction error vs chi, and vs truncated CP baseline.
 """
 

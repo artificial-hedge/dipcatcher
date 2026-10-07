@@ -1,4 +1,4 @@
-"""Independence Metropolis–Hastings with a Student-t envelope for a
+"""Independence Metropolis–Hastings with a Student-t envelope for a (SYNTHETIC)
 heavy-tail target: correct tail coverage where a random-walk proposal
 misses rare regions. Metric = tail-quantile error + ESS.
 """

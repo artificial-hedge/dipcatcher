@@ -1,4 +1,4 @@
-"""Expected-gradient-length (Settles et al. 2007) — query the point
+"""Expected-gradient-length (Settles et al. 2007) — query the point (SYNTHETIC)
 whose label would change the model most: ||φ_i||·p(1−p) (expected
 gradient magnitude over both label outcomes). Accuracy vs random.
 """

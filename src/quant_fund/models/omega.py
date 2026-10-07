@@ -1,4 +1,4 @@
-"""McDonald's omega — composite reliability from a one-factor
+"""McDonald's omega — composite reliability from a one-factor (SYNTHETIC)
 solution.
 
 McDonald (1999): given standardized loadings lambda_j of a single-

@@ -1,4 +1,4 @@
-"""FrodoKEM-style KEM — plain (unstructured) LWE over Z_q matrices.
+"""FrodoKEM-style KEM — plain (unstructured) LWE over Z_q matrices (SYNTHETIC).
 
 No ring structure: A uniform Z_q^{n x n}, secrets small-Gaussian. Ephemeral
 encapsulation B' = s'A + e', v = s'B + e'' + Encode(mu); decap rounds

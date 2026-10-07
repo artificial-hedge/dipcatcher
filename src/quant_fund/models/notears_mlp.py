@@ -1,4 +1,4 @@
-"""NOTEARS-MLP (Zheng et al. 2020) — nonlinear SEM recovery: each
+"""NOTEARS-MLP (Zheng et al. 2020) — nonlinear SEM recovery: each (SYNTHETIC)
 variable's conditional is a small MLP; acyclicity on the weight
 product of first layers. SHD vs corr baseline.
 """

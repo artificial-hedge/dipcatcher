@@ -1,4 +1,4 @@
-"""Neighbor-joining tree reconstruction (wave 284).
+"""Neighbor-joining tree reconstruction (wave 284) (SYNTHETIC).
 
 Greedy NJ on a distance matrix recovers the correct unrooted topology for
 additive quartet distances — verified against planted ((a,b),(c,d)) trees.

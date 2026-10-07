@@ -1,4 +1,4 @@
-"""Mood's median test and pairwise median contrasts.
+"""Mood's median test and pairwise median contrasts (SYNTHETIC).
 
 Mood (1950): for k independent samples, count observations above
 the grand median in each group; under H0 (common median) the

@@ -1,4 +1,4 @@
-"""Stochastic volatility: Harvey & Shephard (1996) lognormal-linear
+"""Stochastic volatility: Harvey & Shephard (1996) lognormal-linear (SYNTHETIC)
 approximation estimated by Kalman QMLE.
 
 Model:  y_t = exp(h_t / 2) e_t,   h_t = phi h_{t-1} + sigma_eta eta_t.

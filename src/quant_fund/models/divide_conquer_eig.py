@@ -1,4 +1,4 @@
-"""Divide-and-conquer symmetric tridiagonal eigensolver."""
+"""Divide-and-conquer symmetric tridiagonal eigensolver (SYNTHETIC)."""
 
 import numpy as np
 

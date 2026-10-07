@@ -1,4 +1,4 @@
-"""DAGMM (Zong et al. 2018).
+"""DAGMM (Zong et al. 2018) (SYNTHETIC).
 
 Autoencoder → (recon features, z) → GMM estimation net; anomaly score =
 negative mixture likelihood of test windows — vs plain AE recon error.

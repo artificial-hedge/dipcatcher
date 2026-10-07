@@ -1,4 +1,4 @@
-"""ADVI/BBVI (Kucukelbir et al. 2017) — mean-field Gaussian VI fit by
+"""ADVI/BBVI (Kucukelbir et al. 2017) — mean-field Gaussian VI fit by (SYNTHETIC)
 reparameterized ELBO SGD. Posterior mean vs MCMC oracle + test log-loss.
 """
 

@@ -1,4 +1,4 @@
-"""Isolation forest anomaly detection (Liu, Ting & Zhou 2008).
+"""Isolation forest anomaly detection (Liu, Ting & Zhou 2008) (SYNTHETIC).
 
 Each iTree recursively partitions the feature space on a random
 feature + random split point; anomalies isolate in few splits.

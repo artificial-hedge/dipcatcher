@@ -1,4 +1,4 @@
-"""Sparse variational GP (Titsias 2009 / SVGP) — M inducing points,
+"""Sparse variational GP (Titsias 2009 / SVGP) — M inducing points, (SYNTHETIC)
 Titsias collapsed bound on the fixture's regression view (fit z* =
 pseudo-target via GP on X→y). Held-out NLL vs full dense GP.
 """

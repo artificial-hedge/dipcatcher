@@ -1,4 +1,4 @@
-"""Post-hoc pairwise-comparison procedures.
+"""Post-hoc pairwise-comparison procedures (SYNTHETIC).
 
 Tukey (1949) honestly significant difference: for k groups
 with means m_i, sizes n_i and pooled MSE s^2 on nu = N - k

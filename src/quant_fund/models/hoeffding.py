@@ -1,4 +1,4 @@
-"""Hoeffding's D — rank-based independence test sensitive to
+"""Hoeffding's D — rank-based independence test sensitive to (SYNTHETIC)
 non-monotone dependence.
 
 Hoeffding (1948): for paired samples (x_i, y_i) the statistic

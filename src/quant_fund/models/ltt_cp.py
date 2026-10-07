@@ -1,4 +1,4 @@
-"""Learn-Then-Test (Angelopoulos et al. 2021) — conformal risk control:
+"""Learn-Then-Test (Angelopoulos et al. 2021) — conformal risk control: (SYNTHETIC)
 choose lambda over a grid so the FWER/FDR-style bound on set-size risk
 holds; interval/set size vs naive fixed threshold.
 """

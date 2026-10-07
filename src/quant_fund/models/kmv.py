@@ -1,4 +1,4 @@
-"""Merton (1974) / KMV distance-to-default.
+"""Merton (1974) / KMV distance-to-default (SYNTHETIC).
 
 Equity is a call option on firm asset value V struck at the face
 value of debt D:

@@ -1,4 +1,4 @@
-"""STDP learning (Bi & Poo 1998) — classic selectivity demo: half the
+"""STDP learning (Bi & Poo 1998) — classic selectivity demo: half the (SYNTHETIC)
 inputs fire causally before the post-synaptic spike, half are
 uncorrelated noise; STDP potentiates only the causal inputs.
 Weight selectivity = mean W_causal - mean W_noise.

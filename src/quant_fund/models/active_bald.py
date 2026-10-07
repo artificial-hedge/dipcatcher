@@ -1,4 +1,4 @@
-"""BALD active learning (Houlsby et al. 2011) — query-by-committee
+"""BALD active learning (Houlsby et al. 2011) — query-by-committee (SYNTHETIC)
 disagreement (5 bagged logistic voters): select top-k highest
 vote-entropy samples each round vs random selection, same budget.
 """

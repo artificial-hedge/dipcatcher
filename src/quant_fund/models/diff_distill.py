@@ -1,4 +1,4 @@
-"""Progressive distillation (Salimans & Ho 2022) — train DDPM teacher,
+"""Progressive distillation (Salimans & Ho 2022) — train DDPM teacher, (SYNTHETIC)
 then a student matching two teacher steps in one; student MMD at half
 the steps vs teacher at full steps.
 """

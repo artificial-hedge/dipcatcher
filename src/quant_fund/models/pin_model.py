@@ -1,4 +1,4 @@
-"""Easley-O'Hara PIN — probability of informed trading.
+"""Easley-O'Hara PIN — probability of informed trading (SYNTHETIC).
 
 Trade arrivals follow a mixture over latent information states:
 with prob α an information event occurs; it is bad news w.p. δ

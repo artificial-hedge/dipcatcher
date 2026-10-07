@@ -1,4 +1,4 @@
-"""HAR realized-volatility models (Corsi 2009) and HARQ extension
+"""HAR realized-volatility models (Corsi 2009) and HARQ extension (SYNTHETIC)
 (Bollerslev, Patton & Quaedvlieg 2016).
 
 HAR-RV: RV_{t+1} = b0 + b_d RV_t + b_w mean(RV_{t-4..t})

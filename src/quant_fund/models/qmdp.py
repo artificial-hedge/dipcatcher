@@ -1,4 +1,4 @@
-"""POMDP primitives + QMDP approximation — treats the problem as
+"""POMDP primitives + QMDP approximation — treats the problem as (SYNTHETIC)
 fully observable after the current step: value = MDP Q-function,
 policy greedy on the belief-weighted Q. Provides the shared spec,
 belief update, α-vector backup, and rollout simulator used by the

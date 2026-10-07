@@ -1,4 +1,4 @@
-"""Denoising score matching (Vincent 2011) — perturb x with noise σ,
+"""Denoising score matching (Vincent 2011) — perturb x with noise σ, (SYNTHETIC)
 match ∇E to -(x̃-x)/σ². No Hessian needed; MMD vs Gaussian baseline.
 """
 

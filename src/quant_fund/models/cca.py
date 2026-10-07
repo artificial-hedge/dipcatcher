@@ -1,4 +1,4 @@
-"""Canonical correlation analysis, PLS, and reduced-rank regression.
+"""Canonical correlation analysis, PLS, and reduced-rank regression (SYNTHETIC).
 
 Hotelling (1936): given two views X (n, p), Y (n, q), CCA finds pairs
 (a_i, b_i) maximizing corr(X a_i, Y b_i). With whitened blocks the

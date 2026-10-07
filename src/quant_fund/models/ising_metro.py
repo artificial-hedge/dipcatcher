@@ -1,4 +1,4 @@
-"""2D Ising Metropolis MCMC: magnetization ordering at low T."""
+"""2D Ising Metropolis MCMC: magnetization ordering at low T (SYNTHETIC)."""
 
 import numpy as np
 

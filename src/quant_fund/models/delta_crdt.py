@@ -1,4 +1,4 @@
-"""Delta-state CRDT: OR-Set with delta-group dissemination.
+"""Delta-state CRDT: OR-Set with delta-group dissemination (SYNTHETIC).
 
 Observed-Remove set: adds are tagged unique dots (replica, counter); removes
 tombstone only the dots observed. The delta variant ships only the

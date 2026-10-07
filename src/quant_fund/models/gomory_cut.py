@@ -1,4 +1,4 @@
-"""Gomory fractional cutting-plane ILP solver.
+"""Gomory fractional cutting-plane ILP solver (SYNTHETIC).
 
 Solves the LP relaxation on the shared tableau (explicit slack columns,
 Bland's rule), then appends Gomory fractional cuts from rows whose basic

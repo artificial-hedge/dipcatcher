@@ -1,4 +1,4 @@
-"""The Theta forecasting method (Assimakopoulos & Nikolopoulos 2000).
+"""The Theta forecasting method (Assimakopoulos & Nikolopoulos 2000) (SYNTHETIC).
 
 The classic Theta method decomposes a series into two *theta lines*.  For a
 coefficient ``theta`` the line is

@@ -1,4 +1,4 @@
-"""Chronos-lite (Ansari et al. 2024) — scale-and-quantize the series into
+"""Chronos-lite (Ansari et al. 2024) — scale-and-quantize the series into (SYNTHETIC)
 bins, model token sequence with a small causal transformer, emit the
 quantile grid directly — vs seasonal-naive pinball.
 """

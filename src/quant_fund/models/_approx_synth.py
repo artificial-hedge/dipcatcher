@@ -1,4 +1,4 @@
-"""Shared fixtures for the wave-212 approximation-algorithms canon.
+"""Shared fixtures for the wave-212 approximation-algorithms canon (SYNTHETIC).
 
 Small deterministic instances so every approximate optimum can be
 checked against brute force:

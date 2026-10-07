@@ -1,4 +1,4 @@
-"""Low-rank neural operator (Li et al. 2020) — kernel integral operator
+"""Low-rank neural operator (Li et al. 2020) — kernel integral operator (SYNTHETIC)
 approximated by low-rank factors: K f ≈ φ(x)·(Σ_j ψ(x_j) f(x_j)) — vs MLP.
 """
 

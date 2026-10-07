@@ -1,4 +1,4 @@
-"""MimeLite (Karimireddy et al. 2021) — server stats applied locally:
+"""MimeLite (Karimireddy et al. 2021) — server stats applied locally: (SYNTHETIC)
 clients run local updates biased by the global full-batch gradient
 estimate computed on the server side each round — vs FedAvg.
 """

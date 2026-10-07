@@ -1,4 +1,4 @@
-"""Model-predictive shooting control over a learned dynamics model.
+"""Model-predictive shooting control over a learned dynamics model (SYNTHETIC).
 
 A dynamics model (trained on random actions) drives CEM-style shooting
 planning toward a moving target. Metrics: final-state distance vs a

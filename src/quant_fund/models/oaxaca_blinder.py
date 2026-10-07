@@ -1,4 +1,4 @@
-"""Oaxaca-Blinder decomposition of mean outcome gaps.
+"""Oaxaca-Blinder decomposition of mean outcome gaps (SYNTHETIC).
 
 Two-fold: Δ = (X̄_A − X̄_B)β_A + X̄_B(β_A − β_B) — a
 composition ("explained") part and a coefficient

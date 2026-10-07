@@ -1,4 +1,4 @@
-"""Kahneman-Tversky Optimization (Ethayarajh et al. 2024).
+"""Kahneman-Tversky Optimization (Ethayarajh et al. 2024) (SYNTHETIC).
 
 Binary desirable/undesirable labels instead of pairs. KTO loss uses
 value-function asymmetry: λ_D σ(β(z_ref − r_θ)) on good examples,

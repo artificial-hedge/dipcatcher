@@ -1,4 +1,4 @@
-"""Bootstrapped DQN posterior (Osband et al. 2016).
+"""Bootstrapped DQN posterior (Osband et al. 2016) (SYNTHETIC).
 
 K=8 Q-heads trained on resampled data give an epistemic posterior over
 Q; disagreement is exploitable for pessimistic risk-aware action choice.

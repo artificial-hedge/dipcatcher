@@ -1,4 +1,4 @@
-"""Lookahead (Zhang et al. 2019) — k fast steps then interpolate toward
+"""Lookahead (Zhang et al. 2019) — k fast steps then interpolate toward (SYNTHETIC)
 the slow weights: φ ← φ + α(θ_k − φ) — vs plain Adam/SGD inner loop.
 """
 

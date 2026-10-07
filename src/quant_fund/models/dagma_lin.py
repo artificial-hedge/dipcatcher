@@ -1,4 +1,4 @@
-"""DAGMA (Bello et al. 2022) — log-determinant acyclicity:
+"""DAGMA (Bello et al. 2022) — log-determinant acyclicity: (SYNTHETIC)
 h(W) = -log det(s I - W∘W) + d log s, smoother than NOTEARS's tr(e^M).
 Augmented-Lagrangian least-squares recovery; SHD vs corr baseline.
 """

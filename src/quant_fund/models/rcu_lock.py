@@ -1,4 +1,4 @@
-"""RCU (read-copy-update) grace-period simulator."""
+"""RCU (read-copy-update) grace-period simulator (SYNTHETIC)."""
 
 import numpy as np
 

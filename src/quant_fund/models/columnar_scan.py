@@ -1,4 +1,4 @@
-"""Columnar scan: vectorized predicate + projection over column batches."""
+"""Columnar scan: vectorized predicate + projection over column batches (SYNTHETIC)."""
 
 import numpy as np
 

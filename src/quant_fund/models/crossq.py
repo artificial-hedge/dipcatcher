@@ -1,4 +1,4 @@
-"""CrossQ (Bhatt et al. 2024) — batch normalization in the critic removes
+"""CrossQ (Bhatt et al. 2024) — batch normalization in the critic removes (SYNTHETIC)
 the need for target networks: BN statistics give stable targets.
 Mean reward vs BN-free no-target ablation.
 """

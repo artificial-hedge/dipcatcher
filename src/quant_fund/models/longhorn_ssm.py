@@ -1,4 +1,4 @@
-"""Longhorn (Liu et al. 2024) — SSM designed from online regression:
+"""Longhorn (Liu et al. 2024) — SSM designed from online regression: (SYNTHETIC)
 the state update solves an online least-squares objective
 h_t = h_{t-1} + beta_t k_t (x_t - k_t^T h_{t-1}) — closed-form Kalman-like
 gain; no random SSM init needed. Induction recall bench.

@@ -1,4 +1,4 @@
-"""Iterative magnitude pruning (Han et al. 2015).
+"""Iterative magnitude pruning (Han et al. 2015) (SYNTHETIC).
 
 Globally prune the smallest-magnitude weights to sparsity s, then
 fine-tune. Accuracy-at-sparsity vs a random-mask control shows the

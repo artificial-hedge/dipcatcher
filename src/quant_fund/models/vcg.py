@@ -1,4 +1,4 @@
-"""VCG mechanism — welfare-maximizing allocation with Clarke pivot
+"""VCG mechanism — welfare-maximizing allocation with Clarke pivot (SYNTHETIC)
 payments. Covers single-item second-price auction (special case) and
 general combinatorial allocations via exhaustive welfare search.
 """

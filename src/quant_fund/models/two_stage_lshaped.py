@@ -1,4 +1,4 @@
-"""Two-stage stochastic program via the L-shaped method.
+"""Two-stage stochastic program via the L-shaped method (SYNTHETIC).
 
 First stage: build scalar capacity x in [0,14] at cost 3x. Second
 stage under demand scenario omega: recourse LP max 5y1 + 4y2 s.t.

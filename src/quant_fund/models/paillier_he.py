@@ -1,4 +1,4 @@
-"""Toy Paillier additive homomorphic encryption; roundtrip + E(m1+m2) check."""
+"""Toy Paillier additive homomorphic encryption; roundtrip + E(m1+m2) check (SYNTHETIC)."""
 
 import math
 

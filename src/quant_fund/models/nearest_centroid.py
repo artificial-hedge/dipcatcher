@@ -1,4 +1,4 @@
-"""Nearest-centroid canon: vanilla nearest class mean (NCM), plus
+"""Nearest-centroid canon: vanilla nearest class mean (NCM), plus (SYNTHETIC)
 nearest shrunken centroids (Tibshirani PAM / NSC) — per-feature
 soft-thresholded class deviations that automatically drop uninformative
 features. ``bench_nearest_centroid`` plants a sparse-signal 3-class

@@ -1,4 +1,4 @@
-"""LWE key exchange (Regev/NewHope-style, toy parameters)."""
+"""LWE key exchange (Regev/NewHope-style, toy parameters) (SYNTHETIC)."""
 
 import numpy as np
 

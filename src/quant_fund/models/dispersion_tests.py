@@ -1,4 +1,4 @@
-"""Rank-based dispersion tests — Siegel-Tukey and Ansari-Bradley.
+"""Rank-based dispersion tests — Siegel-Tukey and Ansari-Bradley (SYNTHETIC).
 
 Siegel & Tukey (1960) and Ansari & Bradley (1960) test equal
 dispersion across two samples without normality assumptions by

@@ -1,4 +1,4 @@
-"""Tensor power-iteration canon: robust symmetric tensor decomposition
+"""Tensor power-iteration canon: robust symmetric tensor decomposition (SYNTHETIC)
 (Anandkumar et al. 2014) — whitening the empirical third moment of a
 spherical-Gaussian mixture / topic-style latent model and recovering the
 factor vectors via deflated tensor power with random restarts.

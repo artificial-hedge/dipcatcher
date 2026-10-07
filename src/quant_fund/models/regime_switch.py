@@ -1,4 +1,4 @@
-"""Markov-switching regressions.
+"""Markov-switching regressions (SYNTHETIC).
 
 Hamilton's (1989) two/more-state Markov-switching model: EM via the
 Hamilton filter, Kim (1994) smoothing, expected regime durations, and the

@@ -1,4 +1,4 @@
-"""DeepHit (Lee et al. 2018) — discrete-time competing-risk network:
+"""DeepHit (Lee et al. 2018) — discrete-time competing-risk network: (SYNTHETIC)
 softmax over time-bin pmf + event indicators trained by likelihood on
 discretized (time, event) vs Cox PH C-index.
 """

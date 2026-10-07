@@ -1,4 +1,4 @@
-"""Base-stock (order-up-to) policy: optimal S = F^{-1}(p/(p+h)) for
+"""Base-stock (order-up-to) policy: optimal S = F^{-1}(p/(p+h)) for (SYNTHETIC)
 lead-time demand vs conservative baseline.
 """
 

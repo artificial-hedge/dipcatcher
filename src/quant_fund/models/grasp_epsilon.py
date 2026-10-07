@@ -1,4 +1,4 @@
-"""Ferrari–Canny epsilon grasp-quality metric (2-D, linearized friction cone).
+"""Ferrari–Canny epsilon grasp-quality metric (2-D, linearized friction cone) (SYNTHETIC).
 
 Each contact contributes a friction-cone wrench set, linearized into L facets.
 The union of contact wrench hulls is summed (Minkowski) via enumerating the

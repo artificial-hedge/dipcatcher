@@ -1,4 +1,4 @@
-"""Calibration estimation — GREG weights on auxiliary totals.
+"""Calibration estimation — GREG weights on auxiliary totals (SYNTHETIC).
 
 Deville & Särndal (1992): given sample d_i = 1/pi_i base weights
 and auxiliary variables x_i with known population totals X, the

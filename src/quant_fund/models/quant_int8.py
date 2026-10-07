@@ -1,4 +1,4 @@
-"""Post-training int8 quantization.
+"""Post-training int8 quantization (SYNTHETIC).
 
 Per-channel symmetric quantization of weight matrices; activation
 scale calibrated on a small batch. Measures accuracy drop vs fp32 and

@@ -1,4 +1,4 @@
-"""LUCB / lil'UCB (Jamieson et al. 2014) — anytime-confidence
+"""LUCB / lil'UCB (Jamieson et al. 2014) — anytime-confidence (SYNTHETIC)
 pure-exploration: pull argmax UCB and the best challenger by LCB,
 stop when the leader's LCB clears every challenger's UCB.
 """

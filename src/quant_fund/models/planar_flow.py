@@ -1,4 +1,4 @@
-"""Planar Flow (Rezende & Mohamed 2015) — z' = z + u h(w^T z + b) with
+"""Planar Flow (Rezende & Mohamed 2015) — z' = z + u h(w^T z + b) with (SYNTHETIC)
 logdet = log|1 + u^T h'(w^Tz+b) w|. K-step flow vs Gaussian on pinwheel.
 """
 

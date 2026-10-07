@@ -1,4 +1,4 @@
-"""Latent class analysis — EM for Bernoulli-response mixtures.
+"""Latent class analysis — EM for Bernoulli-response mixtures (SYNTHETIC).
 
 Lazarsfeld & Henry (1968), Goodman (1974): subjects belong to one of
 K unobserved classes; given the class, item responses are independent

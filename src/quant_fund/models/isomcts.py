@@ -1,4 +1,4 @@
-"""Information-set MCTS — single-observer determinization search.
+"""Information-set MCTS — single-observer determinization search (SYNTHETIC).
 
 Game: 2-card showdown. Each player holds a private card in {0..K-1};
 higher card wins the pot. Actions: check/fold or bet. The searcher

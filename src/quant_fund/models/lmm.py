@@ -1,4 +1,4 @@
-"""Laird-Ware linear mixed models via EM maximum likelihood.
+"""Laird-Ware linear mixed models via EM maximum likelihood (SYNTHETIC).
 
 Laird & Ware (1982): y_i = X_i beta + Z_i b_i + e_i with
 b_i ~ N(0, D), e_i ~ N(0, sigma^2 I). The EM iterations of

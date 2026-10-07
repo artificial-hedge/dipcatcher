@@ -1,4 +1,4 @@
-"""Differential item functioning — Mantel-Haenszel and logistic-
+"""Differential item functioning — Mantel-Haenszel and logistic- (SYNTHETIC)
 regression DIF screens.
 
 Holland & Thayer (1988): stratifying a binary item's 2x2 table

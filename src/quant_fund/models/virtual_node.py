@@ -1,4 +1,4 @@
-"""Virtual-node GNN (Gilmer et al. 2017) — a supernode aggregates all
+"""Virtual-node GNN (Gilmer et al. 2017) — a supernode aggregates all (SYNTHETIC)
 node states each round and broadcasts back; helps on planted-clique
 detection where global context matters. AUC vs plain GCN.
 """

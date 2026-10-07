@@ -1,4 +1,4 @@
-"""CFG ↔ PDA equivalence: expand-top-of-stack PDA checked against CYK oracle."""
+"""CFG ↔ PDA equivalence: expand-top-of-stack PDA checked against CYK oracle (SYNTHETIC)."""
 
 import numpy as np
 

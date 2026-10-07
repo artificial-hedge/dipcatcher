@@ -1,4 +1,4 @@
-"""Peephole optimizer: local rewrite rules over a stack-machine program."""
+"""Peephole optimizer: local rewrite rules over a stack-machine program (SYNTHETIC)."""
 
 import numpy as np
 

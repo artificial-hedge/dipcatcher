@@ -1,4 +1,4 @@
-"""Mean-Field Q-learning (Yang et al., 2018) — each agent's Q
+"""Mean-Field Q-learning (Yang et al., 2018) — each agent's Q (SYNTHETIC)
 conditions on the mean neighbor action ᾱ, collapsing the joint
 action space to (s_i, a_i, ᾱ). N-agent crowding game on a ring.
 """

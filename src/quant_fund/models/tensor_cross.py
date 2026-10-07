@@ -1,4 +1,4 @@
-"""Tensor cross interpolation (maxvol-style fiber sampling): recover a
+"""Tensor cross interpolation (maxvol-style fiber sampling): recover a (SYNTHETIC)
 smooth tensor from O(chi·d·n) entries vs FFT-free random sampling.
 """
 

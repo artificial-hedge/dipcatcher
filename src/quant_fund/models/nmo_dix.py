@@ -1,4 +1,4 @@
-"""NMO correction + Dix interval-velocity inversion (seismic canon).
+"""NMO correction + Dix interval-velocity inversion (seismic canon) (SYNTHETIC).
 
 t^2(x) = t0^2 + x^2 / v_nmo^2 on a CMP gather; Dix converts a stack of
 RMS velocities into interval velocities:

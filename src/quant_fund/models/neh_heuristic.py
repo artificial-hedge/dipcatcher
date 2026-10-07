@@ -1,4 +1,4 @@
-"""NEH heuristic (Nawaz et al. 1983) for m-machine permutation flow-shop
+"""NEH heuristic (Nawaz et al. 1983) for m-machine permutation flow-shop (SYNTHETIC)
 — insertion-improved ordering vs Johnson/random baselines.
 """
 

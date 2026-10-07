@@ -1,4 +1,4 @@
-"""TEBD-style imaginary-time + real-time evolution on TFIM via
+"""TEBD-style imaginary-time + real-time evolution on TFIM via (SYNTHETIC)
 two-site gate decomposition (dense 6-qubit check vs exact expm).
 """
 

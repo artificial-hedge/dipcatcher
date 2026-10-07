@@ -1,4 +1,4 @@
-"""Quade's test — block ranks weighted by within-block range.
+"""Quade's test — block ranks weighted by within-block range (SYNTHETIC).
 
 Quade (1979): Friedman's within-block ranks are weighted by each
 block's spread (range over the k treatments), so blocks with more

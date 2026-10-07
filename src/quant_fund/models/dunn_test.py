@@ -1,4 +1,4 @@
-"""Dunn's post-hoc test — pairwise rank comparisons after Kruskal.
+"""Dunn's post-hoc test — pairwise rank comparisons after Kruskal (SYNTHETIC).
 
 Dunn (1964): after a significant Kruskal-Wallis omnibus, pairwise
 group comparisons on mean-rank differences:

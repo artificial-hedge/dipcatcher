@@ -1,4 +1,4 @@
-"""Reinforcement-learning optimal execution with auction logic (Exec-Summary
+"""Reinforcement-learning optimal execution with auction logic (Exec-Summary (SYNTHETIC)
 Feature 2). Simulated market: GBM mid with short-horizon autocorrelation plus
 temporary impact, a limit step and a terminal closing auction. A tabular
 Q-learning agent learns order-placement schedules to minimize inventory-

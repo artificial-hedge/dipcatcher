@@ -1,4 +1,4 @@
-"""Closed BCMP network via mean-value analysis (Reiser-Lavenberg).
+"""Closed BCMP network via mean-value analysis (Reiser-Lavenberg) (SYNTHETIC).
 
 Iterate over population n = 1..N: residence time
 R_i(n) = D_i * (1 + W_i(n-1)) with service demand D_i = V_i/mu_i, throughput

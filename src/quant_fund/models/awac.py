@@ -1,4 +1,4 @@
-"""AWAC (Nair et al. 2020) — advantage-weighted actor-critic: critic =
+"""AWAC (Nair et al. 2020) — advantage-weighted actor-critic: critic = (SYNTHETIC)
 SARSA-style single Q, actor updated by exp(A/λ)-weighted log-probs on
 the replay buffer (implicit advantage weighting). Mean reward vs
 unweighted BC actor.

@@ -1,4 +1,4 @@
-"""MPPI (Williams et al. 2017): sampled-trajectory control via
+"""MPPI (Williams et al. 2017): sampled-trajectory control via (SYNTHETIC)
 exponentially-weighted noise rollouts on the double integrator.
 Cost vs PD baseline.
 """

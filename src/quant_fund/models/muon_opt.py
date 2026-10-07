@@ -1,4 +1,4 @@
-"""Muon (Jordan et al. 2024) — momentum + Newton-Schulz orthogonalized
+"""Muon (Jordan et al. 2024) — momentum + Newton-Schulz orthogonalized (SYNTHETIC)
 update for 2-D weights: the update is pulled toward a semi-orthogonal
 matrix — vs Adam on the ill-conditioned quadratic task.
 """

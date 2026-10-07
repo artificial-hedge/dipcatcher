@@ -1,4 +1,4 @@
-"""Weighted split CQR under covariate shift (Tibshirani et al. 2019).
+"""Weighted split CQR under covariate shift (Tibshirani et al. 2019) (SYNTHETIC).
 
 Likelihood-ratio weights w(x) = dP_test / dP_cal on a PIT-safe 1-d
 covariate (vol). Lab scores are coverage and width. No Sharpe.

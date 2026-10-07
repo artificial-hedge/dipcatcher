@@ -1,4 +1,4 @@
-"""Adversarial EBM / cooperative nets (Xie et al. 2016) — generator
+"""Adversarial EBM / cooperative nets (Xie et al. 2016) — generator (SYNTHETIC)
 proposal + energy critic trained adversarially (the energy net scores
 real-vs-generated like a WGAN critic); MMD vs Gaussian baseline.
 """

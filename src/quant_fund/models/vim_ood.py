@@ -1,4 +1,4 @@
-"""ViM: virtual-logit matching for OOD (Wang et al. 2022).
+"""ViM: virtual-logit matching for OOD (Wang et al. 2022) (SYNTHETIC).
 
 Combines (i) the residual energy of a feature projected off the
 principal subspace of training features, with (ii) the max-logit — a

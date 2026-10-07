@@ -1,4 +1,4 @@
-"""Rank-based nonparametric location tests: Mann-Whitney U,
+"""Rank-based nonparametric location tests: Mann-Whitney U, (SYNTHETIC)
 Wilcoxon signed-rank, Kruskal-Wallis, and Jonckheere-Terpstra.
 
 Mann-Whitney (1947): U = number of (x_i, y_j) pairs with x_i < y_j;

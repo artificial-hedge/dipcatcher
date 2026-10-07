@@ -1,4 +1,4 @@
-"""Ornstein–Uhlenbeck bridge: conditional path pinned at both endpoints
+"""Ornstein–Uhlenbeck bridge: conditional path pinned at both endpoints (SYNTHETIC)
 (mean-reverting interpolation). Endpoint adherence + intermediate
 variance vs unconditional OU paths.
 """

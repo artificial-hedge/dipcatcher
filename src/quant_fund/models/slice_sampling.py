@@ -1,4 +1,4 @@
-"""Univariate slice sampling — Neal (2003) stepping-out MCMC.
+"""Univariate slice sampling — Neal (2003) stepping-out MCMC (SYNTHETIC).
 
 Neal (2003) "Slice sampling", Ann. Stat. 31:705: auxiliary-variable
 sampling where the move set is the level set {x: f(x) > y} for

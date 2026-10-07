@@ -1,4 +1,4 @@
-"""Profile-guided basic-block reordering (wave 294).
+"""Profile-guided basic-block reordering (wave 294) (SYNTHETIC).
 
 Greedy fallthrough chaining: each block's hottest successor is placed
 immediately after it → minimizes taken-branch count vs arbitrary

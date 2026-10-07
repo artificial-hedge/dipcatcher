@@ -1,4 +1,4 @@
-"""Permutation-group arithmetic (wave 281).
+"""Permutation-group arithmetic (wave 281) (SYNTHETIC).
 
 Cycle decomposition, order (lcm of cycle lengths), sign (parity), and
 composition — verified against brute-force oracle properties.

@@ -1,4 +1,4 @@
-"""Berry-Levinsohn-Pakes (1995) random-coefficients logit demand.
+"""Berry-Levinsohn-Pakes (1995) random-coefficients logit demand (SYNTHETIC).
 
 BLP demand separates the mean utility δ_jt (inverted from
 observed shares by contraction mapping) from the random-

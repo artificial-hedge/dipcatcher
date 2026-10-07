@@ -1,4 +1,4 @@
-"""Nash-MTL (Navon et al. 2022) — combined direction proportional to
+"""Nash-MTL (Navon et al. 2022) — combined direction proportional to (SYNTHETIC)
 task-gradient terms weighted by inverse of their contribution to the
 log barrier: d solves sum_i (1/d^T g_i-scaled) — closed-form 2-task
 approx via equal-angle bisector weighting.

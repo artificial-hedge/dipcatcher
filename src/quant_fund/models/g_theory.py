@@ -1,4 +1,4 @@
-"""Generalizability theory — single-facet person x rater G-study
+"""Generalizability theory — single-facet person x rater G-study (SYNTHETIC)
 and D-study.
 
 Brennan (2001), Cronbach, Gleser, Nanda & Rajaratnam (1972): for a

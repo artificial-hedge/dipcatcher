@@ -1,4 +1,4 @@
-"""ILU(0) preconditioned conjugate gradient for SPD matrices.
+"""ILU(0) preconditioned conjugate gradient for SPD matrices (SYNTHETIC).
 
 ILU(0): incomplete LU keeping only the original sparsity pattern —
 lower-triangular forward/backward substitutions apply the

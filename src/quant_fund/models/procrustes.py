@@ -1,4 +1,4 @@
-"""Procrustes alignment — orthogonal similarity transforms.
+"""Procrustes alignment — orthogonal similarity transforms (SYNTHETIC).
 
 Gower (1975), Dryden & Mardia (2016): given a reference shape X and
 a target Y (both n x d centered point configurations), the

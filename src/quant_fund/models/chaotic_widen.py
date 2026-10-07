@@ -1,4 +1,4 @@
-"""Chaotic iteration with widening & narrowing on an integer-chain domain.
+"""Chaotic iteration with widening & narrowing on an integer-chain domain (SYNTHETIC).
 
 The classic Cousot demo: solving x_{n+1} = F(x_n) over the lattice
 {bot, 0..K, top} where naive ascending iteration diverges or is slow.

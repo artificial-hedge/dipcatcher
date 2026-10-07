@@ -1,4 +1,4 @@
-"""IMTL-G (Liu et al. 2021) — impartial multi-task learning in gradient
+"""IMTL-G (Liu et al. 2021) — impartial multi-task learning in gradient (SYNTHETIC)
 space: find d with equal inner products with all task gradients
 (2-task closed form = projection onto the null-balance direction).
 """

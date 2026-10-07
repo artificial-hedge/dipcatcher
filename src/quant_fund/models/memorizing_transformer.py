@@ -1,4 +1,4 @@
-"""Memorizing-Transformer-style kNN memory (Wu et al. 2022).
+"""Memorizing-Transformer-style kNN memory (Wu et al. 2022) (SYNTHETIC).
 
 Each token can attend to frozen keys/values from earlier training
 examples through an external kNN memory — on the retrieval task the

@@ -1,4 +1,4 @@
-"""VRNN (Chung et al. 2015) — variational RNN: per-step latent z_t with
+"""VRNN (Chung et al. 2015) — variational RNN: per-step latent z_t with (SYNTHETIC)
 prior conditioned on h_{t-1}, posterior on (x_t, h_{t-1}); ELBO on
 synthetic Markov-switching series. Next-step NLL vs plain GRU AE.
 """

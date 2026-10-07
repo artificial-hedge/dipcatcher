@@ -1,4 +1,4 @@
-"""Shared fixture for wave-193 optimal-control canon — double-integrator
+"""Shared fixture for wave-193 optimal-control canon — double-integrator (SYNTHETIC)
 plant (position+velocity, force input) with quadratic stage cost;
 reference-tracking eval vs a PD-controller baseline.
 """

@@ -1,4 +1,4 @@
-"""Thin-plate splines — 2D radial-basis surface smoothing.
+"""Thin-plate splines — 2D radial-basis surface smoothing (SYNTHETIC).
 
 Duchon (1977), Wahba (1990): the thin-plate spline interpolant is
 the minimizer of the bending energy int |d^2 f|^2 over surfaces

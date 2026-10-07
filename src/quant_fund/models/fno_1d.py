@@ -1,4 +1,4 @@
-"""Fourier Neural Operator (Li et al. 2021) — spectral convolution:
+"""Fourier Neural Operator (Li et al. 2021) — spectral convolution: (SYNTHETIC)
 RFT → keep low modes → learned complex weights → iRFT, lifted through a
 pointwise net — vs plain CNN/MLP operator baseline.
 """

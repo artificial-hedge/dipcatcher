@@ -1,4 +1,4 @@
-"""Fisher-information structured pruning (Theis et al.).
+"""Fisher-information structured pruning (Theis et al.) (SYNTHETIC).
 
 Score each hidden unit by E[(∂L/∂w)²]-weighted magnitude (Fisher);
 prune the lowest-score units. Fisher pruning retains accuracy better

@@ -1,5 +1,5 @@
 # mypy: disable-error-code="misc"
-"""Deterministic CPU N-BEATS / N-HiTS quantile heads (P2.7). Research-only.
+"""Deterministic CPU N-BEATS / N-HiTS quantile heads (P2.7). Research-only (SYNTHETIC).
 
 Direct torch implementations of N-BEATS (Oreshkin et al. 2020, doubly-residual
 stacks of MLP blocks with learned generic bases) and N-HiTS (Challu et al.

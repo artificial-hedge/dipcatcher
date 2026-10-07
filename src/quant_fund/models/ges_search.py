@@ -1,4 +1,4 @@
-"""GES — greedy equivalence search (Chickering 2002, DAG-space variant):
+"""GES — greedy equivalence search (Chickering 2002, DAG-space variant): (SYNTHETIC)
 hill-climb edge insertions/deletions/reversals scoring linear-Gaussian
 BIC locally. SHD + skeleton F1 vs correlation baseline.
 """

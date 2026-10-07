@@ -1,4 +1,4 @@
-"""Kushner Markov-chain approximation for the American-put stochastic control.
+"""Kushner Markov-chain approximation for the American-put stochastic control (SYNTHETIC).
 
 Log-price grid with trinomial transitions matched to the local first two
 moments of the GBM drift/diffusion (Kushner's local-consistency

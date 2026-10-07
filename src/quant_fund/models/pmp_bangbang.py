@@ -1,4 +1,4 @@
-"""PMP bang-bang minimum-time control: double integrator, |u|<=1,
+"""PMP bang-bang minimum-time control: double integrator, |u|<=1, (SYNTHETIC)
 minimize time to reach target. Optimal switching curve
 v = -sign(x)·sqrt(2|x|). Time to reach vs PD baseline time.
 """

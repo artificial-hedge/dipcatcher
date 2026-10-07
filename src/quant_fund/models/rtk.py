@@ -1,4 +1,4 @@
-"""RTK double-difference carrier-phase positioning.
+"""RTK double-difference carrier-phase positioning (SYNTHETIC).
 
 Single differences (rover − base) per satellite, then double
 differences against a pivot satellite remove receiver and satellite

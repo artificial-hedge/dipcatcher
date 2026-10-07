@@ -1,4 +1,4 @@
-"""Belief propagation canon: sum-product message passing on trees (exact)
+"""Belief propagation canon: sum-product message passing on trees (exact) (SYNTHETIC)
 and loopy pairwise MRFs (approximate, damping), plus Bethe free-energy
 marginals. ``bench_belief_propagation`` uses a chain (exact = forward/
 backward) and a small loopy grid where BP marginals are compared to the

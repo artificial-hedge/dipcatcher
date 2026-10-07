@@ -1,4 +1,4 @@
-"""Bradley-Terry reward model (Christiano et al. / InstructGPT).
+"""Bradley-Terry reward model (Christiano et al. / InstructGPT) (SYNTHETIC).
 
 R(x,a) = x·Ê_a fit by pairwise logistic loss on preference pairs.
 Reported: pairwise AUC vs the true reward order and top-1 hit rate —

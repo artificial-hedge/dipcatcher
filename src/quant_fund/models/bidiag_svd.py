@@ -1,4 +1,4 @@
-"""Golub–Kahan Householder bidiagonalization then small QR on the
+"""Golub–Kahan Householder bidiagonalization then small QR on the (SYNTHETIC)
 bidiagonal — top singular values of a planted-spectrum matrix vs NumPy.
 """
 

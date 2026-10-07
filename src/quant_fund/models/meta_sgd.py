@@ -1,4 +1,4 @@
-"""Meta-SGD (Li et al. 2017) — learn a per-parameter adaptive learning
+"""Meta-SGD (Li et al. 2017) — learn a per-parameter adaptive learning (SYNTHETIC)
 rate/direction vector α alongside the init: θ' = θ − α ⊙ ∇L. Query MSE
 vs fixed-LR MAML-style init.
 """

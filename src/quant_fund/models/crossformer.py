@@ -1,4 +1,4 @@
-"""CrossFormer-TS: two-stage attention over time and channel.
+"""CrossFormer-TS: two-stage attention over time and channel (SYNTHETIC).
 
 Zhang & Yan 2023 (Crossformer): segment the series into patches,
 attend first *within* time segments per channel (TSW) then *across*

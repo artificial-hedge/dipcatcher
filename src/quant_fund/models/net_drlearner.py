@@ -1,4 +1,4 @@
-"""DR-learner (Kennedy 2020) — doubly-robust pseudo-outcome regressed
+"""DR-learner (Kennedy 2020) — doubly-robust pseudo-outcome regressed (SYNTHETIC)
 by a small net: phi = (m1−m0) + (t−e)/(e(1−e))·(y−m_t). PEHE vs plugin.
 """
 

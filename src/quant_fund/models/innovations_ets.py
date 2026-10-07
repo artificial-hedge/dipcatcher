@@ -1,4 +1,4 @@
-"""Innovations state-space ETS forecasting + Theta and Croston methods.
+"""Innovations state-space ETS forecasting + Theta and Croston methods (SYNTHETIC).
 
 Hyndman, Koehler, Snyder & Grose (2002) exponential smoothing state
 space: the ETS(A,Ad,N) damped-trend model

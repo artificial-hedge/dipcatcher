@@ -1,4 +1,4 @@
-"""Design-rule check (wave 291).
+"""Design-rule check (wave 291) (SYNTHETIC).
 
 Axis-aligned rectangles per layer; DRC flags: min-width violation,
 min-spacing violation between same-layer boxes, enclosure of via by

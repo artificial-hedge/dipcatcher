@@ -1,4 +1,4 @@
-"""Fault-tree analysis: gate-level probability + minimal cut sets.
+"""Fault-tree analysis: gate-level probability + minimal cut sets (SYNTHETIC).
 
 Top-down expansion of the tree yields cut sets (AND = union of children
 cuts, OR = union of alternatives); subsumed sets are pruned to the

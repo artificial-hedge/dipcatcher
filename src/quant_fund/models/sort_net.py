@@ -1,4 +1,4 @@
-"""Differentiable soft-rank / NeuralSort-style layer (Grover et al. 2019).
+"""Differentiable soft-rank / NeuralSort-style layer (Grover et al. 2019) (SYNTHETIC).
 
 Rank via Σ_j σ((s_i−s_j)/τ) — fully differentiable, so an upstream score
 model can be trained end-to-end on a ranking loss. On the fixture the

@@ -1,4 +1,4 @@
-"""Patch-token classifier (ViT-style, Dosovitskiy 2021).
+"""Patch-token classifier (ViT-style, Dosovitskiy 2021) (SYNTHETIC).
 
 2x2 patches → linear embed → 1 transformer layer → CLS head.
 Data-limited (n=120 train): ViT vs CNN gap — ViT underperforms

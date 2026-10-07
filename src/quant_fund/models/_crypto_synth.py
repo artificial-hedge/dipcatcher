@@ -1,4 +1,4 @@
-"""Synthetic cryptography fixtures shared by the primitives canon.
+"""Synthetic cryptography fixtures shared by the primitives canon (SYNTHETIC).
 
 Small-but-real parameters: a safe prime group for DH/Pedersen, secp256k1
 field constants, and known-answer vectors for SHA-256 and the AES S-box.

@@ -1,4 +1,4 @@
-"""Edge-of-stability — Cohen et al. (2021): with step size η, sharpness
+"""Edge-of-stability — Cohen et al. (2021): with step size η, sharpness (SYNTHETIC)
 rises until ≈ 2/η then hovers. Measures sharpness trajectory vs the
 2/η threshold for GD on the regime task.
 """

@@ -1,4 +1,4 @@
-"""Epsilon-greedy exploration schedules: linear, const, 1/t decay.
+"""Epsilon-greedy exploration schedules: linear, const, 1/t decay (SYNTHETIC).
 
 Theory (Auer/Cesa-Bianchi/Fischer 2002): constant-eps keeps linear
 regret; eps_t = min(1, cK/(d^2 t)) with c tuned gets logarithmic regret.

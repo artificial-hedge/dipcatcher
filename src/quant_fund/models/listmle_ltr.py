@@ -1,4 +1,4 @@
-"""ListMLE (Xia et al. 2008) — Plackett-Luce likelihood of the ideal
+"""ListMLE (Xia et al. 2008) — Plackett-Luce likelihood of the ideal (SYNTHETIC)
 ordering: sum over positions of log-softmax on remaining suffix.
 """
 

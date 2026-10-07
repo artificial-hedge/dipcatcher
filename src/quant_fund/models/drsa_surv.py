@@ -1,4 +1,4 @@
-"""DRSA (Ren et al. 2019) — deep recurrent survival analysis: LSTM
+"""DRSA (Ren et al. 2019) — deep recurrent survival analysis: LSTM (SYNTHETIC)
 over time slices outputs per-interval event probabilities; C-index vs
 Cox.
 """

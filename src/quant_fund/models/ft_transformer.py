@@ -1,4 +1,4 @@
-"""FT-Transformer: feature-tokenized transformer for tabular alpha.
+"""FT-Transformer: feature-tokenized transformer for tabular alpha (SYNTHETIC).
 
 Gorishniy et al. 2021 (FT-Transformer): tokenize each scalar feature
 via a per-feature learned linear+ReLU embedding plus a [CLS] token;

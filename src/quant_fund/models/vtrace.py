@@ -1,4 +1,4 @@
-"""V-trace (Espeholt et al., IMPALA, 2018) — off-policy value
+"""V-trace (Espeholt et al., IMPALA, 2018) — off-policy value (SYNTHETIC)
 correction with clipped importance sampling. Recovers the n-step
 on-policy return when behaviour = target policy; corrects bias when
 they differ, with c_i clipping the trace and ρ̄ clipping pointwise

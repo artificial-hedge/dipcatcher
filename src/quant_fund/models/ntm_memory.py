@@ -1,4 +1,4 @@
-"""Neural Turing Machine-lite (Graves et al. 2014).
+"""Neural Turing Machine-lite (Graves et al. 2014) (SYNTHETIC).
 
 Content+location addressing over an external memory matrix: cosine
 content weights sharpened by γ, shifted by a convolution head, gated

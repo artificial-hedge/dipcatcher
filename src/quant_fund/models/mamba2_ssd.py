@@ -1,4 +1,4 @@
-"""Mamba-2 / SSD (Dao & Gu 2024) — scalar-per-channel selective SSM
+"""Mamba-2 / SSD (Dao & Gu 2024) — scalar-per-channel selective SSM (SYNTHETIC)
 h_t = a_t h_{t-1} + b_t x_t with b_t,c_t,a_t input-dependent (the SSD
 restricted form = attention-like dual), trained on induction recall.
 """

@@ -1,4 +1,4 @@
-"""Mini separation-logic satisfiability + entailment over finite heaps.
+"""Mini separation-logic satisfiability + entailment over finite heaps (SYNTHETIC).
 
 Formulas: ("emp",), ("mapsto", x, y-term), ("star", f, g), ("list", x),
 ("ptsto-chain", x, [y0,...,null]). Satisfaction is checked by heap

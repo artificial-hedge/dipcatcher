@@ -1,4 +1,4 @@
-"""Go-Explore-lite (Ecoffet et al. 2021): archive of (state, traj); each
+"""Go-Explore-lite (Ecoffet et al. 2021): archive of (state, traj); each (SYNTHETIC)
 phase returns to a frontier state then explores. Deterministic env so
 "return" replays actions. Metric = coverage/success vs random walk.
 """

@@ -1,4 +1,4 @@
-"""Return distribution: empirical, Gaussian, linear QR, tree quantiles."""
+"""Return distribution: empirical, Gaussian, linear QR, tree quantiles (SYNTHETIC)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Bayesian structural time series causal impact (BSTS / CausalImpact).
+"""Bayesian structural time series causal impact (BSTS / CausalImpact) (SYNTHETIC).
 
 Estimates the causal effect of a discrete intervention on a univariate
 series by forecasting its counterfactual from a pre-period structural

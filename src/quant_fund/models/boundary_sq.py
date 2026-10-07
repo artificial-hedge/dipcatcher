@@ -1,4 +1,4 @@
-"""Boundary-of-boundary is zero (wave 280).
+"""Boundary-of-boundary is zero (wave 280) (SYNTHETIC).
 
 For random flag complexes (clique complexes of random graphs), verify
 ∂_k ∘ ∂_{k+1} = 0 over GF(2) — the foundational chain-complex property.

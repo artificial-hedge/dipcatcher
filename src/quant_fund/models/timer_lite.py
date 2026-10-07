@@ -1,4 +1,4 @@
-"""Timer-lite (Liu et al. 2024) — generic TS backbone: next-token
+"""Timer-lite (Liu et al. 2024) — generic TS backbone: next-token (SYNTHETIC)
 prediction on continuous tokens via a causal transformer; the same
 weights serve any series (genericity = the contribution).
 """

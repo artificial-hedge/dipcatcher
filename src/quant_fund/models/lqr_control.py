@@ -1,4 +1,4 @@
-"""Finite-horizon LQR (Riccati recursion) on the double-integrator —
+"""Finite-horizon LQR (Riccati recursion) on the double-integrator — (SYNTHETIC)
 exact optimal controller; cost vs PD baseline.
 """
 

@@ -1,4 +1,4 @@
-"""Expert iteration (Anthony et al. 2017) — tic-tac-toe: apprentice
+"""Expert iteration (Anthony et al. 2017) — tic-tac-toe: apprentice (SYNTHETIC)
 policy net imitates a strong search expert (minimax oracle chosen as
 the expert — TTT admits exact search); self-play states are relabeled
 by the expert's argmax + outcome value. Non-loss vs oracle/random.

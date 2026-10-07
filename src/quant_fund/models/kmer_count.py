@@ -1,4 +1,4 @@
-"""k-mer spectrum: count + distinctness vs oracle."""
+"""k-mer spectrum: count + distinctness vs oracle (SYNTHETIC)."""
 
 import numpy as np
 

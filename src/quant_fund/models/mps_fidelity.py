@@ -1,4 +1,4 @@
-"""MPS round-trip fidelity: compress an arbitrary dense state to
+"""MPS round-trip fidelity: compress an arbitrary dense state to (SYNTHETIC)
 chi-bond MPS, measure retained fidelity vs chi.
 """
 

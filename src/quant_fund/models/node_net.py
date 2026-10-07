@@ -1,4 +1,4 @@
-"""NODE-lite — neural oblivious decision ensemble (Popov et al. 2020).
+"""NODE-lite — neural oblivious decision ensemble (Popov et al. 2020) (SYNTHETIC).
 
 Soft oblivious trees: all leaves share the same decision function
 per depth; differentiable routing → tabular accuracy vs MLP.

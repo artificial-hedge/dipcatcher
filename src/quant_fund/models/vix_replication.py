@@ -1,4 +1,4 @@
-"""CBOE-style variance-swap replication from an OTM option strip.
+"""CBOE-style variance-swap replication from an OTM option strip (SYNTHETIC).
 
 Carr & Madan (1998) / Demeterfi, Derman, Kamal & Zou (1999) show the fair
 strike of a variance swap is replicated by a static strip of out-of-the-money

@@ -1,4 +1,4 @@
-"""Poly1305 one-time authenticator mod 2^130-5."""
+"""Poly1305 one-time authenticator mod 2^130-5 (SYNTHETIC)."""
 
 import numpy as np
 

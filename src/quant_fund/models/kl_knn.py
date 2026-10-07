@@ -1,4 +1,4 @@
-"""kNN KL-divergence estimator (wave 285).
+"""kNN KL-divergence estimator (wave 285) (SYNTHETIC).
 
 Perez-Cruz / Wang style estimator D(P||Q) ~ (d/n) sum log(nu_i/rho_i) +
 log(m/(n-1)) with nu,rho kNN distances under each sample. Validated on

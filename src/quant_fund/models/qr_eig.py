@@ -1,4 +1,4 @@
-"""Unshifted + Wilkinson-shifted QR algorithm on a Hessenberg form —
+"""Unshifted + Wilkinson-shifted QR algorithm on a Hessenberg form — (SYNTHETIC)
 full nonsymmetric-spectrum recovery vs planted eigenvalues.
 """
 

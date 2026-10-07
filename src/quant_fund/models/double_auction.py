@@ -1,4 +1,4 @@
-"""k-double auction clearing on a planted order book.
+"""k-double auction clearing on a planted order book (SYNTHETIC).
 
 Buy bids sorted desc, sell asks sorted asc; the k-double auction sets
 price p = k*best_bid + (1-k)*best_ask at the crossing point. Bench:

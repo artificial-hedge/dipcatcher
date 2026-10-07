@@ -1,4 +1,4 @@
-"""Conditional normalizing-flow regression — affine-coupling flow on y
+"""Conditional normalizing-flow regression — affine-coupling flow on y (SYNTHETIC)
 conditioned on x (RealNVP-style, 1-D y): base N(0,1), condition net emits
 log-scale/shift per coupling. Test log-density vs Gaussian baseline.
 """

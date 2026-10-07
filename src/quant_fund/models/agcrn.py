@@ -1,4 +1,4 @@
-"""AGCRN (Bai et al. 2020) — adaptive graph conv recurrent network:
+"""AGCRN (Bai et al. 2020) — adaptive graph conv recurrent network: (SYNTHETIC)
 node-embedding-generated adjacency inside a GRU (no fixed A needed).
 Next-step MSE vs DCRNN-style fixed-A ablation.
 """

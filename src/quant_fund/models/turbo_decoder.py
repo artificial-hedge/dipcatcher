@@ -1,4 +1,4 @@
-"""Turbo decoder: parallel concatenated RSC (1,5/7) + BCJR iterations.
+"""Turbo decoder: parallel concatenated RSC (1,5/7) + BCJR iterations (SYNTHETIC).
 
 Encoder: feedback v = u ^ s1 ^ s2 (poly 7), parity = v ^ s2 (poly 5).
 Two component decoders exchange extrinsic LLRs through an interleaver;

@@ -1,4 +1,4 @@
-"""Proper tail calls via trampolining — deep mutual recursion without stack growth."""
+"""Proper tail calls via trampolining — deep mutual recursion without stack growth (SYNTHETIC)."""
 
 import numpy as np
 

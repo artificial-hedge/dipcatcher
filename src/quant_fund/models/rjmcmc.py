@@ -1,4 +1,4 @@
-"""RJMCMC (Green 1995): reversible-jump moves between a 1-component and
+"""RJMCMC (Green 1995): reversible-jump moves between a 1-component and (SYNTHETIC)
 2-component Gaussian-mixture fit to bimodal data; posterior model
 probabilities should favor the truth (k=2 on bimodal, k=1 on unimodal).
 """

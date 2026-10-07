@@ -1,4 +1,4 @@
-"""Metropolis-adjusted and unadjusted Langevin Monte Carlo.
+"""Metropolis-adjusted and unadjusted Langevin Monte Carlo (SYNTHETIC).
 
 Roberts & Tweedie (1996): the Langevin diffusion
 

@@ -1,4 +1,4 @@
-"""Bounded model checking by unrolling (synthetic).
+"""Bounded model checking by unrolling (synthetic) (SYNTHETIC).
 
 Unrolls the transition relation to depth k on a finite-state system
 and searches every trajectory for a violation of the safety

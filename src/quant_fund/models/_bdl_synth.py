@@ -1,4 +1,4 @@
-"""Shared Bayesian-DL fixture: heteroscedastic regression + a held-out
+"""Shared Bayesian-DL fixture: heteroscedastic regression + a held-out (SYNTHETIC)
 OOD region (|x|>2.5 not in training). Score: NLL/coverage on test + OOD
 uncertainty gap (var at OOD vs ID — higher is better).
 """

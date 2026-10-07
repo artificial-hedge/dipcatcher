@@ -1,4 +1,4 @@
-"""RSSM-lite recurrent state-space world model (Hafner et al. 2019).
+"""RSSM-lite recurrent state-space world model (Hafner et al. 2019) (SYNTHETIC).
 
 Deterministic GRU state + stochastic latent z learned by ELBO on the
 controlled-oscillator fixture; latent rollout quality measured by

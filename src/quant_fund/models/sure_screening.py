@@ -1,4 +1,4 @@
-"""Sure independence screening (Fan & Lv 2008) — ultra-high-
+"""Sure independence screening (Fan & Lv 2008) — ultra-high- (SYNTHETIC)
 dimensional feature reduction for p >> n.
 
 SIS ranks predictors by the magnitude of their marginal correlation

@@ -1,4 +1,4 @@
-"""0/1 knapsack exact DP vs greedy density heuristic — optimal-value
+"""0/1 knapsack exact DP vs greedy density heuristic — optimal-value (SYNTHETIC)
 recovery and greedy gap on random instances.
 """
 

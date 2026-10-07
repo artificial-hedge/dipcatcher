@@ -1,4 +1,4 @@
-"""C51 categorical distributional DQN (Bellemare et al. 2017).
+"""C51 categorical distributional DQN (Bellemare et al. 2017) (SYNTHETIC).
 
 Q-value distribution over a fixed 51-atom support; Bellman projection onto
 the categorical atoms. On the risk-sensitive env the CVaR-optimal action is

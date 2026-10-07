@@ -1,4 +1,4 @@
-"""PKCS#7 padding validation for CBC-mode decryption oracle."""
+"""PKCS#7 padding validation for CBC-mode decryption oracle (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""SIMT branch divergence: reconvergence-stack executor vs serial oracle."""
+"""SIMT branch divergence: reconvergence-stack executor vs serial oracle (SYNTHETIC)."""
 
 import numpy as np
 

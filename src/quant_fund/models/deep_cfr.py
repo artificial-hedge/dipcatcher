@@ -1,4 +1,4 @@
-"""Deep CFR / strategy amortization (Brown et al. 2019 adapted) —
+"""Deep CFR / strategy amortization (Brown et al. 2019 adapted) — (SYNTHETIC)
 tabular outcome CFR generates counterfactual-value + average-strategy
 targets on Kuhn; policy nets are trained to amortize both. Reports the
 exploitability of the net policy vs its tabular teacher — the

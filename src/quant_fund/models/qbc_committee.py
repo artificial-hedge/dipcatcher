@@ -1,4 +1,4 @@
-"""Query-by-committee (Seung-Opper-Sompolinsky 1992) — bootstrap
+"""Query-by-committee (Seung-Opper-Sompolinsky 1992) — bootstrap (SYNTHETIC)
 committee of logreg models; query points of maximum vote entropy
 (disagreement). Accuracy vs random baseline.
 """

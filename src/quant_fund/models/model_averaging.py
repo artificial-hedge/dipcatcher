@@ -1,4 +1,4 @@
-"""Mallows model averaging (MMA) — Hansen's weight choice.
+"""Mallows model averaging (MMA) — Hansen's weight choice (SYNTHETIC).
 
 Nested candidate least-squares models are combined with weights
 on the unit simplex minimizing the Mallows criterion

@@ -1,4 +1,4 @@
-"""Numerical QuEST spectrum estimation and nonlinear covariance shrinkage.
+"""Numerical QuEST spectrum estimation and nonlinear covariance shrinkage (SYNTHETIC).
 
 Ledoit & Wolf (2015) "Spectrum estimation: a unified framework for
 covariance matrix estimation and PCA in large dimensions" (JMVA 139) and

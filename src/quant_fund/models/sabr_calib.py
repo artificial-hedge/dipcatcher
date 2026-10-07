@@ -1,4 +1,4 @@
-"""SABR calibration: fit (alpha, beta, rho, nu) to a synthetic smile
+"""SABR calibration: fit (alpha, beta, rho, nu) to a synthetic smile (SYNTHETIC)
 by matching Hagan lognormal-IV quotes; bench recovers parameters on
 a known-parameter surface via least squares on IV.
 """

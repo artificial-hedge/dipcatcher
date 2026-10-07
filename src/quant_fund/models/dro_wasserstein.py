@@ -1,4 +1,4 @@
-"""Wasserstein distributionally-robust newsvendor.
+"""Wasserstein distributionally-robust newsvendor (SYNTHETIC).
 
 DRO: min_x sup_{P: W(P,P_hat)<=rho} E_P[loss(x,D)] over the empirical
 sample distribution; solved by enumerating the worst-case over small

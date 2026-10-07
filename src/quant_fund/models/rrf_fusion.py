@@ -1,4 +1,4 @@
-"""Reciprocal rank fusion (Cormack et al. 2009).
+"""Reciprocal rank fusion (Cormack et al. 2009) (SYNTHETIC).
 
 score(d) = Σ_l 1/(k + rank_l(d)) — fuses BM25 and dense rankings with no
 tuned weights. On the synonym corpus fusion beats either single list.

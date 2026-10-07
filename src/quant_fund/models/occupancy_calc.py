@@ -1,4 +1,4 @@
-"""Kernel occupancy: threads-per-SM bound by regs, shared mem, block limits."""
+"""Kernel occupancy: threads-per-SM bound by regs, shared mem, block limits (SYNTHETIC)."""
 
 import numpy as np
 

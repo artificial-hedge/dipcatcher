@@ -1,4 +1,4 @@
-"""QAOA (Farhi 2014) p=1 MaxCut on a 4-qubit random graph — statevector
+"""QAOA (Farhi 2014) p=1 MaxCut on a 4-qubit random graph — statevector (SYNTHETIC)
 sim, expected cut vs optimal and vs random uniform sampling.
 """
 

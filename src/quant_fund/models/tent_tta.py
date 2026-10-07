@@ -1,4 +1,4 @@
-"""Tent test-time entropy minimization (Wang et al. 2021).
+"""Tent test-time entropy minimization (Wang et al. 2021) (SYNTHETIC).
 
 At test time only affine scale/shift parameters update by minimizing
 prediction entropy on unlabeled shifted data — recovers accuracy lost to

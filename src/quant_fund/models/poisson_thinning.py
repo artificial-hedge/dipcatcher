@@ -1,4 +1,4 @@
-"""Lewis–Shedler thinning for an inhomogeneous Poisson process:
+"""Lewis–Shedler thinning for an inhomogeneous Poisson process: (SYNTHETIC)
 rate λ(t) = a + b·sin(2πt). Thinned event times should match the
 theoretical intensity profile; flat-homogeneous sampler baseline.
 """

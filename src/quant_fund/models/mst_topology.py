@@ -1,4 +1,4 @@
-"""Minimum-spanning-tree and planar-filtered network topology.
+"""Minimum-spanning-tree and planar-filtered network topology (SYNTHETIC).
 
 Mantegna (1999): pairwise distances d_ij = sqrt(2(1 - rho_ij))
 on a correlation matrix span a minimum spanning tree whose

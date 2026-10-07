@@ -1,4 +1,4 @@
-"""Encrypt-then-MAC AEAD toy: CTR-XOR keystream + HMAC over (nonce, ct, ad)."""
+"""Encrypt-then-MAC AEAD toy: CTR-XOR keystream + HMAC over (nonce, ct, ad) (SYNTHETIC)."""
 
 import hashlib
 import hmac as _hmac

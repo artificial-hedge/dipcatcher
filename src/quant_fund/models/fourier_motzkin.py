@@ -1,4 +1,4 @@
-"""Fourier–Motzkin elimination over Q.
+"""Fourier–Motzkin elimination over Q (SYNTHETIC).
 
 A constraint system is a list of rows (a, b) meaning a·x <= b with
 exact Fraction arithmetic. eliminate(var) produces the projection onto

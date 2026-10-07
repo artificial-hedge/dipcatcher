@@ -1,4 +1,4 @@
-"""Particle Gibbs for state-space models (Andrieu, Doucet & Holenstein 2010).
+"""Particle Gibbs for state-space models (Andrieu, Doucet & Holenstein 2010) (SYNTHETIC).
 
 Particle Gibbs is a Gibbs sampler over the joint posterior
 p(theta, x_{0:T} | y_{0:T}) that alternates:

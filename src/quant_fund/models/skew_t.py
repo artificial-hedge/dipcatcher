@@ -1,4 +1,4 @@
-"""Hansen (1994) skewed Student-t distribution.
+"""Hansen (1994) skewed Student-t distribution (SYNTHETIC).
 
 Hansen's standardised skew-t has zero mean, unit variance, degrees of freedom
 ``nu > 2`` and skewness ``lambda in (-1, 1)``.  With

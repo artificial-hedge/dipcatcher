@@ -1,4 +1,4 @@
-"""R-learner (Nie & Wager 2021) — Robinson residual-on-residual:
+"""R-learner (Nie & Wager 2021) — Robinson residual-on-residual: (SYNTHETIC)
 estimate m(x)=E[Y|X], e(x)=P(T=1|X), then fit tau(x) minimizing
 ((y−m) − tau·(t−e))². PEHE vs direct diff regressor.
 """

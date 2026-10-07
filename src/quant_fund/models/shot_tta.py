@@ -1,4 +1,4 @@
-"""SHOT source-hypothesis transfer (Liang et al. 2020).
+"""SHOT source-hypothesis transfer (Liang et al. 2020) (SYNTHETIC).
 
 Freeze the classifier head; adapt the backbone on unlabeled shifted data
 with information maximization (entropy + diversity terms) plus a

@@ -1,4 +1,4 @@
-"""Merton (1974) structural credit model.
+"""Merton (1974) structural credit model (SYNTHETIC).
 
 Equity is a call option on firm assets struck at face debt:
 E = V·N(d1) − D·e^{−rT}·N(d2). Inverting the two-equation

@@ -1,4 +1,4 @@
-"""Impulsive transfer planning: Hohmann and bi-elliptic delta-v."""
+"""Impulsive transfer planning: Hohmann and bi-elliptic delta-v (SYNTHETIC)."""
 
 from __future__ import annotations
 

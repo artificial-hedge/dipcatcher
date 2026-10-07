@@ -1,4 +1,4 @@
-"""PPO-style RLHF with KL-to-reference penalty.
+"""PPO-style RLHF with KL-to-reference penalty (SYNTHETIC).
 
 Policy maximizes a learned reward model's score. Without KL control
 the policy collapses onto the RM's argmax errors (reward hacking —

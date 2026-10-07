@@ -1,4 +1,4 @@
-"""Permutation / randomization inference.
+"""Permutation / randomization inference (SYNTHETIC).
 
 Fisher's exact randomization test for the sharp null of no effect —
 the assignment mechanism is the *only* distribution invoked, so the

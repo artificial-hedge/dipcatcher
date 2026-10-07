@@ -1,4 +1,4 @@
-"""Register automaton over data words: distinct-value acceptance (fresh names)."""
+"""Register automaton over data words: distinct-value acceptance (fresh names) (SYNTHETIC)."""
 
 import numpy as np
 

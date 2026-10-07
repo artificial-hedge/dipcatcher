@@ -1,4 +1,4 @@
-"""RoPE attention (Su et al. 2021) — rotary position embeddings on
+"""RoPE attention (Su et al. 2021) — rotary position embeddings on (SYNTHETIC)
 query/key blocks vs learned absolute embeddings on the induction-head
 task, evaluated at TRAIN length and at 2x length (extrapolation).
 """

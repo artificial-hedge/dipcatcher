@@ -1,4 +1,4 @@
-"""Generic retrograde WDL analysis on a finite game graph.
+"""Generic retrograde WDL analysis on a finite game graph (SYNTHETIC).
 
 Input: succ(s) -> list of successor states, terminal(s) -> +1/-1 mover
 outcome or None. The standard fixpoint: a state is won when some

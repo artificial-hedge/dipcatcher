@@ -1,4 +1,4 @@
-"""Localized kernel-weighted split CQR (Lei–Wasserman / Guan).
+"""Localized kernel-weighted split CQR (Lei–Wasserman / Guan) (SYNTHETIC).
 
 RBF weights on a PIT-safe 1-d covariate (vol). Smoother than Mondrian
 bins (ADR-009) and complementary to likelihood-ratio weighted CQR (ADR-013).

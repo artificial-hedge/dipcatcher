@@ -1,4 +1,4 @@
-"""DPR dual-encoder dense retrieval (Karpukhin et al. 2020).
+"""DPR dual-encoder dense retrieval (Karpukhin et al. 2020) (SYNTHETIC).
 
 Two encoders (mean-pooled linear maps) trained with in-batch contrastive
 loss — cosine similarity ranks the query's same-topic doc over the rest.

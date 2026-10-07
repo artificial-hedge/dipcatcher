@@ -1,4 +1,4 @@
-"""MOON (Li et al. 2021) — model-contrastive: local loss includes a
+"""MOON (Li et al. 2021) — model-contrastive: local loss includes a (SYNTHETIC)
 contrastive term pulling local representations toward the global model's
 and away from the previous local round — vs FedAvg under label skew.
 """

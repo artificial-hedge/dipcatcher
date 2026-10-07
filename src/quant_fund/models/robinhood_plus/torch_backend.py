@@ -1,4 +1,4 @@
-"""Optional torch backend that loads official Kronos weights as robinhood+.
+"""Optional torch backend that loads official Kronos weights as robinhood+ (SYNTHETIC).
 
 Torch, einops, huggingface_hub, and safetensors are the ``[nn]`` extra.
 CI does not download Hub checkpoints. ``allow_network=false`` (default) only

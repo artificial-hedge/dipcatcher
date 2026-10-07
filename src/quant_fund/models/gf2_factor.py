@@ -1,4 +1,4 @@
-"""Berlekamp factorization of GF(2) polynomials (synthetic).
+"""Berlekamp factorization of GF(2) polynomials (synthetic) (SYNTHETIC).
 
 Polynomials as bitmasks: bit i = coefficient of x^i (int arithmetic:
 XOR for add, carry-less multiply via shift-and-xor). Factors via the

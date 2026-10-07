@@ -1,4 +1,4 @@
-"""Büchi automata: lasso acceptance on ultimately-periodic words + emptiness."""
+"""Büchi automata: lasso acceptance on ultimately-periodic words + emptiness (SYNTHETIC)."""
 
 import numpy as np
 

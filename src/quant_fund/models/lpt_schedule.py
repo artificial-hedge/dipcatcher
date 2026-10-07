@@ -1,4 +1,4 @@
-"""LPT (longest-processing-time) list scheduling on identical parallel
+"""LPT (longest-processing-time) list scheduling on identical parallel (SYNTHETIC)
 machines — makespan vs lower bound max(Σp/m, p_max); ~4/3-OPT guarantee.
 """
 

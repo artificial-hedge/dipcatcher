@@ -1,4 +1,4 @@
-"""TD7-lite (Fujimoto et al. 2023) — SALE: state-action learned embedding
+"""TD7-lite (Fujimoto et al. 2023) — SALE: state-action learned embedding (SYNTHETIC)
 as critic input (encoder trained to predict reward + next-state);
 checkpoint policy averaging approximated by EMA actor. Mean reward vs
 plain critic.

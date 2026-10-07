@@ -1,4 +1,4 @@
-"""Collaborative filtering: cosine item-kNN with
+"""Collaborative filtering: cosine item-kNN with (SYNTHETIC)
 shrinkage (Sarwar 2001), ALS with weighted-λ
 regularization (Zhou et al. 2008), and a bias-augmented
 factor model (Koren's SVD++-style baseline). Synthetic

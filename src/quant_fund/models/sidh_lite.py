@@ -1,4 +1,4 @@
-"""SIDH-lite: toy supersingular isogeny Diffie-Hellman over F_p.
+"""SIDH-lite: toy supersingular isogeny Diffie-Hellman over F_p (SYNTHETIC).
 
 E: y^2 = x^3 + x over F_431 has #E = 432 = 2^4 * 3^3. Alice computes a
 2-isogeny chain E -> E/<R_A>; Bob a 3-isogeny chain E -> E/<R_B>. Shared

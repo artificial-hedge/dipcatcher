@@ -1,4 +1,4 @@
-"""ADAPT-VQE: greedy ansatz growth via gradient-ranked Pauli rotations.
+"""ADAPT-VQE: greedy ansatz growth via gradient-ranked Pauli rotations (SYNTHETIC).
 
 Pool: {e^{-i theta P}} for P in a small Pauli set. Each round evaluates
 dE/dtheta|_{0} propto <psi| [H, P] |psi>, appends the max-|gradient| operator,

@@ -1,4 +1,4 @@
-"""iTransformer: inverted-dimension transformer forecaster.
+"""iTransformer: inverted-dimension transformer forecaster (SYNTHETIC).
 
 Liu et al. 2024 (iTransformer): embed each *variate's whole history*
 as a token (not each timestep). Self-attention then mixes variates —

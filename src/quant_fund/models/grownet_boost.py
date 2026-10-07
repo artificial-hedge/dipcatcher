@@ -1,4 +1,4 @@
-"""GrowNet — gradient boosting by shallow nets (Badirli et al. 2020).
+"""GrowNet — gradient boosting by shallow nets (Badirli et al. 2020) (SYNTHETIC).
 
 Stage-k net trains on the negative gradient of the ensemble's logit
 loss; ensemble = sum of stage outputs — vs single MLP.

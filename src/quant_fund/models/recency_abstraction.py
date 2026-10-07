@@ -1,4 +1,4 @@
-"""Recency-based heap abstraction (Balakrishnan-Reps style).
+"""Recency-based heap abstraction (Balakrishnan-Reps style) (SYNTHETIC).
 
 The most recently allocated cell is modeled exactly (singleton); older
 cells merge into one summary partition. Simulates an allocator plus a

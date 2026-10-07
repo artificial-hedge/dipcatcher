@@ -1,4 +1,4 @@
-"""Radon-Nikodym derivative estimation (wave 288).
+"""Radon-Nikodym derivative estimation (wave 288) (SYNTHETIC).
 
 d mu/d nu on [0,1] where mu = Beta(2,5), nu = uniform: density ratio via
 binned-sample histogram ratio matches the beta pdf.

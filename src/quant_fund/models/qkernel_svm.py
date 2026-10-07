@@ -1,4 +1,4 @@
-"""Quantum kernel (ZZ-feature-map fidelity kernel) on 2-qubit XOR data —
+"""Quantum kernel (ZZ-feature-map fidelity kernel) on 2-qubit XOR data — (SYNTHETIC)
 kernel perceptron accuracy vs linear baseline.
 """
 

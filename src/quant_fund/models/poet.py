@@ -1,4 +1,4 @@
-"""POET covariance: Principal Orthogonal complEment Thresholding
+"""POET covariance: Principal Orthogonal complEment Thresholding (SYNTHETIC)
 (Fan, Liao & Mincheva 2013).
 
 Approximate factor model R = F Lambda' + U. Decompose the p x p

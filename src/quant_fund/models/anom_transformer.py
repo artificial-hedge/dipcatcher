@@ -1,4 +1,4 @@
-"""Anomaly-Transformer-lite (Xu et al. 2022).
+"""Anomaly-Transformer-lite (Xu et al. 2022) (SYNTHETIC).
 
 Two-branch attention: prior (fixed Gaussian kernel over positions) vs
 series (learned attention); anomaly score = KL discrepancy between the

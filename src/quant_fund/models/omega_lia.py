@@ -1,4 +1,4 @@
-"""Linear integer arithmetic via Omega-style elimination + bounded search.
+"""Linear integer arithmetic via Omega-style elimination + bounded search (SYNTHETIC).
 
 Constraints are tuples ("<=", coeffs, rhs) / ("==", coeffs, rhs) /
 (">=", coeffs, rhs) over variables x0..x_{n-1}, coefficients int. Feasibility

@@ -1,4 +1,4 @@
-"""Volatility forecasts: rolling, EWMA, GARCH, HAR-RV, trees."""
+"""Volatility forecasts: rolling, EWMA, GARCH, HAR-RV, trees (SYNTHETIC)."""
 
 from __future__ import annotations
 

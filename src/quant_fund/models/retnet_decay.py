@@ -1,4 +1,4 @@
-"""RetNet retention with exponential decay mask (Sun et al. 2023).
+"""RetNet retention with exponential decay mask (Sun et al. 2023) (SYNTHETIC).
 
 Attention scores carry a causal decay γ^{i-j} — retention keeps full
 content addressing (unlike conv scans) but discounts distant tokens.

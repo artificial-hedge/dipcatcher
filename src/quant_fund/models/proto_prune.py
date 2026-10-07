@@ -1,4 +1,4 @@
-"""Prototypicality pruning (Sorscher et al. 2022) — keep examples
+"""Prototypicality pruning (Sorscher et al. 2022) — keep examples (SYNTHETIC)
 closest to class centroids (high prototypicality) vs random; on
 label-noise data, centroid-distance is a mislabel detector.
 """

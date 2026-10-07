@@ -1,4 +1,4 @@
-"""MAF (Papamakarios et al. 2017) — masked autoregressive flow:
+"""MAF (Papamakarios et al. 2017) — masked autoregressive flow: (SYNTHETIC)
 each dim's scale/shift conditioned on previous dims (MADE-style masks).
 NLL vs Gaussian on pinwheel.
 """

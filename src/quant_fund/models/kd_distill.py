@@ -1,4 +1,4 @@
-"""Knowledge distillation (Hinton et al. 2015).
+"""Knowledge distillation (Hinton et al. 2015) (SYNTHETIC).
 
 Teacher (hidden=48) trained to convergence; a small student (h=8)
 trained on soft targets at temperature T beats the same student

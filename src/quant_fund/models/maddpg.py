@@ -1,4 +1,4 @@
-"""MADDPG (Lowe et al., 2017) — centralized-training,
+"""MADDPG (Lowe et al., 2017) — centralized-training, (SYNTHETIC)
 decentralized-execution deterministic actor-critic: each agent has
 its own actor μ_i(obs_i); the shared critic sees the joint state and
 ALL agents' actions. Continuous rendezvous on the ring.

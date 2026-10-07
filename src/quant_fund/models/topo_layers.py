@@ -1,4 +1,4 @@
-"""Kahn topological layering + longest-path oracle on DAGs."""
+"""Kahn topological layering + longest-path oracle on DAGs (SYNTHETIC)."""
 
 import numpy as np
 

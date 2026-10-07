@@ -1,4 +1,4 @@
-"""Bisimulation minimization via partition refinement (Paige–Tarjan lite).
+"""Bisimulation minimization via partition refinement (Paige–Tarjan lite) (SYNTHETIC).
 
 States with action labels; two states are bisimilar iff same labels and
 successors land in same blocks. Refine by splitting on

@@ -1,4 +1,4 @@
-"""Isomap manifold embedding via geodesic-distance MDS.
+"""Isomap manifold embedding via geodesic-distance MDS (SYNTHETIC).
 
 Tenenbaum, de Silva & Langford (2000): nonlinear dimensionality
 reduction that preserves *geodesic* (manifold) distances rather than

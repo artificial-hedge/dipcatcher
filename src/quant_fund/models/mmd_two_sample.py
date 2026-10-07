@@ -1,4 +1,4 @@
-"""MMD two-sample test (Gretton et al. 2012): unbiased U-statistic with
+"""MMD two-sample test (Gretton et al. 2012): unbiased U-statistic with (SYNTHETIC)
 median-heuristic Gaussian kernel; permutation p-value. Correctly
 accepts H0 at shift 0, rejects at shift 0.6.
 """

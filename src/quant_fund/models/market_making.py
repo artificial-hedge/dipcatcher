@@ -1,4 +1,4 @@
-"""Avellaneda-Stoikov (2008) optimal market making.
+"""Avellaneda-Stoikov (2008) optimal market making (SYNTHETIC).
 
 Midprice dS = sigma dW, exponential utility with risk aversion gamma,
 market-order arrival intensity lambda(delta) = A exp(-kappa delta).

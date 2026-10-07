@@ -1,4 +1,4 @@
-"""NTT ring arithmetic — negacyclic polynomial multiplication in Z_q[x]/(x^n+1).
+"""NTT ring arithmetic — negacyclic polynomial multiplication in Z_q[x]/(x^n+1) (SYNTHETIC).
 
 A real radix-2 Cooley-Tukey NTT over a 2n-th root of unity psi:
 evaluation at odd powers psi^(2i+1) gives the negacyclic transform;

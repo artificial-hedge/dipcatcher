@@ -1,4 +1,4 @@
-"""IAF (Kingma et al. 2016) — inverse autoregressive flow: z' = z*σ(x_<i)
+"""IAF (Kingma et al. 2016) — inverse autoregressive flow: z' = z*σ(x_<i) (SYNTHETIC)
 + μ(x_<i); sampling-parallel (vs MAF which is density-parallel). NLL vs
 Gaussian on pinwheel.
 """

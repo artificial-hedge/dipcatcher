@@ -1,4 +1,4 @@
-"""Bayesian optimization (Jones et al. 1998; Mockus 1978):
+"""Bayesian optimization (Jones et al. 1998; Mockus 1978): (SYNTHETIC)
 GP surrogate with expected-improvement, UCB, and
 probability-of-improvement acquisition over a bounded box,
 plus a random-search baseline. Synthetic bench gates regret

@@ -1,4 +1,4 @@
-"""Say-Echo-Do narrative sentiment engine (Exec-Summary NLP item).
+"""Say-Echo-Do narrative sentiment engine (Exec-Summary NLP item) (SYNTHETIC).
 Institutions issue statements ("Say"), media articles echo them
 ("Echo"), and institutions' actual positioning ("Do") covaries with
 future returns — contrarian when say and do disagree.

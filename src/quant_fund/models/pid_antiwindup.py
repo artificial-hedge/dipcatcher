@@ -1,4 +1,4 @@
-"""PID with anti-windup clamping vs naive integrator."""
+"""PID with anti-windup clamping vs naive integrator (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""Termination via affine ranking functions (synthetic).
+"""Termination via affine ranking functions (synthetic) (SYNTHETIC).
 
 For simple integer loops, synthesizes an affine ranking function
 ``R(s) = w·s + c`` such that (i) R >= 0 on all states and

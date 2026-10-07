@@ -1,4 +1,4 @@
-"""Intuitionistic vs classical logic: double-negation and Peirce checks.
+"""Intuitionistic vs classical logic: double-negation and Peirce checks (SYNTHETIC).
 
 Classical prover = intuitionistic sequent prover + excluded-middle
 branching on atoms (bounded). Validates the strictness gap: Peirce's law

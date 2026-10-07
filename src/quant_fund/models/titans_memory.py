@@ -1,4 +1,4 @@
-"""Titans neural memory (Behrouz et al. 2025) — memory is a model
+"""Titans neural memory (Behrouz et al. 2025) — memory is a model (SYNTHETIC)
 trained online by its own surprise: M_t = eta_t M_{t-1} - theta_t * grad
 on associative loss ||M^T k - v||². Momentum-style surprise writes.
 """

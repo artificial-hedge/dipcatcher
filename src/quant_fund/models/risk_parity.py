@@ -1,4 +1,4 @@
-"""Risk-parity / equal-risk-contribution portfolios.
+"""Risk-parity / equal-risk-contribution portfolios (SYNTHETIC).
 
 Roncalli (2013): the risk contribution of asset i to
 sigma(w) = sqrt(w' S w) is

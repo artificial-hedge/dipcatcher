@@ -1,4 +1,4 @@
-"""Izhikevich neuron (2003) — two-variable quadratic spiking model
+"""Izhikevich neuron (2003) — two-variable quadratic spiking model (SYNTHETIC)
 (tonic/phasic/bursting regimes); classify inputs by firing-rate
 response curve vs LIF; measures firing-rate separation between classes.
 """

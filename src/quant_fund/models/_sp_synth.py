@@ -1,4 +1,4 @@
-"""Shared fixture for wave-189 self-play/game-AI canon.
+"""Shared fixture for wave-189 self-play/game-AI canon (SYNTHETIC).
 
 Two games:
 

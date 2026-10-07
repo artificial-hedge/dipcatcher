@@ -1,4 +1,4 @@
-"""Further causal rankers from landmark cross-sectional papers.
+"""Further causal rankers from landmark cross-sectional papers (SYNTHETIC).
 
 Lettau–Pelger (RFS 2020): RP-PCA on characteristic-managed portfolios.
 Giglio–Xiu (JPE 2021 / NBER w23527): three-pass risk premia with omitted factors.

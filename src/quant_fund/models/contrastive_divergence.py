@@ -1,4 +1,4 @@
-"""Contrastive divergence (Hinton 2002) — CD-k: positive phase from
+"""Contrastive divergence (Hinton 2002) — CD-k: positive phase from (SYNTHETIC)
 data, negative phase from k-step Langevin initialized at data. EBM
 loss = E_pos - E_neg; MMD vs Gaussian baseline.
 """

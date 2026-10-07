@@ -1,4 +1,4 @@
-"""Barlow Twins redundancy reduction (Zbontar et al. 2021).
+"""Barlow Twins redundancy reduction (Zbontar et al. 2021) (SYNTHETIC).
 
 Cross-correlation of two views driven to identity — invariance on the
 diagonal, decorrelation off it. No negatives, no asymmetry tricks.

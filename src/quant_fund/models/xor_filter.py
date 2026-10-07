@@ -1,4 +1,4 @@
-"""XOR filter: static perfect-hash 3-choice filter (synthetic).
+"""XOR filter: static perfect-hash 3-choice filter (synthetic) (SYNTHETIC).
 
 Each key maps to 3 cells; fingerprint fp(x) = h2(x) & mask;
 query: fp(x) == T[h0] ⊕ T[h1] ⊕ T[h2]. Built by peeling.

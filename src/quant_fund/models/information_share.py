@@ -1,4 +1,4 @@
-"""Price discovery: Hasbrouck (1995) information shares and
+"""Price discovery: Hasbrouck (1995) information shares and (SYNTHETIC)
 Gonzalo-Granger (1995) permanent-transitory decomposition.
 
 Two cointegrated price series share a common trend. The VECM

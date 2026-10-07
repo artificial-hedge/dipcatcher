@@ -1,4 +1,4 @@
-"""Whittle index for restless bandits — two-state Markov arms
+"""Whittle index for restless bandits — two-state Markov arms (SYNTHETIC)
 (active/passive transition matrices); Whittle threshold per state;
 play top-m arms by index each step vs round-robin.
 """

@@ -1,4 +1,4 @@
-"""CATE forest distillation — fit an honest regression forest on pseudo-
+"""CATE forest distillation — fit an honest regression forest on pseudo- (SYNTHETIC)
 outcomes (DR-score style: (t−e)/(e(1−e))·(y−m) + m1−m0), then distill
 into a small gradient ensemble; PEHE vs direct ridge.
 """

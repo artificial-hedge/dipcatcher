@@ -1,4 +1,4 @@
-"""Random-search NAS baseline (Bergstra-Bengio 2012; Li-Talwalkar 2019).
+"""Random-search NAS baseline (Bergstra-Bengio 2012; Li-Talwalkar 2019) (SYNTHETIC).
 
 Uniform sampling over the arch space vs a grid that evaluates the
 same budget lexicographically — random coverage finds better archs

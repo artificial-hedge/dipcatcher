@@ -1,4 +1,4 @@
-"""MambaTS: selective-scan state-space model for time series.
+"""MambaTS: selective-scan state-space model for time series (SYNTHETIC).
 
 Gu & Dao 2024 (Mamba): a linear state-space recurrence whose
 transition/ input/ output maps are *input-dependent* (selective

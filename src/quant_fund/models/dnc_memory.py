@@ -1,4 +1,4 @@
-"""Differentiable Neural Computer-lite (Graves et al. 2016).
+"""Differentiable Neural Computer-lite (Graves et al. 2016) (SYNTHETIC).
 
 Dynamic allocation + temporal link matrix on top of content addressing:
 the write head reuses freed memory (usage tracking) and can follow

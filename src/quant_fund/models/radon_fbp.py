@@ -1,4 +1,4 @@
-"""Radon transform + filtered back-projection — tomographic reconstruction.
+"""Radon transform + filtered back-projection — tomographic reconstruction (SYNTHETIC).
 
 Forward model: sinogram(theta, s) = line integrals of the image along rays
 at angle theta, computed by rotating the image with nearest-neighbour

@@ -1,4 +1,4 @@
-"""DeepSurv (Katzman et al. 2018) — neural Cox PH: MLP risk score
+"""DeepSurv (Katzman et al. 2018) — neural Cox PH: MLP risk score (SYNTHETIC)
 trained by negative partial log-likelihood vs linear Cox PH C-index.
 """
 

@@ -1,4 +1,4 @@
-"""ML-KEM / Kyber-style KEM — module-LWE key encapsulation over R_q[x]/(x^n+1).
+"""ML-KEM / Kyber-style KEM — module-LWE key encapsulation over R_q[x]/(x^n+1) (SYNTHETIC).
 
 Kyber-512-shaped parameters (n=256, q=3329, k=2) with the Fujisaki-Okamoto
 transform: keypair -> encap -> decap shares a 32-byte key; a tampered

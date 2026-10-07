@@ -1,4 +1,4 @@
-"""Process-reward verifier (Lightman et al. 2024).
+"""Process-reward verifier (Lightman et al. 2024) (SYNTHETIC).
 
 A verifier trained on labelled intermediate states re-scores K
 sampled solution candidates by step-correctness; argmax-PRM beats

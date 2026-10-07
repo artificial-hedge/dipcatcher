@@ -1,4 +1,4 @@
-"""Derivative-free metaheuristic optimizers: simulated annealing,
+"""Derivative-free metaheuristic optimizers: simulated annealing, (SYNTHETIC)
 differential evolution, particle swarm, a simple genetic
 algorithm, and NSGA-II nondominated sorting for multiobjective
 search. Synthetic benches gate multimodal convergence."""

@@ -1,4 +1,4 @@
-"""Elliptical Slice Sampling (Murray et al. 2010) — likelihood×Gaussian
+"""Elliptical Slice Sampling (Murray et al. 2010) — likelihood×Gaussian (SYNTHETIC)
 prior posterior sampling via ellipse bracketing; no gradient needed.
 ESS + moment error vs RWM on the banana likelihood.
 """

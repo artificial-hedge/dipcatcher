@@ -1,4 +1,4 @@
-"""DeepIV-style two-stage IV (Hartford et al. 2017).
+"""DeepIV-style two-stage IV (Hartford et al. 2017) (SYNTHETIC).
 
 Stage 1: z + net → t̂; Stage 2: t̂ → y. Effect estimate vs OLS
 (confounded) — IV recovers the true causal slope 1.5.

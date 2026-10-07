@@ -1,4 +1,4 @@
-"""SwiGLU FFN (Shazeer 2020) — SwiGLU gate FFN vs plain ReLU MLP on
+"""SwiGLU FFN (Shazeer 2020) — SwiGLU gate FFN vs plain ReLU MLP on (SYNTHETIC)
 the multi-regime task: sigmoid(x @ w_r) regime-dependent labels.
 """
 

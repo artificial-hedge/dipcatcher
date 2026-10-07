@@ -1,4 +1,4 @@
-"""Temporal coding comparison — rank-order (latency) vs rate (Poisson
+"""Temporal coding comparison — rank-order (latency) vs rate (Poisson (SYNTHETIC)
 count) coding on the same classifier: information per spike (acc /
 mean spikes) favors latency coding.
 """

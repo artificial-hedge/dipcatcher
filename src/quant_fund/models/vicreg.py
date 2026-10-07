@@ -1,4 +1,4 @@
-"""VICReg variance-invariance-covariance regularization (Bardes et al. 2022).
+"""VICReg variance-invariance-covariance regularization (Bardes et al. 2022) (SYNTHETIC).
 
 Invariance term + per-dimension hinge variance + covariance penalty —
 explicit collapse prevention without negatives or stop-grad tricks.

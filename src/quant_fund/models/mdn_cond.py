@@ -1,4 +1,4 @@
-"""Mixture Density Network (Bishop 1994) — K-component Gaussian mixture
+"""Mixture Density Network (Bishop 1994) — K-component Gaussian mixture (SYNTHETIC)
 head on the multimodal fixture; test log-likelihood vs single-Gaussian
 baseline.
 """

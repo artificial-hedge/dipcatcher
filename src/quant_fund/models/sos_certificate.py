@@ -1,4 +1,4 @@
-"""Sum-of-squares certificate for a nonnegative univariate polynomial.
+"""Sum-of-squares certificate for a nonnegative univariate polynomial (SYNTHETIC).
 
 For p >= 0 on R, complex roots come in conjugate pairs; taking one
 root from each pair gives q with p = |q|^2 = Re(q)^2 + Im(q)^2 — an

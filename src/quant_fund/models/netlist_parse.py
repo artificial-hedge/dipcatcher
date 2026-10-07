@@ -1,4 +1,4 @@
-"""Netlist parser (wave 291).
+"""Netlist parser (wave 291) (SYNTHETIC).
 
 Gate-level netlist DSL: `AND a1 i1 i2 o1` lines plus `.input`/`.output`
 declarations. Returns gate DAG as (inputs, gates{name,type,fanin,fanout},

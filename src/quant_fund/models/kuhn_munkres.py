@@ -1,4 +1,4 @@
-"""Hungarian algorithm on small square costs vs exhaustive oracle."""
+"""Hungarian algorithm on small square costs vs exhaustive oracle (SYNTHETIC)."""
 
 import itertools
 

@@ -1,4 +1,4 @@
-"""NGBoost-lite: natural-gradient boosting for a Gaussian predictive distribution.
+"""NGBoost-lite: natural-gradient boosting for a Gaussian predictive distribution (SYNTHETIC).
 
 Duan, Anand, Ding, Basu, Ng & Schuler (2020, ICML, PMLR 119, pp. 2690-2700,
 "NGBoost: Natural Gradient Boosting for Probabilistic Prediction",

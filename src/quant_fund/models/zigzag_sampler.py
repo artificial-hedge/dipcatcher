@@ -1,4 +1,4 @@
-"""Zig-Zag Sampler (Bierkens et al. 2019) — coordinate-wise PDMP:
+"""Zig-Zag Sampler (Bierkens et al. 2019) — coordinate-wise PDMP: (SYNTHETIC)
 v_i ∈ {±1}, event i at rate max(0, v_i ∂_i U) flips v_i. ESS vs RWM.
 """
 

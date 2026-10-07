@@ -1,4 +1,4 @@
-"""LQR funnel estimation: quadratic region-of-attraction verification."""
+"""LQR funnel estimation: quadratic region-of-attraction verification (SYNTHETIC)."""
 
 from __future__ import annotations
 

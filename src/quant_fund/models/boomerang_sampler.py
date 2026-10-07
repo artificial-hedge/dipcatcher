@@ -1,4 +1,4 @@
-"""Boomerang Sampler (Bierkens et al. 2020) — PDMP on elliptical
+"""Boomerang Sampler (Bierkens et al. 2020) — PDMP on elliptical (SYNTHETIC)
 (rotation) dynamics: x(t)=x0 cos t + v0 sin t, bounce rate
 max(0, <v, ∇U>) via thinning. ESS vs RWM.
 """

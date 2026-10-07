@@ -1,4 +1,4 @@
-"""Single-decree Paxos consensus (synthetic).
+"""Single-decree Paxos consensus (synthetic) (SYNTHETIC).
 
 Simulates proposers/acceptors/learners over an unreliable channel:
 prepare(promise) → accept(accepted) → learn(chosen). Random message

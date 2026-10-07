@@ -1,4 +1,4 @@
-"""Graph neural network for cross-asset relations (Exec-Summary Feature 8 /
+"""Graph neural network for cross-asset relations (Exec-Summary Feature 8 / (SYNTHETIC)
 graph item). Assets are nodes; edges come from correlation + sector links.
 A 2-layer GCN with hand-coded gradients predicts next-period node returns
 conditioned on neighbors.

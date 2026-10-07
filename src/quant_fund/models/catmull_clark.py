@@ -1,4 +1,4 @@
-"""Catmull-Clark subdivision on a quad-dominant mesh.
+"""Catmull-Clark subdivision on a quad-dominant mesh (SYNTHETIC).
 
 One subdivision step: face points (vertex average), edge points
 (vertex+endpoint average), and smoothed vertices (Catmull-Clark rule

@@ -1,4 +1,4 @@
-"""ALiBi attention (Press et al. 2022) — fixed linear distance bias on
+"""ALiBi attention (Press et al. 2022) — fixed linear distance bias on (SYNTHETIC)
 attention logits (no position embeddings at all) vs learned absolute on
 the induction-head task at train length and 2x extrapolation.
 """

@@ -1,4 +1,4 @@
-"""SWA-Gaussian (Maddox et al. 2019) — diagonal posterior over the last
+"""SWA-Gaussian (Maddox et al. 2019) — diagonal posterior over the last (SYNTHETIC)
 checkpoint sequence: mean + diag std over SGD iterates at high LR; sample
 weights → predictive mean/var. NLL + OOD gap vs point MLP.
 """

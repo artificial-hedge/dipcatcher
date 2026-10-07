@@ -1,4 +1,4 @@
-"""Cross-encoder reranker.
+"""Cross-encoder reranker (SYNTHETIC).
 
 First stage (BM25+dense fusion) proposes top-20; a joint scorer over
 the query-doc token pair (concat BoW through an interaction MLP)

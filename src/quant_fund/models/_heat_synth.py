@@ -1,4 +1,4 @@
-"""Shared fixture for wave-187 scientific-ML/PDE-solver canon.
+"""Shared fixture for wave-187 scientific-ML/PDE-solver canon (SYNTHETIC).
 
 1-D heat equation u_t = (sigma²/2) u_xx on [-4,4]×[0,T] with
 Gaussian initial condition u0(x)=N(x; mu0, s0²). Analytic solution:

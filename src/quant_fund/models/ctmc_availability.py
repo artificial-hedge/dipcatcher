@@ -1,4 +1,4 @@
-"""CTMC availability of a repairable unit (2-state birth-death).
+"""CTMC availability of a repairable unit (2-state birth-death) (SYNTHETIC).
 
 Steady-state availability A = mu/(lam + mu); mean time between failures
 MTBF = 1/lam and mean downtime MDT = 1/mu. Bench: transient CTMC

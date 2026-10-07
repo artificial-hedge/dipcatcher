@@ -1,4 +1,4 @@
-"""Traceroute path discovery: TTL-expiry hop enumeration."""
+"""Traceroute path discovery: TTL-expiry hop enumeration (SYNTHETIC)."""
 
 import numpy as np
 

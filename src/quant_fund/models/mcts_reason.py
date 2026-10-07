@@ -1,4 +1,4 @@
-"""MCTS over reasoning steps (AlphaZero-style search on op chains).
+"""MCTS over reasoning steps (AlphaZero-style search on op chains) (SYNTHETIC).
 
 Nodes are partial op sequences; expansion uses the op-policy priors;
 evaluation uses the learned step-verifier on the intermediate value.

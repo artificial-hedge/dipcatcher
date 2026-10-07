@@ -1,4 +1,4 @@
-"""Replicator dynamics — evolutionary game dynamics.
+"""Replicator dynamics — evolutionary game dynamics (SYNTHETIC).
 
 ẋ_i = x_i (f_i(x) − f̄(x)): shares grow proportional to excess
 fitness. Integrates the simplex ODE; detects rest points and

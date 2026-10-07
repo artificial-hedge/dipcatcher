@@ -1,4 +1,4 @@
-"""Statistical process control — Shewhart, EWMA, CUSUM, and
+"""Statistical process control — Shewhart, EWMA, CUSUM, and (SYNTHETIC)
 capability indices.
 
 Shewhart (1931) x-bar/R and x-bar/S charts use phase-I center

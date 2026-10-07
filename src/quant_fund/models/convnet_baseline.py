@@ -1,4 +1,4 @@
-"""Small CNN baseline — locality + weight sharing.
+"""Small CNN baseline — locality + weight sharing (SYNTHETIC).
 
 3x3 conv → relu → flatten → linear, vs a permutation-invariant MLP
 on flattened pixels: the inductive-bias gap on the synth images.

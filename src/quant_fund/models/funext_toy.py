@@ -1,4 +1,4 @@
-"""Function extensionality on finite domains.
+"""Function extensionality on finite domains (SYNTHETIC).
 
 funext: (∀x. f(x) = g(x)) -> f = g. On finite domains the hypothesis is
 checked pointwise; when it holds we emit the canonical path between f

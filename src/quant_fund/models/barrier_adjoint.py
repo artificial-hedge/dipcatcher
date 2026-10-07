@@ -1,4 +1,4 @@
-"""Adjoint (backward-PDE) Greeks for a down-and-out barrier option.
+"""Adjoint (backward-PDE) Greeks for a down-and-out barrier option (SYNTHETIC).
 
 Price+Greeks on a CN grid via the backward Kolmogorov/adjoint pass:
 sensitivity to the barrier level and vol recovered in one backward

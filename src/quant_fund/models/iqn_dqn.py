@@ -1,4 +1,4 @@
-"""Implicit Quantile Network (Dabney et al. 2018).
+"""Implicit Quantile Network (Dabney et al. 2018) (SYNTHETIC).
 
 Quantile conditioned on sampled τ via a cosine embedding; risk measures
 (CVaR-α distortion) computed by reweighting sampled quantiles rather than

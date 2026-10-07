@@ -1,4 +1,4 @@
-"""Neural Spline Flow (Durkan et al. 2019) — monotonic rational-quadratic
+"""Neural Spline Flow (Durkan et al. 2019) — monotonic rational-quadratic (SYNTHETIC)
 coupling: x_b transformed by an RQ spline whose knots/slopes come from
 x_a via a small net. NLL vs Gaussian on pinwheel.
 """

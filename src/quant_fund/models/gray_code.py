@@ -1,4 +1,4 @@
-"""Binary-reflected Gray code construction + validation (wave 282).
+"""Binary-reflected Gray code construction + validation (wave 282) (SYNTHETIC).
 
 g(i) = i ^ (i >> 1): consecutive codewords differ in exactly one bit, the
 sequence is a permutation of 0..2^n-1, and it wraps around cyclically.

@@ -1,4 +1,4 @@
-"""Curriculum learning — easy→hard ordering (Bengio et al. 2009).
+"""Curriculum learning — easy→hard ordering (Bengio et al. 2009) (SYNTHETIC).
 
 Training sorted by difficulty score (distractor magnitude) vs
 anti-curriculum (hard→easy) vs shuffled: curriculum reaches higher

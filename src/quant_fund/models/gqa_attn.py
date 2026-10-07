@@ -1,4 +1,4 @@
-"""Grouped-query attention (Ainslie et al. 2023).
+"""Grouped-query attention (Ainslie et al. 2023) (SYNTHETIC).
 
 G KV heads shared across Q heads — KV cache scales with G not H. On the
 recall fixture GQA at G=2 keeps most of MHA accuracy at 1/4 the KV

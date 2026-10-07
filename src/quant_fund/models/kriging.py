@@ -1,4 +1,4 @@
-"""Ordinary kriging with fitted variogram — best linear unbiased
+"""Ordinary kriging with fitted variogram — best linear unbiased (SYNTHETIC)
 spatial prediction (Matheron; Cressie 1993).
 
 Ordinary kriging predicts z(s0) from observations z(s_i) via weights

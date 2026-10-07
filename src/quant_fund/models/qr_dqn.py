@@ -1,4 +1,4 @@
-"""Quantile-regression DQN (Dabney et al. 2018).
+"""Quantile-regression DQN (Dabney et al. 2018) (SYNTHETIC).
 
 32 quantiles trained with the Huber quantile loss; CVaR action selection on
 the learned quantile grid. Same risk-sensitive niche as C51 with a

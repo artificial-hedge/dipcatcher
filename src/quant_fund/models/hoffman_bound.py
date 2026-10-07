@@ -1,4 +1,4 @@
-"""Hoffman ratio bound on the independence number of a regular graph.
+"""Hoffman ratio bound on the independence number of a regular graph (SYNTHETIC).
 
 alpha(G) <= n * (-lambda_min) / (d - lambda_min) for d-regular G.
 Bench verifies the bound holds vs the brute-force independence number

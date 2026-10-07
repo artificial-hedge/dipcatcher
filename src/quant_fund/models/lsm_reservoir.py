@@ -1,4 +1,4 @@
-"""Liquid state machine (Maass et al. 2002) — random recurrent spiking
+"""Liquid state machine (Maass et al. 2002) — random recurrent spiking (SYNTHETIC)
 reservoir driven by encoded inputs; linear readout on reservoir state
 vs direct linear readout. Reservoir adds short-term memory.
 """

@@ -1,4 +1,4 @@
-"""ICA-LiNGAM (Shimizu et al. 2006) — linear SEM with non-Gaussian
+"""ICA-LiNGAM (Shimizu et al. 2006) — linear SEM with non-Gaussian (SYNTHETIC)
 noise: whiten, FastICA unmixing → mixing matrix → prune to DAG and
 recover a topological order. Skeleton F1 + order error vs baselines.
 """

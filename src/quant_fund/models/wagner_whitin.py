@@ -1,4 +1,4 @@
-"""Wagner–Whitin (1958) dynamic lot-sizing DP for deterministic
+"""Wagner–Whitin (1958) dynamic lot-sizing DP for deterministic (SYNTHETIC)
 time-varying demand — optimal plan cost vs naive policies.
 """
 

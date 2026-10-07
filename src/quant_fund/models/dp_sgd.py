@@ -1,4 +1,4 @@
-"""DP-SGD — per-sample gradient clipping + Gaussian noise (Abadi 2016).
+"""DP-SGD — per-sample gradient clipping + Gaussian noise (Abadi 2016) (SYNTHETIC).
 
 Trains the shared MLP with per-example gradients clipped to C and
 Gaussian noise σ·C added to the batch gradient — the privacy-utility

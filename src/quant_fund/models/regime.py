@@ -1,4 +1,4 @@
-"""Probabilistic regime inference. States are unlabeled at fit time."""
+"""Probabilistic regime inference. States are unlabeled at fit time (SYNTHETIC)."""
 
 from __future__ import annotations
 

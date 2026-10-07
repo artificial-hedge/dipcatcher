@@ -1,4 +1,4 @@
-"""Craig-interpolation bounded model checking (McMillan 2003 skeleton).
+"""Craig-interpolation bounded model checking (McMillan 2003 skeleton) (SYNTHETIC).
 
 Over a bounded-int transition system, BMC unrollings that violate the
 property are generalized by an interpolant computed as the reachable-set

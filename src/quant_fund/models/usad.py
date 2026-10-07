@@ -1,4 +1,4 @@
-"""USAD (Audibert et al. 2020) — autoencoder with two decoders trained
+"""USAD (Audibert et al. 2020) — autoencoder with two decoders trained (SYNTHETIC)
 adversarially (D1 reconstructs honestly, D2 fools D1); score = recon error
 + mutual-discrepancy weight — vs single AE.
 """

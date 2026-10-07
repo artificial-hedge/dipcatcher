@@ -1,4 +1,4 @@
-"""LambdaRank-lite (Burges 2006) — pairwise BCE reweighted by |ΔNDCG|
+"""LambdaRank-lite (Burges 2006) — pairwise BCE reweighted by |ΔNDCG| (SYNTHETIC)
 of swapping the pair, the canonical lambda weighting.
 """
 

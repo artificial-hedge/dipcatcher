@@ -1,4 +1,4 @@
-"""Multifractal detrended fluctuation analysis (Kantelhardt et al. 2002).
+"""Multifractal detrended fluctuation analysis (Kantelhardt et al. 2002) (SYNTHETIC).
 
 MF-DFA generalizes DFA to q-th order fluctuation functions:
   profile Y(i) = sum_{k<=i} (x_k - mean x); per scale s, fit a local

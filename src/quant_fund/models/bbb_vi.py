@@ -1,4 +1,4 @@
-"""Bayes-by-Backprop (Blundell et al. 2015) — diagonal Gaussian posterior
+"""Bayes-by-Backprop (Blundell et al. 2015) — diagonal Gaussian posterior (SYNTHETIC)
 over ALL weights; ELBO = E_q[NLL] - KL(q||N(0,1)); local reparam.
 Predictive var = weight-uncertainty spread. NLL + OOD gap.
 """

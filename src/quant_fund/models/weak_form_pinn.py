@@ -1,4 +1,4 @@
-"""Weak-form / variational PINN (Kharazmi et al. 2019) — test-function
+"""Weak-form / variational PINN (Kharazmi et al. 2019) — test-function (SYNTHETIC)
 weighted residual ∫r·v instead of pointwise residual; variance-reduced,
 L2 error vs analytic.
 """

@@ -1,4 +1,4 @@
-"""Periodic-beacon detection (defensive) — wave 286.
+"""Periodic-beacon detection (defensive) — wave 286 (SYNTHETIC).
 
 FFT over binned connection-count series reveals a period spike for
 beacon traffic vs aperiodic human-like arrivals.

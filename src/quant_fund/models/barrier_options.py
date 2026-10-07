@@ -1,4 +1,4 @@
-"""Reiner-Rubinstein (1991) closed-form barrier options.
+"""Reiner-Rubinstein (1991) closed-form barrier options (SYNTHETIC).
 
 All eight single-barrier European types under Black-Scholes
 via the standard six-term decomposition (a,b,c,d,e,f) with

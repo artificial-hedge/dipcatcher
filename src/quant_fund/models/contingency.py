@@ -1,4 +1,4 @@
-"""Contingency-table inference — Fisher exact, McNemar, CMH, effect sizes.
+"""Contingency-table inference — Fisher exact, McNemar, CMH, effect sizes (SYNTHETIC).
 
 Fisher (1922), McNemar (1947), Cochran-Mantel-Haenszel (1954/1959):
 for 2x2 and stratified tables the exact/conditional tests avoid the

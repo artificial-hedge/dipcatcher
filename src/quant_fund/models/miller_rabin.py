@@ -1,4 +1,4 @@
-"""Miller-Rabin primality testing (synthetic).
+"""Miller-Rabin primality testing (synthetic) (SYNTHETIC).
 
 Deterministic MR for 64-bit integers using the known small-witness
 set {2,3,5,7,11,13,17,19,23,29,31,37}; probabilistic MR with random

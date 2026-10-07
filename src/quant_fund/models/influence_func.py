@@ -1,4 +1,4 @@
-"""Influence functions (Koh & Liang 2017) — first-order logistic
+"""Influence functions (Koh & Liang 2017) — first-order logistic (SYNTHETIC)
 influence approx via HVP-less diagonal-Hessian estimate; flag most
 harmful points (highest negative influence on test loss) and measure
 mislabel-detection AUC.

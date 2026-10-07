@@ -1,4 +1,4 @@
-"""Test-time training layer (Sun et al. 2020).
+"""Test-time training layer (Sun et al. 2020) (SYNTHETIC).
 
 A self-supervised auxiliary rotation task trains a head jointly with the
 main classifier; at test time the model re-adapts to each unlabeled batch

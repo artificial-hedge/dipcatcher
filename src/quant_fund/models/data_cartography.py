@@ -1,4 +1,4 @@
-"""Dataset cartography (Swayamdipta et al. 2020) — confidence &
+"""Dataset cartography (Swayamdipta et al. 2020) — confidence & (SYNTHETIC)
 variability map across checkpoint epochs; splits data into
 easy/ambiguous/hard regions and reports per-region accuracy and the
 ambiguous-fraction data-point score.

@@ -1,4 +1,4 @@
-"""WSPT (weighted shortest processing time, Smith 1956): optimal
+"""WSPT (weighted shortest processing time, Smith 1956): optimal (SYNTHETIC)
 single-machine Σw_jC_j sequencing by p_j/w_j order vs FIFO/random.
 """
 

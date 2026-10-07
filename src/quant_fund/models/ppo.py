@@ -1,4 +1,4 @@
-"""Proximal Policy Optimization (Schulman et al., 2017) — clipped
+"""Proximal Policy Optimization (Schulman et al., 2017) — clipped (SYNTHETIC)
 surrogate objective L^CLIP = min(r·Â, clip(r)·Â) and a minibatch
 gradient update on a softmax bandit policy.
 """

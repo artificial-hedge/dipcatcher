@@ -1,4 +1,4 @@
-"""Smith predictor: dead-time compensation vs uncompensated PI."""
+"""Smith predictor: dead-time compensation vs uncompensated PI (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""Hierarchical risk parity — Lopez de Prado (2016) allocation.
+"""Hierarchical risk parity — Lopez de Prado (2016) allocation (SYNTHETIC).
 
 HRP avoids inverting the covariance matrix: it clusters assets on
 the correlation distance d_ij = sqrt(0.5 (1 - corr_ij)), quasi-

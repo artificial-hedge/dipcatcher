@@ -1,4 +1,4 @@
-"""Inverse iteration with shift: targets interior eigenpairs by solving
+"""Inverse iteration with shift: targets interior eigenpairs by solving (SYNTHETIC)
 (A - mu I)^-1 power steps — recovers an eigenvalue the plain power
 method can't reach.
 """

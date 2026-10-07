@@ -1,4 +1,4 @@
-"""Deep BSDE solver (Han-Jentzen-E 2018) — heat equation via
+"""Deep BSDE solver (Han-Jentzen-E 2018) — heat equation via (SYNTHETIC)
 forward-backward SDE: u(T,x) = E[u0(x + σ√T·Z)]; a network learns the
 spatial gradient to walk u backward; L2 error vs analytic.
 """

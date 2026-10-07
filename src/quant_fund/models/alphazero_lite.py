@@ -1,4 +1,4 @@
-"""AlphaZero-lite (Silver et al. 2018) — tic-tac-toe self-play:
+"""AlphaZero-lite (Silver et al. 2018) — tic-tac-toe self-play: (SYNTHETIC)
 policy/value nets guide PUCT MCTS; visit distributions become the
 training signal; terminal outcome the value target. Non-loss rate vs
 the minimax oracle and vs random.

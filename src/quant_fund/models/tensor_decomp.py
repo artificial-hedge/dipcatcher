@@ -1,4 +1,4 @@
-"""Multilinear tensor factor analysis: CP/ALS, Tucker/HOOI, core consistency.
+"""Multilinear tensor factor analysis: CP/ALS, Tucker/HOOI, core consistency (SYNTHETIC).
 
 Implements the classical polyadic (CP) decomposition via alternating
 least squares (Harshman 1970) and the Tucker model via higher-order

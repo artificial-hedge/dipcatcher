@@ -1,4 +1,4 @@
-"""Well-tempered metadynamics on a double-well potential.
+"""Well-tempered metadynamics on a double-well potential (SYNTHETIC).
 
 Plain MH dynamics on V(x) + V_bias(x) where V_bias is a sum of
 Gaussian hills deposited at the current position every `rate` steps.

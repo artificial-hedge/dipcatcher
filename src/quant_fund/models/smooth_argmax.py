@@ -1,4 +1,4 @@
-"""Smooth-argmax / soft-k-argmax — softmax-weighted aggregation as a
+"""Smooth-argmax / soft-k-argmax — softmax-weighted aggregation as a (SYNTHETIC)
 differentiable argmax proxy; temperature sweep vs hard-argmax on the
 selection task.
 """

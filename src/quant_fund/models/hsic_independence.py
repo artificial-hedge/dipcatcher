@@ -1,4 +1,4 @@
-"""HSIC independence test (Gretton et al. 2005): centered kernel
+"""HSIC independence test (Gretton et al. 2005): centered kernel (SYNTHETIC)
 cross-covariance HSIC + gamma-approx/permutation p-value on dep/indep/
 nonlinear synthetic pairs.
 """

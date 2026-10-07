@@ -1,4 +1,4 @@
-"""Gittins index (calibration-family): compute per-arm Gittins indices
+"""Gittins index (calibration-family): compute per-arm Gittins indices (SYNTHETIC)
 for Bernoulli bandits via the calibration/binary-search formulation
 on the underlying MDP; play argmax index. Regret vs UCB1.
 """

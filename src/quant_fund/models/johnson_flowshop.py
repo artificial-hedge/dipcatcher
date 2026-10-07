@@ -1,4 +1,4 @@
-"""Johnson's rule (1954): optimal 2-machine flow-shop sequencing.
+"""Johnson's rule (1954): optimal 2-machine flow-shop sequencing (SYNTHETIC).
 Makespan vs random-order + SPT baselines; certified by exhaustive check
 on small instances.
 """

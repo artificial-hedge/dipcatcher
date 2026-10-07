@@ -1,4 +1,4 @@
-"""Randomized SVD canon (Halko, Martinsson & Tropp 2011):
+"""Randomized SVD canon (Halko, Martinsson & Tropp 2011): (SYNTHETIC)
 Gaussian range sketching with power iterations to capture
 the dominant singular subspace, compared against exact
 truncated SVD error on a synthetic low-rank+noise matrix.

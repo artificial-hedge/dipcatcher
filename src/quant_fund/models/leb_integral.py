@@ -1,4 +1,4 @@
-"""Lebesgue integral via level-set (simple-function) approximation (wave 288).
+"""Lebesgue integral via level-set (simple-function) approximation (wave 288) (SYNTHETIC).
 
 Integral of monotone f on [0,1] by partitioning the RANGE (Lebesgue)
 matches the Riemann rectangle integral for continuous f.

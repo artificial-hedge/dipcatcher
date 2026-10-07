@@ -1,4 +1,4 @@
-"""Sharpness-aware minimization (Foret et al. 2021).
+"""Sharpness-aware minimization (Foret et al. 2021) (SYNTHETIC).
 
 SAM's two-step (adversarial ascent then descent) finds flatter minima;
 on a shifted test set the SAM model generalizes better than plain SGD —

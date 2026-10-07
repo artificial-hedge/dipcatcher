@@ -1,4 +1,4 @@
-"""Michael-Scott lock-free queue simulator + linearizability oracle."""
+"""Michael-Scott lock-free queue simulator + linearizability oracle (SYNTHETIC)."""
 
 import numpy as np
 

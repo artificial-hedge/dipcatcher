@@ -1,4 +1,4 @@
-"""Grace hash join: spill partitions to 'disk' (lists) when build > budget."""
+"""Grace hash join: spill partitions to 'disk' (lists) when build > budget (SYNTHETIC)."""
 
 import numpy as np
 

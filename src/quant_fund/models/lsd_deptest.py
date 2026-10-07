@@ -1,4 +1,4 @@
-"""LSD-lite (least-squares dependence, Yamada & Sugiyama 2013 family):
+"""LSD-lite (least-squares dependence, Yamada & Sugiyama 2013 family): (SYNTHETIC)
 pointwise L2 between the kernel joint density and the product of
 kernel marginals, permutation p-value. Torch-free.
 """

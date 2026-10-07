@@ -1,4 +1,4 @@
-"""Multiplicative-weights (Hedge) regret vs the halving bound.
+"""Multiplicative-weights (Hedge) regret vs the halving bound (SYNTHETIC).
 
 Hedge with eta = sqrt(ln K / T) achieves E-regret <= 2 sqrt(T ln K).
 Bench: simulated Hedge loss vs best fixed expert, regret curve vs the

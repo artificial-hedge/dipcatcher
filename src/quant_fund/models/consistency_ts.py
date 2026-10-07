@@ -1,4 +1,4 @@
-"""Consistency model for few-step TS generation.
+"""Consistency model for few-step TS generation (SYNTHETIC).
 
 Song et al. 2023: train a single network to map any point on the
 PF-ODE trajectory to its endpoint — generate in 1-2 steps instead of

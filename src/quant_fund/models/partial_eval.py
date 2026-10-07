@@ -1,4 +1,4 @@
-"""Partial evaluation: specialize a tiny expression on known inputs."""
+"""Partial evaluation: specialize a tiny expression on known inputs (SYNTHETIC)."""
 
 import numpy as np
 

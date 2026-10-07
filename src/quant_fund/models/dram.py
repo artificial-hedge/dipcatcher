@@ -1,4 +1,4 @@
-"""DRAM (Haario et al. 2006): delayed-rejection adaptive Metropolis —
+"""DRAM (Haario et al. 2006): delayed-rejection adaptive Metropolis — (SYNTHETIC)
 rejected proposals get a second-stage smaller proposal; covariance
 adapts online. Better ESS than plain RWM at same budget.
 """

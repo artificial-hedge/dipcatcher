@@ -1,4 +1,4 @@
-"""FGMRES: flexible GMRES with variable preconditioner."""
+"""FGMRES: flexible GMRES with variable preconditioner (SYNTHETIC)."""
 
 import numpy as np
 

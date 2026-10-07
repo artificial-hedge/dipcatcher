@@ -1,4 +1,4 @@
-"""Implied binomial tree smile calibration (Derman–Kani / Rubinstein).
+"""Implied binomial tree smile calibration (Derman–Kani / Rubinstein) (SYNTHETIC).
 
 Builds a recombining binomial lattice whose Arrow–Debreu prices reproduce
 an observed expiry smile: at each level the next node prices are solved so

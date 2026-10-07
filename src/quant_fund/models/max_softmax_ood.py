@@ -1,4 +1,4 @@
-"""Max-softmax-probability OOD baseline + ODIN input perturbation.
+"""Max-softmax-probability OOD baseline + ODIN input perturbation (SYNTHETIC).
 
 Hendrycks & Gimpel 2017 (MSP) / Liang et al. 2018 (ODIN): the max
 softmax probability is the simplest OOD signal; ODIN adds a small

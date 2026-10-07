@@ -1,4 +1,4 @@
-"""Monotonic-by-construction network (min-max lattice-style).
+"""Monotonic-by-construction network (min-max lattice-style) (SYNTHETIC).
 
 Outputs are a min over max-pools of affine terms with positive weights
 (Daniels & Velikova style) — monotone in x by construction; a plain MLP

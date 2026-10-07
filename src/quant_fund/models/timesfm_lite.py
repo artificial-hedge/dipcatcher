@@ -1,4 +1,4 @@
-"""TimesFM-lite (Das et al. 2024) — patchify the context into patches of
+"""TimesFM-lite (Das et al. 2024) — patchify the context into patches of (SYNTHETIC)
 p, decoder over patches predicts next patch; quantile head.
 """
 

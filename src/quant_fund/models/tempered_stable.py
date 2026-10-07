@@ -1,4 +1,4 @@
-"""CGMY (tempered stable) Levy process.
+"""CGMY (tempered stable) Levy process (SYNTHETIC).
 
 Carr, Geman, Madan & Yor (2002) generalise the Variance-Gamma process with a
 tail index ``Y``.  Its characteristic exponent (for unit time) is

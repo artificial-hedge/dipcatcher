@@ -1,4 +1,4 @@
-"""PINO-lite (Li et al. 2021) — FNO trained with a physics residual:
+"""PINO-lite (Li et al. 2021) — FNO trained with a physics residual: (SYNTHETIC)
 data loss + λ‖-∂²û − a‖ where ∂² uses central differences — the
 physics penalty should cut error at small data budgets vs data-only.
 """

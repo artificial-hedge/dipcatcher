@@ -1,4 +1,4 @@
-"""GP bridge / conditional GP path: posterior conditioned on anchor
+"""GP bridge / conditional GP path: posterior conditioned on anchor (SYNTHETIC)
 observations; uncertainty collapses at anchors and balloons mid-gap —
 vs unconditional GP draw.
 """

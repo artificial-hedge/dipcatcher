@@ -1,4 +1,4 @@
-"""Isotonic regression — pool-adjacent-violators monotone fitting.
+"""Isotonic regression — pool-adjacent-violators monotone fitting (SYNTHETIC).
 
 Barlow, Bartholomew, Bremner & Brunk (1972): the L2-isotonic
 regression of y on a (totally ordered) x solves

@@ -1,4 +1,4 @@
-"""Optional robinhood+ research bench. Proper scores only — no Sharpe."""
+"""Optional robinhood+ research bench. Proper scores only — no Sharpe (SYNTHETIC)."""
 
 from __future__ import annotations
 

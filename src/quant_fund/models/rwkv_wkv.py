@@ -1,4 +1,4 @@
-"""RWKV WKV recurrent attention (Peng et al. 2023).
+"""RWKV WKV recurrent attention (Peng et al. 2023) (SYNTHETIC).
 
 y_t = σ(r_t) ⊙ Σ_i e^{-(t-i)γ} k_i v_i / Σ_i e^{-(t-i)γ} k_i — a linear
 recurrence that can do content routing through learned k/r. On the

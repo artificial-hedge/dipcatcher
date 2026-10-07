@@ -1,4 +1,4 @@
-"""Corruption-tolerant bandit (Bogunovic et al. 2021) — trimmed-mean /
+"""Corruption-tolerant bandit (Bogunovic et al. 2021) — trimmed-mean / (SYNTHETIC)
 median-based UCB robust to adversarial reward corruption in c fraction
 of pulls. Regret vs mean-UCB under corruption.
 """

@@ -1,4 +1,4 @@
-"""Two-stage cluster sampling — design-based total/mean with
+"""Two-stage cluster sampling — design-based total/mean with (SYNTHETIC)
 cluster-robust variance.
 
 Särndal, Swensson & Wretman (1992) ch. 4: for m sampled PSU

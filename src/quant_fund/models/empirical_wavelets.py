@@ -1,4 +1,4 @@
-"""Empirical wavelet transform (Gilles 2013).
+"""Empirical wavelet transform (Gilles 2013) (SYNTHETIC).
 
 The EWT builds an *adaptive* wavelet filter bank: segment the Fourier
 spectrum of the signal into N bands between successive local minima of

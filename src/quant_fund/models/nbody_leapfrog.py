@@ -1,4 +1,4 @@
-"""Velocity-Verlet gravitational N-body (synthetic).
+"""Velocity-Verlet gravitational N-body (synthetic) (SYNTHETIC).
 
 Newtonian gravity, softening eps, leapfrog kick-drift-kick.
 Verified: (i) total energy drift over 500 steps small vs explicit

@@ -1,4 +1,4 @@
-"""Fisher discriminant analysis: LDA on the pooled within-
+"""Fisher discriminant analysis: LDA on the pooled within- (SYNTHETIC)
 class covariance, QDA on per-class covariances with shrinkage
 (regularized DA, Friedman 1989). Synthetic bench gates
 that QDA dominates LDA when class covariances differ."""

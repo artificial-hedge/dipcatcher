@@ -1,4 +1,4 @@
-"""Classical 1-D root finders and minimizers.
+"""Classical 1-D root finders and minimizers (SYNTHETIC).
 
 Canonical references:
 

@@ -1,4 +1,4 @@
-"""CDCL SAT solver on random 3-SAT at the phase transition.
+"""CDCL SAT solver on random 3-SAT at the phase transition (SYNTHETIC).
 
 DPLL backbone + clause learning: on conflict, learn the negation of
 the current decision-level assignment subset (simple 1-UIP-flavored

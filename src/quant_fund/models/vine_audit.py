@@ -1,4 +1,4 @@
-"""Adversarial contract audit of ``quant_fund.models.pair_vine_copula``.
+"""Adversarial contract audit of ``quant_fund.models.pair_vine_copula`` (SYNTHETIC).
 
 The vine module is the deepest math surface in models/ — per-family
 pair-copula density/h/hinv functions, sequential C/D-vine fitting through a

@@ -1,4 +1,4 @@
-"""Continuous-time quantum walk on a cycle graph vs classical random
+"""Continuous-time quantum walk on a cycle graph vs classical random (SYNTHETIC)
 walk — hitting-probability at antipode after O(N) time (quadratic
 speedup signature).
 """

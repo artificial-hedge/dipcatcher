@@ -1,4 +1,4 @@
-"""Householder Hessenberg reduction: A = Q H Q^T — measures reduction
+"""Householder Hessenberg reduction: A = Q H Q^T — measures reduction (SYNTHETIC)
 fidelity (residual + subdiagonal mass) for symmetric and nonsymmetric
 matrices.
 """

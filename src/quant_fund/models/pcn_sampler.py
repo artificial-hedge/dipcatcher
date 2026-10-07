@@ -1,4 +1,4 @@
-"""Preconditioned Crank–Nicolson (Cotter et al. 2013): dimension-robust
+"""Preconditioned Crank–Nicolson (Cotter et al. 2013): dimension-robust (SYNTHETIC)
 function-space proposal u' = sqrt(1-beta²)u + beta·xi on a GP target —
 acceptance stays healthy where RWM dies as dimension grows.
 """

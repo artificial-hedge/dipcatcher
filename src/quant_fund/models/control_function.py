@@ -1,4 +1,4 @@
-"""Control-function approach to endogeneity.
+"""Control-function approach to endogeneity (SYNTHETIC).
 
 When a regressor is endogenous, the control-function approach keeps
 it in the outcome equation and adds the first-stage residual

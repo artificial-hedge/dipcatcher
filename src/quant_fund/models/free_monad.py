@@ -1,4 +1,4 @@
-"""Free monad over a functor + stack-safe interpreters.
+"""Free monad over a functor + stack-safe interpreters (SYNTHETIC).
 
 Terms: ("pure",v) | ("op",f,k) | ("bind",m,k). run folds the structure
 via an explicit continuation stack (trampolined) so arbitrarily deep

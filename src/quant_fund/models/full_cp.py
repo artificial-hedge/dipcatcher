@@ -1,4 +1,4 @@
-"""Full (transductive) conformal — refit ridge per candidate y on a
+"""Full (transductive) conformal — refit ridge per candidate y on a (SYNTHETIC)
 coarse grid and invert the p-value; tighter intervals than split
 conformal at the cost of refits. Width vs split conformal.
 """

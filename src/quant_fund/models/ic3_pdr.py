@@ -1,4 +1,4 @@
-"""IC3 / property-directed reachability — backward PDR (synthetic).
+"""IC3 / property-directed reachability — backward PDR (synthetic) (SYNTHETIC).
 
 On a small finite-state transition system, decides safety of
 ``init`` vs ``bad`` by backward reachability: computes the iterated

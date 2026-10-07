@@ -1,4 +1,4 @@
-"""LIF neuron classifier (leaky integrate-and-fire) — Poisson-encoded
+"""LIF neuron classifier (leaky integrate-and-fire) — Poisson-encoded (SYNTHETIC)
 inputs drive a membrane-potential readout trained by logistic loss on
 final voltage vs ANN on raw features.
 """

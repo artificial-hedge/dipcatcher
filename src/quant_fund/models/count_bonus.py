@@ -1,4 +1,4 @@
-"""MBIE-style count bonus (Strehl & Littman 2008): r+ = beta / sqrt(N(s)).
+"""MBIE-style count bonus (Strehl & Littman 2008): r+ = beta / sqrt(N(s)) (SYNTHETIC).
 Harness: tabular Q-learning on the hard-exploration gridworld; metrics
 = state coverage + success rate vs an ε-greedy no-bonus baseline.
 """

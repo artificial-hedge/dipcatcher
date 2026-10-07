@@ -1,4 +1,4 @@
-"""Randomized smoothing certification (Cohen et al. 2019).
+"""Randomized smoothing certification (Cohen et al. 2019) (SYNTHETIC).
 
 Certified radius R = σ·Φ^{-1}(p_A) where p_A is the lower confidence
 bound on the smoothed classifier's majority probability under N(0, σ²I)

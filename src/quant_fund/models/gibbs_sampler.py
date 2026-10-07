@@ -1,4 +1,4 @@
-"""Gibbs sampling canon: conjugate normal-mean hierarchical Gibbs
+"""Gibbs sampling canon: conjugate normal-mean hierarchical Gibbs (SYNTHETIC)
 (mu | tau, x-bar ; tau | IG prior) and Bayesian linear regression
 (beta | sigma^2 normal, sigma^2 | IG). ``bench_gibbs_sampler`` gates
 posterior-mean recovery on both fixtures plus simple Monte-Carlo

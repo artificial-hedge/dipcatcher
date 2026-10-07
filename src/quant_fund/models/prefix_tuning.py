@@ -1,4 +1,4 @@
-"""Prefix tuning — learned K/V prefixes (Li & Liang 2021).
+"""Prefix tuning — learned K/V prefixes (Li & Liang 2021) (SYNTHETIC).
 
 Frozen backbone; each attention layer gets learned prefix keys/values
 prepended to K and V. On the value-remap fixture prefix states steer

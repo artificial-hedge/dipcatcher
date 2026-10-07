@@ -1,4 +1,4 @@
-"""NeuralUCB (Zhou et al. 2020) — contextual bandit with a small net
+"""NeuralUCB (Zhou et al. 2020) — contextual bandit with a small net (SYNTHETIC)
 predicting reward; UCB bonus from ridge features (penultimate activs).
 Regret vs LinUCB-lite on nonlinear context reward.
 """

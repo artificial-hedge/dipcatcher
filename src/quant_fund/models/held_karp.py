@@ -1,4 +1,4 @@
-"""Held-Karp 1-tree lower bound for the TSP via subgradient ascent.
+"""Held-Karp 1-tree lower bound for the TSP via subgradient ascent (SYNTHETIC).
 
 A 1-tree = MST on nodes 2..n plus the two cheapest edges at node 1;
 penalties pi_i adjust edge costs so the bound approaches the tour.

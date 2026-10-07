@@ -1,4 +1,4 @@
-"""Tabular ResNet (Gorishniy et al. 2021, "Revisiting Deep Learning
+"""Tabular ResNet (Gorishniy et al. 2021, "Revisiting Deep Learning (SYNTHETIC)
 Models for Tabular Data").
 
 Residual block MLP (skip connections) vs plain MLP on the synth

@@ -1,4 +1,4 @@
-"""Distance covariance — nonparametric dependence of any form.
+"""Distance covariance — nonparametric dependence of any form (SYNTHETIC).
 
 dCov(X,Y) = 0 iff X ⊥ Y — it catches monotone, non-monotone and
 oscillatory dependence where Pearson/Spearman report ~0. Computed

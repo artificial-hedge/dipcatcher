@@ -1,4 +1,4 @@
-"""TSP branch-and-bound with 1-tree-style held-karp-lite bound vs
+"""TSP branch-and-bound with 1-tree-style held-karp-lite bound vs (SYNTHETIC)
 nearest-neighbor + 2-opt. Small instance — certified optimal.
 """
 

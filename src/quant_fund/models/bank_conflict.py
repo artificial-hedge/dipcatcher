@@ -1,4 +1,4 @@
-"""Shared-memory bank-conflict counter for stride-p patterns."""
+"""Shared-memory bank-conflict counter for stride-p patterns (SYNTHETIC)."""
 
 import numpy as np
 

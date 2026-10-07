@@ -1,4 +1,4 @@
-"""IWAE (Burda et al. 2015) — importance-weighted autoencoder: K-sample
+"""IWAE (Burda et al. 2015) — importance-weighted autoencoder: K-sample (SYNTHETIC)
 ELBO bound trained with the SNIS gradient estimator on the logistic
 regression posterior. Tighter bound + posterior mean vs MCMC oracle.
 """

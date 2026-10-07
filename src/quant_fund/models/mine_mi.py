@@ -1,4 +1,4 @@
-"""MINE (Belghazi et al. 2018): neural MI lower bound via DV estimator
+"""MINE (Belghazi et al. 2018): neural MI lower bound via DV estimator (SYNTHETIC)
 E_joint[T] - log E_marg[e^T]. Torch-gated. Trained on dependent vs
 independent Gaussians; gap vs true MI 0.34.
 """

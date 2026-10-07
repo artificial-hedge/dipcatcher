@@ -1,4 +1,4 @@
-"""Random-matrix-theory diagnostics and covariance denoising.
+"""Random-matrix-theory diagnostics and covariance denoising (SYNTHETIC).
 
 References:
 - Marchenko, Pastur (1967). Distribution of eigenvalues for some sets of

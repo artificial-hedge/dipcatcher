@@ -1,4 +1,4 @@
-"""Ellipsoid method for feasibility of Ax ≤ b (as optimization proxy)."""
+"""Ellipsoid method for feasibility of Ax ≤ b (as optimization proxy) (SYNTHETIC)."""
 
 import numpy as np
 

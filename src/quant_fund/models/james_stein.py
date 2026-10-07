@@ -1,4 +1,4 @@
-"""James-Stein shrinkage — minimax mean estimation.
+"""James-Stein shrinkage — minimax mean estimation (SYNTHETIC).
 
 James & Stein (1961): for p >= 3 independent means X_i ~ N(theta_i,
 sigma^2), the sample mean is inadmissible; the shrinkage estimator

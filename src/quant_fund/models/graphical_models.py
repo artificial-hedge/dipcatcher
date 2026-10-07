@@ -1,4 +1,4 @@
-"""Discrete Bayesian networks: hill-climbing structure
+"""Discrete Bayesian networks: hill-climbing structure (SYNTHETIC)
 search scored by BIC (K2-style local search with add /
 remove / reverse moves, bounded parents) and variable
 elimination for exact marginal inference. Synthetic bench

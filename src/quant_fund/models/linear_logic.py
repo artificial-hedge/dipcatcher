@@ -1,4 +1,4 @@
-"""Linear logic prover (multiplicative-additive fragment, small).
+"""Linear logic prover (multiplicative-additive fragment, small) (SYNTHETIC).
 
 Goals: atoms, tensor A⊗B (splits context), par A⅋B (joins), with A&B
 (choose branch — same context used twice), plus A⊕B (pick side),

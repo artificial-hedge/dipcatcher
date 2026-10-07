@@ -1,4 +1,4 @@
-"""Stochastic frontier analysis — normal/half-normal composed error.
+"""Stochastic frontier analysis — normal/half-normal composed error (SYNTHETIC).
 
 Production frontier: y_i = x_i'β + v_i - u_i, with v ~ N(0, σ_v²)
 noise and u ~ half-N(0, σ_u²) one-sided inefficiency. Parameters by

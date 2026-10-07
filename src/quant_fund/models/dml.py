@@ -1,4 +1,4 @@
-"""Double/debiased machine learning — partially linear regression.
+"""Double/debiased machine learning — partially linear regression (SYNTHETIC).
 
 Chernozhukov et al. (2018) PLR: with ``Y = theta D + g(X) + U`` and
 ``D = m(X) + V``, the Neyman-orthogonal score uses residuals on both

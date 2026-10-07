@@ -1,4 +1,4 @@
-"""TT rounding: compress a noisy low-TT-rank tensor back to small chi —
+"""TT rounding: compress a noisy low-TT-rank tensor back to small chi — (SYNTHETIC)
 error vs naive truncation to CP-rank-1 baseline.
 """
 

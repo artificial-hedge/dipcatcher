@@ -1,4 +1,4 @@
-"""Van der Waerden normal-scores k-sample test.
+"""Van der Waerden normal-scores k-sample test (SYNTHETIC).
 
 van der Waerden (1952): pooled ranks are mapped through the
 standard normal quantile, producing scores with maximal power for

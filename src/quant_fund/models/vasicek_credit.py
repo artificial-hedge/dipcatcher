@@ -1,4 +1,4 @@
-"""Vasicek (2002) large-homogeneous-portfolio (ASRF) credit loss distribution.
+"""Vasicek (2002) large-homogeneous-portfolio (ASRF) credit loss distribution (SYNTHETIC).
 
 In the single-factor asymptotic model each obligor defaults when a latent
 variable ``sqrt(rho) M + sqrt(1-rho) Z`` falls below ``Phi^{-1}(pd)``.  For an

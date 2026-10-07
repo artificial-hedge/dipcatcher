@@ -1,4 +1,4 @@
-"""Omega-test lite: exact integer feasibility for small Presburger systems.
+"""Omega-test lite: exact integer feasibility for small Presburger systems (SYNTHETIC).
 
 Constraints are (a, b) meaning a·x <= b over Z^n. The test:
 1) FM-eliminate over Q — infeasible over reals => infeasible over Z.

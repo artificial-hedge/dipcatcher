@@ -1,4 +1,4 @@
-"""CFRNET-lite (Shalit et al. 2017, beyond w155's cfrnet file — this one
+"""CFRNET-lite (Shalit et al. 2017, beyond w155's cfrnet file — this one (SYNTHETIC)
 uses IPW-reweighted factual loss + Wasserstein IPM on the representation).
 PEHE vs unbalanced representation.
 """

@@ -1,4 +1,4 @@
-"""K-fold CV+ / CV-minmax conformal wrapper.
+"""K-fold CV+ / CV-minmax conformal wrapper (SYNTHETIC).
 
 Barber, Candès, Ramdas, Tibshirani (2021). K-fold residual scores replace
 leave-one-out. Classic CV+ (eq. 11) has finite-sample coverage ≥ 1-2α − ε_n

@@ -1,4 +1,4 @@
-"""Regex engine: parse → Thompson NFA → subset DFA (synthetic).
+"""Regex engine: parse → Thompson NFA → subset DFA (synthetic) (SYNTHETIC).
 
 Supports literal chars, '.', '*', '+', '?', '|', concat, parens.
 Verified: full-match acceptance equals Python `re.fullmatch` oracle

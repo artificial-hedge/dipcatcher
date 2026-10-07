@@ -1,4 +1,4 @@
-"""Structured VI — full-rank Cholesky Gaussian posterior vs mean-field:
+"""Structured VI — full-rank Cholesky Gaussian posterior vs mean-field: (SYNTHETIC)
 captures posterior covariance the mean-field family misses. Covariance
 Frobenius deviation vs MCMC oracle, both families.
 """

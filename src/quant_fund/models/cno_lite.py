@@ -1,4 +1,4 @@
-"""Convolutional Neural Operator (Raonic et al. 2024) — U-Net-shaped
+"""Convolutional Neural Operator (Raonic et al. 2024) — U-Net-shaped (SYNTHETIC)
 operator: channel lifting + down/up blocks preserve band structure —
 vs plain MLP on the Poisson fixture.
 """

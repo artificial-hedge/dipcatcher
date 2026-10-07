@@ -1,4 +1,4 @@
-"""DirectLiNGAM (Shimizu et al. 2011) — repeatedly extract the root
+"""DirectLiNGAM (Shimizu et al. 2011) — repeatedly extract the root (SYNTHETIC)
 variable as the one least dependent on residuals of regressions on all
 others (pairwise independence measure via residual correlation +
 mutual-information-lite); order error + skeleton F1 vs baseline.

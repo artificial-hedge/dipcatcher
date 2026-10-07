@@ -1,4 +1,4 @@
-"""5-point Jacobi stencil on a decomposed grid with halo exchange."""
+"""5-point Jacobi stencil on a decomposed grid with halo exchange (SYNTHETIC)."""
 
 import numpy as np
 

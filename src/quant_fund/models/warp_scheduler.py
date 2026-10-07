@@ -1,4 +1,4 @@
-"""GPU warp scheduler: greedy oldest-ready-first issue per cycle."""
+"""GPU warp scheduler: greedy oldest-ready-first issue per cycle (SYNTHETIC)."""
 
 import numpy as np
 

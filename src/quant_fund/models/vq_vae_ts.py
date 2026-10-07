@@ -1,4 +1,4 @@
-"""VQ-VAE for time series: discrete latent codebook.
+"""VQ-VAE for time series: discrete latent codebook (SYNTHETIC).
 
 van den Oord et al. 2017: encoder outputs are snapped to a learned
 codebook of prototypes (commitment + codebook losses); the discrete

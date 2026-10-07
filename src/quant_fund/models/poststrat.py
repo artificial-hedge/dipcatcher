@@ -1,4 +1,4 @@
-"""Post-stratification and raking (iterative proportional
+"""Post-stratification and raking (iterative proportional (SYNTHETIC)
 fitting) for survey weights.
 
 Deming & Stephan (1940): given a sample classified into cells

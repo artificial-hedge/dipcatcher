@@ -1,4 +1,4 @@
-"""Quantile regression forests (Meinshausen 2006).
+"""Quantile regression forests (Meinshausen 2006) (SYNTHETIC).
 
 Meinshausen (2006, JMLR 7, pp. 983-999, "Quantile Regression Forests"):
 a random forest defines, for every test point x, a weight vector over the

@@ -1,4 +1,4 @@
-"""Local-search max-cut — the 1/2-approximation.
+"""Local-search max-cut — the 1/2-approximation (SYNTHETIC).
 
 Greedy local improvement: move any vertex whose swap increases the
 cut until no improving move exists (local optimum guarantees >= 1/2

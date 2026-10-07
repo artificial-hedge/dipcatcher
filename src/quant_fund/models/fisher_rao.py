@@ -1,4 +1,4 @@
-"""Fisher-Rao geometry on the univariate-Gaussian model manifold.
+"""Fisher-Rao geometry on the univariate-Gaussian model manifold (SYNTHETIC).
 
 The Fisher metric maps (mu, sigma) to the hyperbolic half-plane
 (mu/sqrt(2), sigma): d_FR = sqrt(2) * acosh(1 + dz^2/(2 s1 s2)) with

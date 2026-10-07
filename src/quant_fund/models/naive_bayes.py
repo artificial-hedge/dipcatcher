@@ -1,4 +1,4 @@
-"""Naive Bayes classifiers: Gaussian NB (per-class
+"""Naive Bayes classifiers: Gaussian NB (per-class (SYNTHETIC)
 univariate Gaussians), multinomial NB on counts
 (m-class Bayes with Laplace smoothing), and Bernoulli NB
 for binary features. Synthetic bench gates separation

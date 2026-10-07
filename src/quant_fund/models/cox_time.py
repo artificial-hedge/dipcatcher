@@ -1,4 +1,4 @@
-"""Cox-Time (Kvamme et al. 2019) — Cox model where the risk function
+"""Cox-Time (Kvamme et al. 2019) — Cox model where the risk function (SYNTHETIC)
 also sees time: net(x, t) trained by case-control partial likelihood;
 non-PH fixtures gain over time-constant Cox.
 """

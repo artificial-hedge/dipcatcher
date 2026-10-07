@@ -1,4 +1,4 @@
-"""Constant folding + propagation over straight-line SSA."""
+"""Constant folding + propagation over straight-line SSA (SYNTHETIC)."""
 
 import numpy as np
 

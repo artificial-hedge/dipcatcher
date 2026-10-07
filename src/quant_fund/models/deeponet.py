@@ -1,4 +1,4 @@
-"""DeepONet (Lu et al. 2021) — branch encodes the input function's
+"""DeepONet (Lu et al. 2021) — branch encodes the input function's (SYNTHETIC)
 values, trunk encodes query locations; u(y) = <branch(a), trunk(y)>.
 """
 

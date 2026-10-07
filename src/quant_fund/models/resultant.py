@@ -1,4 +1,4 @@
-"""Sylvester-matrix resultant and discriminant over QQ (synthetic).
+"""Sylvester-matrix resultant and discriminant over QQ (synthetic) (SYNTHETIC).
 
 Univariate polynomials as coefficient lists (highest degree first).
 Resultant = det of the Sylvester matrix, computed with Bareiss

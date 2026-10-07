@@ -1,4 +1,4 @@
-"""Codon adaptation index (wave 284).
+"""Codon adaptation index (wave 284) (SYNTHETIC).
 
 CAI = geometric mean of relative synonymous-codon usage. A gene built from
 the most-used codons scores ~1; a gene sampled uniformly scores lower.

@@ -1,4 +1,4 @@
-"""Energy-score OOD detection (Liu et al. 2020).
+"""Energy-score OOD detection (Liu et al. 2020) (SYNTHETIC).
 
 Score = -logsumexp(logits): the log-partition of the softmax acts as
 a Helmholtz free energy — OOD inputs have low energy bound (=high

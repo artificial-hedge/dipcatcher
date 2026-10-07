@@ -1,4 +1,4 @@
-"""TCN forecaster: dilated causal convolutions over time.
+"""TCN forecaster: dilated causal convolutions over time (SYNTHETIC).
 
 Bai, Kolter & Koltun 2018: causal convs with exponentially dilated
 kernels give a receptive field that grows exponentially in depth while

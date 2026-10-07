@@ -1,4 +1,4 @@
-"""Spanning-tree protocol: root election + loop-free path selection."""
+"""Spanning-tree protocol: root election + loop-free path selection (SYNTHETIC)."""
 
 import numpy as np
 

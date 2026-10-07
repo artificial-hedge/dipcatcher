@@ -1,4 +1,4 @@
-"""Clark-West MSPE-adjusted test for nested forecasts.
+"""Clark-West MSPE-adjusted test for nested forecasts (SYNTHETIC).
 
 When model 2 nests model 1, Diebold-Mariano is degenerate
 under the null (the models coincide, so the loss difference

@@ -1,4 +1,4 @@
-"""Low-rank weight factorization (SVD compression).
+"""Low-rank weight factorization (SVD compression) (SYNTHETIC).
 
 Truncate the first-layer weight SVD to rank r → (8×r + r×24) params
 vs 8×24; accuracy retention vs parameter fraction.

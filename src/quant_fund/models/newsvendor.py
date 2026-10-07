@@ -1,4 +1,4 @@
-"""Newsvendor (Arrow et al. 1951): critical fractile Q* = F^{-1}(Cu/(Cu+Co))
+"""Newsvendor (Arrow et al. 1951): critical fractile Q* = F^{-1}(Cu/(Cu+Co)) (SYNTHETIC)
 on Poisson demand vs naive mean-order.
 """
 

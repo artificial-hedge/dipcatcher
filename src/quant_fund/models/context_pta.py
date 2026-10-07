@@ -1,4 +1,4 @@
-"""Context-sensitive Andersen points-to with k-call-string contexts.
+"""Context-sensitive Andersen points-to with k-call-string contexts (SYNTHETIC).
 
 Program: functions with alloc/copy/return statements and call sites.
 Contexts are bounded call strings (length k); points-to facts are keyed

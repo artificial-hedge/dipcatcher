@@ -1,4 +1,4 @@
-"""DE-MCMC (ter Braak 2006): population MCMC where proposals are
+"""DE-MCMC (ter Braak 2006): population MCMC where proposals are (SYNTHETIC)
 scaled differences of other chains — self-tuning jump distribution.
 Correlated-Gaussian recovery vs MH.
 """

@@ -1,4 +1,4 @@
-"""Poincaré-ball embedding layer (Nickel & Kiela 2017).
+"""Poincaré-ball embedding layer (Nickel & Kiela 2017) (SYNTHETIC).
 
 Distances via the Poincaré metric; the same leaves embed a random binary
 tree at far lower distortion than a Euclidean embedding of the same

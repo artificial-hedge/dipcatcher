@@ -1,4 +1,4 @@
-"""Kinetic (underdamped) Langevin Monte Carlo — velocity OU + position
+"""Kinetic (underdamped) Langevin Monte Carlo — velocity OU + position (SYNTHETIC)
 drift discretization (randomized-horizon KLMC/UBU): partial momentum
 refresh ρ per step. ESS vs RWM.
 """

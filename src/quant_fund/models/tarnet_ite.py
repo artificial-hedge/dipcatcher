@@ -1,4 +1,4 @@
-"""TARNet — two-head ITE network (Shalit et al. 2017).
+"""TARNet — two-head ITE network (Shalit et al. 2017) (SYNTHETIC).
 
 Shared trunk + treatment-specific heads trained on the factual arm
 only; ITE = head1(x) − head0(x). PEHE vs naive single-regressor ITE.

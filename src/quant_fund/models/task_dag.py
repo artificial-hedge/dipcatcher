@@ -1,4 +1,4 @@
-"""Task-DAG executor: ready-queue scheduling with dependency counting."""
+"""Task-DAG executor: ready-queue scheduling with dependency counting (SYNTHETIC)."""
 
 import numpy as np
 

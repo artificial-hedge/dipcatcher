@@ -1,4 +1,4 @@
-"""Input-output HMM: covariate-driven regime transitions.
+"""Input-output HMM: covariate-driven regime transitions (SYNTHETIC).
 
 Bengio & Frasconi (1995): the transition matrix is a per-step function of
 exogenous covariates, P_t[i, j] = softmax_j(W_i . x_t), while emissions are

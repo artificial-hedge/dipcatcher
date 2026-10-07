@@ -1,4 +1,4 @@
-"""Spatial autocorrelation — Moran's I, Geary's c, Getis-Ord G.
+"""Spatial autocorrelation — Moran's I, Geary's c, Getis-Ord G (SYNTHETIC).
 
 Moran (1950), Geary (1954), Getis & Ord (1992): for values x_i on
 sites with weight matrix W (row-standardized for I and c), the

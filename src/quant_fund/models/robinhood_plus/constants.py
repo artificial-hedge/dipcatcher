@@ -1,4 +1,4 @@
-"""robinhood+ identity, Kronos attribution, and K-line column contracts.
+"""robinhood+ identity, Kronos attribution, and K-line column contracts (SYNTHETIC).
 
 robinhood+ is Dipcatcher's rebrand of the Kronos two-stage K-line foundation
 model (Shi et al., 2025, arXiv:2508.02739; MIT). It is an internal engine

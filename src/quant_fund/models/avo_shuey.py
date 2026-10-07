@@ -1,4 +1,4 @@
-"""Shuey three-term AVO approximation + class detection.
+"""Shuey three-term AVO approximation + class detection (SYNTHETIC).
 
 R(theta) ~ A + B sin^2(theta) + C (tan^2(theta) - sin^2(theta))
 A = intercept (normal incidence), B = gradient, C = curvature term.

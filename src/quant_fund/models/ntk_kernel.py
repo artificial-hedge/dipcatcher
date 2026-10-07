@@ -1,4 +1,4 @@
-"""Empirical NTK — Jacobian-kernel ridge regression with a trained MLP's
+"""Empirical NTK — Jacobian-kernel ridge regression with a trained MLP's (SYNTHETIC)
 features vs the raw-feature kernel ridge: generalization gain on the
 regime task.
 """

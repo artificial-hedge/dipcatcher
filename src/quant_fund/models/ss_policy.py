@@ -1,4 +1,4 @@
-"""(s, S) continuous-review policy (Scarf 1960): reorder at s, order up
+"""(s, S) continuous-review policy (Scarf 1960): reorder at s, order up (SYNTHETIC)
 to S. Grid-searched (s,S) vs fixed-quantity baseline.
 """
 

@@ -1,4 +1,4 @@
-"""PSRO — Policy-Space Response Oracle (Lanctot et al. 2017) —
+"""PSRO — Policy-Space Response Oracle (Lanctot et al. 2017) — (SYNTHETIC)
 tic-tac-toe: maintain a policy population; the restricted meta-game
 (empirical payoff matrix over the population) is solved by fictitious
 play; each epoch adds a best-response policy trained by imitation of

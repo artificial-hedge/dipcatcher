@@ -1,4 +1,4 @@
-"""Quantum phase estimation on a controlled-U (Z-rotation) with a
+"""Quantum phase estimation on a controlled-U (Z-rotation) with a (SYNTHETIC)
 planted phase — recovers binary digits vs uniform bit guessing.
 """
 

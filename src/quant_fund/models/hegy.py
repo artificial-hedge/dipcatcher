@@ -1,4 +1,4 @@
-"""HEGY seasonal unit-root and Canova-Hansen seasonal-stability
+"""HEGY seasonal unit-root and Canova-Hansen seasonal-stability (SYNTHETIC)
 tests.
 
 Hylleberg, Engle, Granger & Yoo (1990) decompose the seasonal

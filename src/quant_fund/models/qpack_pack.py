@@ -1,4 +1,4 @@
-"""QPACK-lite header compression (wave 292).
+"""QPACK-lite header compression (wave 292) (SYNTHETIC).
 
 Static table (31 entries) + dynamic table insert-by-index: encode
 header block, decode round-trips; dynamic entries reused across blocks.

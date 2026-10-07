@@ -1,4 +1,4 @@
-"""Energy-based changepoint detection (E-divisive, Matteson &
+"""Energy-based changepoint detection (E-divisive, Matteson & (SYNTHETIC)
 James 2014).
 
 Between two candidate segments X, Y the energy divergence is

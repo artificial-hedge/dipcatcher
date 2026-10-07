@@ -1,4 +1,4 @@
-"""Friedman (1984) variable-span smoother ('supersmoother')
+"""Friedman (1984) variable-span smoother ('supersmoother') (SYNTHETIC)
 plus the classic running-line family it adapts.
 
 Canonical references:

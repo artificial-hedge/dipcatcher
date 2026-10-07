@@ -1,4 +1,4 @@
-"""Adversarial bandit canon: EXP3 (Auer, Cesa-Bianchi,
+"""Adversarial bandit canon: EXP3 (Auer, Cesa-Bianchi, (SYNTHETIC)
 Freund & Schapire 2002) with importance-weighted reward
 estimates, against a uniform-play baseline and a full-info
 Hedge upper bound, on a synthetic rotating-best-arm

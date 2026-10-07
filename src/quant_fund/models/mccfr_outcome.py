@@ -1,4 +1,4 @@
-"""Outcome-sampling MCCFR (Lanctot et al. 2009) — Monte Carlo CFR
+"""Outcome-sampling MCCFR (Lanctot et al. 2009) — Monte Carlo CFR (SYNTHETIC)
 on Kuhn poker: sample one terminal history per info set per pass,
 update tabular regrets on the sampled subtree. Exploitability vs the
 tabular full-traversal CFR reference.

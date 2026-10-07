@@ -1,4 +1,4 @@
-"""DGN-lite (Beaini et al. 2021) — directional aggregation: message along
+"""DGN-lite (Beaini et al. 2021) — directional aggregation: message along (SYNTHETIC)
 edge (i,j) weighted by directionality (unit vector between node positions
 in a learned embedding). Planted-clique AUC vs isotropic GCN.
 """

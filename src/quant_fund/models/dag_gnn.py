@@ -1,4 +1,4 @@
-"""DAG-GNN (Yu et al. 2019) — graph neural net VAE for structure:
+"""DAG-GNN (Yu et al. 2019) — graph neural net VAE for structure: (SYNTHETIC)
 encoder infers adjacency logits, decoder f(X) = (I-A^T)^{-1} f0(X)X;
 acyclicity via tr((I+A)^{d-1}). SHD vs corr baseline.
 """

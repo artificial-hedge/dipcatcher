@@ -1,4 +1,4 @@
-"""MoE router (Shazeer et al. 2017) — top-2 noisy-gated experts with
+"""MoE router (Shazeer et al. 2017) — top-2 noisy-gated experts with (SYNTHETIC)
 load-balancing aux loss on the 4-regime task vs a dense MLP of equal
 capacity. Experts should specialize to regimes.
 """

@@ -1,4 +1,4 @@
-"""Lagrangian relaxation + subgradient for set cover.
+"""Lagrangian relaxation + subgradient for set cover (SYNTHETIC).
 
 min c'x, A x >= 1, x in {0,1}. Relaxing the coverage constraints with
 multipliers lam >= 0 gives the separable lower bound

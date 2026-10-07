@@ -1,4 +1,4 @@
-"""Rank aggregation — Plackett-Luce, Borda, Condorcet, MC3.
+"""Rank aggregation — Plackett-Luce, Borda, Condorcet, MC3 (SYNTHETIC).
 
 Plackett (1975) / Luce (1959): partial orderings are treated
 as sequential choices p(i first of S) = w_i / sum_{j in S} w_j

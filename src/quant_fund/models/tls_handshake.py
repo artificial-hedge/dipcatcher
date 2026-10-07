@@ -1,4 +1,4 @@
-"""Toy TLS-1.3-style handshake state machine: CH → SH → EE → Fin."""
+"""Toy TLS-1.3-style handshake state machine: CH → SH → EE → Fin (SYNTHETIC)."""
 
 import hashlib
 import hmac as _hmac

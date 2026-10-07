@@ -1,4 +1,4 @@
-"""Cut elimination on sequent derivations (Hauptsatz, small).
+"""Cut elimination on sequent derivations (Hauptsatz, small) (SYNTHETIC).
 
 A derivation is a tree of rule applications; a cut node pairs two
 proofs with a shared formula. eliminate transforms cuts away:

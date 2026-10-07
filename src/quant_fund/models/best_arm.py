@@ -1,4 +1,4 @@
-"""Fixed-confidence best-arm identification canon:
+"""Fixed-confidence best-arm identification canon: (SYNTHETIC)
 successive elimination (Even-Dar, Mannor & Mansour 2006)
 and LUCB-1 (Kalyanakrishnan, Tewari, Auer & Stone 2012),
 validated on a synthetic Bernoulli instance with a known

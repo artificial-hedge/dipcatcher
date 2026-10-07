@@ -1,4 +1,4 @@
-"""ORF finder: ATG..stop in all 3 frames."""
+"""ORF finder: ATG..stop in all 3 frames (SYNTHETIC)."""
 
 import numpy as np
 

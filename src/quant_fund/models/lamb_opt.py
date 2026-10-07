@@ -1,4 +1,4 @@
-"""LAMB (You et al. 2020) — Adam with layer-wise trust ratio:
+"""LAMB (You et al. 2020) — Adam with layer-wise trust ratio: (SYNTHETIC)
 update scaled by ||w||/||adam_step|| — vs Adam at matched steps.
 """
 

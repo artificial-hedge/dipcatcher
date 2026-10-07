@@ -1,4 +1,4 @@
-"""Golomb–Rice codes for geometric distributions (synthetic).
+"""Golomb–Rice codes for geometric distributions (synthetic) (SYNTHETIC).
 
 n ↦ unary(n >> k) + k low bits. Verified: exact round-trip on
 geometric samples; mean code length within ~0.5 bit of the

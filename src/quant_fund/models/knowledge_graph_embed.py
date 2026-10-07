@@ -1,4 +1,4 @@
-"""TransE knowledge-graph embeddings (Bordes et al. 2013).
+"""TransE knowledge-graph embeddings (Bordes et al. 2013) (SYNTHETIC).
 
 Synthetic typed-entity graph: 8 latent types share a 4-token signature;
 relations compose via translations. Trained by margin ranking on

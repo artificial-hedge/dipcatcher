@@ -1,4 +1,4 @@
-"""Riemannian (metric-adapted) MALA — position-dependent diagonal
+"""Riemannian (metric-adapted) MALA — position-dependent diagonal (SYNTHETIC)
 metric M(x) = diag(1 + |∂²U|) preconditions proposals on the curved
 banana: proposal x + h/2 M⁻¹∇logp + √h M⁻¹ᐟ²z. ESS vs RWM.
 """

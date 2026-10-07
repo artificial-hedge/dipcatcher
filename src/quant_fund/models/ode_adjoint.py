@@ -1,4 +1,4 @@
-"""Neural-ODE adjoint sensitivity (Chen et al. 2018) — terminal-loss
+"""Neural-ODE adjoint sensitivity (Chen et al. 2018) — terminal-loss (SYNTHETIC)
 gradient via backward adjoint ODE vs autograd through the unrolled
 solver; measures accuracy and memory-freeness.
 """

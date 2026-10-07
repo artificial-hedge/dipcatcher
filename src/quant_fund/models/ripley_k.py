@@ -1,4 +1,4 @@
-"""Ripley's K/L spatial point-pattern analysis.
+"""Ripley's K/L spatial point-pattern analysis (SYNTHETIC).
 
 Ripley (1976, 1977): for a homogeneous planar Poisson process of
 intensity lambda, K(r) = (1/lambda) E[# extra points within distance r

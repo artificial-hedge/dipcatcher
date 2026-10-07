@@ -1,4 +1,4 @@
-"""ANIL (Raghu et al. 2020) — meta-learn the body only; the linear head is
+"""ANIL (Raghu et al. 2020) — meta-learn the body only; the linear head is (SYNTHETIC)
 re-fit on each task's support. Query MSE vs pooled baseline.
 """
 

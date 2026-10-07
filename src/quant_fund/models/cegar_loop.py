@@ -1,4 +1,4 @@
-"""Counterexample-guided abstraction refinement — CEGAR (synthetic).
+"""Counterexample-guided abstraction refinement — CEGAR (synthetic) (SYNTHETIC).
 
 Verifies a safety property over an integer program via predicate
 abstraction: start with the coarsest abstraction (empty predicate

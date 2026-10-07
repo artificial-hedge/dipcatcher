@@ -1,4 +1,4 @@
-"""Q-learning convergence on a tiny stochastic-action MDP.
+"""Q-learning convergence on a tiny stochastic-action MDP (SYNTHETIC).
 
 Random-walk exploration with alpha_t = 1/visits(s,a) satisfies
 Robbins-Monro and converges to Q*. On a deterministic-reward MDP the

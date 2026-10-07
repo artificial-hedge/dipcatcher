@@ -1,4 +1,4 @@
-"""RRT-Connect: bidirectional rapidly-exploring random tree in C-space.
+"""RRT-Connect: bidirectional rapidly-exploring random tree in C-space (SYNTHETIC).
 
 Two trees rooted at start/goal alternately extend toward a random sample (and
 then greedily toward each other). Bench vs single-tree RRT: collision-free

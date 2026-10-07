@@ -1,4 +1,4 @@
-"""Cochran's Q — k related binary samples.
+"""Cochran's Q — k related binary samples (SYNTHETIC).
 
 Cochran (1950): for an (n blocks, k treatments) binary matrix the
 test of equal column proportions is

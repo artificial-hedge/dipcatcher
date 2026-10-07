@@ -1,4 +1,4 @@
-"""Exponential smoothing state-space forecasters.
+"""Exponential smoothing state-space forecasters (SYNTHETIC).
 
 Implements the classical smoothing recursions:
 

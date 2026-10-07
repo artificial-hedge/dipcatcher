@@ -1,4 +1,4 @@
-"""X-learner (Künzel et al. 2019) — two-stage: fit outcome models per
+"""X-learner (Künzel et al. 2019) — two-stage: fit outcome models per (SYNTHETIC)
 arm, impute counterfactual effects, re-fit on imputed CATE, combine
 with propensity weights. PEHE vs S-learner.
 """

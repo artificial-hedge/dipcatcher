@@ -1,4 +1,4 @@
-"""E(n)-equivariant GNN-lite (Satorras et al. 2021).
+"""E(n)-equivariant GNN-lite (Satorras et al. 2021) (SYNTHETIC).
 
 Coordinate updates use only relative positions — the network is
 equivariant to rotations by construction. On the rotation-cloud fixture

@@ -1,4 +1,4 @@
-"""Kyle (1985) lambda — price impact and auction equilibrium.
+"""Kyle (1985) lambda — price impact and auction equilibrium (SYNTHETIC).
 
 Two complementary pieces: (i) the empirical lambda — OLS slope
 of price change on signed net order flow, the workhorse market-

@@ -1,4 +1,4 @@
-"""Prioritized experience replay (Schaul et al. 2016).
+"""Prioritized experience replay (Schaul et al. 2016) (SYNTHETIC).
 
 TD-error proportional priorities (α=0.6, IS weights β→1) over a small
 replay buffer; on a rare-outcome env where the heavy-left-tail action's

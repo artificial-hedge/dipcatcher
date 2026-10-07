@@ -1,4 +1,4 @@
-"""Sliding-mode control: reaching + sliding phases on double integrator."""
+"""Sliding-mode control: reaching + sliding phases on double integrator (SYNTHETIC)."""
 
 import numpy as np
 

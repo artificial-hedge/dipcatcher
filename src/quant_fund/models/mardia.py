@@ -1,4 +1,4 @@
-"""Mardia's multivariate normality tests.
+"""Mardia's multivariate normality tests (SYNTHETIC).
 
 Mardia (1970): for a p-variate sample the multivariate skewness and
 kurtosis measures

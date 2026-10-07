@@ -1,4 +1,4 @@
-"""ASTGCN-lite (Guo et al. 2019) — spatial attention: attention scores
+"""ASTGCN-lite (Guo et al. 2019) — spatial attention: attention scores (SYNTHETIC)
 from node-pair feature dot-products modulate graph propagation +
 temporal attention over the window. Next-step MSE vs plain STGCN-lite.
 """

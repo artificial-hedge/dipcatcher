@@ -1,4 +1,4 @@
-"""Direct-CRPS net (Berrisch & Ziel 2021) — predict full conditional via
+"""Direct-CRPS net (Berrisch & Ziel 2021) — predict full conditional via (SYNTHETIC)
 approximated CRPS of a sample-path discretization (closed-form CRPS for
 Gaussian + mixture on a fixed y-grid). Test NLL proxy via kernel density
 of the fitted distribution vs Gaussian.

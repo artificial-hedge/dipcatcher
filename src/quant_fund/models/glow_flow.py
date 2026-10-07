@@ -1,4 +1,4 @@
-"""Glow (Kingma & Dhariwal 2018) — actnorm + invertible 1×1 + affine
+"""Glow (Kingma & Dhariwal 2018) — actnorm + invertible 1×1 + affine (SYNTHETIC)
 coupling. 1×1 conv in 2-D = full invertible linear mixing with logdet.
 Held-out NLL vs Gaussian on pinwheel.
 """

@@ -1,4 +1,4 @@
-"""Heston calibration: price calls by semi-analytic characteristic
+"""Heston calibration: price calls by semi-analytic characteristic (SYNTHETIC)
 function inversion (trapezoid integral), fit (v0, theta, kappa, xi,
 rho) to synthetic quotes generated from known parameters, recover by
 least squares.

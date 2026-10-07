@@ -1,4 +1,4 @@
-"""MOMENT-lite (Goswami et al. 2024) — masked-TS pretraining: random
+"""MOMENT-lite (Goswami et al. 2024) — masked-TS pretraining: random (SYNTHETIC)
 patch masking + reconstruction, then linear-probe the encoder for
 quantile forecast — vs seasonal-naive.
 """

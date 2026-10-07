@@ -1,4 +1,4 @@
-"""TranAD (Tuli et al. 2022) — transformer with self-conditioning:
+"""TranAD (Tuli et al. 2022) — transformer with self-conditioning: (SYNTHETIC)
 encoder attends over the window, decoder re-encodes its own output;
 score = 2-stage recon error — vs plain AE.
 """

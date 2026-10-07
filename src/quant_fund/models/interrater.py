@@ -1,4 +1,4 @@
-"""Inter-rater agreement and reliability coefficients.
+"""Inter-rater agreement and reliability coefficients (SYNTHETIC).
 
 Cohen (1960) kappa for two raters,
 

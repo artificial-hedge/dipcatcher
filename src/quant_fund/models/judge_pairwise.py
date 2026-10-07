@@ -1,4 +1,4 @@
-"""LLM-as-judge — pairwise scoring (Zheng et al. 2023, MT-Bench).
+"""LLM-as-judge — pairwise scoring (Zheng et al. 2023, MT-Bench) (SYNTHETIC).
 
 A judge model scores pairwise comparisons between candidate responses
 (noisy estimate of true quality); agreement rate with the oracle

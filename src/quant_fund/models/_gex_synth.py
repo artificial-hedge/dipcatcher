@@ -1,4 +1,4 @@
-"""Shared graph-exotics fixture: planted-clique node classification on
+"""Shared graph-exotics fixture: planted-clique node classification on (SYNTHETIC)
 random graphs (n=16 nodes, one planted 5-clique + background Erdos–Renyi).
 Metric: node AUC vs feature-only MLP baseline.
 """

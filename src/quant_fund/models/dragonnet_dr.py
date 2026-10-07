@@ -1,4 +1,4 @@
-"""Dragonnet-lite — outcome heads + propensity head (Shi et al. 2019).
+"""Dragonnet-lite — outcome heads + propensity head (Shi et al. 2019) (SYNTHETIC).
 
 Joint propensity + outcome; doubly-robust AIPW pseudo-outcome trained
 head → ATE error vs outcome-only regression under confounding.

@@ -1,4 +1,4 @@
-"""Concrete dropout (Gal et al. 2017) — learnable dropout probability per
+"""Concrete dropout (Gal et al. 2017) — learnable dropout probability per (SYNTHETIC)
 layer via the concrete relaxation; trained jointly with weights. Reports
 learned p and NLL + OOD gap from MC samples at inference.
 """

@@ -1,4 +1,4 @@
-"""Block Lanczos: B-step Krylov basis for symmetric A."""
+"""Block Lanczos: B-step Krylov basis for symmetric A (SYNTHETIC)."""
 
 import numpy as np
 

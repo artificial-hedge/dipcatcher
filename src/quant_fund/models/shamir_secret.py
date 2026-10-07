@@ -1,4 +1,4 @@
-"""Shamir (k, n) secret sharing over GF(p).
+"""Shamir (k, n) secret sharing over GF(p) (SYNTHETIC).
 
 Polynomial f(x) = s + a1 x + ... + a_{k-1} x^{k-1} mod p; any k shares
 reconstruct s via Lagrange interpolation at x = 0. Bench: reconstruction

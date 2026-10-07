@@ -1,4 +1,4 @@
-"""Frank and Joe Archimedean copulas (complementing Clayton/Gumbel).
+"""Frank and Joe Archimedean copulas (complementing Clayton/Gumbel) (SYNTHETIC).
 
 - **Frank** (Frank 1979) is the only Archimedean copula that is radially
   symmetric and admits negative as well as positive dependence.  Its Kendall's

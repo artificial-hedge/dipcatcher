@@ -1,4 +1,4 @@
-"""Hansen-Huang-Shek log-linear Realized GARCH on daily Parkinson.
+"""Hansen-Huang-Shek log-linear Realized GARCH on daily Parkinson (SYNTHETIC).
 
 The realized measure is one-day Parkinson variance from daily OHLC, not
 intraday realized variance and never a silent close-to-close r^2

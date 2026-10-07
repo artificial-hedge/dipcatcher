@@ -1,4 +1,4 @@
-"""Gordon-Newell normalizing-constant evaluation of a closed network.
+"""Gordon-Newell normalizing-constant evaluation of a closed network (SYNTHETIC).
 
 Direct convolution of node weight functions g_i(k) = (V_i/mu_i)^k gives
 G(N); the throughput is X(N) = G(N-1)/G(N) (up to visit-ratio scaling).

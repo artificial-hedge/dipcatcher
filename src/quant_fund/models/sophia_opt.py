@@ -1,4 +1,4 @@
-"""Sophia-lite (Liu et al. 2023) — diagonal-Hessian second-order update:
+"""Sophia-lite (Liu et al. 2023) — diagonal-Hessian second-order update: (SYNTHETIC)
 clipped m / (h + ε) with Hutchinson Hessian estimate — vs Adam.
 """
 

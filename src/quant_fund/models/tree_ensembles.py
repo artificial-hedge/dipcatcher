@@ -1,4 +1,4 @@
-"""Tree ensembles from scratch: CART with Gini/MSE splits,
+"""Tree ensembles from scratch: CART with Gini/MSE splits, (SYNTHETIC)
 bagged random forest, and gradient boosting on regression
 stumps. Synthetic bench gates nonlinear (XOR/checker)
 recovery and additive-model fit."""

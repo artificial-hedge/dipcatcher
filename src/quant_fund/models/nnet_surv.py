@@ -1,4 +1,4 @@
-"""Nnet-survival (Gensheimer & Narasimhan 2019) — discrete-time neural
+"""Nnet-survival (Gensheimer & Narasimhan 2019) — discrete-time neural (SYNTHETIC)
 survival: per-interval hazard logits (logistic discrete hazard) vs Cox
 PH C-index.
 """

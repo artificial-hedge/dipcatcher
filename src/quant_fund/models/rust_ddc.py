@@ -1,4 +1,4 @@
-"""Rust (1987) nested fixed-point dynamic discrete choice.
+"""Rust (1987) nested fixed-point dynamic discrete choice (SYNTHETIC).
 
 The canonical optimal-stopping problem: a durable asset with
 state x (wear) is either kept at maintenance cost c(x) or

@@ -1,4 +1,4 @@
-"""R2D2 (Bertinetto et al. 2019) — meta-learned feature body + closed-form
+"""R2D2 (Bertinetto et al. 2019) — meta-learned feature body + closed-form (SYNTHETIC)
 ridge-regression head per task (no gradient steps needed). Query MSE vs
 kernel-ridge on raw x.
 """

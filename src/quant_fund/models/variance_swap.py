@@ -1,4 +1,4 @@
-"""Model-free variance swap fair strike via option replication.
+"""Model-free variance swap fair strike via option replication (SYNTHETIC).
 
 A variance swap's fair strike equals the risk-neutral expected realised
 variance, which is replicated by a static portfolio of out-of-the-money options

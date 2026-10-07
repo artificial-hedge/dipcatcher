@@ -1,4 +1,4 @@
-"""Conformal prediction sets for ranking / top-k. No Sharpe.
+"""Conformal prediction sets for ranking / top-k. No Sharpe (SYNTHETIC).
 
 Split conformalized selection (Jin & Candès 2023 cfBH; Bates et al. 2021
 conformal p-values) and split conformal on the k-th order-statistic threshold.

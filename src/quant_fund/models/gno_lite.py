@@ -1,4 +1,4 @@
-"""Graph Neural Operator (Li et al. 2020) — message-passing kernel
+"""Graph Neural Operator (Li et al. 2020) — message-passing kernel (SYNTHETIC)
 operator on the grid graph: u(x_i) = Σ_j κ(x_i,x_j,a_i,a_j)·f_j — vs MLP.
 """
 

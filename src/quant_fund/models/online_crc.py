@@ -1,4 +1,4 @@
-"""Online conformal risk control: Gibbs–Candès update on the CRC threshold.
+"""Online conformal risk control: Gibbs–Candès update on the CRC threshold (SYNTHETIC).
 
 Batch CRC (Angelopoulos, Bates, Fisch, Lei, Schuster 2022) picks one λ on a
 calibration window. Adaptive conformal inference (Gibbs & Candès 2021)

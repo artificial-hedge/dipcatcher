@@ -1,4 +1,4 @@
-"""Conditional flow matching for TS generation (rectified flow).
+"""Conditional flow matching for TS generation (rectified flow) (SYNTHETIC).
 
 Lipman et al. 2023 / Liu et al. 2022: regress the straight-line vector
 field `dx/dt = x1 - x0` along the interpolation path; generate by

@@ -1,4 +1,4 @@
-"""N-BEATS: deep stack of interpretable basis blocks.
+"""N-BEATS: deep stack of interpretable basis blocks (SYNTHETIC).
 
 Oreshkin et al. 2020: a stack of residual blocks, each producing a
 backcast (input reconstruction) and a forecast on a shared basis.

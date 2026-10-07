@@ -1,4 +1,4 @@
-"""MAPPO (Yu et al., 2021) — centralized-value PPO for cooperative
+"""MAPPO (Yu et al., 2021) — centralized-value PPO for cooperative (SYNTHETIC)
 MARL: shared critic V(s_global), per-agent PPO-clipped policy updates
 on advantages computed from the joint value.
 """

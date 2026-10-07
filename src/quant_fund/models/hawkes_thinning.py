@@ -1,4 +1,4 @@
-"""Ogata thinning for an exponential Hawkes process:
+"""Ogata thinning for an exponential Hawkes process: (SYNTHETIC)
 λ(t) = μ + Σ_{t_i<t} α e^{-β(t-t_i)}. Clustering signature: event-count
 bursts vs homogeneous Poisson at same mean; branching ratio α/β < 1.
 """

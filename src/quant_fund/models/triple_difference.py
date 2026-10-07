@@ -1,4 +1,4 @@
-"""Triple difference (DDD) estimation.
+"""Triple difference (DDD) estimation (SYNTHETIC).
 
 The DDD estimator differences out a control group's post-shift across
 two additional margins (e.g. treated-vs-untreated unit and

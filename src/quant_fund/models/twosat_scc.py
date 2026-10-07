@@ -1,4 +1,4 @@
-"""2-SAT via implication-graph strongly connected components
+"""2-SAT via implication-graph strongly connected components (SYNTHETIC)
 (Kosaraju). Bench on random 2-CNF: solve rate vs brute force, and
 recovery of a satisfying assignment when one exists.
 """

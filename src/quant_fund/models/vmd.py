@@ -1,4 +1,4 @@
-"""Variational mode decomposition (Dragomiretskiy & Zosso 2014).
+"""Variational mode decomposition (Dragomiretskiy & Zosso 2014) (SYNTHETIC).
 
 VMD decomposes a signal f into K band-limited modes u_k whose spectra
 concentrate around adaptively estimated center frequencies omega_k,

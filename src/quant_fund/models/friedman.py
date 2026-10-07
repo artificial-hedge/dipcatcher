@@ -1,4 +1,4 @@
-"""Friedman, Kendall's W, and Page's L — blocked rank tests.
+"""Friedman, Kendall's W, and Page's L — blocked rank tests (SYNTHETIC).
 
 Friedman (1937): for a blocked design (n blocks x k treatments) the
 treatment ranks within each block give

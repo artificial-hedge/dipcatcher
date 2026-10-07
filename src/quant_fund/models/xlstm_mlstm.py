@@ -1,4 +1,4 @@
-"""xLSTM / mLSTM (Beck et al. 2024) — matrix-memory LSTM:
+"""xLSTM / mLSTM (Beck et al. 2024) — matrix-memory LSTM: (SYNTHETIC)
 M_t = f_t M_{t-1} + i_t k_t v_t^T, readout (q_t^T M)/(q_t^T Σ f k).
 Covariance-matrix memory with learned gates on induction recall.
 """

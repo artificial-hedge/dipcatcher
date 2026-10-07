@@ -1,4 +1,4 @@
-"""Cyclic Jacobi eigenvalue algorithm: sweeps of Givens rotations
+"""Cyclic Jacobi eigenvalue algorithm: sweeps of Givens rotations (SYNTHETIC)
 zeroing off-diagonal mass — full symmetric spectrum recovery.
 """
 

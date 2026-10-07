@@ -1,4 +1,4 @@
-"""DoRA weight-decomposed adaptation (Liu et al. 2024).
+"""DoRA weight-decomposed adaptation (Liu et al. 2024) (SYNTHETIC).
 
 W' = m · (V + BA) / ||V + BA|| — direction adapted by low-rank BA,
 magnitude m learned separately. On the rotated-boundary fixture it

@@ -1,4 +1,4 @@
-"""Adafactor (Shazeer-Stern 2018) — factored second-moment estimate
+"""Adafactor (Shazeer-Stern 2018) — factored second-moment estimate (SYNTHETIC)
 for matrices: row/col RMS factors → O(n+m) memory vs Adam's O(nm).
 """
 

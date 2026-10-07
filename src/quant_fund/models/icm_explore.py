@@ -1,4 +1,4 @@
-"""ICM (Pathak et al. 2017): inverse+forward dynamics model; intrinsic
+"""ICM (Pathak et al. 2017): inverse+forward dynamics model; intrinsic (SYNTHETIC)
 reward = forward-model prediction error on next-state features.
 Torch-gated small nets.
 """

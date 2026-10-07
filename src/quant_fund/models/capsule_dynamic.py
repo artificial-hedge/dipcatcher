@@ -1,4 +1,4 @@
-"""Dynamic-routing capsule layer (Sabour et al. 2017).
+"""Dynamic-routing capsule layer (Sabour et al. 2017) (SYNTHETIC).
 
 Part capsules → one output capsule via 3 iterations of routing-by-
 agreement; on the part-whole fixture the routed agreement beats a mean-

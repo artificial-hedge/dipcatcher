@@ -1,4 +1,4 @@
-"""FCI-lite (Spirtes et al. 1995) — PC-stable skeleton with collider +
+"""FCI-lite (Spirtes et al. 1995) — PC-stable skeleton with collider + (SYNTHETIC)
 Meek orientation under a latent confounder: node 0 is dropped as
 unobserved; skeleton F1 vs the induced marginal DAG skeleton.
 """

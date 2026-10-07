@@ -1,4 +1,4 @@
-"""Explainable-AI attribution for return signals (Exec-Summary XAI item).
+"""Explainable-AI attribution for return signals (Exec-Summary XAI item) (SYNTHETIC).
 KernelSHAP (weighted linear fit over feature coalitions) and integrated
 gradients on a linear+nonlinear signal model, with sanity checks:
 attributions must sum to f(x)-f(base) (completeness) and rank-match the

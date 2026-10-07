@@ -1,4 +1,4 @@
-"""Linear-Gaussian state-space machinery: Kalman filter/smoother + OU.
+"""Linear-Gaussian state-space machinery: Kalman filter/smoother + OU (SYNTHETIC).
 
 References:
 - Kalman (1960). A new approach to linear filtering and prediction problems.

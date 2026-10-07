@@ -1,4 +1,4 @@
-"""STGCN-lite (Yu et al. 2018) — temporal gated conv (GLU over 3 taps)
+"""STGCN-lite (Yu et al. 2018) — temporal gated conv (GLU over 3 taps) (SYNTHETIC)
 + spatial graph conv block; linear readout to next-step values.
 Next-step MSE vs per-node AR(2).
 """

@@ -1,4 +1,4 @@
-"""Exploratory factor analysis — principal axis + varimax rotation.
+"""Exploratory factor analysis — principal axis + varimax rotation (SYNTHETIC).
 
 Thurstone (1947), Harman (1976): the common-factor model writes the
 correlation matrix R ≈ LL^T + Psi with loadings L (p x k) and

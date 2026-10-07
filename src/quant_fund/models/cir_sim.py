@@ -1,4 +1,4 @@
-"""CIR process exact/noncentral-χ² simulation vs Euler — verifies the
+"""CIR process exact/noncentral-χ² simulation vs Euler — verifies the (SYNTHETIC)
 exact scheme's mean/variance against analytic CIR moments where Euler
 drifts and goes negative.
 """

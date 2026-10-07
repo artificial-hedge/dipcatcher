@@ -1,4 +1,4 @@
-"""Linear MPC via batch-QP: condense the finite-horizon LQR into a QP
+"""Linear MPC via batch-QP: condense the finite-horizon LQR into a QP (SYNTHETIC)
 in u_0..u_{T-1}, solve by projected gradient. Receding-horizon cost
 vs PD baseline.
 """

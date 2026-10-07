@@ -1,4 +1,4 @@
-"""LQG = Kalman filter + LQR separation on a noisy double integrator:
+"""LQG = Kalman filter + LQR separation on a noisy double integrator: (SYNTHETIC)
 observations carry position noise; controller uses the filtered
 estimate. Cost vs LQR driven by raw measurements.
 """

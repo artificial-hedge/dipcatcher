@@ -1,4 +1,4 @@
-"""Long-memory (fractional-integration) estimators.
+"""Long-memory (fractional-integration) estimators (SYNTHETIC).
 
 References:
 - Geweke & Porter-Hudak (1983): log-periodogram regression for d.

@@ -1,4 +1,4 @@
-"""CAGrad (Liu et al. 2021) — conflict-averse gradient descent: follow
+"""CAGrad (Liu et al. 2021) — conflict-averse gradient descent: follow (SYNTHETIC)
 the average gradient while staying within c of the worst task
 improvement; solved as min ||d - g0|| s.t. gi.d >= w-min_i gi.d.
 """

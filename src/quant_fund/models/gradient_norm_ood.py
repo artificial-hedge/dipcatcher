@@ -1,4 +1,4 @@
-"""GradNorm OOD detection (Huang et al. 2021).
+"""GradNorm OOD detection (Huang et al. 2021) (SYNTHETIC).
 
 The norm of the input-gradient of the KL divergence between softmax
 and uniform is small for in-distribution inputs and large for OOD —

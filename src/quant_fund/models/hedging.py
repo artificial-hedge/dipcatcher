@@ -1,4 +1,4 @@
-"""Minimum-variance hedging and hedge-effectiveness measurement.
+"""Minimum-variance hedging and hedge-effectiveness measurement (SYNTHETIC).
 
 References:
 - Ederington (1979): minimum-variance hedge ratio and effectiveness R2.

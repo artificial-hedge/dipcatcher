@@ -1,4 +1,4 @@
-"""MC-dropout (Gal & Ghahramani 2016) — dropout active at inference;
+"""MC-dropout (Gal & Ghahramani 2016) — dropout active at inference; (SYNTHETIC)
 predictive mean/var over T stochastic forward passes. NLL + OOD gap.
 """
 

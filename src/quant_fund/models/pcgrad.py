@@ -1,4 +1,4 @@
-"""PCGrad (Yu et al. 2020) — project conflicting gradients: when
+"""PCGrad (Yu et al. 2020) — project conflicting gradients: when (SYNTHETIC)
 g1.g2 < 0, subtract the mutual projection from both. Min-task acc
 vs naive-sum SGD on the conflicting two-task fixture.
 """

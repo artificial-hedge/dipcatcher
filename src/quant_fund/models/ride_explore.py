@@ -1,4 +1,4 @@
-"""RIDE (Raileanu & Rocktaschel 2020): intrinsic reward = |f(s') - f(s)|
+"""RIDE (Raileanu & Rocktaschel 2020): intrinsic reward = |f(s') - f(s)| (SYNTHETIC)
 on learned/fixed features — encourages actions that change the state.
 Numpy fixed random-projection features + forward-model variant.
 """

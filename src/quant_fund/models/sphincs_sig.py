@@ -1,4 +1,4 @@
-"""SPHINCS+-lite — FORS few-time signature under a hypertree of XMSS.
+"""SPHINCS+-lite — FORS few-time signature under a hypertree of XMSS (SYNTHETIC).
 
 The message digest picks k FORS leaf indices; each revealed leaf value +
 auth path verifies to the FORS root, which is signed by a bottom-layer

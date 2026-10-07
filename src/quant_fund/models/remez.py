@@ -1,4 +1,4 @@
-"""Parks–McClellan equiripple FIR design via the Remez exchange.
+"""Parks–McClellan equiripple FIR design via the Remez exchange (SYNTHETIC).
 
 Canonical reference: Parks & McClellan (1972); McClellan, Parks &
 Rabiner (1973). At each step the extremal set pins the (n+1)×(n+1)

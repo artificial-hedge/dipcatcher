@@ -1,4 +1,4 @@
-"""DCRNN-lite (Li et al. 2018) — diffusion-convolutional GRU: gates act
+"""DCRNN-lite (Li et al. 2018) — diffusion-convolutional GRU: gates act (SYNTHETIC)
 on A-propagated [x, h] instead of plain concatenation; linear readout.
 Next-step MSE vs per-node AR(2).
 """

@@ -1,4 +1,4 @@
-"""Design-effect diagnostics — Kish DEFF, effective sample size,
+"""Design-effect diagnostics — Kish DEFF, effective sample size, (SYNTHETIC)
 and weighting-cost decomposition.
 
 Kish (1965, 1992): unequal weights inflate the variance of a

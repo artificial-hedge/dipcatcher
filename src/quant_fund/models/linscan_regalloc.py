@@ -1,4 +1,4 @@
-"""Linear-scan register allocation (synthetic).
+"""Linear-scan register allocation (synthetic) (SYNTHETIC).
 
 Intervals sorted by start; expire registers as intervals end;
 spill when pool exhausted (spill longest-current interval).

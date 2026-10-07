@@ -1,4 +1,4 @@
-"""NoisyNet factorized-Gaussian exploration (Fortunato et al. 2018).
+"""NoisyNet factorized-Gaussian exploration (Fortunato et al. 2018) (SYNTHETIC).
 
 Learned σ on linear-layer weights replaces ε-greedy: exploration declines
 endogenously as σ shrinks. Bench scores state-action coverage vs an

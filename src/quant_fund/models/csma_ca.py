@@ -1,4 +1,4 @@
-"""CSMA/CA channel access: exponential-backoff retransmission sim."""
+"""CSMA/CA channel access: exponential-backoff retransmission sim (SYNTHETIC)."""
 
 import numpy as np
 

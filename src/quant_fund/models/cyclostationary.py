@@ -1,4 +1,4 @@
-"""Cyclostationary analysis — Gardner's cyclic autocorrelation and
+"""Cyclostationary analysis — Gardner's cyclic autocorrelation and (SYNTHETIC)
 spectral correlation density (SCD).
 
 A cyclostationary process has periodically time-varying second-order

@@ -1,4 +1,4 @@
-"""COMA (Foerster et al., 2018) — counterfactual multi-agent policy
+"""COMA (Foerster et al., 2018) — counterfactual multi-agent policy (SYNTHETIC)
 gradients: centralized critic Q(s, a_joint), per-agent advantage
 A_i = Q(s, a) − Σ_{a_i'} π_i(a_i')·Q(s, a_{−i}, a_i'), removing the
 agent's own action from the credit signal.

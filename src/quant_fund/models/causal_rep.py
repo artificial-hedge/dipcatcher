@@ -1,4 +1,4 @@
-"""CFRNet-style IPM-balanced representation (Shalit et al. 2017).
+"""CFRNet-style IPM-balanced representation (Shalit et al. 2017) (SYNTHETIC).
 
 Trunk trained to predict y AND minimize an MMD penalty between
 treated/control representations — balance penalty vs unpenalized

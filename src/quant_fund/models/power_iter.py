@@ -1,4 +1,4 @@
-"""Power iteration + Wielandt deflation for the top-k eigenpairs of a
+"""Power iteration + Wielandt deflation for the top-k eigenpairs of a (SYNTHETIC)
 symmetric matrix — eigenvalue recovery vs NumPy on planted spectra.
 """
 

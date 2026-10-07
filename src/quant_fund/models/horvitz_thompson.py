@@ -1,4 +1,4 @@
-"""Horvitz-Thompson and Hajek estimators for design-based survey
+"""Horvitz-Thompson and Hajek estimators for design-based survey (SYNTHETIC)
 inference.
 
 Horvitz & Thompson (1952): for a probability sample with

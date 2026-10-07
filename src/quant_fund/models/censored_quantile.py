@@ -1,4 +1,4 @@
-"""Censored quantile regression — Powell's CLAD estimator.
+"""Censored quantile regression — Powell's CLAD estimator (SYNTHETIC).
 
 When the outcome is censored (e.g. top-coded at c), ordinary
 quantile regression on the censored sample is biased. Powell's

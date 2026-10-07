@@ -1,4 +1,4 @@
-"""PNA (Corso et al. 2020) — multi-aggregator message passing: per-neighbor
+"""PNA (Corso et al. 2020) — multi-aggregator message passing: per-neighbor (SYNTHETIC)
 messages aggregated by {mean,max,min,std}, concatenated → node MLP.
 Planted-clique node AUC vs mean-only aggregator.
 """

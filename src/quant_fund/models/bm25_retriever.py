@@ -1,4 +1,4 @@
-"""BM25 sparse retrieval (Robertson & Zaragoza 2009).
+"""BM25 sparse retrieval (Robertson & Zaragoza 2009) (SYNTHETIC).
 
 TF·IDF with saturation k1 and length norm b over the topic corpus.
 Sparse lexical match partially recovers topic relevance; dense methods

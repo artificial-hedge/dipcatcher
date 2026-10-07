@@ -1,4 +1,4 @@
-"""CEVAE-lite — latent-confounder VAE for causal effect (Louizos 2017).
+"""CEVAE-lite — latent-confounder VAE for causal effect (Louizos 2017) (SYNTHETIC).
 
 Infer z|x,t,y via encoder; decoder p(y|z,t); ITE via z-marginalized
 counterfactual vs confounded naive ITE.

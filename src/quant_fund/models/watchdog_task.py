@@ -1,4 +1,4 @@
-"""Watchdog supervisor: kicks tasks that miss their check-in window."""
+"""Watchdog supervisor: kicks tasks that miss their check-in window (SYNTHETIC)."""
 
 import numpy as np
 

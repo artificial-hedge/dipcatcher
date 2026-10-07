@@ -1,4 +1,4 @@
-"""Straight-through estimator (Bengio et al. 2013) — forward uses the
+"""Straight-through estimator (Bengio et al. 2013) — forward uses the (SYNTHETIC)
 hard top-k mask; backward substitutes the identity gradient. Gradient
 direction vs finite-diff ground truth on the selection task.
 """

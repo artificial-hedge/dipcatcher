@@ -1,4 +1,4 @@
-"""Synthetic fixtures shared by the game-theory canon.
+"""Synthetic fixtures shared by the game-theory canon (SYNTHETIC).
 
 One LQ control system (for the mean-field games), one Cournot market,
 one leader-follower market, one small zero-sum stochastic game, and one

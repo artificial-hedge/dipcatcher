@@ -1,4 +1,4 @@
-"""Local-projection instrumental-variables impulse responses (Jordà LP-IV).
+"""Local-projection instrumental-variables impulse responses (Jordà LP-IV) (SYNTHETIC).
 
 Extends :mod:`quant_fund.models.local_projection` (plain LP with
 Newey-West CIs) to the instrumented case: at each horizon h, regress

@@ -1,4 +1,4 @@
-"""Quotient filter: Robin-Hood remainder table (synthetic).
+"""Quotient filter: Robin-Hood remainder table (synthetic) (SYNTHETIC).
 
 q = h(x) >> F_r, r = h(x) & mask; slot stores remainder + metadata
 bits (occupied/run_continuation/shifted). Verified: zero FN,

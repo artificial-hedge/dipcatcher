@@ -1,4 +1,4 @@
-"""Identity Preference Optimization (IPO / ΨPO, Azar et al. 2024).
+"""Identity Preference Optimization (IPO / ΨPO, Azar et al. 2024) (SYNTHETIC).
 
 DPO's logistic objective saturates under deterministic preferences and
 overfits label noise; IPO regresses the log-ratio gap to a fixed target

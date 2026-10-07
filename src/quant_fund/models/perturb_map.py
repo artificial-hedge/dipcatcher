@@ -1,4 +1,4 @@
-"""Perturb-and-MAP differentiation (Berthet et al. 2020) — the Jacobian
+"""Perturb-and-MAP differentiation (Berthet et al. 2020) — the Jacobian (SYNTHETIC)
 of argmax under Gumbel perturbations is estimated by Monte-Carlo:
 d/ds E[argmax(s+εZ)] via the perturbed maximizer's covariance.
 Selection-task gradient vs finite-diff.

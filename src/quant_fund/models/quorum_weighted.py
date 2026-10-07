@@ -1,4 +1,4 @@
-"""Weighted-voting quorum systems.
+"""Weighted-voting quorum systems (SYNTHETIC).
 
 Nodes carry integer weights; a quorum is any set with total weight > W/2
 (write) and, for reads, weight >= W - qw + 1 so that read and write

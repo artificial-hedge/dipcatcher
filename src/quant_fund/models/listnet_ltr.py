@@ -1,4 +1,4 @@
-"""ListNet (Cao et al. 2007) — listwise top-1 cross-entropy between
+"""ListNet (Cao et al. 2007) — listwise top-1 cross-entropy between (SYNTHETIC)
 softmax(score) and softmax(relevance gain) distributions.
 """
 

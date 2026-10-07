@@ -1,4 +1,4 @@
-"""NOTEARS (Zheng et al. 2018) — continuous DAG recovery: minimize
+"""NOTEARS (Zheng et al. 2018) — continuous DAG recovery: minimize (SYNTHETIC)
 least-squares + l1 subject to h(W) = tr(e^{W∘W}) - d = 0 via augmented
 Lagrangian. SHD vs correlation-sort baseline.
 """

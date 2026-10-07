@@ -1,4 +1,4 @@
-"""VAR-LiNGAM (Hyvärinen et al. 2010) — VAR(1) dynamics + instantaneous
+"""VAR-LiNGAM (Hyvärinen et al. 2010) — VAR(1) dynamics + instantaneous (SYNTHETIC)
 non-Gaussian SEM: fit lag matrix by OLS, then LiNGAM-order the
 residuals to recover the instantaneous B0 graph.
 """

@@ -1,4 +1,4 @@
-"""Counterexample-guided inductive synthesis (CEGIS) over a stratified
+"""Counterexample-guided inductive synthesis (CEGIS) over a stratified (SYNTHETIC)
 LIA grammar — same term/guard stratification as the ESolver.
 
 Loop: synthesizer proposes the first candidate (ordered small-first)

@@ -1,4 +1,4 @@
-"""p-adic valuation, ultrametric norm, Hensel-lift verification (SYNTHIC)."""
+"""p-adic valuation, ultrametric norm, Hensel-lift verification (SYNTHIC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

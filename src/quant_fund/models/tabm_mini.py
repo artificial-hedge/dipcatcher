@@ -1,4 +1,4 @@
-"""TabM-lite — parameter-efficient multi-head ensemble (Gorishniy 2024).
+"""TabM-lite — parameter-efficient multi-head ensemble (Gorishniy 2024) (SYNTHETIC).
 
 K prediction heads share one trunk (multi-bet ensembling); mean-head
 accuracy vs single-head MLP at matched compute.

@@ -1,4 +1,4 @@
-"""Intraclass correlation coefficients — McGraw & Wong (1996).
+"""Intraclass correlation coefficients — McGraw & Wong (1996) (SYNTHETIC).
 
 For an (n targets, k raters) matrix the one-way/two-way ANOVA
 mean squares give the standard ICC family:

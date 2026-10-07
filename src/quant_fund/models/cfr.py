@@ -1,4 +1,4 @@
-"""Counterfactual regret minimization — self-play equilibrium
+"""Counterfactual regret minimization — self-play equilibrium (SYNTHETIC)
 computation for extensive-form games, instantiated on Kuhn poker
 (canonical 3-card, 1-street game with a known Nash equilibrium).
 """

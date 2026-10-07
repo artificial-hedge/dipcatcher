@@ -1,4 +1,4 @@
-"""Vine copulas (R-vine, C-vine, D-vine) and GAS dynamic copulas.
+"""Vine copulas (R-vine, C-vine, D-vine) and GAS dynamic copulas (SYNTHETIC).
 
 Regular vine (R-vine) pair-copula constructions for high-dimensional
 dependence modelling, plus the Generalized Autoregressive Score (GAS)

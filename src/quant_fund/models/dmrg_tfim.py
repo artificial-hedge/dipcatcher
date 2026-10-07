@@ -1,4 +1,4 @@
-"""Single-site DMRG on the transverse-field Ising chain (MPS chi=4)
+"""Single-site DMRG on the transverse-field Ising chain (MPS chi=4) (SYNTHETIC)
 vs exact diagonalization — variational ground-state energy gap.
 """
 

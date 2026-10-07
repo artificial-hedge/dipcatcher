@@ -1,4 +1,4 @@
-"""GOLEM (Ng et al. 2020) — likelihood-based DAG recovery: Gaussian
+"""GOLEM (Ng et al. 2020) — likelihood-based DAG recovery: Gaussian (SYNTHETIC)
 equal-variance score (replaces least-squares BIC) + NOTEARS acyclicity.
 Better under unequal variances; SHD vs corr baseline.
 """

@@ -1,4 +1,4 @@
-"""Myerson (1981) optimal auction — virtual valuations
+"""Myerson (1981) optimal auction — virtual valuations (SYNTHETIC)
 φ(v) = v − (1 − F(v))/f(v), allocate to the highest nonnegative
 virtual value, charge the winner's threshold bid. Includes the
 regularity check and revenue comparison to VCG/second-price.

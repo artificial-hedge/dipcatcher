@@ -1,4 +1,4 @@
-"""Shared synthetic fixtures + tiny simplex for the wave-211 IP canon."""
+"""Shared synthetic fixtures + tiny simplex for the wave-211 IP canon (SYNTHETIC)."""
 
 import numpy as np
 

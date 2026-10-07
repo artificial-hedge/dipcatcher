@@ -1,4 +1,4 @@
-"""Manifold-learning canon: LLE (Roweis-Saul 2000),
+"""Manifold-learning canon: LLE (Roweis-Saul 2000), (SYNTHETIC)
 Laplacian eigenmaps (Belkin-Niyogi 2003), diffusion
 maps (Coifman-Lafon 2006), and exact-gradient t-SNE
 (van der Maaten-Hinton 2008).

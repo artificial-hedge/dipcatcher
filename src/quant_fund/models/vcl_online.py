@@ -1,4 +1,4 @@
-"""Variational Continual Learning (Nguyen et al. 2018) — sequential Bayes:
+"""Variational Continual Learning (Nguyen et al. 2018) — sequential Bayes: (SYNTHETIC)
 posterior of task t becomes prior of task t+1 (diagonal-Gaussian weights);
 ELBO per task. Retention on task 1 vs SGD + final accuracy.
 """

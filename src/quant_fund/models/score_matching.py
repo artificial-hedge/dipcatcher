@@ -1,4 +1,4 @@
-"""Implicit score matching (Hyvärinen 2005) — train E(x) so that
+"""Implicit score matching (Hyvärinen 2005) — train E(x) so that (SYNTHETIC)
 ∇E ≈ -∇ log p_data via tr(∇²E) + 0.5|∇E|²; Langevin samples then
 MMD-evaluated vs moons data.
 """

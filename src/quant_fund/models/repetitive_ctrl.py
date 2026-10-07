@@ -1,4 +1,4 @@
-"""Repetitive control: learns periodic disturbance rejection."""
+"""Repetitive control: learns periodic disturbance rejection (SYNTHETIC)."""
 
 import numpy as np
 

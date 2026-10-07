@@ -1,4 +1,4 @@
-"""Implicit function theorem differentiation — through the ridge
+"""Implicit function theorem differentiation — through the ridge (SYNTHETIC)
 fixed-point z*(θ) = (θI + A^T A)^{-1} A^T b: dz/dθ via IFT vs finite
 difference on θ.
 """

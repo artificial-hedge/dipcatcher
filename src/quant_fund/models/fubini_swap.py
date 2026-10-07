@@ -1,4 +1,4 @@
-"""Fubini-Tonelli order swap (wave 288).
+"""Fubini-Tonelli order swap (wave 288) (SYNTHETIC).
 
 For integrable f(x,y) on the unit square, row-then-column and
 column-then-row integrals coincide (and equal the 2-D quadrature).

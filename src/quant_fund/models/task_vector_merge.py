@@ -1,4 +1,4 @@
-"""Task-vector model merging (Ilharco et al. 2023).
+"""Task-vector model merging (Ilharco et al. 2023) (SYNTHETIC).
 
 τ_i = θ_i − θ_0 is the task vector; merging adds scaled task vectors to
 the base: θ_merge = θ_0 + λ Σ τ_i. On two rotated tasks, the merged

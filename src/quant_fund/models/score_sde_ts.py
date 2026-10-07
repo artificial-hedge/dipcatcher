@@ -1,4 +1,4 @@
-"""Score-based SDE diffusion for TS generation.
+"""Score-based SDE diffusion for TS generation (SYNTHETIC).
 
 Song et al. 2021: learn the score of noise-perturbed data at all
 noise scales (VP SDE), then sample by solving the reverse SDE.

@@ -1,4 +1,4 @@
-"""Boosting: AdaBoost.M1 (Freund-Schapire 1997) and
+"""Boosting: AdaBoost.M1 (Freund-Schapire 1997) and (SYNTHETIC)
 LogitBoost (Friedman-Hastie-Tibshirani 2000 — additive
 logistic regression by Newton steps), both on decision
 stumps. Synthetic bench gates boosted accuracy over a

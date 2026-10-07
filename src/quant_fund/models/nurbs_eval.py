@@ -1,4 +1,4 @@
-"""NURBS curve evaluation via Cox-de Boor basis + de Boor point eval.
+"""NURBS curve evaluation via Cox-de Boor basis + de Boor point eval (SYNTHETIC).
 
 A clamped, non-uniform cubic NURBS curve is built through control points
 with non-unit weights. Verified: endpoints interpolate the first/last

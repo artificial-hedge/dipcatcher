@@ -1,4 +1,4 @@
-"""Reformer-style LSH bucketed attention (Kitaev et al. 2020).
+"""Reformer-style LSH bucketed attention (Kitaev et al. 2020) (SYNTHETIC).
 
 Angular LSH buckets queries into buckets by hash of a random rotation;
 attention only within bucket (sorted order). On the retrieval task LSH

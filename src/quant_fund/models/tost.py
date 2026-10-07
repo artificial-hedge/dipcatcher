@@ -1,4 +1,4 @@
-"""Equivalence testing via two one-sided tests (TOST).
+"""Equivalence testing via two one-sided tests (TOST) (SYNTHETIC).
 
 Schuirmann (1987) two one-sided tests for mean
 equivalence: ``H0: |delta| >= theta`` rejected when both

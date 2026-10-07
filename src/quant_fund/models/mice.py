@@ -1,4 +1,4 @@
-"""Multiple imputation by chained equations (MICE) with
+"""Multiple imputation by chained equations (MICE) with (SYNTHETIC)
 predictive mean matching, plus Rubin's pooling rules.
 
 van Buuren & Groothuis-Oudshoorn (2011): for a data matrix with

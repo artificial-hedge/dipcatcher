@@ -1,4 +1,4 @@
-"""GAIL: generative adversarial imitation learning.
+"""GAIL: generative adversarial imitation learning (SYNTHETIC).
 
 Ho & Ermon 2016: a discriminator distinguishes expert from policy
 state-action pairs; the policy is trained (via PPO-style clipped

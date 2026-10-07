@@ -1,4 +1,4 @@
-"""Mixture-of-Depths token routing (Raposo et al. 2024).
+"""Mixture-of-Depths token routing (Raposo et al. 2024) (SYNTHETIC).
 
 A learned router scores each token; only the top-k tokens take the
 attention branch, the rest pass through identity — compute scales with

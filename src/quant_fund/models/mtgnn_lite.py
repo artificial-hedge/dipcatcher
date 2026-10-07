@@ -1,4 +1,4 @@
-"""MTGNN-lite (Wu et al. 2020) — mixhop propagation (sum of A^k powers)
+"""MTGNN-lite (Wu et al. 2020) — mixhop propagation (sum of A^k powers) (SYNTHETIC)
 + dilated inception temporal conv + learned uni-directional adjacency.
 Next-step MSE vs plain GCN-TCN.
 """

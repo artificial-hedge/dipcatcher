@@ -1,4 +1,4 @@
-"""Universal-variable Lambert solver (Bate-Mueller-White formulation)."""
+"""Universal-variable Lambert solver (Bate-Mueller-White formulation) (SYNTHETIC)."""
 
 from __future__ import annotations
 

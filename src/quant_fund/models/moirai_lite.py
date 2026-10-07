@@ -1,4 +1,4 @@
-"""Moirai-lite (Woo et al. 2024) — any-variate masked-patch transformer:
+"""Moirai-lite (Woo et al. 2024) — any-variate masked-patch transformer: (SYNTHETIC)
 series packed as (variate, patch) tokens with random masking; output head
 per patch → quantile forecast.
 """

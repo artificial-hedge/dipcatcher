@@ -1,4 +1,4 @@
-"""Linear mode connectivity — loss barrier along the line between two
+"""Linear mode connectivity — loss barrier along the line between two (SYNTHETIC)
 independently trained minima vs same-basin endpoints; measures whether
 the regime task's loss landscape has disconnected basins.
 """

@@ -1,4 +1,4 @@
-"""Lottery ticket hypothesis (Frankle & Carbin 2019).
+"""Lottery ticket hypothesis (Frankle & Carbin 2019) (SYNTHETIC).
 
 Rewind the surviving weights to init inside the magnitude mask and
 retrain — the "winning ticket" matches dense accuracy while a mask on

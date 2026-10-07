@@ -1,4 +1,4 @@
-"""RMSNorm block (Zhang & Sennrich 2019) — RMS-normalized MLP vs
+"""RMSNorm block (Zhang & Sennrich 2019) — RMS-normalized MLP vs (SYNTHETIC)
 LayerNorm and unnormalized MLP on regime task; measures acc AND
 final-layer activation drift (RMS deviation from 1).
 """

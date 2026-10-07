@@ -1,4 +1,4 @@
-"""Morgan/ECFP-style fingerprint (wave 290).
+"""Morgan/ECFP-style fingerprint (wave 290) (SYNTHETIC).
 
 Iterative atom-environment hashing: h^0 = atom symbol, h^{r+1} =
 hash(atom | sorted neighbor hashes). Fingerprints at radius 2; verified

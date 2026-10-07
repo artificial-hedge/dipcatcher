@@ -1,4 +1,4 @@
-"""Row-polymorphic record types: width/depth subtyping + row unification.
+"""Row-polymorphic record types: width/depth subtyping + row unification (SYNTHETIC).
 
 Types: ("base",n) | ("rec",{l:T}, tail) with tail None (closed) or
 ("rvar",n) (row variable). Subtyping: closed record <: record iff it has

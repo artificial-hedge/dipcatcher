@@ -1,4 +1,4 @@
-"""Feynman-Kac Monte Carlo — u(t,x) = E[u0(x + σW_t)] estimated by
+"""Feynman-Kac Monte Carlo — u(t,x) = E[u0(x + σW_t)] estimated by (SYNTHETIC)
 Brownian sampling at each grid point; stochastic baseline for the PDE.
 """
 

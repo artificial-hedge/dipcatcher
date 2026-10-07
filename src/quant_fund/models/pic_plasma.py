@@ -1,4 +1,4 @@
-"""1D particle-in-cell plasma: charge deposit + Poisson solve + push."""
+"""1D particle-in-cell plasma: charge deposit + Poisson solve + push (SYNTHETIC)."""
 
 import numpy as np
 

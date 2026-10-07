@@ -1,4 +1,4 @@
-"""muP-lite (Yang & Hu 2021) — maximal-update-parameterized scaling:
+"""muP-lite (Yang & Hu 2021) — maximal-update-parameterized scaling: (SYNTHETIC)
 readout weights init ~ 1/width and lr scaled ~ 1/width, vs standard
 init at width 16 and 64; measures whether performance transfers across
 widths.

@@ -1,4 +1,4 @@
-"""RealNVP (Dinh et al. 2017) — affine coupling layers:
+"""RealNVP (Dinh et al. 2017) — affine coupling layers: (SYNTHETIC)
 x_a → s,t nets conditioned on x_a transform x_b; logdet = Σ s.
 Held-out NLL vs Gaussian on the pinwheel fixture.
 """

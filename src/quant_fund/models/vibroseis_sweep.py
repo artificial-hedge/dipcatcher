@@ -1,4 +1,4 @@
-"""Vibroseis sweep correlation (Klauder wavelet) + deconvolution check.
+"""Vibroseis sweep correlation (Klauder wavelet) + deconvolution check (SYNTHETIC).
 
 A linear chirp sweep convolved with a reflectivity series is correlated
 with the pilot sweep; the autocorrelated sweep (Klauder wavelet) peaks

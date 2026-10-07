@@ -1,4 +1,4 @@
-"""Interval abstract interpretation over a mini while-language.
+"""Interval abstract interpretation over a mini while-language (SYNTHETIC).
 
 Programs are tuples: ("assign", x, expr), ("seq", s1, s2),
 ("if", guard_expr, then, else), ("while", guard_expr, body, inv_hint).

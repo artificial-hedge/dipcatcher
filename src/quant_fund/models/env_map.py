@@ -1,4 +1,4 @@
-"""Cubemap face selection (wave 293).
+"""Cubemap face selection (wave 293) (SYNTHETIC).
 
 Direction → (face, u, v): dominant axis picks face; verified against
 the six canonical directions and consistency: sampling each face center

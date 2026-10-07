@@ -1,4 +1,4 @@
-"""ORB-lite: Harris corners + binary BRIEF descriptors + Hamming match."""
+"""ORB-lite: Harris corners + binary BRIEF descriptors + Hamming match (SYNTHETIC)."""
 
 import numpy as np
 

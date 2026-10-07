@@ -1,4 +1,4 @@
-"""Neural algorithm execution (Veličković et al., "Neural Execution of
+"""Neural algorithm execution (Veličković et al., "Neural Execution of (SYNTHETIC)
 Graph Algorithms") — GNN learns BFS-relaxation: predict hop-distance to a
 source node on random graphs (clamped to graph diameter). MAE vs
 degree-feature MLP.

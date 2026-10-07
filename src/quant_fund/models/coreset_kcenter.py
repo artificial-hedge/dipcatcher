@@ -1,4 +1,4 @@
-"""k-center coreset selection (Sener & Savarese 2018) — cover the
+"""k-center coreset selection (Sener & Savarese 2018) — cover the (SYNTHETIC)
 unlabeled pool greedily in feature space: pick the point farthest from
 the labeled set (maximin). Accuracy vs random baseline.
 """

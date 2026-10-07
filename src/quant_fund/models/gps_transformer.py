@@ -1,4 +1,4 @@
-"""GraphGPS-lite (Rampášek et al. 2022) — local MPNN + global self-attention
+"""GraphGPS-lite (Rampášek et al. 2022) — local MPNN + global self-attention (SYNTHETIC)
 combined each layer. Planted-clique AUC vs pure-MPNN ablation.
 """
 

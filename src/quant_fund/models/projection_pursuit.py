@@ -1,4 +1,4 @@
-"""Projection pursuit regression (PPR) and indices.
+"""Projection pursuit regression (PPR) and indices (SYNTHETIC).
 
 Canonical references:
 

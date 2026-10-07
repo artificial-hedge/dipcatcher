@@ -1,4 +1,4 @@
-"""Distribution regression — conditional CDF via link regressions.
+"""Distribution regression — conditional CDF via link regressions (SYNTHETIC).
 
 Instead of modeling quantiles one at a time, distribution regression
 fits ``F(y|x) = Λ(x'β(y))`` for each threshold y in a grid, where Λ

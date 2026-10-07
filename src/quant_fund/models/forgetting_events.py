@@ -1,4 +1,4 @@
-"""Forgetting events (Toneva et al. 2019) — count label flips of
+"""Forgetting events (Toneva et al. 2019) — count label flips of (SYNTHETIC)
 per-example predictions across SGD epochs; scores correlate with
 label noise. Bench: AUC of forgetting-count as mislabel detector +
 accuracy after dropping top-forgotten.

@@ -1,4 +1,4 @@
-"""Group Relative Policy Optimization (DeepSeekMath / R1 style).
+"""Group Relative Policy Optimization (DeepSeekMath / R1 style) (SYNTHETIC).
 
 For each context sample G candidate actions from the policy; advantage
 = (r_i − mean(r_group)) / std — no critic needed. Policy improves true

@@ -1,4 +1,4 @@
-"""Semi-supervised canon: label propagation via the harmonic function on a
+"""Semi-supervised canon: label propagation via the harmonic function on a (SYNTHETIC)
 k-NN similarity graph (Zhu & Ghahramani 2002) and self-training with
 confidence thresholding. ``bench_semisupervised`` plants a two-moons-style
 margin structure and gates both methods over the labeled-only logistic

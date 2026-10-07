@@ -1,4 +1,4 @@
-"""ARP cache sim: request/reply learning, timeout eviction, gratuitous update."""
+"""ARP cache sim: request/reply learning, timeout eviction, gratuitous update (SYNTHETIC)."""
 
 import numpy as np
 

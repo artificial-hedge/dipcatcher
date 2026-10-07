@@ -1,4 +1,4 @@
-"""Method of lines — central-difference Laplacian + RK4 time
+"""Method of lines — central-difference Laplacian + RK4 time (SYNTHETIC)
 integration of the heat equation; classical baseline for the canon.
 """
 

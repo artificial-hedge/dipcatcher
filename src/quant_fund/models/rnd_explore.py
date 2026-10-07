@@ -1,4 +1,4 @@
-"""RND (Burda et al. 2019): fixed random target network vs trained
+"""RND (Burda et al. 2019): fixed random target network vs trained (SYNTHETIC)
 predictor; intrinsic reward = feature prediction error. Torch-gated
 MLP pair on state features.
 """

@@ -1,4 +1,4 @@
-"""Gumbel-softmax relaxation (Jang et al. 2017; Maddison et al. 2017) —
+"""Gumbel-softmax relaxation (Jang et al. 2017; Maddison et al. 2017) — (SYNTHETIC)
 continuous top-k via temperature-annealed Gumbel-softmax mask; gradient
 correlation vs finite-diff on the selection task.
 """

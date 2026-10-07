@@ -1,4 +1,4 @@
-"""Clark–Scarf (1960) serial two-echelon inventory: echelon base-stock
+"""Clark–Scarf (1960) serial two-echelon inventory: echelon base-stock (SYNTHETIC)
 levels via sequential newsvendor recursion vs myopic policies.
 """
 

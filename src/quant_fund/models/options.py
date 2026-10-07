@@ -1,4 +1,4 @@
-"""Black–Scholes–Merton option pricing, Greeks, and implied volatility.
+"""Black–Scholes–Merton option pricing, Greeks, and implied volatility (SYNTHETIC).
 
 References:
 - Black & Scholes (1973); Merton (1973): the BSM formula.

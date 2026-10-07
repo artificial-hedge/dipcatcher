@@ -1,4 +1,4 @@
-"""PATE — Private Aggregation of Teacher Ensembles (Papernot 2018).
+"""PATE — Private Aggregation of Teacher Ensembles (Papernot 2018) (SYNTHETIC).
 
 K teachers vote on unlabeled queries; noisy argmax (Laplace) labels
 are revealed to a student. Privacy vs utility: label agreement and

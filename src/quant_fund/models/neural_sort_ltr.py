@@ -1,4 +1,4 @@
-"""NeuralSort (Grover et al. 2019) — deterministic differentiable
+"""NeuralSort (Grover et al. 2019) — deterministic differentiable (SYNTHETIC)
 permutation via P[i,j] = softmax(-(|i+1 - 2j - n| s_j - A s_j)/τ);
 soft-sorted gains drive a listwise NDCG surrogate.
 """

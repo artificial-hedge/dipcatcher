@@ -1,4 +1,4 @@
-"""Neural ODE factor dynamics (Exec-Summary continuous-time item). Latent
+"""Neural ODE factor dynamics (Exec-Summary continuous-time item). Latent (SYNTHETIC)
 drift f_theta(z) learned from return windows; integrate with RK4 and train
 end-to-end on next-step prediction. Compared with an AR baseline on a
 synthetic nonlinear oscillator + trend factor process.

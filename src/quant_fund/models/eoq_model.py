@@ -1,4 +1,4 @@
-"""EOQ (Harris 1913): Q* = sqrt(2·K·D/h). Simulated-cost advantage vs
+"""EOQ (Harris 1913): Q* = sqrt(2·K·D/h). Simulated-cost advantage vs (SYNTHETIC)
 naive periodic restock on Poisson demand.
 """
 

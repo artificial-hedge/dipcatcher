@@ -1,4 +1,4 @@
-"""Diffusion regressor — conditional DDPM sampler on y|x (eps-prediction,
+"""Diffusion regressor — conditional DDPM sampler on y|x (eps-prediction, (SYNTHETIC)
 T=30 steps); test log-density approximated by sampling spread around
 posterior mean vs Gaussian baseline.
 """

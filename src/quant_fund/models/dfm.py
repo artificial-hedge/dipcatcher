@@ -1,4 +1,4 @@
-"""Dynamic factor model: two-step Doz, Giannone & Reichlin (2012)
+"""Dynamic factor model: two-step Doz, Giannone & Reichlin (2012) (SYNTHETIC)
 estimator for the approximate DFM
 
     x_t = Lambda F_t + e_t,      F_t = A F_{t-1} + u_t,

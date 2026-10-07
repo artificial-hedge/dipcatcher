@@ -1,4 +1,4 @@
-"""Surrogate-gradient SNN (Neftci et al. 2019) — 1-hidden-layer SNN
+"""Surrogate-gradient SNN (Neftci et al. 2019) — 1-hidden-layer SNN (SYNTHETIC)
 trained via arctan-surrogate spike gradients on Poisson-encoded inputs
 vs a same-size ANN; reports acc and mean spike count per sample.
 """

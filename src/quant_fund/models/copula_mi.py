@@ -1,4 +1,4 @@
-"""Empirical-copula MI (Ma & Sun 2011): estimate MI via copula density
+"""Empirical-copula MI (Ma & Sun 2011): estimate MI via copula density (SYNTHETIC)
 on the unit square — rank-transform to uniforms, grid the copula,
 MI = sum p log(p/(p_u p_v)). Correct on Gauss + nonlinear dependence.
 """

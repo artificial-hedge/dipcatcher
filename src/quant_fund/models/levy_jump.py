@@ -1,4 +1,4 @@
-"""Merton jump-diffusion: dS = μS dt + σS dW + S dJ, J = Σ(e^{Y_i}-1)
+"""Merton jump-diffusion: dS = μS dt + σS dW + S dJ, J = Σ(e^{Y_i}-1) (SYNTHETIC)
 with Y ~ N(μj, σj), Poisson(λ). Empirical excess kurtosis/skew vs
 pure GBM — jump signature detection.
 """

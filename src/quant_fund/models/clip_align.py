@@ -1,4 +1,4 @@
-"""CLIP-style contrastive image-text alignment (Radford 2021).
+"""CLIP-style contrastive image-text alignment (Radford 2021) (SYNTHETIC).
 
 Image encoder (patch features) + text encoder (class-word features)
 trained with NT-Xent; retrieval accuracy of image→text vs random.

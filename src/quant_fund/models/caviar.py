@@ -1,4 +1,4 @@
-"""CAViaR: Conditional Autoregressive Value at Risk by regression
+"""CAViaR: Conditional Autoregressive Value at Risk by regression (SYNTHETIC)
 quantiles (Engle & Manganelli 2004).
 
 Models the tau-quantile q_t of the return distribution directly,

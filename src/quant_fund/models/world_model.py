@@ -1,4 +1,4 @@
-"""Latent world model for execution decisions (Exec-Summary RL item).
+"""Latent world model for execution decisions (Exec-Summary RL item) (SYNTHETIC).
 Dreamer-lite: an RSSM-style encoder + transition + reward model trained on
 execution-sim rollouts; the policy is then optimized by imagining latent
 rollouts instead of touching the simulator.

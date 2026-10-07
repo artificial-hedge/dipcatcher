@@ -1,4 +1,4 @@
-"""Prompt tuning — learnable soft tokens (Lester et al. 2021).
+"""Prompt tuning — learnable soft tokens (Lester et al. 2021) (SYNTHETIC).
 
 Frozen attention backbone + p learned embeddings prepended to every
 sequence. On the value-remap fixture (same keys, rotated value classes)

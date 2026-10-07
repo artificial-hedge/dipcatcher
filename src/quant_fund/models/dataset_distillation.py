@@ -1,4 +1,4 @@
-"""Dataset distillation — gradient matching (Zhao et al. 2021).
+"""Dataset distillation — gradient matching (Zhao et al. 2021) (SYNTHETIC).
 
 Learn k synthetic samples whose gradient trajectory matches real-data
 training. A logistic model trained on the distillate alone recovers

@@ -1,4 +1,4 @@
-"""Spectrally-normalized 1-Lipschitz MLP (Miyato et al. 2018).
+"""Spectrally-normalized 1-Lipschitz MLP (Miyato et al. 2018) (SYNTHETIC).
 
 Each Linear weight is normalized by its spectral norm (power iteration)
 so layer Lipschitz ≤ 1; with ReLU (1-Lipschitz) the whole network is

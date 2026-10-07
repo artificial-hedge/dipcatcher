@@ -1,4 +1,4 @@
-"""Functional principal component analysis (Karhunen-Loeve).
+"""Functional principal component analysis (Karhunen-Loeve) (SYNTHETIC).
 
 Ramsay & Silverman (2005): a square-integrable stochastic process X(t)
 admits the expansion

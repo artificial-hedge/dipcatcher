@@ -1,4 +1,4 @@
-"""CUR matrix-decomposition canon (Mahoney & Drineas 2009):
+"""CUR matrix-decomposition canon (Mahoney & Drineas 2009): (SYNTHETIC)
 A ≈ C U R where C/R are actual columns/rows selected by
 leverage-score sampling, vs truncated-SVD optimal error on
 a synthetic low-rank+noise matrix.

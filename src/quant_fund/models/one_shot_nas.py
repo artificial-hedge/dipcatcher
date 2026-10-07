@@ -1,4 +1,4 @@
-"""One-shot / weight-sharing NAS (Bender et al. 2018).
+"""One-shot / weight-sharing NAS (Bender et al. 2018) (SYNTHETIC).
 
 Train a single supernet whose width is masked per-sample; rank
 subnets by inherited-weight accuracy. Rank correlation between

@@ -1,4 +1,4 @@
-"""One-way MANOVA — omnibus multivariate group-mean tests.
+"""One-way MANOVA — omnibus multivariate group-mean tests (SYNTHETIC).
 
 Anderson (1958), Rencher & Christensen (2012): for G groups observed
 on p responses, the between-group SSP matrix H and within-group SSP

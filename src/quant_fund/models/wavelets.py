@@ -1,4 +1,4 @@
-"""MODWT wavelet analysis (Percival & Walden, 2000).
+"""MODWT wavelet analysis (Percival & Walden, 2000) (SYNTHETIC).
 
 Maximal-overlap discrete wavelet transform with Haar / D4 / LA(8)
 filters, circular pyramid algorithm:

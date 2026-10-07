@@ -1,4 +1,4 @@
-"""Persistent CD (Tieleman 2008) — negative phase continues a
+"""Persistent CD (Tieleman 2008) — negative phase continues a (SYNTHETIC)
 persistent Langevin chain across updates (fantasy particles), better
 mode coverage than CD-k; MMD vs Gaussian baseline.
 """

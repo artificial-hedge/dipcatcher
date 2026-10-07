@@ -1,4 +1,4 @@
-"""Survival conformal (Candès et al. 2023) — right-censored calibration
+"""Survival conformal (Candès et al. 2023) — right-censored calibration (SYNTHETIC)
 with oracle censoring weights; lower-bound prediction interval on the
 survival time. Empirical coverage of the true event time vs naive
 interval.

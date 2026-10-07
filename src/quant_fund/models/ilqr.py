@@ -1,4 +1,4 @@
-"""iLQR: iterative linear-quadratic regulator for nonlinear dynamics."""
+"""iLQR: iterative linear-quadratic regulator for nonlinear dynamics (SYNTHETIC)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Tonelli-Shanks square roots modulo a prime (synthetic).
+"""Tonelli-Shanks square roots modulo a prime (synthetic) (SYNTHETIC).
 
 Computes r = sqrt(a) mod p for odd prime p via the Q/S decomposition
 p-1 = Q·2^S, plus Euler's criterion for residuosity. Verified by

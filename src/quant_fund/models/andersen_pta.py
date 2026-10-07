@@ -1,4 +1,4 @@
-"""Andersen points-to analysis: subset-constraint solver, cubic worklist.
+"""Andersen points-to analysis: subset-constraint solver, cubic worklist (SYNTHETIC).
 
 Statements: p = &x (address-of), p = q (copy), p = *q (load), *p = q (store).
 Constraints propagate points-to sets until fixpoint via an explicit worklist

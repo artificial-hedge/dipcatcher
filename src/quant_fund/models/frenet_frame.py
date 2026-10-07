@@ -1,4 +1,4 @@
-"""Frenet frame of a helix (wave 287).
+"""Frenet frame of a helix (wave 287) (SYNTHETIC).
 
 Numerical T,N,B and curvature/torsion of the helix
 r(t) = (a cos t, a sin t, b t) match kappa = a/(a^2+b^2),

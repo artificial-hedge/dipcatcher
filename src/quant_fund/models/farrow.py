@@ -1,4 +1,4 @@
-"""Farrow-structure variable fractional-delay filter.
+"""Farrow-structure variable fractional-delay filter (SYNTHETIC).
 
 Canonical reference: Farrow (1988). A fixed bank of FIR subfilters
 c_0..c_L evaluates y[n] = Σ_l (μ_n)^l · (c_l ⋆ x)[n] — polynomial in

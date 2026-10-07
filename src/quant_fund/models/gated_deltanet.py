@@ -1,4 +1,4 @@
-"""Gated DeltaNet (Yang et al. 2024) — delta-rule memory with an
+"""Gated DeltaNet (Yang et al. 2024) — delta-rule memory with an (SYNTHETIC)
 output gate: S = S W + beta (v - S^T k) ⊗ k, o = g ⊙ (q^T S). The gate
 adds non-recall forgetting control. Induction recall bench.
 """

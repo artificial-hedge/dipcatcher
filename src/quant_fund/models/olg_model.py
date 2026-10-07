@@ -1,4 +1,4 @@
-"""2-period OLG: savings → capital; law of motion consistency."""
+"""2-period OLG: savings → capital; law of motion consistency (SYNTHETIC)."""
 
 import numpy as np
 

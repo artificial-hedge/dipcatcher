@@ -1,4 +1,4 @@
-"""VDN (Sunehag et al., 2017) — value decomposition networks:
+"""VDN (Sunehag et al., 2017) — value decomposition networks: (SYNTHETIC)
 joint Q = Σ_i Q_i(obs_i, a_i) learned end-to-end by TD on the joint
 return. Includes the shared 2-agent ring-rendezvous environment used
 by the wave-119 MARL modules.

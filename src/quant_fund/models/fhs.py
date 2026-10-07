@@ -1,4 +1,4 @@
-"""Filtered historical simulation with a skew-t residual law (dip_fhs_skew).
+"""Filtered historical simulation with a skew-t residual law (dip_fhs_skew) (SYNTHETIC).
 
 FHS (Barone-Adesi et al. 1999) standardizes returns by a GARCH sigma path
 and rescales the standardized residuals by the one-step sigma. This head

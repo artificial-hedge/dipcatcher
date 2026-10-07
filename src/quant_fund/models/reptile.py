@@ -1,4 +1,4 @@
-"""Reptile (Nichol et al. 2018) — first-order meta-init: for each task,
+"""Reptile (Nichol et al. 2018) — first-order meta-init: for each task, (SYNTHETIC)
 train a few SGD steps from the meta-init, then move the meta-init toward
 the task solution (w ← w + ε·(w_t − w)). Query MSE after 5-shot vs pooled.
 """

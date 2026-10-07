@@ -1,4 +1,4 @@
-"""Logic levelization (wave 291).
+"""Logic levelization (wave 291) (SYNTHETIC).
 
 Cone depth = 1 + max(fanin level) on the gate DAG; schedule count per
 level and critical level vs a DFS postorder oracle.

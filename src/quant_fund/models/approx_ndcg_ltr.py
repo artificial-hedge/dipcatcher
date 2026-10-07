@@ -1,4 +1,4 @@
-"""ApproxNDCG (Bruch et al. 2019) — differentiable NDCG via soft
+"""ApproxNDCG (Bruch et al. 2019) — differentiable NDCG via soft (SYNTHETIC)
 approximate ranks: rank_j(s_i) ≈ 1 + Σ_k sigmoid((s_i - s_k)/τ).
 """
 

@@ -1,4 +1,4 @@
-"""Label smoothing (Szegedy et al. 2016).
+"""Label smoothing (Szegedy et al. 2016) (SYNTHETIC).
 
 CE with soft targets y*(1−ε)+ε/K improves calibration: lower ECE on
 held-out vs hard-label training, trading a little accuracy — the

@@ -1,4 +1,4 @@
-"""Liang-Zeger generalized estimating equations (GEE).
+"""Liang-Zeger generalized estimating equations (GEE) (SYNTHETIC).
 
 Liang & Zeger (1986): for clustered/panel responses with a
 marginal mean model g(mu_i) = x_i' beta, estimate beta by

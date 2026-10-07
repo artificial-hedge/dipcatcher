@@ -1,4 +1,4 @@
-"""Entropy uncertainty sampling (Shannon 1948; Settles 2009) — query
+"""Entropy uncertainty sampling (Shannon 1948; Settles 2009) — query (SYNTHETIC)
 the unlabeled points whose predicted class posterior is closest to
 uniform. AL loop accuracy vs random-selection baseline.
 """

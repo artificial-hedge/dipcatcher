@@ -1,4 +1,4 @@
-"""Margin sampling (Scheffer et al. 2001) — query points with the
+"""Margin sampling (Scheffer et al. 2001) — query points with the (SYNTHETIC)
 smallest |p−0.5| decision margin; distinct from entropy by selecting
 the single most ambiguous mode. Accuracy vs random baseline.
 """

@@ -1,4 +1,4 @@
-"""Shared fixture for wave-196 eigen canon — planted-spectrum matrices."""
+"""Shared fixture for wave-196 eigen canon — planted-spectrum matrices (SYNTHETIC)."""
 
 from __future__ import annotations
 

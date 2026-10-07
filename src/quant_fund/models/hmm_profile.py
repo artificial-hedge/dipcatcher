@@ -1,4 +1,4 @@
-"""Profile HMM: consensus detection over a multiple alignment."""
+"""Profile HMM: consensus detection over a multiple alignment (SYNTHETIC)."""
 
 import numpy as np
 

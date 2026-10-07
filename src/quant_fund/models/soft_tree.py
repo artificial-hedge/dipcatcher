@@ -1,4 +1,4 @@
-"""Soft decision tree (Irsoy et al. 2012; Frost-Hinton 2017).
+"""Soft decision tree (Irsoy et al. 2012; Frost-Hinton 2017) (SYNTHETIC).
 
 Every internal node is a logistic gate; leaf probabilities mix —
 interpretable routing vs hard tree on the synth task.

@@ -1,4 +1,4 @@
-"""Matching networks (Vinyals et al. 2016) — attention kernel regression:
+"""Matching networks (Vinyals et al. 2016) — attention kernel regression: (SYNTHETIC)
 query embeds against support embeddings; y = softmax-attention-weighted
 support y's. Query MSE vs flat 1-NN cosine baseline.
 """

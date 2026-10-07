@@ -1,4 +1,4 @@
-"""Rough Bergomi model — hybrid-scheme simulation + implied-vol surface.
+"""Rough Bergomi model — hybrid-scheme simulation + implied-vol surface (SYNTHETIC).
 
 Bayer, Friz & Gatheral (2016), "Pricing under rough volatility":
 

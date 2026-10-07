@@ -1,4 +1,4 @@
-"""Hessian spectrum — top eigenvalue (sharpness) via power iteration on
+"""Hessian spectrum — top eigenvalue (sharpness) via power iteration on (SYNTHETIC)
 Hessian-vector products; trained net vs untrained baseline sharpness.
 """
 

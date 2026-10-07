@@ -1,4 +1,4 @@
-"""Affine-invariant ensemble sampler (Goodman & Weare emcee stretch
+"""Affine-invariant ensemble sampler (Goodman & Weare emcee stretch (SYNTHETIC)
 move): K walkers each proposing along the line to a randomly paired
 partner — no tuning, robust to correlation.
 """

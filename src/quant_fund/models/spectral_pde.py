@@ -1,4 +1,4 @@
-"""Fourier pseudospectral heat solver — u_t = 0.5σ²u_xx diagonalizes
+"""Fourier pseudospectral heat solver — u_t = 0.5σ²u_xx diagonalizes (SYNTHETIC)
 in Fourier space; exact-to-roundoff reference solution. L2 error vs
 analytic + comparison to PINN methods.
 """

@@ -1,4 +1,4 @@
-"""Prototypical networks (Snell et al. 2017) — few-shot REGRESSION via
+"""Prototypical networks (Snell et al. 2017) — few-shot REGRESSION via (SYNTHETIC)
 task-conditioned prototypes: embed (x,y) support pairs; class protos per
 task → weighted kernel regression for queries. Query MSE vs pooled.
 """

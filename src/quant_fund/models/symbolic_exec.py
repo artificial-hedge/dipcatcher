@@ -1,4 +1,4 @@
-"""Symbolic execution: path-constraint exploration of a toy program."""
+"""Symbolic execution: path-constraint exploration of a toy program (SYNTHETIC)."""
 
 import numpy as np
 

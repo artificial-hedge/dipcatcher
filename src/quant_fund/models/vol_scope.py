@@ -1,4 +1,4 @@
-"""Fail-closed, symmetric volatility-scope contract.
+"""Fail-closed, symmetric volatility-scope contract (SYNTHETIC).
 
 Volatility artifacts are keyed to exactly one *scope token*.  A consumer must
 declare its own consumer token and the pair must be admitted by the

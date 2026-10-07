@@ -1,4 +1,4 @@
-"""Deep Leakage from Gradients (Zhu et al. 2019) + defense.
+"""Deep Leakage from Gradients (Zhu et al. 2019) + defense (SYNTHETIC).
 
 An attacker optimizes a dummy input to match an observed gradient;
 reconstruction MSE measures leakage — and large batches / DP noise

@@ -1,4 +1,4 @@
-"""Total-order broadcast via a sequencer.
+"""Total-order broadcast via a sequencer (SYNTHETIC).
 
 The sequencer numbers every broadcast message; recipients buffer messages
 that arrive out of order and deliver strictly in sequence order. Verified:

@@ -1,4 +1,4 @@
-"""Smooth transition autoregression (LSTAR / ESTAR).
+"""Smooth transition autoregression (LSTAR / ESTAR) (SYNTHETIC).
 
 Terasvirta (1994) STR(p) with logistic or exponential transition:
 

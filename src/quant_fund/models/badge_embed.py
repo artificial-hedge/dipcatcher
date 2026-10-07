@@ -1,4 +1,4 @@
-"""BADGE sampling (Ash et al. 2020) — gradient-embedding k-means++:
+"""BADGE sampling (Ash et al. 2020) — gradient-embedding k-means++: (SYNTHETIC)
 hypothetical-label loss gradients g_i = φ_i·(p_i − ŷ_i) seed diverse
 uncertain queries. Accuracy vs random baseline.
 """

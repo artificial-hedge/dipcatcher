@@ -1,4 +1,4 @@
-"""Kuiper test — rotation-invariant uniform/CDF deviation statistic.
+"""Kuiper test — rotation-invariant uniform/CDF deviation statistic (SYNTHETIC).
 
 Kuiper (1960): for an empirical CDF F_n against a reference F, the
 two-sided Kolmogorov statistic D = max|F_n - F| is not invariant

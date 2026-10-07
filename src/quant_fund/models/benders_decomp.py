@@ -1,4 +1,4 @@
-"""Benders decomposition for uncapacitated facility location.
+"""Benders decomposition for uncapacitated facility location (SYNTHETIC).
 
 min f'y + q(y), q(y) = sum_i min_{j: y_j=1} c_ij. Combinatorial
 (L-shaped) optimality cuts: at visited y_hat the master gains

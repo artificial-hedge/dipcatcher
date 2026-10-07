@@ -1,4 +1,4 @@
-"""DDP/iLQR-style shooting optimizer on a nonlinear plant
+"""DDP/iLQR-style shooting optimizer on a nonlinear plant (SYNTHETIC)
 (x' = x + dt(v + 0.2 v^2), v' = v + dt·tanh(u)): Gauss-Newton on the
 nonlinear dynamics with Riccati backward pass. Cost vs PD baseline.
 """

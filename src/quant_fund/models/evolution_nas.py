@@ -1,4 +1,4 @@
-"""Regularized evolution NAS (Real et al. 2019).
+"""Regularized evolution NAS (Real et al. 2019) (SYNTHETIC).
 
 Population of archs; tournament selection; mutation on one gene;
 aging — oldest removed. Best-found vs random-search at equal budget.

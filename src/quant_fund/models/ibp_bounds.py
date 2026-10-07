@@ -1,4 +1,4 @@
-"""Interval bound propagation for MLP verification.
+"""Interval bound propagation for MLP verification (SYNTHETIC).
 
 Each linear layer's output box propagates [l,u] via the ± split of |W|;
 ReLU clamps to [max(l,0), max(u,0)]. Certified accuracy = fraction of

@@ -1,4 +1,4 @@
-"""PSRL (Osband et al. 2013) — posterior-sampling RL: sample a full MDP
+"""PSRL (Osband et al. 2013) — posterior-sampling RL: sample a full MDP (SYNTHETIC)
 from Dirichlet/multinomial posteriors each epoch, act with its optimal
 policy. Cumulative regret vs epsilon-greedy Q-learning.
 """

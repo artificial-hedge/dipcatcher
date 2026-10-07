@@ -1,4 +1,4 @@
-"""PLONK-ish constraint system: gate polynomial + copy constraints.
+"""PLONK-ish constraint system: gate polynomial + copy constraints (SYNTHETIC).
 
 Gate check per row: qL*a + qR*b + qM*a*b + qO*c + qC = 0 (mod p).
 Copy constraints via permutation argument: wires assigned to cycles of

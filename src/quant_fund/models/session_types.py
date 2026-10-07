@@ -1,4 +1,4 @@
-"""Binary session types: duality + a checker for a mini process language.
+"""Binary session types: duality + a checker for a mini process language (SYNTHETIC).
 
 Types: ("end",) | ("send",T,S) | ("recv",T,S) | ("sel",{l:S}) internal
 choice | ("bra",{l:S}) external choice | ("mu",X,S) | ("var",X).

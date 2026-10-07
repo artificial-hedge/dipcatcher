@@ -1,4 +1,4 @@
-"""Synchrosqueezed wavelet-transform time-frequency analysis.
+"""Synchrosqueezed wavelet-transform time-frequency analysis (SYNTHETIC).
 
 Daubechies, Lu & Wu (2011): the CWT of x with mother wavelet psi
 smeares energy across scales near the instantaneous frequency

@@ -1,4 +1,4 @@
-"""HyDE — hypothetical document embeddings (Gao et al. 2023).
+"""HyDE — hypothetical document embeddings (Gao et al. 2023) (SYNTHETIC).
 
 A small generator maps the query to a pseudo-document (canonical
 tokens), which is embedded instead of the query — bridging the

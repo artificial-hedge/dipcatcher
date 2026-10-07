@@ -1,4 +1,4 @@
-"""SIREN sinusoidal implicit representation (Sitzmann et al. 2020).
+"""SIREN sinusoidal implicit representation (Sitzmann et al. 2020) (SYNTHETIC).
 
 w0-scaled sin activations fit the field AND its gradient better than a
 ReLU MLP of the same size — the INR literature's key differentiator is

@@ -1,4 +1,4 @@
-"""Graph WaveNet-lite (Wu et al. 2019) — adaptive adjacency learned as
+"""Graph WaveNet-lite (Wu et al. 2019) — adaptive adjacency learned as (SYNTHETIC)
 softmax(E1 E2^T) node embeddings + dilated temporal convs + graph conv.
 Next-step MSE vs fixed-adjacency GCN ablation.
 """

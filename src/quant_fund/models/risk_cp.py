@@ -1,4 +1,4 @@
-"""Conformal risk control (Angelopoulos et al. 2022) — calibrate lambda
+"""Conformal risk control (Angelopoulos et al. 2022) — calibrate lambda (SYNTHETIC)
 so E[risk(lambda)] <= alpha for a non-binary risk (relative absolute
 error truncated); risk level vs naive quantile calibration.
 """

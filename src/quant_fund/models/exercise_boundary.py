@@ -1,4 +1,4 @@
-"""Early-exercise boundary estimation from a coarse binomial tree.
+"""Early-exercise boundary estimation from a coarse binomial tree (SYNTHETIC).
 
 The boundary at each time step is the deepest spot price where exercise
 still dominates continuation. Bench: L2 distance between the coarse

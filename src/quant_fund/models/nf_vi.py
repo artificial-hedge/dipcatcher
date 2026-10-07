@@ -1,4 +1,4 @@
-"""Normalizing-flow VI (Rezende & Mohamed 2015) — planar flow
+"""Normalizing-flow VI (Rezende & Mohamed 2015) — planar flow (SYNTHETIC)
 z' = z + u·tanh(w·z + b) applied to the posterior sample; richer than
 mean-field Gaussian. Posterior std vs MCMC + test log-loss.
 """

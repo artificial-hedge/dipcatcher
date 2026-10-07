@@ -1,4 +1,4 @@
-"""Catapult dynamics (Lewkowycz et al. 2020) — at large-but-subcritical
+"""Catapult dynamics (Lewkowycz et al. 2020) — at large-but-subcritical (SYNTHETIC)
 lr the loss spikes then diverges/converges; measure the transient
 spike amplitude vs convergence of a baseline small-lr run.
 """

@@ -1,4 +1,4 @@
-"""Byte-pair encoding (Sennrich 2016).
+"""Byte-pair encoding (Sennrich 2016) (SYNTHETIC).
 
 Learn merges on a synthetic token corpus; measure vocab growth,
 compression (tokens/char) and roundtrip fidelity vs char-level.

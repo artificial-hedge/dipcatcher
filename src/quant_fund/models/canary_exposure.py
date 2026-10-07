@@ -1,4 +1,4 @@
-"""Membership/memorization audit — canary exposure (Carlini 2019).
+"""Membership/memorization audit — canary exposure (Carlini 2019) (SYNTHETIC).
 
 Inject a synthetic canary pattern (a rare token sequence) into
 training; measure how much the trained model prefers the canary vs

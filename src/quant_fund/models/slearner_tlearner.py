@@ -1,4 +1,4 @@
-"""S/T-learner comparison (Künzel taxonomy) — single-net with treatment
+"""S/T-learner comparison (Künzel taxonomy) — single-net with treatment (SYNTHETIC)
 feature vs two arm-specific nets; PEHE of both vs truth. Diagnostic:
 T-learner wins with strong confounding on this fixture.
 """

@@ -1,4 +1,4 @@
-"""Markov-switching GARCH(1,1) (Haas–Mittnik–Paolella).
+"""Markov-switching GARCH(1,1) (Haas–Mittnik–Paolella) (SYNTHETIC).
 
 h_i,t = omega_i + alpha_i * eps_{t-1}^2 + beta_i * h_i,t-1, with the regime
 i ~ Markov chain of P. Because h depends on the regime *path*, exact

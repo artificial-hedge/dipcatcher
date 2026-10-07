@@ -1,4 +1,4 @@
-"""Optional neural contextual-bandit policy.
+"""Optional neural contextual-bandit policy (SYNTHETIC).
 
 This module is deliberately separate from execution: rewards are research
 targets, dates are processed chronologically, and no output is a live-P&L

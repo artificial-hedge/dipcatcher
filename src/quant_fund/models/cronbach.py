@@ -1,4 +1,4 @@
-"""Scale reliability — Cronbach's alpha, KR-20, split-half.
+"""Scale reliability — Cronbach's alpha, KR-20, split-half (SYNTHETIC).
 
 Cronbach (1951) coefficient alpha from item covariances:
 

@@ -1,4 +1,4 @@
-"""ADMM for lasso: min ½‖Ax−b‖² + λ‖x‖₁ (x-update + soft-threshold split)."""
+"""ADMM for lasso: min ½‖Ax−b‖² + λ‖x‖₁ (x-update + soft-threshold split) (SYNTHETIC)."""
 
 import numpy as np
 

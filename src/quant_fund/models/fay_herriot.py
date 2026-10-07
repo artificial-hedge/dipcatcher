@@ -1,4 +1,4 @@
-"""Fay-Herriot small-area estimation — area-level EBLUP.
+"""Fay-Herriot small-area estimation — area-level EBLUP (SYNTHETIC).
 
 Fay & Herriot (1979): for direct survey estimates y_i with known
 sampling variances D_i and area-level covariates x_i, the basic

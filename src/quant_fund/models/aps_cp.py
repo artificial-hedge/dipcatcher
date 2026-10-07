@@ -1,4 +1,4 @@
-"""APS — adaptive prediction sets (Romano et al. 2020) — split-conformal
+"""APS — adaptive prediction sets (Romano et al. 2020) — split-conformal (SYNTHETIC)
 sets accumulating class probabilities until the quantile threshold;
 set size vs top-k/threshold-set baselines at fixed coverage.
 """

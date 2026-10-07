@@ -1,4 +1,4 @@
-"""Hopcroft-Karp bipartite maximum matching (BFS layering + DFS augment)."""
+"""Hopcroft-Karp bipartite maximum matching (BFS layering + DFS augment) (SYNTHETIC)."""
 
 import collections
 
