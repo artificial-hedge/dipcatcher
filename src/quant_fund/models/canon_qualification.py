@@ -145,10 +145,16 @@ RULESET: dict[str, Any] = {
     "data_param_tokens": DATA_PARAM_TOKENS,
     "quarantine_closure_rule": (
         "a candidate file moves to attic/ only when every importer of it also "
-        "moves in the same step (static imports, lazy-import-map string "
-        "references, constant-string importlib calls, and the dynamic "
-        "module-stem loads in wave tests) and its whole connected component "
-        "is movable; otherwise the component stays live with the blocking "
+        "moves in the same step and its whole connected component is movable; "
+        "import edges come from static imports, relative imports, "
+        "lazy-import-map dotted quant_fund.* string references, constant-string "
+        "importlib calls, and dynamic name loads evidenced by module-stem "
+        "string literals in the loading file (parametrized wave tests, literal "
+        "lazy-lane names); a computed-name dynamic import with no literal "
+        "evidence under its spec prefix blocks every candidate under that "
+        "prefix and is recorded in wildcard_importers; bare family-name "
+        "strings outside loaders (e.g. catalog registries) never create "
+        "edges; anything that cannot move stays live with the blocking "
         "importer named"
     ),
 }
@@ -199,11 +205,16 @@ class AdapterRecord:
 
 @dataclass(frozen=True)
 class ImportGraph:
-    """Repo-internal import edges keyed by repo-relative paths."""
+    """Repo-internal import edges keyed by repo-relative paths.
+
+    ``wildcard_importers`` lists ``(importer, spec_prefix)`` pairs for
+    computed-name dynamic imports with no literal name evidence — each such
+    loader is a potential importer of every module under its spec prefix.
+    """
 
     nodes: tuple[str, ...]
     edges: tuple[tuple[str, str], ...]
-    wildcard_importers: tuple[str, ...]
+    wildcard_importers: tuple[tuple[str, str], ...]
 
 
 class _ShapeCollector(ast.NodeTransformer):
@@ -689,16 +700,23 @@ _BARE_TOKEN_PATTERN = re.compile(r"""['"]([_a-z][_a-z0-9]*)['"]""")
 _WAVE_TEST_PATTERN = re.compile(r"test_(?:benches_)?w\d+\.py")
 
 
+def _rel_to_dotted(rel: str) -> str:
+    """Repo-relative file path -> dotted module name (``src/`` stripped)."""
+    name = rel[: -len(".py")] if rel.endswith(".py") else rel
+    if name.endswith("/__init__"):
+        name = name[: -len("/__init__")]
+    if name.startswith("src/"):
+        name = name[len("src/") :]
+    return name.replace("/", ".")
+
+
 def _dotted_to_path_map(repo_root: Path) -> dict[str, str]:
     """Map dotted module/package names to repo-relative file paths."""
     dotted: dict[str, str] = {}
     for root in _GRAPH_ROOTS:
         for path in _collect_paths(repo_root, [f"{root}/**/*.py"]):
             rel = path.relative_to(repo_root).as_posix()
-            name = rel[: -len(".py")]
-            if rel.endswith("__init__.py"):
-                name = rel[: -len("/__init__.py")] or rel[: -len(".py")]
-            dotted[name.replace("/", ".")] = rel
+            dotted[_rel_to_dotted(rel)] = rel
     if (repo_root / "conftest.py").is_file():
         dotted["conftest"] = "conftest.py"
     return dotted
@@ -762,8 +780,19 @@ def _string_module_refs(tree: ast.Module) -> set[str]:
 
 
 def _corpus_stem_paths(repo_root: Path) -> dict[str, str]:
-    """Module stem -> live repo-relative path for corpus modules and adapters."""
-    patterns = (_MODELS_GLOB, _WIRING_GLOB, _ATTIC_MODELS_GLOB, _ATTIC_WIRING_GLOB)
+    """Module stem -> live repo-relative path for loadable corpus targets.
+
+    Covers model corpus modules, ``benches_w*`` adapters and research modules
+    (the targets of dynamic loaders); live paths win over attic copies.
+    """
+    patterns = (
+        _MODELS_GLOB,
+        _WIRING_GLOB,
+        "src/quant_fund/research/*.py",
+        _ATTIC_MODELS_GLOB,
+        _ATTIC_WIRING_GLOB,
+        "attic/**/src/quant_fund/research/*.py",
+    )
     stems: dict[str, str] = {}
     for path in _collect_paths(repo_root, patterns):
         rel = path.relative_to(repo_root).as_posix()
@@ -780,16 +809,45 @@ def _is_wave_test(rel_path: str) -> bool:
     return rel_path.startswith("tests/unit/models/") or rel_path.startswith("tests/unit/research/")
 
 
+def _dynamic_spec_prefix(source: str) -> str | None:
+    """Spec prefix of a computed-name dynamic import (e.g. ``quant_fund.models.``)."""
+    for match in _DYNAMIC_IMPORT_PATTERN.finditer(source):
+        spec = match.group(1)
+        if "{" in spec and spec.startswith("quant_fund."):
+            return spec.split("{", 1)[0]
+    return None
+
+
+def _evidenced_dynamic_targets(source: str, prefix: str, stems: dict[str, str]) -> set[str]:
+    """Targets a computed-name loader provably loads: same-file stem literals.
+
+    A bare string literal evidences a load only when it is a known corpus or
+    research module stem under the loader's spec prefix — this resolves the
+    parametrized wave-test names and literal lazy-lane names while catalog
+    family-name lists create no edges (family names are not loader evidence).
+    """
+    targets: set[str] = set()
+    for literal in _BARE_TOKEN_PATTERN.findall(source):
+        rel = stems.get(literal)
+        if rel is not None and _rel_to_dotted(rel).startswith(prefix):
+            targets.add(rel)
+    return targets
+
+
 def _file_edges(
     rel: str,
     source: str,
     tree: ast.Module,
     dotted: dict[str, str],
     stems: dict[str, str],
-) -> tuple[set[tuple[str, str]], bool]:
-    """(edges, wildcard-dynamic-importer) for one file."""
+) -> tuple[set[tuple[str, str]], tuple[str, str] | None]:
+    """(edges, wildcard-loader) for one file.
+
+    The wildcard loader is ``(rel, prefix)`` for a computed-name dynamic
+    import with no literal name evidence — such a file may load anything
+    under the prefix, so it blocks every candidate there.
+    """
     edges: set[tuple[str, str]] = set()
-    wildcard = False
     refs = _import_refs(tree, rel) | _string_module_refs(tree)
     for ref in refs:
         target = _resolve_ref(ref, dotted)
@@ -798,12 +856,20 @@ def _file_edges(
     for match in _DYNAMIC_IMPORT_PATTERN.finditer(source):
         spec = match.group(1)
         if "{" in spec:
-            if spec.startswith("quant_fund."):
-                wildcard = True
             continue
         target = _resolve_ref(spec, dotted)
         if target is not None and target != rel:
             edges.add((rel, target))
+    prefix = _dynamic_spec_prefix(source)
+    wildcard: tuple[str, str] | None = None
+    if prefix is not None:
+        evidenced = _evidenced_dynamic_targets(source, prefix, stems)
+        if evidenced:
+            for target in sorted(evidenced):
+                if target != rel:
+                    edges.add((rel, target))
+        else:
+            wildcard = (rel, prefix)
     if _is_wave_test(rel):
         for literal in _BARE_TOKEN_PATTERN.findall(source):
             target = stems.get(literal)
@@ -817,13 +883,15 @@ def scan_import_graph(repo_root: Path) -> ImportGraph:
 
     Edges come from static imports, relative imports, lazy-import-map dotted
     string references, constant-string ``importlib``/``__import__`` calls and
-    the dynamic module-stem loads in wave tests (parametrized string names).
+    dynamically loaded names evidenced by module-stem literals in the loading
+    file. Computed-name loaders without literal evidence are recorded in
+    ``wildcard_importers`` and block every candidate under their spec prefix.
     """
     dotted = _dotted_to_path_map(repo_root)
     stems = _corpus_stem_paths(repo_root)
     nodes: set[str] = set(dotted.values())
     edges: set[tuple[str, str]] = set()
-    wildcards: set[str] = set()
+    wildcards: set[tuple[str, str]] = set()
     for root in _GRAPH_ROOTS:
         for path in _collect_paths(repo_root, [f"{root}/**/*.py"]):
             rel = path.relative_to(repo_root).as_posix()
@@ -834,8 +902,8 @@ def scan_import_graph(repo_root: Path) -> ImportGraph:
                 continue
             file_edges, wildcard = _file_edges(rel, source, tree, dotted, stems)
             edges.update(file_edges)
-            if wildcard:
-                wildcards.add(rel)
+            if wildcard is not None:
+                wildcards.add(wildcard)
     return ImportGraph(tuple(sorted(nodes)), tuple(sorted(edges)), tuple(sorted(wildcards)))
 
 
@@ -910,7 +978,7 @@ def _component_blockers(
     candidates: set[str],
     comp: dict[str, int],
     staying: set[int],
-    wildcard_blockers: list[str],
+    wildcard_blockers: list[tuple[str, str]],
 ) -> set[str]:
     """Live/staying importers that keep this component from moving."""
     blockers: set[str] = set()
@@ -919,8 +987,9 @@ def _component_blockers(
             if importer in candidates and comp.get(importer) not in staying:
                 continue
             blockers.add(importer)
-        if member.startswith("src/quant_fund/models/"):
-            for wildcard in wildcard_blockers:
+        member_dotted = _rel_to_dotted(member)
+        for wildcard, prefix in wildcard_blockers:
+            if member_dotted.startswith(prefix):
                 blockers.add(f"{wildcard} (dynamic f-string import)")
     return blockers
 
@@ -953,7 +1022,7 @@ def _blocking_fixpoint(
     comp: dict[str, int],
     members: dict[int, list[str]],
     importers: dict[str, set[str]],
-    wildcard_blockers: list[str],
+    wildcard_blockers: list[tuple[str, str]],
 ) -> tuple[set[int], dict[int, set[str]]]:
     staying: set[int] = set()
     reasons: dict[int, set[str]] = {}
@@ -978,7 +1047,6 @@ def quarantine_plan(
     records: list[ModuleRecord],
     verdicts: dict[str, str],
     adapters: list[AdapterRecord],
-    stems: dict[str, str],
     graph: ImportGraph,
 ) -> dict[str, Any]:
     """Decide which candidate files may move, closing under the import graph.
@@ -1001,9 +1069,8 @@ def quarantine_plan(
     members: dict[int, list[str]] = {cid: [] for cid in sorted(set(comp.values()))}
     for node, cid in comp.items():
         members[cid].append(node)
-    wildcard_blockers = sorted(set(graph.wildcard_importers) - candidates)
+    wildcard_blockers = sorted((w, p) for w, p in graph.wildcard_importers if w not in candidates)
     staying, reasons = _blocking_fixpoint(candidates, comp, members, importers, wildcard_blockers)
-    _ = stems
     return {
         "candidate_modules": sorted(candidate_modules),
         "candidate_adapters": sorted(candidate_adapters),
@@ -1226,9 +1293,8 @@ def audit_tree(repo_root: Path) -> dict[str, Any]:
     files, verdicts = _files_payload(
         records, shape_counts, skeleton_counts, family_wiring, family_waves
     )
-    stems = _corpus_stem_paths(repo_root)
     graph = scan_import_graph(repo_root)
-    plan = quarantine_plan(repo_root, records, verdicts, adapters, stems, graph)
+    plan = quarantine_plan(repo_root, records, verdicts, adapters, graph)
     families_payload = _families_payload(family_wiring, family_waves, verdicts)
     outstanding = [
         {
@@ -1265,7 +1331,7 @@ def audit_tree(repo_root: Path) -> dict[str, Any]:
                 for importer, imported in graph.edges
                 if importer in candidate_paths or imported in candidate_paths
             ],
-            "wildcard_importers": list(graph.wildcard_importers),
+            "wildcard_importers": [list(pair) for pair in graph.wildcard_importers],
             "quarantine": plan,
         },
     }
