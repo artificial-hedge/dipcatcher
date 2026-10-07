@@ -41,6 +41,7 @@ packages = [
     "microstructure", # LOB/OFI estimators (coupled with northset below)
     "northset",       # northstar estimators/identities over microstructure+metrics
     "metrics",        # shared scoring vocabulary; imported by nearly every layer
+    "flowbars",       # information-driven bar construction (dollar/volume/tick) over data
 ]
 
 [[layers]]
@@ -58,6 +59,7 @@ packages = [
     "reporting",    # reports over metrics
     "validation",   # walk-forward/purging/CPCV splitters used by pipeline.train
     "decay",        # alpha/signal decay diagnostics (IC curves, half-life, turnover)
+    "combination",  # proper-score ensemble forecast combination (BMA, vincentization, conformal)
 ]
 
 [[layers]]
