@@ -346,3 +346,24 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+## API surface audit (`api.py` route wiring)
+
+`fx1.serve.apisurface_audit` pins what requests meet before any handler
+runs: the route inventory itself (required families present, ≥60
+routes, no double-bound (method, path) pairs, the shared scope map —
+`/harness/keys*` and `/harness/drain` are `admin`, safe methods `read`,
+rest `write`), the public surface (`/health` exactly, in both dev and
+key-armed mode), and the auth wiring — authentication precedes routing
+(unknown paths 401 unauthenticated, 404 authenticated),
+`Authorization: Bearer` honored only under `/v1`, `X-API-Key`
+everywhere, dev mode trusting loopback only (a non-loopback client is
+403, not silently trusted), and minted keys laddering
+read < write < admin with 403 `insufficient_scope` in the path's own
+grammar (OpenAI `error` object under `/v1`, `{"detail","code"}`
+elsewhere). Error dialects are per-family (v1 catch-all 404
+`Invalid URL`, harness 405 `method_not_allowed`), response headers
+always carry `X-Request-ID`/`nosniff`/`X-Fx1-Api-Version`, the drain
+latch is one-way while liveness answers, and CORS defaults closed with
+wildcard refused and explicit-origin preflight unauthenticated. ~77
+literal-bool probes seal into an `apisurface_audit.v1` receipt.
