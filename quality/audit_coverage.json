@@ -375,6 +375,9 @@
   "models/base.py": {
    "status": "audited"
   },
+  "models/bayesian_tracking.py": {
+   "status": "audited"
+  },
   "models/bkm_moments.py": {
    "status": "audited"
   },
@@ -384,6 +387,9 @@
   "models/bocpd_changepoint.py": {
    "status": "audited"
   },
+  "models/bounds.py": {
+   "status": "audited"
+  },
   "models/c51_rl.py": {
    "status": "audited"
   },
@@ -391,6 +397,9 @@
    "status": "audited"
   },
   "models/causal_impact.py": {
+   "status": "audited"
+  },
+  "models/causal_panel.py": {
    "status": "audited"
   },
   "models/caviar.py": {
@@ -477,6 +486,9 @@
   "models/extra_tilt_conformal.py": {
    "status": "audited"
   },
+  "models/factor_models.py": {
+   "status": "audited"
+  },
   "models/favar.py": {
    "status": "audited"
   },
@@ -537,6 +549,9 @@
   "models/msgarch.py": {
    "status": "audited"
   },
+  "models/msm_causal.py": {
+   "status": "audited"
+  },
   "models/multisource_conformal.py": {
    "status": "audited"
   },
@@ -573,7 +588,16 @@
   "models/path_signatures.py": {
    "status": "audited"
   },
+  "models/pike_vm.py": {
+   "status": "audited"
+  },
   "models/point_process.py": {
+   "status": "audited"
+  },
+  "models/proximal_causal.py": {
+   "status": "audited"
+  },
+  "models/proxy_svar.py": {
    "status": "audited"
   },
   "models/qrf.py": {
@@ -598,6 +622,9 @@
    "status": "audited"
   },
   "models/realized_garch.py": {
+   "status": "audited"
+  },
+  "models/recurrent_events.py": {
    "status": "audited"
   },
   "models/regime_conformal_var.py": {
@@ -648,6 +675,9 @@
   "models/rolling_conformal.py": {
    "status": "audited"
   },
+  "models/root_finders.py": {
+   "status": "audited"
+  },
   "models/rough_vol.py": {
    "status": "audited"
   },
@@ -663,6 +693,9 @@
   "models/short_rate.py": {
    "status": "audited"
   },
+  "models/sketches.py": {
+   "status": "audited"
+  },
   "models/spectral_atiyah.py": {
    "status": "audited"
   },
@@ -673,6 +706,9 @@
    "status": "audited"
   },
   "models/tda_persistence.py": {
+   "status": "audited"
+  },
+  "models/tirex2.py": {
    "status": "audited"
   },
   "models/viterbi_decode.py": {

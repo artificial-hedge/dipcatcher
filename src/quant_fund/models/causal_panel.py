@@ -33,12 +33,15 @@ def _cross_lrv(u: Array, v: Array, lag: int) -> float:
     """
     t_len = u.size
     lag = max(0, min(lag, t_len - 2))
-    g0 = float(u @ v / t_len)
+    # Entries are unnormalized sums (B = sum_t s_t s_t' + kernel lags):
+    # dividing by t_len here shrinks cov_beta by a factor of T — the old
+    # code produced SEs sqrt(T)-fold too small (anti-conservative).
+    g0 = float(u @ v)
     out = g0
     for k in range(1, lag + 1):
         w = 1.0 - k / (lag + 1.0)
-        g_uv = float(u[: t_len - k] @ v[k:] / t_len)
-        g_vu = float(v[: t_len - k] @ u[k:] / t_len)
+        g_uv = float(u[: t_len - k] @ v[k:])
+        g_vu = float(v[: t_len - k] @ u[k:])
         out += w * (g_uv + g_vu)
     return out
 
@@ -81,6 +84,10 @@ def diff_in_diff(
         var += float(np.var(cell, ddof=1) / cell.size) if cell.size > 1 else 0.0
     att = (means[0] - means[1]) - (means[2] - means[3])
     se = float(np.sqrt(var))
+    if se <= 0.0:
+        # all-singleton cells give se=0 -> t=inf, p=0: a maximal
+        # significance claim on zero residual variance. Fail closed.
+        raise ValueError("degenerate cell variance (se=0)")
     return {
         "att": float(att),
         "se": se,
