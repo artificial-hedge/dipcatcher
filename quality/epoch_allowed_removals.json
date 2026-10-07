@@ -1,8 +1,11 @@
 {
+  "basis_carry_dd7705fc0f2f1c25.json": "852f56a1e2aeb3654d406fbb14a4a2baa7cd20949d45153a98c5a99a2248f741",
   "corpus_history_absence_1791a18109fce973.json": "35a5a663f861c0ac399faefa432ca410da4fae597a0a9111d6c9a2341e0dfe03",
   "corpus_real_drill.json": "082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119",
+  "crossvenue_basis_3f4ff76f517655a7.json": "14ce799a46e282849e8e7852ff74489ed4747274c164040fcc52974bbb72a087",
   "fuzz_drill_b966c0d125b2a999.json": "1e404fef2428d0c1f9fc0c0b32f5904e0c3dd1ad7f743d1587d4f95f04b471ac",
   "fuzz_drill_cb1a0f56a4e67716.json": "977431c492d834e0c4817e9e032f8ef6e36c998facda0415385ba8b80d3ac49c",
+  "mid_dark_amzn.json": "da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1",
   "public/fixtures/receipts/fast_replay_p42_conformance_20260927.json": "8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8",
   "scripts/README.md": "ba0562b22f96e7606e26028fc862dfb07576355671d83a7afe9c6341c5659ccc",
   "scripts/benchmark_crypto_external.py": "2b67812dd0f8a0409d76a9c0a7722c8c72c4e56e214ebb5a5cb52d93dcdc3206",

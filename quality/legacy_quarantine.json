@@ -14,6 +14,12 @@
       ],
       "sha256": "5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4"
     },
+    "basis_carry_dd7705fc0f2f1c25.json": {
+      "errors": [
+        "tape_manifest_unknown"
+      ],
+      "sha256": "852f56a1e2aeb3654d406fbb14a4a2baa7cd20949d45153a98c5a99a2248f741"
+    },
     "basis_pair_candidate_20asset_1d_20260922.json": {
       "errors": [
         "forbidden_metric_keys",
@@ -26,6 +32,12 @@
         "receipt_sha256_missing_or_invalid"
       ],
       "sha256": "61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f"
+    },
+    "crossvenue_basis_3f4ff76f517655a7.json": {
+      "errors": [
+        "tape_manifest_unknown"
+      ],
+      "sha256": "14ce799a46e282849e8e7852ff74489ed4747274c164040fcc52974bbb72a087"
     },
     "dip_bench_crypto_1d_20260925.json": {
       "errors": [
