@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -83,3 +84,42 @@ def test_committed_receipt_still_verifies() -> None:
     verdict = verify_receipt_payload(payload)
     assert verdict["valid"] is True
     assert verdict["errors"] == []
+
+
+def test_webhook_probes_restores_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The loopback SSRF opt-in must not leak past _webhook_probes."""
+    from fx1.serve.drain_audit import _webhook_probes
+
+    key = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
+    monkeypatch.setenv(key, "sentinel")
+    out = _webhook_probes()
+    assert os.environ[key] == "sentinel"
+    assert out["webhook_hmac_verifies"] is True
+
+    monkeypatch.delenv(key, raising=False)
+    out2 = _webhook_probes()
+    assert key not in os.environ
+    assert out2["webhook_fires_past_drain"] is True
+
+
+def test_webhook_probes_restores_env_on_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A raising probe still restores the caller's opt-in state."""
+    import fx1.serve.drain_audit as da
+
+    key = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
+
+    def _boom(out: dict) -> dict:
+        raise RuntimeError("probe boom")
+
+    monkeypatch.setattr(da, "_webhook_probes_inner", _boom)
+    monkeypatch.delenv(key, raising=False)
+    with pytest.raises(RuntimeError):
+        da._webhook_probes()
+    assert key not in os.environ
+
+    monkeypatch.setenv(key, "keep-me")
+    with pytest.raises(RuntimeError):
+        da._webhook_probes()
+    assert os.environ[key] == "keep-me"

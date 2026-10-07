@@ -993,9 +993,10 @@ def webhook_audit() -> dict[str, Any]:
     # The audit's real HTTP sink is deliberately loopback-only. Production
     # callback delivery remains public-network-only unless explicitly opted in.
     os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
-    sink = _Sink()
     out: dict[str, Any] = {}
+    sink: _Sink | None = None
     try:
+        sink = _Sink()
         with tempfile.TemporaryDirectory() as td:
             ctx = _make_ctx(Path(td) / "app", sink=sink)
             out.update(_probe_signature(ctx))
@@ -1007,7 +1008,8 @@ def webhook_audit() -> dict[str, Any]:
             out.update(_probe_secret_never_serializes(ctx, Path(td)))
             out.update(_probe_security(ctx))
     finally:
-        sink.close()
+        if sink is not None:
+            sink.close()
         for k, v in saved.items():
             if v is None:
                 os.environ.pop(k, None)

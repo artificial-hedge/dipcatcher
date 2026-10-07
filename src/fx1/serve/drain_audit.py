@@ -976,8 +976,20 @@ def _recovery_probes() -> dict[str, bool]:
 
 def _webhook_probes() -> dict[str, bool]:
     out: dict[str, bool] = {}
-    # Synthetic loopback receiver: opt in narrowly inside the swept audit context.
+    # Synthetic loopback receiver: opt in narrowly inside the swept audit
+    # context; the caller's env is restored even when a probe raises.
+    _wh_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
     os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    try:
+        return _webhook_probes_inner(out)
+    finally:
+        if _wh_prev is None:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        else:
+            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _wh_prev
+
+
+def _webhook_probes_inner(out: dict[str, bool]) -> dict[str, bool]:
     from fx1.serve.conv_audit import _RESOURCES  # noqa: PLC0415
     from fx1.serve.jobs_audit import _Runner  # noqa: PLC0415
     from fx1.serve.webhook_audit import _Sink  # noqa: PLC0415
