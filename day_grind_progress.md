@@ -2256,6 +2256,38 @@ are counts from a run that died mid-flight. Reported here as measured, with that
 rather than as a verdict. The Lead is running an isolated `PYTHONFAULTHANDLER=1` serial
 pass to name the crashing test.
 
+**Update — the crash was reproduced twice and the adjacent failure is located, but with a
+caveat against the Lead.** The segfault hit **different workers on different runs** (gw3 in
+`/tmp/lead_test2.log`, gw9 in `/tmp/lead_fault2.log`), both at ~28–30%, so it is not one
+bad test slot. Next to it sits an unraisable exception that *is* fully attributed:
+
+```
+PytestUnraisableExceptionWarning: Exception ignored in:
+    <function gc_cumulative_time.<locals>.gc_callback at 0x...>
+  File ".../hypothesis/internal/conjecture/junkdrawer.py", line 497, in gc_callback
+    now = _perf_counter()
+KeyboardInterrupt
+```
+
+So a `KeyboardInterrupt` is landing **inside a `gc.callbacks` handler** registered by
+`hypothesis` (test-only dependency, `hypothesis.internal.conjecture.junkdrawer`). A signal
+arriving mid-GC is a credible source of a hard crash, because it can interrupt a native
+allocation.
+
+**Caveat against the Lead, stated rather than hidden:** the Lead ran `pkill -f "pytest"` at
+the start of two of these invocations, and SIGINT/SIGTERM delivered to xdist workers is
+exactly the kind of signal that produces a `KeyboardInterrupt` inside a GC callback and can
+crash a worker mid-native-call. **It is therefore not established that the segfault is a
+repo defect — the Lead may have caused some or all of these failures itself.** Blaming the
+suite for damage inflicted by the harness's own process management would be the same class
+of error as the misattributed `cost_allocation.py` headline retracted above.
+
+A clean `make test` run with **zero** signals (`/tmp/lead_clean_test.log`, job `bash-308`) is
+the control: if it completes without `Fatal Python error` and without `gc_callback`, the
+earlier crashes were self-inflicted and Finding 1 closes as **Lead process-management
+error, not a repo defect**. If it reproduces, the repo has a genuine crash and hypothesis's
+GC-callback timing is the first place to look.
+
 ### Finding 2 — `n_boot: 1000`, not the mandated 2000 (P0.3 honestly downgraded)
 
 `evidence-debt` probed all five merged receipts (`merge_d1_v2aug`, `merge_h4f_v2aug`,
