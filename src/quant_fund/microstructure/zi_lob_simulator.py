@@ -1525,6 +1525,15 @@ class ZILobSimulator:
             return None
         return self.level_to_price(0) + 0.5 * (bb + ba) * self._cfg.tick
 
+    def open_order_sides(self) -> tuple[Side, ...]:
+        """Sides of every order still resting in the book (snapshot).
+
+        Read-only view for measures that need the live open-interest mix;
+        this is the book's resting side composition, not a submission
+        tape — callers must label it accordingly.
+        """
+        return tuple(o.side for o in self._orders.values())
+
     @property
     def spread_ticks(self) -> int | None:
         bb, ba = self.best_bid_level, self.best_ask_level

@@ -240,6 +240,78 @@
     "backtest/event_sim/simulator.py": {
       "status": "audited"
     },
+    "microstructure/empirical_flow.py": {
+      "status": "audited"
+    },
+    "microstructure/event_time_flow.py": {
+      "status": "audited"
+    },
+    "microstructure/exec_cost_real.py": {
+      "status": "audited"
+    },
+    "microstructure/exec_cost_split.py": {
+      "status": "audited"
+    },
+    "microstructure/exec_shortfall.py": {
+      "status": "audited"
+    },
+    "microstructure/fill_hazard.py": {
+      "status": "audited"
+    },
+    "microstructure/flow_memory.py": {
+      "status": "audited"
+    },
+    "microstructure/impact_instant.py": {
+      "status": "audited"
+    },
+    "microstructure/impact_law.py": {
+      "status": "audited"
+    },
+    "microstructure/impact_propagator.py": {
+      "status": "audited"
+    },
+    "microstructure/intraday_exec.py": {
+      "status": "audited"
+    },
+    "microstructure/kyle_lambda.py": {
+      "status": "audited"
+    },
+    "microstructure/markout.py": {
+      "status": "audited"
+    },
+    "microstructure/ofi_forecast.py": {
+      "status": "audited"
+    },
+    "microstructure/post_trade_drift.py": {
+      "status": "audited"
+    },
+    "microstructure/propagator_impact.py": {
+      "status": "audited"
+    },
+    "microstructure/propagator_real.py": {
+      "status": "audited"
+    },
+    "microstructure/side_imbalance.py": {
+      "status": "audited"
+    },
+    "microstructure/sign_autocorr_real.py": {
+      "status": "audited"
+    },
+    "microstructure/sign_predict.py": {
+      "status": "audited"
+    },
+    "microstructure/split_flow.py": {
+      "status": "audited"
+    },
+    "microstructure/tick_rule.py": {
+      "status": "audited"
+    },
+    "microstructure/trade_decomp.py": {
+      "status": "audited"
+    },
+    "microstructure/vpin.py": {
+      "status": "audited"
+    },
     "parity_leak_audit.py": {
       "status": "audited"
     },

@@ -41,9 +41,17 @@ def sign_sequence(
     """Aggressor sign (+1 buy / -1 sell) at each market-order event."""
     sim = ZILobSimulator(config) if flow is None else ZILobSimulator(config, flow=flow)
     out: list[float] = []
+    n_before = 0
     while sim.t < horizon:
-        if sim.step() == "market":
-            out.append(1.0 if sim.trades[-1].aggressor == "buy" else -1.0)
+        kind = sim.step()
+        new = sim.trades[n_before:]
+        n_before = len(sim.trades)
+        # a k-unit MO burst can produce zero fills (empty book): the burst's
+        # sign is the first NEW fill's aggressor, never trades[-1] — indexing
+        # the tail would re-append the previous fill's sign and fabricate
+        # sign memory that never happened
+        if kind == "market" and new:
+            out.append(1.0 if new[0].aggressor == "buy" else -1.0)
     return np.asarray(out)
 
 

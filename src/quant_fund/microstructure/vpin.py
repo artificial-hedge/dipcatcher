@@ -90,11 +90,14 @@ def _vpin_stats(
     bucket_volume = float(np.abs(signed_qty).sum() / n_buckets)
     imb, starts = _bucket_imbalances(signed_qty, bucket_volume)
     vpin = _vpin_series(imb, window) / bucket_volume
-    # forward |mid change| from each bucket start to the next
+    # forward |mid change| across the first bucket strictly AFTER the VPIN
+    # window — indexing starts[:len(vpin)] would overlap the predictor's own
+    # window and report a contemporaneous, not forward, correlation
     fwd: list[float] = []
-    base_idx = starts[: len(vpin)]
-    for j, s in enumerate(base_idx):
-        nxt = base_idx[j + 1] if j + 1 < len(base_idx) else len(mid_at_trade) - 1
+    for j in range(len(vpin)):
+        b = j + window
+        s = int(starts[b]) if b < starts.size else len(mid_at_trade) - 1
+        nxt = int(starts[b + 1]) if b + 1 < starts.size else len(mid_at_trade) - 1
         if nxt > s and mid_at_trade[s] > 0 and mid_at_trade[nxt] > 0:
             fwd.append(abs(math.log(mid_at_trade[nxt] / mid_at_trade[s])))
         else:

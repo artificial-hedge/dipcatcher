@@ -135,7 +135,7 @@ def sim_intraday_exec(flow: Any | None, *, seed: int = 0, horizon: int = 60000) 
         "buckets": _bucket_stats(
             [(t * rate, s, p, q) for t, s, p, q in execs], scaled_times, scaled_mids
         ),
-        "note": "sim time rescaled to tape-seconds via median event rate",
+        "note": "sim time rescaled to tape-seconds via the mean event rate",
     }
 
 

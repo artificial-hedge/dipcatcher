@@ -106,7 +106,7 @@ def sign_predict_bench(tape_dir: Path, ticker: str = "AMZN", *, seed: int = 7) -
     r5 = real.get("continuation", {}).get("5", {}).get("p_continue")
     for name, arm in arms.items():
         a5 = arm.get("continuation", {}).get("5", {}).get("p_continue")
-        if r5 and a5 is not None and abs(a5 - r5) > 0.1:
+        if r5 is not None and a5 is not None and abs(a5 - r5) > 0.1:
             divergences.append(f"{name}_p5_{a5}_vs_{r5}")
     payload: dict[str, Any] = {
         "kind": "sign_predict",

@@ -13,6 +13,7 @@ SYNTHETIC / research-diagnostic only.
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from typing import Any
 
 import numpy as np
@@ -50,8 +51,15 @@ def exec_episode(
     side: str,
     episode_seed: int,
 ) -> dict[str, float] | None:
-    """Trade one parent by a TWAP schedule through the sim; shortfall in ticks."""
-    sim = ZILobSimulator(cfg, flow=flow)
+    """Trade one parent by a TWAP schedule through the sim; shortfall in ticks.
+
+    Each episode reseeds the engine's own RNG via ``episode_seed`` — without
+    it every same-side episode replays the identical ZI stream and the
+    reported ``n_episodes`` count would overstate independent evidence.
+    The flow object is shared deliberately so flow-level dynamics stay
+    continuous across episodes.
+    """
+    sim = ZILobSimulator(replace(cfg, seed=episode_seed), flow=flow)
     if side not in ("buy", "sell"):
         raise ValueError(f"side must be 'buy' or 'sell', got {side!r}")
     # Burn-in so the book reaches a stationary state.
@@ -80,7 +88,6 @@ def exec_episode(
     # Price moved from arrival to end, in the trade direction.
     end_mid = sim.mid
     moved = (sign * (end_mid - arrival_mid) / tick) if end_mid is not None else float("nan")
-    _ = episode_seed
     return {
         "shortfall_ticks": float(shortfall_ticks),
         "fill_fraction": filled / parent_size,

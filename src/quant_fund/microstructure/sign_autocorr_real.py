@@ -18,7 +18,7 @@ from typing import Any
 
 import numpy as np
 
-from quant_fund.microstructure.lobster import EXECUTION, parse_messages
+from quant_fund.microstructure.lobster import EXECUTION, EXECUTION_HIDDEN, parse_messages
 from quant_fund.microstructure.split_flow import SplitFlow, sign_autocorr_curve
 from quant_fund.microstructure.zi_lob_simulator import (
     MarkovRegimeFlow,
@@ -60,7 +60,11 @@ def lobster_signs(tape_dir: Path, ticker: str = "AMZN") -> dict[str, Any]:
     """Exec-sign autocorrelation curve + exponent on the real tape."""
     msg = tape_dir / f"{ticker}_2012-06-21_34200000_57600000_message_10.csv"
     signs = np.asarray(
-        [-ev.direction for ev in parse_messages(msg) if ev.event_type == EXECUTION],
+        [
+            -ev.direction
+            for ev in parse_messages(msg)
+            if ev.event_type in (EXECUTION, EXECUTION_HIDDEN)
+        ],
         dtype=float,
     )
     curve = sign_autocorr_curve(signs, LAGS)

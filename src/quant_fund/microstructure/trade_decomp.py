@@ -152,10 +152,10 @@ def sim_trade_decomp(
         sim.trades.clear()
     mids_arr = np.asarray(mids)
     # horizons are in seconds on tape; sim time is steps — map nominal
-    # horizon seconds to steps via the median event rate
+    # horizon seconds to steps via the mean event rate
     rate = horizon / max(sim.t, 1e-9)
     stats = _decomp_stats_scaled(execs, np.asarray(mid_times), mids_arr, scale=rate)
-    stats["note"] = "horizons scaled by median event rate (s -> sim steps)"
+    stats["note"] = "horizons scaled by the mean event rate (s -> sim steps)"
     return stats
 
 

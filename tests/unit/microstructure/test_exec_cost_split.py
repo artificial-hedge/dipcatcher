@@ -65,7 +65,9 @@ def test_bench_schema_and_order() -> None:
 def test_bench_deterministic() -> None:
     a = exec_split_bench(parent_size=8, n_children=2, events_per_child=10, n_episodes=3, seed=5)
     b = exec_split_bench(parent_size=8, n_children=2, events_per_child=10, n_episodes=3, seed=5)
-    assert a["arms"] == b["arms"]
+    # repr compare: honest nan fields (e.g. an all-censored drift mean) are
+    # deterministic too but fail float equality (nan != nan)
+    assert repr(a["arms"]) == repr(b["arms"])
 
 
 def test_split_flow_accepted_as_flow() -> None:

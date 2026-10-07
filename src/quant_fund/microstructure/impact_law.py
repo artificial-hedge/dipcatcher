@@ -168,9 +168,9 @@ def impact_law_bench(
             qty_grid=qty_grid, density_exponent=beta, n_trials=n_trials, warmup=warmup
         )
         psi, c, r2 = fit_power_law(pts)
-        # sub-saturation fit: only points that didn't exhaust the 5-level
-        # band (walk < band) — the clean scaling region
-        subs = [p for p in pts if p.levels_walked_mean < 5.0]
+        # sub-saturation fit: only points that didn't exhaust the book band
+        # (walk < band) — the clean scaling region
+        subs = [p for p in pts if p.levels_walked_mean < ZILobConfig(seed=0).band]
         psi_s = c_s = r2_s = float("nan")
         if len(subs) >= 3:
             psi_s, c_s, r2_s = fit_power_law(subs)

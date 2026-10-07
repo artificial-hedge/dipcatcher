@@ -142,8 +142,9 @@ def sim_side_imbalance(
     exec_dirs = np.asarray([1 if tr.aggressor == "buy" else -1 for tr in trades])
     exec_sizes = np.asarray([tr.qty for tr in trades], dtype=float)
     exec_times = np.asarray([tr.t for tr in trades])
-    # submission side share from the live order registry
-    sides = [o.side for o in sim._orders.values()]
+    # side share of the live open-interest registry — a snapshot proxy,
+    # not the submission stream the tape arm measures
+    sides = sim.open_order_sides()
     sub_dirs = np.asarray([1 if s == "buy" else -1 for s in sides])
     t_lo = float(exec_times.min()) if exec_times.size else 0.0
     t_hi = float(exec_times.max()) if exec_times.size else 1.0
@@ -203,7 +204,8 @@ def side_imbalance_bench(tape_dir: Path, ticker: str = "AMZN", *, seed: int = 7)
         "claim": "side_asymmetry_measured",
         "interpretation": (
             "exec_buy_share = share of fills initiated by buyers (resting "
-            "side == sell). submission_buy_share from SUBMISSIONs. "
+            "side == sell). submission_buy_share from SUBMISSIONs (sim arm: "
+            "open-interest snapshot proxy). "
             "touch_imbalance = time-mean of (bid_sz1 - ask_sz1)/(sum) at "
             "the touch. Per-bin buy share shows intraday drift in "
             "initiative. The ZI-LOB flows are side-symmetric — a large "

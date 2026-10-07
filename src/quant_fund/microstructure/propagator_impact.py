@@ -42,6 +42,7 @@ Composition notes
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -99,6 +100,8 @@ def fit_kernel_ls(
         raise ValueError("flow and response must have equal length")
     if not 1 <= n_lags <= flow.size // 4:
         raise ValueError("n_lags must be in [1, len/4]")
+    if not math.isfinite(ridge) or ridge <= 0:
+        raise ValueError("ridge must be positive and finite")
     n = flow.size
     # design matrix X[l, k] = flow[l - k] for k < n_lags (l >= k)
     x = np.zeros((n - n_lags, n_lags))
@@ -189,8 +192,9 @@ def expected_cost_curve(kernel: FloatArray, horizon: int) -> FloatArray:
     costs = np.empty(horizon)
     for t in range(1, horizon + 1):
         # uniform unit metaorder over t steps: w_i = 1/t
-        # cost = sum_{i,j} w_i w_j G(|i-j|) = (G(0) + 2 sum_l (t-l)/t^2 G(l))/1
-        total = g[0]
+        # cost = sum_{i,j} w_i w_j G(|i-j|); the |i-j|=0 diagonal has t pairs
+        # and each lag l has 2*(t-l) pairs, all scaled by 1/t^2
+        total = g[0] * t
         for lag in range(1, min(g.size, t)):
             total += 2.0 * g[lag] * (t - lag)
         costs[t - 1] = total / t**2
