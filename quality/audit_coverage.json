@@ -1,312 +1,2496 @@
 {
-  "directories": {
-    "api": {
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "audit": {
-      "doc": "docs/AUDIT_OBSERVABILITY.md",
-      "n_modules": 11,
-      "status": "audited"
-    },
-    "backtest": {
-      "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 16,
-      "status": "audited"
-    },
-    "calendars": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "cli": {
-      "n_modules": 16,
-      "status": "audited"
-    },
-    "compute": {
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "config": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "data": {
-      "doc": "docs/AUDIT_P63_DATA.md",
-      "n_modules": 42,
-      "status": "audited"
-    },
-    "diffbacktest": {
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "execution": {
-      "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 14,
-      "status": "audited"
-    },
-    "features": {
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "formal": {
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "fusion": {
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "hedge_lab": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 16,
-      "status": "audited"
-    },
-    "hmm": {
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "labels": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "leakage": {
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "lightspeed": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "market_sim": {
-      "n_modules": 13,
-      "status": "audited"
-    },
-    "mc_engine": {
-      "n_modules": 13,
-      "status": "audited"
-    },
-    "metrics": {
-      "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 107,
-      "status": "audited"
-    },
-    "microstructure": {
-      "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 182,
-      "status": "partial",
-      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
-    },
-    "models": {
-      "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 10397,
-      "status": "partial",
-      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
-    },
-    "monitoring": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "native": {
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "northset": {
-      "n_modules": 10,
-      "status": "audited"
-    },
-    "observe": {
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "paper": {
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "parity": {
-      "n_modules": 11,
-      "status": "audited"
-    },
-    "pipeline": {
-      "n_modules": 23,
-      "status": "audited"
-    },
-    "pit": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "portfolio": {
-      "n_modules": 14,
-      "status": "audited"
-    },
-    "pretrade": {
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "proof": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "proofcore": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "quant_models": {
-      "n_modules": 17,
-      "status": "audited"
-    },
-    "reality": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "registry": {
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "reporting": {
-      "n_modules": 6,
-      "status": "audited"
-    },
-    "research": {
-      "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 1859,
-      "status": "partial",
-      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
-    },
-    "risk": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "robustness": {
-      "n_modules": 13,
-      "status": "audited"
-    },
-    "schemas": {
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "simtest": {
-      "n_modules": 10,
-      "status": "audited"
-    },
-    "stress": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 14,
-      "status": "audited"
-    },
-    "utils": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "validation": {
-      "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 13,
-      "status": "audited"
-    }
-  },
+  "schema_version": "audit-coverage/v1",
   "modules": {
-    "__init__.py": {
-      "reason": "package surface only",
-      "status": "waived"
+    "research/benches_w524.py": {
+      "status": "audited"
+    },
+    "research/benches_w210.py": {
+      "status": "audited"
+    },
+    "research/benches_w1172.py": {
+      "status": "audited"
+    },
+    "research/benches_w237.py": {
+      "status": "audited"
+    },
+    "research/benches_w1508.py": {
+      "status": "audited"
+    },
+    "research/benches_w122.py": {
+      "status": "audited"
+    },
+    "research/benches_w1597.py": {
+      "status": "audited"
+    },
+    "research/benches_w871.py": {
+      "status": "audited"
+    },
+    "research/benches_w1043.py": {
+      "status": "audited"
+    },
+    "research/benches_w1357.py": {
+      "status": "audited"
+    },
+    "research/benches_w151.py": {
+      "status": "audited"
+    },
+    "research/benches_w184.py": {
+      "status": "audited"
+    },
+    "research/benches_w426.py": {
+      "status": "audited"
+    },
+    "research/benches_w552.py": {
+      "status": "audited"
+    },
+    "research/benches_w306.py": {
+      "status": "audited"
+    },
+    "research/benches_w1593.py": {
+      "status": "audited"
+    },
+    "research/benches_w397.py": {
+      "status": "audited"
+    },
+    "research/benches_w454.py": {
+      "status": "audited"
+    },
+    "research/benches_w469.py": {
+      "status": "audited"
+    },
+    "research/benches_w1341.py": {
+      "status": "audited"
+    },
+    "research/benches_w1312.py": {
+      "status": "audited"
+    },
+    "research/benches_w295.py": {
+      "status": "audited"
+    },
+    "research/benches_w864.py": {
+      "status": "audited"
+    },
+    "research/benches_w1161.py": {
+      "status": "audited"
+    },
+    "research/benches_w258.py": {
+      "status": "audited"
+    },
+    "research/benches_w1190.py": {
+      "status": "audited"
+    },
+    "research/benches_w361.py": {
+      "status": "audited"
+    },
+    "research/benches_w734.py": {
+      "status": "audited"
+    },
+    "microstructure/full_stack_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w59.py": {
+      "status": "audited"
+    },
+    "research/benches_w307.py": {
+      "status": "audited"
+    },
+    "research/benches_w1060.py": {
+      "status": "audited"
+    },
+    "research/benches_w436.py": {
+      "status": "audited"
+    },
+    "research/benches_w1464.py": {
+      "status": "audited"
+    },
+    "research/benches_w358.py": {
+      "status": "audited"
+    },
+    "research/benches_w1182.py": {
+      "status": "audited"
+    },
+    "research/benches_w641.py": {
+      "status": "audited"
     },
     "backtest/event_sim/__init__.py": {
       "status": "audited"
     },
-    "backtest/event_sim/clock.py": {
+    "research/benches_w689.py": {
       "status": "audited"
     },
-    "backtest/event_sim/constraints.py": {
+    "research/benches_w1497.py": {
       "status": "audited"
     },
-    "backtest/event_sim/costs.py": {
+    "research/benches_w933.py": {
       "status": "audited"
     },
-    "backtest/event_sim/fills.py": {
+    "research/benches_w44.py": {
       "status": "audited"
     },
-    "backtest/event_sim/sensitivity.py": {
+    "research/benches_w1480.py": {
       "status": "audited"
     },
-    "backtest/event_sim/simulator.py": {
+    "research/benches_w1179.py": {
       "status": "audited"
     },
-    "microstructure/aftermath_flow_bench.py": {
+    "research/benches_w1633.py": {
       "status": "audited"
     },
-    "microstructure/anchor_scan_bench.py": {
+    "research/benches_w1685.py": {
       "status": "audited"
     },
-    "microstructure/band_occupancy_bench.py": {
+    "research/benches_w866.py": {
       "status": "audited"
     },
-    "microstructure/band_shape_bench.py": {
+    "research/benches_w453.py": {
       "status": "audited"
     },
-    "microstructure/cancel_gradient_bench.py": {
+    "research/benches_w178.py": {
       "status": "audited"
     },
-    "microstructure/churn_reseed_bench.py": {
+    "research/benches_w992.py": {
       "status": "audited"
     },
-    "microstructure/churn_stability_bench.py": {
+    "research/benches_w1678.py": {
       "status": "audited"
     },
-    "microstructure/closure_stack_bench.py": {
+    "research/benches_w1194.py": {
       "status": "audited"
     },
-    "microstructure/continuation_attr_bench.py": {
+    "research/benches_w121.py": {
       "status": "audited"
     },
-    "microstructure/crown_behind_bench.py": {
+    "research/benches_w84.py": {
       "status": "audited"
     },
-    "microstructure/crown_density_bench.py": {
+    "research/benches_w1135.py": {
       "status": "audited"
     },
-    "microstructure/crown_join_bench.py": {
+    "research/benches_w1476.py": {
       "status": "audited"
     },
-    "microstructure/crown_size_bench.py": {
+    "research/benches_w1507.py": {
       "status": "audited"
     },
-    "microstructure/cxl_shield_bench.py": {
+    "research/benches_w1355.py": {
       "status": "audited"
     },
-    "microstructure/deep_book_bench.py": {
+    "research/benches_w627.py": {
+      "status": "audited"
+    },
+    "research/benches_w206.py": {
+      "status": "audited"
+    },
+    "research/benches_w227.py": {
+      "status": "audited"
+    },
+    "research/benches_w11.py": {
+      "status": "audited"
+    },
+    "research/benches_w257.py": {
+      "status": "audited"
+    },
+    "research/benches_w462.py": {
+      "status": "audited"
+    },
+    "research/benches_w586.py": {
+      "status": "audited"
+    },
+    "research/benches_w708.py": {
+      "status": "audited"
+    },
+    "research/benches_w898.py": {
+      "status": "audited"
+    },
+    "research/benches_w628.py": {
+      "status": "audited"
+    },
+    "research/benches_w376.py": {
+      "status": "audited"
+    },
+    "research/benches_w1205.py": {
+      "status": "audited"
+    },
+    "research/benches_w943.py": {
+      "status": "audited"
+    },
+    "research/benches_w435.py": {
+      "status": "audited"
+    },
+    "research/benches_w1228.py": {
+      "status": "audited"
+    },
+    "research/benches_w1217.py": {
+      "status": "audited"
+    },
+    "research/benches_w1238.py": {
+      "status": "audited"
+    },
+    "research/benches_w658.py": {
+      "status": "audited"
+    },
+    "research/benches_w309.py": {
+      "status": "audited"
+    },
+    "research/benches_w644.py": {
+      "status": "audited"
+    },
+    "research/benches_w216.py": {
+      "status": "audited"
+    },
+    "research/benches_w1542.py": {
+      "status": "audited"
+    },
+    "research/benches_w69.py": {
+      "status": "audited"
+    },
+    "research/benches_w1610.py": {
+      "status": "audited"
+    },
+    "research/benches_w1689.py": {
+      "status": "audited"
+    },
+    "research/benches_w766.py": {
+      "status": "audited"
+    },
+    "research/benches_w535.py": {
+      "status": "audited"
+    },
+    "research/benches_w957.py": {
+      "status": "audited"
+    },
+    "research/benches_w146.py": {
+      "status": "audited"
+    },
+    "research/benches_w1684.py": {
+      "status": "audited"
+    },
+    "research/benches_w81.py": {
+      "status": "audited"
+    },
+    "research/benches_w1142.py": {
+      "status": "audited"
+    },
+    "research/benches_w934.py": {
+      "status": "audited"
+    },
+    "research/benches_w1127.py": {
+      "status": "audited"
+    },
+    "__init__.py": {
+      "reason": "package surface only",
+      "status": "waived"
+    },
+    "research/benches_w195.py": {
+      "status": "audited"
+    },
+    "research/benches_w638.py": {
+      "status": "audited"
+    },
+    "research/benches_w280.py": {
+      "status": "audited"
+    },
+    "research/benches_w1555.py": {
+      "status": "audited"
+    },
+    "research/benches_w1400.py": {
+      "status": "audited"
+    },
+    "research/benches_w1537.py": {
+      "status": "audited"
+    },
+    "research/benches_w112.py": {
+      "status": "audited"
+    },
+    "research/benches_w618.py": {
+      "status": "audited"
+    },
+    "research/benches_w807.py": {
+      "status": "audited"
+    },
+    "research/benches_w466.py": {
+      "status": "audited"
+    },
+    "research/benches_w203.py": {
+      "status": "audited"
+    },
+    "research/benches_w1396.py": {
+      "status": "audited"
+    },
+    "research/benches_w265.py": {
+      "status": "audited"
+    },
+    "research/benches_w611.py": {
+      "status": "audited"
+    },
+    "research/benches_w1133.py": {
+      "status": "audited"
+    },
+    "research/benches_w85.py": {
+      "status": "audited"
+    },
+    "research/benches_w640.py": {
+      "status": "audited"
+    },
+    "research/benches_w489.py": {
+      "status": "audited"
+    },
+    "research/benches_w679.py": {
+      "status": "audited"
+    },
+    "research/benches_w1645.py": {
+      "status": "audited"
+    },
+    "research/benches_w1651.py": {
+      "status": "audited"
+    },
+    "research/benches_w573.py": {
+      "status": "audited"
+    },
+    "research/benches_w297.py": {
+      "status": "audited"
+    },
+    "public.py": {
+      "reason": "package surface only",
+      "status": "waived"
+    },
+    "research/benches_w467.py": {
+      "status": "audited"
+    },
+    "research/benches_w1297.py": {
+      "status": "audited"
+    },
+    "research/benches_w360.py": {
+      "status": "audited"
+    },
+    "research/benches_w632.py": {
+      "status": "audited"
+    },
+    "research/benches_w1418.py": {
+      "status": "audited"
+    },
+    "research/benches_w1612.py": {
+      "status": "audited"
+    },
+    "research/benches_w1517.py": {
+      "status": "audited"
+    },
+    "research/benches_w1659.py": {
+      "status": "audited"
+    },
+    "research/benches_w66.py": {
+      "status": "audited"
+    },
+    "research/benches_w902.py": {
+      "status": "audited"
+    },
+    "research/benches_w942.py": {
+      "status": "audited"
+    },
+    "research/benches_w1451.py": {
+      "status": "audited"
+    },
+    "research/benches_w705.py": {
+      "status": "audited"
+    },
+    "research/benches_w414.py": {
+      "status": "audited"
+    },
+    "research/benches_w1173.py": {
+      "status": "audited"
+    },
+    "research/benches_w186.py": {
+      "status": "audited"
+    },
+    "research/benches_w251.py": {
+      "status": "audited"
+    },
+    "research/benches_w1430.py": {
+      "status": "audited"
+    },
+    "research/benches_w1340.py": {
+      "status": "audited"
+    },
+    "research/benches_w434.py": {
+      "status": "audited"
+    },
+    "research/benches_w821.py": {
+      "status": "audited"
+    },
+    "research/benches_w1362.py": {
+      "status": "audited"
+    },
+    "research/benches_w1407.py": {
+      "status": "audited"
+    },
+    "research/benches_w655.py": {
+      "status": "audited"
+    },
+    "research/benches_w136.py": {
+      "status": "audited"
+    },
+    "research/benches_w882.py": {
+      "status": "audited"
+    },
+    "research/benches_w1313.py": {
+      "status": "audited"
+    },
+    "research/benches_w554.py": {
+      "status": "audited"
+    },
+    "research/benches_w567.py": {
+      "status": "audited"
+    },
+    "research/benches_w907.py": {
+      "status": "audited"
+    },
+    "research/benches_w1635.py": {
+      "status": "audited"
+    },
+    "research/benches_w264.py": {
+      "status": "audited"
+    },
+    "research/benches_w556.py": {
+      "status": "audited"
+    },
+    "research/benches_w456.py": {
+      "status": "audited"
+    },
+    "research/benches_w1016.py": {
+      "status": "audited"
+    },
+    "research/benches_w445.py": {
+      "status": "audited"
+    },
+    "research/benches_w908.py": {
+      "status": "audited"
+    },
+    "research/benches_w1281.py": {
+      "status": "audited"
+    },
+    "research/benches_w650.py": {
+      "status": "audited"
+    },
+    "research/benches_w363.py": {
+      "status": "audited"
+    },
+    "research/benches_w906.py": {
+      "status": "audited"
+    },
+    "research/benches_w862.py": {
+      "status": "audited"
+    },
+    "research/benches_w589.py": {
+      "status": "audited"
+    },
+    "research/benches_w1144.py": {
+      "status": "audited"
+    },
+    "research/benches_w1020.py": {
+      "status": "audited"
+    },
+    "research/benches_w1377.py": {
+      "status": "audited"
+    },
+    "research/benches_w1146.py": {
+      "status": "audited"
+    },
+    "research/benches_w1487.py": {
       "status": "audited"
     },
     "microstructure/depth_tilt_bench.py": {
       "status": "audited"
     },
-    "microstructure/empirical_flow_bench.py": {
+    "research/benches_w829.py": {
       "status": "audited"
     },
-    "microstructure/flee_wide_bench.py": {
+    "research/benches_w544.py": {
       "status": "audited"
     },
-    "microstructure/floor_compose_bench.py": {
+    "research/benches_w215.py": {
       "status": "audited"
     },
-    "microstructure/floor_pins_bench.py": {
+    "research/benches_w938.py": {
       "status": "audited"
     },
-    "microstructure/floor_rate_bench.py": {
+    "research/benches_w582.py": {
+      "status": "audited"
+    },
+    "research/benches_w614.py": {
+      "status": "audited"
+    },
+    "research/benches_w1547.py": {
+      "status": "audited"
+    },
+    "research/benches_w242.py": {
+      "status": "audited"
+    },
+    "research/benches_w223.py": {
+      "status": "audited"
+    },
+    "research/benches_w1334.py": {
+      "status": "audited"
+    },
+    "research/benches_w451.py": {
+      "status": "audited"
+    },
+    "research/benches_w1411.py": {
+      "status": "audited"
+    },
+    "research/benches_w425.py": {
+      "status": "audited"
+    },
+    "research/benches_w1304.py": {
+      "status": "audited"
+    },
+    "research/benches_w1686.py": {
+      "status": "audited"
+    },
+    "research/benches_w352.py": {
+      "status": "audited"
+    },
+    "research/benches_w246.py": {
+      "status": "audited"
+    },
+    "research/benches_w867.py": {
+      "status": "audited"
+    },
+    "research/benches_w127.py": {
+      "status": "audited"
+    },
+    "research/benches_w1041.py": {
+      "status": "audited"
+    },
+    "research/benches_w260.py": {
+      "status": "audited"
+    },
+    "research/benches_w1072.py": {
+      "status": "audited"
+    },
+    "research/benches_w449.py": {
+      "status": "audited"
+    },
+    "research/benches_w1620.py": {
+      "status": "audited"
+    },
+    "research/benches_w1708.py": {
+      "status": "audited"
+    },
+    "research/benches_w211.py": {
+      "status": "audited"
+    },
+    "research/benches_w495.py": {
+      "status": "audited"
+    },
+    "research/benches_w620.py": {
+      "status": "audited"
+    },
+    "research/benches_w1504.py": {
+      "status": "audited"
+    },
+    "research/benches_w1384.py": {
+      "status": "audited"
+    },
+    "research/benches_w746.py": {
+      "status": "audited"
+    },
+    "research/benches_w1529.py": {
+      "status": "audited"
+    },
+    "research/benches_w193.py": {
+      "status": "audited"
+    },
+    "research/benches_w851.py": {
+      "status": "audited"
+    },
+    "research/benches_w340.py": {
+      "status": "audited"
+    },
+    "models/rolling_conformal.py": {
+      "status": "audited"
+    },
+    "research/benches_w1569.py": {
+      "status": "audited"
+    },
+    "research/benches_w346.py": {
+      "status": "audited"
+    },
+    "research/benches_w831.py": {
+      "status": "audited"
+    },
+    "research/benches_w530.py": {
+      "status": "audited"
+    },
+    "research/benches_w742.py": {
+      "status": "audited"
+    },
+    "research/benches_w768.py": {
+      "status": "audited"
+    },
+    "research/benches_w162.py": {
+      "status": "audited"
+    },
+    "research/benches_w1039.py": {
+      "status": "audited"
+    },
+    "research/benches_w1650.py": {
+      "status": "audited"
+    },
+    "research/benches_w229.py": {
+      "status": "audited"
+    },
+    "research/benches_w378.py": {
+      "status": "audited"
+    },
+    "research/benches_w570.py": {
+      "status": "audited"
+    },
+    "research/benches_w1389.py": {
+      "status": "audited"
+    },
+    "research/benches_w1388.py": {
+      "status": "audited"
+    },
+    "research/benches_w416.py": {
+      "status": "audited"
+    },
+    "research/benches_w1243.py": {
+      "status": "audited"
+    },
+    "research/benches_w526.py": {
+      "status": "audited"
+    },
+    "research/benches_w579.py": {
+      "status": "audited"
+    },
+    "research/benches_w103.py": {
+      "status": "audited"
+    },
+    "research/benches_w410.py": {
+      "status": "audited"
+    },
+    "research/benches_w999.py": {
+      "status": "audited"
+    },
+    "research/benches_w27.py": {
+      "status": "audited"
+    },
+    "research/benches_w1004.py": {
+      "status": "audited"
+    },
+    "research/benches_w423.py": {
+      "status": "audited"
+    },
+    "research/benches_w1435.py": {
+      "status": "audited"
+    },
+    "research/benches_w484.py": {
+      "status": "audited"
+    },
+    "research/benches_w1496.py": {
+      "status": "audited"
+    },
+    "research/benches_w1590.py": {
+      "status": "audited"
+    },
+    "research/benches_w20.py": {
+      "status": "audited"
+    },
+    "research/benches_w1273.py": {
+      "status": "audited"
+    },
+    "research/benches_w1323.py": {
+      "status": "audited"
+    },
+    "research/benches_w491.py": {
+      "status": "audited"
+    },
+    "research/benches_w699.py": {
+      "status": "audited"
+    },
+    "research/benches_w100.py": {
+      "status": "audited"
+    },
+    "research/benches_w653.py": {
+      "status": "audited"
+    },
+    "research/benches_w430.py": {
+      "status": "audited"
+    },
+    "models/graded_irt.py": {
+      "status": "audited"
+    },
+    "research/benches_w1051.py": {
+      "status": "audited"
+    },
+    "research/benches_w921.py": {
+      "status": "audited"
+    },
+    "research/benches_w1450.py": {
+      "status": "audited"
+    },
+    "research/benches_w482.py": {
+      "status": "audited"
+    },
+    "research/benches_w1697.py": {
+      "status": "audited"
+    },
+    "research/benches_w1294.py": {
+      "status": "audited"
+    },
+    "research/benches_w284.py": {
+      "status": "audited"
+    },
+    "research/benches_w472.py": {
+      "status": "audited"
+    },
+    "research/benches_w1088.py": {
+      "status": "audited"
+    },
+    "research/benches_w858.py": {
+      "status": "audited"
+    },
+    "research/benches_w1594.py": {
+      "status": "audited"
+    },
+    "research/benches_w894.py": {
+      "status": "audited"
+    },
+    "research/benches_w937.py": {
+      "status": "audited"
+    },
+    "research/benches_w1519.py": {
+      "status": "audited"
+    },
+    "research/benches_w26.py": {
+      "status": "audited"
+    },
+    "microstructure/ice_budget_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w808.py": {
+      "status": "audited"
+    },
+    "research/benches_w1572.py": {
+      "status": "audited"
+    },
+    "research/benches_w1565.py": {
+      "status": "audited"
+    },
+    "research/benches_w1025.py": {
+      "status": "audited"
+    },
+    "research/benches_w317.py": {
+      "status": "audited"
+    },
+    "research/benches_w108.py": {
+      "status": "audited"
+    },
+    "research/benches_w1324.py": {
+      "status": "audited"
+    },
+    "research/benches_w89.py": {
+      "status": "audited"
+    },
+    "research/benches_w588.py": {
+      "status": "audited"
+    },
+    "research/benches_w368.py": {
+      "status": "audited"
+    },
+    "research/benches_w1311.py": {
+      "status": "audited"
+    },
+    "research/benches_w541.py": {
+      "status": "audited"
+    },
+    "research/benches_w93.py": {
+      "status": "audited"
+    },
+    "research/benches_w329.py": {
+      "status": "audited"
+    },
+    "research/benches_w109.py": {
+      "status": "audited"
+    },
+    "research/benches_w813.py": {
+      "status": "audited"
+    },
+    "research/benches_w1159.py": {
+      "status": "audited"
+    },
+    "research/benches_w1691.py": {
+      "status": "audited"
+    },
+    "research/benches_w1032.py": {
+      "status": "audited"
+    },
+    "research/benches_w795.py": {
+      "status": "audited"
+    },
+    "research/benches_w30.py": {
+      "status": "audited"
+    },
+    "research/benches_w276.py": {
+      "status": "audited"
+    },
+    "research/benches_w159.py": {
+      "status": "audited"
+    },
+    "research/benches_w885.py": {
+      "status": "audited"
+    },
+    "research/benches_w1602.py": {
+      "status": "audited"
+    },
+    "research/benches_w779.py": {
+      "status": "audited"
+    },
+    "research/benches_w357.py": {
+      "status": "audited"
+    },
+    "research/benches_w1129.py": {
+      "status": "audited"
+    },
+    "research/benches_w1189.py": {
+      "status": "audited"
+    },
+    "research/benches_w811.py": {
+      "status": "audited"
+    },
+    "research/benches_w1482.py": {
+      "status": "audited"
+    },
+    "research/benches_w1481.py": {
+      "status": "audited"
+    },
+    "research/benches_w646.py": {
+      "status": "audited"
+    },
+    "research/benches_w496.py": {
+      "status": "audited"
+    },
+    "research/benches_w1356.py": {
+      "status": "audited"
+    },
+    "research/benches_w1563.py": {
+      "status": "audited"
+    },
+    "research/benches_w327.py": {
+      "status": "audited"
+    },
+    "research/benches_w711.py": {
+      "status": "audited"
+    },
+    "research/benches_w1247.py": {
+      "status": "audited"
+    },
+    "research/benches_w12.py": {
+      "status": "audited"
+    },
+    "research/benches_w213.py": {
+      "status": "audited"
+    },
+    "research/benches_w234.py": {
+      "status": "audited"
+    },
+    "research/benches_w450.py": {
+      "status": "audited"
+    },
+    "research/benches_w362.py": {
+      "status": "audited"
+    },
+    "research/benches_w21.py": {
+      "status": "audited"
+    },
+    "research/benches_w308.py": {
+      "status": "audited"
+    },
+    "research/benches_w676.py": {
+      "status": "audited"
+    },
+    "research/benches_w1486.py": {
+      "status": "audited"
+    },
+    "research/benches_w341.py": {
+      "status": "audited"
+    },
+    "research/benches_w634.py": {
+      "status": "audited"
+    },
+    "research/benches_w497.py": {
+      "status": "audited"
+    },
+    "research/benches_w440.py": {
+      "status": "audited"
+    },
+    "research/benches_w289.py": {
+      "status": "audited"
+    },
+    "research/benches_w107.py": {
+      "status": "audited"
+    },
+    "research/benches_w1472.py": {
+      "status": "audited"
+    },
+    "research/benches_w198.py": {
+      "status": "audited"
+    },
+    "research/benches_w232.py": {
+      "status": "audited"
+    },
+    "research/benches_w1574.py": {
+      "status": "audited"
+    },
+    "research/benches_w1706.py": {
+      "status": "audited"
+    },
+    "research/benches_w372.py": {
+      "status": "audited"
+    },
+    "research/benches_w390.py": {
+      "status": "audited"
+    },
+    "research/benches_w1021.py": {
+      "status": "audited"
+    },
+    "research/benches_w181.py": {
+      "status": "audited"
+    },
+    "research/benches_w1225.py": {
+      "status": "audited"
+    },
+    "research/benches_w221.py": {
+      "status": "audited"
+    },
+    "research/benches_w1138.py": {
+      "status": "audited"
+    },
+    "research/benches_w382.py": {
+      "status": "audited"
+    },
+    "research/benches_w1272.py": {
+      "status": "audited"
+    },
+    "research/benches_w975.py": {
+      "status": "audited"
+    },
+    "research/benches_w991.py": {
+      "status": "audited"
+    },
+    "research/benches_w1562.py": {
+      "status": "audited"
+    },
+    "research/benches_w1050.py": {
+      "status": "audited"
+    },
+    "research/benches_w702.py": {
+      "status": "audited"
+    },
+    "research/benches_w457.py": {
+      "status": "audited"
+    },
+    "research/benches_w818.py": {
+      "status": "audited"
+    },
+    "research/benches_w880.py": {
+      "status": "audited"
+    },
+    "research/benches_w1234.py": {
+      "status": "audited"
+    },
+    "research/benches_w1300.py": {
+      "status": "audited"
+    },
+    "research/benches_w1568.py": {
+      "status": "audited"
+    },
+    "research/benches_w485.py": {
+      "status": "audited"
+    },
+    "research/benches_w1422.py": {
+      "status": "audited"
+    },
+    "research/benches_w823.py": {
+      "status": "audited"
+    },
+    "research/benches_w1325.py": {
+      "status": "audited"
+    },
+    "research/benches_w1180.py": {
+      "status": "audited"
+    },
+    "research/benches_w411.py": {
+      "status": "audited"
+    },
+    "research/benches_w1054.py": {
+      "status": "audited"
+    },
+    "research/benches_w1443.py": {
+      "status": "audited"
+    },
+    "models/odd_residual_flows.py": {
+      "status": "audited"
+    },
+    "research/benches_w1458.py": {
+      "status": "audited"
+    },
+    "research/benches_w370.py": {
+      "status": "audited"
+    },
+    "research/benches_w285.py": {
+      "status": "audited"
+    },
+    "research/benches_w130.py": {
+      "status": "audited"
+    },
+    "research/benches_w266.py": {
+      "status": "audited"
+    },
+    "research/benches_w236.py": {
+      "status": "audited"
+    },
+    "research/benches_w668.py": {
+      "status": "audited"
+    },
+    "research/benches_w727.py": {
+      "status": "audited"
+    },
+    "research/benches_w304.py": {
+      "status": "audited"
+    },
+    "research/benches_w996.py": {
+      "status": "audited"
+    },
+    "research/benches_w525.py": {
+      "status": "audited"
+    },
+    "research/benches_w385.py": {
+      "status": "audited"
+    },
+    "research/benches_w1427.py": {
+      "status": "audited"
+    },
+    "research/benches_w117.py": {
+      "status": "audited"
+    },
+    "research/benches_w167.py": {
+      "status": "audited"
+    },
+    "research/benches_w647.py": {
+      "status": "audited"
+    },
+    "research/benches_w803.py": {
+      "status": "audited"
+    },
+    "research/benches_w1550.py": {
+      "status": "audited"
+    },
+    "research/benches_w161.py": {
+      "status": "audited"
+    },
+    "research/benches_w681.py": {
+      "status": "audited"
+    },
+    "research/benches_w1333.py": {
+      "status": "audited"
+    },
+    "research/benches_w1452.py": {
+      "status": "audited"
+    },
+    "research/benches_w1178.py": {
+      "status": "audited"
+    },
+    "research/benches_w392.py": {
+      "status": "audited"
+    },
+    "research/benches_w1232.py": {
+      "status": "audited"
+    },
+    "research/benches_w1260.py": {
+      "status": "audited"
+    },
+    "research/benches_w697.py": {
+      "status": "audited"
+    },
+    "research/benches_w1319.py": {
+      "status": "audited"
+    },
+    "research/benches_w1061.py": {
+      "status": "audited"
+    },
+    "research/benches_w275.py": {
+      "status": "audited"
+    },
+    "research/benches_w1495.py": {
+      "status": "audited"
+    },
+    "research/benches_w1512.py": {
+      "status": "audited"
+    },
+    "research/benches_w631.py": {
+      "status": "audited"
+    },
+    "research/benches_w685.py": {
+      "status": "audited"
+    },
+    "research/benches_w77.py": {
+      "status": "audited"
+    },
+    "research/benches_w721.py": {
+      "status": "audited"
+    },
+    "research/benches_w1589.py": {
+      "status": "audited"
+    },
+    "research/benches_w1654.py": {
+      "status": "audited"
+    },
+    "research/benches_w511.py": {
+      "status": "audited"
+    },
+    "research/benches_w1511.py": {
+      "status": "audited"
+    },
+    "research/benches_w41.py": {
+      "status": "audited"
+    },
+    "research/benches_w1626.py": {
+      "status": "audited"
+    },
+    "research/benches_w337.py": {
+      "status": "audited"
+    },
+    "research/benches_w1224.py": {
+      "status": "audited"
+    },
+    "research/benches_w752.py": {
+      "status": "audited"
+    },
+    "research/benches_w106.py": {
+      "status": "audited"
+    },
+    "research/benches_w499.py": {
+      "status": "audited"
+    },
+    "research/benches_w534.py": {
+      "status": "audited"
+    },
+    "research/benches_w743.py": {
+      "status": "audited"
+    },
+    "research/benches_w887.py": {
+      "status": "audited"
+    },
+    "research/benches_w152.py": {
+      "status": "audited"
+    },
+    "research/benches_w324.py": {
+      "status": "audited"
+    },
+    "microstructure/ice_crown_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w187.py": {
+      "status": "audited"
+    },
+    "research/benches_w1566.py": {
+      "status": "audited"
+    },
+    "research/benches_w1245.py": {
+      "status": "audited"
+    },
+    "research/benches_w947.py": {
+      "status": "audited"
+    },
+    "research/benches_w1599.py": {
+      "status": "audited"
+    },
+    "research/benches_w1523.py": {
+      "status": "audited"
+    },
+    "research/benches_w510.py": {
+      "status": "audited"
+    },
+    "research/benches_w955.py": {
+      "status": "audited"
+    },
+    "research/benches_w132.py": {
+      "status": "audited"
+    },
+    "research/benches_w845.py": {
+      "status": "audited"
+    },
+    "research/benches_w305.py": {
+      "status": "audited"
+    },
+    "research/benches_w1628.py": {
+      "status": "audited"
+    },
+    "research/benches_w1605.py": {
+      "status": "audited"
+    },
+    "research/benches_w1339.py": {
+      "status": "audited"
+    },
+    "research/benches_w572.py": {
+      "status": "audited"
+    },
+    "research/benches_w1668.py": {
+      "status": "audited"
+    },
+    "research/benches_w791.py": {
+      "status": "audited"
+    },
+    "research/benches_w565.py": {
+      "status": "audited"
+    },
+    "research/benches_w613.py": {
+      "status": "audited"
+    },
+    "research/benches_w194.py": {
+      "status": "audited"
+    },
+    "research/benches_w1413.py": {
+      "status": "audited"
+    },
+    "research/benches_w1154.py": {
+      "status": "audited"
+    },
+    "research/benches_w1694.py": {
+      "status": "audited"
+    },
+    "research/benches_w153.py": {
+      "status": "audited"
+    },
+    "research/benches_w228.py": {
+      "status": "audited"
+    },
+    "research/benches_w1346.py": {
+      "status": "audited"
+    },
+    "research/benches_w320.py": {
+      "status": "audited"
+    },
+    "research/benches_w1162.py": {
+      "status": "audited"
+    },
+    "research/benches_w649.py": {
+      "status": "audited"
+    },
+    "research/benches_w672.py": {
+      "status": "audited"
+    },
+    "research/benches_w180.py": {
+      "status": "audited"
+    },
+    "research/benches_w737.py": {
+      "status": "audited"
+    },
+    "research/benches_w1326.py": {
+      "status": "audited"
+    },
+    "research/benches_w1696.py": {
+      "status": "audited"
+    },
+    "research/benches_w1439.py": {
+      "status": "audited"
+    },
+    "research/benches_w1459.py": {
+      "status": "audited"
+    },
+    "research/benches_w694.py": {
+      "status": "audited"
+    },
+    "research/benches_w1327.py": {
+      "status": "audited"
+    },
+    "research/benches_w799.py": {
+      "status": "audited"
+    },
+    "research/benches_w1378.py": {
+      "status": "audited"
+    },
+    "research/benches_w1076.py": {
+      "status": "audited"
+    },
+    "research/benches_w1291.py": {
+      "status": "audited"
+    },
+    "research/benches_w399.py": {
+      "status": "audited"
+    },
+    "research/benches_w481.py": {
+      "status": "audited"
+    },
+    "research/benches_w1265.py": {
+      "status": "audited"
+    },
+    "research/benches_w252.py": {
+      "status": "audited"
+    },
+    "research/benches_w463.py": {
+      "status": "audited"
+    },
+    "research/benches_w599.py": {
+      "status": "audited"
+    },
+    "research/benches_w1408.py": {
+      "status": "audited"
+    },
+    "research/benches_w929.py": {
+      "status": "audited"
+    },
+    "research/benches_w339.py": {
+      "status": "audited"
+    },
+    "research/benches_w1545.py": {
+      "status": "audited"
+    },
+    "research/benches_w523.py": {
+      "status": "audited"
+    },
+    "research/benches_w719.py": {
+      "status": "audited"
+    },
+    "microstructure/crown_size_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w471.py": {
+      "status": "audited"
+    },
+    "research/benches_w319.py": {
+      "status": "audited"
+    },
+    "research/benches_w326.py": {
+      "status": "audited"
+    },
+    "research/benches_w1493.py": {
+      "status": "audited"
+    },
+    "research/benches_w1409.py": {
+      "status": "audited"
+    },
+    "research/benches_w349.py": {
+      "status": "audited"
+    },
+    "research/benches_w1623.py": {
+      "status": "audited"
+    },
+    "research/benches_w1677.py": {
+      "status": "audited"
+    },
+    "research/benches_w24.py": {
+      "status": "audited"
+    },
+    "backtest/event_sim/costs.py": {
+      "status": "audited"
+    },
+    "research/benches_w1363.py": {
+      "status": "audited"
+    },
+    "research/benches_w1087.py": {
+      "status": "audited"
+    },
+    "research/benches_w1350.py": {
+      "status": "audited"
+    },
+    "research/benches_w476.py": {
+      "status": "audited"
+    },
+    "research/benches_w630.py": {
+      "status": "audited"
+    },
+    "research/benches_w890.py": {
+      "status": "audited"
+    },
+    "research/benches_w687.py": {
+      "status": "audited"
+    },
+    "research/benches_w896.py": {
+      "status": "audited"
+    },
+    "research/benches_w860.py": {
+      "status": "audited"
+    },
+    "research/benches_w1196.py": {
+      "status": "audited"
+    },
+    "research/benches_w1548.py": {
+      "status": "audited"
+    },
+    "research/benches_w99.py": {
+      "status": "audited"
+    },
+    "research/benches_w493.py": {
+      "status": "audited"
+    },
+    "research/benches_w713.py": {
+      "status": "audited"
+    },
+    "research/benches_w893.py": {
+      "status": "audited"
+    },
+    "research/benches_w1141.py": {
+      "status": "audited"
+    },
+    "research/benches_w386.py": {
+      "status": "audited"
+    },
+    "research/benches_w1242.py": {
+      "status": "audited"
+    },
+    "research/benches_w1149.py": {
+      "status": "audited"
+    },
+    "research/benches_w593.py": {
+      "status": "audited"
+    },
+    "research/benches_w1351.py": {
+      "status": "audited"
+    },
+    "research/benches_w379.py": {
+      "status": "audited"
+    },
+    "research/benches_w810.py": {
+      "status": "audited"
+    },
+    "research/benches_w1048.py": {
+      "status": "audited"
+    },
+    "research/benches_w428.py": {
+      "status": "audited"
+    },
+    "research/benches_w1220.py": {
+      "status": "audited"
+    },
+    "research/benches_w190.py": {
+      "status": "audited"
+    },
+    "research/benches_w1075.py": {
+      "status": "audited"
+    },
+    "research/benches_w267.py": {
+      "status": "audited"
+    },
+    "research/benches_w1052.py": {
+      "status": "audited"
+    },
+    "research/benches_w375.py": {
+      "status": "audited"
+    },
+    "research/benches_w842.py": {
+      "status": "audited"
+    },
+    "research/benches_w714.py": {
+      "status": "audited"
+    },
+    "research/benches_w891.py": {
+      "status": "audited"
+    },
+    "research/benches_w1367.py": {
+      "status": "audited"
+    },
+    "research/benches_w1619.py": {
+      "status": "audited"
+    },
+    "research/benches_w1284.py": {
+      "status": "audited"
+    },
+    "research/benches_w1094.py": {
+      "status": "audited"
+    },
+    "research/benches_w778.py": {
+      "status": "audited"
+    },
+    "research/benches_w591.py": {
+      "status": "audited"
+    },
+    "research/benches_w441.py": {
+      "status": "audited"
+    },
+    "research/benches_w18.py": {
+      "status": "audited"
+    },
+    "research/benches_w792.py": {
+      "status": "audited"
+    },
+    "research/benches_w1606.py": {
+      "status": "audited"
+    },
+    "research/benches_w1405.py": {
+      "status": "audited"
+    },
+    "research/benches_w94.py": {
+      "status": "audited"
+    },
+    "research/benches_w1074.py": {
+      "status": "audited"
+    },
+    "research/benches_w128.py": {
+      "status": "audited"
+    },
+    "research/benches_w157.py": {
+      "status": "audited"
+    },
+    "research/benches_w225.py": {
+      "status": "audited"
+    },
+    "research/benches_w470.py": {
+      "status": "audited"
+    },
+    "research/benches_w691.py": {
+      "status": "audited"
+    },
+    "research/benches_w1514.py": {
+      "status": "audited"
+    },
+    "research/benches_w587.py": {
+      "status": "audited"
+    },
+    "research/benches_w794.py": {
+      "status": "audited"
+    },
+    "research/benches_w1702.py": {
+      "status": "audited"
+    },
+    "research/benches_w651.py": {
+      "status": "audited"
+    },
+    "research/benches_w1516.py": {
+      "status": "audited"
+    },
+    "research/benches_w980.py": {
+      "status": "audited"
+    },
+    "research/benches_w846.py": {
+      "status": "audited"
+    },
+    "research/benches_w407.py": {
+      "status": "audited"
+    },
+    "research/benches_w974.py": {
+      "status": "audited"
+    },
+    "research/benches_w1532.py": {
+      "status": "audited"
+    },
+    "research/benches_w174.py": {
+      "status": "audited"
+    },
+    "research/benches_w1521.py": {
+      "status": "audited"
+    },
+    "research/benches_w1116.py": {
+      "status": "audited"
+    },
+    "research/benches_w1667.py": {
+      "status": "audited"
+    },
+    "research/benches_w1415.py": {
+      "status": "audited"
+    },
+    "research/benches_w1174.py": {
+      "status": "audited"
+    },
+    "research/benches_w57.py": {
+      "status": "audited"
+    },
+    "research/benches_w1040.py": {
+      "status": "audited"
+    },
+    "research/benches_w781.py": {
+      "status": "audited"
+    },
+    "research/benches_w96.py": {
+      "status": "audited"
+    },
+    "research/benches_w997.py": {
+      "status": "audited"
+    },
+    "research/benches_w1502.py": {
+      "status": "audited"
+    },
+    "research/benches_w86.py": {
+      "status": "audited"
+    },
+    "research/benches_w351.py": {
+      "status": "audited"
+    },
+    "research/benches_w433.py": {
+      "status": "audited"
+    },
+    "research/benches_w884.py": {
+      "status": "audited"
+    },
+    "research/benches_w914.py": {
+      "status": "audited"
+    },
+    "research/benches_w322.py": {
+      "status": "audited"
+    },
+    "research/benches_w483.py": {
+      "status": "audited"
+    },
+    "research/benches_w204.py": {
+      "status": "audited"
+    },
+    "research/benches_w559.py": {
+      "status": "audited"
+    },
+    "research/benches_w796.py": {
+      "status": "audited"
+    },
+    "research/benches_w1582.py": {
+      "status": "audited"
+    },
+    "research/benches_w1023.py": {
+      "status": "audited"
+    },
+    "research/benches_w14.py": {
+      "status": "audited"
+    },
+    "research/benches_w76.py": {
+      "status": "audited"
+    },
+    "research/benches_w1483.py": {
+      "status": "audited"
+    },
+    "research/benches_w1700.py": {
+      "status": "audited"
+    },
+    "research/benches_w1210.py": {
+      "status": "audited"
+    },
+    "research/benches_w1018.py": {
+      "status": "audited"
+    },
+    "research/benches_w533.py": {
+      "status": "audited"
+    },
+    "research/benches_w80.py": {
+      "status": "audited"
+    },
+    "research/benches_w935.py": {
+      "status": "audited"
+    },
+    "research/benches_w1128.py": {
+      "status": "audited"
+    },
+    "research/benches_w1026.py": {
+      "status": "audited"
+    },
+    "research/benches_w166.py": {
+      "status": "audited"
+    },
+    "research/benches_w1664.py": {
+      "status": "audited"
+    },
+    "research/benches_w540.py": {
+      "status": "audited"
+    },
+    "research/benches_w654.py": {
+      "status": "audited"
+    },
+    "research/benches_w1349.py": {
+      "status": "audited"
+    },
+    "research/benches_w660.py": {
+      "status": "audited"
+    },
+    "research/benches_w1353.py": {
+      "status": "audited"
+    },
+    "research/benches_w318.py": {
       "status": "audited"
     },
     "microstructure/floor_reseed_bench.py": {
       "status": "audited"
     },
-    "microstructure/floor_stability_bench.py": {
+    "research/benches_w291.py": {
+      "status": "audited"
+    },
+    "research/benches_w873.py": {
+      "status": "audited"
+    },
+    "research/benches_w1509.py": {
+      "status": "audited"
+    },
+    "research/benches_w1505.py": {
+      "status": "audited"
+    },
+    "research/benches_w855.py": {
+      "status": "audited"
+    },
+    "research/benches_w1096.py": {
+      "status": "audited"
+    },
+    "research/benches_w1150.py": {
+      "status": "audited"
+    },
+    "research/benches_w1364.py": {
+      "status": "audited"
+    },
+    "research/benches_w1524.py": {
+      "status": "audited"
+    },
+    "research/benches_w1306.py": {
+      "status": "audited"
+    },
+    "research/benches_w1632.py": {
+      "status": "audited"
+    },
+    "research/benches_w1164.py": {
+      "status": "audited"
+    },
+    "research/benches_w595.py": {
+      "status": "audited"
+    },
+    "research/benches_w344.py": {
+      "status": "audited"
+    },
+    "research/benches_w944.py": {
+      "status": "audited"
+    },
+    "research/benches_w1292.py": {
+      "status": "audited"
+    },
+    "research/benches_w302.py": {
+      "status": "audited"
+    },
+    "models/tda_persistence.py": {
+      "status": "audited"
+    },
+    "research/benches_w1299.py": {
+      "status": "audited"
+    },
+    "research/benches_w1166.py": {
+      "status": "audited"
+    },
+    "research/benches_w42.py": {
+      "status": "audited"
+    },
+    "research/benches_w805.py": {
+      "status": "audited"
+    },
+    "research/benches_w971.py": {
+      "status": "audited"
+    },
+    "research/benches_w1177.py": {
+      "status": "audited"
+    },
+    "research/benches_w217.py": {
+      "status": "audited"
+    },
+    "research/benches_w505.py": {
+      "status": "audited"
+    },
+    "research/benches_w1011.py": {
+      "status": "audited"
+    },
+    "research/benches_w415.py": {
+      "status": "audited"
+    },
+    "microstructure/cancel_gradient_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1056.py": {
+      "status": "audited"
+    },
+    "research/benches_w1683.py": {
+      "status": "audited"
+    },
+    "research/benches_w520.py": {
+      "status": "audited"
+    },
+    "research/benches_w809.py": {
+      "status": "audited"
+    },
+    "research/benches_w1289.py": {
+      "status": "audited"
+    },
+    "research/benches_w790.py": {
+      "status": "audited"
+    },
+    "research/benches_w1287.py": {
+      "status": "audited"
+    },
+    "research/benches_w1083.py": {
+      "status": "audited"
+    },
+    "research/benches_w1581.py": {
+      "status": "audited"
+    },
+    "research/benches_w696.py": {
+      "status": "audited"
+    },
+    "research/benches_w1244.py": {
+      "status": "audited"
+    },
+    "research/benches_w124.py": {
+      "status": "audited"
+    },
+    "research/benches_w480.py": {
+      "status": "audited"
+    },
+    "research/benches_w513.py": {
+      "status": "audited"
+    },
+    "research/benches_w550.py": {
+      "status": "audited"
+    },
+    "research/benches_w1298.py": {
+      "status": "audited"
+    },
+    "research/benches_w1365.py": {
+      "status": "audited"
+    },
+    "research/benches_w230.py": {
+      "status": "audited"
+    },
+    "research/benches_w537.py": {
+      "status": "audited"
+    },
+    "research/benches_w635.py": {
+      "status": "audited"
+    },
+    "research/benches_w984.py": {
+      "status": "audited"
+    },
+    "research/benches_w1588.py": {
+      "status": "audited"
+    },
+    "research/benches_w1546.py": {
+      "status": "audited"
+    },
+    "research/benches_w503.py": {
+      "status": "audited"
+    },
+    "research/benches_w359.py": {
+      "status": "audited"
+    },
+    "research/benches_w1397.py": {
+      "status": "audited"
+    },
+    "research/benches_w1132.py": {
+      "status": "audited"
+    },
+    "research/benches_w748.py": {
+      "status": "audited"
+    },
+    "research/benches_w281.py": {
+      "status": "audited"
+    },
+    "research/benches_w1587.py": {
+      "status": "audited"
+    },
+    "research/benches_w1584.py": {
+      "status": "audited"
+    },
+    "research/benches_w1137.py": {
+      "status": "audited"
+    },
+    "research/benches_w288.py": {
+      "status": "audited"
+    },
+    "research/benches_w36.py": {
+      "status": "audited"
+    },
+    "microstructure/floor_rate_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1613.py": {
+      "status": "audited"
+    },
+    "research/benches_w502.py": {
+      "status": "audited"
+    },
+    "research/benches_w773.py": {
+      "status": "audited"
+    },
+    "research/benches_w1445.py": {
+      "status": "audited"
+    },
+    "research/benches_w968.py": {
+      "status": "audited"
+    },
+    "research/benches_w1544.py": {
+      "status": "audited"
+    },
+    "research/benches_w1526.py": {
+      "status": "audited"
+    },
+    "research/benches_w1134.py": {
+      "status": "audited"
+    },
+    "research/benches_w602.py": {
+      "status": "audited"
+    },
+    "research/benches_w629.py": {
+      "status": "audited"
+    },
+    "research/benches_w1557.py": {
+      "status": "audited"
+    },
+    "research/benches_w788.py": {
+      "status": "audited"
+    },
+    "backtest/event_sim/clock.py": {
+      "status": "audited"
+    },
+    "research/benches_w841.py": {
+      "status": "audited"
+    },
+    "research/benches_w892.py": {
+      "status": "audited"
+    },
+    "research/benches_w1488.py": {
+      "status": "audited"
+    },
+    "research/benches_w1314.py": {
+      "status": "audited"
+    },
+    "microstructure/band_shape_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w377.py": {
+      "status": "audited"
+    },
+    "research/benches_w1655.py": {
+      "status": "audited"
+    },
+    "models/delayed_aci.py": {
+      "status": "audited"
+    },
+    "research/benches_w155.py": {
+      "status": "audited"
+    },
+    "research/benches_w1310.py": {
+      "status": "audited"
+    },
+    "research/benches_w612.py": {
+      "status": "audited"
+    },
+    "research/benches_w804.py": {
+      "status": "audited"
+    },
+    "research/benches_w747.py": {
+      "status": "audited"
+    },
+    "research/benches_w56.py": {
+      "status": "audited"
+    },
+    "research/benches_w1221.py": {
+      "status": "audited"
+    },
+    "research/benches_w150.py": {
+      "status": "audited"
+    },
+    "research/benches_w64.py": {
+      "status": "audited"
+    },
+    "research/benches_w138.py": {
+      "status": "audited"
+    },
+    "research/benches_w209.py": {
+      "status": "audited"
+    },
+    "research/benches_w767.py": {
+      "status": "audited"
+    },
+    "microstructure/crown_join_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1027.py": {
+      "status": "audited"
+    },
+    "research/benches_w621.py": {
+      "status": "audited"
+    },
+    "research/benches_w848.py": {
+      "status": "audited"
+    },
+    "research/benches_w849.py": {
+      "status": "audited"
+    },
+    "research/benches_w1709.py": {
+      "status": "audited"
+    },
+    "research/benches_w1303.py": {
+      "status": "audited"
+    },
+    "research/benches_w1673.py": {
+      "status": "audited"
+    },
+    "research/benches_w729.py": {
+      "status": "audited"
+    },
+    "research/benches_w988.py": {
+      "status": "audited"
+    },
+    "research/benches_w1344.py": {
+      "status": "audited"
+    },
+    "research/benches_w421.py": {
+      "status": "audited"
+    },
+    "research/benches_w976.py": {
+      "status": "audited"
+    },
+    "research/benches_w22.py": {
+      "status": "audited"
+    },
+    "research/benches_w680.py": {
+      "status": "audited"
+    },
+    "models/rrc_filter.py": {
+      "status": "audited"
+    },
+    "research/benches_w1639.py": {
+      "status": "audited"
+    },
+    "research/benches_w531.py": {
+      "status": "audited"
+    },
+    "research/benches_w47.py": {
+      "status": "audited"
+    },
+    "research/benches_w1421.py": {
+      "status": "audited"
+    },
+    "research/benches_w701.py": {
+      "status": "audited"
+    },
+    "research/benches_w1038.py": {
+      "status": "audited"
+    },
+    "research/benches_w1231.py": {
+      "status": "audited"
+    },
+    "research/benches_w1703.py": {
+      "status": "audited"
+    },
+    "research/benches_w787.py": {
+      "status": "audited"
+    },
+    "research/benches_w79.py": {
+      "status": "audited"
+    },
+    "research/benches_w516.py": {
+      "status": "audited"
+    },
+    "research/benches_w235.py": {
+      "status": "audited"
+    },
+    "research/benches_w549.py": {
+      "status": "audited"
+    },
+    "research/benches_w899.py": {
+      "status": "audited"
+    },
+    "research/benches_w202.py": {
+      "status": "audited"
+    },
+    "research/benches_w1254.py": {
+      "status": "audited"
+    },
+    "research/benches_w110.py": {
+      "status": "audited"
+    },
+    "research/benches_w1290.py": {
+      "status": "audited"
+    },
+    "research/benches_w1642.py": {
+      "status": "audited"
+    },
+    "research/benches_w710.py": {
+      "status": "audited"
+    },
+    "research/benches_w196.py": {
+      "status": "audited"
+    },
+    "research/benches_w956.py": {
+      "status": "audited"
+    },
+    "research/benches_w967.py": {
+      "status": "audited"
+    },
+    "research/benches_w115.py": {
+      "status": "audited"
+    },
+    "research/benches_w1109.py": {
+      "status": "audited"
+    },
+    "research/benches_w1575.py": {
+      "status": "audited"
+    },
+    "research/benches_w827.py": {
+      "status": "audited"
+    },
+    "research/benches_w231.py": {
+      "status": "audited"
+    },
+    "research/benches_w910.py": {
+      "status": "audited"
+    },
+    "research/benches_w1465.py": {
+      "status": "audited"
+    },
+    "research/benches_w865.py": {
+      "status": "audited"
+    },
+    "research/benches_w465.py": {
+      "status": "audited"
+    },
+    "research/benches_w1053.py": {
+      "status": "audited"
+    },
+    "research/benches_w979.py": {
+      "status": "audited"
+    },
+    "research/benches_w529.py": {
+      "status": "audited"
+    },
+    "microstructure/hit_starve_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1117.py": {
+      "status": "audited"
+    },
+    "research/benches_w1528.py": {
+      "status": "audited"
+    },
+    "research/benches_w233.py": {
+      "status": "audited"
+    },
+    "research/benches_w923.py": {
+      "status": "audited"
+    },
+    "research/benches_w1168.py": {
+      "status": "audited"
+    },
+    "research/benches_w87.py": {
+      "status": "audited"
+    },
+    "research/benches_w1461.py": {
+      "status": "audited"
+    },
+    "microstructure/crown_behind_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1215.py": {
+      "status": "audited"
+    },
+    "research/benches_w1692.py": {
+      "status": "audited"
+    },
+    "research/benches_w998.py": {
+      "status": "audited"
+    },
+    "research/benches_w1071.py": {
+      "status": "audited"
+    },
+    "research/benches_w816.py": {
+      "status": "audited"
+    },
+    "research/benches_w1647.py": {
+      "status": "audited"
+    },
+    "research/benches_w1091.py": {
+      "status": "audited"
+    },
+    "research/benches_w625.py": {
+      "status": "audited"
+    },
+    "research/benches_w770.py": {
+      "status": "audited"
+    },
+    "research/benches_w1252.py": {
+      "status": "audited"
+    },
+    "research/benches_w1257.py": {
+      "status": "audited"
+    },
+    "research/benches_w1139.py": {
+      "status": "audited"
+    },
+    "research/benches_w218.py": {
+      "status": "audited"
+    },
+    "research/benches_w422.py": {
+      "status": "audited"
+    },
+    "research/benches_w695.py": {
+      "status": "audited"
+    },
+    "research/benches_w1466.py": {
+      "status": "audited"
+    },
+    "research/benches_w154.py": {
+      "status": "audited"
+    },
+    "research/benches_w1390.py": {
+      "status": "audited"
+    },
+    "research/benches_w1442.py": {
+      "status": "audited"
+    },
+    "research/benches_w504.py": {
+      "status": "audited"
+    },
+    "research/benches_w875.py": {
+      "status": "audited"
+    },
+    "research/benches_w854.py": {
+      "status": "audited"
+    },
+    "research/benches_w780.py": {
+      "status": "audited"
+    },
+    "research/benches_w188.py": {
+      "status": "audited"
+    },
+    "research/benches_w393.py": {
+      "status": "audited"
+    },
+    "research/benches_w824.py": {
+      "status": "audited"
+    },
+    "research/benches_w508.py": {
+      "status": "audited"
+    },
+    "research/benches_w1404.py": {
+      "status": "audited"
+    },
+    "models/favar.py": {
+      "status": "audited"
+    },
+    "research/benches_w1293.py": {
+      "status": "audited"
+    },
+    "research/benches_w1454.py": {
+      "status": "audited"
+    },
+    "research/benches_w371.py": {
+      "status": "audited"
+    },
+    "research/benches_w1037.py": {
+      "status": "audited"
+    },
+    "research/benches_w1269.py": {
+      "status": "audited"
+    },
+    "research/benches_w536.py": {
+      "status": "audited"
+    },
+    "research/benches_w1429.py": {
+      "status": "audited"
+    },
+    "research/benches_w214.py": {
+      "status": "audited"
+    },
+    "microstructure/hit_flee_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w182.py": {
+      "status": "audited"
+    },
+    "research/benches_w532.py": {
+      "status": "audited"
+    },
+    "research/benches_w1275.py": {
+      "status": "audited"
+    },
+    "research/benches_w970.py": {
+      "status": "audited"
+    },
+    "research/benches_w547.py": {
+      "status": "audited"
+    },
+    "research/benches_w584.py": {
+      "status": "audited"
+    },
+    "research/benches_w1375.py": {
+      "status": "audited"
+    },
+    "research/benches_w298.py": {
+      "status": "audited"
+    },
+    "research/benches_w688.py": {
+      "status": "audited"
+    },
+    "research/benches_w1579.py": {
+      "status": "audited"
+    },
+    "research/benches_w720.py": {
+      "status": "audited"
+    },
+    "research/benches_w1169.py": {
+      "status": "audited"
+    },
+    "research/benches_w931.py": {
+      "status": "audited"
+    },
+    "models/regime_conformal_var.py": {
+      "status": "audited"
+    },
+    "research/benches_w25.py": {
+      "status": "audited"
+    },
+    "research/benches_w1080.py": {
+      "status": "audited"
+    },
+    "research/benches_w1503.py": {
+      "status": "audited"
+    },
+    "research/benches_w205.py": {
+      "status": "audited"
+    },
+    "research/benches_w637.py": {
+      "status": "audited"
+    },
+    "research/benches_w165.py": {
+      "status": "audited"
+    },
+    "research/benches_w1005.py": {
+      "status": "audited"
+    },
+    "research/benches_w49.py": {
+      "status": "audited"
+    },
+    "research/benches_w585.py": {
+      "status": "audited"
+    },
+    "research/benches_w277.py": {
+      "status": "audited"
+    },
+    "research/benches_w542.py": {
+      "status": "audited"
+    },
+    "research/benches_w740.py": {
+      "status": "audited"
+    },
+    "research/benches_w905.py": {
+      "status": "audited"
+    },
+    "research/benches_w1012.py": {
+      "status": "audited"
+    },
+    "research/benches_w183.py": {
+      "status": "audited"
+    },
+    "research/benches_w745.py": {
+      "status": "audited"
+    },
+    "research/benches_w1393.py": {
+      "status": "audited"
+    },
+    "research/benches_w735.py": {
+      "status": "audited"
+    },
+    "research/benches_w278.py": {
+      "status": "audited"
+    },
+    "research/benches_w1123.py": {
+      "status": "audited"
+    },
+    "research/benches_w1223.py": {
+      "status": "audited"
+    },
+    "research/benches_w1657.py": {
+      "status": "audited"
+    },
+    "research/benches_w922.py": {
+      "status": "audited"
+    },
+    "research/benches_w1046.py": {
+      "status": "audited"
+    },
+    "research/benches_w31.py": {
+      "status": "audited"
+    },
+    "research/benches_w622.py": {
+      "status": "audited"
+    },
+    "research/benches_w950.py": {
+      "status": "audited"
+    },
+    "research/benches_w527.py": {
+      "status": "audited"
+    },
+    "research/benches_w671.py": {
+      "status": "audited"
+    },
+    "research/benches_w405.py": {
+      "status": "audited"
+    },
+    "research/benches_w156.py": {
+      "status": "audited"
+    },
+    "research/benches_w1564.py": {
+      "status": "audited"
+    },
+    "research/benches_w1280.py": {
+      "status": "audited"
+    },
+    "research/benches_w1666.py": {
+      "status": "audited"
+    },
+    "models/pair_vine_copula.py": {
+      "status": "audited"
+    },
+    "research/benches_w474.py": {
+      "status": "audited"
+    },
+    "research/benches_w1660.py": {
+      "status": "audited"
+    },
+    "research/benches_w286.py": {
+      "status": "audited"
+    },
+    "research/benches_w1553.py": {
+      "status": "audited"
+    },
+    "research/benches_w45.py": {
+      "status": "audited"
+    },
+    "research/benches_w249.py": {
+      "status": "audited"
+    },
+    "research/benches_w222.py": {
+      "status": "audited"
+    },
+    "research/benches_w65.py": {
+      "status": "audited"
+    },
+    "research/benches_w1530.py": {
+      "status": "audited"
+    },
+    "research/benches_w546.py": {
+      "status": "audited"
+    },
+    "research/benches_w455.py": {
+      "status": "audited"
+    },
+    "research/benches_w605.py": {
+      "status": "audited"
+    },
+    "research/benches_w479.py": {
+      "status": "audited"
+    },
+    "research/benches_w408.py": {
+      "status": "audited"
+    },
+    "research/benches_w1266.py": {
+      "status": "audited"
+    },
+    "research/benches_w1567.py": {
+      "status": "audited"
+    },
+    "research/benches_w1248.py": {
+      "status": "audited"
+    },
+    "research/benches_w51.py": {
       "status": "audited"
     },
     "microstructure/flow_couple_bench.py": {
@@ -315,51 +2499,347 @@
     "microstructure/full_impact_bench.py": {
       "status": "audited"
     },
-    "microstructure/full_stack_bench.py": {
+    "research/benches_w716.py": {
       "status": "audited"
     },
-    "microstructure/gap_close_bench.py": {
+    "research/benches_w915.py": {
+      "status": "audited"
+    },
+    "research/benches_w158.py": {
+      "status": "audited"
+    },
+    "research/benches_w1712.py": {
+      "status": "audited"
+    },
+    "research/benches_w958.py": {
+      "status": "audited"
+    },
+    "research/benches_w1229.py": {
+      "status": "audited"
+    },
+    "research/benches_w1687.py": {
+      "status": "audited"
+    },
+    "microstructure/aftermath_flow_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w888.py": {
+      "status": "audited"
+    },
+    "research/benches_w1518.py": {
+      "status": "audited"
+    },
+    "research/benches_w365.py": {
+      "status": "audited"
+    },
+    "research/benches_w521.py": {
+      "status": "audited"
+    },
+    "research/benches_w343.py": {
+      "status": "audited"
+    },
+    "research/benches_w1322.py": {
+      "status": "audited"
+    },
+    "research/benches_w690.py": {
+      "status": "audited"
+    },
+    "research/benches_w897.py": {
+      "status": "audited"
+    },
+    "research/benches_w1239.py": {
+      "status": "audited"
+    },
+    "research/benches_w1539.py": {
+      "status": "audited"
+    },
+    "research/benches_w177.py": {
+      "status": "audited"
+    },
+    "research/benches_w269.py": {
+      "status": "audited"
+    },
+    "research/benches_w381.py": {
       "status": "audited"
     },
     "microstructure/hawkes_clock_bench.py": {
       "status": "audited"
     },
-    "microstructure/hidden_depth_bench.py": {
+    "research/benches_w833.py": {
       "status": "audited"
     },
-    "microstructure/hit_flee_bench.py": {
+    "research/benches_w148.py": {
       "status": "audited"
     },
-    "microstructure/hit_starve_bench.py": {
+    "research/benches_w987.py": {
       "status": "audited"
     },
-    "microstructure/ice_budget_bench.py": {
+    "research/benches_w645.py": {
       "status": "audited"
     },
-    "microstructure/ice_crown_bench.py": {
+    "research/benches_w452.py": {
       "status": "audited"
     },
-    "microstructure/iceberg_bench.py": {
+    "research/benches_w911.py": {
       "status": "audited"
     },
-    "microstructure/iid_floor_bench.py": {
+    "research/benches_w1460.py": {
       "status": "audited"
     },
-    "microstructure/impact_persist_bench.py": {
+    "research/benches_w1446.py": {
       "status": "audited"
     },
-    "microstructure/improve_flow_bench.py": {
+    "research/benches_w682.py": {
       "status": "audited"
     },
-    "microstructure/initiative_fade_bench.py": {
+    "research/benches_w1090.py": {
+      "status": "audited"
+    },
+    "research/benches_w333.py": {
+      "status": "audited"
+    },
+    "research/benches_w1130.py": {
+      "status": "audited"
+    },
+    "research/benches_w964.py": {
+      "status": "audited"
+    },
+    "research/benches_w259.py": {
+      "status": "audited"
+    },
+    "research/benches_w1440.py": {
+      "status": "audited"
+    },
+    "research/benches_w1104.py": {
+      "status": "audited"
+    },
+    "research/benches_w1661.py": {
+      "status": "audited"
+    },
+    "research/benches_w965.py": {
+      "status": "audited"
+    },
+    "research/benches_w723.py": {
+      "status": "audited"
+    },
+    "research/benches_w758.py": {
       "status": "audited"
     },
     "parity_leak_audit.py": {
       "status": "audited"
     },
-    "public.py": {
-      "reason": "package surface only",
-      "status": "waived"
+    "research/benches_w443.py": {
+      "status": "audited"
+    },
+    "research/benches_w58.py": {
+      "status": "audited"
+    },
+    "research/benches_w78.py": {
+      "status": "audited"
+    },
+    "research/benches_w765.py": {
+      "status": "audited"
+    },
+    "research/benches_w717.py": {
+      "status": "audited"
+    },
+    "research/benches_w354.py": {
+      "status": "audited"
+    },
+    "research/benches_w164.py": {
+      "status": "audited"
+    },
+    "research/benches_w1097.py": {
+      "status": "audited"
+    },
+    "research/benches_w571.py": {
+      "status": "audited"
+    },
+    "research/benches_w895.py": {
+      "status": "audited"
+    },
+    "research/benches_w775.py": {
+      "status": "audited"
+    },
+    "research/benches_w663.py": {
+      "status": "audited"
+    },
+    "research/benches_w1010.py": {
+      "status": "audited"
+    },
+    "research/benches_w1015.py": {
+      "status": "audited"
+    },
+    "research/benches_w707.py": {
+      "status": "audited"
+    },
+    "research/benches_w1484.py": {
+      "status": "audited"
+    },
+    "research/benches_w877.py": {
+      "status": "audited"
+    },
+    "research/benches_w692.py": {
+      "status": "audited"
+    },
+    "research/benches_w387.py": {
+      "status": "audited"
+    },
+    "research/benches_w806.py": {
+      "status": "audited"
+    },
+    "research/benches_w458.py": {
+      "status": "audited"
+    },
+    "research/benches_w985.py": {
+      "status": "audited"
+    },
+    "research/benches_w733.py": {
+      "status": "audited"
+    },
+    "research/benches_w412.py": {
+      "status": "audited"
+    },
+    "research/benches_w1596.py": {
+      "status": "audited"
+    },
+    "research/benches_w1652.py": {
+      "status": "audited"
+    },
+    "research/benches_w517.py": {
+      "status": "audited"
+    },
+    "research/benches_w633.py": {
+      "status": "audited"
+    },
+    "research/benches_w1014.py": {
+      "status": "audited"
+    },
+    "research/benches_w104.py": {
+      "status": "audited"
+    },
+    "research/benches_w1262.py": {
+      "status": "audited"
+    },
+    "research/benches_w250.py": {
+      "status": "audited"
+    },
+    "research/benches_w1506.py": {
+      "status": "audited"
+    },
+    "research/benches_w1681.py": {
+      "status": "audited"
+    },
+    "research/benches_w142.py": {
+      "status": "audited"
+    },
+    "research/benches_w1515.py": {
+      "status": "audited"
+    },
+    "research/benches_w219.py": {
+      "status": "audited"
+    },
+    "research/benches_w1107.py": {
+      "status": "audited"
+    },
+    "research/benches_w1426.py": {
+      "status": "audited"
+    },
+    "research/benches_w1533.py": {
+      "status": "audited"
+    },
+    "research/benches_w730.py": {
+      "status": "audited"
+    },
+    "research/benches_w826.py": {
+      "status": "audited"
+    },
+    "backtest/event_sim/simulator.py": {
+      "status": "audited"
+    },
+    "research/benches_w88.py": {
+      "status": "audited"
+    },
+    "research/benches_w1106.py": {
+      "status": "audited"
+    },
+    "research/benches_w1354.py": {
+      "status": "audited"
+    },
+    "research/benches_w1560.py": {
+      "status": "audited"
+    },
+    "research/benches_w604.py": {
+      "status": "audited"
+    },
+    "research/benches_w784.py": {
+      "status": "audited"
+    },
+    "research/benches_w1047.py": {
+      "status": "audited"
+    },
+    "research/benches_w406.py": {
+      "status": "audited"
+    },
+    "research/benches_w761.py": {
+      "status": "audited"
+    },
+    "research/benches_w1570.py": {
+      "status": "audited"
+    },
+    "research/benches_w912.py": {
+      "status": "audited"
+    },
+    "research/benches_w1285.py": {
+      "status": "audited"
+    },
+    "research/benches_w857.py": {
+      "status": "audited"
+    },
+    "research/benches_w1202.py": {
+      "status": "audited"
+    },
+    "research/benches_w1013.py": {
+      "status": "audited"
+    },
+    "microstructure/improve_flow_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w539.py": {
+      "status": "audited"
+    },
+    "research/benches_w927.py": {
+      "status": "audited"
+    },
+    "research/benches_w1240.py": {
+      "status": "audited"
+    },
+    "research/benches_w558.py": {
+      "status": "audited"
+    },
+    "research/benches_w528.py": {
+      "status": "audited"
+    },
+    "research/benches_w294.py": {
+      "status": "audited"
+    },
+    "research/benches_w1233.py": {
+      "status": "audited"
+    },
+    "research/benches_w39.py": {
+      "status": "audited"
+    },
+    "research/benches_w75.py": {
+      "status": "audited"
+    },
+    "research/benches_w1031.py": {
+      "status": "audited"
+    },
+    "research/benches_w16.py": {
+      "status": "audited"
+    },
+    "research/benches_w438.py": {
+      "status": "audited"
     },
     "models/c51_rl.py": {
       "status": "partial",
@@ -368,66 +2848,2695 @@
         "tests/unit/models/test_c51_rl.py"
       ]
     },
-    "models/delayed_aci.py": {
+    "research/benches_w837.py": {
       "status": "audited"
     },
-    "models/extra_tilt_conformal.py": {
+    "research/benches_w1034.py": {
       "status": "audited"
     },
-    "models/favar.py": {
+    "research/benches_w1614.py": {
       "status": "audited"
     },
-    "models/graded_irt.py": {
+    "research/benches_w141.py": {
+      "status": "audited"
+    },
+    "research/benches_w870.py": {
+      "status": "audited"
+    },
+    "research/benches_w1066.py": {
+      "status": "audited"
+    },
+    "research/benches_w1114.py": {
+      "status": "audited"
+    },
+    "microstructure/churn_stability_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w551.py": {
+      "status": "audited"
+    },
+    "research/benches_w1648.py": {
+      "status": "audited"
+    },
+    "research/benches_w1535.py": {
+      "status": "audited"
+    },
+    "research/benches_w1095.py": {
+      "status": "audited"
+    },
+    "research/benches_w1295.py": {
+      "status": "audited"
+    },
+    "research/benches_w197.py": {
+      "status": "audited"
+    },
+    "research/benches_w380.py": {
+      "status": "audited"
+    },
+    "research/benches_w859.py": {
+      "status": "audited"
+    },
+    "research/benches_w1009.py": {
+      "status": "audited"
+    },
+    "research/benches_w1042.py": {
+      "status": "audited"
+    },
+    "research/benches_w1118.py": {
+      "status": "audited"
+    },
+    "research/benches_w1580.py": {
+      "status": "audited"
+    },
+    "research/benches_w105.py": {
+      "status": "audited"
+    },
+    "research/benches_w1153.py": {
+      "status": "audited"
+    },
+    "research/benches_w560.py": {
+      "status": "audited"
+    },
+    "research/benches_w1462.py": {
+      "status": "audited"
+    },
+    "research/benches_w192.py": {
+      "status": "audited"
+    },
+    "research/benches_w835.py": {
+      "status": "audited"
+    },
+    "research/benches_w1058.py": {
+      "status": "audited"
+    },
+    "research/benches_w1152.py": {
+      "status": "audited"
+    },
+    "research/benches_w626.py": {
+      "status": "audited"
+    },
+    "research/benches_w1098.py": {
+      "status": "audited"
+    },
+    "research/benches_w139.py": {
+      "status": "audited"
+    },
+    "research/benches_w1470.py": {
+      "status": "audited"
+    },
+    "research/benches_w1682.py": {
+      "status": "audited"
+    },
+    "research/benches_w263.py": {
+      "status": "audited"
+    },
+    "research/benches_w583.py": {
+      "status": "audited"
+    },
+    "research/benches_w1525.py": {
+      "status": "audited"
+    },
+    "research/benches_w335.py": {
+      "status": "audited"
+    },
+    "research/benches_w123.py": {
+      "status": "audited"
+    },
+    "research/benches_w700.py": {
+      "status": "audited"
+    },
+    "research/benches_w1235.py": {
+      "status": "audited"
+    },
+    "research/benches_w1348.py": {
+      "status": "audited"
+    },
+    "research/benches_w1369.py": {
+      "status": "audited"
+    },
+    "research/benches_w1318.py": {
+      "status": "audited"
+    },
+    "research/benches_w1279.py": {
+      "status": "audited"
+    },
+    "research/benches_w616.py": {
+      "status": "audited"
+    },
+    "research/benches_w1212.py": {
+      "status": "audited"
+    },
+    "research/benches_w171.py": {
+      "status": "audited"
+    },
+    "research/benches_w61.py": {
+      "status": "audited"
+    },
+    "research/benches_w348.py": {
+      "status": "audited"
+    },
+    "research/benches_w594.py": {
+      "status": "audited"
+    },
+    "research/benches_w1030.py": {
+      "status": "audited"
+    },
+    "research/benches_w817.py": {
+      "status": "audited"
+    },
+    "research/benches_w175.py": {
+      "status": "audited"
+    },
+    "research/benches_w396.py": {
+      "status": "audited"
+    },
+    "research/benches_w1070.py": {
+      "status": "audited"
+    },
+    "research/benches_w273.py": {
+      "status": "audited"
+    },
+    "research/benches_w1629.py": {
+      "status": "audited"
+    },
+    "research/benches_w514.py": {
       "status": "audited"
     },
     "models/neural_tpp.py": {
       "status": "audited"
     },
-    "models/odd_residual_flows.py": {
+    "research/benches_w417.py": {
       "status": "audited"
     },
-    "models/pair_vine_copula.py": {
+    "backtest/event_sim/fills.py": {
       "status": "audited"
     },
-    "models/path_signatures.py": {
+    "research/benches_w1309.py": {
       "status": "audited"
     },
-    "models/regime_conformal_var.py": {
+    "research/benches_w1379.py": {
       "status": "audited"
     },
-    "models/rrc_filter.py": {
+    "research/benches_w706.py": {
       "status": "audited"
     },
     "models/svi_surface.py": {
       "status": "audited"
     },
-    "models/tda_persistence.py": {
+    "research/benches_w903.py": {
       "status": "audited"
     },
-    "models/viterbi_decode.py": {
+    "research/benches_w1255.py": {
       "status": "audited"
     },
-    "models/rolling_conformal.py": {
+    "research/benches_w1197.py": {
       "status": "audited"
     },
-    "models/rbergomi.py": {
+    "research/benches_w1522.py": {
+      "status": "audited"
+    },
+    "research/benches_w296.py": {
+      "status": "audited"
+    },
+    "research/benches_w569.py": {
+      "status": "audited"
+    },
+    "research/benches_w17.py": {
+      "status": "audited"
+    },
+    "research/benches_w101.py": {
+      "status": "audited"
+    },
+    "research/benches_w1403.py": {
+      "status": "audited"
+    },
+    "research/benches_w917.py": {
+      "status": "audited"
+    },
+    "research/benches_w1268.py": {
+      "status": "audited"
+    },
+    "research/benches_w1036.py": {
+      "status": "audited"
+    },
+    "research/benches_w1704.py": {
+      "status": "audited"
+    },
+    "research/benches_w698.py": {
+      "status": "audited"
+    },
+    "research/benches_w1701.py": {
+      "status": "audited"
+    },
+    "research/benches_w1191.py": {
+      "status": "audited"
+    },
+    "research/benches_w1001.py": {
+      "status": "audited"
+    },
+    "research/benches_w1372.py": {
+      "status": "audited"
+    },
+    "research/benches_w1671.py": {
+      "status": "audited"
+    },
+    "research/benches_w389.py": {
+      "status": "audited"
+    },
+    "research/benches_w1069.py": {
+      "status": "audited"
+    },
+    "microstructure/initiative_fade_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1099.py": {
+      "status": "audited"
+    },
+    "research/benches_w312.py": {
+      "status": "audited"
+    },
+    "research/benches_w314.py": {
+      "status": "audited"
+    },
+    "research/benches_w1601.py": {
+      "status": "audited"
+    },
+    "research/benches_w1201.py": {
+      "status": "audited"
+    },
+    "research/benches_w316.py": {
+      "status": "audited"
+    },
+    "research/benches_w966.py": {
+      "status": "audited"
+    },
+    "research/benches_w1288.py": {
+      "status": "audited"
+    },
+    "research/benches_w19.py": {
+      "status": "audited"
+    },
+    "research/benches_w1617.py": {
+      "status": "audited"
+    },
+    "research/benches_w144.py": {
+      "status": "audited"
+    },
+    "research/benches_w244.py": {
+      "status": "audited"
+    },
+    "research/benches_w1434.py": {
+      "status": "audited"
+    },
+    "research/benches_w1035.py": {
+      "status": "audited"
+    },
+    "research/benches_w1501.py": {
+      "status": "audited"
+    },
+    "research/benches_w771.py": {
+      "status": "audited"
+    },
+    "research/benches_w609.py": {
+      "status": "audited"
+    },
+    "research/benches_w1181.py": {
+      "status": "audited"
+    },
+    "research/benches_w1227.py": {
+      "status": "audited"
+    },
+    "research/benches_w562.py": {
+      "status": "audited"
+    },
+    "research/benches_w1028.py": {
+      "status": "audited"
+    },
+    "research/benches_w1250.py": {
+      "status": "audited"
+    },
+    "research/benches_w1156.py": {
+      "status": "audited"
+    },
+    "research/benches_w1649.py": {
+      "status": "audited"
+    },
+    "research/benches_w1665.py": {
+      "status": "audited"
+    },
+    "research/benches_w839.py": {
+      "status": "audited"
+    },
+    "research/benches_w619.py": {
+      "status": "audited"
+    },
+    "research/benches_w460.py": {
+      "status": "audited"
+    },
+    "research/benches_w1399.py": {
+      "status": "audited"
+    },
+    "research/benches_w1616.py": {
+      "status": "audited"
+    },
+    "microstructure/flee_wide_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w666.py": {
+      "status": "audited"
+    },
+    "research/benches_w962.py": {
+      "status": "audited"
+    },
+    "research/benches_w1387.py": {
+      "status": "audited"
+    },
+    "research/benches_w424.py": {
+      "status": "audited"
+    },
+    "research/benches_w1207.py": {
+      "status": "audited"
+    },
+    "research/benches_w1669.py": {
+      "status": "audited"
+    },
+    "research/benches_w918.py": {
+      "status": "audited"
+    },
+    "research/benches_w67.py": {
+      "status": "audited"
+    },
+    "research/benches_w1607.py": {
+      "status": "audited"
+    },
+    "research/benches_w703.py": {
+      "status": "audited"
+    },
+    "research/benches_w1710.py": {
+      "status": "audited"
+    },
+    "research/benches_w113.py": {
+      "status": "audited"
+    },
+    "research/benches_w82.py": {
+      "status": "audited"
+    },
+    "research/benches_w131.py": {
+      "status": "audited"
+    },
+    "research/benches_w675.py": {
+      "status": "audited"
+    },
+    "microstructure/band_occupancy_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_extra.py": {
+      "status": "audited"
+    },
+    "research/benches_w1447.py": {
+      "status": "audited"
+    },
+    "research/benches_w50.py": {
+      "status": "audited"
+    },
+    "research/benches_w624.py": {
+      "status": "audited"
+    },
+    "research/benches_w310.py": {
+      "status": "audited"
+    },
+    "research/benches_w338.py": {
+      "status": "audited"
+    },
+    "research/benches_w739.py": {
+      "status": "audited"
+    },
+    "research/benches_w669.py": {
+      "status": "audited"
+    },
+    "research/benches_w878.py": {
+      "status": "audited"
+    },
+    "research/benches_w940.py": {
+      "status": "audited"
+    },
+    "research/benches_w1143.py": {
+      "status": "audited"
+    },
+    "research/benches_w916.py": {
+      "status": "audited"
+    },
+    "research/benches_w576.py": {
+      "status": "audited"
+    },
+    "research/benches_w564.py": {
+      "status": "audited"
+    },
+    "research/benches_w247.py": {
+      "status": "audited"
+    },
+    "research/benches_w1230.py": {
+      "status": "audited"
+    },
+    "research/benches_w1055.py": {
+      "status": "audited"
+    },
+    "research/benches_w786.py": {
+      "status": "audited"
+    },
+    "research/benches_w1604.py": {
+      "status": "audited"
+    },
+    "research/benches_w1019.py": {
+      "status": "audited"
+    },
+    "research/benches_w1492.py": {
+      "status": "audited"
+    },
+    "research/benches_w1385.py": {
+      "status": "audited"
+    },
+    "research/benches_w1592.py": {
+      "status": "audited"
+    },
+    "research/benches_w279.py": {
+      "status": "audited"
+    },
+    "research/benches_w240.py": {
+      "status": "audited"
+    },
+    "research/benches_w1474.py": {
+      "status": "audited"
+    },
+    "research/benches_w1160.py": {
+      "status": "audited"
+    },
+    "research/benches_w830.py": {
+      "status": "audited"
+    },
+    "research/benches_w189.py": {
+      "status": "audited"
+    },
+    "research/benches_w1253.py": {
+      "status": "audited"
+    },
+    "research/benches_w1373.py": {
+      "status": "audited"
+    },
+    "research/benches_w46.py": {
+      "status": "audited"
+    },
+    "research/benches_w607.py": {
+      "status": "audited"
+    },
+    "research/benches_w1102.py": {
+      "status": "audited"
+    },
+    "research/benches_w1151.py": {
+      "status": "audited"
+    },
+    "research/benches_w500.py": {
+      "status": "audited"
+    },
+    "research/benches_w659.py": {
+      "status": "audited"
+    },
+    "microstructure/impact_persist_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w353.py": {
+      "status": "audited"
+    },
+    "research/benches_w1308.py": {
+      "status": "audited"
+    },
+    "research/benches_w1634.py": {
+      "status": "audited"
+    },
+    "research/benches_w1598.py": {
+      "status": "audited"
+    },
+    "research/benches_w170.py": {
+      "status": "audited"
+    },
+    "research/benches_w118.py": {
+      "status": "audited"
+    },
+    "research/benches_w1331.py": {
+      "status": "audited"
+    },
+    "research/benches_w369.py": {
+      "status": "audited"
+    },
+    "research/benches_w395.py": {
+      "status": "audited"
+    },
+    "research/benches_w1490.py": {
+      "status": "audited"
+    },
+    "research/benches_w315.py": {
+      "status": "audited"
+    },
+    "research/benches_w834.py": {
+      "status": "audited"
+    },
+    "research/benches_w1079.py": {
+      "status": "audited"
+    },
+    "research/benches_w686.py": {
+      "status": "audited"
+    },
+    "research/benches_w313.py": {
+      "status": "audited"
+    },
+    "research/benches_w55.py": {
+      "status": "audited"
+    },
+    "research/benches_w749.py": {
+      "status": "audited"
+    },
+    "research/benches_w1195.py": {
+      "status": "audited"
+    },
+    "research/benches_w1315.py": {
+      "status": "audited"
+    },
+    "research/benches_w657.py": {
+      "status": "audited"
+    },
+    "research/benches_w1622.py": {
+      "status": "audited"
+    },
+    "research/benches_w1140.py": {
+      "status": "audited"
+    },
+    "research/benches_w1627.py": {
+      "status": "audited"
+    },
+    "research/benches_w1690.py": {
+      "status": "audited"
+    },
+    "research/benches_w73.py": {
+      "status": "audited"
+    },
+    "research/benches_w581.py": {
+      "status": "audited"
+    },
+    "research/benches_w501.py": {
+      "status": "audited"
+    },
+    "research/benches_w1531.py": {
+      "status": "audited"
+    },
+    "research/benches_w1406.py": {
+      "status": "audited"
+    },
+    "research/benches_w1264.py": {
+      "status": "audited"
+    },
+    "research/benches_w23.py": {
+      "status": "audited"
+    },
+    "research/benches_w744.py": {
+      "status": "audited"
+    },
+    "research/benches_w872.py": {
+      "status": "audited"
+    },
+    "research/benches_w437.py": {
+      "status": "audited"
+    },
+    "research/benches_w185.py": {
+      "status": "audited"
+    },
+    "research/benches_w1444.py": {
+      "status": "audited"
+    },
+    "research/benches_w1203.py": {
+      "status": "audited"
+    },
+    "research/benches_w1276.py": {
+      "status": "audited"
+    },
+    "research/benches_w1321.py": {
+      "status": "audited"
+    },
+    "research/benches_w1352.py": {
+      "status": "audited"
+    },
+    "research/benches_w446.py": {
+      "status": "audited"
+    },
+    "research/benches_w683.py": {
+      "status": "audited"
+    },
+    "research/benches_w861.py": {
+      "status": "audited"
+    },
+    "research/benches_w828.py": {
+      "status": "audited"
+    },
+    "research/benches_w832.py": {
+      "status": "audited"
+    },
+    "research/benches_w656.py": {
+      "status": "audited"
+    },
+    "research/benches_w1296.py": {
+      "status": "audited"
+    },
+    "research/benches_w1381.py": {
+      "status": "audited"
+    },
+    "research/benches_w1145.py": {
+      "status": "audited"
+    },
+    "models/extra_tilt_conformal.py": {
+      "status": "audited"
+    },
+    "research/benches_w125.py": {
+      "status": "audited"
+    },
+    "research/benches_w1432.py": {
+      "status": "audited"
+    },
+    "research/benches_w1136.py": {
+      "status": "audited"
+    },
+    "research/benches_w1111.py": {
+      "status": "audited"
+    },
+    "research/benches_w97.py": {
+      "status": "audited"
+    },
+    "research/benches_w1437.py": {
+      "status": "audited"
+    },
+    "research/benches_w290.py": {
+      "status": "audited"
+    },
+    "research/benches_w1209.py": {
+      "status": "audited"
+    },
+    "research/benches_w977.py": {
+      "status": "audited"
+    },
+    "research/benches_w904.py": {
+      "status": "audited"
+    },
+    "research/benches_w1705.py": {
+      "status": "audited"
+    },
+    "research/benches_w1382.py": {
+      "status": "audited"
+    },
+    "research/benches_w1103.py": {
+      "status": "audited"
+    },
+    "research/benches_w1380.py": {
+      "status": "audited"
+    },
+    "research/benches_w1577.py": {
+      "status": "audited"
+    },
+    "research/benches_w1643.py": {
+      "status": "audited"
+    },
+    "research/benches_w1436.py": {
+      "status": "audited"
+    },
+    "research/benches_w636.py": {
+      "status": "audited"
+    },
+    "research/benches_w1100.py": {
+      "status": "audited"
+    },
+    "research/benches_w1218.py": {
+      "status": "audited"
+    },
+    "research/benches_w704.py": {
+      "status": "audited"
+    },
+    "research/benches_w475.py": {
+      "status": "audited"
+    },
+    "research/benches_w1680.py": {
+      "status": "audited"
+    },
+    "research/benches_w1336.py": {
+      "status": "audited"
+    },
+    "research/benches_w718.py": {
+      "status": "audited"
+    },
+    "research/benches_w1475.py": {
+      "status": "audited"
+    },
+    "research/benches_w920.py": {
+      "status": "audited"
+    },
+    "research/benches_w1007.py": {
+      "status": "audited"
+    },
+    "research/benches_w301.py": {
+      "status": "audited"
+    },
+    "research/benches_w331.py": {
+      "status": "audited"
+    },
+    "research/benches_w1101.py": {
+      "status": "audited"
+    },
+    "research/benches_w1513.py": {
+      "status": "audited"
+    },
+    "research/benches_w1541.py": {
+      "status": "audited"
+    },
+    "research/benches_w33.py": {
+      "status": "audited"
+    },
+    "research/benches_w1183.py": {
+      "status": "audited"
+    },
+    "research/benches_w1491.py": {
+      "status": "audited"
+    },
+    "research/benches_w32.py": {
+      "status": "audited"
+    },
+    "research/benches_w261.py": {
+      "status": "audited"
+    },
+    "research/benches_w963.py": {
+      "status": "audited"
+    },
+    "research/benches_w1401.py": {
+      "status": "audited"
+    },
+    "research/benches_w1017.py": {
+      "status": "audited"
+    },
+    "research/benches_w603.py": {
+      "status": "audited"
+    },
+    "research/benches_w664.py": {
+      "status": "audited"
+    },
+    "research/benches_w783.py": {
+      "status": "audited"
+    },
+    "research/benches_w1618.py": {
+      "status": "audited"
+    },
+    "research/benches_w1361.py": {
+      "status": "audited"
+    },
+    "research/benches_w949.py": {
+      "status": "audited"
+    },
+    "research/benches_w1259.py": {
+      "status": "audited"
+    },
+    "research/benches_w91.py": {
+      "status": "audited"
+    },
+    "research/benches_w1002.py": {
+      "status": "audited"
+    },
+    "research/benches_w256.py": {
+      "status": "audited"
+    },
+    "research/benches_w1609.py": {
+      "status": "audited"
+    },
+    "research/benches_w262.py": {
+      "status": "audited"
+    },
+    "research/benches_w507.py": {
+      "status": "audited"
+    },
+    "research/benches_w772.py": {
+      "status": "audited"
+    },
+    "research/benches_w1057.py": {
+      "status": "audited"
+    },
+    "research/benches_w135.py": {
+      "status": "audited"
+    },
+    "research/benches_w1236.py": {
+      "status": "audited"
+    },
+    "research/benches_w1520.py": {
+      "status": "audited"
+    },
+    "research/benches_w592.py": {
+      "status": "audited"
+    },
+    "research/benches_w1536.py": {
+      "status": "audited"
+    },
+    "research/benches_w119.py": {
+      "status": "audited"
+    },
+    "research/benches_w1656.py": {
+      "status": "audited"
+    },
+    "research/benches_w1498.py": {
+      "status": "audited"
+    },
+    "research/benches_w1438.py": {
+      "status": "audited"
+    },
+    "research/benches_w1084.py": {
+      "status": "audited"
+    },
+    "research/benches_w1457.py": {
+      "status": "audited"
+    },
+    "research/benches_w1214.py": {
+      "status": "audited"
+    },
+    "research/benches_w1317.py": {
+      "status": "audited"
+    },
+    "research/benches_w801.py": {
+      "status": "audited"
+    },
+    "research/benches_w1249.py": {
+      "status": "audited"
+    },
+    "research/benches_w254.py": {
+      "status": "audited"
+    },
+    "research/benches_w844.py": {
+      "status": "audited"
+    },
+    "research/benches_w751.py": {
+      "status": "audited"
+    },
+    "microstructure/floor_stability_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w143.py": {
+      "status": "audited"
+    },
+    "research/benches_w52.py": {
+      "status": "audited"
+    },
+    "research/benches_w274.py": {
+      "status": "audited"
+    },
+    "research/benches_w1586.py": {
+      "status": "audited"
+    },
+    "research/benches_w226.py": {
+      "status": "audited"
+    },
+    "research/benches_w60.py": {
+      "status": "audited"
+    },
+    "research/benches_w34.py": {
+      "status": "audited"
+    },
+    "research/benches_w373.py": {
+      "status": "audited"
+    },
+    "research/benches_w1316.py": {
+      "status": "audited"
+    },
+    "research/benches_w543.py": {
+      "status": "audited"
+    },
+    "research/benches_w1433.py": {
+      "status": "audited"
+    },
+    "research/benches_w160.py": {
+      "status": "audited"
+    },
+    "research/benches_w600.py": {
+      "status": "audited"
+    },
+    "research/benches_w959.py": {
+      "status": "audited"
+    },
+    "research/benches_w1241.py": {
+      "status": "audited"
+    },
+    "research/benches_w43.py": {
+      "status": "audited"
+    },
+    "research/benches_w1551.py": {
+      "status": "audited"
+    },
+    "research/benches_w932.py": {
+      "status": "audited"
+    },
+    "research/benches_w336.py": {
+      "status": "audited"
+    },
+    "research/benches_w928.py": {
+      "status": "audited"
+    },
+    "research/benches_w1670.py": {
+      "status": "audited"
+    },
+    "research/benches_w1693.py": {
+      "status": "audited"
+    },
+    "research/benches_w439.py": {
+      "status": "audited"
+    },
+    "research/benches_w459.py": {
+      "status": "audited"
+    },
+    "research/benches_w1366.py": {
+      "status": "audited"
+    },
+    "research/benches_w712.py": {
+      "status": "audited"
+    },
+    "research/benches_w442.py": {
+      "status": "audited"
+    },
+    "research/benches_w545.py": {
+      "status": "audited"
+    },
+    "research/benches_w1625.py": {
+      "status": "audited"
+    },
+    "research/benches_w74.py": {
+      "status": "audited"
+    },
+    "research/benches_w1576.py": {
+      "status": "audited"
+    },
+    "research/benches_w126.py": {
+      "status": "audited"
+    },
+    "research/benches_w1261.py": {
+      "status": "audited"
+    },
+    "research/benches_w757.py": {
+      "status": "audited"
+    },
+    "research/benches_w1175.py": {
+      "status": "audited"
+    },
+    "research/benches_w342.py": {
+      "status": "audited"
+    },
+    "research/benches_w1192.py": {
+      "status": "audited"
+    },
+    "research/benches_w1029.py": {
+      "status": "audited"
+    },
+    "research/benches_w1113.py": {
+      "status": "audited"
+    },
+    "research/benches_w726.py": {
+      "status": "audited"
+    },
+    "research/benches_w577.py": {
+      "status": "audited"
+    },
+    "research/benches_w311.py": {
       "status": "audited"
     },
     "models/fbm.py": {
       "status": "audited"
     },
+    "research/benches_w1600.py": {
+      "status": "audited"
+    },
+    "research/benches_w1165.py": {
+      "status": "audited"
+    },
+    "research/benches_w800.py": {
+      "status": "audited"
+    },
+    "research/benches_w1672.py": {
+      "status": "audited"
+    },
+    "research/benches_w1419.py": {
+      "status": "audited"
+    },
+    "research/benches_w1188.py": {
+      "status": "audited"
+    },
+    "research/benches_w789.py": {
+      "status": "audited"
+    },
+    "research/benches_w820.py": {
+      "status": "audited"
+    },
+    "research/benches_w282.py": {
+      "status": "audited"
+    },
+    "research/benches_w825.py": {
+      "status": "audited"
+    },
+    "research/benches_w83.py": {
+      "status": "audited"
+    },
+    "research/benches_w1695.py": {
+      "status": "audited"
+    },
+    "research/benches_w92.py": {
+      "status": "audited"
+    },
+    "research/benches_w590.py": {
+      "status": "audited"
+    },
+    "research/benches_w253.py": {
+      "status": "audited"
+    },
+    "research/benches_w725.py": {
+      "status": "audited"
+    },
+    "research/benches_w1277.py": {
+      "status": "audited"
+    },
+    "research/benches_w1187.py": {
+      "status": "audited"
+    },
+    "research/benches_w1425.py": {
+      "status": "audited"
+    },
+    "research/benches_w355.py": {
+      "status": "audited"
+    },
+    "research/benches_w623.py": {
+      "status": "audited"
+    },
+    "research/benches_w1578.py": {
+      "status": "audited"
+    },
+    "research/benches_w673.py": {
+      "status": "audited"
+    },
+    "research/benches_w1125.py": {
+      "status": "audited"
+    },
+    "research/benches_w1478.py": {
+      "status": "audited"
+    },
+    "microstructure/hidden_depth_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w677.py": {
+      "status": "audited"
+    },
+    "research/benches_w815.py": {
+      "status": "audited"
+    },
+    "research/benches_w969.py": {
+      "status": "audited"
+    },
+    "research/benches_w990.py": {
+      "status": "audited"
+    },
+    "research/benches_w224.py": {
+      "status": "audited"
+    },
+    "research/benches_w111.py": {
+      "status": "audited"
+    },
+    "research/benches_w400.py": {
+      "status": "audited"
+    },
+    "research/benches_w1573.py": {
+      "status": "audited"
+    },
+    "research/benches_w473.py": {
+      "status": "audited"
+    },
+    "research/benches_w1644.py": {
+      "status": "audited"
+    },
+    "research/benches_w1078.py": {
+      "status": "audited"
+    },
+    "research/benches_w477.py": {
+      "status": "audited"
+    },
+    "research/benches_w1631.py": {
+      "status": "audited"
+    },
+    "research/benches_w722.py": {
+      "status": "audited"
+    },
+    "research/benches_w978.py": {
+      "status": "audited"
+    },
+    "research/benches_w1226.py": {
+      "status": "audited"
+    },
+    "research/benches_w1330.py": {
+      "status": "audited"
+    },
+    "research/benches_w1110.py": {
+      "status": "audited"
+    },
+    "research/benches_w1395.py": {
+      "status": "audited"
+    },
+    "research/benches_w986.py": {
+      "status": "audited"
+    },
+    "research/benches_w1286.py": {
+      "status": "audited"
+    },
+    "research/benches_w578.py": {
+      "status": "audited"
+    },
+    "microstructure/anchor_scan_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1608.py": {
+      "status": "audited"
+    },
+    "research/benches_w208.py": {
+      "status": "audited"
+    },
+    "research/benches_w300.py": {
+      "status": "audited"
+    },
+    "research/benches_w994.py": {
+      "status": "audited"
+    },
+    "research/benches_w1213.py": {
+      "status": "audited"
+    },
+    "research/benches_w468.py": {
+      "status": "audited"
+    },
+    "research/benches_w1082.py": {
+      "status": "audited"
+    },
+    "research/benches_w1006.py": {
+      "status": "audited"
+    },
+    "research/benches_w661.py": {
+      "status": "audited"
+    },
+    "research/benches_w1636.py": {
+      "status": "audited"
+    },
+    "research/benches_w909.py": {
+      "status": "audited"
+    },
+    "research/benches_w981.py": {
+      "status": "audited"
+    },
+    "research/benches_w1085.py": {
+      "status": "audited"
+    },
+    "research/benches_w401.py": {
+      "status": "audited"
+    },
+    "research/benches_w1305.py": {
+      "status": "audited"
+    },
+    "research/benches_w303.py": {
+      "status": "audited"
+    },
+    "research/benches_w774.py": {
+      "status": "audited"
+    },
+    "research/benches_w881.py": {
+      "status": "audited"
+    },
+    "research/benches_w598.py": {
+      "status": "audited"
+    },
+    "research/benches_w1208.py": {
+      "status": "audited"
+    },
+    "models/viterbi_decode.py": {
+      "status": "audited"
+    },
+    "research/benches_w487.py": {
+      "status": "audited"
+    },
+    "research/benches_w601.py": {
+      "status": "audited"
+    },
+    "research/benches_w37.py": {
+      "status": "audited"
+    },
+    "research/benches_w847.py": {
+      "status": "audited"
+    },
+    "research/benches_w498.py": {
+      "status": "audited"
+    },
+    "research/benches_w1500.py": {
+      "status": "audited"
+    },
+    "research/benches_w172.py": {
+      "status": "audited"
+    },
+    "research/benches_w822.py": {
+      "status": "audited"
+    },
+    "research/benches_w901.py": {
+      "status": "audited"
+    },
+    "research/benches_w1558.py": {
+      "status": "audited"
+    },
+    "research/benches_w814.py": {
+      "status": "audited"
+    },
+    "research/benches_w1122.py": {
+      "status": "audited"
+    },
+    "research/benches_w753.py": {
+      "status": "audited"
+    },
+    "research/benches_w1414.py": {
+      "status": "audited"
+    },
+    "research/benches_w850.py": {
+      "status": "audited"
+    },
+    "research/benches_w163.py": {
+      "status": "audited"
+    },
+    "research/benches_w40.py": {
+      "status": "audited"
+    },
+    "research/benches_w13.py": {
+      "status": "audited"
+    },
+    "research/benches_w62.py": {
+      "status": "audited"
+    },
+    "research/benches_w754.py": {
+      "status": "audited"
+    },
+    "research/benches_w1510.py": {
+      "status": "audited"
+    },
+    "research/benches_w1186.py": {
+      "status": "audited"
+    },
+    "research/benches_w819.py": {
+      "status": "audited"
+    },
+    "research/benches_w448.py": {
+      "status": "audited"
+    },
+    "research/benches_w120.py": {
+      "status": "audited"
+    },
+    "research/benches_w1556.py": {
+      "status": "audited"
+    },
+    "research/benches_w1615.py": {
+      "status": "audited"
+    },
+    "research/benches_w606.py": {
+      "status": "audited"
+    },
+    "research/benches_w756.py": {
+      "status": "audited"
+    },
+    "research/benches_w840.py": {
+      "status": "audited"
+    },
+    "research/benches_w292.py": {
+      "status": "audited"
+    },
+    "research/benches_w852.py": {
+      "status": "audited"
+    },
+    "research/benches_w1611.py": {
+      "status": "audited"
+    },
+    "backtest/event_sim/sensitivity.py": {
+      "status": "audited"
+    },
+    "research/benches_w1467.py": {
+      "status": "audited"
+    },
+    "research/benches_w930.py": {
+      "status": "audited"
+    },
+    "microstructure/gap_close_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1527.py": {
+      "status": "audited"
+    },
+    "research/benches_w1211.py": {
+      "status": "audited"
+    },
+    "research/benches_w1343.py": {
+      "status": "audited"
+    },
+    "research/benches_w420.py": {
+      "status": "audited"
+    },
+    "research/benches_w553.py": {
+      "status": "audited"
+    },
+    "research/benches_w248.py": {
+      "status": "audited"
+    },
+    "research/benches_w1171.py": {
+      "status": "audited"
+    },
+    "research/benches_w1170.py": {
+      "status": "audited"
+    },
+    "research/benches_w1167.py": {
+      "status": "audited"
+    },
+    "research/benches_w1335.py": {
+      "status": "audited"
+    },
+    "research/benches_w35.py": {
+      "status": "audited"
+    },
+    "research/benches_w1431.py": {
+      "status": "audited"
+    },
+    "research/benches_w1368.py": {
+      "status": "audited"
+    },
+    "research/benches_w1155.py": {
+      "status": "audited"
+    },
+    "research/benches_w868.py": {
+      "status": "audited"
+    },
+    "research/benches_w1342.py": {
+      "status": "audited"
+    },
+    "research/benches_w243.py": {
+      "status": "audited"
+    },
+    "research/benches_w1065.py": {
+      "status": "audited"
+    },
+    "research/benches_w1371.py": {
+      "status": "audited"
+    },
+    "research/benches_w238.py": {
+      "status": "audited"
+    },
+    "research/benches_w951.py": {
+      "status": "audited"
+    },
+    "research/benches_w1328.py": {
+      "status": "audited"
+    },
+    "research/benches_w1676.py": {
+      "status": "audited"
+    },
+    "research/benches_w1270.py": {
+      "status": "audited"
+    },
+    "research/benches_w492.py": {
+      "status": "audited"
+    },
+    "research/benches_w1033.py": {
+      "status": "audited"
+    },
+    "research/benches_w853.py": {
+      "status": "audited"
+    },
+    "microstructure/continuation_attr_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1081.py": {
+      "status": "audited"
+    },
+    "research/benches_w763.py": {
+      "status": "audited"
+    },
+    "research/benches_w63.py": {
+      "status": "audited"
+    },
+    "research/benches_w926.py": {
+      "status": "audited"
+    },
+    "research/benches_w1112.py": {
+      "status": "audited"
+    },
+    "research/benches_w1455.py": {
+      "status": "audited"
+    },
+    "research/benches_w741.py": {
+      "status": "audited"
+    },
+    "research/benches_w447.py": {
+      "status": "audited"
+    },
+    "research/benches_w328.py": {
+      "status": "audited"
+    },
+    "research/benches_w409.py": {
+      "status": "audited"
+    },
+    "research/benches_w419.py": {
+      "status": "audited"
+    },
+    "research/benches_w1386.py": {
+      "status": "audited"
+    },
+    "research/benches_w1595.py": {
+      "status": "audited"
+    },
+    "research/benches_w889.py": {
+      "status": "audited"
+    },
+    "research/benches_w1383.py": {
+      "status": "audited"
+    },
+    "research/benches_w1158.py": {
+      "status": "audited"
+    },
+    "research/benches_w398.py": {
+      "status": "audited"
+    },
+    "research/benches_w1370.py": {
+      "status": "audited"
+    },
+    "research/benches_w494.py": {
+      "status": "audited"
+    },
+    "research/benches_w665.py": {
+      "status": "audited"
+    },
+    "research/benches_w1448.py": {
+      "status": "audited"
+    },
+    "research/benches_w1699.py": {
+      "status": "audited"
+    },
+    "research/benches_w563.py": {
+      "status": "audited"
+    },
+    "research/benches_w413.py": {
+      "status": "audited"
+    },
+    "research/benches_w662.py": {
+      "status": "audited"
+    },
+    "research/benches_w886.py": {
+      "status": "audited"
+    },
+    "research/benches_w1246.py": {
+      "status": "audited"
+    },
+    "research/benches_w48.py": {
+      "status": "audited"
+    },
+    "research/benches_w1237.py": {
+      "status": "audited"
+    },
+    "research/benches_w68.py": {
+      "status": "audited"
+    },
+    "research/benches_w785.py": {
+      "status": "audited"
+    },
+    "research/benches_w245.py": {
+      "status": "audited"
+    },
+    "research/benches_w913.py": {
+      "status": "audited"
+    },
+    "research/benches_w72.py": {
+      "status": "audited"
+    },
+    "research/benches_w1469.py": {
+      "status": "audited"
+    },
+    "research/benches_w1658.py": {
+      "status": "audited"
+    },
+    "research/benches_w983.py": {
+      "status": "audited"
+    },
+    "research/benches_w1646.py": {
+      "status": "audited"
+    },
+    "research/benches_w1068.py": {
+      "status": "audited"
+    },
+    "research/benches_w939.py": {
+      "status": "audited"
+    },
+    "research/benches_w1108.py": {
+      "status": "audited"
+    },
+    "research/benches_w149.py": {
+      "status": "audited"
+    },
+    "research/benches_w515.py": {
+      "status": "audited"
+    },
+    "research/benches_w1637.py": {
+      "status": "audited"
+    },
+    "research/benches_w1358.py": {
+      "status": "audited"
+    },
+    "research/benches_w1412.py": {
+      "status": "audited"
+    },
+    "research/benches_w241.py": {
+      "status": "audited"
+    },
+    "research/benches_w404.py": {
+      "status": "audited"
+    },
+    "research/benches_w782.py": {
+      "status": "audited"
+    },
+    "research/benches_w1274.py": {
+      "status": "audited"
+    },
+    "research/benches_w954.py": {
+      "status": "audited"
+    },
+    "research/benches_w566.py": {
+      "status": "audited"
+    },
+    "research/benches_w1449.py": {
+      "status": "audited"
+    },
+    "research/benches_w1540.py": {
+      "status": "audited"
+    },
+    "research/benches_w1329.py": {
+      "status": "audited"
+    },
+    "research/benches_w776.py": {
+      "status": "audited"
+    },
+    "research/benches_w1707.py": {
+      "status": "audited"
+    },
+    "research/benches_w843.py": {
+      "status": "audited"
+    },
+    "research/benches_w1204.py": {
+      "status": "audited"
+    },
+    "research/benches_w1410.py": {
+      "status": "audited"
+    },
+    "research/benches_w402.py": {
+      "status": "audited"
+    },
+    "research/benches_w239.py": {
+      "status": "audited"
+    },
+    "research/benches_w755.py": {
+      "status": "audited"
+    },
+    "research/benches_w1711.py": {
+      "status": "audited"
+    },
+    "research/benches_w1157.py": {
+      "status": "audited"
+    },
+    "research/benches_w1049.py": {
+      "status": "audited"
+    },
+    "research/benches_w1332.py": {
+      "status": "audited"
+    },
+    "research/benches_w1283.py": {
+      "status": "audited"
+    },
+    "research/benches_w670.py": {
+      "status": "audited"
+    },
+    "research/benches_w114.py": {
+      "status": "audited"
+    },
+    "research/benches_w191.py": {
+      "status": "audited"
+    },
+    "research/benches_w738.py": {
+      "status": "audited"
+    },
+    "research/benches_w863.py": {
+      "status": "audited"
+    },
+    "research/benches_w383.py": {
+      "status": "audited"
+    },
+    "research/benches_w793.py": {
+      "status": "audited"
+    },
+    "research/benches_w802.py": {
+      "status": "audited"
+    },
+    "research/benches_w1456.py": {
+      "status": "audited"
+    },
+    "research/benches_w1554.py": {
+      "status": "audited"
+    },
+    "research/benches_w538.py": {
+      "status": "audited"
+    },
+    "research/benches_w1347.py": {
+      "status": "audited"
+    },
+    "research/benches_w709.py": {
+      "status": "audited"
+    },
+    "research/benches_w199.py": {
+      "status": "audited"
+    },
+    "research/benches_w1216.py": {
+      "status": "audited"
+    },
+    "research/benches_w561.py": {
+      "status": "audited"
+    },
+    "research/benches_w1471.py": {
+      "status": "audited"
+    },
+    "research/benches_w1062.py": {
+      "status": "audited"
+    },
+    "research/benches_w1485.py": {
+      "status": "audited"
+    },
+    "research/benches_w883.py": {
+      "status": "audited"
+    },
+    "research/benches_w1126.py": {
+      "status": "audited"
+    },
+    "research/benches_w1552.py": {
+      "status": "audited"
+    },
+    "research/benches_w272.py": {
+      "status": "audited"
+    },
+    "research/benches_w1120.py": {
+      "status": "audited"
+    },
+    "research/benches_w1391.py": {
+      "status": "audited"
+    },
+    "research/benches_w325.py": {
+      "status": "audited"
+    },
+    "research/benches_w674.py": {
+      "status": "audited"
+    },
+    "research/benches_w1479.py": {
+      "status": "audited"
+    },
+    "research/benches_w1376.py": {
+      "status": "audited"
+    },
+    "research/benches_w54.py": {
+      "status": "audited"
+    },
+    "research/benches_w1278.py": {
+      "status": "audited"
+    },
+    "research/benches_w179.py": {
+      "status": "audited"
+    },
+    "research/benches_w299.py": {
+      "status": "audited"
+    },
+    "research/benches_w1417.py": {
+      "status": "audited"
+    },
+    "research/benches_w29.py": {
+      "status": "audited"
+    },
+    "research/benches_w642.py": {
+      "status": "audited"
+    },
+    "research/benches_w1206.py": {
+      "status": "audited"
+    },
+    "research/benches_w1473.py": {
+      "status": "audited"
+    },
+    "research/benches_w1571.py": {
+      "status": "audited"
+    },
+    "research/benches_w1147.py": {
+      "status": "audited"
+    },
+    "research/benches_w70.py": {
+      "status": "audited"
+    },
+    "research/benches_w715.py": {
+      "status": "audited"
+    },
+    "research/benches_w478.py": {
+      "status": "audited"
+    },
+    "research/benches_w941.py": {
+      "status": "audited"
+    },
+    "research/benches_w1360.py": {
+      "status": "audited"
+    },
+    "research/benches_w1258.py": {
+      "status": "audited"
+    },
+    "research/benches_w961.py": {
+      "status": "audited"
+    },
+    "research/benches_w879.py": {
+      "status": "audited"
+    },
+    "research/benches_w1591.py": {
+      "status": "audited"
+    },
+    "research/benches_w134.py": {
+      "status": "audited"
+    },
+    "research/benches_w1089.py": {
+      "status": "audited"
+    },
+    "research/benches_w1621.py": {
+      "status": "audited"
+    },
+    "microstructure/crown_density_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w15.py": {
+      "status": "audited"
+    },
+    "research/benches_w1338.py": {
+      "status": "audited"
+    },
+    "research/benches_w506.py": {
+      "status": "audited"
+    },
+    "research/benches_w53.py": {
+      "status": "audited"
+    },
+    "research/benches_w364.py": {
+      "status": "audited"
+    },
+    "research/benches_w28.py": {
+      "status": "audited"
+    },
+    "research/benches_w836.py": {
+      "status": "audited"
+    },
+    "models/path_signatures.py": {
+      "status": "audited"
+    },
+    "research/benches_w555.py": {
+      "status": "audited"
+    },
+    "research/benches_w137.py": {
+      "status": "audited"
+    },
+    "research/benches_w1538.py": {
+      "status": "audited"
+    },
+    "research/benches_w952.py": {
+      "status": "audited"
+    },
+    "research/benches_w116.py": {
+      "status": "audited"
+    },
+    "research/benches_w1044.py": {
+      "status": "audited"
+    },
+    "research/benches_w1638.py": {
+      "status": "audited"
+    },
+    "research/benches_w1263.py": {
+      "status": "audited"
+    },
+    "research/benches_w869.py": {
+      "status": "audited"
+    },
+    "research/benches_w596.py": {
+      "status": "audited"
+    },
+    "research/benches_w667.py": {
+      "status": "audited"
+    },
+    "research/benches_w1219.py": {
+      "status": "audited"
+    },
+    "research/benches_w403.py": {
+      "status": "audited"
+    },
+    "research/benches_w1256.py": {
+      "status": "audited"
+    },
+    "research/benches_w173.py": {
+      "status": "audited"
+    },
+    "research/benches_w945.py": {
+      "status": "audited"
+    },
+    "research/benches_w432.py": {
+      "status": "audited"
+    },
+    "research/benches_w431.py": {
+      "status": "audited"
+    },
+    "research/benches_w684.py": {
+      "status": "audited"
+    },
+    "research/benches_w1688.py": {
+      "status": "audited"
+    },
+    "research/benches_w1222.py": {
+      "status": "audited"
+    },
+    "research/benches_w1463.py": {
+      "status": "audited"
+    },
+    "research/benches_w490.py": {
+      "status": "audited"
+    },
+    "research/benches_w509.py": {
+      "status": "audited"
+    },
+    "research/benches_w798.py": {
+      "status": "audited"
+    },
+    "microstructure/churn_reseed_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w948.py": {
+      "status": "audited"
+    },
+    "research/benches_w812.py": {
+      "status": "audited"
+    },
+    "research/benches_w1675.py": {
+      "status": "audited"
+    },
+    "research/benches_w1267.py": {
+      "status": "audited"
+    },
+    "research/benches_w728.py": {
+      "status": "audited"
+    },
+    "research/benches_w982.py": {
+      "status": "audited"
+    },
+    "research/benches_w268.py": {
+      "status": "audited"
+    },
+    "research/benches_w1420.py": {
+      "status": "audited"
+    },
+    "research/benches_w1003.py": {
+      "status": "audited"
+    },
+    "research/benches_w1064.py": {
+      "status": "audited"
+    },
+    "research/benches_w1559.py": {
+      "status": "audited"
+    },
+    "research/benches_w1008.py": {
+      "status": "audited"
+    },
+    "research/benches_w1199.py": {
+      "status": "audited"
+    },
+    "research/benches_w486.py": {
+      "status": "audited"
+    },
+    "research/benches_w724.py": {
+      "status": "audited"
+    },
+    "research/benches_w925.py": {
+      "status": "audited"
+    },
+    "research/benches_w1394.py": {
+      "status": "audited"
+    },
+    "research/benches_w919.py": {
+      "status": "audited"
+    },
+    "research/benches_w1185.py": {
+      "status": "audited"
+    },
+    "research/benches_w874.py": {
+      "status": "audited"
+    },
+    "research/benches_w145.py": {
+      "status": "audited"
+    },
+    "research/benches_w334.py": {
+      "status": "audited"
+    },
+    "research/benches_w140.py": {
+      "status": "audited"
+    },
+    "research/benches_w1428.py": {
+      "status": "audited"
+    },
+    "research/benches_w856.py": {
+      "status": "audited"
+    },
+    "research/benches_w374.py": {
+      "status": "audited"
+    },
+    "research/benches_w995.py": {
+      "status": "audited"
+    },
+    "research/benches_w1374.py": {
+      "status": "audited"
+    },
+    "research/benches_w1392.py": {
+      "status": "audited"
+    },
+    "research/benches_w255.py": {
+      "status": "audited"
+    },
+    "research/benches_w1549.py": {
+      "status": "audited"
+    },
+    "research/benches_w1271.py": {
+      "status": "audited"
+    },
+    "research/benches_w201.py": {
+      "status": "audited"
+    },
+    "research/benches_w936.py": {
+      "status": "audited"
+    },
+    "research/benches_w1585.py": {
+      "status": "audited"
+    },
+    "research/benches_w993.py": {
+      "status": "audited"
+    },
+    "research/benches_w648.py": {
+      "status": "audited"
+    },
+    "research/benches_w693.py": {
+      "status": "audited"
+    },
+    "models/rbergomi.py": {
+      "status": "audited"
+    },
+    "research/benches_w1193.py": {
+      "status": "audited"
+    },
+    "research/benches_w1402.py": {
+      "status": "audited"
+    },
+    "research/benches_w147.py": {
+      "status": "audited"
+    },
+    "research/benches_w71.py": {
+      "status": "audited"
+    },
+    "research/benches_w764.py": {
+      "status": "audited"
+    },
+    "research/benches_w330.py": {
+      "status": "audited"
+    },
+    "research/benches_w169.py": {
+      "status": "audited"
+    },
+    "research/benches_w1543.py": {
+      "status": "audited"
+    },
+    "research/benches_w207.py": {
+      "status": "audited"
+    },
+    "research/benches_w876.py": {
+      "status": "audited"
+    },
+    "research/benches_w212.py": {
+      "status": "audited"
+    },
+    "research/benches_w350.py": {
+      "status": "audited"
+    },
+    "research/benches_w518.py": {
+      "status": "audited"
+    },
+    "research/benches_w597.py": {
+      "status": "audited"
+    },
+    "research/benches_w418.py": {
+      "status": "audited"
+    },
+    "research/benches_w287.py": {
+      "status": "audited"
+    },
+    "research/benches_w1477.py": {
+      "status": "audited"
+    },
+    "microstructure/cxl_shield_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w777.py": {
+      "status": "audited"
+    },
+    "research/benches_w332.py": {
+      "status": "audited"
+    },
+    "research/benches_w1115.py": {
+      "status": "audited"
+    },
+    "research/benches_w1441.py": {
+      "status": "audited"
+    },
+    "research/benches_w946.py": {
+      "status": "audited"
+    },
+    "research/benches_w366.py": {
+      "status": "audited"
+    },
+    "microstructure/iid_floor_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w512.py": {
+      "status": "audited"
+    },
+    "research/benches_w444.py": {
+      "status": "audited"
+    },
+    "research/benches_w1561.py": {
+      "status": "audited"
+    },
+    "research/benches_w1641.py": {
+      "status": "audited"
+    },
+    "research/benches_w1073.py": {
+      "status": "audited"
+    },
+    "research/benches_w1424.py": {
+      "status": "audited"
+    },
+    "research/benches_w1453.py": {
+      "status": "audited"
+    },
+    "research/benches_w568.py": {
+      "status": "audited"
+    },
+    "research/benches_w38.py": {
+      "status": "audited"
+    },
+    "research/benches_w1398.py": {
+      "status": "audited"
+    },
+    "research/benches_w557.py": {
+      "status": "audited"
+    },
+    "research/benches_w608.py": {
+      "status": "audited"
+    },
+    "research/benches_w1534.py": {
+      "status": "audited"
+    },
+    "research/benches_w574.py": {
+      "status": "audited"
+    },
+    "research/benches_w283.py": {
+      "status": "audited"
+    },
+    "research/benches_w989.py": {
+      "status": "audited"
+    },
+    "research/benches_w1499.py": {
+      "status": "audited"
+    },
+    "research/benches_w1320.py": {
+      "status": "audited"
+    },
+    "research/benches_w321.py": {
+      "status": "audited"
+    },
+    "research/benches_w391.py": {
+      "status": "audited"
+    },
+    "research/benches_w610.py": {
+      "status": "audited"
+    },
+    "research/benches_w762.py": {
+      "status": "audited"
+    },
+    "research/benches_w900.py": {
+      "status": "audited"
+    },
+    "microstructure/empirical_flow_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1077.py": {
+      "status": "audited"
+    },
+    "research/benches_w1176.py": {
+      "status": "audited"
+    },
+    "research/benches_w731.py": {
+      "status": "audited"
+    },
+    "research/benches_w924.py": {
+      "status": "audited"
+    },
+    "research/benches_w488.py": {
+      "status": "audited"
+    },
+    "research/benches_w271.py": {
+      "status": "audited"
+    },
+    "research/benches_w220.py": {
+      "status": "audited"
+    },
+    "research/benches_w1092.py": {
+      "status": "audited"
+    },
+    "research/benches_w1184.py": {
+      "status": "audited"
+    },
+    "research/benches_w1603.py": {
+      "status": "audited"
+    },
+    "research/benches_w388.py": {
+      "status": "audited"
+    },
+    "research/benches_w522.py": {
+      "status": "audited"
+    },
+    "research/benches_w461.py": {
+      "status": "audited"
+    },
+    "research/benches_w1024.py": {
+      "status": "audited"
+    },
+    "research/benches_w1059.py": {
+      "status": "audited"
+    },
+    "research/benches_w1679.py": {
+      "status": "audited"
+    },
+    "research/benches_w1063.py": {
+      "status": "audited"
+    },
+    "research/benches_w270.py": {
+      "status": "audited"
+    },
+    "research/benches_w133.py": {
+      "status": "audited"
+    },
+    "research/benches_w1359.py": {
+      "status": "audited"
+    },
+    "research/benches_w519.py": {
+      "status": "audited"
+    },
+    "microstructure/floor_compose_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1423.py": {
+      "status": "audited"
+    },
+    "microstructure/floor_pins_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w548.py": {
+      "status": "audited"
+    },
+    "research/benches_w797.py": {
+      "status": "audited"
+    },
+    "research/benches_w1301.py": {
+      "status": "audited"
+    },
+    "research/benches_w90.py": {
+      "status": "audited"
+    },
+    "research/benches_w1163.py": {
+      "status": "audited"
+    },
+    "research/benches_w1663.py": {
+      "status": "audited"
+    },
+    "research/benches_w769.py": {
+      "status": "audited"
+    },
+    "research/benches_w1124.py": {
+      "status": "audited"
+    },
+    "research/benches_w1337.py": {
+      "status": "audited"
+    },
+    "research/benches_w1105.py": {
+      "status": "audited"
+    },
+    "research/benches_w973.py": {
+      "status": "audited"
+    },
+    "research/benches_w615.py": {
+      "status": "audited"
+    },
+    "research/benches_w1093.py": {
+      "status": "audited"
+    },
+    "research/benches_w293.py": {
+      "status": "audited"
+    },
+    "research/benches_w1583.py": {
+      "status": "audited"
+    },
+    "research/benches_w1131.py": {
+      "status": "audited"
+    },
+    "research/benches_w1086.py": {
+      "status": "audited"
+    },
+    "research/benches_w736.py": {
+      "status": "audited"
+    },
+    "research/benches_w1000.py": {
+      "status": "audited"
+    },
+    "research/benches_w838.py": {
+      "status": "audited"
+    },
     "models/deep_regime_mixture.py": {
+      "status": "audited"
+    },
+    "research/benches_w1045.py": {
+      "status": "audited"
+    },
+    "research/benches_w580.py": {
+      "status": "audited"
+    },
+    "research/benches_w384.py": {
+      "status": "audited"
+    },
+    "research/benches_w1630.py": {
+      "status": "audited"
+    },
+    "research/benches_w960.py": {
+      "status": "audited"
+    },
+    "research/benches_w323.py": {
+      "status": "audited"
+    },
+    "research/benches_w1121.py": {
+      "status": "audited"
+    },
+    "research/benches_w678.py": {
+      "status": "audited"
+    },
+    "research/benches_w1640.py": {
+      "status": "audited"
+    },
+    "microstructure/deep_book_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w639.py": {
+      "status": "audited"
+    },
+    "research/benches_w759.py": {
+      "status": "audited"
+    },
+    "research/benches_w1251.py": {
+      "status": "audited"
+    },
+    "research/benches_w1200.py": {
+      "status": "audited"
+    },
+    "microstructure/iceberg_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w1468.py": {
+      "status": "audited"
+    },
+    "research/benches_w1653.py": {
+      "status": "audited"
+    },
+    "research/benches_w347.py": {
       "status": "audited"
     },
     "models/ivs_diffusion.py": {
       "status": "audited"
+    },
+    "research/benches_w98.py": {
+      "status": "audited"
+    },
+    "research/benches_w1674.py": {
+      "status": "audited"
+    },
+    "research/benches_w750.py": {
+      "status": "audited"
+    },
+    "research/benches_w760.py": {
+      "status": "audited"
+    },
+    "research/benches_w972.py": {
+      "status": "audited"
+    },
+    "research/benches_w367.py": {
+      "status": "audited"
+    },
+    "research/benches_w1022.py": {
+      "status": "audited"
+    },
+    "research/benches_w394.py": {
+      "status": "audited"
+    },
+    "research/benches_w652.py": {
+      "status": "audited"
+    },
+    "research/benches_w1494.py": {
+      "status": "audited"
+    },
+    "research/benches_w95.py": {
+      "status": "audited"
+    },
+    "research/benches_w1345.py": {
+      "status": "audited"
+    },
+    "research/benches_w953.py": {
+      "status": "audited"
+    },
+    "research/benches_w1489.py": {
+      "status": "audited"
+    },
+    "research/benches_w1662.py": {
+      "status": "audited"
+    },
+    "research/benches_w429.py": {
+      "status": "audited"
+    },
+    "research/benches_w129.py": {
+      "status": "audited"
+    },
+    "research/benches_w643.py": {
+      "status": "audited"
+    },
+    "research/benches_w427.py": {
+      "status": "audited"
+    },
+    "research/benches_w1698.py": {
+      "status": "audited"
+    },
+    "microstructure/closure_stack_bench.py": {
+      "status": "audited"
+    },
+    "research/benches_w345.py": {
+      "status": "audited"
+    },
+    "research/benches_w1282.py": {
+      "status": "audited"
+    },
+    "research/benches_w575.py": {
+      "status": "audited"
+    },
+    "research/benches_w617.py": {
+      "status": "audited"
+    },
+    "research/benches_w1119.py": {
+      "status": "audited"
+    },
+    "research/benches_w176.py": {
+      "status": "audited"
+    },
+    "research/benches_w1624.py": {
+      "status": "audited"
+    },
+    "research/benches_w1198.py": {
+      "status": "audited"
+    },
+    "research/benches_w356.py": {
+      "status": "audited"
+    },
+    "research/benches_w732.py": {
+      "status": "audited"
+    },
+    "research/benches_w102.py": {
+      "status": "audited"
+    },
+    "research/benches_w464.py": {
+      "status": "audited"
+    },
+    "research/benches_w168.py": {
+      "status": "audited"
+    },
+    "research/benches_w1067.py": {
+      "status": "audited"
+    },
+    "research/benches_w1148.py": {
+      "status": "audited"
+    },
+    "research/benches_w1307.py": {
+      "status": "audited"
+    },
+    "research/benches_w200.py": {
+      "status": "audited"
+    },
+    "research/benches_w1302.py": {
+      "status": "audited"
+    },
+    "research/benches_w1416.py": {
+      "status": "audited"
+    },
+    "backtest/event_sim/constraints.py": {
+      "status": "audited"
     }
   },
-  "schema_version": "audit-coverage/v1",
+  "directories": {
+    "reality": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 8,
+      "status": "audited"
+    },
+    "research": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 1859,
+      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
+      "status": "partial"
+    },
+    "portfolio": {
+      "n_modules": 14,
+      "status": "audited"
+    },
+    "microstructure": {
+      "doc": "docs/AUDIT_P65_MICRO.md",
+      "n_modules": 182,
+      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
+      "status": "partial"
+    },
+    "pretrade": {
+      "n_modules": 9,
+      "status": "audited"
+    },
+    "simtest": {
+      "n_modules": 10,
+      "status": "audited"
+    },
+    "paper": {
+      "n_modules": 9,
+      "status": "audited"
+    },
+    "schemas": {
+      "n_modules": 8,
+      "status": "audited"
+    },
+    "leakage": {
+      "n_modules": 8,
+      "status": "audited"
+    },
+    "native": {
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "fusion": {
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "compute": {
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "parity": {
+      "n_modules": 11,
+      "status": "audited"
+    },
+    "observe": {
+      "n_modules": 9,
+      "status": "audited"
+    },
+    "config": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "monitoring": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "pipeline": {
+      "n_modules": 23,
+      "status": "audited"
+    },
+    "utils": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 9,
+      "status": "audited"
+    },
+    "proof": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 9,
+      "status": "audited"
+    },
+    "reporting": {
+      "n_modules": 6,
+      "status": "audited"
+    },
+    "risk": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "cli": {
+      "n_modules": 16,
+      "status": "audited"
+    },
+    "hedge_lab": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 16,
+      "status": "audited"
+    },
+    "mc_engine": {
+      "n_modules": 13,
+      "status": "audited"
+    },
+    "robustness": {
+      "n_modules": 13,
+      "status": "audited"
+    },
+    "calendars": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 8,
+      "status": "audited"
+    },
+    "audit": {
+      "doc": "docs/AUDIT_OBSERVABILITY.md",
+      "n_modules": 11,
+      "status": "audited"
+    },
+    "execution": {
+      "doc": "docs/AUDIT_P61_MONEY.md",
+      "n_modules": 14,
+      "status": "audited"
+    },
+    "northset": {
+      "n_modules": 10,
+      "status": "audited"
+    },
+    "pit": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 8,
+      "status": "audited"
+    },
+    "backtest": {
+      "doc": "docs/AUDIT_P61_MONEY.md",
+      "n_modules": 16,
+      "status": "audited"
+    },
+    "formal": {
+      "n_modules": 8,
+      "status": "audited"
+    },
+    "registry": {
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "quant_models": {
+      "n_modules": 17,
+      "status": "audited"
+    },
+    "proofcore": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "api": {
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "labels": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "models": {
+      "doc": "docs/AUDIT_MODELS.md",
+      "n_modules": 10397,
+      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
+      "status": "partial"
+    },
+    "metrics": {
+      "doc": "docs/AUDIT_P62_STATS.md",
+      "n_modules": 107,
+      "status": "audited"
+    },
+    "features": {
+      "n_modules": 9,
+      "status": "audited"
+    },
+    "hmm": {
+      "n_modules": 8,
+      "status": "audited"
+    },
+    "diffbacktest": {
+      "n_modules": 8,
+      "status": "audited"
+    },
+    "validation": {
+      "doc": "docs/AUDIT_P62_STATS.md",
+      "n_modules": 13,
+      "status": "audited"
+    },
+    "market_sim": {
+      "n_modules": 13,
+      "status": "audited"
+    },
+    "lightspeed": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 8,
+      "status": "audited"
+    },
+    "stress": {
+      "doc": "docs/AUDIT_FRONTIER.md",
+      "n_modules": 14,
+      "status": "audited"
+    },
+    "data": {
+      "doc": "docs/AUDIT_P63_DATA.md",
+      "n_modules": 42,
+      "status": "audited"
+    }
+  },
   "statuses": {
     "audited": "line-level audit complete for this scope",
+    "waived": "audit not applicable \u2014 'reason' required",
     "partial": "some modules in scope audited; remainder pending",
-    "pending": "audit queued or not yet started",
-    "waived": "audit not applicable \u2014 'reason' required"
+    "pending": "audit queued or not yet started"
   }
 }

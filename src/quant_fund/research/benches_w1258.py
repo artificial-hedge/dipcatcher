@@ -14,11 +14,15 @@ _SEED = 20261231
 
 
 def _finite_blob(blob: dict[str, float]) -> dict[str, float]:
-    assert isinstance(blob, dict)
+    if not isinstance(blob, dict):
+        raise ValueError("bench blob must be a dict")
     for key, value in blob.items():
-        assert key not in _FORBIDDEN
-        assert key.startswith("synthetic_")
-        assert isinstance(value, float) and 0.0 <= value <= 1.0
+        if key in _FORBIDDEN:
+            raise ValueError(f"forbidden metric key {key}")
+        if not key.startswith("synthetic_"):
+            raise ValueError(f"non-synthetic metric key {key}")
+        if not (isinstance(value, float) and 0.0 <= value <= 1.0):
+            raise ValueError(f"metric {key} is not a [0,1] float")
     return blob
 
 
