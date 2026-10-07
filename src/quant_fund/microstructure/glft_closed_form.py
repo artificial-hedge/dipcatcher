@@ -52,7 +52,9 @@ def _theta_rhs(
     theta: np.ndarray, q_idx: np.ndarray, sigma: float, gamma: float, k: float, nu: float
 ) -> np.ndarray:
     n = theta.size
-    rhs = (sigma * sigma / 2.0) * q_idx.astype(float) ** 2 / gamma
+    # γ·θ̇_q = (γσ²/2)q² − ν[...] ⇒ θ̇_q = (σ²/2)q² − (ν/γ)[...]: the
+    # inventory forcing carries no γ divisor (θ_q ~ σ²q²τ/2).
+    rhs = (sigma * sigma / 2.0) * q_idx.astype(float) ** 2
     for i in range(n):
         # q=−Q cannot sell: the θ_{q−1} term is absent (0, not e^0)
         if i > 0:
@@ -109,7 +111,7 @@ def theta_closed_form(
     Linearizing e^{−k(θ_q−θ_{q±1})} ≈ 1 − k(θ_q−θ_{q±1}) gives
     θ̇ = b + Mθ with M symmetric tridiagonal (diag +2c, off-diag −c,
     c = νk/γ; +c on the one-sided boundary diagonals) and
-    b_q = σ²q²/(2γ) − 2ν/γ (−ν/γ at boundaries). Backward from
+    b_q = σ²q²/2 − 2ν/γ (−ν/γ at boundaries). Backward from
     θ(T)=0: θ(t) = −M⁻¹(I − e^{−M(T−t)})b, evaluated by
     eigendecomposition of M.
     """
@@ -130,8 +132,8 @@ def theta_closed_form(
     )
     M[0, 0] = c  # q=-Q: no sell-side term
     M[n - 1, n - 1] = c  # q=+Q: no buy-side term
-    b = (sigma * sigma / 2.0) * q_idx.astype(float) ** 2 / gamma - 2.0 * nu / gamma
-    b[0] = (sigma * sigma / 2.0) * q_max**2 / gamma - nu / gamma
+    b = (sigma * sigma / 2.0) * q_idx.astype(float) ** 2 - 2.0 * nu / gamma
+    b[0] = (sigma * sigma / 2.0) * q_max**2 - nu / gamma
     b[n - 1] = b[0]
     evals, evecs = np.linalg.eigh(M)  # M symmetric ⇒ orthonormal U
     # backward solution: θ(t) = −M⁻¹(I − e^{−Mτ})b; M has a kernel

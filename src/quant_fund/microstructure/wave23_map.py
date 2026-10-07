@@ -63,13 +63,15 @@ def wave23_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
             entry["sealed"] = bool(verify_receipt_file(path)["valid"])
             all_sealed = all_sealed and entry["sealed"]
             body = json.loads(path.read_text())
-            entry["claims"] = body.get("claims", {})
+            # Claims are only trustworthy under a valid seal: an
+            # unsealed-or-tampered receipt contributes no evidence.
+            entry["claims"] = body.get("claims", {}) if entry["sealed"] else None
             # Five-target closure lives at the CELL level: a receipt's own
             # `joint_closure_exists` claim may be scoped to a narrower
             # target set (e.g. cxl_shield's instant+cxl joint), so the map
             # counts only cells flagged `all_in_tol` on the five-channel
             # tape score.
-            cells = body.get("cells") or []
+            cells = body.get("cells") or [] if entry["sealed"] else []
             entry["n_cells_all_in_tol"] = sum(1 for c in cells if c.get("all_in_tol"))
         lanes.append(entry)
 
@@ -90,7 +92,7 @@ def wave23_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
     claims = {
         "all_member_receipts_sealed": bool(all_sealed),
         "all_lanes_present": len(lanes) == len(_LANES)
-        and all(e["claims"] is not None for e in lanes),
+        and all(e["sealed"] and e["claims"] is not None for e in lanes),
         "instant_channel_located": any(e["claims"].get("cooldown_lifts_instant") for e in found),
         "continuation_channel_located": any(
             e["claims"].get("lo_channel_lifts") or e["claims"].get("chase_still_lifts_lo")

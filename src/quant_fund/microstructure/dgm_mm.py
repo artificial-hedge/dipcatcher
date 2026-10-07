@@ -13,7 +13,7 @@ the remaining horizon. The reservation-price shift (price adjustment per
 unit of inventory that leaves expected utility unchanged) is
 
     rho(t, q) = (1/gamma) * ln(u(t, q) / u(t, q + 1))
-              = -0.5 * gamma * sigma^2 * (T - t) * (2q + 1),
+              = 0.5 * sigma^2 * (T - t) * (2q + 1)  [gamma cancels],
 
 i.e. a linear-in-inventory slope proportional to remaining time — the
 exact AS skew. DGM recovers both without ever being shown the formula:

@@ -14,7 +14,7 @@ from typing import Any
 
 import numpy as np
 
-from quant_fund.microstructure.lobster import EXECUTION, parse_messages
+from quant_fund.microstructure.lobster import EXECUTION, EXECUTION_HIDDEN, parse_messages
 from quant_fund.microstructure.split_flow import SplitFlow
 from quant_fund.microstructure.zi_lob_simulator import (
     MarkovRegimeFlow,
@@ -66,7 +66,11 @@ def _streak_stats(runs: np.ndarray) -> dict[str, Any]:
 
 def lobster_streaks(tape_dir: Path, ticker: str = "AMZN") -> dict[str, Any]:
     msg = tape_dir / f"{ticker}_2012-06-21_34200000_57600000_message_10.csv"
-    signs = [-ev.direction for ev in parse_messages(msg) if ev.event_type == EXECUTION]
+    signs = [
+        -ev.direction
+        for ev in parse_messages(msg)
+        if ev.event_type == EXECUTION or ev.event_type == EXECUTION_HIDDEN
+    ]
     out = _streak_stats(_run_lengths(signs))
     out["n_execs"] = len(signs)
     return out

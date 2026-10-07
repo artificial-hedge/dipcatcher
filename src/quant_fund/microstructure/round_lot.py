@@ -13,7 +13,7 @@ from typing import Any
 
 import numpy as np
 
-from quant_fund.microstructure.lobster import EXECUTION, parse_messages
+from quant_fund.microstructure.lobster import EXECUTION, EXECUTION_HIDDEN, parse_messages
 from quant_fund.microstructure.split_flow import SplitFlow
 from quant_fund.microstructure.zi_lob_simulator import (
     MarkovRegimeFlow,
@@ -52,7 +52,11 @@ def _size_profile(sizes: np.ndarray) -> dict[str, Any]:
 def lobster_round_lot(tape_dir: Path, ticker: str = "AMZN") -> dict[str, Any]:
     msg = tape_dir / f"{ticker}_2012-06-21_34200000_57600000_message_10.csv"
     sizes = np.asarray(
-        [ev.size for ev in parse_messages(msg) if ev.event_type == EXECUTION],
+        [
+            ev.size
+            for ev in parse_messages(msg)
+            if ev.event_type == EXECUTION or ev.event_type == EXECUTION_HIDDEN
+        ],
         dtype=float,
     )
     out = _size_profile(sizes)

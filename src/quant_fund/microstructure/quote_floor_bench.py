@@ -87,15 +87,30 @@ def quote_floor_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
                 divergences.append(f"{c['regime']}:{pin}_out")
 
     floored = [c for c in cells if c["min_quote_dist"] > 0]
+
+    # Within-flow control only: a floored cell's spread demonstrates the
+    # floor's effect against an unfloored cell on the SAME flow arm —
+    # comparing a split-flow floor to the iid control confounds the
+    # floor with the flow regime.
+    def _control(c: dict[str, Any]) -> dict[str, Any] | None:
+        for o in cells:
+            if o["min_quote_dist"] == 0 and o["flow_intensity"] == c["flow_intensity"]:
+                return o
+        return None
+
+    scale_pairs: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for c in floored:
+        base = _control(c)
+        if base is not None:
+            scale_pairs.append((c, base))
     claims = {
         "cells_measured": all(c["n_fills"] > 0 for c in cells),
         # A maker floor opens the standing spread into the tape band.
         "floor_opens_spread": any(c["pins"]["spread"] for c in floored),
-        # The floor sets the spread scale: floored cells widen over the
-        # unfloored control.
-        "spread_scales_with_floor": all(
-            (c["spread_mean"] or 0.0) > (cells[0]["spread_mean"] or 0.0) for c in floored
-        ),
+        # The floor sets the spread scale: floored cells widen over
+        # their own arm's unfloored control.
+        "spread_scales_with_floor": bool(scale_pairs)
+        and all((c["spread_mean"] or 0.0) > (b["spread_mean"] or 0.0) for c, b in scale_pairs),
         # The emptied-touch pins survive under some floored cell — the
         # floor composes with the campaign's machinery rather than
         # breaking it.

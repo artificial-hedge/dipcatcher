@@ -66,20 +66,22 @@ def lobster_intraday(tape_dir: Path, ticker: str = "AMZN", *, n_bins: int = 13) 
         for ev, ob_row in zip(parse_messages(msg), csv.reader(f_ob), strict=True):
             asks_exp, bids_exp = parse_orderbook_row(ob_row)
             if not seeded:
+                # Row i is the book state AFTER message i: seeding from
+                # row 0 already includes event 0 — applying it would
+                # double-count the first event.
                 book.seed(asks_exp, bids_exp)
-                book.apply(ev)
                 seeded = True
                 continue
             book.apply(ev)
-            if ev.event_type in (EXECUTION_HIDDEN, HALT):
-                continue
             if book.top("ask", 10) != asks_exp or book.top("bid", 10) != bids_exp:
                 resync_band(book, asks_exp, bids_exp)
             b = int(np.searchsorted(edges, ev.time_s, side="right") - 1)
             b = min(max(b, 0), n_bins - 1)
             ev_counts[b] += 1
-            if ev.event_type == EXECUTION:
+            if ev.event_type == EXECUTION or ev.event_type == EXECUTION_HIDDEN:
                 ex_counts[b] += 1
+            if ev.event_type == HALT:
+                continue
             asks, bids = book.top("ask", 1), book.top("bid", 1)
             if asks and bids:
                 spread_sum[b] += asks[0][0] - bids[0][0]

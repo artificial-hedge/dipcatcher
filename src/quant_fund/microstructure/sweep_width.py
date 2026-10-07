@@ -124,8 +124,8 @@ def sweep_width_bench(data_dir: Path) -> dict[str, Any]:
         if real["max_width"] >= 4 and a["max_width"] < 2
     ]
     payload: dict[str, Any] = {
-        "kind": "sweep_width.v1",
-        "schema": 1,
+        "kind": "sweep_width",
+        "schema": "sweep_width.v1",
         "tape": {"msg": msg.name, "ob": ob.name, "symbol": "AMZN", "date": "2012-06-21"},
         "real": real,
         "sim_arms": arms,

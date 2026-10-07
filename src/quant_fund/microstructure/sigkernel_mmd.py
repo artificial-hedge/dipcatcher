@@ -36,7 +36,7 @@ from typing import Any
 
 import numpy as np
 
-from quant_fund.microstructure.lobster import EXECUTION, parse_messages
+from quant_fund.microstructure.lobster import EXECUTION, EXECUTION_HIDDEN, parse_messages
 from quant_fund.microstructure.split_flow import SplitFlow
 from quant_fund.microstructure.zi_lob_simulator import (
     MarkovRegimeFlow,
@@ -95,7 +95,11 @@ def sim_sign_stream(
 def real_sign_stream(tape_dir: Path, ticker: str = "AMZN") -> np.ndarray:
     msg = tape_dir / f"{ticker}_2012-06-21_34200000_57600000_message_10.csv"
     return np.asarray(
-        [-ev.direction for ev in parse_messages(msg) if ev.event_type == EXECUTION],
+        [
+            -ev.direction
+            for ev in parse_messages(msg)
+            if ev.event_type == EXECUTION or ev.event_type == EXECUTION_HIDDEN
+        ],
         dtype=np.float64,
     )
 

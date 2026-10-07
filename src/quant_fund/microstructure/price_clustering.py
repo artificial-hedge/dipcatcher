@@ -268,7 +268,9 @@ def sim_cluster_stats(
         raise ValueError(f"horizon must be positive and finite, got {horizon!r}")
     mm = _modulus(m)
     sim = ZILobSimulator(cfg, flow=flow)
-    prev_oids: set[int] = set()
+    # The seeded book is sim state, not an event-attributed placement — seed
+    # the oid diff with it so only limit events minted during the run count.
+    prev_oids: set[int] = set(sim._orders)  # noqa: SLF001 — same-package read
     submit_levels: list[int] = []
     reachable: set[int] = set()
     while sim.t < h:

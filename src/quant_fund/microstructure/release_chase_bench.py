@@ -219,7 +219,7 @@ def release_chase_bench(*, horizon: int = 20000, seed: int = 7) -> dict[str, Any
             and chase_delete
             and any(
                 (c["instant_signed_ticks"] or 0.0)
-                >= max(d["instant_signed_ticks"] or 0.0 for d in chase_delete)
+                > max(d["instant_signed_ticks"] or 0.0 for d in chase_delete)
                 and (c["lo_channel_ticks"] or -99.0)
                 > max(d["lo_channel_ticks"] or -99.0 for d in chase_delete)
                 for c in chase_reprice

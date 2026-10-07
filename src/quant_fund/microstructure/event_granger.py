@@ -79,13 +79,20 @@ def _xcorr(a: np.ndarray, b: np.ndarray, max_lag: int) -> np.ndarray:
 
 
 def _pairwise(counts: dict[str, np.ndarray]) -> dict[str, Any]:
-    """Peak cross-correlation and its lag for each (a→b) pair."""
+    """Peak cross-correlation and its lag for each (a→b) pair.
+
+    ``exec`` folds in hidden-liquidity prints: a type-5 fill is still a
+    market-order arrival, and leaving it out of the MO channel undercounts
+    the very stream the Granger lags are meant to describe.
+    """
+    exec_all = counts["exec"] + counts.get("exec_hidden", np.zeros_like(counts["exec"]))
+    merged = {**counts, "exec": exec_all}
     pairs: dict[str, Any] = {}
     for a in _KINDS:
         for b in _KINDS:
             if a == b:
                 continue
-            xc = _xcorr(counts[a], counts[b], _MAX_LAG_BINS)
+            xc = _xcorr(merged[a], merged[b], _MAX_LAG_BINS)
             peak = int(np.argmax(np.abs(xc)))
             pos = int(np.argmax(np.abs(xc[1:]))) + 1  # best strictly-positive lag
             pairs[f"{a}->{b}"] = {
@@ -138,6 +145,7 @@ def sim_event_granger(
     counts = {
         "submit": _bins("limit"),
         "exec": _bins("market"),
+        "exec_hidden": np.zeros(n_bins),  # sim has no hidden-fill channel
         "delete": _bins("cancel"),
         "cancel_partial": np.zeros(n_bins),
     }

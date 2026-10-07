@@ -54,18 +54,30 @@ def _check_times(times: NDArray[np.float64]) -> NDArray[np.float64]:
     return t
 
 
-def hawkes_exp_loglik(times: NDArray[np.float64], mu: float, alpha: float, beta: float) -> float:
-    """Exact log-likelihood of an exponential Hawkes process.
+def hawkes_exp_loglik(
+    times: NDArray[np.float64],
+    mu: float,
+    alpha: float,
+    beta: float,
+    *,
+    horizon: float | None = None,
+) -> float:
+    """Exact log-likelihood of an exponential Hawkes process on [0, T].
 
     lambda*(t) = mu + alpha * sum_i exp(-beta (t - t_i)). Returns -inf for
     parameter vectors that leave a nonpositive conditional intensity —
-    callers treat that as infeasible rather than an error.
+    callers treat that as infeasible rather than an error. ``horizon`` is
+    the observation window T; omitted it defaults to the last event time,
+    which treats the silent tail (t_last, T] as unobserved and biases the
+    compensator upward.
     """
     t = _check_times(times)
     mu, alpha, beta = float(mu), float(alpha), float(beta)
     if mu <= 0.0 or alpha < 0.0 or beta <= 0.0:
         return float("-inf")
-    horizon = float(t[-1])
+    h = float(horizon) if horizon is not None else float(t[-1])
+    if not math.isfinite(h) or h < float(t[-1]):
+        raise ValueError(f"horizon must be finite and >= last event time, got {horizon!r}")
     r = 0.0
     ll = 0.0
     prev = 0.0
@@ -77,8 +89,7 @@ def hawkes_exp_loglik(times: NDArray[np.float64], mu: float, alpha: float, beta:
             return float("-inf")
         ll += math.log(lam)
         prev = ti
-    tail = t[-1] - prev  # noqa: F841 — kept for readability of compensator
-    comp = mu * horizon + (alpha / beta) * float(np.sum(1.0 - np.exp(-beta * (horizon - t))))
+    comp = mu * h + (alpha / beta) * float(np.sum(1.0 - np.exp(-beta * (h - t))))
     return ll - comp
 
 
@@ -96,11 +107,13 @@ class HawkesFit:
 
 
 def _fit_once(
-    t: NDArray[np.float64], x0: tuple[float, float, float]
+    t: NDArray[np.float64],
+    x0: tuple[float, float, float],
+    horizon: float | None,
 ) -> tuple[float, tuple[float, float, float]]:
     def nll(z: NDArray[np.float64]) -> float:
         mu, alpha, beta = np.exp(z)
-        return -hawkes_exp_loglik(t, mu, alpha, beta)
+        return -hawkes_exp_loglik(t, mu, alpha, beta, horizon=horizon)
 
     res = minimize(nll, np.log(np.asarray(x0)), method="L-BFGS-B")
     mu, alpha, beta = (float(v) for v in np.exp(res.x))
@@ -111,10 +124,13 @@ def fit_hawkes_exp(
     times: NDArray[np.float64],
     *,
     inits: tuple[tuple[float, float, float], ...] | None = None,
+    horizon: float | None = None,
 ) -> HawkesFit:
     """MLE fit with log-parameter L-BFGS-B over a small deterministic grid.
 
-    Restarts are deterministic (no rng). ``stationary`` is the honest flag:
+    Restarts are deterministic (no rng). ``horizon`` is the true
+    observation window; omitted, it falls back to the last event time
+    (which undercounts the empty tail). ``stationary`` is the honest flag:
     the fit reports whatever the likelihood prefers; a supercritical best
     fit is reported, not projected back inside n<1.
     """
@@ -129,7 +145,7 @@ def fit_hawkes_exp(
     best_ll = float("-inf")
     best = (rate0, 0.0, 1.0)
     for x0 in starts:
-        ll, params = _fit_once(t, x0)
+        ll, params = _fit_once(t, x0, horizon)
         if ll > best_ll:
             best_ll, best = ll, params
     mu, alpha, beta = best
@@ -190,14 +206,20 @@ def _nonneg(x: float, name: str) -> float:
 
 
 def zi_mo_times(config: Any, horizon: float) -> NDArray[np.float64]:
-    """Market-order arrival times from one ZI-LOB run."""
+    """Market-order arrival times from one ZI-LOB run.
+
+    Only fill-bearing steps count: a "market" step can zero-fill when the
+    burst hits an empty side, and counting it fabricates arrivals that
+    never printed.
+    """
     from quant_fund.microstructure.zi_lob_simulator import ZILobSimulator
 
     _pos_finite(horizon, "horizon")
     sim = ZILobSimulator(config)
     times: list[float] = []
     while sim.t < horizon:
-        if sim.step() == "market":
+        n_before = len(sim.trades)
+        if sim.step() == "market" and len(sim.trades) > n_before:
             times.append(sim.t)
     return np.asarray(times, dtype=float)
 
@@ -217,12 +239,12 @@ def hawkes_cal_bench(
     # 1) recovery on a known Hawkes stream
     mu0, a0, b0 = 0.5, 0.8, 4.0
     truth = hawkes_ogata(mu0, a0, b0, horizon, seed=seed)
-    fit_h = fit_hawkes_exp(truth)
+    fit_h = fit_hawkes_exp(truth, horizon=horizon)
 
     # 2) negative control: the ZI-LOB MO stream is regime-Poisson, so a
     #    Hawkes fit should find ~no self-excitation
     mo = zi_mo_times(santa_fe_config(seed=seed + 1), zi_horizon)
-    fit_zi = fit_hawkes_exp(mo) if mo.size >= 3 else None
+    fit_zi = fit_hawkes_exp(mo, horizon=zi_horizon) if mo.size >= 3 else None
 
     payload: dict[str, Any] = {
         "schema": HAWKES_CAL_SCHEMA,

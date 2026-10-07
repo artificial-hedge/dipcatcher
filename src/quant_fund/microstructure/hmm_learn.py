@@ -129,11 +129,18 @@ def discretize_tape(
     buy_counts: list[int] = []
     next_t = 0.0
     cur_mo = cur_buy = 0
+    n_seen = 0
     while sim.t < horizon:
         kind = sim.step()
         if kind == "market":
-            cur_mo += 1
-            cur_buy += int(sim.trades[-1].aggressor == "buy")
+            # "market" steps can zero-fill (MO burst hits an empty side);
+            # counting them inflates mo_rate and trades[-1] would either
+            # crash on an empty tape or steal a prior fill's sign.
+            new = sim.trades[n_seen:]
+            if new:
+                cur_mo += 1
+                cur_buy += int(new[0].aggressor == "buy")
+        n_seen = len(sim.trades)
         while sim.t >= next_t:
             mo_counts.append(cur_mo)
             buy_counts.append(cur_buy)

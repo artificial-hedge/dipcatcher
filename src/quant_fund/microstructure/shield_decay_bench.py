@@ -81,10 +81,9 @@ def shield_decay_bench(*, horizon: int = 20000, seed: int = 7) -> dict[str, Any]
 
     short_flat = [c for c in cells if _flat(c) and 0 < c["window"] <= 25 and c["profile_in_tol"]]
     decay_ok = [c for c in cells if _decayed(c) and c["profile_in_tol"]]
-    long_flat_late_fail = all(
-        not c["profile_in_tol"]
-        for c in cells
-        if _flat(c) and c["window"] >= 100 and c["damp"] >= 0.4
+    long_flat_cells = [c for c in cells if _flat(c) and c["window"] >= 100 and c["damp"] >= 0.4]
+    long_flat_late_fail = bool(long_flat_cells) and all(
+        not c["profile_in_tol"] for c in long_flat_cells
     )
     joint = [c for c in cells if c["joint_in_tol"]]
 

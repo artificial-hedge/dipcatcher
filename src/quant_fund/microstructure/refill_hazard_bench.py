@@ -133,8 +133,11 @@ def lobster_refill_hazard(msg_path: Path, ob_path: Path, *, max_delay: int = 400
                 if touch not in other:
                     # Gap behind the emptied touch in the pre-event row,
                     # in ticks (LOBSTER prices are 1/10000$ = 100/tick).
+                    # abs(): ask prices ascend but bid prices descend.
                     pre_gap = (
-                        (pre_side[1][0] - pre_side[0][0]) / 100.0 if len(pre_side) > 1 else 10**18
+                        abs(pre_side[1][0] - pre_side[0][0]) / 100.0
+                        if len(pre_side) > 1
+                        else 10**18
                     )
                     bin_i = 0
                     for i, (hi, _label) in enumerate(_GAP_BINS):

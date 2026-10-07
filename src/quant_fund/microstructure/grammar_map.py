@@ -53,7 +53,11 @@ def grammar_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
         else:
             entry["sealed"] = bool(verify_receipt_file(path)["valid"])
             all_sealed = all_sealed and entry["sealed"]
-            entry["claims"] = json.loads(path.read_text()).get("claims", {})
+            # Claims are only trustworthy under a valid seal: an
+            # unsealed-or-tampered receipt contributes no evidence.
+            entry["claims"] = (
+                json.loads(path.read_text()).get("claims", {}) if entry["sealed"] else None
+            )
         lanes.append(entry)
 
     found = {e["receipt"]: e for e in lanes if e["claims"] is not None}
@@ -66,7 +70,7 @@ def grammar_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
     claims = {
         "all_member_receipts_sealed": bool(all_sealed),
         "all_lanes_present": len(lanes) == len(_LANES)
-        and all(e["claims"] is not None for e in lanes),
+        and all(e["sealed"] and e["claims"] is not None for e in lanes),
         # The grammar gap was real: the closed-geometry cell did not
         # carry tape-scale maker lifetimes.
         "grammar_gap_was_real": bool(

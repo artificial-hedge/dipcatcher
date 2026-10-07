@@ -78,15 +78,19 @@ def collect_tape(
     event_mids: list[float] = []
     cal_mids: list[float] = []
     n_mo = 0
+    n_trades = 0
     next_cal = 0.0
     while sim.t < horizon:
         kind = sim.step()
-        if kind == "market":
+        # "market" steps can zero-fill (MO burst hits an empty side): the
+        # event clock must only advance on fill-bearing MO arrivals.
+        if kind == "market" and len(sim.trades) > n_trades:
             n_mo += 1
             if n_mo % event_k == 0:
                 m = sim.mid
                 if m is not None:
                     event_mids.append(m)
+        n_trades = len(sim.trades)
         while sim.t >= next_cal:
             m = sim.mid
             if m is not None:

@@ -1,258 +1,363 @@
 {
-  "directories": {
-    "api": {
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "audit": {
-      "doc": "docs/AUDIT_OBSERVABILITY.md",
-      "n_modules": 11,
-      "status": "audited"
-    },
-    "backtest": {
-      "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 16,
-      "status": "audited"
-    },
-    "calendars": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "cli": {
-      "n_modules": 15,
-      "status": "audited"
-    },
-    "compute": {
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "config": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "data": {
-      "doc": "docs/AUDIT_P63_DATA.md",
-      "n_modules": 42,
-      "status": "audited"
-    },
-    "diffbacktest": {
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "execution": {
-      "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 14,
-      "status": "audited"
-    },
-    "features": {
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "formal": {
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "fusion": {
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "hedge_lab": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 16,
-      "status": "audited"
-    },
-    "hmm": {
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "labels": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "leakage": {
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "lightspeed": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "market_sim": {
-      "n_modules": 13,
-      "status": "audited"
-    },
-    "mc_engine": {
-      "n_modules": 13,
-      "status": "audited"
-    },
-    "metrics": {
-      "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 107,
-      "status": "audited"
-    },
-    "microstructure": {
-      "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 182,
-      "status": "partial",
-      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
-    },
-    "models": {
-      "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 10396,
-      "status": "partial",
-      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
-    },
-    "monitoring": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "native": {
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "northset": {
-      "n_modules": 10,
-      "status": "audited"
-    },
-    "observe": {
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "paper": {
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "parity": {
-      "n_modules": 11,
-      "status": "audited"
-    },
-    "pipeline": {
-      "n_modules": 23,
-      "status": "audited"
-    },
-    "pit": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "portfolio": {
-      "n_modules": 14,
-      "status": "audited"
-    },
-    "pretrade": {
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "proof": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "proofcore": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "quant_models": {
-      "n_modules": 17,
-      "status": "audited"
-    },
-    "reality": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "registry": {
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "reporting": {
-      "n_modules": 6,
-      "status": "audited"
-    },
-    "research": {
-      "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 1857,
-      "status": "partial",
-      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
-    },
-    "risk": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
-      "status": "audited"
-    },
-    "robustness": {
-      "n_modules": 13,
-      "status": "audited"
-    },
-    "schemas": {
-      "n_modules": 8,
-      "status": "audited"
-    },
-    "simtest": {
-      "n_modules": 10,
-      "status": "audited"
-    },
-    "stress": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 14,
-      "status": "audited"
-    },
-    "utils": {
-      "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 9,
-      "status": "audited"
-    },
-    "validation": {
-      "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 13,
-      "status": "audited"
-    }
+ "directories": {
+  "api": {
+   "n_modules": 7,
+   "status": "audited"
   },
-  "modules": {
-    "__init__.py": {
-      "reason": "package surface only",
-      "status": "waived"
-    },
-    "backtest/event_sim/__init__.py": {
-      "status": "audited"
-    },
-    "backtest/event_sim/clock.py": {
-      "status": "audited"
-    },
-    "backtest/event_sim/constraints.py": {
-      "status": "audited"
-    },
-    "backtest/event_sim/costs.py": {
-      "status": "audited"
-    },
-    "backtest/event_sim/fills.py": {
-      "status": "audited"
-    },
-    "backtest/event_sim/sensitivity.py": {
-      "status": "audited"
-    },
-    "backtest/event_sim/simulator.py": {
-      "status": "audited"
-    },
-    "parity_leak_audit.py": {
-      "status": "audited"
-    },
-    "public.py": {
-      "reason": "package surface only",
-      "status": "waived"
-    }
+  "audit": {
+   "doc": "docs/AUDIT_OBSERVABILITY.md",
+   "n_modules": 11,
+   "status": "audited"
   },
-  "schema_version": "audit-coverage/v1",
-  "statuses": {
-    "audited": "line-level audit complete for this scope",
-    "partial": "some modules in scope audited; remainder pending",
-    "pending": "audit queued or not yet started",
-    "waived": "audit not applicable \u2014 'reason' required"
+  "backtest": {
+   "doc": "docs/AUDIT_P61_MONEY.md",
+   "n_modules": 16,
+   "status": "audited"
+  },
+  "calendars": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 8,
+   "status": "audited"
+  },
+  "cli": {
+   "n_modules": 15,
+   "status": "audited"
+  },
+  "compute": {
+   "n_modules": 7,
+   "status": "audited"
+  },
+  "config": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 7,
+   "status": "audited"
+  },
+  "data": {
+   "doc": "docs/AUDIT_P63_DATA.md",
+   "n_modules": 42,
+   "status": "audited"
+  },
+  "diffbacktest": {
+   "n_modules": 8,
+   "status": "audited"
+  },
+  "execution": {
+   "doc": "docs/AUDIT_P61_MONEY.md",
+   "n_modules": 14,
+   "status": "audited"
+  },
+  "features": {
+   "n_modules": 9,
+   "status": "audited"
+  },
+  "formal": {
+   "n_modules": 8,
+   "status": "audited"
+  },
+  "fusion": {
+   "n_modules": 7,
+   "status": "audited"
+  },
+  "hedge_lab": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 16,
+   "status": "audited"
+  },
+  "hmm": {
+   "n_modules": 8,
+   "status": "audited"
+  },
+  "labels": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 7,
+   "status": "audited"
+  },
+  "leakage": {
+   "n_modules": 8,
+   "status": "audited"
+  },
+  "lightspeed": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 8,
+   "status": "audited"
+  },
+  "market_sim": {
+   "n_modules": 13,
+   "status": "audited"
+  },
+  "mc_engine": {
+   "n_modules": 13,
+   "status": "audited"
+  },
+  "metrics": {
+   "doc": "docs/AUDIT_P62_STATS.md",
+   "n_modules": 107,
+   "status": "audited"
+  },
+  "microstructure": {
+   "doc": "docs/AUDIT_P65_MICRO.md",
+   "n_modules": 182,
+   "status": "partial",
+   "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
+  },
+  "models": {
+   "doc": "docs/AUDIT_MODELS.md",
+   "n_modules": 10396,
+   "status": "partial",
+   "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
+  },
+  "monitoring": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 7,
+   "status": "audited"
+  },
+  "native": {
+   "n_modules": 7,
+   "status": "audited"
+  },
+  "northset": {
+   "n_modules": 10,
+   "status": "audited"
+  },
+  "observe": {
+   "n_modules": 9,
+   "status": "audited"
+  },
+  "paper": {
+   "n_modules": 9,
+   "status": "audited"
+  },
+  "parity": {
+   "n_modules": 11,
+   "status": "audited"
+  },
+  "pipeline": {
+   "n_modules": 23,
+   "status": "audited"
+  },
+  "pit": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 8,
+   "status": "audited"
+  },
+  "portfolio": {
+   "n_modules": 14,
+   "status": "audited"
+  },
+  "pretrade": {
+   "n_modules": 9,
+   "status": "audited"
+  },
+  "proof": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 9,
+   "status": "audited"
+  },
+  "proofcore": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 7,
+   "status": "audited"
+  },
+  "quant_models": {
+   "n_modules": 17,
+   "status": "audited"
+  },
+  "reality": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 8,
+   "status": "audited"
+  },
+  "registry": {
+   "n_modules": 7,
+   "status": "audited"
+  },
+  "reporting": {
+   "n_modules": 6,
+   "status": "audited"
+  },
+  "research": {
+   "doc": "docs/AUDIT_LEDGER.md",
+   "n_modules": 1857,
+   "status": "partial",
+   "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
+  },
+  "risk": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 7,
+   "status": "audited"
+  },
+  "robustness": {
+   "n_modules": 13,
+   "status": "audited"
+  },
+  "schemas": {
+   "n_modules": 8,
+   "status": "audited"
+  },
+  "simtest": {
+   "n_modules": 10,
+   "status": "audited"
+  },
+  "stress": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 14,
+   "status": "audited"
+  },
+  "utils": {
+   "doc": "docs/AUDIT_FRONTIER.md",
+   "n_modules": 9,
+   "status": "audited"
+  },
+  "validation": {
+   "doc": "docs/AUDIT_P62_STATS.md",
+   "n_modules": 13,
+   "status": "audited"
   }
+ },
+ "modules": {
+  "__init__.py": {
+   "reason": "package surface only",
+   "status": "waived"
+  },
+  "backtest/event_sim/__init__.py": {
+   "status": "audited"
+  },
+  "backtest/event_sim/clock.py": {
+   "status": "audited"
+  },
+  "backtest/event_sim/constraints.py": {
+   "status": "audited"
+  },
+  "backtest/event_sim/costs.py": {
+   "status": "audited"
+  },
+  "backtest/event_sim/fills.py": {
+   "status": "audited"
+  },
+  "backtest/event_sim/sensitivity.py": {
+   "status": "audited"
+  },
+  "backtest/event_sim/simulator.py": {
+   "status": "audited"
+  },
+  "microstructure/abc_calibrate.py": {
+   "status": "audited"
+  },
+  "microstructure/adversarial_mm.py": {
+   "status": "audited"
+  },
+  "microstructure/closure_fit.py": {
+   "status": "audited"
+  },
+  "microstructure/dgm_mm.py": {
+   "status": "audited"
+  },
+  "microstructure/event_burst.py": {
+   "status": "audited"
+  },
+  "microstructure/event_granger.py": {
+   "status": "audited"
+  },
+  "microstructure/event_matrix.py": {
+   "status": "audited"
+  },
+  "microstructure/glft_closed_form.py": {
+   "status": "audited"
+  },
+  "microstructure/grammar_map.py": {
+   "status": "audited"
+  },
+  "microstructure/hawkes_calibrate.py": {
+   "status": "audited"
+  },
+  "microstructure/hawkes_mv.py": {
+   "status": "audited"
+  },
+  "microstructure/hawkes_real.py": {
+   "status": "audited"
+  },
+  "microstructure/hmm_learn.py": {
+   "status": "audited"
+  },
+  "microstructure/impulse_mm.py": {
+   "status": "audited"
+  },
+  "microstructure/intraday_shape.py": {
+   "status": "audited"
+  },
+  "microstructure/price_clustering.py": {
+   "status": "audited"
+  },
+  "microstructure/price_improvement.py": {
+   "status": "audited"
+  },
+  "microstructure/quote_floor_bench.py": {
+   "status": "audited"
+  },
+  "microstructure/refill_hazard_bench.py": {
+   "status": "audited"
+  },
+  "microstructure/regime_filter.py": {
+   "status": "audited"
+  },
+  "microstructure/regime_quoting.py": {
+   "status": "audited"
+  },
+  "microstructure/release_chase_bench.py": {
+   "status": "audited"
+  },
+  "microstructure/rl_market_maker.py": {
+   "status": "audited"
+  },
+  "microstructure/rlmm_c51.py": {
+   "status": "audited"
+  },
+  "microstructure/round_lot.py": {
+   "status": "audited"
+  },
+  "microstructure/scenario_bandit.py": {
+   "status": "audited"
+  },
+  "microstructure/shield_decay_bench.py": {
+   "status": "audited"
+  },
+  "microstructure/sigkernel_mmd.py": {
+   "status": "audited"
+  },
+  "microstructure/streak_stats.py": {
+   "status": "audited"
+  },
+  "microstructure/sweep_width.py": {
+   "status": "audited"
+  },
+  "microstructure/vol_clock.py": {
+   "status": "audited"
+  },
+  "microstructure/vol_signature.py": {
+   "status": "audited"
+  },
+  "microstructure/waiting_times.py": {
+   "status": "audited"
+  },
+  "microstructure/wave23_map.py": {
+   "status": "audited"
+  },
+  "microstructure/wave24_map.py": {
+   "status": "audited"
+  },
+  "parity_leak_audit.py": {
+   "status": "audited"
+  },
+  "public.py": {
+   "reason": "package surface only",
+   "status": "waived"
+  }
+ },
+ "schema_version": "audit-coverage/v1",
+ "statuses": {
+  "audited": "line-level audit complete for this scope",
+  "partial": "some modules in scope audited; remainder pending",
+  "pending": "audit queued or not yet started",
+  "waived": "audit not applicable \u2014 'reason' required"
+ }
 }

@@ -26,7 +26,7 @@ from typing import Any
 import numpy as np
 from scipy.optimize import minimize
 
-from quant_fund.microstructure.lobster import EXECUTION, parse_messages
+from quant_fund.microstructure.lobster import EXECUTION, EXECUTION_HIDDEN, parse_messages
 from quant_fund.microstructure.split_flow import SplitFlow
 from quant_fund.microstructure.zi_lob_simulator import (
     MarkovRegimeFlow,
@@ -101,10 +101,14 @@ def hawkes_fit(times: np.ndarray, horizon_s: float) -> dict[str, Any]:
 
 
 def mo_times_lobster(message_path: Path) -> np.ndarray:
-    """Event-time (seconds) of every visible execution on the tape."""
+    """Event-time (seconds) of every execution on the tape.
+
+    Hidden-liquidity prints (type 5) are market orders too — dropping them
+    understates the MO arrival process the Hawkes fit is meant to describe.
+    """
     times = []
     for ev in parse_messages(message_path):
-        if ev.event_type == EXECUTION:
+        if ev.event_type == EXECUTION or ev.event_type == EXECUTION_HIDDEN:
             times.append(ev.time_s)
     return np.asarray(times)
 
@@ -122,7 +126,7 @@ def mo_times_sim(
     for _ in range(horizon):
         sim.step()
     ts = np.asarray([tr.t for tr in sim.trades], dtype=float)
-    horizon_s = float(sim._t) if math.isfinite(sim._t) else float(ts.max())
+    horizon_s = float(sim.t) if math.isfinite(sim.t) else float(ts.max())
     return ts, horizon_s
 
 
