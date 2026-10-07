@@ -1131,10 +1131,16 @@ class HostedK3Backend(_UsageTracker):
             raise RuntimeError(
                 f"hosted_k3 endpoint transport fault ({type(exc).__name__})"
             ) from exc
-        content = payload["choices"][0]["message"]["content"]
+        try:
+            content = payload["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise RuntimeError(
+                "malformed hosted_k3 completion payload: missing choices[0].message.content"
+            ) from exc
         if not isinstance(content, str):
             raise RuntimeError(
-                f"malformed completion payload: content is {type(content).__name__}, not str"
+                "malformed hosted_k3 completion payload: "
+                f"content is {type(content).__name__}, not str"
             )
         self._record_usage(_extract_usage(payload))
         return content
@@ -1636,6 +1642,12 @@ class LocalFx1Backend(_UsageTracker):
         sampling: SamplingParams | None = None,
     ) -> Iterator[str]:
         """Stream token deltas; the engine is ensured before subscribing."""
+        if not self._url:
+            raise BackendNotConfiguredError(
+                "local_fx1 is not configured: set FX1_LOCAL_SERVE_URL to an "
+                "OpenAI-compatible engine serving the checkpoint (fx-1 never "
+                "hardcodes endpoints); FX1_LOCAL_SERVE_CMD may spawn one"
+            )
         self._ensure_engine()
         box: list[dict[str, int]] = []
         for tok in _openai_chat_stream(  # noqa: UP028 — trailer needs the box after exhaustion

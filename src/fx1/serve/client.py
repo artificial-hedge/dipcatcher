@@ -52,7 +52,7 @@ from fx1.sdk import (
     ReceiptVerdict,
     StoredReceipt,
 )
-from fx1.serve.backends import BackendNotConfiguredError
+from fx1.serve.backends import BackendNotConfiguredError, _RefuseRedirects
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
 from fx1.serve.usage_report import UsageReport
 
@@ -73,6 +73,11 @@ Transport = Callable[
 # Patch three-state: an omitted kwarg keeps the declared policy while
 # an explicit ``None`` sends the JSON-null that clears the bound.
 _UNSET: Any = object()
+
+# Peer-supplied error text is never trusted to be small — cap what the
+# mapped exception echoes from the wire.
+_MAX_ERROR_DETAIL_CHARS = 500
+_MAX_ERROR_CODE_CHARS = 128
 
 
 class HarnessTransportError(RuntimeError):
@@ -127,14 +132,24 @@ def _urllib_transport(
         data = json.dumps(payload).encode()
         req_headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
+    # Redirects are refused, never followed: every request can carry
+    # X-API-Key, and urllib's stock handler replays caller-supplied
+    # headers to the redirect target — even a changed origin (the same
+    # seam ``backends._openai_urlopen`` closes for provider calls).
+    opener = urllib.request.build_opener(_RefuseRedirects())
     try:
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310 — URL is validated at construction  # nosec B310
+        with opener.open(req, timeout=timeout_s) as resp:  # noqa: S310 — URL is validated at construction  # nosec B310
             return resp.status, dict(resp.headers), resp.read()
     except urllib.error.HTTPError as exc:
         # HTTPError owns the rejected response/socket.  The normal ``with``
         # path cannot close it because urlopen raises before it is entered.
         try:
             body = exc.read() if exc.fp is not None else b""
+        except (http.client.HTTPException, OSError):
+            # The refusal arrived but its body was cut short (reset early
+            # close) — the status still maps; don't leak raw errno classes.
+            body = b""
+        try:
             return exc.code, dict(exc.headers or {}), body
         finally:
             with contextlib.suppress(Exception):
@@ -295,6 +310,18 @@ class HarnessClient:
         parsed = urllib.parse.urlparse(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
             raise ValueError(f"base_url must be http(s)://host[:port], got {base_url!r}")
+        # Rejected components are never echoed — the URL may carry a
+        # pasted credential (same no-echo policy as ``byok_base_url_problem``).
+        if parsed.username is not None or parsed.password is not None:
+            raise ValueError("base_url must not embed userinfo credentials")
+        if parsed.params or parsed.query or parsed.fragment:
+            raise ValueError("base_url must not carry params, query, or fragment")
+        try:
+            port = parsed.port
+        except ValueError:
+            raise ValueError("base_url port must be 1-65535") from None
+        if port is not None and not 0 < port < 65536:
+            raise ValueError("base_url port must be 1-65535")
         if timeout_s <= 0:
             raise ValueError(f"timeout_s must be > 0, got {timeout_s}")
         if max_retries < 0:
@@ -422,7 +449,12 @@ class HarnessClient:
                 if isinstance(raw_code, str):
                     code = raw_code
         except (json.JSONDecodeError, AttributeError, UnicodeDecodeError):
-            detail = body.decode(errors="replace")[:500]
+            detail = body.decode(errors="replace")[:_MAX_ERROR_DETAIL_CHARS]
+        # The peer controls this text — bound what the envelope echoes
+        # (the raw-body fallback above is already capped the same way).
+        detail = str(detail)[:_MAX_ERROR_DETAIL_CHARS]
+        if code is not None:
+            code = code[:_MAX_ERROR_CODE_CHARS]
         if status in (401, 403):
             return HarnessAuthError(f"harness auth refused ({status}): {detail}", code=code)
         if status == 404:
@@ -574,7 +606,7 @@ class HarnessClient:
         appears once terminal."""
         out = self._json(
             "GET",
-            f"/harness/jobs/{urllib.parse.quote(job_id)}",
+            f"/harness/jobs/{urllib.parse.quote(job_id, safe='')}",
             idempotent=True,
         )
         return dict(out)
@@ -585,7 +617,7 @@ class HarnessClient:
         404 maps to KeyError. Feed it to :meth:`verify_receipt`."""
         out = self._json(
             "GET",
-            f"/harness/jobs/{urllib.parse.quote(job_id)}/receipt",
+            f"/harness/jobs/{urllib.parse.quote(job_id, safe='')}/receipt",
             idempotent=True,
         )
         return dict(out)
@@ -615,7 +647,7 @@ class HarnessClient:
         or terminal job maps the 409 through the error table."""
         out = self._json(
             "DELETE",
-            f"/harness/jobs/{urllib.parse.quote(job_id)}",
+            f"/harness/jobs/{urllib.parse.quote(job_id, safe='')}",
         )
         return dict(out)
 
@@ -671,7 +703,7 @@ class HarnessClient:
         status/report/attempts/sampling pin."""
         out = self._json(
             "GET",
-            f"/harness/evals/{urllib.parse.quote(eval_id)}",
+            f"/harness/evals/{urllib.parse.quote(eval_id, safe='')}",
             idempotent=True,
         )
         return dict(out)
@@ -703,7 +735,7 @@ class HarnessClient:
         feed it to :meth:`verify_receipt`)."""
         out = self._json(
             "GET",
-            f"/harness/evals/{urllib.parse.quote(eval_id)}/receipt",
+            f"/harness/evals/{urllib.parse.quote(eval_id, safe='')}/receipt",
             idempotent=True,
         )
         return dict(out)
@@ -714,7 +746,7 @@ class HarnessClient:
         table."""
         out = self._json(
             "DELETE",
-            f"/harness/evals/{urllib.parse.quote(eval_id)}",
+            f"/harness/evals/{urllib.parse.quote(eval_id, safe='')}",
         )
         return dict(out)
 
@@ -724,7 +756,7 @@ class HarnessClient:
         404 unknown id, 409 non-terminal/missing report."""
         out = self._json(
             "GET",
-            f"/harness/evals/{urllib.parse.quote(base_id)}/diff/{urllib.parse.quote(candidate_id)}",
+            f"/harness/evals/{urllib.parse.quote(base_id, safe='')}/diff/{urllib.parse.quote(candidate_id, safe='')}",
             idempotent=True,
         )
         return dict(out)
@@ -770,7 +802,9 @@ class HarnessClient:
 
     def eval_spec_get(self, eval_id: str) -> dict[str, Any]:
         """GET /v1/evals/{eval_id}."""
-        return dict(self._json("GET", f"/v1/evals/{urllib.parse.quote(eval_id)}", idempotent=True))
+        return dict(
+            self._json("GET", f"/v1/evals/{urllib.parse.quote(eval_id, safe='')}", idempotent=True)
+        )
 
     def eval_specs(self, *, limit: int = 20, after: str | None = None) -> dict[str, Any]:
         """GET /v1/evals — newest-first spec page."""
@@ -790,11 +824,11 @@ class HarnessClient:
             body["name"] = name
         if metadata is not None:
             body["metadata"] = metadata
-        return dict(self._json("POST", f"/v1/evals/{urllib.parse.quote(eval_id)}", body))
+        return dict(self._json("POST", f"/v1/evals/{urllib.parse.quote(eval_id, safe='')}", body))
 
     def eval_spec_delete(self, eval_id: str) -> dict[str, Any]:
         """DELETE /v1/evals/{eval_id} — journaled tombstone."""
-        return dict(self._json("DELETE", f"/v1/evals/{urllib.parse.quote(eval_id)}"))
+        return dict(self._json("DELETE", f"/v1/evals/{urllib.parse.quote(eval_id, safe='')}"))
 
     def eval_run_create(
         self,
@@ -828,7 +862,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "POST",
-                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs",
+                f"/v1/evals/{urllib.parse.quote(eval_id, safe='')}/runs",
                 body,
                 extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
             )
@@ -839,7 +873,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs?limit={limit}",
+                f"/v1/evals/{urllib.parse.quote(eval_id, safe='')}/runs?limit={limit}",
                 idempotent=True,
             )
         )
@@ -849,7 +883,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}",
+                f"/v1/evals/{urllib.parse.quote(eval_id, safe='')}/runs/{urllib.parse.quote(run_id, safe='')}",
                 idempotent=True,
             )
         )
@@ -860,7 +894,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "POST",
-                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}/cancel",
+                f"/v1/evals/{urllib.parse.quote(eval_id, safe='')}/runs/{urllib.parse.quote(run_id, safe='')}/cancel",
                 {},
             )
         )
@@ -870,7 +904,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "DELETE",
-                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}",
+                f"/v1/evals/{urllib.parse.quote(eval_id, safe='')}/runs/{urllib.parse.quote(run_id, safe='')}",
             )
         )
 
@@ -882,7 +916,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}/output_items{q}",
+                f"/v1/evals/{urllib.parse.quote(eval_id, safe='')}/runs/{urllib.parse.quote(run_id, safe='')}/output_items{q}",
                 idempotent=True,
             )
         )
@@ -940,7 +974,7 @@ class HarnessClient:
         """GET /v1/fine_tuning/jobs/{id} — the job record."""
         out = self._json(
             "GET",
-            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}",
+            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id, safe='')}",
             idempotent=True,
         )
         return dict(out)
@@ -950,7 +984,7 @@ class HarnessClient:
     ) -> dict[str, Any]:
         """GET /v1/fine_tuning/jobs/{id}/events — oldest-first feed."""
         q = f"limit={limit}" + (f"&after={urllib.parse.quote(after)}" if after else "")
-        jid = urllib.parse.quote(job_id)
+        jid = urllib.parse.quote(job_id, safe="")
         out = self._json("GET", f"/v1/fine_tuning/jobs/{jid}/events?{q}", idempotent=True)
         return dict(out)
 
@@ -961,7 +995,7 @@ class HarnessClient:
         artifacts the job registered, oldest-first (OpenAI's
         ``fine_tuning.jobs.list_checkpoints``)."""
         q = f"limit={limit}" + (f"&after={urllib.parse.quote(after)}" if after else "")
-        jid = urllib.parse.quote(job_id)
+        jid = urllib.parse.quote(job_id, safe="")
         out = self._json("GET", f"/v1/fine_tuning/jobs/{jid}/checkpoints?{q}", idempotent=True)
         return dict(out)
 
@@ -970,7 +1004,7 @@ class HarnessClient:
         cancels at once, running stops at the next stage boundary."""
         out = self._json(
             "POST",
-            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}/cancel",
+            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id, safe='')}/cancel",
         )
         return dict(out)
 
@@ -980,7 +1014,7 @@ class HarnessClient:
         Pausing a paused job is idempotent."""
         out = self._json(
             "POST",
-            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}/pause",
+            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id, safe='')}/pause",
         )
         return dict(out)
 
@@ -989,7 +1023,7 @@ class HarnessClient:
         pause captured; resuming a non-paused job is a 409."""
         out = self._json(
             "POST",
-            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}/resume",
+            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id, safe='')}/resume",
         )
         return dict(out)
 
@@ -1095,7 +1129,7 @@ class HarnessClient:
         resume — frames carry the full record, not diffs)."""
         _, _, body = self._request(
             "GET",
-            f"/harness/jobs/{urllib.parse.quote(job_id)}/events"
+            f"/harness/jobs/{urllib.parse.quote(job_id, safe='')}/events"
             f"?timeout_s={urllib.parse.quote(str(timeout_s))}",
             idempotent=True,
         )
@@ -1202,7 +1236,11 @@ class HarnessClient:
     def completion(self, completion_id: str) -> CompletionRecord:
         """Fetch one recorded call from the server's completion log —
         ``GET /harness/completions/{id}``; 404 maps to KeyError."""
-        out = self._json("GET", f"/harness/completions/{completion_id}", idempotent=True)
+        out = self._json(
+            "GET",
+            f"/harness/completions/{urllib.parse.quote(completion_id, safe='')}",
+            idempotent=True,
+        )
         return CompletionRecord(
             completion_id=out["completion_id"],
             backend=out["backend"],
@@ -1259,7 +1297,7 @@ class HarnessClient:
         KeyError. Feed it to :meth:`verify_receipt` to check the seal."""
         out = self._json(
             "GET",
-            f"/harness/completions/{completion_id}/receipt",
+            f"/harness/completions/{urllib.parse.quote(completion_id, safe='')}/receipt",
             idempotent=True,
         )
         return dict(out)
@@ -1336,18 +1374,26 @@ class HarnessClient:
 
     def key_get(self, key_id: str) -> dict[str, Any]:
         """``GET /harness/keys/{id}`` — one key's record."""
-        return dict(self._json("GET", f"/harness/keys/{key_id}", idempotent=True))
+        return dict(
+            self._json(
+                "GET", f"/harness/keys/{urllib.parse.quote(key_id, safe='')}", idempotent=True
+            )
+        )
 
     def key_revoke(self, key_id: str) -> dict[str, Any]:
         """``DELETE /harness/keys/{id}`` — tombstone the key; auth with
         it fails closed immediately after."""
-        return dict(self._json("DELETE", f"/harness/keys/{key_id}"))
+        return dict(self._json("DELETE", f"/harness/keys/{urllib.parse.quote(key_id, safe='')}"))
 
     def key_usage(self, key_id: str) -> dict[str, Any]:
         """``GET /harness/keys/{id}/usage`` — the key's usage card:
         live counters, declared budgets with headroom, rate-window
         state, and the completion-ring spend split. Needs admin."""
-        return dict(self._json("GET", f"/harness/keys/{key_id}/usage", idempotent=True))
+        return dict(
+            self._json(
+                "GET", f"/harness/keys/{urllib.parse.quote(key_id, safe='')}/usage", idempotent=True
+            )
+        )
 
     def key_rotate(
         self,
@@ -1369,7 +1415,9 @@ class HarnessClient:
             body["name"] = name
         if ttl_s is not None:
             body["ttl_s"] = ttl_s
-        return dict(self._json("POST", f"/harness/keys/{key_id}/rotate", body))
+        return dict(
+            self._json("POST", f"/harness/keys/{urllib.parse.quote(key_id, safe='')}/rotate", body)
+        )
 
     def key_update(
         self,
@@ -1411,7 +1459,9 @@ class HarnessClient:
             )
         for field in clear:
             body[field] = None
-        return dict(self._json("PATCH", f"/harness/keys/{key_id}", body))
+        return dict(
+            self._json("PATCH", f"/harness/keys/{urllib.parse.quote(key_id, safe='')}", body)
+        )
 
     def self_usage(self) -> dict[str, Any]:
         """``GET /harness/self`` — the calling credential's own card:
@@ -1454,7 +1504,7 @@ class HarnessClient:
         credential plumbing as a completion."""
         out = self._json(
             "POST",
-            f"/harness/backends/{backend}/probe",
+            f"/harness/backends/{urllib.parse.quote(backend, safe='')}/probe",
             {
                 "checkpoint_dir": str(checkpoint_dir) if checkpoint_dir is not None else None,
                 "byok": byok,
@@ -2214,7 +2264,13 @@ class HarnessClient:
         """``GET /v1/messages/batches/{id}`` — processing status +
         request counts. Read-time expiry applies: a batch past
         ``expires_at`` ends ``expired`` with unfinished items expired."""
-        return dict(self._json("GET", f"/v1/messages/batches/{batch_id}", idempotent=True))
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/messages/batches/{urllib.parse.quote(batch_id, safe='')}",
+                idempotent=True,
+            )
+        )
 
     def message_batches(
         self,
@@ -2237,20 +2293,28 @@ class HarnessClient:
         """``POST /v1/messages/batches/{id}/cancel`` — cooperative cancel;
         the batch flips to ``canceling`` and in-flight items complete
         before it ends."""
-        return dict(self._json("POST", f"/v1/messages/batches/{batch_id}/cancel"))
+        return dict(
+            self._json(
+                "POST", f"/v1/messages/batches/{urllib.parse.quote(batch_id, safe='')}/cancel"
+            )
+        )
 
     def delete_message_batch(self, batch_id: str) -> dict[str, Any]:
         """``DELETE /v1/messages/batches/{id}`` — tombstone an ended
         batch; returns ``{id, type: "message_batch_deleted"}``. A batch
         that isn't ended refuses (Anthropic's contract)."""
-        return dict(self._json("DELETE", f"/v1/messages/batches/{batch_id}"))
+        return dict(
+            self._json("DELETE", f"/v1/messages/batches/{urllib.parse.quote(batch_id, safe='')}")
+        )
 
     def message_batch_results(self, batch_id: str) -> list[dict[str, Any]]:
         """``GET /v1/messages/batches/{id}/results`` — the results JSONL,
         parsed into ``{custom_id, result}`` row dicts. Only served once
         the batch has ended; before that the wire 400s."""
         _status, _headers, body = self._request(
-            "GET", f"/v1/messages/batches/{batch_id}/results", idempotent=True
+            "GET",
+            f"/v1/messages/batches/{urllib.parse.quote(batch_id, safe='')}/results",
+            idempotent=True,
         )
         return [json.loads(line) for line in body.decode().splitlines() if line.strip()]
 
@@ -2619,6 +2683,13 @@ class HarnessClient:
         The multipart body is assembled here (stdlib only — no extra dep
         on the client); the server accepts only ``purpose='batch'`` and
         ``.jsonl`` names."""
+        # ``filename`` and ``purpose`` land verbatim inside the hand-rolled
+        # frame — a quote/backslash breaks the quoted field and CR/LF would
+        # inject further headers or parts.
+        if any(ch in filename for ch in ('"', "\\", "\r", "\n")):
+            raise ValueError(f"filename cannot contain quotes or CR/LF: {filename!r}")
+        if "\r" in purpose or "\n" in purpose:
+            raise ValueError("purpose cannot contain CR/LF")
         boundary = f"fx1{uuid.uuid4().hex}"
         head = (
             f"--{boundary}\r\n"
@@ -2644,18 +2715,20 @@ class HarnessClient:
 
     def file(self, file_id: str) -> dict[str, Any]:
         """``GET /v1/files/{id}`` — one file's card."""
-        return dict(self._json("GET", f"/v1/files/{file_id}", idempotent=True))
+        return dict(
+            self._json("GET", f"/v1/files/{urllib.parse.quote(file_id, safe='')}", idempotent=True)
+        )
 
     def file_content(self, file_id: str) -> bytes:
         """``GET /v1/files/{id}/content`` — raw bytes (JSONL in, JSONL out)."""
         _status, _headers, body = self._request(
-            "GET", f"/v1/files/{file_id}/content", idempotent=True
+            "GET", f"/v1/files/{urllib.parse.quote(file_id, safe='')}/content", idempotent=True
         )
         return body
 
     def delete_file(self, file_id: str) -> dict[str, Any]:
         """``DELETE /v1/files/{id}``."""
-        return dict(self._json("DELETE", f"/v1/files/{file_id}"))
+        return dict(self._json("DELETE", f"/v1/files/{urllib.parse.quote(file_id, safe='')}"))
 
     # ---- uploads (chunked files) ----------------------------------------------
 
@@ -2699,7 +2772,7 @@ class HarnessClient:
         )
         _status, _headers, raw = self._request(
             "POST",
-            f"/v1/uploads/{upload_id}/parts",
+            f"/v1/uploads/{urllib.parse.quote(upload_id, safe='')}/parts",
             body,
             extra_headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
         )
@@ -2718,12 +2791,18 @@ class HarnessClient:
         payload: dict[str, Any] = {"part_ids": part_ids}
         if md5 is not None:
             payload["md5"] = md5
-        return dict(self._json("POST", f"/v1/uploads/{upload_id}/complete", payload))
+        return dict(
+            self._json(
+                "POST", f"/v1/uploads/{urllib.parse.quote(upload_id, safe='')}/complete", payload
+            )
+        )
 
     def upload_cancel(self, upload_id: str) -> dict[str, Any]:
         """``POST /v1/uploads/{id}/cancel`` — terminal cancel; replays
         200 on an already-cancelled record."""
-        return dict(self._json("POST", f"/v1/uploads/{upload_id}/cancel"))
+        return dict(
+            self._json("POST", f"/v1/uploads/{urllib.parse.quote(upload_id, safe='')}/cancel")
+        )
 
     def create_batch(
         self,
@@ -2764,7 +2843,11 @@ class HarnessClient:
 
     def batch(self, batch_id: str) -> dict[str, Any]:
         """``GET /v1/batches/{id}`` — status + request counts."""
-        return dict(self._json("GET", f"/v1/batches/{batch_id}", idempotent=True))
+        return dict(
+            self._json(
+                "GET", f"/v1/batches/{urllib.parse.quote(batch_id, safe='')}", idempotent=True
+            )
+        )
 
     def batches(self, *, limit: int = 20, after: str | None = None) -> dict[str, Any]:
         """``GET /v1/batches`` — newest-first page (``after`` = last id of
@@ -2778,7 +2861,9 @@ class HarnessClient:
         """``POST /v1/batches/{id}/cancel`` — cooperative cancel; the
         worker checks between lines and lands 'cancelled' with partial
         output written."""
-        return dict(self._json("POST", f"/v1/batches/{batch_id}/cancel"))
+        return dict(
+            self._json("POST", f"/v1/batches/{urllib.parse.quote(batch_id, safe='')}/cancel")
+        )
 
     def wait_batch(
         self,
@@ -2814,7 +2899,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/chat/completions/{urllib.parse.quote(completion_id)}",
+                f"/v1/chat/completions/{urllib.parse.quote(completion_id, safe='')}",
                 idempotent=True,
             )
         )
@@ -2828,7 +2913,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "POST",
-                f"/v1/chat/completions/{urllib.parse.quote(completion_id)}",
+                f"/v1/chat/completions/{urllib.parse.quote(completion_id, safe='')}",
                 body,
             )
         )
@@ -2838,26 +2923,32 @@ class HarnessClient:
         return dict(
             self._json(
                 "DELETE",
-                f"/v1/chat/completions/{urllib.parse.quote(completion_id)}",
+                f"/v1/chat/completions/{urllib.parse.quote(completion_id, safe='')}",
             )
         )
 
     def retrieve_response(self, response_id: str) -> dict[str, Any]:
         """``GET /v1/responses/{id}`` — the stored ``response`` object."""
         return dict(
-            self._json("GET", f"/v1/responses/{urllib.parse.quote(response_id)}", idempotent=True)
+            self._json(
+                "GET", f"/v1/responses/{urllib.parse.quote(response_id, safe='')}", idempotent=True
+            )
         )
 
     def delete_response(self, response_id: str) -> dict[str, Any]:
         """``DELETE /v1/responses/{id}`` — drop the stored envelope."""
-        return dict(self._json("DELETE", f"/v1/responses/{urllib.parse.quote(response_id)}"))
+        return dict(
+            self._json("DELETE", f"/v1/responses/{urllib.parse.quote(response_id, safe='')}")
+        )
 
     def cancel_response(self, response_id: str) -> dict[str, Any]:
         """``POST /v1/responses/{id}/cancel`` — cancel a queued or
         in-progress background response. Terminal responses are a 409;
         unknown ids a 404 (both surface as ``HarnessTransportError``)."""
         return dict(
-            self._json("POST", f"/v1/responses/{urllib.parse.quote(response_id)}/cancel", {})
+            self._json(
+                "POST", f"/v1/responses/{urllib.parse.quote(response_id, safe='')}/cancel", {}
+            )
         )
 
     def responses_replay(
@@ -2886,7 +2977,7 @@ class HarnessClient:
             q += f"&timeout_s={timeout_s}"
         _status, headers, body = self._request(
             "GET",
-            f"/v1/responses/{urllib.parse.quote(response_id)}?{q}",
+            f"/v1/responses/{urllib.parse.quote(response_id, safe='')}?{q}",
             idempotent=True,
             extra_headers=extra_headers,
         )
@@ -2929,7 +3020,7 @@ class HarnessClient:
     ) -> dict[str, Any]:
         """``GET /v1/chat/completions/{id}/messages`` — the stored
         request messages, paged by item id."""
-        cid = urllib.parse.quote(completion_id)
+        cid = urllib.parse.quote(completion_id, safe="")
         q = f"limit={limit}&order={order}"
         if after:
             q += f"&after={urllib.parse.quote(after)}"
@@ -2948,7 +3039,7 @@ class HarnessClient:
     ) -> dict[str, Any]:
         """``GET /v1/responses/{id}/input_items`` — the stored ``input``
         items, paged by item id."""
-        rid = urllib.parse.quote(response_id)
+        rid = urllib.parse.quote(response_id, safe="")
         q = f"limit={limit}&order={order}"
         if after:
             q += f"&after={urllib.parse.quote(after)}"
@@ -2978,7 +3069,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/conversations/{urllib.parse.quote(conversation_id)}",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id, safe='')}",
                 idempotent=True,
             )
         )
@@ -2994,7 +3085,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "POST",
-                f"/v1/conversations/{urllib.parse.quote(conversation_id)}",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id, safe='')}",
                 {"metadata": metadata},
             )
         )
@@ -3003,7 +3094,9 @@ class HarnessClient:
         """``DELETE /v1/conversations/{id}`` — drop the container and its
         items."""
         return dict(
-            self._json("DELETE", f"/v1/conversations/{urllib.parse.quote(conversation_id)}")
+            self._json(
+                "DELETE", f"/v1/conversations/{urllib.parse.quote(conversation_id, safe='')}"
+            )
         )
 
     def conversation_items(
@@ -3017,7 +3110,7 @@ class HarnessClient:
     ) -> dict[str, Any]:
         """``GET /v1/conversations/{id}/items`` — the accumulated items,
         paged by item id."""
-        cid = urllib.parse.quote(conversation_id)
+        cid = urllib.parse.quote(conversation_id, safe="")
         q = f"limit={limit}&order={order}"
         if after:
             q += f"&after={urllib.parse.quote(after)}"
@@ -3035,7 +3128,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "POST",
-                f"/v1/conversations/{urllib.parse.quote(conversation_id)}/items",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id, safe='')}/items",
                 {"items": items},
             )
         )
@@ -3050,8 +3143,8 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/conversations/{urllib.parse.quote(conversation_id)}"
-                f"/items/{urllib.parse.quote(item_id)}",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id, safe='')}"
+                f"/items/{urllib.parse.quote(item_id, safe='')}",
                 idempotent=True,
             )
         )
@@ -3066,8 +3159,8 @@ class HarnessClient:
         return dict(
             self._json(
                 "DELETE",
-                f"/v1/conversations/{urllib.parse.quote(conversation_id)}"
-                f"/items/{urllib.parse.quote(item_id)}",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id, safe='')}"
+                f"/items/{urllib.parse.quote(item_id, safe='')}",
             )
         )
 
@@ -3101,7 +3194,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}",
                 idempotent=True,
             )
         )
@@ -3127,7 +3220,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "POST",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}",
                 payload,
             )
         )
@@ -3138,7 +3231,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "DELETE",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}",
             )
         )
 
@@ -3176,7 +3269,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "POST",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/files",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}/files",
                 payload,
             )
         )
@@ -3203,7 +3296,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/files?{q}",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}/files?{q}",
                 idempotent=True,
             )
         )
@@ -3214,8 +3307,8 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
-                f"/files/{urllib.parse.quote(file_id)}",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}"
+                f"/files/{urllib.parse.quote(file_id, safe='')}",
                 idempotent=True,
             )
         )
@@ -3226,8 +3319,8 @@ class HarnessClient:
         return dict(
             self._json(
                 "DELETE",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
-                f"/files/{urllib.parse.quote(file_id)}",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}"
+                f"/files/{urllib.parse.quote(file_id, safe='')}",
             )
         )
 
@@ -3237,8 +3330,8 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
-                f"/files/{urllib.parse.quote(file_id)}/content",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}"
+                f"/files/{urllib.parse.quote(file_id, safe='')}/content",
                 idempotent=True,
             )
         )
@@ -3265,7 +3358,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "POST",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/search",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}/search",
                 payload,
             )
         )
@@ -3289,7 +3382,7 @@ class HarnessClient:
         return dict(
             self._json(
                 "POST",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/file_batches",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}/file_batches",
                 payload,
             )
         )
@@ -3300,8 +3393,8 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
-                f"/file_batches/{urllib.parse.quote(batch_id)}",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}"
+                f"/file_batches/{urllib.parse.quote(batch_id, safe='')}",
                 idempotent=True,
             )
         )
@@ -3312,8 +3405,8 @@ class HarnessClient:
         return dict(
             self._json(
                 "POST",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
-                f"/file_batches/{urllib.parse.quote(batch_id)}/cancel",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}"
+                f"/file_batches/{urllib.parse.quote(batch_id, safe='')}/cancel",
                 {},
             )
         )
@@ -3341,8 +3434,8 @@ class HarnessClient:
         return dict(
             self._json(
                 "GET",
-                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
-                f"/file_batches/{urllib.parse.quote(batch_id)}/files?{q}",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id, safe='')}"
+                f"/file_batches/{urllib.parse.quote(batch_id, safe='')}/files?{q}",
                 idempotent=True,
             )
         )
@@ -3360,13 +3453,15 @@ class HarnessClient:
         """GET /receipts/{sha256} — the sealed document verbatim plus the
         server's live re-verify verdict (``X-Fx1-Receipt-Valid``). Unknown
         hashes raise KeyError; malformed digests raise ValueError."""
-        _status, headers, body = self._request("GET", f"/receipts/{sha256}", idempotent=True)
+        _status, headers, body = self._request(
+            "GET", f"/receipts/{urllib.parse.quote(sha256, safe='')}", idempotent=True
+        )
         doc = json.loads(body)
         assert isinstance(doc, dict)
         return StoredReceipt(
             sha256=sha256,
             document=doc,
-            valid=headers.get("x-fx1-receipt-valid") == "true",
+            valid=_hget(headers, "X-Fx1-Receipt-Valid") == "true",
         )
 
     # ---- receipts --------------------------------------------------------

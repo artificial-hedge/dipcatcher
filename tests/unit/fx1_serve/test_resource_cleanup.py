@@ -62,7 +62,9 @@ def test_client_closes_http_error_after_read(monkeypatch: pytest.MonkeyPatch) ->
     def refuse(*args: Any, **kwargs: Any) -> Any:
         raise error
 
-    monkeypatch.setattr(client.urllib.request, "urlopen", refuse)
+    opener = Mock()
+    opener.open.side_effect = refuse
+    monkeypatch.setattr(client.urllib.request, "build_opener", lambda *args: opener)
     status, _headers, payload = client._urllib_transport(
         "GET", "https://harness.invalid/health", None, {}, 1.0
     )

@@ -132,6 +132,18 @@
     "selftest.py": {
       "status": "pending"
     },
+    "serve/backends.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/client.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/signing.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
     "tail_audit.py": {
       "status": "audited"
     }

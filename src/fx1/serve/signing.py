@@ -12,6 +12,7 @@ verification, or loading; this module does not lock the deployment tree.
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import hmac
 import os
@@ -110,6 +111,30 @@ def _read_metadata(path: Path, limit: int) -> bytes:
     return content
 
 
+def _write_regular_file(path: Path, data: bytes) -> None:
+    """Write release metadata without following a final-component symlink.
+
+    ``Path.write_bytes`` resolves a pre-planted ``release.sig`` symlink and
+    clobbers whatever it points at (e.g. a user's config outside the
+    checkpoint); ``O_NOFOLLOW`` refuses instead, matching the read invariant.
+    """
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_BINARY", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(path, flags, 0o666)
+    except OSError as exc:
+        if exc.errno == errno.ELOOP:
+            raise ValueError(f"release metadata must not be a symlink: {path}") from exc
+        raise
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise ValueError(f"release metadata must be a regular file: {path}")
+        with os.fdopen(fd, "wb", closefd=False) as stream:
+            stream.write(data)
+    finally:
+        os.close(fd)
+
+
 def sign_release(checkpoint_dir: str | Path) -> Path:
     """Write a manifest and detached HMAC; validate configuration before I/O."""
     key = _key()
@@ -118,9 +143,9 @@ def sign_release(checkpoint_dir: str | Path) -> Path:
     if len(manifest_bytes) > _MAX_MANIFEST_BYTES:
         raise ValueError("release manifest exceeds its byte limit")
     signature = hmac.new(key, manifest_bytes, hashlib.sha256).hexdigest()
-    (root / MANIFEST_FILENAME).write_bytes(manifest_bytes)
+    _write_regular_file(root / MANIFEST_FILENAME, manifest_bytes)
     sig_path = root / SIGNATURE_FILENAME
-    sig_path.write_text(signature, encoding="utf-8")
+    _write_regular_file(sig_path, signature.encode("ascii"))
     return sig_path
 
 
