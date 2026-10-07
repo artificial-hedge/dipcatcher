@@ -543,6 +543,24 @@
   "models/_sp_synth.py": {
    "status": "audited"
   },
+  "models/_ssl_synth.py": {
+   "status": "audited"
+  },
+  "models/_sv_synth.py": {
+   "status": "audited"
+  },
+  "models/_td_synth.py": {
+   "status": "audited"
+  },
+  "models/_tn_synth.py": {
+   "status": "audited"
+  },
+  "models/_tsf_synth.py": {
+   "status": "audited"
+  },
+  "models/_ttc_synth.py": {
+   "status": "audited"
+  },
   "models/a1_degrees.py": {
    "status": "audited"
   },

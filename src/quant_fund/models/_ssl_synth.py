@@ -22,6 +22,8 @@ def synth_ssl(n: int, rng: np.random.Generator) -> tuple[FloatArray, NDArray[np.
     """XOR-class latent: y = (sign(x0) == sign(x1)) XOR structure — the
     raw features are NOT linearly separable, so a linear probe on x caps
     near chance while a learned representation can expose the class."""
+    if n < 1:
+        raise ValueError(f"need n>=1, got {n}")
     s1 = rng.choice([-1.0, 1.0], n)
     s2 = rng.choice([-1.0, 1.0], n)
     y = ((s1 * s2) > 0).astype(np.int64)
@@ -34,6 +36,8 @@ def synth_ssl(n: int, rng: np.random.Generator) -> tuple[FloatArray, NDArray[np.
 
 
 def make_views(x: FloatArray, rng: np.random.Generator) -> tuple[FloatArray, FloatArray]:
+    if x.ndim != 2 or x.shape[0] < 1 or x.shape[1] != _D:
+        raise ValueError(f"x must be a non-empty (n, {_D}) array, got {x.shape}")
     sc1 = rng.uniform(0.7, 1.3, (x.shape[0], 1))
     sc2 = rng.uniform(0.7, 1.3, (x.shape[0], 1))
     sh1 = rng.normal(0, 0.4, (x.shape[0], _D))
@@ -46,10 +50,15 @@ def make_views(x: FloatArray, rng: np.random.Generator) -> tuple[FloatArray, Flo
 def synth_tta_split(
     n_tr: int, n_te: int, rng: np.random.Generator
 ) -> tuple[FloatArray, NDArray[np.int64], FloatArray, NDArray[np.int64]]:
+    if n_tr < 1 or n_te < 1:
+        raise ValueError(f"need n_tr>=1 and n_te>=1, got {n_tr},{n_te}")
     xtr, ytr = synth_ssl(n_tr, rng)
     xte, yte = synth_ssl(n_te, rng)
     g = rng.standard_normal((_D, _D))
-    q, _ = np.linalg.qr(g)
+    q, r_ = np.linalg.qr(g)
+    s_ = np.sign(np.diag(r_))
+    s_[s_ == 0] = 1.0
+    q = q * s_[None, :]  # canonicalize QR sign (LAPACK-arbitrary)
     xte = 1.15 * (xte @ q) + 0.6
     return xtr, ytr, xte, yte
 
@@ -57,6 +66,18 @@ def synth_tta_split(
 def linear_probe_acc(
     xtr: FloatArray, ytr: NDArray[np.int64], xte: FloatArray, yte: NDArray[np.int64]
 ) -> float:
+    if (
+        xtr.ndim != 2
+        or xte.ndim != 2
+        or xtr.shape[0] < 1
+        or xte.shape[0] < 1
+        or xtr.shape[1] != xte.shape[1]
+    ):
+        raise ValueError(f"need matching non-empty (n,d) arrays, got {xtr.shape} vs {xte.shape}")
+    if len(ytr) != xtr.shape[0] or len(yte) != xte.shape[0]:
+        raise ValueError("label arrays must match row counts")
+    if ytr.min() < 0 or ytr.max() >= _K or yte.min() < 0 or yte.max() >= _K:
+        raise ValueError(f"labels must be in [0, {_K})")
     w = np.linalg.lstsq(
         np.hstack([xtr, np.ones((xtr.shape[0], 1))]),
         np.eye(_K)[ytr],

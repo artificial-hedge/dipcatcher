@@ -12,6 +12,8 @@ FloatArray = NDArray[np.float64]
 
 def smooth_tensor(seed: int, d: int = 4, n: int = 8) -> FloatArray:
     """Low-TT-rank smooth tensor: sum of 3 separable Gaussian bumps."""
+    if d < 1 or n < 2:
+        raise ValueError(f"need d>=1 and n>=2, got {d},{n}")
     rng = np.random.default_rng(seed)
     x = np.linspace(0, 1, n)
     T = np.zeros([n] * d)
@@ -29,6 +31,10 @@ def smooth_tensor(seed: int, d: int = 4, n: int = 8) -> FloatArray:
 
 def tfim_h(n: int, h: float = 1.0) -> FloatArray:
     """Transverse-field Ising Hamiltonian d=2^n."""
+    if n < 1:
+        raise ValueError(f"need n>=1 spins, got {n}")
+    if not np.isfinite(h):
+        raise ValueError(f"need finite h, got {h}")
     Z = np.array([[1, 0], [0, -1]])
     X = np.array([[0, 1], [1, 0]])
     ID = np.eye(2)
@@ -52,6 +58,10 @@ def tfim_h(n: int, h: float = 1.0) -> FloatArray:
 
 def to_mps(T: np.ndarray, d_phys: int = 2, chi: int = 8) -> list[np.ndarray]:
     """Flatten a d^n tensor to an MPS via sequential SVD (left-canonical)."""
+    if d_phys < 2 or chi < 1:
+        raise ValueError(f"need d_phys>=2 and chi>=1, got {d_phys},{chi}")
+    if T.size < d_phys:
+        raise ValueError(f"tensor too small ({T.size}) for d_phys={d_phys}")
     n = int(round(np.log(T.size) / np.log(d_phys)))
     if d_phys**n != T.size:
         raise ValueError(f"tensor size {T.size} is not a power of d_phys={d_phys}")
@@ -72,6 +82,8 @@ def to_mps(T: np.ndarray, d_phys: int = 2, chi: int = 8) -> list[np.ndarray]:
 
 
 def mps_contract(cores: list[np.ndarray]) -> np.ndarray:
+    if not cores:
+        raise ValueError("empty MPS core list")
     out = cores[0]
     for c in cores[1:]:
         out = np.tensordot(out, c, axes=(-1, 0))

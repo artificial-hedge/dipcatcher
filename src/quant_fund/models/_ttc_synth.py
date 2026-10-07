@@ -18,6 +18,8 @@ _OPS = np.array([[1, 1, 0], [1, -1, 0], [0, 1, 0]])
 
 
 def true_ops(a: IntArray) -> IntArray:
+    if a.ndim != 2 or a.shape[1] != 3:
+        raise ValueError(f"a must be (n,3), got {a.shape}")
     n = a.shape[0]
     f = np.zeros((n, 2), dtype=np.int64)
     for i in range(2):
@@ -26,6 +28,12 @@ def true_ops(a: IntArray) -> IntArray:
 
 
 def eval_chain(a: IntArray, ops: IntArray) -> FloatArray:
+    if a.ndim != 2 or a.shape[1] != 3:
+        raise ValueError(f"a must be (n,3), got {a.shape}")
+    if ops.shape != (a.shape[0], 2):
+        raise ValueError(f"ops must be (n={a.shape[0]},2), got {ops.shape}")
+    if ops.min() < 0 or ops.max() > 2:
+        raise ValueError(f"ops must be in {{0,1,2}}, got range {ops.min()}..{ops.max()}")
     v = a[:, 0].astype(float)
     for i in range(2):
         o = ops[:, i]
@@ -34,6 +42,8 @@ def eval_chain(a: IntArray, ops: IntArray) -> FloatArray:
 
 
 def synth_problems(n: int, rng: np.random.Generator) -> tuple[IntArray, IntArray, FloatArray]:
+    if n < 1:
+        raise ValueError(f"need n>=1, got {n}")
     a = rng.integers(1, 10, (n, 3))
     ops = true_ops(a)
     return a, ops, eval_chain(a, ops)
@@ -45,6 +55,10 @@ def op_features(a: IntArray, step: int) -> FloatArray:
     true op_i = (a_i + a_{i+1} + i) mod 3 — periodic (sin/cos) features of
     the operand sum make it linearly separable; plain raw features don't.
     """
+    if a.ndim != 2 or a.shape[1] != 3:
+        raise ValueError(f"a must be (n,3), got {a.shape}")
+    if step not in (0, 1):
+        raise ValueError(f"step must be 0 or 1, got {step}")
     n = a.shape[0]
     x = np.zeros((n, 10))
     ssum = a[:, step] + a[:, step + 1] + step

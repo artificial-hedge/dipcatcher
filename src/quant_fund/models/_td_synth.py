@@ -16,12 +16,18 @@ FloatArray = NDArray[np.float64]
 
 
 def make_data(seed: int = 0, n: int = 600):
+    if n < 1:
+        raise ValueError(f"need n>=1, got {n}")
     X, y = regime_task(seed, n=n)
     Xt, yt = regime_task(seed + 1, n=300)
     return X, y, Xt, yt
 
 
 def train_mlp(torch, X, y, iters: int = 400, lr: float = 0.01, seed: int = 0, hidden: int = 24):
+    if iters < 1 or hidden < 1:
+        raise ValueError(f"need iters>=1 and hidden>=1, got {iters},{hidden}")
+    if not np.isfinite(lr) or lr <= 0:
+        raise ValueError(f"need finite lr>0, got {lr}")
     with torch.random.fork_rng():
         torch.manual_seed(seed)
         net = torch.nn.Sequential(
@@ -41,6 +47,8 @@ def train_mlp(torch, X, y, iters: int = 400, lr: float = 0.01, seed: int = 0, hi
 
 
 def acc(net, torch, X, y) -> float:
+    if len(X) < 1 or len(X) != len(y):
+        raise ValueError(f"X/y must be non-empty equal lengths, got {len(X)},{len(y)}")
     with torch.no_grad():
         p = (net(torch.tensor(X).float()).squeeze(-1) > 0).float().numpy()
     return float((p == y).mean())

@@ -18,6 +18,10 @@ def sv_data(
     beta: FloatArray | None = None,
 ) -> tuple[FloatArray, FloatArray, NDArray[np.int64], FloatArray]:
     """Returns (X, time_observed, event_indicator, beta)."""
+    if n < 1 or d < 1:
+        raise ValueError(f"need n,d >= 1, got {n},{d}")
+    if beta is not None and np.asarray(beta).shape != (d,):
+        raise ValueError(f"beta must be (d={d},), got {np.asarray(beta).shape}")
     rng = np.random.default_rng(seed)
     X = rng.standard_normal((n, d))
     if beta is None:
@@ -35,22 +39,40 @@ def sv_data(
 
 def cindex(t: FloatArray, risk_pred: FloatArray, e: NDArray[np.int64]) -> float:
     """Harrell C-index on uncensored pairs."""
-    conc = disc = 0.0
+    if not (len(t) == len(risk_pred) == len(e)) or len(t) < 1:
+        raise ValueError(
+            f"t/risk_pred/e must be non-empty equal lengths, got {len(t)},{len(risk_pred)},{len(e)}"
+        )
+    if not np.isfinite(t).all() or not np.isfinite(risk_pred).all():
+        raise ValueError("non-finite t or risk_pred")
+    conc = 0.0
+    pairs = 0.0
     n = len(t)
     for i in range(n):
         for j in range(n):
             if e[i] == 1 and t[i] < t[j]:
+                pairs += 1
                 if risk_pred[i] > risk_pred[j]:
                     conc += 1
                 elif risk_pred[i] < risk_pred[j]:
-                    disc += 1
+                    pass
                 else:
                     conc += 0.5
-    return conc / max(conc + disc, 1)
+    if pairs == 0:
+        raise ValueError("no comparable uncensored pairs — C-index undefined")
+    return conc / pairs
 
 
 def cox_ph(X: FloatArray, t: FloatArray, e: NDArray[np.int64], iters: int = 300) -> FloatArray:
     """Cox PH partial likelihood gradient ascent → coefficient vector."""
+    if iters < 1:
+        raise ValueError(f"need iters>=1, got {iters}")
+    if X.ndim != 2 or X.shape[0] < 1 or X.shape[1] < 1:
+        raise ValueError(f"X must be a non-empty (n,d) array, got {X.shape}")
+    if not (len(t) == len(e) == X.shape[0]):
+        raise ValueError("t/e must match X rows")
+    if not set(np.unique(e)) <= {0, 1}:
+        raise ValueError("event indicator must be binary {0,1}")
     d = X.shape[1]
     b = np.zeros(d)
     order = np.argsort(t)
