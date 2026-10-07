@@ -346,3 +346,130 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Serve compat leaves audit (PR #2945)
+
+Line-level audit of `openai_compat.py`, `anthropic_compat.py`, `chat.py`,
+`contract.py`. Ten real defects fixed in product: `ft:` model silently
+dropped `checkpoint_dir` overrides (now refused 422 like byok); the
+`fx1.receipt_hashes` body channel skipped the sha256 check the header
+enforces; `OpenAIBatchRequest.metadata` bounded count but not per-key/value
+size; `score_threshold` accepted bools/out-of-range the search core refuses;
+usage claims admitted JSON `true` as a token count (all now sieve
+int-not-bool); `openai_completion_envelope.model` last-wins (now `+`-joined
+like `system_fingerprint`); `tool_calls` non-dict provider payloads crashed
+bare-500 on the hostile-BYOK path (now sieved); Anthropic
+`tool_result.is_error` silently dropped (tool failure reached the model as
+success — refused); `_messages_to_openai` emitted user text before tool
+messages regardless of block order (causality inversion — now caller order).
+`chat.py`/`contract.py` verified clean. 79 adversarial probes across
+`tests/fx1/test_serve_{openai_compat,anthropic_compat,chat,contract}_adversarial.py`
+— SYNTHETIC, deterministic, loopback-only.
+### Serve transport leaves audit (PR #2946)
+
+Line-level audit of `client.py`, `backends.py`, `signing.py`. Ten real
+defects fixed: `_urllib_transport` followed redirects while urllib replays
+`X-API-Key` to the target — cross-origin included, 307 replaying a
+credentialed POST — now opens through the `_RefuseRedirects` seam backends
+already used (verified against live loopback redirect servers); `_map_error`
+echoed unbounded peer `detail`/`code` (capped 500/128); `HTTPError` body-read
+leaked raw reset/OSError past the envelope taxonomy; `base_url` accepted
+userinfo/query/fragment/bad ports; `X-Fx1-Receipt-Valid` read
+case-sensitively; ~16 client path segments unquoted or `safe='/'` (id '/'
+reached sibling routes); `upload_file` Content-Disposition injection via
+filename/purpose refused; `HostedK3Backend.complete` unguarded dig → bare
+KeyError on malformed 2xx; `LocalFx1Backend.stream` skipped the
+unconfigured-backend refusal (spawned phantom engine); `sign_release`
+`write_*` resolved a pre-planted `release.sig` symlink → `O_NOFOLLOW` writes.
+Re-pins only to measured behavior (client_audit ×4, resource_cleanup mocks
+urlopen→build_opener). Adversarial probes in
+`tests/fx1/test_serve_{client,backends,signing}_adversarial.py`.
+### Serve job/data leaves audit (PR #2949)
+
+Line-level audit of `evals.py`, `finetune.py`, `keys.py`, `uploads.py`,
+`vectorstores.py`. Twelve real defects fixed: journal-after-mutation on
+evals put/delete (replay divergence + resurrection) → journal-then-mutate;
+eval spec update raced delete → compute-under-lock; `spec_wire` shared live
+containers → deepcopy; finetune queued→running clobber of cancel/pause →
+atomic `FTJobStore.start()` under store lock; post-artifact publish forced
+`succeeded` over a landed cancel → flag re-check; parked worker leaked on
+eviction → `_drop` releases resume; unknown cursors → 400 invalid_cursor;
+uploads terminal evictees resurrected on restart → all ids journaled;
+uploads LRU ignored live activity → `move_to_end` on access + replay; keys
+malformed journaled records dropped silently → warned + disabled default
+(fail closed); vectorstores `chunking_strategy` swallowed by extra=allow →
+wired end-to-end; vectorstores wire objects + frozen batch rows shared live
+nested containers → deepcopy. 45 adversarial probes; 216 touched-module +
+50 key-recovery tests green.
+### Extensions leaves audit (PR #2951)
+
+Line-level audit of `extensions/{naming,registry,contracts,feature_catalog}.py`.
+Two fail-closed fixes: `list_extensions` refuses owner collisions
+(`module_basename` maps `-`→`_` non-injectively — two owners could emit one
+module path); `extension_manifest` kind dispatch made explicit
+(`elif feature` + `else: raise` — unknown kinds no longer described as
+features). Remaining modules verified clean (identity-triple binding,
+foreign-record sieve, frozen catalog, `market_evidence: False`). 15
+adversarial probes in `tests/fx1/test_extensions_adversarial.py`.
+### Serve receipt-spine leaves audit (PR #2952)
+
+Line-level audit of `journal.py`, `webhooks.py`, `usage_report.py`,
+`ops_receipt.py`, `receipt_store.py`, `attestation.py`. Four real defects:
+`verify_artifacts_exist` resolved relative proof paths against process cwd —
+a checkpoint could claim proofs that exist nowhere near it, and directories /
+`""` counted (now anchored at `manifest_path.parent`, regular files only);
+empty `proof_artifacts` vacuously verified, lighting the tier-3 rung for zero
+proofs; whitespace-only TEE `signature` passed `verify_quote` and the ladder
+rung (real signature material now required); `webhooks.py` admitted
+`192.88.99.0/24` (6a44 relay) and `fec0::/10` (IPv6 site-local) as *global*
+destinations with no opt-in — deprecated unroutable space now refused
+unconditionally at literal validation and delivery-time DNS re-resolution.
+Dead `_appends_since_compact` store removed. 70 adversarial probes across 6
+files — SYNTHETIC, deterministic, loopback-only.
+### Operations IO leaves audit (PR #2956)
+
+Line-level audit of `operations/{base,registry,read_jsonl,read_csv,read_toml,
+inspect_zip,inspect_numpy_array,inspect_parquet,verify_file_hash}.py` plus
+~1000 fuzz iterations and ~90 targeted hostile inputs. Zero defects — the
+cluster is already closed-world: dir-fd `O_NOFOLLOW` traversal + handle
+inspection, descriptor-pinned hashing (hash/size can't race a rename swap),
+layered byte/record/column/field/page budgets, literal-header NPY parsing,
+thrift caps, literal-map registry binding. 107 adversarial probes pin the
+measured contracts; residue documented (`resolve_file` inspect-only TOCTOU,
+CSV/TOML formula-looking passthrough, NPY trailing comments, unix-attr
+symlink detection).
+### Operations audit_* leaves audit (PR #2957)
+
+Line-level audit of the 12 `operations/audit_*.py` verifiers. Zero defects —
+the verifiers already fail closed (corrupt inputs produce violations or
+reject at the Input boundary; every unassessed case yields a named
+tri-state verdict, never a vacuous green). 179 adversarial probes pin the
+measured contracts: strict `>` decision boundaries, missing≠null≠empty
+channels, canonical-JSON type sensitivity, timezone-equivalent instant
+folding, lossless compatible_numbers compare (2^53+1 vs 2^53.0), exact
+diagnostic counts under caps, out-of-order input never re-sorted,
+repeat-run determinism + JSON finiteness.
+### Operations compute leaves audit (PR #2961)
+
+Line-level audit of the 21 remaining `operations/` compute/select/score
+modules: `resolve_security_identity`, `join_asof_observations`,
+`select_universe_membership`, `select_asof_revisions`,
+`summarize_ingestion_latency`, `spectral_summary`, `time_weighted_mean`,
+`permutation_entropy`, `rolling_linear_trend`, `rolling_autocorrelation`,
+`rolling_mad`, `bipower_variation`, `score_binary_forecasts`,
+`score_intervals`, `score_empirical_crps`, `score_quantiles`,
+`rolling_zscore`, `rolling_rank`, `drawdown_path`, `ewma_variance`,
+`simple_returns`. Zero defects — every module was cross-validated
+against an independent reference: CRPS vs its quadratic form, interval
+score vs the Gneiting–Raftery form, seeded random instances for the
+as-of joins/identity/membership/TWM legs, and naive recomputation of
+every rolling statistic. Verified-correct edges pinned: no look-ahead
+anywhere (activation is `max(event, avail)` bounded by decision time;
+early-published future events cannot leak), lexicographic revision
+tie-break ('r9' > 'r10'), same-clock conflicts fail closed or surface
+`ambiguous`, EWMA forecast at t excludes return t, bipower
+scaled-product accumulation survives individually-underflowing
+products, spectral constant-input is explicitly zeroed, log loss
+reports `positive_infinity` on impossible endpoints. 113 adversarial
+probes across `tests/fx1/test_ops_compute_{asof,scores,series}_adversarial.py`
+— SYNTHETIC, deterministic, seeded.

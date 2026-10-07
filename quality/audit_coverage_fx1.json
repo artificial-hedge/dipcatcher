@@ -16,7 +16,9 @@
       "status": "audited"
     },
     "extensions": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited",
+      "n_modules": 94
     },
     "forecast": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -24,13 +26,14 @@
       "status": "audited"
     },
     "operations": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited",
+      "n_modules": 43
     },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 54,
-      "status": "partial",
-      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
+      "status": "audited",
+      "n_modules": 54
     },
     "train": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -61,6 +64,382 @@
       "status": "audited"
     },
     "ext_bench_audit.py": {
+      "status": "audited"
+    },
+    "extensions/__init__.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/contracts.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/feature_catalog.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/__init__.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/adv.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/adv_ratio_20_60.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/amihud.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/amihud_60.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/beta_60.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/cs_z_planted_signal.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/cs_z_ret_1.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/dollar_volume.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/downside_vol_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/high_52w_prox.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/idio_mom_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/idio_vol_60.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/kurt_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/log_price.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/log_ret_1.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/max_ret_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/min_ret_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/mom_126.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/mom_12_1.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/mom_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/mom_252.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/mom_5.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/mom_60.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/mom_skip_5_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/planted_signal.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/rel_volume.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/ret_1.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/ret_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/ret_5.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/ret_intraday_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/ret_open_close.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/ret_overnight.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/ret_overnight_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/reversal_1.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/skew_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/turnover_proxy.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/vol_20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/vol_60.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/vol_ewma.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/vol_garman_klass.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/vol_of_vol.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/vol_parkinson.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/vol_ratio_20_60.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/volume_vol.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/features/z_vs_ma20.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/naming.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/__init__.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/binance_crypto.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/caixin.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/cls.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/dongcai.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/finance_fetch.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/finance_research.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/finenter.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/gildata.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/ifind.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/igo_open_data.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/imf.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/sec_edgar.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/sp_data.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/tianyancha.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/wind.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/world_bank.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/xhcj.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/plugins/yahoo_finance.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/registry.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/__init__.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/backtest.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/book_panel.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/build_features.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/build_labels.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/candle_book.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/collect.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/doctor.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/forecast.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/ingest.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/kronos_forecast.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/kyle_ofi.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/monitor.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/northset.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/optimize.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/paper.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/report.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/research.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/session_book.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/tearsheet.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/train.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/validate.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/vendor_book_map.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/skills/verify_research.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
     "harness.py": {
