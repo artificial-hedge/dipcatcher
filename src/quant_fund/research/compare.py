@@ -196,7 +196,10 @@ def load_run(path: str | Path) -> RunData:
     series = {
         key: values
         for key, values in _flatten_series(payload).items()
-        if not _is_forbidden_key(key)
+        # Config-root numeric lists (params.taus, inputs.seeds, ...) are
+        # settings, not score series — the same exclusion the scalar path
+        # applies, or a config diff is reported as paired score evidence.
+        if not _is_forbidden_key(key) and key.split(".", 1)[0] not in _CONFIG_ROOT_KEYS
     }
     config = {key: payload[key] for key in _CONFIG_ROOT_KEYS if key in payload}
     return RunData(
@@ -670,11 +673,22 @@ def build_compare_receipt(comparison: RunComparison, *, version: int = 1) -> dic
         raise ValueError("receipt version must be 1 or 2")
     from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
 
+    real_verdicts = {
+        _VERDICT_NO_EFFECT,
+        _VERDICT_NO_DIFF,
+        _VERDICT_A_BETTER,
+        _VERDICT_B_BETTER,
+        _VERDICT_AMBIGUOUS,
+    }
+    # verdict follows the evidence: a compare whose every aligned series
+    # failed to reach inference (insufficient / unaligned / inconclusive) —
+    # or which aligned nothing — is not a pass.
+    ran = any(comp.verdict in real_verdicts for comp in comparison.series)
     return seal_receipt(
         wrap_receipt_v2(
             document,
             code_files=(Path(__file__),),
-            verdict="pass",
+            verdict="pass" if ran else "fail",
             kind=COMPARE_RECEIPT_SCHEMA,
             data_label=COMPARE_DATA_LABEL,
             dataset={

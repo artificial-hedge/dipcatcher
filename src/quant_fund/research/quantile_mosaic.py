@@ -171,6 +171,8 @@ def quantile_consistency(
     """
     t = _check_taus(taus)
     q = _check_grid(np.asarray(quantiles), len(t))
+    if q.shape[0] == 0:
+        raise ValueError("quantile grid must have at least one row")
     diffs = np.diff(q, axis=1)
     crossed_rows = np.nonzero(np.any(diffs < 0.0, axis=1))[0]
     if strict and crossed_rows.size:

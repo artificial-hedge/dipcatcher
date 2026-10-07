@@ -367,6 +367,66 @@
       "evidence": [
         "tests/unit/models/test_c51_rl.py"
       ]
+    },
+    "research/agent.py": {
+      "status": "audited"
+    },
+    "research/changepoint_localize.py": {
+      "status": "audited"
+    },
+    "research/compare.py": {
+      "status": "audited"
+    },
+    "research/concordance.py": {
+      "status": "audited"
+    },
+    "research/cross_sectional.py": {
+      "status": "audited"
+    },
+    "research/drift_alarm.py": {
+      "status": "audited"
+    },
+    "research/fleet_eval.py": {
+      "status": "audited"
+    },
+    "research/fleet_race.py": {
+      "status": "audited"
+    },
+    "research/lane_power.py": {
+      "status": "audited"
+    },
+    "research/multih_fleet.py": {
+      "status": "audited"
+    },
+    "research/net_replay.py": {
+      "status": "audited"
+    },
+    "research/net_tournament.py": {
+      "status": "audited"
+    },
+    "research/quantile_ladder.py": {
+      "status": "audited"
+    },
+    "research/quantile_mosaic.py": {
+      "status": "audited"
+    },
+    "research/ranker_probability.py": {
+      "status": "audited"
+    },
+    "research/reality_survivorship.py": {
+      "status": "audited"
+    },
+    "research/reality_sweep.py": {
+      "status": "audited"
+    },
+    "research/expert_mixture.py": {
+      "status": "audited"
+    },
+    "research/capability_value.py": {
+      "status": "audited"
+    },
+    "research/capacity_overlay.py": {
+      "status": "audited"
     }
   },
   "schema_version": "audit-coverage/v1",

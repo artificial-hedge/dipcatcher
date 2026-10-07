@@ -123,7 +123,9 @@ def _h_step_dispersion_ratio(
     ratio = np.full(n, np.nan)
     for i, t in enumerate(origins):
         lo = max(0, t - lookback)
-        window = y[lo : t + 1]  # returns up to and including the origin bar
+        # Strictly-past returns only: the scored h-step target begins at the
+        # origin bar, so including y[t] would leak the target's first element.
+        window = y[lo:t]
         if window.size < h + 4:
             continue
         s1 = float(np.std(window))
@@ -216,7 +218,11 @@ def _score_head_horizon(
         ]
 
     for tag, qh in constructions:
-        if not np.isfinite(qh).all() or np.any(np.diff(qh, axis=1) < -1e-12):
+        # Non-finite quantiles are a scored failure, never an "ok" row:
+        # NaN would silently propagate through the accumulate repair below.
+        if not np.isfinite(qh).all():
+            raise ValueError(f"{tag} construction produced non-finite quantiles")
+        if np.any(np.diff(qh, axis=1) < -1e-12):
             qh = np.maximum.accumulate(np.asarray(qh, dtype=float), axis=1)
         metrics: dict[str, Any] = {"crps": None, "pit_ks": None}
         metrics["crps"] = crps_from_quantiles(y_target, qh, taus)
@@ -376,7 +382,17 @@ def multih_fleet_consistency_errors(body: Mapping[str, Any]) -> list[str]:
     leaders = payload.get("leaders")
     if not isinstance(rows, list) or not isinstance(leaders, dict):
         return []
-    pinball_keys = [k for k in rows[0] if k.startswith("pinball_")] if rows else []
+    # Re-derive the pinball metric fields from the ok rows — an error row
+    # first in the list must not empty the key set and false-flag leaders.
+    pinball_keys = sorted(
+        {
+            key
+            for row in rows
+            if isinstance(row, Mapping) and row.get("status") == "ok"
+            for key in row
+            if key.startswith("pinball_")
+        }
+    )
     errors: list[str] = []
     recomputed: dict[str, str] = {}
     cells: dict[str, list[Mapping[str, Any]]] = {}

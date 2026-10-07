@@ -249,3 +249,64 @@ def test_lane_is_registered_with_the_receipt_verifier() -> None:
     module, func, _label = _LANE_CONSISTENCY_OUTER_KIND[EXPERT_MIXTURE_KIND]
     assert module == "quant_fund.research.expert_mixture"
     assert func == "expert_mixture_consistency_errors"
+
+
+def test_ewa_and_fixed_share_survive_alternating_dominance() -> None:
+    """Regime flips where every expert is catastrophic somewhere used to
+    underflow the whole weight vector to 0/0 = NaN. Weights must stay a
+    finite simplex even when no expert dominates everywhere."""
+    k, t = 3, 1400
+    losses = np.full((k, t), 0.001)
+    losses[[0, 2], :700] = 0.02  # heads 0,2 catastrophic early
+    losses[1, 700:] = 0.02  # head 1 catastrophic late — all heads eventually zeroed
+    for w in (ewa_weights(losses), fixed_share_weights(losses, alpha=0.05)):
+        assert np.isfinite(w).all()
+        assert np.all(w >= 0.0)
+        np.testing.assert_allclose(w.sum(axis=0), 1.0, atol=1e-10)
+
+
+def test_verdict_fails_when_every_row_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The receipt verdict follows the error rows: a bench that recorded only
+    expert failures produced no usable evidence — never a pass."""
+    from quant_fund.research import expert_mixture as em
+
+    class _DeadHead:
+        def fit(self, x, y, **kw):
+            raise RuntimeError("synthetic outage")
+
+    monkeypatch.setattr(
+        em,
+        "fleet_head_factories",
+        lambda *a, **k: {"dead": _DeadHead},
+    )
+    _, receipt = em.run_expert_mixture_eval(
+        seed=0,
+        n_train=192,
+        n_eval=64,
+        alpha=0.05,
+        head_names=["dead"],
+        shard_names=["iid_gaussian"],
+        taus=TAUS,
+    )
+    assert receipt["payload"]["n_error_rows"] == receipt["payload"]["n_rows"] > 0
+    assert receipt["verdict"] == "fail"
+
+
+def test_payload_counts_error_rows() -> None:
+    """n_error_rows is the field the verdict reads — it must count non-ok
+    rows exactly."""
+    from quant_fund.research.expert_mixture import run_expert_mixture
+
+    factories = fleet_head_factories(TAUS, 0, names=HEADS[:2])
+
+    class _DeadHead:
+        def fit(self, x, y, **kw):
+            raise RuntimeError("deliberate failure")
+
+    factories = dict(factories)
+    factories["dead"] = _DeadHead
+    _, payload = run_expert_mixture(
+        factories, ["iid_gaussian"], n_train=192, n_eval=64, seed=0, taus=TAUS
+    )
+    assert payload["n_error_rows"] == 1
+    assert payload["n_error_rows"] < payload["n_rows"]

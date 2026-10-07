@@ -595,3 +595,17 @@ def test_dataset_sha256_edges_monitor_run_on_same_shards() -> None:
     )
     assert fleet_receipt["dataset_sha256"] == mon_receipt["dataset_sha256"]
     assert fleet_receipt["inputs_sha256"] != mon_receipt["inputs_sha256"]
+
+
+def test_fleet_v1_audit_tau_grid_format_parity() -> None:
+    """A tau whose str() and :g spellings differ (float grid noise) must audit
+    clean — writer keys are _pinball_key(tau) == f"pinball_{tau:g}"."""
+    from quant_fund.research.fleet_eval import fleet_v1_audit_errors
+
+    noisy_taus = (0.1, 0.30000000000000004, 0.9)  # str() → '0.30000000000000004', :g → '0.3'
+    fac = {"empirical": lambda: EmpiricalDistribution(list(noisy_taus))}
+    _, receipt = run_distribution_fleet(
+        fac, shards=["iid_gaussian"], n_train=128, n_eval=64, seed=0, taus=noisy_taus
+    )
+    errors = fleet_v1_audit_errors(receipt)
+    assert errors == [], errors
