@@ -110,7 +110,8 @@ def test_committed_receipt_revision_is_source_commit() -> None:
     missing the object)."""
     payload = json.loads(Path("receipts/fx1_client_retry_audit.json").read_text())
     rev = payload.get("git_revision")
-    assert isinstance(rev, str) and re.fullmatch(r"[0-9a-f]{40}", rev)
+    assert isinstance(rev, str)
+    assert re.fullmatch(r"[0-9a-f]{40}", rev)
     probe = subprocess.run(
         ["git", "cat-file", "-e", f"{rev}^{{commit}}"],
         capture_output=True,
@@ -205,5 +206,6 @@ def test_scripted_transport_repeats_last_step() -> None:
         cli.commands()
     except HarnessTransportError as e:
         exc = e
-    assert exc is not None and "dial failed" in str(exc)
+    assert exc is not None
+    assert "dial failed" in str(exc)
     assert len(calls) == 3

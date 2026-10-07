@@ -115,6 +115,9 @@ _RA = "Retry-After"
 _ERR_BODY = b'{"detail":"refused","code":"refused_test"}'
 _ITEMS_BODY = b'{"items":[{"name":"alpha"},{"name":"beta"}]}'
 _MSGS: list[dict[str, str]] = [{"role": "user", "content": "ping"}]
+_DIAL = "dial failed"
+_CIRCUIT = "circuit open"
+_CMDS = "/harness/commands"
 _COMP_OK: _Step = (
     200,
     {},
@@ -189,7 +192,7 @@ def _exc(fn: Callable[[], Any]) -> BaseException | None:
     """The exception ``fn`` raised (None when it returned)."""
     try:
         fn()
-    except BaseException as exc:  # noqa: BLE001 — measuring the raised class
+    except Exception as exc:  # noqa: BLE001
         return exc
     return None
 
@@ -242,7 +245,7 @@ def _probe_attempt_counts() -> dict[str, bool]:
     ok: _Step = (200, {}, _ITEMS_BODY)
     ra429: _Step = (429, {_RA: "0"}, _ERR_BODY)
     ra503: _Step = (503, {_RA: "0"}, _ERR_BODY)
-    fault = HarnessTransportError("dial failed")
+    fault = HarnessTransportError(_DIAL)
 
     c, calls, _ = _scripted(ra429)
     out["no_retries_means_one_call"] = _exc(_mk(c).commands) is not None and len(calls) == 1
@@ -291,9 +294,9 @@ def _probe_attempt_counts() -> dict[str, bool]:
     cli = _mk(c, max_retries=3, sleep=lambda s: None)
     cli.commands()
     out["retries_hit_same_path"] = calls == [
-        ("GET", "/harness/commands"),
-        ("GET", "/harness/commands"),
-        ("GET", "/harness/commands"),
+        ("GET", _CMDS),
+        ("GET", _CMDS),
+        ("GET", _CMDS),
     ]
     return out
 
@@ -307,7 +310,7 @@ def _probe_sleep_arithmetic() -> dict[str, bool]:
     from fx1.serve.client import HarnessTransportError
 
     ok: _Step = (200, {}, _ITEMS_BODY)
-    fault = HarnessTransportError("dial failed")
+    fault = HarnessTransportError(_DIAL)
 
     def runs(
         *steps: _Step | BaseException, **kw: Any
@@ -440,7 +443,7 @@ def _probe_error_lifecycle() -> dict[str, bool]:
     s503: _Step = (503, {"X-Err": "2"}, b'{"detail":"busy","code":"over_capacity"}')
     s429: _Step = (429, {"X-Err": "3"}, _ERR_BODY)
     s404: _Step = (404, {"X-Err": "4"}, b'{"detail":"nope","code":"missing"}')
-    fault = HarnessTransportError("dial failed")
+    fault = HarnessTransportError(_DIAL)
 
     # mapped 500 is a HarnessTransportError → headers cleared on escape
     tr, _, _ = _scripted(s500)
@@ -525,7 +528,7 @@ def _probe_circuit_interplay() -> dict[str, bool]:
     from fx1.serve.client import HarnessTransportError
 
     ok: _Step = (200, {}, _ITEMS_BODY)
-    fault = HarnessTransportError("dial failed")
+    fault = HarnessTransportError(_DIAL)
     ra503: _Step = (503, {_RA: "0"}, b'{"detail":"busy","code":"over_capacity"}')
 
     # an exhausted 503+RA maps to BackendNotConfiguredError → no trip
@@ -558,9 +561,7 @@ def _probe_circuit_interplay() -> dict[str, bool]:
     _exc(cli.commands)
     exc = _exc(cli.commands)
     out["threshold_one_opens_on_first_fault"] = (
-        type(exc).__name__ == "HarnessTransportError"
-        and "circuit open" in str(exc)
-        and len(calls) == 1
+        type(exc).__name__ == "HarnessTransportError" and _CIRCUIT in str(exc) and len(calls) == 1
     )
 
     # past reset, the next call is a real probe: success closes the gate
@@ -577,7 +578,7 @@ def _probe_circuit_interplay() -> dict[str, bool]:
     clock_t[0] += 1.0
     _exc(cli.commands)  # probe faults → trip → open at clock+30
     exc = _exc(cli.commands)
-    out["half_open_fault_reopens"] = "circuit open" in str(exc) and len(calls3) == 1
+    out["half_open_fault_reopens"] = _CIRCUIT in str(exc) and len(calls3) == 1
 
     # open-until boundary is strict <: exactly at the deadline the gate opens
     clock_t[0] += 30.0
@@ -602,9 +603,31 @@ def _probe_circuit_interplay() -> dict[str, bool]:
     _exc(cli.commands)
     out["open_circuit_never_sleeps"] = sleeps == []
 
-    # half-open is single-probe under contention: with the window lapsed,
-    # eight threads released together admit exactly ONE transport probe;
-    # the rest fail fast without dialing.
+    _probe_half_open_contention(out, fault, clock_t)
+
+    # consecutive counting: a success between faults holds the gate open
+    tr, calls, _ = _scripted(fault, ok, fault, fault)
+    cli = _mk(
+        tr,
+        sleep=lambda s: None,
+        circuit_breaker_threshold=2,
+        circuit_reset_s=30.0,
+        clock=lambda: clock_t[0],
+    )
+    _exc(cli.commands)
+    cli.commands()
+    _exc(cli.commands)
+    _exc(cli.commands)
+    exc = _exc(cli.commands)
+    out["counter_needs_consecutive_faults"] = _CIRCUIT in str(exc) and len(calls) == 4
+    return out
+
+
+def _probe_half_open_contention(
+    out: dict[str, bool], fault: Exception, clock_t: list[float]
+) -> None:
+    """Half-open admits exactly one transport probe: eight threads
+    released together race the admit; seven fail fast without dialing."""
     tr, calls, _ = _scripted(fault)
     clock_t[0] += 30.0
     probe_gate = threading.Event()
@@ -635,8 +658,9 @@ def _probe_circuit_interplay() -> dict[str, bool]:
         try:
             cli.commands()
             outcomes.append("ok")
-        except Exception as exc:  # noqa: BLE001 — audit records classes
-            outcomes.append("circuit" if "circuit open" in str(exc) else type(exc).__name__)
+        except Exception as exc:  # noqa: BLE001
+            # audit records the raised class
+            outcomes.append("circuit" if _CIRCUIT in str(exc) else type(exc).__name__)
         finally:
             if len(outcomes) == 7:
                 probe_gate.set()  # all seven losers answered — release the probe
@@ -650,23 +674,6 @@ def _probe_circuit_interplay() -> dict[str, bool]:
         outcomes.count("ok") == 1 and outcomes.count("circuit") == 7 and len(dialed) == 1
     )
 
-    # consecutive counting: a success between faults holds the gate open
-    tr, calls, _ = _scripted(fault, ok, fault, fault)
-    cli = _mk(
-        tr,
-        sleep=lambda s: None,
-        circuit_breaker_threshold=2,
-        circuit_reset_s=30.0,
-        clock=lambda: clock_t[0],
-    )
-    _exc(cli.commands)
-    cli.commands()
-    _exc(cli.commands)
-    _exc(cli.commands)
-    exc = _exc(cli.commands)
-    out["counter_needs_consecutive_faults"] = "circuit open" in str(exc) and len(calls) == 4
-    return out
-
 
 def _probe_timeout_and_key_on_wire() -> dict[str, bool]:
     """``timeout_s`` reaches the transport verbatim on every attempt;
@@ -676,7 +683,7 @@ def _probe_timeout_and_key_on_wire() -> dict[str, bool]:
     from fx1.serve.client import HarnessTransportError
 
     ok: _Step = (200, {}, _ITEMS_BODY)
-    fault = HarnessTransportError("dial failed")
+    fault = HarnessTransportError(_DIAL)
 
     timeouts: list[float] = []
     tr, calls, hdrs = _scripted(fault, fault, ok)
@@ -773,7 +780,7 @@ def _probe_retry_under_parallelism() -> dict[str, bool]:
 
     def send2(*a: Any) -> Any:
         calls2.append(1)
-        raise HarnessTransportError("dial failed")
+        raise HarnessTransportError(_DIAL)
 
     cli2 = _mk(
         send2,
@@ -788,7 +795,7 @@ def _probe_retry_under_parallelism() -> dict[str, bool]:
     def worker2() -> None:
         barrier2.wait()
         e = _exc(cli2.commands)
-        if e is not None and "circuit open" in str(e):
+        if e is not None and _CIRCUIT in str(e):
             failfast.append("open")
 
     threads2 = [threading.Thread(target=worker2) for _ in range(n2)]
