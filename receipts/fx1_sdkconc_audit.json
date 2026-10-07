@@ -115,11 +115,11 @@
     ]
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "83609ab99814fc31c98db7e55616b7c661c11a3c",
+  "git_revision": "77ce38db7c874c07697ec24cd29e180397281c47",
   "interpretation": "Every probe is a measured statement about SDK concurrency behavior \u2014 Fx1Harness thread-safety, ContextVar hygiene, HarnessClient retry/timeout/circuit-breaker correctness \u2014 exercised end to end against real transports and stores.",
   "kind": "fx1_sdkconc_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "1597fef14817363f317aff3a995dfe5d9e1c6eafcff9f562837880e803950247",
+  "receipt_sha256": "eaf215fb46818138dce374d34c541304c680795362074ce3531efe5b0e0aab38",
   "research_only": true,
   "schema": "fx1_sdkconc_audit.v1"
 }
