@@ -732,6 +732,9 @@
   "models/rvine.py": {
    "status": "audited"
   },
+  "models/sabr.py": {
+   "status": "audited"
+  },
   "models/sbi.py": {
    "status": "audited"
   },
