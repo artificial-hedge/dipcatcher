@@ -906,6 +906,12 @@ def _replay_driver(
     )
 
 
+def _require_no_risk_overlay(risk_overlay: Any) -> None:
+    """Fast replay never runs with a market-risk overlay (fail closed)."""
+    if risk_overlay is not None:
+        raise ValueError("fast replay does not support risk_overlay")
+
+
 def run_backtest_fast(
     bars: pl.DataFrame,
     weights: pl.DataFrame,
@@ -927,8 +933,7 @@ def run_backtest_fast(
             f"(spread_estimator={config.costs.spread_estimator!r}); "
             "use run_backtest(..., fast=False) for the calibrated cost path"
         )
-    if risk_overlay is not None:
-        raise ValueError("fast replay does not support risk_overlay")
+    _require_no_risk_overlay(risk_overlay)
     _validate_panel_fast(weights)
     # Shared with the event loop: duplicate bar keys raise the same
     # ValueError("duplicate bars …") rather than a fast-only refuse string.

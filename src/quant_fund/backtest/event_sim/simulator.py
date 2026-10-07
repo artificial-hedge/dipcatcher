@@ -126,8 +126,7 @@ class EventSimSpec:
             "block",
         ):
             raise ValueError("pdt_mode and gfv_mode must be off, warn, or block")
-        if self.fee_schedule not in ("bps", "alpaca"):
-            raise ValueError("fee_schedule must be bps or alpaca")
+        _require_fee_schedule(self.fee_schedule)
         for label, value in (
             ("ac_eta", self.ac_eta),
             ("ac_gamma", self.ac_gamma),
@@ -142,6 +141,12 @@ class EventSimSpec:
             raise ValueError("ac_tau must be finite and > 0")
         if self.taf_min > self.taf_max:
             raise ValueError("taf_min cannot exceed taf_max")
+
+
+def _require_fee_schedule(fee_schedule: str) -> None:
+    """Reject unknown fee schedules."""
+    if fee_schedule not in ("bps", "alpaca"):
+        raise ValueError("fee_schedule must be bps or alpaca")
 
 
 @dataclass
@@ -757,6 +762,13 @@ def _count_overlay(state: _State, source: str | None, bar_index: int) -> None:
         state.garch_overlay_dates += 1
 
 
+def _rounded_delta(delta: float, *, legacy: bool, spec: EventSimSpec) -> float:
+    """Apply the spec's share rounding (legacy zero-extra specs pass through)."""
+    if not legacy:
+        return round_shares(delta, fractional=spec.fractional_shares)
+    return delta
+
+
 def _rebalance_next_open(
     state: _State,
     *,
@@ -800,8 +812,7 @@ def _rebalance_next_open(
         desired = tw * nav / price
         current = state.book.shares.get(sid, 0.0)
         delta = desired - current
-        if not legacy:
-            delta = round_shares(delta, fractional=spec.fractional_shares)
+        delta = _rounded_delta(delta, legacy=legacy, spec=spec)
         if abs(delta) * price < (1.0 if legacy else spec.min_notional):
             continue
         adv = snap.adv.get(sid)
@@ -1165,6 +1176,13 @@ def _rebalance_path(
             )
 
 
+def _decay_resting(state: _State, resting: _Resting) -> None:
+    """Tick one unfillable bar and expire the order when its budget is spent."""
+    resting.bars_left -= 1
+    if resting.bars_left <= 0:
+        state.resting.pop(resting.sid, None)
+
+
 def _advance_resting(
     state: _State,
     resting: _Resting,
@@ -1187,9 +1205,7 @@ def _advance_resting(
         return
     row = _row_on(rows, exec_time, resting.sid)
     if row is None:
-        resting.bars_left -= 1
-        if resting.bars_left <= 0:
-            state.resting.pop(resting.sid, None)
+        _decay_resting(state, resting)
         return
     try:
         volume = float(row.get("volume") or 0.0)
@@ -1198,9 +1214,7 @@ def _advance_resting(
     if resting.kind == "vwap":
         px = bar_vwap_price(row)
         if px is None or not math.isfinite(volume) or volume <= 0.0:
-            resting.bars_left -= 1
-            if resting.bars_left <= 0:
-                state.resting.pop(resting.sid, None)
+            _decay_resting(state, resting)
             return
         sign = 1.0 if resting.remaining > 0 else -1.0
         take = sign * min(abs(resting.remaining), volume)
@@ -1232,9 +1246,7 @@ def _advance_resting(
         return
     book = books.get((resting.sid, exec_time))
     if book is None or not math.isfinite(volume) or volume < 0.0:
-        resting.bars_left -= 1
-        if resting.bars_left <= 0:
-            state.resting.pop(resting.sid, None)
+        _decay_resting(state, resting)
         return
     touch_px, touch_sz = touch(book, resting.side)
     step = advance_queue(
