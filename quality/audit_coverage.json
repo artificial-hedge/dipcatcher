@@ -417,6 +417,9 @@
   "models/covariance.py": {
    "status": "audited"
   },
+  "models/cs_papers.py": {
+   "status": "audited"
+  },
   "models/cv_plus.py": {
    "status": "audited"
   },
@@ -480,6 +483,9 @@
   "models/fbm.py": {
    "status": "audited"
   },
+  "models/fukasawa_iv.py": {
+   "status": "audited"
+  },
   "models/gaussian_normalized_coords.py": {
    "status": "audited"
   },
@@ -490,6 +496,9 @@
    "status": "audited"
   },
   "models/hawkes_em.py": {
+   "status": "audited"
+  },
+  "models/hidden_markov_equilibrium.py": {
    "status": "audited"
   },
   "models/hierarchical_conformal.py": {
@@ -505,6 +514,9 @@
    "status": "audited"
   },
   "models/kinetic_ising.py": {
+   "status": "audited"
+  },
+  "models/kit_paths.py": {
    "status": "audited"
   },
   "models/kronos.py": {
@@ -532,6 +544,9 @@
    "status": "audited"
   },
   "models/nbeats.py": {
+   "status": "audited"
+  },
+  "models/neural_sde.py": {
    "status": "audited"
   },
   "models/neural_tpp.py": {
