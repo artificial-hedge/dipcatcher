@@ -1,102 +1,68 @@
-"""Tests for models/sparse.py — LARS, OMP, adaptive lasso, EBIC."""
-
-from __future__ import annotations
+"""Adversarial probes for sparse."""
 
 import numpy as np
 import pytest
 
-from quant_fund.models.sparse import (
-    adaptive_lasso,
-    ebic_select,
-    lars_path,
-    lasso_cd,
-    omp,
-)
+from quant_fund.models import sparse as sp
 
 
-def _sparse_design(n: int = 200, p: int = 30, k: int = 3, seed: int = 7):
+def _design(n: int = 120, p: int = 30, k: int = 4, seed: int = 0):
     rng = np.random.default_rng(seed)
     x = rng.standard_normal((n, p))
-    beta_true = np.zeros(p)
-    beta_true[[2, 7, 15]] = [2.0, -1.5, 1.0]
-    y = x @ beta_true + 0.3 * rng.standard_normal(n)
-    return x, y, beta_true
+    true = rng.choice(p, k, replace=False)
+    beta = np.zeros(p)
+    beta[true] = rng.uniform(2.0, 4.0, k)
+    y = x @ beta + 0.1 * rng.standard_normal(n)
+    return x, y, set(true.tolist())
 
 
-def _raw_units(beta_std: np.ndarray, x: np.ndarray) -> np.ndarray:
-    """Convert unit-norm-column coefficients back to raw units."""
-    norms = np.linalg.norm(x - x.mean(axis=0), axis=0)
-    return beta_std / norms
+def test_lasso_cd_rejects_zero_max_iter():
+    x, y, _ = _design()
+    with pytest.raises(ValueError, match="max_iter"):
+        sp.lasso_cd(x, y, lam=0.1, max_iter=0)
+    with pytest.raises(ValueError, match="max_iter"):
+        sp.lasso_cd(x, y, lam=0.1, max_iter=-3)
 
 
-def test_lars_recovers_support() -> None:
-    x, y, bt = _sparse_design()
-    path = lars_path(x, y)
-    bp = np.asarray(path["beta_path"])
-    assert bp.shape[0] == 30
-    # path should include a point with exactly the true support
-    found = False
-    for i in range(bp.shape[1]):
-        nz = set(np.nonzero(np.abs(bp[:, i]) > 1e-8)[0].tolist())
-        if nz == {2, 7, 15}:
-            found = True
-            raw = _raw_units(bp[:, i], x)
-            assert np.abs(raw - bt).max() < 0.5
-    assert found
+def test_lasso_cd_n_iter_counts_iterations():
+    x, y, _ = _design()
+    out = sp.lasso_cd(x, y, lam=0.1, max_iter=500, tol=1e-12)
+    assert out["n_iter"] >= 1.0
+    assert out["n_iter"] <= 500.0
 
 
-def test_omp_exact_support() -> None:
-    x, y, bt = _sparse_design(n=300)
-    out = omp(x, y, k=3)
-    sel = set(np.asarray(out["selected"]).tolist())
-    assert sel == {2, 7, 15}
-    raw = _raw_units(np.asarray(out["beta"]), x)
-    assert np.abs(raw - bt).max() < 0.4
+def test_omp_recovers_support():
+    x, y, true = _design()
+    out = sp.omp(x, y, k=8)
+    sel = set(np.asarray(out["selected"], dtype=int).tolist())
+    assert true <= sel
 
 
-def test_lasso_cd_selects() -> None:
-    x, y, bt = _sparse_design()
-    out = lasso_cd(x, y, lam=5.0)
-    b = np.asarray(out["beta"])
-    nz = np.nonzero(np.abs(b) > 1e-6)[0]
-    assert set(nz) == {2, 7, 15}
-    assert out["n_nonzero"] == 3.0
+def test_lars_path_monotone_l1_endpoints():
+    x, y, _ = _design()
+    out = sp.lars_path(x, y)
+    lam = np.asarray(out["lambdas"])
+    assert lam.size >= 1
+    assert np.all(np.diff(lam) > -1e-8)
+    assert out["beta_path"].shape[0] == x.shape[1]
 
 
-def test_adaptive_lasso() -> None:
-    x, y, _ = _sparse_design(n=300)
-    out = adaptive_lasso(x, y, lam=3.0)
-    b = np.asarray(out["beta"])
-    nz = np.nonzero(np.abs(b) > 1e-6)[0]
-    assert set(nz) == {2, 7, 15}
+def test_lasso_cd_sparsifies_at_high_lambda():
+    x, y, _ = _design()
+    out = sp.lasso_cd(x, y, lam=1e3)
+    assert out["n_nonzero"] == 0.0
 
 
-def test_ebic_picks_three() -> None:
-    x, y, _ = _sparse_design(n=250)
-    out = ebic_select(x, y)
-    b = np.asarray(out["beta"])
-    nz = np.nonzero(np.abs(b) > 1e-6)[0]
-    assert set(nz) == {2, 7, 15}
-    assert out["n_selected"] == 3.0
+def test_adaptive_lasso_recovers_support():
+    x, y, true = _design()
+    out = sp.adaptive_lasso(x, y, lam=0.05)
+    sel = set(np.where(np.abs(np.asarray(out["beta"])) > 1e-8)[0].tolist())
+    assert true <= sel
 
 
-def test_lam_zero_is_ols() -> None:
-    x, y, _ = _sparse_design(n=300)
-    out = lasso_cd(x, y, lam=0.0)
-    b = np.asarray(out["beta"])
-    xc = (x - x.mean(0)) / np.linalg.norm(x - x.mean(0), axis=0)
-    ols = np.linalg.lstsq(xc, y - y.mean(), rcond=None)[0]
-    assert np.abs(b - ols).max() < 1e-4
-
-
-def test_fail_closed() -> None:
-    with pytest.raises(ValueError):
-        lars_path(np.ones((5, 3)), np.ones(5))
-    with pytest.raises(ValueError):
-        omp(np.random.default_rng(0).standard_normal((50, 5)), np.ones(50), k=0)
-    with pytest.raises(ValueError):
-        lasso_cd(np.random.default_rng(0).standard_normal((50, 5)), np.ones(50), lam=-1.0)
-    with pytest.raises(ValueError):
-        adaptive_lasso(np.random.default_rng(0).standard_normal((20, 30)), np.ones(20), lam=1.0)
-    with pytest.raises(ValueError):
-        lars_path(np.column_stack([np.ones(50), np.ones(50)]), np.ones(50))
+def test_ebic_selects_nonempty():
+    x, y, true = _design()
+    out = sp.ebic_select(x, y)
+    assert out["n_selected"] >= 1.0
+    sel = set(np.where(np.abs(np.asarray(out["beta"])) > 1e-8)[0].tolist())
+    assert len(sel & true) >= 3

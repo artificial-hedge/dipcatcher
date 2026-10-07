@@ -186,12 +186,16 @@ def lasso_cd(
     n, p = xc.shape
     if not np.isfinite(lam) or lam < 0.0:
         raise ValueError("lam must be >= 0")
+    if int(max_iter) < 1:
+        raise ValueError("max_iter must be >= 1")
     w = np.ones(p) if weights is None else np.asarray(weights, dtype=float).ravel()
     if w.shape != (p,) or not np.isfinite(w).all() or (w <= 0).any():
         raise ValueError("weights must be finite, > 0, length p")
     beta = np.zeros(p)
     x2 = (xc * xc).sum(axis=0)
-    for _ in range(max_iter):
+    n_iter = 0
+    for _ in range(int(max_iter)):
+        n_iter += 1
         beta_old = beta.copy()
         for j in range(p):
             r = yc - xc @ beta + xc[:, j] * beta[j]
@@ -202,7 +206,7 @@ def lasso_cd(
     return {
         "beta": beta,
         "sse": float(resid @ resid),
-        "n_iter": float(_),
+        "n_iter": float(n_iter),
         "lam": float(lam),
         "n_nonzero": float((np.abs(beta) > 1e-10).sum()),
     }
