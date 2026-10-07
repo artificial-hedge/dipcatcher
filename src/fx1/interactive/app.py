@@ -13,13 +13,28 @@ one-shot for scripting. First-time setup lives in ``fx1.interactive.wizard``
 from __future__ import annotations
 
 import getpass
+import importlib
 from pathlib import Path
+from types import ModuleType
 from typing import NoReturn
 
 import typer
 
 import fx1
-from fx1.interactive import actions, concierge, profiles, shell, wizard
+from fx1.interactive import actions, profiles, shell, wizard
+
+
+def _concierge() -> ModuleType:
+    """Lazy handle to the orchestration package.
+
+    ``fx1.interactive.concierge`` / ``superpower`` / ``approvals`` ship in a
+    later commit; importing them lazily keeps the core ``fxi`` surface
+    (keys, shell, eval) usable while that code is staged. Commands that need
+    the orchestrator resolve it at invocation time and fail with a clear
+    ModuleNotFoundError until it lands.
+    """
+    return importlib.import_module("fx1.interactive.concierge")
+
 
 app = typer.Typer(
     name="fxi",
@@ -84,7 +99,7 @@ def callback(
     if ctx.invoked_subcommand is None:
         # Bare `fxi` (or `fxi --model ...`) opens the concierge console:
         # chat, /superpower, background web research, flash context.
-        concierge.run_console(state["model"])
+        _concierge().run_console(state["model"])
 
 
 @app.command("shell")
@@ -244,13 +259,15 @@ def superpower_cmd(
     ),
 ) -> None:
     """Plan, select, coordinate, and explain research capabilities for a goal."""
-    from fx1.interactive.superpower import describe_capabilities
+    describe_capabilities = importlib.import_module(
+        "fx1.interactive.superpower"
+    ).describe_capabilities
 
     if help_catalog:
         typer.echo(describe_capabilities())
         raise typer.Exit()
     goal_text = " ".join(goal)
-    operator = concierge.Concierge(model=state["model"])
+    operator = _concierge().Concierge(model=state["model"])
     operator._slash(f"/superpower {goal_text}{' --sync' if sync else ''}")  # noqa: SLF001
     operator.join_job(timeout_s=3600)
 
@@ -272,7 +289,7 @@ def research_cmd(
         extra.append(f"--queries {queries}")
     if sync:
         extra.append("--sync")
-    operator = concierge.Concierge(model=state["model"])
+    operator = _concierge().Concierge(model=state["model"])
     operator._slash(f"/research {goal_text} {' '.join(extra)}")  # noqa: SLF001
     operator.join_job(timeout_s=budget_s + 30)
 

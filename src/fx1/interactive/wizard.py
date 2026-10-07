@@ -8,15 +8,25 @@ the wizard without a TTY; set ``animations=False`` for fully static output.
 from __future__ import annotations
 
 import getpass
+import importlib
 from collections.abc import Callable
+from typing import Any
 
 import typer
 
 from fx1.interactive import actions, profiles
-from fx1.interactive.concierge import run_console
 from fx1.interactive.orb import OrbAnimator, OrbState
 from fx1.interactive.orb import banner as orb_banner
 from fx1.interactive.profiles import DEFAULT_MODEL
+
+
+def _default_shell_factory() -> Any:
+    """The concierge console entry point, resolved lazily.
+
+    ``fx1.interactive.concierge`` ships in a later commit; resolving at
+    call time keeps the wizard module importable while it is staged.
+    """
+    return importlib.import_module("fx1.interactive.concierge").run_console
 
 
 def _prompt_endpoint(
@@ -62,10 +72,12 @@ def enter(
     password_fn: Callable[[str], str] = getpass.getpass,
     output_fn: Callable[..., None] = typer.echo,
     animations: bool = True,
-    shell_factory: Callable[..., None] = run_console,
+    shell_factory: Callable[..., None] | None = None,
     prober: Callable[[str], str] = actions._probe,
 ) -> None:
     """Onboard the operator, then hand off to the concierge console."""
+    if shell_factory is None:
+        shell_factory = _default_shell_factory()
     resolved = profiles.resolve_endpoint(DEFAULT_MODEL)
     if not force and resolved:
         shell_factory(DEFAULT_MODEL)

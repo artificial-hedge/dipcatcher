@@ -13,18 +13,19 @@ The orchestration surface lives alongside the classic shell:
   private-data sharing.
 """
 
-from fx1.interactive import actions, approvals, concierge, orb, profiles, shell, superpower, wizard
+# The orchestration modules (``concierge``, ``superpower``, ``approvals``)
+# ship in a later commit; they are intentionally absent from this import so
+# the package stays importable while the surface is staged. Callers reach
+# them lazily via importlib (see fx1.interactive.app / wizard).
+from fx1.interactive import actions, orb, profiles, shell, wizard
 from fx1.interactive.app import app, main
 
 __all__ = [
     "actions",
     "app",
-    "approvals",
-    "concierge",
     "main",
     "orb",
     "profiles",
     "shell",
-    "superpower",
     "wizard",
 ]

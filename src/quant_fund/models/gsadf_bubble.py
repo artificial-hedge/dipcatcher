@@ -240,6 +240,12 @@ def date_stamp(
     flags = (bb > cv).astype(np.float64)
     flags[np.isnan(bb)] = 0.0
     if min_len > 1:
+        # PSY consolidation: bridge flagged runs separated by exactly one
+        # unflagged observation before the length filter applies.
+        idx0 = np.flatnonzero(flags)
+        if idx0.size >= 2:
+            gaps = np.where(np.diff(idx0) == 2)[0]
+            flags[idx0[gaps] + 1] = 1.0
         idx = np.flatnonzero(flags)
         if idx.size:
             keep = np.zeros_like(flags)
