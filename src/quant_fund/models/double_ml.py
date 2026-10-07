@@ -186,7 +186,10 @@ def dml_irm(
     ``ATE = mean ψ + θ``. Propensity clipped to ``[0.01, 0.99]``.
     """
     y, d, x = _check_xyd(y, d, x)
-    if set(np.unique(d.astype(int))) != {0, 1}:
+    # Compare raw values, not truncations: astype(int) would silently map a
+    # fractional dose like {0.3, 1.7} onto {0, 1} and the AIPW score would
+    # then compute confidently wrong math on a non-binary treatment.
+    if set(np.unique(d)) != {0, 1}:
         raise ValueError("d must be binary for IRM")
     rng = np.random.default_rng(seed)
     folds = _folds(y.size, n_folds, rng)
