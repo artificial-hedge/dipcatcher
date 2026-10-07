@@ -507,6 +507,24 @@
   "models/_rag_synth.py": {
    "status": "audited"
   },
+  "models/_rel_synth.py": {
+   "status": "audited"
+  },
+  "models/_rlt_synth.py": {
+   "status": "audited"
+  },
+  "models/_sched_synth.py": {
+   "status": "audited"
+  },
+  "models/_sig3_synth.py": {
+   "status": "audited"
+  },
+  "models/_sk_synth.py": {
+   "status": "audited"
+  },
+  "models/_sp_synth.py": {
+   "status": "audited"
+  },
   "models/a1_degrees.py": {
    "status": "audited"
   },

@@ -19,6 +19,8 @@ def chirp(seed: int) -> np.ndarray:
 
 
 def voiced(seed: int, f0: float = 120.0) -> np.ndarray:
+    if not np.isfinite(f0) or not 0 < f0 <= FS / 2:
+        raise ValueError(f"need finite 0<f0<=Nyquist ({FS / 2}), got {f0}")
     rng = np.random.default_rng(seed)
     t = np.arange(N) / FS
     sig = np.zeros(N)
@@ -39,6 +41,8 @@ def two_tone(seed: int) -> np.ndarray:
 
 def array_snap(seed: int, theta_deg: float = 20.0) -> tuple[np.ndarray, np.ndarray]:
     """8-element ULA, half-wavelength spacing; returns (X, steering)."""
+    if not np.isfinite(theta_deg) or not -90.0 <= theta_deg <= 90.0:
+        raise ValueError(f"need finite theta_deg in [-90, 90], got {theta_deg}")
     rng = np.random.default_rng(seed)
     m, snaps = 8, 256
     th = np.deg2rad(theta_deg)

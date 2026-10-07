@@ -63,8 +63,11 @@ def minimax_val(s: tuple[int, ...], player: int) -> float:
 
 
 def optimal_move(s: tuple[int, ...], player: int) -> int:
+    legal = ttt_legal(s)
+    if not legal or ttt_winner(s) is not None:
+        raise ValueError(f"no legal move on terminal/full board {s}")
     best, best_a = -2.0, -1
-    for a in ttt_legal(s):
+    for a in legal:
         ns = list(s)
         ns[a] = player
         v = -minimax_val(tuple(ns), -player)
@@ -90,6 +93,8 @@ def play_ttt(
         if not legal:
             return 0
         a = fn(encode_ttt(s, player), legal)
+        if a not in legal:
+            raise ValueError(f"policy returned illegal move {a} on board {s}; legal={legal}")
         ns = list(s)
         ns[a] = player
         s = tuple(ns)
@@ -151,7 +156,7 @@ def kuhn_infosets() -> list[tuple[int, int, str]]:
         for c in CARDS:
             for h in ("", "p", "b", "pb"):
                 # legality: hist length parity = player's turn
-                if len(h) % 2 == player and not kuhn_terminal(h + "x" if False else h):
+                if len(h) % 2 == player and not kuhn_terminal(h):
                     out.append((player, c, h))
     return out
 
@@ -173,7 +178,17 @@ def kuhn_exploit(strat: Callable[[int, int, str], FloatArray]) -> float:
             return u if brp == 0 else -u
         player = len(hist) % 2
         card = c1 if player == 0 else c2
-        s = strat(player, card, hist)
+        s = np.asarray(strat(player, card, hist), dtype=np.float64)
+        if (
+            s.shape != (2,)
+            or not np.isfinite(s).all()
+            or (s < 0).any()
+            or abs(float(s.sum()) - 1.0) > 1e-6
+        ):
+            raise ValueError(
+                f"strategy must return a finite 2-vector summing to 1, got {s} "
+                f"at player={player} card={card} hist={hist!r}"
+            )
         if player == brp:
             # best response
             vals = [br_value(hist + a, c1, c2, brp) for a in kuhn_acts(hist)]

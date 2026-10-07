@@ -25,6 +25,8 @@ RBD_LAM = np.array([0.004, 0.006, 0.005])
 
 def weibull_lifetimes(seed: int, n: int = 400) -> tuple[np.ndarray, np.ndarray]:
     """Right-censored Weibull lifetimes; returns (times, failed flags)."""
+    if n < 1:
+        raise ValueError(f"need n>=1, got {n}")
     rng = np.random.default_rng(seed)
     t = WB_ETA * (-np.log(rng.uniform(size=n))) ** (1 / WB_BETA)
     failed = t <= WB_CENSOR
@@ -33,6 +35,8 @@ def weibull_lifetimes(seed: int, n: int = 400) -> tuple[np.ndarray, np.ndarray]:
 
 def arrhenius_lives(seed: int, n: int = 30) -> tuple[np.ndarray, np.ndarray]:
     """Lives at each stress temp: log-normal around C*exp(Ea/kT)."""
+    if n < 1:
+        raise ValueError(f"need n>=1 per temp, got {n}")
     rng = np.random.default_rng(seed)
     out = []
     for temp in ARR_TEMPS:
@@ -59,6 +63,6 @@ def fault_tree_top_prob() -> float:
     return 1.0 - (1 - ab) * (1 - cd) * (1 - e)
 
 
-def mc_system_state(rng: np.random.Generator, up: int = 2) -> int:
+def mc_system_state(up: int = 2) -> int:
     """Number of up units for RAM system sample (unused helper kept small)."""
     return up
