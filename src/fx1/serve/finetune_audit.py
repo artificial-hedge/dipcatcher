@@ -32,6 +32,11 @@ from fx1.serve.finetune import (
 )
 from fx1.serve.journal import JobJournal
 
+_MODEL_A = "ft:m:a:j1"
+_MODEL_B = "ft:m:b:j1"
+_MODEL_DONE = "ft:m:x:done"
+_MODEL_T = "ft:m:t:t"
+
 
 def _run(fn, *a: Any, **kw: Any) -> tuple[bool, Any]:
     try:
@@ -288,30 +293,30 @@ def _probe_store_models() -> dict[str, bool]:
     out: dict[str, bool] = {}
     s = _store(10)
     s.put(_job("j1"), None, "f")
-    s.register_model("ft:m:b:j1", job_id="j1", checkpoint="/c1", created=2)
-    s.register_model("ft:m:a:j1", job_id="j1", checkpoint="/c0", created=1)
+    s.register_model(_MODEL_B, job_id="j1", checkpoint="/c1", created=2)
+    s.register_model(_MODEL_A, job_id="j1", checkpoint="/c0", created=1)
     out["models_sorted_by_id"] = [m["id"] for m in s.models()] == [
-        "ft:m:a:j1",
-        "ft:m:b:j1",
+        _MODEL_A,
+        _MODEL_B,
     ]
-    out["model_card_shape"] = s.get_model("ft:m:a:j1") == {
-        "id": "ft:m:a:j1",
+    out["model_card_shape"] = s.get_model(_MODEL_A) == {
+        "id": _MODEL_A,
         "job_id": "j1",
         "checkpoint": "/c0",
         "created": 1,
     }
-    out["checkpoint_for_resolves"] = s.checkpoint_for("ft:m:a:j1") == "/c0"
+    out["checkpoint_for_resolves"] = s.checkpoint_for(_MODEL_A) == "/c0"
     out["checkpoint_for_missing_none"] = s.checkpoint_for("ft:m:z") is None
 
-    dropped = s.unregister_model("ft:m:a:j1")
-    out["unregister_returns_card"] = dropped is not None and dropped["id"] == "ft:m:a:j1"
-    out["unregister_gone"] = s.get_model("ft:m:a:j1") is None
+    dropped = s.unregister_model(_MODEL_A)
+    out["unregister_returns_card"] = dropped is not None and dropped["id"] == _MODEL_A
+    out["unregister_gone"] = s.get_model(_MODEL_A) is None
     out["unregister_missing_none"] = s.unregister_model("ft:m:z") is None
 
     ckpts, more = s.checkpoints_for("j1", limit=10, after=None)
     out["checkpoints_one_per_card"] = len(ckpts) == 1
     out["checkpoint_id_derived"] = ckpts[0].id.startswith("ftckpt-")
-    out["checkpoint_names_model"] = ckpts[0].fine_tuned_model_checkpoint == "ft:m:b:j1"
+    out["checkpoint_names_model"] = ckpts[0].fine_tuned_model_checkpoint == _MODEL_B
     out["checkpoints_more_flag"] = more is False
     ckpts2, _ = s.checkpoints_for("j1", limit=10, after=ckpts[0].id)
     out["checkpoints_after_exclusive"] = ckpts2 == []
@@ -340,7 +345,7 @@ def _probe_store_events() -> dict[str, bool]:
     s.add_event("j1", "warn", "second", {"k": 1})
     s.add_event("nope", "error", "nowhere")
 
-    evs, more = s.list_events("j1", limit=10, after=None)
+    evs, _ = s.list_events("j1", limit=10, after=None)
     out["events_oldest_first"] = [e.message for e in evs] == ["first", "second"]
     out["events_shape"] = (
         evs[0].object == "fine_tuning.job.event"
@@ -441,9 +446,9 @@ def _probe_store_drain() -> dict[str, bool]:
     s.put(_job("q1"), None, "f")
     s.put(_job("r1", status="running"), None, "f")
     s.put(_job("p1", status="queued"), None, "f")
-    s.request_pause("p1")  # paused_from=queued
+    s.request_pause("p1")  # paused while queued
     s.put(_job("p2", status="running"), None, "f")
-    s.request_pause("p2")  # paused_from=running
+    s.request_pause("p2")  # paused while running
     s.put(_job("t1", status="succeeded"), None, "f")
 
     pending = s.cancel_pending()
@@ -504,18 +509,16 @@ def _probe_store_journal() -> dict[str, bool]:
     with tempfile.TemporaryDirectory() as td:
         jd = Path(td)
         s1 = _store(10, journal_dir=jd)
-        s1.put(_job("done", status="succeeded", fine_tuned_model="ft:m:x:done"), "k-done", "fp1")
+        s1.put(_job("done", status="succeeded", fine_tuned_model=_MODEL_DONE), "k-done", "fp1")
         s1.add_event("done", "info", "trained")
-        s1.register_model("ft:m:x:done", job_id="done", checkpoint="/ckpt", created=5)
+        s1.register_model(_MODEL_DONE, job_id="done", checkpoint="/ckpt", created=5)
         s1.put(_job("live", status="running"), "k-live", "fp2")
         s1.put(_job("wait", status="queued"), None, "fp3")
 
         s2 = _store(10, journal_dir=jd)
         d = s2.get("done")
         out["replay_terminal_as_was"] = (
-            d is not None
-            and d.job.status == "succeeded"
-            and d.job.fine_tuned_model == "ft:m:x:done"
+            d is not None and d.job.status == "succeeded" and d.job.fine_tuned_model == _MODEL_DONE
         )
         out["replay_idem_keys_resolve"] = (
             s2.lookup_idem("k-done") is not None and s2.lookup_idem("k-done").job.id == "done"  # type: ignore[union-attr]
@@ -529,8 +532,8 @@ def _probe_store_journal() -> dict[str, bool]:
         )
         wait = s2.get("wait")
         out["replay_queued_failed"] = wait is not None and wait.job.status == "failed"
-        out["replay_model_restored"] = s2.get_model("ft:m:x:done") == {
-            "id": "ft:m:x:done",
+        out["replay_model_restored"] = s2.get_model(_MODEL_DONE) == {
+            "id": _MODEL_DONE,
             "job_id": "done",
             "checkpoint": "/ckpt",
             "created": 5,
@@ -551,10 +554,10 @@ def _probe_store_journal() -> dict[str, bool]:
         # unregister journals the tombstone
         s5 = _store(10, journal_dir=jd / "tomb")
         s5.put(_job("t", status="succeeded"), None, "f")
-        s5.register_model("ft:m:t:t", job_id="t", checkpoint="/x", created=1)
-        s5.unregister_model("ft:m:t:t")
+        s5.register_model(_MODEL_T, job_id="t", checkpoint="/x", created=1)
+        s5.unregister_model(_MODEL_T)
         s6 = _store(10, journal_dir=jd / "tomb")
-        out["replay_model_delete_holds"] = s6.get_model("ft:m:t:t") is None
+        out["replay_model_delete_holds"] = s6.get_model(_MODEL_T) is None
     return out
 
 
@@ -599,6 +602,12 @@ def finetune_audit_bench() -> dict[str, Any]:
     r = finetune_audit()
     ok = bool(r) and all(r.values())
     defects = sorted(k for k, v in r.items() if v is not True)
+    if ok:
+        interpretation = "all_probes_hold"
+    elif not r:
+        interpretation = "no_probes"
+    else:
+        interpretation = f"defects: {', '.join(defects)}"
     out: dict[str, Any] = {
         "kind": "finetune_audit",
         "schema": "finetune_audit.v1",
@@ -615,11 +624,7 @@ def finetune_audit_bench() -> dict[str, Any]:
                 "GPU trainer wiring",
             ],
         },
-        "interpretation": (
-            "all_probes_hold"
-            if ok
-            else ("no_probes" if not r else f"defects: {', '.join(defects)}")
-        ),
+        "interpretation": interpretation,
     }
     out["receipt_sha256"] = hash_bytes(canonical_json_bytes(out))
     return out
