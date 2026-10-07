@@ -155,9 +155,9 @@
       "tree_root": "83e97d6f6fb33418978f8ac57df34de0ef02e0631f051139f5d45e35e6a348d5"
     },
     "src/*": {
-      "receipt": "corpus_epoch_ad3249daa8290396.json",
-      "sha256": "7dfe8b2398d46af26cc8e121af6ba48fabc8ca042893956c5f0695424028352d",
-      "tree_root": "bf11f159e75f328d1b9f7b4c4b98899983e432735908a1196cd4981e280acfa7"
+      "receipt": "corpus_epoch_dfff47d5039f5e43.json",
+      "sha256": "9ff662c97e7b5c248fbe2480d53b1aaa70a90593a7abc0c27d8dc43e372b1027",
+      "tree_root": "a145d773f747cc5dc14670af2810aa452401b0c71b69b2ee45b3c6b9e99ac124"
     },
     "tests/*": {
       "chain_root": "968d12a1490dfcfd3fd48d0a03d30284105bc42ff82a92e020bf899da5d76377",
