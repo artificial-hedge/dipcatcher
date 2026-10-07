@@ -375,6 +375,9 @@
   "models/bandits.py": {
    "status": "audited"
   },
+  "models/barrier_options.py": {
+   "status": "audited"
+  },
   "models/base.py": {
    "status": "audited"
   },

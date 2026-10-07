@@ -45,6 +45,12 @@ def _ncd(x: float) -> float:
     return float(stats.norm.cdf(x))
 
 
+def _check_knock(knock: str) -> str:
+    if knock not in {"in", "out"}:
+        raise ValueError("knock must be 'in' or 'out'")
+    return knock
+
+
 def _terms(
     s: float,
     k: float,
@@ -113,6 +119,7 @@ def down_call(
     rebate: float = 0.0,
 ) -> float:
     """Down-and-out / down-and-in call (h < s)."""
+    _check_knock(knock)
     if not (0 < h < s and k > 0 and t > 0 and sig > 0):
         raise ValueError("bad barrier option inputs")
     tm = _terms(s, k, h, t, r, sig, q, rebate, phi=1.0, eta=1.0)
@@ -136,6 +143,7 @@ def up_call(
     rebate: float = 0.0,
 ) -> float:
     """Up-and-out / up-and-in call (h > s)."""
+    _check_knock(knock)
     if not (h > s > 0 and k > 0 and t > 0 and sig > 0):
         raise ValueError("bad barrier option inputs")
     tm = _terms(s, k, h, t, r, sig, q, rebate, phi=1.0, eta=-1.0)
@@ -159,6 +167,7 @@ def down_put(
     rebate: float = 0.0,
 ) -> float:
     """Down-and-out / down-and-in put (h < s)."""
+    _check_knock(knock)
     if not (0 < h < s and k > 0 and t > 0 and sig > 0):
         raise ValueError("bad barrier option inputs")
     tm = _terms(s, k, h, t, r, sig, q, rebate, phi=-1.0, eta=1.0)
@@ -182,6 +191,7 @@ def up_put(
     rebate: float = 0.0,
 ) -> float:
     """Up-and-out / up-and-in put (h > s)."""
+    _check_knock(knock)
     if not (h > s > 0 and k > 0 and t > 0 and sig > 0):
         raise ValueError("bad barrier option inputs")
     tm = _terms(s, k, h, t, r, sig, q, rebate, phi=-1.0, eta=-1.0)
