@@ -16,7 +16,7 @@ def rot(theta: float) -> np.ndarray:
 
 
 def chsh_expect(rho: np.ndarray, a: float, a2: float, b: float, b2: float) -> float:
-    """S = E(a,b) - E(a,b2) + E(a2,b) + E(a2,b2)."""
+    """S = E(a,b) + E(a,b2) + E(a2,b) - E(a2,b2)."""
     A, A2, B, B2 = rot(a), rot(a2), rot(b), rot(b2)
 
     def e(o1: np.ndarray, o2: np.ndarray) -> float:

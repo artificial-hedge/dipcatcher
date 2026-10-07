@@ -30,7 +30,18 @@ def test_view_tilts_correct_asset() -> None:
 def test_posterior_cov_psd() -> None:
     sigma, w_eq, p, q = synth_bl(seed=3)
     r = bl_posterior(sigma, w_eq, p, q)
-    assert float(r["max_eig_neg"]) <= 1e-12
+    # real PSD assertion: min eigenvalue of post_cov is >= -tol. (The old
+    # form asserted min(0, eig) <= 1e-12, which cannot fail.)
+    eig_min = float(np.min(np.linalg.eigvalsh(np.asarray(r["post_cov"]))))
+    assert eig_min > -1e-10
+
+
+def test_psd_gate_discriminates() -> None:
+    # the bench's PSD gate must actually be able to fail
+    from quant_fund.models.black_litterman import _psd_ok
+
+    assert _psd_ok(np.eye(3))
+    assert not _psd_ok(np.diag([-1.0, 1.0, 1.0]))
 
 
 def test_input_validation() -> None:

@@ -120,6 +120,11 @@ def bl_posterior(
     return out
 
 
+def _psd_ok(cov: FloatArray, tol: float = 1e-10) -> bool:
+    """True iff the smallest eigenvalue of ``cov`` is >= -tol."""
+    return float(np.min(np.linalg.eigvalsh(np.asarray(cov, dtype=np.float64)))) > -tol
+
+
 def synth_bl(seed: int = 20261231 + 365) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray]:
     """SYNTHETIC 3-asset equilibrium + one absolute view."""
     chol = np.linalg.cholesky(
@@ -151,7 +156,7 @@ def bench_bl(seed: int = 20261231 + 365) -> dict[str, float]:
         and mu[0] > pi[0]
         and mu[0] < q[0] + 0.01  # but doesn't fully hit the dogmatic view
         and collapse < 1e-10
-        and float(r["max_eig_neg"]) <= 1e-12
+        and _psd_ok(np.asarray(r["post_cov"]))
     )
     out: dict[str, float] = {
         "synthetic_bl_pi0": float(pi[0]),

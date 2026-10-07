@@ -2474,6 +2474,9 @@
   "models/beacon_context_studies.py": {
    "status": "audited"
   },
+  "models/beacon_detect.py": {
+   "status": "audited"
+  },
   "models/beacon_qa_studies.py": {
    "status": "audited"
   },
@@ -2493,6 +2496,12 @@
    "status": "audited"
   },
   "models/beaver_safe_studies.py": {
+   "status": "audited"
+  },
+  "models/beaver_triple.py": {
+   "status": "audited"
+  },
+  "models/beck_katz.py": {
    "status": "audited"
   },
   "models/bee_eater_qa_studies.py": {
@@ -2549,6 +2558,12 @@
   "models/beira_qa_studies.py": {
    "status": "audited"
   },
+  "models/belief_propagation.py": {
+   "status": "audited"
+  },
+  "models/bell_ineq.py": {
+   "status": "audited"
+  },
   "models/bell_triangle.py": {
    "status": "audited"
   },
@@ -2565,6 +2580,9 @@
    "status": "audited"
   },
   "models/benchmark_saturate_studies.py": {
+   "status": "audited"
+  },
+  "models/benders_decomp.py": {
    "status": "audited"
   },
   "models/bene_filter.py": {
@@ -2663,7 +2681,13 @@
   "models/bessel_fn.py": {
    "status": "audited"
   },
+  "models/best_arm.py": {
+   "status": "audited"
+  },
   "models/best_of_n_studies.py": {
+   "status": "audited"
+  },
+  "models/beta_ar.py": {
    "status": "audited"
   },
   "models/beta_bernoulli.py": {
@@ -2693,10 +2717,22 @@
   "models/beverage_qa_studies.py": {
    "status": "audited"
   },
+  "models/beveridge_nelson.py": {
+   "status": "audited"
+  },
+  "models/bezier_curve.py": {
+   "status": "audited"
+  },
   "models/bezier_eval.py": {
    "status": "audited"
   },
+  "models/bezout_bezout.py": {
+   "status": "audited"
+  },
   "models/bezout_matrix.py": {
+   "status": "audited"
+  },
+  "models/bfast.py": {
    "status": "audited"
   },
   "models/bfcl_v3_studies.py": {
@@ -2705,7 +2741,19 @@
   "models/bfgs_update.py": {
    "status": "audited"
   },
+  "models/bfgs_wolfe.py": {
+   "status": "audited"
+  },
+  "models/bfv_fhe.py": {
+   "status": "audited"
+  },
   "models/bgk_model.py": {
+   "status": "audited"
+  },
+  "models/bgp_pathvec.py": {
+   "status": "audited"
+  },
+  "models/bgw_mpc.py": {
    "status": "audited"
   },
   "models/bhairava_qa_studies.py": {
@@ -2747,7 +2795,19 @@
   "models/bicg_solver.py": {
    "status": "audited"
   },
+  "models/bicgstab.py": {
+   "status": "audited"
+  },
   "models/bicgstab2.py": {
+   "status": "audited"
+  },
+  "models/bidiag_svd.py": {
+   "status": "audited"
+  },
+  "models/bidirectional_dijkstra.py": {
+   "status": "audited"
+  },
+  "models/bidirectional_tc.py": {
    "status": "audited"
   },
   "models/bifurcation_track.py": {
@@ -2769,6 +2829,12 @@
    "status": "audited"
   },
   "models/bighorn_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/bignum.py": {
+   "status": "audited"
+  },
+  "models/bike_lite.py": {
    "status": "audited"
   },
   "models/bike_qa_studies.py": {
@@ -2796,6 +2862,9 @@
    "status": "audited"
   },
   "models/binomial_heap.py": {
+   "status": "audited"
+  },
+  "models/binscatter.py": {
    "status": "audited"
   },
   "models/binturong_qa_studies.py": {
@@ -2864,6 +2933,9 @@
   "models/biostatistics_methods_studies.py": {
    "status": "audited"
   },
+  "models/biquad.py": {
+   "status": "audited"
+  },
   "models/birch_qa_studies.py": {
    "status": "audited"
   },
@@ -2873,10 +2945,25 @@
   "models/birkhoff.py": {
    "status": "audited"
   },
+  "models/birkhoff_rep.py": {
+   "status": "audited"
+  },
   "models/bisbisot_sheffield.py": {
    "status": "audited"
   },
+  "models/bisim_refine.py": {
+   "status": "audited"
+  },
+  "models/bisimulation.py": {
+   "status": "audited"
+  },
   "models/bison_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/bitap_fuzzy.py": {
+   "status": "audited"
+  },
+  "models/bitmap_index.py": {
    "status": "audited"
   },
   "models/bittern_qa_studies.py": {
@@ -2897,7 +2984,13 @@
   "models/black_footed_qa_studies.py": {
    "status": "audited"
   },
+  "models/black_karasinski.py": {
+   "status": "audited"
+  },
   "models/black_lemur_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/black_litterman.py": {
    "status": "audited"
   },
   "models/black_scholes.py": {
@@ -2910,6 +3003,12 @@
    "status": "audited"
   },
   "models/bladder_studies.py": {
+   "status": "audited"
+  },
+  "models/blahut_arimoto.py": {
+   "status": "audited"
+  },
+  "models/blanchard_quah.py": {
    "status": "audited"
   },
   "models/blasting_engineering.py": {
@@ -2933,6 +3032,15 @@
   "models/blind_salamander_qa_studies.py": {
    "status": "audited"
   },
+  "models/blind_sig.py": {
+   "status": "audited"
+  },
+  "models/blind_sources.py": {
+   "status": "audited"
+  },
+  "models/blink_tree.py": {
+   "status": "audited"
+  },
   "models/blizzard_qa_studies.py": {
    "status": "audited"
   },
@@ -2954,7 +3062,13 @@
   "models/block_cg.py": {
    "status": "audited"
   },
+  "models/block_lanczos.py": {
+   "status": "audited"
+  },
   "models/block_low_rank.py": {
+   "status": "audited"
+  },
+  "models/block_validator.py": {
    "status": "audited"
   },
   "models/blood_pheasant_qa_studies.py": {

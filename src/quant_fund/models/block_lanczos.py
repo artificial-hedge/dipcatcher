@@ -10,6 +10,7 @@ def block_lanczos(A: np.ndarray, b: int, steps: int, rng: np.random.RandomState)
     Q0, _ = np.linalg.qr(rng.rand(n, b))
     blocks = [Q0]
     alpha = []
+    betas = []
     beta_prev = np.zeros((b, b))
     Q_prev = np.zeros((n, b))
     Q_cur = Q0
@@ -20,18 +21,19 @@ def block_lanczos(A: np.ndarray, b: int, steps: int, rng: np.random.RandomState)
         R = Z - Q_cur @ a
         Q_next, b_next = np.linalg.qr(R)
         blocks.append(Q_next)
+        betas.append(b_next)
         beta_prev = b_next
         Q_prev, Q_cur = Q_cur, Q_next
         if np.linalg.norm(b_next) < 1e-10:
             break
-    # Ritz values from block tridiagonal
+    # Ritz values from block tridiagonal: T[i,i]=alpha_i, T[i+1,i]=beta_{i+1}
     k = len(alpha)
     T = np.zeros((k * b, k * b))
     for i, a in enumerate(alpha):
         T[i * b : (i + 1) * b, i * b : (i + 1) * b] = a
         if i + 1 < k:
-            T[i * b : (i + 1) * b, (i + 1) * b : (i + 2) * b] = np.eye(b)
-            T[(i + 1) * b : (i + 2) * b, i * b : (i + 1) * b] = np.eye(b)
+            T[(i + 1) * b : (i + 2) * b, i * b : (i + 1) * b] = betas[i]
+            T[i * b : (i + 1) * b, (i + 1) * b : (i + 2) * b] = betas[i].T
     return np.linalg.eigvalsh(T)
 
 

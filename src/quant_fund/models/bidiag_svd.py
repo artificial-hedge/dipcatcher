@@ -13,7 +13,8 @@ def _bidiag(A: np.ndarray) -> np.ndarray:
     for k in range(n):
         x = A[k:, k]
         v = x.copy()
-        v[0] += np.sign(x[0]) * np.linalg.norm(x)
+        # sign(0)=0 must not collapse the reflector: treat x[0]==0 as +
+        v[0] += np.linalg.norm(x) if x[0] >= 0 else -np.linalg.norm(x)
         nv = np.linalg.norm(v)
         if nv > 1e-14:
             v = v / nv
@@ -21,7 +22,7 @@ def _bidiag(A: np.ndarray) -> np.ndarray:
         if k < n - 2:
             x = A[k, k + 1 :]
             v = x.copy()
-            v[0] += np.sign(x[0]) * np.linalg.norm(x)
+            v[0] += np.linalg.norm(x) if x[0] >= 0 else -np.linalg.norm(x)
             nv = np.linalg.norm(v)
             if nv > 1e-14:
                 v = v / nv

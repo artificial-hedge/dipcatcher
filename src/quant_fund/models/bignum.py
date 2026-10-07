@@ -1,7 +1,8 @@
 """SYNTHETIC multiprecision arithmetic on base-1e9 digit vectors.
 
-add/sub/mul/divmod on sign-magnitude digit lists; verified against
-Python's builtin bignum on 30–300 digit operands.
+add/mul/divmod on little-endian magnitude digit lists (non-negative
+operands); verified against Python's builtin bignum on 30–300 digit
+operands.
 """
 
 from __future__ import annotations

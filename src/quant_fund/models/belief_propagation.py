@@ -53,6 +53,9 @@ def bp_loopy(
     pot_node = np.asarray(pot_node, dtype=np.float64)
     pot_edge = np.asarray(pot_edge, dtype=np.float64)
     n, k = pot_node.shape
+    if not edges:
+        # no factors: marginals are just the normalized node potentials
+        return np.stack([_norm(pot_node[i]) for i in range(n)])
     msgs: dict[tuple[int, int], FloatArray] = {}
     for i, j in edges:
         msgs[(i, j)] = np.full(k, 1.0 / k)
@@ -103,7 +106,10 @@ def brute_marginals(
         gi = np.arange(k).reshape([k if ax == i else 1 for ax in range(n)])
         gj = np.arange(k).reshape([k if ax == j else 1 for ax in range(n)])
         joint = joint * pot_edge[e][gi, gj]
-    joint /= joint.sum()
+    total = float(joint.sum())
+    if total <= 0.0:
+        raise ValueError("joint has nonpositive total mass")
+    joint /= total
     marg = np.zeros((n, k))
     for i in range(n):
         axes = tuple(ax for ax in range(n) if ax != i)

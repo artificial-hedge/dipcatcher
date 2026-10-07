@@ -30,16 +30,18 @@ def successive_elimination(
     counts = np.zeros(k)
     means = np.zeros(k)
     t = 0
+    pulls = 0
     while len(active) > 1 and t < max_pulls:
         for a in active:
             r = float(rng.random() < probs[a])
             counts[a] += 1.0
             means[a] += (r - means[a]) / counts[a]
+        pulls += len(active)
         t += 1
         ucbs = {a: means[a] + _ucb_bound(t, counts[a], delta) for a in active}
         lcb_max = max(means[a] - _ucb_bound(t, counts[a], delta) for a in active)
         active = [a for a in active if ucbs[a] >= lcb_max]
-    return int(active[0]), int(t * 1), bool(active[0] == best_true)
+    return int(active[0]), pulls, bool(active[0] == best_true)
 
 
 def lucb(
@@ -58,6 +60,7 @@ def lucb(
         means[a] = float(rng.random() < probs[a])
         counts[a] = 1.0
     t = k
+    pulls = k
     while t < max_pulls:
         b = {a: _ucb_bound(t, counts[a], delta) for a in range(k)}
         leader = int(np.argmax(means))
@@ -66,14 +69,15 @@ def lucb(
             key=lambda a: means[a] + b[a],
         )
         if means[leader] - b[leader] >= means[challenger] + b[challenger]:
-            return leader, t, bool(leader == best_true)
+            return leader, pulls, bool(leader == best_true)
         for a in (leader, challenger):
             r = float(rng.random() < probs[a])
             counts[a] += 1.0
             means[a] += (r - means[a]) / counts[a]
+        pulls += 2
         t += 1
     leader = int(np.argmax(means))
-    return leader, t, bool(leader == best_true)
+    return leader, pulls, bool(leader == best_true)
 
 
 def bench_best_arm(seed: int | None = None) -> dict[str, float]:

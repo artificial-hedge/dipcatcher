@@ -89,7 +89,9 @@ def infer(e: Expr, ctx: Ctx) -> Ty:
 
 def check(e: Expr, ty: Ty, ctx: Ctx) -> None:
     if e[0] == "lam" and ty.tag == "->":
-        _, name, _, body = e
+        _, name, declared, body = e
+        if declared != ty.a:
+            raise TypeError_(f"lam annotation {declared} != domain {ty.a}")
         c2 = dict(ctx)
         c2[name] = ty.a  # type: ignore[assignment]
         check(body, ty.b, c2)  # type: ignore[arg-type]

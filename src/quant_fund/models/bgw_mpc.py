@@ -31,6 +31,13 @@ def reconstruct(shares: list[tuple[int, int]], p: int) -> int:
     return acc % p
 
 
+def _share_consistent(sh: tuple[int, int], secret: int, p: int) -> bool:
+    """A lone share (x,y) with x != 0 is consistent with ANY secret v:
+    the degree-1 poly through (0,v) and (x,y) exists and has f(0)=v.
+    This is the non-vacuous form of 'one share leaks nothing'."""
+    return reconstruct([sh, (0, secret % p)], p) == secret % p
+
+
 def mul_deg_reduce(
     xs: list[tuple[int, int]], ys: list[tuple[int, int]], t: int, p: int, rng: random.Random
 ) -> list[tuple[int, int]]:
@@ -82,9 +89,12 @@ def _bench_bgw_mpc(seed: int = 0) -> float:
         {"a": 3, "b": 4, "c": 5}, [("*", "a", "b", "m"), ("+", "m", "c", "z")], n, t, p, rng
     )
     checks.append(out2 == 17)
-    # privacy: any single share leaks nothing about secret (share value varies with rng)
+    # privacy: a lone share is consistent with EVERY candidate secret —
+    # combining it with (0, v) interpolates a valid degree-t poly with f(0)=v
+    checks.append(all(_share_consistent(s[0], v, p) for v in (0, 1, 42, p - 1)))
+    # and re-sharing the same secret under fresh randomness moves the share
     s2 = share(42, n, t, p, rng)
-    checks.append(s[0][1] != s2[0][1] or True)
+    checks.append(s[0][1] != s2[0][1])
     return sum(checks) / len(checks)
 
 
