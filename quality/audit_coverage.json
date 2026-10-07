@@ -372,6 +372,12 @@
   "models/_anom_synth.py": {
    "status": "audited"
   },
+  "models/_approx_synth.py": {
+   "status": "audited"
+  },
+  "models/_attn_synth.py": {
+   "status": "audited"
+  },
   "models/_lm_synth.py": {
    "status": "audited"
   },

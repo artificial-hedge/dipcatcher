@@ -47,20 +47,23 @@ def synth_retrieval(
 
 def attn_dot_cost(n_tokens: int, method: str, param: int) -> float:
     """Normalized attention score-computation cost (full attn = 1.0)."""
-    full = float(n_tokens * n_tokens)
+    _LINEAR = ("linformer", "performer", "linear", "nystrom", "sliding", "memknn")
+    _BLOCK = ("sinkhorn", "lsh")
     if method == "full":
         return 1.0
-    if method in ("linformer", "performer", "linear", "nystrom"):
+    if method not in _LINEAR + _BLOCK:
+        raise ValueError(f"unknown attention method {method!r}")
+    if n_tokens < 1:
+        raise ValueError(f"n_tokens must be >= 1, got {n_tokens}")
+    if param < 1:
+        raise ValueError(f"param must be >= 1 for method {method!r}, got {param}")
+    full = float(n_tokens * n_tokens)
+    if method in _LINEAR:
         return float(n_tokens * param) / full
-    if method == "sliding":
-        return float(n_tokens * param) / full
+    # blocked methods: ceil so un-covered tail tokens are never free
     if method == "sinkhorn":
         n_blocks = param
-        blk = n_tokens // n_blocks
+        blk = -(-n_tokens // n_blocks)
         return float(n_blocks * blk * blk * 2) / full
-    if method == "lsh":
-        blk = n_tokens // param
-        return float(param * blk * blk) / full
-    if method == "memknn":
-        return float(n_tokens * param) / full
-    return 1.0
+    blk = -(-n_tokens // param)
+    return float(param * blk * blk) / full
