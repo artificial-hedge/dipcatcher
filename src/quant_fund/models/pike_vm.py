@@ -75,18 +75,23 @@ class _Parser:
             if neg:
                 j += 1
             chars: set[str] = set()
+            prev: str | None = None
             while j < len(self.pat) and self.pat[j] != "]":
                 if (
                     self.pat[j] == "-"
-                    and chars
+                    and prev is not None
                     and j + 1 < len(self.pat)
                     and self.pat[j + 1] != "]"
                 ):
-                    lo = chars.pop()
-                    for ch in range(ord(lo), ord(self.pat[j + 1]) + 1):
+                    # chars.pop() returned an arbitrary element (set order is
+                    # hash-seed dependent) — the range must start from the
+                    # last character actually parsed before '-'.
+                    for ch in range(ord(prev), ord(self.pat[j + 1]) + 1):
                         chars.add(chr(ch))
+                    prev = None
                     j += 1
                 else:
+                    prev = self.pat[j]
                     chars.add(self.pat[j])
                 j += 1
             if j >= len(self.pat):
