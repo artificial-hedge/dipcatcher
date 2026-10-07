@@ -116,15 +116,23 @@ _METHODS = frozenset({"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
 # shim (documented in prose as a pass-through, not a route). Every
 # method on them — including the implicit HEAD/OPTIONS the framework
 # adds — is excluded at the path level.
+_P_DOCS = "/docs"
+_P_V1_PH = "/v1/{}"
+_P_KEYS = "/harness/keys"
+_P_CHAT = "/v1/chat/completions"
+_P_STREAM = "/harness/complete/stream"
+_P_COMPLETE = "/harness/complete"
+_P_COMMANDS = "/harness/commands"
+
 _DOC_EXCLUDED_PATHS = frozenset(
-    {"/docs", "/docs/oauth2-redirect", "/redoc", "/openapi.json", "/v1/{}"}
+    {_P_DOCS, "/docs/oauth2-redirect", "/redoc", "/openapi.json", _P_V1_PH}
 )
 
 # Served paths absent from the exported OpenAPI spec: the framework's
 # self-docs, the spec's own endpoint (it cannot list itself), and the
 # catch-all shim. ``GET /openapi.json`` IS documented in prose.
 _OPENAPI_EXCLUDED_PATHS = frozenset(
-    {"/docs", "/docs/oauth2-redirect", "/openapi.json", "/redoc", "/v1/{}"}
+    {_P_DOCS, "/docs/oauth2-redirect", "/openapi.json", "/redoc", _P_V1_PH}
 )
 
 # ``fx1 harness`` subcommands the docs never name — lifecycle twins and
@@ -246,6 +254,34 @@ def _norm(p: str) -> str:
     return re.sub(r"\{[^}]*\}", "{}", p.strip())
 
 
+def _route_row_tokens(
+    toks: list[str], served_paths: set[str] | None
+) -> tuple[list[str], list[str]]:
+    """Classify one table row's backticked tokens into methods and paths."""
+    meths: list[str] = []
+    paths: list[str] = []
+    for tok in toks:
+        tok = tok.strip()
+        if tok in _METHODS:
+            meths.append(tok)
+        elif re.match(rf"^({'|'.join(sorted(_METHODS))})\s+/", tok):
+            m, p = tok.split(None, 1)
+            meths.append(m)
+            paths.append(p)
+        elif tok.startswith("/"):
+            paths.append(tok)
+        elif tok.startswith(".../") and paths:
+            # ``.../suffix`` = same path, tail differs: appends
+            # (``/runs`` → ``/runs/{id}``) or replaces the leaf
+            # (``/pause`` → ``/resume``) — serve table arbitrates.
+            base = paths[-1].rstrip("/")
+            cand = base + tok[3:]
+            if served_paths is not None and _norm(cand) not in served_paths:
+                cand = base.rsplit("/", 1)[0] + tok[3:]
+            paths.append(cand)
+    return meths, paths
+
+
 def _doc_route_rows(text: str, served_paths: set[str] | None = None) -> set[tuple[str, str]]:
     """(method, normalized-path) pairs the API doc's route table claims."""
     section = text.split("## Routes", 1)[1] if "## Routes" in text else text
@@ -255,27 +291,7 @@ def _doc_route_rows(text: str, served_paths: set[str] | None = None) -> set[tupl
             continue
         cell = line.split("|")[1]
         toks = re.findall(r"`([^`]+)`", cell)
-        meths: list[str] = []
-        paths: list[str] = []
-        for tok in toks:
-            tok = tok.strip()
-            if tok in _METHODS:
-                meths.append(tok)
-            elif re.match(rf"^({'|'.join(sorted(_METHODS))})\s+/", tok):
-                m, p = tok.split(None, 1)
-                meths.append(m)
-                paths.append(p)
-            elif tok.startswith("/"):
-                paths.append(tok)
-            elif tok.startswith(".../") and paths:
-                # ``.../suffix`` = same path, tail differs: appends
-                # (``/runs`` → ``/runs/{id}``) or replaces the leaf
-                # (``/pause`` → ``/resume``) — serve table arbitrates.
-                base = paths[-1].rstrip("/")
-                cand = base + tok[3:]
-                if served_paths is not None and _norm(cand) not in served_paths:
-                    cand = base.rsplit("/", 1)[0] + tok[3:]
-                paths.append(cand)
+        meths, paths = _route_row_tokens(toks, served_paths)
         for m in meths:
             for p in paths:
                 p = p.split("?")[0].rstrip("/").strip()
@@ -347,8 +363,7 @@ def _cited_methods(texts: list[str], cls: str) -> set[str]:
     """``<cls>.<name>`` citations; a trailing ``*`` marks a prefix cite."""
     cited: set[str] = set()
     for text in texts:
-        for m in re.findall(rf"\b{re.escape(cls)}\.([a-zA-Z_][a-zA-Z_0-9]*\*?)", text):
-            cited.add(m)
+        cited.update(re.findall(rf"\b{re.escape(cls)}\.([a-zA-Z_][a-zA-Z_0-9]*\*?)", text))
     return cited
 
 
@@ -388,10 +403,14 @@ def _all_cli_flags() -> set[str]:
             if getattr(sub, "commands", None):
                 stack.append(sub)
             else:
-                for p in getattr(sub, "params", []):
-                    for opt in getattr(p, "opts", []) + getattr(p, "secondary_opts", []):
-                        flags.add(opt.lstrip("-"))
+                _flags_of(sub, flags)
     return flags
+
+
+def _flags_of(cmd: Any, flags: set[str]) -> None:
+    for p in getattr(cmd, "params", []):
+        for opt in getattr(p, "opts", []) + getattr(p, "secondary_opts", []):
+            flags.add(opt.lstrip("-"))
 
 
 # --- live app fixtures ---------------------------------------------------------
@@ -424,9 +443,11 @@ class _StubBackend:
         self._model = "fake-0"
 
     def complete(self, messages: list[dict[str, str]], *, sampling: Any = None) -> str:
+        del sampling  # protocol signature; echo uses only messages
         return f"clean:{messages[-1]['content']}"
 
     def stream(self, messages: list[dict[str, str]], *, sampling: Any = None) -> Any:
+        del messages, sampling  # protocol signature; fixed stub stream
         yield "clean"
         yield ":ok"
 
@@ -436,6 +457,7 @@ class _NoStreamBackend:
     surfaces must fail 501, never hang or fake a stream."""
 
     def complete(self, messages: list[dict[str, str]], *, sampling: Any = None) -> str:
+        del messages, sampling  # protocol signature; unconditional stub
         return "clean"
 
 
@@ -484,6 +506,58 @@ _CHAT_BODY = {"model": "fx1", "messages": [{"role": "user", "content": "ping"}]}
 # --- probe sections ------------------------------------------------------------
 
 
+def _brace_variants(p: str) -> list[str]:
+    """``p{,/suf}`` doc shorthand → [p, p/suf]; the suffix may itself hold
+    a placeholder (``/v1/models{,/{id}}``) so braces are balanced."""
+    variants = [p]
+    i = p.find("{,")
+    while i >= 0:
+        j, depth = i + 2, 1
+        while j < len(p) and depth:
+            depth += (p[j] == "{") - (p[j] == "}")
+            j += 1
+        suf = p[i + 2 : j - 1]
+        variants = [v[:i] + v[j:] for v in variants] + [v[:i] + suf + v[j:] for v in variants]
+        i = variants[0].find("{,")
+    return variants
+
+
+def _prose_route_gaps(
+    api_text: str, served: set[tuple[str, str]], served_paths: set[str]
+) -> list[str]:
+    """``METHOD /path`` spans in prose (curl snippets, error examples)
+    that resolve to no served route; a trailing ``*`` is a prefix glob."""
+    bad: list[str] = []
+    for m, p in re.findall(rf"`({'|'.join(sorted(_METHODS))})\s+(/[^`\s]+)`", api_text):
+        for v in _brace_variants(p.split("?")[0].rstrip("/")):
+            if v.endswith("*"):
+                ok = any(sp.startswith(v[:-1]) for sp in served_paths)
+            else:
+                ok = (m, _norm(v)) in served
+            if not ok:
+                bad.append(f"{m} {v}")
+    return bad
+
+
+def _bare_path_gaps(texts: dict[str, str], served_paths: set[str]) -> set[str]:
+    """Bare backticked ``/path`` spans that look like routes — across
+    every doc — resolving to neither a served path nor a templated
+    example."""
+    bare_ns = {"", "/v1", "/harness", "/receipts", _P_DOCS}
+    bad: set[str] = set()
+    for label, text in texts.items():
+        for p in re.findall(r"`((?:/harness|/v1|/receipts|/health|/ready|/metrics)[^`\s]*)`", text):
+            p = re.sub(r"\(.*$", "", p).split("?")[0].rstrip("/")
+            if p.endswith("..."):
+                continue
+            if p.endswith("*"):
+                if not any(sp.startswith(p[:-1]) for sp in served_paths):
+                    bad.add(f"{label}:{p}")
+            elif p and p not in bare_ns and "{" not in p and _norm(p) not in served_paths:
+                bad.add(f"{label}:{p}")
+    return bad
+
+
 def _probe_route_parity(out: dict[str, bool], texts: dict[str, str]) -> None:
     served = _served_routes()
     served_paths = {p for _, p in served}
@@ -495,47 +569,8 @@ def _probe_route_parity(out: dict[str, bool], texts: dict[str, str]) -> None:
     out["doc_route_exclusions_exact"] = (
         undocumented == {(m, p) for m, p in served if p in _DOC_EXCLUDED_PATHS} - doc_routes
     )
-    # ``METHOD /path`` spans in prose (curl snippets, error examples)
-    # must resolve too; a trailing ``*`` is a path-prefix glob and
-    # ``p{,/suf}`` is doc brace expansion for two paths.
-    prose_bad: list[str] = []
-    for m, p in re.findall(rf"`({'|'.join(sorted(_METHODS))})\s+(/[^`\s]+)`", texts["api"]):
-        p = p.split("?")[0].rstrip("/")
-        # ``p{,/suf}`` doc shorthand → [p, p/suf]; the suffix may itself
-        # hold a placeholder (``/v1/models{,/{id}}``) so balance braces.
-        variants = [p]
-        i = p.find("{,")
-        while i >= 0:
-            j, depth = i + 2, 1
-            while j < len(p) and depth:
-                depth += (p[j] == "{") - (p[j] == "}")
-                j += 1
-            suf = p[i + 2 : j - 1]
-            variants = [v[:i] + v[j:] for v in variants] + [v[:i] + suf + v[j:] for v in variants]
-            i = variants[0].find("{,")
-        for v in variants:
-            if v.endswith("*"):
-                ok = any(sp.startswith(v[:-1]) for sp in served_paths)
-            else:
-                ok = (m, _norm(v)) in served
-            if not ok:
-                prose_bad.append(f"{m} {v}")
-    out["doc_prose_routes_served"] = not prose_bad
-    # Bare backticked ``/path`` spans that look like routes — across
-    # every doc — resolve to a served path or a templated example.
-    bare_ns = {"", "/v1", "/harness", "/receipts", "/docs"}
-    bad_bare: set[str] = set()
-    for label, text in texts.items():
-        for p in re.findall(r"`((?:/harness|/v1|/receipts|/health|/ready|/metrics)[^`\s]*)`", text):
-            p = re.sub(r"\(.*$", "", p).split("?")[0].rstrip("/")
-            if p.endswith("..."):
-                continue
-            if p.endswith("*"):
-                if not any(sp.startswith(p[:-1]) for sp in served_paths):
-                    bad_bare.add(f"{label}:{p}")
-            elif p and p not in bare_ns and "{" not in p and _norm(p) not in served_paths:
-                bad_bare.add(f"{label}:{p}")
-    out["doc_bare_paths_served"] = not bad_bare
+    out["doc_prose_routes_served"] = not _prose_route_gaps(texts["api"], served, served_paths)
+    out["doc_bare_paths_served"] = not _bare_path_gaps(texts, served_paths)
 
 
 def _probe_openapi_golden(out: dict[str, bool], spec: dict[str, Any]) -> None:
@@ -567,14 +602,10 @@ def _dts_operation_block(text: str, path: str, method: str) -> str:
     return m2.group(1) if m2 else path_block
 
 
-def _probe_ts_schema(out: dict[str, bool], spec: dict[str, Any]) -> None:
-    text = _TS_SCHEMA.read_text() if _TS_SCHEMA.is_file() else ""
-    out["schema_ts_exists"] = bool(text)
-    out["schema_ts_sha256_pinned"] = hashlib.sha256(text.encode()).hexdigest() == _SCHEMA_TS_SHA256
-    dts_paths = set(re.findall(r'^\s{4}"(/[^"]+)":\s*\{', text, re.M))
-    spec_paths_raw = set(spec.get("paths", {}))
-    out["schema_ts_paths_cover_spec"] = spec_paths_raw <= dts_paths
-    missing_params: list[str] = []
+def _schema_missing_params(spec: dict[str, Any], dts_paths: set[str], text: str) -> list[str]:
+    """Spec operation parameters whose name is absent from the matching
+    ``.d.ts`` block."""
+    missing: list[str] = []
     for path, ops in spec.get("paths", {}).items():
         if path not in dts_paths:
             continue
@@ -585,25 +616,41 @@ def _probe_ts_schema(out: dict[str, bool], spec: dict[str, Any]) -> None:
             for prm in op.get("parameters", []):
                 name = prm.get("name", "")
                 if name and not re.search(rf"\b{re.escape(name)}\b", block):
-                    missing_params.append(f"{method.upper()} {path}:{name}")
-    out["schema_ts_params_fresh"] = not missing_params
+                    missing.append(f"{method.upper()} {path}:{name}")
+    return missing
+
+
+def _ts_client_called_paths() -> set[str]:
+    """Normalized paths the shipped TS client actually calls."""
     ts_client = _TS_CLIENT.read_text()
     called = set(re.findall(r"`(/(?:harness|v1|receipts|health|ready|metrics)[^`]*)`", ts_client))
     called |= set(re.findall(r'"(/(?:harness|v1|receipts|health|ready|metrics)[^"`]*)"', ts_client))
-    norm_called = set()
+    norm: set[str] = set()
     for p in called:
         p = p.split("${", 1)[0]  # TS template interpolation tail
         p = re.sub(r"\$\{[^}]*\}", "{}", p)
         p = p.split("?")[0].rstrip("/") or "/"
-        norm_called.add(_norm(p))
-    served_norm = {p for _, p in _served_routes()}
-    out["ts_client_paths_all_served"] = norm_called <= served_norm
+        norm.add(_norm(p))
+    return norm
+
+
+def _probe_ts_schema(out: dict[str, bool], spec: dict[str, Any]) -> None:
+    text = _TS_SCHEMA.read_text() if _TS_SCHEMA.is_file() else ""
+    out["schema_ts_exists"] = bool(text)
+    out["schema_ts_sha256_pinned"] = hashlib.sha256(text.encode()).hexdigest() == _SCHEMA_TS_SHA256
+    dts_paths = set(re.findall(r'^\s{4}"(/[^"]+)":\s*\{', text, re.M))
+    spec_paths_raw = set(spec.get("paths", {}))
+    out["schema_ts_paths_cover_spec"] = spec_paths_raw <= dts_paths
+    out["schema_ts_params_fresh"] = not _schema_missing_params(spec, dts_paths, text)
+    out["ts_client_paths_all_served"] = _ts_client_called_paths() <= {
+        p for _, p in _served_routes()
+    }
 
 
 def _probe_request_fields(out: dict[str, bool], spec: dict[str, Any]) -> None:
     """Fields the doc binds to a route exist in the served schema."""
     checks = {
-        ("POST", "/harness/keys"): {
+        ("POST", _P_KEYS): {
             "name",
             "admin",
             "rpm",
@@ -632,7 +679,7 @@ def _probe_request_fields(out: dict[str, bool], spec: dict[str, Any]) -> None:
             "stop_sequences",
             "stream",
         },
-        ("POST", "/v1/chat/completions"): {
+        ("POST", _P_CHAT): {
             "model",
             "messages",
             "stream",
@@ -706,7 +753,7 @@ def _probe_request_fields(out: dict[str, bool], spec: dict[str, Any]) -> None:
             "chunking_strategy",
         },
         ("POST", "/receipts/verify"): {"receipt"},
-        ("POST", "/harness/complete"): {
+        ("POST", _P_COMPLETE): {
             "messages",
             "backend",
             "fallbacks",
@@ -789,7 +836,7 @@ def _probe_response_shapes(out: dict[str, bool]) -> None:
         )
         r = c.get("/ready", headers=_H)
         out["doc_resp_ready"] = r.status_code == 200 and {"ready", "inflight"} <= set(r.json())
-        r = c.post("/harness/keys", json={"name": "probe"}, headers=_H)
+        r = c.post(_P_KEYS, json={"name": "probe"}, headers=_H)
         j = r.json()
         out["doc_resp_key_mint"] = (
             r.status_code == 201
@@ -813,7 +860,7 @@ def _probe_response_shapes(out: dict[str, bool]) -> None:
             headers=_H,
         )
         out["doc_resp_eval_submit"] = r.status_code == 202 and "eval_id" in r.json()
-        r = c.post("/harness/complete", json=body, headers=_H)
+        r = c.post(_P_COMPLETE, json=body, headers=_H)
         out["doc_resp_complete"] = r.status_code == 200 and {"backend", "model", "content"} <= set(
             r.json()
         )
@@ -840,141 +887,183 @@ def _probe_response_shapes(out: dict[str, bool]) -> None:
         out["doc_resp_self"] = r.status_code == 200 and {"credential", "scopes", "metered"} <= set(
             r.json()
         )
-        rs = c.post("/harness/complete/stream", json=body, headers=_H)
+        rs = c.post(_P_STREAM, json=body, headers=_H)
         out["doc_resp_sse"] = rs.status_code == 200 and rs.headers.get(
             "content-type", ""
         ).startswith("text/event-stream")
+
+
+_DUMMY_ID_NAMES = {"key_id", "job", "eval", "run"}
+_DUMMY_STR_NAMES = {
+    "name",
+    "model",
+    "backend",
+    "text",
+    "prompt",
+    "input",
+    "suite",
+    "endpoint",
+    "url",
+    "role",
+    "content",
+    "filename",
+    "purpose",
+    "suffix",
+    "format",
+    "status",
+    "query",
+    "command",
+    "suite_name",
+    "training_file",
+    "validation_file",
+    "input_file_id",
+    "callback_url",
+    "callback_secret",
+    "custom_id",
+    "operation",
+    "sha",
+    "hash",
+    "receipt_sha256",
+    "model_id",
+    "title",
+    "checkpoint_dir",
+}
+_DUMMY_INT_PREFIXES = (
+    "max_",
+    "num_",
+    "limit",
+    "n",
+    "seed",
+    "timeout",
+    "ttl",
+    "wait",
+    "interval",
+    "attempts",
+    "offset",
+    "dimensions",
+    "size",
+    "count",
+    "top_",
+)
+_DUMMY_BOOL_PREFIXES = (
+    "is_",
+    "has_",
+    "with_",
+    "include_",
+    "strict",
+    "echo",
+    "stream",
+    "admin",
+    "store",
+    "background",
+    "revoke_old",
+)
+_DUMMY_LIST_NAMES = {
+    "tools",
+    "stop",
+    "stop_sequences",
+    "file_ids",
+    "part_ids",
+    "fallbacks",
+    "receipt_hashes",
+    "scopes",
+    "clear",
+    "include",
+}
+_DUMMY_DICT_NAMES = {
+    "payload",
+    "request",
+    "params",
+    "body",
+    "metadata",
+    "config",
+    "kwargs",
+    "data",
+    "data_source",
+    "hyperparameters",
+    "testing_criteria",
+    "response_format",
+    "tool_choice",
+    "byok",
+    "judge_byok",
+    "filters",
+    "ranking_options",
+    "chunking_strategy",
+    "annotations",
+    "attributes",
+    "receipt",
+    "result",
+    "options",
+    "headers",
+    "extra_headers",
+}
+_DUMMY_CALLABLE_NAMES = {"fn", "func", "callable", "sleep", "clock", "on_event"}
+_DUMMY_FILE_NAMES = {"file", "fh", "stream", "fp", "f"}
 
 
 def _dummy_for(name: str, ptype: Any) -> Any:
     n = name.lower()
     if ptype is bytes:
         return b"x"
-    if n.endswith("_id") or n == "id" or n in {"key_id", "job", "eval", "run"}:
+    if n.endswith("_id") or n == "id" or n in _DUMMY_ID_NAMES:
         return "x"
-    if n in {
-        "name",
-        "model",
-        "backend",
-        "text",
-        "prompt",
-        "input",
-        "suite",
-        "endpoint",
-        "url",
-        "role",
-        "content",
-        "filename",
-        "purpose",
-        "suffix",
-        "format",
-        "status",
-        "query",
-        "command",
-        "suite_name",
-        "training_file",
-        "validation_file",
-        "input_file_id",
-        "callback_url",
-        "callback_secret",
-        "custom_id",
-        "operation",
-        "sha",
-        "hash",
-        "receipt_sha256",
-        "model_id",
-        "title",
-        "checkpoint_dir",
-    }:
+    if n in _DUMMY_STR_NAMES:
         return "x"
     if "messages" in n or n in {"items", "requests"}:
         return [{"role": "user", "content": "x"}]
     if n == "batch":
         return [[{"role": "user", "content": "x"}]]
-    if n in {"file", "fh", "stream", "fp", "f"}:
+    if n in _DUMMY_FILE_NAMES:
         return io.BytesIO(b"x")
-    if ptype is int or n.startswith(
-        (
-            "max_",
-            "num_",
-            "limit",
-            "n",
-            "seed",
-            "timeout",
-            "ttl",
-            "wait",
-            "interval",
-            "attempts",
-            "offset",
-            "dimensions",
-            "size",
-            "count",
-            "top_",
-        )
-    ):
+    if ptype is int or n.startswith(_DUMMY_INT_PREFIXES):
         return 1
     if ptype is float or n.endswith("_s") or n.endswith("_ms"):
         return 1.0
-    if ptype is bool or n.startswith(
-        (
-            "is_",
-            "has_",
-            "with_",
-            "include_",
-            "strict",
-            "echo",
-            "stream",
-            "admin",
-            "store",
-            "background",
-            "revoke_old",
-        )
-    ):
+    if ptype is bool or n.startswith(_DUMMY_BOOL_PREFIXES):
         return True
-    if n in {
-        "tools",
-        "stop",
-        "stop_sequences",
-        "file_ids",
-        "part_ids",
-        "fallbacks",
-        "receipt_hashes",
-        "scopes",
-        "clear",
-        "include",
-    } or n.endswith("s"):
+    if n in _DUMMY_LIST_NAMES or n.endswith("s"):
         return []
-    if n in {
-        "payload",
-        "request",
-        "params",
-        "body",
-        "metadata",
-        "config",
-        "kwargs",
-        "data",
-        "data_source",
-        "hyperparameters",
-        "testing_criteria",
-        "response_format",
-        "tool_choice",
-        "byok",
-        "judge_byok",
-        "filters",
-        "ranking_options",
-        "chunking_strategy",
-        "annotations",
-        "attributes",
-        "receipt",
-        "result",
-        "options",
-        "headers",
-        "extra_headers",
-    }:
+    if n in _DUMMY_DICT_NAMES:
         return {}
-    if n in {"fn", "func", "callable", "sleep", "clock", "on_event"}:
+    if n in _DUMMY_CALLABLE_NAMES:
         return lambda *a, **k: None
     return "x"
+
+
+_STR_TYPE_MAP = {
+    "bytes": bytes,
+    "int": int,
+    "float": float,
+    "str": str,
+    "bool": bool,
+    "dict": dict,
+    "list": list,
+}
+
+
+def _annotation_type(annotation: Any) -> Any:
+    """A parameter's type as a ``type`` when the annotation resolves to
+    one — handles string annotations like ``"bytes | None"``."""
+    if isinstance(annotation, type):
+        return annotation
+    if isinstance(annotation, str):
+        base = annotation.split("|")[0].strip().strip("'\"")
+        return _STR_TYPE_MAP.get(base)
+    return None
+
+
+def _param_dummy(p: inspect.Parameter) -> Any:
+    ptype = _annotation_type(p.annotation)
+    dummy = _dummy_for(p.name, ptype)
+    if (
+        "HarnessResult" in str(p.annotation)
+        and dummy is None
+        or (p.name == "result" and ptype is None)
+    ):
+        from fx1.harness import HarnessResult  # noqa: PLC0415
+
+        dummy = HarnessResult(command="x", exit_code=0, stdout="", stderr="")
+    return dummy
 
 
 def _call_with_dummies(fn: Any) -> Any:
@@ -992,27 +1081,7 @@ def _call_with_dummies(fn: Any) -> Any:
             continue
         if p.default is not inspect.Parameter.empty:
             continue
-        ptype = p.annotation if isinstance(p.annotation, type) else None
-        if isinstance(p.annotation, str):
-            base = p.annotation.split("|")[0].strip().strip("'\"")
-            ptype = {
-                "bytes": bytes,
-                "int": int,
-                "float": float,
-                "str": str,
-                "bool": bool,
-                "dict": dict,
-                "list": list,
-            }.get(base, ptype)
-        dummy = _dummy_for(p.name, ptype)
-        if (
-            "HarnessResult" in str(p.annotation)
-            and dummy is None
-            or (p.name == "result" and ptype is None)
-        ):
-            from fx1.harness import HarnessResult  # noqa: PLC0415
-
-            dummy = HarnessResult(command="x", exit_code=0, stdout="", stderr="")
+        dummy = _param_dummy(p)
         if p.kind == inspect.Parameter.KEYWORD_ONLY:
             kwargs[p.name] = dummy
         else:
@@ -1032,13 +1101,25 @@ def _exhaust(res: Any) -> None:
             pass
 
 
-def _route_patterns() -> dict[tuple[str, re.Pattern[str]], None]:
+def _route_patterns() -> set[tuple[str, re.Pattern[str]]]:
     served = _served_routes()
-    pats: dict[tuple[str, re.Pattern[str]], None] = {}
+    pats: set[tuple[str, re.Pattern[str]]] = set()
     for m, p in served:
         rx = re.compile("^" + re.escape(p).replace(r"\{\}", "[^/]+") + "$")
-        pats[(m, rx)] = None
+        pats.add((m, rx))
     return pats
+
+
+def _canned_body(path: str) -> bytes:
+    """A terminal-looking payload per waiter family — each poller
+    pattern-matches a different marker."""
+    if "stream" in path or "events" in path or "results" in path:
+        return b"data: [DONE]\n\n"
+    if "/messages/batches" in path:
+        return b'{"processing_status":"ended","id":"x","request_counts":{}}'
+    if re.search(r"(/harness/jobs|/harness/evals|/v1/fine_tuning)", path):
+        return b'{"status":"succeeded","id":"x","data":[]}'
+    return b'{"data":[],"id":"x","status":"completed","ok":true,"object":"x"}'
 
 
 def _probe_client_coverage(out: dict[str, bool], texts: dict[str, str]) -> None:
@@ -1046,22 +1127,13 @@ def _probe_client_coverage(out: dict[str, bool], texts: dict[str, str]) -> None:
 
     emitted: list[tuple[str, str]] = []
 
-    def canned_body(path: str) -> bytes:
-        # each waiter polls a different terminal marker
-        if "stream" in path or "events" in path or "results" in path:
-            return b"data: [DONE]\n\n"
-        if "/messages/batches" in path:
-            return b'{"processing_status":"ended","id":"x","request_counts":{}}'
-        if re.search(r"(/harness/jobs|/harness/evals|/v1/fine_tuning)", path):
-            return b'{"status":"succeeded","id":"x","data":[]}'
-        return b'{"data":[],"id":"x","status":"completed","ok":true,"object":"x"}'
-
     def rec_transport(
         method: str, url: str, payload: Any, headers: Any, timeout: Any
     ) -> tuple[int, dict[str, str], bytes]:
+        del payload, headers, timeout  # canned transport records only the route
         path = "/" + url.split("://", 1)[1].split("/", 1)[1]
         emitted.append((method, path.split("?")[0]))
-        return 200, {}, canned_body(path)
+        return 200, {}, _canned_body(path)
 
     client = HarnessClient("https://probe.local", transport=rec_transport, max_retries=0)
     pats = _route_patterns()
@@ -1106,13 +1178,32 @@ def _probe_sdk(out: dict[str, bool]) -> None:
             try:
                 res = _call_with_dummies(fn)
                 _exhaust(res)
-            except (KeyError, ValueError, RuntimeError, NotImplementedError, OSError):
+            except (KeyError, ValueError, RuntimeError, OSError):
                 continue
-            except Exception as exc:  # noqa: BLE001 — classify, don't filter
+            except Exception as exc:  # noqa: BLE001
+                # classify — a non-fx1/quant_fund raise is a real finding
                 mod = type(exc).__module__
                 if "fx1" not in mod and "quant_fund" not in mod:
                     unexpected.append(f"{name}:{type(exc).__name__}")
         out["sdk_methods_all_invocable"] = not unexpected
+
+
+def _harness_cmd_name(node: Any, deco: Any) -> str | None:
+    """The command name a ``@harness_app.command(...)`` decorator binds,
+    or None when the decorator is something else."""
+    import ast
+
+    if not (isinstance(deco, ast.Call) and isinstance(deco.func, ast.Attribute)):
+        return None
+    if (
+        deco.func.attr != "command"
+        or not deco.args
+        or not isinstance(deco.func.value, ast.Name)
+        or deco.func.value.id != "harness_app"
+    ):
+        return None
+    arg = deco.args[0]
+    return str(arg.value if isinstance(arg, ast.Constant) else node.name)
 
 
 def _cli_route_usage() -> dict[str, set[str]]:
@@ -1134,22 +1225,15 @@ def _cli_route_usage() -> dict[str, set[str]]:
         if not isinstance(node, ast.FunctionDef):
             continue
         for deco in node.decorator_list:
-            if not (isinstance(deco, ast.Call) and isinstance(deco.func, ast.Attribute)):
+            cmd_name = _harness_cmd_name(node, deco)
+            if cmd_name is None:
                 continue
-            if (
-                deco.func.attr != "command"
-                or not deco.args
-                or not isinstance(deco.func.value, ast.Name)
-                or deco.func.value.id != "harness_app"
-            ):
-                continue
-            arg = deco.args[0]
-            cmd_name = arg.value if isinstance(arg, ast.Constant) else node.name
-            calls: set[str] = set()
-            for sub in ast.walk(node):
-                if isinstance(sub, ast.Attribute) and sub.attr in pub:
-                    calls.add(sub.attr)
-            usage[str(cmd_name)] = calls
+            calls = {
+                sub.attr
+                for sub in ast.walk(node)
+                if isinstance(sub, ast.Attribute) and sub.attr in pub
+            }
+            usage[cmd_name] = calls
     return usage
 
 
@@ -1191,13 +1275,13 @@ def _probe_deploy(out: dict[str, bool], texts: dict[str, str]) -> None:
 def _probe_failure_table(out: dict[str, bool]) -> None:
     """Every ``(status, code)`` row of the deploy failure table, live."""
     c = _client(api_key=_ROOT_KEY, backend_resolver=lambda *a, **k: _StubBackend())
-    r = c.post("/v1/chat/completions", json=_CHAT_BODY, headers={"X-API-Key": "wrong"})
+    r = c.post(_P_CHAT, json=_CHAT_BODY, headers={"X-API-Key": "wrong"})
     out["doc_401_unauthorized"] = (
         r.status_code == 401 and r.json().get("error", {}).get("code") == "unauthorized"
     )
-    mint = c.post("/harness/keys", json={"scopes": ["read"]}, headers=_H)
+    mint = c.post(_P_KEYS, json={"scopes": ["read"]}, headers=_H)
     ro = c.post(
-        "/v1/chat/completions",
+        _P_CHAT,
         json=_CHAT_BODY,
         headers={"X-API-Key": mint.json().get("key", "")},
     )
@@ -1213,22 +1297,22 @@ def _probe_failure_table(out: dict[str, bool]) -> None:
     }
     r = c.get("/harness/jobs/nope", headers=_H)
     out["doc_404"] = r.status_code == 404
-    r = c.post("/v1/chat/completions", json={"model": "fx1"}, headers=_H)
+    r = c.post(_P_CHAT, json={"model": "fx1"}, headers=_H)
     out["doc_422"] = r.status_code == 422
-    mint = c.post("/harness/keys", json={"rpm": 1}, headers=_H)
+    mint = c.post(_P_KEYS, json={"rpm": 1}, headers=_H)
     h = {"X-API-Key": mint.json().get("key", "")}
-    c.get("/harness/commands", headers=h)
-    r = c.get("/harness/commands", headers=h)
+    c.get(_P_COMMANDS, headers=h)
+    r = c.get(_P_COMMANDS, headers=h)
     out["doc_429_rate_limited"] = (
         r.status_code == 429
         and r.json().get("code") == "rate_limited"
         and "Retry-After" in r.headers
         and "X-RateLimit-Limit-Requests" in r.headers
     )
-    mint = c.post("/harness/keys", json={"max_requests": 1}, headers=_H)
+    mint = c.post(_P_KEYS, json={"max_requests": 1}, headers=_H)
     hq = {"X-API-Key": mint.json().get("key", "")}
-    c.get("/harness/commands", headers=hq)
-    r = c.get("/harness/commands", headers=hq)
+    c.get(_P_COMMANDS, headers=hq)
+    r = c.get(_P_COMMANDS, headers=hq)
     out["doc_429_quota_exceeded"] = (
         r.status_code == 429
         and r.json().get("code") == "quota_exceeded"
@@ -1237,8 +1321,8 @@ def _probe_failure_table(out: dict[str, bool]) -> None:
     # ``/health``/``/ready`` are exempt from the ingress limiter — the
     # 429 proves on a metered route instead.
     cr = _client(rate_limit_rps=0.0001, backend_resolver=lambda *a, **k: _StubBackend())
-    cr.get("/harness/commands")
-    r = cr.get("/harness/commands")
+    cr.get(_P_COMMANDS)
+    r = cr.get(_P_COMMANDS)
     out["doc_429_too_many_requests"] = (
         r.status_code == 429
         and r.json().get("code") == "too_many_requests"
@@ -1246,7 +1330,7 @@ def _probe_failure_table(out: dict[str, bool]) -> None:
     )
     cn = _client(api_key=_ROOT_KEY, backend_resolver=lambda *a, **k: _NoStreamBackend())
     r = cn.post(
-        "/harness/complete/stream",
+        _P_STREAM,
         json={**_COMPLETE_BODY, "backend": "local_fx1", "checkpoint_dir": "/x"},
         headers=_H,
     )
@@ -1254,7 +1338,7 @@ def _probe_failure_table(out: dict[str, bool]) -> None:
         r.status_code == 501 and r.json().get("code") == "not_implemented"
     )
     r = cn.post(
-        "/harness/complete/stream",
+        _P_STREAM,
         json={
             **_COMPLETE_BODY,
             "backend": "local_fx1",
@@ -1265,23 +1349,23 @@ def _probe_failure_table(out: dict[str, bool]) -> None:
     )
     out["doc_501_not_supported"] = r.status_code == 501 and r.json().get("code") == "not_supported"
     cd = _client(api_key=_ROOT_KEY, backend_resolver=lambda *a, **k: _DishonestBackend())
-    r = cd.post("/v1/chat/completions", json=_CHAT_BODY, headers=_H)
+    r = cd.post(_P_CHAT, json=_CHAT_BODY, headers=_H)
     out["doc_502_honesty_gate"] = (
         r.status_code == 502 and r.json().get("error", {}).get("code") == "honesty_gate"
     )
     cf = _client(api_key=_ROOT_KEY, backend_resolver=lambda *a, **k: _FailBackend())
-    r = cf.post("/v1/chat/completions", json=_CHAT_BODY, headers=_H)
+    r = cf.post(_P_CHAT, json=_CHAT_BODY, headers=_H)
     out["doc_502_backend_failure"] = (
         r.status_code == 502 and r.json().get("error", {}).get("code") == "backend_failure"
     )
     cu = _client(api_key=_ROOT_KEY, backend_resolver=_unconfigured_backend)
-    r = cu.post("/v1/chat/completions", json=_CHAT_BODY, headers=_H)
+    r = cu.post(_P_CHAT, json=_CHAT_BODY, headers=_H)
     out["doc_503_backend_unavailable"] = (
         r.status_code == 503 and r.json().get("error", {}).get("code") == "backend_unavailable"
     )
     cg = _client(api_key=_ROOT_KEY, backend_resolver=lambda *a, **k: _StubBackend())
     cg.post("/harness/drain", headers=_H)
-    r = cg.post("/v1/chat/completions", json=_CHAT_BODY, headers=_H)
+    r = cg.post(_P_CHAT, json=_CHAT_BODY, headers=_H)
     out["doc_503_draining"] = (
         r.status_code == 503 and r.json().get("error", {}).get("code") == "draining"
     )
@@ -1296,7 +1380,7 @@ def _probe_failure_table(out: dict[str, bool]) -> None:
     def _hold() -> None:
         with tempfile.TemporaryDirectory() as td:
             rr = cc.post(
-                "/harness/complete",
+                _P_COMPLETE,
                 json={**_COMPLETE_BODY, "checkpoint_dir": td},
                 headers=_H,
             )
@@ -1307,7 +1391,7 @@ def _probe_failure_table(out: dict[str, bool]) -> None:
     if block.entered.wait(10):
         with tempfile.TemporaryDirectory() as td:
             r = cc.post(
-                "/harness/complete",
+                _P_COMPLETE,
                 json={**_COMPLETE_BODY, "checkpoint_dir": td},
                 headers=_H,
             )
@@ -1368,7 +1452,7 @@ def _probe_error_contract(out: dict[str, bool]) -> None:
     out["envelope_harness_detail_code"] = (
         r.status_code == 404 and isinstance(j.get("detail"), str) and isinstance(j.get("code"), str)
     )
-    r = c.post("/v1/chat/completions", json={"model": "fx1"}, headers=_H)
+    r = c.post(_P_CHAT, json={"model": "fx1"}, headers=_H)
     j = r.json().get("error", {})
     out["envelope_openai_keys"] = r.status_code in (400, 422) and {
         "message",
@@ -1403,7 +1487,7 @@ def _probe_readme(out: dict[str, bool], texts: dict[str, str]) -> None:
         _norm(p.split("?")[0].rstrip("/"))
         for p in re.findall(r"`((?:/harness|/v1|/receipts|/health|/ready|/metrics)[^`\s]*)`", text)
     }
-    out["readme_bare_paths_real"] = bare <= served_paths | {"/v1/{}"}
+    out["readme_bare_paths_real"] = bare <= served_paths | {_P_V1_PH}
     real = _extract_cli_commands()
     cited = set(re.findall(r"\bfx1 harness ([a-z][a-z0-9-]*)", text))
     out["readme_commands_real"] = cited <= real
