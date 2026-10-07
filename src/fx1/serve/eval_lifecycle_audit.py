@@ -101,6 +101,7 @@ Sealed ``eval_lifecycle_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import html
 import json
 import os
 import tempfile
@@ -206,6 +207,15 @@ class _FailBackend:
         """No resources to release — the stub holds nothing."""
 
 
+def _stub_reply(content: object) -> dict[str, Any]:
+    """OpenAI-shaped chat reply with the echoed message escaped."""
+    return {
+        "choices": [
+            {"message": {"role": "assistant", "content": f"stub:{html.escape(str(content))}"}}
+        ]
+    }
+
+
 class _CliChat(BaseHTTPRequestHandler):
     """Deterministic OpenAI-compatible engine for the CLI legs — echoes the
     last user message, counts completions."""
@@ -230,9 +240,7 @@ class _CliChat(BaseHTTPRequestHandler):
         except Exception:  # noqa: BLE001 — hostile input fails closed
             self.send_error(400)
             return
-        payload = json.dumps(
-            {"choices": [{"message": {"role": "assistant", "content": f"stub:{content}"}}]}
-        ).encode()
+        payload = json.dumps(_stub_reply(content)).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(payload)))

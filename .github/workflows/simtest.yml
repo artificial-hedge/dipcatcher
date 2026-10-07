@@ -62,4 +62,7 @@ jobs:
       - name: Large swarm
         env:
           MLFLOW_DISABLE_AGENT_HINT: "1"
-        run: uv run python scripts/simtest_swarm.py --seeds ${{ inputs.seeds }} --days ${{ inputs.days }} --base-seed ${{ inputs.base_seed }}
+          INPUT_SEEDS: ${{ inputs.seeds }}
+          INPUT_DAYS: ${{ inputs.days }}
+          INPUT_BASE_SEED: ${{ inputs.base_seed }}
+        run: uv run --frozen --no-build python scripts/simtest_swarm.py --seeds "$INPUT_SEEDS" --days "$INPUT_DAYS" --base-seed "$INPUT_BASE_SEED"

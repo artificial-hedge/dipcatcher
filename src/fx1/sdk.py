@@ -1141,7 +1141,8 @@ class Fx1Harness:
                     name = cand
                     break
                 if backend_obj is None:
-                    assert last_exc is not None  # noqa: S101 — chain exhausted
+                    if last_exc is None:
+                        raise RuntimeError("backend chain exhausted without exception")
                     raise last_exc
                 record.backend = name
                 record.attempts = attempts

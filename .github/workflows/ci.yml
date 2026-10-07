@@ -195,13 +195,15 @@ jobs:
       - name: Sync
         run: uv sync --frozen --all-groups --all-extras
       - name: Pytest
+        env:
+          INPUT_SUITE: ${{ inputs.suite }}
         run: |
           set -euo pipefail
           suite="fast"
           if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
             suite="full"
           elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            suite="${{ inputs.suite }}"
+            suite="${INPUT_SUITE:-fast}"
           fi
           if [ "$suite" = "full" ]; then
             marker='not network'

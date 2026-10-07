@@ -620,7 +620,8 @@ def _one_look(protocol: dict[str, Any], events: list[dict[str, Any]]) -> dict[st
     dates = [event["derived"]["date_crps"] for event in events if event["kind"] == "settlement"]
     if len(dates) != protocol["minimum_paired_origins"]:
         return None
-    alpha, lags = protocol["alpha"], protocol["hac_lags"]
+    alpha = protocol["alpha"]
+    lags = _int(protocol["hac_lags"], "hac_lags", 1, 365)
     output: dict[str, Any] = {
         "method": "one_sided_normal_HAC_Bonferroni_two_fixed_contrasts",
         "alpha_each": alpha / 2,
@@ -630,6 +631,8 @@ def _one_look(protocol: dict[str, Any], events: list[dict[str, Any]]) -> dict[st
         diff = np.asarray([date[comparator] - date["candidate"] for date in dates], dtype=float)
         centered = diff - np.mean(diff)
         n = len(diff)
+        if lags >= n:
+            raise ValueError("hac_lags must be smaller than minimum_paired_origins")
         long_run_var = float(np.dot(centered, centered) / n)
         for lag in range(1, lags + 1):
             gamma = float(np.dot(centered[lag:], centered[:-lag]) / n)
