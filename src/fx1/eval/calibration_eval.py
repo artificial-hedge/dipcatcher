@@ -29,7 +29,10 @@ perfectly elicited oracle measures ECE ~ 0, while a systematically shrunk
 oracle (``synthetic_oracle("miscalibrated")``, p -> 0.5 + 0.9 (p - 0.5))
 measures |bias| ~ 0.1 |p - 0.5| per bin. Spiegelhalter's Z additionally
 consumes a deterministic low-discrepancy Bernoulli realization (golden-ratio
-uniforms) of each probability as the binary outcome.
+uniforms) of each probability as the binary outcome. Measured at seeds 0-4:
+true-oracle ECE = 2e-5..7e-5, miscalibrated-oracle ECE = 0.0407..0.0437 with
+|Z| <= 1.90; the default gate (:data:`DEFAULT_ECE_THRESHOLD` = 0.02) therefore
+genuinely rejects the probe (the old 0.05 default could not).
 
 Strict numeric extraction takes the *last* number in the response; values
 outside [0, 1] (or unparseable / model-raising responses) are counted as
@@ -67,6 +70,18 @@ FAMILIES: tuple[str, ...] = (
 Mode = Literal["true", "miscalibrated"]
 
 Array = NDArray[np.float64]
+
+# Default gate thresholds. The mandated miscalibrated oracle
+# (``synthetic_oracle("miscalibrated")``: p -> 0.5 + 0.9 (p - 0.5)) is capped
+# at |f - p| = 0.05, so it measures ECE = 0.0407..0.0437 over seeds 0-4 and
+# never trips the |Z| <= 2.0 bound (max |Z| = 1.90), while the true oracle
+# measures ECE = 2e-5..7e-5. An ece_threshold of 0.05 could therefore *never*
+# reject the probe - a gate that cannot fail. 0.02 sits between the two
+# distributions (~2x above the probe, ~280x above the true oracle), so the
+# default gate is genuinely falsifiable; the measured numbers and the exact
+# reproduction commands are in ``docs/FX1_EVAL_FAMILIES.md``.
+DEFAULT_ECE_THRESHOLD = 0.02
+DEFAULT_Z_THRESHOLD = 2.0
 
 _SYNTHETIC_HEADER = (
     "SYNTHETIC data — this is a generated correctness test, not market evidence.\n\n"
@@ -357,8 +372,8 @@ def run_calibration_eval(
     model: ModelFn,
     seed: int = 0,
     n_bins: int = 10,
-    ece_threshold: float = 0.05,
-    z_threshold: float = 2.0,
+    ece_threshold: float = DEFAULT_ECE_THRESHOLD,
+    z_threshold: float = DEFAULT_Z_THRESHOLD,
 ) -> CalibrationReport:
     """Measure *model*'s probability calibration against the seeded bank.
 
@@ -371,6 +386,11 @@ def run_calibration_eval(
     degenerate constant forecasts) fail closed with NaN statistics. Model
     exceptions and unparseable / out-of-range answers are counted, never
     propagated.
+
+    The default thresholds are deliberately strict enough to reject the
+    mandated miscalibrated probe (see :data:`DEFAULT_ECE_THRESHOLD` and
+    ``docs/FX1_EVAL_FAMILIES.md``); passing ``ece_threshold=0.05`` would make
+    the ECE gate unfalsifiable for that probe.
     """
     if n_bins < 1:
         raise ValueError("n_bins must be positive")

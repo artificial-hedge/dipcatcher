@@ -3,6 +3,17 @@
 from fx1.eval.bank import DEFAULT_BANK, DOMAIN_TASKS, GENERAL_TASKS, HONESTY_BAITS
 from fx1.eval.compare import ComparisonResult, compare_runs
 from fx1.eval.contamination import ContaminationReport, run_contamination_audit
+from fx1.eval.families import (
+    ALL_FAMILIES,
+    BANK_FAMILIES,
+    CAPABILITY_FAMILIES,
+    DEFAULT_FAMILIES,
+    FAMILY_NAMES,
+    FamilyEvalSummary,
+    FamilyResult,
+    resolve_families,
+    run_families,
+)
 from fx1.eval.masking import MemoryGapReport, mask_task, masked_twins, memory_gap_report
 from fx1.eval.redteam import REDTEAM_TASKS
 from fx1.eval.rephrased import rephrased_twins, run_rephrased_gap
@@ -10,8 +21,13 @@ from fx1.eval.suite import EvalResult, EvalTask, run_suite
 from fx1.eval.timepart import TimePartition, partition_tasks, post_cutoff_pass_rate
 
 __all__ = [
+    "ALL_FAMILIES",
+    "BANK_FAMILIES",
+    "CAPABILITY_FAMILIES",
     "DEFAULT_BANK",
+    "DEFAULT_FAMILIES",
     "DOMAIN_TASKS",
+    "FAMILY_NAMES",
     "GENERAL_TASKS",
     "HONESTY_BAITS",
     "REDTEAM_TASKS",
@@ -19,6 +35,8 @@ __all__ = [
     "ContaminationReport",
     "EvalResult",
     "EvalTask",
+    "FamilyEvalSummary",
+    "FamilyResult",
     "MemoryGapReport",
     "TimePartition",
     "compare_runs",
@@ -28,7 +46,9 @@ __all__ = [
     "partition_tasks",
     "post_cutoff_pass_rate",
     "rephrased_twins",
+    "resolve_families",
     "run_contamination_audit",
+    "run_families",
     "run_rephrased_gap",
     "run_suite",
 ]

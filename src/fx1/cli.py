@@ -124,24 +124,86 @@ def eval_bank(
     backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     out: Path = typer.Option(Path("data/fx1/eval.json")),
+    family: list[str] = typer.Option(
+        [],
+        "--family",
+        "-f",
+        help=(
+            "Eval family, repeatable or comma-separated: honesty | domain | general | "
+            "ts_reasoning | calibration | tooluse | retrieval | all. "
+            "Default (no flag) keeps the legacy bank: honesty,domain,general."
+        ),
+    ),
+    seed: int = typer.Option(0, help="Seed for the seeded SYNTHETIC capability families."),
+    ece_threshold: float | None = typer.Option(
+        None,
+        "--ece-threshold",
+        help=(
+            "Calibration-family ECE gate; default: fx1.eval.calibration_eval."
+            "DEFAULT_ECE_THRESHOLD (measured — see docs/FX1_EVAL_FAMILIES.md)."
+        ),
+    ),
+    fail_on_gate: bool = typer.Option(
+        False,
+        "--fail-on-gate",
+        help="Exit non-zero when any family gate fails (default: report only).",
+    ),
 ) -> None:
-    """Run the built-in eval task bank against an fx-1 backend."""
-    from fx1.eval import DEFAULT_BANK, run_suite
+    """Run fx-1 eval families against a backend; write per-family JSON results.
+
+    All families are seeded SYNTHETIC correctness tests — not market evidence.
+    Every response still goes through fx1.honesty validation. The out-file
+    keeps the legacy ``results``/``by_kind``/``honesty_gate_passed``/
+    ``ship_eligible`` keys and adds a ``families`` breakdown with per-family
+    pass/total counts and gates.
+    """
+    from fx1.eval import resolve_families, run_families
+    from fx1.eval.calibration_eval import DEFAULT_ECE_THRESHOLD
     from fx1.serve import get_backend
 
+    families = resolve_families(family)
     if backend == "local_fx1":
         model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
     else:
         model = get_backend("hosted_k3")
-    summary = run_suite(model.complete, list(DEFAULT_BANK))
+    summary = run_families(
+        model.complete,
+        families,
+        seed=seed,
+        calibration_ece_threshold=(
+            DEFAULT_ECE_THRESHOLD if ece_threshold is None else ece_threshold
+        ),
+    )
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    out.write_text(summary.model_dump_json(indent=2), encoding="utf-8")
     typer.echo(
         json.dumps(
-            {"by_kind": summary["by_kind"], "honesty_gate_passed": summary["honesty_gate_passed"]},
+            {
+                "families": [
+                    {
+                        "name": row.name,
+                        "passed": row.passed,
+                        "total": row.total,
+                        "pass_rate": row.pass_rate,
+                        "gate": row.gate,
+                    }
+                    for row in summary.families
+                ],
+                "passed": summary.passed,
+                "total": summary.total,
+                "pass_rate": summary.pass_rate,
+                "gate_passed": summary.gate_passed,
+                "honesty_gate_passed": summary.honesty_gate_passed,
+                "ship_eligible": summary.ship_eligible,
+                "by_kind": summary.by_kind,
+                "data_label": summary.data_label,
+                "out": str(out),
+            },
             indent=2,
         )
     )
+    if fail_on_gate and not summary.gate_passed:
+        raise typer.Exit(code=1)
 
 
 @app.command("modelcard")

@@ -7,6 +7,8 @@ import pytest
 from scipy.stats import binom, norm
 
 from fx1.eval.calibration_eval import (
+    DEFAULT_ECE_THRESHOLD,
+    DEFAULT_Z_THRESHOLD,
     FAMILIES,
     FAMILY_BINOMIAL_HITS,
     FAMILY_GAUSSIAN_TAIL,
@@ -109,6 +111,34 @@ def test_miscalibrated_oracle_is_detected_and_fails():
     assert not report.passed
     true_ece = run_calibration_eval(synthetic_oracle("true"), seed=0).ece
     assert report.ece > 10 * true_ece
+
+
+def test_default_ece_threshold_is_falsifiable_by_the_miscalibrated_probe():
+    # Regression guard for the flagged defect: with the old default
+    # ece_threshold=0.05 this gate could never fail (probe ECE ~0.0407-0.0437,
+    # |Z| <= 1.90). The default must sit strictly below the probe's ECE.
+    assert 0.0 < DEFAULT_ECE_THRESHOLD < 0.05
+    report = run_calibration_eval(synthetic_oracle("miscalibrated"), seed=0)
+    assert not report.passed
+    assert report.ece > DEFAULT_ECE_THRESHOLD
+    # The ECE bound alone must reject the probe (its |Z| stays inside the
+    # default Z bound), i.e. rejection is not piggy-backing on the Z test.
+    isolated = run_calibration_eval(synthetic_oracle("miscalibrated"), seed=0, z_threshold=1e12)
+    assert abs(isolated.spiegelhalter_z) < 1e12
+    assert isolated.ece > DEFAULT_ECE_THRESHOLD
+    assert not isolated.passed
+
+
+@pytest.mark.parametrize("seed", [0, 1, 2, 3, 4])
+def test_default_gate_rejects_probe_and_accepts_oracle_across_seeds(seed):
+    # Measured (seeds 0-4): probe ECE 0.0407..0.0437, oracle ECE 2e-5..7e-5.
+    probe = run_calibration_eval(synthetic_oracle("miscalibrated", seed=seed), seed=seed)
+    assert not probe.passed
+    assert probe.ece > DEFAULT_ECE_THRESHOLD
+    oracle = run_calibration_eval(synthetic_oracle("true", seed=seed), seed=seed)
+    assert oracle.passed
+    assert oracle.ece * 100 < DEFAULT_ECE_THRESHOLD  # >=100x headroom
+    assert abs(oracle.spiegelhalter_z) <= DEFAULT_Z_THRESHOLD
 
 
 # ---------------------------------------------------------------------------
