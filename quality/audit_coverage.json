@@ -390,6 +390,24 @@
   "models/_mfg_synth.py": {
    "status": "audited"
   },
+  "models/_mt_core.py": {
+   "status": "audited"
+  },
+  "models/_mt_synth.py": {
+   "status": "audited"
+  },
+  "models/_nas_synth.py": {
+   "status": "audited"
+  },
+  "models/_nf_synth.py": {
+   "status": "audited"
+  },
+  "models/_oc_synth.py": {
+   "status": "audited"
+  },
+  "models/_opt_synth.py": {
+   "status": "audited"
+  },
   "models/a1_degrees.py": {
    "status": "audited"
   },
