@@ -188,3 +188,36 @@ def test_train_config_rejects_invalid_paper_ranker_hparams() -> None:
         TrainConfig.model_validate({"ipca_tol": 0.0})
     with pytest.raises(ValueError):
         TrainConfig.model_validate({"sdf_ridge_z": float("nan")})
+
+
+def test_managed_portfolios_drop_all_nan_dates() -> None:
+    # A date whose names are all non-finite must contribute NO row — a
+    # zero-filled managed return would contaminate mu/cov downstream.
+    x = np.array([[1.0, 0.0], [0.0, 1.0], [np.nan, np.nan], [np.nan, np.nan]])
+    y = np.array([0.5, -0.5, np.nan, np.nan])
+    dates = np.array([0, 0, 1, 1])
+    managed = characteristic_managed_portfolios(x, y, dates)
+    assert managed.shape == (1, 2)
+    np.testing.assert_allclose(managed[0], np.array([0.25, -0.25]))
+
+
+def test_managed_portfolios_all_nan_everywhere_returns_empty() -> None:
+    x = np.full((4, 2), np.nan)
+    y = np.full(4, np.nan)
+    dates = np.array([0, 0, 1, 1])
+    managed = characteristic_managed_portfolios(x, y, dates)
+    assert managed.shape == (0, 2)
+
+
+def test_rff_predict_nan_feature_lands_at_training_mean() -> None:
+    rng = np.random.default_rng(11)
+    x = rng.normal(loc=3.0, scale=1.0, size=(200, 2))
+    signal = np.sin(2.0 * x[:, 0])
+    y = signal + rng.normal(scale=0.05, size=x.shape[0])
+    model = RandomFourierRanker(n_features=32, bandwidth=2.0, z=1e-3, seed=3).fit(x, y)
+    probe = np.array([[np.nan, 0.5]])
+    pred_nan = model.predict(probe)[0]
+    pred_mean = model.predict(np.array([[model.scaler_x.mean_[0], 0.5]]))[0]
+    # NaN in feature 0 imputes the training mean — identical to scoring the
+    # mean row; a raw-0 fill would sit ~3 std off-mean and score differently.
+    assert pred_nan == pytest.approx(pred_mean, rel=1e-9, abs=1e-9)
