@@ -728,3 +728,19 @@ def test_bench_keys_labels_and_claims() -> None:
             assert math.isfinite(value), key
     forbidden = ("sharpe", "sortino", "calmar", "pnl", "nav", "drawdown")
     assert not any(tok in key.lower() for key in out for tok in forbidden)
+
+
+@requires_torch
+def test_mae_accepts_list_input_like_its_siblings() -> None:
+    """mae() must run the same input contract as the sibling scorers: it used
+    to call X.shape on the raw argument, so a plain list — accepted by
+    _check_matrix — got past predict() then crashed with AttributeError."""
+    rng = np.random.default_rng(3)
+    X = rng.normal(size=(40, 2))
+    y = rng.normal(size=40)
+    m = DiffPTSForecaster(epochs=2, n_steps=4).fit(X, y)
+    val = m.mae(X.tolist(), y.tolist())
+    assert isinstance(val, float) and val >= 0.0
+    # and the length check still binds through the validated matrix
+    with pytest.raises(ValueError, match="length"):
+        m.mae(X.tolist(), y.tolist()[:-1])

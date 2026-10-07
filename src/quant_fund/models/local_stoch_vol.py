@@ -652,13 +652,12 @@ def heston_mc(
         )
         a = lev * np.sqrt(np.maximum(v_cur, vol_floor))
         x += (r - q - 0.5 * a * a) * dt + a * sdt * z1[:, i]
-        if xi > 0.0:
-            v_cur = np.maximum(
-                v_cur
-                + kappa * (theta - v_cur) * dt
-                + xi * np.sqrt(np.maximum(v_cur, vol_floor)) * sdt * w2[:, i],
-                vol_floor,
-            )
+        v_cur = np.maximum(
+            v_cur
+            + kappa * (theta - v_cur) * dt
+            + xi * np.sqrt(np.maximum(v_cur, vol_floor)) * sdt * w2[:, i],
+            vol_floor,
+        )
         s_paths[:, i + 1] = np.exp(x)
         v_paths[:, i + 1] = v_cur
     return {

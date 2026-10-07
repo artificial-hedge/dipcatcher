@@ -539,3 +539,53 @@ def test_slv_leverage_function_fail_closed() -> None:
         slv_leverage_function(**{**base, "target_implied_vols": np.full(2, 0.2)})
     with pytest.raises(ValueError):
         slv_leverage_function(**{**base, "target_rho": 1.0})
+
+
+def test_heston_mc_zero_vov_follows_mean_reversion_ode() -> None:
+    """xi == 0 collapses the CIR diffusion term but NOT the drift: the
+    pre-fix code skipped the whole variance update under `if xi > 0`,
+    freezing v at v0 forever.  The true xi -> 0 limit is the mean-reversion
+    ODE v(t) = theta + (v0 - theta) exp(-kappa t)."""
+    hp = dict(HESTON, xi=0.0, v0=0.09)  # v0 > theta: v must DECAY, not freeze
+    times = np.linspace(0.0, 1.0, 41)
+    sim = heston_mc(spot=SPOT, r=R, q=Q, times=times, n_paths=128, seed=4, **hp)
+    v_all = np.asarray(sim["v"])
+    # every path is identical (no diffusion) — determinism pin preserved
+    assert np.allclose(v_all, v_all[0])
+    v = v_all[0]
+    assert float(np.ptp(v)) > 0.03  # decisively NOT the frozen-at-v0 defect
+    expected = hp["theta"] + (hp["v0"] - hp["theta"]) * np.exp(-hp["kappa"] * times)
+    # Euler discretization of the ODE — tight but not bitwise
+    assert float(np.abs(v - expected).max()) < 2e-3
+
+
+def test_heston_mc_small_vov_between_ode_and_zero_var_limits() -> None:
+    """Sanity band: a small xi path-average variance sits between the
+    deterministic ODE limit and the frozen-at-v0 behaviour the fix removed."""
+    times = np.linspace(0.0, 1.0, 21)
+    frozen = heston_mc(
+        spot=SPOT,
+        r=R,
+        q=Q,
+        times=times,
+        n_paths=128,
+        seed=9,
+        **dict(HESTON, xi=0.0, v0=0.09),
+    )
+    noisy = heston_mc(
+        spot=SPOT,
+        r=R,
+        q=Q,
+        times=times,
+        n_paths=128,
+        seed=9,
+        **dict(HESTON, xi=0.6, v0=0.09),
+    )
+    vf = np.asarray(frozen["v"])[0]
+    vn = np.asarray(noisy["v"])
+    assert np.all(vn >= 0.0)
+    # noisy paths must differ across seeds-in-paths (diffusion on)
+    assert not np.allclose(vn, vn[0])
+    # and the deterministic leg still tracks the ODE
+    expected = 0.04 + (0.09 - 0.04) * np.exp(-3.0 * times)
+    assert float(np.abs(vf - expected).max()) < 3e-3

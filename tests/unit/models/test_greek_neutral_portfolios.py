@@ -743,3 +743,16 @@ def test_lambda_sweep_fails_closed(
         gnp.penalty_strength_sweep(
             marks_small, eval_marks, alphas=[0.0, 1.0, 2.0], variant="enp_l1"
         )
+
+
+def test_dp_denominator_guard_message_is_not_inverted() -> None:
+    """The dp_* invariant in greek_neutrality_penalty_np asserts that the
+    denominator Greek must be SET — the pre-fix message raised the negation
+    ('denominator is not None').  The guard is defensive/unreachable
+    (_validate_penalty_inputs rejects dp_* with den=None first), so this
+    pins the message text at source level."""
+    import inspect
+
+    src = inspect.getsource(gnp.greek_neutrality_penalty_np)
+    assert "denominator must be set for the dp_* variants" in src
+    assert 'raise ValueError("denominator is not None")' not in src

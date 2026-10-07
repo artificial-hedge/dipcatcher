@@ -519,7 +519,9 @@ def _value_book(
             comp["swap"][:, i] = (
                 sign_sw * book.swap_notional * ((1.0 - p_end) - book.swap_fixed_rate * annuity)
             )
-        # FX forward: long foreign -> S e^{-r_f tau} - K P(t, tau)
+        # FX forward: long foreign -> S e^{-r_f tau} - K P(t, tau); at
+        # maturity the settled claim S_T - K is marked (tau -> 0+ limit),
+        # matching the equity leg's intrinsic marking convention.
         tau_f = book.fx_fwd_maturity - t
         if tau_f > _MATURITY_TOL:
             comp["fx_forward"][:, i] = (
@@ -529,6 +531,10 @@ def _value_book(
                     sft * math.exp(-book.foreign_rate * tau_f)
                     - book.fx_fwd_strike_price * zcb(rt, tau_f, kr, th, sg)
                 )
+            )
+        elif abs(tau_f) <= _MATURITY_TOL:
+            comp["fx_forward"][:, i] = (
+                sign_fx * book.fx_fwd_notional * (sft - book.fx_fwd_strike_price)
             )
         # Equity call: analytic BS on the simulated state, payoff at maturity
         tau_e = book.eq_opt_maturity - t

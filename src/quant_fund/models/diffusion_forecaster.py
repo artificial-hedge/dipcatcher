@@ -887,8 +887,9 @@ class DiffPTSForecaster:
 
     def mae(self, X: Array, y: Array) -> float:
         """Point MAE of the LSNM mean estimator ``f_phi``."""
-        mu = self.predict(X)
-        yv = _check_vector(y, X.shape[0], "y")
+        Xm = self._context(X)
+        mu = self.predict_params(Xm)[0]
+        yv = _check_vector(y, Xm.shape[0], "y")
         return float(np.mean(np.abs(yv - mu)))
 
 

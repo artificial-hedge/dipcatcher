@@ -595,3 +595,50 @@ def test_bench_xva_deterministic_labeled_and_clean() -> None:
 def test_bench_xva_fail_closed() -> None:
     with pytest.raises(ValueError, match="n_paths"):
         bench_xva(n_paths=1)
+
+
+def test_fx_forward_marks_settlement_at_maturity() -> None:
+    """An FX forward maturing exactly at the horizon must mark its settled
+    claim sign*(S_T - K) — the tau -> 0+ limit of the forward formula — not
+    0.0.  The equity leg already marks intrinsic at its own maturity; the FX
+    leg silently dropped the claim."""
+    book = SyntheticBook(
+        swap_maturity=2.0,
+        eq_opt_maturity=2.0,
+        fx_fwd_maturity=5.0,
+        fx_fwd_strike=1.1,
+        horizon=5.0,  # forward maturity lands exactly on the terminal grid point
+    )
+    sim = simulate_exposure(book, n_paths=400, n_steps=25, seed=13)
+    assert float(sim.times[-1]) == pytest.approx(5.0)
+    s_t = book.fx0 * np.exp(np.asarray(sim.factor_terminals["fx"]))
+    expected = book.fx_fwd_notional * (s_t - book.fx_fwd_strike_price)
+    np.testing.assert_allclose(
+        np.asarray(sim.components["fx_forward"])[:, -1], expected, rtol=1e-12, atol=1e-10
+    )
+    # and the book total rebuilds from components at every column
+    comp = sim.components
+    np.testing.assert_allclose(
+        comp["swap"] + comp["fx_forward"] + comp["equity_call"],
+        sim.values,
+        rtol=1e-12,
+        atol=1e-8,
+    )
+
+
+def test_fx_forward_short_position_sign_flips_settlement() -> None:
+    """A short FX forward settles to -(S_T - K) at maturity (symmetric claim)."""
+    book = SyntheticBook(
+        swap_maturity=2.0,
+        eq_opt_maturity=2.0,
+        fx_fwd_maturity=5.0,
+        fx_fwd_strike=1.1,
+        fx_fwd_is_long=False,
+        horizon=5.0,
+    )
+    sim = simulate_exposure(book, n_paths=200, n_steps=25, seed=17)
+    s_t = book.fx0 * np.exp(np.asarray(sim.factor_terminals["fx"]))
+    expected = -book.fx_fwd_notional * (s_t - book.fx_fwd_strike_price)
+    np.testing.assert_allclose(
+        np.asarray(sim.components["fx_forward"])[:, -1], expected, rtol=1e-12, atol=1e-10
+    )
