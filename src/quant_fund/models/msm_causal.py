@@ -124,7 +124,10 @@ def stabilized_weights(
     )
     sw = num / den
     cap = float(np.quantile(sw, trunc))
-    return np.asarray(np.clip(sw, 0.0, cap), dtype=np.float64)
+    sw_out = np.asarray(np.clip(sw, 0.0, cap), dtype=np.float64)
+    if not np.isfinite(sw_out).all():
+        raise ValueError("non-finite stabilized weights")
+    return sw_out
 
 
 def msm_cumulative_effect(
@@ -146,6 +149,8 @@ def msm_cumulative_effect(
     aa2 = np.asarray(a2).ravel().astype(np.float64)
     if yy.size != aa1.size:
         raise ValueError("shape mismatch")
+    if not np.isfinite(yy).all() or not np.isfinite(aa1).all() or not np.isfinite(aa2).all():
+        raise ValueError("non-finite outcome or treatment")
     sw = stabilized_weights(aa1, l1, aa2, l2, baseline)
     dose = aa1 + aa2
     x = np.column_stack([np.ones(yy.size), dose])
@@ -155,8 +160,10 @@ def msm_cumulative_effect(
     yw = yy * w_sqrt
     beta = np.linalg.lstsq(xw, yw, rcond=None)[0]
     resid = yy - x @ beta
-    # Huber-White sandwich on the weighted fit
-    meat = x.T @ ((sw * resid**2)[:, None] * x)
+    # Huber-White sandwich on the weighted fit: the observation score is
+    # w_i x_i resid_i, so the meat needs w_i^2 (a single sw underweights
+    # high-leverage units and shrinks SEs by ~1/sqrt(mean weight)).
+    meat = x.T @ ((sw**2 * resid**2)[:, None] * x)
     bread = x.T @ (sw[:, None] * x)
     cov = np.linalg.solve(bread, meat @ np.linalg.inv(bread))
     se1 = float(math.sqrt(max(cov[1, 1], 0.0)))
