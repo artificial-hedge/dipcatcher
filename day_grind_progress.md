@@ -1,7 +1,7 @@
 # Day grind progress
 
 ## INFLIGHT
-(none — Day Wave 141 GREEN; Wave 142 reserved for HF-RV receipt schema per `docs/HF_RV_DESIGN.md` §7 q5)
+(none — Day Wave 140 GREEN)
 
 
 ## Day Wave 140 — named analytical nonlinear Ledoit–Wolf path (2026-09-19)
@@ -2064,14 +2064,3 @@ Gates: 82 tests green; ruff check clean; ruff format applied; mypy clean on all 
 - models/midas_regression.py — exp-Almon NLS + UMIDAS OLS with forecast path
 
 Gates: 88 tests green across the wave; ruff check clean; ruff format applied; mypy clean on all 11 files.
-
-
-## Day Wave 141 — HF-RV implementation lands (2026-10-07)
-- GREEN: `quant_fund.realized.compute_hf_rv` body lands — RV / BPV / Lee–Mykland / hole interpolation / clock drift / source authority / tick subsample / PIT gate, all matching `docs/HF_RV_DESIGN.md` §2–§6. The function returns `HFRVResult(honest=False)` on every fail-closed path (schema-invalid, empty bars, null availability, no-PIT-bars, null event_time, clock drift > 60s, patchy intraday, degenerate close, too-few-returns, non-positive BPV).
-- GREEN: scaffolds the receipt path (PIT-stamped `available_time`, source authority recorded, `holes_count` per bar) so the HF-RV-fed overlay can be evaluated via proper scores (pinball / CRPS / QLIKE / Brier / ECE / Kupiec / HMM likelihood) without Sharpe/Sortino/Calmar headline regressions.
-- GREEN: `quant_fund.realized` package + new `__init__.py` re-exports `HFRVResult` / `compute_hf_rv` (matches the scaffolding PR #2959).
-- pytest: `tests/unit/test_hf_rv.py` (18) + `tests/test_hf_rv_scaffolding.py` (6) = 24/24 green; ruff check clean; ruff format applied on `src/quant_fund/realized/hf_rv.py` + the new test files. `scripts/check_import_boundaries.py` does not add arch violations from the impl (the 20 active on main are pre-existing fx1-harness-surface issues that PR #2970 fixes).
-- LANDED in PR #2972 (stacked on #2959). The receipt-schema stamping for HF-RV (`quality/hf_rv_receipt.json`, §7 q5) is deferred to Wave 142 so Wave 141 is a clean "lands the body" drop.
-- Research/infrastructure only — no live broker / vendor MD / live_pnl_claim.
-
-Next gap left on the table: HF-RV receipt JSON (Wave 142); factor PIT panel; QuEST 2017 numerical; full-coverage disjointness / native-lane maturin / lint-type-Bandit scope (all from #2851, deferred per PR #2973); TypeScript SSE / research-client malformed-JSON / missing TS tests (deferred per PR #2975).
