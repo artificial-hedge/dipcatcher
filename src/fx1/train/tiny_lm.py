@@ -32,6 +32,8 @@ from quant_fund.utils.atomicio import atomic_write_text
 if TYPE_CHECKING:
     import torch
 
+    from fx1.modelcard import EvalDelta
+
 VOCAB_SIZE = 259  # 256 byte-value tokens + BOS + EOS + PAD
 BOS_ID = 256
 EOS_ID = 257
@@ -313,14 +315,18 @@ def write_modelcard(
     corpus_receipt_range: str,
     training_manifest_sha256: str,
     known_limits: list[str],
+    eval_delta: EvalDelta | None = None,
     version: str = "fx-1.v0.1",
 ) -> Path:
     """Write the ship-gate card for a tiny-LM checkpoint.
 
-    The eval_delta values are the same labeled synthetic ship-gate
-    placeholders the committed fixture card carries — the real measured
-    evals live in the producing run's own artifacts (eval_base.json /
-    eval_candidate.json / comparison.json), never on the card.
+    ``eval_delta=None`` writes the labeled synthetic placeholders the
+    committed fixture card carries — for the fixture generator
+    (``scripts/fx1_tiny_lm_train.py``), whose checkpoint exists outside
+    any eval run. A real ``EvalDelta`` writes measured evidence; the
+    ``default_ft_runner`` path stamps it post-eval via
+    :func:`stamp_measured_eval_delta`, so a produced ft card's gate
+    verdict is always computed from measured pass rates.
     """
     from fx1.modelcard import EvalDelta, ModelCard
 
@@ -330,7 +336,9 @@ def write_modelcard(
         corpus_sha256=corpus_sha256,
         corpus_receipt_range=corpus_receipt_range,
         training_manifest_sha256=training_manifest_sha256,
-        eval_delta=EvalDelta(
+        eval_delta=eval_delta
+        if eval_delta is not None
+        else EvalDelta(
             domain_pass_rate_base=0.5,
             domain_pass_rate_candidate=0.51,
             general_pass_rate_base=0.9,
@@ -339,6 +347,65 @@ def write_modelcard(
         ),
         known_limits=known_limits,
     ).save(card_path)
+    return card_path
+
+
+def eval_pending_delta() -> EvalDelta:
+    """The unmeasured sentinel a freshly trained card carries.
+
+    All-zero pass rates with ``honesty_gate_candidate=False`` fail the
+    ship gate closed: a checkpoint whose eval has not run — or whose
+    measured stamp never landed — is never servable. Distinguished from
+    the fixture placeholder (which claims a pass) so an auditor can tell
+    'not yet measured' from 'measured' at a glance.
+    """
+    from fx1.modelcard import EvalDelta
+
+    return EvalDelta(
+        domain_pass_rate_base=0.0,
+        domain_pass_rate_candidate=0.0,
+        general_pass_rate_base=0.0,
+        general_pass_rate_candidate=0.0,
+        honesty_gate_candidate=False,
+    )
+
+
+def stamp_measured_eval_delta(
+    checkpoint_dir: Path,
+    eval_delta: EvalDelta,
+    *,
+    evidence_note: str,
+) -> Path:
+    """Replace a produced checkpoint's pending ``eval_delta`` with the
+    job's measured one and rewrite its provenance line.
+
+    The trainer writes the :func:`eval_pending_delta` sentinel so the
+    checkpoint on disk can never claim a gate pass it has not earned;
+    once the job's real eval pair lands, the runner stamps the measured
+    values here — the only way a produced card can become ship-eligible
+    is measured evidence. ``evidence_note`` replaces the ``eval_delta``
+    provenance line in ``known_limits`` with what was actually measured
+    (eval suite, task counts, bank sha, job seed).
+
+    Stamping over a card that is not carrying the pending sentinel is
+    refused: overwriting real measured numbers (or the labeled fixture
+    placeholder) with a second stamp would hide evidence.
+    """
+    from fx1.modelcard import ModelCard
+
+    card_path = checkpoint_dir / "modelcard.json"
+    card = ModelCard.load(card_path)
+    if card.eval_delta != eval_pending_delta():
+        raise RuntimeError(
+            "modelcard.json does not carry the eval-pending sentinel — "
+            "refusing to stamp over existing eval_delta evidence "
+            f"(got {card.eval_delta.model_dump()})"
+        )
+    card.eval_delta = eval_delta
+    kept = [lim for lim in card.known_limits if not lim.startswith("eval_delta ")]
+    kept.append(evidence_note)
+    card.known_limits = kept
+    card.save(card_path)
     return card_path
 
 
@@ -419,14 +486,17 @@ def make_tiny_lm_trainer(
             corpus_sha256=corpus_sha,
             corpus_receipt_range=f"{corpus_label} (job {job_id})",
             training_manifest_sha256=sha256_file(manifest_path),
+            eval_delta=eval_pending_delta(),
             known_limits=[
                 "fixture-scale byte-level LM (~31k params) fine-tuned for seconds "
                 "on CPU on the job's uploaded corpus — a real trained artifact, "
                 "not an fx-1 release candidate",
-                "eval_delta values are synthetic ship-gate placeholders, not "
-                "measured evals; the job's real measured evals are the "
-                "eval_base.json / eval_candidate.json / comparison.json "
-                "result files",
+                "eval_delta pending — unmeasured sentinel (all-zero pass rates, "
+                "honesty_gate_candidate false) that fails the ship gate closed "
+                "until the job's real measured eval pair is stamped via "
+                "stamp_measured_eval_delta; the measured numbers live in the "
+                "eval_base.json / eval_candidate.json / comparison.json / "
+                "eval_receipt.json result files",
                 f"fine-tuned from base weights_sha256 {base_weights_sha256[:16]}…",
             ],
         )

@@ -239,15 +239,23 @@ class LocalWeightsEngine:
     a complete tiny-LM tensor set. The same object powers both the HTTP
     surface (``serve``) and in-process calls (``complete_messages``), so a
     wire answer and a direct-weights answer are the same computation.
+
+    ``enforce_ship_gate=False`` is the measurement path, not a serving
+    path: an eval must be able to load the candidate checkpoint *before*
+    the real eval_delta it is about to measure exists (and after a card
+    has measured an honest gate failure). The artifact layer — manifest
+    sha pin, tensor completeness, vocab — always verifies; only the card
+    verdict is bypassed, and callers must never serve through an
+    engine built this way.
     """
 
-    def __init__(self, checkpoint_dir: str | Path) -> None:
+    def __init__(self, checkpoint_dir: str | Path, *, enforce_ship_gate: bool = True) -> None:
         root = Path(checkpoint_dir)
         card_path = root / CARD_FILENAME
         if not card_path.is_file():
             raise FileNotFoundError(f"no model card at {card_path}")
         card = ModelCard.load(card_path)
-        if not card.eval_delta.ship_eligible:
+        if enforce_ship_gate and not card.eval_delta.ship_eligible:
             raise RuntimeError(
                 f"{card.version} failed the ship gate; refusing to serve its weights"
             )
