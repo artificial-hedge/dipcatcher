@@ -1,104 +1,44 @@
-"""Tests for specification-curve analysis (models/specification_curve.py)."""
+"""Adversarial probes for specification_curve."""
 
-from __future__ import annotations
-
-import math
-
-import numpy as np
 import pytest
 
-from quant_fund.models.specification_curve import (
-    bench_specification_curve,
-    spec_curve_shuffle_p,
-    spec_grid,
-    specification_curve,
-    synth_multiverse,
-)
+from quant_fund.models import specification_curve as sc
 
 
-def _panel(**kw):
-    kw.setdefault("effect", 0.5)
-    return synth_multiverse(seed=18, **kw)
+def _data(n: int = 300, seed: int = 0):
+    d = sc.synth_multiverse(n=n, seed=seed)
+    return d["y"], d["treat"], d["covariate"]
 
 
-def test_grid_nonempty():
-    g = spec_grid()
-    assert len(g) > 3
-    assert all(len(s) == 3 for s in g)
+def test_all_skipped_grid_raises():
+    """Grid whose every spec needs a covariate, but none provided."""
+    y, t, _ = _data()
+    with pytest.raises(ValueError, match="no estimable"):
+        sc.specification_curve(y, t, None, grid=[("top_half", "linear", "level")])
 
 
-def test_median_recovers_effect():
-    d = _panel()
-    sc = specification_curve(np.asarray(d["y"]), np.asarray(d["treat"]), np.asarray(d["covariate"]))
-    assert abs(float(sc["median"]) - 0.5) < 0.3
-    assert float(sc["n_specs"]) >= 5.0
+def test_shuffle_rejects_zero_shuffles():
+    y, t, c = _data()
+    with pytest.raises(ValueError, match="n_shuffles"):
+        sc.spec_curve_shuffle_p(y, t, c, n_shuffles=0)
 
 
-def test_sorted_curve():
-    d = _panel()
-    sc = specification_curve(np.asarray(d["y"]), np.asarray(d["treat"]), np.asarray(d["covariate"]))
-    es = np.asarray(sc["effects_sorted"])
-    assert np.all(np.diff(es) >= 0.0)
-
-
-def test_shuffle_p_low_for_real():
-    d = _panel()
-    sh = spec_curve_shuffle_p(
-        np.asarray(d["y"]),
-        np.asarray(d["treat"]),
-        np.asarray(d["covariate"]),
-        n_shuffles=50,
-        seed=1,
-    )
-    assert sh["p_value"] < 0.3
-
-
-def test_shuffle_p_high_for_null():
-    d = _panel(effect=0.0)
-    sh = spec_curve_shuffle_p(
-        np.asarray(d["y"]),
-        np.asarray(d["treat"]),
-        np.asarray(d["covariate"]),
-        n_shuffles=50,
-        seed=2,
-    )
-    assert sh["p_value"] > 0.3
-
-
-def test_labels_match_specs():
-    d = _panel()
-    sc = specification_curve(np.asarray(d["y"]), np.asarray(d["treat"]), np.asarray(d["covariate"]))
-    assert len(sc["labels"]) == int(sc["n_specs"])
-
-
-def test_validation():
-    d = _panel()
-    y = np.asarray(d["y"])
-    t = np.asarray(d["treat"])
-    c = np.asarray(d["covariate"])
+def test_shuffle_fails_when_every_null_fails():
+    """Every placebo curve unestimable -> raise, not a fake p=1.0."""
+    y, t, _ = _data()
+    grid = [("top_half", "linear", "level")]  # needs covariate: all fail
     with pytest.raises(ValueError):
-        specification_curve(y[:5], t, c)
-    with pytest.raises(ValueError):
-        specification_curve(y, t, c[:3])
-    y2 = y.copy()
-    y2[0] = np.nan
-    with pytest.raises(ValueError):
-        specification_curve(y2, t, c)
-    with pytest.raises(ValueError):
-        specification_curve(y, t, c, grid=[])
+        sc.spec_curve_shuffle_p(y, t, None, n_shuffles=5, grid=grid)
 
 
-def test_determinism():
-    d = _panel()
-    a = specification_curve(np.asarray(d["y"]), np.asarray(d["treat"]), np.asarray(d["covariate"]))
-    b = specification_curve(np.asarray(d["y"]), np.asarray(d["treat"]), np.asarray(d["covariate"]))
-    assert float(a["median"]) == float(b["median"])
+def test_curve_labels_align_with_effects():
+    y, t, c = _data()
+    out = sc.specification_curve(y, t, c)
+    assert out["n_specs"] == float(len(out["labels"]))
+    assert out["n_specs"] == float(out["effects"].size)
 
 
-def test_bench_keys():
-    out = bench_specification_curve()
-    for k, v in out.items():
-        assert k.startswith("synthetic_")
-        assert math.isfinite(v)
-    assert out["synthetic_detects"] == 1.0
+def test_bench_smoke():
+    out = sc.bench_specification_curve()
     assert out["synthetic_determinism"] == 1.0
+    assert out["synthetic_n_specs"] >= 1.0

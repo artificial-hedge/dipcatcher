@@ -720,6 +720,9 @@
   "models/sketches.py": {
    "status": "audited"
   },
+  "models/specification_curve.py": {
+   "status": "audited"
+  },
   "models/spectral_atiyah.py": {
    "status": "audited"
   },

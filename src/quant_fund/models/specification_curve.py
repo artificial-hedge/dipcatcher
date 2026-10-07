@@ -156,6 +156,8 @@ def specification_curve(
         zvals.append(b2 / max(se2, 1e-12))
         labels.append(f"{sub}|{ctrl}|{trf}")
 
+    if not effects:
+        raise ValueError("no estimable specifications (all skipped as degenerate)")
     eff = np.asarray(effects)
     z = np.asarray(zvals)
     sig_pos = float(np.mean(z > 1.96))
@@ -186,6 +188,8 @@ def spec_curve_shuffle_p(
     """Placebo shuffle test: permute treatment labels, recompute each
     curve's median|effect|, report the share of placebo medians ≥ the
     observed (a bootstrapped p-value for the multiverse effect)."""
+    if int(n_shuffles) < 1:
+        raise ValueError("n_shuffles must be >= 1")
     ya = _as1(y, "y")
     ta = _as1(treat, "treat")
     rng = np.random.default_rng(seed)
@@ -200,6 +204,8 @@ def spec_curve_shuffle_p(
         except ValueError:
             null_stats[i] = np.nan
     ok = null_stats[np.isfinite(null_stats)]
+    if ok.size == 0:
+        raise ValueError("every placebo curve failed — null distribution empty")
     p = float((1.0 + float(np.sum(ok >= obs_stat))) / (ok.size + 1.0))
     return {
         "p_value": p,
