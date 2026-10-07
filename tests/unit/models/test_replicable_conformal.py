@@ -191,6 +191,19 @@ def test_fail_closed_empty_and_nonfinite_scores() -> None:
         pilot_density(np.array([]), ALPHA, 0.1)
 
 
+def test_fail_closed_partial_nonfinite_scores() -> None:
+    """Any non-finite entry must reject the whole vector — silently dropping
+    NaN/inf rows would shrink effective n and mask corrupted calibration."""
+    rng = np.random.default_rng(7)
+    scores = rng.random(60)
+    scores[11] = np.nan
+    scores[23] = np.inf
+    with pytest.raises(ValueError, match="finite"):
+        replicable_conformal_threshold(scores, ALPHA, 0.1, 0.0)
+    with pytest.raises(ValueError, match="finite"):
+        pilot_density(scores, ALPHA, 0.05)
+
+
 def test_fail_closed_pilot_edges() -> None:
     rng = np.random.default_rng(2)
     good = rng.random(100)

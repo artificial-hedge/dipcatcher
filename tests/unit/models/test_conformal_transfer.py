@@ -22,6 +22,7 @@ from quant_fund.models.conformal_transfer import (
     DEFAULT_WEIGHT_CLIP,
     WEIGHT_FLOOR,
     NearestNeighborTransport,
+    _irls_logistic,
     bench_tcc,
     domain_ratio_weights,
     one_sided_ks_gap,
@@ -393,6 +394,16 @@ def test_surrogate_tracks_score_alignment_a2() -> None:
     s_test = run.model.score(run.data.x_tgt_test, run.data.y_test)
     rho = float(spearmanr(surr, s_test).statistic)
     assert 0.25 < rho < 0.75
+
+
+def test_irls_nonconvergence_fails_closed() -> None:
+    """Exhausting max_iter without meeting tol must raise — silently
+    returning the un-converged iterate fakes a fitted domain classifier."""
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=(40, 3))
+    labels = (x[:, 0] > 0.0).astype(float)
+    with pytest.raises(ValueError, match="converge"):
+        _irls_logistic(x, labels, l2=1e-2, max_iter=1)
 
 
 def test_bench_tcc_keys_proper_scores_only() -> None:

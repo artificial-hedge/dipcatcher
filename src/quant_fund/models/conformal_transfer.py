@@ -304,6 +304,7 @@ def _irls_logistic(
     reg = np.full(d + 1, float(l2))
     reg[0] = 0.0
     beta = np.zeros(d + 1)
+    converged = False
     for _ in range(int(max_iter)):
         p = np.asarray(expit(design @ beta), dtype=float)
         curvature = np.maximum(p * (1.0 - p), 1e-9)
@@ -317,7 +318,10 @@ def _irls_logistic(
         if not np.all(np.isfinite(beta)):
             raise ValueError("domain classifier diverged")
         if float(np.max(np.abs(step))) < tol:
+            converged = True
             break
+    if not converged:
+        raise ValueError("domain classifier did not converge")
     return beta
 
 

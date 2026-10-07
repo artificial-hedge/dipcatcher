@@ -129,9 +129,8 @@ def _validate_grid(beta: float, offset: float) -> None:
 
 def _finite_scores(scores: Array) -> Array:
     s = np.asarray(scores, dtype=float).ravel()
-    s = s[np.isfinite(s)]
-    if s.size == 0:
-        raise ValueError("calibration scores contain no finite values")
+    if s.size == 0 or not np.all(np.isfinite(s)):
+        raise ValueError("calibration scores must be non-empty and finite")
     return s
 
 
@@ -202,7 +201,7 @@ def replicable_conformal_threshold(
     step 2 rounds it UP to the shared grid ``offset + beta * Z``. Fail-closed:
     alpha must lie in (0, 1), the level must be attainable (alpha >=
     1/(n + 1), else k > n and no finite threshold covers at 1 - alpha),
-    scores must contain at least one finite value, beta > 0 finite, and
+    scores must all be finite, beta > 0 finite, and
     offset in [0, beta).
     """
     _validate_alpha(alpha)
