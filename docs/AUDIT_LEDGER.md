@@ -346,3 +346,50 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### serve/api.py audit maintenance (PR #2954)
+
+Line-level audit of `src/fx1/serve/api.py` (10,963 lines — the last
+un-audited serve leaf): refusal and error envelopes, auth/API-key
+handling inside routes (BYOK secret material vs serialization, logging
+and echo), request-body validation boundaries, mutate-vs-journal
+ordering across every store leg, the honesty contract, and
+env/determinism invariants — a full-file sequential pass in the
+audit lane's priority order.
+
+The lane surfaced one real defect class, fixed on the same PR:
+
+* `str(ValidationError)` was rendered into refusal bodies and
+  journaled batch rows — pydantic's `input_value` repr embeds request
+  input values. The reachable site was `batch_line_body` in
+  `openai_compat.py` (batch input-file lines are raw dicts validated
+  directly): a line carrying `fx1.byok.api_key` — or a
+  `byok.base_url` with pasted userinfo credentials — journaled the
+  credential verbatim into the durable output file. The same render at
+  the three dialect routes in `api.py` (`anthropic_messages`,
+  `_abatch_row_fault`, `openai_completions`) is unreachable from the
+  wire today — `AnthropicMessagesRequest` mirrors every translatable
+  check and `anthropic_to_openai` drops extras — but all four sites
+  now join `msg` fields only (verdict text, no submitted values), so
+  schema drift cannot silently reopen the channel.
+
+The probes in `tests/fx1/test_serve_api_adversarial.py` pin the
+journaled-row leak on both batch endpoints plus the userinfo variant,
+and confirm request-layer credential redaction, ambiguous-auth
+refusal, the 1 MiB body cap and the tool_choice refusal contract.
+
+Also verified during the pass (no defects): `_redact_credential_inputs`
+covers every credential `loc`; `_IDEM_SEMANTIC_HEADERS` binds
+`x-fx1-byok-api-key` hashed-only; the store legs journal under their
+locks (the #2949 journal-then-mutate pattern holds for
+`mutate_items`, `put_unless_status`, `transition_status`,
+`put_if_present`); `abatch`/`jobs` workers install the submitter's
+`_REQUEST_KEY_ID` before charging; `key_idem_store` is deliberately
+unjournaled (raw credential replay); executors and stores are
+per-`create_app`; no `os.environ` writes; no forbidden headline tokens
+in any envelope; SSE replay is monotonic on `Last-Event-ID`; the
+drain, loopback-dev and ambiguous-auth refusals all precede route
+dispatch.
+
+The serve directory census is unchanged at 54 and remains `partial`;
+`serve/api.py` is individually `audited` in the module map.
