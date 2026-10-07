@@ -187,6 +187,42 @@ def _expand_shard(path: Path) -> tuple[list[int], str | None]:
     return ids, module
 
 
+def _check_kind_ledger(
+    dirname: str, table: tuple[tuple[str, int, int, int], ...], out: dict[str, bool]
+) -> tuple[bool, bool, bool, bool]:
+    """Check one kind's shard dir against its compact table.
+
+    Returns (file_count_ok, ids_exact, modules_exist, guard_ok).
+    """
+    file_count_ok = ids_exact = modules_exist = guard_ok = True
+    files = sorted((_LEDGER / dirname).glob("*.py"))
+    expected_names = sorted(f"{owner.replace('-', '_')}.py" for owner, *_ in table)
+    if [f.name for f in files] != expected_names:
+        file_count_ok = False
+    by_owner = {o.replace("-", "_"): (f, s, c) for o, f, s, c in table}
+    for shard in files:
+        stem = shard.stem
+        entry = by_owner.get(stem)
+        if entry is None:
+            file_count_ok = False
+            continue
+        first, stride, count = entry
+        ids, module = _expand_shard(shard)
+        if ids != [first + stride * i for i in range(count)]:
+            ids_exact = False
+        if any(sid < 0 for sid in ids):
+            guard_ok = False
+        wrapper = (
+            (_ROOT / "src" / module.replace(".", "/")).with_suffix(".py")
+            if module is not None
+            else None
+        )
+        if wrapper is None or not wrapper.is_file():
+            modules_exist = False
+        out[f"lg_{stem}_count"] = len(ids) == count
+    return file_count_ok, ids_exact, modules_exist, guard_ok
+
+
 def _probe_ledger() -> dict[str, bool]:
     """Compact table must reproduce the expanded declaration ledger exactly."""
     out: dict[str, bool] = {}
@@ -203,40 +239,15 @@ def _probe_ledger() -> dict[str, bool]:
         out["lg_wrapper_modules_exist"] = False
         out["lg_ids_in_guard_range"] = False
         return out
-    file_count_ok = True
-    ids_exact = True
-    modules_exist = True
-    guard_ok = True
-    for kind, dirname in kind_dirs.items():
-        table = _TABLES[kind]
-        files = sorted((_LEDGER / dirname).glob("*.py"))
-        expected_names = sorted(f"{owner.replace('-', '_')}.py" for owner, *_ in table)
-        if [f.name for f in files] != expected_names:
-            file_count_ok = False
-        by_owner = {o.replace("-", "_"): (o, f, s, c) for o, f, s, c in table}
-        for shard in files:
-            stem = shard.stem
-            entry = by_owner.get(stem)
-            if entry is None:
-                file_count_ok = False
-                continue
-            owner, first, stride, count = entry
-            ids, module = _expand_shard(shard)
-            if ids != [first + stride * i for i in range(count)]:
-                ids_exact = False
-            if any(sid < 0 for sid in ids):
-                guard_ok = False
-            if module is None:
-                modules_exist = False
-            else:
-                wrapper = _ROOT / "src" / module.replace(".", "/")
-                if not (wrapper.with_suffix(".py")).is_file():
-                    modules_exist = False
-            out[f"lg_{stem}_count"] = len(ids) == count
-    out["lg_file_count_matches"] = file_count_ok
-    out["lg_ids_exact"] = ids_exact
-    out["lg_wrapper_modules_exist"] = modules_exist
-    out["lg_ids_in_guard_range"] = guard_ok
+    results = [
+        _check_kind_ledger(dirname, _TABLES[kind], out) for kind, dirname in kind_dirs.items()
+    ]
+    (
+        out["lg_file_count_matches"],
+        out["lg_ids_exact"],
+        out["lg_wrapper_modules_exist"],
+        out["lg_ids_in_guard_range"],
+    ) = (all(r[i] for r in results) for i in range(4))
     return out
 
 

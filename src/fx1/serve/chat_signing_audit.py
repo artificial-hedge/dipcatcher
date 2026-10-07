@@ -54,6 +54,9 @@ __all__ = ["chat_signing_audit", "chat_signing_audit_bench"]
 
 _FORBIDDEN = "our sharpe is 2.0"
 _CLEAN = "CRPS improved by 4%"
+_WEIGHTS_BIN = "weights.bin"
+_W_BIN = "w.bin"
+_C_JSON = "c.json"
 
 
 @dataclass
@@ -62,6 +65,7 @@ class _StubBackend:
     tool_result: ToolCompletion | None = None
     seen_sampling: SamplingParams | None = None
     seen_kwargs: dict[str, Any] | None = None
+    seen_messages: list[dict[str, Any]] | None = None
     _complete_with_tools_present: bool = True
 
     def complete(
@@ -70,6 +74,7 @@ class _StubBackend:
         *,
         sampling: SamplingParams | None = None,
     ) -> str:
+        self.seen_messages = messages
         self.seen_sampling = sampling
         return self.response
 
@@ -78,6 +83,7 @@ class _StubBackend:
         messages: list[dict[str, Any]],
         **kwargs: Any,
     ) -> ToolCompletion:
+        self.seen_messages = messages
         self.seen_kwargs = kwargs
         assert self.tool_result is not None
         return self.tool_result
@@ -92,6 +98,7 @@ class _PlainBackend:
         *,
         sampling: SamplingParams | None = None,
     ) -> str:
+        del messages, sampling
         return _CLEAN
 
 
@@ -239,16 +246,14 @@ def _probe_manifest(tmp: Path) -> dict[str, bool]:
     out: dict[str, bool] = {}
     root = tmp / "ckpt"
     (root / "sub").mkdir(parents=True)
-    (root / "weights.bin").write_bytes(b"weights" * 64)
+    (root / _WEIGHTS_BIN).write_bytes(b"weights" * 64)
     (root / "sub" / "config.json").write_text("{}", encoding="utf-8")
     m = build_manifest(root)
     out["mn_paths_relative"] = set(m.artifacts) == {
-        "weights.bin",
+        _WEIGHTS_BIN,
         "sub/config.json",
     }
-    out["mn_hashes_real"] = (
-        m.artifacts["weights.bin"] == hashlib.sha256(b"weights" * 64).hexdigest()
-    )
+    out["mn_hashes_real"] = m.artifacts[_WEIGHTS_BIN] == hashlib.sha256(b"weights" * 64).hexdigest()
     out["mn_dir_recorded"] = m.checkpoint_dir == str(root)
     (root / SIGNATURE_FILENAME).write_text("deadbeef", encoding="utf-8")
     (root / MANIFEST_FILENAME).write_text("{}", encoding="utf-8")
@@ -276,8 +281,8 @@ def _probe_sign_verify(tmp: Path) -> dict[str, bool]:
     out: dict[str, bool] = {}
     root = tmp / "rel"
     (root / "sub").mkdir(parents=True)
-    (root / "w.bin").write_bytes(b"payload" * 128)
-    (root / "sub" / "c.json").write_text('{"a": 1}', encoding="utf-8")
+    (root / _W_BIN).write_bytes(b"payload" * 128)
+    (root / "sub" / _C_JSON).write_text('{"a": 1}', encoding="utf-8")
 
     key = "audit-signing-key"
     saved = os.environ.get(SIGNING_KEY_ENV)
@@ -294,7 +299,7 @@ def _probe_sign_verify(tmp: Path) -> dict[str, bool]:
         out["sv_roundtrip_true"] = verify_release(root) is True
 
         # tampered artifact byte
-        (root / "w.bin").write_bytes(b"payload" * 127 + b"x")
+        (root / _W_BIN).write_bytes(b"payload" * 127 + b"x")
         out["sv_tamper_detected"] = verify_release(root) is False
         sign_release(root)
         # added file breaks the inventory
@@ -303,12 +308,12 @@ def _probe_sign_verify(tmp: Path) -> dict[str, bool]:
         (root / "extra.bin").unlink()
         sign_release(root)
         # removed file breaks the inventory
-        (root / "sub" / "c.json").unlink()
+        (root / "sub" / _C_JSON).unlink()
         out["sv_removed_detected"] = verify_release(root) is False
-        (root / "sub" / "c.json").write_text('{"a": 1}', encoding="utf-8")
+        (root / "sub" / _C_JSON).write_text('{"a": 1}', encoding="utf-8")
         sign_release(root)
         # forged manifest (valid JSON, different digest list)
-        forged = ReleaseManifest(checkpoint_dir=str(root), artifacts={"w.bin": "0" * 64})
+        forged = ReleaseManifest(checkpoint_dir=str(root), artifacts={_W_BIN: "0" * 64})
         (root / MANIFEST_FILENAME).write_bytes(forged.model_dump_json().encode())
         out["sv_forged_manifest_detected"] = verify_release(root) is False
         sign_release(root)
@@ -347,11 +352,11 @@ def _probe_sign_verify(tmp: Path) -> dict[str, bool]:
             out["sv_verify_no_key_raises"] = False
         os.environ[SIGNING_KEY_ENV] = key
         # artifact swapped for a symlink after signing → closed
-        (root / "w.bin").unlink()
-        (root / "w.bin").symlink_to(root / "sub" / "c.json")
+        (root / _W_BIN).unlink()
+        (root / _W_BIN).symlink_to(root / "sub" / _C_JSON)
         out["sv_symlink_swap_closed"] = verify_release(root) is False
-        (root / "w.bin").unlink()
-        (root / "w.bin").write_bytes(b"payload" * 128)
+        (root / _W_BIN).unlink()
+        (root / _W_BIN).write_bytes(b"payload" * 128)
         sign_release(root)
         out["sv_restored_true"] = verify_release(root) is True
     finally:
