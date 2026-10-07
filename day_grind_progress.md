@@ -2289,8 +2289,78 @@ external session is itself running `refactor(northset): extract helpers to cut M
 complexity`, so mass-refactoring the same list would collide; the Lead is deliberately not
 duplicating it.
 
-Ruff is clean (`All checks passed!`, 19,018 files formatted) as of `612544cd0d`, so the
+Ruff is clean (`All checks passed!`, 19,019 files formatted) as of `612544cd0d`, so the
 ratchet is the *only* thing left between here and `make lint` green.
+
+---
+
+## Round 3 — measured state at hand-off
+
+**Honesty contract re-verified after every landing this round** (diffed against baseline
+`34ce633d80`): `src/fx1/honesty.py`, `catalog/constants.py`, `catalog/families.py` and
+`tests/fx1/test_honesty_inheritance.py` are all **byte-unchanged**. The one file holding
+frozen constants that was edited, `catalog/registry.py`, is **+12/−0 purely additive** (one
+import, one comment, the `LIVE_OPTIONAL_BENCHMARK_FAMILIES` derivation, two `__all__`
+entries) — `FORBIDDEN_RESEARCH_METRIC_KEYS` untouched. No new research headline names a
+forbidden metric.
+
+| gate | state |
+|---|---|
+| `ruff check src tests` | **GREEN** — All checks passed |
+| `ruff format --check` | **GREEN** — 19,019 files formatted |
+| `make typecheck` | GREEN earlier in the round; re-run in flight |
+| McCabe ratchet | **RED** — 23 ceiling regressions (was 30 at round start), 736 unlisted |
+| `make test` | **RED, and unmeasurable** — suite segfaults in native code (see below) |
+| `make fx1-test` | **RED** — 1 of 16 selftest checks (`job_receipt_verifies`) |
+| lane-authored tests | **GREEN — 66/66** |
+
+### McCabe: what is deliberately left red, and why
+
+The refactor lane cleared **7 of 30** ceiling regressions (`4132dc4a66`, `f36714c3ec`), each
+to exactly its pinned baseline, with 56 targeted tests green. The remaining 23 fall into
+three groups and the boundary is deliberate:
+
+1. **Safety-critical — correctly NOT touched:** `leakage/ast_scan.py` (4 functions — this is
+   the look-ahead-bias scanner), `portfolio/risk_gate.py`, `paper/ledger.py:promotion_dry_run`,
+   `execution/simulated_broker.py:_attempt_fill`, `labels/engine.py:build_labels`. A
+   complexity metric is never worth weakening a leakage scanner or a risk gate. **20 of 26
+   done safely beats 26 of 26 with one neutered check.**
+2. **External-caused:** `models/caviar.py:caviar_fit`, `models/ngboost_lite.py:NGBoostGaussian.fit`,
+   `northset/benches.py:bench_northset`, `parity/checker.py:attribute_pair` — these arrived
+   via `dbd00ac5a8` / `d18caafd4c` / `6a63fafbce` / `150f1b448e` / `4b0d47d2f3` ("unstrip
+   64 residual contract asserts", which *adds* branches). The external session is separately
+   running `refactor(northset): extract helpers to cut McCabe complexity`, so reworking the
+   same list would collide.
+3. **Large backtest/simulation loops:** `run_carry_backtest` (57), `_run_backtest_event_loop`
+   (39), `momentum_target_weights` (37), `run_backtest_fast` (33),
+   `basis_carry_hysteresis_weights` (29) — high-value, high-risk, and wrong to rewrite while
+   the suite cannot even be measured because of the segfault.
+
+Note also that `check_mccabe_ratchet.py --write` **refuses to pin anything while a single
+ceiling violation exists** (byte-identical baseline, 362 lines before and after). So the 23
+must be reduced before the 736 can be pinned — pinning cannot be used to paper over them.
+
+### `make fx1-test` — one failing check, precisely located
+
+`run_selftest()` returns **16 checks, 1 failing**: `job_receipt_verifies`, detail
+`HarnessTransportError: harness API returned 500: Internal Server Error`.
+
+Deduction worth recording: because the assertion is
+`_vrp(jr_doc)["valid"] is True and jr.post("/receipts/verify", ...).json().get("valid") is True`
+and Python short-circuits `and`, the local verification **must have returned `valid` True** —
+the POST only executes after it does. So `verify_receipt_payload` accepts the document and
+the HTTP wrapper does not. Confirmed `_vrp` **is** `verify_receipt_payload`
+(`api_audit.py:4590`), `_result()` returns every key `ReceiptVerifyResponse` reads
+(`valid`/`path`/`schema`/`kind`/`verdict`/`digest_convention`/`errors`/`warnings`), all
+nullable fields are typed `str | None`, and the verifier does no filesystem access via
+`path` (only `path = Path(path)`), so `Path("<api>")` is not the trigger.
+
+Remaining defect, on the external `fxi`/serve surface: `src/fx1/serve/api.py:2756`
+`verify_receipt` has **no** fail-closed guard, whereas its sibling `verify_receipts_batch`
+at line 2774 wraps the same call in `try/except Exception` with the explicit comment
+*"verifier must fail item-local, never 500"*. The single-receipt route violates the contract
+its own file documents. Reported to the owning lane; not patched here because the serve
+surface is external in-flight work and a 500 there is a symptom worth its owner's eyes.
 
 ### Honesty contract — verified intact (independently, not taken on assertion)
 
