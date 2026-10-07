@@ -82,7 +82,7 @@ def kernel_smooth(
     z = np.asarray(z, dtype=np.float64).ravel()
     y = np.asarray(y, dtype=np.float64).ravel()
     tgt = z if z_grid is None else np.asarray(z_grid, dtype=np.float64).ravel()
-    if bw <= 0:
+    if not np.isfinite(bw) or bw <= 0:
         raise ValueError("bw must be positive")
     d = (tgt[:, None] - z[None, :]) / bw
     wts = np.exp(-0.5 * d * d)
@@ -104,9 +104,15 @@ def cv_bandwidth(
         raise ValueError("grid needs >=2 bandwidths")
     errs = np.empty(grid.size)
     for gi, bw in enumerate(grid):
-        m_y = kernel_smooth(y, z, bw)
+        # true leave-one-out smooth: zero the diagonal so each point's own
+        # weight cannot dominate at small bandwidths
+        d = (z[:, None] - z[None, :]) / bw
+        wts = np.exp(-0.5 * d * d)
+        np.fill_diagonal(wts, 0.0)
+        den = np.maximum(wts.sum(axis=1), 1e-12)
+        m_y = (wts @ y) / den
+        m_x = (wts @ x) / den[:, None]
         r_y = y - m_y
-        m_x = np.column_stack([kernel_smooth(x[:, j], z, bw) for j in range(x.shape[1])])
         r_x = x - m_x
         beta_v = np.asarray(linalg.lstsq(r_x, r_y)[0])
         resid = r_y - r_x @ beta_v
@@ -136,13 +142,13 @@ def robinson_pl(
     r_x = x - m_x
     beta = np.asarray(linalg.lstsq(r_x, r_y)[0])
     resid = r_y - r_x @ beta
-    # sandwich variance on the residual design
-    meat = r_x.T @ (r_x * (resid[:, None] ** 2))
+    # Eicker-Huber-White sandwich on the residual design:
+    # cov(beta) = (X'X)^-1 (X' diag(u^2) X) (X'X)^-1 — no extra 1/n factor
     bread = r_x.T @ r_x
-    var = linalg.solve(
-        bread.T @ bread, linalg.solve(bread, meat, assume_a="pos").T, assume_a="pos"
-    ).T
-    se = np.sqrt(np.maximum(np.diag(var) / y.size, 0.0))
+    meat = r_x.T @ (r_x * (resid[:, None] ** 2))
+    bread_inv = linalg.inv(bread)
+    var = bread_inv @ meat @ bread_inv
+    se = np.sqrt(np.maximum(np.diag(var), 0.0))
     g_hat = kernel_smooth(y - x @ beta, z, bw)
     return {
         "beta": beta,
@@ -177,8 +183,8 @@ def series_pl(
 ) -> dict[str, FloatArray | float]:
     """Polynomial series estimator: y = xβ + Σ_j c_j φ_j(z) + ε."""
     y, x, z = _check(y, x, z)
-    if n_basis < 1 or n_basis > 40:
-        raise ValueError("n_basis in [1,40]")
+    if isinstance(n_basis, bool) or not isinstance(n_basis, int) or n_basis < 1 or n_basis > 40:
+        raise ValueError("n_basis must be an integer in [1,40]")
     zs = (z - z.mean()) / (z.std() + 1e-12)
     phi = np.polynomial.hermite_e.hermevander(zs, n_basis - 1)
     design = np.column_stack([x, phi])

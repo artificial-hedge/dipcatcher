@@ -83,3 +83,50 @@ def test_bench_keys():
     assert out["synthetic_semi_beats_ols"] == 1.0
     assert out["synthetic_g_corr"] > 0.9
     assert out["synthetic_determinism"] == 1.0
+
+
+def test_robinson_se_matches_manual_sandwich() -> None:
+    """EHW se must equal bread^-1 meat bread^-1 (no extra /n or bread^-1)."""
+    d = __import__("quant_fund.models.partial_linear", fromlist=["x"]).synth_partial_linear(
+        n=300, seed=7
+    )
+    y, x, z = np.asarray(d["y"]), np.asarray(d["x"]), np.asarray(d["z"])
+    out = robinson_pl(y, x, z, bw=0.15, bw_cv=False)
+    # independent recomputation
+    bw = 0.15
+    m_y = kernel_smooth(y, z, bw)
+    m_x = np.column_stack([kernel_smooth(x[:, j], z, bw) for j in range(x.shape[1])])
+    r_x, resid = x - m_x, (y - m_y) - (x - m_x) @ np.asarray(out["beta"])
+    bread = r_x.T @ r_x
+    meat = r_x.T @ (r_x * resid[:, None] ** 2)
+    expected = np.sqrt(np.diag(np.linalg.inv(bread) @ meat @ np.linalg.inv(bread)))
+    assert np.allclose(np.asarray(out["se"]), expected, rtol=1e-8)
+    # and not orders of magnitude off the classical scale
+    assert np.asarray(out["se"])[0] > 1e-4
+
+
+def test_cv_is_truly_leave_one_out() -> None:
+    """A tiny bandwidth must not win CV — self-fit is excluded."""
+    rng = np.random.default_rng(3)
+    n = 200
+    z = rng.uniform(0, 1, n)
+    x = rng.normal(size=(n, 1))
+    y = np.sin(4 * np.pi * z) + 0.4 * rng.standard_normal(n) + x[:, 0]
+    grid = np.array([0.001, 0.05, 0.2, 0.5])
+    out = cv_bandwidth(y, x, z, grid=grid)
+    assert out["bw"] != grid[0]  # the undersmoothing endpoint cannot win real LOO CV
+
+
+def test_kernel_smooth_rejects_nan_bw() -> None:
+    with pytest.raises(ValueError, match="bw"):
+        kernel_smooth(np.ones(5), np.arange(5.0), bw=float("nan"))
+
+
+def test_series_pl_rejects_bool_n_basis() -> None:
+    d = np.random.default_rng(1)
+    n = 40
+    y, x, z = d.normal(size=n), d.normal(size=(n, 1)), d.uniform(0, 1, n)
+    with pytest.raises(ValueError, match="n_basis"):
+        series_pl(y, x, z, n_basis=True)
+    with pytest.raises(ValueError, match="n_basis"):
+        series_pl(y, x, z, n_basis=2.5)
