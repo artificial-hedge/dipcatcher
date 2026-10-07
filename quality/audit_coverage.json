@@ -2120,6 +2120,9 @@
   "models/ausm_flux.py": {
    "status": "audited"
   },
+  "models/aut_group.py": {
+   "status": "audited"
+  },
   "models/autoattack_studies.py": {
    "status": "audited"
   },
@@ -2132,7 +2135,13 @@
   "models/automotive_technology.py": {
    "status": "audited"
   },
+  "models/auxiliary_pf.py": {
+   "status": "audited"
+  },
   "models/avalanche_consensus.py": {
+   "status": "audited"
+  },
+  "models/avellaneda_stoikov.py": {
    "status": "audited"
   },
   "models/averaged_operator.py": {
@@ -2147,10 +2156,16 @@
   "models/avl_tree.py": {
    "status": "audited"
   },
+  "models/avo_shuey.py": {
+   "status": "audited"
+  },
   "models/avocet_qa_studies.py": {
    "status": "audited"
   },
   "models/avsd_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/awac.py": {
    "status": "audited"
   },
   "models/awgy_qa_studies.py": {
@@ -2172,6 +2187,9 @@
    "status": "audited"
   },
   "models/azukiarai_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/azuma.py": {
    "status": "audited"
   },
   "models/azuma_ineq.py": {
@@ -2216,6 +2234,12 @@
   "models/babyai_lite_studies.py": {
    "status": "audited"
   },
+  "models/bachelier.py": {
+   "status": "audited"
+  },
+  "models/back_forth.py": {
+   "status": "audited"
+  },
   "models/back_substitution.py": {
    "status": "audited"
   },
@@ -2223,6 +2247,9 @@
    "status": "audited"
   },
   "models/backgrounds_studies.py": {
+   "status": "audited"
+  },
+  "models/backstepping.py": {
    "status": "audited"
   },
   "models/backward_euler.py": {
@@ -2237,7 +2264,13 @@
   "models/bacteriology.py": {
    "status": "audited"
   },
+  "models/badge_embed.py": {
+   "status": "audited"
+  },
   "models/badger_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/bai_ng_ic.py": {
    "status": "audited"
   },
   "models/bai_perron.py": {
@@ -2246,10 +2279,16 @@
   "models/baik_rmt.py": {
    "status": "audited"
   },
+  "models/baire_category.py": {
+   "status": "audited"
+  },
   "models/baire_space.py": {
    "status": "audited"
   },
   "models/baker_thm.py": {
+   "status": "audited"
+  },
+  "models/bakery_lock.py": {
    "status": "audited"
   },
   "models/baking_science.py": {
@@ -2294,6 +2333,9 @@
   "models/bamboogle_studies.py": {
    "status": "audited"
   },
+  "models/banach_alaoglu.py": {
+   "status": "audited"
+  },
   "models/banach_algebra.py": {
    "status": "audited"
   },
@@ -2303,7 +2345,13 @@
   "models/banach_colmez2.py": {
    "status": "audited"
   },
+  "models/banach_fixed.py": {
+   "status": "audited"
+  },
   "models/banach_mazur.py": {
+   "status": "audited"
+  },
+  "models/band_align.py": {
    "status": "audited"
   },
   "models/band_gerbe.py": {
@@ -2312,10 +2360,19 @@
   "models/band_structure.py": {
    "status": "audited"
   },
+  "models/bandi_russell.py": {
+   "status": "audited"
+  },
   "models/bandicoot_qa_studies.py": {
    "status": "audited"
   },
   "models/bandits.py": {
+   "status": "audited"
+  },
+  "models/banerjee_dep.py": {
+   "status": "audited"
+  },
+  "models/bank_conflict.py": {
    "status": "audited"
   },
   "models/bank_qa_studies.py": {
@@ -2328,6 +2385,9 @@
    "status": "audited"
   },
   "models/banteng_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/banzhaf.py": {
    "status": "audited"
   },
   "models/baobab_qa_studies.py": {
@@ -2366,6 +2426,9 @@
   "models/bariatric_surgery_studies.py": {
    "status": "audited"
   },
+  "models/barlow_twins.py": {
+   "status": "audited"
+  },
   "models/barlow_ust.py": {
    "status": "audited"
   },
@@ -2373,6 +2436,9 @@
    "status": "audited"
   },
   "models/barnacle_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/barnes_hut.py": {
    "status": "audited"
   },
   "models/barnowl_qa_studies.py": {
@@ -2385,6 +2451,12 @@
    "status": "audited"
   },
   "models/barred_owl_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/barrier_adjoint.py": {
+   "status": "audited"
+  },
+  "models/barrier_ip.py": {
    "status": "audited"
   },
   "models/barrier_options.py": {
@@ -2405,6 +2477,9 @@
   "models/base_change.py": {
    "status": "audited"
   },
+  "models/base_stock.py": {
+   "status": "audited"
+  },
   "models/basil_qa_studies.py": {
    "status": "audited"
   },
@@ -2423,10 +2498,16 @@
   "models/bastet_qa_studies.py": {
    "status": "audited"
   },
+  "models/batch_od.py": {
+   "status": "audited"
+  },
   "models/bateleur_qa_studies.py": {
    "status": "audited"
   },
   "models/bates_model.py": {
+   "status": "audited"
+  },
+  "models/bates_svj.py": {
    "status": "audited"
   },
   "models/baumslag_solitar.py": {
@@ -2441,7 +2522,25 @@
   "models/bayes_inverse.py": {
    "status": "audited"
   },
+  "models/bayesian.py": {
+   "status": "audited"
+  },
+  "models/bayesian_linear.py": {
+   "status": "audited"
+  },
+  "models/bayesian_optimization.py": {
+   "status": "audited"
+  },
+  "models/bayesian_quadrature.py": {
+   "status": "audited"
+  },
   "models/bayesian_tracking.py": {
+   "status": "audited"
+  },
+  "models/bb_reorder.py": {
+   "status": "audited"
+  },
+  "models/bbb_vi.py": {
    "status": "audited"
   },
   "models/bbh_lite_studies.py": {
@@ -2456,6 +2555,12 @@
   "models/bc_space.py": {
    "status": "audited"
   },
+  "models/bch_code.py": {
+   "status": "audited"
+  },
+  "models/bcmp_mva.py": {
+   "status": "audited"
+  },
   "models/bcmp_net.py": {
    "status": "audited"
   },
@@ -2465,10 +2570,19 @@
   "models/bdd_fano.py": {
    "status": "audited"
   },
+  "models/bdd_ops.py": {
+   "status": "audited"
+  },
   "models/bddc_lite.py": {
    "status": "audited"
   },
+  "models/bdf.py": {
+   "status": "audited"
+  },
   "models/bdr_plus.py": {
+   "status": "audited"
+  },
+  "models/bds.py": {
    "status": "audited"
   },
   "models/beacon_context_studies.py": {

@@ -44,6 +44,8 @@ def bdf1(f, y0: float, t: FloatArray, lam: float = 0.0) -> FloatArray:
             g = y - out[i - 1] - h * f(tn, y)
             if abs(step) < 1e-13 or abs(g) < 1e-13:
                 break
+        if not np.isfinite(y) or not np.isfinite(g) or abs(g) > 1e-8:
+            raise RuntimeError(f"bdf1 newton did not converge at t={tn}")
         out[i] = y
     return out
 
@@ -63,6 +65,8 @@ def bdf2(f, y0: float, t: FloatArray) -> FloatArray:
         g = y - y0 - h * f(t[1], y)
         if abs(step) < 1e-13:
             break
+    if not np.isfinite(y) or not np.isfinite(g) or abs(g) > 1e-8:
+        raise RuntimeError(f"bdf2 bootstrap newton did not converge at t={t[1]}")
     out[1] = y
     for i in range(2, len(t)):
         h = t[i] - t[i - 1]
@@ -78,6 +82,8 @@ def bdf2(f, y0: float, t: FloatArray) -> FloatArray:
             g = y - rhs - (2.0 * h / 3.0) * f(tn, y)
             if abs(step) < 1e-13:
                 break
+        if not np.isfinite(y) or not np.isfinite(g) or abs(g) > 1e-8:
+            raise RuntimeError(f"bdf2 newton did not converge at t={tn}")
         out[i] = y
     return out
 

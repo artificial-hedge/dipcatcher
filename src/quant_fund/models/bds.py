@@ -30,13 +30,11 @@ formula
     sigma_m^2 = 4 * [ K^m + 2*sum_{j=1}^{m-1} K^{m-j} C_1^{2j}
                     + (m-1)^2 C_1^{2m} - m^2 K C_1^{2m-2} ],
 
-with ``K`` the probability two histories share a boundary
-segment (third-order correlation integral
-``P(||X_i-X_j||<eps and |x_{i+m}-x_{j+m}|<eps)`` estimated as
-C_{m+1}-adjusted counts). We use the common practitioner form
-with K from the pairs whose *last coordinate also matches*
-(Kanzler 1999 / Brock et al. standard tabulation form), and
-eps = 1.0 * sd(x). The synth compares iid innovations (null:
+with ``K`` the third-order correlation integral on scalars —
+the probability that a triple of observations is pairwise
+within eps (Kanzler 1999 / Brock et al. standard tabulation
+form), computed exactly by counting matching triples. Eps is
+1.0 * sd(x). The synth compares iid innovations (null:
 |w| in the central range) against a deterministic tent-map
 chaotic path (dependence: reject) — the canonical BDS demo.
 """
@@ -66,17 +64,20 @@ def _corr_int(x: FloatArray, m: int, eps: float) -> float:
     return cnt / (n * (n - 1) / 2.0)
 
 
-def _corr_int_k(x: FloatArray, m: int, eps: float) -> float:
-    """K(eps): triples correlation term for the variance form."""
-    n = x.size - m
+def _corr_int_k(x: FloatArray, eps: float) -> float:
+    """K(eps): third-order correlation integral on scalars — the
+    fraction of observation triples (i<j<k) all pairwise within eps
+    (Kanzler 1999 / Brock-Hsieh-LeBaron variance term)."""
+    n = x.size
     if n < 20:
-        raise ValueError("too short for embedding")
-    emb = np.lib.stride_tricks.sliding_window_view(x, m + 1)
+        raise ValueError("too short")
     cnt = 0.0
     for i in range(n):
-        d = np.abs(emb[i] - emb[i + 1 :]).max(axis=1)
-        cnt += float(np.sum(d < eps))
-    return cnt / (n * (n - 1) / 2.0)
+        js = np.nonzero(np.abs(x[i + 1 :] - x[i]) < eps)[0] + i + 1
+        for j in js:
+            rem = x[j + 1 :]
+            cnt += float(np.sum((np.abs(rem - x[i]) < eps) & (np.abs(rem - x[j]) < eps)))
+    return 6.0 * cnt / (n * (n - 1) * (n - 2))
 
 
 def bds_stat(x: FloatArray, m: int = 4, eps_frac: float = 1.0) -> dict[str, float]:
@@ -93,9 +94,9 @@ def bds_stat(x: FloatArray, m: int = 4, eps_frac: float = 1.0) -> dict[str, floa
     if c1 <= 1e-9 or c1 >= 1.0 - 1e-9:
         raise ValueError("degenerate C1")
     n_eff = xx.size
+    k = _corr_int_k(xx, eps)
     for mm in range(2, m + 1):
         cm = _corr_int(xx, mm, eps)
-        k = _corr_int_k(xx, mm, eps)
         c1p = c1
         var = 4.0 * (
             k**mm

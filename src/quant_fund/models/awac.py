@@ -73,8 +73,16 @@ def bench_awac(seed: int = 907, steps: int = 2500, lam: float = 1.0) -> dict[str
         st, r = _env_step(st, a, rng)
         tot += r
         n += 1
+    # random-policy baseline measured on the same env/step budget
+    tot_r, n_r = 0.0, 0
+    st = np.zeros(4)
+    for _ in range(200):
+        a = float(rng.uniform(-1.0, 1.0))
+        st, r = _env_step(st, a, rng)
+        tot_r += r
+        n_r += 1
     return {
         "synthetic_awac_mean_reward": tot / n,
-        "synthetic_awac_random_reward": -0.2,
+        "synthetic_awac_random_reward": tot_r / n_r,
         "synthetic_torch_available": 1.0,
     }

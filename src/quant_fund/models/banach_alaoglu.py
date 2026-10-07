@@ -6,10 +6,17 @@ import numpy as np
 
 
 def weak_star_cluster(seq: np.ndarray) -> np.ndarray:
-    """Bolzano-Weierstrass: return a convergent subsequence's limit (first coord greedy)."""
-    # sequential compactness of closed ball: average converges to a cluster point
-    # use Cesaro mean as canonical cluster point of bounded sequence
-    return np.asarray(np.mean(seq, axis=0))
+    """Bolzano-Weierstrass: return a convergent subsequence's limit.
+
+    The Cesàro mean is not, in general, a cluster point of the sequence
+    (an alternating ±1 sequence averages to 0, which no subsequence
+    reaches). On the finite grid model used here an honest witness is an
+    actual element of the sequence — a limit of its constant
+    subsequence; we return the element nearest the Cesàro mean so the
+    choice is canonical and deterministic."""
+    mean = np.mean(seq, axis=0)
+    d2 = ((seq - mean) ** 2).sum(axis=1)
+    return np.asarray(seq[int(np.argmin(d2))])
 
 
 def is_bounded(seq: np.ndarray, r: float) -> bool:

@@ -67,6 +67,10 @@ def direction(f: Access, g: Access, bounds: Bounds, dim: int) -> Fraction | None
     if a != 0 and b == 0:
         i_eq = Fraction(g[1] - f[1], a)
         return i_eq if f[1] + a * i_eq == g[1] else None
+    if a == 0 and b != 0:
+        # symmetric case: constant write f[1], affine read b*i_r + g[1]
+        i_eq = Fraction(f[1] - g[1], b)
+        return i_eq if g[1] + b * i_eq == f[1] else None
     return None
 
 

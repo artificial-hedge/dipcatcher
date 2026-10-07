@@ -56,3 +56,24 @@ def test_bench_schema_and_score() -> None:
     ):
         assert np.isfinite(r[k])
     assert r["synthetic_score"] == 1.0
+
+
+def test_k_is_scalar_triple() -> None:
+    """K(eps) is the fraction of observation triples all pairwise within
+    eps (Kanzler variance term) — not the pairwise (m+1)-history count
+    the old code used."""
+    from quant_fund.models.bds import _corr_int_k
+
+    rng = np.random.default_rng(7)
+    x = rng.standard_normal(120)
+    eps = 0.9
+    n = x.size
+    cnt = 0
+    for i in range(n):
+        for j in range(i + 1, n):
+            dij = abs(x[i] - x[j]) < eps
+            for k in range(j + 1, n):
+                if dij and abs(x[i] - x[k]) < eps and abs(x[j] - x[k]) < eps:
+                    cnt += 1
+    expect = 6.0 * cnt / (n * (n - 1) * (n - 2))
+    assert abs(_corr_int_k(x, eps) - expect) < 1e-12

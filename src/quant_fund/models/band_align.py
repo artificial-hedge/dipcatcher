@@ -37,6 +37,8 @@ def _nw_band(s: str, t: str, w: int) -> int:
                 dp[i, j - 1] - 1,
                 dp[i - 1, j - 1] + (1 if s[i - 1] == t[j - 1] else -1),
             )
+    if dp[m, n] <= neg // 2:
+        raise ValueError(f"(m, n) = ({m}, {n}) unreachable inside band w={w}: widen the band")
     return int(dp[m, n])
 
 

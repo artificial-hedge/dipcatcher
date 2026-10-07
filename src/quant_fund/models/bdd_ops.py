@@ -53,17 +53,25 @@ class _BDD:
         self.cache[key] = r
         return r
 
-    def sat_count(self, node: int) -> int:
-        # count assignments over the full 4-var order via paths
-        memo: dict[int, int] = {}
+    def sat_count(self, node: int, order: list[str]) -> int:
+        # count satisfying assignments over the full var order: each
+        # path that skips k variables carries a 2**k multiplicity, and
+        # terminals multiply the remaining-variable count
+        memo: dict[tuple[int, int], int] = {}
 
-        def count(n: int) -> int:
-            if n in memo:
-                return memo[n]
-            memo[n] = count(self.lo[n]) + count(self.hi[n])
-            return memo[n]
+        def count(n: int, idx: int) -> int:
+            if n in (0, 1):
+                return int(n * (2 ** (len(order) - idx)))
+            if (n, idx) in memo:
+                return memo[(n, idx)]
+            v_idx = order.index(self.var[n])
+            skip = v_idx - idx
+            memo[(n, idx)] = (count(self.lo[n], v_idx + 1) + count(self.hi[n], v_idx + 1)) * (
+                2**skip
+            )
+            return memo[(n, idx)]
 
-        return int(count(node))
+        return int(count(node, 0))
 
 
 def bench_bdd_ops(seed: int = 5909) -> dict[str, float]:
@@ -75,17 +83,7 @@ def bench_bdd_ops(seed: int = 5909) -> dict[str, float]:
     node_tot = 0
     for f in forms:
         root = bdd.build(f, order, {})
-
-        # expand count with skipped vars: recursive over ordered vars
-        def cnt(n: int, idx: int) -> int:
-            if n in (0, 1):
-                return int(n * (2 ** (4 - idx)))
-            var = bdd.var[n]
-            v_idx = order.index(var)
-            skip = v_idx - idx
-            return int((cnt(bdd.lo[n], v_idx + 1) + cnt(bdd.hi[n], v_idx + 1)) * (2**skip))
-
-        est = cnt(root, 0)
+        est = bdd.sat_count(root, order)
         truth = sum(
             1
             for vals in itertools.product([False, True], repeat=4)

@@ -19,7 +19,10 @@ def fixed_point(f, x0: float = 0.0, tol: float = 1e-12, maxit: int = 10_000) -> 
         if abs(nx - x) < tol:
             return float(nx)
         x = nx
-    return float(x)
+    raise ValueError(
+        f"fixed_point did not converge in {maxit} iterations "
+        f"(last residual {abs(nx - x):.3e}) — not a contraction here"
+    )
 
 
 def lipschitz_const(f, lo: float, hi: float, steps: int = 200) -> float:

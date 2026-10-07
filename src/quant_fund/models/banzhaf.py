@@ -18,8 +18,10 @@ def banzhaf_index(g: CoopGame, normalized: bool = True) -> FloatArray:
     swings = np.zeros(n)
     for s in range(2**n):
         for i in range(n):
-            if not s & (1 << i) and g.v(s | (1 << i)) - g.v(s) != 0:
-                swings[i] += 1.0
+            if not s & (1 << i):
+                # Banzhaf value: sum of marginal contributions, not a
+                # count of nonzero ones (equivalent on 0/1 games)
+                swings[i] += g.v(s | (1 << i)) - g.v(s)
     raw = swings / (2.0 ** (n - 1))
     if normalized and raw.sum() > 0:
         out: FloatArray = np.asarray(raw / raw.sum())

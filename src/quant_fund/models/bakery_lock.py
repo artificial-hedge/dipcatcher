@@ -36,13 +36,16 @@ def run_bakery(n: int, schedule: list[int]) -> tuple[bool, list[int]]:
             if not blocked:
                 pc[i] = 3
         elif pc[i] == 3:
+            # enter the critical section; occupancy persists across
+            # schedule steps so a second entrant is detected
             in_cs[i] = True
             if sum(in_cs) > 1:
                 mutex_ok = False
-            in_cs[i] = False
-            order.append(i)
             pc[i] = 4
         elif pc[i] == 4:
+            # exit: release the slot, record completion, drop ticket
+            in_cs[i] = False
+            order.append(i)
             num[i] = 0
             pc[i] = 5
     return mutex_ok, order

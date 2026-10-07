@@ -29,3 +29,19 @@ def test_bench_orders():
     assert 0.7 < out["synthetic_bdf1_order"] < 1.3
     assert 1.7 < out["synthetic_bdf2_order"] < 2.3
     assert out["synthetic_stiff_err_ratio"] > 1.0
+
+
+def test_newton_nonconvergence_fails_closed() -> None:
+    """A diverging Newton solve used to write NaN/garbage iterates into
+    the trajectory silently. Must raise."""
+    import numpy as np
+    import pytest
+
+    from quant_fund.models.bdf import bdf1, bdf2
+
+    with pytest.raises(RuntimeError):
+        bdf1(lambda t, y: np.nan, 1.0, np.linspace(0.0, 1.0, 5))
+    with pytest.raises(RuntimeError):
+        bdf2(lambda t, y: np.nan, 1.0, np.linspace(0.0, 1.0, 5))
+    with pytest.raises(RuntimeError):
+        bdf1(lambda t, y: 1e30 * (y - 1.0) ** 3 + 1.0, 1.0, np.linspace(0.0, 1.0, 5))

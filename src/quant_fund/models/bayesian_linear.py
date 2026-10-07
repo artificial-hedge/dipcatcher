@@ -109,7 +109,7 @@ def bench_bayesian_linear(seed: int = 558) -> dict[str, float]:
         raise ValueError(f"blm rmse off: {out['synthetic_blm_rmse']}")
     rvm = ard_rvm_fit(x, y, it=400)
     kept = np.asarray(rvm["kept"])
-    n_noise_kept = int(kept[4:-1].sum())  # features 4..d-1 (last is bias)
+    n_noise_kept = int(kept[3:-1].sum())  # features 3..d-1 (last is bias)
     out["synthetic_ard_noise_kept"] = float(n_noise_kept)
     out["synthetic_ard_kept_total"] = float(kept.sum())
     if n_noise_kept > 3:

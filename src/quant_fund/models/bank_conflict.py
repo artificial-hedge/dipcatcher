@@ -1,5 +1,7 @@
 """Shared-memory bank-conflict counter for stride-p patterns (SYNTHETIC)."""
 
+import math
+
 import numpy as np
 
 _SEED = 20261231 + 688
@@ -22,7 +24,7 @@ def bench_bank_conflict(seed: int = _SEED) -> dict[str, float]:
         stride = int(rng.randint(1, 9))
         addrs = (np.arange(32) * stride).astype(int)
         deg = conflicts(addrs)
-        # stride 1 -> degree 1 (conflict-free); stride 32 -> all same bank
-        expect_min = 1 if stride % 32 != 0 else 32
-        ok += float(deg >= expect_min and deg <= 32)
+        # exact degree: the 32 lanes hit 32/gcd(stride,32) distinct
+        # banks, so the busiest bank holds gcd(stride,32) addresses
+        ok += float(deg == math.gcd(stride, 32))
     return {"synthetic_bank_degree": ok / trials}

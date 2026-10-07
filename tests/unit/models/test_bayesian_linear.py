@@ -32,3 +32,27 @@ def test_bench_bayesian_linear():
     out = bench_bayesian_linear(seed=558)
     assert out["synthetic_blm_rmse"] < 0.6
     assert out["synthetic_ard_noise_kept"] <= 3
+
+
+def test_noise_kept_covers_index3(monkeypatch):
+    """The synthetic truth keeps signal only at features 0..2 — noise
+    starts at index 3. The bench counted kept[4:-1], so a retained noise
+    feature at index 3 was silently missed."""
+    import quant_fund.models.bayesian_linear as bl
+
+    kept = np.zeros(13, dtype=bool)
+    kept[:4] = True  # signal 0..2 plus a retained noise feature at 3
+    kept[-1] = True  # bias column always kept
+    monkeypatch.setattr(
+        bl,
+        "ard_rvm_fit",
+        lambda x, y, it=0: {
+            "kept": kept,
+            "mean": None,
+            "cov": None,
+            "alpha": None,
+            "beta": 1.0,
+        },
+    )
+    out = bl.bench_bayesian_linear()
+    assert out["synthetic_ard_noise_kept"] == 1.0
