@@ -23,6 +23,8 @@ class Replica:
 
 class ABDRegister:
     def __init__(self, n: int) -> None:
+        if n < 1:
+            raise ValueError(f"need n>=1 replicas, got {n}")
         self.reps = [Replica() for _ in range(n)]
         self.q = n // 2 + 1
         self.ts = 0

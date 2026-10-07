@@ -9,8 +9,22 @@ import heapq
 _SEED = 20261231 + 832
 
 
-def route(grid: list[list[int]], src: tuple[int, int], dst: tuple[int, int]) -> int:
+def _check(grid: list[list[int]], src: tuple[int, int], dst: tuple[int, int]) -> tuple[int, int]:
+    if not grid or not grid[0]:
+        raise ValueError("grid must be non-empty")
     n, m = len(grid), len(grid[0])
+    if any(len(row) != m for row in grid):
+        raise ValueError("grid rows must all have equal length")
+    for pt, name in ((src, "src"), (dst, "dst")):
+        if not (0 <= pt[0] < n and 0 <= pt[1] < m):
+            raise ValueError(f"{name} {pt} outside {n}x{m} grid")
+        if grid[pt[0]][pt[1]] != 0:
+            raise ValueError(f"{name} {pt} lies on a blocked cell")
+    return n, m
+
+
+def route(grid: list[list[int]], src: tuple[int, int], dst: tuple[int, int]) -> int:
+    n, m = _check(grid, src, dst)
 
     def h(c: tuple[int, int]) -> int:
         return abs(c[0] - dst[0]) + abs(c[1] - dst[1])
@@ -36,7 +50,7 @@ def route(grid: list[list[int]], src: tuple[int, int], dst: tuple[int, int]) -> 
 def _bfs(grid: list[list[int]], src: tuple[int, int], dst: tuple[int, int]) -> int:
     from collections import deque
 
-    n, m = len(grid), len(grid[0])
+    n, m = _check(grid, src, dst)
     dist = {src: 0}
     q = deque([src])
     while q:

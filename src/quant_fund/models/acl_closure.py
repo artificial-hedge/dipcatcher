@@ -7,6 +7,10 @@ from itertools import permutations
 
 def _autos_fixing(n: int, edges: set[tuple[int, int]], fixed: set[int]) -> list[list[int]]:
     und = {frozenset(e) for e in edges}
+    if any(len(e) != 2 or not (min(e) >= 0 and max(e) < n) for e in und):
+        raise ValueError(f"edges must reference distinct nodes in [0,{n})")
+    if not all(0 <= v < n for v in fixed):
+        raise ValueError("fixed nodes must lie in [0,n)")
     out = []
     for p in permutations(range(n)):
         if any(p[v] != v for v in fixed):
@@ -28,6 +32,8 @@ def acl(n: int, edges: set[tuple[int, int]], a_set: set[int]) -> set[int]:
     """Elements whose orbit under Aut(M/A) is a singleton are algebraic:
     in a finite structure acl(A) = elements fixed by all A-automorphisms
     extended to the pointwise stabilizer."""
+    if n < 1:
+        raise ValueError(f"need n>=1 nodes, got {n}")
     autos = _autos_fixing(n, edges, a_set)
     out = set(a_set)
     for v in range(n):

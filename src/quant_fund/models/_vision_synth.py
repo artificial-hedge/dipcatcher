@@ -15,6 +15,10 @@ FloatArray = NDArray[np.float64]
 def synth_images(
     seed: int = 0, n: int = 400, noise: float = 0.35
 ) -> tuple[FloatArray, NDArray[np.int64]]:
+    if n < 1:
+        raise ValueError(f"need n>=1, got {n}")
+    if not np.isfinite(noise) or noise < 0:
+        raise ValueError(f"need finite noise>=0, got {noise}")
     rng = np.random.default_rng(seed)
     x = rng.normal(0, noise, (n, 6, 6))
     y = rng.integers(0, 2, n)
@@ -31,6 +35,10 @@ def synth_images(
 
 def patches(x: FloatArray, p: int = 2) -> FloatArray:
     """(n,6,6) -> (n, (6//p)^2, p*p) flattened p x p patches."""
+    if p < 1:
+        raise ValueError(f"need p>=1, got {p}")
+    if x.ndim != 3 or x.shape[1:] != (6, 6) or x.shape[0] < 1:
+        raise ValueError(f"x must be a non-empty (n,6,6) array, got {x.shape}")
     if 6 % p:
         raise ValueError(f"patch size p={p} does not divide image side 6")
     n = x.shape[0]

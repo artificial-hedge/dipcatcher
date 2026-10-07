@@ -561,6 +561,12 @@
   "models/_ttc_synth.py": {
    "status": "audited"
   },
+  "models/_vi_synth.py": {
+   "status": "audited"
+  },
+  "models/_vision_synth.py": {
+   "status": "audited"
+  },
   "models/a1_degrees.py": {
    "status": "audited"
   },
@@ -571,6 +577,9 @@
    "status": "audited"
   },
   "models/a_infty_alg.py": {
+   "status": "audited"
+  },
+  "models/a_star_route.py": {
    "status": "audited"
   },
   "models/aa_tree.py": {
@@ -592,6 +601,9 @@
    "status": "audited"
   },
   "models/abcast_lite.py": {
+   "status": "audited"
+  },
+  "models/abd_register.py": {
    "status": "audited"
   },
   "models/abduct_qa_studies.py": {
@@ -657,6 +669,9 @@
   "models/abzu_qa_studies.py": {
    "status": "audited"
   },
+  "models/ac_choice.py": {
+   "status": "audited"
+  },
   "models/acacia_qa_studies.py": {
    "status": "audited"
   },
@@ -688,6 +703,9 @@
    "status": "audited"
   },
   "models/acid_base_medicine.py": {
+   "status": "audited"
+  },
+  "models/acl_closure.py": {
    "status": "audited"
   },
   "models/acne_studies.py": {
