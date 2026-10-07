@@ -1,9 +1,8 @@
 """First-run onboarding: enter your API key and base URL, then drop into the
-dipcatcher harness.
+concierge console (chat, /superpower, web research, flash context).
 
-Launched by bare ``dipcatcher`` (when no endpoint is configured yet) and by
-``fxi setup``. Every I/O handle is injectable so tests can drive the wizard
-without a TTY; set ``animations=False`` for fully static output.
+Launched by ``fxi setup``. Every I/O handle is injectable so tests can drive
+the wizard without a TTY; set ``animations=False`` for fully static output.
 """
 
 from __future__ import annotations
@@ -13,7 +12,8 @@ from collections.abc import Callable
 
 import typer
 
-from fx1.interactive import actions, profiles, shell
+from fx1.interactive import actions, profiles
+from fx1.interactive.concierge import run_console
 from fx1.interactive.orb import OrbAnimator, OrbState
 from fx1.interactive.orb import banner as orb_banner
 from fx1.interactive.profiles import DEFAULT_MODEL
@@ -62,10 +62,10 @@ def enter(
     password_fn: Callable[[str], str] = getpass.getpass,
     output_fn: Callable[..., None] = typer.echo,
     animations: bool = True,
-    shell_factory: Callable[..., None] = shell.run_shell,
+    shell_factory: Callable[..., None] = run_console,
     prober: Callable[[str], str] = actions._probe,
 ) -> None:
-    """Onboard the operator, then hand off to the interactive harness shell."""
+    """Onboard the operator, then hand off to the concierge console."""
     resolved = profiles.resolve_endpoint(DEFAULT_MODEL)
     if not force and resolved:
         shell_factory(DEFAULT_MODEL)

@@ -1,0 +1,336 @@
+"""Fail-closed composition of immutable promotion receipts (``promotion_receipt.v1``).
+
+A promotion receipt is one composed, immutable record binding:
+
+- artifact identity — payload hash, manifest hash, artifact class, feature
+  identity, label/horizon identity and full **dataset identity** (required;
+  missing or unverified dataset identity blocks promotion),
+- the ``evidence_report.v1`` bytes by hash (with its sidecar),
+- the ``promotion.v1`` decision, its input metrics and every gate result,
+- the approving identity.
+
+Composition is fail-closed: every precondition raises
+:class:`PromotionCompositionError` — approved decision only
+(``promotion_is_approved``), non-synthetic evidence only, evidence report
+complete and hash-bound, all required gate results present and passing, an
+honest named approver with a timestamped decision, and a verified artifact
+manifest. The receipt is written exactly once (exclusive create) with a
+``.sha256`` sidecar and is never rewritten.
+
+Verification is an independent implementation in
+:mod:`quant_fund.research.verify` (``verify-research``): composition-side
+gating and verification-side checking share no code, so a bug in one cannot
+vouch for the other.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from collections.abc import Mapping
+from datetime import UTC, datetime
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from quant_fund.pipeline.artifact_manifest import (
+    ArtifactIdentity,
+    ArtifactManifestError,
+    manifest_path,
+    verify_artifact_manifest,
+)
+from quant_fund.registry.mlflow_store import promotion_is_approved
+from quant_fund.research.receipt_v2 import build_receipt_v2, seal_receipt
+from quant_fund.utils.hashing import hash_file
+
+PROMOTION_RECEIPT_SCHEMA = "promotion_receipt.v1"
+PROMOTION_RECEIPT_KIND = "promotion_receipt"
+EVIDENCE_REPORT_SCHEMA = "evidence_report.v1"
+REQUIRED_PROMOTION_GATES: tuple[str, ...] = (
+    "artifact_manifest",
+    "dataset_identity",
+    "evidence_report",
+    "research_receipt",
+    "leakage",
+)
+DISHONEST_APPROVER_NAMES: frozenset[str] = frozenset(
+    {"", "unknown", "anonymous", "none", "null", "n/a", "na", "tbd", "unspecified", "someone"}
+)
+
+
+class PromotionCompositionError(RuntimeError):
+    """Raised whenever a promotion receipt cannot be composed fail-closed."""
+
+
+class Approver(BaseModel):
+    """The approving identity — a named human/service, never anonymous."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1)
+    role: str = Field(min_length=1)
+    decided_at: str = Field(min_length=1)
+
+    @field_validator("name", "role")
+    @classmethod
+    def _honest_identity(cls, value: str) -> str:
+        cleaned = value.strip()
+        if cleaned.lower() in DISHONEST_APPROVER_NAMES:
+            raise ValueError(f"approver identity is missing or dishonest: {value!r}")
+        return cleaned
+
+    @field_validator("decided_at")
+    @classmethod
+    def _timestamped(cls, value: str) -> str:
+        try:
+            datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError(f"approver decided_at is not ISO-8601: {value!r}") from exc
+        return value
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise PromotionCompositionError(message)
+
+
+def _load_evidence_report(path: Path) -> dict[str, Any]:
+    try:
+        report = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise PromotionCompositionError(f"evidence report is unreadable: {path}") from exc
+    if not isinstance(report, dict):
+        raise PromotionCompositionError(f"evidence report is not a JSON object: {path}")
+    return report
+
+
+def _require_dataset_identity(identity: ArtifactIdentity) -> None:
+    dataset = identity.dataset
+    _require(
+        bool(dataset.materialized_panel_sha256) and bool(dataset.source_manifest_sha256),
+        "dataset identity is missing; promotion is blocked",
+    )
+    _require(
+        int(dataset.row_count) >= 1 and int(dataset.column_count) >= 1,
+        "dataset identity is empty; promotion is blocked",
+    )
+    _require(
+        bool(str(dataset.data_source).strip()) and bool(str(dataset.label).strip()),
+        "dataset identity is unlabeled; promotion is blocked",
+    )
+
+
+def _gate_results_checked(gates: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    _require(isinstance(gates, Mapping) and bool(gates), "gate results are missing")
+    checked = {str(name): dict(row) for name, row in gates.items() if isinstance(row, Mapping)}
+    _require(len(checked) == len(gates), "gate results must all be objects")
+    for name in REQUIRED_PROMOTION_GATES:
+        _require(name in checked, f"gate result is missing: {name}")
+    for name, row in checked.items():
+        _require(row.get("status") == "pass", f"gate result is not passing: {name}")
+    return checked
+
+
+def compose_promotion_receipt(
+    *,
+    artifact: Path,
+    evidence_report: Path,
+    decision: Mapping[str, Any],
+    input_metrics: Mapping[str, Any],
+    gate_results: Mapping[str, Any],
+    approver: Mapping[str, Any],
+    out_path: Path,
+) -> dict[str, Any]:
+    """Compose one immutable ``promotion_receipt.v1`` — fail-closed.
+
+    Raises :class:`PromotionCompositionError` on any missing, mismatched,
+    stale, synthetic or dishonest input. The written receipt is never
+    overwritten; a second composition to the same ``out_path`` raises.
+    """
+    # 1. Artifact manifest with verified dataset identity (mandated blocker).
+    try:
+        identity = verify_artifact_manifest(Path(artifact))
+    except ArtifactManifestError as exc:
+        raise PromotionCompositionError(
+            "artifact manifest is absent or unverified (dataset identity "
+            f"cannot be established); promotion is blocked: {exc}"
+        ) from exc
+    _require_dataset_identity(identity)
+
+    artifact_path = Path(artifact)
+    artifact_sha = hash_file(artifact_path)
+    manifest_file = manifest_path(artifact_path)
+    manifest_sha = hash_file(manifest_file)
+    try:
+        manifest_record = json.loads(manifest_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise PromotionCompositionError(f"artifact manifest is unreadable: {manifest_file}") from exc
+    artifact_class = manifest_record.get("class") if isinstance(manifest_record, dict) else None
+
+    # 2. Approved, non-synthetic promotion decision.
+    _require(
+        promotion_is_approved(dict(decision)),
+        "promotion decision is not an approved fail-closed promotion.v1 decision",
+    )
+    decision_source = str(decision.get("data_source", ""))
+    _require(
+        bool(decision_source.strip()) and decision_source.strip().upper() != "SYNTHETIC",
+        "synthetic evidence cannot be presented for promotion",
+    )
+    _require(
+        decision.get("artifact_sha256") == artifact_sha,
+        "promotion decision binds a different artifact",
+    )
+    _require(bool(str(decision.get("run_id", "")).strip()), "promotion decision has no run_id")
+
+    # 3. Input metrics bind the same artifact and dataset (staleness check).
+    _require(isinstance(input_metrics, Mapping) and bool(input_metrics), "input metrics are missing")
+    metrics_source = str(input_metrics.get("data_source", ""))
+    _require(
+        bool(metrics_source.strip()) and metrics_source.strip().upper() != "SYNTHETIC",
+        "synthetic evidence cannot be presented for promotion",
+    )
+    _require(
+        metrics_source == decision_source,
+        "input metrics and promotion decision disagree on data source",
+    )
+    _require(input_metrics.get("synthetic") is not True, "synthetic evidence cannot be promoted")
+    _require(
+        input_metrics.get("artifact_sha256") == artifact_sha,
+        "input metrics bind a different artifact",
+    )
+    _require(
+        input_metrics.get("dataset_content_sha256") == identity.dataset.materialized_panel_sha256,
+        "input metrics dataset identity is stale or absent",
+    )
+
+    # 4. Gate results: every required gate present and passing.
+    gates = _gate_results_checked(gate_results)
+
+    # 5. Approving identity: named, honest, timestamped.
+    try:
+        approver_record = Approver.model_validate(dict(approver))
+    except Exception as exc:
+        raise PromotionCompositionError(f"approver identity is missing or dishonest: {exc}") from exc
+
+    # 6. Evidence report: bytes-bound, complete, research-only, non-synthetic.
+    report_path = Path(evidence_report)
+    if not report_path.is_file():
+        raise PromotionCompositionError(f"evidence report does not exist: {report_path}")
+    report = _load_evidence_report(report_path)
+    report_sha = hash_file(report_path)
+    sidecar = report_path.with_name(f"{report_path.name}.sha256")
+    if sidecar.is_file():
+        expected = sidecar.read_text(encoding="ascii").strip()
+        _require(expected == report_sha, "evidence report hash sidecar mismatch")
+    _require(
+        report.get("schema") == EVIDENCE_REPORT_SCHEMA,
+        "evidence report schema mismatch",
+    )
+    _require(report.get("research_only") is True, "evidence report is not research-only")
+    _require(report.get("live_pnl_claim") is False, "evidence report claims live P&L")
+    _require(
+        report.get("status") == "complete",
+        "evidence report is incomplete; promotion is blocked",
+    )
+    warnings = report.get("warnings")
+    _require(
+        not (isinstance(warnings, list) and "synthetic_evidence_not_promotable" in warnings),
+        "synthetic evidence is not promotable",
+    )
+    provenance = report.get("provenance")
+    if not isinstance(provenance, Mapping):
+        raise PromotionCompositionError("evidence report has no provenance")
+    _require(
+        provenance.get("artifact_sha256") == artifact_sha,
+        "evidence report artifact hash does not match the artifact",
+    )
+    _require(
+        provenance.get("dataset_content_sha256") == identity.dataset.materialized_panel_sha256,
+        "evidence report dataset identity is stale or absent",
+    )
+    _require(
+        provenance.get("manifest_valid") is True,
+        "evidence report does not bind a verified artifact manifest",
+    )
+
+    payload: dict[str, Any] = {
+        "schema": PROMOTION_RECEIPT_SCHEMA,
+        "claim": "research_only",
+        "execution_claim": "research_only",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "artifact_identity": {
+            "path": str(artifact_path),
+            "artifact_sha256": artifact_sha,
+            "manifest_path": str(manifest_file),
+            "manifest_sha256": manifest_sha,
+            "artifact_class": artifact_class,
+            "identity": identity.model_dump(mode="json"),
+        },
+        "evidence_report": {
+            "path": str(report_path),
+            "sha256": report_sha,
+            "schema": EVIDENCE_REPORT_SCHEMA,
+        },
+        "promotion_decision": dict(decision),
+        "input_metrics": dict(input_metrics),
+        "gate_results": gates,
+        "approver": approver_record.model_dump(mode="json"),
+    }
+    envelope = build_receipt_v2(
+        kind=PROMOTION_RECEIPT_KIND,
+        data_label=PROMOTION_RECEIPT_SCHEMA,
+        dataset={
+            "artifact_sha256": artifact_sha,
+            "materialized_panel_sha256": identity.dataset.materialized_panel_sha256,
+            "evidence_report_sha256": report_sha,
+        },
+        params={
+            "run_id": str(decision.get("run_id", "")),
+            "approver": approver_record.name,
+            "gates": sorted(gates),
+        },
+        code_files=(Path(__file__),),
+        verdict="pass",
+        payload=payload,
+    )
+    sealed = seal_receipt(envelope)
+
+    destination = Path(out_path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    # Exclusive create: an existing receipt is never rewritten.
+    try:
+        with open(destination, "x", encoding="utf-8") as handle:
+            handle.write(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+    except FileExistsError as exc:
+        raise PromotionCompositionError(
+            f"promotion receipts are immutable; refusing to overwrite: {destination}"
+        ) from exc
+
+    file_sha = hash_file(destination)
+    sidecar = destination.with_name(f"{destination.name}.sha256")
+    temporary_path: Path | None = None
+    try:
+        with NamedTemporaryFile(
+            dir=sidecar.parent,
+            prefix=f".{sidecar.name}.",
+            suffix=".tmp",
+            mode="w",
+            encoding="ascii",
+            delete=False,
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+            temporary.write(file_sha + "\n")
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        os.replace(temporary_path, sidecar)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+    return sealed

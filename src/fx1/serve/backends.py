@@ -1085,13 +1085,18 @@ class TokenCountingBackend(Protocol):
 
 
 class HostedK3Backend(_UsageTracker):
-    """Hosted Kimi K3 via the Moonshot API (stdlib HTTP; no new deps)."""
+    """Hosted Kimi K3 via the Moonshot API (stdlib HTTP; no new deps).
+
+    Endpoint override: ``api_url`` wins, then the ``FX1_BASE_URL``
+    environment variable, then the pinned Moonshot URL. The API key comes
+    from the ``api_key`` argument or ``MOONSHOT_API_KEY`` — never hardcoded.
+    """
 
     def __init__(
         self,
         api_key: str | None = None,
         model: str = "kimi-k3",
-        api_url: str = MOONSHOT_API_URL,
+        api_url: str | None = None,
         timeout_s: float = 120.0,
     ) -> None:
         self._api_key = api_key or os.environ.get("MOONSHOT_API_KEY", "")
@@ -1101,7 +1106,7 @@ class HostedK3Backend(_UsageTracker):
             raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
         super().__init__()
         self._model = model
-        self._api_url = api_url
+        self._api_url = api_url or os.environ.get("FX1_BASE_URL") or MOONSHOT_API_URL
         self._timeout_s = timeout_s
 
     def complete(
