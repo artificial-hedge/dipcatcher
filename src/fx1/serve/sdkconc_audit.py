@@ -71,6 +71,9 @@ _MODEL = "byok"  # the link every stub registers under
 _MSGS = [{"role": "user", "content": "hi"}]
 _IDEM = "Idempotency-Key"
 _RA = "Retry-After"
+_P_COMPLETE = "/harness/complete"
+_P_MODELS = "/v1/models"
+_UP_URL = "http://up.test"
 _HEADER_KEYS = {
     "x-request-id",
     "x-fx1-api-version",
@@ -312,7 +315,7 @@ def _parallel(fn: Callable[[int], Any], n: int = _N) -> list[tuple[Any, BaseExce
         try:
             barrier.wait(10)
             out[i] = (fn(i), None)
-        except BaseException as exc:  # noqa: BLE001 — collected, asserted
+        except Exception as exc:  # noqa: BLE001
             out[i] = (None, exc)
 
     ths = [threading.Thread(target=_w, args=(i,), daemon=True) for i in range(n)]
@@ -448,6 +451,21 @@ def _probe_sdk_complete_storm() -> dict[str, bool]:
     )
     # Readers racing a write storm always see coherent snapshots — never
     # torn, never raising.
+    problems = _reader_writer_storm(sdk)
+    out["storm_snapshots_coherent"] = not problems and backend.calls == _N + 40
+    # Sequential calls track their own call exactly — completion id in
+    # the tracing surface names the call that just finished.
+    r = sdk.complete([{"role": "user", "content": "seq"}], backend=_MODEL)
+    out["headers_track_call"] = (
+        sdk.last_response_headers.get("x-fx1-completion-id") == r.completion_id
+    )
+    return out
+
+
+def _reader_writer_storm(sdk: Any) -> list[str]:
+    """A writer storms completions while a reader snapshots; the returned
+    problems list is empty iff every snapshot was coherent."""
+
     problems: list[str] = []
     stop = threading.Event()
 
@@ -465,7 +483,7 @@ def _probe_sdk_complete_storm() -> dict[str, bool]:
                     problems.append(f"torn:{sorted(h)}")
                 sdk.completions(limit=8)
                 sdk.usage()
-            except BaseException as exc:  # noqa: BLE001 — recorded
+            except Exception as exc:  # noqa: BLE001
                 problems.append(f"raised:{type(exc).__name__}:{exc}")
 
     wt = threading.Thread(target=_writer)
@@ -475,19 +493,51 @@ def _probe_sdk_complete_storm() -> dict[str, bool]:
     wt.join(120)
     stop.set()
     rt.join(30)
-    out["storm_snapshots_coherent"] = not problems and backend.calls == _N + 40
-    # Sequential calls track their own call exactly — completion id in
-    # the tracing surface names the call that just finished.
-    r = sdk.complete([{"role": "user", "content": "seq"}], backend=_MODEL)
-    out["headers_track_call"] = (
-        sdk.last_response_headers.get("x-fx1-completion-id") == r.completion_id
-    )
-    return out
+    return problems
 
 
 # ---------------------------------------------------------------------------
 # Fx1Harness mixed-method storm — every method family at once
 # ---------------------------------------------------------------------------
+
+
+def _mixed_lane(sdk: Any, i: int) -> Any:
+    kind = i % 8
+    if kind == 0:
+        return sdk.complete([{"role": "user", "content": f"c{i}"}], backend=_MODEL).content
+    if kind == 1:
+        batch = sdk.complete_many(
+            [
+                [{"role": "user", "content": f"b{i}a"}],
+                [{"role": "user", "content": f"b{i}b"}],
+            ],
+            backend=_MODEL,
+            max_workers=2,
+        )
+        return {r.content for r in batch}
+    if kind == 2:
+        return tuple(sdk.stream_complete([{"role": "user", "content": f"s{i}"}], backend=_MODEL))
+    if kind == 3:
+        env, _ = sdk.openai_chat(
+            {"model": _MODEL, "messages": [{"role": "user", "content": f"o{i}"}]}
+        )
+        return env.choices[0].message["content"]
+    if kind == 4:
+        anth, _ = sdk.anthropic_message(
+            {
+                "model": _MODEL,
+                "max_tokens": 8,
+                "messages": [{"role": "user", "content": f"a{i}"}],
+            }
+        )
+        return anth.content[0]["text"]
+    if kind == 5:
+        emb, _ = sdk.openai_embeddings({"model": _MODEL, "input": f"e{i}"})
+        return emb["data"][0]["embedding"]
+    if kind == 6:
+        conv = sdk.openai_conversation_create(metadata={"lane": str(i)})
+        return conv["id"]
+    return sdk.key_create(f"mix-{i}")["id"]
 
 
 def _probe_sdk_mixed_storm() -> dict[str, bool]:
@@ -497,47 +547,7 @@ def _probe_sdk_mixed_storm() -> dict[str, bool]:
     spec = sdk.eval_spec_create("mixed", suite="tooluse")
     spec_id = str(spec["id"])
 
-    def _lane(i: int) -> Any:
-        kind = i % 8
-        if kind == 0:
-            return sdk.complete([{"role": "user", "content": f"c{i}"}], backend=_MODEL).content
-        if kind == 1:
-            batch = sdk.complete_many(
-                [
-                    [{"role": "user", "content": f"b{i}a"}],
-                    [{"role": "user", "content": f"b{i}b"}],
-                ],
-                backend=_MODEL,
-                max_workers=2,
-            )
-            return {r.content for r in batch}
-        if kind == 2:
-            return tuple(
-                sdk.stream_complete([{"role": "user", "content": f"s{i}"}], backend=_MODEL)
-            )
-        if kind == 3:
-            env, _ = sdk.openai_chat(
-                {"model": _MODEL, "messages": [{"role": "user", "content": f"o{i}"}]}
-            )
-            return env.choices[0].message["content"]
-        if kind == 4:
-            anth, _ = sdk.anthropic_message(
-                {
-                    "model": _MODEL,
-                    "max_tokens": 8,
-                    "messages": [{"role": "user", "content": f"a{i}"}],
-                }
-            )
-            return anth.content[0]["text"]
-        if kind == 5:
-            emb, _ = sdk.openai_embeddings({"model": _MODEL, "input": f"e{i}"})
-            return emb["data"][0]["embedding"]
-        if kind == 6:
-            conv = sdk.openai_conversation_create(metadata={"lane": str(i)})
-            return conv["id"]
-        return sdk.key_create(f"mix-{i}")["id"]
-
-    lanes = _parallel(_lane, 2 * _N)
+    lanes = _parallel(lambda i: _mixed_lane(sdk, i), 2 * _N)
     out["mixed_all_succeed"] = all(e is None for _, e in lanes)
     values = [v for v, _ in lanes]
     out["mixed_complete_marker"] = "ok:c0" in values and "ok:c8" in values
@@ -592,55 +602,54 @@ def _probe_sdk_store_storm() -> dict[str, bool]:
                     }
                 ],
             )
-            return (conv["id"], [it["id"] for it in added["data"]])
+            return (kind, (conv["id"], [it["id"] for it in added["data"]]))
         if kind == 1:
             fobj = sdk.openai_file_create(
                 f'{{"i":{i}}}\n'.encode(), purpose="batch", filename=f"f{i}.jsonl"
             )
-            return (fobj["id"], sdk.file_content(fobj["id"]))
+            return (kind, (fobj["id"], sdk.file_content(fobj["id"])))
         if kind == 2:
             blob = f"part-body-{i}".encode()
             up = sdk.upload_create(purpose="batch", filename=f"u{i}.jsonl", bytes=len(blob) * 2)
             p1 = sdk.upload_part(up["id"], blob)
             p2 = sdk.upload_part(up["id"], blob)
             fin = sdk.upload_complete(up["id"], [p1["id"], p2["id"]])
-            return (fin["file"]["id"], sdk.file_content(fin["file"]["id"]))
+            return (kind, (fin["file"]["id"], sdk.file_content(fin["file"]["id"])))
         if kind == 3:
             return (
-                sdk.check_text(f"text{i}").ok,
-                sdk.score(f"text{i}")[0]["total"],
-                sdk.moderate(f"text{i}")["results"][0]["flagged"],
+                kind,
+                (
+                    sdk.check_text(f"text{i}").ok,
+                    sdk.score(f"text{i}")[0]["total"],
+                    sdk.moderate(f"text{i}")["results"][0]["flagged"],
+                ),
             )
-        return sdk.commands()
+        return (kind, sdk.commands())
 
     lanes = _parallel(_lane, 5 * _N)
     values = [v for v, _ in lanes]
     out["store_all_succeed"] = all(e is None for _, e in lanes)
     out["store_conv_items_land"] = all(
-        isinstance(v, tuple) and len(v) == 2 and str(v[0]).startswith("conv_")
-        for i, v in enumerate(values)
-        if i % 5 == 0
+        str(v[1][0]).startswith("conv_") for i, v in enumerate(values) if i % 5 == 0
     )
     out["store_file_roundtrip"] = all(
-        isinstance(v, tuple) and str(v[0]).startswith("file-") and v[1] == f'{{"i":{i}}}\n'.encode()
+        str(v[1][0]).startswith("file-") and v[1][1] == f'{{"i":{i}}}\n'.encode()
         for i, v in enumerate(values)
         if i % 5 == 1
     )
     out["store_upload_assembles"] = all(
-        isinstance(v, tuple) and v[1] == f"part-body-{i}".encode() * 2
-        for i, v in enumerate(values)
-        if i % 5 == 2
+        v[1][1] == f"part-body-{i}".encode() * 2 for i, v in enumerate(values) if i % 5 == 2
     )
     out["store_gate_readers_honest"] = all(
-        v == (True, 4.0, False) for i, v in enumerate(values) if i % 5 == 3
+        v == (3, (True, 4.0, False)) for i, v in enumerate(values) if i % 5 == 3
     )
     out["store_commands_listed"] = all(
-        isinstance(v, list) and "doctor" in v for i, v in enumerate(values) if i % 5 == 4
+        v[0] == 4 and "doctor" in v[1] for i, v in enumerate(values) if i % 5 == 4
     )
     # Store objects stay consistent under the storm: every minted id is
     # fetchable afterwards — the store is the shared surface.
-    conv_ids = [v[0] for i, v in enumerate(values) if i % 5 == 0]
-    file_ids = [v[0] for i, v in enumerate(values) if i % 5 in (1, 2)]
+    conv_ids = [v[1][0] for i, v in enumerate(values) if i % 5 == 0]
+    file_ids = [v[1][0] for i, v in enumerate(values) if i % 5 in (1, 2)]
 
     def _conv_ok(conv_id: str) -> bool:
         return _exc(lambda: sdk.openai_conversation_get(conv_id)) is None
@@ -831,11 +840,11 @@ def _probe_contextvar_isolation() -> dict[str, bool]:
 
     def _lane(i: int) -> int:
         if i % 2 == 0:  # 16 lanes: A writes, 200s
-            return client.post("/harness/complete", json=body, headers=_h(key_a)).status_code
+            return client.post(_P_COMPLETE, json=body, headers=_h(key_a)).status_code
         if i % 4 == 1:  # 8 lanes: B writes — scope-refused
-            return client.post("/harness/complete", json=body, headers=_h(key_b)).status_code
+            return client.post(_P_COMPLETE, json=body, headers=_h(key_b)).status_code
         # 8 lanes: B reads — authorized
-        return client.get("/v1/models", headers=_h(key_b)).status_code
+        return client.get(_P_MODELS, headers=_h(key_b)).status_code
 
     lanes = _parallel(_lane, 4 * _N)
     statuses = [v for v, _ in lanes if isinstance(v, int)]
@@ -864,7 +873,7 @@ def _probe_contextvar_isolation() -> dict[str, bool]:
     resp: list[Any] = []
 
     def _parked() -> None:
-        resp.append(client2.post("/harness/complete", json=body, headers=_h(_ROOT)))
+        resp.append(client2.post(_P_COMPLETE, json=body, headers=_h(_ROOT)))
 
     pt = threading.Thread(target=_parked)
     pt.start()
@@ -882,6 +891,30 @@ def _probe_contextvar_isolation() -> dict[str, bool]:
 # ---------------------------------------------------------------------------
 
 
+def _cmd_ok_body(cmd: str) -> bytes:
+    return json.dumps({"command": cmd, "exit_code": 0, "stdout": "", "stderr": ""}).encode()
+
+
+def _retry_response(path: str, cmd: str, n: int) -> tuple[int, Any, bytes]:
+    """The retry script: ra-/s5- commands fail once then succeed, t5- always
+    500s, n4- always 429s without a hint."""
+    if cmd.startswith("ra-") or path == _P_MODELS:
+        if n == 0:
+            return 429, {_RA: "0"}, b'{"detail":"slow"}'
+        return 200, {}, _cmd_ok_body(cmd or "list")
+    if cmd.startswith("s5-"):
+        if n == 0:
+            return 503, {_RA: "0"}, b'{"detail":"unavail"}'
+        return 200, {}, _cmd_ok_body(cmd)
+    if cmd.startswith("t5-"):
+        return 500, {}, b'{"detail":"boom"}'
+    if cmd.startswith("n4-"):
+        return 429, {}, b'{"detail":"no hint"}'
+    if path == f"{_P_MODELS}/x":
+        return 404, {}, b'{"detail":"missing"}'
+    return 200, {}, _cmd_ok_body(cmd)
+
+
 def _probe_client_retry_concurrent() -> dict[str, bool]:
     """Shared client under a storm: retries keyed by a per-lane marker in
     the run payload, so every lane's attempt count is deterministic
@@ -891,9 +924,6 @@ def _probe_client_retry_concurrent() -> dict[str, bool]:
     seen: dict[str, int] = {}
     paths: list[str] = []
     lock = threading.Lock()
-
-    def _ok_for(cmd: str) -> bytes:
-        return json.dumps({"command": cmd, "exit_code": 0, "stdout": "", "stderr": ""}).encode()
 
     def send(
         method: str,
@@ -909,21 +939,7 @@ def _probe_client_retry_concurrent() -> dict[str, bool]:
             paths.append(path)
             n = seen.get(cmd, 0)
             seen[cmd] = n + 1
-        if cmd.startswith("ra-") or path == "/v1/models":
-            if n == 0:
-                return 429, {_RA: "0"}, b'{"detail":"slow"}'
-            return 200, {}, _ok_for(cmd or "list")
-        if cmd.startswith("s5-"):
-            if n == 0:
-                return 503, {_RA: "0"}, b'{"detail":"unavail"}'
-            return 200, {}, _ok_for(cmd)
-        if cmd.startswith("t5-"):
-            return 500, {}, b'{"detail":"boom"}'
-        if cmd.startswith("n4-"):
-            return 429, {}, b'{"detail":"no hint"}'
-        if path == "/v1/models/x":
-            return 404, {}, b'{"detail":"missing"}'
-        return 200, {}, _ok_for(cmd)
+        return _retry_response(path, cmd, n)
 
     client = _mk(send, clock=clk, sleep=slp, max_retries=4)
     tags = {k: [f"{k}{i}" for i in range(_N)] for k in ("ra-", "s5-", "t5-", "n4-")}
@@ -951,8 +967,8 @@ def _probe_client_retry_concurrent() -> dict[str, bool]:
     out["cl_retry_attempts_per_call"] = (
         all(seen[t] == 2 for t in tags["ra-"] + tags["s5-"])
         and all(seen[t] == 1 for t in tags["t5-"] + tags["n4-"])
-        and paths.count("/v1/models") == 2
-        and paths.count("/v1/models/x") == 1
+        and paths.count(_P_MODELS) == 2
+        and paths.count(f"{_P_MODELS}/x") == 1
     )
     out["cl_retry_sleeps_recorded"] = len(sleeps) == 2 * _N + 1
     out["cl_500_terminal_no_retry"] = all(
@@ -969,7 +985,7 @@ def _probe_client_circuit_concurrent() -> dict[str, bool]:
     out: dict[str, bool] = {}
     clk, tick, _sleeps = _vclock()
     fault = HarnessTransportError("conn refused")
-    send, calls = _path_scripted({"/v1/models": [fault]})
+    send, calls = _path_scripted({_P_MODELS: [fault]})
     client = _mk(
         send,
         clock=clk,
@@ -993,7 +1009,7 @@ def _probe_client_circuit_concurrent() -> dict[str, bool]:
     )
     # Advance past reset: the half-open probe succeeds and closes it.
     tick(31.0)
-    ok_send, _ok_calls = _path_scripted({"/v1/models": [_http_ok({"object": "list", "data": []})]})
+    ok_send, _ok_calls = _path_scripted({_P_MODELS: [_http_ok({"object": "list", "data": []})]})
     client._transport = ok_send  # noqa: SLF001 — swap under test to answer 200
     probe = _exc(client.list_models)
     out["cb_halfopen_recovers"] = (
@@ -1186,7 +1202,7 @@ def _probe_client_stream_concurrent() -> dict[str, bool]:
         marker = {0: "err", 1: "nodone"}.get(i % 3, f"m{i}")
         try:
             return client.stream_complete([{"role": "user", "content": marker}], backend="byok")
-        except BaseException as exc:  # noqa: BLE001 — collected
+        except Exception as exc:  # noqa: BLE001
             return exc
 
     lanes = _parallel(_lane, 3 * _N)
@@ -1242,11 +1258,11 @@ def _probe_client_url_headers() -> dict[str, bool]:
     _mk(send2).complete(
         _MSGS,
         backend="byok",
-        byok={"base_url": "http://up.test", "api_key": "k", "model": "m"},
+        byok={"base_url": _UP_URL, "api_key": "k", "model": "m"},
     )
     body = payloads[-1]
     out["byok_payload_verbatim"] = isinstance(body, dict) and body.get("byok") == {
-        "base_url": "http://up.test",
+        "base_url": _UP_URL,
         "api_key": "k",
         "model": "m",
     }
@@ -1317,7 +1333,7 @@ def _probe_sdk_wire_interleave() -> dict[str, bool]:
     provisioned = sdk.key_create("wire-key")
     client, _api = _app_client({_MODEL: lambda: backend}, api_key=_ROOT, state_dir=state)
     r = client.post(
-        "/harness/complete",
+        _P_COMPLETE,
         json={"backend": _MODEL, "messages": _MSGS},
         headers=_h(provisioned["key"]),
     )
@@ -1327,7 +1343,7 @@ def _probe_sdk_wire_interleave() -> dict[str, bool]:
     def _lane(i: int) -> Any:
         if i % 2:
             return sdk.complete([{"role": "user", "content": f"s{i}"}], backend=_MODEL).content
-        return client.post("/harness/complete", json=body, headers=_h(_ROOT)).status_code
+        return client.post(_P_COMPLETE, json=body, headers=_h(_ROOT)).status_code
 
     lanes = _parallel(_lane, 2 * _N)
     out["interleave_no_exceptions"] = all(e is None for _, e in lanes)
@@ -1373,18 +1389,18 @@ def _probe_sdk_byok_wire() -> dict[str, bool]:
     good = {
         "backend": "byok",
         "messages": _MSGS,
-        "byok": {"base_url": "http://up.test", "api_key": "k", "model": "m"},
+        "byok": {"base_url": _UP_URL, "api_key": "k", "model": "m"},
     }
     bad_missing = {
         "backend": "byok",
         "messages": _MSGS,
-        "byok": {"base_url": "http://up.test"},
+        "byok": {"base_url": _UP_URL},
     }
     bad_extra = {
         "backend": "byok",
         "messages": _MSGS,
         "byok": {
-            "base_url": "http://up.test",
+            "base_url": _UP_URL,
             "api_key": "k",
             "model": "m",
             "key": "z",
@@ -1393,10 +1409,10 @@ def _probe_sdk_byok_wire() -> dict[str, bool]:
 
     def _lane(i: int) -> int:
         if i % 3 == 0:
-            return client.post("/harness/complete", json=good).status_code
+            return client.post(_P_COMPLETE, json=good).status_code
         if i % 3 == 1:
-            return client.post("/harness/complete", json=bad_missing).status_code
-        return client.post("/harness/complete", json=bad_extra).status_code
+            return client.post(_P_COMPLETE, json=bad_missing).status_code
+        return client.post(_P_COMPLETE, json=bad_extra).status_code
 
     # Under the inflight cap (16 by default) the verdicts are strict.
     lanes = _parallel(_lane, 12)
@@ -1406,7 +1422,7 @@ def _probe_sdk_byok_wire() -> dict[str, bool]:
     out["byok_wire_refusals_422"] = codes.count(422) == 8
     byok_kwargs = [k for n, k in seen if n == "byok"]
     out["byok_kwargs_reach_resolver"] = len(byok_kwargs) == 4 and all(
-        k.get("base_url") == "http://up.test" and k.get("api_key") == "k" and k.get("model") == "m"
+        k.get("base_url") == _UP_URL and k.get("api_key") == "k" and k.get("model") == "m"
         for k in byok_kwargs
     )
     # Over the cap the inflight gate claims the slot BEFORE body
@@ -1430,13 +1446,13 @@ def _probe_sdk_byok_wire() -> dict[str, bool]:
     holders: list[Any] = []
 
     def _hold() -> None:
-        holders.append(client2.post("/harness/complete", json=good).status_code)
+        holders.append(client2.post(_P_COMPLETE, json=good).status_code)
 
     hold_threads = [threading.Thread(target=_hold, daemon=True) for _ in range(16)]
     for t in hold_threads:
         t.start()
     parked = _wait_for(lambda: park.inflight >= 16)
-    mal = _parallel(lambda i: client2.post("/harness/complete", json=bad_missing), _N)
+    mal = _parallel(lambda i: client2.post(_P_COMPLETE, json=bad_missing), _N)
     mal_bodies = [v.json().get("code") for v, _ in mal if v is not None and v.status_code == 503]
     out["byok_wire_overcap_typed"] = (
         parked
