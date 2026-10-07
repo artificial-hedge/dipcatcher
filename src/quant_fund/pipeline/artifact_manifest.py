@@ -178,7 +178,7 @@ def build_dataset_identity(
     columns = [str(name) for name in frame.columns]
     if "event_time" not in columns:
         raise DatasetIdentityError("dataset identity requires an event_time column")
-    if label not in columns:
+    if label != UNSUPERVISED_LABEL and label not in columns:
         raise DatasetIdentityError(f"label {label!r} is not present in the materialized panel")
     if not str(data_source).strip():
         raise DatasetIdentityError("dataset identity requires a non-empty data_source")

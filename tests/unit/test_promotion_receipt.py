@@ -30,7 +30,6 @@ from quant_fund.models.base import save_joblib_artifact
 from quant_fund.pipeline.artifact_manifest import (
     identity_for_training,
     save_training_artifact,
-    verify_artifact_manifest,
 )
 from quant_fund.proof.promotion_receipt import (
     PromotionCompositionError,

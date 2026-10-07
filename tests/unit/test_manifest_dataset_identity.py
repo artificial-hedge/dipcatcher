@@ -31,6 +31,7 @@ from quant_fund.pipeline.artifact_manifest import (
     build_dataset_identity,
     dataset_identity_from_artifact,
     identity_for_training,
+    manifest_path,
     save_training_artifact,
     verify_artifact_manifest,
 )
@@ -64,6 +65,7 @@ def _frame(n_dates: int = 64, n_secs: int = 6) -> pl.DataFrame:
                     "vol_parkinson": 0.02 + abs(float(rng.normal(0, 0.003))),
                     "vol_of_vol": 0.005 + abs(float(rng.normal(0, 0.001))),
                     "mom_20": float(rng.normal(0, 0.01)),
+                    "cs_pct_mom_20": float(rng.normal(0, 0.01)),
                     "reversal_1": float(rng.normal(0, 0.01)),
                     "amihud": 1e-6 + abs(float(rng.normal(0, 1e-7))),
                     "future_idio_return_1": float(rng.normal(0, 0.01)),
@@ -121,14 +123,21 @@ def _patch_train(monkeypatch: pytest.MonkeyPatch, frame: pl.DataFrame) -> None:
         "quant_fund.pipeline.train.distribution",
         "quant_fund.pipeline.train.volatility",
     ):
-        monkeypatch.setattr(f"{module}.panel", lambda *a, **k: frame)
-        monkeypatch.setattr(f"{module}.configure_tracking", lambda: None)
-        monkeypatch.setattr(f"{module}.log_run", lambda **kwargs: "run_test_0001")
+        monkeypatch.setattr(f"{module}.panel", lambda *a, **k: frame, raising=False)
+        monkeypatch.setattr(f"{module}.configure_tracking", lambda: None, raising=False)
+        monkeypatch.setattr(
+            f"{module}.log_run", lambda **kwargs: "run_test_0001", raising=False
+        )
+        # Never touch shared MLflow sqlite state from correctness tests.
+        monkeypatch.setattr(
+            f"{module}.attach_artifact_identity", lambda *a, **k: None, raising=False
+        )
 
 
 def test_save_training_artifact_requires_identity_keyword(tmp_path: Path) -> None:
     frame = _frame()
     cfg = _cfg(tmp_path)
+    _materialize_sources(tmp_path, frame)
     identity = _identity(frame, cfg)
     with pytest.raises(TypeError):
         save_training_artifact({"model": 1}, tmp_path / "a.joblib", identity)  # type: ignore[misc]
@@ -139,11 +148,12 @@ def test_save_training_artifact_requires_identity_keyword(tmp_path: Path) -> Non
 def test_manifest_carries_complete_dataset_identity(tmp_path: Path) -> None:
     frame = _frame()
     cfg = _cfg(tmp_path)
+    _materialize_sources(tmp_path, frame)
     identity = _identity(frame, cfg)
     artifact = tmp_path / "model.joblib"
     save_training_artifact({"model": 1}, artifact, identity=identity)
 
-    manifest = json.loads((tmp_path / "model.manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads(manifest_path(artifact).read_text(encoding="utf-8"))
     assert manifest["schema"] == "model_artifact.v1"
     block = manifest["identity"]
     assert block["identity_schema"] == "artifact_identity.v1"
@@ -158,8 +168,8 @@ def test_manifest_carries_complete_dataset_identity(tmp_path: Path) -> None:
     assert len(dataset["source_manifest_sha256"]) == 64
     assert block["features"]["features"] == ["mom_20", "vol_20", "reversal_1"]
     assert block["label"] == {"name": "future_return_5", "horizon_bars": 5}
-    assert block["horizon"]["bars"] == [int(bar) for bar in cfg.horizon.bars]
-    assert block["horizon"]["names"] == [str(name) for name in cfg.horizon.names]
+    assert block["horizon"]["bars"] == [int(bar) for bar in cfg.horizons.bars]
+    assert block["horizon"]["names"] == [str(name) for name in cfg.horizons.names]
     assert len(block["config_sha256"]) == 64
     assert block["git_revision"]
     assert block["git_worktree_sha256"]
@@ -173,6 +183,7 @@ def test_manifest_carries_complete_dataset_identity(tmp_path: Path) -> None:
 def test_verify_artifact_manifest_fails_closed_without_dataset_identity(tmp_path: Path) -> None:
     frame = _frame()
     cfg = _cfg(tmp_path)
+    _materialize_sources(tmp_path, frame)
     artifact = tmp_path / "legacy.joblib"
     save_joblib_artifact({"model": 1}, artifact)  # no identity block at all
     with pytest.raises(ArtifactManifestError):
@@ -188,19 +199,20 @@ def test_verify_artifact_manifest_fails_closed_without_dataset_identity(tmp_path
 def test_verify_artifact_manifest_rejects_partial_dataset_identity(tmp_path: Path) -> None:
     frame = _frame()
     cfg = _cfg(tmp_path)
+    _materialize_sources(tmp_path, frame)
     artifact = tmp_path / "model.joblib"
     save_training_artifact({"model": 1}, artifact, identity=_identity(frame, cfg))
-    manifest_path = tmp_path / "model.manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest_file = manifest_path(artifact)
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
     del manifest["identity"]["dataset"]["materialized_panel_sha256"]
-    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
     with pytest.raises(ArtifactManifestError):
         verify_artifact_manifest(artifact)
 
 
 def test_dataset_identity_fails_closed_on_missing_sources(tmp_path: Path) -> None:
     frame = _frame()
-    cfg = _cfg(tmp_path)  # gold/silver never written
+    _cfg(tmp_path)  # gold/silver never written; side effects only
     with pytest.raises(DatasetIdentityError):
         build_dataset_identity(
             frame,
@@ -290,7 +302,7 @@ def test_auto_dispatch_rebinds_selected_identity(
     _patch_train(monkeypatch, frame)
     result = train_calibration_auto(cfg)
     auto_path = Path(str(result["path"]))
-    selected = Path(str(result["selected_path"]))
+    selected = auto_path.parent / f"calibrator_{result['selected_model']}.joblib"
     assert auto_path.name == "calibrator_auto.joblib"
     auto_identity = verify_artifact_manifest(auto_path)
     selected_identity = verify_artifact_manifest(selected)
