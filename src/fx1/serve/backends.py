@@ -238,6 +238,12 @@ _BYOK_PRIVATE_V4 = tuple(
     for cidr in ("10.0.0.0/8", "127.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")
 )
 _BYOK_PRIVATE_V6 = tuple(ipaddress.ip_network(cidr) for cidr in ("::1/128", "fc00::/7"))
+# These legacy ranges can be classified as global by supported Python versions.
+# The 6a44 assignment at 192.88.99.2 is not globally reachable either; IPv6
+# site-local addresses are outside the deliberately narrow ULA opt-in.
+_BYOK_LEGACY_SPECIAL_USE = tuple(
+    ipaddress.ip_network(cidr) for cidr in ("192.88.99.0/24", "fec0::/10")
+)
 
 
 def _byok_private_networks_allowed() -> bool:
@@ -270,8 +276,11 @@ def _byok_address_allowed(
 
     The opt-in admits ordinary loopback/RFC1918/ULA model servers, but never
     link-local metadata addresses, multicast, unspecified, reserved,
-    documentation, benchmarking, or carrier-grade NAT space.
+    documentation, benchmarking, carrier-grade NAT, or legacy relay/site-local
+    space.
     """
+    if any(address in network for network in _BYOK_LEGACY_SPECIAL_USE):
+        return False
     if address.is_global and not (
         address.is_private
         or address.is_loopback
