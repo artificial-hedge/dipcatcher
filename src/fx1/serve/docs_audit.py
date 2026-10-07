@@ -1010,8 +1010,9 @@ _DUMMY_FILE_NAMES = {"file", "fh", "stream", "fp", "f"}
 _MISSING = object()
 
 
-def _dummy_by_name(n: str) -> Any:
-    """Name-driven dummies; ``_MISSING`` when no name rule matches."""
+def _dummy_named(n: str) -> Any:
+    """Name-driven dummies that outrank scalar types; ``_MISSING`` when
+    no name rule matches."""
     if n.endswith("_id") or n == "id" or n in _DUMMY_ID_NAMES:
         return "x"
     if n in _DUMMY_STR_NAMES:
@@ -1022,12 +1023,11 @@ def _dummy_by_name(n: str) -> Any:
         return [[{"role": "user", "content": "x"}]]
     if n in _DUMMY_FILE_NAMES:
         return io.BytesIO(b"x")
-    if n.startswith(_DUMMY_INT_PREFIXES):
-        return 1
-    if n.endswith("_s") or n.endswith("_ms"):
-        return 1.0
-    if n.startswith(_DUMMY_BOOL_PREFIXES):
-        return True
+    return _MISSING
+
+
+def _dummy_shaped(n: str) -> Any:
+    """List/dict/callable dummies — outranked by scalar types."""
     if n in _DUMMY_LIST_NAMES or n.endswith("s"):
         return []
     if n in _DUMMY_DICT_NAMES:
@@ -1041,15 +1041,18 @@ def _dummy_for(name: str, ptype: Any) -> Any:
     n = name.lower()
     if ptype is bytes:
         return b"x"
-    named = _dummy_by_name(n)
+    named = _dummy_named(n)
     if named is not _MISSING:
         return named
-    if ptype is int:
+    if ptype is int or n.startswith(_DUMMY_INT_PREFIXES):
         return 1
-    if ptype is float:
+    if ptype is float or n.endswith("_s") or n.endswith("_ms"):
         return 1.0
-    if ptype is bool:
+    if ptype is bool or n.startswith(_DUMMY_BOOL_PREFIXES):
         return True
+    shaped = _dummy_shaped(n)
+    if shaped is not _MISSING:
+        return shaped
     return "x"
 
 
