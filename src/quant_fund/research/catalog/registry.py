@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import math
 
+from .retired_families import RETIRED_BENCHMARK_FAMILIES
+
 BENCHMARK_CATALOG_VERSION = 2
 # Schema 2 stamps ``backtest_overfitting`` (PBO, DSR, PSR, MinTRL, trial counts).
 # Schema 1 receipts remain valid: they predate the block and are not rewritten.
@@ -13108,6 +13110,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "wand_bmw",
     }
 )
+# Optional -> RETIRED (2026-10-07 canon qualification audit). The accepted set
+# above stays append-only so archived receipts naming retired families keep
+# verifying; retired names are excluded from live scorecards and runtime
+# emission (research/agent.py). Evidence and per-family reasons live in
+# retired_families.py (generated) and quality/canon_qualification_summary.json.
+LIVE_OPTIONAL_BENCHMARK_FAMILIES: frozenset[str] = frozenset(
+    OPTIONAL_BENCHMARK_FAMILIES
+) - frozenset(RETIRED_BENCHMARK_FAMILIES)
 BENCHMARK_FAMILY_ORDER = (
     "ranking",
     "alpha",
@@ -13240,12 +13250,14 @@ __all__ = [
     "BENCHMARK_CATALOG_VERSION",
     "BENCHMARK_FAMILY_ORDER",
     "FORBIDDEN_RESEARCH_METRIC_KEYS",
+    "LIVE_OPTIONAL_BENCHMARK_FAMILIES",
     "OPTIONAL_BENCHMARK_FAMILIES",
     "REQUIRED_BENCHMARK_FAMILIES",
     "PREFERRED_CHRISTOFFERSEN_IND_KEYS",
     "REQUIRED_CHRISTOFFERSEN_CC_KEYS",
     "RESEARCH_RECEIPT_SCHEMA_VERSION",
     "RESEARCH_RECEIPT_SCHEMA_VERSIONS_ACCEPTED",
+    "RETIRED_BENCHMARK_FAMILIES",
     "family_blob_executed",
     "family_blob_forbidden_metrics_absent",
     "family_blob_has_finite_observation",
