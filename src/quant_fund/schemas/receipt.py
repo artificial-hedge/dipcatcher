@@ -31,19 +31,37 @@ foundation.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 
-# Sentinel placeholders — bound to the real callables on first attribute
-# access via __getattr__ below. The arch-guard treats module-scope imports
-# of research-layer symbols as layer-order violations; routing through
-# __getattr__ defers the import to first call. Type stubs here let
-# static analyzers see the public surface without triggering a guard
-# violation (no import is performed).
-def seal_receipt(receipt: Any) -> Any: ...  # type: ignore[no-untyped-def]
-def verify_receipt_bytes(data: bytes, path: Any = ...) -> Any: ...  # type: ignore[no-untyped-def]
-def verify_receipt_file(path: Any) -> Any: ...  # type: ignore[no-untyped-def]
-def verify_receipt_payload(payload: Any, path: Any = ...) -> Any: ...  # type: ignore[no-untyped-def]
+# Delegating facades — the bodies import ``research.receipt_v2`` lazily at
+# call time (function scope), which the arch-guard exempts from the
+# layer-order check. These MUST be real delegations: bare ``...`` stubs
+# permanently shadow ``__getattr__`` below and silently return ``None`` to
+# every caller.
+def seal_receipt(receipt: Any) -> Any:  # type: ignore[no-untyped-def]
+    from quant_fund.research import receipt_v2
+
+    return receipt_v2.seal_receipt(receipt)
+
+
+def verify_receipt_bytes(data: bytes, path: Any = Path("<memory>")) -> Any:  # type: ignore[no-untyped-def]
+    from quant_fund.research import receipt_v2
+
+    return receipt_v2.verify_receipt_bytes(data, path)
+
+
+def verify_receipt_file(path: Any) -> Any:  # type: ignore[no-untyped-def]
+    from quant_fund.research import receipt_v2
+
+    return receipt_v2.verify_receipt_file(path)
+
+
+def verify_receipt_payload(payload: Any, path: Any = Path("<memory>")) -> Any:  # type: ignore[no-untyped-def]
+    from quant_fund.research import receipt_v2
+
+    return receipt_v2.verify_receipt_payload(payload, path)
 
 
 __all__ = [
