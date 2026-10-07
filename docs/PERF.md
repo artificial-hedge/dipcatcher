@@ -500,3 +500,82 @@ to run the building-block rebenchmark is given above; the end-to-end causal
 rebench is the existing Wave-N harness (`data/metadata/perf_bench.json`), run
 by the metrics/pipeline owner, not by this lane.
 
+---
+
+## Wave T8 (delivered) — `fit_student_t` optimization + numerical-equivalence proof (metrics owner)
+
+The optimization the previous note flagged as "blocked on the metrics owner" is
+**delivered** by `vol-scope` (metrics owner). Honesty: correctness/performance
+only on seeded SYNTHETIC inputs; PROPER SCORES only (CRPS); no Sharpe/P&L/NAV
+and no live-trading claim. `fit_student_t` underpins proper scores
+(CRPS/pinball/QLIKE/PIT), so the change is guarded by a committed golden
+equivalence proof.
+
+**Method — speed without loosening any convergence tolerance.** Nelder-Mead,
+`x0`, `maxiter=2000`, and the convergence criterion (`xatol=fatol=1e-4`) are
+kept **bit-for-bit identical**. The only change is the objective's arithmetic:
+`scipy.stats.t.logpdf`'s per-call `rv_continuous` dispatch (≈4.4 ms/call at
+n=5000) is replaced by a hand-rolled vectorized Student-t log-likelihood
+(≈0.24 ms/call, ≈19x cheaper per objective eval) that is mathematically the same
+NLL. Warm-starts / re-optimizers (bracketing `nu`, L-BFGS, method-of-moments)
+were **deliberately declined** — they change the Nelder-Mead trajectory and would
+risk `nu` fidelity on weakly-identified (flat) cells.
+
+**Controlled before/after** (same process, same input, median of 30, n=5000):
+
+| Stage | before (ms) | after (ms) | speedup |
+|---|---:|---:|---:|
+| `fit_student_t` | 306.83 | 38.99 | **7.87x** |
+| conformal + Student-t interval (composed) | 488.40 | 93.89 | **5.20x** |
+
+Fitted `nu`/`mu`/`sigma` are **bit-identical** old-vs-new (diff 0.0) on the bench
+workload.
+
+**Reproducible bench** (`uv run python scripts/bench_causal_latency.py --reps 200 --n 5000`),
+cross-run wall-clock (machine-load variance ≈3.5x between runs; `crps_student_t`
+is unchanged code yet shifted 7→15 ms between runs):
+
+| Stage | before mean/med (ms) | after mean/med (ms) | speedup |
+|---|---:|---:|---:|
+| `fit_student_t` | 383.87 / 313.24 | 60.45 / 53.40 | 6.35x / 5.87x |
+| composed interval | 278.45 / 260.45 | 159.45 / 150.24 | 1.75x / 1.73x |
+
+The composed cross-run number is load-confounded; the controlled same-process
+figure (5.20x) is the reliable one. Under the quiet baseline in the previous note
+(`fit_student_t` 110.42 ms), the optimized fit is ≈14 ms.
+
+**Numerical-equivalence proof** (`tests/unit/metrics/test_fit_student_t_equivalence.py`
++ committed golden `tests/unit/metrics/fit_student_t_golden.json`; 21-cell seeded
+grid — nu in [2.05, 2.2, 3, 5, 10, 30, 100], n in [50, 200, 5000, 20000],
+loc/scale across orders of magnitude, heavy-tail + near-degenerate). Per-field
+tolerance (every param tolerance tighter than the fit's own `xatol=1e-4`):
+
+| field | rtol | atol | observed max drift |
+|---|---:|---:|---:|
+| `fit_mu` | 1e-6 | 1e-6 | 4.7e-8 |
+| `fit_sigma` | 1e-6 | 1e-6 | 2.3e-8 |
+| `loglik` | 1e-6 | 1e-5 | 4.8e-6 |
+| `crps_mean` | 1e-6 | 1e-8 | 1.5e-10 |
+| `crps_sum` | 1e-6 | 1e-5 | 1.4e-7 |
+| `quantiles` | 1e-6 | 1e-5 | 1.0e-7 |
+| `fit_nu` (identified) | 0 | 5e-5 | 0 on 19/21; 2.8e-5 (weak-id light-tail) |
+
+Result: **19/21 cells bit-identical (0.0 drift on every field)**; the proper-score
+surface (mu/sigma/loglik/CRPS/quantiles) matches to ≤5e-6 on every cell. `fit_nu`
+is 0 on 19/21; on one weakly-identified light-tail cell (nu≈100, n=20000) it
+wobbles 2.8e-5 — **below the fit's own 1e-4 `xatol`** — with loglik/CRPS unchanged
+(≤7e-12). On near-degenerate inputs `nu` is statistically **unidentified** (flat
+likelihood ridge as nu→∞): the golden value is itself arbitrary, so the test
+asserts validity there and the matching loglik (4.8e-6) proves both fits reach
+the same likelihood — a property of the flat ridge, not lost accuracy. Permanent
+mutant harnesses prove the equivalence check FAILS on injected drift (CRPS at 10x
+tolerance; `nu` at the convergence-level 1e-4). Reproduce:
+`uv run pytest tests/unit/metrics/test_fit_student_t_equivalence.py -q`.
+
+**Honesty note.** The optimization changes no proper score and no identified
+parameter; the only numeric difference is the already-meaningless `nu` value on
+near-degenerate inputs where `nu` is unidentifiable. If a stricter "bit-identical
+degenerate-`nu`" requirement is preferred, the objective can revert to
+`scipy.stats.t.logpdf` (bit-identical) at the cost of most of the speedup (≈1.5x
+instead of ≈6-8x); flagged for the Lead to decide.
+
