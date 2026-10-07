@@ -46,6 +46,7 @@
       "dup_authorization_ambiguous_400": true,
       "dup_x_api_key_bad_first_ambiguous_400": true,
       "dup_x_api_key_good_first_ambiguous_400": true,
+      "dup_x_api_key_same_value_ambiguous_400": true,
       "env_key_bearer_unmetered": true,
       "env_key_bearer_v1_admits": true,
       "env_x_api_key_plus_bearer_ambiguous_400": true,
@@ -196,11 +197,11 @@
     "transport": "in-process buffered TestClient; stub backends; ASGI-scope fabrication for loopback/remote edges"
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "bfaa8a0c265fb21df967f4160c9758ed90bed17f",
+  "git_revision": "8312bb586199a74a08367a3820b0ea1815643ce0",
   "interpretation": "The auth surface admits exactly its declared credentials through exactly two channels \u2014 X-API-Key on any path (header-name case-insensitive) and Authorization: Bearer on the /v1* dialect prefix only \u2014 with X-API-Key taking absolute precedence: an empty X-API-Key is no header and falls through to Bearer, while a garbage one refuses without consulting Bearer. The Bearer scheme match is exact (lowercase, doubled spaces, tabs, missing space, non-Bearer schemes all refuse), duplicated header lines resolve first-wins, and credential whitespace is part of the compared bytes. Every malformed, absent, revoked, or expired credential gets the same uniform 401 \u2014 byte-identical bodies, no oracle for which entries exist \u2014 including non-ASCII header bytes and POSIX surrogate-escaped environment values (compare_digest is fed utf-8 encodings so malformed material refuses instead of faulting). Scope is literal membership: read covers GET/HEAD/OPTIONS, write the mutating methods, admin the /harness/keys* + /harness/drain control plane on any method \u2014 no hierarchy (a write-only key cannot read, an admin-only key cannot touch the data plane), and the admin boundary is slash-delimited. Order is authenticate, authorize, meter: garbage keys 401 on admin routes, under-scoped keys 403 insufficient_scope, exhausted keys 429 \u2014 and neither a 403 nor a forged-key storm moves a counter. Mid-request revocation and scope patches let the admitted call complete; the next call sees the new policy. Expiry fails closed at the exact second (t >= expires_at refuses; rotation inherits the deadline). Loopback dev mode is trusted only while the store is empty and keyed off request.client.host \u2014 unspoofable by headers; provisioning the first key is what turns auth on. The raw secret leaves the store exactly once at mint; every other surface exposes fingerprint and 13-char prefix only, and refusals never echo the credential. The Anthropic dialect authenticates x-api-key + anthropic-version or Bearer alike and refuses in its own error grammar; CORS preflights bypass auth by design while actual requests never do. HarnessClient maps 401/403 to HarnessAuthError.",
   "kind": "auth_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "d158c1ce1ca466a460dc67d3932814ea91fd5276647952567f47e8d9512793c7",
+  "receipt_sha256": "28258aafa02e7f901d5fbf49ce1d1080226b18e23f0a3b2fac86132bf732786f",
   "research_only": true,
   "schema": "auth_audit.v1"
 }
