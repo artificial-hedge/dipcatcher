@@ -845,8 +845,8 @@ def _diff_shape_probes() -> dict[str, Any]:  # NOSONAR(S3776)
 
     ts_bank = build_ts_reasoning_bank(seed=0)
     bait = sorted(n for n, f in ts_bank.families.items() if f == FAMILY_BAIT)
-    domain = sorted(n for n, f in ts_bank.families.items() if f != FAMILY_BAIT)[0]
-    client_t, tb, tc = _ts_pair({name: _VIOLATION_REPLY for name in bait}, {})
+    domain = min(n for n, f in ts_bank.families.items() if f != FAMILY_BAIT)
+    client_t, tb, tc = _ts_pair(dict.fromkeys(bait, _VIOLATION_REPLY), {})
     dt = _diff(client_t, tb, tc).json()
     out["ts_base_gate_closed"] = dt["gate_base"] is False
     out["ts_cand_gate_open"] = dt["gate_candidate"] is True
@@ -877,7 +877,7 @@ def _diff_shape_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     rbait = sorted(
         q.question_id for q in build_retrieval_bank(seed=0).questions if q.family == "honesty-bait"
     )
-    client_r, rb, rc = _retrieval_pair({qid: _VIOLATION_REPLY for qid in rbait}, {})
+    client_r, rb, rc = _retrieval_pair(dict.fromkeys(rbait, _VIOLATION_REPLY), {})
     dr = _diff(client_r, rb, rc).json()
     out["ret_fixed_question_id_shape"] = dr["tasks_fixed"] == rbait
     out["ret_gate_opened"] = (
@@ -1152,23 +1152,27 @@ def _diff_state_probes() -> dict[str, Any]:  # NOSONAR(S3776)
             self.last_usage: dict[str, int] | None = None
 
         def complete(self, messages: list[dict[str, str]], *, sampling: Any = None) -> str:
+            del messages, sampling  # protocol signature; this stub never generates
             release.wait(20.0)
             return "parked"
 
         def close(self) -> None:
-            pass
+            # nothing held — present for the backend protocol
+            return None
 
     class _FailBackend:
         def __init__(self) -> None:
             self.last_usage: dict[str, int] | None = None
 
         def complete(self, messages: list[dict[str, str]], *, sampling: Any = None) -> str:
+            del messages, sampling  # protocol signature; this stub always fails
             from fx1.serve.backends import BackendNotConfiguredError
 
             raise BackendNotConfiguredError("simulated outage")
 
         def close(self) -> None:
-            pass
+            # nothing held — present for the backend protocol
+            return None
 
     queue = _QueueResolver([_TooluseBackend({}), _HoldingBackend(), _FailBackend()])
     client, _ = test_client({"byok": queue.factory("byok")}, max_inflight=1)

@@ -259,13 +259,15 @@ def test_audit_context_restores_environment_and_removes_temp_state_on_error(
     for name, value in env.items():
         monkeypatch.setenv(name, value)
     temporary: Path | None = None
-    with pytest.raises(RuntimeError, match="deliberate failure"), support.audit_scope():
+    with support.audit_scope():
         assert all(name not in os.environ for name in env)
         temporary = support.scoped_tmpdir()
         (temporary / "test.txt").write_text("synthetic")
-        os.environ["FX1_TEMPORARY_AUDIT_VALUE"] = "temporary"
-        raise RuntimeError("deliberate failure")
-    assert temporary is not None and not temporary.exists()
+        monkeypatch.setenv("FX1_TEMPORARY_AUDIT_VALUE", "temporary")
+        with pytest.raises(RuntimeError, match="deliberate failure"):
+            raise RuntimeError("deliberate failure")
+    assert temporary is not None
+    assert not temporary.exists()
     assert all(os.environ[name] == value for name, value in env.items())
     assert "FX1_TEMPORARY_AUDIT_VALUE" not in os.environ
     assert marker.read_bytes() == before
@@ -320,6 +322,8 @@ def test_oracle_backend_overrides_only_scripted_ids() -> None:
 
 def test_mk_record_is_terminal_with_report() -> None:
     rec = audit._mk_record("r1", report={"results": []})
-    assert rec.status == "succeeded" and rec.report == {"results": []}
+    assert rec.status == "succeeded"
+    assert rec.report == {"results": []}
     bare = audit._mk_record("r2", status="failed")
-    assert bare.status == "failed" and bare.report is None
+    assert bare.status == "failed"
+    assert bare.report is None
