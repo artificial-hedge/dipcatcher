@@ -510,6 +510,9 @@
   "models/fukasawa_iv.py": {
    "status": "audited"
   },
+  "models/functional_linear.py": {
+   "status": "audited"
+  },
   "models/gas_score.py": {
    "status": "audited"
   },

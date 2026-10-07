@@ -52,6 +52,8 @@ def bspline_basis(grid: FloatArray, n_basis: int, degree: int = 3) -> FloatArray
     """Cubic B-spline basis on a grid via the Cox-de Boor recursion,
     with open-uniform knots. Returns (len(grid), n_basis)."""
     grid = np.asarray(grid, dtype=np.float64).ravel()
+    if int(n_basis) < 1 or int(degree) < 0:
+        raise ValueError("n_basis >= 1 and degree >= 0 required")
     if grid.size < n_basis + degree + 1:
         raise ValueError("grid too short for basis size")
     lo, hi = float(grid.min()), float(grid.max())
@@ -118,17 +120,21 @@ def fpca(
     mean_coef = coef.mean(axis=0)
     c_cent = coef - mean_coef
     cov = c_cent.T @ c_cent / max(n - 1, 1)
-    # roughness penalty on eigenfunctions via second-difference
-    pen = np.zeros((n_basis, n_basis))
-    for i in range(1, n_basis - 1):
-        for off in (-1, 0, 1):
-            pen[i, i] += 4.0 if off == 0 else -2.0
-    cov_s = cov + smooth_lambda * pen
-    eigval, eigvec = np.linalg.eigh(cov_s)
+    # roughness-penalized eigenfunctions via the generalized problem
+    #   Sigma v = mu (I + lambda D2' D2) v   (Ramsay-Silverman smoothed PCA)
+    # solved by whitening (I + lam P); adding P to Sigma would instead
+    # inflate the ROUGHEST directions (D2'D2 eigen-mass lives there).
+    d2 = np.diff(np.eye(n_basis), n=2, axis=0)
+    metric = np.eye(n_basis) + smooth_lambda * (d2.T @ d2)
+    mval, mvec = np.linalg.eigh(metric)
+    w_half = mvec @ np.diag(1.0 / np.sqrt(np.maximum(mval, 1e-12))) @ mvec.T
+    white = w_half @ cov @ w_half
+    eigval, eigvec_w = np.linalg.eigh(white)
     order = np.argsort(eigval)[::-1]
     n_components = min(n_components, n_basis, eigval.size)
-    vals = eigval[order][:n_components]
-    vecs = eigvec[:, order][:, :n_components]
+    vals = np.maximum(eigval[order][:n_components], 0.0)
+    vecs = w_half @ eigvec_w[:, order][:, :n_components]
+    vecs = vecs / np.linalg.norm(vecs, axis=0, keepdims=True).clip(min=1e-12)
     eigenfuncs = basis @ vecs  # (t, n_components)
     scores = c_cent @ vecs  # (n, n_components)
     fitted = (mean_coef + scores @ vecs.T) @ basis.T
@@ -161,6 +167,8 @@ def functional_lm(
     n, t = y.shape
     if xa.size != n:
         raise ValueError("x must align with curve rows")
+    if not np.all(np.isfinite(xa)):
+        raise ValueError("x must be finite")
     if float(np.std(xa)) < 1e-12:
         raise ValueError("x must have nonzero variance")
     grid = np.linspace(0.0, 1.0, t)
