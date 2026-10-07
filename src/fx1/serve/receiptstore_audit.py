@@ -34,6 +34,9 @@ __all__ = ["receiptstore_audit", "receiptstore_audit_bench"]
 _SHA_A = "a" * 64
 _SHA_B = "b" * 64
 _SHA_C = "c" * 64
+_ALPHA_JSON = "alpha.json"
+_TWO_JSON = "two.json"
+_RENAMED_JSON = "renamed.json"
 
 
 def _write(root: Path, name: str, sha: str | None = "x") -> Path:
@@ -85,12 +88,12 @@ def _probe_duplicates(tmp: Path) -> dict[str, bool]:
     root = tmp / "dupes"
     root.mkdir()
     _write(root, "zeta.json", _SHA_A)
-    _write(root, "alpha.json", _SHA_A)
+    _write(root, _ALPHA_JSON, _SHA_A)
     _write(root, "mid.json", _SHA_B)
     idx = ReceiptIndex(root)
-    out["du_first_filename_wins"] = idx.lookup(_SHA_A) == root / "alpha.json"
+    out["du_first_filename_wins"] = idx.lookup(_SHA_A) == root / _ALPHA_JSON
     out["du_items_name_order"] = [p.name for _, p in idx.items()] == [
-        "alpha.json",
+        _ALPHA_JSON,
         "mid.json",
     ]
     out["du_count_distinct"] = len(idx.items()) == 2
@@ -105,23 +108,23 @@ def _probe_staleness(tmp: Path) -> dict[str, bool]:
     idx = ReceiptIndex(root)
     out["st_initial"] = idx.lookup(_SHA_A) == first
     # addition picked up
-    _write(root, "two.json", _SHA_B)
-    out["st_addition"] = idx.lookup(_SHA_B) == root / "two.json"
+    _write(root, _TWO_JSON, _SHA_B)
+    out["st_addition"] = idx.lookup(_SHA_B) == root / _TWO_JSON
     # removal clears the entry
     first.unlink()
     out["st_removal"] = idx.lookup(_SHA_A) is None
     # rename moves the mapping
-    (root / "two.json").rename(root / "renamed.json")
-    out["st_rename"] = idx.lookup(_SHA_B) == root / "renamed.json"
+    (root / _TWO_JSON).rename(root / _RENAMED_JSON)
+    out["st_rename"] = idx.lookup(_SHA_B) == root / _RENAMED_JSON
     # same-name replacement with new digest
-    _write(root, "renamed.json", _SHA_C)
-    out["st_replace"] = idx.lookup(_SHA_B) is None and idx.lookup(_SHA_C) == root / "renamed.json"
+    _write(root, _RENAMED_JSON, _SHA_C)
+    out["st_replace"] = idx.lookup(_SHA_B) is None and idx.lookup(_SHA_C) == root / _RENAMED_JSON
     # unchanged snapshot short-circuits without losing state
-    out["st_stable"] = idx.lookup(_SHA_C) == root / "renamed.json"
+    out["st_stable"] = idx.lookup(_SHA_C) == root / _RENAMED_JSON
     # a corrupt file appearing then being fixed updates
-    (root / "renamed.json").write_text("{garbage", encoding="utf-8")
+    (root / _RENAMED_JSON).write_text("{garbage", encoding="utf-8")
     out["st_corrupt_drops"] = idx.lookup(_SHA_C) is None
-    _write(root, "renamed.json", _SHA_C)
+    _write(root, _RENAMED_JSON, _SHA_C)
     out["st_repaired_returns"] = idx.lookup(_SHA_C) is not None
     return out
 

@@ -31,9 +31,10 @@ Probes are literal bools; the sealed receipt names every defect found.
 from __future__ import annotations
 
 import json
+import math
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from fx1.serve.journal import JobJournal
 from fx1.serve.keys import (
@@ -110,7 +111,7 @@ def _probe_mint() -> dict[str, bool]:
         store.mint, max_tokens=0
     )
     _r5, rec5 = store.mint(ttl_s=30.0)
-    out["mt_expires_computed"] = rec5["expires_at"] == clock.t + 30.0
+    out["mt_expires_computed"] = math.isclose(rec5["expires_at"], clock.t + 30.0)
     capped = ApiKeyStore(max_keys=1, clock=clock)
     capped.mint()
     out["mt_cap"] = _code(capped.mint) == "keys_cap"
@@ -126,7 +127,7 @@ def _probe_authenticate() -> dict[str, bool]:
     out["au_accepts_own"] = _must(store.authenticate(raw))["key_id"] == rec["key_id"]
     out["au_wrong_none"] = store.authenticate(KEY_PREFIX + "0" * 40) is None
     out["au_unprefixed_none"] = store.authenticate("sk-whatever") is None
-    out["au_nonstring_none"] = store.authenticate(12345) is None  # type: ignore[arg-type]
+    out["au_nonstring_none"] = store.authenticate(cast(str, 12345)) is None
     out["au_empty_none"] = store.authenticate("") is None
     first = _must(store.authenticate(raw))
     out["au_uses_count"] = first["uses"] >= 1 and first["last_used_at"] == clock.t
@@ -199,7 +200,7 @@ def _probe_revoke_update_rotate() -> dict[str, bool]:
     out: dict[str, bool] = {}
     clock = _Clock()
     store = ApiKeyStore(clock=clock)
-    raw, rec = store.mint("rotator", scopes=["read", "write"], rpm=3, max_requests=50)
+    _, rec = store.mint("rotator", scopes=["read", "write"], rpm=3, max_requests=50)
     out["rv_tombstone"] = (lambda r: r["enabled"] is False and r["revoked_at"] == clock.t)(
         store.revoke(rec["key_id"])
     )
