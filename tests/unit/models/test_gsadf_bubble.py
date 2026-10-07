@@ -48,7 +48,15 @@ def test_date_stamp_merges() -> None:
     flags = date_stamp(bs, cv=2.5, min_len=2)
     assert flags[2] == 1.0 and flags[3] == 1.0
     assert flags[5] == 1.0 and flags[6] == 1.0
-    assert flags[8] == 0.0  # singleton dropped
+    # PSY consolidation bridges one-observation gaps BEFORE the length filter:
+    # index 8 sits one obs after the [5,6] run, so it merges into that episode
+    # rather than surviving as a droppable singleton.
+    assert flags[8] == 1.0
+    # A lone flag separated by two+ observations is a real singleton — dropped.
+    bs2 = np.array([np.nan, np.nan, 3.0, 3.1, 0.0, 3.2, 3.4, 0.0, 0.0, 3.5])
+    flags2 = date_stamp(bs2, cv=2.5, min_len=2)
+    assert flags2[9] == 0.0
+    assert flags2[2:4].sum() == 2.0
 
 
 def test_critical_values_ordered() -> None:

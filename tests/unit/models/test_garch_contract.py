@@ -36,7 +36,7 @@ def test_fit_returns_and_diagnostics_are_direct_and_serializable() -> None:
     assert diagnostics["variance_units"] == "decimal_squared"
     assert diagnostics["returns_scale"] == "decimal_returns_to_percent"
     assert diagnostics["vol"] == "garch"
-    assert diagnostics["series_scope"] == "univariate_return_series"
+    assert diagnostics["series_scope"] == "date_level_equal_weight_cross_section"
 
 
 def test_egarch_uses_a_valid_multi_step_path() -> None:

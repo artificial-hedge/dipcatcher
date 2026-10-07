@@ -155,7 +155,7 @@ def test_acd_weibull_nll_includes_psi_jacobian():
     psi[0] = x.mean()  # matches _psi_path's initialization
     for t in range(1, x.size):
         psi[t] = omega + alpha * x[t - 1] + beta * psi[t - 1]
-    lam = math.exp(math.lgamma(1.0 + 1.0 / gamma))
+    lam = math.exp(-math.lgamma(1.0 + 1.0 / gamma))  # mean-1 scale: 1/Gamma(1+1/g)
     z = x / psi / lam
     # Derived: eps = x/psi, f_x = f_eps(x/psi)/psi =>
     # ln f = ln g - g ln lam - ln psi + (g-1)(ln x - ln psi) - z^g
