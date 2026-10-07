@@ -831,6 +831,9 @@
   "models/volatility.py": {
    "status": "audited"
   },
+  "models/vonmises_fisher.py": {
+   "status": "audited"
+  },
   "models/watch.py": {
    "status": "audited"
   },

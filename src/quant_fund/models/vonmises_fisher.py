@@ -38,6 +38,8 @@ def _check_sphere(x: FloatArray) -> FloatArray:
     z = np.asarray(x, dtype=np.float64)
     if z.ndim != 2 or z.shape[0] < 4 or z.shape[1] < 2:
         raise ValueError("x must be an (n, p) matrix with n>=4, p>=2")
+    if not np.isfinite(z).all():
+        raise ValueError("x must be finite")
     norms = np.linalg.norm(z, axis=1)
     if (norms <= 1e-12).any():
         raise ValueError("zero-norm rows not allowed on the sphere")
@@ -132,8 +134,24 @@ def movm_em(
     loglik, and the responsibilities of the winning run."""
     z = _check_sphere(x)
     n, p = z.shape
-    if n_components < 1 or n_components > n:
-        raise ValueError("n_components must be in [1, n]")
+    if (
+        isinstance(n_components, bool)
+        or not isinstance(n_components, (int, np.integer))
+        or n_components < 1
+        or n_components > n
+    ):
+        raise ValueError("n_components must be an integer in [1, n]")
+    if (
+        isinstance(n_iter, bool)
+        or isinstance(n_init, bool)
+        or not isinstance(n_iter, int)
+        or not isinstance(n_init, int)
+        or n_iter < 1
+        or n_init < 1
+    ):
+        raise ValueError("n_iter and n_init must be positive integers")
+    if not np.isfinite(tol) or tol < 0.0:
+        raise ValueError("tol must be finite and non-negative")
     rng = np.random.default_rng(seed)
     best: dict[str, float | FloatArray] = {}
     best_ll = -np.inf
@@ -183,6 +201,8 @@ def movm_em(
                 "loglik": float(prev_ll),
                 "resp": resp.copy(),
             }
+    if not best:
+        raise RuntimeError("movm_em: every restart produced a non-finite log-likelihood")
     return best
 
 

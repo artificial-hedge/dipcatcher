@@ -72,3 +72,41 @@ def test_bench_passes():
     assert out["synthetic_purity"] > 0.9
     assert out["synthetic_kappa_max_err"] < 6.0
     assert out["synthetic_score"] == 1.0
+
+
+def test_sphere_rejects_non_finite() -> None:
+    x = np.ones((8, 3))
+    x[2, 1] = np.nan
+    with pytest.raises(ValueError, match="finite"):
+        vmf_fit(x)
+    with pytest.raises(ValueError, match="finite"):
+        movm_em(x, 2)
+
+
+def test_movm_rejects_vacuous_loop_counts() -> None:
+    x = np.random.default_rng(0).normal(size=(10, 3))
+    for kwargs in ({"n_init": 0}, {"n_iter": 0}, {"n_init": -2}, {"n_iter": True}):
+        with pytest.raises(ValueError):
+            movm_em(x, 2, **kwargs)
+    with pytest.raises(ValueError, match="tol"):
+        movm_em(x, 2, tol=-1.0)
+
+
+def test_movm_rejects_noninteger_components() -> None:
+    x = np.random.default_rng(0).normal(size=(10, 3))
+    with pytest.raises(ValueError, match="n_components"):
+        movm_em(x, 2.5)
+    with pytest.raises(ValueError, match="n_components"):
+        movm_em(x, True)
+
+
+def test_em_recovers_two_clusters() -> None:
+    rng = np.random.default_rng(7)
+    mu1, mu2 = np.array([1.0, 0, 0]), np.array([0.0, 1.0, 0])
+    x1 = rng.normal(size=(60, 3)) * 0.15 + mu1[None, :] * 3
+    x2 = rng.normal(size=(60, 3)) * 0.15 + mu2[None, :] * 3
+    x = np.vstack([x1, x2])
+    fit = movm_em(x, 2, seed=3)
+    mus = np.asarray(fit["mus"])
+    assert max(float(np.abs(mus @ mu1).max()), float(np.abs(mus @ mu2).max())) > 0.9
+    assert fit["loglik"] > -10.0
