@@ -140,33 +140,19 @@ def _gate_results_checked(gates: Mapping[str, Any]) -> dict[str, dict[str, Any]]
     return checked
 
 
-def compose_promotion_receipt(
-    *,
+def _artifact_identity_checked(
     artifact: Path,
-    evidence_report: Path,
-    decision: Mapping[str, Any],
-    input_metrics: Mapping[str, Any],
-    gate_results: Mapping[str, Any],
-    approver: Mapping[str, Any],
-    out_path: Path,
-) -> dict[str, Any]:
-    """Compose one immutable ``promotion_receipt.v1`` — fail-closed.
-
-    Raises :class:`PromotionCompositionError` on any missing, mismatched,
-    stale, synthetic or dishonest input. The written receipt is never
-    overwritten; a second composition to the same ``out_path`` raises.
-    """
-    # 1. Artifact manifest with verified dataset identity (mandated blocker).
+) -> tuple[ArtifactIdentity, Path, Path, str, str, object]:
+    """Step 1: verified artifact manifest with mandated dataset identity."""
+    artifact_path = Path(artifact)
     try:
-        identity = verify_artifact_manifest(Path(artifact))
+        identity = verify_artifact_manifest(artifact_path)
     except ArtifactManifestError as exc:
         raise PromotionCompositionError(
             "artifact manifest is absent or unverified (dataset identity "
             f"cannot be established); promotion is blocked: {exc}"
         ) from exc
     _require_dataset_identity(identity)
-
-    artifact_path = Path(artifact)
     artifact_sha = hash_file(artifact_path)
     manifest_file = manifest_path(artifact_path)
     manifest_sha = hash_file(manifest_file)
@@ -177,8 +163,11 @@ def compose_promotion_receipt(
             f"artifact manifest is unreadable: {manifest_file}"
         ) from exc
     artifact_class = manifest_record.get("class") if isinstance(manifest_record, dict) else None
+    return identity, artifact_path, manifest_file, artifact_sha, manifest_sha, artifact_class
 
-    # 2. Approved, non-synthetic promotion decision.
+
+def _decision_checked(decision: Mapping[str, Any], artifact_sha: str) -> str:
+    """Step 2: approved, non-synthetic decision bound to this artifact."""
     _require(
         promotion_is_approved(dict(decision)),
         "promotion decision is not an approved fail-closed promotion.v1 decision",
@@ -193,8 +182,16 @@ def compose_promotion_receipt(
         "promotion decision binds a different artifact",
     )
     _require(bool(str(decision.get("run_id", "")).strip()), "promotion decision has no run_id")
+    return decision_source
 
-    # 3. Input metrics bind the same artifact and dataset (staleness check).
+
+def _metrics_checked(
+    input_metrics: Mapping[str, Any],
+    artifact_sha: str,
+    identity: ArtifactIdentity,
+    decision_source: str,
+) -> None:
+    """Step 3: metrics bind the same artifact and dataset (staleness)."""
     _require(
         isinstance(input_metrics, Mapping) and bool(input_metrics), "input metrics are missing"
     )
@@ -217,19 +214,39 @@ def compose_promotion_receipt(
         "input metrics dataset identity is stale or absent",
     )
 
-    # 4. Gate results: every required gate present and passing.
-    gates = _gate_results_checked(gate_results)
 
-    # 5. Approving identity: named, honest, timestamped.
+def _approver_checked(approver: Mapping[str, Any]) -> Approver:
+    """Step 5: approving identity — named, honest, timestamped."""
     try:
         approver_record = Approver.model_validate(dict(approver))
     except Exception as exc:
         raise PromotionCompositionError(
             f"approver identity is missing or dishonest: {exc}"
         ) from exc
+    return approver_record
 
-    # 6. Evidence report: bytes-bound, complete, research-only, non-synthetic.
-    report_path = Path(evidence_report)
+
+def _report_stage_warnings(report: Mapping[str, Any]) -> list[str]:
+    """Stage-aware completeness scoping — resolution, never loosening."""
+    warnings = report.get("warnings")
+    report_status = report.get("status")
+    if report_status == "complete":
+        return []
+    if (
+        report_status == "insufficient_evidence"
+        and isinstance(warnings, list)
+        and set(warnings) <= STAGE_EXPECTED_REPORT_WARNINGS
+    ):
+        # Training-time report: the only gap is this receipt's own absence,
+        # which composition is resolving right now.
+        return sorted(set(warnings))
+    raise PromotionCompositionError("evidence report is incomplete; promotion is blocked")
+
+
+def _report_checked(
+    report_path: Path, artifact_sha: str, identity: ArtifactIdentity
+) -> tuple[str, str, list[str]]:
+    """Step 6: report bytes-bound, complete-or-resolved, research-only."""
     if not report_path.is_file():
         raise PromotionCompositionError(f"evidence report does not exist: {report_path}")
     report = _load_evidence_report(report_path)
@@ -249,19 +266,7 @@ def compose_promotion_receipt(
         not (isinstance(warnings, list) and "synthetic_evidence_not_promotable" in warnings),
         "synthetic evidence is not promotable",
     )
-    report_status = report.get("status")
-    if report_status == "complete":
-        stage_warnings: list[str] = []
-    elif (
-        report_status == "insufficient_evidence"
-        and isinstance(warnings, list)
-        and set(warnings) <= STAGE_EXPECTED_REPORT_WARNINGS
-    ):
-        # Training-time report: the only gap is this receipt's own absence,
-        # which composition is resolving right now.
-        stage_warnings = sorted(set(warnings))
-    else:
-        raise PromotionCompositionError("evidence report is incomplete; promotion is blocked")
+    stage_warnings = _report_stage_warnings(report)
     provenance = report.get("provenance")
     if not isinstance(provenance, Mapping):
         raise PromotionCompositionError("evidence report has no provenance")
@@ -277,6 +282,69 @@ def compose_promotion_receipt(
         provenance.get("manifest_valid") is True,
         "evidence report does not bind a verified artifact manifest",
     )
+    return report_sha, str(report.get("status")), stage_warnings
+
+
+def _write_receipt_exclusive(destination: Path, sealed: dict[str, Any]) -> None:
+    """Immutable exclusive-create write plus sha256 sidecar."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with open(destination, "x", encoding="utf-8") as handle:
+            handle.write(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+    except FileExistsError as exc:
+        raise PromotionCompositionError(
+            f"promotion receipts are immutable; refusing to overwrite: {destination}"
+        ) from exc
+
+    file_sha = hash_file(destination)
+    sidecar = destination.with_name(f"{destination.name}.sha256")
+    temporary_path: Path | None = None
+    try:
+        with NamedTemporaryFile(
+            dir=sidecar.parent,
+            prefix=f".{sidecar.name}.",
+            suffix=".tmp",
+            mode="w",
+            encoding="ascii",
+            delete=False,
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+            temporary.write(file_sha + "\n")
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        os.replace(temporary_path, sidecar)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
+def compose_promotion_receipt(
+    *,
+    artifact: Path,
+    evidence_report: Path,
+    decision: Mapping[str, Any],
+    input_metrics: Mapping[str, Any],
+    gate_results: Mapping[str, Any],
+    approver: Mapping[str, Any],
+    out_path: Path,
+) -> dict[str, Any]:
+    """Compose one immutable ``promotion_receipt.v1`` — fail-closed.
+
+    Raises :class:`PromotionCompositionError` on any missing, mismatched,
+    stale, synthetic or dishonest input. The written receipt is never
+    overwritten; a second composition to the same ``out_path`` raises.
+    """
+    identity, artifact_path, manifest_file, artifact_sha, manifest_sha, artifact_class = (
+        _artifact_identity_checked(artifact)
+    )
+    decision_source = _decision_checked(decision, artifact_sha)
+    _metrics_checked(input_metrics, artifact_sha, identity, decision_source)
+    gates = _gate_results_checked(gate_results)
+    approver_record = _approver_checked(approver)
+    report_path = Path(evidence_report)
+    report_sha, report_status, stage_warnings = _report_checked(report_path, artifact_sha, identity)
 
     payload: dict[str, Any] = {
         "schema": PROMOTION_RECEIPT_SCHEMA,
@@ -324,38 +392,5 @@ def compose_promotion_receipt(
         payload=payload,
     )
     sealed = seal_receipt(envelope)
-
-    destination = Path(out_path)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    # Exclusive create: an existing receipt is never rewritten.
-    try:
-        with open(destination, "x", encoding="utf-8") as handle:
-            handle.write(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-    except FileExistsError as exc:
-        raise PromotionCompositionError(
-            f"promotion receipts are immutable; refusing to overwrite: {destination}"
-        ) from exc
-
-    file_sha = hash_file(destination)
-    sidecar = destination.with_name(f"{destination.name}.sha256")
-    temporary_path: Path | None = None
-    try:
-        with NamedTemporaryFile(
-            dir=sidecar.parent,
-            prefix=f".{sidecar.name}.",
-            suffix=".tmp",
-            mode="w",
-            encoding="ascii",
-            delete=False,
-        ) as temporary:
-            temporary_path = Path(temporary.name)
-            temporary.write(file_sha + "\n")
-            temporary.flush()
-            os.fsync(temporary.fileno())
-        os.replace(temporary_path, sidecar)
-    finally:
-        if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
+    _write_receipt_exclusive(Path(out_path), sealed)
     return sealed
