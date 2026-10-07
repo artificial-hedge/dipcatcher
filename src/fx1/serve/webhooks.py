@@ -60,6 +60,13 @@ def _private_networks_allowed() -> bool:
 _LEGACY_SPECIAL_USE = tuple(ipaddress.ip_network(cidr) for cidr in ("192.88.99.0/24", "fec0::/10"))
 
 
+def _is_legacy_special_use(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Classify mapped IPv4 by its destination without changing the connection address."""
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
+        address = address.ipv4_mapped
+    return any(address in network for network in _LEGACY_SPECIAL_USE)
+
+
 def _is_public_unicast(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     """Classify an address conservatively for an outbound callback."""
     if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
@@ -81,7 +88,7 @@ def _validate_literal_host(host: str) -> None:
         address = ipaddress.ip_address(candidate)
     except ValueError:
         return
-    if any(address in network for network in _LEGACY_SPECIAL_USE):
+    if _is_legacy_special_use(address):
         raise ValueError(
             f"callback_url must not target a deprecated special-use address: {address}"
         )
@@ -102,7 +109,7 @@ def _resolved_addresses(host: str, port: int) -> tuple[str, ...]:
         raw = str(sockaddr[0])
         candidate = raw.split("%", 1)[0]
         address = ipaddress.ip_address(candidate)
-        if any(address in network for network in _LEGACY_SPECIAL_USE):
+        if _is_legacy_special_use(address):
             raise ValueError(
                 f"callback_url resolved to a deprecated special-use address: {address}"
             )
