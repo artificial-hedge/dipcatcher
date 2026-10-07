@@ -550,7 +550,7 @@ def _probe_circuit_interplay() -> dict[str, bool]:
     )
 
     # threshold=1: a single fault opens; fail-fast adds no transport call
-    tr, calls, _ = _scripted(fault)
+    tr, _, _ = _scripted(fault)
     cli = _mk(
         tr,
         circuit_breaker_threshold=1,
@@ -589,7 +589,7 @@ def _probe_circuit_interplay() -> dict[str, bool]:
     )
 
     # fail-fast sleep-free: no sleep recorded while the gate is shut
-    tr, calls, _ = _scripted(fault)
+    tr, _, _ = _scripted(fault)
     sleeps: list[float] = []
     cli = _mk(
         tr,
@@ -628,7 +628,7 @@ def _probe_half_open_contention(
 ) -> None:
     """Half-open admits exactly one transport probe: eight threads
     released together race the admit; seven fail fast without dialing."""
-    tr, calls, _ = _scripted(fault)
+    tr, _, _ = _scripted(fault)
     clock_t[0] += 30.0
     probe_gate = threading.Event()
     dialed: list[tuple[str, str]] = []
