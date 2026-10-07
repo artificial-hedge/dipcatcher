@@ -6,8 +6,9 @@ Modules
   the selection equation, inverse Mills ratio ``λ = φ(w'γ̂)/Φ(w'γ̂)``
   for the selected subsample, OLS of the outcome on
   ``[x, λ]``; the λ coefficient identifies ``ρ·σ_ε`` (selection
-  correction). Returns β, γ, λ, ρ·σ estimate, and corrected standard
-  errors via the Heckman two-step formula of Greene (1981).
+  correction). Returns β, γ, λ, ρ·σ estimate, and heteroskedasticity-
+  robust sandwich standard errors on the second-stage design (an
+  approximation — not the full Greene (1981) two-step correction).
 * ``heckman_ml`` — joint maximum-likelihood estimation of
   ``(β, γ, σ, ρ)`` over the full sample, using the bivariate-normal
   selection likelihood (Heckman 1979; Amemiya 1984).
@@ -113,12 +114,15 @@ def heckman_two_step(
     resid = y1 - x1 @ coef
     sig2 = float(resid @ resid / max(y1.size - x1.shape[1], 1))
     rho_sig = float(delta)
-    # Greene (1981) corrected covariance: X*'X inverse with delta-weighted
-    # IMR derivatives; report both raw and corrected se on β.
-    x_mat = np.column_stack([np.ones(int(sel.sum())), x[sel]])
-    xt_x = x_mat.T @ x_mat
-    meat = x_mat.T @ (x_mat * (resid[:, None] ** 2))
-    cov = linalg.solve(xt_x, meat, assume_a="pos") @ linalg.inv(xt_x)
+    # Heteroskedasticity-robust sandwich on the SECOND-STAGE design
+    # [1, x, lam] that actually generated `resid`.  (This approximates
+    # inference on beta; it is not the full Greene (1981) two-step
+    # correction, which additionally needs the probit VCV and the
+    # delta_i = lam_i(lam_i + w_i'g) weighting matrix.)
+    xt_x = x1.T @ x1
+    meat = x1.T @ (x1 * (resid[:, None] ** 2))
+    xt_xi = linalg.inv(xt_x)
+    cov = xt_xi @ meat @ xt_xi
     se = np.sqrt(np.maximum(np.diag(cov), 0.0))
     return {
         "beta": beta,
@@ -127,7 +131,7 @@ def heckman_two_step(
         "sigma": math.sqrt(max(sig2, 1e-12)),
         "lambda_coef": float(coef[-1]),
         "intercept": float(coef[0]),
-        "se_beta": np.asarray(se[1:]),
+        "se_beta": np.asarray(se[1 : 1 + x.shape[1]]),
         "n_selected": float(sel.sum()),
     }
 
@@ -182,6 +186,8 @@ def heckman_ml(
         if math.isfinite(res.fun) and res.fun < best:
             best = float(res.fun)
             best_x = np.asarray(res.x)
+    if not math.isfinite(best):
+        raise ValueError("heckman_ml: every restart failed (no finite likelihood)")
     k = x.shape[1]
     beta = best_x[:k]
     gamma = best_x[k : k + w1.shape[1]]
@@ -209,6 +215,8 @@ def synth_heckman(
     """
     if n < 100:
         raise ValueError("n>=100")
+    if not abs(rho) < 1.0:
+        raise ValueError("rho must lie in (-1, 1)")
     rng = np.random.default_rng(seed)
     w = rng.standard_normal(n)
     x = rng.standard_normal(n) + 0.5 * w  # correlated regressors

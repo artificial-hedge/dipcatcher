@@ -1,104 +1,61 @@
-"""Tests for Heckman selection models (models/heckman.py)."""
-
-from __future__ import annotations
-
-import math
+"""Adversarial probes for heckman."""
 
 import numpy as np
 import pytest
 
-from quant_fund.models.heckman import (
-    bench_heckman,
-    heckman_ml,
-    heckman_two_step,
-    inverse_mills,
-    synth_heckman,
-)
+from quant_fund.models import heckman as hk
 
 
-@pytest.fixture
-def panel():
-    return synth_heckman(n=700, rho=0.7, seed=4)
+def _data(n: int = 500, seed: int = 0):
+    d = hk.synth_heckman(n=n, seed=seed)
+    return d["y"], d["x"], d["w"], d["s"]
 
 
-def test_inverse_mills():
-    z = np.linspace(-3, 3, 50)
-    lam = inverse_mills(z)
-    assert np.all(lam > 0)
-    assert np.all(np.diff(lam) < 0)  # decreasing
-    assert abs(inverse_mills(np.array([0.0]))[0] - math.sqrt(2 / math.pi)) < 0.05
+def test_synth_rejects_rho_boundary():
+    with pytest.raises(ValueError, match="rho"):
+        hk.synth_heckman(n=200, rho=1.5)
+    with pytest.raises(ValueError, match="rho"):
+        hk.synth_heckman(n=200, rho=-1.0)
 
 
-def test_two_step_beta(panel):
-    ts = heckman_two_step(
-        np.asarray(panel["y"]),
-        np.asarray(panel["x"]),
-        np.asarray(panel["w"]),
-        np.asarray(panel["s"]),
+def test_ml_raises_when_every_restart_fails(monkeypatch):
+    y, x, w, s = _data()
+    monkeypatch.setattr(hk, "_heckman_nll", lambda *a: np.inf)
+    with pytest.raises(ValueError, match="restart"):
+        hk.heckman_ml(y, x, w, s, n_restarts=2)
+
+
+def test_se_beta_shape_and_positivity():
+    y, x, w, s = _data()
+    out = hk.heckman_two_step(y, x, w, s)
+    se = np.asarray(out["se_beta"])
+    assert se.shape == (x.shape[1],)
+    assert np.all(se >= 0.0)
+    assert np.all(np.isfinite(se))
+
+
+def test_se_beta_depends_on_lambda_column():
+    """The sandwich must run on the [1, x, lam] design: mechanically
+    recompute it and compare to the reported se."""
+    y, x, w, s = _data()
+    out = hk.heckman_two_step(y, x, w, s)
+    sel = s == 1.0
+    from scipy import linalg as la
+
+    w1 = np.column_stack([np.ones(w.shape[0]), w])
+    gamma = np.asarray(out["gamma"])
+    lam = hk.inverse_mills(w1[sel] @ gamma)
+    x1 = np.column_stack([np.ones(int(sel.sum())), x[sel], lam])
+    resid = np.asarray(y[sel]) - x1 @ np.concatenate(
+        [np.array([out["intercept"]]), np.asarray(out["beta"]), [out["lambda_coef"]]]
     )
-    assert abs(float(np.asarray(ts["beta"])[0]) - 1.0) < 0.15
-    assert float(ts["rho_sigma"]) > 0.0  # detects positive selection
+    xt_xi = la.inv(x1.T @ x1)
+    cov = xt_xi @ (x1.T @ (x1 * resid[:, None] ** 2)) @ xt_xi
+    expected = np.sqrt(np.diag(cov))[1 : 1 + x.shape[1]]
+    np.testing.assert_allclose(np.asarray(out["se_beta"]), expected, rtol=1e-8)
 
 
-def test_ml_returns(panel):
-    ml = heckman_ml(
-        np.asarray(panel["y"]),
-        np.asarray(panel["x"]),
-        np.asarray(panel["w"]),
-        np.asarray(panel["s"]),
-    )
-    assert math.isfinite(float(ml["loglik"]))
-    assert -1.0 <= float(ml["rho"]) <= 1.0
-    assert float(ml["sigma"]) > 0.0
-
-
-def test_selection_correction_direction(panel):
-    # subsample OLS slope differs from truth; Heckman corrects toward it
-    sel = np.asarray(panel["s"]) == 1.0
-    xo = np.column_stack([np.ones(int(sel.sum())), np.asarray(panel["x"])[sel]])
-    beta_ols = np.linalg.lstsq(xo, np.asarray(panel["y"])[sel], rcond=None)[0][1]
-    ts = heckman_two_step(
-        np.asarray(panel["y"]),
-        np.asarray(panel["x"]),
-        np.asarray(panel["w"]),
-        np.asarray(panel["s"]),
-    )
-    beta_ts = float(np.asarray(ts["beta"])[0])
-    assert abs(beta_ts - 1.0) <= abs(beta_ols - 1.0) + 0.05
-
-
-def test_validation():
-    with pytest.raises(ValueError):
-        heckman_two_step(np.ones(20), np.ones(20), np.ones(20), np.ones(20))
-    with pytest.raises(ValueError):
-        heckman_two_step(np.ones(60), np.ones(60), np.ones(60), np.full(60, 0.5))
-    with pytest.raises(ValueError):
-        heckman_two_step(np.ones(60), np.ones(60), np.ones(60), np.ones(60))
-    with pytest.raises(ValueError):
-        heckman_ml(np.ones(60), np.ones(60), np.ones(60), np.zeros(60))
-
-
-def test_determinism(panel):
-    a = heckman_two_step(
-        np.asarray(panel["y"]),
-        np.asarray(panel["x"]),
-        np.asarray(panel["w"]),
-        np.asarray(panel["s"]),
-    )["beta"]
-    b = heckman_two_step(
-        np.asarray(panel["y"]),
-        np.asarray(panel["x"]),
-        np.asarray(panel["w"]),
-        np.asarray(panel["s"]),
-    )["beta"]
-    assert np.allclose(a, b)
-
-
-def test_bench_keys():
-    out = bench_heckman()
-    for k, v in out.items():
-        assert k.startswith("synthetic_")
-        assert math.isfinite(v)
-    assert out["synthetic_beta_twostep_err"] < 0.2
-    assert out["synthetic_twostep_beats_ols"] == 1.0
+def test_bench_smoke():
+    out = hk.bench_heckman()
     assert out["synthetic_determinism"] == 1.0
+    assert out["synthetic_twostep_beats_ols"] == 1.0

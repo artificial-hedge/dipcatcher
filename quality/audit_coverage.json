@@ -531,6 +531,9 @@
   "models/hawkes_em.py": {
    "status": "audited"
   },
+  "models/heckman.py": {
+   "status": "audited"
+  },
   "models/hidden_markov_equilibrium.py": {
    "status": "audited"
   },
