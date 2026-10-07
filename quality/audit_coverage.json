@@ -360,6 +360,9 @@
   "models/_al_synth.py": {
    "status": "audited"
   },
+  "models/_align_synth.py": {
+   "status": "audited"
+  },
   "models/ait_sahalia.py": {
    "status": "audited"
   },

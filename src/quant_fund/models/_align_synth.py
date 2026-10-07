@@ -33,8 +33,12 @@ def true_reward(x: FloatArray, emb: FloatArray) -> FloatArray:
     return x @ emb.T
 
 
-def pref_pairs(n: int, emb: FloatArray, rng: np.random.Generator, noise: float = 0.1):
+def pref_pairs(
+    n: int, emb: FloatArray, rng: np.random.Generator, noise: float = 0.1
+) -> tuple[FloatArray, IntArray, IntArray]:
     """(x, winner, loser) triples with label noise."""
+    if not 0.0 <= noise <= 1.0:
+        raise ValueError(f"noise must be a probability in [0, 1], got {noise}")
     x = contexts(n, rng)
     r = true_reward(x, emb)
     a_w = np.zeros(n, dtype=np.int64)
