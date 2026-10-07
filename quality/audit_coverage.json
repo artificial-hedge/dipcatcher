@@ -573,6 +573,9 @@
   "models/mixture.py": {
    "status": "audited"
   },
+  "models/moirai2.py": {
+   "status": "audited"
+  },
   "models/msgarch.py": {
    "status": "audited"
   },
