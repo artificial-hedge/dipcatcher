@@ -58,3 +58,20 @@ class TestBoot:
     def test_bench(self) -> None:
         out = bench_bootstrapped_dqn(seed=13, n_train=100, iters=40, mc_eval=200)
         assert np.isfinite(out["synthetic_boot_cvar"])
+
+
+class TestReturnDist:
+    def test_action_means_equal(self) -> None:
+        rng = np.random.default_rng(3)
+        m0 = mc_return_dist(0, 0, rng, 200000).mean()
+        m1 = mc_return_dist(0, 1, rng, 200000).mean()
+        # Docstring contract: action 1 shares the mean, adds left-tail mass.
+        # Lomax(1.5) tail has infinite variance — tol 0.08 separates the fixed
+        # base (≈0 diff) from the old 0.94 base (≈0.21 diff).
+        assert abs(m0 - m1) < 0.08
+
+    def test_action1_heavier_left_tail(self) -> None:
+        rng = np.random.default_rng(5)
+        c0 = cvar(mc_return_dist(0, 0, rng, 20000))
+        c1 = cvar(mc_return_dist(0, 1, rng, 20000))
+        assert c1 < c0

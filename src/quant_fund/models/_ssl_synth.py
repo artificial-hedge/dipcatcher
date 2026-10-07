@@ -1,8 +1,8 @@
 """Shared synthetic SSL / test-time-adaptation fixtures (wave 139) (SYNTHETIC).
 
-- `synth_ssl`: 4-class Gaussian blobs; `make_views` produces two noisy
-  views (random scale + translation) — view-invariant representations
-  separate the classes.
+- `synth_ssl`: 2-class XOR latent (features not linearly separable);
+  `make_views` produces two noisy views (random scale + translation) —
+  view-invariant representations separate the classes.
 - `synth_tta_split`: train set ID, test set rotated + shifted + rescaled —
   no labels at test; adaptation must recover accuracy.
 """

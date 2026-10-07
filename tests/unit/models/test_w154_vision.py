@@ -57,3 +57,17 @@ class TestRollout:
     def test_bench(self) -> None:
         out = bench_attention_rollout(seed=13)
         assert out["synthetic_rollout_relevance"] > 0
+
+
+class TestPatches:
+    def test_other_patch_sizes(self) -> None:
+        x = np.ones((2, 6, 6))
+        out3 = patches(x, p=3)
+        assert out3.shape == (2, 4, 9)
+        assert (out3 != 0).all()  # no silent zero-padding
+
+    def test_indivisible_patch_size(self) -> None:
+        import pytest
+
+        with pytest.raises(ValueError):
+            patches(np.zeros((2, 6, 6)), p=5)

@@ -28,11 +28,13 @@ def ess(x: FloatArray, max_lag: int = 50) -> float:
     if var < 1e-12:
         return float(n)
     ess_v = float(n)
+    rho_sum = 0.0
     for lag in range(1, min(max_lag, n - 1)):
         rho = float((x[:-lag] * x[lag:]).mean() / var)
         if rho < 0.02:
             break
-        ess_v = float(n) / (1 + 2 * rho * lag / lag)
+        rho_sum += rho
+        ess_v = float(n) / (1 + 2 * rho_sum)
     return float(min(ess_v, n))
 
 

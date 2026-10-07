@@ -46,3 +46,20 @@ class TestGoExplore:
     def test_bench(self) -> None:
         out = bench_go_explore(seed=13, rounds=80)
         assert 0.0 <= out["synthetic_goexp_coverage"] <= 1.0
+
+
+class TestQLearnTieBreak:
+    def test_no_directional_bias_on_q_ties(self) -> None:
+        from quant_fund.models._ex_synth import q_learn
+
+        seen: set = set()
+
+        def spy(s, sp, st, ep, rng):
+            seen.add(sp)
+            return 0.0
+
+        # eps=0 → always greedy; fresh Q table → every first step is a tie.
+        # Sweep seeds: a first-index argmax always lands on the same state.
+        for sd in range(40):
+            q_learn(spy, seed=sd, episodes=1, steps=1, eps=0.0)
+        assert len(seen) > 1

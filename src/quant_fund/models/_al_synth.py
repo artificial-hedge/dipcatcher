@@ -78,10 +78,12 @@ def al_loop(
 
 
 def random_baseline(seed: int = 0, rounds: int = 10, batch: int = 8) -> float:
+    sel_rng = np.random.default_rng(seed + 101)
+
     def rnd(
         uP: FloatArray, u_idx: FloatArray, lP: FloatArray, ly: FloatArray, w: FloatArray
     ) -> FloatArray:
-        return np.asarray(np.random.default_rng(0).permutation(len(uP)), dtype=np.float64)
+        return np.asarray(sel_rng.permutation(len(uP)), dtype=np.float64)
 
     return al_loop(rnd, seed=seed, batch=batch, rounds=rounds)
 

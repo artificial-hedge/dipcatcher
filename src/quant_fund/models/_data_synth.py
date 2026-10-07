@@ -1,9 +1,9 @@
 """Synthetic data-dynamics fixture (SYNTHETIC).
 
-2-class problem in R^8: class mean ±mu on first 3 dims, 5 distractor
-dims with class-conditional variance flip (easy/hard split — hard
-examples have distractor noise amplified). y = sign(x·w_true) on the
-first 3 dims; hardness score = distractor magnitude.
+2-class problem in R^8: class mean ±mu on first 3 dims; dim 3 is a
+spurious weakly label-correlated feature; dims 4–7 are distractors
+amplified ×4 on hard examples (easy/hard split). y = sign(x·w_true) on
+the first 3 dims; hardness score = distractor magnitude.
 """
 
 from __future__ import annotations

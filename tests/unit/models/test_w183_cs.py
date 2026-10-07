@@ -55,3 +55,13 @@ class TestCam:
     def test_bench(self) -> None:
         out = bench_cam_prune(seed=13)
         assert out["synthetic_cam_shd"] >= 0
+
+
+class TestSEMBound:
+    def test_edges_beyond_acyclic_max(self) -> None:
+        import pytest
+
+        from quant_fund.models._cs_synth import sem_data
+
+        with pytest.raises(ValueError):
+            sem_data(seed=0, d=3, edges=10)

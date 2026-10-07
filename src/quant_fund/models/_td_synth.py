@@ -22,20 +22,21 @@ def make_data(seed: int = 0, n: int = 600):
 
 
 def train_mlp(torch, X, y, iters: int = 400, lr: float = 0.01, seed: int = 0, hidden: int = 24):
-    torch.manual_seed(seed)
-    net = torch.nn.Sequential(
-        torch.nn.Linear(8, hidden), torch.nn.ReLU(), torch.nn.Linear(hidden, 1)
-    )
-    opt = torch.optim.SGD(net.parameters(), lr=lr)
-    Xt = torch.tensor(X).float()
-    yt = torch.tensor(y).float()[:, None]
-    losses = []
-    for _ in range(iters):
-        loss = torch.nn.functional.binary_cross_entropy_with_logits(net(Xt), yt)
-        opt.zero_grad()
-        loss.backward()
-        opt.step()
-        losses.append(float(loss))
+    with torch.random.fork_rng():
+        torch.manual_seed(seed)
+        net = torch.nn.Sequential(
+            torch.nn.Linear(8, hidden), torch.nn.ReLU(), torch.nn.Linear(hidden, 1)
+        )
+        opt = torch.optim.SGD(net.parameters(), lr=lr)
+        Xt = torch.tensor(X).float()
+        yt = torch.tensor(y).float()[:, None]
+        losses = []
+        for _ in range(iters):
+            loss = torch.nn.functional.binary_cross_entropy_with_logits(net(Xt), yt)
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+            losses.append(float(loss))
     return net, losses
 
 

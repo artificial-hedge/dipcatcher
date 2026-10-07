@@ -17,6 +17,10 @@ def sem_data(seed: int, n: int = 1500, d: int = 6, edges: int = 7) -> tuple[Floa
     """Returns (X, B_true) with B_true[i,j]=w if i→j edge."""
     rng = np.random.default_rng(seed)
     perm = rng.permutation(d)
+    rank = {int(v): i for i, v in enumerate(perm)}
+    valid = [(i, j) for i in range(d) for j in range(d) if i != j and rank[i] < rank[j]]
+    if edges > len(valid):
+        raise ValueError(f"edges={edges} exceeds {len(valid)} acyclic pairs for d={d}")
     B = np.zeros((d, d))
     ecount = 0
     while ecount < edges:

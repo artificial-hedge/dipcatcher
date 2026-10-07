@@ -63,3 +63,12 @@ class TestMoment:
     def test_bench(self) -> None:
         out = bench_moment_lite(seed=15, n_train=8, iters=10)
         assert np.isfinite(out["synthetic_moment_pinball"])
+
+
+class TestNaiveHonesty:
+    def test_no_season_scaling(self) -> None:
+        hist = np.arange(1.0, 97.0)  # len 96 = 4 full periods
+        qs = naive_quantiles(hist, np.array([0.5]), period=24)
+        assert qs.shape == (24, 1)
+        expect = hist[-24:] + np.quantile(np.diff(hist[-24:]), 0.5)
+        assert np.allclose(qs[:, 0], expect)

@@ -53,6 +53,8 @@ def tfim_h(n: int, h: float = 1.0) -> FloatArray:
 def to_mps(T: np.ndarray, d_phys: int = 2, chi: int = 8) -> list[np.ndarray]:
     """Flatten a d^n tensor to an MPS via sequential SVD (left-canonical)."""
     n = int(round(np.log(T.size) / np.log(d_phys)))
+    if d_phys**n != T.size:
+        raise ValueError(f"tensor size {T.size} is not a power of d_phys={d_phys}")
     psi = T.reshape(d_phys, -1)
     cores = []
     W = psi.reshape(1, d_phys, -1)

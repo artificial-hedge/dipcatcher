@@ -1,5 +1,6 @@
 """Shared SYNTHETIC fixture for wave-170 causal-DL-2 canon: confounded
-treatment with heterogeneous effect tau(x) = x0·(x1>0). Metric: PEHE
+treatment with heterogeneous effect tau(x) = 1.2·x0 for x1>0 else -0.4.
+Metric: PEHE
 (sqrt MSE of estimated CATE) vs naive difference regressor.
 """
 

@@ -32,7 +32,7 @@ def naive_quantiles(
     hist: NDArray[np.float64], taus: NDArray[np.float64], period: int = 24
 ) -> NDArray[np.float64]:
     """Seasonal-naive quantiles: repeat last-season value + empirical noise."""
-    pred = hist[-period:] * (len(hist) // period)
+    pred = hist[-period:]
     resid = np.diff(hist[-period:])
     qs = []
     for h in range(1, len(pred) + 1):

@@ -45,3 +45,14 @@ class TestTTRound:
     def test_bench(self) -> None:
         out = bench_tt_round()
         assert out["synthetic_ttround_err"] < 0.1
+
+
+class TestToMPS:
+    def test_rejects_non_power_size(self) -> None:
+        import numpy as np
+        import pytest
+
+        from quant_fund.models._tn_synth import to_mps
+
+        with pytest.raises(ValueError):
+            to_mps(np.zeros(24), d_phys=2)

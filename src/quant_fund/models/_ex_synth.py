@@ -67,7 +67,12 @@ def q_learn(
     for ep in range(episodes):
         s = (3, 0)
         for st in range(steps):
-            ai = int(rng.integers(4)) if rng.random() < eps else int(np.argmax(Q[s2i(s)]))
+            row = Q[s2i(s)]
+            ai = (
+                int(rng.integers(4))
+                if rng.random() < eps
+                else int(rng.choice(np.flatnonzero(row == row.max())))
+            )
             legal = dict(neighbors(s))
             if ai not in legal:
                 ai = int(rng.choice(list(legal)))

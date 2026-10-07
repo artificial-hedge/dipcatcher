@@ -46,3 +46,18 @@ class TestGrok:
     def test_bench(self) -> None:
         out = bench_neural_grok(seed=13, iters=100)
         assert 0.0 <= out["synthetic_grok_test_acc"] <= 1.0
+
+
+class TestTrainMLPRNG:
+    def test_preserves_global_rng(self) -> None:
+        import torch
+
+        from quant_fund.models._td_synth import train_mlp
+
+        X = np.zeros((8, 8))
+        y = np.zeros(8)
+        torch.manual_seed(123)
+        before = torch.rand(3)
+        torch.manual_seed(123)
+        train_mlp(torch, X, y, iters=2, seed=5)
+        assert torch.equal(before, torch.rand(3))

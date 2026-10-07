@@ -1,6 +1,7 @@
-"""Vision fixture: 6x6 grayscale "images" — class 0 = corner blob, (SYNTHETIC)
-class 1 = edge stripe; plus Gaussian noise. A CNN's locality helps;
-patch-token ViT needs more data.
+"""Vision fixture: 6x6 grayscale "images" (SYNTHETIC) — two corner blobs
+(top-left 2x2, bottom-right 2x2); class = XOR of blob presence, so the
+task is not linearly separable; plus Gaussian noise. A CNN's locality
+helps; patch-token ViT needs more data.
 """
 
 from __future__ import annotations
@@ -29,9 +30,11 @@ def synth_images(
 
 
 def patches(x: FloatArray, p: int = 2) -> FloatArray:
-    """(n,6,6) -> (n, 9, 4) 2x2 flattened patches."""
+    """(n,6,6) -> (n, (6//p)^2, p*p) flattened p x p patches."""
+    if 6 % p:
+        raise ValueError(f"patch size p={p} does not divide image side 6")
     n = x.shape[0]
-    out = np.zeros((n, 9, p * p))
+    out = np.zeros((n, (6 // p) ** 2, p * p))
     k = 0
     for r in range(0, 6, p):
         for c in range(0, 6, p):

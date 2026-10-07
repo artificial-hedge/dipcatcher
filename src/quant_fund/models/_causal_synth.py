@@ -1,7 +1,7 @@
 """Causal-inference fixture: confounded treatment with known ITE (SYNTHETIC).
 
-x ~ N(0, I_5); propensity sigmoid(x0); t ~ Bern(e);
-y0 = x0 + 0.5*x1 + noise; tau(x) = 1 + x0 (heterogeneous);
+x ~ N(0, I_5); propensity sigmoid(x0 + 0.5*x2); t ~ Bern(e);
+y0 = x0 + 0.5*x1 - 0.3*x2 + noise; tau(x) = 1 + x0 (heterogeneous);
 y = y0 + tau*t. True ATE = 1, PEHE computable.
 """
 

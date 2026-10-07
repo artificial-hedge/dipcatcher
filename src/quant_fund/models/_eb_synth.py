@@ -47,13 +47,18 @@ def make_energy(torch):
 
 
 def langevin(torch, net, n: int, steps: int = 80, step: float = 0.1, seed: int | None = 0, x0=None):
-    if seed is not None:
+    def _run():
+        x = torch.randn(n, 2) * 2 if x0 is None else x0.clone()
+        for _ in range(steps):
+            x = x.detach().requires_grad_(True)
+            e = net(x).sum()
+            g = torch.autograd.grad(e, x)[0]
+            with torch.no_grad():
+                x = x - 0.5 * step * g + np.sqrt(step) * torch.randn(n, 2)
+        return x.detach()
+
+    if seed is None:
+        return _run()
+    with torch.random.fork_rng():
         torch.manual_seed(seed)
-    x = torch.randn(n, 2) * 2 if x0 is None else x0.clone()
-    for _ in range(steps):
-        x = x.detach().requires_grad_(True)
-        e = net(x).sum()
-        g = torch.autograd.grad(e, x)[0]
-        with torch.no_grad():
-            x = x - 0.5 * step * g + np.sqrt(step) * torch.randn(n, 2)
-    return x.detach()
+        return _run()

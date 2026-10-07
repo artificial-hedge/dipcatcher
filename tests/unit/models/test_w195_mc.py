@@ -46,3 +46,18 @@ class TestIMH:
     def test_bench(self) -> None:
         out = bench_indep_mh(n=1500)
         assert np.isfinite(out["synthetic_imh_tail_err"])
+
+
+class TestESS:
+    def test_ar1_autocorrelation(self) -> None:
+        from quant_fund.models._mc2_synth import ess
+
+        rng = np.random.default_rng(0)
+        n = 20000
+        e = rng.standard_normal(n)
+        x = np.zeros(n)
+        for i in range(1, n):
+            x[i] = 0.9 * x[i - 1] + e[i]
+        est = ess(x)
+        # AR(1) rho=0.9 → ESS ≈ n*(1-rho)/(1+rho) ≈ n/19, far below n.
+        assert n / 50 < est < n / 3

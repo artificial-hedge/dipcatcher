@@ -46,3 +46,24 @@ class TestEGL:
     def test_bench(self) -> None:
         out = bench_egl_change(seed=13, trials=2)
         assert np.isfinite(out["synthetic_egl_acc"])
+
+
+class TestRandomBaseline:
+    def test_varies_across_rounds(self) -> None:
+        from quant_fund.models._al_synth import al_loop, random_baseline
+
+        def frozen(uP, u_idx, lP, ly, w):
+            return np.asarray(np.random.default_rng(0).permutation(len(uP)), dtype=np.float64)
+
+        # A true random baseline must not replay one fixed permutation every
+        # round — that reduces it to a deterministic positional selector.
+        assert random_baseline(seed=0, rounds=4, batch=4) != al_loop(
+            frozen, seed=0, rounds=4, batch=4
+        )
+
+    def test_deterministic(self) -> None:
+        from quant_fund.models._al_synth import random_baseline
+
+        assert random_baseline(seed=7, rounds=4, batch=4) == random_baseline(
+            seed=7, rounds=4, batch=4
+        )

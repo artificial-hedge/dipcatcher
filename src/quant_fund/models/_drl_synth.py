@@ -31,9 +31,11 @@ def sample_return(states: FloatArray, actions: FloatArray, rng: np.random.Genera
     r = 0.5 + 0.1 * rng.standard_normal(states.size)
     heavy = rng.random(states.size) < 0.12
     left_tail = -rng.pareto(1.5, states.size) * heavy
+    # E[left_tail] = -0.12 * E[pareto(1.5)] = -0.24 (Lomax mean = 1/(a-1));
+    # base 0.74 keeps E[return | action 1] = E[return | action 0] = 0.5.
     mix = np.where(
         actions > 0.5,
-        0.94 + left_tail + 0.05 * rng.standard_normal(states.size),
+        0.74 + left_tail + 0.05 * rng.standard_normal(states.size),
         r,
     )
     return np.asarray(mix)

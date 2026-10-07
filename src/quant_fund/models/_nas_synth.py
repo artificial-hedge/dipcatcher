@@ -24,14 +24,15 @@ def _torch():
 
 
 def build_net(torch, arch, seed: int = 0):
-    torch.manual_seed(seed)
-    h, d, a = arch
-    act = torch.nn.ReLU() if a == 0 else torch.nn.Tanh()
-    layers = [torch.nn.Linear(8, h), act]
-    for _i in range(d - 1):
-        layers += [torch.nn.Linear(h, h), act]
-    layers.append(torch.nn.Linear(h, 2))
-    return torch.nn.Sequential(*layers)
+    with torch.random.fork_rng():
+        torch.manual_seed(seed)
+        h, d, a = arch
+        act = torch.nn.ReLU() if a == 0 else torch.nn.Tanh()
+        layers = [torch.nn.Linear(8, h), act]
+        for _i in range(d - 1):
+            layers += [torch.nn.Linear(h, h), act]
+        layers.append(torch.nn.Linear(h, 2))
+        return torch.nn.Sequential(*layers)
 
 
 def eval_arch(

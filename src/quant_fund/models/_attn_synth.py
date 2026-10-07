@@ -23,8 +23,9 @@ def synth_retrieval(
 ) -> tuple[FloatArray, NDArray[np.int64]]:
     """x (n, T, d): alternating key/value token embeddings + final query.
 
-    Key tokens: one-hot key id in first _NKEYS slots + noise. Value tokens:
-    one-hot class in next slots. Query: last token holds the queried key id.
+    Key tokens: one-hot key id in first _NKEYS slots plus the paired value's
+    class in the next slots + noise. Value tokens: one-hot class in next
+    slots. Query: last token holds the queried key id.
     """
     d = _NKEYS + n_classes + _TOK
     t = 2 * m_pairs + 1

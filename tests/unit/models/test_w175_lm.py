@@ -46,3 +46,16 @@ class TestMuP:
     def test_bench(self) -> None:
         out = bench_mup_init(seed=13, iters=80)
         assert np.isfinite(out["synthetic_mup_width_gap"])
+
+
+class TestAttnBaselineRNG:
+    def test_preserves_global_rng(self) -> None:
+        import torch
+
+        from quant_fund.models._lm_synth import attn_baseline
+
+        torch.manual_seed(123)
+        before = torch.rand(3)
+        torch.manual_seed(123)
+        attn_baseline(seed=3, iters=5)
+        assert torch.equal(before, torch.rand(3))

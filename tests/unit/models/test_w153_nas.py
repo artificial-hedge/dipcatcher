@@ -57,3 +57,25 @@ class TestAP:
     def test_bench(self) -> None:
         out = bench_arch_predictor(seed=13, n=120, n_train=8, iters=15)
         assert -1 <= out["synthetic_ap_rank_rho"] <= 1
+
+
+class TestBuildNetRNG:
+    def test_preserves_global_rng(self) -> None:
+        import torch
+
+        from quant_fund.models._nas_synth import build_net
+
+        torch.manual_seed(123)
+        before = torch.rand(3)
+        torch.manual_seed(123)
+        build_net(torch, (8, 2, 0), seed=5)
+        assert torch.equal(before, torch.rand(3))
+
+    def test_seed_reproducible(self) -> None:
+        import torch
+
+        from quant_fund.models._nas_synth import build_net
+
+        a = build_net(torch, (8, 2, 0), seed=5)
+        b = build_net(torch, (8, 2, 0), seed=5)
+        assert all(torch.equal(x, y) for x, y in zip(a.parameters(), b.parameters(), strict=True))

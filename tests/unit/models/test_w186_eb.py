@@ -44,3 +44,17 @@ class TestAEBM:
     def test_bench(self) -> None:
         out = bench_adversarial_ebm(seed=13, iters=40)
         assert out["synthetic_aebm_mmd"] >= 0.0
+
+
+class TestLangevinRNG:
+    def test_preserves_global_rng(self) -> None:
+        import torch
+
+        from quant_fund.models._eb_synth import langevin, make_energy
+
+        net = make_energy(torch)
+        torch.manual_seed(123)
+        before = torch.rand(3)
+        torch.manual_seed(123)
+        langevin(torch, net, 8, steps=2, seed=7)
+        assert torch.equal(before, torch.rand(3))
