@@ -319,6 +319,16 @@ def custody_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     for key in ("member", "corpus_dir", "pattern", "first_epoch", "chain_head"):
         if not isinstance(payload.get(key), str) or not payload[key]:
             errors.append(key)
+    # Path-valued fields must be materializable: a ``.``/empty-normalized or
+    # NUL/control path reaches ``verify_custody_bundle``'s writes and crashes
+    # there instead of failing closed in the contract.
+    for key in ("member", "corpus_dir"):
+        if (
+            isinstance(payload.get(key), str)
+            and payload[key]
+            and not _safe_member_relpath(payload[key])
+        ):
+            errors.append(f"{key}_path_invalid")
     hops = payload.get("hops")
     if not isinstance(hops, list) or not hops:
         errors.append("hops_empty")
@@ -331,6 +341,8 @@ def custody_contract_errors(payload: Mapping[str, Any]) -> list[str]:
                 or not isinstance(h.get("sha256"), str)
             ):
                 errors.append(f"hop_malformed:{i}")
+            elif not _safe_member_relpath(h["name"]):
+                errors.append(f"hop_path_invalid:{i}")
         if errors == []:
             if isinstance(hops, list) and hops[0].get("name") != payload.get("first_epoch"):
                 errors.append("first_epoch_mismatch")
@@ -365,12 +377,16 @@ def _safe_member_relpath(rel: object) -> bool:
 
     Verification materializes an untrusted bundle's member paths to disk —
     an absolute anchor or a ``..`` segment would turn a ``tmp / rel`` join
-    into an arbitrary write (or read) outside the sandbox root.
+    into an arbitrary write (or read) outside the sandbox root. A path that
+    normalizes to nothing (``.``, ``./``) targets the root itself and
+    crashes the write; NUL/control bytes crash the filesystem syscalls.
     """
     if not isinstance(rel, str) or not rel:
         return False
+    if any(ord(c) < 0x20 or ord(c) == 0x7F for c in rel):
+        return False
     path = Path(rel)
-    return not path.is_absolute() and ".." not in path.parts
+    return not path.is_absolute() and bool(path.parts) and ".." not in path.parts
 
 
 def verify_custody_bundle(
@@ -499,12 +515,18 @@ def verify_custody_bundle(
             if not _safe_member_relpath(hop_name):
                 errors.append(f"hop_path_uncontained:{str(hop_name)!a}")
                 continue
-            (corpus_root / hop_name).write_bytes(raw)
+            try:
+                (corpus_root / hop_name).write_bytes(raw)
+            except (OSError, ValueError):
+                errors.append(f"hop_write_failed:{str(hop_name)!a}")
         member_rel = bundle["member"]
         if not _safe_member_relpath(member_rel):
             errors.append("member_path_uncontained")
         else:
-            (corpus_root / member_rel).write_bytes(member_bytes)
+            try:
+                (corpus_root / member_rel).write_bytes(member_bytes)
+            except (OSError, ValueError):
+                errors.append("member_write_failed")
 
     embedded = bundle["embedded_files"]
     assert isinstance(embedded, Mapping)
@@ -515,8 +537,11 @@ def verify_custody_bundle(
             errors.append(f"embedded_path_uncontained:{str(rel)!a}")
             continue
         dest = tmp / rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_bytes(raw)
+        try:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(raw)
+        except (OSError, ValueError):
+            errors.append(f"embedded_write_failed:{str(rel)!a}")
 
     # The signed pin must bind the claimed head hop.
     try:
@@ -535,7 +560,10 @@ def verify_custody_bundle(
     if (tmp / "gate_pins.sig").is_file():
         from quant_fund.research.gate_signatures import verify_pin_signatures
 
-        sig = verify_pin_signatures(tmp)
+        try:
+            sig = verify_pin_signatures(tmp)
+        except (OSError, ValueError) as exc:
+            sig = {"ok": False, "signed": False, "errors": [exc.__class__.__name__]}
         layers["signature"] = {"ok": bool(sig["ok"]), "signed": sig["signed"]}
         if not sig["ok"] or not sig["signed"]:
             errors.append(f"signature:{sig['errors']}")
@@ -545,7 +573,10 @@ def verify_custody_bundle(
     if (tmp / _CP_FILE).is_file():
         from quant_fund.research.integrity_checkpoint import verify_checkpoint
 
-        cp = verify_checkpoint(tmp)
+        try:
+            cp = verify_checkpoint(tmp)
+        except (OSError, ValueError) as exc:
+            cp = {"ok": False, "errors": [f"crash:{exc.__class__.__name__}"]}
         layers["checkpoint"] = {"ok": bool(cp["ok"]), "current": cp.get("current")}
         if not cp["ok"]:
             errors.append(f"checkpoint:{cp['errors']}")
@@ -568,9 +599,17 @@ def verify_custody_bundle(
                 errors.append(f"witness_path_uncontained:{str(rel)!a}")
                 continue
             dest = tmp / rel
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_bytes(raw)
-            res = verify_witness_file(tmp, rel)
+            try:
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(raw)
+            except (OSError, ValueError):
+                errors.append(f"witness_write_failed:{str(rel)!a}")
+                continue
+            try:
+                res = verify_witness_file(tmp, rel)
+            except (OSError, ValueError) as exc:
+                w_errors.append(f"{rel}:crash:{exc.__class__.__name__}")
+                continue
             if res["ok"]:
                 w_ok = True
             else:
@@ -589,7 +628,10 @@ def verify_custody_bundle(
     if ts_manifest.is_file():
         from quant_fund.research.timestamp_anchor import verify_timestamps
 
-        ts = verify_timestamps(tmp)
+        try:
+            ts = verify_timestamps(tmp)
+        except (OSError, ValueError) as exc:
+            ts = {"ok": False, "errors": [f"crash:{exc.__class__.__name__}"]}
         layers["timestamps"] = {
             "ok": bool(ts["ok"]),
             "anchored": ts.get("anchored"),

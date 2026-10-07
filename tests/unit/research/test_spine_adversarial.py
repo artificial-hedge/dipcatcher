@@ -280,7 +280,7 @@ def test_custody_verify_never_writes_outside_sandbox() -> None:
     bundle = _custody_bundle(corpus_dir="../custody_escape_dir")
     res = verify_custody_bundle(bundle, member_bytes=b"member bytes")
     assert res["ok"] is False
-    assert "corpus_dir_uncontained" in res["errors"]
+    assert "contract:corpus_dir_path_invalid" in res["errors"]
     assert not marker.exists()
 
 
@@ -301,7 +301,7 @@ def test_custody_verify_rejects_traversal_hop_name() -> None:
     )
     res = verify_custody_bundle(bundle, member_bytes=b"member bytes")
     assert res["ok"] is False
-    assert any("hop_path_uncontained" in e for e in res["errors"])
+    assert any("hop_path_invalid" in e for e in res["errors"])
     assert not marker.exists()
 
 
@@ -329,3 +329,65 @@ def test_auditor_bundle_rejects_prefixed_traversal_member() -> None:
     assert res["ok"] is False
     assert any("member_path_uncontained" in e for e in res["errors"])
     assert not marker.exists()
+
+
+def test_custody_contract_flags_dot_and_nul_paths() -> None:
+    """Core path fields must fail the contract, not crash verify:
+    ``.``/empty-normalized paths target the sandbox root itself, and
+    NUL/control bytes crash the filesystem syscalls."""
+    for bad in (".", "./"):
+        errors = custody_contract_errors(_custody_bundle(member=bad))
+        assert any("member_path_invalid" in e for e in errors), bad
+    for bad in ("m\0ember", "a/\x07b"):
+        errors = custody_contract_errors(_custody_bundle(member=bad))
+        assert any("member_path_invalid" in e for e in errors), repr(bad)
+    errors = custody_contract_errors(_custody_bundle(corpus_dir="."))
+    assert any("corpus_dir_path_invalid" in e for e in errors)
+    errors = custody_contract_errors(_custody_bundle(corpus_dir="cor\0pus"))
+    assert any("corpus_dir_path_invalid" in e for e in errors)
+
+
+def test_custody_contract_flags_dot_hop_name() -> None:
+    hop_raw = json.dumps({"members": []}).encode()
+    bundle = _custody_bundle(
+        first_epoch=".",
+        chain_head=".",
+        hops=[{"name": ".", "sha256": "12" * 32, "bytes_b64": _B64(hop_raw)}],
+    )
+    errors = custody_contract_errors(bundle)
+    assert any("hop_path_invalid" in e for e in errors)
+
+
+def test_custody_verify_dot_member_never_crashes() -> None:
+    res = verify_custody_bundle(_custody_bundle(member="."), member_bytes=b"x")
+    assert res["ok"] is False
+    assert any("member_path_invalid" in e for e in res["errors"])
+
+
+def test_custody_verify_nul_member_never_crashes() -> None:
+    res = verify_custody_bundle(_custody_bundle(member="a/\0b"), member_bytes=b"x")
+    assert res["ok"] is False
+    assert any("member_path_invalid" in e for e in res["errors"])
+
+
+def test_auditor_bundle_rejects_nul_spine_member() -> None:
+    """A ``quality/checkpoints/\x00`` member passes the SPINE_PREFIXES
+    startswith check — containment must refuse it, not lstat-crash."""
+    from quant_fund.research.auditor_bundle import BUNDLE_MEMBERS, verify_bundle
+
+    files = {rel: _B64(b"junk") for rel in BUNDLE_MEMBERS}
+    files["quality/checkpoints/\x00"] = _B64(b"owned")
+    bundle = {
+        "schema": "auditor_bundle.v1",
+        "files": files,
+        "witness_proof": {"rekor": {"body_b64": _B64(json.dumps({}).encode())}},
+        "files_sha256": {},
+    }
+    bundle_path = Path(tempfile.gettempdir()) / "auditor_nul_probe_bundle.json"
+    bundle_path.write_text(json.dumps(bundle))
+    try:
+        res = verify_bundle(bundle_path, rekor_url=None)
+    finally:
+        bundle_path.unlink(missing_ok=True)
+    assert res["ok"] is False
+    assert any("member_path_uncontained" in e for e in res["errors"])

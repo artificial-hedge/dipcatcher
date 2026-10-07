@@ -78,12 +78,16 @@ def _safe_member_relpath(rel: object) -> bool:
     ``verify_bundle`` materializes member paths to disk — an absolute
     anchor or ``..`` segment (e.g. ``quality/witness/../../../x``, which
     still passes the ``SPINE_PREFIXES`` startswith check) would turn the
-    ``tmp_root / rel`` join into a write outside the sandbox.
+    ``tmp_root / rel`` join into a write outside the sandbox. A path that
+    normalizes to nothing (``.``, ``./``) targets the root itself and
+    crashes the write, and NUL/control bytes crash the filesystem calls.
     """
     if not isinstance(rel, str) or not rel:
         return False
+    if any(ord(c) < 0x20 or ord(c) == 0x7F for c in rel):
+        return False
     path = Path(rel)
-    return not path.is_absolute() and ".." not in path.parts
+    return not path.is_absolute() and bool(path.parts) and ".." not in path.parts
 
 
 def _fetch_json(url: str, timeout: int = 30) -> dict[str, Any]:
@@ -247,8 +251,12 @@ def verify_bundle(
                 errors.append(f"member_path_uncontained:{rel!a}")
                 continue
             dest = tmp_root / rel
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            dest.write_bytes(raw)
+            try:
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(raw)
+            except (OSError, ValueError):
+                errors.append(f"member_write_failed:{rel!a}")
+                continue
         witness_dir = tmp_root / "quality/witness"
         witness_dir.mkdir(parents=True, exist_ok=True)
         proof_rel = "quality/witness/_bundle_proof.json"
@@ -258,13 +266,23 @@ def verify_bundle(
         from quant_fund.research.integrity_checkpoint import verify_checkpoint
         from quant_fund.research.integrity_witness import verify_witness_file
 
-        cp = verify_checkpoint(tmp_root)
-        errors += [f"checkpoint:{e}" for e in cp.get("errors", [])]
-        pins = verify_pin_signatures(tmp_root)
+        try:
+            cp = verify_checkpoint(tmp_root)
+            errors += [f"checkpoint:{e}" for e in cp.get("errors", [])]
+        except (OSError, ValueError) as exc:
+            errors.append(f"checkpoint_crash:{exc.__class__.__name__}")
+        try:
+            pins = verify_pin_signatures(tmp_root)
+        except (OSError, ValueError) as exc:
+            pins = {}
+            errors.append(f"pins_crash:{exc.__class__.__name__}")
         pin_errors = pins.get("errors")
         if isinstance(pin_errors, list):
             errors += [f"pins:{e}" for e in pin_errors]
-        wit = verify_witness_file(tmp_root, proof_rel)
+        try:
+            wit = verify_witness_file(tmp_root, proof_rel)
+        except (OSError, ValueError) as exc:
+            wit = {"ok": False, "errors": [f"crash:{exc.__class__.__name__}"]}
         wit_errors = [f"witness:{e}" for e in wit.get("errors", [])]
         # Rekor key rotation: if a fetched/override key fails the signature
         # checks, retry under the bundle's pinned era key before failing.
