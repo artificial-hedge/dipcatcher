@@ -354,6 +354,15 @@
   "microstructure/initiative_fade_bench.py": {
    "status": "audited"
   },
+  "models/ait_sahalia.py": {
+   "status": "audited"
+  },
+  "models/bkm_moments.py": {
+   "status": "audited"
+  },
+  "models/bocpd_changepoint.py": {
+   "status": "audited"
+  },
   "models/c51_rl.py": {
    "evidence": [
     "tests/unit/models/test_c51_rl.py"
@@ -361,10 +370,28 @@
    "reason": "C51 RL core (Bellemare 2017) with torch-free Algorithm-1, ZILobQuoteEnv adapter; wired via tests/unit/models/test_c51_rl.py (37 tests).",
    "status": "partial"
   },
+  "models/causal_forest.py": {
+   "status": "audited"
+  },
+  "models/changepoint.py": {
+   "status": "audited"
+  },
+  "models/count_data.py": {
+   "status": "audited"
+  },
+  "models/cv_plus.py": {
+   "status": "audited"
+  },
   "models/deep_regime_mixture.py": {
    "status": "audited"
   },
   "models/delayed_aci.py": {
+   "status": "audited"
+  },
+  "models/did_diagnostics.py": {
+   "status": "audited"
+  },
+  "models/enkf.py": {
    "status": "audited"
   },
   "models/extra_tilt_conformal.py": {
@@ -376,13 +403,31 @@
   "models/fbm.py": {
    "status": "audited"
   },
+  "models/gaussian_normalized_coords.py": {
+   "status": "audited"
+  },
   "models/graded_irt.py": {
+   "status": "audited"
+  },
+  "models/gsadf_bubble.py": {
    "status": "audited"
   },
   "models/ivs_diffusion.py": {
    "status": "audited"
   },
+  "models/kinetic_ising.py": {
+   "status": "audited"
+  },
+  "models/nardl.py": {
+   "status": "audited"
+  },
+  "models/nbeats.py": {
+   "status": "audited"
+  },
   "models/neural_tpp.py": {
+   "status": "audited"
+  },
+  "models/nexcp.py": {
    "status": "audited"
   },
   "models/odd_residual_flows.py": {
@@ -397,6 +442,9 @@
   "models/rbergomi.py": {
    "status": "audited"
   },
+  "models/rd.py": {
+   "status": "audited"
+  },
   "models/regime_conformal_var.py": {
    "status": "audited"
   },
@@ -406,6 +454,12 @@
   "models/rrc_filter.py": {
    "status": "audited"
   },
+  "models/sbi.py": {
+   "status": "audited"
+  },
+  "models/spectral_atiyah.py": {
+   "status": "audited"
+  },
   "models/svi_surface.py": {
    "status": "audited"
   },
@@ -413,6 +467,9 @@
    "status": "audited"
   },
   "models/viterbi_decode.py": {
+   "status": "audited"
+  },
+  "models/watch.py": {
    "status": "audited"
   },
   "parity_leak_audit.py": {
