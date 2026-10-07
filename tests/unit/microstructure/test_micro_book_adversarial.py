@@ -36,7 +36,6 @@ inputs (no real tape):
 
 from __future__ import annotations
 
-import csv
 import json
 import shutil
 from collections.abc import Callable
@@ -95,38 +94,13 @@ from quant_fund.microstructure.sim_real_ledger import measure_lobster
 from quant_fund.microstructure.spread_response import lobster_spread_response
 from quant_fund.microstructure.stale_quote import sim_stale_quote
 from quant_fund.microstructure.zone_map import zone_map
-
-
-def _ev(t: int, ty: int, oid: int, sz: int, px: int, d: int) -> LobsterEvent:
-    return LobsterEvent(float(t), ty, oid, sz, px, d)
-
-
-def _write_pair(msg: Path, ob: Path, events: list[LobsterEvent], levels: int = 4) -> None:
-    """Synthetic consistent tape: row i is the book state after event i."""
-    book = LobsterBook()
-    rows: list[list[str]] = []
-    for ev in events:
-        book.apply(ev)
-        asks = book.top("ask", levels)
-        bids = book.top("bid", levels)
-        row: list[str] = []
-        for lvl in range(levels):
-            a = asks[lvl] if lvl < len(asks) else (0, 0)
-            b = bids[lvl] if lvl < len(bids) else (0, 0)
-            row += [str(a[0]), str(a[1]), str(b[0]), str(b[1])]
-        rows.append(row)
-    with msg.open("w", newline="") as f:
-        w = csv.writer(f)
-        for ev in events:
-            w.writerow([ev.time_s, ev.event_type, ev.order_id, ev.size, ev.price, ev.direction])
-    with ob.open("w", newline="") as f:
-        csv.writer(f).writerows(rows)
+from tests.unit.microstructure.test_sim_real_ledger import _ev, _write_pair
 
 
 def _tape(tmp_path: Path, events: list[LobsterEvent]) -> tuple[Path, Path]:
     msg = tmp_path / "AMZN_2012-06-21_34200000_57600000_message_10.csv"
     ob = tmp_path / "AMZN_2012-06-21_34200000_57600000_orderbook_10.csv"
-    _write_pair(msg, ob, events)
+    _write_pair(msg, ob, events, levels=4)
     return msg, ob
 
 

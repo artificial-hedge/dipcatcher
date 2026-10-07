@@ -40,7 +40,7 @@ from quant_fund.microstructure.zi_lob_simulator import (
     ZILobConfig,
     run_mm_session,
 )
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.hashing import hash_bytes, sanitize_for_json
 from quant_fund.utils.reproducibility import git_revision
 
 EXCURSION_GEO_SCHEMA = "excursion_geometry.v1"
@@ -51,17 +51,6 @@ def _pos_finite(x: float, name: str) -> float:
     if not math.isfinite(v) or v <= 0.0:
         raise ValueError(f"{name} must be positive and finite, got {x!r}")
     return v
-
-
-def _sanitize(value: Any) -> Any:
-    """Replace non-finite floats with ``None`` recursively (strict-JSON safe)."""
-    if isinstance(value, dict):
-        return {str(key): _sanitize(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_sanitize(item) for item in value]
-    if isinstance(value, float):
-        return value if math.isfinite(value) else None
-    return value
 
 
 DEFAULT_TWO_STATE_FLOW = (
@@ -308,7 +297,7 @@ def excursion_geometry_bench(
     }
     # Non-finite stats (quiet paths with no excursions, unhit levels)
     # seal as strict-JSON null, never literal NaN.
-    payload = _sanitize(payload)
+    payload = sanitize_for_json(payload)
     payload["payload_sha256"] = hash_bytes(json.dumps(payload, sort_keys=True).encode())
     return payload
 
