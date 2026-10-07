@@ -346,3 +346,32 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### API/auth/drain/webhook audit maintenance (PR #2900)
+
+Re-pins `api_audit` wire probes to the hardened `_openai_urlopen` seam
+(the raw `urlopen` fakes were dead-falling to real dials) and
+`auth_audit` to the duplicate-header ambiguity gate (mixed
+`authorization` + `x-api-key` now refuses `400 bad_request`), both
+measured live. The four loopback callback sinks (jobs, fine-tune,
+eval, batch) moved behind a shared `_callback_sink` contextmanager:
+the `FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS` opt-in is set before sink
+construction and restored in the outermost `finally`, so
+constructor/probe/cleanup failures leave `os.environ` byte-identical
+to the caller's state.
+
+Two same-class leaks found and fixed on the way:
+
+* `drain_audit._webhook_probes` set the SSRF opt-in unconditionally
+  and never restored it — every drain run leaked the private-network
+  bypass for the rest of the process. Split into a guarded outer
+  wrapper restoring the caller's value.
+* `webhook_audit` restored the env in `finally` but constructed its
+  `_Sink` outside the `try` — a ctor failure skipped restoration.
+  The ctor now runs inside the guarded region.
+
+Regression cases pin absent and sentinel caller env values plus
+injected constructor, probe, and cleanup failures for both sinks.
+
+The generated audit receipts remain `SYNTHETIC`, `research_only`, and
+make no live-PnL claim. The serve census is unchanged.
