@@ -99,6 +99,8 @@ def pmg_ardl(
         raise ValueError("panel too small")
     if not np.all(np.isfinite(yy)) or not np.all(np.isfinite(xx)):
         raise ValueError("non-finite panel")
+    if phi_true_prior is not None:
+        raise ValueError("phi_true_prior is not implemented (accepted arg was silently dropped)")
     if theta_init is None:
         theta_init = np.zeros(k)
     th0 = np.asarray(theta_init, dtype=np.float64)
@@ -119,17 +121,20 @@ def pmg_ardl(
     )
     theta = np.asarray(res.x, dtype=np.float64)
     phis = np.empty(n)
-    ssrs = np.empty(n)
+    ssrs_raw = np.empty(n)
+    ssrs_dof = np.empty(n)
     for i in range(n):
         s, beta, dof = _group_ssr(yy[i], xx[i], theta)
-        ssrs[i] = s / dof
+        ssrs_raw[i] = s
+        ssrs_dof[i] = s / dof
         phis[i] = float(beta[0])
     return {
         "theta": theta,
         "phi_mean": float(np.mean(phis)),
         "phi_median": float(np.median(phis)),
         "phi_sd": float(np.std(phis)),
-        "ssr_pooled": float(np.sum(ssrs)),
+        "ssr_pooled": float(np.sum(ssrs_raw)),
+        "ssr_dof_normalized": float(np.sum(ssrs_dof)),
         "cost": float(res.cost),
         "optimality": float(res.optimality),
         "n_groups": float(n),
@@ -153,8 +158,10 @@ def mean_group(
     if yy.ndim != 2 or xx.ndim != 3 or xx.shape[:2] != yy.shape:
         raise ValueError("y (N,T) and x (N,T,k) shapes required")
     n, t, k = yy.shape[0], yy.shape[1], xx.shape[2]
-    if n < 2 or t < 12:
+    if n < 2 or t < 12 or k < 1:
         raise ValueError("panel too small")
+    if not np.all(np.isfinite(yy)) or not np.all(np.isfinite(xx)):
+        raise ValueError("non-finite panel")
     thetas = np.empty((n, k))
     phis = np.empty(n)
     for i in range(n):

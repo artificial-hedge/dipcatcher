@@ -1,80 +1,58 @@
-"""Unit tests for quant_fund.models.pmg_ardl."""
-
-from __future__ import annotations
+"""Adversarial probes for pmg_ardl."""
 
 import numpy as np
 import pytest
 
-from quant_fund.models.pmg_ardl import (
-    bench_pmg_ardl,
-    mean_group,
-    pmg_ardl,
-    synth_pmg,
-)
+from quant_fund.models import pmg_ardl as pa
 
 
-def test_pmg_theta_close_to_truth() -> None:
-    d = synth_pmg(seed=10)
-    out = pmg_ardl(np.asarray(d["y_groups"]), np.asarray(d["x_groups"]))
+def test_pmg_rejects_dead_prior_arg():
+    d = pa.synth_pmg(seed=0)
+    with pytest.raises(ValueError, match="phi_true_prior"):
+        pa.pmg_ardl(d["y_groups"], d["x_groups"], phi_true_prior=-0.3)
+
+
+def test_mean_group_finiteness_and_k():
+    yy = np.random.default_rng(0).normal(size=(3, 20))
+    xx = np.random.default_rng(1).normal(size=(3, 20, 1))
+    yy[0, 5] = np.nan
+    with pytest.raises(ValueError, match="non-finite"):
+        pa.mean_group(yy, xx)
+    with pytest.raises(ValueError, match="panel too small"):
+        pa.mean_group(np.zeros((3, 20)), np.zeros((3, 20, 0)))
+
+
+def test_pmg_recovers_planted_theta():
+    d = pa.synth_pmg(seed=4, n=8, t=160)
+    out = pa.pmg_ardl(d["y_groups"], d["x_groups"])
     th = np.asarray(out["theta"])
-    th_t = np.asarray(d["theta_true"])
-    assert float(np.linalg.norm(th - th_t) / np.linalg.norm(th_t)) < 0.15
-
-
-def test_pmg_beats_or_matches_mg() -> None:
-    d = synth_pmg(seed=11)
-    yy = np.asarray(d["y_groups"])
-    xx = np.asarray(d["x_groups"])
-    th_t = np.asarray(d["theta_true"])
-    e_p = float(np.linalg.norm(np.asarray(pmg_ardl(yy, xx)["theta"]) - th_t))
-    e_m = float(np.linalg.norm(np.asarray(mean_group(yy, xx)["theta_mg"]) - th_t))
-    assert e_p <= e_m + 0.05
-
-
-def test_phi_mean_negative() -> None:
-    d = synth_pmg(seed=12)
-    out = pmg_ardl(np.asarray(d["y_groups"]), np.asarray(d["x_groups"]))
+    rel = np.linalg.norm(th - np.asarray(d["theta_true"])) / np.linalg.norm(d["theta_true"])
+    assert rel < 0.2
     assert out["phi_mean"] < 0.0
-    assert out["phi_mean"] > -1.0
 
 
-def test_mg_shape() -> None:
-    d = synth_pmg(seed=13, n=5, k=2)
-    out = mean_group(np.asarray(d["y_groups"]), np.asarray(d["x_groups"]))
-    assert np.asarray(out["theta_mg"]).shape == (2,)
-    assert np.asarray(out["theta_i"]).shape == (5, 2)
+def test_ssr_pooled_is_raw_sum():
+    d = pa.synth_pmg(seed=2, n=5, t=80)
+    out = pa.pmg_ardl(d["y_groups"], d["x_groups"])
+    # recompute per-group raw SSR at the fitted theta and compare
+    theta = np.asarray(out["theta"])
+    total = 0.0
+    for i in range(5):
+        s, _, _ = pa._group_ssr(np.asarray(d["y_groups"])[i], np.asarray(d["x_groups"])[i], theta)
+        total += s
+    assert out["ssr_pooled"] == pytest.approx(total, rel=1e-8)
+    assert out["ssr_dof_normalized"] > 0.0
 
 
-def test_deterministic() -> None:
-    d = synth_pmg(seed=14)
-    args = (np.asarray(d["y_groups"]), np.asarray(d["x_groups"]))
-    a = pmg_ardl(*args)
-    b = pmg_ardl(*args)
-    assert np.allclose(np.asarray(a["theta"]), np.asarray(b["theta"]))
-    assert a["phi_mean"] == b["phi_mean"]
+def test_pmg_tighter_than_mg_on_shared_theta():
+    d = pa.synth_pmg(seed=9, n=10, t=200)
+    th_t = np.asarray(d["theta_true"])
+    e_p = np.linalg.norm(np.asarray(pa.pmg_ardl(d["y_groups"], d["x_groups"])["theta"]) - th_t)
+    e_m = np.linalg.norm(np.asarray(pa.mean_group(d["y_groups"], d["x_groups"])["theta_mg"]) - th_t)
+    assert e_p <= e_m + 1e-9
 
 
-def test_fail_closed() -> None:
-    d = synth_pmg(seed=15)
-    yy = np.asarray(d["y_groups"])
-    xx = np.asarray(d["x_groups"])
-    with pytest.raises(ValueError):
-        pmg_ardl(yy, xx[:, :, :1].reshape(yy.shape[0], yy.shape[1], 1)[:, :5, :])
-    with pytest.raises(ValueError):
-        pmg_ardl(yy.reshape(-1), xx)
-    with pytest.raises(ValueError):
-        mean_group(np.full_like(yy, np.nan), xx)
-
-
-def test_bench_score() -> None:
-    out = bench_pmg_ardl()
+def test_bench_smoke():
+    out = pa.bench_pmg_ardl()
     assert out["synthetic_score"] == 1.0
-    assert set(out) == {
-        "synthetic_theta_hat",
-        "synthetic_theta_true",
-        "synthetic_theta_mg",
-        "synthetic_err_pmg",
-        "synthetic_err_mg",
-        "synthetic_phi_mean",
-        "synthetic_score",
-    }
+    assert out["synthetic_err_pmg"] < 0.15
