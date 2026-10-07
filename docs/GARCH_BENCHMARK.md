@@ -58,3 +58,21 @@ market data**: the S&P 500 adjusted-close series bundled with `arch`
 - The same `sota_proven: false` constraint applies: one historical index,
   no live trading, daily-frequency target, and a proxy HAR. This is real-data
   evidence about these specific estimators — not a broad SOTA certificate.
+
+## Per-security keyed scope (v2 note, 2026-10-07)
+
+The frozen v1 protocol above stays exactly as written. Separately, the repo now
+has a keyed per-security volatility lane (`series_scope=per_security`,
+`src/quant_fund/models/vol_per_security.py`) with one variance forecast per
+symbol key and an explicit key axis: `garch` (GARCH(1,1) via `GARCHVol`),
+`ewma`, `har`, and the `garch_ext` QMLE families `aparch`/`figarch` (one-step
+only). `forecast(...)["variance"]` is a **variance** (sigma^2) in
+`decimal_squared` units — never a volatility — and per-key forecasts use
+trailing/as-of windows only (no forward labels; proven by assertion). This
+lane is the correct scope for per-asset risk scaling, per-name vol targeting
+and per-name ES/VaR; the pooled `date_level_equal_weight_cross_section`
+overlay is not. The symmetric fail-closed consumer matrix and the full
+integration surface are specified in `docs/VOL_SCOPE_CONTRACT.md`. Keyed
+evaluation is proper-scores-only (QLIKE on variance, pinball on quantiles) on
+seeded SYNTHETIC panels — correctness tests, never market evidence, and no
+live-trading or profitability claim of any kind.
