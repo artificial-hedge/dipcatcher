@@ -48,7 +48,11 @@ def zone_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
         else:
             entry["sealed"] = bool(verify_receipt_file(path)["valid"])
             all_sealed = all_sealed and entry["sealed"]
-            entry["claims"] = json.loads(path.read_text()).get("claims", {})
+            # An unsealed receipt contributes no evidence — its claims
+            # never reach the map even though the file parses.
+            entry["claims"] = (
+                json.loads(path.read_text()).get("claims", {}) if entry["sealed"] else None
+            )
         lanes.append(entry)
 
     found = [e for e in lanes if e["claims"] is not None]
@@ -87,7 +91,7 @@ def zone_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
     ]
     payload: dict[str, Any] = {
         "schema": ZONE_MAP_SCHEMA,
-        "kind": "wave24_map",
+        "kind": "zone_map",
         "asset": "AMZN",
         "n_lanes": len(lanes),
         "lanes": lanes,

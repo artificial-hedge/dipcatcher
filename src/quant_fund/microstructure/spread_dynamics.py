@@ -61,8 +61,10 @@ def lobster_spread_dynamics(tape_dir: Path, ticker: str = "AMZN") -> dict[str, A
         for ev, ob_row in zip(parse_messages(msg), ob_rows, strict=True):
             asks_exp, bids_exp = parse_orderbook_row(ob_row)
             if first:
+                # Row 0 is the book state AFTER message 0: seeding from it
+                # already includes event 0 — applying it would double-count
+                # the first event.
                 book.seed(asks_exp, bids_exp)
-                book.apply(ev)
                 first = False
                 continue
             book.apply(ev)

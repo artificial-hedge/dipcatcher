@@ -22,6 +22,7 @@ from quant_fund.microstructure.lobster import (
     CANCEL_PARTIAL,
     DELETE,
     EXECUTION,
+    EXECUTION_HIDDEN,
     parse_messages,
 )
 from quant_fund.microstructure.split_flow import SplitFlow
@@ -71,7 +72,7 @@ def lobster_cancel_cluster(tape_dir: Path, ticker: str = "AMZN") -> dict[str, An
         t1 = ev.time_s
         if t0 == 0.0:
             t0 = ev.time_s
-        if ev.event_type == EXECUTION:
+        if ev.event_type in (EXECUTION, EXECUTION_HIDDEN):
             # resting side hit: direction -1 => sell book lifted => sell cancels retreat
             side = "sell" if ev.direction == -1 else "buy"
             exec_t[side].append(ev.time_s)

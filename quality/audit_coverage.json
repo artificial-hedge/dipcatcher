@@ -240,6 +240,147 @@
     "backtest/event_sim/simulator.py": {
       "status": "audited"
     },
+    "microstructure/__init__.py": {
+      "status": "audited"
+    },
+    "microstructure/agentic_lob.py": {
+      "status": "audited"
+    },
+    "microstructure/almgren_chriss.py": {
+      "status": "audited"
+    },
+    "microstructure/bench.py": {
+      "status": "audited"
+    },
+    "microstructure/book_depletion.py": {
+      "status": "audited"
+    },
+    "microstructure/book_metrics.py": {
+      "status": "audited"
+    },
+    "microstructure/book_panel.py": {
+      "status": "audited"
+    },
+    "microstructure/cancel_cluster.py": {
+      "status": "audited"
+    },
+    "microstructure/cancel_gradient.py": {
+      "status": "audited"
+    },
+    "microstructure/cancel_lead.py": {
+      "status": "audited"
+    },
+    "microstructure/candle_book_features.py": {
+      "status": "audited"
+    },
+    "microstructure/deep_microprice.py": {
+      "status": "audited"
+    },
+    "microstructure/depth_consumption.py": {
+      "status": "audited"
+    },
+    "microstructure/excursion_geometry.py": {
+      "status": "audited"
+    },
+    "microstructure/hidden_depth.py": {
+      "status": "audited"
+    },
+    "microstructure/imbalance_predict.py": {
+      "status": "audited"
+    },
+    "microstructure/joint_tune_contract.py": {
+      "status": "audited"
+    },
+    "microstructure/liquidity_tail_lob.py": {
+      "status": "audited"
+    },
+    "microstructure/lob_exec.py": {
+      "status": "audited"
+    },
+    "microstructure/lob_resilience.py": {
+      "status": "audited"
+    },
+    "microstructure/lob_shape.py": {
+      "status": "audited"
+    },
+    "microstructure/lobster.py": {
+      "status": "audited"
+    },
+    "microstructure/marketable_limit.py": {
+      "status": "audited"
+    },
+    "microstructure/metaorder_decay.py": {
+      "status": "audited"
+    },
+    "microstructure/metaorder_detect.py": {
+      "status": "audited"
+    },
+    "microstructure/microprice.py": {
+      "status": "audited"
+    },
+    "microstructure/mid_jump.py": {
+      "status": "audited"
+    },
+    "microstructure/multilevel_mm.py": {
+      "status": "audited"
+    },
+    "microstructure/order_lifetime.py": {
+      "status": "audited"
+    },
+    "microstructure/order_revision.py": {
+      "status": "audited"
+    },
+    "microstructure/pin_estimator.py": {
+      "status": "audited"
+    },
+    "microstructure/queue_depletion.py": {
+      "status": "audited"
+    },
+    "microstructure/queue_fate.py": {
+      "status": "audited"
+    },
+    "microstructure/queue_jump.py": {
+      "status": "audited"
+    },
+    "microstructure/queue_occupancy.py": {
+      "status": "audited"
+    },
+    "microstructure/queue_priority.py": {
+      "status": "audited"
+    },
+    "microstructure/queue_reactive.py": {
+      "status": "audited"
+    },
+    "microstructure/quote_place.py": {
+      "status": "audited"
+    },
+    "microstructure/sim_real_ledger.py": {
+      "status": "audited"
+    },
+    "microstructure/sim_sensitivity.py": {
+      "status": "audited"
+    },
+    "microstructure/spread_dynamics.py": {
+      "status": "audited"
+    },
+    "microstructure/spread_response.py": {
+      "status": "audited"
+    },
+    "microstructure/stale_quote.py": {
+      "status": "audited"
+    },
+    "microstructure/synthetic_lob.py": {
+      "status": "audited"
+    },
+    "microstructure/vendor_book_map.py": {
+      "status": "audited"
+    },
+    "microstructure/zi_lob_simulator.py": {
+      "status": "audited"
+    },
+    "microstructure/zone_map.py": {
+      "status": "audited"
+    },
     "parity_leak_audit.py": {
       "status": "audited"
     },

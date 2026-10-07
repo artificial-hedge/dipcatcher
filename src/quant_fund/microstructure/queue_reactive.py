@@ -69,6 +69,9 @@ class QueueTrajectory:
     states: IntArray  # queue size *after* each event
     events: IntArray  # event codes: 0 limit(+1), 1 cancel(-1), 2 market(-1)
     q_max: int
+    # Queue size before the first event; ``None`` means the legacy default
+    # (``q_max // 2``) so hand-constructed trajectories stay valid.
+    q0: int | None = None
 
     @property
     def n_events(self) -> int:
@@ -116,9 +119,10 @@ def simulate_queue(
         raise ValueError("horizon must be positive")
     q_max = l_l.size - 1
     rng = np.random.default_rng(seed)
-    q = int(q0) if q0 is not None else q_max // 2
-    if not 0 <= q <= q_max:
+    q_init = int(q0) if q0 is not None else q_max // 2
+    if not 0 <= q_init <= q_max:
         raise ValueError("q0 out of range")
+    q = q_init
     times, states, events = [], [], []
     t = 0.0
     # generous capacity: expected events ~ total rate * horizon
@@ -146,6 +150,7 @@ def simulate_queue(
         states=np.asarray(states, dtype=np.int64),
         events=np.asarray(events, dtype=np.int64),
         q_max=q_max,
+        q0=q_init,
     )
 
 
@@ -154,9 +159,10 @@ def estimate_rates(traj: QueueTrajectory) -> RateEstimate:
     if traj.n_events < 4:
         raise ValueError("trajectory too short to estimate")
     q_max = traj.q_max
-    # state *before* each event = state after previous event (start at midpoint)
+    # state *before* each event = state after previous event; the first
+    # event's pre-state is the trajectory's own initial state ``q0``.
     pre = np.empty(traj.n_events, dtype=np.int64)
-    pre[0] = q_max // 2
+    pre[0] = traj.q0 if traj.q0 is not None else q_max // 2
     pre[1:] = traj.states[:-1]
     times = traj.times
     dwell = np.zeros(q_max + 1)
@@ -200,7 +206,7 @@ def stationary_simulated(traj: QueueTrajectory) -> FloatArray:
         raise ValueError("trajectory too short")
     q_max = traj.q_max
     pre = np.empty(traj.n_events, dtype=np.int64)
-    pre[0] = q_max // 2
+    pre[0] = traj.q0 if traj.q0 is not None else q_max // 2
     pre[1:] = traj.states[:-1]
     dt = np.diff(traj.times, prepend=traj.times[0])
     dwell = np.zeros(q_max + 1)
@@ -240,7 +246,7 @@ def queue_value_curve(rates: RateEstimate, reward: float = 1.0) -> FloatArray:
     birth = rates.lam_l
     death = rates.lam_c + rates.lam_m
     # first-step equations for h_q = P(hit 0 before q_max | start q)
-    # h_0 = 1, h_{q_max} = 0; interior: -h_{q-1} b + (b+d) h_q - h_{q+1} d = 0
+    # h_0 = 1, h_{q_max} = 0; interior: -h_{q-1} d + (b+d) h_q - h_{q+1} b = 0
     a_mat = np.zeros((q_max + 1, q_max + 1))
     rhs = np.zeros(q_max + 1)
     a_mat[0, 0], rhs[0] = 1.0, 1.0

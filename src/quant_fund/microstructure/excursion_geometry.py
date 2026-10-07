@@ -53,6 +53,17 @@ def _pos_finite(x: float, name: str) -> float:
     return v
 
 
+def _sanitize(value: Any) -> Any:
+    """Replace non-finite floats with ``None`` recursively (strict-JSON safe)."""
+    if isinstance(value, dict):
+        return {str(key): _sanitize(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_sanitize(item) for item in value]
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    return value
+
+
 DEFAULT_TWO_STATE_FLOW = (
     RegimeState("calm", intensity_mult=1.0, p_buy=0.5),
     RegimeState("stress", intensity_mult=2.2, p_buy=0.55),
@@ -295,6 +306,9 @@ def excursion_geometry_bench(
         if "1" in bia["levels"] and "1" in sym["levels"]
         else float("nan"),
     }
+    # Non-finite stats (quiet paths with no excursions, unhit levels)
+    # seal as strict-JSON null, never literal NaN.
+    payload = _sanitize(payload)
     payload["payload_sha256"] = hash_bytes(json.dumps(payload, sort_keys=True).encode())
     return payload
 

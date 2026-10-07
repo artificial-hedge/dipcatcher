@@ -132,19 +132,25 @@ def measure_lobster(msg: Path, ob: Path, *, tick_units: float = 100.0) -> dict[s
         for i, (ev, row) in enumerate(zip(parse_messages(msg), csv.reader(f), strict=True)):
             ae, be = parse_orderbook_row(row)
             if not seeded:
+                # Row 0 is the book state AFTER message 0: seeding from it
+                # already includes event 0 — applying it would double-count
+                # the first event.
                 book.seed(ae, be)
-                book.apply(ev)
                 seeded = True
+                n_events += 1
                 continue
             book.apply(ev)
             n_events += 1
+            if ev.event_type in (EXECUTION, EXECUTION_HIDDEN):
+                # MO prints include hidden-liquidity fills (type 5); record
+                # before the no-visible-book skip so n_mo and the sign
+                # stream cover the full aggressor tape.
+                n_mo += 1
+                signs.append(float(-ev.direction))
             if ev.event_type in (EXECUTION_HIDDEN, HALT):
                 continue
             if book.top("ask", 10) != ae or book.top("bid", 10) != be:
                 resync_band(book, ae, be)
-            if ev.event_type == EXECUTION:
-                n_mo += 1
-                signs.append(float(-ev.direction))
             bb, ba = book.top("bid", 1), book.top("ask", 1)
             if bb and ba:
                 spreads.append(float(ba[0][0] - bb[0][0]) / tick_units)

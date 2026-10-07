@@ -136,12 +136,15 @@ def sim_cancel_lead(
     mids: list[float] = []
     for _ in range(horizon):
         before = dict(sim._orders)
+        # Touch BEFORE the cancel: the at-touch band is judged against the
+        # book the cancel saw (matches the real arm's prior-orderbook row).
+        pre_ba, pre_bb = sim.best_ask_level, sim.best_bid_level
         kind = sim.step()
         m = sim.mid
         mid_times.append(float(sim.t))
         mids.append(float(m) if m is not None else np.nan)
         if kind == "cancel":
-            ba, bb = sim.best_ask_level, sim.best_bid_level
+            ba, bb = pre_ba, pre_bb
             for oid in before.keys() - set(sim._orders):
                 o = before[oid]
                 if o.side == "sell" and ba is not None and 0 <= o.level - ba <= TOUCH_BAND_TICKS:

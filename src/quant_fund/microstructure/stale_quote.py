@@ -134,7 +134,8 @@ def sim_stale_quote(
     horizon: int = 30_000,
     seed: int = 7,
 ) -> dict[str, Any]:
-    sim = ZILobSimulator(ZILobConfig(seed=seed), flow=flow)
+    cfg = ZILobConfig(seed=seed)
+    sim = ZILobSimulator(cfg, flow=flow)
     n0 = len(sim.trades)
     times: list[float] = []
     mids: list[float] = []
@@ -142,7 +143,8 @@ def sim_stale_quote(
         sim.step()
         times.append(sim.t)
         m = sim.mid
-        mids.append(float(m) if m is not None else np.nan)
+        # sim.mid is in price units; the drift contract is ticks.
+        mids.append(float(m) / cfg.tick if m is not None else np.nan)
     t_arr = np.asarray(times, dtype=float)
     m_arr = np.asarray(mids, dtype=float)
     fwd = _forward_mids(t_arr, m_arr, FWD_HORIZON_S)

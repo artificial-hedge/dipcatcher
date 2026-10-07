@@ -88,8 +88,18 @@ def exec_on_tape(
     """Execute one parent TWAP-style on the tape starting at event `start`."""
     book = LobsterBook()
     book.seed(*snapshots[0])
-    for i in range(start):
-        book.apply(events[i])
+    # Row 0 is the book state AFTER message 0: the seed already includes
+    # event 0 — replay from event 1 or the first event is double-counted.
+    n_resync = 0
+    for i in range(1, start):
+        ev = events[i]
+        book.apply(ev)
+        if ev.event_type in (EXECUTION_HIDDEN, HALT):
+            continue
+        ae, be = snapshots[i]
+        if book.top("ask", 10) != ae or book.top("bid", 10) != be:
+            resync_band(book, ae, be)
+            n_resync += 1
     bb, ba = book.top("bid", 1), book.top("ask", 1)
     if not bb or not ba:
         return None
@@ -98,7 +108,6 @@ def exec_on_tape(
     notional = 0.0
     walk_total = 0.0
     cursor = start
-    n_resync = 0
     for child in twap_children(parent_size, n_children):
         f, n, w = _walk_book(book, side, child)
         filled += f
@@ -112,8 +121,9 @@ def exec_on_tape(
             cursor += 1
             if ev.event_type in (EXECUTION_HIDDEN, HALT):
                 continue
-            if cursor < len(snapshots):
-                ae, be = snapshots[cursor]
+            # Row cursor-1 is the book state after the event just applied.
+            if cursor - 1 < len(snapshots):
+                ae, be = snapshots[cursor - 1]
                 if book.top("ask", 10) != ae or book.top("bid", 10) != be:
                     resync_band(book, ae, be)
                     n_resync += 1

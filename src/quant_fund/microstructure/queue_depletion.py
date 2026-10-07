@@ -54,6 +54,17 @@ def _pos_finite(x: float, name: str) -> float:
     return v
 
 
+def _sanitize(value: Any) -> Any:
+    """Replace non-finite floats with ``None`` recursively (strict-JSON safe)."""
+    if isinstance(value, dict):
+        return {str(key): _sanitize(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_sanitize(item) for item in value]
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    return value
+
+
 def _nonneg_finite(x: float, name: str) -> float:
     v = float(x)
     if not math.isfinite(v) or v < 0.0:
@@ -283,6 +294,9 @@ def queue_depletion_bench(
         "mean_rel_err": float(np.mean(list(rel_errs.values()))) if rel_errs else float("nan"),
         "t_max": float(t_max),
     }
+    # Non-finite stats (empty fill buckets, degenerate model means) seal
+    # as strict-JSON null, never literal NaN.
+    payload = _sanitize(payload)
     payload["payload_sha256"] = hash_bytes(json.dumps(payload, sort_keys=True).encode())
     return payload
 
