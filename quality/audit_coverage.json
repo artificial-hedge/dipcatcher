@@ -465,6 +465,24 @@
   "models/_opt_synth.py": {
    "status": "audited"
   },
+  "models/_pd_synth.py": {
+   "status": "audited"
+  },
+  "models/_pde_synth.py": {
+   "status": "audited"
+  },
+  "models/_peft_synth.py": {
+   "status": "audited"
+  },
+  "models/_qc_synth.py": {
+   "status": "audited"
+  },
+  "models/_queue_synth.py": {
+   "status": "audited"
+  },
+  "models/_rag_synth.py": {
+   "status": "audited"
+  },
   "models/a1_degrees.py": {
    "status": "audited"
   },

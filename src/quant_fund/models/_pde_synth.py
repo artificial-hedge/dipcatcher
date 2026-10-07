@@ -16,6 +16,8 @@ def poisson_pairs(
     k_max: int = 6,
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     """Random forcing a(x) = Σ c_k sin(kπx) → u = Σ c_k sin(kπx)/(kπ)^2."""
+    if n_samp < 2 or n_grid < 2 or k_max < 1:
+        raise ValueError(f"need n_samp>=2, n_grid>=2, k_max>=1, got {n_samp},{n_grid},{k_max}")
     rng = np.random.default_rng(seed)
     x = np.linspace(0, 1, n_grid)
     coeffs = rng.standard_normal((n_samp, k_max)) / (np.arange(k_max) + 1) ** 1.5
@@ -34,4 +36,11 @@ def poisson_pairs(
 
 
 def rel_l2(pred: NDArray[np.float64], truth: NDArray[np.float64]) -> float:
-    return float(np.linalg.norm(pred - truth, axis=1).mean() / np.linalg.norm(truth, axis=1).mean())
+    if pred.ndim != 2 or truth.ndim != 2 or pred.shape != truth.shape:
+        raise ValueError(f"need matching (n, g) shapes, got {pred.shape} vs {truth.shape}")
+    if pred.shape[0] < 1 or not np.isfinite(pred).all() or not np.isfinite(truth).all():
+        raise ValueError("need non-empty finite inputs")
+    denom = np.linalg.norm(truth, axis=1).mean()
+    if denom <= 0:
+        raise ValueError("relative L2 undefined for zero-norm truth")
+    return float(np.linalg.norm(pred - truth, axis=1).mean() / denom)

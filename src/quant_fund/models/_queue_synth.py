@@ -29,6 +29,12 @@ VQ_LAM, VQ_MU, VQ_VAC = 1.5, 3.0, 0.5
 
 def mm1_sim(seed: int, lam: float, mu: float, horizon: float = 20000.0) -> float:
     """Event-driven M/M/1 mean queue-length estimate."""
+    if not np.isfinite(lam) or lam <= 0:
+        raise ValueError(f"need finite lam>0, got {lam}")
+    if not np.isfinite(mu) or mu <= 0:
+        raise ValueError(f"need finite mu>0, got {mu}")
+    if not np.isfinite(horizon) or horizon <= 0:
+        raise ValueError(f"need finite horizon>0, got {horizon}")
     rng = np.random.default_rng(seed)
     t, n = 0.0, 0
     area = 0.0

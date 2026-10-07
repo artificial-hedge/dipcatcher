@@ -17,6 +17,10 @@ BAND = 0.35  # curvature bandwidth
 
 
 def logp(x: FloatArray) -> float:
+    if len(x) < 2:
+        raise ValueError(f"banana target needs dim>=2, got {len(x)}")
+    if not np.isfinite(x).all():
+        raise ValueError("non-finite x")
     out = -0.5 * x[0] ** 2
     for i in range(1, len(x)):
         out -= 0.5 * (x[i] - (x[i - 1] ** 2 + 1.0)) ** 2 / BAND**2
@@ -24,6 +28,10 @@ def logp(x: FloatArray) -> float:
 
 
 def grad_logp(x: FloatArray) -> FloatArray:
+    if len(x) < 2:
+        raise ValueError(f"banana target needs dim>=2, got {len(x)}")
+    if not np.isfinite(x).all():
+        raise ValueError("non-finite x")
     g = np.zeros(len(x))
     g[0] = -x[0]
     for i in range(1, len(x)):
@@ -35,6 +43,8 @@ def grad_logp(x: FloatArray) -> FloatArray:
 
 def ref_moments(seed: int = 999, n: int = 40000) -> tuple[FloatArray, FloatArray]:
     """Reference mean/std from a long fine-step MALA chain."""
+    if n < 8:
+        raise ValueError(f"need n>=8 for burn-in+thinning, got {n}")
     rng = np.random.default_rng(seed)
     x = np.zeros(DIM)
     h = 0.03
@@ -54,6 +64,10 @@ def ref_moments(seed: int = 999, n: int = 40000) -> tuple[FloatArray, FloatArray
 
 
 def rwm_baseline(seed: int, n: int = 12000, step: float = 0.35) -> FloatArray:
+    if n < 1:
+        raise ValueError(f"need n>=1, got {n}")
+    if not np.isfinite(step) or step <= 0:
+        raise ValueError(f"need finite step>0, got {step}")
     rng = np.random.default_rng(seed)
     x = np.zeros(DIM)
     out = np.zeros((n, DIM))
@@ -66,6 +80,10 @@ def rwm_baseline(seed: int, n: int = 12000, step: float = 0.35) -> FloatArray:
 
 
 def moment_err(samples: FloatArray, mu: FloatArray, sd: FloatArray) -> float:
+    if samples.ndim != 2 or samples.shape[0] < 4:
+        raise ValueError(f"need (n>=4, d) samples, got {samples.shape}")
+    if mu.shape != (samples.shape[1],) or sd.shape != (samples.shape[1],):
+        raise ValueError("mu/sd must be (d,) matching samples")
     m = samples[len(samples) // 4 :]
     return float(np.abs(m.mean(0) - mu).mean() + np.abs(m.std(0) - sd).mean())
 
@@ -89,5 +107,7 @@ def ess_1d(x: FloatArray) -> float:
 
 
 def mean_ess(samples: FloatArray) -> float:
+    if samples.ndim != 2 or samples.shape[0] < 4 or samples.shape[1] < 1:
+        raise ValueError(f"need (n>=4, d>=1) samples, got {samples.shape}")
     m = samples[len(samples) // 4 :]
     return float(np.mean([ess_1d(m[:, j]) for j in range(m.shape[1])]))
