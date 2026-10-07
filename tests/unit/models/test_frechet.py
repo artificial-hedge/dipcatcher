@@ -24,7 +24,7 @@ def test_frechet_path_monotone():
     A = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
     B = np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 0.0]])
     path = frechet_path(A, B)
-    for (i0, j0), (i1, j1) in zip(path, path[1:], strict=True):
+    for (i0, j0), (i1, j1) in zip(path, path[1:]):
         assert i1 >= i0 and j1 >= j0
 
 
