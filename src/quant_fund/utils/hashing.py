@@ -170,3 +170,13 @@ def fingerprint(
     }
     blob = json.dumps(payload, sort_keys=True, default=str).encode()
     return hash_bytes(blob)
+
+
+def sanitize_for_json(value: Any) -> Any:
+    """Replace non-finite floats with ``None`` recursively (strict-JSON safe).
+
+    Matches the ``canonical_json_bytes`` non-finite convention: payloads
+    sanitized before ``payload_sha256``/receipt serialization never emit
+    literal ``NaN``/``Infinity``, which strict JSON parsers reject.
+    """
+    return _canonicalize(value)

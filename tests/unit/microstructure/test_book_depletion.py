@@ -16,6 +16,7 @@ import pytest
 
 from quant_fund.microstructure.book_depletion import (
     BOOK_DEPLETION_KIND,
+    BOOK_DEPLETION_SCHEMA,
     arrival_cancel_rates,
     book_depletion_bench,
     collect_depth_panel,
@@ -206,8 +207,8 @@ def test_book_depletion_bench_schema_and_determinism() -> None:
     r1 = book_depletion_bench(n_events=1_500, depth=3, mc_paths=32, seed=41)
     r2 = book_depletion_bench(n_events=1_500, depth=3, mc_paths=32, seed=41)
     assert r1 == r2  # bit-identical sealed receipt under the same seed
-    assert r1["schema"] == BOOK_DEPLETION_KIND == "book_depletion.v1"
-    assert r1["kind"] == "book_depletion.v1"
+    assert r1["schema"] == BOOK_DEPLETION_SCHEMA == "book_depletion.v1"
+    assert r1["kind"] == BOOK_DEPLETION_KIND == "book_depletion"
     assert r1["label"] == "SYNTHETIC"
     assert r1["research_only"] is True
     assert r1["live_pnl_claim"] is False

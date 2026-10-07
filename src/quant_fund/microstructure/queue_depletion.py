@@ -40,7 +40,7 @@ from quant_fund.microstructure.zi_lob_simulator import (
     ZILobConfig,
     ZILobSimulator,
 )
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.hashing import hash_bytes, sanitize_for_json
 from quant_fund.utils.reproducibility import git_revision
 
 QUEUE_DEPLETION_SCHEMA = "queue_depletion.v1"
@@ -283,6 +283,9 @@ def queue_depletion_bench(
         "mean_rel_err": float(np.mean(list(rel_errs.values()))) if rel_errs else float("nan"),
         "t_max": float(t_max),
     }
+    # Non-finite stats (empty fill buckets, degenerate model means) seal
+    # as strict-JSON null, never literal NaN.
+    payload = sanitize_for_json(payload)
     payload["payload_sha256"] = hash_bytes(json.dumps(payload, sort_keys=True).encode())
     return payload
 

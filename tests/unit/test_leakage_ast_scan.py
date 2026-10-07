@@ -293,6 +293,26 @@ def test_lh001_function_allowlist_still_flags_nested_helper(tmp_path: Path) -> N
     assert lh001[0].snippet == "return close.shift(-1)"
 
 
+def test_lh003_kit_paths_allowlist_is_function_scoped(tmp_path: Path) -> None:
+    rel = Path("src/quant_fund/models/kit_paths.py")
+    source = (
+        "def fit_ohlcv(scaler, train_candles):\n"
+        "    scaler.fit(train_candles)\n"
+        "\n"
+        "def leaked_global_fit(scaler, all_candles):\n"
+        "    scaler.fit(all_candles)\n"
+    )
+    path = tmp_path / rel
+    path.parent.mkdir(parents=True)
+    path.write_text(source, encoding="utf-8")
+
+    report = scan_paths([path], rules={"LH003"})
+    lh003 = [finding for finding in report.findings if finding.rule_id == "LH003"]
+
+    assert len(lh003) == 1
+    assert lh003[0].snippet == "scaler.fit(all_candles)"
+
+
 @pytest.mark.parametrize("headline", ["Sharpe:2.1", "P&L=$4,200"])
 def test_lh008_detects_compact_headline(tmp_path: Path, headline: str) -> None:
     report = _scan(tmp_path, f"title = {headline!r}\n")

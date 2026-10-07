@@ -131,12 +131,15 @@ def sim_cancel_gradient(
     depth_w: list[float] = []
     for i in range(horizon):
         before = dict(sim._orders)
+        # Touch BEFORE the event: the cancel was placed against the
+        # pre-event book (matches the real arm's prior-orderbook row).
+        pre_bb, pre_ba = sim.best_bid_level, sim.best_ask_level
         ev = sim.step()
         bb, ba = sim.best_bid_level, sim.best_ask_level
-        if ev == "cancel" and bb is not None and ba is not None:
+        if ev == "cancel" and pre_bb is not None and pre_ba is not None:
             for oid in before.keys() - set(sim._orders):
                 o = before[oid]
-                touch = bb if o.side == "buy" else ba
+                touch = pre_bb if o.side == "buy" else pre_ba
                 cancel_d.append(float(abs(touch - o.level)))
         if i % 50 == 0 and bb is not None and ba is not None:
             for o in sim._orders.values():

@@ -204,6 +204,15 @@ LH003_ALLOWLIST: frozenset[str] = frozenset(
     }
 )
 
+# kit_paths.py accepts caller-supplied training arrays. Keep the file scanned
+# and exempt only the reviewed self-fit entry points: fit_ohlcv trains a model
+# on its input, while bench_kit_paths is a synthetic benchmark. There is no
+# production pipeline caller proving fold isolation yet, so callers must pass
+# an already isolated training slice.
+LH003_FUNCTION_ALLOWLIST: dict[str, frozenset[str]] = {
+    "src/quant_fund/models/kit_paths.py": frozenset({"fit_ohlcv", "bench_kit_paths"}),
+}
+
 # LH004: backward as-of joins on event_time over frames that are already
 # PIT-filtered upstream (funding/roll calendars, factor exposures) — verified
 # publish-time-clean in audit §2. New PIT joins must key on known_at.
@@ -297,6 +306,27 @@ LH008_LITERAL_ALLOWLIST: dict[str, frozenset[str]] = {
             "0d6b8449f8d0745b25880e3a6cb9618ba33181adc11ba8b25aafd531c29e4973",
         }
     ),
+    # parity_leak_audit.py: scanner test fixtures — these string literals are
+    # deliberately constructed forbidden patterns used to verify the LH008
+    # scanner catches them. They are NOT production disclosure text.
+    "src/quant_fund/parity_leak_audit.py": frozenset(
+        {
+            "965649c38bb6c4740e1a3fb14c9204aa2b6838481d27134664f7f8e890ebf121",
+            "8793cf9737b657b34ede8437b3459ba9c77b8920991487d775d7017cb4b59f5c",
+            "4ee52816c7079cce1a82f5030570df6d716fdb9c3a836483418d9e6fa83c7299",
+            "db3293fc24a72a39a096494fa85b0a375c1d35841e79e31077d85763a96e4dbf",
+            "537b151e6a40c4dc1f5fd9c0fd828a57b0119a4a83db028ddd2092c670253505",
+            "5464f85d0ca6adc8995d8328c4006e2f0de72dc84c07f8168f230dd8e07c7554",
+            "e722ad9fdbe5e5a3f216748b393d756807099f5c185b57c73c900dd8c6958ef3",
+        }
+    ),
+    # policy_eprocess.py: validation error message containing "pnl" — not a
+    # headline metric claim, just a parameter-name reference in an exception.
+    "src/quant_fund/research/policy_eprocess.py": frozenset(
+        {
+            "31cccf51a0ecea0642f135a3f1d6ba96be2edab03362ef6cefaef4e81c300823",
+        }
+    ),
 }
 
 # Fixture clean-controls that deliberately mirror allowlisted production
@@ -324,6 +354,7 @@ RULE_ALLOWLISTS: dict[str, frozenset[str]] = {
 # glob: a same-named function in another file is still scanned.
 FUNCTION_ALLOWLISTS: dict[str, dict[str, frozenset[str]]] = {
     "LH001": LH001_FUNCTION_ALLOWLIST,
+    "LH003": LH003_FUNCTION_ALLOWLIST,
 }
 
 # LH009 / LH010 scope exemptions (these rules are warning-severity at HEAD but
