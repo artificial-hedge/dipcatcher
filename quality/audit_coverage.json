@@ -564,6 +564,9 @@
   "models/malliavin_greeks.py": {
    "status": "audited"
   },
+  "models/marginal_treatment.py": {
+   "status": "audited"
+  },
   "models/markov_switching.py": {
    "status": "audited"
   },

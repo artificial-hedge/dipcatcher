@@ -151,6 +151,12 @@ def marginal_te(
         raise ValueError("non-finite inputs")
     if not np.all((tt == 0.0) | (tt == 1.0)):
         raise ValueError("treat must be 0/1")
+    if int(tt.sum()) < 10 or int(tt.size - tt.sum()) < 10:
+        raise ValueError("need >= 10 treated and >= 10 untreated")
+    if not np.isfinite(bw) or bw <= 0.0:
+        raise ValueError("bw must be finite and > 0")
+    if not isinstance(n_grid, (int, np.integer)) or n_grid < 4:
+        raise ValueError("n_grid must be an integer >= 4")
 
     px = np.column_stack([xx, zz])
     gb = _irls_logit(tt, px)
@@ -170,7 +176,10 @@ def marginal_te(
     mte_g = mte[ok]
     gr = grid[ok]
 
-    ate = float(np.trapezoid(mte_g, gr) / (gr[-1] - gr[0]))
+    span = float(gr[-1] - gr[0])
+    if span <= 0.0:
+        raise ValueError("propensity support degenerate (constant propensity)")
+    ate = float(np.trapezoid(mte_g, gr) / span)
     # ATT weight: density of p among treated at u (selection >= u).
     p_t = p[tt == 1]
     if p_t.shape[0] < 10:
@@ -209,6 +218,8 @@ def synth_mte(
     rng = np.random.default_rng(seed)
     if n < 100:
         raise ValueError("n too small")
+    if not abs(rho) < 1.0:
+        raise ValueError("rho must lie in (-1, 1)")
     z = rng.normal(0.0, 1.0, n)
     x = rng.normal(0.0, 1.0, n)
     v = rng.normal(0.0, 1.0, n)
