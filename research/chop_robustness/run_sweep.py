@@ -69,7 +69,21 @@ WINDOWS: dict[str, dict[str, Any]] = {
     "W4_2018_05_8p3y": {"symbols": MAJORS_3, "eval_tail_bars": None},
 }
 
-OUT_DIR = Path("research/chop_robustness_20261007b")  # re-run under the bench config
+def _bench_config() -> AppConfig:
+    """The lane's bench config, loaded through the resolved YAML inheritance chain.
+
+    Bare ``AppConfig()`` silently diverges from the bench environment (it left
+    the base book degenerate on 3 of 4 windows and did not reproduce the
+    historical receipts). The canonical constructor is ``load_config`` on the
+    bench YAML; ``dump_resolved`` pins the fully-resolved config into the run
+    outputs so this divergence cannot recur unnoticed.
+    """
+    from quant_fund.config.loader import load_config
+
+    return load_config("configs/sim_live.yaml")
+
+
+OUT_DIR = Path("research/chop_robustness_benchconfig_20261007")  # resolved bench YAML config
 
 
 def _slot(name: str, overrides: dict[str, Any]) -> StrategySlot:

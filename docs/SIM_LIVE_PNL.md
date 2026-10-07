@@ -299,6 +299,53 @@ as out-sample or forward evidence (the 2025 holdout is spent;
 parameter value discovered here will be tried; any future sweep needs a new
 dated pre-registration.
 
+## Chop-regime robustness sweep — RESULTS, bench-config re-run (2026-10-07T22:30+05:30)
+
+**This supersedes the NON-RESULT block above for the numbers — that block
+stays visible as the disclosure of what went wrong and how it was found.**
+`load_config("configs/sim_live.yaml")` (the resolved `inherit: paper.yaml`
+chain) is the lane's bench config; bare `AppConfig()` was the anomaly. The
+reproduction gate passed **exactly**: base/vin3stack on W4's sha256-identical
+bars = SR 1.1273 / +652.5% / −18.7% / **1,078 fills** / 3,061 marks vs the
+historical receipt's 1.127 / +652% / −18.7% / 1,078 / 3,061, and base on W1 =
+SR 1.97 / +2,905.7%, matching the flagship row in this doc. The fully-resolved
+config is pinned in `research/chop_robustness_benchconfig_20261007/resolved_config.json`.
+
+**Retrospective analytics, `live_pnl_claim=false`. Binance USDT spot majors
+only; not market evidence; not a live-trading claim.** All 16
+pre-registered cells, losers included:
+
+| window | base | `vol_scale_002` | `breadth_gross` | `trend_gate_010` |
+|---|---|---|---|---|
+| W1 full (5 majors) | 1.970 / +2,905.7% / −27.1% / 1,887 | 1.917 / +1,022.8% / −20.2% / 2,996 | 1.914 / +2,925.2% / −31.1% / 1,907 | 1.680 / +921.4% / −17.0% / 1,882 |
+| W2 last 800d | 1.005 / +49.6% / −12.8% / 368 | 0.784 / +33.3% / −13.8% / 532 | 0.994 / +50.8% / −12.8% / 374 | 1.064 / +42.5% / −14.7% / 321 |
+| W3 last 500d (chop) | 0.341 / +6.1% / −12.0% / 157 | **0.488 / +10.8% / −10.4% / 285** | 0.299 / +5.3% / −12.0% / 162 | 0.204 / +2.4% / −13.7% / 150 |
+| W4 8.3y (3 majors) | 1.127 / +652.5% / −18.7% / 1,078 | 1.050 / +370.7% / −20.9% / 1,405 | 1.127 / +652.5% / −18.7% / 1,078 | 0.984 / +407.5% / −21.5% / 1,023 |
+
+**Pre-declared verdicts (rules applied mechanically, Δsharpe_simulated vs
+base):**
+
+- **`vol_scale_002` — REGIME-FITTING, REJECTED.** It is the only mechanism
+  that lifts the pre-declared worst window (W3 +0.146) — and it does so while
+  hurting every other window (W1 −0.054, W2 −0.222, W4 −0.077). Sign
+  reversal across windows ⇒ recorded as regime-fitting and rejected in the
+  `leader_edge_min`/`fund_cut` verdict shape, and criterion (b) also fails
+  (the full window is hurt).
+- **`trend_gate_010` — REGIME-FITTING, REJECTED.** Helps W2 only (+0.058),
+  hurts W1 (−0.291), W3 (−0.137) and W4 (−0.143).
+- **`breadth_gross` — rejected, not regime-fitting.** No window is helped
+  (W4 exactly neutral; W1 −0.056, W2 −0.012, W3 −0.042); it simply does not
+  lift the worst window.
+
+**Recorded verdict (verbatim form of the pre-declaration):** *none of the
+pre-registered mechanisms lifts the worst window without hurting the full
+window.* The chop window can be lifted (`vol_scale_002` on W3), but only by a
+mechanism that reverses elsewhere — which is precisely the regime-fitting
+pattern this sweep was declared to reject. No parameter value discovered here
+will be tried; any further sweep requires a new dated pre-registration.
+In-sample/robustness only: the 2025 holdout is SPENT, `forward_2026H2` is not
+yet collected, and conditions 1 and 2 remain BLOCKED.
+
 ## Per-asset attribution (same policy, single-name books)
 
 BNB +195% (SR 0.95) · BTC +112% (0.99) · ETH +100% (0.75) ·
