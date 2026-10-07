@@ -41,6 +41,7 @@ packages = [
     "microstructure", # LOB/OFI estimators (coupled with northset below)
     "northset",       # northstar estimators/identities over microstructure+metrics
     "metrics",        # shared scoring vocabulary; imported by nearly every layer
+    "realized",       # realized-variance estimators over market observations (RV/BPV/HF-RV scaffolding)
 ]
 
 [[layers]]
