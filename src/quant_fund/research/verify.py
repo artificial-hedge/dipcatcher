@@ -1464,15 +1464,9 @@ def _promotion_approver_errors(approver: object) -> list[str]:
     return errors
 
 
-def _verify_promotion_receipt_document(path: Path, doc: dict[str, Any]) -> dict[str, Any]:
-    """Fail-closed verification of one composed ``promotion_receipt.v1``."""
-    root = path.parent
+def _promotion_payload_claim_errors(payload: dict[str, Any]) -> list[str]:
+    """Payload claims: schema, research-only, no live P&L, timestamped."""
     errors: list[str] = []
-    errors.extend(_promotion_envelope_errors(doc))
-    payload = doc.get("payload")
-    if not isinstance(payload, dict):
-        errors.append("promotion_payload_missing")
-        payload = {}
     if payload.get("schema") != "promotion_receipt.v1":
         errors.append("promotion_payload_schema_invalid")
     if payload.get("claim") != "research_only" or payload.get("execution_claim") != "research_only":
@@ -1483,7 +1477,14 @@ def _verify_promotion_receipt_document(path: Path, doc: dict[str, Any]) -> dict[
         errors.append("promotion_live_pnl_claim")
     if not _timestamp_valid(payload.get("generated_at")):
         errors.append("promotion_generated_at_invalid")
+    return errors
 
+
+def _promotion_artifact_state_errors(
+    payload: dict[str, Any],
+) -> tuple[list[str], object, object, dict[str, Any]]:
+    """Identity block state: errors, artifact hash, dataset panel hash, block."""
+    errors: list[str] = []
     artifact_block = payload.get("artifact_identity")
     if not isinstance(artifact_block, dict):
         errors.append("promotion_artifact_identity_missing")
@@ -1500,7 +1501,14 @@ def _verify_promotion_receipt_document(path: Path, doc: dict[str, Any]) -> dict[
         errors.append("promotion_artifact_sha256_invalid")
     if not _is_sha256(artifact_block.get("manifest_sha256")):
         errors.append("promotion_manifest_sha256_invalid")
+    return errors, artifact_sha, dataset_panel_sha, artifact_block
 
+
+def _promotion_artifact_files_errors(
+    root: Path, artifact_block: dict[str, Any], artifact_sha: object
+) -> tuple[list[str], Path | None, dict[str, Any] | None]:
+    """Artifact payload and manifest files: present, hash-bound, readable."""
+    errors: list[str] = []
     artifact_file = _promotion_path(root, artifact_block.get("path"))
     if artifact_file is None or not artifact_file.is_file():
         errors.append("promotion_artifact_file_missing")
@@ -1510,30 +1518,67 @@ def _verify_promotion_receipt_document(path: Path, doc: dict[str, Any]) -> dict[
     manifest_body: dict[str, Any] | None = None
     if manifest_file is None or not manifest_file.is_file():
         errors.append("promotion_manifest_file_missing")
+        return errors, artifact_file, None
+    if hash_file(manifest_file) != artifact_block.get("manifest_sha256"):
+        errors.append("promotion_manifest_sha256_mismatch")
+    try:
+        loaded_manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        loaded_manifest = None
+    if not isinstance(loaded_manifest, dict):
+        errors.append("promotion_manifest_unreadable")
     else:
-        if hash_file(manifest_file) != artifact_block.get("manifest_sha256"):
-            errors.append("promotion_manifest_sha256_mismatch")
-        try:
-            loaded_manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            loaded_manifest = None
-        if not isinstance(loaded_manifest, dict):
-            errors.append("promotion_manifest_unreadable")
-        else:
-            manifest_body = loaded_manifest
-    if manifest_body is not None:
-        if manifest_body.get("schema") != "model_artifact.v1":
-            errors.append("promotion_manifest_schema_invalid")
-        if artifact_file is not None and manifest_body.get("artifact") != artifact_file.name:
-            errors.append("promotion_manifest_artifact_mismatch")
-        if manifest_body.get("sha256") != artifact_sha:
-            errors.append("promotion_manifest_payload_hash_mismatch")
-        if manifest_body.get("identity") != identity_block:
-            # Stale/tampered dataset identity: the receipt binds exactly the
-            # identity the artifact manifest carries.
-            errors.append("promotion_identity_stale_or_tampered")
-    else:
-        errors.append("promotion_identity_unbound")
+        manifest_body = loaded_manifest
+    return errors, artifact_file, manifest_body
+
+
+def _promotion_manifest_record_errors(
+    manifest_body: dict[str, Any] | None,
+    artifact_file: Path | None,
+    artifact_sha: object,
+    identity_block: object,
+) -> list[str]:
+    """Manifest record: schema, artifact name, payload hash, identity binding."""
+    if manifest_body is None:
+        return ["promotion_identity_unbound"]
+    errors: list[str] = []
+    if manifest_body.get("schema") != "model_artifact.v1":
+        errors.append("promotion_manifest_schema_invalid")
+    if artifact_file is not None and manifest_body.get("artifact") != artifact_file.name:
+        errors.append("promotion_manifest_artifact_mismatch")
+    if manifest_body.get("sha256") != artifact_sha:
+        errors.append("promotion_manifest_payload_hash_mismatch")
+    if manifest_body.get("identity") != identity_block:
+        # Stale/tampered dataset identity: the receipt binds exactly the
+        # identity the artifact manifest carries.
+        errors.append("promotion_identity_stale_or_tampered")
+    return errors
+
+
+def _verify_promotion_receipt_document(path: Path, doc: dict[str, Any]) -> dict[str, Any]:
+    """Fail-closed verification of one composed ``promotion_receipt.v1``."""
+    root = path.parent
+    errors: list[str] = []
+    errors.extend(_promotion_envelope_errors(doc))
+    payload = doc.get("payload")
+    if not isinstance(payload, dict):
+        errors.append("promotion_payload_missing")
+        payload = {}
+    errors.extend(_promotion_payload_claim_errors(payload))
+
+    state_errors, artifact_sha, dataset_panel_sha, artifact_block = (
+        _promotion_artifact_state_errors(payload)
+    )
+    errors.extend(state_errors)
+    file_errors, artifact_file, manifest_body = _promotion_artifact_files_errors(
+        root, artifact_block, artifact_sha
+    )
+    errors.extend(file_errors)
+    errors.extend(
+        _promotion_manifest_record_errors(
+            manifest_body, artifact_file, artifact_sha, artifact_block.get("identity")
+        )
+    )
 
     errors.extend(
         _promotion_evidence_report_errors(
