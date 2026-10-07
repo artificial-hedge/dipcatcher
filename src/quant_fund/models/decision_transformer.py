@@ -70,6 +70,7 @@ def bench_decision_transformer(
 ) -> dict[str, float]:
     """Return-conditioned transformer vs dataset behavior vs random."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     states, acts, rews = synth_trajectories(n_ep, horizon, rng)
     rtg = np.flip(np.cumsum(np.flip(rews, 1).copy(), 1), 1).copy()  # return-to-go

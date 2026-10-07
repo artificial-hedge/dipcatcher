@@ -92,6 +92,7 @@ def bench_cql_agent(
 ) -> dict[str, float]:
     """CQL vs plain fitted-Q on mostly-random offline data."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     s, a, r, sn = synth_offline(n_ep, horizon, rng, expert_frac=0.3)
     S = torch.tensor(s, dtype=torch.float32)

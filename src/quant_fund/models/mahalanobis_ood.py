@@ -81,6 +81,7 @@ def bench_mahalanobis_ood(
 ) -> dict[str, float]:
     """Feature-space Mahalanobis vs max-softmax baseline (AUROC)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     (x_id, y_id), x_ood = synth_id_ood(n_id, n_ood, d, rng)
     body, head = _fit_features(x_id, y_id)

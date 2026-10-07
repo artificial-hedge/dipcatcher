@@ -59,6 +59,7 @@ def bench_vq_vae_ts(
 ) -> dict[str, float]:
     """VQ-VAE codebook recovery + recon vs PCA-4."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, lab = synth_prototype_mix(n, win, rng)
     xb = torch.tensor(xs, dtype=torch.float32)

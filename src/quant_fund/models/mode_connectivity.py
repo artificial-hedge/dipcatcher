@@ -20,6 +20,7 @@ def _torch():
 
 def bench_mode_connectivity(seed: int = 2371) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     X, y, _, _ = make_data(seed)
     na, _ = train_mlp(torch, X, y, iters=400, seed=seed)
     nb, _ = train_mlp(torch, X, y, iters=400, seed=seed + 77)

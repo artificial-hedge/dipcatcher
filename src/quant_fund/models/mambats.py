@@ -72,6 +72,7 @@ def bench_mambats(
 ) -> dict[str, float]:
     """Selective-scan recall of a 20-step-old shock vs GRU baseline."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_selective_memory(n, win, rng)
     xb = torch.tensor(xs, dtype=torch.float32)

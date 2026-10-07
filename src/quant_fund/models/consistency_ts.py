@@ -56,6 +56,7 @@ def bench_consistency_ts(
 ) -> dict[str, float]:
     """Consistency-model 2-step sampler vs Gaussian (MMD, SYNTH)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs = synth_bimodal(n, win, rng)
     xb = torch.tensor(xs, dtype=torch.float32)

@@ -20,6 +20,7 @@ def bench_evolution_nas(
     iters: int = 40,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     x_tr, y_tr, x_te, y_te = split(seed, n)
     x_tr_t = torch.tensor(x_tr).float()
     y_tr_t = torch.tensor(noisy_labels(y_tr, seed))

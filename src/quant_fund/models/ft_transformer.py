@@ -50,6 +50,7 @@ def bench_ft_transformer(
 ) -> dict[str, float]:
     """Feature-token attention vs logistic and a flat MLP classifier."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_interaction(n, d, rng)
     xb = torch.tensor(xs, dtype=torch.float32)

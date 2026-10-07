@@ -42,6 +42,7 @@ def bench_cvxpy_layer(
     tau: float = 0.3,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, mutr, rtr = synth_decision_data(n_train, d_feat, rng)
     xte, _mute, rte = synth_decision_data(n_test, d_feat, rng)

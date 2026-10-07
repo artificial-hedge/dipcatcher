@@ -41,6 +41,7 @@ def bench_input_convex(
     d: int = 64,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr = rng.normal(0, 1, (n_train, 4))
     ytr = rng.uniform(-2, 2, n_train)

@@ -20,6 +20,7 @@ def _torch():
 
 def bench_st_estimator(seed: int = 2389, trials: int = 20) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     corrs = []
     for i in range(trials):
         s0, _ = sel_data(seed + i)

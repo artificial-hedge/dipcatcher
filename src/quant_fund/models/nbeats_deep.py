@@ -75,6 +75,7 @@ def bench_nbeats_deep(
 ) -> dict[str, float]:
     """3-block N-BEATS vs equal-param MLP and seasonal naive."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, ys = synth_multicomponent(n, win, h, rng)
     xb = torch.tensor(xs, dtype=torch.float32)

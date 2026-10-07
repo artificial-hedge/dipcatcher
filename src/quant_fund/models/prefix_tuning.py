@@ -37,6 +37,7 @@ def bench_prefix_tuning(
     n_prefix: int = 8,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, ytr = synth_retrieval(n_train, m_pairs, n_classes, rng)
     xs, ys = synth_retrieval(n_shift, m_pairs, n_classes, np.random.default_rng(seed + 1))

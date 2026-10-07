@@ -62,6 +62,7 @@ def bench_spd_net(
     eps: float = 1e-3,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     ctr, ytr = synth_spd_data(n_train, rng)
     cte, yte = synth_spd_data(n_test, rng)

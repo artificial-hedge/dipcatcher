@@ -35,6 +35,7 @@ def bench_graph_unet(
     d_hid: int = 32,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     adj, x, y = synth_sbm_graph(seed=seed + _SEED)
     a_norm = normalize_adj(adj)
     tr, te = split_masks(x.shape[0], n_train_frac, seed + _SEED)

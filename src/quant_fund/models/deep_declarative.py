@@ -60,6 +60,7 @@ def bench_deep_declarative(
     iters: int = 600,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, ytr = synth_expert_positions(n_train, d_feat, rng)
     xte, yte = synth_expert_positions(n_test, d_feat, rng)

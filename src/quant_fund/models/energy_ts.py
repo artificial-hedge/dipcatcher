@@ -71,6 +71,7 @@ def bench_energy_ts(
 ) -> dict[str, float]:
     """EBM energy ranking vs AE recon-error baseline (AUC, SYNTH)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_normal_anom(n, win, rng)
     xb = torch.tensor(xs, dtype=torch.float32)

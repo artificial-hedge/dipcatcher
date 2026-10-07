@@ -59,6 +59,7 @@ def bench_score_sde_ts(
 ) -> dict[str, float]:
     """Score-matching SDE sampler vs Gaussian baseline (MMD, SYNTH)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs = synth_bimodal(n, win, rng)
     xb = torch.tensor(xs, dtype=torch.float32)

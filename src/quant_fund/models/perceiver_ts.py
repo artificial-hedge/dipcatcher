@@ -49,6 +49,7 @@ def bench_perceiver_ts(
 ) -> dict[str, float]:
     """32-latent perceiver vs full attention and pooled MLP (SYNTH)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_long_window(n, win, rng)
     xb = torch.tensor(xs, dtype=torch.float32).unsqueeze(-1)  # (B,T,1)

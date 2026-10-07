@@ -64,6 +64,7 @@ def bench_flow_matching_ts(
 ) -> dict[str, float]:
     """Rectified-flow sampler vs moment-matched Gaussian (MMD, SYNTH)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, reg = synth_regime_windows(n, win, rng)
     xb = torch.tensor(xs, dtype=torch.float32)

@@ -57,6 +57,7 @@ def bench_tcn_forecaster(
 ) -> dict[str, float]:
     """Dilated-TCN next-step forecast vs short-window MLP and AR(4)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_long_lag(n, win, rng)
     xs = (xs - xs.mean()) / (xs.std() + 1e-9)

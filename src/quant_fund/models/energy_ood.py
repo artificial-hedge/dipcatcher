@@ -60,6 +60,7 @@ def bench_energy_ood(
 ) -> dict[str, float]:
     """Free-energy OOD score vs MSP (AUROC, SYNTHETIC)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     (x_id, y_id), x_ood = synth_id_ood(n_id, n_ood, d, rng)
     X = torch.tensor(x_id, dtype=torch.float32)

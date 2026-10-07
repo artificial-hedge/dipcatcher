@@ -20,6 +20,7 @@ def _torch():
 
 def bench_smooth_argmax(seed: int = 2417, trials: int = 20) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     corrs: list[float] = []
     corrs_soft: list[float] = []
     for i in range(trials):

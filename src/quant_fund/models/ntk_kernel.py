@@ -48,6 +48,7 @@ def _krr(K: FloatArray, y: FloatArray, Kt: FloatArray, lam: float = 1e-3) -> Flo
 
 def bench_ntk_kernel(seed: int = 2359) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     X, y, Xt, yt = make_data(seed)
     net, _ = train_mlp(torch, X, y, iters=400, seed=seed)
     Xs, Xts = X[:120], Xt[:120]

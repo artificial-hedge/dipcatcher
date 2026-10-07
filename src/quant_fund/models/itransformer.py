@@ -69,6 +69,7 @@ def bench_itransformer(
 ) -> dict[str, float]:
     """Fit inverted-attention forecaster vs channel-mix MLP + AR baseline."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_variate_panel(n, win, rng)
     xs = (xs - xs.mean()) / (xs.std() + 1e-9)

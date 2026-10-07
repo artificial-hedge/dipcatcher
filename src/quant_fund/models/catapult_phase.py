@@ -20,6 +20,7 @@ def _torch():
 
 def bench_catapult_phase(seed: int = 2377) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     X, y, _, _ = make_data(seed)
     _, losses_hi = train_mlp(torch, X, y, iters=300, lr=0.12, seed=seed)
     _, losses_lo = train_mlp(torch, X, y, iters=300, lr=0.005, seed=seed)

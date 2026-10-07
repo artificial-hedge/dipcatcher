@@ -76,6 +76,7 @@ def bench_gail_imitation(
 ) -> dict[str, float]:
     """GAIL vs behavior cloning on 90%-expert demos; SYNTHETIC."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     es, ea = synth_expert(n_ep, horizon, rng)
     ES = torch.tensor(es, dtype=torch.float32)
