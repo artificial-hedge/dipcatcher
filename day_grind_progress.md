@@ -2340,7 +2340,7 @@ forbidden metric.
 |---|---|
 | `ruff check src tests` | **GREEN** — All checks passed |
 | `ruff format --check` | **GREEN** — 19,019 files formatted |
-| `make typecheck` | GREEN earlier in the round; re-run in flight |
+| `make typecheck` | **GREEN** — `TYPECHECK_EXIT=0`, no issues across the full tree + strict allowlist |
 | McCabe ratchet | **RED** — 23 ceiling regressions (was 30 at round start), 736 unlisted |
 | `make test` | **RED, and unmeasurable** — suite segfaults in native code (see below) |
 | `make fx1-test` | **RED** — 1 of 16 selftest checks (`job_receipt_verifies`) |
