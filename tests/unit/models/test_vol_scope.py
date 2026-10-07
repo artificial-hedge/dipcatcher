@@ -189,21 +189,25 @@ def test_garchvol_delegates_to_the_symmetric_contract() -> None:
         pooled.assert_consumer_scope(PER_SECURITY_CONSUMER)
     with pytest.raises(ValueError, match="scope mismatch"):
         GARCHVol.assert_consumer_scope(
-            _Artifact(PER_SECURITY_SCOPE), DATE_LEVEL_PORTFOLIO_CONSUMER  # type: ignore[arg-type]
+            _Artifact(PER_SECURITY_SCOPE),
+            DATE_LEVEL_PORTFOLIO_CONSUMER,  # type: ignore[arg-type]
         )
     GARCHVol.assert_consumer_scope(
-        _Artifact(UNIVARIATE_RETURN_SERIES_SCOPE), UNIVARIATE_RETURN_SERIES_SCOPE  # type: ignore[arg-type]
+        _Artifact(UNIVARIATE_RETURN_SERIES_SCOPE),
+        UNIVARIATE_RETURN_SERIES_SCOPE,  # type: ignore[arg-type]
     )
 
 
 def test_garchvol_rejects_corrupted_and_unknown_artifact_scopes() -> None:
     with pytest.raises(CorruptedScopeError):
         GARCHVol.assert_consumer_scope(
-            _Artifact("PER_SECURITY"), PER_SECURITY_CONSUMER  # type: ignore[arg-type]
+            _Artifact("PER_SECURITY"),
+            PER_SECURITY_CONSUMER,  # type: ignore[arg-type]
         )
     with pytest.raises(UnknownScopeError):
         GARCHVol.assert_consumer_scope(
-            _Artifact("quux_scope"), PER_SECURITY_CONSUMER  # type: ignore[arg-type]
+            _Artifact("quux_scope"),
+            PER_SECURITY_CONSUMER,  # type: ignore[arg-type]
         )
 
 
@@ -222,9 +226,7 @@ def test_pooled_artifacts_cannot_reach_per_security_risk_consumers_end_to_end() 
 def test_mismatch_messages_are_directional_and_stable() -> None:
     with pytest.raises(ScopeMismatchError) as pooled_error:
         assert_scope_compatible(POOLED_DATE_LEVEL_SCOPE, PER_SECURITY_CONSUMER)
-    assert re.search(
-        "consumable only by date_level_portfolio", str(pooled_error.value)
-    )
+    assert re.search("consumable only by date_level_portfolio", str(pooled_error.value))
     with pytest.raises(ScopeMismatchError) as per_security_error:
         assert_scope_compatible(PER_SECURITY_SCOPE, DATE_LEVEL_PORTFOLIO_CONSUMER)
     assert "scope mismatch" in str(per_security_error.value)

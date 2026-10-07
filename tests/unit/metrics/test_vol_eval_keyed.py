@@ -121,7 +121,9 @@ def test_pinball_per_key_is_decentralized() -> None:
             realized[index : index + 1], quantiles[index : index + 1], TAUS, keys=(key,)
         )
         for tau in TAUS:
-            assert np.isclose(single["pinball_per_key"][key][str(tau)], pooled["pinball_per_key"][key][str(tau)])
+            assert np.isclose(
+                single["pinball_per_key"][key][str(tau)], pooled["pinball_per_key"][key][str(tau)]
+            )
 
 
 def test_pinball_bad_key_is_honest_nan_without_poisoning_siblings() -> None:
@@ -153,8 +155,14 @@ def test_pinball_requires_matching_levels_and_valid_taus() -> None:
 def test_units_contract_is_bit_preserving_and_fail_closed() -> None:
     variance = np.array([4e-4, 1e-4])
     sigma = np.array([0.02, 0.01])
-    assert coerce_units(variance, from_units=VARIANCE_UNITS, to_units=VARIANCE_UNITS).tobytes() == variance.tobytes()
-    assert coerce_units(sigma, from_units=VOLATILITY_UNITS, to_units=VOLATILITY_UNITS).tobytes() == sigma.tobytes()
+    assert (
+        coerce_units(variance, from_units=VARIANCE_UNITS, to_units=VARIANCE_UNITS).tobytes()
+        == variance.tobytes()
+    )
+    assert (
+        coerce_units(sigma, from_units=VOLATILITY_UNITS, to_units=VOLATILITY_UNITS).tobytes()
+        == sigma.tobytes()
+    )
     with pytest.raises(VolUnitsError):
         coerce_units(variance, from_units=VARIANCE_UNITS, to_units=VOLATILITY_UNITS)
     assert assert_units(VARIANCE_UNITS, VARIANCE_UNITS) == VARIANCE_UNITS

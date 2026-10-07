@@ -14,7 +14,8 @@ Sharpe/Sortino/Calmar/P&L/NAV, no live-trading or profitability claims.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import numpy as np
 import pytest
@@ -128,7 +129,9 @@ def _assert_label_invariance(
         left = getattr(base, name)
         right = getattr(shifted, name)
         assert np.all(np.isnan(left) == np.isnan(right)), f"{name} NaN mask differs"
-        assert left.tobytes() == right.tobytes(), f"{name} changed under label shift (labels leaked)"
+        assert left.tobytes() == right.tobytes(), (
+            f"{name} changed under label shift (labels leaked)"
+        )
     if base.quantiles is not None and shifted.quantiles is not None:
         assert base.quantiles.tobytes() == shifted.quantiles.tobytes(), (
             "quantiles changed under label shift (labels leaked)"
@@ -234,7 +237,10 @@ def test_forecast_variance_is_variance_not_volatility_under_rescaling() -> None:
     assert model.forecast("S00")["variance_units"] == VARIANCE_UNITS
     # x10 returns => x100 variance: variance scales like sigma^2, not sigma.
     assert np.allclose(base, np.asarray(model.forecast("S00")["sigma"]) ** 2)
-    assert np.all(np.asarray(model.forecast("S00")["sigma"]) ** 2 <= np.asarray(model.forecast("S00")["sigma"]) + 1.0)
+    assert np.all(
+        np.asarray(model.forecast("S00")["sigma"]) ** 2
+        <= np.asarray(model.forecast("S00")["sigma"]) + 1.0
+    )
 
 
 def test_forecast_units_are_preserved_bit_identically() -> None:
@@ -274,7 +280,9 @@ def test_ewma_forecast_matches_the_documented_recursion() -> None:
 
 
 def test_one_bad_key_is_nan_without_poisoning_the_other_keys() -> None:
-    panel = _synthetic_keyed_panel(keys=("GOOD1", "BAD", "GOOD2"), key_lengths={"GOOD1": 120, "BAD": 5, "GOOD2": 120})
+    panel = _synthetic_keyed_panel(
+        keys=("GOOD1", "BAD", "GOOD2"), key_lengths={"GOOD1": 120, "BAD": 5, "GOOD2": 120}
+    )
     model = PerSecurityVol("ewma", min_obs=20).fit(panel)
     bad = model.forecast("BAD")
     assert np.all(np.isnan(bad["variance"]))
@@ -286,7 +294,9 @@ def test_one_bad_key_is_nan_without_poisoning_the_other_keys() -> None:
 
 
 def test_non_finite_key_fails_honestly_alone() -> None:
-    panel = _synthetic_keyed_panel(keys=("OK1", "NAN1", "OK2"), key_lengths={"OK1": 120, "NAN1": 120, "OK2": 120})
+    panel = _synthetic_keyed_panel(
+        keys=("OK1", "NAN1", "OK2"), key_lengths={"OK1": 120, "NAN1": 120, "OK2": 120}
+    )
     times = np.asarray(panel.times)
     returns = np.array(panel.returns, dtype=float)
     returns[(np.asarray(panel.keys) == "NAN1") & (times >= 100)] = np.nan

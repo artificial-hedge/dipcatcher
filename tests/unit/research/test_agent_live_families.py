@@ -16,7 +16,10 @@ _REQUIRED = frozenset(registry.REQUIRED_BENCHMARK_FAMILIES)
 
 
 def _families(*optional: str) -> dict[str, Any]:
-    return {**{name: {"blob": name} for name in _REQUIRED}, **{name: {"blob": name} for name in optional}}
+    return {
+        **{name: {"blob": name} for name in _REQUIRED},
+        **{name: {"blob": name} for name in optional},
+    }
 
 
 def _set_catalog(monkeypatch, optional, retired=None, live=None) -> None:
@@ -24,11 +27,15 @@ def _set_catalog(monkeypatch, optional, retired=None, live=None) -> None:
     if retired is None:
         monkeypatch.delattr(registry, "RETIRED_BENCHMARK_FAMILIES", raising=False)
     else:
-        monkeypatch.setattr(registry, "RETIRED_BENCHMARK_FAMILIES", frozenset(retired), raising=False)
+        monkeypatch.setattr(
+            registry, "RETIRED_BENCHMARK_FAMILIES", frozenset(retired), raising=False
+        )
     if live is None:
         monkeypatch.delattr(registry, "LIVE_OPTIONAL_BENCHMARK_FAMILIES", raising=False)
     else:
-        monkeypatch.setattr(registry, "LIVE_OPTIONAL_BENCHMARK_FAMILIES", frozenset(live), raising=False)
+        monkeypatch.setattr(
+            registry, "LIVE_OPTIONAL_BENCHMARK_FAMILIES", frozenset(live), raising=False
+        )
 
 
 def test_required_families_still_fully_emitted(monkeypatch):

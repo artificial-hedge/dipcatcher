@@ -275,9 +275,7 @@ NEGATIVE_CASES = (
 
 
 @pytest.mark.parametrize(("name", "mutate", "expected"), NEGATIVE_CASES)
-def test_negative_fail_closed(
-    tmp_path: Path, name: str, mutate, expected: str
-) -> None:
+def test_negative_fail_closed(tmp_path: Path, name: str, mutate, expected: str) -> None:
     _out_path, sealed = _compose_receipt(tmp_path)
     variant = _reseal_variant(tmp_path, sealed, name, mutate)
     result = verify_research_artifact(variant)

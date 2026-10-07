@@ -272,7 +272,10 @@ def test_missing_gate_result_blocks_promotion(tmp_path: Path) -> None:
 def test_failing_gate_result_blocks_promotion(tmp_path: Path) -> None:
     built = _build(tmp_path)
     gates = _gates()
-    gates["dataset_identity"] = {"status": "fail", "checked_at": gates["dataset_identity"]["checked_at"]}
+    gates["dataset_identity"] = {
+        "status": "fail",
+        "checked_at": gates["dataset_identity"]["checked_at"],
+    }
     with pytest.raises(PromotionCompositionError):
         _compose(tmp_path, built, gate_results=gates)
 

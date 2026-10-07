@@ -173,7 +173,9 @@ def compose_promotion_receipt(
     try:
         manifest_record = json.loads(manifest_file.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise PromotionCompositionError(f"artifact manifest is unreadable: {manifest_file}") from exc
+        raise PromotionCompositionError(
+            f"artifact manifest is unreadable: {manifest_file}"
+        ) from exc
     artifact_class = manifest_record.get("class") if isinstance(manifest_record, dict) else None
 
     # 2. Approved, non-synthetic promotion decision.
@@ -193,7 +195,9 @@ def compose_promotion_receipt(
     _require(bool(str(decision.get("run_id", "")).strip()), "promotion decision has no run_id")
 
     # 3. Input metrics bind the same artifact and dataset (staleness check).
-    _require(isinstance(input_metrics, Mapping) and bool(input_metrics), "input metrics are missing")
+    _require(
+        isinstance(input_metrics, Mapping) and bool(input_metrics), "input metrics are missing"
+    )
     metrics_source = str(input_metrics.get("data_source", ""))
     _require(
         bool(metrics_source.strip()) and metrics_source.strip().upper() != "SYNTHETIC",
@@ -220,7 +224,9 @@ def compose_promotion_receipt(
     try:
         approver_record = Approver.model_validate(dict(approver))
     except Exception as exc:
-        raise PromotionCompositionError(f"approver identity is missing or dishonest: {exc}") from exc
+        raise PromotionCompositionError(
+            f"approver identity is missing or dishonest: {exc}"
+        ) from exc
 
     # 6. Evidence report: bytes-bound, complete, research-only, non-synthetic.
     report_path = Path(evidence_report)

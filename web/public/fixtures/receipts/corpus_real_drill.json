@@ -1,47 +1,209 @@
 {
-  "corpus_evalue": 1.0,
-  "corpus_reject_at_alpha": false,
+  "corpus_evalue": 1.2304387444765854e+46,
+  "corpus_evalue_product_dependence_assuming": null,
+  "corpus_reject_at_alpha": true,
   "data_label": "MIXED",
+  "dataset_sha256": "6132ffe96eff50b91b3330553d34b4ddfc814b10f97f9e4e57f914460052ebce",
   "evidence": [
     "bh_fdr_pooled_family",
-    "evalue_product_merge",
+    "evalue_mean_merge",
+    "evalue_product_merge_diagnostic_only",
     "tagged_claim_provenance"
   ],
-  "generated_at_commit": "8096a5245da4d708771c00b7756e334a3638f14b",
-  "inputs_sha256": "30c129932661b7f9c36fa8822f6669bc062d383b10358a221b3073936efd440c",
+  "generated_at_commit": "dbf7d35edafdbef91df069905a927544f7f85905",
+  "inputs_sha256": "ac239a9b24c169e324c9cf2dcb16b6eda07166eda82214d35d6fc70ab100bf0b",
   "kind": "corpus_inference.v1",
   "live_pnl_claim": false,
-  "n_e_findings": 0,
-  "n_p_findings": 52,
+  "n_e_findings": 90,
+  "n_p_findings": 85,
   "n_parse_errors": 0,
-  "n_receipts": 10,
-  "n_survivors": 7,
+  "n_receipts": 71,
+  "n_survivors": 24,
   "params": {
     "glob": "*.json",
     "input_labels": {
-      "adaptive_mix_20asset_1d_20260922.json": "UNKNOWN",
-      "adaptive_mix_band_search_20asset_1d_20260922.json": "UNKNOWN",
-      "basis_pair_candidate_20asset_1d_20260922.json": "UNKNOWN",
-      "basis_reversion_screen_20asset_1d_20260922.json": "UNKNOWN",
+      "calib_real_drill.json": "yahoo_eod",
+      "capacity_eval_3622d0c059d42009.json": "SYNTHETIC",
       "capacity_eval_cd0854242ed8a9ec.json": "SYNTHETIC",
-      "dip_bench_crypto_1d_20260925.json": "UNKNOWN",
-      "fast_replay_p42_conformance_20260927.json": "UNKNOWN",
+      "coherence_2dd641ab766a536a.json": "SYNTHETIC",
+      "concordance_df424fa2f6b1c4e9.json": "UNKNOWN",
+      "conformal_real_drill_gaussian_minus_conf_t_pinball.json": "yahoo_eod",
+      "conformal_real_drill_gaussian_pit.json": "yahoo_eod",
+      "cost_calibration_eval_df9b8d7068bf709b.json": "SYNTHETIC",
+      "coverage_cs_real_drill.json": "yahoo_eod",
+      "coverage_real_drill.json": "yahoo_eod",
+      "cp_real_drill_gaussian_minus_conf_t_pinball.json": "yahoo_eod",
+      "cp_real_drill_gaussian_pit.json": "yahoo_eod",
+      "deps_security_hygiene_f3b4e6fd22e439b7.json": "SYNTHETIC",
+      "drift_real_drill_gaussian_minus_conf_t_pinball.json": "yahoo_eod",
+      "drift_real_drill_gaussian_pit.json": "yahoo_eod",
+      "emerge_real_drill.json": "yahoo_eod",
+      "evidence_audit_3464d8f8197bf737.json": "UNKNOWN",
+      "evidence_audit_5c9f07c823727701.json": "UNKNOWN",
+      "evidence_audit_d449e1ca0cc119a6.json": "UNKNOWN",
+      "fast_replay_p42_conformance_20260928.json": "UNKNOWN",
       "fleet_eval_5ddf15b0dc7d3ca1.json": "SYNTHETIC",
-      "incumbent_bench_qlib.json": "UNKNOWN",
-      "rankic_eval_9ebdad7da83e7348.json": "SYNTHETIC"
+      "fleet_eval_5e907be710811a44.json": "SYNTHETIC",
+      "fleet_race_real_drill.json": "yahoo_eod",
+      "honest_verdict_b133e8b3992af893.json": "SYNTHETIC",
+      "honest_verdict_real_drill.json": "yahoo_eod",
+      "lane_power_drill.json": "UNKNOWN",
+      "lattice_drill_verdict.json": "CORPUS",
+      "lattice_drill_vol_bench_a.json": "SYNTHETIC",
+      "lattice_drill_vol_bench_b.json": "SYNTHETIC",
+      "loss_cs_real_drill_conf_t_vs_empirical.json": "yahoo_eod",
+      "loss_cs_real_drill_gaussian_vs_conf_t.json": "yahoo_eod",
+      "mcs_real_drill.json": "yahoo_eod",
+      "mcs_vol_drill.json": "SYNTHETIC",
+      "monitor_run_13d20aef00774027.json": "SYNTHETIC",
+      "monitor_run_drill_clean.json": "SYNTHETIC",
+      "monitor_run_drill_defect.json": "SYNTHETIC",
+      "monitor_run_real_drill.json": "yahoo_eod",
+      "multih_fleet_eval_5db1cab214e291d7.json": "UNKNOWN",
+      "nautilus_conformance_7bf19a08c147547b.json": "UNKNOWN",
+      "panel_audit_real_drill.json": "yahoo_eod",
+      "rankic_eval_8d740c0ddf6d5c54.json": "SYNTHETIC",
+      "rankic_eval_9ebdad7da83e7348.json": "SYNTHETIC",
+      "real_benchmark_us_wide_manifest.json": "UNKNOWN",
+      "real_benchmark_us_wide_test.json": "UNKNOWN",
+      "real_benchmark_us_wide_validation.json": "UNKNOWN",
+      "replay_coverage_e72b56ffaf7abe4b.json": "CORPUS",
+      "replay_proof_0de5fa4e0c739037.json": "SYNTHETIC",
+      "replay_proof_701ae84c3d9813e0.json": "SYNTHETIC",
+      "replay_proof_73137fe1a97c3538.json": "SYNTHETIC",
+      "replay_proof_7e1d9b632f022f5a.json": "SYNTHETIC",
+      "replay_proof_b23a176a5c91e210.json": "SYNTHETIC",
+      "replay_proof_cbbad2b0389750e5.json": "SYNTHETIC",
+      "replay_proof_e1fa8dd41197ef11.json": "yahoo_eod",
+      "replay_proof_f5fe541481bbf231.json": "SYNTHETIC",
+      "serial_watch_140b073ea589b0c7.json": "yahoo_eod",
+      "serial_watch_1e8e1446e506fce1.json": "yahoo_eod",
+      "serial_watch_2c14615c26efd19b.json": "yahoo_eod",
+      "serial_watch_46445c3b227aa15e.json": "yahoo_eod",
+      "serial_watch_47297eff3cb55178.json": "yahoo_eod",
+      "serial_watch_4f4a495b59d022fb.json": "yahoo_eod",
+      "serial_watch_771602cd1580476c.json": "yahoo_eod",
+      "serial_watch_78dd891261e2aae9.json": "SYNTHETIC",
+      "serial_watch_85db152db863d25d.json": "yahoo_eod",
+      "serial_watch_8977244ef78bfd2f.json": "yahoo_eod",
+      "serial_watch_a6fd40311ce0fa04.json": "yahoo_eod",
+      "serial_watch_d311f5ea367a66a9.json": "yahoo_eod",
+      "serial_watch_dbd21a6c99c81e00.json": "yahoo_eod",
+      "suite_health_drill.json": "MIXED",
+      "tail_real_drill.json": "yahoo_eod",
+      "verdict_real_drill.json": "yahoo_eod",
+      "vol_bench_f3bf2afc2f159ace.json": "SYNTHETIC"
     },
+    "membership": "data/manifests/replay_corpus_members.json",
+    "membership_sha256": "781f4c5b0944ce5ecdfbdaffd92bc643bd7ad46d1de2ff706c7d36627bb2dc96",
     "q": 0.05
   },
   "parse_errors": [],
-  "receipt_sha256": "b96b612f8e4494ecb380b24fea20ee3468bc2a251b14697239e5f4ed38b1e7c6",
+  "receipt_sha256": "2ee42848a1d51937ffa9aeec9b9d16a3cbb2aba1eafbd6330dc0448878295641",
   "research_only": true,
   "schema": "corpus_inference.v1",
   "surviving_claims": [
     {
       "family": "pooled",
+      "path": "payload.results[1].pit_ks_p",
+      "source": "coherence_2dd641ab766a536a.json",
+      "value": 0.0023207300752640103
+    },
+    {
+      "family": "pooled",
+      "path": "payload.results[2].pit_ks_p",
+      "source": "coherence_2dd641ab766a536a.json",
+      "value": 0.00631348904828366
+    },
+    {
+      "family": "pooled",
+      "path": "payload.results[5].pit_ks_p",
+      "source": "coherence_2dd641ab766a536a.json",
+      "value": 0.0004985802922539563
+    },
+    {
+      "family": "pooled",
+      "path": "payload.results[10].pit_ks_p",
+      "source": "coherence_2dd641ab766a536a.json",
+      "value": 0.0017689770926977433
+    },
+    {
+      "family": "pooled",
+      "path": "payload.results[14].pit_ks_p",
+      "source": "coherence_2dd641ab766a536a.json",
+      "value": 1.5531427723103203e-07
+    },
+    {
+      "family": "pooled",
+      "path": "payload.results[15].pit_ks_p",
+      "source": "coherence_2dd641ab766a536a.json",
+      "value": 0.011365189850154112
+    },
+    {
+      "family": "pooled",
+      "path": "payload.shards[0].rc_p",
+      "source": "concordance_df424fa2f6b1c4e9.json",
+      "value": 0.0033222591362126247
+    },
+    {
+      "family": "pooled",
+      "path": "payload.shards[1].rc_p",
+      "source": "concordance_df424fa2f6b1c4e9.json",
+      "value": 0.0033222591362126247
+    },
+    {
+      "family": "pooled",
+      "path": "payload.shards[2].rc_p",
+      "source": "concordance_df424fa2f6b1c4e9.json",
+      "value": 0.0033222591362126247
+    },
+    {
+      "family": "pooled",
+      "path": "payload.shards[3].rc_p",
+      "source": "concordance_df424fa2f6b1c4e9.json",
+      "value": 0.0033222591362126247
+    },
+    {
+      "family": "pooled",
+      "path": "payload.shards[4].rc_p",
+      "source": "concordance_df424fa2f6b1c4e9.json",
+      "value": 0.0033222591362126247
+    },
+    {
+      "family": "pooled",
+      "path": "payload.shards[5].rc_p",
+      "source": "concordance_df424fa2f6b1c4e9.json",
+      "value": 0.0033222591362126247
+    },
+    {
+      "family": "pooled",
+      "path": "payload.shards[6].rc_p",
+      "source": "concordance_df424fa2f6b1c4e9.json",
+      "value": 0.0033222591362126247
+    },
+    {
+      "family": "pooled",
+      "path": "payload.shards[7].rc_p",
+      "source": "concordance_df424fa2f6b1c4e9.json",
+      "value": 0.0033222591362126247
+    },
+    {
+      "family": "pooled",
+      "path": "payload.shards[8].rc_p",
+      "source": "concordance_df424fa2f6b1c4e9.json",
+      "value": 0.0033222591362126247
+    },
+    {
+      "family": "pooled",
       "path": "results[14].pit_ks_p",
       "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
       "value": 0.0003521222142801333
+    },
+    {
+      "family": "pooled",
+      "path": "results[15].pit_ks_p",
+      "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "value": 0.008782896397864857
     },
     {
       "family": "pooled",
@@ -66,6 +228,12 @@
       "path": "results[31].pit_ks_p",
       "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
       "value": 0.00017886857828392145
+    },
+    {
+      "family": "pooled",
+      "path": "results[37].pit_ks_p",
+      "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "value": 0.0088485156384654
     },
     {
       "family": "pooled",

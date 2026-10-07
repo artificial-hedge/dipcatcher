@@ -252,8 +252,7 @@ def qlike_keyed(
     realized = _keyed_matrix(realized_var, len(key_list), "realized_var")
     forecast = _keyed_matrix(forecast_var, len(key_list), "forecast_var")
     per_key = {
-        key: _qlike_row(realized[index], forecast[index])
-        for index, key in enumerate(key_list)
+        key: _qlike_row(realized[index], forecast[index]) for index, key in enumerate(key_list)
     }
     scored = [value for value in per_key.values() if np.isfinite(value)]
     counts = {
@@ -326,15 +325,16 @@ def pinball_keyed(
     if len(key_list) != len(set(key_list)):
         raise ValueError("keys must be unique")
     realized_matrix = _keyed_matrix(realized, len(key_list), "realized")
-    quantiles = _keyed_quantile_tensor(quantile_forecast, len(key_list), len(levels), "quantile_forecast")
+    quantiles = _keyed_quantile_tensor(
+        quantile_forecast, len(key_list), len(levels), "quantile_forecast"
+    )
     per_key = {
         key: _pinball_row(realized_matrix[index], quantiles[index], levels)
         for index, key in enumerate(key_list)
     }
     mean_per_tau = _pooled_pinball_per_tau(realized_matrix, quantiles, levels, key_list)
     counts = {
-        key: int(np.isfinite(realized_matrix[index]).sum())
-        for index, key in enumerate(key_list)
+        key: int(np.isfinite(realized_matrix[index]).sum()) for index, key in enumerate(key_list)
     }
     return {
         "score": "pinball",
@@ -355,7 +355,9 @@ def _pooled_pinball_per_tau(
         values = [
             per_tau
             for index, key in enumerate(keys)
-            for per_tau in [_pinball_key_all_taus(realized[index], quantiles[index, :, level_index], (tau,))[0]]
+            for per_tau in [
+                _pinball_key_all_taus(realized[index], quantiles[index, :, level_index], (tau,))[0]
+            ]
             if np.isfinite(per_tau)
         ]
         pooled[str(tau)] = float(np.mean(values)) if values else float("nan")

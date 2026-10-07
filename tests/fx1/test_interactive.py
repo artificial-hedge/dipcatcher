@@ -559,8 +559,10 @@ def test_cli_doctor_json(isolated_store: Path, monkeypatch: pytest.MonkeyPatch) 
 def test_cli_bare_invocation_opens_shell(
     isolated_store: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    from fx1.interactive import concierge
+
     calls: list[str] = []
-    monkeypatch.setattr(shell, "run_shell", lambda model="fx1": calls.append(model))
+    monkeypatch.setattr(concierge, "run_console", lambda model="fx1": calls.append(model))
     result = RUNNER.invoke(fxi_app, [])
     assert result.exit_code == 0
     assert calls == ["fx1"]
@@ -569,8 +571,10 @@ def test_cli_bare_invocation_opens_shell(
 def test_cli_global_model_selects_shell_model(
     isolated_store: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    from fx1.interactive import concierge
+
     calls: list[str] = []
-    monkeypatch.setattr(shell, "run_shell", lambda model="fx1": calls.append(model))
+    monkeypatch.setattr(concierge, "run_console", lambda model="fx1": calls.append(model))
     result = RUNNER.invoke(fxi_app, ["--model", "fx1-lite"])
     assert result.exit_code == 0
     assert calls == ["fx1-lite"]

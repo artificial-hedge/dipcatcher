@@ -125,9 +125,7 @@ def _patch_train(monkeypatch: pytest.MonkeyPatch, frame: pl.DataFrame) -> None:
     ):
         monkeypatch.setattr(f"{module}.panel", lambda *a, **k: frame, raising=False)
         monkeypatch.setattr(f"{module}.configure_tracking", lambda: None, raising=False)
-        monkeypatch.setattr(
-            f"{module}.log_run", lambda **kwargs: "run_test_0001", raising=False
-        )
+        monkeypatch.setattr(f"{module}.log_run", lambda **kwargs: "run_test_0001", raising=False)
         # Never touch shared MLflow sqlite state from correctness tests.
         monkeypatch.setattr(
             f"{module}.attach_artifact_identity", lambda *a, **k: None, raising=False

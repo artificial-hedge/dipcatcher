@@ -224,7 +224,9 @@ def build_artifact_identity(
             features=feature_list,
             feature_set_version=str(FEATURE_SET_VERSION),
             feature_set_sha256=hash_bytes(
-                canonical_json_bytes({"features": sorted(feature_list), "version": FEATURE_SET_VERSION})
+                canonical_json_bytes(
+                    {"features": sorted(feature_list), "version": FEATURE_SET_VERSION}
+                )
             ),
         ),
         label=LabelIdentity(name=str(label), horizon_bars=int(label_horizon_bars)),

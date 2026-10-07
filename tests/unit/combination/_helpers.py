@@ -41,5 +41,7 @@ def crps_gaussian(y: FloatArray, mu: FloatArray, sigma: FloatArray) -> FloatArra
     mu = np.asarray(mu, dtype=float)
     sigma = np.asarray(sigma, dtype=float)
     z = (y - mu) / sigma
-    return np.asarray(sigma * (z * (2.0 * norm.cdf(z) - 1.0) + 2.0 * norm.pdf(z)
-                               - 1.0 / np.sqrt(np.pi)), dtype=np.float64)
+    return np.asarray(
+        sigma * (z * (2.0 * norm.cdf(z) - 1.0) + 2.0 * norm.pdf(z) - 1.0 / np.sqrt(np.pi)),
+        dtype=np.float64,
+    )

@@ -42,8 +42,9 @@ correctness fixtures only.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Final, Protocol, Sequence
+from typing import Any, Final, Protocol
 
 import numpy as np
 from numpy.typing import NDArray
@@ -278,9 +279,7 @@ class _GarchKeyFit:
         return {
             "variance": np.asarray(raw["variance"], dtype=float).reshape(-1),
             "mean": float(raw["mean"]),
-            "quantiles": None
-            if quantiles is None
-            else np.asarray(raw["quantiles"], dtype=float),
+            "quantiles": None if quantiles is None else np.asarray(raw["quantiles"], dtype=float),
         }
 
 
@@ -493,7 +492,12 @@ class KeyedVarianceForecast:
 
 
 def _validate_garch_order(p: int, q: int) -> None:
-    if isinstance(p, bool) or isinstance(q, bool) or not isinstance(p, int) or not isinstance(q, int):
+    if (
+        isinstance(p, bool)
+        or isinstance(q, bool)
+        or not isinstance(p, int)
+        or not isinstance(q, int)
+    ):
         raise ValueError("p and q must be positive integers")
     if p < 1 or q < 1:
         raise ValueError("p and q must be positive integers")
