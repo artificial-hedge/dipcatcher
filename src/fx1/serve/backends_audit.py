@@ -422,7 +422,7 @@ def _probe_transport() -> dict[str, bool]:
             return _Body(self.payload)
 
     opener = _Opener(b'{"ok": true}')
-    with patch.object(backends.urllib.request, "build_opener", lambda *a: opener):
+    with patch.object(backends.urllib.request, "build_opener", return_value=opener):
         with _openai_urlopen(req, timeout_s=7.0) as resp:
             out["urlopen_normal_reads_body"] = resp.read() == b'{"ok": true}'
         out["urlopen_forwards_timeout"] = opener.seen["timeout"] == 7.0
@@ -431,7 +431,7 @@ def _probe_transport() -> dict[str, bool]:
         def open(self, request: urllib.request.Request, timeout: float = 0):
             raise _http_error(500)
 
-    with patch.object(backends.urllib.request, "build_opener", lambda *a: _ErrOpener()):
+    with patch.object(backends.urllib.request, "build_opener", return_value=_ErrOpener()):
         ok, exc = _run(lambda: _openai_urlopen(req, timeout_s=1.0).__enter__())
         out["urlopen_httperror_reraised"] = not ok and isinstance(exc, urllib.error.HTTPError)
 
@@ -458,7 +458,7 @@ def _probe_transport() -> dict[str, bool]:
     with patch.object(
         backends,
         "_open_byok_pinned",
-        lambda request, *, timeout_s, allow_private: (resp200, conn200),
+        return_value=(resp200, conn200),
     ):
         with _openai_urlopen(breq, timeout_s=1.0) as resp:
             out["pinned_2xx_yields_response"] = resp is resp200
@@ -469,7 +469,7 @@ def _probe_transport() -> dict[str, bool]:
     with patch.object(
         backends,
         "_open_byok_pinned",
-        lambda request, *, timeout_s, allow_private: (resp503, conn503),
+        return_value=(resp503, conn503),
     ):
         ok, exc = _run(lambda: _openai_urlopen(breq, timeout_s=1.0).__enter__())
         out["pinned_non2xx_is_httperror"] = not ok and isinstance(exc, urllib.error.HTTPError)
@@ -1094,10 +1094,10 @@ def _probe_backend_classes() -> dict[str, bool]:
             ok, exc = _run(lb.count_tokens, _MSGS)
             out["local_count_unconfigured"] = not ok and isinstance(exc, BackendNotConfiguredError)
         with _env({k: None for k in _ENV_KEYS} | {"FX1_SIGNING_KEY": "k"}):
-            with patch("fx1.serve.signing.verify_release", lambda root: False):
+            with patch("fx1.serve.signing.verify_release", return_value=False):
                 ok, exc = _run(LocalFx1Backend, ck)
                 out["local_unsigned_refuses"] = not ok and isinstance(exc, RuntimeError)
-            with patch("fx1.serve.signing.verify_release", lambda root: True):
+            with patch("fx1.serve.signing.verify_release", return_value=True):
                 ok2, lb2 = _run(LocalFx1Backend, ck)
                 out["local_signed_passes"] = ok2
         with _env({k: None for k in _ENV_KEYS} | {LOCAL_SERVE_URL_ENV: "ftp://x"}):
@@ -1147,7 +1147,9 @@ def _probe_backend_classes() -> dict[str, bool]:
             lb5 = LocalFx1Backend(ck)
             with (
                 patch.object(
-                    backends.LocalFx1Backend, "_engine_up", lambda self: lb5._proc is not None
+                    backends.LocalFx1Backend,
+                    "_engine_up",
+                    side_effect=lambda: lb5._proc is not None,
                 ),
                 patch.object(backends.subprocess, "Popen", _FakeProc),
             ):
