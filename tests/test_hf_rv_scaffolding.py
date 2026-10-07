@@ -1,15 +1,20 @@
-"""HF-RV scaffolding pinning tests (Day Wave 140 design drop).
+"""HF-RV pinning tests (Day Wave 140 design drop).
 
-These tests are a contract for the follow-up implementation wave. They pin:
+These tests pin the public surface of ``quant_fund.realized.hf_rv`` and the
+minimum-behavior contracts documented in ``docs/HF_RV_DESIGN.md``:
 
 - :mod:`quant_fund.realized.hf_rv` is importable.
 - :class:`HFRVResult` is a dataclass with the planned fields.
 - :func:`compute_hf_rv` has signature
   ``(bars, asof, available_time, *, window_bars=288, apply_tick_subsample=True, subsample_stride=5, rng_seed=None)``.
-- :func:`compute_hf_rv` raises :class:`NotImplementedError` with the
-  pinned message on every call (scaffolding is intentionally not implemented).
-- The function's exception message references the design doc path so a
-  future reader can find the contract.
+- With too-small input (1-bar, empty) the function returns
+  ``HFRVResult(honest=False)`` so downstream consumers fail closed
+  (matching the design doc's "fail-closed" contract).
+
+The original scaffolding pin (raising :class:`NotImplementedError`) was
+retired when the implementation landed; this file now exercises the
+public surface plus the two fail-mode-shaped boundaries the scaffolding
+tests originally expressed.
 """
 
 from __future__ import annotations
@@ -18,11 +23,9 @@ import inspect
 from datetime import UTC, datetime
 
 import pandas as pd
-import pytest
 
 from quant_fund.realized.hf_rv import HFRVResult, compute_hf_rv
 
-EXPECTED_ERROR_SUBSTRING = "hf_rv_committed: see docs/HF_RV_DESIGN.md"
 EXPECTED_PARAM_NAMES = ["bars", "asof", "available_time"]
 
 
@@ -73,7 +76,15 @@ def test_compute_hf_rv_defaults() -> None:
     assert sig.parameters["rng_seed"].default is None
 
 
-def test_compute_hf_rv_raises_not_implemented_with_synthetic_input() -> None:
+def test_compute_hf_rv_runs_and_marks_fail_closed_on_trivial_bars() -> None:
+    """A 1-bar frame has zero log returns; the function must fail closed.
+
+    The original scaffolding pin asserted that :func:`compute_hf_rv`
+    raised :class:`NotImplementedError` on a 1-bar frame. With the
+    implementation landed, the same input shape produces a well-formed
+    :class:`HFRVResult` with ``honest=False`` so downstream consumers
+    detect fail-closed uniformly.
+    """
     asof = pd.Timestamp(datetime(2024, 1, 2, 20, 0, tzinfo=UTC))
     available_time = pd.Timestamp(datetime(2024, 1, 2, 20, 0, tzinfo=UTC))
     bars = pd.DataFrame(
@@ -86,17 +97,21 @@ def test_compute_hf_rv_raises_not_implemented_with_synthetic_input() -> None:
             "close": [100.2],
         }
     )
-    with pytest.raises(NotImplementedError) as excinfo:
-        compute_hf_rv(bars, asof, available_time)
-    assert EXPECTED_ERROR_SUBSTRING in str(excinfo.value)
+    result = compute_hf_rv(bars, asof, available_time)
+    assert result.honest is False, (
+        "A 1-bar frame has zero log returns; the function must fail closed."
+    )
+    assert result.n_obs == 0
+    assert result.asof == asof
 
 
-def test_compute_hf_rv_raises_on_empty_bars() -> None:
+def test_compute_hf_rv_fail_closed_on_empty_bars() -> None:
     asof = pd.Timestamp(datetime(2024, 1, 2, 20, 0, tzinfo=UTC))
     available_time = pd.Timestamp(datetime(2024, 1, 2, 20, 0, tzinfo=UTC))
-    with pytest.raises(NotImplementedError) as excinfo:
-        compute_hf_rv(pd.DataFrame(), asof, available_time)
-    assert EXPECTED_ERROR_SUBSTRING in str(excinfo.value)
+    result = compute_hf_rv(pd.DataFrame(), asof, available_time)
+    assert result.honest is False
+    assert result.n_obs == 0
+    assert result.asof == asof
 
 
 def test_module_exports_match_design_doc() -> None:
