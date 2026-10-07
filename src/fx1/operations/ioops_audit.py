@@ -87,6 +87,17 @@ _T0 = _dt("2024-01-01T00:00:00+00:00")
 _T1 = _dt("2024-01-01T00:01:00+00:00")
 _T2 = _dt("2024-01-01T00:02:00+00:00")
 _T3 = _dt("2024-01-01T00:03:00+00:00")
+_A_CSV = "a.csv"
+_BARS_CSV = "bars.csv"
+_ROWS_JSONL = "rows.jsonl"
+_CFG_TOML = "cfg.toml"
+_ARR_NPY = "arr.npy"
+_T_PARQUET = "t.parquet"
+_ARC_ZIP = "arc.zip"
+_DATA_A_TXT = "data/a.txt"
+_F_JSON = "f.json"
+
+
 _DEC = _dt("2024-01-02T00:00:00+00:00")
 _FAR = _dt("2024-03-01T00:00:00+00:00")
 
@@ -166,8 +177,8 @@ def _probe_descriptors() -> dict[str, bool]:
 def _probe_containment(ws: _Ws) -> dict[str, bool]:
     """Every file op must refuse escapes, wrong suffixes, absent files."""
     out: dict[str, bool] = {}
-    ws.write("a.csv", "x,y\n1,2\n")
-    csv_in = read_csv.Input(path="a.csv")
+    ws.write(_A_CSV, "x,y\n1,2\n")
+    csv_in = read_csv.Input(path=_A_CSV)
     out["ct_legit_read"] = read_csv.execute(csv_in, ws.ctx).total_rows == 1
     out["ct_escape_refused"] = _fails(
         lambda: read_csv.execute(read_csv.Input(path="../escape.csv"), ws.ctx)
@@ -206,7 +217,7 @@ def _link(ws: _Ws) -> str:
     """Create a workspace symlink pointing inside the root; still refused."""
     target = ws.root / "linked.csv"
     if not target.is_symlink():
-        target.symlink_to(ws.root / "a.csv")
+        target.symlink_to(ws.root / _A_CSV)
     return "linked.csv"
 
 
@@ -214,10 +225,10 @@ def _probe_read_csv(ws: _Ws) -> dict[str, bool]:
     out: dict[str, bool] = {}
     mod = read_csv
     ws.write(
-        "bars.csv",
+        _BARS_CSV,
         "t,o,h,l,c,v\n2024-01-01,10,12,9,11,5\n2024-01-02,11,13,10,12,7\n\n2024-01-03,12,14,11,13,9\n",
     )
-    r = mod.execute(mod.Input(path="bars.csv"), ws.ctx)
+    r = mod.execute(mod.Input(path=_BARS_CSV), ws.ctx)
     out["csv_columns"] = r.columns == ["t", "o", "h", "l", "c", "v"]
     out["csv_exact_strings"] = r.rows[0] == {
         "t": "2024-01-01",
@@ -229,10 +240,10 @@ def _probe_read_csv(ws: _Ws) -> dict[str, bool]:
     }
     out["csv_blank_skipped"] = r.blank_records_skipped == 1 and r.total_rows == 3
     out["csv_sha_matches"] = (
-        r.source_sha256 == _sha256((ws.root / "bars.csv").read_bytes())
-        and r.source_bytes == (ws.root / "bars.csv").stat().st_size
+        r.source_sha256 == _sha256((ws.root / _BARS_CSV).read_bytes())
+        and r.source_bytes == (ws.root / _BARS_CSV).stat().st_size
     )
-    page = mod.execute(mod.Input(path="bars.csv", offset=1, limit=1), ws.ctx)
+    page = mod.execute(mod.Input(path=_BARS_CSV, offset=1, limit=1), ws.ctx)
     out["csv_paged"] = (
         page.returned_rows == 1 and page.has_more is True and page.rows[0]["t"] == "2024-01-02"
     )
@@ -244,8 +255,8 @@ def _probe_read_csv(ws: _Ws) -> dict[str, bool]:
     ws.write("semis.csv", "x;y\n1;2\n")
     semi = mod.execute(mod.Input(path="semis.csv", delimiter=";"), ws.ctx)
     out["csv_delimiter"] = semi.rows == [{"x": "1", "y": "2"}]
-    out["csv_reject_bad_delimiter"] = _refuses(mod.Input, path="a.csv", delimiter="\n")
-    out["csv_extra_forbid"] = _refuses(mod.Input, path="a.csv", bogus=1)
+    out["csv_reject_bad_delimiter"] = _refuses(mod.Input, path=_A_CSV, delimiter="\n")
+    out["csv_extra_forbid"] = _refuses(mod.Input, path=_A_CSV, bogus=1)
     return out
 
 
@@ -253,10 +264,10 @@ def _probe_read_jsonl(ws: _Ws) -> dict[str, bool]:
     out: dict[str, bool] = {}
     mod = read_jsonl
     ws.write(
-        "rows.jsonl",
+        _ROWS_JSONL,
         '{"a": 1, "b": "x"}\n\n{"a": 2, "c": true}\n{"a": 3, "b": null}\n',
     )
-    r = mod.execute(mod.Input(path="rows.jsonl"), ws.ctx)
+    r = mod.execute(mod.Input(path=_ROWS_JSONL), ws.ctx)
     out["jl_rows_parsed"] = r.rows[0] == {"a": 1, "b": "x"} and r.rows[2] == {
         "a": 3,
         "b": None,
@@ -264,8 +275,8 @@ def _probe_read_jsonl(ws: _Ws) -> dict[str, bool]:
     out["jl_blank_skipped"] = r.blank_lines_skipped == 1
     out["jl_physical_lines"] = r.physical_line_numbers == [1, 3, 4]
     out["jl_union_columns"] = sorted(r.columns) == ["a", "b", "c"]
-    out["jl_sha"] = r.source_sha256 == _sha256((ws.root / "rows.jsonl").read_bytes())
-    page = mod.execute(mod.Input(path="rows.jsonl", offset=2, limit=1), ws.ctx)
+    out["jl_sha"] = r.source_sha256 == _sha256((ws.root / _ROWS_JSONL).read_bytes())
+    page = mod.execute(mod.Input(path=_ROWS_JSONL, offset=2, limit=1), ws.ctx)
     out["jl_paged"] = page.returned_rows == 1 and page.rows[0]["a"] == 3
     ws.write("dup.jsonl", '{"a": 1}\n{"a": 1, "a": 2}\n')
     out["jl_dup_keys_refused"] = _fails(
@@ -283,7 +294,7 @@ def _probe_read_toml(ws: _Ws) -> dict[str, bool]:
     out: dict[str, bool] = {}
     mod = read_toml
     ws.write(
-        "cfg.toml",
+        _CFG_TOML,
         'title = "demo"\n'
         "when = 2024-01-01T10:00:00Z\n"
         "day = 2024-01-02\n"
@@ -291,7 +302,7 @@ def _probe_read_toml(ws: _Ws) -> dict[str, bool]:
         "[nested]\n"
         "flag = true\n",
     )
-    r = mod.execute(mod.Input(path="cfg.toml"), ws.ctx)
+    r = mod.execute(mod.Input(path=_CFG_TOML), ws.ctx)
     out["toml_parsed"] = r.data["title"] == "demo" and r.data["nested"] == {"flag": True}
     kinds = {t.kind for t in r.temporal_values}
     out["toml_temporals_classified"] = kinds == {
@@ -299,12 +310,12 @@ def _probe_read_toml(ws: _Ws) -> dict[str, bool]:
         "local_date",
         "local_time",
     }
-    sub = mod.execute(mod.Input(path="cfg.toml", table_path=["nested"]), ws.ctx)
+    sub = mod.execute(mod.Input(path=_CFG_TOML, table_path=["nested"]), ws.ctx)
     out["toml_table_path"] = sub.data == {"flag": True}
-    out["toml_sha"] = r.source_sha256 == _sha256((ws.root / "cfg.toml").read_bytes())
+    out["toml_sha"] = r.source_sha256 == _sha256((ws.root / _CFG_TOML).read_bytes())
     ws.write("bad.toml", "x = [unclosed\n")
     out["toml_invalid_refused"] = _fails(lambda: mod.execute(mod.Input(path="bad.toml"), ws.ctx))
-    out["toml_extra_forbid"] = _refuses(mod.Input, path="cfg.toml", bogus=1)
+    out["toml_extra_forbid"] = _refuses(mod.Input, path=_CFG_TOML, bogus=1)
     return out
 
 
@@ -313,8 +324,8 @@ def _probe_inspect_numpy(ws: _Ws) -> dict[str, bool]:
     import numpy as np
 
     mod = inspect_numpy_array
-    np.save(ws.root / "arr.npy", np.arange(12, dtype=np.float64).reshape(3, 4))
-    r = mod.execute(mod.Input(path="arr.npy"), ws.ctx)
+    np.save(ws.root / _ARR_NPY, np.arange(12, dtype=np.float64).reshape(3, 4))
+    r = mod.execute(mod.Input(path=_ARR_NPY), ws.ctx)
     out["npy_shape"] = r.shape == [3, 4] and r.element_count == 12
     out["npy_dtype"] = (
         r.dtype == "float64"
@@ -324,12 +335,12 @@ def _probe_inspect_numpy(ws: _Ws) -> dict[str, bool]:
     )
     out["npy_no_fortran"] = r.fortran_order is False
     out["npy_payload"] = r.payload_bytes == 96
-    out["npy_sha"] = r.source_sha256 == _sha256((ws.root / "arr.npy").read_bytes())
+    out["npy_sha"] = r.source_sha256 == _sha256((ws.root / _ARR_NPY).read_bytes())
     np.save(ws.root / "obj.npy", np.array([{"a": 1}], dtype=object), allow_pickle=True)
     out["npy_object_refused"] = _fails(lambda: mod.execute(mod.Input(path="obj.npy"), ws.ctx))
-    ws.write("trail.npy", (ws.root / "arr.npy").read_bytes() + b"JUNK")
+    ws.write("trail.npy", (ws.root / _ARR_NPY).read_bytes() + b"JUNK")
     out["npy_trailing_refused"] = _fails(lambda: mod.execute(mod.Input(path="trail.npy"), ws.ctx))
-    out["npy_extra_forbid"] = _refuses(mod.Input, path="arr.npy", bogus=1)
+    out["npy_extra_forbid"] = _refuses(mod.Input, path=_ARR_NPY, bogus=1)
     return out
 
 
@@ -340,8 +351,8 @@ def _probe_inspect_parquet(ws: _Ws) -> dict[str, bool]:
 
     mod = inspect_parquet
     table = pa.table({"a": [1, 2, 3], "b": ["x", "y", None]})
-    pq.write_table(table, ws.root / "t.parquet", row_group_size=2)
-    r = mod.execute(mod.Input(path="t.parquet"), ws.ctx)
+    pq.write_table(table, ws.root / _T_PARQUET, row_group_size=2)
+    r = mod.execute(mod.Input(path=_T_PARQUET), ws.ctx)
     out["pq_columns"] = [c.name for c in r.columns] == ["a", "b"]
     out["pq_leaf_count"] = r.leaf_column_count == 2 and r.total_rows == 3
     out["pq_row_groups"] = r.row_group_count == 2
@@ -349,31 +360,31 @@ def _probe_inspect_parquet(ws: _Ws) -> dict[str, bool]:
         "a": True,
         "b": True,
     }
-    page = mod.execute(mod.Input(path="t.parquet", row_group_offset=1, row_group_limit=1), ws.ctx)
+    page = mod.execute(mod.Input(path=_T_PARQUET, row_group_offset=1, row_group_limit=1), ws.ctx)
     out["pq_row_group_paged"] = (
         len(page.row_groups) == 1
         and page.row_groups[0].index == 1
         and page.has_more_row_groups is False
     )
-    out["pq_sha"] = r.source_sha256 == _sha256((ws.root / "t.parquet").read_bytes())
+    out["pq_sha"] = r.source_sha256 == _sha256((ws.root / _T_PARQUET).read_bytes())
     ws.write("junk.parquet", b"NOTAPARQUETFILE")
     out["pq_invalid_refused"] = _fails(lambda: mod.execute(mod.Input(path="junk.parquet"), ws.ctx))
-    out["pq_extra_forbid"] = _refuses(mod.Input, path="t.parquet", bogus=1)
+    out["pq_extra_forbid"] = _refuses(mod.Input, path=_T_PARQUET, bogus=1)
     return out
 
 
 def _probe_inspect_zip(ws: _Ws) -> dict[str, bool]:
     out: dict[str, bool] = {}
     mod = inspect_zip
-    zpath = ws.root / "arc.zip"
+    zpath = ws.root / _ARC_ZIP
     with zipfile.ZipFile(zpath, "w") as zf:
-        zf.writestr("data/a.txt", "hello")
+        zf.writestr(_DATA_A_TXT, "hello")
         zf.writestr("data/b.txt", "world")
-        zf.writestr("data/a.txt", "dup")  # duplicate name
+        zf.writestr(_DATA_A_TXT, "dup")  # duplicate name
         zf.writestr("../evil.txt", "escape")
         info = zipfile.ZipInfo("dironly/")
         zf.writestr(info, "")
-    r = mod.execute(mod.Input(path="arc.zip"), ws.ctx)
+    r = mod.execute(mod.Input(path=_ARC_ZIP), ws.ctx)
     out["zip_counts"] = r.entry_count == 5 and r.file_count >= 4
     out["zip_dirs_counted"] = r.directory_count == 1
     out["zip_dup_names"] = r.duplicate_name_count >= 1
@@ -381,13 +392,13 @@ def _probe_inspect_zip(ws: _Ws) -> dict[str, bool]:
         r.entries_with_path_issues >= 1 and sum(r.path_issue_counts.values()) >= 1
     )
     names = [m.name for m in r.members]
-    out["zip_members_listed"] = "data/a.txt" in names and r.members[0].index == 0
+    out["zip_members_listed"] = _DATA_A_TXT in names and r.members[0].index == 0
     out["zip_declared_sizes"] = r.total_declared_uncompressed_bytes >= 18
     out["zip_sha"] = r.source_sha256 == _sha256(zpath.read_bytes())
-    page = mod.execute(mod.Input(path="arc.zip", offset=4, limit=1), ws.ctx)
+    page = mod.execute(mod.Input(path=_ARC_ZIP, offset=4, limit=1), ws.ctx)
     out["zip_paged"] = len(page.members) == 1 and page.members[0].index == 4
     out["zip_no_extract_side_effects"] = not (ws.root / "evil.txt").exists()
-    out["zip_extra_forbid"] = _refuses(mod.Input, path="arc.zip", bogus=1)
+    out["zip_extra_forbid"] = _refuses(mod.Input, path=_ARC_ZIP, bogus=1)
     return out
 
 
@@ -395,16 +406,16 @@ def _probe_verify_hash(ws: _Ws) -> dict[str, bool]:
     out: dict[str, bool] = {}
     mod = verify_file_hash
     content = b'{"k": 1}\n'
-    ws.write("f.json", content)
-    good = mod.execute(mod.Input(path="f.json", expected_sha256=_sha256(content)), ws.ctx)
+    ws.write(_F_JSON, content)
+    good = mod.execute(mod.Input(path=_F_JSON, expected_sha256=_sha256(content)), ws.ctx)
     out["vh_match"] = (
         good.digest_matches is True and good.matches is True and good.actual_bytes == len(content)
     )
-    bad = mod.execute(mod.Input(path="f.json", expected_sha256="a" * 64), ws.ctx)
+    bad = mod.execute(mod.Input(path=_F_JSON, expected_sha256="a" * 64), ws.ctx)
     out["vh_mismatch"] = bad.digest_matches is False and bad.matches is False
     sized = mod.execute(
         mod.Input(
-            path="f.json",
+            path=_F_JSON,
             expected_sha256=_sha256(content),
             expected_bytes=len(content),
         ),
@@ -413,7 +424,7 @@ def _probe_verify_hash(ws: _Ws) -> dict[str, bool]:
     out["vh_size_check"] = sized.size_matches is True
     wrong_size = mod.execute(
         mod.Input(
-            path="f.json",
+            path=_F_JSON,
             expected_sha256=_sha256(content),
             expected_bytes=999,
         ),
@@ -423,13 +434,13 @@ def _probe_verify_hash(ws: _Ws) -> dict[str, bool]:
         wrong_size.size_matches is False and wrong_size.matches is False
     )
     upper = mod.execute(
-        mod.Input(path="f.json", expected_sha256=_sha256(content).upper()),
+        mod.Input(path=_F_JSON, expected_sha256=_sha256(content).upper()),
         ws.ctx,
     )
     out["vh_upper_normalized"] = upper.digest_matches is True
-    out["vh_reject_short_digest"] = _refuses(mod.Input, path="f.json", expected_sha256="abc")
-    out["vh_reject_nonhex"] = _refuses(mod.Input, path="f.json", expected_sha256="z" * 64)
-    out["vh_extra_forbid"] = _refuses(mod.Input, path="f.json", expected_sha256="0" * 64, bogus=1)
+    out["vh_reject_short_digest"] = _refuses(mod.Input, path=_F_JSON, expected_sha256="abc")
+    out["vh_reject_nonhex"] = _refuses(mod.Input, path=_F_JSON, expected_sha256="z" * 64)
+    out["vh_extra_forbid"] = _refuses(mod.Input, path=_F_JSON, expected_sha256="0" * 64, bogus=1)
     return out
 
 
