@@ -58,6 +58,27 @@ app = typer.Typer(
     help="Dipcatcher — Artificial Hedge's proprietary research lab. Default mode is research, never live."
 )
 
+# The fx-1 interactive front door is the `fxi` console script (pyproject.toml:
+# fxi = "fx1.interactive.app:main"; see docs/FXI.md). It is deliberately NOT
+# wired into bare `dipcatcher`: doing so requires a quant_fund -> fx1 import,
+# which configs/arch_boundaries.toml denies under `harness-no-fx1-imports` and
+# tests/unit/test_fx1_dependency_edge.py enforces. The harness gates the model;
+# it never imports it. The only sanctioned seam is fx1.__version__ in
+# src/quant_fund/__init__.py, which hatch reads for the distribution version.
+
+
+@app.callback(invoke_without_command=True)
+def _bare_help(ctx: typer.Context) -> None:
+    """Bare ``dipcatcher`` prints help and exits 0.
+
+    Click exits 2 when a root Typer app has only sub-typers and no direct
+    commands, even with ``no_args_is_help=True``. This callback restores the
+    expected help-and-zero behavior without importing any fx1 code.
+    """
+    if ctx.invoked_subcommand is None:
+        ctx.get_help()
+        raise typer.Exit()
+
 
 train_app = typer.Typer(help="Train a forecast family.")
 app.add_typer(train_app, name="train")

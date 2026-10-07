@@ -4807,12 +4807,16 @@ def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     out: Path = typer.Option(Path("data/fx1/eval.json")),
+    model: str | None = typer.Option(
+        None,
+        help="Model id sent to a hosted backend (default: the backend's pin).",
+    ),
 ) -> None:
     """Run the built-in eval task bank against an fx-1 backend."""
     from fx1.eval import DEFAULT_BANK, run_suite
 
-    model = _resolve_model_backend(backend, checkpoint_dir)
-    summary = run_suite(model, list(DEFAULT_BANK))
+    model_backend = _resolve_model_backend(backend, checkpoint_dir, model)
+    summary = run_suite(model_backend, list(DEFAULT_BANK))
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     typer.echo(
@@ -4823,7 +4827,9 @@ def eval_bank(
     )
 
 
-def _resolve_model_backend(backend: str, checkpoint_dir: Path | None) -> ModelFn:
+def _resolve_model_backend(
+    backend: str, checkpoint_dir: Path | None, model: str | None = None
+) -> ModelFn:
     """Resolve the model under test. Fail-closed on unknown names.
 
     ``local_fx1`` needs ``--checkpoint-dir``; ``byok`` reads the
@@ -4837,7 +4843,10 @@ def _resolve_model_backend(backend: str, checkpoint_dir: Path | None) -> ModelFn
     if backend == "local_fx1":
         return get_backend("local_fx1", checkpoint_dir=checkpoint_dir).complete
     if backend in ("hosted_k3", "byok"):
-        return get_backend(backend).complete
+        kwargs: dict[str, object] = {}
+        if model is not None:
+            kwargs["model"] = model
+        return get_backend(backend, **kwargs).complete
     typer.echo(f"unknown --backend {backend!r}; choose hosted_k3 | local_fx1 | byok", err=True)
     raise typer.Exit(code=2)
 

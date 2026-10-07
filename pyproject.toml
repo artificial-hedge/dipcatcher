@@ -79,9 +79,11 @@ Issues = "https://github.com/artificial-hedge/dipcatcher/issues"
 [project.scripts]
 fx1 = "fx1.cli:app"
 # Harness aliases: dipcatcher remains the lab/harness CLI used to build,
-# evaluate, and verify fx-1.
+# evaluate, and verify fx-1. fxi is the interactive orchestration front door
+# (chat, /superpower, web research, flash context).
 quant = "quant_fund.cli.main:app"
 dipcatcher = "quant_fund.cli.main:app"
+fxi = "fx1.interactive.app:main"
 verify-ledger = "quant_fund.audit.cli:main"
 mc-engine = "quant_fund.mc_engine.cli:app"
 
