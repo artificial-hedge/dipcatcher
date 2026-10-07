@@ -19,12 +19,15 @@ from quant_fund.models._pd_synth import (
 FloatArray = NDArray[np.float64]
 
 
-def _zigzag(seed: int, horizon: float = 800.0) -> FloatArray:
+def _zigzag_trace(seed: int, horizon: float = 800.0) -> tuple[FloatArray, FloatArray]:
+    """Run the skeleton; return (times, positions) at every event. Positions are
+    piecewise linear between events along the active velocity."""
     rng = np.random.default_rng(seed)
     x = np.zeros(DIM)
     v = rng.choice([-1.0, 1.0], DIM)
     t = 0.0
-    out = []
+    times = [0.0]
+    pos = [x.copy()]
     while t < horizon:
         gu = -grad_logp(x)
         rates = np.maximum(0.0, v * gu)
@@ -41,8 +44,26 @@ def _zigzag(seed: int, horizon: float = 800.0) -> FloatArray:
         lam_true = max(0.0, float(v[i] * (-grad_logp(x)[i])))
         if rng.random() < lam_true / lam[i]:
             v[i] = -v[i]
-        out.append(x.copy())
-    return np.asarray(out)
+        times.append(t)
+        pos.append(x.copy())
+    return np.asarray(times), np.asarray(pos)
+
+
+def _zigzag(seed: int, horizon: float = 800.0, n_grid: int = 4000) -> FloatArray:
+    """Uniform-time resample of the skeleton. Event-time subsamples are biased
+    for PDMPs (events are not a Poisson time process); moments/ESS must be
+    computed on time-uniform positions, reconstructed exactly since the path
+    is linear between events."""
+    times, pos = _zigzag_trace(seed, horizon)
+    if times.size < 2:
+        return pos
+    grid = np.linspace(0.0, times[-1], min(n_grid, times.size * 4))
+    idx = np.searchsorted(times, grid, side="right") - 1
+    idx = np.clip(idx, 0, times.size - 2)
+    # velocity on segment k = (pos[k+1]-pos[k]) / (times[k+1]-times[k])
+    seg_dt = times[idx + 1] - times[idx]
+    frac = (grid - times[idx]) / np.maximum(seg_dt, 1e-12)
+    return pos[idx] + (pos[idx + 1] - pos[idx]) * frac[:, None]
 
 
 def bench_zigzag_sampler(seed: int = 2207) -> dict[str, float]:

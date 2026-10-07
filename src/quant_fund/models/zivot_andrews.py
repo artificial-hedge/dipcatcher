@@ -63,6 +63,8 @@ def zivot_andrews(
         raise ValueError("bad series")
     if np.std(np.diff(xx)) < 1e-12:
         raise ValueError("degenerate")
+    if not isinstance(k, (int, np.integer)) or k < 0 or 2 * k + 15 > xx.size:
+        raise ValueError("k must leave >=10 dof at every grid point")
     t = xx.size
     dy = np.diff(xx)
     best_t, best_b = np.inf, -1

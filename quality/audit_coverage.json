@@ -24492,7 +24492,16 @@
   "models/xiwangmu_qa_studies.py": {
    "status": "audited"
   },
+  "models/xlstm_mlstm.py": {
+   "status": "audited"
+  },
   "models/xlsum_studies.py": {
+   "status": "audited"
+  },
+  "models/xmss_sig.py": {
+   "status": "audited"
+  },
+  "models/xor_filter.py": {
    "status": "audited"
   },
   "models/xor_linked_list.py": {
@@ -24567,6 +24576,9 @@
   "models/ymir_qa_studies.py": {
    "status": "audited"
   },
+  "models/yoneda_embed.py": {
+   "status": "audited"
+  },
   "models/yosida_op.py": {
    "status": "audited"
   },
@@ -24588,10 +24600,16 @@
   "models/z_curve.py": {
    "status": "audited"
   },
+  "models/z_function.py": {
+   "status": "audited"
+  },
   "models/z_stability.py": {
    "status": "audited"
   },
   "models/z_transform.py": {
+   "status": "audited"
+  },
+  "models/zab_protocol.py": {
    "status": "audited"
   },
   "models/zagier_polylog.py": {
@@ -24609,7 +24627,13 @@
   "models/zariski_main.py": {
    "status": "audited"
   },
+  "models/zariski_topo.py": {
+   "status": "audited"
+  },
   "models/zashiki_warashi_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/zbuffer_render.py": {
    "status": "audited"
   },
   "models/zebra_logic_studies.py": {
@@ -24645,6 +24669,9 @@
   "models/zeta_fn.py": {
    "status": "audited"
   },
+  "models/zeta_mobius.py": {
+   "status": "audited"
+  },
   "models/zhaba_qa_studies.py": {
    "status": "audited"
   },
@@ -24663,13 +24690,28 @@
   "models/zienkiewicz_zhu.py": {
    "status": "audited"
   },
+  "models/zigzag_sampler.py": {
+   "status": "audited"
+  },
   "models/zilant_qa_studies.py": {
    "status": "audited"
   },
   "models/zinnia_qa_studies.py": {
    "status": "audited"
   },
+  "models/zivot_andrews.py": {
+   "status": "audited"
+  },
+  "models/zkp_schnorr.py": {
+   "status": "audited"
+  },
   "models/zmei_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/zone_dbm.py": {
+   "status": "audited"
+  },
+  "models/zone_map.py": {
    "status": "audited"
   },
   "models/zooarchaeology.py": {

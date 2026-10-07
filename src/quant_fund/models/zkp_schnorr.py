@@ -42,13 +42,12 @@ def bench_zkp_schnorr(seed: int = 20261231 + 424) -> dict[str, float]:
         s = (r + c * w) % Q
         complete += int(pow(G, s, P) == t * pow(pub, c, P) % P)
         # soundness: second challenge on same commitment t
-        c2 = (c + rng.randrange(1, Q - 1)) % Q or 1
-        if c2 != c:
-            s2 = (r + c2 * w) % Q
-            w_ext = (s - s2) * pow(c - c2, -1, Q) % Q
-            sound += int(pow(G, w_ext, P) == pub)
-        else:
-            sound += 1
+        c2 = c
+        while c2 == c or c2 == 0:
+            c2 = (c + rng.randrange(1, Q)) % Q
+        s2 = (r + c2 * w) % Q
+        w_ext = (s - s2) * pow(c - c2, -1, Q) % Q
+        sound += int(pow(G, w_ext, P) == pub)
         # honest-verifier simulation: pick s,c then t = g^s * pub^-c — no w needed
         c3 = rng.randrange(1, Q)
         s3 = rng.randrange(1, Q)

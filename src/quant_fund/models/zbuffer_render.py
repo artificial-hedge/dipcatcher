@@ -59,13 +59,20 @@ def bench_zbuffer_render(seed: int = 20261231 + 383) -> dict[str, float]:
         owner = raster([first, second])
         # tri_b (z=0.2) is nearer → where both cover, owner must be tri_b's index
         idx_b = 0 if first == tri_b else 1
-        idx_a = 1 - idx_b
-        overlap = sum(1 for row in owner for o in row if o == idx_b)
-        a_px = sum(1 for row in owner for o in row if o == idx_a)
-        near_wins += int(overlap > 0)
+        cov_a = raster([tri_a])
+        cov_b = raster([tri_b])
+        overlap_px = sum(
+            1 for y in range(32) for x in range(32) if cov_a[y][x] >= 0 and cov_b[y][x] >= 0
+        )
+        b_wins_all = all(
+            owner[y][x] == idx_b
+            for y in range(32)
+            for x in range(32)
+            if cov_a[y][x] >= 0 and cov_b[y][x] >= 0
+        )
+        near_wins += int(overlap_px > 0 and b_wins_all)
         # finite check
         finite += int(all(o in (-1, 0, 1) for row in owner for o in row))
-        _ = a_px
     # second, stricter: per-pixel winner is the nearer z
     strict = 0
     strict_trials = 40
@@ -75,8 +82,15 @@ def bench_zbuffer_render(seed: int = 20261231 + 383) -> dict[str, float]:
             (t1[i][0] + rng.uniform(-3, 3), t1[i][1] + rng.uniform(-3, 3), 0.1) for i in range(3)
         )
         owner = raster([t1, t2])
+        o1 = raster([t1])
+        o2 = raster([t2])
         # wherever both triangles cover (t2 smaller depth), owner==1
-        ok = all(o != 0 or True for row in owner for o in row)
+        ok = all(
+            owner[y][x] == 1
+            for y in range(32)
+            for x in range(32)
+            if o1[y][x] >= 0 and o2[y][x] >= 0
+        )
         strict += int(ok)
     return {
         "synthetic_nearer_wins": float(near_wins / trials),

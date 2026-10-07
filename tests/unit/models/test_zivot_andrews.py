@@ -39,3 +39,13 @@ def test_bench_schema_and_score() -> None:
     for k, v in r.items():
         assert np.isfinite(v), k
     assert r["synthetic_score"] == 1.0
+
+
+def test_k_must_leave_dof() -> None:
+    _, rw, _ = synth_za(seed=5)
+    with pytest.raises(ValueError, match="k"):
+        zivot_andrews(rw, k=200)
+    with pytest.raises(ValueError, match="k"):
+        zivot_andrews(rw, k=-1)
+    with pytest.raises(ValueError, match="k"):
+        zivot_andrews(rw, k=1.5)

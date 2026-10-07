@@ -27,6 +27,8 @@ def _idx(x: int, m: int) -> tuple[int, int, int]:
 
 
 def build(keys: list[int]) -> tuple[bytearray, int]:
+    if not keys:
+        raise ValueError("keys must be non-empty")
     m = 3 * ((len(keys) * 4 + 2) // 3)
     tab = bytearray(m)
     for _try in range(10):
@@ -60,7 +62,8 @@ def build(keys: list[int]) -> tuple[bytearray, int]:
             return tab, m
         # restack with different salt impossible here; widen m
         m += 3
-    return tab, m
+        tab = bytearray(m)
+    raise RuntimeError("xor filter peel failed after 10 widenings")
 
 
 def contains(tab: bytearray, m: int, x: int) -> bool:

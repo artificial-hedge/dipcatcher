@@ -43,10 +43,15 @@ def _msg_chain_lens(msg: bytes) -> list[int]:
     for byte in _h(msg)[:N_BYTES]:
         nibbles += [byte >> 4, byte & 0xF]
     csum = sum(W - 1 - v for v in nibbles)
-    csum_bytes = csum.to_bytes(2, "big")
+    # LEN2=2 base-16 digits => exactly 1 byte; csum <= LEN1*(W-1) = 240 < 256.
+    # Encoding wider would append 4 nibbles and [:LEN] would truncate the real
+    # checksum digits, leaving chains LEN-2..LEN-1 at length 0 (raw sk leaked).
+    csum_bytes = csum.to_bytes(1, "big")
     for byte in csum_bytes:
         nibbles += [byte >> 4, byte & 0xF]
-    return nibbles[:LEN]
+    if len(nibbles) != LEN:
+        raise ValueError("checksum length mismatch")
+    return nibbles
 
 
 def wots_sign(msg: bytes, seed: bytes, masks: list[bytes]) -> list[bytes]:
