@@ -474,6 +474,22 @@ def _release_response(
         pool.release(scheme, host, port, conn)
 
 
+def _release_redirect_conn(
+    pool: ConnectionPool,
+    scheme: str,
+    host: str,
+    port: int,
+    conn: http.client.HTTPConnection,
+    response: http.client.HTTPResponse,
+    too_big: bool,
+) -> None:
+    """Hand off the pooled connection when a redirect hop is complete."""
+    if too_big or response.will_close:
+        pool.discard(conn)
+    else:
+        pool.release(scheme, host, port, conn)
+
+
 def pooled_stream(
     url: str,
     dest: Path,
@@ -511,10 +527,7 @@ def pooled_stream(
             location = response.getheader("Location")
             if status in {301, 302, 303, 307, 308} and location:
                 too_big = _read_capped(response, max_bytes)[1]
-                if too_big or response.will_close:
-                    pool.discard(conn)
-                else:
-                    pool.release(scheme, host, port, conn)
+                _release_redirect_conn(pool, scheme, host, port, conn, response, too_big)
                 handed_off = True
                 if too_big:
                     raise IoError(f"response exceeded {max_bytes} bytes: {current}")

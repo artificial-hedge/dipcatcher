@@ -451,6 +451,15 @@ def _unmeasured_optimizer_covariance(reason: str, ids: list[str]) -> OptimizerCo
     )
 
 
+def _require_trailing_covariance_object(params: dict[str, float | str]) -> str:
+    """Fail closed unless the fit reports the trailing covariance object."""
+    object_name = str(params.get("covariance_object", OPTIMIZER_COVARIANCE_OBJECT_TRAILING))
+    prefix = f"optimizer_covariance_failed:{OPTIMIZER_COVARIANCE_LEDOIT_WOLF}"
+    if object_name != OPTIMIZER_COVARIANCE_OBJECT_TRAILING:
+        raise ValueError(f"{prefix}:unexpected_covariance_object:{object_name}")
+    return object_name
+
+
 def estimate_optimizer_covariance_asof(
     config: AppConfig,
     frame: pl.DataFrame,
@@ -566,10 +575,8 @@ def estimate_optimizer_covariance_asof(
     prefix = f"optimizer_covariance_failed:{OPTIMIZER_COVARIANCE_LEDOIT_WOLF}"
     if family != OPTIMIZER_COVARIANCE_LEDOIT_WOLF:
         raise ValueError(f"{prefix}:unexpected_family:{family}")
-    object_name = str(params.get("covariance_object", OPTIMIZER_COVARIANCE_OBJECT_TRAILING))
+    object_name = _require_trailing_covariance_object(params)
     spec_name = str(params.get("spec", OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF))
-    if object_name != OPTIMIZER_COVARIANCE_OBJECT_TRAILING:
-        raise ValueError(f"{prefix}:unexpected_covariance_object:{object_name}")
     sigma, _ = repair_psd(sigma, config.train.psd_eigen_tol)
     sigma, overlay, overlay_kind = apply_market_variance_overlay_to_covariance(
         config, frame, asof, sigma

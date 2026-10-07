@@ -22,7 +22,7 @@ from quant_fund.metrics.conformal import (
 )
 from quant_fund.metrics.cross_section import _date_keys
 from quant_fund.metrics.evalues import bench_e_coverage, e_process
-from quant_fund.metrics.probability import kupiec_pof
+from quant_fund.metrics.probability import Array, kupiec_pof
 from quant_fund.models.conformal import (
     AdaptiveConformal,
     MondrianACI,
@@ -68,6 +68,13 @@ from .common import (
 from .ranking import _policy_bandit_metrics, _policy_public_design, _policy_ridge_topk_rewards
 
 
+def _kupiec_or_nan(miss: Array, alpha: float) -> tuple[float, float, float]:
+    """Kupiec POF triple; NaN triple below the 10-miss reporting floor."""
+    if miss.size >= 10:
+        return kupiec_pof(miss, alpha)
+    return float("nan"), float("nan"), float("nan")
+
+
 def bench_conformal(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
     """CQR vs raw Gaussian vs ACI. Coverage and width only."""
     split = _gaussian_interval_split(frame, config)
@@ -108,10 +115,7 @@ def bench_conformal(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
     cqr_m = set_metrics(y[te], lo_c, hi_c)
     cqr_miss = 1.0 - covered(y[te], lo_c, hi_c)
     cqr_miss = cqr_miss[np.isfinite(cqr_miss)]
-    if cqr_miss.size >= 10:
-        cqr_rate, cqr_lr, cqr_kp = kupiec_pof(cqr_miss, alpha)
-    else:
-        cqr_rate, cqr_lr, cqr_kp = float("nan"), float("nan"), float("nan")
+    cqr_rate, cqr_lr, cqr_kp = _kupiec_or_nan(cqr_miss, alpha)
     qr_m: dict[str, float] | None = None
     if 80 <= int(tr.sum()) <= 4000:
         try:
