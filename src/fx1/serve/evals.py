@@ -33,6 +33,7 @@ import time
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
+from copy import deepcopy
 from dataclasses import asdict, is_dataclass
 from datetime import date, datetime
 from enum import Enum
@@ -335,7 +336,11 @@ class EvalStore:
         mutates ``rec`` in place; this makes each hop durable)."""
         if self._journal is not None:
             with self._lock:
-                self._journal.append(self._record(rec))
+                # A bounded-store eviction wins over a late worker mark.
+                # Journaling a record no longer present would resurrect it
+                # (and its idempotency mapping) after restart.
+                if self._records.get(rec.eval_id) is rec:
+                    self._journal.append(self._record(rec))
 
     def start(self, eval_id: str) -> EvalRecord | None:
         """Atomic queued→running claim — the worker's handshake against
@@ -393,9 +398,12 @@ class EvalStore:
             rec = self._records.get(eval_id)
             if rec is None:
                 return None
-            self._drop(eval_id)
+            # Tombstone first: a failed append must leave the record
+            # live rather than dropping it in memory while the journal
+            # still resurrects it.
             if self._journal is not None:
                 self._journal.append({"deleted": eval_id})
+            self._drop(eval_id)
             return rec
 
     def cancel(self, eval_id: str) -> tuple[EvalRecord | None, str]:
@@ -449,25 +457,29 @@ class EvalStore:
         fingerprint: str | None,
     ) -> None:
         with self._lock:
+            # Compute the bounded-store transition without publishing it —
+            # the journal must acknowledge put+evictions first; a failed
+            # append leaves live state exactly as it was (the same
+            # durability boundary FTJobStore.put holds).
+            order = [eid for eid in self._records if eid != record.eval_id]
+            evicted = order[: max(0, len(order) + 1 - self._max)]
+            if self._journal is not None:
+                payload: dict[str, Any] = {
+                    "record": record.model_dump(mode="json"),
+                    "key": key,
+                    "fp": fingerprint,
+                }
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
+            for evicted_id in evicted:
+                self._drop(evicted_id)
             self._records[record.eval_id] = record
             self._records.move_to_end(record.eval_id)
             if key is not None and fingerprint is not None:
                 self._keys[key] = (fingerprint, record.eval_id)
                 self._record_key[record.eval_id] = key
                 self._record_fp[record.eval_id] = fingerprint
-            evicted: list[str] = []
-            while len(self._records) > self._max:
-                evicted_id, _ = self._records.popitem(last=False)
-                old_key = self._record_key.pop(evicted_id, None)
-                self._record_fp.pop(evicted_id, None)
-                if old_key is not None:
-                    self._keys.pop(old_key, None)
-                evicted.append(evicted_id)
-            if self._journal is not None:
-                payload = self._record(record)
-                if evicted:
-                    payload["evicted"] = evicted
-                self._journal.append(payload)
 
 
 def run_eval_record(
@@ -682,31 +694,62 @@ class EvalSpecStore:
 
     def put(self, spec: EvalSpec) -> None:
         with self._lock:
-            self._specs[spec.spec_id] = spec
-            self._specs.move_to_end(spec.spec_id)
-            evicted: list[str] = []
-            while len(self._specs) > self._max:
-                evicted_id, _ = self._specs.popitem(last=False)
-                evicted.append(evicted_id)
+            # Journal-first like EvalStore.put: compute the transition,
+            # persist it, then mutate — a failed append changes nothing.
+            order = [sid for sid in self._specs if sid != spec.spec_id]
+            evicted = order[: max(0, len(order) + 1 - self._max)]
             payload: dict[str, Any] = {"record": spec.model_dump(mode="json")}
             if evicted:
                 payload["evicted"] = evicted
             self._write(payload)
+            for evicted_id in evicted:
+                self._drop(evicted_id)
+            self._specs[spec.spec_id] = spec
+            self._specs.move_to_end(spec.spec_id)
 
     def get(self, spec_id: str) -> EvalSpec | None:
         with self._lock:
             return self._specs.get(spec_id)
 
-    def update(self, spec: EvalSpec) -> None:
-        """Journal a spec mutation (name/metadata edits are durable)."""
+    def update(
+        self,
+        spec_id: str,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> EvalSpec | None:
+        """Journal then apply a name/metadata edit — the vector-store
+        update contract: the next record is computed under the lock and
+        journaled before live state mutates, so a failed append leaves
+        the stored spec untouched. Returns ``None`` when the spec is no
+        longer live (deleted or evicted mid-edit) — the store's verdict
+        stands, the spec never comes back."""
         with self._lock:
-            self._write({"record": spec.model_dump(mode="json")})
+            spec = self._specs.get(spec_id)
+            if spec is None:
+                return None
+            next_name = name if name is not None else spec.name
+            next_metadata = deepcopy(metadata) if metadata is not None else spec.metadata
+            self._write(
+                {
+                    "record": spec.model_copy(
+                        update={"name": next_name, "metadata": next_metadata}
+                    ).model_dump(mode="json")
+                }
+            )
+            spec.name = next_name
+            spec.metadata = next_metadata
+            return spec
 
     def delete(self, spec_id: str) -> EvalSpec | None:
         with self._lock:
-            spec = self._specs.pop(spec_id, None)
-            if spec is not None:
-                self._write({"deleted": spec_id})
+            spec = self._specs.get(spec_id)
+            if spec is None:
+                return None
+            # Tombstone before the drop — a failed append leaves the
+            # spec live instead of replaying it back next boot.
+            self._write({"deleted": spec_id})
+            self._specs.pop(spec_id, None)
             return spec
 
     def list_specs(self, *, limit: int, after: str | None) -> tuple[list[EvalSpec], bool]:
@@ -741,9 +784,9 @@ def spec_wire(spec: EvalSpec) -> dict[str, Any]:
         "id": spec.spec_id,
         "object": "eval",
         "name": spec.name,
-        "data_source_config": spec.data_source_config,
-        "testing_criteria": spec.testing_criteria,
-        "metadata": spec.metadata,
+        "data_source_config": deepcopy(spec.data_source_config),
+        "testing_criteria": deepcopy(spec.testing_criteria),
+        "metadata": deepcopy(spec.metadata),
         "created_at": int(spec.created_at),
     }
 

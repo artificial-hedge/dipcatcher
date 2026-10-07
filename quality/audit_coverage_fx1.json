@@ -132,6 +132,26 @@
     "selftest.py": {
       "status": "pending"
     },
+    "serve/evals.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/finetune.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/keys.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/uploads.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/vectorstores.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
     "tail_audit.py": {
       "status": "audited"
     }

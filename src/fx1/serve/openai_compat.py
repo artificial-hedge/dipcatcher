@@ -2196,7 +2196,8 @@ class OpenAIConversationItemsAdd(_Model):
 class OpenAIVectorStoreCreate(_Model):
     """``POST /v1/vector_stores`` body — ``name``/``metadata`` are free
     labels; ``file_ids`` attaches existing ``file-*`` records at create
-    time (a bogus id fails the attach honestly)."""
+    time (a bogus id fails the attach honestly); ``chunking_strategy``
+    is the default strategy applied to those initial files."""
 
     model_config = ConfigDict(extra="allow")
 
@@ -2204,6 +2205,7 @@ class OpenAIVectorStoreCreate(_Model):
     file_ids: list[str] | None = Field(default=None, max_length=64)
     metadata: dict[str, str] | None = None
     expires_after: dict[str, Any] | None = None
+    chunking_strategy: dict[str, Any] | None = None
 
 
 class OpenAIVectorStoreUpdate(_Model):

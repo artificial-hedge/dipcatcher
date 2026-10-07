@@ -188,6 +188,9 @@ class UploadStore:
                         )
                         continue
                     part_meta.parts[pid] = int(p["bytes"])
+                    # Activity is recency — a part line makes its upload
+                    # most-recently-used on replay too.
+                    self._uploads.move_to_end(part_meta.upload_id)
                 elif "upload_terminal" in payload:
                     t = payload["upload_terminal"]
                     term_meta = self._uploads.get(str(t["upload_id"]))
@@ -196,6 +199,7 @@ class UploadStore:
                         term_meta.file_id = t.get("file_id")
                         if term_meta.status != "completed":
                             term_meta.parts = {}
+                        self._uploads.move_to_end(term_meta.upload_id)
             self._gc_blobs()
             self._compact_locked()
 
@@ -306,9 +310,10 @@ class UploadStore:
                     {
                         "upload": self._meta(meta),
                         "expired_uploads": pending_evicted,
-                        # Older readers honor evicted, so a downgrade cannot
-                        # resurrect a pending intent (they return 404, not 410).
-                        "evicted": pending_evicted,
+                        # Every evicted id — terminal ones too, or they would
+                        # resurrect on replay. Pending ids also land in
+                        # expired_uploads so readers give 410, not 404.
+                        "evicted": evicted,
                     }
                 )
             self._uploads[meta.upload_id] = meta
@@ -334,12 +339,17 @@ class UploadStore:
             meta = self._uploads.get(upload_id)
             if meta is None:
                 return None
+            self._uploads.move_to_end(upload_id)
             return self._touch(meta)
 
     def _pending(self, upload_id: str) -> UploadMeta:
         meta = self._uploads.get(upload_id)
         if meta is None:
             raise UploadStoreError(404, f"upload {upload_id!r} not found", "upload_not_found")
+        # Live accesses are recency — a part arriving or a complete
+        # refreshing the record keeps an active upload ahead of dormant
+        # ones in the LRU (documented bounded-LRU contract).
+        self._uploads.move_to_end(upload_id)
         self._touch(meta)
         if meta.status == "expired":
             raise UploadStoreError(410, f"upload {upload_id!r} expired", "upload_expired")

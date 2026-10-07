@@ -1360,16 +1360,15 @@ class Fx1Harness:
         datasource is frozen once runs bind to it."""
         from fx1.serve.evals import spec_wire  # noqa: PLC0415
 
-        spec = self._eval_spec_store.get(spec_id)
-        if spec is None:
-            raise KeyError(spec_id)
         if name is None and metadata is None:
             raise ValueError("update must carry name or metadata")
-        if name is not None:
-            spec.name = name
-        if metadata is not None:
-            spec.metadata = dict(metadata)
-        self._eval_spec_store.update(spec)
+        spec = self._eval_spec_store.update(
+            spec_id,
+            name=name,
+            metadata=dict(metadata) if metadata is not None else None,
+        )
+        if spec is None:
+            raise KeyError(spec_id)
         return spec_wire(spec)
 
     def eval_spec_delete(self, spec_id: str) -> None:

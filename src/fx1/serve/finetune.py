@@ -356,8 +356,13 @@ class FTJobStore:
     def _drop(self, job_id: str) -> None:
         """Evict one entry plus its idem key and any model cards it minted."""
         old = self._entries.pop(job_id, None)
-        if old is not None and old.idem_key is not None:
-            self._keys.pop(f"ft:{old.idem_key}", None)
+        if old is not None:
+            if old.idem_key is not None:
+                self._keys.pop(f"ft:{old.idem_key}", None)
+            # Release a worker parked on the resume gate: eviction is the
+            # verdict, the parked claim must observe it and exit rather
+            # than pin an inflight slot forever.
+            old.resume.set()
         for mname, mref in list(self._models.items()):
             if str(mref["job_id"]) == job_id:
                 del self._models[mname]
@@ -470,7 +475,9 @@ class FTJobStore:
         ]
         if after is not None:
             idx = next((i for i, c in enumerate(items) if c.id == after), None)
-            items = items[idx + 1 :] if idx is not None else []
+            if idx is None:
+                raise ValueError(f"cursor {after!r} is not a checkpoint id")
+            items = items[idx + 1 :]
         has_more = len(items) > limit
         return items[:limit], has_more
 
@@ -504,17 +511,39 @@ class FTJobStore:
                 self._entries.move_to_end(job_id)
             return entry
 
+    def start(self, entry: FTJobEntry) -> bool:
+        """Atomic queued→running claim — the worker's handshake against the
+        cancel/pause paths.
+
+        Takes the same lock ``request_cancel``/``request_pause``/
+        ``cancel_pending`` do, so a cancel or pause that lands first can
+        never be overwritten back to ``running`` by a stale worker write
+        (the EvalStore.start contract, applied to fine-tuning). Returns
+        False when the job is paused, terminal, or evicted — the store's
+        recorded verdict stands.
+        """
+        with self._lock:
+            if self._entries.get(entry.job.id) is not entry:
+                return False
+            if entry.job.status != "queued":
+                return False
+            entry.job.status = "running"
+            if self._journal is not None:
+                self._journal.append(self._record(entry))
+            return True
+
     def list_jobs(self, *, limit: int, after: str | None) -> tuple[list[FTJob], bool]:
-        """Newest-first page; ``after`` is the id cursor (exclusive)."""
+        """Newest-first page; ``after`` is the id cursor (exclusive). An
+        unknown cursor raises ``ValueError`` — a mistyped cursor must
+        fail closed, never masquerade as end-of-list."""
         with self._lock:
             entries = list(self._entries.values())
         entries.reverse()
         if after is not None:
             idx = next((i for i, e in enumerate(entries) if e.job.id == after), None)
-            if idx is not None:
-                entries = entries[idx + 1 :]
-            else:
-                entries = []
+            if idx is None:
+                raise ValueError(f"cursor {after!r} is not a job id")
+            entries = entries[idx + 1 :]
         has_more = len(entries) > limit
         return [e.job for e in entries[:limit]], has_more
 
@@ -552,10 +581,13 @@ class FTJobStore:
             if entry is None:
                 return [], False
             events = list(entry.events)
-        # oldest-first, like OpenAI's events feed
+        # oldest-first, like OpenAI's events feed; an unknown cursor
+        # raises — never a fabricated end-of-feed.
         if after is not None:
             idx = next((i for i, e in enumerate(events) if e.id == after), None)
-            events = events[idx + 1 :] if idx is not None else []
+            if idx is None:
+                raise ValueError(f"cursor {after!r} is not an event id")
+            events = events[idx + 1 :]
         has_more = len(events) > limit
         return events[:limit], has_more
 

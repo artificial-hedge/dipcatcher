@@ -4842,12 +4842,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     )
     def eval_spec_update(eval_id: str, body: EvalSpecUpdate) -> EvalSpecWire:
         _drain_refusal(metrics)
-        spec = _spec_or_404(eval_id)
-        if body.name is not None:
-            spec.name = body.name
-        if body.metadata is not None:
-            spec.metadata = body.metadata
-        eval_spec_store.update(spec)
+        # The store computes the next record, journals it, then mutates —
+        # never a live mutation the journal failed to see.
+        spec = eval_spec_store.update(eval_id, name=body.name, metadata=body.metadata)
+        if spec is None:
+            raise ApiError(404, f"eval '{eval_id}' not found", code="eval_not_found")
         return EvalSpecWire.model_validate(spec_wire(spec))
 
     @app.delete(
@@ -7608,6 +7607,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 metadata=body.metadata,
                 file_ids=tuple(body.file_ids or ()),
                 expires_after=body.expires_after,
+                chunking_strategy=body.chunking_strategy,
                 idempotency_key=key,
                 body_fingerprint=body_fp,
             )
@@ -9144,17 +9144,25 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         mid-pipeline ends ``cancelled``, not ``failed``."""
         job: FTJob = entry.job
         try:
-            # a job paused while queued parks here — resume (or cancel,
-            # which also opens the gate) releases it
-            entry.resume.wait()
-            if entry.cancel.is_set():
-                job.status = "cancelled"
-                job.finished_at = int(time.time())
-                ft_store.mark(entry)
-                return
-            job.status = "running"
+            # Claim queued→running under the store's atomic start(): the
+            # same lock request_cancel/request_pause/cancel_pending take,
+            # so a cancel or pause that lands first is never overwritten
+            # back to running by a stale worker write. A job parked while
+            # queued re-enters the resume gate; a cancelled or evicted
+            # one exits.
+            while not ft_store.start(entry):
+                if entry.cancel.is_set():
+                    job.status = "cancelled"
+                    job.finished_at = int(time.time())
+                    ft_store.mark(entry)
+                    return
+                if entry.job.status == "paused" and ft_store.get(entry.job.id) is entry:
+                    # paused before the claim — resume (or cancel, which
+                    # also opens the gate) releases the park
+                    entry.resume.wait()
+                    continue
+                return  # terminal or evicted — the store's verdict stands
             ft_store.add_event(job.id, "info", "job started", None)
-            ft_store.mark(entry)
 
             def _pause_gate() -> bool:
                 """Block while paused; True iff a cancel landed parked."""
@@ -9236,7 +9244,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 # Publish the terminal status only after the complete event
                 # feed is durable. Otherwise a reader can observe
                 # ``succeeded`` and immediately retrieve a truncated feed.
-                job.status = "succeeded"
+                # A cancel flag that landed during artifact publish still
+                # wins — the flag is the standing request.
+                if entry.cancel.is_set():
+                    job.status = "cancelled"
+                    ft_store.add_event(job.id, "info", _EV_JOB_CANCELLED, None)
+                else:
+                    job.status = "succeeded"
         except Exception as exc:  # noqa: BLE001 — a runner fault is job data
             if entry.cancel.is_set():
                 already = job.status == "cancelled"
@@ -9411,7 +9425,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         limit: int = Query(default=20, ge=1, le=100), after: str | None = Query(default=None)
     ) -> FTJobList:
         """Newest-first page; ``after`` is the exclusive id cursor."""
-        jobs, has_more = ft_store.list_jobs(limit=limit, after=after)
+        try:
+            jobs, has_more = ft_store.list_jobs(limit=limit, after=after)
+        except ValueError as exc:
+            raise ApiError(400, str(exc), code="invalid_cursor") from exc
         return FTJobList(data=jobs, has_more=has_more)
 
     @app.get(
@@ -9538,7 +9555,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         entry = ft_store.get(job_id)
         if entry is None:
             raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
-        events, has_more = ft_store.list_events(job_id, limit=limit, after=after)
+        try:
+            events, has_more = ft_store.list_events(job_id, limit=limit, after=after)
+        except ValueError as exc:
+            raise ApiError(400, str(exc), code="invalid_cursor") from exc
         return FTEventList(data=events, has_more=has_more)
 
     @app.get(
@@ -9558,7 +9578,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ``ft:`` name drops off — tombstones don't fabricate history."""
         if ft_store.get(job_id) is None:
             raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
-        items, has_more = ft_store.checkpoints_for(job_id, limit=limit, after=after)
+        try:
+            items, has_more = ft_store.checkpoints_for(job_id, limit=limit, after=after)
+        except ValueError as exc:
+            raise ApiError(400, str(exc), code="invalid_cursor") from exc
         return FTJobCheckpointList(
             data=items,
             first_id=items[0].id if items else None,

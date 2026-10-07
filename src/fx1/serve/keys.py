@@ -253,8 +253,15 @@ class ApiKeyStore:
             self.recovery_quarantined = True
         for value in (payload.get("record"), payload.get("successor")):
             if not isinstance(value, dict) or not isinstance(value.get("sha256"), str):
+                if value is not None:
+                    self.recover_warnings.append(
+                        "journaled key record is malformed — dropped without restoring"
+                    )
                 continue
             record = _durable_record(value)
+            # A record that lacks ``enabled`` defaults disabled — a
+            # credential is never enabled by a malformed line.
+            record.setdefault("enabled", False)
             record.setdefault("admin", False)
             record.setdefault("scopes", list(SCOPES) if record["admin"] else ["read", "write"])
             record.setdefault("max_requests", None)

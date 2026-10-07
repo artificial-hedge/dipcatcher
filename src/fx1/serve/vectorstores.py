@@ -410,16 +410,18 @@ def vs_object(meta: VSMeta) -> dict[str, Any]:
             "total": len(meta.files),
         },
         "last_active_at": last_active,
-        "expires_after": dict(meta.expires_after) if meta.expires_after else None,
+        "expires_after": deepcopy(meta.expires_after) if meta.expires_after else None,
         "expires_at": meta.expires_at,
-        "metadata": dict(meta.metadata),
+        "metadata": deepcopy(meta.metadata),
     }
 
 
 def vs_file_object(rec: VSFileRec) -> dict[str, Any]:
     """The OpenAI ``vector_store.file`` wire object — ``indexed_chunks``
     and ``truncated`` are harness extensions: the honest accounting of
-    what the index actually saw."""
+    what the index actually saw. Wire objects own their nested
+    containers: mutating a response never reaches the stored record
+    (``last_error``/``attributes``/``chunking_strategy`` carry dicts)."""
     return {
         "id": rec.file_id,
         "object": "vector_store.file",
@@ -427,9 +429,9 @@ def vs_file_object(rec: VSFileRec) -> dict[str, Any]:
         "created_at": rec.created_at,
         "status": rec.status,
         "usage_bytes": rec.usage_bytes,
-        "last_error": rec.last_error,
-        "attributes": dict(rec.attributes),
-        "chunking_strategy": dict(rec.chunking_strategy),
+        "last_error": deepcopy(rec.last_error),
+        "attributes": deepcopy(rec.attributes),
+        "chunking_strategy": deepcopy(rec.chunking_strategy),
         "indexed_chunks": rec.indexed_chunks,
         "truncated": rec.truncated,
     }
@@ -873,8 +875,10 @@ class VectorStoreStore:
             status="completed",
             usage_bytes=len(content),
             filename=filename,
-            attributes=attributes,
-            chunking_strategy=chunking_strategy,
+            # Own copies — the caller reuses its attributes/strategy dicts
+            # across a batch, so sibling records must never share one dict.
+            attributes=deepcopy(attributes),
+            chunking_strategy=deepcopy(chunking_strategy),
         )
         return rec, self._build_index(rec, content)
 
@@ -900,6 +904,7 @@ class VectorStoreStore:
         metadata: dict[str, Any] | None = None,
         file_ids: list[str] | tuple[str, ...] = (),
         expires_after: dict[str, Any] | None = None,
+        chunking_strategy: dict[str, Any] | None = None,
         idempotency_key: str | None = None,
         body_fingerprint: str | None = None,
     ) -> dict[str, Any]:
@@ -909,6 +914,7 @@ class VectorStoreStore:
                 metadata=metadata,
                 file_ids=file_ids,
                 expires_after=expires_after,
+                chunking_strategy=chunking_strategy,
                 idempotency_key=idempotency_key,
                 body_fingerprint=body_fingerprint,
             )
@@ -920,6 +926,7 @@ class VectorStoreStore:
         metadata: dict[str, Any] | None,
         file_ids: list[str] | tuple[str, ...],
         expires_after: dict[str, Any] | None,
+        chunking_strategy: dict[str, Any] | None,
         idempotency_key: str | None,
         body_fingerprint: str | None,
     ) -> dict[str, Any]:
@@ -930,7 +937,7 @@ class VectorStoreStore:
             vs_id=f"vs_{uuid.uuid4().hex}",
             name=name,
             created_at=created,
-            metadata=dict(metadata or {}),
+            metadata=deepcopy(metadata) if metadata is not None else {},
             expires_after=policy,
             last_active_at=created,
             expires_at=created + policy["days"] * 86400 if policy else None,
@@ -940,7 +947,7 @@ class VectorStoreStore:
         # existing LRU victim, leak a partial store, or require a tombstone.
         pending: list[tuple[VSFileRec, list[_Chunk]]] = []
         pending_ids: set[str] = set()
-        strategy = validate_chunking_strategy(None)
+        strategy = validate_chunking_strategy(chunking_strategy)
         for file_id in file_ids:
             got = self._reader(file_id) if self._reader is not None else None
             rec, chunks = self._prepare_file_locked(
@@ -1013,7 +1020,7 @@ class VectorStoreStore:
         with self._lock:
             meta = self._store(vs_id, touch_lru=False)
             next_name = name if name is not None else meta.name
-            next_metadata = dict(metadata) if metadata is not None else dict(meta.metadata)
+            next_metadata = deepcopy(metadata) if metadata is not None else dict(meta.metadata)
             next_policy = dict(policy) if policy is not None else meta.expires_after
             next_expires_at = meta.expires_at
             if policy is not None:
@@ -1287,8 +1294,8 @@ class VectorStoreStore:
                                 "status": "failed",
                                 "usage_bytes": 0,
                                 "last_error": {"code": exc.code, "message": str(exc)},
-                                "attributes": dict(attrs),
-                                "chunking_strategy": dict(strategy),
+                                "attributes": deepcopy(attrs),
+                                "chunking_strategy": deepcopy(strategy),
                                 "indexed_chunks": 0,
                                 "truncated": False,
                             }
@@ -1390,7 +1397,7 @@ class VectorStoreStore:
             )
         with self._lock:
             rec = self._batch(vs_id, batch_id)
-            rows = [dict(r) for r in rec.files if filter is None or r.get("status") == filter]
+            rows = [deepcopy(r) for r in rec.files if filter is None or r.get("status") == filter]
             return _page(rows, limit=limit, order=order, after=after, before=before)
 
     # ---- retrieval --------------------------------------------------------
