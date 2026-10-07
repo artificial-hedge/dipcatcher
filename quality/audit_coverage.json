@@ -369,6 +369,9 @@
   "models/asset_pricing.py": {
    "status": "audited"
   },
+  "models/bai_perron.py": {
+   "status": "audited"
+  },
   "models/bandits.py": {
    "status": "audited"
   },
@@ -409,6 +412,9 @@
    "status": "audited"
   },
   "models/changepoint.py": {
+   "status": "audited"
+  },
+  "models/cluster_robust.py": {
    "status": "audited"
   },
   "models/conformal.py": {

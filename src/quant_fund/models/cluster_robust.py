@@ -76,6 +76,8 @@ def crve(
     is the raw sandwich; 'cr2' rescales each cluster's score by the
     Bell–McCaffrey leverage adjustment (approximate form).
     """
+    if corr not in ("cr0", "cr1", "cr2"):
+        raise ValueError("corr must be 'cr0', 'cr1', or 'cr2'")
     y = np.asarray(y, dtype=np.float64).ravel()
     n = y.size
     if n < 8 or not np.all(np.isfinite(y)):
@@ -104,9 +106,15 @@ def crve(
     scale = 1.0
     if corr == "cr1":
         scale = (g_n / (g_n - 1.0)) * ((n - 1.0) / (n - k)) if g_n > 1 else 1.0
+    if np.max(np.abs(resid)) <= 1e-10 * max(1.0, float(np.std(y))):
+        raise ValueError(
+            "degenerate cluster sandwich (residuals numerically zero) — variance not identified"
+        )
     cov = scale * (xtx_inv @ meat @ xtx_inv)
     se = np.sqrt(np.maximum(np.diag(cov), 0.0))
-    tstat = beta / np.maximum(se, 1e-300)
+    if np.any(se <= 0.0):
+        raise ValueError("degenerate cluster sandwich (zero variance) — cannot form a t-statistic")
+    tstat = beta / se
     dof = g_n - 1.0
     pvals = 2.0 * (1.0 - stats.t.cdf(np.abs(tstat), dof))
     return {
@@ -142,6 +150,10 @@ def wild_cluster_bootstrap(
     n = y.size
     if n < 8 or not np.all(np.isfinite(y)):
         raise ValueError("y: need >= 8 finite obs")
+    if weight not in ("rademacher", "webb"):
+        raise ValueError("weight must be 'rademacher' or 'webb'")
+    if n_boot < 1:
+        raise ValueError("n_boot must be >= 1")
     a = np.column_stack([np.ones(n), _design(x, n)])
     g = np.asarray(cluster).ravel()
     _, groups = np.unique(g, return_inverse=True)

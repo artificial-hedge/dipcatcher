@@ -130,7 +130,9 @@ def breakpoints_dp(y: Array, x: Array, m: int, *, trim: float = 0.15) -> dict[st
     for s in range(1, m + 1):
         for j in range((s + 1) * h, t + 1):
             lo = s * h
-            hi = j - h
+            # break index i ranges [s*h, j-h] INCLUSIVE — a final segment
+            # of exactly h rows is admissible, so hi must be j-h+1.
+            hi = j - h + 1
             cand = dp[s - 1, lo:hi] + ssr[lo:hi, j]
             if not np.isfinite(cand).any():
                 continue
@@ -175,6 +177,8 @@ def sequential_breaks(
     """
     ya, xa = _as_xy(y, x)
     t, q = xa.shape
+    if m_max < 1:
+        raise ValueError("m_max must be at least 1")
     cv = sup_wald_cv(q, alpha)
     breaks: list[int] = []
     for _m in range(m_max):
@@ -206,7 +210,7 @@ def refit_segments(y: Array, x: Array, breaks: Array) -> dict[str, Array]:
     ya, xa = _as_xy(y, x)
     b_idx = np.asarray(breaks, dtype=int).ravel()
     t = ya.shape[0]
-    if (b_idx < 0).any() or (b_idx >= t).any() or np.any(np.diff(b_idx) <= 0):
+    if (b_idx < 1).any() or (b_idx >= t).any() or np.any(np.diff(b_idx) <= 0):
         raise ValueError("breaks must be strictly increasing interior indices")
     bounds = [0, *b_idx.tolist(), t]
     coefs: list[Array] = []
