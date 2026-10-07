@@ -1446,58 +1446,42 @@ feat(research): wave 269 — computer-vision canon (lk_flow, orb_feature, homogr
 feat(research): wave 268 — crypto-4 canon (elgamal_enc, paillier_he, fiat_shamir, ot_12, chacha_stream, poly1305_mac) (1581->1587 families)
 feat(research): wave 267 — GPU-architecture canon (warp_scheduler, simt_divergence, bank_conflict, mem_coalesce, occupancy_calc, shared_mem_tile) (1575->1581 families)
 feat(research): wave 266 — graphics-2 canon (triangle_raster, phong_shade, mipmap_sample, shadow_map, bump_map, ssao_lite) (1569->1575 families)
-owner: kimi-code (session 2026-10-06/07, gate remediation + lane rebuild)
-slice: REBUILD UNPUSHED LOCAL LANES ONTO MOVED MAIN — 8 PRs, pre-existing reds itemized
-status: PRs OPEN, awaiting CI (runner queue saturated — 82+ checks queued per PR at ~16h)
+owner: kimi-code (session 2026-10-06/07, lane rebuild status)
+slice: RECONCILE REBUILT LANES WITH CURRENT MAIN AND EXACT-HEAD REVIEWS
+status: PARTIAL — #2895 and #2898 merged; six lanes remain open with blockers
 detail: |
-  Context: the 2026-10-05 owner-directed push (de8965875e..67ff0888f4) was never
-  pushed; origin/main is ~2000 commits past it (canon fleet at w1712 / 10k+
-  families). All salvageable work was rebuilt directly on origin/main:
-  - #2860 fix(audit): track cli/sota_cmds.py, cli pin 15->16 + 6 tests.
-  - #2864 docs(packaging): fxi install.sh, homebrew formula, superpowers spec,
-    3 cost-calibration web fixtures.
-  - #2870 feat(cli): the operator-surface lane — benchmark_cmds
-    (real-benchmark/net-tournament/ranker-probability), allocation_cli,
-    explainability_cli, reality sweep/survivorship + total-return, 5 research
-    commands (coherence/concordance/multih-fleet/expert-mixture/compare),
-    compare.build_compare_receipt shared impl, LH011 reality lazy whitelist
-    (+research) with the layering-test mirror, wiring in _app/main, 8 test
-    files. Rebased onto ce711e84; normalize.py bytes-reject deduped in favor
-    of upstream #2879 (identical fix).
-  - #2871 test(fx1): operation_cases_chunk{0,2,3,4} invocation cases.
-  - #2882 feat(models): c51_rl.py + ZILobQuoteEnv + 37 tests (B4-ii core;
-    documented macOS-only margin failure on the seeded training test).
-  - #2895 fix(lint): ruff --fix 8518 errors (mostly F401 wave-import fallout
-    in agent.py) + 5 duplicate registry family entries removed.
-  - #2898 fix(models): pair_vine_copula redundant RVineSpec casts — was the
-    only check_mypy_strict_allowlist regression; gate back to 867 modules ok.
-  - #2899 fix(arch): parity_leak_audit classified into research layer (proper
-    fix, no baseline); receipt_v2 allowlisted on fx1-harness-surface (pydantic
-    envelope = data structure); 9 layer-order baselines itemized (5 share one
-    root cause: receipt_v2 belongs in schemas/); FX1_TO_QUANT_FUND_EDGES pin
-    regenerated 20->180 (159-edge audit seam: every fx1 *_audit module seals
-    via utils.hashing/reproducibility/atomicio); atlas artifacts regenerated
-    (13311-module census). arch-guards: 0 violations / 19 baselined / 0 stale.
-  Closed as superseded: #2873 (folded into #2870), #2884 (upstream #2886 fixed
-  the imports properly), #2885 (rebuilt as #2899 after #2886/#2888 landed).
-  Verified locally at main: mypy clean (13012 files); tests/fx1 green (1 skip);
-  audit coverage green; all #2870 lane tests green; proofcore layering green.
-  PRE-EXISTING REDS at origin/main (not from these lanes):
-  - test_leakage_clean_src::test_clean_src_scan_zero_errors fails on a full
-    src/quant_fund scan. The 12 src files touched by #2870 scan to ZERO errors
-    under a strict-superset allowlist, so the culprit predates these lanes.
-    Scanner costs ~2min/file locally (~3.5h full tree) — culprit not enumerated
-    locally; deferred to the CI shards.
-  - Windows full-gate (WMI, ce711e84, -n 4): ~30 F marks by 99%, then a worker
-    hung ~5.5h with no summary line; tree killed. Log: .dsh-24x7/gate_main.log
-    (durable, remote only). CI will name the failures.
-  - tests/fx1/test_interactive.py: 2 Windows-only env failures (0o600 filemode
-    semantics; agent-gw credential probe) — platform, not code.
-  Fleet box notes: D:\dipcatcher reset to origin/main (branch main-gate);
-  reserved-name `nul` files block git clean (repo-root copy removed via
-  Remove-Item -LiteralPath; .worktrees/_pilot copies remain).
-note: no push to local main (diverged from origin); everything lives in the PR
-  branches above. Local checkout left on kimi/20261007-inflight.
+  The session rebuilt eight local lanes as pull requests. Current repository
+  state and exact-head maintenance review supersede the original local notes:
+  - #2895 merged as 5a6cbe6910dfa6d1da3bb01fc9fdf8f070f09859.
+  - #2898 merged as 62579b23b3865df9f9839a978687208f23363fe0.
+  - #2860 remains open: the new Typer command groups are not mounted on the
+    root CLI; its focused suite produced 37 failures and 3 passes. Evidence
+    paths also omit DATA_LABEL and accept duplicate-key JSON.
+  - #2864 remains open: release URLs use the wrong owner, the wheel does not
+    provide the advertised `fxi` executable, the formula contains a release
+    placeholder, the installer does not verify the wheel, and uninstall can
+    recursively delete unrelated user data.
+  - #2870 remains open: operator-supplied `joblib.load()` permits pickle code
+    execution; receipt comparison can pass unverified inputs; provenance can
+    be mislabeled REAL or overwritten; volatility units and feature-column
+    handling are incorrect.
+  - #2871 remains open: default pytest collection finds no tests in the added
+    files; 96 of 125 operation IDs do not exist, and 7 of the 29 real cases
+    have stale or incomplete expectations.
+  - #2882 remains open: recovery fills can escape terminal accounting,
+    Poisson overshoot can create zero-time decisions, the receipt records the
+    configured rather than active reset seed, and float actions/seeds are
+    silently truncated. The advertised Linux learning regression failed.
+  - #2899 remains open: it makes the architecture gates green by permitting a
+    non-leaf FX1-to-research dependency and adding nine upward-dependency
+    baselines. `quant_fund.research.receipt_v2` executes research imports and
+    must be split into a true leaf schema/verifier before lower layers use it.
+  Closed without merge as superseded: #2873, #2884, and #2885.
+  The prior clean-source attribution is not retained: scanning selected files
+  with a strict-superset allowlist cannot prove they pass the gate's actual
+  policy. The cited `tests/fx1/test_interactive.py` path is absent from the
+  reviewed tree. Remote-only logs are not treated as repository evidence.
+note: This record changes no production code, receipts, or workflow policy.
 
 ---
 owner: opencode (resumed session)
