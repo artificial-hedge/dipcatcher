@@ -155,7 +155,7 @@ def lobster_lo_response(
         else:
             base["dist_hit"].append(dist)
 
-    def _pack(a: dict[str, Any], sign_aware: bool) -> dict[str, Any]:
+    def _pack(a: dict[str, Any]) -> dict[str, Any]:
         n = a["n_sub"]
         out = {
             "n_submissions": n,
@@ -172,8 +172,8 @@ def lobster_lo_response(
         "ok": True,
         "n_events": len(events),
         "n_execs": len(execs),
-        "post_fill": {str(h): _pack(per_h[h], True) for h in horizons},
-        "unconditional": _pack(base, False),
+        "post_fill": {str(h): _pack(per_h[h]) for h in horizons},
+        "unconditional": _pack(base),
     }
 
 

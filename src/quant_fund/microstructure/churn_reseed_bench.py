@@ -27,7 +27,7 @@ from typing import Any
 import numpy as np
 
 from quant_fund.microstructure.place_law_bench import _calibrated, _split
-from quant_fund.microstructure.reseed_hazard_bench import _WINDOW
+from quant_fund.microstructure.reseed_hazard_bench import _WINDOW, _resolve_vacancy_fill
 from quant_fund.microstructure.zi_lob_simulator import ZILobSimulator
 from quant_fund.microstructure.zone_ttl_bench import _extra
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -117,16 +117,9 @@ def _reseed_fates(
             lvl = tr.level
             book = "a" if tr.aggressor == "buy" else "b"
             d = sim._asks if book == "a" else sim._bids
-            if (lvl, book) in pending:
-                # Fill at a still-vacant level: depth re-rested inside
-                # this same step, so the episode resolved as a
-                # reseed-at-touch and the level is emptied again —
-                # close it and reopen the episode.
-                lat.append(ev_i - pending.pop((lvl, book)))
-                resed_touch += 1
-            if (lvl not in d or len(d[lvl]) == 0) and (lvl, book) not in pending:
-                n_emp += 1
-                pending[(lvl, book)] = ev_i
+            new, touch = _resolve_vacancy_fill(lvl, book, d, pending, lat, ev_i)
+            n_emp += new
+            resed_touch += touch
     due = sim.n_repost_due
     drops = {
         "floor": sim.n_repost_drop_floor,

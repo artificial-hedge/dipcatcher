@@ -93,6 +93,33 @@ _ARMS: tuple[tuple[str, dict[str, Any]], ...] = (
 )
 
 
+def _resolve_vacancy_fill(
+    lvl: int,
+    book: str,
+    side: dict[int, Any],
+    pending: dict[tuple[int, str], int],
+    lat: list[int],
+    ev_i: int,
+) -> tuple[int, int]:
+    """Fold one visible-book fill into the vacancy ledger.
+
+    Returns ``(n_new_episodes, n_touch_resolutions)``. A fill at a
+    still-pending vacant level resolved the episode inside this step —
+    depth re-rested mid-burst (iceberg reload, immediate repost) so the
+    vacancy resolved as a reseed-at-touch; the emptied size leaves a
+    fresh vacancy, so a new episode opens.
+    """
+    touch = 0
+    if (lvl, book) in pending:
+        lat.append(ev_i - pending.pop((lvl, book)))
+        touch = 1
+    new = 0
+    if (lvl not in side or len(side[lvl]) == 0) and (lvl, book) not in pending:
+        new = 1
+        pending[(lvl, book)] = ev_i
+    return new, touch
+
+
 def _stats(n_emp: int, lat: list[int], resed_touch: int) -> dict[str, Any]:
     arr = np.asarray(lat, dtype=float)
     return {
@@ -190,17 +217,9 @@ def sim_reseed(
             lvl = tr.level
             book = "a" if tr.aggressor == "buy" else "b"
             d = sim._asks if book == "a" else sim._bids
-            if (lvl, book) in pending:
-                # A fill lands only at the touch: depth re-rested on the
-                # still-vacant level inside this same step (iceberg
-                # reload mid-burst, immediate repost), so the vacancy
-                # resolved as a reseed-at-touch and the level is now
-                # emptied again — close the episode and reopen it.
-                lat.append(ev_i - pending.pop((lvl, book)))
-                resed_touch += 1
-            if (lvl not in d or len(d[lvl]) == 0) and (lvl, book) not in pending:
-                n_emp += 1
-                pending[(lvl, book)] = ev_i
+            new, touch = _resolve_vacancy_fill(lvl, book, d, pending, lat, ev_i)
+            n_emp += new
+            resed_touch += touch
     out = _stats(n_emp, lat, resed_touch)
     out["regime"] = regime
     return out

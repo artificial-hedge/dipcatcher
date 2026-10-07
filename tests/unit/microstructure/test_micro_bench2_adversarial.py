@@ -134,7 +134,6 @@ def test_instant_decomp_partial_fill_is_not_empty(tmp_path: Path) -> None:
     """A fill that leaves size at the touch is not an emptying."""
     messages = ["34200.1,1,1,50,2000000,1"]
     rows = ["2000500,50,2000000,50"]
-    t = 1
     for k in range(10):
         messages.append(f"3420{1 + k}.1,1,{10 + k},100,2000500,-1")
         rows.append("2000500,150,2000000,50")
@@ -142,7 +141,6 @@ def test_instant_decomp_partial_fill_is_not_empty(tmp_path: Path) -> None:
         size = 110 if k == 4 else 150
         messages.append(f"3420{1 + k}.2,4,{100 + k},{size},2000500,-1")
         rows.append("2000500,40,2000000,50" if k == 4 else "2000600,30,2000000,50")
-        t += 1
     msg, ob = _write_tape(tmp_path, messages, rows)
     out = lobster_instant_decomp(msg, ob)
     assert out["ok"] is True
@@ -178,9 +176,9 @@ def test_horizon_threaded_as_prefix() -> None:
     short = maker_age_arm(13, sized=False, horizon=120.0)
     long = maker_age_arm(13, sized=False, horizon=600.0)
     assert short["n_fills"] <= long["n_fills"]
-    assert maker_age_arm(13, sized=False, horizon=300.0) == maker_age_arm(
-        13, sized=False, horizon=300.0
-    )
+    ref = maker_age_arm(13, sized=False, horizon=300.0)
+    re_run = maker_age_arm(13, sized=False, horizon=300.0)
+    assert ref == re_run
     sw_short = sweep_width_arm(13, sized=False, horizon=120.0)
     sw_long = sweep_width_arm(13, sized=False, horizon=600.0)
     assert sw_short["n_bursts"] <= sw_long["n_bursts"]
@@ -258,10 +256,12 @@ def test_tape_stats_rejects_bad_values(tmp_path: Path) -> None:
     root = _root(0.5, 0.4)
     ts = load_tape_stats(root, "syn")
     assert ts.rate("sub") == pytest.approx(0.5)
+    neg = _root(-1.0, 0.4)
     with pytest.raises(ValueError):
-        load_tape_stats(_root(-1.0, 0.4), "syn")
+        load_tape_stats(neg, "syn")
+    nan_root = _root(0.5, float("nan"))
     with pytest.raises(ValueError):
-        load_tape_stats(_root(0.5, float("nan")), "syn")
+        load_tape_stats(nan_root, "syn")
 
 
 def test_streak_calibrate_degenerate_arm_fails_closed(

@@ -28,7 +28,7 @@ from quant_fund.microstructure.zone_card_bench import (
     _TAPE_LIFE_S,
     _TAPE_MIX,
 )
-from quant_fund.microstructure.zone_ttl_bench import _cell
+from quant_fund.microstructure.zone_ttl_bench import _cell, _mean
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -68,12 +68,6 @@ def zone_churn_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
         cells.append((label, zone, ttl, rq, inten, draws))
 
     return _emit(cells, horizon, seed)
-
-
-def _mean(vals: list[Any]) -> float | None:
-    """Mean over the non-missing draws; None when every draw is missing."""
-    xs = [float(v) for v in vals if v is not None]
-    return sum(xs) / len(xs) if xs else None
 
 
 def _emit(cell_rows: list[Any], horizon: int, seed: int) -> dict[str, Any]:
