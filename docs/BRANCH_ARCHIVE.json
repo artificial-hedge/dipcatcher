@@ -7097,6 +7097,232 @@
       "excluded_file_bytes": 1585906,
       "untracked_archive_bytes": 1551811,
       "attempt": 1
+    },
+    {
+      "path": "/Users/vaithianathan/dipcatcher",
+      "original_branch": "isolated",
+      "original_head": "dbf54cef338b090952e79bc72c146c1b5469680c",
+      "snapshot_sha": "0d1613a5194a60d64c38fb56cd035a058085b713",
+      "snapshot_tree": "62b520443df824bd8899bb3024f05ed6ecf370b3",
+      "clean": false,
+      "counts": {
+        "staged": 0,
+        "unstaged": 8,
+        "untracked": 40
+      },
+      "excluded_paths": [
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_BNBUSDT_ewma_emp94_5725886deaf06cfe.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 53064
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_BNBUSDT_ewma_emp99_5da846507f43c1a3.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 62029
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_BNBUSDT_ewma_emp_83699fba7616f472.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 58301
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp94_051ff869a36723e8.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 73164
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp94_39fd87f85b775e7e.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 53244
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp99_934ad091db5d3978.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 86129
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp99_cfc3d7e5066071cb.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 62092
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp_adb76eec9464aac0.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 80413
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp_b408896838dec059.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 58554
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp94_546d4c3183f4002c.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 53215
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp94_a791f92240e1b4b9.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 73182
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp99_43804af580672c77.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 85743
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp99_d88284265d7a48cf.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 61685
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp_1a214e03cdfc9488.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 58426
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp_6b2e99493e295535.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 80344
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_SOLUSDT_ewma_emp94_0ba89c289183ba27.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 53081
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_SOLUSDT_ewma_emp99_9a1665596d809505.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 61914
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_SOLUSDT_ewma_emp_01dcefb48918d542.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 58069
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp94_3167ad3e240a28d4.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 53155
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp94_9bb4497dd9a8b16e.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 73208
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp99_812702a8787b3099.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 86186
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp99_a7caa9ab3874402a.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 62074
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp_ac76779a546aa3d6.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 80331
+        },
+        {
+          "path": "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp_c8c717c4a7b8ee63.npz",
+          "reason": "generated_qpanel_cache",
+          "bytes": 58303
+        },
+        {
+          "path": "research/cost_aware_tournament_20261007/validation.json",
+          "reason": "generated_validation_output",
+          "bytes": 76514191
+        }
+      ],
+      "backup_directory": "/Users/vaithianathan/.codex/backups/dipcatcher-branches-20261007T110800Z/late-primary-1791372620327895000-attempt-2",
+      "fingerprint": {
+        "head": "dbf54cef338b090952e79bc72c146c1b5469680c",
+        "branch": "isolated",
+        "index_hash": "48e2e45359ebff165870055cf1e195b0488dbf3f492216b093f058036314cadd",
+        "files": {
+          "pyproject.toml": "e27a69b5ec8b5fbe52e5dafd07fd6f74e587d27946e71de6cb85d3f91d99eddd",
+          "src/fx1/cli.py": "6445e158a2a740d5d3f07ff7d6618617ef6b951f0e9ff6b54c5304a6b4ce88f7",
+          "src/fx1/interactive/__init__.py": "af3934e46b7c887654c6dc3f7c8e2b48e743bb690271206ec81856880b87f64f",
+          "src/fx1/interactive/app.py": "a296ad387a641bda6bd084120472df9f24ead239d3f31d78da359f12fcf37972",
+          "src/fx1/interactive/wizard.py": "3fdb57d9e5eeb1aba9b702e97fb82d9295974c3baafe3cc303438f6616e27c1e",
+          "src/fx1/serve/backends.py": "b9ac9f99a3aff8e21761af71c2e2fe176d7abf53988d1dbfa7aa4e7c1c25cc88",
+          "src/quant_fund/cli/_app.py": "7eb7c9400937b30ff1140dfc7c8e5f4cdd417b7b79fa7fa55485f60c3071e1f0",
+          "tests/fx1/test_interactive.py": "a08c36a8cd0ac3218c766ab6465fcca9c7ce2e8a02012a8705ec2b17b6373d61",
+          "docs/VOL_SCOPE_CONTRACT.md": "57797bcea8f8a5129884bd6d812157588c7ebdba582fc39a73dfa047c62bcbaf",
+          "research/chop_robustness/run_sweep.py": "c8dcaddae5adc09965fee5ecf4e0f026cc273d7d7873a8b5b6499519ca833740",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_BNBUSDT_ewma_emp94_5725886deaf06cfe.npz": "2e3dc967e731ce37c21f49a8ed1153b27741668456e4e95c2e5bd06601a96631",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_BNBUSDT_ewma_emp99_5da846507f43c1a3.npz": "89298a7d47d0c192e3b17451d0c45e1df229e1c2eb94d7cc11b56ba18e7b5912",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_BNBUSDT_ewma_emp_83699fba7616f472.npz": "57f9dea46ed8b6743ccdb07de92c97c9a56834678b73b0588fa53d5a82c5c335",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp94_051ff869a36723e8.npz": "97f35b2720acb9d981454ae78610527b906566f36f11ccbd748fa3ba9c988b91",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp94_39fd87f85b775e7e.npz": "5a2d29a99ea88103091396795b0152fb2cc960ff7e801294e2553108e4b09e72",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp99_934ad091db5d3978.npz": "5d045a6c16e90ef8090d63543e590d285af83236a35a6655e9bdddb589200613",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp99_cfc3d7e5066071cb.npz": "8d6600167b6a9b3d91ccdd012aac3df8c23ceae2948a404cbf8f8b8e8494f4e7",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp_adb76eec9464aac0.npz": "8ed3505dbcd1421beaa308e7e9d5bce43dd8ac1018d23b31b20e47adae597bd1",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_BTCUSDT_ewma_emp_b408896838dec059.npz": "e5b81c89433b09cf4c8345e30a1d405a124005fe2d12e83b41aefd81d2027665",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp94_546d4c3183f4002c.npz": "b4177e2b764aea48e2c0c7136858024aafc5e3b72de3507b1a66ed4c60a7940b",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp94_a791f92240e1b4b9.npz": "fb950498bd5528598f504de6d3518c785af09572fd4e72524bd5aa152592c9ab",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp99_43804af580672c77.npz": "e19ccd769b2541532b227ac0d57d4bc5444a117259684c5d677fdd05c9e6be45",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp99_d88284265d7a48cf.npz": "5b4c40472951658a15c1cb3906589a7e8cf46d7181360d41e4832b103c07715a",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp_1a214e03cdfc9488.npz": "868c2a590ec4bd71a89fe0b47016379a012b7cb92a8ef5a5b8539e3a73166e39",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_ETHUSDT_ewma_emp_6b2e99493e295535.npz": "086e919ba2953ed6e33e9113a9d3db3aa46cba578d7269a58b3a1df4b4a7ff13",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_SOLUSDT_ewma_emp94_0ba89c289183ba27.npz": "8e131f384882d7a2055364ac08d1e9c4323355cc5c1b7ba8f96c0ead2616c541",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_SOLUSDT_ewma_emp99_9a1665596d809505.npz": "f66e1a1b8e5a84221ec8b872354535b48a3625db6a7e60a2c85e6e93d607ed20",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_SOLUSDT_ewma_emp_01dcefb48918d542.npz": "4c7da6e45b85c99532096d2bba3485fdc2a53af295f4dd2b596527c06077ae33",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp94_3167ad3e240a28d4.npz": "9b701efc9f5e4fe32bfbcb3083521594c6231fc4c2606622d4eb9374283ab3c3",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp94_9bb4497dd9a8b16e.npz": "0066be6620864caf58a87c20a02c507621636052de00d5e520dc409c76a44eef",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp99_812702a8787b3099.npz": "af06349b838d7ca7c71b79c506549f65c80016d474bbff1c5405e3904b5cce07",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp99_a7caa9ab3874402a.npz": "b7af0bf8f60d2ad3e88eedaa70c7053ba04ca2f93b6577079bf733a678715b1c",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp_ac76779a546aa3d6.npz": "09a71890bd94e70ccb64a13fc56f380260d58122ce103186c18528540c3182b8",
+          "research/chop_robustness_20261007/qpanel_cache/qpanel_XRPUSDT_ewma_emp_c8c717c4a7b8ee63.npz": "d770c75a28b96dc01c4383a0bf301158cd8c0ebac8303e91db30ce90e0bfaeb5",
+          "research/chop_robustness_20261007/receipts/sim_live_chop-W1_full.json": "fca29eb5beac1ede9ff7be84a1cb240df8cb7dd50c5171539229841deb59fce3",
+          "research/chop_robustness_20261007/receipts/sim_live_chop-W2_last800d.json": "d88420a191e8c6475edefb026a056e78ec8dd0e5a09cb67b0a756dcb16ca209e",
+          "research/chop_robustness_20261007/receipts/sim_live_chop-W3_last500d.json": "8312d27c6162bbea02e4b586091bbb9e59b4a7ff6edc3ee25521afa4f28ef885",
+          "research/chop_robustness_20261007/receipts/sim_live_chop-W4_2018_05_8p3y.json": "18a1537ed3ee59d97ca5c5ede9de284b2da1e6fe2ca50e2ad73fd207ea09f1fc",
+          "research/cost_aware_tournament_20261007/manifest.json": "139609719867a9624a410f94e012837c038054aa47c751dce991e5475c51a418",
+          "research/cost_aware_tournament_20261007/validation.attempt.json": "355586657823e51139fa7458ed5c993070ba61fd87a76bb3351b076b2bda3d88",
+          "research/cost_aware_tournament_20261007/validation.json": "a295bef2cc4ce6cd841dafa90a1c6a1c957384eb2c6634b64aa33fe9e2452d9c",
+          "research/real_benchmark_us_wide_20261007/manifest.json": "a0fcdcd109c8c839e8b4f6fea9b62de3c4a2ce9c5f2eb64d1c2871db83406719",
+          "src/quant_fund/models/vol_scope.py": "cbfcbf3af741d1936e3624f0d9ebf8f9e1ddda8092263eb297e4e4499ff86032",
+          "src/quant_fund/pipeline/artifact_manifest.py": "fb920e3d81fb44f5d43bd7208bd0b77af288b88f176919b32ade0e650c4380f5",
+          "src/quant_fund/proof/promotion_receipt.py": "47bc693c8e739db96a37ab142417eaff2ebb3ba2178cd1e50a5b65fffc69fc87",
+          "tests/unit/research/test_verify_promotion_receipt.py": "53c0ac46395166f2f22c470c9de62a04d5e3f98e9089e00e9255cea5647dad50",
+          "tests/unit/test_manifest_dataset_identity.py": "fea9b262fd75a6c2b48181ea663ae5fddead3bacb9ac7b42e70b79c727e525e1",
+          "tests/unit/test_promotion_receipt.py": "46f679541463b54364bcff5f119144dcc1d01d4505205f35cf70025e5f0a7c81"
+        }
+      },
+      "capture": "late_final_primary",
+      "included_paths": [
+        "pyproject.toml",
+        "src/fx1/cli.py",
+        "src/fx1/interactive/__init__.py",
+        "src/fx1/interactive/app.py",
+        "src/fx1/interactive/wizard.py",
+        "src/fx1/serve/backends.py",
+        "src/quant_fund/cli/_app.py",
+        "tests/fx1/test_interactive.py",
+        "docs/VOL_SCOPE_CONTRACT.md",
+        "research/chop_robustness/run_sweep.py",
+        "research/chop_robustness_20261007/receipts/sim_live_chop-W1_full.json",
+        "research/chop_robustness_20261007/receipts/sim_live_chop-W2_last800d.json",
+        "research/chop_robustness_20261007/receipts/sim_live_chop-W3_last500d.json",
+        "research/chop_robustness_20261007/receipts/sim_live_chop-W4_2018_05_8p3y.json",
+        "research/cost_aware_tournament_20261007/manifest.json",
+        "research/cost_aware_tournament_20261007/validation.attempt.json",
+        "research/real_benchmark_us_wide_20261007/manifest.json",
+        "src/quant_fund/models/vol_scope.py",
+        "src/quant_fund/pipeline/artifact_manifest.py",
+        "src/quant_fund/proof/promotion_receipt.py",
+        "tests/unit/research/test_verify_promotion_receipt.py",
+        "tests/unit/test_manifest_dataset_identity.py",
+        "tests/unit/test_promotion_receipt.py"
+      ],
+      "included_changed_file_bytes": 512820,
+      "excluded_file_bytes": 78100097,
+      "untracked_archive_bytes": 12730786,
+      "attempt": 2
     }
   ],
   "unresolved_prs": [
@@ -7597,7 +7823,7 @@
     }
   ],
   "main_commit": "c57d3760c466294238f1efc05f1ed7c0ad219e7d",
-  "isolated_commit": "098208fe5f2b2cac7cc9af64e2071d3fa6a726c0",
+  "isolated_commit": "14a02621c34e1dac9af2fa87585636753db845fe",
   "github_ruleset_id": 24646693,
   "local_creation_guard": "hooks/reference-transaction",
   "recovery": "Original work is reachable by the recorded commit SHA. Inspect with git show SHA:path or apply commits onto isolated/main.",
@@ -7605,5 +7831,7 @@
     "refs/heads/devin/1791353234-audit-wave-book": "0fd7ca9331dfa5fb98fed868837addeaa727c5f6",
     "refs/heads/kimi/20261007-frechet-fix": "b3ca17c9ba708c54be83da0813f9e9afd7f7899d"
   },
-  "late_local_refs": {}
+  "late_local_refs": {
+    "refs/heads/isolated@final-capture": "da5c3e78c7f618fb15e42169850bb01044c3ea77"
+  }
 }
