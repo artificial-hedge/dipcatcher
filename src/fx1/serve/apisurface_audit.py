@@ -55,26 +55,40 @@ _LOCAL_ENVS = (
     "FX1_API_CORS_ORIGINS",
 )
 
+_P_HEALTH = "/health"
+_P_READY = "/ready"
+_P_MODELS = "/v1/models"
+_P_CHAT = "/v1/chat/completions"
+_P_COMPLETE = "/harness/complete"
+_P_KEYS = "/harness/keys"
+_P_DRAIN = "/harness/drain"
+_P_COMMANDS = "/harness/commands"
+_P_VERIFY = "/receipts/verify"
+_P_UNKNOWN = "/v1/definitely-not-here"
+_ORIGIN_EVIL = "https://evil.example"
+_ORIGIN_OK = "https://ok.example"
+_REMOTE_CLIENT = "8.8.8.8"  # NOSONAR(S1313) — fixed non-loopback probe host
+
 # Every route family a client can legitimately expect — the surface
 # contract this battery pins. Deliberately conservative: only paths
 # whose existence is load-bearing across dialects.
 _REQUIRED_ROUTES: dict[str, set[str]] = {
-    "/health": {"GET"},
-    "/ready": {"GET"},
+    _P_HEALTH: {"GET"},
+    _P_READY: {"GET"},
     "/metrics": {"GET"},
-    "/v1/models": {"GET"},
-    "/v1/chat/completions": {"POST"},
+    _P_MODELS: {"GET"},
+    _P_CHAT: {"POST"},
     "/v1/completions": {"POST"},
     "/v1/messages": {"POST"},
     "/v1/responses": {"POST"},
     "/v1/evals": {"GET", "POST"},
     "/v1/fine_tuning/jobs": {"GET", "POST"},
-    "/harness/complete": {"POST"},
+    _P_COMPLETE: {"POST"},
     "/harness/jobs": {"GET", "POST"},
-    "/harness/keys": {"GET", "POST"},
-    "/harness/drain": {"POST"},
-    "/harness/commands": {"GET"},
-    "/receipts/verify": {"POST"},
+    _P_KEYS: {"GET", "POST"},
+    _P_DRAIN: {"POST"},
+    _P_COMMANDS: {"GET"},
+    _P_VERIFY: {"POST"},
 }
 
 
@@ -147,14 +161,14 @@ def _probe_inventory() -> dict[str, bool]:
                 seen.add((m, r.path))
     out["rt_no_duplicate_bindings"] = dupes == 0
     # the scope map is shared and honest
-    out["rt_scope_admin_keys"] = api_mod._required_scope("GET", "/harness/keys") == "admin"  # noqa: SLF001
+    out["rt_scope_admin_keys"] = api_mod._required_scope("GET", _P_KEYS) == "admin"  # noqa: SLF001
     out["rt_scope_admin_keys_nested"] = (
         api_mod._required_scope("DELETE", "/harness/keys/abc") == "admin"  # noqa: SLF001
     )
-    out["rt_scope_admin_drain"] = api_mod._required_scope("POST", "/harness/drain") == "admin"  # noqa: SLF001
-    out["rt_scope_get_read"] = api_mod._required_scope("GET", "/v1/models") == "read"  # noqa: SLF001
+    out["rt_scope_admin_drain"] = api_mod._required_scope("POST", _P_DRAIN) == "admin"  # noqa: SLF001
+    out["rt_scope_get_read"] = api_mod._required_scope("GET", _P_MODELS) == "read"  # noqa: SLF001
     out["rt_scope_post_write"] = (
-        api_mod._required_scope("POST", "/v1/chat/completions") == "write"  # noqa: SLF001
+        api_mod._required_scope("POST", _P_CHAT) == "write"  # noqa: SLF001
     )
     out["rt_scope_options_read"] = api_mod._required_scope("OPTIONS", "/v1/x") == "read"  # noqa: SLF001
     out["rt_scope_delete_write"] = (
@@ -166,11 +180,11 @@ def _probe_inventory() -> dict[str, bool]:
 def _probe_public() -> dict[str, bool]:
     out: dict[str, bool] = {}
     dev, api_mod = _build()
-    out["pb_public_exactly_health"] = frozenset({"/health"}) == api_mod._PUBLIC_PATHS  # noqa: SLF001
-    out["pb_health_dev"] = dev.get("/health").status_code == 200
+    out["pb_public_exactly_health"] = frozenset({_P_HEALTH}) == api_mod._PUBLIC_PATHS  # noqa: SLF001
+    out["pb_health_dev"] = dev.get(_P_HEALTH).status_code == 200
     secured, _ = _build(_ENV_KEY)
-    out["pb_health_key_mode"] = secured.get("/health").status_code == 200
-    for path in ("/v1/models", "/harness/commands", "/metrics", "/ready", "/openapi.json"):
+    out["pb_health_key_mode"] = secured.get(_P_HEALTH).status_code == 200
+    for path in (_P_MODELS, _P_COMMANDS, "/metrics", _P_READY, "/openapi.json"):
         tag = path.strip("/").replace("/", "_").replace(".", "_")
         out[f"pb_gated_{tag}"] = secured.get(path).status_code == 401
     return out
@@ -181,35 +195,29 @@ def _probe_auth_surface() -> dict[str, bool]:
     secured, _ = _build(_ENV_KEY)
     root = {"X-API-Key": _ENV_KEY}
     out["au_wrong_key_401"] = (
-        secured.get("/v1/models", headers={"X-API-Key": "wrong-key"}).status_code == 401
+        secured.get(_P_MODELS, headers={"X-API-Key": "wrong-key"}).status_code == 401
     )
-    out["au_env_key_200"] = secured.get("/v1/models", headers=root).status_code == 200
+    out["au_env_key_200"] = secured.get(_P_MODELS, headers=root).status_code == 200
     out["au_bearer_v1"] = (
-        secured.get("/v1/models", headers={"Authorization": f"Bearer {_ENV_KEY}"}).status_code
-        == 200
+        secured.get(_P_MODELS, headers={"Authorization": f"Bearer {_ENV_KEY}"}).status_code == 200
     )
     out["au_bearer_harness_refused"] = (
-        secured.get(
-            "/harness/commands", headers={"Authorization": f"Bearer {_ENV_KEY}"}
-        ).status_code
-        == 401
+        secured.get(_P_COMMANDS, headers={"Authorization": f"Bearer {_ENV_KEY}"}).status_code == 401
     )
-    out["au_xkey_harness"] = secured.get("/harness/commands", headers=root).status_code == 200
+    out["au_xkey_harness"] = secured.get(_P_COMMANDS, headers=root).status_code == 200
     # auth precedes routing: unknown path 401s unauthenticated, 404s authed
-    out["au_unknown_unauth_401"] = secured.get("/v1/definitely-not-here").status_code == 401
-    out["au_unknown_authed_404"] = (
-        secured.get("/v1/definitely-not-here", headers=root).status_code == 404
-    )
+    out["au_unknown_unauth_401"] = secured.get(_P_UNKNOWN).status_code == 401
+    out["au_unknown_authed_404"] = secured.get(_P_UNKNOWN, headers=root).status_code == 404
     out["au_unknown_harness_404"] = (
         secured.get("/harness/definitely-not-here", headers=root).status_code == 404
     )
     # dev mode: loopback trusted — TestClient host is in _LOOPBACK_HOSTS
     dev, api_mod = _build()
-    out["au_dev_loopback_200"] = dev.get("/v1/models").status_code == 200
+    out["au_dev_loopback_200"] = dev.get(_P_MODELS).status_code == 200
     out["au_dev_testclient_loopback"] = "testclient" in api_mod._LOOPBACK_HOSTS  # noqa: SLF001
     # non-loopback host in dev mode is refused, not silently trusted
-    remote_dev, _ = _build(client=("8.8.8.8", 31337))
-    out["au_dev_remote_403"] = remote_dev.get("/v1/models").status_code == 403
+    remote_dev, _ = _build(client=(_REMOTE_CLIENT, 31337))
+    out["au_dev_remote_403"] = remote_dev.get(_P_MODELS).status_code == 403
     return out
 
 
@@ -217,25 +225,25 @@ def _probe_scopes() -> dict[str, bool]:
     out: dict[str, bool] = {}
     secured, _ = _build(_ENV_KEY)
     root = {"X-API-Key": _ENV_KEY}
-    mint = secured.post("/harness/keys", json={"name": "svc"}, headers=root)
+    mint = secured.post(_P_KEYS, json={"name": "svc"}, headers=root)
     mkey = mint.json().get("key", "") if mint.status_code == 201 else ""
     mh = {"X-API-Key": mkey}
     out["sc_mint_201"] = mint.status_code == 201 and mkey.startswith("fx1k_")
-    out["sc_read_ok"] = secured.get("/v1/models", headers=mh).status_code == 200
+    out["sc_read_ok"] = secured.get(_P_MODELS, headers=mh).status_code == 200
     out["sc_write_ok"] = (
-        secured.post("/receipts/verify", json={"receipt": {"a": 1}}, headers=mh).status_code != 403
+        secured.post(_P_VERIFY, json={"receipt": {"a": 1}}, headers=mh).status_code != 403
     )
-    out["sc_admin_denied"] = secured.get("/harness/keys", headers=mh).status_code == 403
-    denied = secured.get("/harness/keys", headers=mh)
+    out["sc_admin_denied"] = secured.get(_P_KEYS, headers=mh).status_code == 403
+    denied = secured.get(_P_KEYS, headers=mh)
     out["sc_denied_code"] = denied.json().get("code") == "insufficient_scope"
-    out["sc_admin_env_ok"] = secured.get("/harness/keys", headers=root).status_code == 200
-    out["sc_drain_admin_only"] = secured.post("/harness/drain", headers=mh).status_code == 403
+    out["sc_admin_env_ok"] = secured.get(_P_KEYS, headers=root).status_code == 200
+    out["sc_drain_admin_only"] = secured.post(_P_DRAIN, headers=mh).status_code == 403
     # read-only minted key cannot write
-    mint_ro = secured.post("/harness/keys", json={"name": "ro", "scopes": ["read"]}, headers=root)
+    mint_ro = secured.post(_P_KEYS, json={"name": "ro", "scopes": ["read"]}, headers=root)
     rokey = mint_ro.json().get("key", "") if mint_ro.status_code == 201 else ""
     roh = {"X-API-Key": rokey}
-    out["sc_ro_read_ok"] = secured.get("/v1/models", headers=roh).status_code == 200
-    ro_denied = secured.post("/receipts/verify", json={"receipt": {"a": 1}}, headers=roh)
+    out["sc_ro_read_ok"] = secured.get(_P_MODELS, headers=roh).status_code == 200
+    ro_denied = secured.post(_P_VERIFY, json={"receipt": {"a": 1}}, headers=roh)
     out["sc_ro_write_403"] = (
         ro_denied.status_code == 403 and ro_denied.json().get("code") == "insufficient_scope"
     )
@@ -249,7 +257,7 @@ def _probe_error_grammar() -> dict[str, bool]:
     out: dict[str, bool] = {}
     secured, _ = _build(_ENV_KEY)
     root = {"X-API-Key": _ENV_KEY}
-    v1_404 = secured.get("/v1/definitely-not-here", headers=root)
+    v1_404 = secured.get(_P_UNKNOWN, headers=root)
     out["eg_v1_404_openai"] = v1_404.status_code == 404 and "error" in v1_404.json()
     h_404 = secured.get("/harness/definitely-not-here", headers=root)
     out["eg_harness_404_detail"] = (
@@ -258,21 +266,18 @@ def _probe_error_grammar() -> dict[str, bool]:
     # harness surfaces 405 in the detail/code grammar; /v1 method
     # mismatches land in the OpenAI-parity catch-all's 404 Invalid URL
     out["eg_harness_method_405"] = (
-        secured.get("/harness/complete", headers=root).status_code == 405
-        and secured.get("/harness/complete", headers=root).json().get("code")
-        == "method_not_allowed"
+        secured.get(_P_COMPLETE, headers=root).status_code == 405
+        and secured.get(_P_COMPLETE, headers=root).json().get("code") == "method_not_allowed"
     )
-    v1_mm = secured.request("PUT", "/v1/chat/completions", headers=root)
+    v1_mm = secured.request("PUT", _P_CHAT, headers=root)
     out["eg_v1_wrong_method_404"] = v1_mm.status_code == 404 and "error" in v1_mm.json()
     # GET /v1/chat/completions is a real route (chat-store list), not a miss
-    out["eg_v1_list_route_real"] = (
-        secured.get("/v1/chat/completions", headers=root).status_code == 200
-    )
-    v1_422 = secured.post("/v1/chat/completions", json={}, headers=root)
+    out["eg_v1_list_route_real"] = secured.get(_P_CHAT, headers=root).status_code == 200
+    v1_422 = secured.post(_P_CHAT, json={}, headers=root)
     out["eg_v1_422_openai"] = v1_422.status_code == 422 and "error" in v1_422.json()
-    u_401 = secured.get("/v1/models")
+    u_401 = secured.get(_P_MODELS)
     out["eg_v1_401_openai"] = u_401.status_code == 401 and "error" in u_401.json()
-    h_401 = secured.get("/harness/commands")
+    h_401 = secured.get(_P_COMMANDS)
     out["eg_harness_401_detail"] = (
         h_401.status_code == 401 and "detail" in h_401.json() and "code" in h_401.json()
     )
@@ -282,14 +287,14 @@ def _probe_error_grammar() -> dict[str, bool]:
 def _probe_headers() -> dict[str, bool]:
     out: dict[str, bool] = {}
     dev, _ = _build()
-    r = dev.get("/health")
+    r = dev.get(_P_HEALTH)
     out["hd_request_id_stamped"] = bool(r.headers.get("x-request-id"))
-    echoed = dev.get("/health", headers={"X-Request-ID": "audit-req-1"})
+    echoed = dev.get(_P_HEALTH, headers={"X-Request-ID": "audit-req-1"})
     out["hd_request_id_echo"] = echoed.headers.get("x-request-id") == "audit-req-1"
     out["hd_nosniff"] = r.headers.get("x-content-type-options") == "nosniff"
     out["hd_api_version"] = bool(r.headers.get("x-fx1-api-version"))
     # error responses carry the same headers
-    err = dev.get("/v1/definitely-not-here")
+    err = dev.get(_P_UNKNOWN)
     out["hd_errors_too"] = bool(err.headers.get("x-request-id"))
     return out
 
@@ -298,14 +303,14 @@ def _probe_drain() -> dict[str, bool]:
     out: dict[str, bool] = {}
     secured, _ = _build(_ENV_KEY)
     root = {"X-API-Key": _ENV_KEY}
-    d = secured.post("/harness/drain", headers=root)
+    d = secured.post(_P_DRAIN, headers=root)
     out["dr_latch_200"] = d.status_code == 200 and d.json().get("draining") is True
-    refused = secured.post("/harness/complete", json={"command": "selftest"}, headers=root)
+    refused = secured.post(_P_COMPLETE, json={"command": "selftest"}, headers=root)
     out["dr_gated_503"] = refused.status_code == 503
     out["dr_gated_code"] = refused.json().get("code") == "draining"
-    out["dr_health_survives"] = secured.get("/health").status_code == 200
-    out["dr_ready_survives"] = secured.get("/ready", headers=root).status_code in (200, 503)
-    d2 = secured.post("/harness/drain", headers=root)
+    out["dr_health_survives"] = secured.get(_P_HEALTH).status_code == 200
+    out["dr_ready_survives"] = secured.get(_P_READY, headers=root).status_code in (200, 503)
+    d2 = secured.post(_P_DRAIN, headers=root)
     out["dr_idempotent"] = d2.status_code == 200 and d2.json().get("draining") is True
     return out
 
@@ -314,15 +319,15 @@ def _probe_cors() -> dict[str, bool]:
     out: dict[str, bool] = {}
     dev, api_mod = _build()
     preflight = dev.options(
-        "/v1/chat/completions",
+        _P_CHAT,
         headers={
-            "Origin": "https://evil.example",
+            "Origin": _ORIGIN_EVIL,
             "Access-Control-Request-Method": "POST",
         },
     )
     out["cors_default_closed"] = (
         "access-control-allow-origin" not in preflight.headers
-        or preflight.headers["access-control-allow-origin"] != "https://evil.example"
+        or preflight.headers["access-control-allow-origin"] != _ORIGIN_EVIL
     )
     out["cors_wildcard_refused"] = False
     try:
@@ -334,26 +339,24 @@ def _probe_cors() -> dict[str, bool]:
         api_mod.create_app(cors_origins="not-a-url")
     except ValueError:
         out["cors_bad_origin_refused"] = True
-    ok_dev, _ = _build(cors_origins="https://ok.example")
+    ok_dev, _ = _build(cors_origins=_ORIGIN_OK)
     ok_pf = ok_dev.options(
-        "/v1/chat/completions",
+        _P_CHAT,
         headers={
-            "Origin": "https://ok.example",
+            "Origin": _ORIGIN_OK,
             "Access-Control-Request-Method": "POST",
         },
     )
-    out["cors_explicit_origin"] = (
-        ok_pf.headers.get("access-control-allow-origin") == "https://ok.example"
-    )
+    out["cors_explicit_origin"] = ok_pf.headers.get("access-control-allow-origin") == _ORIGIN_OK
     evil_pf = ok_dev.options(
-        "/v1/chat/completions",
+        _P_CHAT,
         headers={
-            "Origin": "https://evil.example",
+            "Origin": _ORIGIN_EVIL,
             "Access-Control-Request-Method": "POST",
         },
     )
     out["cors_unlisted_origin_denied"] = (
-        evil_pf.headers.get("access-control-allow-origin") != "https://evil.example"
+        evil_pf.headers.get("access-control-allow-origin") != _ORIGIN_EVIL
     )
     return out
 
