@@ -564,6 +564,9 @@
   "models/multisource_conformal.py": {
    "status": "audited"
   },
+  "models/multistate.py": {
+   "status": "audited"
+  },
   "models/nardl.py": {
    "status": "audited"
   },

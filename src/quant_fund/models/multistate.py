@@ -82,12 +82,17 @@ def ctmc_intensity_fit(
     u = np.zeros(n_states)
     if isinstance(exposure, dict):
         for k, v in exposure.items():
-            u[int(k)] = float(v)
+            kf = float(k)
+            if kf != int(kf) or not (0 <= int(kf) < n_states):
+                raise ValueError(f"exposure key {k} out of range")
+            u[int(kf)] = float(v)
     else:
         arr = np.asarray(exposure, dtype=np.float64).ravel()
         if arr.size != n_states:
             raise ValueError("exposure length must equal n_states")
         u = arr
+    if not np.all(np.isfinite(u)) or np.any(u < 0):
+        raise ValueError("exposure must be finite and non-negative")
     n_ij = np.zeros((n_states, n_states))
     for a, b in transitions:
         if not (0 <= a < n_states and 0 <= b < n_states):
@@ -106,21 +111,32 @@ def ctmc_intensity_fit(
     return q
 
 
-def transition_probabilities(q: FloatArray, horizon: float) -> FloatArray:
-    """P(0→h) = expm(Q·h). Validates generator structure."""
+def _check_generator(q: FloatArray) -> FloatArray:
+    """Fail closed unless ``q`` is a valid CTMC generator: square,
+    finite, off-diagonal >= 0, row sums 0."""
     q = np.asarray(q, dtype=np.float64)
     if q.ndim != 2 or q.shape[0] != q.shape[1]:
         raise ValueError("q must be square")
-    if horizon <= 0:
-        raise ValueError("horizon must be positive")
+    if not np.all(np.isfinite(q)):
+        raise ValueError("q must be finite")
     if np.any(np.diag(q) > 1e-9) or np.any(np.abs(q.sum(axis=1)) > 1e-6):
         raise ValueError("q is not a valid CTMC generator")
+    if np.any(q - np.diag(np.diag(q)) < -1e-9):
+        raise ValueError("q has negative off-diagonal rates")
+    return q
+
+
+def transition_probabilities(q: FloatArray, horizon: float) -> FloatArray:
+    """P(0→h) = expm(Q·h). Validates generator structure."""
+    q = _check_generator(q)
+    if not np.isfinite(horizon) or horizon <= 0:
+        raise ValueError("horizon must be positive and finite")
     return np.asarray(linalg.expm(q * horizon))
 
 
 def mean_sojourn(q: FloatArray) -> FloatArray:
     """Expected holding time per state: -1/q_ii (inf for absorbing)."""
-    q = np.asarray(q, dtype=np.float64)
+    q = _check_generator(q)
     d = np.diag(q)
     with np.errstate(divide="ignore"):
         out = np.where(d < -1e-12, -1.0 / d, np.inf)
