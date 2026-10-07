@@ -222,6 +222,26 @@ def test_sim_real_ledger_counts_hidden_execs(tmp_path: Path) -> None:
     assert out["mo_fraction"] == 2 / 5
 
 
+@pytest.mark.parametrize("event_type", [EXECUTION, EXECUTION_HIDDEN])
+def test_event_zero_execution_stays_in_aggressor_ledgers(tmp_path: Path, event_type: int) -> None:
+    msg, ob = _tape(
+        tmp_path,
+        [
+            _ev(0, event_type, 1, 10, 49000, 1),
+            _ev(1, SUBMISSION, 2, 100, 49000, 1),
+            _ev(2, SUBMISSION, 3, 100, 50000, -1),
+        ],
+    )
+
+    tape = tape_measurements(msg, ob)
+    ledger = measure_lobster(msg, ob, tick_units=100.0)
+
+    assert tape["n_executions"] == 1
+    assert ledger["n_events"] == 3
+    assert ledger["n_trades"] == 1
+    assert ledger["mo_fraction"] == 1 / 3
+
+
 def test_cancel_cluster_counts_hidden_execs(tmp_path: Path) -> None:
     _tape(
         tmp_path,
