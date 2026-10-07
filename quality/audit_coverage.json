@@ -738,6 +738,9 @@
   "models/sketches.py": {
    "status": "audited"
   },
+  "models/sparse.py": {
+   "status": "audited"
+  },
   "models/specification_curve.py": {
    "status": "audited"
   },
