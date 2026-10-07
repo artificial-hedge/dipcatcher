@@ -698,7 +698,9 @@ class EvalSpecStore:
             return self._specs.get(spec_id)
 
     def update(self, spec: EvalSpec) -> None:
-        """Journal a spec mutation (name/metadata edits are durable)."""
+        """Journal a spec mutation — name/metadata always, the declared
+        shape on the unbound hot-reload path (the route/SDK freeze it once
+        a run binds)."""
         with self._lock:
             self._write({"record": spec.model_dump(mode="json")})
 
