@@ -43,7 +43,7 @@ from typing import Any
 def seal_receipt(receipt: Any) -> Any: ...  # type: ignore[no-untyped-def]
 def verify_receipt_bytes(data: bytes) -> Any: ...  # type: ignore[no-untyped-def]
 def verify_receipt_file(path: Any) -> Any: ...  # type: ignore[no-untyped-def]
-def verify_receipt_payload(payload: Any) -> Any: ...  # type: ignore[no-untyped-def]
+def verify_receipt_payload(payload: Any, path: Any = ...) -> Any: ...  # type: ignore[no-untyped-def]
 
 
 __all__ = [

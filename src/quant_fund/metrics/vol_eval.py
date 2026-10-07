@@ -205,8 +205,8 @@ def rescale_units(values: Array, *, from_units: object, to_units: object) -> Arr
     if source == target:
         return arr
     if source == VARIANCE_UNITS:
-        return np.sqrt(np.maximum(arr, 0.0))
-    return arr * arr
+        return np.asarray(np.sqrt(np.maximum(arr, 0.0)), dtype=np.float64)
+    return np.asarray(arr * arr, dtype=np.float64)
 
 
 def _keyed_matrix(values: Array, n_keys: int, name: str) -> Array:
