@@ -205,6 +205,6 @@ def bench_star(seed: int = 20261231 + 350) -> dict[str, float]:
         "synthetic_star_pvalue": lm_star["pvalue"],
         "synthetic_star_c_hat": fit["c"],
         "synthetic_star_lm3_lin_pvalue": lm_lin["pvalue"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

@@ -194,6 +194,6 @@ def bench_pelt_wbs(seed: int = 20261231 + 340) -> dict[str, float]:
         "synthetic_pelt_max_dist": dist,
         "synthetic_pelt_null_cp": float(r_p_null["n_cp"][0]),
         "synthetic_wbs_n_cp": float(r_w["n_cp"][0]),
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

@@ -204,6 +204,6 @@ def bench_stable(seed: int = 20261231 + 363) -> dict[str, float]:
         "synthetic_st_alpha2_hat": r2["alpha"],
         "synthetic_st_beta_hat": r["beta"],
         "synthetic_st_cf_err": r["cf_err"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

@@ -184,6 +184,6 @@ def bench_log_acd(seed: int = 20261231 + 352) -> dict[str, float]:
         "synthetic_lacd_ll_gain": r["ll_gain_vs_iid"],
         "synthetic_lacd_resid_acf1": r["resid_acf1"],
         "synthetic_lacd_iid_resid_acf1": r_i["resid_acf1"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

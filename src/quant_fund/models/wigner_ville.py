@@ -143,6 +143,6 @@ def bench_wigner_ville(seed: int = 20261231 + 353) -> dict[str, float]:
         "synthetic_wvd_ridge_err": ridge_err,
         "synthetic_wvd_concentration": conc,
         "synthetic_wvd_energy": float(r["total_energy"][0]),
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

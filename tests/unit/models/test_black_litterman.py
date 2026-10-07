@@ -43,5 +43,5 @@ def test_input_validation() -> None:
 
 def test_bench_contract() -> None:
     out = bench_bl()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_bl_pull0"] > 0.0

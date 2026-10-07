@@ -196,6 +196,6 @@ def bench_emd(seed: int = 20261231 + 342) -> dict[str, float]:
         "synthetic_emd_recon_err": recon_err,
         "synthetic_emd_best_corr": best,
         "synthetic_emd_top3_var_explained": var_expl,
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

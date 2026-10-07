@@ -10,7 +10,7 @@ from quant_fund.models.wavelet_coherence import (
 
 def test_bench_wavelet_coherence_passes():
     r = bench_wavelet_coherence()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_coherence_bounded():

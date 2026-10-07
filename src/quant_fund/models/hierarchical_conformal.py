@@ -494,18 +494,18 @@ def bench_ghcp(
         fin = wid[np.isfinite(wid)]
         coverage_means[m] = float(cov.mean())
         width_means[m] = float(fin.mean()) if fin.size > 0 else float("inf")
-        out[f"coverage_m{m}"] = coverage_means[m]
-        out[f"mean_width_m{m}"] = width_means[m]
-        out[f"trivial_share_m{m}"] = float(np.mean(np.asarray(trivials[m], dtype=float)))
-    out["min_coverage"] = float(min(coverage_means.values()))
+        out[f"synthetic_coverage_m{m}"] = coverage_means[m]
+        out[f"synthetic_mean_width_m{m}"] = width_means[m]
+        out[f"synthetic_trivial_share_m{m}"] = float(np.mean(np.asarray(trivials[m], dtype=float)))
+    out["synthetic_min_coverage"] = float(min(coverage_means.values()))
     ordered_widths = [width_means[m] for m in ms]
-    out["width_shrinks"] = 1.0 if ordered_widths[-1] < ordered_widths[0] else 0.0
-    out["n_reps"] = float(n_reps)
-    out["alpha"] = float(alpha)
-    out["eta"] = float(eta)
-    out["gamma"] = float(gamma)
-    out["sigma"] = float(sigma)
-    out["seed"] = float(seed)
-    out["dgp"] = "synthetic_hierarchical_gaussian"
-    out["claim"] = "research_metric_only"
+    out["synthetic_width_shrinks"] = 1.0 if ordered_widths[-1] < ordered_widths[0] else 0.0
+    out["synthetic_n_reps"] = float(n_reps)
+    out["synthetic_alpha"] = float(alpha)
+    out["synthetic_eta"] = float(eta)
+    out["synthetic_gamma"] = float(gamma)
+    out["synthetic_sigma"] = float(sigma)
+    out["synthetic_seed"] = float(seed)
+    out["synthetic_dgp"] = "synthetic_hierarchical_gaussian"
+    out["synthetic_claim"] = "research_metric_only"
     return out

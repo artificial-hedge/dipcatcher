@@ -173,6 +173,6 @@ def bench_gallant_snp(seed: int = 20261231 + 343) -> dict[str, float]:
         "synthetic_snp_ll_gain_t": r_t["ll_gain"],
         "synthetic_snp_ll_gain_normal": r_n["ll_gain"],
         "synthetic_snp_converged": r_t["converged"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

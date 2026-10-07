@@ -145,6 +145,6 @@ def bench_spectral_pca(seed: int = 20261231 + 341) -> dict[str, float]:
         "synthetic_dpca_eig1_share_factor": float(r_p["eig1_share_mean"][0]),
         "synthetic_dpca_eig1_share_noise": float(r_n["eig1_share_mean"][0]),
         "synthetic_dpca_share_gap": gap,
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

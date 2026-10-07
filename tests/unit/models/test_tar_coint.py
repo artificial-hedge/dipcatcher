@@ -6,7 +6,7 @@ from quant_fund.models.tar_coint import bench_tar_coint, synth_tar, tar_cointegr
 
 def test_bench_tar_coint_passes():
     r = bench_tar_coint()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_tar_detects_asymmetry():

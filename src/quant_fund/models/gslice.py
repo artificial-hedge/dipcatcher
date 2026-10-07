@@ -1233,10 +1233,10 @@ def bench_gslice(
     ev_gen = evaluate_samples(gen, held)
     ev_prior = evaluate_samples(prior, held)
     out: dict[str, float] = {"gslice_synth_" + k[len("gslice_") :]: v for k, v in ev_gen.items()}
-    out["gslice_synth_energy_score_prior"] = ev_prior["gslice_energy_score_mean"]
-    out["gslice_synth_energy_score_gain"] = (
+    out["synthetic_gslice_synth_energy_score_prior"] = ev_prior["gslice_energy_score_mean"]
+    out["synthetic_gslice_synth_energy_score_gain"] = (
         ev_prior["gslice_energy_score_mean"] - ev_gen["gslice_energy_score_mean"]
     )
-    out["gslice_synth_final_loss"] = float(model.loss_curve[-1])
-    out["gslice_synth_loss_drop"] = float(model.loss_curve[0] - model.loss_curve[-1])
+    out["synthetic_gslice_synth_final_loss"] = float(model.loss_curve[-1])
+    out["synthetic_gslice_synth_loss_drop"] = float(model.loss_curve[0] - model.loss_curve[-1])
     return out

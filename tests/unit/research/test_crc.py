@@ -67,15 +67,20 @@ def test_bench_crc_var_seeded_risk_vs_alpha() -> None:
     losses = rng.exponential(scale=0.04, size=400)
     base = np.full_like(losses, 0.01)
     out = bench_crc_var(losses, base, alpha=0.05)
-    assert set(out) >= {"risk", "nominal", "n", "lambda_hat"}
+    assert set(out) >= {
+        "synthetic_risk",
+        "synthetic_nominal",
+        "synthetic_n",
+        "synthetic_lambda_hat",
+    }
     assert "sharpe" not in {k.lower() for k in out}
-    assert out["nominal"] == 0.05
-    assert out["n"] == 400.0
-    assert out["lambda_hat"] > 0.0
-    n = int(out["n"])
-    crc_stat = (n * out["risk"] + 1.0) / (n + 1)
-    assert crc_stat <= out["nominal"] + 1e-12
-    assert out["risk"] < out["nominal"]
+    assert out["synthetic_nominal"] == 0.05
+    assert out["synthetic_n"] == 400.0
+    assert out["synthetic_lambda_hat"] > 0.0
+    n = int(out["synthetic_n"])
+    crc_stat = (n * out["synthetic_risk"] + 1.0) / (n + 1)
+    assert crc_stat <= out["synthetic_nominal"] + 1e-12
+    assert out["synthetic_risk"] < out["synthetic_nominal"]
 
 
 def test_crc_rejects_bad_alpha() -> None:

@@ -165,6 +165,6 @@ def bench_entropy_pool(seed: int = 20261231 + 360) -> dict[str, float]:
         "synthetic_ep_view_viol": viol,
         "synthetic_ep_rel_ent": float(r["rel_entropy"]),
         "synthetic_ep_eff_n": float(r["effective_n"]),
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

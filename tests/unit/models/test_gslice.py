@@ -523,8 +523,8 @@ def test_train_fail_closed_edges() -> None:
 def test_bench_gslice_scorecard() -> None:
     out = gs.bench_gslice(n_train=128, n_eval=48, config=gs.GSliceConfig(epochs=30, batch_size=64))
     assert "gslice_synth_energy_score_mean" in out
-    assert "gslice_synth_energy_score_prior" in out
+    assert "synthetic_gslice_synth_energy_score_prior" in out
     assert "gslice_synth_coverage_80" in out
-    assert out["gslice_synth_energy_score_gain"] > 0.0
-    assert out["gslice_synth_loss_drop"] > 0.0
+    assert out["synthetic_gslice_synth_energy_score_gain"] > 0.0
+    assert out["synthetic_gslice_synth_loss_drop"] > 0.0
     assert all(np.isfinite(v) for v in out.values())

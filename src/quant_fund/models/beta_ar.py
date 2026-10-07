@@ -185,6 +185,6 @@ def bench_beta_ar(seed: int = 20261231 + 358) -> dict[str, float]:
         "synthetic_beta_nu_hat": r["nu"],
         "synthetic_beta_rmse_os": r["rmse_os"],
         "synthetic_beta_rmse_marg": rmse_marg,
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

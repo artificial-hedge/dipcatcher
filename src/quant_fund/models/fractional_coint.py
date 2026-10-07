@@ -151,6 +151,6 @@ def bench_fractional_coint(seed: int = 20261231 + 349) -> dict[str, float]:
         "synthetic_fcoint_d_y": r["d_y"],
         "synthetic_fcoint_memory_gap": r["memory_gap"],
         "synthetic_fcoint_null_gap": r_n["memory_gap"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

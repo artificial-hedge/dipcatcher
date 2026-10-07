@@ -403,12 +403,12 @@ def test_extra_prediction_sets_expand_consistently() -> None:
 
 def test_bench_correct_direction_beats_unweighted() -> None:
     row = bench_extra_conformal(seed=0)
-    assert row["coverage"] > row["unweighted_coverage"]
-    assert row["coverage_error"] < row["unweighted_coverage_error"]
-    assert row["coverage"] >= 0.85  # near the 0.90 nominal level
-    assert row["weights_mode"] == "tilt"
-    assert row["claim"] == "research_metric_only"
-    assert "SYNTHETIC" in str(row["dgp"])
+    assert row["synthetic_coverage"] > row["synthetic_unweighted_coverage"]
+    assert row["synthetic_coverage_error"] < row["synthetic_unweighted_coverage_error"]
+    assert row["synthetic_coverage"] >= 0.85  # near the 0.90 nominal level
+    assert row["synthetic_weights_mode"] == "tilt"
+    assert row["synthetic_claim"] == "research_metric_only"
+    assert "SYNTHETIC" in str(row["synthetic_dgp"])
     assert all("sharpe" not in str(k).lower() for k in row)
 
 
@@ -416,11 +416,11 @@ def test_bench_harm_regime_worse_than_unweighted_on_healthy_weights() -> None:
     row = bench_extra_harm(seed=0)
     # Misspecified label direction: high ESS (no collapse, no fallback) yet
     # coverage is worse than doing nothing -- the documented harm regime.
-    assert row["weights_mode"] == "tilt"
-    assert row["ess_fraction"] > 0.2
-    assert row["coverage"] < row["unweighted_coverage"]
-    assert row["harm_coverage_gap"] > 0.1
-    assert row["harm_mode"] == "misspecified_label_tilt"
+    assert row["synthetic_weights_mode"] == "tilt"
+    assert row["synthetic_ess_fraction"] > 0.2
+    assert row["synthetic_coverage"] < row["synthetic_unweighted_coverage"]
+    assert row["synthetic_harm_coverage_gap"] > 0.1
+    assert row["synthetic_harm_mode"] == "misspecified_label_tilt"
 
 
 def test_bench_deterministic() -> None:

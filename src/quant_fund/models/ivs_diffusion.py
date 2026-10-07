@@ -1539,30 +1539,34 @@ def bench_ivs_diffusion(
     arb_ft = arb_violation_report(v_paths_ft[:, 0], grid)
 
     out: dict[str, float | str] = {
-        "es_model": float(np.mean(es_model)),
-        "es_resample": float(np.mean(es_resample)),
-        "es_gain_vs_resample": float(np.mean(es_resample) - np.mean(es_model)),
-        "hedge_es_tail_model": model_hedge["hedge_es_tail"],
-        "hedge_es_tail_resample": res_hedge["hedge_es_tail"],
-        "hedge_rmse_model": model_hedge["hedge_tracking_rmse"],
-        "hedge_rmse_resample": res_hedge["hedge_tracking_rmse"],
-        "hedge_delta_model": model_hedge["hedge_delta"],
-        "arb_rate_data": arb_data.surface_rate,
-        "arb_rate_generated": arb_gen.surface_rate,
-        "arb_rate_finetuned": arb_ft.surface_rate,
-        "arb_cell_generated": (arb_gen.nonneg_rate + arb_gen.calendar_rate + arb_gen.butterfly_rate)
+        "synthetic_es_model": float(np.mean(es_model)),
+        "synthetic_es_resample": float(np.mean(es_resample)),
+        "synthetic_es_gain_vs_resample": float(np.mean(es_resample) - np.mean(es_model)),
+        "synthetic_hedge_es_tail_model": model_hedge["hedge_es_tail"],
+        "synthetic_hedge_es_tail_resample": res_hedge["hedge_es_tail"],
+        "synthetic_hedge_rmse_model": model_hedge["hedge_tracking_rmse"],
+        "synthetic_hedge_rmse_resample": res_hedge["hedge_tracking_rmse"],
+        "synthetic_hedge_delta_model": model_hedge["hedge_delta"],
+        "synthetic_arb_rate_data": arb_data.surface_rate,
+        "synthetic_arb_rate_generated": arb_gen.surface_rate,
+        "synthetic_arb_rate_finetuned": arb_ft.surface_rate,
+        "synthetic_arb_cell_generated": (
+            arb_gen.nonneg_rate + arb_gen.calendar_rate + arb_gen.butterfly_rate
+        )
         / 3.0,
-        "arb_cell_finetuned": (arb_ft.nonneg_rate + arb_ft.calendar_rate + arb_ft.butterfly_rate)
+        "synthetic_arb_cell_finetuned": (
+            arb_ft.nonneg_rate + arb_ft.calendar_rate + arb_ft.butterfly_rate
+        )
         / 3.0,
-        "ft_probe_rate_before": ft.violation_rate_before,
-        "ft_probe_rate_after": ft.violation_rate_after,
-        "ft_probe_cell_before": ft.cell_rate_before,
-        "ft_probe_cell_after": ft.cell_rate_after,
-        "n_stream": float(n_stream),
-        "n_train": float(n_train),
-        "seed": float(seed),
-        "dgp": "synthetic_svi_leverage",
-        "claim": "research_metric_only",
+        "synthetic_ft_probe_rate_before": ft.violation_rate_before,
+        "synthetic_ft_probe_rate_after": ft.violation_rate_after,
+        "synthetic_ft_probe_cell_before": ft.cell_rate_before,
+        "synthetic_ft_probe_cell_after": ft.cell_rate_after,
+        "synthetic_n_stream": float(n_stream),
+        "synthetic_n_train": float(n_train),
+        "synthetic_seed": float(seed),
+        "synthetic_dgp": "synthetic_svi_leverage",
+        "synthetic_claim": "research_metric_only",
         "synthetic": "seeded_ivs_stream",
     }
     return out

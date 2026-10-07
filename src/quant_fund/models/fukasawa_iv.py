@@ -1412,10 +1412,10 @@ def bench_fukasawa_iv(
     )
     sv_abs = np.asarray(sv["abs_residual"], dtype=float)
     sv_sc = np.asarray(sv["scaled_residual"], dtype=float)
-    out["small_volvol_abs_resid_a50"] = float(sv_abs[0])
-    out["small_volvol_abs_resid_a25"] = float(sv_abs[1])
-    out["small_volvol_scaled_resid_a50"] = float(sv_sc[0])
-    out["small_volvol_scaled_resid_a25"] = float(sv_sc[1])
+    out["synthetic_small_volvol_abs_resid_a50"] = float(sv_abs[0])
+    out["synthetic_small_volvol_abs_resid_a25"] = float(sv_abs[1])
+    out["synthetic_small_volvol_scaled_resid_a50"] = float(sv_sc[0])
+    out["synthetic_small_volvol_scaled_resid_a25"] = float(sv_sc[1])
 
     fm = fast_mean_reverting_convergence(
         [4.0, 16.0],
@@ -1425,8 +1425,8 @@ def bench_fukasawa_iv(
         seed=seed + 101,
     )
     fm_sc = np.asarray(fm["scaled_residual"], dtype=float)
-    out["fast_mr_scaled_resid_n4"] = float(fm_sc[0])
-    out["fast_mr_scaled_resid_n16"] = float(fm_sc[1])
+    out["synthetic_fast_mr_scaled_resid_n4"] = float(fm_sc[0])
+    out["synthetic_fast_mr_scaled_resid_n16"] = float(fm_sc[1])
 
     sm = short_maturity_convergence(
         [0.08, 0.04, 0.02],
@@ -1438,10 +1438,12 @@ def bench_fukasawa_iv(
     sm_t = np.asarray(sm["maturity"], dtype=float)
     sm_sc = np.asarray(sm["scaled_residual"], dtype=float)
     sm_sl = np.asarray(sm["slope_m"], dtype=float)
-    out["short_mat_scaled_resid_t08"] = float(sm_sc[0])
-    out["short_mat_scaled_resid_t02"] = float(sm_sc[-1])
-    out["short_mat_slope_m_gap"] = float(abs(sm_sl[int(np.argmax(sm_t))] - sm["slope_theory"]))
-    out["short_mat_slope_theory"] = float(sm["slope_theory"])
+    out["synthetic_short_mat_scaled_resid_t08"] = float(sm_sc[0])
+    out["synthetic_short_mat_scaled_resid_t02"] = float(sm_sc[-1])
+    out["synthetic_short_mat_slope_m_gap"] = float(
+        abs(sm_sl[int(np.argmax(sm_t))] - sm["slope_theory"])
+    )
+    out["synthetic_short_mat_slope_theory"] = float(sm["slope_theory"])
 
     det = simulate_lognormal_factor_sv(
         v_star=0.04,
@@ -1454,13 +1456,15 @@ def bench_fukasawa_iv(
         seed=seed + 303,
     )
     est = fukasawa_residual(det, 0.10)
-    out["deterministic_vol_abs_resid"] = float(abs(est.residual))
+    out["synthetic_deterministic_vol_abs_resid"] = float(abs(est.residual))
 
     cq = conditional_qv(det, np.linspace(-0.4, 0.4, 81), z_max=DEFAULT_Z_MAX)
     dk = 0.8 / 80.0
-    out["normalization_gap"] = float(abs(np.sum(cq.m * cq.density) * dk / cq.v_mean - 1.0))
-    out["bench_n_paths"] = float(n_paths)
-    out["bench_n_steps"] = float(n_steps)
-    out["runtime_seconds"] = float(time.perf_counter() - tic)
+    out["synthetic_normalization_gap"] = float(
+        abs(np.sum(cq.m * cq.density) * dk / cq.v_mean - 1.0)
+    )
+    out["synthetic_bench_n_paths"] = float(n_paths)
+    out["synthetic_bench_n_steps"] = float(n_steps)
+    out["synthetic_runtime_seconds"] = float(time.perf_counter() - tic)
     out["synthetic"] = 1.0
     return out

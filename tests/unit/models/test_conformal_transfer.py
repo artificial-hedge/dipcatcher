@@ -398,35 +398,39 @@ def test_surrogate_tracks_score_alignment_a2() -> None:
 def test_bench_tcc_keys_proper_scores_only() -> None:
     row = bench_tcc(n_cal=800, n_pairs_fit=1000, n_pairs_eval=2000, n_test=3000, seed=11)
     for key in (
-        "coverage_transport_only",
-        "coverage_tcc_ks",
-        "coverage_weighted_tcc",
-        "mean_width_transport_only",
-        "mean_width_tcc_ks",
-        "mean_width_weighted_tcc",
-        "qhat_transport_only",
-        "qhat_tcc_ks",
-        "qhat_weighted_tcc",
-        "delta_hat",
-        "delta_plus",
-        "alpha_star",
-        "ess_percent",
-        "n",
-        "alpha",
-        "target_scale",
-        "seed",
+        "synthetic_coverage_transport_only",
+        "synthetic_coverage_tcc_ks",
+        "synthetic_coverage_weighted_tcc",
+        "synthetic_mean_width_transport_only",
+        "synthetic_mean_width_tcc_ks",
+        "synthetic_mean_width_weighted_tcc",
+        "synthetic_qhat_transport_only",
+        "synthetic_qhat_tcc_ks",
+        "synthetic_qhat_weighted_tcc",
+        "synthetic_delta_hat",
+        "synthetic_delta_plus",
+        "synthetic_alpha_star",
+        "synthetic_ess_percent",
+        "synthetic_n",
+        "synthetic_alpha",
+        "synthetic_target_scale",
+        "synthetic_seed",
     ):
         assert key in row
     forbidden = {"sharpe", "sortino", "calmar", "pnl", "nav"}
     for key in row:
         assert "sharpe" not in key.lower()
         assert not (set(key.lower().split("_")) & forbidden)
-    assert row["dgp"] == "fixture"
-    assert row["claim"] == "research_metric_only"
-    assert float(row["n"]) > 0.0
+    assert row["synthetic_dgp"] == "fixture"
+    assert row["synthetic_claim"] == "research_metric_only"
+    assert float(row["synthetic_n"]) > 0.0
     # the corrected variants are at least as wide/covering as plain transport
-    assert float(row["coverage_tcc_ks"]) >= float(row["coverage_transport_only"])
-    assert float(row["mean_width_tcc_ks"]) >= float(row["mean_width_transport_only"])
+    assert float(row["synthetic_coverage_tcc_ks"]) >= float(
+        row["synthetic_coverage_transport_only"]
+    )
+    assert float(row["synthetic_mean_width_tcc_ks"]) >= float(
+        row["synthetic_mean_width_transport_only"]
+    )
 
 
 def test_bench_tcc_deterministic() -> None:

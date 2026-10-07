@@ -6,7 +6,7 @@ from quant_fund.models.emd_hht import bench_emd, emd, hilbert_spectrum, synth_em
 
 def test_bench_emd_passes():
     r = bench_emd()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_emd_reconstructs_input():

@@ -164,6 +164,6 @@ def bench_tar_coint(seed: int = 20261231 + 346) -> dict[str, float]:
         "synthetic_tar_rho_below": r["rho_below"],
         "synthetic_tar_asym_t": r["asym_t"],
         "synthetic_tar_lin_rho_gap": float(abs(r_lin["rho_above"] - r_lin["rho_below"])),
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out
