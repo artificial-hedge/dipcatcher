@@ -7402,5 +7402,9 @@
   "isolated_commit": "520590f8985da0511cd8d7faace74ffbe440fa15",
   "github_ruleset_id": 24646693,
   "local_creation_guard": "hooks/reference-transaction",
-  "recovery": "Original work is reachable by the recorded commit SHA. Inspect with git show SHA:path or apply commits onto isolated/main."
+  "recovery": "Original work is reachable by the recorded commit SHA. Inspect with git show SHA:path or apply commits onto isolated/main.",
+  "late_remote_refs": {
+    "refs/heads/devin/1791353234-audit-wave-book": "0fd7ca9331dfa5fb98fed868837addeaa727c5f6",
+    "refs/heads/kimi/20261007-frechet-fix": "b3ca17c9ba708c54be83da0813f9e9afd7f7899d"
+  }
 }
