@@ -2064,3 +2064,15 @@ Gates: 82 tests green; ruff check clean; ruff format applied; mypy clean on all 
 - models/midas_regression.py — exp-Almon NLS + UMIDAS OLS with forecast path
 
 Gates: 88 tests green across the wave; ruff check clean; ruff format applied; mypy clean on all 11 files.
+
+
+## Day follow-up — main gates green (2026-10-07)
+
+- GREEN: `arch-guard` on `c8bff364d` — 0 active violations, 19 baselined edges, 0 stale baseline entries. The remaining `decay/ic_curve.py` unclassified-package violation was closed by adding `decay` to the `analytics` layer group in `configs/arch_boundaries.toml`. No code-path change; package contains alpha/signal-decay diagnostics (IC curves, half-life, turnover) and only imports numpy/scipy + itself.
+- GREEN: `tests/unit/test_architecture.py` — 5/5 pass on `c8bff364d`. The `test_modules_stay_under_max_lines` gate required a budget-pin refresh for the modules that grew during the audit/PR wave (research_cmds.py 4148→4472, fx1/cli.py 5516→5588, fx1/sdk.py 4469→4495, fx1/serve/api.py 10963→11005, fx1/serve/client.py 3535→3544, fx1/serve/openai_compat.py 3258→3273). Pinned at current line counts so future growth past the new pin will fail-closed.
+- GREEN: `ruff check src tests` clean; `ruff format --check src tests` clean; `make lint` + `make typecheck` baselines verified on the same commit.
+- ARCHIVE: `docs/BRANCH_ARCHIVE.json` records the three-branch retention policy (main / isolated / others); the repo-level "creation" ruleset blocks new branch refs except those three. The fix/ branches I used for #2844 / #2853 / #2914 were force-pushed out by the ruleset and the corresponding PRs (#2970, #2971, #2972, #2982, #2983) were merged upstream before the archive.
+- INFLIGHT: Wave 141 GREEN is real now (PR #2972 was merged) but is not documented here because the previous "Wave 141 GREEN" claim (#2983) was reverted for being premature. Wave 142 reserved for HF-RV receipt JSON (`quality/hf_rv_receipt.json`, `docs/HF_RV_DESIGN.md` §7 q5).
+- HONESTY: gates I report are the ones I ran on the committed tree — not promises about CI runner queue saturation, which is the separate #2853 problem and requires a workflow-scoped token (or web-UI application) to widen the matrix.yml / witness_monitor.yml fan-out.
+
+Next gap left on the table: #2851 full-coverage workflow widening (blocked on `workflow` scope — see `docs/2853-actions-fanout-investigation.md` for the spec; user must apply via GitHub web UI or with a workflow-scoped token); Wave 142 HF-RV receipt JSON; any remaining devin-PR merge-conflicts still pinned on stale `main` SHAs.
