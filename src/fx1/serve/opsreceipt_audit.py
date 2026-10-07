@@ -45,6 +45,8 @@ from fx1.serve import ops_receipt
 
 __all__ = ["opsreceipt_audit", "opsreceipt_audit_bench"]
 
+_STDOUT = "diagnostics ok"
+
 
 def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -63,7 +65,7 @@ def _run_record() -> dict[str, Any]:
         "ok": True,
         "timeout_s": 30,
         "replayed": False,
-        "stdout": "diagnostics ok",
+        "stdout": _STDOUT,
         "stderr": "",
         "stdout_truncated": False,
         "stderr_truncated": False,
@@ -144,9 +146,7 @@ def _probe_run_result() -> dict[str, bool]:
     out["run_kind_schema"] = (
         doc["kind"] == "fx1_run_result" and doc["schema"] == "fx1_run_result.v1"
     )
-    out["run_stdout_digested"] = "stdout" not in sealed and sealed["stdout_sha256"] == _sha(
-        "diagnostics ok"
-    )
+    out["run_stdout_digested"] = "stdout" not in sealed and sealed["stdout_sha256"] == _sha(_STDOUT)
     out["run_stderr_digested"] = "stderr" not in sealed and sealed["stderr_sha256"] == _sha("")
     out["run_passthrough_keys"] = all(
         sealed.get(k) == record[k]
@@ -217,9 +217,7 @@ def _probe_job_record() -> dict[str, bool]:
     )
     out["job_nonlisted_dropped"] = "internal_note" not in sealed
     res = sealed["result"]
-    out["job_result_predigested"] = "stdout" not in res and res["stdout_sha256"] == _sha(
-        "diagnostics ok"
-    )
+    out["job_result_predigested"] = "stdout" not in res and res["stdout_sha256"] == _sha(_STDOUT)
 
     no_url = ops_receipt.job_record_receipt({"job_id": "j2", "status": "queued"})
     out["job_no_url_no_digest_key"] = "callback_url_sha256" not in no_url["record"]
