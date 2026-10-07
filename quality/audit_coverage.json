@@ -396,6 +396,9 @@
   "models/bounds.py": {
    "status": "audited"
   },
+  "models/bvar_minnesota.py": {
+   "status": "audited"
+  },
   "models/c51_rl.py": {
    "status": "audited"
   },

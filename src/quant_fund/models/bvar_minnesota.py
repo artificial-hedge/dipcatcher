@@ -71,8 +71,12 @@ def minnesota_dummies(
         raise ValueError("k>=2, p>=1 required")
     if lambda_ <= 0 or not np.isfinite(lambda_):
         raise ValueError("lambda_ must be > 0")
-    if lag_decay <= 0:
-        raise ValueError("lag_decay must be > 0")
+    if not np.isfinite(lag_decay) or lag_decay <= 0:
+        raise ValueError("lag_decay must be finite and > 0")
+    if not np.isfinite(mean_own):
+        raise ValueError("mean_own must be finite")
+    if not np.isfinite(intercept_tight) or intercept_tight <= 0:
+        raise ValueError("intercept_tight must be finite and > 0")
     s = (
         np.ones(k)
         if sigma_scales is None
