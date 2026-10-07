@@ -159,6 +159,13 @@
       "sha256": "268fc7e59fe4895f2e831c94201438cc16ed0246d9c79eee77d6a20f95d497f2",
       "tree_root": "d8b56ab81d3644cfd80fc9653141417a39bb8959c95ab7236f5f2a415bdeb1b2"
     },
+    "src/*.json": {
+      "chain_root": "c3fbb06cd6f58307272601e0a3de237804fbe35cd5e4cfc412e2edf35e3749bf",
+      "n_epochs": 1,
+      "receipt": "corpus_epoch_91b0bc4448620e2f.json",
+      "sha256": "9e07031a0fde9665504ccb9e7ce2b1895e222cf999074564df61db3385d3622c",
+      "tree_root": "484ae6e2ce53cf59e905d1966de62f06e449c797001ac8f741b7800399e08a34"
+    },
     "tests/*": {
       "chain_root": "968d12a1490dfcfd3fd48d0a03d30284105bc42ff82a92e020bf899da5d76377",
       "n_epochs": 21,
