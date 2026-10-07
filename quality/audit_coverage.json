@@ -246,7 +246,27 @@
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
-    }
+    },
+    "research/coherence.py": "audited",
+    "research/corpus_inference.py": "audited",
+    "research/evidence_audit.py": "audited",
+    "research/evidence_export.py": "audited",
+    "research/forward_evidence.py": "audited",
+    "research/forward_shadow.py": "audited",
+    "research/impossible_fit.py": "audited",
+    "research/legacy_unsealed.py": "audited",
+    "research/prospective_sota.py": "audited",
+    "research/real_benchmark.py": "audited",
+    "research/receipt_graph.py": "audited",
+    "research/receipt_schema.py": "audited",
+    "research/release_attestation.py": "audited",
+    "research/replay_sweep.py": "audited",
+    "research/repo_integrity.py": "audited",
+    "research/script_receipts.py": "audited",
+    "research/shadow_journal.py": "audited",
+    "research/sota_evidence.py": "audited",
+    "research/sota_protocol.py": "audited",
+    "research/tape_registry.py": "audited"
   },
   "schema_version": "audit-coverage/v1",
   "statuses": {

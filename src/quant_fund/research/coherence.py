@@ -444,8 +444,15 @@ def coherence_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
         errors.append("data_label_mismatch")
     if payload.get("live_pnl_claim") is not False:
         errors.append("live_pnl_claim")
-    if not isinstance(payload.get("results"), list):
+    results = payload.get("results")
+    if not isinstance(results, list):
         errors.append("results_missing")
+    else:
+        n_errors = sum(
+            1 for row in results if isinstance(row, Mapping) and row.get("status") == "error"
+        )
+        if payload.get("n_error_rows") != n_errors:
+            errors.append("n_error_rows_mismatch")
     return errors
 
 

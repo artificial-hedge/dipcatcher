@@ -224,7 +224,9 @@ def verify_release_attestation(
                     bytes.fromhex(str(payload["signature"])),
                     canonical_json_bytes(unsigned),
                 )
-            except InvalidSignature:
+            except (InvalidSignature, ValueError):
+                # ValueError: a 128-char non-hex signature passes the contract's
+                # length check but can't decode — an invalid signature, not a crash
                 errs.append("signature_invalid")
 
     witness = payload.get("witness")
@@ -273,11 +275,24 @@ def verify_release_attestation(
     if root is not None:
         state = payload.get("pinned_state_sha256")
         assert isinstance(state, Mapping)
+        root_resolved = Path(root).resolve()
         stale: list[str] = []
         for rel, digest in state.items():
-            p = Path(root) / str(rel)
+            rel_s = str(rel)
+            if (
+                not isinstance(rel, str)
+                or not rel_s.strip()
+                or rel_s.startswith("/")
+                or ".." in rel_s.split("/")
+            ):
+                errs.append(f"pinned_state_path_invalid:{rel_s}")
+                continue
+            p = (Path(root) / rel_s).resolve()
+            if not p.is_relative_to(root_resolved):
+                errs.append(f"pinned_state_path_uncontained:{rel_s}")
+                continue
             if not p.is_file() or hash_bytes(p.read_bytes()) != digest:
-                stale.append(str(rel))
+                stale.append(rel_s)
         if stale:
             errs.append(f"attestation_stale:{','.join(sorted(stale))}")
     return {"ok": not errs, "errors": errs}

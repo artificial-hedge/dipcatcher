@@ -13,9 +13,10 @@ Procedure:
   (``*evalue*``, ``anytime_p`` handled via the p convention) at any depth
   of each committed receipt — tagged by file, kind, and JSON path so a
   claim can be traced back to its artifact.
-- p-values are pooled into one Benjamini-Hochberg family at level ``q``
-  (calibration/discovery families stay distinct when the receipt declares
-  one — pooling a bound claim with a discovery claim inflates power).
+- p-values are pooled into one Benjamini-Hochberg family at level ``q``.
+  A receipt's declared ``family`` tag is recorded on each finding for
+  provenance; the BH run itself pools — the conservative direction,
+  since a larger family tightens the per-rank critical value.
 - e-values are kept in a separate bucket and merged by arithmetic mean:
   the mean of e-values is an e-value under *arbitrary dependence*
   (Vovk–Wang 2021), which receipts require — they are produced by
@@ -43,6 +44,7 @@ import numpy as np
 
 from quant_fund.research.fleet_eval import _atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.receipt import verified_corpus_files
 from quant_fund.utils.reproducibility import git_revision
 
 CORPUS_SCHEMA = "corpus_inference.v1"
@@ -172,15 +174,27 @@ def corpus_audit(
     errors: list[dict[str, str]] = []
     if members is not None:
         member_set = {str(m) for m in members}
-        receipt_files = [root / name for name in sorted(member_set)]
-        present = {p.name for p in root.glob(glob) if p.is_file()}
-        for name in sorted(member_set - present):
-            errors.append({"file": name, "error": "member_missing_from_dir"})
+        root_resolved = root.resolve()
+        present = {
+            p.relative_to(root_resolved).as_posix()
+            for p in verified_corpus_files(root, pattern=glob)
+        }
+        receipt_files = []
+        for name in sorted(member_set):
+            p = (root / name).resolve()
+            if not p.is_relative_to(root_resolved):
+                # a pinned member must name a corpus file — a traversal name
+                # would attest outside bytes under the member's basename
+                errors.append({"file": name, "error": "member_path_uncontained"})
+                continue
+            if name not in present:
+                errors.append({"file": name, "error": "member_missing_from_dir"})
+                continue
+            receipt_files.append(p)
         # Files in the dir that are not members are ignored — a pinned
         # membership audits the same frozen set even as the corpus grows.
-        receipt_files = [p for p in receipt_files if p.name in present]
     else:
-        receipt_files = sorted(p for p in root.glob(glob) if p.is_file())
+        receipt_files = verified_corpus_files(root, pattern=glob)
     digests: dict[str, str] = {}
     input_labels: dict[str, str] = {}
     # Retractions exclude their target's findings from the inference pool —
@@ -192,22 +206,23 @@ def corpus_audit(
     for bad in tombs["invalid"]:
         errors.append({"file": bad.split(":", 1)[0], "error": bad.split(":", 1)[1]})
     for path in receipt_files:
+        rel_name = path.relative_to(root.resolve()).as_posix()
         try:
             raw = path.read_bytes()
-            digests[path.name] = hash_bytes(raw)
+            digests[rel_name] = hash_bytes(raw)
             doc = json.loads(raw)
             if not isinstance(doc, Mapping):
                 raise ValueError("receipt root is not an object")
             body = doc.get("payload")
             inner = body if isinstance(body, Mapping) else doc
-            input_labels[path.name] = str(inner.get("data_label") or "UNKNOWN")
+            input_labels[rel_name] = str(inner.get("data_label") or "UNKNOWN")
             if inner.get("kind") == "receipt_tombstone.v1":
                 continue
-            scope = (retracted.get(path.name) or {}).get("scope")
+            scope = (retracted.get(rel_name) or {}).get("scope")
             if scope == "all":
                 continue
             scoped = set(scope) if isinstance(scope, list) else None
-            for f in harvest_findings(doc, path.name):
+            for f in harvest_findings(doc, rel_name):
                 if scoped is not None and f["path"] in scoped:
                     continue
                 findings.append(f)

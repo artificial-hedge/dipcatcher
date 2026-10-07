@@ -276,7 +276,12 @@ def verify_manifest(
         if not isinstance(rel, str) or not rel or rel.startswith("/") or ".." in rel.split("/"):
             errors.append(f"tape_files[{index}]_path_invalid")
             continue
-        tape_path = root_path / rel
+        tape_path = (root_path / rel).resolve()
+        if not tape_path.is_relative_to(root_path.resolve()):
+            # a declared tape path must stay inside the repo — a symlinked
+            # repo path would let the manifest sha256 oracle arbitrary files
+            errors.append(f"tape_files[{index}]_path_uncontained")
+            continue
         tape_paths.append(tape_path)
         if not tape_path.is_file():
             errors.append(f"tape_missing:{rel}")

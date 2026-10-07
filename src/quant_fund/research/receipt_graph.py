@@ -13,9 +13,11 @@ from every chain.
 
 Procedure:
 
-- Read every ``*.json`` member; index two identities per member: the
-  sha256 of its file bytes and its sealed ``receipt_sha256`` (absent for
-  unsealed or unreadable files).
+- Read every ``*.json`` member — recursively, matching the epoch chain's
+  member semantics and quarantined subdirs excluded (a nested member is
+  still corpus evidence, not a blind spot). Index two identities per
+  member: the sha256 of its file bytes and its sealed ``receipt_sha256``
+  (absent for unsealed or unreadable files).
 - Walk each receipt body — the whole document for v1, and for ``receipt.v2``
   envelopes both the envelope provenance (``code_files``) and the wrapped
   ``payload`` — harvesting two reference types: *digest refs* (fields whose
@@ -50,6 +52,7 @@ from typing import Any
 
 from quant_fund.research.fleet_eval import _atomic_write_text
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH, canonical_json_bytes, hash_bytes
+from quant_fund.utils.receipt import verified_corpus_files
 from quant_fund.utils.reproducibility import git_revision
 
 GRAPH_SCHEMA = "receipt_graph.v1"
@@ -132,6 +135,7 @@ def _harvest_edges(
     by_file_bytes: dict[str, str],
     by_seal: dict[str, str],
     member_names: set[str],
+    unique_basenames: dict[str, str],
 ) -> list[dict[str, Any]]:
     """Typed reference edges from one member to the rest of the corpus."""
     edges: list[dict[str, Any]] = []
@@ -148,6 +152,10 @@ def _harvest_edges(
         for candidate in (value, base):
             if candidate in member_names and candidate != name:
                 return candidate
+        # a member sitting in a non-quarantined subdir resolves through its
+        # basename only when that basename names exactly one member
+        if base in unique_basenames and unique_basenames[base] != name:
+            return unique_basenames[base]
         return None
 
     for field_path, field_name, value in _walk_fields(doc, ""):
@@ -330,11 +338,12 @@ def receipt_graph(
     if not root.is_dir():
         raise ValueError(f"corpus dir {root} does not exist")
 
-    member_files = sorted(p for p in root.glob(glob) if p.is_file())
+    member_files = verified_corpus_files(root, pattern=glob)
     members: dict[str, dict[str, Any]] = {}
     errors: list[dict[str, str]] = []
     docs: dict[str, Mapping[str, Any]] = {}
     for path in member_files:
+        rel = path.relative_to(root).as_posix()
         entry: dict[str, Any] = {"file_sha256": hash_bytes(path.read_bytes())}
         try:
             doc = json.loads(path.read_bytes())
@@ -344,14 +353,26 @@ def receipt_graph(
             # Narrowed from `except Exception` (quality ratchet): read_bytes
             # faults are OSError; non-object roots are the ValueError raised
             # above. Recorded, never skipped.
-            errors.append({"file": path.name, "error": f"{type(exc).__name__}: {exc}"})
+            errors.append({"file": rel, "error": f"{type(exc).__name__}: {exc}"})
             entry["kind"] = None
             entry["receipt_sha256"] = None
         else:
-            docs[path.name] = doc
+            docs[rel] = doc
             entry["kind"] = _member_kind(doc)
             entry["receipt_sha256"] = _member_seal(doc)
-        members[path.name] = entry
+        members[rel] = entry
+
+    # Members keyed by rel path: a basename resolves a nested member only
+    # when it names exactly one.
+    basename_count: dict[str, int] = {}
+    for member_name in members:
+        base = member_name.rsplit("/", 1)[-1]
+        basename_count[base] = basename_count.get(base, 0) + 1
+    unique_basenames = {
+        member_name.rsplit("/", 1)[-1]: member_name
+        for member_name in members
+        if basename_count[member_name.rsplit("/", 1)[-1]] == 1
+    }
 
     by_file_bytes = {m["file_sha256"]: name for name, m in members.items()}
     by_seal = {
@@ -361,7 +382,9 @@ def receipt_graph(
 
     edges: list[dict[str, Any]] = []
     for name in sorted(docs):
-        edges.extend(_harvest_edges(name, docs[name], by_file_bytes, by_seal, member_names))
+        edges.extend(
+            _harvest_edges(name, docs[name], by_file_bytes, by_seal, member_names, unique_basenames)
+        )
 
     dangling = _expected_dangling(edges)
     unresolvable = _expected_unresolvable(edges)
@@ -446,14 +469,15 @@ def _edge_errors(edge: object, members: Mapping[str, Any], index: int) -> list[s
             errors.append(f"edges[{index}].target_via")
         if ref == "filename" and via not in ("filename", "file_bytes", "receipt_sha256"):
             errors.append(f"edges[{index}].target_via")
-        if (
-            ref == "filename"
-            and via == "filename"
-            and isinstance(value, str)
-            and value != target
-            and value.rsplit("/", 1)[-1] != target
-        ):
-            errors.append(f"edges[{index}].value")
+        if ref == "filename" and via == "filename" and isinstance(value, str):
+            base = value.rsplit("/", 1)[-1]
+            # mirrors resolve_filename: exact member name, member basename,
+            # or the unique member carrying that basename in a subdir
+            ok = value == target or base == target
+            if not ok and isinstance(target, str) and target.rsplit("/", 1)[-1] == base:
+                ok = sum(1 for m in members if str(m).rsplit("/", 1)[-1] == base) == 1
+            if not ok:
+                errors.append(f"edges[{index}].value")
     if ref == "digest" and isinstance(value, str) and not _is_sha256(value):
         errors.append(f"edges[{index}].digest_shape")
     return errors
@@ -517,7 +541,13 @@ def graph_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     unresolvable = _ref_list("unresolvable")
     for item in unresolvable:
         value = item["value"]
-        if value in members or (isinstance(value, str) and value.rsplit("/", 1)[-1] in members):
+        base = value.rsplit("/", 1)[-1] if isinstance(value, str) else ""
+        resolved = value if value in members else (base if base in members else None)
+        if resolved is None and base:
+            candidates = [m for m in members if str(m).rsplit("/", 1)[-1] == base]
+            if len(candidates) == 1:
+                resolved = candidates[0]
+        if resolved is not None and resolved != item.get("file"):
             errors.append("unresolvable_names_member")
             break
 

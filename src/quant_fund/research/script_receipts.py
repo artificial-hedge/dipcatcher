@@ -555,6 +555,6 @@ def script_receipt_contract_errors(schema: object, payload: Mapping[str, Any]) -
     try:
         result: list[str] = check(payload)
         return result
-    except (TypeError, ValueError, KeyError, AttributeError, ZeroDivisionError):
+    except (TypeError, ValueError, KeyError, AttributeError, ArithmeticError, IndexError):
         # A contract-check crash must never read as a verified receipt.
         return ["contract_check_error"]

@@ -72,23 +72,26 @@ def _extract_n_obs(metrics: Mapping[str, Any]) -> int | None:
     return None
 
 
-def _zero_score_hit(metrics: Mapping[str, Any]) -> tuple[str, float] | None:
-    for substring in _ZERO_SCORE_SUBSTRINGS:
-        for key, value in metrics.items():
-            if substring in key.lower() and _is_number(value):
-                return key, float(value)
-    return None
+def _zero_score_hits(metrics: Mapping[str, Any]) -> list[tuple[str, float]]:
+    """Every ``(key, value)`` naming a zero-eligible score — a benign first
+    key must not mask an impossible sibling."""
+    return [
+        (key, float(value))
+        for key, value in metrics.items()
+        if _is_number(value) and any(s in key.lower() for s in _ZERO_SCORE_SUBSTRINGS)
+    ]
 
 
-def _token_hit(metrics: Mapping[str, Any], families: frozenset[str]) -> tuple[str, float] | None:
+def _token_hits(metrics: Mapping[str, Any], families: frozenset[str]) -> list[tuple[str, float]]:
     """Match when a whole token names the family (`rank_ic` → tokens rank/ic)."""
+    hits: list[tuple[str, float]] = []
     for key, value in metrics.items():
         if not _is_number(value):
             continue
         tokens = _tokens(key)
         if any(token in families for token in tokens) or "".join(tokens) in families:
-            return key, float(value)
-    return None
+            hits.append((key, float(value)))
+    return hits
 
 
 def impossible_fit_flags(metrics: Mapping[str, Any], *, n_obs: int | None = None) -> list[str]:
@@ -104,31 +107,21 @@ def impossible_fit_flags(metrics: Mapping[str, Any], *, n_obs: int | None = None
         n_obs = _extract_n_obs(metrics)
     enough = n_obs is None or n_obs >= IMPOSSIBLE_FIT_MIN_OBS
 
-    zero_hit = _zero_score_hit(metrics)
-    if zero_hit is not None and zero_hit[1] == 0.0 and enough:
-        flags.add(f"exact_zero:{zero_hit[0]}")
+    for key, value in _zero_score_hits(metrics):
+        if value == 0.0 and enough:
+            flags.add(f"exact_zero:{key}")
 
-    ic_hit = _token_hit(metrics, _IC_TOKENS)
-    if (
-        ic_hit is not None
-        and math.isfinite(ic_hit[1])
-        and abs(ic_hit[1]) >= 1.0 - IC_PERFECT_EPS
-        and enough
-    ):
-        flags.add(f"near_perfect_correlation:{ic_hit[0]}")
+    for key, value in _token_hits(metrics, _IC_TOKENS):
+        if math.isfinite(value) and abs(value) >= 1.0 - IC_PERFECT_EPS and enough:
+            flags.add(f"near_perfect_correlation:{key}")
 
-    auc_hit = _token_hit(metrics, _AUC_TOKENS)
-    if auc_hit is not None and math.isfinite(auc_hit[1]) and auc_hit[1] >= 1.0 and enough:
-        flags.add(f"perfect_auc:{auc_hit[0]}")
+    for key, value in _token_hits(metrics, _AUC_TOKENS):
+        if math.isfinite(value) and value >= 1.0 and enough:
+            flags.add(f"perfect_auc:{key}")
 
-    violations_hit = _token_hit(metrics, _VIOLATION_TOKENS)
-    if (
-        violations_hit is not None
-        and violations_hit[1] == 0.0
-        and n_obs is not None
-        and n_obs >= VAR_ZERO_MIN_OBS
-    ):
-        flags.add(f"zero_violations_high_n:{violations_hit[0]}")
+    for key, value in _token_hits(metrics, _VIOLATION_TOKENS):
+        if value == 0.0 and n_obs is not None and n_obs >= VAR_ZERO_MIN_OBS:
+            flags.add(f"zero_violations_high_n:{key}")
 
     return sorted(flags)
 

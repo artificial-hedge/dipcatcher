@@ -331,7 +331,9 @@ def verify_repo(
         )
 
         for f in sorted(cdir.rglob("*")):
-            if not f.is_file() or f.name.startswith("corpus_epoch_"):
+            # The chain records are corpus_epoch_*.json — a same-prefixed
+            # non-.json file is smuggled content, not bookkeeping.
+            if not f.is_file() or (f.name.startswith("corpus_epoch_") and f.suffix == ".json"):
                 continue
             rel = f.relative_to(cdir).as_posix()
             if (
