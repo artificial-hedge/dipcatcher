@@ -82,6 +82,8 @@ _T1 = "2024-01-01T00:01:00+00:00"
 _T2 = "2024-01-01T00:02:00+00:00"
 _T3 = "2024-01-01T00:03:00+00:00"
 _DECISION = "2024-01-02T00:00:00+00:00"
+_TS_LATE = "2024-01-03T00:00:00+00:00"
+_TS_FUTURE = "2024-02-01T00:00:00+00:00"
 
 
 def _dt(value: str) -> datetime:
@@ -95,8 +97,8 @@ _DT3 = _dt(_T3)
 _DECISION_DT = _dt(_DECISION)
 _STALE_EVENT = _dt("2023-01-01T00:00:00+00:00")
 _STALE_AVAIL = _dt("2023-01-01T00:01:00+00:00")
-_LATE = _dt("2024-01-03T00:00:00+00:00")
-_FUTURE = _dt("2024-02-01T00:00:00+00:00")
+_LATE = _dt(_TS_LATE)
+_FUTURE = _dt(_TS_FUTURE)
 
 
 def _ctx() -> OperationContext:
@@ -343,7 +345,7 @@ def _probe_monotonic() -> dict[str, bool]:
     tzdup = mod.execute(
         mod.Input(
             observations=[
-                obs("2024-01-01T00:00:00+00:00", 1.0),
+                obs(_T0, 1.0),
                 obs("2024-01-01T02:00:00+02:00", 2.0),  # same instant
             ]
         ),
@@ -539,7 +541,7 @@ def _probe_panel_gaps() -> dict[str, bool]:
     dense = mod.execute(
         mod.Input(
             observations=[
-                obs("s1", "2024-01-01T00:00:00+00:00"),
+                obs("s1", _T0),
                 obs("s1", "2024-01-01T00:01:00+00:00"),
                 obs("s1", "2024-01-01T00:02:00+00:00"),
             ],
@@ -551,7 +553,7 @@ def _probe_panel_gaps() -> dict[str, bool]:
     gappy = mod.execute(
         mod.Input(
             observations=[
-                obs("s1", "2024-01-01T00:00:00+00:00"),
+                obs("s1", _T0),
                 obs("s1", "2024-01-01T00:03:00+00:00"),
             ],
             interval_seconds=60,
@@ -636,7 +638,7 @@ def _probe_point_in_time() -> dict[str, bool]:
     out["pt_clean_passes"] = ok.passed is True
     late_avail = mod.execute(
         mod.Input(
-            observations=[obs(_T0, "2024-01-03T00:00:00+00:00")],
+            observations=[obs(_T0, _TS_LATE)],
             decision_time=_DECISION_DT,
         ),
         ctx,
@@ -647,7 +649,7 @@ def _probe_point_in_time() -> dict[str, bool]:
     # future announced events allowed by default
     future_ok = mod.execute(
         mod.Input(
-            observations=[obs("2024-02-01T00:00:00+00:00", _T0)],
+            observations=[obs(_TS_FUTURE, _T0)],
             decision_time=_DECISION_DT,
         ),
         ctx,
@@ -655,7 +657,7 @@ def _probe_point_in_time() -> dict[str, bool]:
     out["pt_future_event_allowed"] = future_ok.passed is True
     future_strict = mod.execute(
         mod.Input(
-            observations=[obs("2024-02-01T00:00:00+00:00", _T0)],
+            observations=[obs(_TS_FUTURE, _T0)],
             decision_time=_DECISION_DT,
             require_completed_events=True,
         ),
@@ -696,7 +698,7 @@ def _probe_point_in_time() -> dict[str, bool]:
     )
     late_ingest = mod.execute(
         mod.Input(
-            observations=[obs(_T0, _T1, "2024-01-03T00:00:00+00:00")],
+            observations=[obs(_T0, _T1, _TS_LATE)],
             decision_time=_DECISION_DT,
             require_ingestion_by_decision=True,
         ),
