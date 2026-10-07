@@ -30,11 +30,12 @@ module:
 * Merton (1973) barrier closed forms re-derived independently (the reflection
   exponent is pinned at ``r = 0`` where it is exactly 1, and at ``r != 0``),
   and ``_bs_price_scalar`` cross-pinned against ``models.options.bs_price``.
-* CONV and Hilbert legs: *differential* ("shadow") pins.  Both legs have
-  documented numerical defects (see ``TestCONVBermudanShadow`` /
-  ``TestHilbertBarrierShadow`` docstrings), so those pins lock the internal
-  constants against silent drift.  They are regression locks, NOT accuracy
-  claims and NOT market evidence.
+* CONV and Hilbert legs: *differential* ("shadow") pins of the repaired
+  recursions (the dt-step Lévy kernel through the complex principal log, no
+  conjugated/dx-scaled convolution, evaluation at x = 0), plus accuracy
+  probes against the COS leg, the European limit, and the surviving-path
+  density integral.  Shadow pins are regression locks on internals; the
+  accuracy pins carry the correctness claim — none of it is market evidence.
 """
 
 from __future__ import annotations
@@ -284,6 +285,44 @@ def _ref_do_call(s0: float, k: float, h: float, t: float, sigma: float, r: float
     expo = 1.0 - 2.0 * r / sigma**2
     knock_in = (s0 / h) ** expo * _ref_bs_scalar(h * h / s0, k, t, sigma, r, call=True)
     return max(0.0, _ref_bs_scalar(s0, k, t, sigma, r, call=True) - knock_in)
+
+
+def _ref_barrier_call_quad(
+    s0: float, k: float, h: float, t: float, sigma: float, r: float, barrier_type: str
+) -> float:
+    """Fully independent continuous-barrier reference: numerically integrates
+    the surviving-path density of the drifted Brownian motion (reflection
+    principle) — shares no closed form with the module.
+
+    For X_T = ln(S_T/S0) with drift nu = r - sigma^2/2 and a lower barrier
+    h_log < 0 (up barrier h_log > 0 is symmetric), the density of X_T
+    restricted to paths whose running minimum stayed above h_log is
+        p(y) = [phi((y - nu t)/sd) - e^{2 nu h_log/sigma^2}
+               phi((y - 2 h_log - nu t)/sd)] / sd.
+    Only valid when the spot starts on the surviving side (s0 > h for
+    down-and-out, s0 < h for up-and-out) and h_log != 0.
+    """
+    from scipy.integrate import quad
+
+    nu = r - 0.5 * sigma**2
+    sd = sigma * math.sqrt(t)
+    h_log = math.log(h / s0)
+
+    def surv_pdf(y: float) -> float:
+        a = (y - nu * t) / sd
+        b = (y - 2.0 * h_log - nu * t) / sd
+        return (norm.pdf(a) - math.exp(2.0 * nu * h_log / sigma**2) * norm.pdf(b)) / sd
+
+    if barrier_type == "up-and-out":
+        lo, hi = math.log(k / s0), h_log
+        if lo >= hi:
+            return 0.0
+    else:
+        lo, hi = max(math.log(k / s0), h_log), nu * t + 12.0 * sd + h_log
+        if lo >= hi:
+            return 0.0
+    val, _ = quad(lambda y: (s0 * math.exp(y) - k) * surv_pdf(y), lo, hi, epsabs=1e-14)
+    return math.exp(-r * t) * val
 
 
 def _fd_mean_var(char_fn: CharFn, h: float = 1e-4) -> tuple[float, float]:
@@ -1862,12 +1901,12 @@ def _shadow_conv(
 ) -> np.ndarray:
     """Differential shadow of ``conv_bermudan_put`` (Lord et al. 2008 skeleton).
 
-    NOTE: the CONV leg of this module has documented numerical defects (the
-    dt-step kernel is built from |φ| and the FFT grid-offset phase is missing),
-    so this shadow is a *characterisation* reference: it locks the internal
-    constants (grid width factor, frequency-grid step, the 1e-300 magnitude
-    floor, the damping branch, the interpolation clamps) against silent drift.
-    It is NOT an accuracy claim and NOT market evidence.
+    Mirrors the repaired kernel: the dt-step CF is the (dt/t) power of the
+    maturity CF of ln(S_T / s0) through the complex principal log (damping
+    tilts it to phi(u + i*alpha)); the FFT convolution is
+    ``ifft(fft(v) * cf_dt)`` — no conjugation, no outer dx; M-1 exercise
+    dates plus a final continuation to t = 0 evaluated at x = 0.
+    Characterisation pin of the repaired internals, not market evidence.
     """
     ks = np.asarray(ks, dtype=float).ravel()
     dt = t / M
@@ -1881,9 +1920,10 @@ def _shadow_conv(
     grid = x_min + dx * np.arange(N)
     dk_grid = 2.0 * np.pi / (N * dx)
     u = dk_grid * np.fft.fftfreq(N) * N
-    cf_vals = char_fn(u) * np.exp(-1j * u * np.log(s0))
-    cf_dt = np.exp((dt / t) * np.log(np.maximum(np.abs(cf_vals), 1e-300) + 0j))
-    cf_dt = cf_dt * np.exp(1j * u * (r * dt))
+    u_eff = u + 1j * float(alpha)
+    cf_vals = char_fn(u_eff) * np.exp(-1j * u_eff * np.log(s0))
+    cf_safe = np.where(np.abs(cf_vals) < 1e-300, 1e-300 + 0j, cf_vals)
+    cf_dt = np.exp((dt / t) * np.log(cf_safe))
     damp = np.exp(alpha * grid)
     out = np.empty(ks.size, dtype=float)
     for idx, k in enumerate(ks):
@@ -1893,13 +1933,14 @@ def _shadow_conv(
         else:
             payoff = np.maximum(k - k * np.exp(y), 0.0)
         v = payoff.copy()
-        for _ in range(M):
+        for _ in range(M - 1):
             v_hat = fft(v)
-            conv = np.real(ifft(v_hat * np.conj(cf_dt))) * dx
+            conv = np.real(ifft(v_hat * cf_dt))
             v = np.maximum(np.exp(-r * dt) * conv, payoff)
             v = np.asarray(np.real(v), dtype=float)
-        x0_val = np.log(s0 / k)
-        j_frac = (x0_val - x_min) / dx
+        v_hat = fft(v)
+        v = np.asarray(np.exp(-r * dt) * np.real(ifft(v_hat * cf_dt)), dtype=float)
+        j_frac = (0.0 - x_min) / dx
         jj = int(np.floor(j_frac))
         if jj < 0:
             val = v[0]
@@ -1908,8 +1949,6 @@ def _shadow_conv(
         else:
             w = j_frac - jj
             val = (1.0 - w) * v[jj] + w * v[jj + 1]
-        if alpha != 0.0:
-            val = val / np.exp(alpha * x0_val)
         out[idx] = float(val)
     return out
 
@@ -1931,14 +1970,15 @@ class TestCONVBermudan:
         assert conv > 0.0
 
     def test_conv_bermudan_structural(self) -> None:
-        """CONV Bermudan should be >= European (early exercise adds value).
-        NOTE: Current implementation has known bugs; this test documents
-        the expected relationship."""
+        """CONV Bermudan >= European (early exercise adds value) and agrees
+        with the COS leg within FFT-truncation tolerance."""
         cf = bs_char_fn(S0, R, T, SIGMA)
         euro = cos_european_put(cf, r=R, t=T, strikes=np.array([K]), s0=S0, n=256)[0]
         conv = conv_bermudan_put(cf, r=R, t=T, s0=S0, strikes=np.array([K]), M=10, N=512)[0]
-        # Both should be positive
+        berm = cos_bermudan_put(cf, r=R, t=T, s0=S0, strikes=np.array([K]), M=10, n=512)[0]
         assert euro > 0 and conv > 0
+        assert conv >= euro - 1e-8  # early exercise premium, real ordering
+        assert conv == pytest.approx(berm, rel=2e-2)  # same claim, other method
 
     def test_fail_closed_bad_inputs(self) -> None:
         cf = bs_char_fn(S0, R, T, SIGMA)
@@ -1950,8 +1990,10 @@ class TestCONVBermudanShadow:
     """Differential pins (see ``_shadow_conv`` — characterisation, not accuracy)."""
 
     def _edge_strikes(self, cf: CharFn, N: int) -> np.ndarray:
-        """Strike vector whose log-moneyness hits every interpolation branch:
-        jj < 0, jj == 0, interior (w = 0), jj == N-2, jj == N-1, jj > N-1.
+        """Strike vector spread across the whole log-moneyness grid.  (Under
+        the repaired evaluation point x = 0 — the spot position — j_frac is
+        strike-independent and always takes the interior interpolation
+        branch; the vector still sweeps the payoff's shape across the grid.)
         The median stays 100.0 so the grid geometry is the reference one."""
         sig = _ref_sigma_est(cf, T)
         x_min, x_max, dx = _conv_grid(S0, 100.0, R, T, sig, 10.0, N)
@@ -1987,7 +2029,8 @@ class TestCONVBermudanShadow:
         assert np.max(np.abs(got)) > 1.0
 
     def test_matches_shadow_damped(self) -> None:
-        """alpha != 0 takes the damped payoff branch and un-damps at x0."""
+        """alpha != 0 takes the damped payoff branch and the tilted kernel
+        phi(u + i*alpha); undamping at x = 0 is an exact no-op."""
         cf = bs_char_fn(S0, R, T, SIGMA)
         ks = np.array([90.0, 100.0, 112.0])
         sig = _ref_sigma_est(cf, T)
@@ -1997,10 +2040,10 @@ class TestCONVBermudanShadow:
             np.testing.assert_allclose(got, exp, rtol=1e-12, atol=1e-14)
 
     def test_matches_shadow_at_alpha_one(self) -> None:
-        """alpha == 1.0 exactly must still take both damped branches (pins
-        `alpha != 0.0`, not `alpha != 1.0`, at the payoff *and* the un-damping
-        step).  The strike deliberately differs from s0 so the un-damping factor
-        exp(alpha * ln(s0/k)) is not 1 and the second branch is observable."""
+        """alpha == 1.0 exactly must still take the damped payoff branch
+        (pins `alpha != 0.0`, not `alpha != 1.0`).  The damped recursion
+        converges to the undamped price as N grows (the tilt is exact); at
+        N=128 the discretization difference stays visible."""
         cf = bs_char_fn(S0, R, T, SIGMA)
         ks = np.array([85.0, 118.0])
         sig = _ref_sigma_est(cf, T)
@@ -2013,7 +2056,8 @@ class TestCONVBermudanShadow:
         assert np.exp(1.0 * math.log(S0 / 85.0)) != 1.0
 
     def test_matches_shadow_for_merton_cf(self) -> None:
-        """Non-Gaussian CF through the |φ| kernel and the L-dependent width."""
+        """Non-Gaussian CF through the complex-log kernel and the
+        L-dependent width."""
         cf = merton_char_fn(S0, R, T, SIGMA, lam=1.1, mu_j=-0.05, s_j=0.12)
         ks = np.array([100.0, 105.0])
         sig = _ref_sigma_est(cf, T)
@@ -2094,12 +2138,11 @@ def _shadow_hilbert(
     """Differential shadow of ``hilbert_barrier_call`` (Feng & Linetsky 2008
     skeleton as implemented) returning (price, survival_prob).
 
-    NOTE: like the CONV leg this FFT recursion drops the grid-offset phase and
-    builds the dt kernel from |φ|, so its output is orders of magnitude below
-    the Merton continuous-monitoring reference.  The shadow is therefore a
-    *characterisation* reference that locks the internals (grid width factor,
-    frequency step, 1e-300 floor, barrier-mask direction, knock-out zeroing,
-    survival-probability mask) against silent drift — NOT an accuracy claim.
+    Mirrors the repaired kernel: cf_dt through the complex principal log (no
+    r*dt phase fudge), ``ifft(fft(v) * cf_dt)`` with no conjugation or outer
+    dx, knock-out applied at maturity AND after every step, evaluation at
+    x = 0.  Characterisation pin of the repaired internals — not market
+    evidence.
     """
     dt = t / M
     a_ref, b_ref = _ref_bs_truncation(s0, strike, r, t, sigma_est, L)
@@ -2112,8 +2155,8 @@ def _shadow_hilbert(
     dk_grid = 2.0 * np.pi / (N * dx)
     u = dk_grid * np.fft.fftfreq(N) * N
     cf_vals = char_fn(u) * np.exp(-1j * u * np.log(s0))
-    cf_dt = np.exp((dt / t) * np.log(np.maximum(np.abs(cf_vals), 1e-300) + 0j))
-    cf_dt = cf_dt * np.exp(1j * u * (r * dt))
+    cf_safe = np.where(np.abs(cf_vals) < 1e-300, 1e-300 + 0j, cf_vals)
+    cf_dt = np.exp((dt / t) * np.log(cf_safe))
     log_barrier = np.log(barrier / strike)
     log_s0_shifted = np.log(s0 / strike)
     payoff = np.maximum(strike * np.exp(grid + log_s0_shifted) - strike, 0.0)
@@ -2121,14 +2164,14 @@ def _shadow_hilbert(
         barrier_mask = (grid + log_s0_shifted) > log_barrier
     else:
         barrier_mask = (grid + log_s0_shifted) < log_barrier
-    v = payoff.copy()
+    v = np.where(barrier_mask, payoff, 0.0)
     for _ in range(M):
         v_hat = fft(v)
-        conv = np.real(ifft(v_hat * np.conj(cf_dt))) * dx
+        conv = np.real(ifft(v_hat * cf_dt))
         v_next = np.exp(-r * dt) * conv
         v_next[~barrier_mask] = 0.0
         v = np.maximum(v_next, 0.0)
-    j_frac = (log_s0_shifted - x_min) / dx
+    j_frac = (0.0 - x_min) / dx
     jj = int(np.floor(j_frac))
     if jj < 0:
         price = float(v[0])
@@ -2548,34 +2591,46 @@ class TestBSContinuousBarrier:
         assert bs_continuous_barrier_call(130.0, 100.0, 130.0, T, SIGMA, R, "up-and-out") == 0.0
         assert bs_continuous_barrier_call(140.0, 100.0, 130.0, T, SIGMA, R, "up-and-out") == 0.0
 
-    def test_up_and_out_is_clamped_to_zero_DEFECT(self) -> None:
-        """DEFECT (characterisation pin — NOT an accuracy claim).
-
-        The up-and-out branch reuses the *down*-and-in reflection
-        (S/H)^{1-2r/σ²}·C(H²/S, K).  That identity requires the payoff support
-        to lie above the barrier (K >= H); in the usual up-and-out regime H > K
-        the reflected leg exceeds the vanilla price, so max(0.0, ·) floors the
-        result at exactly 0.0 for every H > S.  Monte-Carlo cross-check for the
-        config below (400k paths x 800 steps, discrete monitoring): 3.3166
-        +/- 0.0098 versus 0.0 from this function — a ~339-sigma error.  The
-        correct up-and-in leg needs the four-term Reiner-Rubinstein form.
-        Pinned as-is so the floor constant cannot drift; update when repaired.
-        """
+    def test_up_and_out_matches_surviving_path_density(self) -> None:
+        """The up-and-out branch implements the four-term Reiner-Rubinstein
+        form; the wrong (down-and-in) reflection collapsed it to 0.0 for
+        every H > S.  The surviving-path density integral is an independent
+        reference sharing no closed form with the module (400k-path MC of the
+        same config with 800 monitoring steps gives 3.32 — the discrete
+        upper bound, consistent with the continuous 3.20)."""
         got = bs_continuous_barrier_call(100.0, 100.0, 130.0, T, SIGMA, R, "up-and-out")
-        assert got == 0.0
+        exp = _ref_barrier_call_quad(100.0, 100.0, 130.0, T, SIGMA, R, "up-and-out")
         vanilla = _ref_bs_scalar(100.0, 100.0, T, SIGMA, R)
-        assert vanilla > 9.0  # the option is far from worthless
+        assert got == pytest.approx(exp, rel=1e-12, abs=1e-12)
+        assert 0.0 < got < vanilla  # ~3.20: neither 0.0 nor the vanilla 9.41
 
-    def test_up_and_out_reflection_constants_DEFECT_characterization(self) -> None:
-        """Deep-ITM up-and-out config where the clamp does NOT bind, so the UO
-        reflection exponent, the H²/S image spot and the call flag stay
-        observable.  Same (defective) expression as the DO branch — see
-        ``test_up_and_out_is_clamped_to_zero_DEFECT``."""
+    def test_up_and_out_deep_itm_matches_density(self) -> None:
+        """Deep-ITM up-and-out config where the knocked region bites little:
+        same surviving-density reference on a config whose value is large
+        (exercises the exponent/reflection terms far from the clamp)."""
         s0, k, h, t, sigma, r = 100.0, 15.0, 200.0, 1.0, 0.2, -0.05
         got = bs_continuous_barrier_call(s0, k, h, t, sigma, r, "up-and-out")
-        exp = _ref_do_call(s0, k, h, t, sigma, r)
-        assert got > 1.0  # clamp not binding
-        assert got == pytest.approx(exp, rel=1e-13)
+        exp = _ref_barrier_call_quad(s0, k, h, t, sigma, r, "up-and-out")
+        assert got > 1.0  # well clear of the 0.0 clamp
+        assert got == pytest.approx(exp, rel=1e-12, abs=1e-12)
+
+    @pytest.mark.parametrize(
+        ("s0", "k", "h", "t", "sigma", "r"),
+        [
+            (100.0, 80.0, 90.0, 1.0, 0.2, 0.03),  # barrier above strike
+            (100.0, 60.0, 95.0, 2.0, 0.3, -0.02),  # deep ITM, B>K, neg rate
+            (80.0, 60.0, 70.0, 0.5, 0.4, 0.0),  # narrow alive band
+        ],
+    )
+    def test_down_and_out_barrier_above_strike_matches_density(
+        self, s0: float, k: float, h: float, t: float, sigma: float, r: float
+    ) -> None:
+        """K < B takes the four-term Reiner-Rubinstein branch; the compact
+        reflection is invalid when the payoff support extends below the
+        barrier.  Reference: the surviving-path density integral."""
+        got = bs_continuous_barrier_call(s0, k, h, t, sigma, r, "down-and-out")
+        exp = _ref_barrier_call_quad(s0, k, h, t, sigma, r, "down-and-out")
+        assert got == pytest.approx(exp, rel=1e-12, abs=1e-12)
 
     def test_t_and_sigma_validation(self) -> None:
         for bad_t, bad_sigma in ((0.0, SIGMA), (-1.0, SIGMA), (T, 0.0), (T, -0.2)):

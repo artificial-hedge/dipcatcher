@@ -630,6 +630,9 @@ def cos_bermudan_put(
         u: np.ndarray, _cf: CharFn = char_fn, _a: float = adj, _s: float = scale
     ) -> np.ndarray:
         phi = _cf(u) * np.exp(-1j * u * _a)
+        # Guard the principal log against an exactly-zero tail CF (exp(s*log0)
+        # maps to 0 either way; the floor just silences the -inf warning).
+        phi = np.where(np.abs(phi) < 1e-300, 1e-300 + 0j, phi)
         return np.exp(_s * np.log(phi))
 
     prices = np.empty(ks.size, dtype=float)
@@ -731,13 +734,16 @@ def conv_bermudan_put(
     dk_grid = 2.0 * np.pi / (N * dx)
     u = dk_grid * np.fft.fftfreq(N) * N  # frequency grid
 
-    # Precompute CF values at frequency grid (adjusted for log-return)
-    cf_vals = char_fn(u) * np.exp(-1j * u * np.log(s0))
-    # Transition density via CF (as if CF of log-return over dt)
-    # For Levy processes, the CF over dt is char_fn_dt(u) = φ(u)^{dt/t}
-    cf_dt = np.exp((dt / t) * np.log(np.maximum(np.abs(cf_vals), 1e-300) + 0j))
-    # Adjust phase
-    cf_dt = cf_dt * np.exp(1j * u * (r * dt))
+    # dt-step kernel on the log-return grid.  For a Levy model the step CF
+    # is the (dt/t) power of the maturity CF of ln(S_T / s0), taken through
+    # the complex principal log (same convention as the COS leg's
+    # _psi_step) — NOT a magnitude-only kernel: the phase carries the mean.
+    # Exponential damping tilts the density: the damped kernel's CF is
+    # phi(u + i*alpha); alpha == 0 recovers the undamped kernel.
+    u_eff = u + 1j * float(alpha)
+    cf_vals = char_fn(u_eff) * np.exp(-1j * u_eff * np.log(s0))
+    cf_safe = np.where(np.abs(cf_vals) < 1e-300, 1e-300 + 0j, cf_vals)
+    cf_dt = np.exp((dt / t) * np.log(cf_safe))
 
     # Damping
     damp = np.exp(alpha * grid)
@@ -752,18 +758,24 @@ def conv_bermudan_put(
         else:
             payoff = np.maximum(k - k * np.exp(y), 0.0)
 
+        # Terminal condition: value grid holds the (damped) payoff at t_M.
         v = payoff.copy()
 
-        for _ in range(M):
+        # M - 1 early-exercise dates t_1 .. t_{M-1} (inception is not an
+        # exercise date; the final step below prices the last continuation).
+        for _ in range(M - 1):
             v_hat = fft(v)
-            conv = np.real(ifft(v_hat * np.conj(cf_dt))) * dx
+            conv = np.real(ifft(v_hat * cf_dt))
             v = np.maximum(np.exp(-r * dt) * conv, payoff)
             # Keep v real
             v = np.asarray(np.real(v), dtype=float)
 
-        # Interpolate at x0
-        x0_val = np.log(s0 / k)
-        j_frac = (x0_val - x_min) / dx
+        # Final continuation to t = 0 (no exercise at inception).
+        v_hat = fft(v)
+        v = np.asarray(np.exp(-r * dt) * np.real(ifft(v_hat * cf_dt)), dtype=float)
+
+        # Interpolate at the spot's log-return x = 0.
+        j_frac = (0.0 - x_min) / dx
         jj = int(np.floor(j_frac))
         if jj < 0:
             val = v[0]
@@ -772,10 +784,7 @@ def conv_bermudan_put(
         else:
             w = j_frac - jj
             val = (1.0 - w) * v[jj] + w * v[jj + 1]
-
-        if alpha != 0.0:
-            x0_damp = np.exp(alpha * x0_val)
-            val = val / x0_damp
+        # Undamping at x = 0 is a no-op (exp(alpha * 0) == 1).
 
         prices[idx] = float(val)
 
@@ -845,9 +854,11 @@ def hilbert_barrier_call(
 
     dk_grid = 2.0 * np.pi / (N * dx)
     u = dk_grid * np.fft.fftfreq(N) * N
+    # Same Levy dt-step kernel as conv_bermudan_put: the (dt/t) power of
+    # the maturity CF of ln(S_T / s0) through the complex principal log.
     cf_vals = char_fn(u) * np.exp(-1j * u * np.log(s0))
-    cf_dt = np.exp((dt / t) * np.log(np.maximum(np.abs(cf_vals), 1e-300) + 0j))
-    cf_dt = cf_dt * np.exp(1j * u * (r * dt))
+    cf_safe = np.where(np.abs(cf_vals) < 1e-300, 1e-300 + 0j, cf_vals)
+    cf_dt = np.exp((dt / t) * np.log(cf_safe))
 
     log_barrier = np.log(barrier / strike)
     log_s0_shifted = np.log(s0 / strike)
@@ -861,19 +872,21 @@ def hilbert_barrier_call(
     else:
         barrier_mask = (grid + log_s0_shifted) < log_barrier
 
-    v = payoff.copy()
+    # Terminal value at t_M: payoff on surviving paths only (the maturity
+    # monitoring date knocks out terminal states beyond the barrier).
+    v = np.where(barrier_mask, payoff, 0.0)
 
     for _ in range(M):
         v_hat = fft(v)
-        conv = np.real(ifft(v_hat * np.conj(cf_dt))) * dx
+        conv = np.real(ifft(v_hat * cf_dt))
         v_next = np.exp(-r * dt) * conv
         # Apply barrier: zero out knocked-out region
         v_next[~barrier_mask] = 0.0
         # Ensure option is not negative
         v = np.maximum(v_next, 0.0)
 
-    # Interpolate at s0
-    j_frac = (log_s0_shifted - x_min) / dx
+    # Interpolate at the spot's log-return x = 0
+    j_frac = (0.0 - x_min) / dx
     jj = int(np.floor(j_frac))
     if jj < 0:
         price = float(v[0])
@@ -915,38 +928,59 @@ def bs_continuous_barrier_call(
     This is the **continuous** limit (M → ∞).  The discrete-monitoring
     Hilbert price should converge to this as M increases.
 
-    Reference: Merton (1973) "Theory of rational option pricing", §8.
+    References: Merton (1973) "Theory of rational option pricing", §8 (the
+    reflection identity, down-and-out with K >= barrier); Reiner &
+    Rubinstein (1991) / Haug (2007) §4.17 (four-term forms: down-and-out
+    with barrier above strike, up-and-out with barrier above strike).
     """
     if t <= 0 or sigma <= 0:
         raise ValueError("t and sigma must be positive")
     if s0 <= 0 or k <= 0 or barrier <= 0:
         raise ValueError("s0, k, barrier must be positive")
 
+    lam = (r + 0.5 * sigma**2) / sigma**2
+    sq = sigma * math.sqrt(t)
+    pow2 = (barrier / s0) ** (2.0 * lam)
+    pow2m2 = (barrier / s0) ** (2.0 * lam - 2.0)
+
     if barrier_type == "down-and-out":
         if s0 <= barrier:
             return 0.0
-        # Standard Merton DO call formula
         c_bs = _bs_price_scalar(s0, k, t, sigma, r, call=True)
-        # Reflection-principle knock-in adjustment (Merton 1973)
-        c_do = max(
-            0.0,
-            c_bs
-            - (s0 / barrier) ** (1.0 - 2.0 * r / sigma**2)
-            * _bs_price_scalar(barrier**2 / s0, k, t, sigma, r, call=True),
-        )
-        return float(c_do)
+        if k >= barrier:
+            # Reflection-principle knock-in adjustment (Merton 1973):
+            # valid when the payoff support lies above the barrier (K >= B).
+            c_do = c_bs - pow2m2 * _bs_price_scalar(barrier**2 / s0, k, t, sigma, r, call=True)
+        else:
+            # Barrier above strike (K < B): four-term Reiner-Rubinstein form
+            # — the compact reflection above is invalid here.
+            x2 = math.log(s0 / barrier) / sq + lam * sq
+            y1 = math.log(barrier / s0) / sq + lam * sq
+            c_do = (
+                s0 * normal.cdf(x2)
+                - k * math.exp(-r * t) * normal.cdf(x2 - sq)
+                - s0 * pow2 * normal.cdf(y1)
+                + k * math.exp(-r * t) * pow2m2 * normal.cdf(y1 - sq)
+            )
+        return float(max(0.0, c_do))
 
-    # up-and-out
+    # up-and-out call (Reiner & Rubinstein 1991, Haug 2007 §4.17)
     if s0 >= barrier:
         return 0.0
-    c_bs = _bs_price_scalar(s0, k, t, sigma, r, call=True)
-    c_uo = max(
-        0.0,
-        c_bs
-        - (s0 / barrier) ** (1.0 - 2.0 * r / sigma**2)
-        * _bs_price_scalar(barrier**2 / s0, k, t, sigma, r, call=True),
+    if barrier <= k:
+        # The knocked region contains the whole payoff support.
+        return 0.0
+    x1 = math.log(s0 / k) / sq + lam * sq
+    x2 = math.log(s0 / barrier) / sq + lam * sq
+    y = math.log(barrier**2 / (s0 * k)) / sq + lam * sq
+    y1 = math.log(barrier / s0) / sq + lam * sq
+    c_uo = (
+        s0 * (normal.cdf(x1) - normal.cdf(x2))
+        - k * math.exp(-r * t) * (normal.cdf(x1 - sq) - normal.cdf(x2 - sq))
+        - s0 * pow2 * (normal.cdf(y) - normal.cdf(y1))
+        + k * math.exp(-r * t) * pow2m2 * (normal.cdf(y - sq) - normal.cdf(y1 - sq))
     )
-    return float(c_uo)
+    return float(max(0.0, c_uo))
 
 
 def _bs_price_scalar(
