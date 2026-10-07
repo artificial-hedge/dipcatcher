@@ -36,4 +36,6 @@ def nll_gauss(y: NDArray[np.float64], mu: NDArray[np.float64], var: NDArray[np.f
 def coverage(
     y: NDArray[np.float64], mu: NDArray[np.float64], sd: NDArray[np.float64], z: float = 1.96
 ) -> float:
+    if (np.asarray(sd) < 0).any() or z < 0:
+        raise ValueError("sd and z must be non-negative for an interval to be valid")
     return float((np.abs(y - mu) <= z * sd).mean())

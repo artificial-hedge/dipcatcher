@@ -378,6 +378,9 @@
   "models/_attn_synth.py": {
    "status": "audited"
   },
+  "models/_bdl_synth.py": {
+   "status": "audited"
+  },
   "models/_lm_synth.py": {
    "status": "audited"
   },
