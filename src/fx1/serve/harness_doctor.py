@@ -105,9 +105,7 @@ def run_remote_doctor(
         _run_check("version_compat", lambda: _remote_version_compat(client)),
         _run_check("capabilities", lambda: _remote_capabilities(client)),
         _run_check("commands", lambda: _remote_commands(client)),
-        _run_check(
-            "unauth_refused", lambda: _remote_unauth_refused(client, make_client, open_mode)
-        ),
+        _run_check("unauth_refused", lambda: _remote_unauth_refused(make_client, open_mode)),
         _run_check("key_lifecycle", lambda: _remote_key_lifecycle(client, make_client, open_mode)),
         _run_check("metrics", lambda: _remote_metrics(client)),
         _run_check("receipt_roundtrip", lambda: _remote_receipt_roundtrip(client)),
@@ -155,9 +153,7 @@ def _remote_commands(client: Any) -> str:
     return f"{len(names)} registered commands"
 
 
-def _remote_unauth_refused(
-    client: Any, make_client: Callable[[str | None], Any], open_mode: bool
-) -> str:
+def _remote_unauth_refused(make_client: Callable[[str | None], Any], open_mode: bool) -> str:
     from fx1.serve.client import HarnessAuthError  # noqa: PLC0415
 
     if open_mode:
