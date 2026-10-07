@@ -473,3 +473,18 @@ products, spectral constant-input is explicitly zeroed, log loss
 reports `positive_infinity` on impossible endpoints. 113 adversarial
 probes across `tests/fx1/test_ops_compute_{asof,scores,series}_adversarial.py`
 — SYNTHETIC, deterministic, seeded.
+
+### Extensions generated-leaf audit (PR #2962)
+
+Line-level audit of the 89 generated extension wrappers under
+`extensions/{features,skills,plugins}` plus the directory `__init__`
+files — the last uncovered `src/fx1` leaf group. Zero defects: every
+file matches the canonical generated wrapper shape, the declared owner
+matches its filename (`module_basename` — skills kebab-case, features
+and plugins snake_case), owners are globally unique, no capability
+card is shared between leaves, and `verify()` fails closed on a
+foreign record. 179 adversarial probes in
+`tests/fx1/test_extensions_leaves_adversarial.py` enumerate the real
+tree so a nonconforming new leaf fails closed. The same PR flips
+`directories{extensions,serve,operations}` to `audited` with pinned
+censuses (94/54/43) — every `src/fx1` directory is now audited.
