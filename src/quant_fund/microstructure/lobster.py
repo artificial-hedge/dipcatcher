@@ -275,6 +275,8 @@ def tape_measurements(
                 # the first event.
                 book.seed(asks_exp, bids_exp)
                 seeded = True
+                if ev.event_type in (EXECUTION, EXECUTION_HIDDEN):
+                    signs.append(-ev.direction)
                 continue
             book.apply(ev)
             if ev.event_type in (EXECUTION, EXECUTION_HIDDEN):
