@@ -82,6 +82,7 @@ packages = [
     "robustness",  # adversarial certification (paired with research)
     "leakage",     # leakage scanner/guardrails over proofcore
     "audit",       # hash-chained audit ledger over research receipts
+    "parity_leak_audit", # parity-leak scanner over research-adjacent invariants
     "stress",      # stress harness over research+data
     "proof",       # proof bundles over proofcore
     "reality",     # reality checks (SPA/CSCV/DSR) over proofcore+metrics
@@ -271,6 +272,20 @@ file = "src/quant_fund/metrics/analytics.py"
 module = "quant_fund.portfolio.attribution"
 rule = "layer-order"
 note = "portfolio analytics import the attribution engine"
+
+# signature_features reuses models.path_signatures as the only sane source
+# of incremental-Chen signature / logsignature / lead_lag kernels (every
+# other lane copies them, but those copies drift). The honest path is to
+# move signature_features up a layer, but that ripples through ~12
+# downstream callers — deferred. Owner: metrics maintainers; the proper
+# fix is moving the upstream signature kernel next to metrics (foundation)
+# and re-exporting it from there. See #2844 triage doc for the
+# facade-extract plan.
+[[baseline]]
+file = "src/quant_fund/metrics/signature_features.py"
+module = "quant_fund.models.path_signatures"
+rule = "layer-order"
+note = "signature_features reuses the analytics-layer path-signatures kernels; facade-extract deferred"
 
 # validation/gates.py gates research artifacts — the only upward edge of an
 # otherwise low-level validation package (walk_forward/purging/cpcv are used

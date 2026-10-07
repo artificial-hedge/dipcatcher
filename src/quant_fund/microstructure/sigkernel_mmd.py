@@ -45,14 +45,6 @@ from quant_fund.microstructure.zi_lob_simulator import (
     ZILobConfig,
     ZILobSimulator,
 )
-from quant_fund.models.sigkernel import (
-    gram_is_psd,
-    mmd2,
-    mmd2_permutation,
-    pde_vs_series_gap,
-    sigkernel_gram,
-    sigkernel_pde,
-)
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -133,6 +125,15 @@ def sigkernel_mmd_bench(
     known-distinct sim populations, and (c) — with a tape — the
     distribution-level ordering of flow mechanisms vs the real stream.
     """
+    from quant_fund.models.sigkernel import (  # noqa: PLC0415  # layer-order: analytics-layer, imported lazily
+        gram_is_psd,
+        mmd2,
+        mmd2_permutation,
+        pde_vs_series_gap,
+        sigkernel_gram,
+        sigkernel_pde,
+    )
+
     results: dict[str, bool] = {}
     claim: dict[str, Any] = {}
 
@@ -292,7 +293,7 @@ def write_sigkernel_mmd_receipt(
     import json
     from pathlib import Path as _Path
 
-    from quant_fund.research.receipt_v2 import verify_receipt_payload
+    from quant_fund.schemas.receipt import verify_receipt_payload
     from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
     if receipt.get("kind") != "sigkernel_mmd" or receipt.get("schema") != SCHEMA:

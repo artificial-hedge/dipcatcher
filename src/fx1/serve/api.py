@@ -247,7 +247,7 @@ from fx1.serve.vectorstores import (
     VectorStoreStore,
 )
 from fx1.serve.webhooks import check_callback_url, deliver_signed
-from quant_fund.research.receipt_v2 import verify_receipt_bytes, verify_receipt_payload
+from quant_fund.schemas.receipt import verify_receipt_bytes, verify_receipt_payload
 
 _OBJ_CHAT_COMPLETION = "chat.completion"
 _EV_JOB_CANCELLED = "job cancelled"
