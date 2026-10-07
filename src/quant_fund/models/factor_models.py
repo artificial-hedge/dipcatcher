@@ -272,9 +272,19 @@ def gics_alpha(returns: Array, market: Array, nw_lags: int = 0) -> dict[str, Arr
     xtx_inv = np.linalg.pinv(x.T @ x)
     for i in range(n):
         e = resid[:, i]
-        s2 = float(e @ e) / (t - 2)
-        cov_ols = xtx_inv * s2
-        se = np.sqrt(max(cov_ols[0, 0], 0.0))
+        if nw_lags > 0:
+            # Newey–West HAC: scores s_t = e_t x_t, Bartlett-weighted
+            # autocovariances inside the (X'X)^-1 S (X'X)^-1 sandwich.
+            s = e[:, None] * x
+            s_mat = s.T @ s
+            for j in range(1, min(nw_lags, t - 2) + 1):
+                w = 1.0 - j / (nw_lags + 1.0)
+                s_mat += w * (s[j:].T @ s[:-j] + s[:-j].T @ s[j:])
+            cov_b = xtx_inv @ s_mat @ xtx_inv
+        else:
+            s2 = float(e @ e) / (t - 2)
+            cov_b = xtx_inv * s2
+        se = np.sqrt(max(cov_b[0, 0], 0.0))
         alphas[i] = beta[0, i]
         tstats[i] = beta[0, i] / se if se > 0 else np.nan
     return {"alpha": alphas, "alpha_t": tstats, "beta": beta[1]}
