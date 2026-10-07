@@ -413,3 +413,17 @@ restores records + counters, live rate windows stay process-local,
 torn journals quarantine recovered keys while keeping auth required,
 and a later clean mint is not re-quarantined. ~75 literal-bool probes
 seal into a `keys_audit.v1` receipt.
+
+## Receipt index audit (`receipt_store.py`)
+
+`fx1.serve.receiptstore_audit` pins the lazy sha256→file index behind
+`GET /receipts*`: admission is strict (regular `*.json` files whose
+document carries a full-match 64-hex `receipt_sha256`; malformed,
+non-dict, wrong-length, uppercase, symlinked, directory, binary, and
+recursion-depth inputs never index and never raise), duplicate
+digests resolve to the lexicographically first filename, items list in
+name order, and staleness is honest — additions, removals, renames,
+same-name replacements, corrupt-then-repaired files, and a missing or
+unreadable root all flip lookups correctly while unavailable roots
+clear the cache instead of serving stale results. ~30 literal-bool
+probes seal into a `receiptstore_audit.v1` receipt.
