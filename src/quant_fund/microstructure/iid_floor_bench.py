@@ -79,6 +79,9 @@ def iid_floor_bench(*, horizon: int = 12000, seed: int = 7) -> dict[str, Any]:
             cr["run_seed"] = rs
             cell_draws.append(cr)
         n = len(cell_draws)
+        # spread_mean is None on a degenerate draw — mean over measured
+        # draws only, None when none measured.
+        sp_vals = [d["spread_mean"] for d in cell_draws if d["spread_mean"] is not None]
         cells.append(
             {
                 "regime": label,
@@ -100,7 +103,7 @@ def iid_floor_bench(*, horizon: int = 12000, seed: int = 7) -> dict[str, Any]:
                     4,
                 ),
                 "mean_pins_ok": round(sum(d["n_pins_ok"] for d in cell_draws) / n, 4),
-                "spread_mean": round(sum(d["spread_mean"] for d in cell_draws) / n, 4),
+                "spread_mean": round(sum(sp_vals) / len(sp_vals), 4) if sp_vals else None,
                 "empty_share_mean": round(sum(d["empty_share"] or 0.0 for d in cell_draws) / n, 4),
                 "reseed_rate_mean": round(
                     sum(d.get("reseed_rate_500") or 0.0 for d in cell_draws) / n,
