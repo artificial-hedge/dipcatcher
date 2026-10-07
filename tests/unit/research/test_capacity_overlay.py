@@ -286,3 +286,20 @@ def test_dataset_sha256_tracks_books_not_run_params() -> None:
     assert d1 == d2  # AUM grid is a run param, not data
     assert r1["inputs_sha256"] != r2["inputs_sha256"]
     assert d1 != d3
+
+
+def test_capacity_v1_audit_rejects_hostile_days_to_trade() -> None:
+    """days_to_trade is required finite non-negative on ok rows — a hostile
+    receipt (string, inf, negative) must flag row_days_to_trade_invalid,
+    not pass silently through the identity check."""
+    from quant_fund.research.capacity_overlay import capacity_v1_audit_errors
+
+    _, receipt = run_capacity_bench(seed=3, n_dates=30, n_names=6)
+    assert capacity_v1_audit_errors(receipt) == []
+
+    ok_idx = next(i for i, r in enumerate(receipt["results"]) if r["status"] == "ok")
+    for hostile in ("not-a-number", float("inf"), -3.0, None, True):
+        tampered = json.loads(json.dumps(receipt))
+        tampered["results"][ok_idx]["days_to_trade"] = hostile
+        errors = capacity_v1_audit_errors(tampered)
+        assert "row_days_to_trade_invalid" in errors, (hostile, errors)

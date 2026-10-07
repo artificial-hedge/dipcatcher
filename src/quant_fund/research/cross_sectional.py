@@ -99,7 +99,11 @@ def _forward_returns(
             raise ValueError("horizons must be >= 1")
         fwd = np.full((n_dates, n_assets), np.nan)
         cum = np.cumsum(daily, axis=0)
-        fwd[h:] = cum[h:] - cum[:-h]
+        # fwd[t] = daily[t+1] + ... + daily[t+h] = cum[t+h] - cum[t] — a true
+        # forward window, matching the panel contract (signal[t] observed
+        # before fwd[t] is realized). The trailing cum[h:] - cum[:-h] on the
+        # head slice would instead include daily[t] itself (contemporaneous).
+        fwd[:-h] = cum[h:] - cum[:-h]
         out[h] = fwd
     return out
 

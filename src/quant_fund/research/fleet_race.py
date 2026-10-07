@@ -103,6 +103,7 @@ def _predict_head(
         or q.shape[0] != x_ev.shape[0]
         or q.shape[1] != n_taus
         or not np.isfinite(q).all()
+        or bool(np.any(np.diff(q, axis=1) < 0.0))
     ):
         return f"predict returned invalid quantile frame {q.shape!r}"
     return q
@@ -213,7 +214,15 @@ def fleet_race(
                     if lane.eliminated_at is None and lane.demote.promotion_origin is not None:
                         lane.eliminated_at = lane.demote.promotion_origin
 
-        promoted = [lane for lane in clean_lanes if lane.promoted_at is not None]
+        # A head that promoted and was later eliminated carries
+        # contradictory evidence — provably better AND provably worse than
+        # the incumbent — so it stays out of the winner pool (its row still
+        # reports both stopping times).
+        promoted = [
+            lane
+            for lane in clean_lanes
+            if lane.promoted_at is not None and lane.eliminated_at is None
+        ]
         contenders = [lane for lane in clean_lanes if lane.eliminated_at is None]
         winner_lane = min(
             promoted if promoted else (contenders or clean_lanes),
@@ -366,7 +375,9 @@ def write_race_receipt(
             wrap_receipt_v2(
                 receipt,
                 code_files=(Path(__file__),),
-                verdict="pass",
+                # verdict follows the evidence: a race with no shard winner
+                # recorded no usable head (every lane errored) — not a pass.
+                verdict="pass" if receipt.get("shard_winners") else "fail",
             )
         )
         name_digest = str(payload["receipt_sha256"])[:16]

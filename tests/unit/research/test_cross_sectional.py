@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -289,3 +290,19 @@ def test_dataset_sha256_tracks_panels_not_run_params() -> None:
     assert d1 == d2  # challenger set is a run param, not data
     assert r1["inputs_sha256"] != r2["inputs_sha256"]
     assert d1 != d3
+
+
+def test_forward_returns_are_true_forward_windows() -> None:
+    """fwd[t] must be the sum of daily[t+1..t+h] — realized AFTER the signal,
+    per the panel's no-lookahead contract. Pins direction and the telescoping
+    identity fwd5[t] = fwd1[t] + fwd4[t+1]; a trailing window fails both."""
+    from quant_fund.research.cross_sectional import _forward_returns
+
+    n_dates, n_assets = 80, 16
+    fw = _forward_returns(np.random.default_rng(11), n_dates, n_assets, (1, 4, 5))
+    f1, f4, f5 = fw[1], fw[4], fw[5]
+    # NaN block sits at the END (dates without a full h-window), not the start.
+    assert np.isfinite(f5[0]).all()
+    assert np.isnan(f5[-5:]).all() and np.isfinite(f5[:-5]).all()
+    # Telescoping: fwd1[t] + fwd4[t+1] == fwd5[t] for all valid t.
+    np.testing.assert_allclose(f5[:-5], f1[:-5] + f4[1:-4], rtol=1e-12, atol=1e-12)

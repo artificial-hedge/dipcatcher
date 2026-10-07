@@ -96,11 +96,14 @@ def localize_changepoint(
     # per-candidate threshold must spend alpha across the family
     # (Bonferroni/union bound; valid under arbitrary dependence between
     # overlapping windows).
-    n_candidates = max(1, n - window - min_left)
+    n_candidates = max(1, n - window - min_left + 1)
     threshold = np.log(n_candidates / alpha)
 
     log_e = np.full(n, np.nan)
-    for s in range(min_left, n - window):
+    # inclusive right edge: s = n - window is a legal candidate — its window
+    # [n-W, n) is the final W observations — so a change inside the last W
+    # positions must stay reachable or it silently cannot be localized.
+    for s in range(min_left, n - window + 1):
         left = x[:s]
         mu = float(left.mean())
         scale = float(left.std(ddof=1)) if s > 1 else 0.0

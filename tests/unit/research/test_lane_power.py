@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -136,3 +137,23 @@ def test_lane_power_receipt_v2_round_trip(tmp_path) -> None:
     assert payload["payload"]["kind"] == "lane_power"
     assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
     assert verify_receipt_file(path)["valid"] is True
+
+
+def test_cs_lanes_alarmed_means_ever_excluded() -> None:
+    """For the CS lanes, alarmed must mean 'the CS excluded at some point in
+    the stream' — consistent with t_alarm and the CS validity guarantee
+    P(ever exclude | null) <= alpha. A CS that crossed then re-covered still
+    fired; reporting final-step exclusion would understate both power and
+    the null-alarm control."""
+    for lane in ("loss_cs", "coverage_cs"):
+        try:
+            runner = lane_power._LANES[lane]
+        except KeyError:  # pragma: no cover - lane unregistered
+            continue
+        for seed in range(12):
+            for defect in (0.0, 0.1, 0.25):
+                r = runner(defect, seed, 200, 0.05)
+                assert r.alarmed == np.isfinite(r.t_alarm), (
+                    f"{lane} seed={seed} defect={defect}: alarmed={r.alarmed} "
+                    f"but t_alarm={r.t_alarm}"
+                )

@@ -406,6 +406,15 @@ def capacity_v1_audit_errors(receipt: Mapping[str, Any]) -> list[str]:
         feasible = row.get("feasible")
         if feasible not in (0, 1):
             errors.append("row_feasible_invalid")
+        # days_to_trade is a required finite non-negative field on ok rows —
+        # the identity check below must not pass silently when it is hostile.
+        if (
+            not isinstance(days, (int, float))
+            or isinstance(days, bool)
+            or not math.isfinite(days)
+            or days < 0
+        ):
+            errors.append("row_days_to_trade_invalid")
         if (
             isinstance(max_p, (int, float))
             and not isinstance(max_p, bool)

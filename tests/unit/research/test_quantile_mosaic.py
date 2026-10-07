@@ -153,3 +153,14 @@ def test_mosaic_bench_fail_closed() -> None:
         mosaic_bench(head, shard_names=("iid_gaussian",), n=4)
     with pytest.raises(ValueError):
         mosaic_bench(head, shard_names=("nonexistent_shard",), n=32)
+
+
+def test_consistency_rejects_empty_grid() -> None:
+    """SYNTHETIC: an empty quantile grid must fail loudly, not 0/0 crash."""
+    from quant_fund.research.quantile_mosaic import quantile_consistency
+
+    empty = np.zeros((0, 3), dtype=float)
+    taus = [0.25, 0.5, 0.75]
+    for strict in (True, False):
+        with pytest.raises(ValueError, match="at least one row"):
+            quantile_consistency(empty, taus, strict=strict)

@@ -132,3 +132,85 @@ def test_bad_horizon_fails_closed() -> None:
 def test_unknown_head_fails_closed() -> None:
     with pytest.raises(ValueError):
         multih_factories(TAUS, 11, names=["not_a_head"])
+
+
+def test_empirical_ratio_excludes_origin_bar() -> None:
+    """The scored h-step target begins at the origin bar: y[t] itself must not
+    enter the dispersion window (lookback only, per the module docstring).
+    Later origins inside the trailing lookback do see it."""
+    rng = np.random.default_rng(2)
+    y = rng.normal(size=300)
+    origins = np.array([160])
+    y_low, y_high = y.copy(), y.copy()
+    y_low[160] = -50.0
+    y_high[160] = 50.0
+    r_low = _h_step_dispersion_ratio(y_low, origins, h=5, lookback=80)
+    r_high = _h_step_dispersion_ratio(y_high, origins, h=5, lookback=80)
+    np.testing.assert_allclose(r_low, r_high, equal_nan=True)
+    later = np.array([170])
+    assert not np.allclose(
+        _h_step_dispersion_ratio(y_low, later, h=5, lookback=80),
+        _h_step_dispersion_ratio(y_high, later, h=5, lookback=80),
+        equal_nan=True,
+    )
+
+
+def test_consistency_errors_tolerate_error_row_first() -> None:
+    """An error row first in the sealed rows must not empty the verifier's
+    pinball key set and false-flag honest leaders."""
+    from quant_fund.research.multih_fleet import multih_fleet_consistency_errors
+
+    fac = multih_factories(TAUS, 11, names=["empirical"])
+    gens = resolve_shard_generators(["iid_gaussian"])
+    _, receipt = run_multih_fleet_eval(
+        fac, gens, taus=TAUS, horizons=(1,), n_train=150, n_eval=20, n=240, seed=3
+    )
+    assert multih_fleet_consistency_errors(receipt) == []
+    tampered = json.loads(json.dumps(receipt))
+    error_row = dict(tampered["payload"]["rows"][0])
+    error_row["status"] = "error"
+    error_row["error"] = "synthetic fault"
+    for key in [k for k in error_row if k.startswith("pinball_")]:
+        error_row.pop(key)
+    tampered["payload"]["rows"] = [error_row] + tampered["payload"]["rows"]
+    assert multih_fleet_consistency_errors(tampered) == []
+
+
+def test_nonfinite_native_block_raises_not_ok() -> None:
+    """A native h-block emitting non-finite quantiles must raise — the caller
+    records an error row; NaN metrics must never score as status ok."""
+    from quant_fund.research.fleet_eval import COVERAGE_LEVELS, _central_interval_index
+    from quant_fund.research.multih_fleet import _score_head_horizon
+
+    class _Inner:
+        horizons = (1, 5)
+
+        def predict(self, x: np.ndarray) -> np.ndarray:
+            row = np.zeros(12)
+            row[6:9] = np.nan  # student_t h=5 quantile block (2*1*3 = 6)
+            return np.tile(row, (x.shape[0], 1))
+
+    class _Head:
+        fleet_lagged_predict = False
+        block = "student_t"
+        _inner = _Inner()
+
+        def predict(self, x: np.ndarray) -> np.ndarray:
+            return np.tile(np.array([0.0, 1.0, 2.0]), (x.shape[0], 1))
+
+    gens = resolve_shard_generators(["iid_gaussian"])
+    shard = gens["iid_gaussian"](n=240, seed=3)
+    taus = np.asarray(TAUS, dtype=np.float64)
+    coverage_index = {level: _central_interval_index(taus, level) for level in COVERAGE_LEVELS}
+    with pytest.raises(ValueError, match="non-finite quantiles"):
+        _score_head_horizon(
+            shard=shard,
+            name="hstep_t",
+            model=_Head(),
+            h=5,
+            n_train=150,
+            n_eval=20,
+            taus=taus,
+            coverage_index=coverage_index,
+            seed=0,
+        )

@@ -896,7 +896,9 @@ def fleet_v1_audit_errors(receipt: Mapping[str, Any]) -> list[str]:
     shard_set = sorted(str(s) for s in shards)
     seen: set[tuple[str, str]] = set()
     n_error_rows = 0
-    tau_fields = {f"pinball_{tau}" for tau in taus}
+    # Writer keys are _pinball_key(tau) == f"pinball_{tau:g}" — mirror the same
+    # formatting or a non-default tau grid false-flags row_missing_pinball.
+    tau_fields = {_pinball_key(float(tau)) for tau in taus}
 
     for row in results:
         if not isinstance(row, Mapping):
@@ -927,7 +929,7 @@ def fleet_v1_audit_errors(receipt: Mapping[str, Any]) -> list[str]:
         if missing_taus:
             errors.append(f"row_missing_pinball:{model}:{shard}")
         for tau in taus:
-            value = row.get(f"pinball_{tau}")
+            value = row.get(_pinball_key(float(tau)))
             if status == "ok" and (
                 not isinstance(value, (int, float))
                 or isinstance(value, bool)

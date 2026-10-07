@@ -161,7 +161,10 @@ def _run_loss_cs(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
         if np.isfinite(lo) and lo > 0.0 and not np.isfinite(t_alarm):
             t_alarm = float(i)
     lo, hi = proc.interval()
-    excludes = bool(np.isfinite(lo) and lo > 0.0)
+    # Ever-excluded, matching t_alarm and the CS validity guarantee
+    # P(ever exclude | null) <= alpha: a CS that crossed then re-covered still
+    # fired — final-step exclusion would understate both power and alarm rate.
+    excludes = bool(np.isfinite(t_alarm))
     return _LaneResult(excludes, t_alarm, float(lo), _stream_digest(stream))
 
 
@@ -237,7 +240,8 @@ def _run_coverage_cs(defect: float, seed: int, n: int, alpha: float) -> _LaneRes
         if excluded and not np.isfinite(t_alarm):
             t_alarm = float(i)
             width = float(hi - lo)
-    return _LaneResult(excluded, t_alarm, width, _stream_digest(stream))
+    # Ever-excluded, matching t_alarm and CS validity (see _run_loss_cs).
+    return _LaneResult(bool(np.isfinite(t_alarm)), t_alarm, width, _stream_digest(stream))
 
 
 def _run_serial(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:

@@ -129,8 +129,13 @@ def ewa_weights(losses: NDArray[np.float64]) -> NDArray[np.float64]:
     for i in range(1, t):
         sigma = float(np.std(losses[:, :i]))
         eta = 1.0 / sigma if sigma > 1e-12 else 0.0
-        prev = prev * np.exp(-eta * losses[:, i - 1])
-        prev = prev / prev.sum()
+        # exp(min z - z) <= 1 with the best head at factor 1: identical
+        # normalized weights, but an all-underflow round can no longer take
+        # prev.sum() to 0 and turn the whole row NaN.
+        z = eta * np.asarray(losses[:, i - 1], dtype=float)
+        prev = prev * np.exp(z.min() - z)
+        total = float(prev.sum())
+        prev = prev / total if np.isfinite(total) and total > 0.0 else np.full(k, 1.0 / k)
         w[:, i] = prev
     return w
 
@@ -152,8 +157,10 @@ def fixed_share_weights(losses: NDArray[np.float64], alpha: float = 0.05) -> NDA
     for i in range(1, t):
         sigma = float(np.std(losses[:, :i]))
         eta = 1.0 / sigma if sigma > 1e-12 else 0.0
-        prev = prev * np.exp(-eta * losses[:, i - 1])
-        prev = prev / prev.sum()
+        z = eta * np.asarray(losses[:, i - 1], dtype=float)
+        prev = prev * np.exp(z.min() - z)
+        total = float(prev.sum())
+        prev = prev / total if np.isfinite(total) and total > 0.0 else np.full(k, 1.0 / k)
         prev = (1.0 - alpha) * prev + alpha / k
         w[:, i] = prev
     return w
@@ -341,6 +348,7 @@ def run_expert_mixture(
         "seed": seed,
         "shards": shard_reports,
         "n_rows": frame.height,
+        "n_error_rows": int(sum(1 for r in rows if r.get("status") != "ok")),
     }
     return frame, payload
 
@@ -387,7 +395,9 @@ def run_expert_mixture_eval(
         },
         params=params,
         code_files=(Path(__file__),),
-        verdict="pass",
+        # Mirror the multih gate: pass iff the bench produced usable evidence —
+        # every row erroring means an empty measurement, not a pass.
+        verdict="pass" if payload["n_rows"] > payload["n_error_rows"] else "fail",
         payload=payload,
     )
     return frame, receipt

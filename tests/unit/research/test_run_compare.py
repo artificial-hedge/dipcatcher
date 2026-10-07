@@ -189,3 +189,43 @@ def test_receipt_v2_envelope_via_main(tmp_path: Path) -> None:
     assert document["payload"]["schema"] == "run_compare.v1"
     assert document["payload"]["report"]["series"]
     assert verify_receipt_file(out)["valid"] is True
+
+
+def test_config_root_lists_are_not_score_series(tmp_path: Path) -> None:
+    """SYNTHETIC: config-root numeric lists are settings, not paired evidence."""
+    payload = {
+        "params": {"taus": [0.1, 0.5, 0.9], "depth": 3},
+        "inputs": {"seeds": [7, 11, 13]},
+        "scores": {"pinball_per_fold": [0.30, 0.31, 0.29, 0.28]},
+    }
+    path = tmp_path / "run.json"
+    path.write_text(json.dumps(payload))
+    data = load_run(path)
+    assert "scores.pinball_per_fold" in data.series
+    assert "params.taus" not in data.series
+    assert "inputs.seeds" not in data.series
+    assert "params.depth" not in data.scalars
+    assert data.config["params"] == payload["params"]
+
+
+def test_receipt_v2_verdict_fails_when_nothing_ran(tmp_path: Path) -> None:
+    """SYNTHETIC: a v2 compare whose every series failed to pair is not a pass."""
+    from quant_fund.research.compare import main
+
+    run_a = tmp_path / "a.json"
+    run_b = tmp_path / "b.json"
+    run_a.write_text(json.dumps({"scores": {"s": [0.1, 0.2]}}))
+    run_b.write_text(json.dumps({"scores": {"s": [0.2, 0.1]}}))
+    out = tmp_path / "receipt.json"
+    main(
+        [
+            str(run_a),
+            str(run_b),
+            "--receipt-out",
+            str(out),
+            "--receipt-version",
+            "2",
+        ]
+    )
+    document = json.loads(out.read_text())
+    assert document["verdict"] == "fail"

@@ -85,3 +85,20 @@ def test_report_shape() -> None:
     assert rep["n"] == 400
     assert isinstance(rep["log_evalues"], list)
     assert rep["alarmed"] is True
+
+
+def test_tail_candidate_is_reachable() -> None:
+    """SYNTHETIC: a change in the final window must still be localizable.
+
+    Off-by-one guard: s = n - window is a legal candidate whose scan window
+    is the last W observations. Pin a big shift exactly at n - window and
+    require the maximizer to reach it.
+    """
+    rng = np.random.default_rng(11)
+    n, window, min_left = 200, 40, 10
+    x = rng.normal(0.0, 0.1, size=n)
+    x[n - window :] += 5.0  # the last window is entirely post-change
+    res = localize_changepoint(x, alpha=0.05, window=window, min_left=min_left)
+    assert res.alarmed
+    assert res.tau_hat == n - window
+    assert res.cs_hi == n - window

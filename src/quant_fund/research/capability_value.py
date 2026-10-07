@@ -183,8 +183,8 @@ def _rank_signals(
                 test = signal_matrix[t_start + embargo : t_end + embargo, k]
                 if len(test) < 2:
                     continue
-                # Proper score: squared error (Brier-compatible)
-                # Rank by out-of-sample signal strength (mean / std)
+                # Out-of-sample signal strength: holdout mean/std ratio
+                # (a screening score for the synthetic Cap, not a market IC).
                 mu_test = float(np.mean(test))
                 sigma_test = float(np.std(test, ddof=1))
                 if sigma_test > _SS:
@@ -842,7 +842,15 @@ def cap_gate(cap_value: CapabilityValue) -> CapGateVerdict:
     CapGateVerdict
         Structured gate verdict.
     """
-    deltas = np.array([r.rank_ic_delta for r in cap_value.swap_results], dtype=float)
+    # std must come from the same metric the evaluation aggregated — pairing
+    # an ic_delta mean against rank_ic dispersion is a confounded effect size.
+    deltas = np.array(
+        [
+            r.rank_ic_delta if cap_value.metric == "rank_ic_delta" else r.ic_delta
+            for r in cap_value.swap_results
+        ],
+        dtype=float,
+    )
 
     if len(deltas) > 1:
         std_deltas = float(np.std(deltas, ddof=1))

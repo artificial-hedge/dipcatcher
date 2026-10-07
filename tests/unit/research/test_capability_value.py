@@ -780,3 +780,41 @@ class TestCapabilityValueAggregation:
             cap_b_fingerprint="b",
         )
         assert cv.ci_lower <= cv.mean_delta <= cv.ci_upper
+
+
+def test_cap_gate_effect_size_follows_evaluation_metric() -> None:
+    """SYNTHETIC: cap_gate must not pair an ic_delta mean with rank_ic sigma."""
+    swaps = tuple(
+        CapSwapResult(
+            anchor_label=f"s{i}",
+            cap_a_fingerprint="a",
+            cap_b_fingerprint="b",
+            ic_a=0.0,
+            ic_b=0.0,
+            rank_ic_a=0.0,
+            rank_ic_b=0.0,
+            ic_delta=0.1 + 0.1 * i,
+            rank_ic_delta=0.0,
+            selected_a=1,
+            selected_b=1,
+        )
+        for i in range(3)
+    )
+    cv = CapabilityValue(
+        swap_results=swaps,
+        metric="ic_delta",
+        mean_delta=0.2,
+        median_delta=0.2,
+        ci_lower=0.1,
+        ci_upper=0.3,
+        t_stat=3.0,
+        p_value=0.01,
+        n_swaps=3,
+        cap_a_fingerprint="a",
+        cap_b_fingerprint="b",
+    )
+    verdict = cap_gate(cv)
+    # std(ic_delta) ≈ 0.0816 → effect ≈ 0.2/0.0816; the buggy pairing against
+    # std(rank_ic_delta)=0 would have reported 0.0.
+    assert verdict.effect_size == pytest.approx(0.2 / np.std([0.1, 0.2, 0.3], ddof=1))
+    assert verdict.effect_size > 0.0
