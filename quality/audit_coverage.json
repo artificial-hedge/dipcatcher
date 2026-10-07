@@ -486,6 +486,9 @@
   "models/duration.py": {
    "status": "audited"
   },
+  "models/durbin_koopman.py": {
+   "status": "audited"
+  },
   "models/dynamic_subspace_denoising.py": {
    "status": "audited"
   },
@@ -508,6 +511,9 @@
    "status": "audited"
   },
   "models/factor_models.py": {
+   "status": "audited"
+  },
+  "models/factor_nowcast.py": {
    "status": "audited"
   },
   "models/favar.py": {
@@ -558,10 +564,16 @@
   "models/hierarchical_conformal.py": {
    "status": "audited"
   },
+  "models/hmc.py": {
+   "status": "audited"
+  },
   "models/honest_did.py": {
    "status": "audited"
   },
   "models/hpd_conformal.py": {
+   "status": "audited"
+  },
+  "models/implied_tree.py": {
    "status": "audited"
   },
   "models/ivs_diffusion.py": {
@@ -592,6 +604,9 @@
    "status": "audited"
   },
   "models/martingale_ot.py": {
+   "status": "audited"
+  },
+  "models/mean_field_games.py": {
    "status": "audited"
   },
   "models/mixture.py": {
@@ -753,6 +768,9 @@
   "models/root_finders.py": {
    "status": "audited"
   },
+  "models/rough_heston_rbergomi.py": {
+   "status": "audited"
+  },
   "models/rough_vol.py": {
    "status": "audited"
   },
@@ -771,6 +789,9 @@
   "models/short_rate.py": {
    "status": "audited"
   },
+  "models/sig_gan.py": {
+   "status": "audited"
+  },
   "models/sketches.py": {
    "status": "audited"
   },
@@ -781,6 +802,9 @@
    "status": "audited"
   },
   "models/spectral_atiyah.py": {
+   "status": "audited"
+  },
+  "models/stacking.py": {
    "status": "audited"
   },
   "models/state_space.py": {

@@ -185,3 +185,32 @@ class TestBench:
         assert blob["synthetic_draw_mean_corr"] > 0.95
         assert blob["synthetic_draw_cov_calib"] > 0.8
         assert blob["synthetic_determinism"] == 1.0
+
+
+class TestDisturbanceSmootherIdentity:
+    """Exact identity: eps_hat_t = E[eps_t|y] = y_t - z_t * E[a_t|y]."""
+
+    def test_eps_hat_equals_obs_minus_smoothed_signal(self, sim, mats):
+        ds = disturbance_smooth(sim["y"], *mats)
+        a_s = np.asarray(rts_smooth(sim["y"], *mats)["a_s"])
+        resid = sim["y"] - a_s @ sim["z"].T
+        mask = np.isfinite(ds["eps_hat"])
+        np.testing.assert_allclose(ds["eps_hat"][mask], resid[mask], atol=1e-10)
+
+
+class TestInitialStateDraw:
+    """The sim smoother needs a+_0 ~ N(a1, p1) for an exact DK correction.
+
+    With a+_0 = a1 (old code) the t=0 draw variance collapses to ~0
+    instead of matching the smoother covariance p_s[0].
+    """
+
+    def test_draw_variance_at_t0(self):
+        sim = synth_ssm(60, 1, 0.0, 7)  # iid factor, weak smoothing
+        y = sim["y"]
+        mats = (sim["z"], sim["trans"], sim["q"], sim["r"], sim["a1"], sim["p1"])
+        p_s0 = np.diag(np.atleast_2d(np.asarray(rts_smooth(y, *mats)["p_s"][0])))
+        draws = simulation_smoother(y, *mats, n_draws=3000, seed=0)
+        ratio = draws[:, 0, :].var(axis=0) / p_s0
+        np.testing.assert_array_less(0.7, ratio, err_msg=f"draw/p_s ratio {ratio}")
+        np.testing.assert_array_less(ratio, 1.3, err_msg=f"draw/p_s ratio {ratio}")

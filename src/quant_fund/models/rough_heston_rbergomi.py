@@ -268,9 +268,11 @@ def rbergomi_simulate(
 ) -> tuple[Array, Array, Array]:
     """Simulate rBergomi log-price X and variance V paths.
 
-    V_t = xi0·exp(η W^H_t - ½ η² t^{2H}), X_t = -½∫V + ∫√V dW^ρ with
-    W^ρ = ρ Z + √(1-ρ²) W' where Z drives W^H. Returns (X, V, W^H)
-    each shaped (n_paths, n_steps+1).
+    V_t = xi0·exp(η W^H_t - ½ η² Var(W^H_t)), X_t = -½∫V + ∫√V dW^ρ
+    with W^ρ = ρ Z + √(1-ρ²) W' where Z drives W^H. Var(W^H_n) is the
+    discrete-exact sum Σ_m w_m² of the RL kernel weights (→ t^{2H}/
+    (Γ(α)²·2H) in the limit), so E[V_t] = xi0 exactly on the grid.
+    Returns (X, V, W^H) each shaped (n_paths, n_steps+1).
     """
     _require(n_paths >= 4 and n_steps >= 16 and t > 0, "bad sizes")
     _require(xi0 > 0 and eta > 0 and 0.0 < h < 0.5 and -1.0 < rho < 1.0, "bad params")
@@ -282,8 +284,9 @@ def rbergomi_simulate(
     z2 = rng.standard_normal((n_paths, n_steps))
     # W^H_n = Σ_{k<=n} w_{n-k} · z1_k  (w already /sqrt(dt))
     wh = np.stack([np.convolve(w, z1[p, :], mode="full")[:n_steps] for p in range(n_paths)])
-    tt = np.arange(1, n_steps + 1) * dt
-    v = xi0 * np.exp(eta * wh - 0.5 * eta * eta * tt ** (2.0 * h))
+    # Var(W^H_n) = sum of squared kernel weights (discrete-exact)
+    var_wh = np.cumsum(w * w)
+    v = xi0 * np.exp(eta * wh - 0.5 * eta * eta * var_wh[None, :])
     v = np.concatenate([np.full((n_paths, 1), xi0), v], axis=1)
     drho = math.sqrt(1.0 - rho * rho)
     dx = -0.5 * v[:, :-1] * dt + np.sqrt(np.maximum(v[:, :-1], _EPS)) * (
@@ -308,9 +311,9 @@ def volterra_heston_simulate(
 ) -> tuple[Array, Array]:
     """Euler scheme for the Volterra (rough) Heston variance + log-price.
 
-    V_n = g0(n) + Σ_{k<n} K_{n-k} (λ(θ-V_k) dt + ν√V_k ΔB_k),
-    g0(n) = V0 + λθ ∫0^{n dt} K — precomputed cumulative kernel.
-    K_m = ((m)^α - (m-1)^α) · dt^{α-1}/Γ(α+1) (left-point kernel mass).
+    V_n = V0 + Σ_{k<n} K_{n-k} (λ(θ-V_k) dt + ν√V_k ΔB_k),
+    K_m = (m·dt)^{α-1}/Γ(α) — pointwise kernel value; the dt measure
+    is inside the convolved driver.
     """
     _require(n_paths >= 4 and n_steps >= 16 and t > 0, "bad sizes")
     _require(v0 > 0 and lam > 0 and theta > 0 and nu > 0 and -1.0 < rho < 1.0, "bad params")
@@ -319,7 +322,6 @@ def volterra_heston_simulate(
     dt = t / n_steps
     m = np.arange(1, n_steps + 1, dtype=float)
     kernel = (dt ** (alpha - 1.0) / _gamma(alpha)) * m ** (alpha - 1.0)
-    g0 = v0 + lam * theta * (dt**alpha / _gamma(alpha + 1.0)) * m**alpha
     v = np.full((n_paths, n_steps + 1), v0)
     x = np.zeros((n_paths, n_steps + 1))
     dz1 = rng.standard_normal((n_paths, n_steps))
@@ -330,7 +332,7 @@ def volterra_heston_simulate(
         vn = np.maximum(v[:, n], 0.0)
         drift_drv[:, n] = lam * (theta - vn) * dt + nu * np.sqrt(vn) * dz1[:, n] * math.sqrt(dt)
         conv = drift_drv[:, : n + 1] @ kernel[: n + 1][::-1]
-        v[:, n + 1] = g0[n] + conv
+        v[:, n + 1] = v0 + conv
         x[:, n + 1] = (
             x[:, n]
             - 0.5 * vn * dt

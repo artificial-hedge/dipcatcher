@@ -4,7 +4,7 @@ Implements the Cardaliaguet & Lehalle (2018) trade-crowding MFG via the
 linear-quadratic (LQ) spectral decomposition.  The equilibrium is
 characterised by a forward-backward ODE system:
 
-    q*'(t) = −α*(t),  q*(0) = Q₀
+    q*'(t) = α*(t),  q*(0) = Q₀
     α*(t,q) = −∂_q v / (2κ) = −(h₂(t) q + ½ h₁(t)) / κ
 
 where h₂(t) solves a decoupled Riccati equation and (q*, h₁) form a
@@ -211,11 +211,11 @@ def _solve_fbsde(
         c1 = 2.0 * h / kappa - 0.5 * gamma / kappa
         c2 = 0.5 / kappa
 
-        # Backward Euler: (P_k − P_{k+1}) / dt = c0 + c1·P_k + c2·P_k²
-        # → c2·P_k² + (c1 − 1/dt)·P_k + (c0 + P_{k+1}/dt) = 0
+        # Backward Euler stepping back in time: P_k = P_{k+1} − dt·f(P_k)
+        # → c2·P_k² + (c1 + 1/dt)·P_k + (c0 − P_{k+1}/dt) = 0
         a = c2
-        b = c1 - 1.0 / dt
-        c_val = c0 + P[k + 1] / dt
+        b = c1 + 1.0 / dt
+        c_val = c0 - P[k + 1] / dt
 
         disc = b * b - 4.0 * a * c_val
         if disc < 0:
@@ -248,11 +248,11 @@ def _solve_fbsde(
     h1 = P * q_star
 
     # --- Forward quadrature for h₀ -----------------------------------------
-    # h₀' = h₁²/(4κ), h₀(T) = 0 → integrate backward
+    # h₀' = h₁²/(4κ), h₀(T) = 0 → h₀(t) = −∫_t^T h₁²/(4κ) ds
     h0 = np.empty(n_t + 1, dtype=np.float64)
     h0[-1] = 0.0
     for k in range(n_t - 1, -1, -1):
-        h0[k] = h0[k + 1] + dt * h1[k] ** 2 / (4.0 * kappa)
+        h0[k] = h0[k + 1] - dt * h1[k] ** 2 / (4.0 * kappa)
 
     return q_star, h1, h0
 
@@ -439,7 +439,7 @@ def ac_benchmark_trajectory(
 
     This is the Almgren–Chriss schedule:
         q(t) = Q₀ · sinh(ω(T−t)) / sinh(ω T),   ω = √(ψ / κ).
-    Returns α̂(t) = −dq/dt at each slice midpoint.
+    Returns α̂(t) = dq/dt at each slice midpoint (negative: liquidation).
     """
     if psi <= 0:
         raise ValueError("psi must be positive for the AC benchmark")

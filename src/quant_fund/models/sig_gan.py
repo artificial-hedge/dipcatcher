@@ -409,8 +409,10 @@ def sample_gbm_paths(
     sigma = _as_vector(vol, d, "vol")
     if np.any(sigma <= 0.0) or not bool(np.all(np.isfinite(sigma))):
         raise ValueError(f"vol entries must be positive and finite; got {vol!r}")
-    if not math.isfinite(rho) or not -1.0 < rho < 1.0:
-        raise ValueError(f"rho must be in (-1, 1); got {rho!r}")
+    # equicorrelation matrix is PSD iff -1/(d-1) < rho < 1
+    rho_min = -1.0 / (d - 1) if d > 1 else -1.0
+    if not math.isfinite(rho) or not rho_min < rho < 1.0:
+        raise ValueError(f"rho must be in ({rho_min}, 1); got {rho!r}")
     if not math.isfinite(s0) or s0 <= 0.0:
         raise ValueError(f"s0 must be positive and finite; got {s0!r}")
     dt = _check_horizon(horizon) / t
@@ -458,8 +460,9 @@ def sample_ou_paths(
         raise ValueError(f"theta entries must be positive; got {theta!r}")
     if np.any(sigma <= 0.0):
         raise ValueError(f"vol entries must be positive; got {vol!r}")
-    if not math.isfinite(rho) or not -1.0 < rho < 1.0:
-        raise ValueError(f"rho must be in (-1, 1); got {rho!r}")
+    rho_min = -1.0 / (d - 1) if d > 1 else -1.0
+    if not math.isfinite(rho) or not rho_min < rho < 1.0:
+        raise ValueError(f"rho must be in ({rho_min}, 1); got {rho!r}")
     dt = _check_horizon(horizon) / t
     start = mu if x0 is None else _as_vector(x0, d, "x0")
     rng = np.random.default_rng(int(seed))

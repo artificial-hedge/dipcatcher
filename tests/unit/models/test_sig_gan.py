@@ -308,3 +308,24 @@ def test_torch_gate_metrics_on_generated() -> None:
     assert math.isfinite(sg.signature_moment_distance(real, gen))
     assert 0.0 <= sg.marginal_ks_distance(real, gen) <= 1.0
     assert sg.acf_distance(real, gen) >= 0.0
+
+
+class TestRhoEquicorrelationBound:
+    """rho must respect the equicorrelation PSD bound -1/(d-1) < rho < 1.
+
+    The old gate (-1 < rho < 1) let non-PSD matrices through: a raw
+    numpy LinAlgError escaped instead of the documented ValueError.
+    """
+
+    def test_non_psd_rho_raises_valueerror(self) -> None:
+        # d=3: PSD bound is rho > -1/2; rho=-0.6 is non-PSD
+        with pytest.raises(ValueError):
+            sg.sample_gbm_paths(8, 16, 3, rho=-0.6)
+        with pytest.raises(ValueError):
+            sg.sample_ou_paths(8, 16, 3, rho=-0.6)
+
+    def test_valid_negative_rho_accepted(self) -> None:
+        out = sg.sample_gbm_paths(8, 16, 2, rho=-0.9)
+        assert np.all(np.isfinite(out))
+        out = sg.sample_ou_paths(8, 16, 3, rho=-0.4)
+        assert np.all(np.isfinite(out))

@@ -236,8 +236,9 @@ def disturbance_smooth(
             kt = k_gain[t][:, idx]  # (k, m)
             l_mat = tm - kt @ zt
             u_obs = finv @ v[t, idx]
-            r_vec = zt.T @ u_obs + l_mat.T @ r_vec
+            # eps_hat_t = R (F^{-1} v_t - K' r_t) uses r BEFORE obs t folds in
             eps_hat[t, idx] = rm[idx] * (u_obs - kt.T @ r_vec)
+            r_vec = zt.T @ u_obs + l_mat.T @ r_vec
     return {"eps_hat": eps_hat, "eta_hat": eta_hat}
 
 
@@ -248,6 +249,7 @@ def _unconditional_sim(
     q: FloatArray,
     r: FloatArray,
     a1: FloatArray,
+    p1: FloatArray,
     rng: np.random.Generator,
 ) -> tuple[FloatArray, FloatArray]:
     """Simulate (a+, y+) from the model, no NaNs."""
@@ -255,7 +257,9 @@ def _unconditional_sim(
     n_y = z.shape[0]
     a_sim = np.zeros((t_n, k))
     y_sim = np.zeros((t_n, n_y))
-    a_sim[0] = a1
+    # a_0 must be drawn from N(a1, p1): the DK correction is exact only
+    # when (a+, y+) is a true joint simulation of the model.
+    a_sim[0] = a1 + np.linalg.cholesky(p1 + 1e-12 * np.eye(k)) @ rng.standard_normal(k)
     lq = np.linalg.cholesky(q + 1e-12 * np.eye(k))
     lr = np.sqrt(r)
     for t in range(t_n):
@@ -295,7 +299,7 @@ def simulation_smoother(
 
     draws = np.zeros((n_draws, t_n, k))
     for j in range(n_draws):
-        a_sim, y_sim = _unconditional_sim(t_n, zm, tm, qm, rm, a0, rng)
+        a_sim, y_sim = _unconditional_sim(t_n, zm, tm, qm, rm, a0, p0, rng)
         ks = rts_smooth(y_sim, zm, tm, qm, rm, a0, p0)
         draws[j] = a_hat + a_sim - np.asarray(ks["a_s"])
     return draws

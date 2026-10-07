@@ -41,10 +41,11 @@ def test_leapfrog_energy_bound(gauss):
     x = np.zeros(3)
     p = rng.standard_normal(3)
     lp0, _ = gauss(x)
-    h0 = -lp0 - 0.5 * p @ p
+    # true Hamiltonian: H = -logp + |p|^2/2, conserved by leapfrog
+    h0 = -lp0 + 0.5 * p @ p
     x1, p1 = leapfrog(gauss, x, p, 0.05, 50)
     lp1, _ = gauss(x1)
-    h1 = -lp1 - 0.5 * p1 @ p1
+    h1 = -lp1 + 0.5 * p1 @ p1
     assert abs(h1 - h0) < 0.5
 
 
@@ -183,3 +184,31 @@ def test_input_validation(gauss):
         leapfrog(gauss, np.array([]), np.array([]), 0.1, 1)
     with pytest.raises(ValueError):
         rhat(np.zeros((1, 10)))
+
+
+def test_nuts_marginal_not_frozen_or_inflated(gauss):
+    """NUTS marginals must track the target — not freeze or inflate.
+
+    The broken slice sign (-lp - K) admitted almost no states -> the
+    chain froze (std ~0.75 on a unit Gaussian). Merging curled/fold
+    states into the flat candidate pool inflates variance ~60% (~1.6).
+    Both failure modes are caught by the marginal window below.
+    """
+    stds = [
+        nuts_sample(
+            gauss, np.zeros(3), n_draws=800, burn=200, eps=0.3, max_depth=6, adapt=False, seed=s
+        )[0][:, 0].std()
+        for s in (0, 1, 2)
+    ]
+    assert 0.85 < float(np.mean(stds)) < 1.15, f"marginal stds {stds}"
+
+
+def test_nuts_student_t_variance():
+    """df=4 Student-t has Var = df/(df-2) = 2 per component."""
+    f = synth_student_t(df=4.0, dim=2, seed=0)
+    d = nuts_sample(
+        f, np.zeros(2), n_draws=3000, burn=500, eps=0.3, max_depth=6, adapt=False, seed=0
+    )[0]
+    for j in range(2):
+        var = float(d[:, j].var())
+        assert 1.2 < var < 3.2, f"component {j} var={var:.3f} (theory 2.0)"

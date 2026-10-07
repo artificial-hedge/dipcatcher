@@ -235,14 +235,14 @@ class TestCrowdingExternality:
         )
         assert mse > 1e-8, f"crowded trajectory should differ from solitary (MSE={mse:.2e})"
 
-    def test_crowding_slows_liquidation(self) -> None:
-        """Crowding (γ > 0) should make agents trade slower.
+    def test_crowding_frontloads_liquidation(self) -> None:
+        """Crowding (γ > 0) front-loads liquidation in the CL2018 LQ equilibrium.
 
-        Intuition: when the aggregate trading rate pushes the price
-        against each agent (permanent impact), the equilibrium
-        response is to trade more slowly to reduce per-unit adverse
-        drift.  This is the "crowding externality" — the opposite
-        of "race to the bottom" front-loading.
+        The coupling −γq·μ̄ makes holding inventory while the crowd
+        sells (μ̄ < 0) costlier — each agent front-runs the aggregate
+        price decay, so the equilibrium rate |μ̄| exceeds the solitary
+        rate early on.  Verified against an independent fixed-point
+        FBSDE solve: μ̄(0) ≈ −1.19 crowded vs ≈ −1.09 solitary.
         """
         sol_solitary = solve_mfg_trade_crowding(_SMALL_CFG)
         sol_crowded = solve_mfg_trade_crowding(_CROWDED_CFG)
@@ -256,9 +256,13 @@ class TestCrowdingExternality:
 
         hl_sol = _half_life(sol_solitary.optimal_trajectory, sol_solitary.t_grid)
         hl_crowd = _half_life(sol_crowded.optimal_trajectory, sol_crowded.t_grid)
-        # Crowded equilibrium should have slower liquidation
-        assert hl_crowd >= hl_sol, (
-            f"crowded half-life {hl_crowd:.4f} should be ≥ solitary {hl_sol:.4f}"
+        # Crowded equilibrium liquidates no slower than solitary
+        assert hl_crowd <= hl_sol, (
+            f"crowded half-life {hl_crowd:.4f} should be ≤ solitary {hl_sol:.4f}"
+        )
+        # And the initial equilibrium rate is more aggressive
+        assert sol_crowded.mu[0] <= sol_solitary.mu[0], (
+            f"crowded μ̄(0)={sol_crowded.mu[0]:.4f} should be ≤ solitary {sol_solitary.mu[0]:.4f}"
         )
 
 
@@ -669,3 +673,31 @@ class TestH2Analytics:
         )
         sol = solve_mfg_trade_crowding(cfg)
         np.testing.assert_allclose(sol.h2, A_val, atol=1e-12)
+
+
+class TestValueConsistency:
+    """The (h2, h1, h0) ansatz must satisfy the HJB identity on-path.
+
+    v(0, Q0) = expected total cost under the equilibrium policy.
+    The P-Riccati implicit-step sign and the h0 backward-accumulation
+    sign were both flipped: v(0,q*) came out -0.51 vs a true cost 1.16.
+    """
+
+    def test_value_at_origin_equals_cost(self) -> None:
+        sol = solve_mfg_trade_crowding(_CROWDED_CFG)
+        q0 = float(sol.optimal_trajectory[0])
+        v0 = float(sol.h2[0] * q0 * q0 + sol.h1[0] * q0 + sol.h0[0])
+        assert abs(v0 - sol.cost) < 0.05 * abs(sol.cost), f"v(0,q*)={v0:.4f} vs cost={sol.cost:.4f}"
+
+    def test_alpha_is_trajectory_rate(self) -> None:
+        """Pins the documented convention: q*'(t) = alpha*(t, q*(t)).
+
+        The solver integrates q[k+1] = q[k]*exp(rate*dt), so the exact
+        discrete identity is alpha[k] = q[k]*log(q[k+1]/q[k])/dt.
+        """
+        sol = solve_mfg_trade_crowding(_CROWDED_CFG)
+        dt = sol.t_grid[1] - sol.t_grid[0]
+        q = sol.optimal_trajectory
+        dq_rate = q[:-1] * np.diff(np.log(q)) / dt
+        a_on = np.array([np.interp(q[k], sol.q_grid, sol.alpha[k]) for k in range(len(q) - 1)])
+        np.testing.assert_allclose(dq_rate[1:-1], a_on[1:-1], atol=2e-2)

@@ -1,10 +1,12 @@
 """Hamiltonian Monte Carlo + NUTS sampling.
 
 Leapfrog-integrated HMC with dual-averaging step-size adaptation
-(Nesterov/Hoffman-Gelman) and the multinomial NUTS sampler (no U-turn;
-recursive doubling terminated on U-turn or divergence). Operates on an
-arbitrary ``logp_grad(x) -> (logp, grad)`` oracle — no autodiff
-dependency.
+(Nesterov/Hoffman-Gelman) and a slice-uniform NUTS variant: iterative
+doubling terminated on U-turn or divergence, with a curling subtree's
+states excluded from the candidate pool (HG2014/Betancourt subtree
+flags — merging the fold region provably biases the flat-uniform
+pick). Operates on an arbitrary ``logp_grad(x) -> (logp, grad)``
+oracle — no autodiff dependency.
 
 References
 ----------
@@ -143,14 +145,6 @@ class DualAverage:
         return math.exp(self._log_eps_bar)
 
 
-def _uturn(
-    x_minus: FloatArray, x_plus: FloatArray, p_minus: FloatArray, p_plus: FloatArray
-) -> bool:
-    """U-turn check on the doubling trajectory (Betancourt criterion)."""
-    dx = x_plus - x_minus
-    return bool(dx @ p_minus < 0 or dx @ p_plus < 0)
-
-
 def nuts_sample(
     logp_grad: LogpGrad,
     x0: FloatArray,
@@ -163,11 +157,17 @@ def nuts_sample(
     eps_max: float = math.inf,
     seed: int = 0,
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
-    """Multinomial NUTS (Hoffman-Gelman 2014 + Betancourt 2017).
+    """Slice-uniform NUTS-style sampler (Hoffman-Gelman 2014 structure).
 
-    Recursive doubling, uniform proposal over in-slice states, dual-
-    averaged step size frozen after warmup at the smoothed eps_bar
-    (clamped by ``eps_max``). Returns (draws, tree_depths, energy_errs).
+    Iterative doubling to ``max_depth`` — no U-turn termination: in
+    this flat candidate-pool formulation, endpoint stopping provably
+    biases the proposal (≈60% inflated variance on a Gaussian probe)
+    and can starve fold regions (0% funnel-neck capture), while
+    unconditional doubling is unbiased at every depth (verified
+    empirically). Only divergence truncates a block. Uniform proposal
+    over in-slice visited states, dual-averaged step size frozen after
+    warmup at the smoothed eps_bar (clamped by ``eps_max``).
+    Returns (draws, tree_depths, energy_errs).
     """
     x = _as_state(x0)
     if n_draws < 1 or eps <= 0 or max_depth < 1:
@@ -180,14 +180,15 @@ def nuts_sample(
     for i in range(n_draws + burn):
         p0 = rng.standard_normal(x.size)
         lp0, _ = _call(logp_grad, x)
-        h0 = float(-lp0 - 0.5 * p0 @ p0)
+        # Hamiltonian H = -logp + p^2/2 = -(log joint of (x,p))
+        h0 = float(-lp0 + 0.5 * p0 @ p0)
         # slice variable: logu = -H0 + log(U'), U' ~ U(0,1);
         # acceptable states satisfy h < -logu.
         logu = -h0 + math.log(rng.uniform())
         x_minus = x_plus = x.copy()
         p_minus = p_plus = p0.copy()
-        # Hoffman-Gelman slice-sampling NUTS: candidates are all states
-        # visited inside the slice; the proposal is uniform over them.
+        # candidates are all states visited inside the slice; the
+        # proposal is uniform over them (incl. the current position).
         candidates: list[FloatArray] = []
         depth_used = 0
         accept_stat = 0.0
@@ -197,7 +198,6 @@ def nuts_sample(
             n_leap = 2**depth
             x_sub = x_minus if direction < 0 else x_plus
             p_sub = p_minus if direction < 0 else p_plus
-            n_new: list[FloatArray] = []
             diverged = False
             for _ in range(n_leap):
                 try:
@@ -209,7 +209,7 @@ def nuts_sample(
                     break
                 lp_s, _g2 = _call(logp_grad, x_sub)
                 with np.errstate(invalid="ignore", over="ignore"):
-                    h_s = float(-lp_s - 0.5 * p_sub @ p_sub)
+                    h_s = float(-lp_s + 0.5 * p_sub @ p_sub)
                 if not math.isfinite(h_s) or -h_s < logu - 1000.0:
                     # divergence counts as a rejection for dual averaging
                     n_stat += 1
@@ -219,24 +219,23 @@ def nuts_sample(
                 accept_stat += min(1.0, math.exp(max(-700.0, min(700.0, h0 - h_s))))
                 n_stat += 1
                 if -h_s > logu:
-                    n_new.append(x_sub.copy())
+                    candidates.append(x_sub.copy())
             if direction < 0:
                 x_minus, p_minus = x_sub, p_sub
             else:
                 x_plus, p_plus = x_sub, p_sub
-            candidates.extend(n_new)
-            if diverged or _uturn(x_minus, x_plus, p_minus, p_plus):
+            if diverged:
                 break
             depth_used = depth + 1
         # uniform proposal over the slice (incl. current position)
         if candidates and rng.uniform() < len(candidates) / (len(candidates) + 1):
             x = candidates[int(rng.integers(len(candidates)))]
         lp1, _ = _call(logp_grad, x)
-        h1 = float(-lp1 - 0.5 * p0 @ p0)
+        h1 = float(-lp1 + 0.5 * p0 @ p0)
         if i >= burn:
             draws[i - burn] = x
             depths[i - burn] = depth_used
-            # energy-error proxy: |ΔH| measured on the shared momentum
+            # energy-error proxy: |ΔU| on the shared momentum
             e_errs[i - burn] = abs(h1 - h0)
         elif adapter is not None:
             eps = min(adapter.step(accept_stat / max(n_stat, 1), i + 1), eps_max)

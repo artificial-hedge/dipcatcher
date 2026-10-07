@@ -230,3 +230,25 @@ def test_bench_deterministic() -> None:
     a = bench_rough_heston_rbergomi(seed=7, n_paths=400)
     b = bench_rough_heston_rbergomi(seed=7, n_paths=400)
     assert a == b
+
+
+def test_rbergomi_variance_martingale() -> None:
+    """V_t = xi0*exp(eta*W^H_t - 0.5*eta^2*Var(W^H_t)) must keep E[V_t] = xi0.
+
+    Using Var(W^H_t) = t^{2H} instead of the RL-kernel sum-of-squares
+    inflates E[V_T] to ~1.5*xi0 at these parameters.
+    """
+    _, v, _ = rbergomi_simulate(3, 3000, 160, 1.0, 0.04, 1.0, 0.1, -0.5)
+    ratio = float(v[:, -1].mean() / 0.04)
+    assert 0.7 <= ratio <= 1.3, f"E[V_T]/xi0 = {ratio:.3f} (martingale requires ~1)"
+
+
+def test_volterra_mean_reversion_level() -> None:
+    """With v0 = theta, E[V_T] must sit at the long-run level ~theta.
+
+    The old g0 term double-counted lambda*theta*int(K) inside the
+    convolution, pushing E[V_T] to ~1.43*theta.
+    """
+    _, v = volterra_heston_simulate(5, 1500, 160, 0.5, **_PARAMS, alpha=0.7)
+    ratio = float(v[:, -1].mean() / _PARAMS["theta"])
+    assert 0.75 <= ratio <= 1.25, f"E[V_T]/theta = {ratio:.3f}"
