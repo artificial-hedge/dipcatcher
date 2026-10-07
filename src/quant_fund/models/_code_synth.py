@@ -47,11 +47,15 @@ def bpsk_awgn(bits: np.ndarray, sigma: float, seed: int) -> np.ndarray:
 
 
 def bsc(bits: np.ndarray, p: float, seed: int) -> np.ndarray:
+    if not 0.0 <= p <= 1.0:
+        raise ValueError(f"crossover probability must be in [0, 1], got {p}")
     rng = np.random.default_rng(seed)
     return np.asarray(bits ^ (rng.uniform(size=len(bits)) < p).astype(int), dtype=int)
 
 
 def burst_channel(bits: np.ndarray, start: int, length: int) -> np.ndarray:
+    if start < 0 or length < 0 or start + length > len(bits):
+        raise ValueError(f"burst [start={start}, length={length}] does not fit in {len(bits)} bits")
     out = bits.copy()
     out[start : start + length] ^= 1
     return out

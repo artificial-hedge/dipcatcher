@@ -390,6 +390,27 @@
   "models/_cate_synth.py": {
    "status": "audited"
   },
+  "models/_causal_synth.py": {
+   "status": "audited"
+  },
+  "models/_cd_synth.py": {
+   "status": "audited"
+  },
+  "models/_cert_synth.py": {
+   "status": "audited"
+  },
+  "models/_code_synth.py": {
+   "status": "audited"
+  },
+  "models/_compress_synth.py": {
+   "status": "audited"
+  },
+  "models/_cp2_synth.py": {
+   "status": "audited"
+  },
+  "models/_crypto_synth.py": {
+   "status": "audited"
+  },
   "models/_lm_synth.py": {
    "status": "audited"
   },

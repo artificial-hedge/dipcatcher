@@ -25,4 +25,6 @@ def cd_data(
 
 
 def gauss_logpdf(y: NDArray[np.float64], mu: float, sd: float) -> NDArray[np.float64]:
+    if not sd > 0.0 or not np.isfinite(sd):
+        raise ValueError(f"sd must be positive and finite, got {sd}")
     return np.asarray(-0.5 * np.log(2 * np.pi * sd**2) - (y - mu) ** 2 / (2 * sd**2))

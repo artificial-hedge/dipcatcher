@@ -29,6 +29,8 @@ def ridge_pred(w: FloatArray, X: FloatArray) -> FloatArray:
 
 
 def cov_width(lo: FloatArray, hi: FloatArray, y: FloatArray) -> tuple[float, float]:
+    if (np.asarray(lo) > np.asarray(hi)).any():
+        raise ValueError("every interval must satisfy lo <= hi")
     return float(np.mean((y >= lo) & (y <= hi))), float(np.mean(hi - lo))
 
 

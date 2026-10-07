@@ -11,12 +11,15 @@ FloatArray = NDArray[np.float64]
 def synth_cls_2d(
     n: int,
     rng: np.random.Generator,
-    margin: float = 1.2,
+    margin: float = 0.15,
 ) -> tuple[FloatArray, NDArray[np.int64]]:
-    """Two classes split by x0+0.5·x1 sign with a clean margin."""
+    """Two classes split by x0+0.5·x1 sign, dropping samples within `margin`
+    of the boundary."""
+    if margin < 0 or not np.isfinite(margin):
+        raise ValueError(f"margin must be non-negative and finite, got {margin}")
     x = rng.uniform(-2, 2, (n, 4))
     y = (x[:, 0] + 0.5 * x[:, 1] > 0).astype(np.int64)
-    keep = np.abs(x[:, 0] + 0.5 * x[:, 1]) > 0.15
+    keep = np.abs(x[:, 0] + 0.5 * x[:, 1]) > margin
     return x[keep], y[keep]
 
 
