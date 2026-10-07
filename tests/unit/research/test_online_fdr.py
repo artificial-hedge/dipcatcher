@@ -135,3 +135,41 @@ def test_stream_report_feeds_own_sealer(tmp_path) -> None:
     assert payload["payload"]["kind"] == "online_fdr.v1"
     assert payload["payload"]["inputs_sha256"] == digest
     assert verify_receipt_file(path)["valid"] is True
+
+
+def test_sealer_rejects_hostile_bodies(tmp_path) -> None:
+    """Fail-closed contract: malformed receipt bodies must be rejected —
+    non-hex digests, out-of-range levels/indices, negative counts, NaN
+    wealth, empty evidence."""
+    import copy
+
+    from quant_fund.research.online_fdr import write_online_fdr_receipt
+
+    proc = OnlineFDR(level=0.05)
+    for p in [0.5, 0.9, 0.01, 0.4]:
+        proc.update(p)
+    good = proc.stream_report(inputs_sha256="a" * 64, params={"level": 0.05})
+    bad_cases = [
+        {"inputs_sha256": "not-hex"},
+        {"inputs_sha256": "A" * 64},  # uppercase is not the sealed form
+        {"inputs_sha256": "a" * 63},
+        {"level": 0.0},
+        {"level": 1.5},
+        {"level": "high"},
+        {"n_tests": -1},
+        {"n_rejections": -2},
+        {"n_rejections": 99},  # exceeds n_tests
+        {"rejection_indices": [0, 99]},  # out of range
+        {"rejection_indices": [2, 2]},  # duplicated
+        {"n_rejections": 1},  # mismatches len(rejection_indices)
+        {"final_wealth": float("nan")},
+        {"final_wealth": -0.5},
+        {"evidence": []},
+        {"evidence": "foster_stine_alpha_investing"},
+    ]
+    for patch in bad_cases:
+        body = copy.deepcopy(good)
+        body.update(patch)
+        with pytest.raises(ValueError, match="contract"):
+            write_online_fdr_receipt(body, tmp_path, receipt_version=2)
+    write_online_fdr_receipt(good, tmp_path, receipt_version=2)  # control passes

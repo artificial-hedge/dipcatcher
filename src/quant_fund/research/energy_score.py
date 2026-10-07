@@ -21,7 +21,6 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.stats import norm
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -35,6 +34,8 @@ def energy_score(y: NDArray[np.float64], samples: NDArray[np.float64]) -> float:
     s = np.asarray(samples, dtype=np.float64)
     if s.ndim != 2 or s.shape[0] < 1 or y.ndim != 1 or s.shape[1] != y.size:
         raise ValueError("samples must be (m >= 1, d) and y (d,)")
+    if not (np.isfinite(s).all() and np.isfinite(y).all()):
+        raise ValueError("y and samples must be finite")
     term1 = float(np.linalg.norm(s - y, axis=1).mean())
     diff = s[:, None, :] - s[None, :, :]
     term2 = float(np.linalg.norm(diff, axis=2).mean())
@@ -52,6 +53,8 @@ def variogram_score(
     s = np.asarray(samples, dtype=np.float64)
     if s.ndim != 2 or s.shape[0] < 1 or y.ndim != 1 or s.shape[1] != y.size:
         raise ValueError("samples must be (m >= 1, d) and y (d,)")
+    if not (np.isfinite(s).all() and np.isfinite(y).all()):
+        raise ValueError("y and samples must be finite")
     dy = np.abs(y[:, None] - y[None, :]) ** p
     ds = np.abs(s[:, :, None] - s[:, None, :]) ** p  # (m, d, d)
     return float(((dy[None] - ds.mean(axis=0)) ** 2).sum())
@@ -64,9 +67,10 @@ def gaussian_copula_samples(
 ) -> NDArray[np.float64]:
     """Couple per-name marginal samples into joint draws at equicorrelation ρ.
 
-    marginals[j]: (m,) samples for name j. Draws z ~ N(0, corr(ρ)),
-    maps through Φ → uniform → inverse-empirical-CDF of each marginal.
-    Returns (m, d).
+    marginals[j]: (m,) samples for name j. Draws z ~ N(0, corr(ρ)); each
+    row takes the marginal value at z's within-column rank, so every
+    output column is an exact permutation of its marginal — coupling the
+    joint ranks without thinning the sample set. Returns (m, d).
     """
     d = len(marginals)
     m = marginals[0].size
@@ -74,16 +78,18 @@ def gaussian_copula_samples(
         raise ValueError("marginals must share length m")
     if not (-1.0 / (d - 1) < rho <= 1.0):
         raise ValueError(f"equicorrelation rho out of feasible range: {rho}")
+    for x in marginals:
+        if not np.isfinite(np.asarray(x, dtype=np.float64)).all():
+            raise ValueError("marginals must be finite")
     corr = np.full((d, d), rho)
     np.fill_diagonal(corr, 1.0)
     chol = np.linalg.cholesky(corr)
     z = rng.standard_normal((m, d)) @ chol.T
-    u = norm.cdf(z)
     out = np.empty((m, d))
     for j, x in enumerate(marginals):
         xs = np.sort(x)
-        idx = np.clip((u[:, j] * m).astype(int), 0, m - 1)
-        out[:, j] = xs[idx]
+        rank = np.argsort(np.argsort(z[:, j], kind="stable"), kind="stable")
+        out[:, j] = xs[rank]
     return out
 
 

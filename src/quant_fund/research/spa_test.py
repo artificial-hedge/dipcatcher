@@ -68,8 +68,9 @@ def reality_check_pvalue(
 
 @dataclass
 class StepdownResult:
-    rejected: list[int]  # head indices (loss_matrix columns) beating the benchmark
-    adj_p: NDArray[np.float64]  # per-head adjusted p-value, shape (k,)
+    rejected: list[int]  # loss_matrix column indices beating the benchmark
+    adj_p: NDArray[np.float64]  # per-head adjusted p, ordered over head_cols
+    head_cols: list[int]  # loss_matrix columns each adj_p entry refers to
 
 
 def romano_wolf_stepdown(
@@ -107,8 +108,11 @@ def romano_wolf_stepdown(
         prev = max(prev, pv)
         adj[head] = prev
         remaining = remaining[remaining != head]
-    rejected = [int(order[i]) for i in range(k) if adj[order[i]] < alpha]
-    return StepdownResult(rejected=rejected, adj_p=adj)
+    # diff-columns are the non-benchmark columns in order — map back to
+    # loss_matrix column indices so `rejected` never names the benchmark
+    heads = [j for j in range(np.asarray(loss_matrix).shape[1]) if j != benchmark_col]
+    rejected = [heads[int(order[i])] for i in range(k) if adj[order[i]] < alpha]
+    return StepdownResult(rejected=rejected, adj_p=adj, head_cols=heads)
 
 
 def _loss_diffs(loss_matrix: NDArray[np.float64], benchmark_col: int) -> NDArray[np.float64]:

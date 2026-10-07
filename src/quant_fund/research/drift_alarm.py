@@ -107,7 +107,13 @@ class EProcessDriftAlarm:
     def update(self, x: float) -> _Step:
         v = float(x)
         if not np.isfinite(v):
-            step = _Step(v, self._running_mean(), float(np.exp(self._log_e)), False, True)
+            step = _Step(
+                v,
+                self._running_mean(),
+                float(np.exp(min(self._log_e, 700.0))),
+                False,
+                True,
+            )
             self._steps.append(step)
             return step
 

@@ -152,6 +152,80 @@ class OnlineFDR:
         return report
 
 
+def _is_sha256_str(value: object) -> bool:
+    return (
+        isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+    )
+
+
+def _online_fdr_body_errors(receipt: Mapping[str, Any]) -> list[str]:
+    """Contract errors for an ``online_fdr.v1`` receipt body — count fields
+    re-derived from the stream summary, never trusted verbatim."""
+    errors: list[str] = []
+    if receipt.get("kind") != "online_fdr.v1" or receipt.get("schema") != "online_fdr.v1":
+        errors.append("kind_schema_mismatch")
+    if receipt.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if receipt.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    if not _is_sha256_str(receipt.get("inputs_sha256")):
+        errors.append("inputs_sha256_not_hex")
+    if not isinstance(receipt.get("params"), Mapping):
+        errors.append("params_not_mapping")
+    level = receipt.get("level")
+    try:
+        level_ok = (
+            isinstance(level, (int, float))
+            and not isinstance(level, bool)
+            and 0.0 < float(level) < 1.0
+        )
+    except (TypeError, ValueError, OverflowError):
+        level_ok = False
+    if not level_ok:
+        errors.append("level_out_of_unit_interval")
+    n_tests = receipt.get("n_tests")
+    if not isinstance(n_tests, int) or isinstance(n_tests, bool) or n_tests < 0:
+        errors.append("n_tests_not_nonnegative_int")
+        n_tests = None
+    n_rejections = receipt.get("n_rejections")
+    if not isinstance(n_rejections, int) or isinstance(n_rejections, bool) or n_rejections < 0:
+        errors.append("n_rejections_not_nonnegative_int")
+    elif n_tests is not None and n_rejections > n_tests:
+        errors.append("n_rejections_exceeds_n_tests")
+    indices = receipt.get("rejection_indices")
+    if not isinstance(indices, list) or not all(
+        isinstance(i, int) and not isinstance(i, bool) for i in indices
+    ):
+        errors.append("rejection_indices_not_int_list")
+    elif n_tests is not None:
+        if any(not (0 <= i < n_tests) for i in indices):
+            errors.append("rejection_index_out_of_range")
+        if len(set(indices)) != len(indices):
+            errors.append("rejection_indices_not_unique")
+        if isinstance(n_rejections, int) and n_rejections != len(indices):
+            errors.append("n_rejections_mismatches_indices")
+    wealth = receipt.get("final_wealth")
+    try:
+        wealth_ok = (
+            isinstance(wealth, (int, float))
+            and not isinstance(wealth, bool)
+            and math.isfinite(float(wealth))
+            and float(wealth) >= 0.0
+        )
+    except (TypeError, ValueError, OverflowError):
+        wealth_ok = False
+    if not wealth_ok:
+        errors.append("final_wealth_not_finite_nonneg")
+    evidence = receipt.get("evidence")
+    if (
+        not isinstance(evidence, list)
+        or not evidence
+        or not all(isinstance(e, str) for e in evidence)
+    ):
+        errors.append("evidence_not_nonempty_str_list")
+    return errors
+
+
 def write_online_fdr_receipt(
     receipt: Mapping[str, Any],
     receipts_dir: Path | str = Path("receipts"),
@@ -167,15 +241,9 @@ def write_online_fdr_receipt(
     """
     from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
 
-    if (
-        receipt.get("kind") != "online_fdr.v1"
-        or receipt.get("schema") != "online_fdr.v1"
-        or receipt.get("research_only") is not True
-        or receipt.get("live_pnl_claim") is not False
-        or not isinstance(receipt.get("inputs_sha256"), str)
-        or not isinstance(receipt.get("params"), Mapping)
-    ):
-        raise ValueError("online_fdr receipt violates its contract")
+    body_errors = _online_fdr_body_errors(receipt)
+    if body_errors:
+        raise ValueError("online_fdr receipt violates its contract: " + ",".join(body_errors))
     if receipt_version == 1:
         canonical = json.loads(canonical_json_bytes(dict(receipt)))
         digest = hash_bytes(canonical_json_bytes(canonical))

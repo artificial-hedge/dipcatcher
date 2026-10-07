@@ -162,3 +162,19 @@ def test_null_control_across_families() -> None:
                 ep.update(float(x))
             alarms += int(ep.alarmed)
         assert alarms <= 6, f"{name}: {alarms}/{n_sims} alarms at alpha=0.05"
+
+
+def test_inconclusive_step_evalue_capped() -> None:
+    """A non-finite observation after a large log-e must not emit inf or
+    warn — the inconclusive step reports the same capped e-value."""
+    import math
+    import warnings
+
+    proc = EProcessDriftAlarm(alpha=0.05)
+    for i in range(2000):
+        proc.update(float(i))  # strictly increasing → log_e >> 700
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        step = proc.update(float("nan"))
+    assert step.inconclusive is True
+    assert math.isfinite(step.statistic)

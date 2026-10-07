@@ -93,3 +93,16 @@ def test_loss_diffs_positive_for_dominant_head() -> None:
     d = _loss_diffs(losses, 0)
     assert d.shape == (200, 2)
     assert d.mean(axis=0).argmax() == 1  # diff-column 1 is head 2
+
+
+def test_rejected_maps_to_loss_matrix_columns() -> None:
+    """`rejected` must be original loss_matrix column indices, never the
+    diff-column index or the benchmark column itself."""
+    rng = np.random.default_rng(9)
+    losses = rng.standard_normal((300, 5))
+    losses[:, 3] -= 0.9  # head at column 3 dominates benchmark at column 2
+    res = romano_wolf_stepdown(losses, benchmark_col=2, n_boot=200, alpha=0.05, seed=0)
+    assert 2 not in res.rejected  # the benchmark is not a head
+    assert all(c != 2 and 0 <= c < 5 for c in res.rejected)
+    assert res.head_cols == [0, 1, 3, 4]
+    assert 3 in res.rejected

@@ -168,9 +168,9 @@ def test_page_hinkley_only_alarm_demotes_confirmed() -> None:
     """Declared gate: a PageHinkley alarm without an e-process crossing is
     the 'drift diagnostic fired while the e-process did not' case —
     supported_with_caveats, not confirmed."""
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(4)
     winner = rng.normal(-1.5, 1.0, 200)
-    winner[100:] += 1.0  # mid-stream level shift: PH alarms, e-process quiet
+    winner[100:] += 2.0  # mid-stream advantage shift: PH alarms, e-process quiet
     scores = {
         "winner": winner,
         "runner": rng.normal(0.0, 1.0, 200),
@@ -184,13 +184,34 @@ def test_page_hinkley_only_alarm_demotes_confirmed() -> None:
     assert rep["verdict"] == "supported_with_caveats"
 
 
+def test_common_mode_shift_does_not_demote() -> None:
+    """The drift lane watches the winner's advantage (winner − runner-up):
+    a common-mode level shift leaves the relative edge unchanged and must
+    not demote a confirmed verdict."""
+    rng = np.random.default_rng(0)
+    shift = np.zeros(200)
+    shift[100:] += 1.0
+    scores = {
+        "winner": rng.normal(-1.5, 1.0, 200) + shift,
+        "runner": rng.normal(0.0, 1.0, 200) + shift,  # identical shift
+        "far": rng.normal(0.8, 1.0, 200) + shift,
+    }
+    rep = honest_verdict(scores, seed=0, n_boot=500)
+    drift = rep["components"]["drift"]
+    assert drift["stream"] == "advantage"
+    assert drift["page_hinkley_alarmed"] is False
+    assert drift["eprocess_alarmed"] is False
+    assert rep["verdict"] == "confirmed"
+
+
 def test_reported_drift_evalue_capped_finite() -> None:
     """A strongly drifting stream drives log_e past 700; the reported
     final_evalue must stay finite (strict JSON has no Infinity literal)."""
     n = 2500
     scores = {
-        "winner": np.linspace(0.0, 1.0, n) ** 3 - 10.0,  # increasing diffs
-        "runner": np.random.default_rng(2).normal(0.0, 1.0, n),
+        # constant runner → advantage diffs strictly increasing → log_e >> 700
+        "winner": np.linspace(0.0, 1.0, n) ** 3 - 10.0,
+        "runner": np.zeros(n),
     }
     rep = honest_verdict(scores, seed=0, n_boot=200)
     fe = rep["components"]["drift"]["final_evalue"]

@@ -88,3 +88,17 @@ def test_empty_sample_set_fails_closed() -> None:
         energy_score(y, empty)
     with pytest.raises(ValueError):
         variogram_score(y, empty)
+
+
+def test_nonfinite_inputs_fail_closed() -> None:
+    y = np.array([0.0, np.nan])
+    s = np.zeros((10, 2))
+    with pytest.raises(ValueError):
+        energy_score(y, s)
+    with pytest.raises(ValueError):
+        variogram_score(y, s)
+    with pytest.raises(ValueError):
+        energy_score(np.zeros(2), np.full((10, 2), np.inf))
+    rng = np.random.default_rng(0)
+    with pytest.raises(ValueError):
+        gaussian_copula_samples([np.array([0.0, np.inf]), np.zeros(2)], 0.5, rng)

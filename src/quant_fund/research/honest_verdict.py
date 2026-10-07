@@ -116,13 +116,25 @@ def _promotion_component(
 
 
 def _drift_component(
-    scores: dict[str, NDArray[np.floating]], winner: str, alpha: float
+    scores: dict[str, NDArray[np.floating]],
+    winner: str,
+    runner_up: str | None,
+    alpha: float,
 ) -> ComponentResult:
     try:
         from quant_fund.research.drift_alarm import EProcessDriftAlarm
     except ImportError as exc:
         return ComponentResult("drift", False, error=f"unavailable:{exc.name}")
-    stream = np.asarray(scores[winner], dtype=float)
+    # The declared lane watches the winner's *advantage*, not its absolute
+    # level: a common-mode shift (every head drifts together) must not
+    # demote an unchanged relative edge. With a runner-up the advantage
+    # stream is winner − runner-up; a lone winner falls back to its own
+    # stream.
+    w = np.asarray(scores[winner], dtype=float)
+    if isinstance(runner_up, str):
+        stream = w - np.asarray(scores[runner_up], dtype=float)
+    else:
+        stream = w
     diffs = np.diff(stream)
     ep = EProcessDriftAlarm(alpha=alpha)
     for x in diffs:
@@ -143,6 +155,7 @@ def _drift_component(
         detail={
             "eprocess_alarmed": ep.alarmed,
             "alarm_index": ep.alarm_index,
+            "stream": "advantage" if isinstance(runner_up, str) else "absolute",
             # capped like evalues.LossEProcess — an unbounded exp turns the
             # reported e-value into inf, which json.dumps renders as the
             # non-standard literal Infinity and breaks strict consumers.
@@ -171,14 +184,20 @@ def _magnitude_component(
 
 
 def _localize_component(
-    scores: dict[str, NDArray[np.floating]], winner: str, alpha: float
+    scores: dict[str, NDArray[np.floating]],
+    winner: str,
+    runner_up: str | None,
+    alpha: float,
 ) -> ComponentResult:
-    """When drift fires, where did the stream shift? fixed-window scan."""
+    """When drift fires, where did the stream shift? fixed-window scan on
+    the same advantage stream the drift lane watched."""
     try:
         from quant_fund.research.changepoint_localize import localize_changepoint
     except ImportError as exc:
         return ComponentResult("localize", False, error=f"unavailable:{exc.name}")
-    diffs = np.diff(np.asarray(scores[winner], dtype=float))
+    w = np.asarray(scores[winner], dtype=float)
+    stream = w - np.asarray(scores[runner_up], dtype=float) if isinstance(runner_up, str) else w
+    diffs = np.diff(stream)
     res = localize_changepoint(diffs.tolist(), alpha=alpha)
     return ComponentResult(
         "localize",
@@ -279,16 +298,15 @@ def honest_verdict(
         winner = min(arrays, key=lambda h: float(arrays[h].mean()))
 
     promo = _promotion_component(arrays, winner, alpha)
-    drift = _drift_component(arrays, winner, alpha)
     runner = promo.detail.get("runner_up") if promo.available else None
-    magnitude = _magnitude_component(
-        arrays, winner, runner if isinstance(runner, str) else None, alpha
-    )
+    runner_name = runner if isinstance(runner, str) else None
+    drift = _drift_component(arrays, winner, runner_name, alpha)
+    magnitude = _magnitude_component(arrays, winner, runner_name, alpha)
     calib = _calibration_component(pits, winner, alpha)
     # localization only fires when drift alarmed — it answers "where"
     drifted = drift.available and bool(drift.detail.get("eprocess_alarmed", False))
     localize = (
-        _localize_component(arrays, winner, alpha)
+        _localize_component(arrays, winner, runner_name, alpha)
         if drifted
         else ComponentResult("localize", True, detail={"skipped": "no_drift_alarm"})
     )
