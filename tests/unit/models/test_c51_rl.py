@@ -54,7 +54,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from quant_fund.microstructure.zi_lob_simulator import santa_fe_config
+from quant_fund.microstructure.zi_lob_simulator import TradeEvent, santa_fe_config
 from quant_fund.models import c51_rl
 from quant_fund.models.c51_rl import (
     C51_RL_REVISION,
@@ -1112,3 +1112,187 @@ def test_torch_guard_fails_closed_with_install_guidance(monkeypatch) -> None:
     monkeypatch.setitem(sys.modules, "torch", None)
     with pytest.raises(ImportError, match="uv sync --extra nn"):
         C51Agent(N_OBS_FEATURES, len(DEFAULT_QUOTE_ACTIONS), C51AgentConfig())
+
+
+# ---------------------------------------------------------------------------
+# #2992 — event-accounting and input-contract regressions
+#
+# Four defects in the C51 ZI-LOB step API, each with a regression:
+#   1. recovery fills were drained *before* ``_require_mid`` stepped the sim,
+#      so fills generated during recovery never reached inventory/cash/MTM;
+#   2. exponential event time could overshoot several decision boundaries,
+#      letting the next step run zero simulator events while still charging
+#      an inventory penalty against the same market state;
+#   3. ``int(action)`` accepted 1.9 as action 1 and True as action 1;
+#   4. ``episode_summary`` stamped ``config.lob.seed`` after ``reset(seed=...)``
+#      ran a different episode, mislabelling the evidence envelope.
+# ---------------------------------------------------------------------------
+
+
+def test_episode_summary_stamps_the_effective_episode_seed() -> None:
+    """Defect 4: the honesty envelope must name the book that ran."""
+    cfg = _env_config()
+    env = ZILobQuoteEnv(cfg)
+    # The config default differs from the episode seed below, so a summary that
+    # stamps the config default is provably wrong.
+    assert cfg.lob.seed != 4242
+    env.reset(seed=4242)
+    out = env.episode_summary()
+    assert out["seed"] == 4242
+    assert out["label"] == "SYNTHETIC"
+    # A later reset must re-stamp, not accumulate.
+    env.reset(seed=7)
+    assert env.episode_summary()["seed"] == 7
+
+
+def test_run_env_episode_reports_the_seed_it_actually_used() -> None:
+    """Defect 4, end to end: the summary seed must match the reset seed."""
+    cfg = _env_config()
+    env = ZILobQuoteEnv(cfg)
+    row = run_env_episode(env, _fixed_action_policy(1), seed=31337)
+    assert row["seed"] == 31337
+    assert row["policy_seed"] == 31337
+
+
+@pytest.mark.parametrize("bad", [1.9, 1.0, -0.5, True, False, "1", None, 1.0000001])
+def test_step_rejects_non_integer_actions(bad: object) -> None:
+    """Defect 3: a malformed action must fail, not be coerced by int()."""
+    env = ZILobQuoteEnv(_env_config(horizon=10.0))
+    env.reset(seed=5)
+    with pytest.raises(ValueError, match="action must be an int"):
+        env.step(bad)  # type: ignore[arg-type]
+
+
+def test_run_env_episode_rejects_non_integer_policy_output() -> None:
+    """Defect 3, end to end: a policy returning 1.9 must not become action 1."""
+    env = ZILobQuoteEnv(_env_config(horizon=10.0))
+    with pytest.raises(ValueError, match="action must be an int"):
+        run_env_episode(env, lambda obs, e: 1.9)  # type: ignore[arg-type,return-value]
+
+
+@requires_torch
+def test_store_transition_rejects_non_integer_actions() -> None:
+    """Defect 3, agent path: the buffer must not store a coerced action."""
+    agent = C51Agent(N_OBS_FEATURES, len(DEFAULT_QUOTE_ACTIONS), _agent_config())
+    obs = np.zeros(N_OBS_FEATURES, dtype=np.float64)
+    with pytest.raises(ValueError, match="action must be an int"):
+        agent.store_transition(obs, 1.9, 0.0, obs, False)  # type: ignore[arg-type]
+
+
+def test_next_decision_target_is_strictly_past_the_live_clock() -> None:
+    """Defect 2: a zero-event decision must be impossible.
+
+    Event time is stochastic, so one step can overshoot several decision
+    boundaries. The old code advanced ``_t_next`` by a single interval,
+    leaving it behind ``sim.t``; the following step would then execute no
+    simulator events yet still charge an inventory penalty. Assert the
+    invariant directly rather than trying to schedule an overshoot.
+    """
+    env = ZILobQuoteEnv(_env_config(horizon=200.0, decision_interval=1.0))
+    env.reset(seed=11)
+    interval = float(env.config.decision_interval)
+    for _ in range(40):
+        out = env.step(1)
+        # The invariant the fix installs: the next target is past the live
+        # clock, so the next step's while-loop runs at least one event.
+        assert env._t_next > float(env.sim.t)
+        assert float(env.sim.t) <= env._t_next - interval + interval  # sanity
+        if out.terminated:
+            break
+    # Explicitly: t_next never lags the clock.
+    assert env._t_next > float(env.sim.t)
+
+
+def test_zero_event_decisions_do_not_accumulate_penalties() -> None:
+    """Defect 2, observable: a step that runs no events must not be charged.
+
+    Run a long episode and assert that the number of decisions never exceeds
+    the number of distinct simulator clock advances, which is what a lagged
+    ``_t_next`` would violate.
+    """
+    cfg = _env_config(horizon=60.0, decision_interval=1.0)
+    env = ZILobQuoteEnv(cfg)
+    env.reset(seed=23)
+    stamps: list[float] = []
+    decisions = 0
+    while decisions < 50:
+        out = env.step(1)
+        after = float(env.sim.t)
+        stamps.append(after)
+        decisions += 1
+        if out.terminated:
+            break
+    # Every decision moved the clock forward: no decision reused a market state.
+    assert all(later > earlier for earlier, later in zip(stamps, stamps[1:], strict=False))
+    assert env._n_decisions == decisions
+
+
+def test_recovery_generated_fills_reach_the_accounting(monkeypatch: Any) -> None:
+    """Defect 1: fills produced during mid-recovery must reach the accounting.
+
+    The old order was ``_drain_trades()`` then ``_require_mid(...)``. When the
+    book thinned, ``_require_mid`` stepped the simulator — and those steps can
+    fill this environment's resting orders — so the fills never reached
+    inventory, cash, MTM, fill counts, reward, or the episode summary.
+
+    Depending on a seed to thin the book is unreliable (it usually does not,
+    which makes such a test vacuous), so this drives the ordering directly: the
+    stubbed ``_require_mid`` appends a synthetic tagged trade to the simulator's
+    trade tape mid-recovery, exactly as a real recovery step would, and the
+    test then asserts the drain *after* recovery picked it up. Under the old
+    ordering the cursor never advances past it and the counters are wrong.
+    """
+    from dataclasses import replace as _dc_replace
+
+    env = ZILobQuoteEnv(_env_config(horizon=20.0, decision_interval=1.0))
+    env.reset(seed=5)
+    sim = env.sim
+    injected: list[Any] = []
+
+    def recovering_require_mid(why: str) -> float:
+        """Emit one env-tagged fill during recovery, as a real step would."""
+        assert not injected, "recovery stub should run once per step"
+        template = None
+        for t in sim.trades:
+            template = t
+            break
+        if template is None:
+            # No template available: synthesise from the env's own order ids.
+            oid = env._bid_oid if env._bid_oid is not None else env._ask_oid
+            side = "buy" if env._bid_oid is not None else "sell"
+            trade = TradeEvent(
+                t=float(sim.t),
+                aggressor="sell" if side == "buy" else "buy",
+                price=float(sim.best_bid if side == "buy" else sim.best_ask),
+                level=0,
+                qty=1,
+                maker_order_id=int(oid) if oid is not None else 0,
+                maker_side=side,
+                maker_tag=c51_rl.ENV_TAG,
+                maker_t_submit=float(sim.t),
+                maker_queue_ahead_at_submit=0,
+                maker_placement_class="join",
+            )
+        else:
+            trade = _dc_replace(
+                template,
+                maker_tag=c51_rl.ENV_TAG,
+                maker_order_id=int(env._bid_oid or env._ask_oid or 0),
+                maker_side="buy",
+                qty=1,
+            )
+        sim.trades.append(trade)
+        injected.append(trade)
+        return env._last_mid
+
+    monkeypatch.setattr(env, "_require_mid", recovering_require_mid)
+    out = env.step(1)
+
+    assert injected, "SYNTHETIC precondition: recovery stub never ran"
+    # The decisive assertion: the fill created *during* recovery is accounted.
+    assert env._n_fills == 1, f"recovery fill was dropped (n_fills={env._n_fills})"
+    assert env._inventory == 1
+    assert out.info["n_fills_step"] == 1
+    assert out.info["inventory"] == 1
+    # ...and it is reflected in the MTM the reward was computed from.
+    assert env._cash < 0.0
