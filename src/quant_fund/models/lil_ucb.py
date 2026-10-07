@@ -1,6 +1,7 @@
 """LUCB / lil'UCB (Jamieson et al. 2014) — anytime-confidence (SYNTHETIC)
-pure-exploration: pull argmax UCB and the best challenger by LCB,
-stop when the leader's LCB clears every challenger's UCB.
+pure-exploration: pull argmax UCB and the best challenger by UCB
+(excluding the leader), stop when the leader's LCB clears every
+challenger's UCB.
 """
 
 from __future__ import annotations
@@ -55,7 +56,12 @@ def lil_ucb(
         ucb = means + rad
         lcb = means - rad
         best = int(np.argmax(means))
-        challenger = int(np.argmax(lcb + np.where(np.arange(k) == best, -np.inf, 0)))
+        # Jamieson et al. (2014): the challenger is the non-leader arm with
+        # the highest UCB — the arm that could still plausibly beat the
+        # leader. Argmax over LCB (the old line) can pick a well-sampled
+        # second-best arm and stop while an under-sampled arm's UCB still
+        # exceeds the leader's LCB — a premature, possibly wrong, stop.
+        challenger = int(np.argmax(ucb + np.where(np.arange(k) == best, -np.inf, 0)))
         if lcb[best] >= ucb[challenger]:
             return best, t
         env.pull(int(np.argmax(ucb)), rng)

@@ -79,3 +79,33 @@ def test_benches():
     ):
         out = fn()
         assert out and all(k.startswith("synthetic_") for k in out)
+
+
+def test_lil_ucb_pulls_max_ucb_challenger(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Jamieson LUCB: challenger = argmax UCB among non-leaders. A crafted
+    # bandit where an under-sampled arm has the highest UCB but the lowest
+    # LCB: the (old) LCB-challenger bug would pull the well-sampled
+    # second-best arm instead and could stop prematurely.
+    import quant_fund.models.lil_ucb as m
+
+    pulls: list[int] = []
+
+    class SpyBandit(m.GaussianBandit):
+        def pull(self, i: int, rng: np.random.Generator) -> float:
+            pulls.append(i)
+            self.counts[i] += 1  # track counts only; sums stay preset
+            return 0.0
+
+    spy = SpyBandit(np.array([0.9, 0.7, 0.6]))
+    # Preload: leader arm0 well-sampled, arm1 well-sampled second, arm2
+    # under-sampled with a decent mean -> argmax UCB must be arm2 while
+    # argmax LCB is arm1.
+    spy.counts = np.array([101.0, 101.0, 3.0])
+    spy.sums = np.array([90.0, 70.0, 1.2])
+    monkeypatch.setattr(m, "GaussianBandit", lambda *a, **kw: spy)
+    rng = np.random.default_rng(0)
+    m.lil_ucb(np.array([0.9, 0.7, 0.6]), rng, delta=0.1, max_pulls=30)
+    assert pulls[:3] == [0, 1, 2]  # warmup round-robin
+    # pulls[3] is the argmax-UCB pull (arm2 either way); pulls[4] is the
+    # challenger — must be the under-sampled max-UCB arm, not arm1.
+    assert pulls[4] == 2

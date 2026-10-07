@@ -61,7 +61,14 @@ class GaussianHMMRegime(JoblibMixin):
     ) -> GaussianHMMRegime:
         from hmmlearn.hmm import GaussianHMM
 
-        xx = self.scaler.fit_transform(np.where(np.isfinite(x), x, 0.0))
+        arr = np.asarray(x, dtype=float)
+        with np.errstate(all="ignore"):
+            col_mean = np.nanmean(arr, axis=0)
+        col_mean = np.where(np.isfinite(col_mean), col_mean, 0.0)
+        # Missing features impute the column mean so they land near 0 after
+        # standardization — a raw 0.0 fill would sit off-mean (biased) and
+        # also distort the scaler's own mean/variance during fit.
+        xx = self.scaler.fit_transform(np.where(np.isfinite(arr), arr, col_mean))
         self.model = GaussianHMM(
             n_components=self.n_states,
             covariance_type="diag",
@@ -89,7 +96,8 @@ class GaussianHMMRegime(JoblibMixin):
             raise RuntimeError("GaussianHMMRegime must be fitted before prediction")
         from scipy.special import logsumexp
 
-        xx = self.scaler.transform(np.where(np.isfinite(x), x, 0.0))
+        x = np.asarray(x, dtype=float)
+        xx = self.scaler.transform(np.where(np.isfinite(x), x, self.scaler.mean_))
         means = np.asarray(self.model.means_, dtype=float)
         covars = np.asarray(self.model.covars_, dtype=float)
         log_emission = np.empty((xx.shape[0], self.n_states), dtype=float)
@@ -117,7 +125,8 @@ class GaussianHMMRegime(JoblibMixin):
         """Return full-sequence smoothed probabilities for retrospective analysis."""
         if self.model is None:
             raise RuntimeError("GaussianHMMRegime must be fitted before prediction")
-        xx = self.scaler.transform(np.where(np.isfinite(x), x, 0.0))
+        x = np.asarray(x, dtype=float)
+        xx = self.scaler.transform(np.where(np.isfinite(x), x, self.scaler.mean_))
         p = self.model.predict_proba(xx)
         return np.asarray(p / np.clip(p.sum(axis=1, keepdims=True), 1e-12, None), dtype=np.float64)
 
@@ -127,7 +136,8 @@ class GaussianHMMRegime(JoblibMixin):
     def aic_bic(self, x: NDArray[np.float64]) -> dict[str, float]:
         if self.model is None:
             raise RuntimeError("GaussianHMMRegime must be fitted before scoring")
-        xx = self.scaler.transform(np.where(np.isfinite(x), x, 0.0))
+        x = np.asarray(x, dtype=float)
+        xx = self.scaler.transform(np.where(np.isfinite(x), x, self.scaler.mean_))
         n = xx.shape[0]
         k = self.n_states
         d = xx.shape[1]

@@ -54,6 +54,10 @@ def bench_sac_agent(
         return q1, q2, pi
 
     def run(stochastic: bool) -> tuple[float, float]:
+        # Seed torch per arm: module inits and policy noise reproduce, and
+        # both arms start from the SAME initial weights — otherwise the
+        # SAC-vs-deterministic margin is confounded by the init draw.
+        torch.manual_seed(seed)
         q1, q2, pi = make()
         tq1, tq2, _ = make()
         for a_, b_ in zip(tq1.parameters(), q1.parameters(), strict=True):
@@ -150,11 +154,14 @@ def bench_sac_agent(
                     a_.data.copy_(0.995 * a_.data + 0.005 * b_.data)
         tot = 0.0
         ent = float(torch.exp(log_alpha).item())
+        # Common-random-numbers eval: both arms score the same seeded
+        # episode stream, so the margin reflects policy, not eval draws.
+        eval_rng = np.random.default_rng(seed + 0x5AC)
         for _e in range(16):
-            s = np.array([0.0, 0.0, 0.0, rng.standard_normal()])
+            s = np.array([0.0, 0.0, 0.0, eval_rng.standard_normal()])
             for _t in range(16):
                 a, _ = act(s)
-                s, r = _env_step(s, a, rng)
+                s, r = _env_step(s, a, eval_rng)
                 tot += r
         return tot / 16, ent
 
