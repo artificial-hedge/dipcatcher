@@ -163,7 +163,9 @@ def _cox_cp(
             xbar = np.einsum("i,ij->j", e, xa[risk])
             d = float(at.sum())
             sres[at] += xa[at] - xbar
-            sres[risk] -= np.outer(e * d, xbar)
+            # dfbeta residuals subtract Y_i e_i d (x_i - xbar) per risk-set
+            # member — the subject's own deviation, not xbar for everyone.
+            sres[risk] -= (e * d)[:, None] * (xa[risk] - xbar[None, :])
     cs = np.zeros((n_cl, p))
     np.add.at(cs, cl, sres)
     meat = cs.T @ cs
