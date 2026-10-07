@@ -127,21 +127,21 @@ def bench_crc_var(losses: Array, base_bound: Array, alpha: float = 0.05) -> dict
     n = int(y.size)
     if n == 0:
         return {
-            "risk": float("nan"),
-            "nominal": float(alpha),
-            "n": 0.0,
-            "lambda_hat": float(crc.lambda_hat),
+            "synthetic_risk": float("nan"),
+            "synthetic_nominal": float(alpha),
+            "synthetic_n": 0.0,
+            "synthetic_lambda_hat": float(crc.lambda_hat),
         }
     pred = crc.predict_bound(b)
     hits = loss_hit(y, pred)
     risk = float(np.mean(hits))
     _rate, lr, p_val = kupiec_pof(hits, alpha)
     return {
-        "risk": risk,
-        "nominal": float(alpha),
-        "n": float(n),
-        "lambda_hat": float(crc.lambda_hat),
-        "crc_stat": float(_crc_stat(risk, n, crc.B)),
-        "kupiec_lr": float(lr),
-        "kupiec_p": float(p_val),
+        "synthetic_risk": risk,
+        "synthetic_nominal": float(alpha),
+        "synthetic_n": float(n),
+        "synthetic_lambda_hat": float(crc.lambda_hat),
+        "synthetic_crc_stat": float(_crc_stat(risk, n, crc.B)),
+        "synthetic_kupiec_lr": float(lr),
+        "synthetic_kupiec_p": float(p_val),
     }

@@ -26,5 +26,5 @@ def bench_ss_policy(seed: int = 3025) -> dict[str, float]:
         "synthetic_ss_fill": float(best_fill),
         "synthetic_ss_s": best_par[0],
         "synthetic_ss_S": best_par[1],
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

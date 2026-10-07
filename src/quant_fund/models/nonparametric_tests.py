@@ -142,5 +142,5 @@ def bench_nonparametric_tests(
         "synthetic_jt_p_alt": float(jt["p_value"]),
         "synthetic_kw_p_alt": float(kw["p_value"]),
         "synthetic_mwu_p_null": float(mw0["p_value"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

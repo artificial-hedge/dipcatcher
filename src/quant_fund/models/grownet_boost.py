@@ -64,5 +64,5 @@ def bench_grownet_boost(
         "synthetic_gn_acc": acc_g,
         "synthetic_gn_mlp_acc": acc_m,
         "synthetic_gn_gain": acc_g - acc_m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

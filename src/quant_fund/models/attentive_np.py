@@ -98,5 +98,5 @@ def bench_attentive_np(
         "synthetic_anp_mse_gain": mse_base - mse_anp,
         "synthetic_anp_cov90": cov90,
         "synthetic_anp_cov90_err": abs(cov90 - 0.90),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -124,5 +124,5 @@ def bench_input_convex(
         "synthetic_icnn_jensen_viol": viol_icnn,
         "synthetic_icnn_mlp_jensen_viol": viol_mlp,
         "synthetic_icnn_convexity_gain": viol_mlp - viol_icnn,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

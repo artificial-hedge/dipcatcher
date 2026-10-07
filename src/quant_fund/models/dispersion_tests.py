@@ -127,5 +127,5 @@ def bench_dispersion_tests(seed: int = 20261231 + 432) -> dict[str, float]:
         "synthetic_ansari_bradley_p": ab["p"],
         "synthetic_siegel_tukey_p_null": st_n["p"],
         "synthetic_ansari_bradley_p_null": ab_n["p"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

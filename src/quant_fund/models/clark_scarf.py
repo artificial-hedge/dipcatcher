@@ -59,5 +59,5 @@ def bench_clark_scarf(seed: int = 3037) -> dict[str, float]:
         "synthetic_myopic_fill": float(f_m),
         "synthetic_cs_s1": s1,
         "synthetic_cs_s2": s2,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

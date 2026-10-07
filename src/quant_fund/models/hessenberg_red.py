@@ -44,5 +44,5 @@ def bench_hessenberg_red(seed: int = 3009) -> dict[str, float]:
         "synthetic_hess_resid_nonsym": resid2,
         "synthetic_hess_subdiag_sym": off,
         "synthetic_hess_subdiag_nonsym": off2,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

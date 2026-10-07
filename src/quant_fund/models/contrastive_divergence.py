@@ -40,5 +40,5 @@ def bench_contrastive_divergence(
         "synthetic_cd_mmd": m,
         "synthetic_gauss_mmd": mb,
         "synthetic_cd_gain": mb - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

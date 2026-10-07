@@ -98,5 +98,5 @@ def bench_chebnet(
         "synthetic_cheb_acc": acc_cheb,
         "synthetic_cheb_mlp_acc": acc_mlp,
         "synthetic_cheb_acc_gain": acc_cheb - acc_mlp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

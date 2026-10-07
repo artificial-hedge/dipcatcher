@@ -61,5 +61,5 @@ def bench_simclr_views(
         "synthetic_simclr_probe": probe_ssl,
         "synthetic_simclr_raw_probe": probe_raw,
         "synthetic_simclr_gain": probe_ssl - probe_raw,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

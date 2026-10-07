@@ -159,5 +159,5 @@ def bench_saddlepoint(seed: int = 20261231 + 372) -> dict[str, float]:
         "synthetic_sp_err_gamma": err_g,
         "synthetic_sp_err_normal": err_n,
         "synthetic_sp_dens_err": dens_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

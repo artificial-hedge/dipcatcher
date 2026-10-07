@@ -27,5 +27,5 @@ def bench_perturb_map(
     return {
         "synthetic_pmap_grad_corr": float(np.mean(corrs)),
         "synthetic_pmap_mc_std": float(np.std(corrs)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

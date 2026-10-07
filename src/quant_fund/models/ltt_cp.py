@@ -39,5 +39,5 @@ def bench_ltt_cp(seed: int = 1313, alpha: float = 0.1) -> dict[str, float]:
         "synthetic_ltt_naive_coverage": cov2,
         "synthetic_ltt_cov_gain": cov - cov2,
         "synthetic_ltt_radius": lam_star,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

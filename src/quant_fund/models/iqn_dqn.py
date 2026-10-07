@@ -95,5 +95,5 @@ def bench_iqn_dqn(
         "synthetic_iqn_mean_cvar": float(cvar_mean),
         "synthetic_iqn_cvar_gain": float(cvar_risk - cvar_mean),
         "synthetic_iqn_risk_share": float(np.mean(a_risk == 0)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -166,5 +166,5 @@ def bench_contingency(seed: int = 20261231 + 430) -> dict[str, float]:
         "synthetic_phi": phi,
         "synthetic_mcnemar_p": mn["p"],
         "synthetic_cmh_p": cm["p"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

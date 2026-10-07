@@ -86,5 +86,5 @@ def bench_mtgnn_lite(seed: int = 1627, iters: int = 800, K: int = 3) -> dict[str
         "synthetic_mtg_ar2_mse": base,
         "synthetic_mtg_mse_gain": base - mse,
         "synthetic_mtg_mixhop_gain": mse2 - mse,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -175,7 +175,8 @@ def bench_quantcode_bench(seed: int = 7) -> dict[str, float]:
     for spec in _TASKS:
         code = compile_spec(spec)
         errs = static_check(code)
-        assert not errs, errs
+        if errs:
+            raise ValueError("not errs")
         res = backtest(code, px, spec.params)
         backtests += 1
         passes += int(judge_pass(res))

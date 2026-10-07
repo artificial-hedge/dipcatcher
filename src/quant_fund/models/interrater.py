@@ -218,5 +218,5 @@ def bench_interrater(seed: int = 20261231 + 452) -> dict[str, float]:
     return {
         "synthetic_kappa": kap,
         "synthetic_perfect_kappa": float(perf["kappa"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

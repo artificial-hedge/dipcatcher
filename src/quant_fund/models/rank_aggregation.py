@@ -198,5 +198,5 @@ def bench_rank_aggregation(seed: int = 20261231 + 457) -> dict[str, float]:
     return {
         "synthetic_top_item": float(est_order[0]),
         "synthetic_w_top": float(np.asarray(out["w"]).max()),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -138,5 +138,5 @@ def bench_state_dependent_lp(seed: int = 20261231 + 393) -> dict[str, float]:
         "synthetic_sdlp_beta_expansion": be0,
         "synthetic_sdlp_beta_recession": br0,
         "synthetic_sdlp_gap": br0 - be0,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

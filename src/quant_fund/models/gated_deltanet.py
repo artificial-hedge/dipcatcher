@@ -61,5 +61,5 @@ def bench_gated_deltanet(seed: int = 2269, iters: int = 800, D: int = 16) -> dic
         "synthetic_gdn_recall": float(acc),
         "synthetic_attn_recall": base,
         "synthetic_gdn_gain": float(acc) - base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

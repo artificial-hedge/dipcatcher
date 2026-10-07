@@ -81,5 +81,5 @@ def bench_vit_classifier(
         "synthetic_vit_acc": acc_v,
         "synthetic_vit_cnn_acc": acc_c,
         "synthetic_vit_gap": acc_v - acc_c,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

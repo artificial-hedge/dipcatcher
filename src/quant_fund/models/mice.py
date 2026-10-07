@@ -174,5 +174,5 @@ def bench_mice(seed: int = 20261231 + 455) -> dict[str, float]:
         "synthetic_imputed_err": err_imp,
         "synthetic_cc_err": err_cc,
         "synthetic_fmi": float(pooled["fmi"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

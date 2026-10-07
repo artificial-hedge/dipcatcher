@@ -54,5 +54,5 @@ def bench_xlearner(seed: int = 1201, iters: int = 700) -> dict[str, float]:
         "synthetic_xlearner_pehe": pehe(cate, tau),
         "synthetic_xlearner_s_pehe": pehe(s_cate, tau),
         "synthetic_xlearner_pehe_gain": pehe(s_cate, tau) - pehe(cate, tau),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

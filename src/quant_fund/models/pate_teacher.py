@@ -72,5 +72,5 @@ def bench_pate_teacher(
         "synthetic_pate_noisy_agree": agree,
         "synthetic_pate_student_acc": acc_stu,
         "synthetic_pate_teacher_acc": acc_teacher,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

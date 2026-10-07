@@ -52,5 +52,5 @@ def bench_nnet_surv(seed: int = 2119, iters: int = 500, K: int = 10) -> dict[str
         "synthetic_nnet_cindex": c_ns,
         "synthetic_cox_cindex": c_cox,
         "synthetic_nnet_gain": c_ns - c_cox,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

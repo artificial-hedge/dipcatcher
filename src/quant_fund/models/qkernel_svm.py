@@ -52,5 +52,5 @@ def bench_qkernel_svm(seed: int = 3081) -> dict[str, float]:
         "synthetic_qk_acc": acc_q,
         "synthetic_linear_acc": acc_l,
         "synthetic_qk_gain": float(acc_q - acc_l),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

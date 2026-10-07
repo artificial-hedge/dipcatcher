@@ -44,5 +44,5 @@ def bench_cqr_pred(seed: int = 1301, alpha: float = 0.1) -> dict[str, float]:
         "synthetic_cqr_split_width": w2,
         "synthetic_cqr_width_gain": w2 - w,
         "synthetic_cqr_split_coverage": c2,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

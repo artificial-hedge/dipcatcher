@@ -59,4 +59,4 @@ def bench_fci_alg(
                 if B[0, a] != 0 and B[0, b] != 0:
                     B_ind[a, b] = B_ind[b, a] = 1.0  # latent-induced edge
         f1s.append(skeleton_f1(B_ind, B_hat))
-    return {"synthetic_fci_skel_f1": float(np.mean(f1s)), "torch_available": 0.0}
+    return {"synthetic_fci_skel_f1": float(np.mean(f1s)), "synthetic_torch_available": 0.0}

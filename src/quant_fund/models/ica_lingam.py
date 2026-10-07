@@ -54,5 +54,5 @@ def bench_ica_lingam(seed: int = 2801, trials: int = 4, d: int = 6) -> dict[str,
         "synthetic_ical_skel_f1": float(np.mean(f1s)),
         "synthetic_ical_order_err": float(np.mean(oes)),
         "synthetic_corr_order_err": float(np.mean(oes_b)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

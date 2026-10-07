@@ -26,5 +26,5 @@ def bench_imtl_g(seed: int = 2033, iters: int = 600) -> dict[str, float]:
         "synthetic_imtl_mean_acc": mean,
         "synthetic_naive_min_acc": mn0,
         "synthetic_imtl_min_gain": mn - mn0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

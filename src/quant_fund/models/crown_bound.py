@@ -96,5 +96,5 @@ def bench_crown_bound(
         "synthetic_crown_ibp_certified_acc": ibp_cert,
         "synthetic_crown_gain": crown_cert - ibp_cert,
         "synthetic_crown_mean_lb": float(lb.mean()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

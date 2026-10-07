@@ -74,5 +74,5 @@ def bench_kd_distill(
         "synthetic_kd_hard_acc": acc_hard,
         "synthetic_kd_teacher_acc": acc_t,
         "synthetic_kd_gain": acc_kd - acc_hard,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -97,5 +97,5 @@ def bench_median_tests(seed: int = 20261231 + 433) -> dict[str, float]:
         "synthetic_mood_p": out["p"],
         "synthetic_mood_p_null": out_n["p"],
         "synthetic_pair_median_p": pair["p_two_sample"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

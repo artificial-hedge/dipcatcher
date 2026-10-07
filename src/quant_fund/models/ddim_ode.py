@@ -68,5 +68,5 @@ def bench_ddim_ode(seed: int = 1517, iters: int = 900, steps: int = 20) -> dict[
         "synthetic_ddim_ddpm_mmd": m_p,
         "synthetic_ddim_gauss_mmd": g,
         "synthetic_ddim_mmd_gain_vs_ddpm": m_p - m_d,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

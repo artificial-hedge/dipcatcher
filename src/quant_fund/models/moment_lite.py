@@ -82,5 +82,5 @@ def bench_moment_lite(
         "synthetic_moment_pinball": pb,
         "synthetic_moment_naive_pinball": pb_n,
         "synthetic_moment_gain": pb_n - pb,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -86,5 +86,5 @@ def bench_equivar_gnn(
         "synthetic_equivar_flat_acc_rot": acc_flat_rot,
         "synthetic_equivar_drop": abs(acc_eq_id - acc_eq_rot),
         "synthetic_equivar_gain": acc_eq_rot - acc_flat_rot,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

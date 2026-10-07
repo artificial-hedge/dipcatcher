@@ -36,5 +36,5 @@ def bench_wagner_whitin(seed: int = 3029) -> dict[str, float]:
         "synthetic_alt_cost": c_alt,
         "synthetic_ww_gain_lfl": float(c_lfl - c_opt),
         "synthetic_ww_gain_alt": float(c_alt - c_opt),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

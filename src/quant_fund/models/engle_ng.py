@@ -150,10 +150,10 @@ def bench_engle_ng(
     r_sym = engle_ng_test(z_sym)
     ok = r_lev["p_joint"] < 0.01 and r_sym["p_joint"] > 0.01
     return {
-        "lm_lev": r_lev["lm"],
-        "p_lev": r_lev["p_joint"],
-        "p_sym": r_sym["p_joint"],
-        "b_sign": r_lev["b_sign"],
-        "r2_lev": r_lev["r2"],
-        "score": float(ok),
+        "synthetic_lm_lev": r_lev["lm"],
+        "synthetic_p_lev": r_lev["p_joint"],
+        "synthetic_p_sym": r_sym["p_joint"],
+        "synthetic_b_sign": r_lev["b_sign"],
+        "synthetic_r2_lev": r_lev["r2"],
+        "synthetic_score": float(ok),
     }

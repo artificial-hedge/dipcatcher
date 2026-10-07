@@ -301,11 +301,11 @@ def bench_bkm_moments(seed: int = 20261231 + 293) -> dict[str, float]:
         and est == est2
     )
     return {
-        "var_q": var_q,
-        "var_true": var_true,
-        "skew_q": est["skew_q"],
-        "skew_true": float(d["skew_true"]),
-        "kurt_q": est["kurt_q"],
-        "kurt_true": float(d["kurt_true"]),
-        "score": float(ok),
+        "synthetic_var_q": var_q,
+        "synthetic_var_true": var_true,
+        "synthetic_skew_q": est["skew_q"],
+        "synthetic_skew_true": float(d["skew_true"]),
+        "synthetic_kurt_q": est["kurt_q"],
+        "synthetic_kurt_true": float(d["kurt_true"]),
+        "synthetic_score": float(ok),
     }

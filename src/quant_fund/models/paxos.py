@@ -84,8 +84,10 @@ def bench_paxos(seed: int = 20261231 + 250) -> dict[str, float]:
         if chosen is not None:
             terminated += 1
             learned = res["learned"]
-            assert isinstance(learned, list)
-            assert isinstance(chosen, int)
+            if not (isinstance(learned, list)):
+                raise ValueError("isinstance(learned, list)")
+            if not (isinstance(chosen, int)):
+                raise ValueError("isinstance(chosen, int)")
             agree += int(all(v == learned[0] for v in learned))
             valid += int(chosen in proposals)
     # determinism test: no drops must always agree in few rounds

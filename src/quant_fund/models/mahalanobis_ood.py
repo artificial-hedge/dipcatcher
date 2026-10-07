@@ -111,7 +111,7 @@ def bench_mahalanobis_ood(
         "synthetic_maha_auc": auc_m,
         "synthetic_maha_msp_auc": auc_msp,
         "synthetic_maha_margin_vs_msp": auc_m - auc_msp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

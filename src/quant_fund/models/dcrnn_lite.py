@@ -68,5 +68,5 @@ def bench_dcrnn_lite(seed: int = 1601, iters: int = 800) -> dict[str, float]:
         "synthetic_dcrnn_mse": mse,
         "synthetic_dcrnn_ar2_mse": base,
         "synthetic_dcrnn_mse_gain": base - mse,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

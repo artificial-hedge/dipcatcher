@@ -76,5 +76,5 @@ def bench_tent_tta(
         "synthetic_tent_acc_before": acc_before,
         "synthetic_tent_acc_after": acc_after,
         "synthetic_tent_gain": acc_after - acc_before,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

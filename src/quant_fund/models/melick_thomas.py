@@ -213,10 +213,10 @@ def bench_melick_thomas(seed: int = 20261231 + 301) -> dict[str, float]:
     var_err = abs(float(r["var_ln"]) - float(d["var_true"])) / float(d["var_true"])
     ok = tail_err < 0.06 and var_err < 0.25 and float(r["rmse_rel"]) < 0.01
     return {
-        "tail_hat": float(r["tail_mass"]),
-        "tail_true": float(d["tail_true"]),
-        "tail_err": tail_err,
-        "var_err_rel": var_err,
-        "rmse_rel": float(r["rmse_rel"]),
-        "score": float(ok),
+        "synthetic_tail_hat": float(r["tail_mass"]),
+        "synthetic_tail_true": float(d["tail_true"]),
+        "synthetic_tail_err": tail_err,
+        "synthetic_var_err_rel": var_err,
+        "synthetic_rmse_rel": float(r["rmse_rel"]),
+        "synthetic_score": float(ok),
     }

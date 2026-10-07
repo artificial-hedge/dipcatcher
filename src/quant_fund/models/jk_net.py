@@ -98,5 +98,5 @@ def bench_jk_net(
         "synthetic_jk_deep_acc": acc_deep,
         "synthetic_jk_acc_gain": acc_jk - acc_deep,
         "synthetic_jk_emb_rowvar": row_var,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -145,7 +145,7 @@ def bench_decision_transformer(
         "synthetic_dt_random_reward": rand,
         "synthetic_dt_margin_vs_dataset": dt - dataset_mean,
         "synthetic_dt_margin_vs_random": dt - rand,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

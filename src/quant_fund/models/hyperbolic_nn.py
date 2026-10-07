@@ -75,5 +75,5 @@ def bench_hyperbolic_nn(
         "synthetic_hyp_distortion": distortion_h,
         "synthetic_hyp_euclid_distortion": distortion_e,
         "synthetic_hyp_gain": float(distortion_e - distortion_h),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

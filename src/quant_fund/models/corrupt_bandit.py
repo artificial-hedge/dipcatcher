@@ -41,5 +41,5 @@ def bench_corrupt_bandit(
         "synthetic_cb_robust_reward": tot / T,
         "synthetic_cb_naive_reward": tot2 / T,
         "synthetic_cb_reward_gain": (tot - tot2) / T,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

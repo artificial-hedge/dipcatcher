@@ -216,5 +216,5 @@ def bench_hegy(seed: int = 20261231 + 454) -> dict[str, float]:
         "synthetic_rw_p34": out_rw["p_pi34"],
         "synthetic_ch_stable_p": ch_s["p_value"],
         "synthetic_ch_rw_p": ch_rw["p_value"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

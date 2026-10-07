@@ -138,5 +138,5 @@ def bench_p_spline(seed: int = 20261231 + 423) -> dict[str, float]:
         "synthetic_pspline_mse_ratio": ratio,
         "synthetic_pspline_lambda": lam,
         "synthetic_pspline_gcv": float(out["gcv"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

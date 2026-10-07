@@ -64,5 +64,5 @@ def bench_real_nvp(seed: int = 2281, iters: int = 600) -> dict[str, float]:
         "synthetic_realnvp_nll": nll_te,
         "synthetic_gauss_nll": base,
         "synthetic_realnvp_gain": base - nll_te,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

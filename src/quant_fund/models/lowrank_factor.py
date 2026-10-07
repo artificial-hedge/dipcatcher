@@ -44,5 +44,5 @@ def bench_lowrank_factor(
         "synthetic_lr_full_acc": acc_full,
         "synthetic_lr_retention": acc_lr / max(acc_full, 1e-9),
         "synthetic_lr_param_frac": float(frac),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

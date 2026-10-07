@@ -88,5 +88,5 @@ def bench_linear_attn(
         "synthetic_linear_full_acc": acc_full,
         "synthetic_linear_acc_gap": acc_full - acc_lin,
         "synthetic_linear_cost_ratio": cost,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -85,5 +85,5 @@ def bench_surrogate_snn(seed: int = 1913, iters: int = 500, T: int = 20) -> dict
         "synthetic_snn_ann_acc": acc_ann,
         "synthetic_snn_gap": acc_snn - acc_ann,
         "synthetic_snn_spike_rate": spk_cnt / T,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

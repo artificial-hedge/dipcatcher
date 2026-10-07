@@ -98,5 +98,5 @@ def bench_delta_net(
         "synthetic_delta_full_acc": acc_full,
         "synthetic_delta_acc_gap": acc_full - acc,
         "synthetic_delta_cost_ratio": float(t * d_model * d_model) / float(t * t * 48),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

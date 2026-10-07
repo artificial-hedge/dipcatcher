@@ -69,5 +69,5 @@ def bench_ddp_solve(seed: int = 2911, iters: int = 30) -> dict[str, float]:
         "synthetic_ddp_cost": float(tot),
         "synthetic_pd_cost": float(cost_b),
         "synthetic_ddp_gain": float(cost_b - tot),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

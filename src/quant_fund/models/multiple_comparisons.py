@@ -223,5 +223,5 @@ def bench_multiple_comparisons(seed: int = 20261231 + 456) -> dict[str, float]:
     return {
         "synthetic_tukey_min_p_shifted": float(np.nanmin([p[0, 3], p[1, 3], p[2, 3]])),
         "synthetic_dunnett_p3": float(dp[2]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -37,5 +37,5 @@ def bench_gp_bridge(seed: int = 2955, n_pts: int = 40) -> dict[str, float]:
         "synthetic_gp_gap_var": gap_var,
         "synthetic_gp_uncond_var": uncond,
         "synthetic_gp_bridge_end_err": end_err,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

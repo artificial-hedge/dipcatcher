@@ -151,5 +151,5 @@ def bench_synthetic_likelihood(seed: int = 20261231 + 392) -> dict[str, float]:
         "synthetic_bsl_mean_err": mean_err,
         "synthetic_bsl_sd_err": sd_err,
         "synthetic_bsl_llr": float(ll_true - ll_bad),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

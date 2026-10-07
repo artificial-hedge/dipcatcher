@@ -23,5 +23,5 @@ def bench_mgda_mtl(seed: int = 2007, iters: int = 600) -> dict[str, float]:
         "synthetic_mgda_mean_acc": mean,
         "synthetic_naive_min_acc": mn0,
         "synthetic_mgda_min_gain": mn - mn0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

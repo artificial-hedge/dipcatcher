@@ -42,5 +42,5 @@ def bench_noise_contrastive(seed: int = 2435, iters: int = 500) -> dict[str, flo
         "synthetic_nce_mmd": m,
         "synthetic_gauss_mmd": mb,
         "synthetic_nce_gain": mb - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

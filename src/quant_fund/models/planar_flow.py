@@ -54,5 +54,5 @@ def bench_planar_flow(seed: int = 2305, iters: int = 800, K: int = 8) -> dict[st
         "synthetic_planar_nll": nll_te,
         "synthetic_gauss_nll": base,
         "synthetic_planar_gain": base - nll_te,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

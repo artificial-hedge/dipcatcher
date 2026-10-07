@@ -220,10 +220,10 @@ def bench_wavelet_modwt(
         and rho > 0.9
     )
     return {
-        "recon_err": float(coeffs["recon_err"][0]),
-        "var_peak_scale": peak,
-        "var_d4": float(vx[3]),
-        "snr_d4": snr_d4,
-        "corr_d4": rho,
-        "score": float(ok),
+        "synthetic_recon_err": float(coeffs["recon_err"][0]),
+        "synthetic_var_peak_scale": peak,
+        "synthetic_var_d4": float(vx[3]),
+        "synthetic_snr_d4": snr_d4,
+        "synthetic_corr_d4": rho,
+        "synthetic_score": float(ok),
     }

@@ -29,5 +29,5 @@ def bench_inverse_iter(seed: int = 2997, iters: int = 60) -> dict[str, float]:
     return {
         "synthetic_inviter_eig_err": err,
         "synthetic_inviter_eig_hat": lam_hat,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

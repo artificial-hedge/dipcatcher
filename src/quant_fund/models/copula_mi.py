@@ -37,5 +37,5 @@ def bench_copula_mi(seed: int = 2897) -> dict[str, float]:
         "synthetic_copula_mi_dep": float(mi_dep),
         "synthetic_copula_mi_indep": float(mi_ind),
         "synthetic_copula_mi_nonlin": float(mi_nonlin),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

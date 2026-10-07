@@ -117,7 +117,7 @@ def bench_perceiver_ts(
         "synthetic_perceiver_poolmlp_mae": mp_mae,
         "synthetic_perceiver_margin_vs_fullattn": fa_mae - perc_mae,
         "synthetic_perceiver_dot_ratio": (n_lat * win + n_lat * n_lat) / (win * win),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

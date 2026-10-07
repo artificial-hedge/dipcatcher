@@ -94,5 +94,5 @@ def bench_prompt_tuning(
         "synthetic_prompt_frozen_acc": acc_frozen,
         "synthetic_prompt_full_acc": acc_full,
         "synthetic_prompt_param_frac": float(n_prompt * d_model) / n_full,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

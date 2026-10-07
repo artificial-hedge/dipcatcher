@@ -69,5 +69,5 @@ def bench_enas_controller(
         "synthetic_ec_prior_acc": acc_prior,
         "synthetic_ec_best": best,
         "synthetic_ec_gain": acc_final - acc_prior,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

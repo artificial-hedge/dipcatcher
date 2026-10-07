@@ -57,5 +57,5 @@ def bench_cate_distill(seed: int = 1223) -> dict[str, float]:
         "synthetic_cd_pehe": pehe(cate, tau),
         "synthetic_cd_naive_pehe": pehe(naive, tau),
         "synthetic_cd_pehe_gain": pehe(naive, tau) - pehe(cate, tau),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

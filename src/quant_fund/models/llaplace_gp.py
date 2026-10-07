@@ -106,5 +106,5 @@ def bench_llaplace_gp(
         "synthetic_llap_cov90_edge_homo": cov_edge_homo,
         "synthetic_llap_edge_gain": cov_edge_epi - cov_edge_homo,
         "synthetic_llap_sigma2": sigma2,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

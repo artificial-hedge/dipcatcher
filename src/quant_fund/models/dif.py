@@ -178,5 +178,5 @@ def bench_dif(seed: int = 20261231 + 440) -> dict[str, float]:
         "synthetic_dif_p": out["p"],
         "synthetic_dif_null_p": out0["p"],
         "synthetic_dif_logistic_p": lg["p_uniform"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -27,5 +27,5 @@ def bench_nash_mtl(seed: int = 2027, iters: int = 600) -> dict[str, float]:
         "synthetic_nash_mean_acc": mean,
         "synthetic_naive_min_acc": mn0,
         "synthetic_nash_min_gain": mn - mn0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

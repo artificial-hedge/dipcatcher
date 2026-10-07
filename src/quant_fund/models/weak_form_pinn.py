@@ -57,4 +57,4 @@ def bench_weak_form_pinn(seed: int = 2507, iters: int = 800) -> dict[str, float]
             q = torch.cat([torch.tensor(xq).float().unsqueeze(1), torch.full((len(xq), 1), tq)], 1)
             return np.asarray(net(q).squeeze(1).numpy())
 
-    return {"synthetic_weak_rel_l2": eval_error(pred), "torch_available": 1.0}
+    return {"synthetic_weak_rel_l2": eval_error(pred), "synthetic_torch_available": 1.0}

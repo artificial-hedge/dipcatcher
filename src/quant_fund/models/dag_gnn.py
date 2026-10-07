@@ -49,5 +49,5 @@ def bench_dag_gnn(seed: int = 2341, edges: int = 7, steps: int = 350) -> dict[st
         "synthetic_daggnn_shd": float(shd_gnn),
         "synthetic_corr_shd": float(shd_cb),
         "synthetic_daggnn_gain": float(shd_cb - shd_gnn),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

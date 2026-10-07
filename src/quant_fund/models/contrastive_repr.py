@@ -141,5 +141,5 @@ def bench_contrastive_repr(seed: int = 67) -> dict[str, float]:
         "synthetic_contrastive_probe_acc": acc_emb,
         "synthetic_contrastive_raw_probe_acc": acc_raw,
         "synthetic_contrastive_acc_margin": acc_emb - acc_raw,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

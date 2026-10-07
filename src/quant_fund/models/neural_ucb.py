@@ -70,5 +70,5 @@ def bench_neural_ucb(seed: int = 1429, T: int = 1800, K: int = 4, d: int = 6) ->
         "synthetic_nucb_reward_sum": tot / T,
         "synthetic_nucb_linucb_sum": tot2 / T,
         "synthetic_nucb_gain": (tot - tot2) / T,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

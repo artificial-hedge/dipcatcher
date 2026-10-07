@@ -94,5 +94,5 @@ def bench_nystrom_attn(
         "synthetic_nystrom_full_acc": acc_full,
         "synthetic_nystrom_acc_gap": acc_full - acc_ny,
         "synthetic_nystrom_cost_ratio": cost,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

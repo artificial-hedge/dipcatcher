@@ -78,5 +78,5 @@ def bench_muon_opt(
         "synthetic_muon_loss": loss_m,
         "synthetic_muon_adam_loss": loss_a,
         "synthetic_muon_gain": loss_a - loss_m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

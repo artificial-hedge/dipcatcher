@@ -40,8 +40,10 @@ def bench_quorum_weighted(seed: int = _SEED) -> dict[str, float]:
     rq = all_quorums(weights, qr)
     intersect_ok = all(len(a & b) > 0 for a in wq for b in rq)
     # minimal write quorums check: {0,1} weight 5 <6, {0,2} 5<6, {0,1,4} 6 ok
-    assert not is_quorum(weights, {0, 1}, qw)
-    assert is_quorum(weights, {0, 1, 4}, qw)
+    if is_quorum(weights, {0, 1}, qw):
+        raise ValueError("not is_quorum(weights, {0, 1}, qw)")
+    if not (is_quorum(weights, {0, 1, 4}, qw)):
+        raise ValueError("is_quorum(weights, {0, 1, 4}, qw)")
     # availability sim: node failures with prob pf; can we still read+write?
     pf = 0.15
     trials = 3000

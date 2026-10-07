@@ -30,5 +30,5 @@ def bench_base_stock(seed: int = 3033) -> dict[str, float]:
         "synthetic_cons_cost": float(c_c),
         "synthetic_cons_fill": float(f_c),
         "synthetic_bs_gain": float(c_c - c_bs),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

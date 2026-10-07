@@ -37,5 +37,5 @@ def bench_el2n_scoring(
         "synthetic_el2n_full_acc": acc_full,
         "synthetic_el2n_gain": acc_el - acc_rand,
         "synthetic_el2n_mean": float(el2n.mean()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

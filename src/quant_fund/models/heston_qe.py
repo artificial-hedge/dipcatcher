@@ -153,11 +153,11 @@ def bench_heston_qe(seed: int = 20261231 + 307) -> dict[str, float]:
         and abs(var_v - stat_var) / stat_var < 0.6
     )
     return {
-        "mean_v": mean_v,
-        "stat_var": stat_var,
-        "var_v": var_v,
-        "min_v": float(np.min(v)),
-        "m_err": m_err,
-        "s_err": s_err,
-        "score": float(ok),
+        "synthetic_mean_v": mean_v,
+        "synthetic_stat_var": stat_var,
+        "synthetic_var_v": var_v,
+        "synthetic_min_v": float(np.min(v)),
+        "synthetic_m_err": m_err,
+        "synthetic_s_err": s_err,
+        "synthetic_score": float(ok),
     }

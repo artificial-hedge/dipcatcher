@@ -121,5 +121,5 @@ def bench_g_theory(seed: int = 20261231 + 441) -> dict[str, float]:
         "synthetic_phi": out["phi_coefficient"],
         "synthetic_g_noise": noise["g_coefficient"],
         "synthetic_d_g_10": d["g_coefficient"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

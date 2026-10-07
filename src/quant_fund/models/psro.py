@@ -64,5 +64,5 @@ def bench_psro(seed: int = 2731, epochs: int = 6, games: int = 10) -> dict[str, 
         "synthetic_psro_nonloss_oracle": nl_or,
         "synthetic_psro_nonloss_random": nl_rd,
         "synthetic_psro_pop": float(len(pop)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

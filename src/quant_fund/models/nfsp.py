@@ -109,5 +109,5 @@ def bench_nfsp(
         "synthetic_nfsp_expl": expl,
         "synthetic_random_expl": ref,
         "synthetic_nfsp_drop": ref - expl,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

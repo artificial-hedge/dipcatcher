@@ -64,5 +64,5 @@ def bench_ntk_kernel(seed: int = 2359) -> dict[str, float]:
         "synthetic_ntk_acc": acc_ntk,
         "synthetic_lin_kernel_acc": acc_lin,
         "synthetic_ntk_gain": acc_ntk - acc_lin,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

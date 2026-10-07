@@ -68,7 +68,8 @@ def bench_closure_conv(seed: int = 20261231 + 482) -> dict[str, float]:
         eval_ok += int(got == direct)
         # escaping closure: capture env must hold c
         clo = eval_cc(lam, {"c": c})
-        assert isinstance(clo, tuple)
+        if not (isinstance(clo, tuple)):
+            raise ValueError("isinstance(clo, tuple)")
         capture += int(clo[3] == {"c": c})
         # apply later from another env
         _, _, body, fenv = clo

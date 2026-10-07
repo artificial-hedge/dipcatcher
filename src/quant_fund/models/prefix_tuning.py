@@ -79,5 +79,5 @@ def bench_prefix_tuning(
         "synthetic_prefix_acc_shift": acc_pref,
         "synthetic_prefix_frozen_acc": acc_pre,
         "synthetic_prefix_param_frac": float(2 * n_prefix * d_model) / n_full,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

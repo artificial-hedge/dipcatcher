@@ -68,5 +68,5 @@ def bench_fno_1d(
         "synthetic_fno_rell2": err,
         "synthetic_fno_mlp_rell2": err_b,
         "synthetic_fno_gain": err_b - err,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

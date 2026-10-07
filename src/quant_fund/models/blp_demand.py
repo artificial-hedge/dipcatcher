@@ -268,7 +268,8 @@ def bench_blp_demand(seed: int = 20261231 + 263) -> dict[str, float]:
     )
     alpha_hat = out["alpha"]
     sigma_hat = out["sigma"]
-    assert isinstance(alpha_hat, float) and isinstance(sigma_hat, float)
+    if not (isinstance(alpha_hat, float) and isinstance(sigma_hat, float)):
+        raise ValueError("isinstance(alpha_hat, float) and isinstance(sigma_hat, float)")
     return {
         "synthetic_alpha": alpha_hat,
         "synthetic_sigma": sigma_hat,

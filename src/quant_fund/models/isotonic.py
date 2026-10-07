@@ -139,5 +139,5 @@ def bench_isotonic(seed: int = 20261231 + 418) -> dict[str, float]:
         "synthetic_iso_mse_ratio": ratio,
         "synthetic_iso_brier_cal": b_cal,
         "synthetic_iso_brier_raw": b_raw,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

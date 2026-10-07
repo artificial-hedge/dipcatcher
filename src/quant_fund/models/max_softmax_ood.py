@@ -107,7 +107,7 @@ def bench_max_softmax_ood(
         "synthetic_msp_auc": auc_msp,
         "synthetic_odin_auc": float(auc_odin),
         "synthetic_odin_margin_vs_msp": float(auc_odin - auc_msp),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

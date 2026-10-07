@@ -70,5 +70,5 @@ def bench_node_net(
         "synthetic_node_acc": acc_n,
         "synthetic_node_mlp_acc": acc_m,
         "synthetic_node_gain": acc_n - acc_m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

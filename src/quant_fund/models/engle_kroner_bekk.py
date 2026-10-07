@@ -196,10 +196,10 @@ def bench_engle_kroner_bekk(seed: int = 20261231 + 306) -> dict[str, float]:
     )
     ok = rel < 0.35 and float(r["persistence"]) < 1.0
     return {
-        "var_rel_rmse": rel,
-        "rho_err": rho_err,
-        "persistence": float(r["persistence"]),
-        "a_hat": float(np.mean(np.asarray(r["a"]))),
-        "b_hat": float(np.mean(np.asarray(r["b"]))),
-        "score": float(ok),
+        "synthetic_var_rel_rmse": rel,
+        "synthetic_rho_err": rho_err,
+        "synthetic_persistence": float(r["persistence"]),
+        "synthetic_a_hat": float(np.mean(np.asarray(r["a"]))),
+        "synthetic_b_hat": float(np.mean(np.asarray(r["b"]))),
+        "synthetic_score": float(ok),
     }

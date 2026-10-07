@@ -65,5 +65,5 @@ def bench_reward_model(
         "synthetic_rm_top1_acc": top1,
         "synthetic_rm_random_auc": 0.5,
         "synthetic_rm_top1_gain": top1 - 1.0 / N_ACT,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

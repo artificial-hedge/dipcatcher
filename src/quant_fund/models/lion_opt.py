@@ -67,5 +67,5 @@ def bench_lion_opt(
         "synthetic_lion_loss": loss_l,
         "synthetic_lion_adam_loss": loss_a,
         "synthetic_lion_gain": loss_a - loss_l,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

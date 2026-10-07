@@ -105,5 +105,5 @@ def bench_james_stein(seed: int = 20261231 + 425) -> dict[str, float]:
         "synthetic_js_gain": gain,
         "synthetic_js_mse_ratio": mse_js / mse_mle,
         "synthetic_js_pp_ratio": mse_pp / mse_mle,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

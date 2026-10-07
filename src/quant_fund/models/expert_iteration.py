@@ -68,5 +68,5 @@ def bench_expert_iteration(seed: int = 2725, rounds: int = 30) -> dict[str, floa
     return {
         "synthetic_exit_nonloss_oracle": nl_or,
         "synthetic_exit_nonloss_random": nl_rd,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

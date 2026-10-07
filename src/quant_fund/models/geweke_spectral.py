@@ -158,10 +158,10 @@ def bench_geweke_spectral(
     band_peak = band_measure(sp, 0.5, 2.0)
     ok = fwd > 3.0 * rev and fwd > 0.15 and band_peak > 3.0 * null_max
     return {
-        "fwd_mean": fwd,
-        "rev_mean": rev,
-        "band_peak": band_peak,
-        "null_max": null_max,
-        "total": geweke_total(pair, p=5),
-        "score": float(ok),
+        "synthetic_fwd_mean": fwd,
+        "synthetic_rev_mean": rev,
+        "synthetic_band_peak": band_peak,
+        "synthetic_null_max": null_max,
+        "synthetic_total": geweke_total(pair, p=5),
+        "synthetic_score": float(ok),
     }

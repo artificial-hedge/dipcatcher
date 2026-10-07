@@ -121,5 +121,5 @@ def bench_graph_temporal(seed: int = 107) -> dict[str, float]:
         "synthetic_graphtemporal_ar_mae": ar,
         "synthetic_graphtemporal_margin_vs_ind": mae_ind - mae_joint,
         "synthetic_graphtemporal_margin_vs_ar": ar - mae_joint,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

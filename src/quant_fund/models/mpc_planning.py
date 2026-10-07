@@ -81,5 +81,5 @@ def bench_mpc_planning(
         "synthetic_mpc_random_dist": float(dist_rand / n_ep),
         "synthetic_mpc_prop_dist": float(dist_prop / n_ep),
         "synthetic_mpc_gain": float((dist_rand - dist_model) / n_ep),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -60,5 +60,5 @@ def bench_arch_predictor(
         "synthetic_ap_best_found": best_found,
         "synthetic_ap_random_best": best_rand,
         "synthetic_ap_oracle": float(true_all.max()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

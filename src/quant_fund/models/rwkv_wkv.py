@@ -101,5 +101,5 @@ def bench_rwkv_wkv(
         "synthetic_rwkv_full_acc": acc_full,
         "synthetic_rwkv_acc_gap": acc_full - acc,
         "synthetic_rwkv_cost_ratio": float(t * d_model) / float(t * t),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

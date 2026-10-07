@@ -81,5 +81,5 @@ def bench_knowledge_graph_embed(
         "synthetic_kge_hits10": hits / len(t_te),
         "synthetic_kge_random_hits10": rand_hit,
         "synthetic_kge_gain": hits / len(t_te) - rand_hit,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

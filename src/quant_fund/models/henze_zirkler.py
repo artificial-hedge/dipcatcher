@@ -124,5 +124,5 @@ def bench_henze_zirkler(seed: int = 20261231 + 470) -> dict[str, float]:
         "synthetic_mix_p": float(out_mix["p"]),
         "synthetic_hz_mvn": float(out_mvn["hz"]),
         "synthetic_hz_mix": float(out_mix["hz"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

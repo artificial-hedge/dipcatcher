@@ -59,5 +59,5 @@ def bench_barlow_twins(
         "synthetic_barlow_probe_acc": float(acc_bt),
         "synthetic_barlow_raw_acc": float(acc_raw),
         "synthetic_barlow_gain": float(acc_bt - acc_raw),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

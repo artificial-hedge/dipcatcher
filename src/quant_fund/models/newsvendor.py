@@ -28,5 +28,5 @@ def bench_newsvendor(seed: int = 3021, trials: int = 2000) -> dict[str, float]:
         "synthetic_nv_cost_star": c_star,
         "synthetic_nv_cost_naive": c_mean,
         "synthetic_nv_gain": float(c_mean - c_star),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

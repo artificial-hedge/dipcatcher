@@ -80,5 +80,5 @@ def bench_consistency_vote(
         "synthetic_sc_greedy_acc": acc_greedy,
         "synthetic_sc_sample_acc": acc_sample,
         "synthetic_sc_gain": acc_sc - acc_greedy,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

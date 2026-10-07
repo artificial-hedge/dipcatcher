@@ -99,5 +99,5 @@ def bench_rssm_world(
         "synthetic_rssm_mse_gain": float(mse_ar - mse),
         "synthetic_rssm_plan_score": float(reach / n_test),
         "synthetic_rssm_plan_random": float(reach_r / n_test),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

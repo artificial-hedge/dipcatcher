@@ -74,5 +74,5 @@ def bench_iwae_bound(seed: int = 709, iters: int = 1500, K: int = 16) -> dict[st
         "synthetic_iwae_mean_dev": float(
             np.linalg.norm(w_hat - w_m) / max(np.linalg.norm(w_m), 1e-9)
         ),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

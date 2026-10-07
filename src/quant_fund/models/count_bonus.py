@@ -25,5 +25,5 @@ def bench_count_bonus(seed: int = 2841, beta: float = 0.5) -> dict[str, float]:
         "synthetic_baseline_coverage": float(cov_b),
         "synthetic_count_success": float(succ),
         "synthetic_baseline_success": float(succ_b),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

@@ -43,5 +43,5 @@ def bench_listnet_ltr(
         "synthetic_listnet_ndcg10": nd,
         "synthetic_listnet_base_ndcg10": nd_base,
         "synthetic_listnet_gain": nd - nd_base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

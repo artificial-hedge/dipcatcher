@@ -74,5 +74,5 @@ def bench_dpr_retriever(
     return {
         "synthetic_dpr_recall5": r5,
         "synthetic_dpr_recall20": r20,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

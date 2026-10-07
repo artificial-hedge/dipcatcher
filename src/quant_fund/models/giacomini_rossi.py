@@ -135,9 +135,9 @@ def bench_giacomini_rossi(
         and abs(float(r1["break_idx"]) - 300) < 100
     )
     return {
-        "p_null": float(r0["p_boot"]),
-        "p_alt": float(r1["p_boot"]),
-        "break_idx": float(r1["break_idx"]),
-        "max_stat_alt": float(r1["max_stat"]),
-        "score": float(ok),
+        "synthetic_p_null": float(r0["p_boot"]),
+        "synthetic_p_alt": float(r1["p_boot"]),
+        "synthetic_break_idx": float(r1["break_idx"]),
+        "synthetic_max_stat_alt": float(r1["max_stat"]),
+        "synthetic_score": float(ok),
     }

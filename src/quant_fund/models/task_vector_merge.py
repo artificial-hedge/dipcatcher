@@ -87,5 +87,5 @@ def bench_task_vector_merge(
         "synthetic_merge_ft1_t2": acc_1_t2,
         "synthetic_merge_ft2_t2": acc_2_t2,
         "synthetic_merge_base_t1": acc_base_t1,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

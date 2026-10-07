@@ -199,5 +199,5 @@ def bench_libor_market(seed: int = 20261231 + 378) -> dict[str, float]:
         "synthetic_lmm_swaption": sw,
         "synthetic_lmm_swaption_bound": float(caps),
         "synthetic_lmm_srate_err": abs(s_mc - s0) / s0,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

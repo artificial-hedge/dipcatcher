@@ -93,5 +93,5 @@ def bench_cvxpy_layer(
         "synthetic_cvx_ret_oracle": ret_or,
         "synthetic_cvx_ret_gain": ret_e2e - ret_ts,
         "synthetic_cvx_regret_frac": (ret_or - ret_e2e) / max(abs(ret_or), 1e-9),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

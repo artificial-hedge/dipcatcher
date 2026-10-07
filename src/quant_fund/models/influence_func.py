@@ -55,5 +55,5 @@ def bench_influence_func(seed: int = 1827) -> dict[str, float]:
         "synthetic_infl_mislabel_auc": auc,
         "synthetic_infl_pruned_acc": acc_clean,
         "synthetic_infl_full_acc": acc_full,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

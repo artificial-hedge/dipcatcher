@@ -99,5 +99,5 @@ def bench_lora_ft(
         "synthetic_lora_full_t0_retention": acc_full_t0,
         "synthetic_lora_base_t0_acc": acc_base_t0,
         "synthetic_lora_param_frac": float(n_lora) / n_full,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

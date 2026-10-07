@@ -68,5 +68,5 @@ def bench_dp_sgd(
         "synthetic_dpsgd_nodp_acc": acc_b,
         "synthetic_dpsgd_highnoise_acc": acc_dp2,
         "synthetic_dpsgd_drop": acc_b - acc_dp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

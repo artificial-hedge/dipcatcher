@@ -151,5 +151,5 @@ def bench_smc_samplers(seed: int = 20261231 + 391) -> dict[str, float]:
     return {
         "synthetic_smc_logz_err": logz_err,
         "synthetic_smc_mean_err": mean_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

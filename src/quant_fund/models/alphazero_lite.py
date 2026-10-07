@@ -132,5 +132,5 @@ def bench_alphazero_lite(seed: int = 2719, episodes: int = 60, sims: int = 25) -
     return {
         "synthetic_az_nonloss_oracle": nl_or,
         "synthetic_az_nonloss_random": nl_rd,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

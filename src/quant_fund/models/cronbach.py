@@ -107,5 +107,5 @@ def bench_cronbach(seed: int = 20261231 + 438) -> dict[str, float]:
         "synthetic_kr20": kr["alpha"],
         "synthetic_spearman_brown": split["spearman_brown"],
         "synthetic_alpha_if_deleted_min": float(deleted.min()),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

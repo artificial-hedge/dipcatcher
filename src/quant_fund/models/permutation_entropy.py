@@ -127,5 +127,5 @@ def bench_permutation_entropy(seed: int = 20261231 + 388) -> dict[str, float]:
         "synthetic_pe_ar": h_ar,
         "synthetic_ce_noise_c": cn,
         "synthetic_ce_ar_c": c_ar,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

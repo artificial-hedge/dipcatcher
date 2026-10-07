@@ -59,5 +59,5 @@ def bench_mamba2_ssd(seed: int = 2243, iters: int = 800, D: int = 16) -> dict[st
         "synthetic_mamba2_recall": float(acc),
         "synthetic_attn_recall": base,
         "synthetic_mamba2_gain": float(acc) - base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

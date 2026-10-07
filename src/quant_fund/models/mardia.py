@@ -85,5 +85,5 @@ def bench_mardia(seed: int = 20261231 + 426) -> dict[str, float]:
         "synthetic_mardia_p_null": p_null,
         "synthetic_mardia_p_alt": p_alt,
         "synthetic_mardia_b2p_null": out_n["b2p"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

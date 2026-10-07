@@ -52,5 +52,5 @@ def bench_proto_prune(seed: int = 1833, keep_frac: float = 0.7) -> dict[str, flo
         "synthetic_proto_random_acc": acc_r,
         "synthetic_proto_full_acc": acc_full,
         "synthetic_proto_gain": acc_p - acc_r,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

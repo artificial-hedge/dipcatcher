@@ -95,5 +95,5 @@ def bench_hyena_conv(
         "synthetic_hyena_full_acc": acc_full,
         "synthetic_hyena_acc_gap": acc_full - acc,
         "synthetic_hyena_cost_ratio": float(t * math.log2(t) * d_model) / float(t * t * d_model),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

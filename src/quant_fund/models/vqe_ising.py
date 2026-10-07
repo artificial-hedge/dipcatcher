@@ -51,5 +51,5 @@ def bench_vqe_ising(seed: int = 3069, n: int = 4) -> dict[str, float]:
         "synthetic_vqe_energy": float(res.fun),
         "synthetic_exact_gs": e_exact,
         "synthetic_vqe_gap": gap,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

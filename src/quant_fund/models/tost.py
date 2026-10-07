@@ -176,5 +176,5 @@ def bench_tost(seed: int = 20261231 + 464) -> dict[str, float]:
     return {
         "synthetic_eq_p": float(eq["p_tost"]),
         "synthetic_neq_p": float(ne["p_tost"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

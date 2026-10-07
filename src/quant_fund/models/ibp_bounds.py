@@ -73,5 +73,5 @@ def bench_ibp_bounds(
         "synthetic_ibp_clean_acc": acc,
         "synthetic_ibp_mc_falsified": frac_bad,
         "synthetic_ibp_margin_mean": float(margin[yidx, torch.tensor(yte)].mean().item()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

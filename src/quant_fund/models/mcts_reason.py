@@ -132,5 +132,5 @@ def bench_mcts_reason(
         "synthetic_mcts_acc": float(acc_mcts),
         "synthetic_mcts_greedy_acc": acc_greedy,
         "synthetic_mcts_gain": float(acc_mcts - acc_greedy),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

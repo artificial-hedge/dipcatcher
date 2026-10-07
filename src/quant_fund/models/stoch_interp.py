@@ -52,5 +52,5 @@ def bench_stoch_interp(
         "synthetic_si_mmd": m,
         "synthetic_si_gauss_mmd": g,
         "synthetic_si_mmd_gain": g - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

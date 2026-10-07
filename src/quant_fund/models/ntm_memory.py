@@ -137,5 +137,5 @@ def bench_ntm_memory(
         "synthetic_ntm_copy_acc": float(acc),
         "synthetic_ntm_flat_acc": float(acc_f),
         "synthetic_ntm_acc_gain": float(acc - acc_f),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

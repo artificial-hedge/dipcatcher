@@ -46,5 +46,5 @@ def bench_random_search_nas(
         "synthetic_rnas_grid_best": best_g,
         "synthetic_rnas_oracle": oracle,
         "synthetic_rnas_gain": best_r - best_g,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

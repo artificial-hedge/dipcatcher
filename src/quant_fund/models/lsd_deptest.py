@@ -36,5 +36,5 @@ def bench_lsd_deptest(seed: int = 2903, perms: int = 120) -> dict[str, float]:
         "synthetic_lsd_pval_dep": float(outs["dep"]),
         "synthetic_lsd_pval_indep": float(outs["indep"]),
         "synthetic_lsd_pval_nonlin": float(outs["nonlin"]),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

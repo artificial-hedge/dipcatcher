@@ -131,7 +131,7 @@ def bench_iql_agent(
         "synthetic_iql_dataset_reward": rew_dataset,
         "synthetic_iql_margin_vs_bc": rew_iql - rew_bc,
         "synthetic_iql_margin_vs_dataset": rew_iql - rew_dataset,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

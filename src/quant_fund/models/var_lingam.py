@@ -75,5 +75,5 @@ def bench_var_lingam(seed: int = 2813, trials: int = 4) -> dict[str, float]:
     return {
         "synthetic_varling_skel_f1": float(np.mean(f1s)),
         "synthetic_varling_max_err": float(np.mean(errs)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

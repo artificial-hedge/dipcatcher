@@ -54,5 +54,5 @@ def bench_mdn_cond(seed: int = 823, iters: int = 400, K: int = 3) -> dict[str, f
         "synthetic_mdn_test_ll": float(ll_te.mean()),
         "synthetic_mdn_gauss_ll": float(ll_gauss.mean()),
         "synthetic_mdn_ll_gain": float(ll_te.mean() - ll_gauss.mean()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

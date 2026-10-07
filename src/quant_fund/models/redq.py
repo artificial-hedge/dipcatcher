@@ -90,5 +90,5 @@ def bench_redq(seed: int = 911, steps: int = 2500, N: int = 6, M: int = 2) -> di
     return {
         "synthetic_redq_mean_reward": tot / n,
         "synthetic_redq_random_reward": -0.2,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

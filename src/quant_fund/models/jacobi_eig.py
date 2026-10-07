@@ -40,5 +40,5 @@ def bench_jacobi_eig(seed: int = 3001) -> dict[str, float]:
     return {
         "synthetic_jacobi_spec_err": err,
         "synthetic_jacobi_offdiag": offdiag,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

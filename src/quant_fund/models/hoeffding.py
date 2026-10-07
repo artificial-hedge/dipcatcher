@@ -102,5 +102,5 @@ def bench_hoeffding(seed: int = 20261231 + 431) -> dict[str, float]:
         "synthetic_hoeffding_nd_dep": out_dep["nd"],
         "synthetic_hoeffding_nd_ind": out_ind["nd"],
         "synthetic_hoeffding_rho_mask": abs(rho),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

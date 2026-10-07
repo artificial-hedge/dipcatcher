@@ -162,5 +162,5 @@ def bench_kriging(seed: int = 20261231 + 406) -> dict[str, float]:
         "synthetic_kriging_rmse_ratio": ratio,
         "synthetic_kriging_knot_err": float(knot_err),
         "synthetic_kriging_range_fit": float(rng_f),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

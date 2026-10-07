@@ -37,5 +37,5 @@ def bench_smooth_argmax(seed: int = 2417, trials: int = 20) -> dict[str, float]:
         "synthetic_smax_sharp_corr": float(np.mean(corrs)),
         "synthetic_smax_soft_corr": float(np.mean(corrs_soft)),
         "synthetic_smax_tau_gain": float(np.mean(corrs) - np.mean(corrs_soft)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

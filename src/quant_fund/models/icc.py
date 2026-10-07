@@ -90,5 +90,5 @@ def bench_icc(seed: int = 20261231 + 439) -> dict[str, float]:
         "synthetic_icc_agree": out["icc_2_1"],
         "synthetic_icc_noise": out_n["icc_2_1"],
         "synthetic_icc_sem": out["sem"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -101,5 +101,5 @@ def bench_moon_fl(
         "synthetic_moon_acc": a_moon,
         "synthetic_moon_fedavg_acc": a_fa,
         "synthetic_moon_gain": a_moon - a_fa,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

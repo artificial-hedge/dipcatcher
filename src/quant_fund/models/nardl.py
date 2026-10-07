@@ -315,12 +315,12 @@ def bench_nardl(seed: int = 20261231 + 299) -> dict[str, float]:
     lm_err = abs(float(fit["l_minus"]) - float(d["l_minus"]))
     ok = lp_err < 0.3 and lm_err < 0.3 and w["p_value"] < 0.05 and bf["f_stat"] > 3.0
     return {
-        "l_plus": float(fit["l_plus"]),
-        "l_minus": float(fit["l_minus"]),
-        "lp_err": lp_err,
-        "lm_err": lm_err,
-        "wald_sym": w["wald"],
-        "pval_sym": w["p_value"],
-        "f_bounds": bf["f_stat"],
-        "score": float(ok),
+        "synthetic_l_plus": float(fit["l_plus"]),
+        "synthetic_l_minus": float(fit["l_minus"]),
+        "synthetic_lp_err": lp_err,
+        "synthetic_lm_err": lm_err,
+        "synthetic_wald_sym": w["wald"],
+        "synthetic_pval_sym": w["p_value"],
+        "synthetic_f_bounds": bf["f_stat"],
+        "synthetic_score": float(ok),
     }

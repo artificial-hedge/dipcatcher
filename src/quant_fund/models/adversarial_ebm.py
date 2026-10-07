@@ -46,5 +46,5 @@ def bench_adversarial_ebm(seed: int = 2453, iters: int = 500) -> dict[str, float
         "synthetic_aebm_mmd": m,
         "synthetic_gauss_mmd": mb,
         "synthetic_aebm_gain": mb - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

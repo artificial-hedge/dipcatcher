@@ -20,5 +20,5 @@ def bench_tt_svd(seed: int = 3089, d: int = 4, n: int = 9, chi: int = 6) -> dict
         "synthetic_tt_err": err,
         "synthetic_tt_ratio": float(n_mps / n_full),
         "synthetic_tt_chi": float(chi),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

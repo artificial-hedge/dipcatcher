@@ -54,5 +54,5 @@ def bench_active_bald(seed: int = 1801, budget: int = 60, rounds: int = 3) -> di
         "synthetic_random_acc": acc_rand,
         "synthetic_full_acc": acc_full,
         "synthetic_bald_gain": acc_bald - acc_rand,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

@@ -76,5 +76,5 @@ def bench_gno_lite(
         "synthetic_gno_rell2": err,
         "synthetic_gno_mlp_rell2": err_b,
         "synthetic_gno_gain": err_b - err,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -199,5 +199,5 @@ def bench_lmm(seed: int = 20261231 + 451) -> dict[str, float]:
         "synthetic_beta_err": abs(b_hat - b_true),
         "synthetic_tau2_err": err_tau,
         "synthetic_blup_corr": corr_b,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

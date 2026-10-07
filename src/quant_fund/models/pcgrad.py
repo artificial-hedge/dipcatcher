@@ -28,5 +28,5 @@ def bench_pcgrad(seed: int = 2001, iters: int = 600) -> dict[str, float]:
         "synthetic_naive_min_acc": mn0,
         "synthetic_naive_mean_acc": mean0,
         "synthetic_pcgrad_min_gain": mn - mn0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

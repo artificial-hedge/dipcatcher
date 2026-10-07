@@ -83,5 +83,5 @@ def bench_dora_weight(
         "synthetic_dora_m_shift": float(
             (m1 - base[0].weight.norm(dim=1, keepdim=True)).abs().mean()
         ),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

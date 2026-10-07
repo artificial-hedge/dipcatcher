@@ -51,5 +51,5 @@ def bench_notears(seed: int = 2317, edges: int = 7, steps: int = 400) -> dict[st
         "synthetic_notears_shd": float(shd_nt),
         "synthetic_corr_shd": float(shd_cb),
         "synthetic_notears_gain": float(shd_cb - shd_nt),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

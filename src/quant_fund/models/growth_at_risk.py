@@ -173,11 +173,11 @@ def bench_growth_at_risk(seed: int = 20261231 + 300) -> dict[str, float]:
     spread_widen = g_hi["iqr_width"] - g_lo["iqr_width"]
     ok = gar_drop > 1.0 and spread_widen > 0.5
     return {
-        "gar_lo": g_lo["gar"],
-        "gar_hi": g_hi["gar"],
-        "gar_drop": gar_drop,
-        "spread_widen": spread_widen,
-        "med_lo": g_lo["median"],
-        "med_hi": g_hi["median"],
-        "score": float(ok),
+        "synthetic_gar_lo": g_lo["gar"],
+        "synthetic_gar_hi": g_hi["gar"],
+        "synthetic_gar_drop": gar_drop,
+        "synthetic_spread_widen": spread_widen,
+        "synthetic_med_lo": g_lo["median"],
+        "synthetic_med_hi": g_hi["median"],
+        "synthetic_score": float(ok),
     }

@@ -45,5 +45,5 @@ def bench_qr_eig(seed: int = 3005) -> dict[str, float]:
     return {
         "synthetic_qr_spec_err": err,
         "synthetic_hess_offdiag": float(np.abs(np.tril(H, -2)).max()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

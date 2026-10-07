@@ -76,5 +76,5 @@ def bench_astgcn(seed: int = 1619, iters: int = 800) -> dict[str, float]:
         "synthetic_astgcn_ar2_mse": base,
         "synthetic_astgcn_mse_gain": base - mse,
         "synthetic_astgcn_att_gain": mse2 - mse,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

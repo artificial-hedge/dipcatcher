@@ -104,7 +104,8 @@ def bench_vcg(seed: int = 20261231) -> dict[str, float]:
         for overbid in np.linspace(0.5, 1.5, 5) * vals[i]:
             a_l, p_l = vcg_auction(np.insert(others, i, overbid), 1)
             best_u = max(best_u, (vals[i] - p_l[i]) * a_l[i])
-        assert best_u <= u_truth + 1e-9 or abs(best_u - u_truth) < 1e-6
+        if not (best_u <= u_truth + 1e-9 or abs(best_u - u_truth) < 1e-6):
+            raise ValueError("best_u <= u_truth + 1e-9 or abs(best_u - u_truth) < 1e-6")
     out["synthetic_vcg_dsic"] = 1.0
     return out
 

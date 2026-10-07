@@ -58,7 +58,8 @@ def bench_recency_abstraction(seed: int = _SEED) -> dict[str, float]:
     # tag freshness: fresh tag strictly exceeds any old tag
     h.set_field("val", 1)
     old_tags = h.old.get("tag", set())
-    assert h.mr is not None
+    if not (h.mr is not None):
+        raise ValueError("h.mr is not None")
     checks.append(h.mr["tag"] > max(old_tags))
     # summary never claims exactness on mixed vals -> bounds only
     h2 = RecencyHeap()

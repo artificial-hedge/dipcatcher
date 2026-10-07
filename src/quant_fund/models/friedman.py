@@ -102,5 +102,5 @@ def bench_friedman(seed: int = 20261231 + 429) -> dict[str, float]:
         "synthetic_friedman_w": float(f["kendall_w"]),
         "synthetic_page_p": float(pg["p"]),
         "synthetic_friedman_p_null": float(fn["p"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

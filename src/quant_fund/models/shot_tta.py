@@ -73,5 +73,5 @@ def bench_shot_tta(
         "synthetic_shot_acc_before": acc_before,
         "synthetic_shot_acc_after": acc_after,
         "synthetic_shot_gain": acc_after - acc_before,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

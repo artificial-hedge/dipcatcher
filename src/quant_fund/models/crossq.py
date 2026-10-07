@@ -71,5 +71,5 @@ def bench_crossq(seed: int = 919, steps: int = 2500) -> dict[str, float]:
     return {
         "synthetic_cq_mean_reward": tot / n,
         "synthetic_cq_random_reward": -0.2,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

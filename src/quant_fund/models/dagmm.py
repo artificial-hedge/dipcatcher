@@ -83,5 +83,5 @@ def bench_dagmm(
         "synthetic_dagmm_auc": auc_d,
         "synthetic_dagmm_ae_auc": auc_ae,
         "synthetic_dagmm_gain": auc_d - auc_ae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

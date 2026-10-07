@@ -68,5 +68,5 @@ def bench_xlstm_mlstm(seed: int = 2251, iters: int = 800, D: int = 16) -> dict[s
         "synthetic_mlstm_recall": float(acc),
         "synthetic_attn_recall": base,
         "synthetic_mlstm_gain": float(acc) - base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

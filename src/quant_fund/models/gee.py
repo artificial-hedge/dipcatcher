@@ -231,5 +231,5 @@ def bench_gee(seed: int = 20261231 + 450) -> dict[str, float]:
     return {
         "synthetic_beta_err": abs(b_hat - b_true),
         "synthetic_alpha_err": abs(al - rho_true),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -77,5 +77,5 @@ def bench_sophia_opt(
         "synthetic_sophia_loss": loss_s,
         "synthetic_sophia_adam_loss": loss_a,
         "synthetic_sophia_gain": loss_a - loss_s,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

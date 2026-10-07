@@ -60,5 +60,5 @@ def bench_net_drlearner(seed: int = 1229, iters: int = 800) -> dict[str, float]:
         "synthetic_ndr_pehe": pehe(cate, tau),
         "synthetic_ndr_plugin_pehe": pehe(m1 - m0, tau),
         "synthetic_ndr_pehe_gain": pehe(m1 - m0, tau) - pehe(cate, tau),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

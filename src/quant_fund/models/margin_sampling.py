@@ -22,5 +22,5 @@ def bench_margin_sampling(seed: int = 2607, trials: int = 5) -> dict[str, float]
         "synthetic_ms_acc": float(np.mean(accs)),
         "synthetic_random_acc": float(np.mean(bases)),
         "synthetic_ms_gain": float(np.mean(accs) - np.mean(bases)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

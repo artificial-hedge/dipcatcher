@@ -140,7 +140,7 @@ def bench_itransformer(
         "synthetic_itransformer_perchan_mae": pc_mae,
         "synthetic_itransformer_margin_vs_perchan": pc_mae - it_mae,
         "synthetic_itransformer_ar_mae": ar_mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

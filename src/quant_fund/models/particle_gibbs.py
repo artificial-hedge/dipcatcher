@@ -235,5 +235,5 @@ def bench_particle_gibbs(seed: int = 20261231 + 399) -> dict[str, float]:
         "synthetic_pg_coverage": cover,
         "synthetic_pg_phi": phi_hat,
         "synthetic_pg_phi_err": phi_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

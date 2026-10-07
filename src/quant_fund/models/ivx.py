@@ -144,10 +144,10 @@ def bench_ivx(seed: int = 20261231 + 332) -> dict[str, float]:
     r_n = ivx_wald(y_null[1:], x[1:])
     ok = r_t["reject5"] == 1.0 and r_n["reject5"] == 0.0
     return {
-        "wald_true": r_t["wald"],
-        "pval_true": r_t["pval"],
-        "wald_null": r_n["wald"],
-        "pval_null": r_n["pval"],
-        "rho_hat": r_t["rho_hat"],
-        "score": float(ok),
+        "synthetic_wald_true": r_t["wald"],
+        "synthetic_pval_true": r_t["pval"],
+        "synthetic_wald_null": r_n["wald"],
+        "synthetic_pval_null": r_n["pval"],
+        "synthetic_rho_hat": r_t["rho_hat"],
+        "synthetic_score": float(ok),
     }

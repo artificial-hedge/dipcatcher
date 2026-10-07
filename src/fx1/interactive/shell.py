@@ -270,7 +270,7 @@ class FxiShell(cmd.Cmd):
         if not arg.strip():
             self._say_error(ValueError("usage: !<shell command>"))
             return
-        subprocess.run(arg, shell=True, check=False)  # noqa: S602 — explicit operator escape hatch
+        subprocess.run(arg, shell=True, check=False)  # noqa: S602  # nosec B602 — explicit operator escape hatch
 
     do_bang = do_shell
 

@@ -168,5 +168,5 @@ def bench_mala(seed: int = 20261231 + 397) -> dict[str, float]:
         "synthetic_mala_acc": float(acc_m),
         "synthetic_mala_rwm_acc": float(acc_r),
         "synthetic_mala_ula_mean_err": u_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

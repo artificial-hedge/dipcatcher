@@ -94,5 +94,5 @@ def bench_vrnn_seq(seed: int = 739, steps: int = 2200, T: int = 16) -> dict[str,
         "synthetic_vrnn_step_nll": float(nll),
         "synthetic_vrnn_baseline_nll": base,
         "synthetic_vrnn_nll_gain": base - float(nll),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

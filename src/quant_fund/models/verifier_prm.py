@@ -130,5 +130,5 @@ def bench_verifier_prm(
         "synthetic_prm_acc": acc_prm,
         "synthetic_prm_single_acc": acc_first,
         "synthetic_prm_gain": acc_prm - acc_first,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

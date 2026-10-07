@@ -68,5 +68,5 @@ def bench_van_der_waerden(seed: int = 20261231 + 436) -> dict[str, float]:
         "synthetic_vdw_p": out["p"],
         "synthetic_vdw_p_null": out_n["p"],
         "synthetic_vdw_chi2": out["chi2"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

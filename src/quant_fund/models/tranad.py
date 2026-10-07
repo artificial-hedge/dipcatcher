@@ -83,5 +83,5 @@ def bench_tranad(
         "synthetic_tranad_auc": auc_t,
         "synthetic_tranad_ae_auc": auc_ae,
         "synthetic_tranad_gain": auc_t - auc_ae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

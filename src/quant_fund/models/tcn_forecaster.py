@@ -109,7 +109,7 @@ def bench_tcn_forecaster(
         "synthetic_tcn_ar_mae": ar_mae,
         "synthetic_tcn_margin_vs_ar": ar_mae - tcn_mae,
         "synthetic_tcn_margin_vs_shortmlp": mlp_mae - tcn_mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

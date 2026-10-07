@@ -73,5 +73,5 @@ def bench_magnitude_pruning(
         "synthetic_mprune_random_acc": acc_rand,
         "synthetic_mprune_gain": acc_pruned - acc_rand,
         "synthetic_mprune_retention": acc_pruned / max(acc_dense, 1e-9),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -46,5 +46,5 @@ def bench_hawkes_thinning(seed: int = 2947, T: float = 100.0, trials: int = 30) 
         "synthetic_hawkes_mean_rate_err": float(
             abs(mean_n / T - mu / (1 - alpha / beta)) / (mu / (1 - alpha / beta))
         ),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

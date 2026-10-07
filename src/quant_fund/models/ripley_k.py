@@ -162,5 +162,5 @@ def bench_ripley_k(seed: int = 20261231 + 400) -> dict[str, float]:
         "synthetic_rk_cluster_dev": dev_clu,
         "synthetic_rk_csr_in_env": inside_frac,
         "synthetic_rk_cluster_above_env": above_frac,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

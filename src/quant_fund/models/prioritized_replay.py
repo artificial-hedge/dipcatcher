@@ -91,5 +91,5 @@ def bench_prioritized_replay(
         "synthetic_per_tail_mae": mae_per,
         "synthetic_per_uniform_mae": mae_uni,
         "synthetic_per_gain": mae_uni - mae_per,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

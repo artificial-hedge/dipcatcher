@@ -66,5 +66,5 @@ def bench_lowrank_op(
         "synthetic_lo_rell2": err,
         "synthetic_lo_mlp_rell2": err_b,
         "synthetic_lo_gain": err_b - err,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

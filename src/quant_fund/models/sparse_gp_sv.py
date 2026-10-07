@@ -57,5 +57,5 @@ def bench_sparse_gp_sv(seed: int = 727, M: int = 20) -> dict[str, float]:
         "synthetic_svgp_ridge_nll": nll_r,
         "synthetic_svgp_nll_gain": nll_r - nll,
         "synthetic_svgp_elbo": float(elbo),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

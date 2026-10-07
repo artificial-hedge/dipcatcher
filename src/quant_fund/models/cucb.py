@@ -29,5 +29,5 @@ def bench_cucb(seed: int = 1417, K: int = 8, m: int = 3, T: int = 2500) -> dict[
         "synthetic_cucb_mean_reward": tot / T / m,
         "synthetic_cucb_random_reward": tot2 / T / m,
         "synthetic_cucb_reward_gain": (tot - tot2) / T / m,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

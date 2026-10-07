@@ -100,5 +100,5 @@ def bench_noisy_net(
         "synthetic_noisy_eps_coverage": float(len(seen_eps) / 8),
         "synthetic_noisy_coverage_gain": float((len(seen_noisy) - len(seen_eps)) / 8),
         "synthetic_noisy_sigma_end": float(l1.sigma_mean() + l2.sigma_mean()) / 2,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

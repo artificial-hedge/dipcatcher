@@ -52,5 +52,5 @@ def bench_neural_sort_ltr(
         "synthetic_nsort_ndcg10": nd,
         "synthetic_nsort_base_ndcg10": nd_base,
         "synthetic_nsort_gain": nd - nd_base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

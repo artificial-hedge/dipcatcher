@@ -67,5 +67,5 @@ def bench_gradient_leakage(
         "synthetic_dlg_mse_single": mse_single,
         "synthetic_dlg_mse_batch": mse_batch,
         "synthetic_dlg_log_suppression": float(np.log10(mse_batch / max(mse_single, 1e-12))),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

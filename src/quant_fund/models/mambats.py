@@ -140,7 +140,7 @@ def bench_mambats(
         "synthetic_mamba_flat_mae": f_mae,
         "synthetic_mamba_margin_vs_gru": g_mae - m_mae,
         "synthetic_mamba_margin_vs_flat": f_mae - m_mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

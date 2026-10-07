@@ -88,5 +88,5 @@ def bench_fedavg_hetero(
         "synthetic_fed_prox_acc": acc_prox,
         "synthetic_fed_hetero_gap": acc_iid - acc_niid,
         "synthetic_fed_prox_recovery": acc_prox - acc_niid,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

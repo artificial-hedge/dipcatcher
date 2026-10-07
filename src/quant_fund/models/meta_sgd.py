@@ -77,5 +77,5 @@ def bench_meta_sgd(seed: int = 867, n_tasks: int = 30, K: int = 5) -> dict[str, 
         "synthetic_msgd_query_mse": float(np.mean(mses)),
         "synthetic_msgd_fixedlr_mse": float(np.mean(mses_b)),
         "synthetic_msgd_gain": float(np.mean(mses_b) - np.mean(mses)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

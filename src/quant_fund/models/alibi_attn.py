@@ -73,5 +73,5 @@ def bench_alibi_attn(seed: int = 1707, iters: int = 800) -> dict[str, float]:
         "synthetic_learned_recall": acc_a,
         "synthetic_learned_recall_2x": acc_a2,
         "synthetic_alibi_extrap_gain": acc_al2 - acc_a2,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

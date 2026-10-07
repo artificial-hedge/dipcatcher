@@ -131,5 +131,5 @@ def bench_moran(seed: int = 20261231 + 428) -> dict[str, float]:
         "synthetic_moran_p": out_s["p"],
         "synthetic_moran_p_iid": out_i["p"],
         "synthetic_geary_c": g_stat["c"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

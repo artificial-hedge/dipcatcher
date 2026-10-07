@@ -32,5 +32,5 @@ def bench_badge_embed(seed: int = 2625, trials: int = 5) -> dict[str, float]:
         "synthetic_badge_acc": float(np.mean(accs)),
         "synthetic_random_acc": float(np.mean(bases)),
         "synthetic_badge_gain": float(np.mean(accs) - np.mean(bases)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

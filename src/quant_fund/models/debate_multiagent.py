@@ -72,5 +72,5 @@ def bench_debate_multiagent(
         "synthetic_debate_single_mean": float(single.mean()),
         "synthetic_debate_single_max": float(single.max()),
         "synthetic_debate_gain": acc_debate - float(single.max()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

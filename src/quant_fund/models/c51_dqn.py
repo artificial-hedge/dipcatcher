@@ -106,5 +106,5 @@ def bench_c51_dqn(
         "synthetic_c51_risk_share": float(risk_pick.mean()),
         "synthetic_c51_tail_pred": float(tail_pred[1]),
         "synthetic_c51_tail_gauss": float(tail_gauss[1]),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

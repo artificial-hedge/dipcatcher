@@ -80,5 +80,5 @@ def bench_hyde_retrieval(
         "synthetic_hyde_recall5": recall_at_k(s_h, td, tq, 5),
         "synthetic_hyde_raw_recall5": recall_at_k(s_raw, td, tq, 5),
         "synthetic_hyde_gain": float(recall_at_k(s_h, td, tq, 5) - recall_at_k(s_raw, td, tq, 5)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

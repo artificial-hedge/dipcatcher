@@ -83,5 +83,5 @@ def bench_gwnet_lite(seed: int = 1613, iters: int = 800) -> dict[str, float]:
         "synthetic_gwn_ar2_mse": base,
         "synthetic_gwn_mse_gain": base - mse,
         "synthetic_gwn_adapt_gain": mse2 - mse,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

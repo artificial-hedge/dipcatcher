@@ -125,5 +125,5 @@ def bench_mantel(seed: int = 20261231 + 427) -> dict[str, float]:
         "synthetic_mantel_r_dep": out_dep["r"],
         "synthetic_mantel_p_dep": out_dep["p"],
         "synthetic_mantel_p_ind": out_ind["p"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

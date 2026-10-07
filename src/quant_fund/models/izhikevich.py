@@ -41,5 +41,5 @@ def bench_izhikevich(seed: int = 1919) -> dict[str, float]:
         "synthetic_izh_rate_sep": sep,
         "synthetic_izh_rate_low": r0,
         "synthetic_izh_rate_high": r10,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

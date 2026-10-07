@@ -71,5 +71,5 @@ def bench_cno_lite(
         "synthetic_cno_rell2": err,
         "synthetic_cno_mlp_rell2": err_b,
         "synthetic_cno_gain": err_b - err,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

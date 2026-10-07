@@ -62,5 +62,5 @@ def bench_dataset_distillation(
         "synthetic_dd_full_acc": float(acc_full),
         "synthetic_dd_random_acc": float(acc_rand),
         "synthetic_dd_recovery": float((acc_dist - acc_rand) / max(acc_full - acc_rand, 1e-9)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

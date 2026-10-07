@@ -77,5 +77,5 @@ def bench_lamb_opt(
         "synthetic_lamb_loss": loss_l,
         "synthetic_lamb_adam_loss": loss_a,
         "synthetic_lamb_gain": loss_a - loss_l,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -128,7 +128,7 @@ def bench_vq_vae_ts(
         "synthetic_vqvae_code_mi": float(mi),
         "synthetic_vqvae_mi_ratio": float(mi / np.log(4)),
         "synthetic_vqvae_bits_per_window": float(np.log2(K)) / (win * 32),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

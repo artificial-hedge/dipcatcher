@@ -89,5 +89,5 @@ def bench_bootstrapped_dqn(
         "synthetic_boot_mean_cvar": float(cvar_mean),
         "synthetic_boot_cvar_gain": float(cvar_pess - cvar_mean),
         "synthetic_boot_spread_err_corr": corr if np.isfinite(corr) else 0.0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

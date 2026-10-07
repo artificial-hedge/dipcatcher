@@ -118,5 +118,5 @@ def bench_option_vae(seed: int = 79) -> dict[str, float]:
         "synthetic_ovae_curv_corr": float(c_cv),
         "synthetic_ovae_gen_mean_err": mean_err,
         "synthetic_ovae_gen_std_err": std_err,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -79,5 +79,5 @@ def bench_timer_lite(
         "synthetic_timer_pinball": pb,
         "synthetic_timer_naive_pinball": pb_n,
         "synthetic_timer_gain": pb_n - pb,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

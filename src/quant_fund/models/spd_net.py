@@ -109,5 +109,5 @@ def bench_spd_net(
         "synthetic_spd_acc": acc_spd,
         "synthetic_spd_mlp_acc": acc_mlp,
         "synthetic_spd_acc_gain": acc_spd - acc_mlp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

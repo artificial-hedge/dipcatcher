@@ -40,7 +40,8 @@ def bench_gradnorm_bal(seed: int = 2019, iters: int = 600) -> dict[str, float]:
         l2 = torch.nn.functional.binary_cross_entropy_with_logits(h2(h).squeeze(-1), y2_)
         if l10 is None:
             l10, l20 = float(l1), float(l2)
-        assert l10 is not None and l20 is not None
+        if not (l10 is not None and l20 is not None):
+            raise ValueError("l10 is not None and l20 is not None")
         c1 = torch.autograd.grad(l1, W_last, retain_graph=True)[0].norm().detach()
         c2 = torch.autograd.grad(l2, W_last, retain_graph=True)[0].norm().detach()
         G1 = w[0] * c1
@@ -69,5 +70,5 @@ def bench_gradnorm_bal(seed: int = 2019, iters: int = 600) -> dict[str, float]:
         "synthetic_gradnorm_mean_acc": (a1 + a2) / 2,
         "synthetic_gradnorm_w1": float(w[0]),
         "synthetic_gradnorm_w2": float(w[1]),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

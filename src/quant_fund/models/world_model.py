@@ -130,7 +130,7 @@ def bench_world_model(seed: int = 63) -> dict[str, float]:
         "synthetic_wm_imagined_reward": wm_r,
         "synthetic_wm_twap_reward": twap_r,
         "synthetic_wm_margin_vs_twap": wm_r - twap_r,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

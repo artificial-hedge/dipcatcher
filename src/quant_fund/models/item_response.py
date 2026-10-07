@@ -190,5 +190,5 @@ def bench_item_response(seed: int = 20261231 + 414) -> dict[str, float]:
         "synthetic_irt_mae": mae,
         "synthetic_irt_theta_rho": rho,
         "synthetic_irt_disc_corr": ord_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

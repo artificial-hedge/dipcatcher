@@ -115,5 +115,5 @@ def bench_ts_mixer(seed: int = 91) -> dict[str, float]:
         "synthetic_tsmixer_ar_mae": ar,
         "synthetic_tsmixer_margin_vs_mlp": mae_m - mae,
         "synthetic_tsmixer_margin_vs_ar": ar - mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -136,5 +136,5 @@ def bench_risk_parity(seed: int = 20261231 + 459) -> dict[str, float]:
     return {
         "synthetic_max_dev": dev,
         "synthetic_naive_dev": naive_dev,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

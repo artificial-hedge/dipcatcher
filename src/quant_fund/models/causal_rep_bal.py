@@ -67,5 +67,5 @@ def bench_causal_rep_bal(seed: int = 1219, iters: int = 1000, lam: float = 0.1) 
         "synthetic_crb_pehe": pehe(cate, tau),
         "synthetic_crb_unbal_pehe": pehe(cate2, tau),
         "synthetic_crb_pehe_gain": pehe(cate2, tau) - pehe(cate, tau),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

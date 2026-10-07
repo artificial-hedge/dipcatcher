@@ -41,5 +41,5 @@ def bench_denoising_sm(seed: int = 2429, iters: int = 500, sig: float = 0.15) ->
         "synthetic_dsm_mmd": m,
         "synthetic_gauss_mmd": mb,
         "synthetic_dsm_gain": mb - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

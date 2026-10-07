@@ -65,5 +65,5 @@ def bench_cochran_q(seed: int = 20261231 + 434) -> dict[str, float]:
         "synthetic_cochran_q_p": out["p"],
         "synthetic_cochran_q_p_null": out_n["p"],
         "synthetic_cochran_q_stat": out["q"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -76,5 +76,5 @@ def bench_gumbel_topk(
         "synthetic_gtopk_precision": prec,
         "synthetic_gtopk_lr_precision": prec_lr,
         "synthetic_gtopk_gain": prec - prec_lr,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

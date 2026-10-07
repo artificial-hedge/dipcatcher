@@ -141,9 +141,9 @@ def bench_pesaran_timmermann(
     r_hm = hm_test(y1, f1)
     ok = r_null["p_value"] > 0.05 and r_alt["p_value"] < 0.01 and r_hm["hm_p"] < 0.01
     return {
-        "p_null": r_null["p_value"],
-        "p_alt": r_alt["p_value"],
-        "hm_p": r_hm["hm_p"],
-        "p_hat_alt": r_alt["p_hat"],
-        "score": float(ok),
+        "synthetic_p_null": r_null["p_value"],
+        "synthetic_p_alt": r_alt["p_value"],
+        "synthetic_hm_p": r_hm["hm_p"],
+        "synthetic_p_hat_alt": r_alt["p_hat"],
+        "synthetic_score": float(ok),
     }

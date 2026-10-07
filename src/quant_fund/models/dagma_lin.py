@@ -50,5 +50,5 @@ def bench_dagma_lin(seed: int = 2323, edges: int = 7, steps: int = 400) -> dict[
         "synthetic_dagma_shd": float(shd_dg),
         "synthetic_corr_shd": float(shd_cb),
         "synthetic_dagma_gain": float(shd_cb - shd_dg),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

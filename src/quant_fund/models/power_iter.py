@@ -37,5 +37,5 @@ def bench_power_iter(seed: int = 2993, k: int = 4) -> dict[str, float]:
     return {
         "synthetic_power_topk_err": err,
         "synthetic_power_vs_numpy": err_np,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

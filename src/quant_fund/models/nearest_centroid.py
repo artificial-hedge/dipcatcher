@@ -97,7 +97,8 @@ def bench_nearest_centroid(seed: int = 20261231) -> dict[str, float]:
         # prefer the largest shrink that holds accuracy near the best seen
         if best is None or acc1 > best[0] + 0.01 or (acc1 >= best[0] - 0.02 and shrink > best[2]):
             best = (acc1, act, shrink)
-    assert best is not None
+    if not (best is not None):
+        raise ValueError("best is not None")
     acc1, act, shrink = best
     hit = float(np.intersect1d(act, true_feats).size)
     extra = float(np.setdiff1d(act, true_feats).size)

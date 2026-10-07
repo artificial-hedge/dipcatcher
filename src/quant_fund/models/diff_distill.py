@@ -102,5 +102,5 @@ def bench_diff_distill(seed: int = 1529, iters: int = 900, steps: int = 16) -> d
         "synthetic_dd_student_mmd": m_s,
         "synthetic_dd_student_gap": m_s - m_t,
         "synthetic_dd_gauss_mmd": g,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

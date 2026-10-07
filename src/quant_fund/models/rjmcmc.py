@@ -56,5 +56,5 @@ def bench_rjmcmc(seed: int = 2977, steps: int = 1200) -> dict[str, float]:
         "synthetic_rj_p2_bimodal": float(out["bimodal"]),
         "synthetic_rj_p2_unimodal": float(out["unimodal"]),
         "synthetic_rj_sep": float(out["bimodal"] - out["unimodal"]),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

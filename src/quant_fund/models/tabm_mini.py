@@ -63,5 +63,5 @@ def bench_tabm_mini(
         "synthetic_tabm_best_head": acc_best_head,
         "synthetic_tabm_mlp_acc": acc_m,
         "synthetic_tabm_gain": acc_tabm - acc_m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

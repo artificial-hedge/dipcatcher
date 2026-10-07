@@ -97,7 +97,7 @@ def bench_neural_ode(seed: int = 61) -> dict[str, float]:
         "synthetic_node_1step_mae": float(np.mean(one_step)),
         "synthetic_node_1step_ar_mae": float(np.mean(ar_1step)),
         "synthetic_node_1step_margin": float(np.mean(ar_1step) - np.mean(one_step)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

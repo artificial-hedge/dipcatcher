@@ -137,5 +137,5 @@ def bench_vmd(seed: int = 20261231 + 402) -> dict[str, float]:
         "synthetic_vmd_recon_err": recon_err,
         "synthetic_vmd_freq_err": float(match),
         "synthetic_vmd_n_modes": 3.0,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

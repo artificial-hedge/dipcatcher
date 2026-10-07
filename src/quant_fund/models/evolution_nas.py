@@ -65,5 +65,5 @@ def bench_evolution_nas(
         "synthetic_enas_best": best_e,
         "synthetic_enas_random_best": best_r,
         "synthetic_enas_gain": best_e - best_r,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -44,5 +44,5 @@ def bench_quant_int8(
         "synthetic_quant_fp_acc": acc_fp,
         "synthetic_quant_drop": acc_fp - acc_q,
         "synthetic_quant_size_ratio": 0.25,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

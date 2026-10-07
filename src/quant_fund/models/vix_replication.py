@@ -162,5 +162,5 @@ def bench_vix_replication(seed: int = 20261231 + 396) -> dict[str, float]:
         "synthetic_vix_sig_err": sig_err,
         "synthetic_vix_fwd_err": abs(f_hat - fwd),
         "synthetic_vix_corridor": float(np.sqrt(cor)),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

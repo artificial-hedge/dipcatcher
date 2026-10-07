@@ -144,5 +144,5 @@ def bench_fay_herriot(seed: int = 20261231 + 447) -> dict[str, float]:
         "synthetic_fh_eblup_mse": eblup_mse,
         "synthetic_fh_direct_mse": direct_mse,
         "synthetic_fh_synth_mse": synth_mse,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

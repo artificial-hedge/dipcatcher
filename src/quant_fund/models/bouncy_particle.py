@@ -65,5 +65,5 @@ def bench_bouncy_particle(seed: int = 2201) -> dict[str, float]:
         "synthetic_bps_ess_gain": ess - ess_b,
         "synthetic_bps_moment_err": moment_err(smp, mu, sd),
         "synthetic_bps_accept_events": float(len(smp)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

@@ -60,5 +60,5 @@ def bench_mine_mi(seed: int = 2887) -> dict[str, float]:
         "synthetic_mine_mi_indep": float(mi_ind),
         "synthetic_mine_true_mi": float(true_dep),
         "synthetic_mine_gap": float(abs(mi_dep - true_dep)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

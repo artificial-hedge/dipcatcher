@@ -115,5 +115,5 @@ def bench_sure_screening(seed: int = 20261231 + 413) -> dict[str, float]:
         "synthetic_sis_hidden_found": float(2 in keep_i),
         "synthetic_sis_top_gap": top_gap,
         "synthetic_sis_n_kept": float(len(keep)),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -105,5 +105,5 @@ def bench_isomap(seed: int = 20261231 + 405) -> dict[str, float]:
     return {
         "synthetic_isomap_order_rho": rho,
         "synthetic_isomap_top_eig": float(np.asarray(out["eigenvalues"])[0]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

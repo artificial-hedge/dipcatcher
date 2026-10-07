@@ -71,5 +71,5 @@ def bench_grpo_train(
         "synthetic_grpo_random_reward": r0,
         "synthetic_grpo_oracle_reward": float(r_max),
         "synthetic_grpo_gain": float(r_final - r0),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

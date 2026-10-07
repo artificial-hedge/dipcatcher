@@ -70,5 +70,5 @@ def bench_cevae_latent(
         "synthetic_cevae_pehe": pehe_c,
         "synthetic_cevae_ate_err": abs(float(ite_c.mean()) - float(tau_te.mean())),
         "synthetic_cevae_naive_ate_err": abs(ate_naive - float(tau_te.mean())),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

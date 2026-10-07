@@ -32,5 +32,5 @@ def bench_lpt_schedule(seed: int = 3049, n: int = 60, m: int = 4) -> dict[str, f
         "synthetic_random_ms": float(ms_rnd),
         "synthetic_lpt_lb_ratio": float(ms_lpt / lb),
         "synthetic_lpt_gain": float(ms_rnd - ms_lpt),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

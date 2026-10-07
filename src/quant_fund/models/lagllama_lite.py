@@ -70,5 +70,5 @@ def bench_lagllama_lite(
         "synthetic_ll_pinball": pb,
         "synthetic_ll_naive_pinball": pb_n,
         "synthetic_ll_gain": pb_n - pb,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

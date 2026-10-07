@@ -126,5 +126,5 @@ def bench_brownian_bridge(seed: int = 20261231 + 375) -> dict[str, float]:
         "synthetic_bb_hit_mc": p_mc,
         "synthetic_bb_err": abs(p_mc - p_exact),
         "synthetic_bb_var_mid": float(v[0]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

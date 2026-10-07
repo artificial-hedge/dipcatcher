@@ -118,5 +118,5 @@ def bench_kan_forecaster(seed: int = 89) -> dict[str, float]:
         "synthetic_kan_margin_vs_ridge": mae_r - mae_kan,
         "synthetic_kan_params": float(w1.numel() + w2.numel()),
         "synthetic_kan_mlp_params": float(sum(p.numel() for p in mlp.parameters())),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

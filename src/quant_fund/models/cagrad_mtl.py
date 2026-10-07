@@ -27,5 +27,5 @@ def bench_cagrad_mtl(seed: int = 2013, iters: int = 600) -> dict[str, float]:
         "synthetic_cagrad_mean_acc": mean,
         "synthetic_naive_min_acc": mn0,
         "synthetic_cagrad_min_gain": mn - mn0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

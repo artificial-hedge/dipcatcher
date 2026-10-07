@@ -63,5 +63,5 @@ def bench_go_explore(seed: int = 2867, rounds: int = 300, tail: int = 8) -> dict
         "synthetic_goexp_goal_found": float(min(successes, 1)),
         "synthetic_goexp_path_len": path_len,
         "synthetic_optimal_path_len": optimal,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

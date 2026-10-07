@@ -58,5 +58,5 @@ def bench_forgetting_events(seed: int = 1819, epochs: int = 40) -> dict[str, flo
         "synthetic_forget_pruned_acc": acc_drop,
         "synthetic_forget_full_acc": acc_full,
         "synthetic_forget_mean": float(forgot.mean()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

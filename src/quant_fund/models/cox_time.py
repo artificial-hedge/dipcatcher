@@ -56,5 +56,5 @@ def bench_cox_time(seed: int = 2113, iters: int = 500) -> dict[str, float]:
         "synthetic_coxtime_cindex": c_ct,
         "synthetic_cox_cindex": c_cox,
         "synthetic_coxtime_gain": c_ct - c_cox,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -59,5 +59,5 @@ def bench_mup_init(seed: int = 1733, iters: int = 500) -> dict[str, float]:
         "synthetic_std_w64": b64,
         "synthetic_mup_width_gap": abs(a64 - a16),
         "synthetic_std_width_gap": abs(b64 - b16),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

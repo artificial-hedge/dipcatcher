@@ -54,5 +54,5 @@ def bench_approx_ndcg_ltr(
         "synthetic_andcg_ndcg10": nd,
         "synthetic_andcg_base_ndcg10": nd_base,
         "synthetic_andcg_gain": nd - nd_base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

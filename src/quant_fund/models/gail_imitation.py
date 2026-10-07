@@ -164,7 +164,7 @@ def bench_gail_imitation(
         "synthetic_gail_disc_expert_mean": float(ex_p),
         "synthetic_gail_disc_policy_mean": float(po_p),
         "synthetic_gail_disc_gap": float(ex_p - po_p),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

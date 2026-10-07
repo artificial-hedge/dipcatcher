@@ -68,5 +68,5 @@ def bench_glow_flow(seed: int = 2287, iters: int = 600) -> dict[str, float]:
         "synthetic_glow_nll": nll_te,
         "synthetic_gauss_nll": base,
         "synthetic_glow_gain": base - nll_te,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -74,5 +74,5 @@ def bench_rmsnorm_block(seed: int = 1719, iters: int = 600) -> dict[str, float]:
         "synthetic_rms_drift": dr_r,
         "synthetic_nonorm_drift": dr_n,
         "synthetic_rms_gain": acc_r - acc_n,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

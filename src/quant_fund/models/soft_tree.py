@@ -71,5 +71,5 @@ def bench_soft_tree(
         "synthetic_st_acc": acc_s,
         "synthetic_st_mlp_acc": acc_m,
         "synthetic_st_gain": acc_s - acc_m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

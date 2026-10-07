@@ -159,7 +159,8 @@ def bench_sidh_lite(seed: int = _SEED) -> dict[str, float]:
     ea_a, eb_a, phi_a_pb = _chain_with_push(pa, 2, 3, pb)
     ea_b, eb_b, phi_b_pa = _chain_with_push(pb, 3, 3, pa)
     # Alice recomputes shared curve from Bob's curve using image of PA.
-    assert phi_b_pa is not None and phi_a_pb is not None
+    if not (phi_b_pa is not None and phi_a_pb is not None):
+        raise ValueError("phi_b_pa is not None and phi_a_pb is not None")
     ea_ab, eb_ab, _ = _chain_with_push(phi_b_pa, 2, 3, phi_b_pa, ea_b, eb_b)
     ea_ba, eb_ba, _ = _chain_with_push(phi_a_pb, 3, 3, phi_a_pb, ea_a, eb_a)
     j1 = j_invariant(ea_ab, eb_ab)

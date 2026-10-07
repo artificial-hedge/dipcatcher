@@ -40,5 +40,5 @@ def bench_poisson_thinning(seed: int = 2943, T: float = 20.0) -> dict[str, float
         "synthetic_thin_count_err": float(abs(len(ev) - exp_n) / exp_n),
         "synthetic_thin_rate_corr": corr,
         "synthetic_unif_rate_corr": corr_b,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

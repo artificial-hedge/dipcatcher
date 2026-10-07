@@ -39,5 +39,5 @@ def bench_mppi_control(
         "synthetic_mppi_cost": float(tot),
         "synthetic_pd_cost": float(cost_b),
         "synthetic_mppi_gain": float(cost_b - tot),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

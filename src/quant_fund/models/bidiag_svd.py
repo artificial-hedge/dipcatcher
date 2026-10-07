@@ -51,5 +51,5 @@ def bench_bidiag_svd(seed: int = 3013, m: int = 15, n: int = 10) -> dict[str, fl
         "synthetic_bidiag_sv_err": err,
         "synthetic_bidiag_offmass": offmass,
         "synthetic_bidiag_diag_mass": float(diag.sum() + supdiag.sum()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

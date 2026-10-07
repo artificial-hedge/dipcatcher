@@ -105,7 +105,7 @@ def bench_ft_transformer(
         "synthetic_ft_logistic_acc": log_acc,
         "synthetic_ft_margin_vs_logistic": ft_acc - log_acc,
         "synthetic_ft_margin_vs_mlp": ft_acc - mlp_acc,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

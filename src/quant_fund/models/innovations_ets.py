@@ -201,5 +201,5 @@ def bench_innovations_ets(seed: int = 20261231 + 407) -> dict[str, float]:
         "synthetic_croston_rate": float(out["croston_rate"]),
         "synthetic_sba_rate": float(out["sba_rate"]),
         "synthetic_sba_bias_gain": float(bias_c - bias_s),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

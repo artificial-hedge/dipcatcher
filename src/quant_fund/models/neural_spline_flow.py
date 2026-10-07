@@ -93,5 +93,5 @@ def bench_neural_spline_flow(seed: int = 2293, iters: int = 600, K: int = 8) -> 
         "synthetic_nsf_nll": nll_te,
         "synthetic_gauss_nll": base,
         "synthetic_nsf_gain": base - nll_te,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

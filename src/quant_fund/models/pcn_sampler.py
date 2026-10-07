@@ -39,5 +39,5 @@ def bench_pcn_sampler(
         "synthetic_pcn_accept": float(acc / steps),
         "synthetic_pcn_fit_err": fit_err,
         "synthetic_pcn_dim": float(d),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

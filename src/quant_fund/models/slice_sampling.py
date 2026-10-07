@@ -112,5 +112,5 @@ def bench_slice_sampling(seed: int = 20261231 + 421) -> dict[str, float]:
         "synthetic_slice_mean_err": mean_err,
         "synthetic_slice_acf1": acf1,
         "synthetic_slice_mode_err": mode_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

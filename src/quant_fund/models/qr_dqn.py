@@ -96,5 +96,5 @@ def bench_qr_dqn(
         "synthetic_qr_mean_cvar": float(cvar_mean),
         "synthetic_qr_cvar_gain": float(cvar_risk - cvar_mean),
         "synthetic_qr_quantile_mae": float(pb / 8),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -206,7 +206,8 @@ def bench_gaussian_process(seed: int = 20261231 + 183) -> dict[str, float]:
     f = np.asarray(d["f"])
     fit = gp_fit(x, y, n_restarts=3, seed=seed)
     model = fit["model"]
-    assert isinstance(model, GPModel)
+    if not (isinstance(model, GPModel)):
+        raise ValueError("isinstance(model, GPModel)")
     pred = gp_predict(model, x, latent=True)
     mu = np.asarray(pred["mean"])
     loo = loo_cv(model)
@@ -216,7 +217,8 @@ def bench_gaussian_process(seed: int = 20261231 + 183) -> dict[str, float]:
     cover = float(np.mean(np.abs(np.asarray(pg["mean"]) - fg) < 1.96 * np.asarray(pg["sd"])))
     fit2 = gp_fit(x, y, n_restarts=1, seed=seed)
     model2 = fit2["model"]
-    assert isinstance(model2, GPModel)
+    if not (isinstance(model2, GPModel)):
+        raise ValueError("isinstance(model2, GPModel)")
     return {
         "synthetic_train_rmse": float(math.sqrt(float(np.mean((mu - f) ** 2)))),
         "synthetic_grid_rmse": float(math.sqrt(float(np.mean((np.asarray(pg["mean"]) - fg) ** 2)))),

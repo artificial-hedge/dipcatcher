@@ -149,5 +149,5 @@ def bench_empirical_wavelets(seed: int = 20261231 + 409) -> dict[str, float]:
         "synthetic_ewt_cover_err": float(err),
         "synthetic_ewt_leakage": leak,
         "synthetic_ewt_n_bands": float(modes.shape[0]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

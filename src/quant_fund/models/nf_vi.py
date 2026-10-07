@@ -77,5 +77,5 @@ def bench_nf_vi(seed: int = 719, iters: int = 2000, Kflow: int = 3) -> dict[str,
         "synthetic_nfv_mean_dev": float(
             np.linalg.norm(w_hat - w_m) / max(np.linalg.norm(w_m), 1e-9)
         ),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

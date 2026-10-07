@@ -22,4 +22,4 @@ def bench_spectral_pde(seed: int = 2519, nx: int = 128) -> dict[str, float]:
     def pred(xq: np.ndarray, tq: float) -> np.ndarray:
         return np.asarray(np.interp(xq, x, uT))
 
-    return {"synthetic_spectral_rel_l2": eval_error(pred), "torch_available": 0.0}
+    return {"synthetic_spectral_rel_l2": eval_error(pred), "synthetic_torch_available": 0.0}

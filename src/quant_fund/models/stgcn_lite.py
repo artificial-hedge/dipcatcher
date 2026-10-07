@@ -57,5 +57,5 @@ def bench_stgcn_lite(seed: int = 1607, iters: int = 800) -> dict[str, float]:
         "synthetic_stgcn_mse": mse,
         "synthetic_stgcn_ar2_mse": base,
         "synthetic_stgcn_mse_gain": base - mse,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

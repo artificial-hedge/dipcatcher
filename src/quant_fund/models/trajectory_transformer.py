@@ -160,7 +160,7 @@ def bench_trajectory_transformer(
         "synthetic_tt_expert_reward": expert,
         "synthetic_tt_margin_vs_random": tt - rand,
         "synthetic_tt_expert_gap": expert - tt,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

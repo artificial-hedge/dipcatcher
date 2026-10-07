@@ -38,5 +38,5 @@ def bench_indep_mh(seed: int = 2987, n: int = 4000) -> dict[str, float]:
     return {
         "synthetic_imh_tail_err": tail_err,
         "synthetic_imh_accept": float(acc / n),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

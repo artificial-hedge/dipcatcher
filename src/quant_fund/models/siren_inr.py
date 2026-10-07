@@ -81,5 +81,5 @@ def bench_siren_inr(
         "synthetic_siren_grad_err": grad_err_s,
         "synthetic_siren_relu_grad_err": grad_err_r,
         "synthetic_siren_grad_gain": float(grad_err_r - grad_err_s),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -79,5 +79,5 @@ def bench_pino_residual(
         "synthetic_pino_rell2": err_p,
         "synthetic_pino_data_rell2": err_d,
         "synthetic_pino_gain": err_d - err_p,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

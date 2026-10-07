@@ -140,10 +140,10 @@ def bench_christoffersen_pelletier(
     r_bad = cp_backtest(bad_hits)
     ok = r_ok["p_value"] > 0.01 and r_bad["p_value"] < 0.05
     return {
-        "b_iid": r_ok["b_hat"],
-        "p_iid": r_ok["p_value"],
-        "b_clustered": r_bad["b_hat"],
-        "p_clustered": r_bad["p_value"],
-        "lr_gap": r_bad["lr"] - r_ok["lr"],
-        "score": float(ok),
+        "synthetic_b_iid": r_ok["b_hat"],
+        "synthetic_p_iid": r_ok["p_value"],
+        "synthetic_b_clustered": r_bad["b_hat"],
+        "synthetic_p_clustered": r_bad["p_value"],
+        "synthetic_lr_gap": r_bad["lr"] - r_ok["lr"],
+        "synthetic_score": float(ok),
     }

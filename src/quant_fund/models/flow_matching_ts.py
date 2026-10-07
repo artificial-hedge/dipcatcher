@@ -109,7 +109,7 @@ def bench_flow_matching_ts(
         "synthetic_flow_gauss_mmd": mmd_gauss,
         "synthetic_flow_margin_vs_gauss": mmd_gauss - mmd_flow,
         "synthetic_flow_steps": float(gen_steps),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

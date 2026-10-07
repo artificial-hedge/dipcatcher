@@ -93,5 +93,5 @@ def bench_manova(seed: int = 20261231 + 416) -> dict[str, float]:
         "synthetic_manova_p_alt": p_alt,
         "synthetic_manova_p_null": p_null,
         "synthetic_manova_roy": out["roy_max"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

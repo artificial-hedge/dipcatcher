@@ -97,5 +97,5 @@ def bench_gqa_attn(
         "synthetic_gqa_mha_acc": acc_full,
         "synthetic_gqa_gap": acc_full - acc,
         "synthetic_gqa_kv_frac": float(n_groups) / n_heads,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

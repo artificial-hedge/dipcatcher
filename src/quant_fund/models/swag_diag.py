@@ -62,5 +62,5 @@ def bench_swag_diag(
         "synthetic_swag_nll": nll_gauss(y_te, mu, var),
         "synthetic_swag_cov95": coverage(y_te, mu, np.sqrt(var)),
         "synthetic_swag_ood_gap": float(var_ood / (var_raw.mean() + 1e-9)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

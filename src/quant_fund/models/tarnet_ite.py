@@ -70,5 +70,5 @@ def bench_tarnet_ite(
         "synthetic_tarnet_naive_pehe": pehe_n,
         "synthetic_tarnet_gain": pehe_n - pehe_t,
         "synthetic_tarnet_ate_err": float(abs(ite.mean() - tau_te.mean())),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -40,5 +40,5 @@ def bench_dram(seed: int = 2971, n: int = 1500, warmup: int = 500) -> dict[str, 
         "synthetic_dram_cov_err": ce,
         "synthetic_dram_ess_frac": float(e),
         "synthetic_dram_second_accept": float(accept2 / n),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

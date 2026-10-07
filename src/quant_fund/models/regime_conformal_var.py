@@ -561,22 +561,28 @@ def bench_regime_weighted_conformal_var(
     w_high = float(w_report["per_regime_coverage"].get("1", float("nan")))
     u_high = float(u_report["per_regime_coverage"].get("1", float("nan")))
     return {
-        "coverage": weighted.coverage,
-        "mean_width": weighted.mean_width,
-        "median_width": weighted.median_width,
-        "highvol_coverage": w_high,
-        "lowvol_coverage": float(w_report["per_regime_coverage"].get("0", float("nan"))),
-        "highvol_mean_width": float(w_report["per_regime_mean_width"].get("1", float("nan"))),
-        "lowvol_mean_width": float(w_report["per_regime_mean_width"].get("0", float("nan"))),
-        "unweighted_coverage": plain.coverage,
-        "unweighted_mean_width": plain.mean_width,
-        "unweighted_highvol_coverage": u_high,
-        "unweighted_lowvol_coverage": float(u_report["per_regime_coverage"].get("0", float("nan"))),
-        "highvol_coverage_gain": w_high - u_high,
-        "n": float(weighted.n),
-        "alpha": float(alpha),
-        "seed": float(seed),
-        "dgp": "fixture",
-        "claim": "research_metric_only",
-        "regimes": "oracle_true_states_synthetic",
+        "synthetic_coverage": weighted.coverage,
+        "synthetic_mean_width": weighted.mean_width,
+        "synthetic_median_width": weighted.median_width,
+        "synthetic_highvol_coverage": w_high,
+        "synthetic_lowvol_coverage": float(w_report["per_regime_coverage"].get("0", float("nan"))),
+        "synthetic_highvol_mean_width": float(
+            w_report["per_regime_mean_width"].get("1", float("nan"))
+        ),
+        "synthetic_lowvol_mean_width": float(
+            w_report["per_regime_mean_width"].get("0", float("nan"))
+        ),
+        "synthetic_unweighted_coverage": plain.coverage,
+        "synthetic_unweighted_mean_width": plain.mean_width,
+        "synthetic_unweighted_highvol_coverage": u_high,
+        "synthetic_unweighted_lowvol_coverage": float(
+            u_report["per_regime_coverage"].get("0", float("nan"))
+        ),
+        "synthetic_highvol_coverage_gain": w_high - u_high,
+        "synthetic_n": float(weighted.n),
+        "synthetic_alpha": float(alpha),
+        "synthetic_seed": float(seed),
+        "synthetic_dgp": "fixture",
+        "synthetic_claim": "research_metric_only",
+        "synthetic_regimes": "oracle_true_states_synthetic",
     }

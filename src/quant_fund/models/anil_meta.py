@@ -68,5 +68,5 @@ def bench_anil_meta(seed: int = 863, n_tasks: int = 30, K: int = 5) -> dict[str,
         "synthetic_anil_query_mse": float(np.mean(mses)),
         "synthetic_anil_pooled_mse": mse_pool,
         "synthetic_anil_gain": mse_pool - float(np.mean(mses)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

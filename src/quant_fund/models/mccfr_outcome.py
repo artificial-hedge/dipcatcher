@@ -80,5 +80,5 @@ def bench_mccfr_outcome(seed: int = 2701, iters: int = 4000) -> dict[str, float]
         "synthetic_mccfr_expl": expl,
         "synthetic_random_expl": ref,
         "synthetic_mccfr_drop": ref - expl,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

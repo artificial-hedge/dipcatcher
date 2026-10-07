@@ -59,5 +59,5 @@ def bench_ode_adjoint(seed: int = 2411) -> dict[str, float]:
     return {
         "synthetic_adjoint_corr": corr,
         "synthetic_adjoint_max_err": err,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

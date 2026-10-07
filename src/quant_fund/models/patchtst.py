@@ -142,5 +142,5 @@ def bench_patchtst(seed: int = 51) -> dict[str, float]:
         "synthetic_patchtst_flatmlp_mae": mlp,
         "synthetic_patchtst_margin_vs_ar": ar - mae,
         "synthetic_patchtst_margin_vs_flatmlp": mlp - mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -54,5 +54,5 @@ def bench_clip_align(
         "synthetic_clip_acc": acc,
         "synthetic_clip_unaligned": acc_r,
         "synthetic_clip_gain": acc - acc_r,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

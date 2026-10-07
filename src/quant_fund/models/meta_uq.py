@@ -106,5 +106,5 @@ def bench_meta_uq(
         "synthetic_meta_mse_gain": mse_pool - mse_meta,
         "synthetic_meta_cov90": cov90,
         "synthetic_meta_cov90_err": abs(cov90 - 0.90),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

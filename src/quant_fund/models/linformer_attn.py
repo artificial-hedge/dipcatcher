@@ -93,5 +93,5 @@ def bench_linformer_attn(
         "synthetic_linformer_full_acc": acc_full,
         "synthetic_linformer_acc_gap": acc_full - acc_lin,
         "synthetic_linformer_cost_ratio": cost,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

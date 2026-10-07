@@ -89,5 +89,5 @@ def bench_reptile(seed: int = 853, n_tasks: int = 30, K: int = 5) -> dict[str, f
         "synthetic_rep_query_mse": float(np.mean(mses)),
         "synthetic_rep_pooled_mse": float(np.mean(mses_pooled)),
         "synthetic_rep_gain": float(np.mean(mses_pooled) - np.mean(mses)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

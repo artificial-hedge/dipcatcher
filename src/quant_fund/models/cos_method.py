@@ -189,5 +189,5 @@ def bench_cos_method(seed: int = 20261231 + 379) -> dict[str, float]:
         "synthetic_cos_put_err": float(err_put),
         "synthetic_cos_call": float(v_cos),
         "synthetic_cos_parity_gap": float(parity_gap),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -77,5 +77,5 @@ def bench_kto_train(
         "synthetic_kto_best_rate": acc,
         "synthetic_kto_random_rate": acc_rand,
         "synthetic_kto_gain": acc - acc_rand,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

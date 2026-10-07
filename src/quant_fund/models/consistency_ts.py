@@ -122,7 +122,7 @@ def bench_consistency_ts(
         "synthetic_consistency_gauss_mmd": mmd_g,
         "synthetic_consistency_margin_vs_gauss": mmd_g - mmd_c,
         "synthetic_consistency_steps": 2.0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

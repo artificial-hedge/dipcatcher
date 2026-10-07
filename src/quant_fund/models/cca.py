@@ -177,5 +177,5 @@ def bench_cca(seed: int = 20261231 + 404) -> dict[str, float]:
     return {
         "synthetic_cca_rho": rho1,
         "synthetic_cca_align": align,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

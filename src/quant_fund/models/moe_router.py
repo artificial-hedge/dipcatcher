@@ -82,5 +82,5 @@ def bench_moe_router(seed: int = 1727, iters: int = 700) -> dict[str, float]:
         "synthetic_dense_acc": acc_d,
         "synthetic_moe_gain": acc_m - acc_d,
         "synthetic_moe_expert_balance": util,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

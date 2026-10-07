@@ -61,5 +61,5 @@ def bench_convnet_baseline(
         "synthetic_cnn_acc": acc_c,
         "synthetic_cnn_mlp_acc": acc_m,
         "synthetic_cnn_gain": acc_c - acc_m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

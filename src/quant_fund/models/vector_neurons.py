@@ -88,5 +88,5 @@ def bench_vector_neurons(
         "synthetic_vnn_flat_acc_rot": acc_flat_rot,
         "synthetic_vnn_drop": abs(acc_id - acc_rot),
         "synthetic_vnn_gain": acc_rot - acc_flat_rot,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -120,5 +120,5 @@ def bench_hrp(seed: int = 20261231 + 419) -> dict[str, float]:
         "synthetic_hrp_block_spread": spread,
         "synthetic_hrp_ivp_dev": dev,
         "synthetic_hrp_min_w": float(w.min()),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

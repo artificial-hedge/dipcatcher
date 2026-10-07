@@ -40,5 +40,5 @@ def bench_mmd_two_sample(seed: int = 2873, perms: int = 200) -> dict[str, float]
         "synthetic_mmd_pval_null": float(pvals["null"]),
         "synthetic_mmd_pval_alt": float(pvals["alt"]),
         "synthetic_mmd_sep": float(pvals["null"] - pvals["alt"]),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

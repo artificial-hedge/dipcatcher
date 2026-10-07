@@ -79,5 +79,5 @@ def bench_unlearn_ga(
         "synthetic_unlearn_forget_post": acc_f_post,
         "synthetic_unlearn_retain_post": acc_r_post,
         "synthetic_unlearn_drop": acc_f_pre - acc_f_post,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

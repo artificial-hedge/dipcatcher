@@ -78,5 +78,5 @@ def bench_stockwell(seed: int = 20261231 + 403) -> dict[str, float]:
     return {
         "synthetic_stockwell_ridge_err": err,
         "synthetic_stockwell_n_freq": float(freqs.size),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

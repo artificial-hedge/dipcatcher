@@ -67,5 +67,5 @@ def bench_whittle_restless(
         "synthetic_whi_mean_reward": tot / T,
         "synthetic_whi_rr_reward": tot2 / T,
         "synthetic_whi_reward_gain": (tot - tot2) / T,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

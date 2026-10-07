@@ -145,5 +145,5 @@ def bench_debtrank(seed: int = 20261231 + 386) -> dict[str, float]:
         "synthetic_dr_leaf": r_leaf,
         "synthetic_dr_hub_rank": float(top_dr),
         "synthetic_ist_leader_rank": float(top_ist),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

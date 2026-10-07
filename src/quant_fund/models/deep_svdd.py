@@ -61,5 +61,5 @@ def bench_deep_svdd(
         "synthetic_svdd_auc": auc_svdd,
         "synthetic_svdd_ae_auc": auc_ae,
         "synthetic_svdd_gain": auc_svdd - auc_ae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

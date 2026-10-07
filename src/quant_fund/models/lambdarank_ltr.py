@@ -61,5 +61,5 @@ def bench_lambdarank_ltr(
         "synthetic_lambda_ndcg10": nd,
         "synthetic_lambda_base_ndcg10": nd_base,
         "synthetic_lambda_gain": nd - nd_base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

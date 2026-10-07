@@ -95,5 +95,5 @@ def bench_s4_ssm(
         "synthetic_s4_full_acc": acc_full,
         "synthetic_s4_acc_gap": acc_full - acc,
         "synthetic_s4_cost_ratio": cost,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

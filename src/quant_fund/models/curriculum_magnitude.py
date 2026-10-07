@@ -65,5 +65,5 @@ def bench_curriculum_magnitude(
         "synthetic_curr_anti_acc": float(acc_a),
         "synthetic_curr_shuffled_acc": float(acc_r),
         "synthetic_curr_gain_vs_anti": float(acc_c - acc_a),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

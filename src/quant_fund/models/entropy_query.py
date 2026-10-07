@@ -23,5 +23,5 @@ def bench_entropy_query(seed: int = 2601, trials: int = 5) -> dict[str, float]:
         "synthetic_eq_acc": float(np.mean(accs)),
         "synthetic_random_acc": float(np.mean(bases)),
         "synthetic_eq_gain": float(np.mean(accs) - np.mean(bases)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

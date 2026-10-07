@@ -91,5 +91,5 @@ def bench_virtual_node(seed: int = 883, iters: int = 200) -> dict[str, float]:
         "synthetic_vn_auc": auc_vn,
         "synthetic_vn_gcn_auc": auc_gcn,
         "synthetic_vn_gain": auc_vn - auc_gcn,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

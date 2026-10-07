@@ -122,7 +122,8 @@ def bench_timed_automata(seed: int = _SEED) -> dict[str, float]:
     # guard zone math
     z0b: Zone = [(0.0, INF)]
     z = guard(z0b, 0, "<=", 2.0)
-    assert z is not None
+    if not (z is not None):
+        raise ValueError("z is not None")
     z = reset(z, 0)
     z = up(z)
     z = guard(z, 0, ">=", 1.0)

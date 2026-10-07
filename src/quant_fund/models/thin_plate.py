@@ -118,5 +118,5 @@ def bench_thin_plate(seed: int = 20261231 + 424) -> dict[str, float]:
     return {
         "synthetic_tps_rmse_ratio": ratio,
         "synthetic_tps_interp_err": interp_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

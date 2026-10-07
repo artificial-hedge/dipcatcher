@@ -72,5 +72,5 @@ def bench_quade(seed: int = 20261231 + 435) -> dict[str, float]:
         "synthetic_quade_p": out["p"],
         "synthetic_quade_p_null": out_n["p"],
         "synthetic_quade_t3": out["t3"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

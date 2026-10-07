@@ -62,5 +62,5 @@ def bench_vicreg(
         "synthetic_vicreg_probe_acc": float(acc_v),
         "synthetic_vicreg_raw_acc": float(acc_raw),
         "synthetic_vicreg_gain": float(acc_v - acc_raw),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -84,5 +84,5 @@ def bench_capsule_dynamic(
         "synthetic_capsule_acc": float(acc),
         "synthetic_capsule_flat_acc": float(acc_f),
         "synthetic_capsule_gain": float(acc - acc_f),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

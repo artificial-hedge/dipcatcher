@@ -44,5 +44,5 @@ def bench_hsic_independence(seed: int = 2879, perms: int = 150) -> dict[str, flo
         "synthetic_hsic_pval_dep": float(outs["dep"]),
         "synthetic_hsic_pval_indep": float(outs["indep"]),
         "synthetic_hsic_pval_nonlin": float(outs["nonlin"]),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

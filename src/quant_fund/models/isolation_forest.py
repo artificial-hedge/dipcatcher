@@ -181,5 +181,5 @@ def bench_isolation_forest(seed: int = 20261231 + 453) -> dict[str, float]:
     return {
         "synthetic_top_hits": float(hits),
         "synthetic_score_gap": mean_out - mean_in,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

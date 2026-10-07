@@ -88,5 +88,5 @@ def bench_ges_search(seed: int = 2819, trials: int = 4, d: int = 6) -> dict[str,
         "synthetic_ges_shd": float(np.mean(shds)),
         "synthetic_corr_shd": float(np.mean(shds_b)),
         "synthetic_ges_skel_f1": float(np.mean(f1s)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

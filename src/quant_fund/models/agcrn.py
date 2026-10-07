@@ -75,5 +75,5 @@ def bench_agcrn(seed: int = 1633, iters: int = 800) -> dict[str, float]:
         "synthetic_agcrn_ar2_mse": base,
         "synthetic_agcrn_mse_gain": base - mse,
         "synthetic_agcrn_adapt_gain": mse2 - mse,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

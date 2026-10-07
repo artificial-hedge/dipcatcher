@@ -55,5 +55,5 @@ def bench_tebd_quench(
         "synthetic_tebd_fid": fid,
         "synthetic_tebd_err": float(1 - fid),
         "synthetic_tebd_dt": float(dt),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }
