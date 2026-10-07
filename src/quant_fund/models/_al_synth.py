@@ -70,9 +70,19 @@ def al_loop(
             yp[np.array(labeled)],
             w,
         )
+        seen_sel: set[int] = set()
         for j in np.atleast_1d(sel)[:batch]:
-            unlabeled.discard(int(u_idx[int(j)]))
-            labeled.append(int(u_idx[int(j)]))
+            jf = float(j)
+            ji = int(jf)
+            if jf != ji or not 0 <= ji < len(u_idx) or ji in seen_sel:
+                raise ValueError(
+                    f"select() returned invalid unlabeled index {j!r}: must be "
+                    "an integer in [0, len(unlabeled)) without duplicates"
+                )
+            seen_sel.add(ji)
+            pool = int(u_idx[ji])
+            unlabeled.discard(pool)
+            labeled.append(pool)
     w = fit_logreg(feats(Xp[np.array(labeled)]), yp[np.array(labeled)])
     return acc(w, Xt, yt)
 
