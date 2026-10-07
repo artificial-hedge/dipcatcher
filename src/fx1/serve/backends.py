@@ -255,11 +255,18 @@ def _byok_private_networks_allowed() -> bool:
     }
 
 
-def _apply_byok_destination_policy(request: urllib.request.Request) -> None:
+class _ByokRequest(urllib.request.Request):
+    """Request carrying a BYOK destination-policy snapshot to the wire seam."""
+
+    _fx1_byok_public_only: bool = False
+    _fx1_byok_allow_private: bool = False
+
+
+def _apply_byok_destination_policy(request: _ByokRequest) -> None:
     """Snapshot the process policy onto a request for the transport seam."""
     allow_private = _byok_private_networks_allowed()
-    request._fx1_byok_public_only = not allow_private  # type: ignore[attr-defined]
-    request._fx1_byok_allow_private = allow_private  # type: ignore[attr-defined]
+    request._fx1_byok_public_only = not allow_private
+    request._fx1_byok_allow_private = allow_private
 
 
 def _normalized_address(raw: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
@@ -503,7 +510,7 @@ def _openai_chat_complete(
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    request = _ByokRequest(url, data=body, headers=headers, method="POST")
     if byok:
         _apply_byok_destination_policy(request)
     try:
@@ -565,7 +572,7 @@ def _openai_tokenize_count(
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    request = _ByokRequest(url, data=body, headers=headers, method="POST")
     if byok:
         _apply_byok_destination_policy(request)
     try:
@@ -686,7 +693,7 @@ def _openai_chat_complete_tools(
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    request = _ByokRequest(url, data=body, headers=headers, method="POST")
     if byok:
         _apply_byok_destination_policy(request)
     try:
@@ -784,7 +791,7 @@ def _openai_chat_stream(
     headers = {"Content-Type": "application/json", "Accept": "text/event-stream"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    request = _ByokRequest(url, data=body, headers=headers, method="POST")
     if byok:
         _apply_byok_destination_policy(request)
     try:
@@ -897,7 +904,7 @@ def _openai_embeddings_complete(
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    request = _ByokRequest(url, data=body, headers=headers, method="POST")
     if byok:
         _apply_byok_destination_policy(request)
     try:
