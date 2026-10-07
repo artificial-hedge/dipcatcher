@@ -2193,6 +2193,52 @@ verdicts `closeable-now` 3 / `runbook-ready` 2 / `blocked` 2, sealed as NEW
 `valid: True | errors: [] | schema: receipt.v2 | digest: canonical_json`. Freshly minted,
 never an edit. `docs/evidence/index.md` regenerated (`make evidence`, `71808e6773`).
 
+### RETRACTION — the cost-aware headline is WITHDRAWN (alpha-research, byte-provable)
+
+**I carried this claim through the round record and it is wrong. Withdrawing it explicitly and
+loudly rather than letting it age into the record:**
+
+> ~~"cost-aware tournament re-run on the tracked 424-name snapshot with the frozen slate
+> selected `momentum_20_cost_aware` on validation, where the September run returned
+> `optimal_inaccurate` and selected nothing — the CLARABEL conditioning fix worked."~~
+
+**Why it is wrong:** the claim was TRUE OF THAT RUN BUT MISATTRIBUTED. Byte-hashing the
+16:55 run `research/cost_aware_tournament_20261007` shows it ran with `cost_allocation.py`
+= `058afffc…`, which is the **pre-rewrite 314-line repair** (the x100-objective ladder) —
+NOT the fail-closed solver chain. That run's own test phase was then refused by its code
+lock.
+
+**What is actually true:** under the committed fail-closed chain, the self-consistent re-run
+`research/cost_aware_tournament_20261007r2` **SELECTS NOTHING** —
+`selected: null`, `complete: false`, `all_terminal_liquidations_complete: false`. Some
+cost-aware decisions still terminate in `optimal_inaccurate`, which the chain records and
+refuses (visible in the run's stderr). The test phase then refused fail-closed
+("validation was incomplete; no candidate was selected"). Therefore:
+
+- **no selected candidate**, **no test receipt**, **`economic_evidence_gate` = `false`**;
+- **`selected_holdout_adjusted_rejection` never turned true** and could not have — it can
+  only do so on a test phase, and no test phase ever ran;
+- **no reversal is claimed**, because there was no validation selection in the binding run
+  to reverse. The earlier framing ("if the test phase reverses the selection, say so loudly")
+  was built on the misattribution and does not apply.
+
+**What survives:** the mechanical conditioning evidence only — the flip experiment, the
+scaled-vs-unscaled equivalence, and the fail-closed status matrix. The solver chain itself
+is sound and correctly refuses; the conditioning fix did NOT deliver a selection, and the
+looser-acceptance code is what "certified" one.
+
+The two runs disagree and **are not reconciled in our favour**: the looser-acceptance code
+certified decisions the fail-closed chain refuses, and the chain's refusal is binding under
+the bar (`GAP_TOL_ORIGINAL=1e-10`, tightened, never loosened; only `optimal` plus an
+independent 1e-7 check is selectable). Recorded verbatim, including the disagreement, in
+`receipts/cost_aware_rerun_20261007.json` (seal `618fadcd…`) and
+`docs/COST_AWARE_CONSTRUCTION.md`.
+
+This is the second time a headline has been withdrawn on byte-level evidence in this repo
+after `bb8bb6e6f5`/`95799dbeb8`, and the standard applied here is the one that commit pair
+established: a claim rests on the hash of the code that produced it, not on the narrative
+around it.
+
 ### Finding 1 — the suite SEGFAULTS, so `make test` is not currently measurable
 
 `make test` reports `127 failed / 12,083 passed / 9 errors` and then dies with 41
