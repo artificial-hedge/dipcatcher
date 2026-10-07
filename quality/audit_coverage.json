@@ -501,6 +501,9 @@
   "models/fbm.py": {
    "status": "audited"
   },
+  "models/fractional_ou.py": {
+   "status": "audited"
+  },
   "models/fukasawa_iv.py": {
    "status": "audited"
   },
@@ -592,6 +595,9 @@
    "status": "audited"
   },
   "models/odd_residual_flows.py": {
+   "status": "audited"
+  },
+  "models/online_crc.py": {
    "status": "audited"
   },
   "models/pair_vine_copula.py": {

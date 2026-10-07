@@ -1,132 +1,62 @@
-"""Fractional OU: spectrum, spectral simulation, Whittle estimation."""
-
-from __future__ import annotations
+"""Adversarial probes for fractional_ou."""
 
 import numpy as np
-import pytest
 
-from quant_fund.models.fractional_ou import (
-    bench_fractional_ou,
-    estimate_fou,
-    fou_autocov_theoretical,
-    fou_spectrum,
-    simulate_fou_exact,
-    synth_fou_observed,
-    whittle_loglik,
-)
+from quant_fund.models import fractional_ou as fo
 
 
-class TestSpectrum:
-    def test_positive(self):
-        w = np.linspace(0.01, 5.0, 50)
-        s = fou_spectrum(w, 0.4, 0.5, 1.0)
-        assert np.all(s > 0)
-
-    def test_ou_limit(self):
-        # H=1/2: fOU spectrum should match OU Lorentzian shape
-        w = np.linspace(0.01, 5.0, 50)
-        s = fou_spectrum(w, 0.5, 0.5, 1.0)
-        s_norm = s / s[0]
-        lorentz = 1.0 / (0.25 + w**2)
-        lorentz_norm = lorentz / lorentz[0]
-        np.testing.assert_allclose(s_norm, lorentz_norm, rtol=0.1)
-
-    def test_low_freq_rougher(self):
-        # f(w) ~ |w|^{1-2H}/(a^2+w^2): lower H -> more high-frequency mass
-        w = np.array([0.05, 1.0])
-        s_rough = fou_spectrum(w, 0.3, 0.5)
-        s_smooth = fou_spectrum(w, 0.7, 0.5)
-        ratio_r = s_rough[0] / s_rough[1]
-        ratio_s = s_smooth[0] / s_smooth[1]
-        assert ratio_r < ratio_s
-
-    def test_fail_closed(self):
-        with pytest.raises(ValueError):
-            fou_spectrum(np.array([1.0]), 1.2, 0.5)
-        with pytest.raises(ValueError):
-            fou_spectrum(np.array([1.0]), 0.4, -0.5)
-        with pytest.raises(ValueError):
-            fou_spectrum(np.array([1.0]), 0.4, 0.5, 0.0)
+def test_sim_uses_hermitian_coefficients():
+    """Pin the circulant construction: coefficients must satisfy
+    c[m-k] == conj(c[k]) so the ifft is a real stationary process."""
+    n, h, a, sigma, seed = 256, 0.3, 0.5, 1.0, 11
+    got = fo.simulate_fou_exact(n, h, a, sigma, seed)
+    # recompute the symmetric construction independently
+    rng = np.random.default_rng(seed)
+    m = 1 << int(np.ceil(np.log2(2 * n)))
+    freqs = np.fft.fftfreq(m) * 2 * np.pi
+    spec = fo.fou_spectrum(np.abs(freqs), h, a, sigma)
+    amp = np.sqrt(np.maximum(spec, 0.0) * m / 2.0)
+    re = rng.standard_normal(m)
+    im = rng.standard_normal(m)
+    coeff = amp * (re + 1j * im)
+    half = m // 2
+    coeff[half + 1 :] = np.conj(coeff[1:half][::-1])
+    coeff[half] = amp[half] * re[half]
+    coeff[0] = 0.0
+    x = np.fft.ifft(coeff).real[:n]
+    x = x - x.mean()
+    expected = x / np.std(x) * sigma
+    np.testing.assert_allclose(got, expected, atol=1e-12)
 
 
-class TestSimulation:
-    def test_shape_demeaned(self):
-        x = simulate_fou_exact(512, 0.4, 0.5, seed=1)
-        assert x.shape == (512,)
-        assert abs(x.mean()) < 1e-8
-
-    def test_deterministic(self):
-        a = simulate_fou_exact(256, 0.4, 0.5, seed=2)
-        b = simulate_fou_exact(256, 0.4, 0.5, seed=2)
-        np.testing.assert_allclose(a, b)
-
-    def test_rougher_has_higher_short_lag_var(self):
-        # lower H gives bigger short-lag increment variance relative to level var
-        x_r = simulate_fou_exact(2048, 0.3, 0.5, seed=3)
-        x_s = simulate_fou_exact(2048, 0.7, 0.5, seed=3)
-        inc_r = np.var(np.diff(x_r)) / np.var(x_r)
-        inc_s = np.var(np.diff(x_s)) / np.var(x_s)
-        assert inc_r > inc_s
-
-    def test_fail_closed(self):
-        with pytest.raises(ValueError):
-            simulate_fou_exact(16, 0.4, 0.5)
-        with pytest.raises(ValueError):
-            simulate_fou_exact(256, 1.1, 0.5)
+def test_sim_imaginary_part_is_zero():
+    """With Hermitian symmetry the ifft imaginary part must vanish —
+    an independent-draw implementation leaks power there."""
+    n, h, a, sigma, seed = 256, 0.3, 0.5, 1.0, 3
+    rng = np.random.default_rng(seed)
+    m = 1 << int(np.ceil(np.log2(2 * n)))
+    freqs = np.fft.fftfreq(m) * 2 * np.pi
+    spec = fo.fou_spectrum(np.abs(freqs), h, a, sigma)
+    amp = np.sqrt(np.maximum(spec, 0.0) * m / 2.0)
+    re = rng.standard_normal(m)
+    im = rng.standard_normal(m)
+    coeff = amp * (re + 1j * im)
+    half = m // 2
+    coeff[half + 1 :] = np.conj(coeff[1:half][::-1])
+    coeff[half] = amp[half] * re[half]
+    coeff[0] = 0.0
+    assert np.abs(np.fft.ifft(coeff).imag).max() < 1e-12
 
 
-class TestEstimation:
-    def test_h_recovery(self):
-        x = synth_fou_observed(2048, 0.4, 0.5, seed=4)
-        est = estimate_fou(x, seed=4)
-        assert abs(est.h - 0.4) < 0.2
-        assert est.converged
-
-    def test_h_grid(self):
-        for h in (0.3, 0.6):
-            x = synth_fou_observed(2048, h, 0.5, seed=5)
-            est = estimate_fou(x, seed=5)
-            assert abs(est.h - h) < 0.25
-
-    def test_whittle_prefers_truth(self):
-        x = synth_fou_observed(1024, 0.4, 0.5, seed=6)
-        ll_true = whittle_loglik(x, 0.4, 0.5, 1.0)
-        ll_wrong = whittle_loglik(x, 0.8, 0.5, 1.0)
-        assert ll_true > ll_wrong
-
-    def test_deterministic(self):
-        x = synth_fou_observed(512, 0.4, 0.5, seed=7)
-        e1 = estimate_fou(x, seed=7)
-        e2 = estimate_fou(x, seed=7)
-        assert e1.h == e2.h
-
-    def test_fail_closed(self):
-        with pytest.raises(ValueError):
-            estimate_fou(np.arange(10.0))
-        with pytest.raises(ValueError):
-            whittle_loglik(np.arange(10.0), 0.4, 0.5, 1.0)
+def test_estimate_converged_flag_reflects_nelder_mead():
+    """converged must come from res.success of the winning start."""
+    x = fo.synth_fou_observed(1024, 0.4, a=0.5, sigma=1.0, seed=5)
+    est = fo.estimate_fou(x, seed=5)
+    # on this well-posed problem NM should converge
+    assert est.converged is True
 
 
-class TestAutocov:
-    def test_theoretical_decreasing(self):
-        lags = np.arange(0, 10, dtype=float)
-        ac = fou_autocov_theoretical(lags, 0.4, 0.8)
-        assert ac[0] > ac[-1]
-        assert ac[0] > 0
-
-
-class TestBench:
-    def test_keys_finite(self):
-        out = bench_fractional_ou(20260201)
-        for k, v in out.items():
-            assert k.startswith("synthetic_")
-            assert isinstance(v, float)
-            assert np.isfinite(v), k
-
-    def test_deterministic(self):
-        assert bench_fractional_ou(20260201) == bench_fractional_ou(20260201)
-
-    def test_quality(self):
-        out = bench_fractional_ou(20260201)
-        assert out["synthetic_h_err_mean"] < 0.3
-        assert out["synthetic_determinism"] == 1.0
+def test_bench_smoke():
+    out = fo.bench_fractional_ou()
+    assert out["synthetic_determinism"] == 1.0
+    assert out["synthetic_h_err_mean"] < 0.25

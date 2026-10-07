@@ -98,10 +98,16 @@ def simulate_fou_exact(
     freqs = np.fft.fftfreq(m) * 2 * np.pi  # angular frequencies
     spec = fou_spectrum(np.abs(freqs), h, a, sigma)
     amp = np.sqrt(np.maximum(spec, 0.0) * m / 2.0)
-    # complex normal coefficients with conjugate symmetry
+    # complex normal coefficients with Hermitian symmetry — required
+    # for the ifft to be a real circular-stationary Gaussian process
+    # (independent draws would leak variance into the discarded
+    # imaginary part and mix +k/-k frequency mass).
     re = rng.standard_normal(m)
     im = rng.standard_normal(m)
     coeff = amp * (re + 1j * im)
+    half = m // 2
+    coeff[half + 1 :] = np.conj(coeff[1:half][::-1])
+    coeff[half] = amp[half] * re[half]  # Nyquist bin must be real
     coeff[0] = 0.0  # zero DC — de-meaned process
     x = np.fft.ifft(coeff).real[:n]
     x = x - x.mean()
@@ -179,6 +185,7 @@ def estimate_fou(
     if h_grid is None:
         h_grid = np.array([0.2, 0.35, 0.5, 0.65, 0.8])
     best = (np.inf, 0.5, 0.5)
+    best_ok = False
     rng = np.random.default_rng(seed)
     for h0 in np.asarray(h_grid, dtype=float):
         a0 = float(np.exp(rng.uniform(np.log(0.01), np.log(2.0))))
@@ -190,6 +197,7 @@ def estimate_fou(
         )
         if res.fun < best[0]:
             best = (float(res.fun), float(res.x[0]), float(np.exp(res.x[1])))
+            best_ok = bool(res.success)
     nll, h_hat, a_hat = best
     spec1 = np.maximum(fou_spectrum(wabs, h_hat, a_hat, 1.0), 1e-300)
     level = float(np.mean(periodo / spec1))
@@ -199,7 +207,7 @@ def estimate_fou(
         a=a_hat,
         sigma=sigma_hat,
         loglik=-nll,
-        converged=bool(np.isfinite(nll)),
+        converged=bool(np.isfinite(nll)) and best_ok,
     )
 
 
