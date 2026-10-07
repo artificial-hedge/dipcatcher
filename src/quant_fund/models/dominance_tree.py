@@ -1,4 +1,4 @@
-"""Immediate-dominator tree via iterative dataflow (synthetic).
+"""Immediate-dominator tree via iterative dataflow (synthetic) (SYNTHETIC).
 
 CFG dominator sets by standard meet-over-paths fixpoint; idom =
 strict dominator not dominated by any other strict dominator.

@@ -1,4 +1,4 @@
-"""Expert iteration (Anthony et al. 2017) — tic-tac-toe: apprentice
+"""Expert iteration (Anthony et al. 2017) — tic-tac-toe: apprentice (SYNTHETIC)
 policy net imitates a strong search expert (minimax oracle chosen as
 the expert — TTT admits exact search); self-play states are relabeled
 by the expert's argmax + outcome value. Non-loss vs oracle/random.
@@ -68,5 +68,5 @@ def bench_expert_iteration(seed: int = 2725, rounds: int = 30) -> dict[str, floa
     return {
         "synthetic_exit_nonloss_oracle": nl_or,
         "synthetic_exit_nonloss_random": nl_rd,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

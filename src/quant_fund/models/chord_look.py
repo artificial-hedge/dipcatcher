@@ -1,4 +1,4 @@
-"""Chord DHT lookup: finger-table greedy routing on a ring."""
+"""Chord DHT lookup: finger-table greedy routing on a ring (SYNTHETIC)."""
 
 import numpy as np
 

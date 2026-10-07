@@ -1,4 +1,4 @@
-"""ODE/SDE solver canon: classical RK4, adaptive Dormand-Prince RK45 with
+"""ODE/SDE solver canon: classical RK4, adaptive Dormand-Prince RK45 with (SYNTHETIC)
 embedded error control, implicit midpoint, and Euler-Maruyama / Milstein for
 Ito SDEs. ``bench_ode_solvers`` gates convergence on y' = -2y (exact
 decay), a stiff-ish linear system, and the GBM weak-order moment check.

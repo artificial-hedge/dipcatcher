@@ -1,4 +1,4 @@
-"""SwiGLU FFN (Shazeer 2020) — SwiGLU gate FFN vs plain ReLU MLP on
+"""SwiGLU FFN (Shazeer 2020) — SwiGLU gate FFN vs plain ReLU MLP on (SYNTHETIC)
 the multi-regime task: sigmoid(x @ w_r) regime-dependent labels.
 """
 
@@ -55,5 +55,5 @@ def bench_swiglu_ffn(seed: int = 1713, iters: int = 600) -> dict[str, float]:
         "synthetic_swiglu_acc": acc_s,
         "synthetic_relu_acc": acc_r,
         "synthetic_swiglu_gain": acc_s - acc_r,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

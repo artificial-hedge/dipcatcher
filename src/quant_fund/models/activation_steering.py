@@ -1,4 +1,4 @@
-"""Activation steering / representation engineering (Turner et al.).
+"""Activation steering / representation engineering (Turner et al.) (SYNTHETIC).
 
 Compute a steering vector as the mean-difference direction between
 activations with/without feature k; adding λ·v flips downstream

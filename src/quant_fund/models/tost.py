@@ -1,4 +1,4 @@
-"""Equivalence testing via two one-sided tests (TOST).
+"""Equivalence testing via two one-sided tests (TOST) (SYNTHETIC).
 
 Schuirmann (1987) two one-sided tests for mean
 equivalence: ``H0: |delta| >= theta`` rejected when both
@@ -176,5 +176,5 @@ def bench_tost(seed: int = 20261231 + 464) -> dict[str, float]:
     return {
         "synthetic_eq_p": float(eq["p_tost"]),
         "synthetic_neq_p": float(ne["p_tost"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

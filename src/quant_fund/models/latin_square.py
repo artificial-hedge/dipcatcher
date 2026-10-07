@@ -1,4 +1,4 @@
-"""Latin-square validation and backtracking completion (wave 282).
+"""Latin-square validation and backtracking completion (wave 282) (SYNTHETIC).
 
 A Latin square has each symbol exactly once per row and column. Cyclic
 squares are Latin; a partial square is completed by constraint propagation

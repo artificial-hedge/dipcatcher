@@ -1,4 +1,4 @@
-"""Sample-average approximation consistency for a newsvendor.
+"""Sample-average approximation consistency for a newsvendor (SYNTHETIC).
 
 True problem: max_x E[min(D,x)] - c x with D ~ Gamma. SAA solves on N
 samples; the optimality gap is estimated with M independent replicates

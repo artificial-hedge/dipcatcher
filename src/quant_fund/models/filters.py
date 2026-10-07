@@ -1,4 +1,4 @@
-"""Trend/cycle decomposition filters.
+"""Trend/cycle decomposition filters (SYNTHETIC).
 
 Classical macro/finance signal extraction: Hodrick–Prescott, Baxter–King
 bandpass, Christiano–Fitzgerald asymmetric bandpass, the Hamilton (2018)

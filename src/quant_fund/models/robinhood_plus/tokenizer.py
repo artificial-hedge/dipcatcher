@@ -1,4 +1,4 @@
-"""Hierarchical binary-spherical tokenizer for K-line sequences.
+"""Hierarchical binary-spherical tokenizer for K-line sequences (SYNTHETIC).
 
 Implements the Kronos stage-1 contract (Shi et al., 2025): a 6-d OHLCV+amount
 vector is projected, L2-normalized, and quantized into coarse (s1) and fine (s2)

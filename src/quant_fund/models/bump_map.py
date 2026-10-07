@@ -1,4 +1,4 @@
-"""Bump mapping: perturbed normals via finite-difference height field."""
+"""Bump mapping: perturbed normals via finite-difference height field (SYNTHETIC)."""
 
 import numpy as np
 

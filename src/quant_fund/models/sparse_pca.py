@@ -1,4 +1,4 @@
-"""Sparse PCA canon: l1-penalized variance maximization via alternating
+"""Sparse PCA canon: l1-penalized variance maximization via alternating (SYNTHETIC)
 maximization (power iteration with soft-thresholded loadings, SCoTLASS
 style), with Schur-complement deflation for multi-component fits.
 ``bench_sparse_pca`` plants a block-sparse covariance and gates support

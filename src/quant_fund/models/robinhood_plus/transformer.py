@@ -1,4 +1,4 @@
-"""Tiny causal decoder for hierarchical K-line tokens (research-scale).
+"""Tiny causal decoder for hierarchical K-line tokens (research-scale) (SYNTHETIC).
 
 This is the Kronos decoder-only contract in NumPy: hierarchical embeddings,
 causal self-attention, then s1 logits and s2 logits conditioned on the sampled

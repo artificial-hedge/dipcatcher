@@ -1,4 +1,4 @@
-"""Augmented inverse-propensity-weighting (AIPW) doubly-robust ATE.
+"""Augmented inverse-propensity-weighting (AIPW) doubly-robust ATE (SYNTHETIC).
 
 The estimator combines the outcome model μ_d(x) = E[Y|D=d, X] and
 the propensity e(x) = P(D=1|X):

@@ -1,4 +1,4 @@
-"""GraphGPS-lite (Rampášek et al. 2022) — local MPNN + global self-attention
+"""GraphGPS-lite (Rampášek et al. 2022) — local MPNN + global self-attention (SYNTHETIC)
 combined each layer. Planted-clique AUC vs pure-MPNN ablation.
 """
 
@@ -64,5 +64,5 @@ def bench_gps_transformer(seed: int = 887, iters: int = 200) -> dict[str, float]
         "synthetic_gps_auc": auc_gps,
         "synthetic_gps_random_auc": 0.5,
         "synthetic_gps_lift": auc_gps - 0.5,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

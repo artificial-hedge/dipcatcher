@@ -1,4 +1,4 @@
-"""Well-structured transition systems: coverability via backward search.
+"""Well-structured transition systems: coverability via backward search (SYNTHETIC).
 
 States are multisets of places (Petri-net style, ω-values after
 acceleration). pre(U) computed upward-closed; acceleration extrapolates

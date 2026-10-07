@@ -1,4 +1,4 @@
-"""LOWESS: locally weighted scatterplot smoothing (Cleveland 1979).
+"""LOWESS: locally weighted scatterplot smoothing (Cleveland 1979) (SYNTHETIC).
 
 For each target point the fit is a weighted local linear regression over the
 ``frac`` nearest neighbours, weighted by the tricube kernel of scaled distance.

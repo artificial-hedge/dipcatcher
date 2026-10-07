@@ -1,4 +1,4 @@
-"""Expectile estimation and asymmetric-least-squares regression.
+"""Expectile estimation and asymmetric-least-squares regression (SYNTHETIC).
 
 Newey & Powell (1987) introduced expectiles as the minimisers of an asymmetric
 squared loss.  The ``tau``-expectile ``mu`` of a variable solves

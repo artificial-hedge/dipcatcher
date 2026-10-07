@@ -1,4 +1,4 @@
-"""Harvey (1989) unobserved-components structural time series.
+"""Harvey (1989) unobserved-components structural time series (SYNTHETIC).
 
 The model decomposes ``y_t`` into a random-walk-with-drift level, a
 stochastic cycle, and observation noise:

@@ -1,4 +1,4 @@
-"""Forward-filter backward-simulation particle smoother on a stochastic
+"""Forward-filter backward-simulation particle smoother on a stochastic (SYNTHETIC)
 volatility toy: x_t = a x_{t-1} + s v, y = exp(x/2) e. Bootstrap filter
 with ancestor tracking, then backward-simulated smoothing paths; bench
 compares smoother vs filter RMSE against truth.

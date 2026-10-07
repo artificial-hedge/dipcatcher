@@ -1,4 +1,4 @@
-"""Cross-sectional and time-series momentum signals.
+"""Cross-sectional and time-series momentum signals (SYNTHETIC).
 
 References:
 - Jegadeesh & Titman (1993): formation-period return momentum.

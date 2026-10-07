@@ -1,4 +1,4 @@
-"""Unit propagation engine: closure under unit clauses, counts
+"""Unit propagation engine: closure under unit clauses, counts (SYNTHETIC)
 propagated assignments and detects forced-variable fraction on a
 clause set generated with a planted satisfying assignment.
 """

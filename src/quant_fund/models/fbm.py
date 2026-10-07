@@ -100,11 +100,11 @@ def fbm_bench(
     """Measure the exact-sampler contract and the hybrid scheme's deficit.
 
     Claims (all measured):
-      * exact_variance_scaling: Var(B^H_t)/t^{2H} within [0.9, 1.1]
-      * autocorr_closed_form: |measured - rho(k)| < 0.05 at lags 1..8
-      * brownian_limit: H=0.5 increment autocorr ~0 (|r| < 0.04, lags 1..8)
+      * exact_variance_scaling: Var(B^H_t)/t^{2H} within (0.85, 1.15)
+      * autocorr_closed_form: |measured - rho(k)| < 0.06 at lags 1..8
+      * brownian_limit: H=0.5 increment autocorr ~0 (|r| < 0.05, lags 1..8)
       * self_similar: Var(B_{2t})/Var(B_t) within 8% of 2^{2H}
-      * hybrid_deficit_pinned: Var ratio hybrid/exact measured in [0.7, 1.0]
+      * hybrid_deficit_pinned: Var ratio hybrid/exact measured in (0.65, 0.98)
         at H=0.10 — the kappa=1 bias quantified against an exact oracle
     """
     h, dt = 0.10, 1.0 / n

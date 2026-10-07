@@ -6,7 +6,7 @@ from quant_fund.models.log_acd import bench_log_acd, log_acd_fit, synth_log_acd
 
 def test_bench_log_acd_passes():
     r = bench_log_acd()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_persistence_recovered():

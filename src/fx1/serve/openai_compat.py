@@ -722,6 +722,17 @@ def _resolve_openai_link(
                 "a byok override applies only to a 'byok' link in the chain",
                 status=422,
             )
+        if (ext is not None and ext.checkpoint_dir is not None) or hdrs.get(
+            "x-fx1-checkpoint-dir"
+        ) is not None:
+            # an ft: name resolves through the registry's own checkpoint —
+            # a checkpoint_dir override has no link to bind and would
+            # otherwise drop silently (a dropped override is a silently
+            # misrouted call, same class as the byok refusal above).
+            raise OpenAICompatError(
+                "an ft: model pins its registered checkpoint — checkpoint_dir cannot override it",
+                status=422,
+            )
         checkpoint = ft_resolver(model) if ft_resolver is not None else None
         if checkpoint is None:
             raise OpenAICompatError(
@@ -828,6 +839,12 @@ def _resolve_receipt_hashes(ext_hashes: list[str] | None, hdrs: dict[str, str]) 
     malformed digest is a fail-closed 400; resolvability stays with the
     mounted store's check downstream."""
     if ext_hashes:
+        if any(SHA256_HEX.fullmatch(h) is None for h in ext_hashes):
+            # the body channel enforces the same digest shape as the
+            # header — a garbage citation must never reach the Evidence
+            # footer unchallenged (it stays advisory only when it is a
+            # well-formed digest the store cannot resolve).
+            raise OpenAICompatError("fx1.receipt_hashes entries must be sha256 digests")
         return list(ext_hashes)
     raw = hdrs.get("x-fx1-receipt-hashes")
     if raw is None:
@@ -960,7 +977,7 @@ def openai_usage(usage: dict[str, int] | None) -> dict[str, int] | None:
     evidence field stays faithful."""
     if not isinstance(usage, dict):
         return None
-    return {k: v for k, v in usage.items() if isinstance(v, int)}
+    return {k: v for k, v in usage.items() if isinstance(v, int) and not isinstance(v, bool)}
 
 
 def openai_envelope(
@@ -1073,10 +1090,10 @@ def openai_completion_envelope(  # NOSONAR(S3776) — per-choice mapping is a fl
     usage_seen = False
     created = int(time.time())
     backends: dict[str, None] = {}
-    model = "fx1"
+    models: dict[str, None] = {}
     for env, prompt in zip(envs, prompts, strict=True):
         created = int(env["created"])
-        model = str(env["model"])
+        models[str(env["model"])] = None
         backends[str(env["system_fingerprint"])] = None
         for ch in env["choices"]:
             msg = ch["message"]
@@ -1093,13 +1110,13 @@ def openai_completion_envelope(  # NOSONAR(S3776) — per-choice mapping is a fl
         if isinstance(u, dict):
             usage_seen = True
             for k, v in u.items():
-                if isinstance(v, int):
+                if isinstance(v, int) and not isinstance(v, bool):
                     usage_sum[k] = usage_sum.get(k, 0) + v
     return {
         "id": f"cmpl-{cid}",
         "object": "text_completion",
         "created": created,
-        "model": model,
+        "model": "+".join(models) if models else "fx1",
         "system_fingerprint": "+".join(backends),
         "choices": choices,
         "usage": usage_sum if usage_seen else None,
@@ -1967,7 +1984,13 @@ def openai_response_call_items(
     the envelope and the stream frames carry identical item ids."""
     items: list[dict[str, Any]] = []
     for call in tool_calls:
-        fn = call.get("function") or {}
+        if not isinstance(call, dict):
+            # a provider-verbatim member that isn't an object can't shape
+            # a function_call item — sieve it like the usage claim's
+            # non-ints rather than crashing the envelope into a bare 500
+            continue
+        fn = call.get("function")
+        fn = fn if isinstance(fn, dict) else {}
         args = fn.get("arguments")
         items.append(
             {
@@ -2040,16 +2063,23 @@ def openai_response_object(
     reason, e.g. ``{'reason': 'max_tool_calls'}``)."""
     resp_usage: dict[str, int] | None = None
     if isinstance(usage, dict):
-        it = usage.get("prompt_tokens")
-        ot = usage.get("completion_tokens")
-        tt = usage.get("total_tokens")
-        if isinstance(it, int) or isinstance(ot, int) or isinstance(tt, int):
-            i_v = it if isinstance(it, int) else 0
-            o_v = ot if isinstance(ot, int) else 0
+        # a bool is not a token count — the wire claim gets the same
+        # sieve the billable ledger's usage claim does
+        it, ot, tt = (
+            v if isinstance(v, int) and not isinstance(v, bool) else None
+            for v in (
+                usage.get("prompt_tokens"),
+                usage.get("completion_tokens"),
+                usage.get("total_tokens"),
+            )
+        )
+        if it is not None or ot is not None or tt is not None:
+            i_v = it if it is not None else 0
+            o_v = ot if ot is not None else 0
             resp_usage = {
                 "input_tokens": i_v,
                 "output_tokens": o_v,
-                "total_tokens": tt if isinstance(tt, int) else i_v + o_v,
+                "total_tokens": tt if tt is not None else i_v + o_v,
             }
     output: list[dict[str, Any]] = []
     if status in ("completed", "incomplete"):
@@ -2270,8 +2300,13 @@ class OpenAIVectorStoreSearch(_Model):
         if ro.get("ranker", "auto") != "auto":
             raise ValueError("ranking_options.ranker accepts only 'auto'")
         st = ro.get("score_threshold")
-        if st is not None and not isinstance(st, (int, float)):
-            raise ValueError("ranking_options.score_threshold must be a number")
+        # the cosine floor gets the file_search tool's bound: a bool is
+        # not a threshold, and out-of-range refuses at validation — the
+        # same verdict the direct-search core applies at call time.
+        if st is not None and (
+            not isinstance(st, (int, float)) or isinstance(st, bool) or not 0.0 <= st <= 1.0
+        ):
+            raise ValueError("score_threshold must be a number in [0, 1]")
         return self
 
 
@@ -2798,8 +2833,15 @@ class OpenAIBatchRequest(_Model):
     @field_validator("metadata")
     @classmethod
     def _meta_bounds(cls, v: dict[str, str] | None) -> dict[str, str] | None:
-        if v is not None and len(v) > 16:
-            raise ValueError("metadata must have <= 16 keys")
+        if v is not None:
+            if len(v) > 16:
+                raise ValueError("metadata must have <= 16 keys")
+            # the values persist into the journaled batch record and every
+            # GET projection — apply the same ≤64/≤512 bounds every
+            # sibling metadata surface enforces.
+            for k, val in v.items():
+                if len(k) > 64 or len(val) > 512:
+                    raise ValueError("metadata keys are ≤64 chars, values ≤512")
         return v
 
     @field_validator("callback_url")

@@ -179,11 +179,11 @@ def bench_christensen_diebold_rudebusch(
     y_rmse = float(np.sqrt(np.mean((y_hat - y_adj) ** 2)))
     ok = corr > 0.85 and abs(lam_hat - lam_true) < 0.35 and rmse < 0.02
     return {
-        "factor_corr": corr,
-        "lam_hat": lam_hat,
-        "lam_true": lam_true,
-        "factor_rmse": rmse,
-        "yield_rmse": y_rmse,
-        "adj_mag": float(np.mean(np.abs(afns_adjustment(tau, 0.42, 0.02, 0.02, 0.02)))),
-        "score": float(ok),
+        "synthetic_factor_corr": corr,
+        "synthetic_lam_hat": lam_hat,
+        "synthetic_lam_true": lam_true,
+        "synthetic_factor_rmse": rmse,
+        "synthetic_yield_rmse": y_rmse,
+        "synthetic_adj_mag": float(np.mean(np.abs(afns_adjustment(tau, 0.42, 0.02, 0.02, 0.02)))),
+        "synthetic_score": float(ok),
     }

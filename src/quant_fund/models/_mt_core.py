@@ -1,4 +1,4 @@
-"""Shared two-task trainer for wave-178: shared-trunk MLP, per-task
+"""Shared two-task trainer for wave-178: shared-trunk MLP, per-task (SYNTHETIC)
 heads; gradient combiners differ per method.
 """
 

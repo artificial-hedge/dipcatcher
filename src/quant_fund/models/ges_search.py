@@ -1,4 +1,4 @@
-"""GES — greedy equivalence search (Chickering 2002, DAG-space variant):
+"""GES — greedy equivalence search (Chickering 2002, DAG-space variant): (SYNTHETIC)
 hill-climb edge insertions/deletions/reversals scoring linear-Gaussian
 BIC locally. SHD + skeleton F1 vs correlation baseline.
 """
@@ -88,5 +88,5 @@ def bench_ges_search(seed: int = 2819, trials: int = 4, d: int = 6) -> dict[str,
         "synthetic_ges_shd": float(np.mean(shds)),
         "synthetic_corr_shd": float(np.mean(shds_b)),
         "synthetic_ges_skel_f1": float(np.mean(f1s)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

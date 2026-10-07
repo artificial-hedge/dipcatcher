@@ -1,4 +1,4 @@
-"""Learn-Then-Test (Angelopoulos et al. 2021) — conformal risk control:
+"""Learn-Then-Test (Angelopoulos et al. 2021) — conformal risk control: (SYNTHETIC)
 choose lambda over a grid so the FWER/FDR-style bound on set-size risk
 holds; interval/set size vs naive fixed threshold.
 """
@@ -39,5 +39,5 @@ def bench_ltt_cp(seed: int = 1313, alpha: float = 0.1) -> dict[str, float]:
         "synthetic_ltt_naive_coverage": cov2,
         "synthetic_ltt_cov_gain": cov - cov2,
         "synthetic_ltt_radius": lam_star,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

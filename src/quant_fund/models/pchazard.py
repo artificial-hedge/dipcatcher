@@ -1,4 +1,4 @@
-"""PC-Hazard (Kvamme & Borgan 2021) — piecewise-constant hazard neural
+"""PC-Hazard (Kvamme & Borgan 2021) — piecewise-constant hazard neural (SYNTHETIC)
 net: hazard rate per time bin via softplus head; survival = product of
 exp(-hazard * bin-width). C-index vs Cox.
 """
@@ -52,5 +52,5 @@ def bench_pchazard(seed: int = 2133, iters: int = 500, K: int = 10) -> dict[str,
         "synthetic_pchazard_cindex": c_pc,
         "synthetic_cox_cindex": c_cox,
         "synthetic_pchazard_gain": c_pc - c_cox,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

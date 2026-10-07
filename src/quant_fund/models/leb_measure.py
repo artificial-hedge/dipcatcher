@@ -1,4 +1,4 @@
-"""Lebesgue outer measure via interval covers (wave 288).
+"""Lebesgue outer measure via interval covers (wave 288) (SYNTHETIC).
 
 Cantor-set outer measure -> 0 under the standard middle-third cover;
 union of intervals recovers the sum of lengths.

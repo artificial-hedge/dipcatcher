@@ -1,4 +1,4 @@
-"""Differentiable Neural Computer-lite (Graves et al. 2016).
+"""Differentiable Neural Computer-lite (Graves et al. 2016) (SYNTHETIC).
 
 Dynamic allocation + temporal link matrix on top of content addressing:
 the write head reuses freed memory (usage tracking) and can follow
@@ -98,5 +98,5 @@ def bench_dnc_memory(
         acc = (logits.argmax(-1) == torch.tensor(yte)).float().mean()
     return {
         "synthetic_dnc_copy_acc": float(acc),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Multi-task learning canon: shared-representation ridge — joint fit
+"""Multi-task learning canon: shared-representation ridge — joint fit (SYNTHETIC)
 W (d,T) minimizing ||X_t w_t - y_t||^2 + lam*||W||_F^2, plus the
 dirty/l1-shared variant by iteratively reweighted feature scaling that
 concentrates weight energy on shared coordinates.

@@ -130,5 +130,5 @@ def bench_informer_attn(seed: int = 97) -> dict[str, float]:
         "synthetic_informer_margin_vs_ar": mae_r - mae_ps,
         "synthetic_informer_query_share": float(u / win),
         "synthetic_informer_active_query_frac": budget,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

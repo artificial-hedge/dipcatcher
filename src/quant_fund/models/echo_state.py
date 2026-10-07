@@ -141,6 +141,6 @@ def bench_echo_state(seed: int = 20261231 + 337) -> dict[str, float]:
         "synthetic_esn_nmse_iid": r_iid["nmse"],
         "synthetic_esn_signal_gain": gain,
         "synthetic_esn_spectral_radius": r_sig["spectral_radius"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

@@ -1,4 +1,4 @@
-"""Neural Turing Machine-lite (Graves et al. 2014).
+"""Neural Turing Machine-lite (Graves et al. 2014) (SYNTHETIC).
 
 Content+location addressing over an external memory matrix: cosine
 content weights sharpened by γ, shifted by a convolution head, gated
@@ -137,5 +137,5 @@ def bench_ntm_memory(
         "synthetic_ntm_copy_acc": float(acc),
         "synthetic_ntm_flat_acc": float(acc_f),
         "synthetic_ntm_acc_gain": float(acc - acc_f),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -148,5 +148,5 @@ def bench_obizhaeva_wang(seed: int = 20261231 + 380) -> dict[str, float]:
         "synthetic_ow_twap_gain": float(improvement),
         "synthetic_ow_cost_ratio": float(c_fast / c_slow),
         "synthetic_ow_cost_opt": float(c_opt),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

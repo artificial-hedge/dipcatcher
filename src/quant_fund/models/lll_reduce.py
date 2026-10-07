@@ -1,4 +1,4 @@
-"""LLL lattice basis reduction over QQ (synthetic).
+"""LLL lattice basis reduction over QQ (synthetic) (SYNTHETIC).
 
 Classic LLL with exact Fraction Gram-Schmidt: size reduction and
 Lovász condition with delta = 3/4. Verified by (i) the Lovász

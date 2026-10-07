@@ -144,12 +144,12 @@ def bench_beveridge_nelson(seed: int = 20261231 + 304) -> dict[str, float]:
     # sign of serial correlation in recovered cycle should be +
     ok = perm_err / perm_scale < 0.5 and cyc_corr > 0.6
     return {
-        "perm_err": perm_err,
-        "perm_scale": perm_scale,
-        "rel_err": perm_err / perm_scale,
-        "cyc_corr": cyc_corr,
-        "mu_hat": float(r["mu"]),
-        "mu_true": float(d["mu"]),
-        "max_root": float(r["max_root"]),
-        "score": float(ok),
+        "synthetic_perm_err": perm_err,
+        "synthetic_perm_scale": perm_scale,
+        "synthetic_rel_err": perm_err / perm_scale,
+        "synthetic_cyc_corr": cyc_corr,
+        "synthetic_mu_hat": float(r["mu"]),
+        "synthetic_mu_true": float(d["mu"]),
+        "synthetic_max_root": float(r["max_root"]),
+        "synthetic_score": float(ok),
     }

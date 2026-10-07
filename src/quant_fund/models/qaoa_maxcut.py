@@ -1,4 +1,4 @@
-"""QAOA (Farhi 2014) p=1 MaxCut on a 4-qubit random graph — statevector
+"""QAOA (Farhi 2014) p=1 MaxCut on a 4-qubit random graph — statevector (SYNTHETIC)
 sim, expected cut vs optimal and vs random uniform sampling.
 """
 
@@ -50,5 +50,5 @@ def bench_qaoa_maxcut(seed: int = 3065) -> dict[str, float]:
         "synthetic_uniform_cut": uniform,
         "synthetic_qaoa_ratio": float(exp_cut / max(opt, 1e-9)),
         "synthetic_qaoa_gain": float(exp_cut - uniform),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

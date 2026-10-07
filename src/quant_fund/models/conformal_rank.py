@@ -1,4 +1,4 @@
-"""Conformal prediction sets for ranking / top-k. No Sharpe.
+"""Conformal prediction sets for ranking / top-k. No Sharpe (SYNTHETIC).
 
 Split conformalized selection (Jin & Candès 2023 cfBH; Bates et al. 2021
 conformal p-values) and split conformal on the k-th order-statistic threshold.
@@ -303,17 +303,17 @@ def bench_conformal_topk(
         cal_frac=float(cal_frac),
     )
     out: dict[str, float | str] = {
-        "set_size": result.set_size,
-        "fdr": result.fdr,
-        "coverage": result.coverage,
-        "n_dates": float(result.n_dates),
-        "alpha": float(alpha),
-        "k": float(k),
-        "qhat": result.qhat,
-        "guarantee": result.guarantee,
-        "dgp": dgp_label,
-        "claim": "research_metric_only",
+        "synthetic_set_size": result.set_size,
+        "synthetic_fdr": result.fdr,
+        "synthetic_coverage": result.coverage,
+        "synthetic_n_dates": float(result.n_dates),
+        "synthetic_alpha": float(alpha),
+        "synthetic_k": float(k),
+        "synthetic_qhat": result.qhat,
+        "synthetic_guarantee": result.guarantee,
+        "synthetic_dgp": dgp_label,
+        "synthetic_claim": "research_metric_only",
     }
     if dgp_label == "fixture":
-        out["seed"] = float(seed)
+        out["synthetic_seed"] = float(seed)
     return out

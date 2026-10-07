@@ -341,32 +341,32 @@ def test_rank_score_fail_closed() -> None:
 
 
 BENCH_KEYS = {
-    "dgp",
-    "claim",
-    "seed",
-    "alpha",
-    "n_cal",
-    "n_test",
-    "n_cloud",
-    "n_diag",
-    "n_draws",
-    "qhat_cusim",
-    "qhat_miscal",
-    "qhat_absresid",
-    "coverage_cusim",
-    "coverage_absresid",
-    "mean_total_length_cusim",
-    "mean_width_absresid",
-    "length_ratio",
-    "n_components_mean",
-    "coverage_spread_wellcal",
-    "coverage_spread_miscal",
-    "coverage_std_wellcal",
-    "coverage_std_miscal",
-    "ccad_wellcal",
-    "ccad_miscal",
-    "gap_bound_wellcal_mean",
-    "gap_bound_miscal_mean",
+    "synthetic_dgp",
+    "synthetic_claim",
+    "synthetic_seed",
+    "synthetic_alpha",
+    "synthetic_n_cal",
+    "synthetic_n_test",
+    "synthetic_n_cloud",
+    "synthetic_n_diag",
+    "synthetic_n_draws",
+    "synthetic_qhat_cusim",
+    "synthetic_qhat_miscal",
+    "synthetic_qhat_absresid",
+    "synthetic_coverage_cusim",
+    "synthetic_coverage_absresid",
+    "synthetic_mean_total_length_cusim",
+    "synthetic_mean_width_absresid",
+    "synthetic_length_ratio",
+    "synthetic_n_components_mean",
+    "synthetic_coverage_spread_wellcal",
+    "synthetic_coverage_spread_miscal",
+    "synthetic_coverage_std_wellcal",
+    "synthetic_coverage_std_miscal",
+    "synthetic_ccad_wellcal",
+    "synthetic_ccad_miscal",
+    "synthetic_gap_bound_wellcal_mean",
+    "synthetic_gap_bound_miscal_mean",
 }
 
 
@@ -379,27 +379,33 @@ def test_bench_bimodal_cusim_smaller_at_matched_coverage() -> None:
     """
     row = bench_cusim_bimodal()
     assert set(row) == BENCH_KEYS
-    assert row["claim"] == "research_metric_only"
-    assert row["dgp"] == "synthetic_bimodal_mixture"
-    nominal = 1.0 - float(row["alpha"])
+    assert row["synthetic_claim"] == "research_metric_only"
+    assert row["synthetic_dgp"] == "synthetic_bimodal_mixture"
+    nominal = 1.0 - float(row["synthetic_alpha"])
     for k, v in row.items():
-        if k not in ("dgp", "claim"):
+        if k not in ("synthetic_dgp", "synthetic_claim"):
             assert np.isfinite(float(v)), k
     # matched marginal coverage: both methods valid within tolerance
-    assert float(row["coverage_cusim"]) >= nominal - 0.03
-    assert float(row["coverage_absresid"]) >= nominal - 0.03
+    assert float(row["synthetic_coverage_cusim"]) >= nominal - 0.03
+    assert float(row["synthetic_coverage_absresid"]) >= nominal - 0.03
     # C-USIM region strictly smaller; baseline interval covers the mode gap
-    assert float(row["mean_total_length_cusim"]) < float(row["mean_width_absresid"])
-    assert float(row["length_ratio"]) < 0.75
-    assert float(row["mean_width_absresid"]) > 6.0  # mode separation spanned
-    assert float(row["qhat_absresid"]) > 3.0  # half-width > mode offset
+    assert float(row["synthetic_mean_total_length_cusim"]) < float(
+        row["synthetic_mean_width_absresid"]
+    )
+    assert float(row["synthetic_length_ratio"]) < 0.75
+    assert float(row["synthetic_mean_width_absresid"]) > 6.0  # mode separation spanned
+    assert float(row["synthetic_qhat_absresid"]) > 3.0  # half-width > mode offset
     # region is genuinely disconnected around the two modes
-    assert float(row["n_components_mean"]) > 1.5
+    assert float(row["synthetic_n_components_mean"]) > 1.5
     # rank-score diagnostic detects the miscalibrated predictor's heterogeneity
-    assert float(row["coverage_spread_miscal"]) > 1.5 * float(row["coverage_spread_wellcal"])
-    assert float(row["ccad_miscal"]) > float(row["ccad_wellcal"])
+    assert float(row["synthetic_coverage_spread_miscal"]) > 1.5 * float(
+        row["synthetic_coverage_spread_wellcal"]
+    )
+    assert float(row["synthetic_ccad_miscal"]) > float(row["synthetic_ccad_wellcal"])
     # Thm. 1 bound: estimation error dominates for the miscalibrated predictor
-    assert float(row["gap_bound_miscal_mean"]) > float(row["gap_bound_wellcal_mean"])
+    assert float(row["synthetic_gap_bound_miscal_mean"]) > float(
+        row["synthetic_gap_bound_wellcal_mean"]
+    )
 
 
 def test_bench_deterministic() -> None:

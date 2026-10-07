@@ -1,4 +1,4 @@
-"""Adversarial EBM / cooperative nets (Xie et al. 2016) — generator
+"""Adversarial EBM / cooperative nets (Xie et al. 2016) — generator (SYNTHETIC)
 proposal + energy critic trained adversarially (the energy net scores
 real-vs-generated like a WGAN critic); MMD vs Gaussian baseline.
 """
@@ -46,5 +46,5 @@ def bench_adversarial_ebm(seed: int = 2453, iters: int = 500) -> dict[str, float
         "synthetic_aebm_mmd": m,
         "synthetic_gauss_mmd": mb,
         "synthetic_aebm_gain": mb - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

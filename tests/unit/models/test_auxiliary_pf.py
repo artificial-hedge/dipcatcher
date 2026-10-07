@@ -64,4 +64,4 @@ def test_fail_closed_short():
 
 def test_bench():
     out = bench_auxiliary_pf()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

@@ -610,3 +610,300 @@ def test_sdk_webhooks(tmp_path: Path, hook_server: str):
     _wait_hits(2)
     assert batch["status"] == "completed"
     assert batch["callback_status"] == "delivered" and batch["callback_attempts"] == 1
+
+
+# --- the real in-repo trainer (fx1.train.tiny_lm behind the wire) -----------
+
+_ROOT = Path(__file__).resolve().parents[3]
+_BASE_CKPT = _ROOT / "artifacts" / "fx1_tiny_lm"
+
+# A corpus that survives the real quality gate: distinct, substantive rows —
+# near-duplicates are honestly deduped below the frozen-split floor.
+_REAL_CORPUS = b"".join(
+    json.dumps(
+        {
+            "messages": [
+                {"role": "user", "content": q},
+                {"role": "assistant", "content": a},
+            ]
+        }
+    ).encode()
+    + b"\n"
+    for q, a in [
+        (
+            "How does the checkpoint journal recover a job killed mid-train?",
+            "On restart the journal replays every record; a non-terminal status is a "
+            "run that never finished, so it is recovered as failed — an honest "
+            "terminal state rather than a fabricated resume.",
+        ),
+        (
+            "What does the weights manifest pin?",
+            "The manifest records the sha256 of weights.safetensors plus architecture "
+            "and training provenance; the engine refuses to load bytes that do not "
+            "match the pin.",
+        ),
+        (
+            "Why does the quality gate drop near-duplicate corpus rows?",
+            "A corpus padded with paraphrases of one example inflates eval pass rates "
+            "without evidence; dedup keeps only genuinely distinct supervision.",
+        ),
+        (
+            "What certifies a frozen split?",
+            "The split manifest pins train and val file digests with the seed that "
+            "produced them, so a later run cannot quietly re-split onto different data.",
+        ),
+        (
+            "How is a fine-tuned model name minted?",
+            "The route composes ft: from the base model name, the caller suffix, and "
+            "the job id prefix, then registers the minted name against the produced "
+            "checkpoint dir.",
+        ),
+        (
+            "What does ship_eligible mean on a model card?",
+            "The card may only be served when its eval delta records a passing honesty "
+            "gate and a strict domain improvement over the measured base.",
+        ),
+    ]
+)
+
+
+def _real_client(tmp_path: Path, state_dir: Path | None = None) -> TestClient:
+    """A TestClient over the DEFAULT runner — the real tiny-LM trainer."""
+    return TestClient(
+        create_app(
+            backend_resolver=lambda *a, **k: _B(),
+            ft_dir=None if state_dir is not None else tmp_path / "ft",
+            state_dir=state_dir,
+        ),
+        raise_server_exceptions=False,
+    )
+
+
+def _needs_nn() -> None:
+    pytest.importorskip("torch", reason="nn extra not installed")
+    pytest.importorskip("safetensors.numpy", reason="nn extra not installed")
+
+
+def test_real_trainer_end_to_end(tmp_path: Path):
+    _needs_nn()
+    c = _real_client(tmp_path)
+    fid = _upload(c, _REAL_CORPUS)
+    job = c.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": fid, "suffix": "rt"},
+    ).json()
+    fin = _wait_terminal(c, job["id"])
+    assert fin["status"] == "succeeded", fin.get("error")
+    assert fin["fine_tuned_model"].startswith("ft:fx1:rt:")
+    assert isinstance(fin["trained_tokens"], int) and fin["trained_tokens"] > 0
+    # real pipeline + checkpoint artifacts registered as downloadable files
+    fid_by_name = {
+        c.get(f"/v1/files/{fid2}").json()["filename"]: fid2 for fid2 in fin["result_files"]
+    }
+    names = set(fid_by_name)
+    assert any(n.endswith("weights.manifest.json") for n in names)
+    assert any(n.endswith("modelcard.json") for n in names)
+    assert any(n.endswith("training_receipt.json") for n in names)
+    receipt_fids = [v for k, v in fid_by_name.items() if k.endswith("eval_receipt.json")]
+    assert receipt_fids, names
+    ckpts = c.get(f"/v1/fine_tuning/jobs/{job['id']}/checkpoints").json()
+    assert any(d["id"].startswith("ftckpt-") for d in ckpts["data"])
+
+    # the produced card carries the MEASURED eval_delta — real pass rates
+    # from the eval pair. The discriminator between 'measured' and
+    # 'pending' is provenance, not the values: an honest 0/28 measurement
+    # lands on the same zeros as the sentinel, so the card must carry the
+    # 'eval_delta measured' line and no placeholder/pending provenance.
+    ck_dir = tmp_path / "ft" / job["id"] / "checkpoint"
+    card = json.loads((ck_dir / "modelcard.json").read_text())
+    delta = card["eval_delta"]
+    # the fixture placeholder is structurally unreachable: the general
+    # bank has 6 tasks, so a real measured general pass rate is a k/6
+    # fraction — 0.9 can never be produced by the eval pair
+    assert delta != {
+        "domain_pass_rate_base": 0.5,
+        "domain_pass_rate_candidate": 0.51,
+        "general_pass_rate_base": 0.9,
+        "general_pass_rate_candidate": 0.9,
+        "honesty_gate_candidate": True,
+    }
+    limits = card["known_limits"]
+    assert any(lim.startswith("eval_delta measured") for lim in limits)
+    assert not any(lim.startswith("eval_delta pending") for lim in limits)
+    assert not any("synthetic ship-gate placeholders" in lim for lim in limits)
+    for key in (
+        "domain_pass_rate_base",
+        "domain_pass_rate_candidate",
+        "general_pass_rate_base",
+        "general_pass_rate_candidate",
+    ):
+        assert 0.0 <= delta[key] <= 1.0
+    ship_eligible = (
+        delta["honesty_gate_candidate"]
+        and delta["domain_pass_rate_candidate"] > delta["domain_pass_rate_base"]
+        and delta["general_pass_rate_candidate"] >= delta["general_pass_rate_base"]
+    )
+
+    # the eval receipt downloaded from result_files seal-verifies, and
+    # its measured numbers are exactly the card's stamped values
+    from quant_fund.research.receipt_v2 import verify_receipt_bytes
+
+    body = c.get(f"/v1/files/{receipt_fids[0]}/content").content
+    assert verify_receipt_bytes(body)["valid"] is True
+    receipt = json.loads(body)
+    assert receipt["schema"] == "fx1_ft_eval.v1"
+    assert receipt["eval"]["suite"] == "fx1.eval.suite.run_suite"
+    assert receipt["eval"]["bank"] == "DEFAULT_BANK"
+    assert receipt["eval"]["n_tasks"] > 0
+    assert receipt["measured"]["ship_eligible"] == ship_eligible
+    assert receipt["measured"]["domain_pass_rate_candidate"] == delta["domain_pass_rate_candidate"]
+    assert receipt["measured"]["honesty_gate_candidate"] == delta["honesty_gate_candidate"]
+
+    manifest = json.loads((ck_dir / "weights.manifest.json").read_text())
+    assert manifest["training"]["trained_tokens"] == fin["trained_tokens"]
+    assert manifest["training"]["fine_tuned_model"] == fin["fine_tuned_model"]
+
+    # the ship gate consumes the measured card at every serve-path
+    # construction: a fixture-scale candidate honestly scores ~0 on the
+    # bank → honesty gate fails → ship_eligible False → both engine and
+    # backend refuse. (This app's backend_resolver is stubbed by design,
+    # so the wire verdict itself is asserted in the restart test; the
+    # ft: name resolving through the registry is covered by /v1/models.)
+    from fx1.serve.local_engine import LocalWeightsEngine
+
+    assert c.get(f"/v1/models/{fin['fine_tuned_model']}").status_code == 200
+    if ship_eligible:
+        eng = LocalWeightsEngine(ck_dir)
+        assert eng.complete_messages([{"role": "user", "content": "hi"}], max_tokens=8).text
+    else:
+        assert delta["honesty_gate_candidate"] is False
+        with pytest.raises(RuntimeError, match="ship gate"):
+            LocalWeightsEngine(ck_dir)
+        from fx1.serve.backends import LocalFx1Backend
+
+        with pytest.raises(RuntimeError, match="ship gate"):
+            LocalFx1Backend(ck_dir)
+
+
+def test_real_trainer_malformed_and_tiny_corpus(tmp_path: Path):
+    _needs_nn()
+    c = _real_client(tmp_path)
+    bad_id = _upload(c, b"not json\n")
+    r = c.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": bad_id})
+    assert r.status_code == 400
+    # valid chat JSONL but too thin to train/split — honest terminal failed
+    tiny_id = _upload(c, _CORPUS)
+    job = c.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": tiny_id}).json()
+    fin = _wait_terminal(c, job["id"])
+    assert fin["status"] == "failed"
+    assert fin["error"]["code"] == "job_failed"
+
+
+def test_real_trainer_completed_survives_restart(tmp_path: Path):
+    """A completed job's ft: model + checkpoint resolve after a same-state-dir
+    restart — the registry is durable, the weights are on disk, and the
+    measured card's ship-gate verdict survives the replay."""
+    _needs_nn()
+    state = tmp_path / "state"
+    c = _real_client(tmp_path, state_dir=state)
+    fid = _upload(c, _REAL_CORPUS)
+    job = c.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": fid, "suffix": "durable"},
+    ).json()
+    fin = _wait_terminal(c, job["id"])
+    assert fin["status"] == "succeeded", fin.get("error")
+    ft_name = fin["fine_tuned_model"]
+    ck_dir = state / "ft" / job["id"] / "checkpoint"
+    assert (ck_dir / "weights.safetensors").is_file()
+    card = json.loads((ck_dir / "modelcard.json").read_text())
+    delta = card["eval_delta"]
+    ship_eligible = (
+        delta["honesty_gate_candidate"]
+        and delta["domain_pass_rate_candidate"] > delta["domain_pass_rate_base"]
+        and delta["general_pass_rate_candidate"] >= delta["general_pass_rate_base"]
+    )
+
+    # a fresh app over the same --state-dir: journal + checkpoint dirs
+    # replay. This one runs the REAL backend resolver (no stub), so the
+    # ft: completion exercises the measured card's ship gate on the wire.
+    c2 = TestClient(
+        create_app(backend_resolver=None, state_dir=state),
+        raise_server_exceptions=False,
+    )
+    got = c2.get(f"/v1/fine_tuning/jobs/{job['id']}").json()
+    assert got["status"] == "succeeded"
+    assert got["fine_tuned_model"] == ft_name
+    assert c2.get(f"/v1/models/{ft_name}").status_code == 200
+    ckpts = c2.get(f"/v1/fine_tuning/jobs/{job['id']}/checkpoints").json()
+    assert any(d["id"].startswith("ftckpt-") for d in ckpts["data"])
+    # the wire honors the measured card's verdict across the restart — a
+    # gate-failing card is honestly refused (503 naming the gate); a
+    # passing card would serve real trained weights
+    resp = c2.post(
+        "/v1/chat/completions",
+        json={"model": ft_name, "messages": [{"role": "user", "content": "hi"}]},
+    )
+    if ship_eligible:
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["choices"][0]["message"]["content"]
+    else:
+        assert resp.status_code == 503, resp.text
+        assert "ship gate" in resp.text
+
+
+def test_real_trainer_nonterminal_journal_recovers_failed(tmp_path: Path):
+    """A SIGKILL mid-train leaves a non-terminal journal record; the next
+    boot replays it as honest failed — never a fabricated success."""
+    from fx1.serve.journal import JobJournal
+
+    journal = JobJournal(tmp_path / "ft_jobs.jsonl")
+    store = FTJobStore(64, journal=journal)
+    from fx1.serve.finetune import FTJob
+
+    job = FTJob(
+        id="ftjob-deadbeefdeadbeefdeadbeefdeadbeef",
+        model="fx1",
+        created_at=int(time.time()),
+        status="running",
+        training_file="file-x",
+    )
+    entry = store.put(job, None, "fp")
+    store.mark(entry)
+    # the runner dies here (SIGKILL); a new store on the same journal replays
+    store2 = FTJobStore(64, journal=JobJournal(tmp_path / "ft_jobs.jsonl"))
+    rec = store2.get(job.id)
+    assert rec is not None and rec.job.status == "failed"
+
+
+def test_local_fx1_attach_refuses_foreign_weights(tmp_path: Path):
+    """An engine advertising weights whose sha differs from the backend's
+    manifest pin is refused — attaching would silently serve the wrong model."""
+    _needs_nn()
+    import shutil
+
+    from fx1.serve.backends import LocalFx1Backend
+    from fx1.serve.local_engine import LocalWeightsEngine, _EngineHTTPServer, _Handler
+
+    engine = LocalWeightsEngine(_BASE_CKPT)
+    srv: ThreadingHTTPServer = _EngineHTTPServer(("127.0.0.1", 0), _Handler)
+    srv.engine = engine
+    port = int(srv.server_address[1])
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{port}/v1"
+        # the matching checkpoint attaches and completes for real
+        good = LocalFx1Backend(_BASE_CKPT, serve_url=url)
+        assert good.complete([{"role": "user", "content": "hi"}])
+        # a checkpoint dir whose manifest pins a different sha is refused
+        other = tmp_path / "other"
+        shutil.copytree(_BASE_CKPT, other)
+        manifest = json.loads((other / "weights.manifest.json").read_text())
+        manifest["weights_sha256"] = "0" * 64
+        (other / "weights.manifest.json").write_text(json.dumps(manifest))
+        bad = LocalFx1Backend(other, serve_url=url)
+        with pytest.raises(RuntimeError, match="did not verify"):
+            bad.complete([{"role": "user", "content": "hi"}])
+    finally:
+        srv.shutdown()
+        srv.server_close()

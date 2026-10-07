@@ -1,4 +1,4 @@
-"""Energy-based changepoint detection (E-divisive, Matteson &
+"""Energy-based changepoint detection (E-divisive, Matteson & (SYNTHETIC)
 James 2014).
 
 Between two candidate segments X, Y the energy divergence is
@@ -141,5 +141,5 @@ def bench_e_divisive(seed: int = 20261231 + 461) -> dict[str, float]:
     return {
         "synthetic_cps": float(cps.size),
         "synthetic_first_cp": float(cps[0]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

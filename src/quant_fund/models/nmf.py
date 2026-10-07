@@ -181,5 +181,5 @@ def bench_nmf(seed: int = 20261231 + 466) -> dict[str, float]:
     return {
         "synthetic_recon_r2": r2,
         "synthetic_sparseness": sp,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

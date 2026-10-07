@@ -1,4 +1,4 @@
-"""Online gradient descent regret (Zinkevich O(sqrt(T))).
+"""Online gradient descent regret (Zinkevich O(sqrt(T))) (SYNTHETIC).
 
 Adversarial convex losses l_t(x) = (x - a_t)^2 with drifting a_t on a
 bounded interval; OGD with eta_t = D/(G sqrt(t)). Bench reports the

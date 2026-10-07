@@ -1,4 +1,4 @@
-"""Weighted split CQR under covariate shift (Tibshirani et al. 2019).
+"""Weighted split CQR under covariate shift (Tibshirani et al. 2019) (SYNTHETIC).
 
 Likelihood-ratio weights w(x) = dP_test / dP_cal on a PIT-safe 1-d
 covariate (vol). Lab scores are coverage and width. No Sharpe.
@@ -200,15 +200,15 @@ def bench_weighted_cqr(
     weighted = set_metrics(y_te, wlo, whi)
     plain = set_metrics(y_te, ulo, uhi)
     return {
-        "coverage": weighted.coverage,
-        "mean_width": weighted.mean_width,
-        "median_width": weighted.median_width,
-        "unweighted_coverage": plain.coverage,
-        "unweighted_mean_width": plain.mean_width,
-        "unweighted_median_width": plain.median_width,
-        "n": float(weighted.n),
-        "alpha": float(alpha),
-        "dgp": "fixture",
-        "claim": "research_metric_only",
-        "seed": float(seed),
+        "synthetic_coverage": weighted.coverage,
+        "synthetic_mean_width": weighted.mean_width,
+        "synthetic_median_width": weighted.median_width,
+        "synthetic_unweighted_coverage": plain.coverage,
+        "synthetic_unweighted_mean_width": plain.mean_width,
+        "synthetic_unweighted_median_width": plain.median_width,
+        "synthetic_n": float(weighted.n),
+        "synthetic_alpha": float(alpha),
+        "synthetic_dgp": "fixture",
+        "synthetic_claim": "research_metric_only",
+        "synthetic_seed": float(seed),
     }

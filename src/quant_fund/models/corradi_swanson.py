@@ -158,9 +158,9 @@ def bench_corradi_swanson(seed: int = 20261231 + 305) -> dict[str, float]:
     r_null = cs_test(y_null, lags_small=0, lags_big=2, n_boot=300, seed=seed)
     ok = r_alt["mspe_diff"] > 0.0 and r_alt["p_boot"] < 0.1 and r_null["p_boot"] > 0.1
     return {
-        "mspe_diff_alt": r_alt["mspe_diff"],
-        "p_alt": r_alt["p_boot"],
-        "p_null": r_null["p_boot"],
-        "enc_new_alt": r_alt["enc_new"],
-        "score": float(ok),
+        "synthetic_mspe_diff_alt": r_alt["mspe_diff"],
+        "synthetic_p_alt": r_alt["p_boot"],
+        "synthetic_p_null": r_null["p_boot"],
+        "synthetic_enc_new_alt": r_alt["enc_new"],
+        "synthetic_score": float(ok),
     }

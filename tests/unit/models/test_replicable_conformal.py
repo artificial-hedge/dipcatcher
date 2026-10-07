@@ -599,11 +599,11 @@ def test_seedless_requirement_has_no_rho_factor() -> None:
 def test_bench_keys_values_and_honesty_stamps() -> None:
     row = bench_replicable_conformal(n=8_000, seed=23638)
     suggested = (
-        "repcon_agreement_rate",
-        "repcon_coverage",
-        "repcon_size_cost_ratio",
-        "repcon_gaming_undercover_standard",
-        "repcon_gaming_stability",
+        "synthetic_repcon_agreement_rate",
+        "synthetic_repcon_coverage",
+        "synthetic_repcon_size_cost_ratio",
+        "synthetic_repcon_gaming_undercover_standard",
+        "synthetic_repcon_gaming_stability",
     )
     for key in suggested:
         assert key in row
@@ -611,13 +611,13 @@ def test_bench_keys_values_and_honesty_stamps() -> None:
     for key in row:
         low = key.lower()
         assert all(tok not in low for tok in forbidden), key
-    assert row["dgp"] == "fixture"
-    assert row["claim"] == "research_metric_only"
-    assert float(row["repcon_agreement_rate"]) >= 0.9
-    assert float(row["repcon_coverage"]) >= 0.9
-    assert float(row["repcon_size_cost_ratio"]) > 1.0
-    assert float(row["repcon_gaming_undercover_standard"]) > 0.0
-    assert float(row["repcon_seedless_adjacency_rate"]) == 1.0
+    assert row["synthetic_dgp"] == "fixture"
+    assert row["synthetic_claim"] == "research_metric_only"
+    assert float(row["synthetic_repcon_agreement_rate"]) >= 0.9
+    assert float(row["synthetic_repcon_coverage"]) >= 0.9
+    assert float(row["synthetic_repcon_size_cost_ratio"]) > 1.0
+    assert float(row["synthetic_repcon_gaming_undercover_standard"]) > 0.0
+    assert float(row["synthetic_repcon_seedless_adjacency_rate"]) == 1.0
 
 
 def test_bench_is_deterministic() -> None:

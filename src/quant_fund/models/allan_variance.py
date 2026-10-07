@@ -1,4 +1,4 @@
-"""Overlapping Allan variance / deviation — IMU & clock noise
+"""Overlapping Allan variance / deviation — IMU & clock noise (SYNTHETIC)
 characterization. Log–log slopes identify white noise (−1/2), flicker
 (0), and random walk (+1/2).
 """

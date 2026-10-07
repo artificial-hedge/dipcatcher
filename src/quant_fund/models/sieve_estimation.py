@@ -1,4 +1,4 @@
-"""Sieve estimation — semiparametric partial-linear regression.
+"""Sieve estimation — semiparametric partial-linear regression (SYNTHETIC).
 
 y = xβ + g(z) + ε where g is an unknown smooth function. Chen's
 sieve approach approximates g by a finite basis expansion

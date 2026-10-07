@@ -1,4 +1,4 @@
-"""Finite-horizon LQR (Riccati recursion) on the double-integrator —
+"""Finite-horizon LQR (Riccati recursion) on the double-integrator — (SYNTHETIC)
 exact optimal controller; cost vs PD baseline.
 """
 
@@ -41,5 +41,5 @@ def bench_lqr_control(seed: int = 2909) -> dict[str, float]:
         "synthetic_lqr_cost": float(tot),
         "synthetic_pd_cost": float(cost_b),
         "synthetic_lqr_gain": float(cost_b - tot),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

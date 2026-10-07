@@ -389,3 +389,260 @@ def test_gp_regression_penalty_falls_back_to_defaults(monkeypatch):
     fit = mod.fit_gp_regression(x, y)
     # fallback to the median-length heuristic, not the penalized point
     assert fit["length"] == pytest.approx(mod._median_length(x))
+
+
+# --- models-core audit probes -------------------------------------------------
+# Adversarial/seeded probes for the second wave of audited modules
+# (delayed_aci, extra_tilt_conformal, favar, graded_irt, neural_tpp,
+# odd_residual_flows, pair_vine_copula, path_signatures, regime_conformal_var,
+# rrc_filter, svi_surface, tda_persistence, viterbi_decode, rolling_conformal,
+# rbergomi, fbm, deep_regime_mixture, ivs_diffusion).
+
+
+def test_viterbi_rejects_nonbinary_encoder_and_degenerate_streams():
+    from quant_fund.models.viterbi_decode import conv_encode, viterbi_hard, viterbi_soft
+
+    rng = np.random.default_rng(0)
+    bits = rng.integers(0, 2, 40).astype(float)
+    # clean encode/decode still works (control)
+    np.testing.assert_array_equal(viterbi_hard(conv_encode(bits)), bits)
+    # encoder silently truncated 0.7 -> 0 before the fix
+    with pytest.raises(ValueError, match="0/1"):
+        conv_encode(np.array([0.0, 0.7, 1.0]))
+    with pytest.raises(ValueError, match="0/1"):
+        conv_encode(np.array([0.0, np.nan, 1.0]))
+    # decoders: odd-length streams were silently truncated, non-finite
+    # symbols fabricated output bits through a garbage traceback
+    enc = conv_encode(bits)
+    with pytest.raises(ValueError, match="even"):
+        viterbi_hard(enc[:-1])
+    with pytest.raises(ValueError, match="0/1"):
+        viterbi_hard(np.array([0.0, 0.4, 1.0, 1.0]))
+    with pytest.raises(ValueError, match="even"):
+        viterbi_soft(enc[:-1])
+    bad = enc.copy()
+    bad[3] = np.nan
+    with pytest.raises(ValueError, match="non-finite"):
+        viterbi_soft(bad)
+
+
+def test_graded_irt_rejects_fractional_category_codes():
+    from quant_fund.models.graded_irt import grm_jml
+
+    rng = np.random.default_rng(1)
+    resp = rng.integers(0, 3, size=(8, 4)).astype(float)
+    resp[2, 1] = 0.7  # int64 cast used to silently truncate to 0
+    with pytest.raises(ValueError, match="integer-valued"):
+        grm_jml(resp, n_iter=2)
+    resp[4, 0] = np.nan
+    with pytest.raises(ValueError, match="integer-valued"):
+        grm_jml(resp, n_iter=2)
+
+
+def test_neural_tpp_rejects_fractional_marks_and_penalty(monkeypatch):
+    import quant_fund.models.neural_tpp as mod
+
+    t = np.array([0.1, 0.4, 0.9, 1.5, 2.0])
+    marks = np.array([0.0, 0.6, 0.0, 1.0, 1.0])  # 0.6 truncated to 0 pre-fix
+    with pytest.raises(ValueError, match="integer-valued"):
+        mod.hawkes_intensity_path(t, marks, 0, mu=0.2, alpha=0.5, beta=1.5)
+
+    monkeypatch.setattr(
+        mod, "minimize", lambda *a, **k: _PenaltyResult(np.log(np.array([0.2, 0.4, 1.0])))
+    )
+    with pytest.raises(ValueError, match="hawkes MLE"):
+        mod.hawkes_mle_univariate(np.cumsum(np.random.default_rng(0).uniform(size=20)))
+
+
+def test_tda_vr_pairs_cap_fires_before_materializing(monkeypatch):
+    # n=30 dense complex has ~4.5k triangles vs cap 100; the old code built
+    # the whole C(n,3) list before checking. A tight cap must raise fast.
+    import quant_fund.models.tda_persistence as mod
+
+    monkeypatch.setattr(mod, "_MAX_SIMPLICES", 100)
+    rng = np.random.default_rng(0)
+    pts = rng.normal(size=(30, 2))
+    with pytest.raises(ValueError, match="simplices"):
+        mod.h1_persistence(pts)
+    # filtered complex that fits under the cap still reduces normally
+    dgm = mod.h1_persistence(pts, r_max=0.5)
+    assert dgm.shape[1] == 2
+
+
+def test_tda_max_matching_iterative_deep_path():
+    # a 1D chain where every augmenting path is ~2n hops: the recursive
+    # augment() hit RecursionError on large matchings instead of answering.
+    import quant_fund.models.tda_persistence as mod
+
+    n = 400
+    adj = [[i] + ([i - 1] if i > 0 else []) for i in range(n)]
+    match = mod._max_matching(adj, n)
+    # perfect matching exists: each right vertex lands some left vertex
+    assert sorted(match) == list(range(n))
+
+
+def test_deep_regime_torch_nlpd_matches_numpy_quadrature():
+    # torch GH quadrature used sqrt(2)*x nodes inside delta = m + sqrt(2v)*x,
+    # i.e. trained on delta ~ N(m, 2 v) while numpy scoring used N(m, v).
+    # After the fix both marginalise the same N(m, v) posterior.
+    torch = pytest.importorskip("torch")
+    import quant_fund.models.deep_regime_mixture as drm
+
+    rng = np.random.default_rng(0)
+    n, h, r = 40, 2, 3
+    out = {
+        "delta_mean": torch.as_tensor(0.1 * rng.normal(size=(n, h)), dtype=torch.float32),
+        "delta_var": torch.as_tensor(
+            np.exp(-0.5 + 0.2 * rng.normal(size=(n, h))), dtype=torch.float32
+        ),
+        "mu": torch.as_tensor(rng.normal(size=(n, h)), dtype=torch.float32),
+        "gate_logits": torch.as_tensor(rng.normal(size=(n, h, r)), dtype=torch.float32),
+        "vres": torch.as_tensor(np.exp(-2.0 + 0.1 * rng.normal(size=(n, h))), dtype=torch.float32),
+    }
+    tau_val = np.exp(-1.0 + 0.1 * rng.normal(size=r)).astype(np.float32)
+
+    class _NetStub:
+        gate = "softmax"
+        family = "gaussian"
+
+        def tau(self):
+            return torch.as_tensor(tau_val, dtype=torch.float32)
+
+    y_std = torch.as_tensor(rng.normal(size=(n, h)), dtype=torch.float32)
+    nodes_np, w_np = drm._gh_nodes(12)
+    nodes_t = torch.as_tensor(nodes_np, dtype=torch.float32).view(1, 1, -1)
+    logw_t = torch.as_tensor(np.log(w_np), dtype=torch.float32).view(1, 1, -1)
+    floor = 0.05
+    nlpd_t = float(
+        drm._torch_nlpd(
+            torch,
+            _NetStub(),
+            out,
+            y_std,
+            nodes_t=nodes_t,
+            logw_t=logw_t,
+            sigma_floor=floor,
+        ).detach()
+    )
+    # numpy mirror on the same parameters (same standardised space)
+    sigma2 = (
+        tau_val.astype(float) ** 2
+        + floor**2
+        + np.asarray(out["vres"].numpy(), dtype=float)[:, :, None]
+    )
+    scales = np.broadcast_to(np.sqrt(sigma2), (n, h, r))
+    logits = np.asarray(out["gate_logits"].numpy(), dtype=float)
+    gates = np.exp(logits - np.max(logits, axis=-1, keepdims=True))
+    gates = gates / gates.sum(axis=-1, keepdims=True)
+    lp = drm.mixture_log_density(
+        np.asarray(y_std.numpy(), dtype=float),
+        np.asarray(out["mu"].numpy(), dtype=float),
+        delta_mean=np.asarray(out["delta_mean"].numpy(), dtype=float),
+        delta_var=np.asarray(out["delta_var"].numpy(), dtype=float),
+        scales=scales,
+        tails=np.full(r, 8.0),
+        gates=gates,
+        family="gaussian",
+    )
+    assert nlpd_t == pytest.approx(float(-np.mean(lp)), abs=2e-3)
+    # and the buggy sqrt(2)*x convention is detectably different
+    nodes_bad = torch.as_tensor(np.sqrt(2.0) * nodes_np, dtype=torch.float32).view(1, 1, -1)
+    nlpd_bad = float(
+        drm._torch_nlpd(
+            torch,
+            _NetStub(),
+            out,
+            y_std,
+            nodes_t=nodes_bad,
+            logw_t=logw_t,
+            sigma_floor=floor,
+        ).detach()
+    )
+    assert abs(nlpd_bad - nlpd_t) > 1e-3
+
+
+def test_extra_tilt_source_density_integrates_to_mode_prob():
+    # log_density used + log_ndtr (adding the truncation normalizer instead
+    # of subtracting): the density then integrated to pi_z * ndtr(t)^2, not
+    # pi_z, and score S_0 was not a proper negative log density.
+    from quant_fund.models.extra_tilt_conformal import SourceConditional
+
+    src = SourceConditional(
+        gate=np.array([0.35, -0.2, 0.1]),
+        mu_coef=np.array([[0.4, 0.3, -0.1], [-0.6, -0.2, 0.05]]),
+        log_sigma_coef=np.array([-0.15, 0.2]),
+    )
+    rng = np.random.default_rng(2)
+    x = rng.normal(size=(64, 2))
+    pi_pos = src.mode_prob(x)
+    eps = 1e-6
+    grid_pos = np.linspace(eps, 8.0, 60_001)
+    grid_neg = np.linspace(-8.0, -eps, 60_001)
+    mass_pos = np.empty(x.shape[0])
+    mass_neg = np.empty(x.shape[0])
+    for i in range(x.shape[0]):
+        xi = x[i : i + 1]
+        xp = np.repeat(xi, grid_pos.size, axis=0)
+        mass_pos[i] = np.trapezoid(np.exp(src.log_density(xp, grid_pos)), grid_pos)
+        mass_neg[i] = np.trapezoid(np.exp(src.log_density(xp, grid_neg)), grid_neg)
+    np.testing.assert_allclose(mass_pos, pi_pos, atol=2e-3)
+    np.testing.assert_allclose(mass_neg, 1.0 - pi_pos, atol=2e-3)
+
+
+def test_extra_tilt_source_mle_rejects_penalty(monkeypatch):
+    import quant_fund.models.extra_tilt_conformal as mod
+
+    monkeypatch.setattr(mod, "minimize", lambda *a, **k: _PenaltyResult(np.zeros(8)))
+    rng = np.random.default_rng(3)
+    x = rng.normal(size=(80, 2))
+    y = np.sign(rng.normal(size=80)) * np.exp(rng.normal(scale=0.5, size=80))
+    with pytest.raises(ValueError, match="truncated-normal MLE"):
+        mod.fit_source_model(x, y)
+
+
+def test_gas_copula_fit_rejects_penalty(monkeypatch):
+    import quant_fund.models.pair_vine_copula as mod
+
+    monkeypatch.setattr(
+        mod.opt, "minimize", lambda *a, **k: _PenaltyResult(np.asarray(a[1], dtype=float))
+    )
+    rng = np.random.default_rng(4)
+    x = rng.normal(size=60)
+    y = 0.7 * x + np.sqrt(1 - 0.49) * rng.normal(size=60)
+    u = np.column_stack([x, y])
+    out = mod.gas_copula_fit(u)
+    # every start hit the 1e12 penalty -> nothing converged; honest zeros
+    assert out["converged"] == 0.0
+    assert out["loglik"] == 0.0
+
+
+def test_dvine_edges_condition_on_interior_nodes():
+    # tree-t edge (a, b) of a D-vine conditions on nodes a+1..b-1, not
+    # on 0..t-1 — the old record mislabeled every edge with start > 0.
+    from quant_fund.models.pair_vine_copula import _dvine_edges
+
+    edges = _dvine_edges(5)
+    assert edges[1] == [(0, 2, (1,)), (1, 3, (2,)), (2, 4, (3,))]
+    assert edges[2] == [(0, 3, (1, 2)), (1, 4, (2, 3))]
+
+
+def test_favar_forecast_rejects_nonfinite_history():
+    from quant_fund.models.favar import favar_fit, favar_forecast, synth_favar
+
+    d = synth_favar(t=120, seed=0)
+    fit = favar_fit(d["y"], d["x"], r=2, p=1)
+    y_bad = np.asarray(d["y"], dtype=float).copy()
+    y_bad[5, 0] = np.nan
+    with pytest.raises(ValueError, match="non-finite"):
+        favar_forecast(fit, y_bad, np.asarray(fit["factors"]), steps=2)
+
+
+def test_rrc_taps_rejects_zero_beta():
+    from quant_fund.models.rrc_filter import rrc_taps
+
+    with pytest.raises(ValueError, match="beta"):
+        rrc_taps(8, 33, beta=0.0)
+    with pytest.raises(ValueError, match="beta"):
+        rrc_taps(8, 33, beta=-0.2)
+    # control: normal call still works
+    assert np.all(np.isfinite(rrc_taps(8, 33, beta=0.35)))

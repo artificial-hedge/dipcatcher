@@ -1,4 +1,4 @@
-"""Glow (Kingma & Dhariwal 2018) — actnorm + invertible 1×1 + affine
+"""Glow (Kingma & Dhariwal 2018) — actnorm + invertible 1×1 + affine (SYNTHETIC)
 coupling. 1×1 conv in 2-D = full invertible linear mixing with logdet.
 Held-out NLL vs Gaussian on pinwheel.
 """
@@ -68,5 +68,5 @@ def bench_glow_flow(seed: int = 2287, iters: int = 600) -> dict[str, float]:
         "synthetic_glow_nll": nll_te,
         "synthetic_gauss_nll": base,
         "synthetic_glow_gain": base - nll_te,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

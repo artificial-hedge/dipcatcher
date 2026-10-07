@@ -1,4 +1,4 @@
-"""SimHash locality-sensitive fingerprint (synthetic).
+"""SimHash locality-sensitive fingerprint (synthetic) (SYNTHETIC).
 
 64-bit fingerprint: bit i = sign(Σ_features w·h_i(feature)).
 Verified: near-duplicates (few edits) have small Hamming distance;

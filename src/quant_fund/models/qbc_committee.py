@@ -1,4 +1,4 @@
-"""Query-by-committee (Seung-Opper-Sompolinsky 1992) — bootstrap
+"""Query-by-committee (Seung-Opper-Sompolinsky 1992) — bootstrap (SYNTHETIC)
 committee of logreg models; query points of maximum vote entropy
 (disagreement). Accuracy vs random baseline.
 """
@@ -32,5 +32,5 @@ def bench_qbc_committee(seed: int = 2613, trials: int = 4) -> dict[str, float]:
         "synthetic_qbc_acc": float(np.mean(accs)),
         "synthetic_random_acc": float(np.mean(bases)),
         "synthetic_qbc_gain": float(np.mean(accs) - np.mean(bases)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

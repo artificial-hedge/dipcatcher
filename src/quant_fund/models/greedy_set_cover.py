@@ -1,4 +1,4 @@
-"""Greedy set cover — the ln(n)-approximation.
+"""Greedy set cover — the ln(n)-approximation (SYNTHETIC).
 
 Picks the set minimizing cost-per-newly-covered-element until the
 universe is covered; classic Chvátal bound H(m). Bench compares the

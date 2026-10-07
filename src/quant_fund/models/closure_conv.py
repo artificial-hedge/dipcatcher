@@ -38,16 +38,19 @@ def eval_cc(e: tuple, env: dict[str, int]) -> int | tuple:
     if op in ("add", "sub"):
         lo = eval_cc(e[1], env)
         ro = eval_cc(e[2], env)
-        assert isinstance(lo, int) and isinstance(ro, int)
+        if not (isinstance(lo, int) and isinstance(ro, int)):
+            raise ValueError("isinstance(lo, int) and isinstance(ro, int)")
         return lo + ro if op == "add" else lo - ro
     if op == "lam":
         return conv(e, env)
     if op == "app":
         fn = eval_cc(e[1], env)
         arg = eval_cc(e[2], env)
-        assert isinstance(fn, tuple) and fn[0] == "closure"
+        if not (isinstance(fn, tuple) and fn[0] == "closure"):
+            raise ValueError('isinstance(fn, tuple) and fn[0] == "closure"')
         _, _, body, fenv = fn
-        assert isinstance(arg, int)
+        if not (isinstance(arg, int)):
+            raise ValueError("isinstance(arg, int)")
         inner = dict(fenv)
         inner[body[1]] = arg
         return eval_cc(body[2], inner)
@@ -68,7 +71,8 @@ def bench_closure_conv(seed: int = 20261231 + 482) -> dict[str, float]:
         eval_ok += int(got == direct)
         # escaping closure: capture env must hold c
         clo = eval_cc(lam, {"c": c})
-        assert isinstance(clo, tuple)
+        if not (isinstance(clo, tuple)):
+            raise ValueError("isinstance(clo, tuple)")
         capture += int(clo[3] == {"c": c})
         # apply later from another env
         _, _, body, fenv = clo

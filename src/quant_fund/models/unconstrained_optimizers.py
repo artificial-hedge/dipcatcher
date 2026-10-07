@@ -1,4 +1,4 @@
-"""Classical unconstrained optimizers.
+"""Classical unconstrained optimizers (SYNTHETIC).
 
 Canonical references:
 

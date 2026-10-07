@@ -144,5 +144,5 @@ def bench_lee_carter(seed: int = 20261231 + 367) -> dict[str, float]:
         "synthetic_lc_recon_r2": recon,
         "synthetic_lc_rmse": rmse_lc,
         "synthetic_lc_rmse_naive": rmse_nv,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

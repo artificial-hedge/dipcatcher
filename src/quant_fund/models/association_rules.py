@@ -1,4 +1,4 @@
-"""Association-rule mining: Apriori frequent itemsets
+"""Association-rule mining: Apriori frequent itemsets (SYNTHETIC)
 (Agrawal-Srikant 1994 — level-wise candidate generation
 with downward-closure pruning) plus rule extraction with
 confidence and lift. Synthetic bench gates recovery of a

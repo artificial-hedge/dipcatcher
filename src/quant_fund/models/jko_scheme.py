@@ -1,4 +1,4 @@
-"""JKO scheme — Jordan-Kinderlehrer-Otto Wasserstein gradient flow.
+"""JKO scheme — Jordan-Kinderlehrer-Otto Wasserstein gradient flow (SYNTHETIC).
 
 For the OU/Fokker-Planck equation rho_t = div(rho grad(V + log rho)),
 the JKO step minimizes  W2^2(rho, rho_k)/(2 tau) + E[rho]  over rho.

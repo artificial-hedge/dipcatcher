@@ -1,4 +1,4 @@
-"""Perceiver-IO forecaster: latent cross-attention for long inputs.
+"""Perceiver-IO forecaster: latent cross-attention for long inputs (SYNTHETIC).
 
 Jaegle et al. 2021: a small latent array cross-attends to the (long)
 input, then self-attends among latents — compute scales linearly in
@@ -117,7 +117,7 @@ def bench_perceiver_ts(
         "synthetic_perceiver_poolmlp_mae": mp_mae,
         "synthetic_perceiver_margin_vs_fullattn": fa_mae - perc_mae,
         "synthetic_perceiver_dot_ratio": (n_lat * win + n_lat * n_lat) / (win * win),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

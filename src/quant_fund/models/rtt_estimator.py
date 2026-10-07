@@ -27,7 +27,8 @@ class RTTEst:
 
     @property
     def rto(self) -> float:
-        assert self.srtt is not None
+        if not (self.srtt is not None):
+            raise ValueError("self.srtt is not None")
         return self.srtt + 4 * self.var
 
 
@@ -43,7 +44,8 @@ def bench_rtt_estimator(seed: int = 20261231 + 403) -> dict[str, float]:
         # phase 2: step to 150 → estimator converges
         for _ in range(60):
             est.update(rng.gauss(150, 8))
-        assert est.srtt is not None
+        if not (est.srtt is not None):
+            raise ValueError("est.srtt is not None")
         track += int(abs(est.srtt - 150) < 15)
         # coverage: RTO above 95% of steady samples
         est2 = RTTEst()

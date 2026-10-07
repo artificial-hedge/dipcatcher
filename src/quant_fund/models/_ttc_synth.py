@@ -1,4 +1,4 @@
-"""Synthetic multi-step reasoning fixture for test-time-compute canon.
+"""Synthetic multi-step reasoning fixture for test-time-compute canon (SYNTHETIC).
 
 Problems: (n,3) ints; hidden ops f_i = (a_i + a_{i+1} + i) mod 3 for
 i=0,1 — deterministic learnable map. Evaluate v = ((a0 op0 a1) op1 a2)

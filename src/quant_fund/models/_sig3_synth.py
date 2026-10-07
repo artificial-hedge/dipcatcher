@@ -1,4 +1,4 @@
-"""Synthetic signal fixtures shared by the signal-processing-3 canon.
+"""Synthetic signal fixtures shared by the signal-processing-3 canon (SYNTHETIC).
 
 A linear chirp, a harmonic "voiced" train for cepstrum/LPC, a two-tone
 target for Goertzel, and a narrowband 8-sensor array snapshot for MVDR.

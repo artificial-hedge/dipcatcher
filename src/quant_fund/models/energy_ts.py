@@ -1,4 +1,4 @@
-"""Energy-based model for TS anomaly scoring.
+"""Energy-based model for TS anomaly scoring (SYNTHETIC).
 
 Trains an energy function E(x) via contrastive divergence (Langevin
 negative sampling); normal windows get low energy, corrupted/anomalous
@@ -124,7 +124,7 @@ def bench_energy_ts(
         "synthetic_energy_auc": auc_ebm,
         "synthetic_energy_ae_auc": auc_ae,
         "synthetic_energy_margin_vs_ae": auc_ebm - auc_ae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

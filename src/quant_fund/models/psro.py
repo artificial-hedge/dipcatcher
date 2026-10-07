@@ -1,4 +1,4 @@
-"""PSRO — Policy-Space Response Oracle (Lanctot et al. 2017) —
+"""PSRO — Policy-Space Response Oracle (Lanctot et al. 2017) — (SYNTHETIC)
 tic-tac-toe: maintain a policy population; the restricted meta-game
 (empirical payoff matrix over the population) is solved by fictitious
 play; each epoch adds a best-response policy trained by imitation of
@@ -64,5 +64,5 @@ def bench_psro(seed: int = 2731, epochs: int = 6, games: int = 10) -> dict[str, 
         "synthetic_psro_nonloss_oracle": nl_or,
         "synthetic_psro_nonloss_random": nl_rd,
         "synthetic_psro_pop": float(len(pop)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

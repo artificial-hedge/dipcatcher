@@ -1,4 +1,4 @@
-"""Bouncy Particle Sampler (Bouchard-Côté et al. 2018) — non-reversible
+"""Bouncy Particle Sampler (Bouchard-Côté et al. 2018) — non-reversible (SYNTHETIC)
 PDMP: straight-line trajectories x+vt, bounce events at rate
 max(0, v·∇U) via thinning, plus Poisson velocity refresh. ESS vs RWM.
 """
@@ -65,5 +65,5 @@ def bench_bouncy_particle(seed: int = 2201) -> dict[str, float]:
         "synthetic_bps_ess_gain": ess - ess_b,
         "synthetic_bps_moment_err": moment_err(smp, mu, sd),
         "synthetic_bps_accept_events": float(len(smp)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

@@ -1,4 +1,4 @@
-"""Derivative-free metaheuristic optimizers: simulated annealing,
+"""Derivative-free metaheuristic optimizers: simulated annealing, (SYNTHETIC)
 differential evolution, particle swarm, a simple genetic
 algorithm, and NSGA-II nondominated sorting for multiobjective
 search. Synthetic benches gate multimodal convergence."""
@@ -235,7 +235,8 @@ def bench_metaheuristics(seed: int = 540) -> dict[str, float]:
     pts = np.vstack([front_true, dominated])
     r = nsga2_sort(pts)
     fronts = r["fronts"]
-    assert isinstance(fronts, list)
+    if not (isinstance(fronts, list)):
+        raise ValueError("isinstance(fronts, list)")
     front0 = [int(i) for i in fronts[0]]
     in_first = set(front0)
     out["synthetic_nsga_front0_size"] = float(len(front0))

@@ -1,4 +1,4 @@
-"""Hopcroft DFA minimization (synthetic).
+"""Hopcroft DFA minimization (synthetic) (SYNTHETIC).
 
 Partition refinement on random DFAs. Verified: (i) minimized DFA
 language-equivalent to original on random input set; (ii) state

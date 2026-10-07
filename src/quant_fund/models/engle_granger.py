@@ -144,10 +144,10 @@ def bench_engle_granger(
         and ecm["alpha_p"] < 0.05
     )
     return {
-        "tau_ci": r_ci["tau"],
-        "crit5": r_ci["crit5"],
-        "tau_nc": r_nc["tau"],
-        "alpha": ecm["alpha"],
-        "alpha_p": ecm["alpha_p"],
-        "score": float(ok),
+        "synthetic_tau_ci": r_ci["tau"],
+        "synthetic_crit5": r_ci["crit5"],
+        "synthetic_tau_nc": r_nc["tau"],
+        "synthetic_alpha": ecm["alpha"],
+        "synthetic_alpha_p": ecm["alpha_p"],
+        "synthetic_score": float(ok),
     }

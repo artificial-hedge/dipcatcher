@@ -1,4 +1,4 @@
-"""Recency-based heap abstraction (Balakrishnan-Reps style).
+"""Recency-based heap abstraction (Balakrishnan-Reps style) (SYNTHETIC).
 
 The most recently allocated cell is modeled exactly (singleton); older
 cells merge into one summary partition. Simulates an allocator plus a
@@ -28,11 +28,13 @@ class RecencyHeap:
         self.next_id += 1
 
     def set_field(self, field: str, val: int) -> None:
-        assert self.mr is not None
+        if not (self.mr is not None):
+            raise ValueError("self.mr is not None")
         self.mr[field] = val
 
     def fresh_val_range(self) -> tuple[int, int]:
-        assert self.mr is not None
+        if not (self.mr is not None):
+            raise ValueError("self.mr is not None")
         return (self.mr["val"], self.mr["val"])
 
     def old_val_bounds(self) -> tuple[int, int]:
@@ -58,7 +60,8 @@ def bench_recency_abstraction(seed: int = _SEED) -> dict[str, float]:
     # tag freshness: fresh tag strictly exceeds any old tag
     h.set_field("val", 1)
     old_tags = h.old.get("tag", set())
-    assert h.mr is not None
+    if not (h.mr is not None):
+        raise ValueError("h.mr is not None")
     checks.append(h.mr["tag"] > max(old_tags))
     # summary never claims exactness on mixed vals -> bounds only
     h2 = RecencyHeap()

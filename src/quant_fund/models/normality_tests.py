@@ -1,4 +1,4 @@
-"""Normality test battery.
+"""Normality test battery (SYNTHETIC).
 
 Canonical references:
 

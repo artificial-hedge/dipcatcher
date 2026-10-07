@@ -63,4 +63,4 @@ def test_complexity_entropy_bounds() -> None:
 
 def test_bench_permutation_entropy_score() -> None:
     out = bench_permutation_entropy()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)

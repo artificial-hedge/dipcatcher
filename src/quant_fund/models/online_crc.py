@@ -1,4 +1,4 @@
-"""Online conformal risk control: Gibbs–Candès update on the CRC threshold.
+"""Online conformal risk control: Gibbs–Candès update on the CRC threshold (SYNTHETIC).
 
 Batch CRC (Angelopoulos, Bates, Fisch, Lei, Schuster 2022) picks one λ on a
 calibration window. Adaptive conformal inference (Gibbs & Candès 2021)
@@ -249,25 +249,25 @@ def bench_online_crc(
     else:
         rate, lr, kp = float("nan"), float("nan"), float("nan")
     out: dict[str, float | str] = {
-        "mean_risk": mean_risk,
-        "coverage": float(1.0 - mean_risk) if np.isfinite(mean_risk) else float("nan"),
-        "nominal": float(alpha),
-        "alpha": float(alpha),
-        "n": float(n),
-        "miss_rate": rate,
-        "kupiec_lr": lr,
-        "kupiec_p": kp,
-        "dgp": dgp_label,
-        "claim": "research_metric_only",
+        "synthetic_mean_risk": mean_risk,
+        "synthetic_coverage": float(1.0 - mean_risk) if np.isfinite(mean_risk) else float("nan"),
+        "synthetic_nominal": float(alpha),
+        "synthetic_alpha": float(alpha),
+        "synthetic_n": float(n),
+        "synthetic_miss_rate": rate,
+        "synthetic_kupiec_lr": lr,
+        "synthetic_kupiec_p": kp,
+        "synthetic_dgp": dgp_label,
+        "synthetic_claim": "research_metric_only",
     }
     if dgp_label != "fixture" and n:
         date_rate, date_t, date_p, n_dates = grouped_mean_tstat(
             hits, np.asarray(eval_dates, dtype=str)[finite_hits], target=float(alpha)
         )
-        out["date_clustered_miss_rate"] = date_rate
-        out["date_clustered_t"] = date_t
-        out["date_clustered_p"] = date_p
-        out["date_clustered_n_dates"] = float(n_dates)
+        out["synthetic_date_clustered_miss_rate"] = date_rate
+        out["synthetic_date_clustered_t"] = date_t
+        out["synthetic_date_clustered_p"] = date_p
+        out["synthetic_date_clustered_n_dates"] = float(n_dates)
     if dgp_label == "fixture":
-        out["seed"] = float(seed)
+        out["synthetic_seed"] = float(seed)
     return out

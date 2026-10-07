@@ -1,4 +1,4 @@
-"""Blahut-Arimoto channel capacity (wave 285).
+"""Blahut-Arimoto channel capacity (wave 285) (SYNTHETIC).
 
 Alternating maximization over input distribution and backward channel;
 capacity of BSC(eps) converges to 1 - h(eps) bits.

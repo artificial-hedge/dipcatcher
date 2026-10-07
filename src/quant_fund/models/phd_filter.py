@@ -1,4 +1,4 @@
-"""Gaussian-mixture PHD filter (Vo & Ma 2006).
+"""Gaussian-mixture PHD filter (Vo & Ma 2006) (SYNTHETIC).
 
 Predict/update/prune/merge/extract for the intensity function of a
 multi-target RFS under linear-Gaussian dynamics, Poisson birth,

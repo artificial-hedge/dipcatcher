@@ -1,4 +1,4 @@
-"""Shared PDE operator-learning fixture: 1-D Poisson -u'' = a(x) on
+"""Shared PDE operator-learning fixture: 1-D Poisson -u'' = a(x) on (SYNTHETIC)
 [0,1] with Dirichlet BCs, solved by sine transform; pairs (a, u) on a
 uniform grid for the neural-operator canon.
 """

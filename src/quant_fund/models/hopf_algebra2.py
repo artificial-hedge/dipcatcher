@@ -1,4 +1,4 @@
-"""Hopf algebra structure: antipode and coassociativity (SYNTHIC)."""
+"""Hopf algebra structure: antipode and coassociativity (SYNTHIC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Test-time training layer (Sun et al. 2020).
+"""Test-time training layer (Sun et al. 2020) (SYNTHETIC).
 
 A self-supervised auxiliary rotation task trains a head jointly with the
 main classifier; at test time the model re-adapts to each unlabeled batch
@@ -86,5 +86,5 @@ def bench_ttt_layer(
         "synthetic_ttt_acc_before": acc_before,
         "synthetic_ttt_acc_after": acc_after,
         "synthetic_ttt_gain": acc_after - acc_before,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

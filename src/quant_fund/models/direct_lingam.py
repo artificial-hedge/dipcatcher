@@ -1,4 +1,4 @@
-"""DirectLiNGAM (Shimizu et al. 2011) — repeatedly extract the root
+"""DirectLiNGAM (Shimizu et al. 2011) — repeatedly extract the root (SYNTHETIC)
 variable as the one least dependent on residuals of regressions on all
 others (pairwise independence measure via residual correlation +
 mutual-information-lite); order error + skeleton F1 vs baseline.
@@ -62,5 +62,5 @@ def bench_direct_lingam(seed: int = 2807, trials: int = 4, d: int = 6) -> dict[s
         "synthetic_dling_order_err": float(np.mean(oes)),
         "synthetic_dling_skel_f1": float(np.mean(f1s)),
         "synthetic_corr_order_err": float(np.mean(oes_b)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

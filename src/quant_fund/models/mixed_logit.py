@@ -1,4 +1,4 @@
-"""Mixed logit — random-coefficients choice model via simulated MLE.
+"""Mixed logit — random-coefficients choice model via simulated MLE (SYNTHETIC).
 
 Tastes vary across choosers: β_i = μ + σ·η_i with η standard
 normal. Choice probabilities integrate over the taste

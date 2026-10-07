@@ -67,5 +67,5 @@ def bench_byol(
         "synthetic_byol_probe_acc": float(acc_byol),
         "synthetic_byol_raw_acc": float(acc_raw),
         "synthetic_byol_gain": float(acc_byol - acc_raw),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

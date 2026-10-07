@@ -1,4 +1,4 @@
-"""Insider-flow anomaly detection (Exec-Summary surveillance item). A linear
+"""Insider-flow anomaly detection (Exec-Summary surveillance item). A linear (SYNTHETIC)
 autoencoder over order-flow features reconstructs "normal" flow; bursts of
 informed trading produce high reconstruction error, detected with robust
 z-scores + isolation-style random projections.

@@ -251,6 +251,16 @@ class AnthropicMessage(_Model):
                     raise ValueError("tool_result blocks belong on user turns")
                 if not isinstance(block.get("tool_use_id"), str) or not block.get("tool_use_id"):
                     raise ValueError("tool_result blocks need a 'tool_use_id'")
+                if block.get("is_error"):
+                    # the wire's tool messages can't carry the error flag —
+                    # dropping it would report the tool's failure to the
+                    # model as a normal result (the same class of silent
+                    # lie the cache_control refusal below prevents).
+                    raise ValueError(
+                        "tool_result is_error is not supported by the gated "
+                        "pipeline — the wire's tool messages have no channel "
+                        "for it; put the failure in the result's text"
+                    )
             elif btype in _BLOCK_UNSUPPORTED:
                 raise ValueError(
                     f"content block type {btype!r} is not supported by the "
@@ -492,20 +502,31 @@ def _messages_to_openai(  # NOSONAR(S3776) — one branch per Anthropic block ty
                 )
             out.append(turn)
             continue
-        # user turn — text blocks + tool_result blocks
-        texts = [str(b["text"]) for b in msg.content if b["type"] == "text"]
-        if texts:
-            out.append({"role": "user", "content": "\n".join(texts)})
+        # user turn — text blocks + tool_result blocks, in the caller's
+        # block order: a text run flushes before each tool message so a
+        # result that precedes prose on the wire isn't reported to the
+        # model as if the prose came first.
+        user_texts: list[str] = []
+        emitted = False
         for block in msg.content:
-            if block["type"] == "tool_result":
-                out.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": str(block["tool_use_id"]),
-                        "content": _tool_result_content(block),
-                    }
-                )
-        if not texts and not any(b["type"] == "tool_result" for b in msg.content):
+            if block["type"] == "text":
+                user_texts.append(str(block["text"]))
+                continue
+            if user_texts:
+                out.append({"role": "user", "content": "\n".join(user_texts)})
+                user_texts.clear()
+            out.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": str(block["tool_use_id"]),
+                    "content": _tool_result_content(block),
+                }
+            )
+            emitted = True
+        if user_texts:
+            out.append({"role": "user", "content": "\n".join(user_texts)})
+            emitted = True
+        if not emitted:
             raise OpenAICompatError(
                 "user turn has no text or tool_result blocks",
                 status=400,
@@ -594,7 +615,12 @@ def anthropic_envelope(  # NOSONAR(S3776) — envelope builder fans out per cont
     if isinstance(text, str) and text:
         blocks.append({"type": "text", "text": text})
     for call in message.get("tool_calls") or []:
-        fn = call.get("function") if isinstance(call, dict) else None
+        if not isinstance(call, dict):
+            # a provider-verbatim member that isn't an object can't shape
+            # a tool_use block — sieve it like the usage claim below
+            # rather than crashing the envelope into a bare 500
+            continue
+        fn = call.get("function")
         raw_args = fn.get("arguments") if isinstance(fn, dict) else None
         try:
             inp = json.loads(raw_args) if isinstance(raw_args, str) else (raw_args or {})
@@ -614,6 +640,11 @@ def anthropic_envelope(  # NOSONAR(S3776) — envelope builder fans out per cont
     stop_reason = _FINISH_TO_STOP_REASON.get(finish, "end_turn")
     raw_usage = env.get("usage")
     usage: dict[str, Any] = raw_usage if isinstance(raw_usage, dict) else {}
+    # a bool or a float is not a token count — the billable sieve's rule
+    # applies to the wire claim too (a malformed claim reads as 0, never
+    # a crash and never a truncated float passed off as the count)
+    pt = usage.get("prompt_tokens")
+    ct = usage.get("completion_tokens")
     cid = str(env.get("id") or "")
     return {
         "id": f"msg_{cid.removeprefix('chatcmpl-')}"
@@ -626,8 +657,8 @@ def anthropic_envelope(  # NOSONAR(S3776) — envelope builder fans out per cont
         "stop_reason": stop_reason,
         "stop_sequence": None,
         "usage": {
-            "input_tokens": int(usage.get("prompt_tokens", 0) or 0),
-            "output_tokens": int(usage.get("completion_tokens", 0) or 0),
+            "input_tokens": pt if isinstance(pt, int) and not isinstance(pt, bool) else 0,
+            "output_tokens": ct if isinstance(ct, int) and not isinstance(ct, bool) else 0,
             "cache_creation_input_tokens": 0,
             "cache_read_input_tokens": 0,
         },

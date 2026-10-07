@@ -1,4 +1,4 @@
-"""Monahan/Lovejoy grid value iteration — piecewise-linear convex
+"""Monahan/Lovejoy grid value iteration — piecewise-linear convex (SYNTHETIC)
 value function over the belief simplex via α-vector sets; the full
 cross-sum backup is pruned by dominance on a uniform belief grid.
 """

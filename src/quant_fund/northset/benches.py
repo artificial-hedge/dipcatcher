@@ -468,9 +468,12 @@ def northset_receipt_key_classification_honesty_errors(blob: object) -> list[str
     return [token]
 
 
-assert not (NORTHSET_CLI_ECHO_REQUIRED & NORTHSET_RECEIPT_BLOB_ONLY)
-assert not (NORTHSET_CLI_ECHO_EXTRA & NORTHSET_RECEIPT_BLOB_ONLY)
-assert not (NORTHSET_CLI_ECHO_REQUIRED & NORTHSET_CLI_ECHO_EXTRA)
+if NORTHSET_CLI_ECHO_REQUIRED & NORTHSET_RECEIPT_BLOB_ONLY:
+    raise ValueError("not (NORTHSET_CLI_ECHO_REQUIRED & NORTHSET_RECEIPT_BLOB_ONLY)")
+if NORTHSET_CLI_ECHO_EXTRA & NORTHSET_RECEIPT_BLOB_ONLY:
+    raise ValueError("not (NORTHSET_CLI_ECHO_EXTRA & NORTHSET_RECEIPT_BLOB_ONLY)")
+if NORTHSET_CLI_ECHO_REQUIRED & NORTHSET_CLI_ECHO_EXTRA:
+    raise ValueError("not (NORTHSET_CLI_ECHO_REQUIRED & NORTHSET_CLI_ECHO_EXTRA)")
 
 
 def _pack_ic(name: str, result: DateICResult) -> dict[str, Any]:
@@ -999,10 +1002,14 @@ def bench_northset(bars: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
         sweep_evidence,
         primary_test_id_default=str(PRIMARY_EXECUTABLE_TEST["id"]),
     )
-    assert "event_mean_bps" in "sweep_reject_event_mean_bps"
-    assert "control_diff_mean_bps" in "sweep_reject_control_diff_mean_bps"
-    assert "mean_excess_bps" in _SWEEP_EVENT_MEAN_FIELD
-    assert "mean_diff_bps" in _SWEEP_CONTROL_DIFF_FIELD
+    if "event_mean_bps" not in "sweep_reject_event_mean_bps":
+        raise ValueError('"event_mean_bps" in "sweep_reject_event_mean_bps"')
+    if "control_diff_mean_bps" not in "sweep_reject_control_diff_mean_bps":
+        raise ValueError('"control_diff_mean_bps" in "sweep_reject_control_diff_mean_bps"')
+    if "mean_excess_bps" not in _SWEEP_EVENT_MEAN_FIELD:
+        raise ValueError('"mean_excess_bps" in _SWEEP_EVENT_MEAN_FIELD')
+    if "mean_diff_bps" not in _SWEEP_CONTROL_DIFF_FIELD:
+        raise ValueError('"mean_diff_bps" in _SWEEP_CONTROL_DIFF_FIELD')
     out.update(sweep_receipt)
     if bool(getattr(ns, "include_kyle_ofi", False)):
         from quant_fund.northset.kyle_ofi import bench_kyle_ofi_fused

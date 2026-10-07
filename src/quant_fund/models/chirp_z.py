@@ -1,4 +1,4 @@
-"""Chirp Z-transform: evaluate z-transform on an arbitrary contour."""
+"""Chirp Z-transform: evaluate z-transform on an arbitrary contour (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""SIMD-style chunked filter: process rows in vector-width blocks."""
+"""SIMD-style chunked filter: process rows in vector-width blocks (SYNTHETIC)."""
 
 import numpy as np
 

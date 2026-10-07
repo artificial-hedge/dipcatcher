@@ -1,4 +1,4 @@
-"""LZW dictionary compression (synthetic).
+"""LZW dictionary compression (synthetic) (SYNTHETIC).
 
 Classic Welch LZW: encoder grows dictionary on miss, decoder
 reconstructs with the KwKwK edge case. Verified: exact round-trip

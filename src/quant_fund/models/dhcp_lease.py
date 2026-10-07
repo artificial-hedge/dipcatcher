@@ -1,4 +1,4 @@
-"""DHCP DORA + lease lifecycle sim: discover/offer/request/ack, T1 renew,
+"""DHCP DORA + lease lifecycle sim: discover/offer/request/ack, T1 renew, (SYNTHETIC)
 expiry."""
 
 import numpy as np

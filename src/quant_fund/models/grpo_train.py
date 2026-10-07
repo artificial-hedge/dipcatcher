@@ -1,4 +1,4 @@
-"""Group Relative Policy Optimization (DeepSeekMath / R1 style).
+"""Group Relative Policy Optimization (DeepSeekMath / R1 style) (SYNTHETIC).
 
 For each context sample G candidate actions from the policy; advantage
 = (r_i − mean(r_group)) / std — no critic needed. Policy improves true
@@ -71,5 +71,5 @@ def bench_grpo_train(
         "synthetic_grpo_random_reward": r0,
         "synthetic_grpo_oracle_reward": float(r_max),
         "synthetic_grpo_gain": float(r_final - r0),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""arch-package fits shared by research and the paper quantile lanes.
+"""arch-package fits shared by research and the paper quantile lanes (SYNTHETIC).
 
 Research imports this module directly so it does not pull in the paper loop
 or the simulated broker.

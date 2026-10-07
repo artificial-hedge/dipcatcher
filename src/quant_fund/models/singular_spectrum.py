@@ -1,4 +1,4 @@
-"""Singular spectrum analysis (SSA) for nonlinear signal
+"""Singular spectrum analysis (SSA) for nonlinear signal (SYNTHETIC)
 decomposition — no parametric form assumed.
 
 Canonical references:

@@ -1,4 +1,4 @@
-"""Finite-group axioms on a multiplication table (wave 281).
+"""Finite-group axioms on a multiplication table (wave 281) (SYNTHETIC).
 
 Check closure, associativity, identity, and inverses on a Cayley table;
 classify the table as Z4, Klein-4, or S3 when valid.

@@ -1,4 +1,4 @@
-"""Learning without Forgetting (Li & Hoiem 2016) — after each task the
+"""Learning without Forgetting (Li & Hoiem 2016) — after each task the (SYNTHETIC)
 model's soft outputs on the new data become distillation targets; loss =
 new-task MSE + lam * KL to old predictions.
 """

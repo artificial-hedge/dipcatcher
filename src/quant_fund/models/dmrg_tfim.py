@@ -1,4 +1,4 @@
-"""Single-site DMRG on the transverse-field Ising chain (MPS chi=4)
+"""Single-site DMRG on the transverse-field Ising chain (MPS chi=4) (SYNTHETIC)
 vs exact diagonalization — variational ground-state energy gap.
 """
 
@@ -31,5 +31,5 @@ def bench_dmrg_tfim(
         "synthetic_exact_e": e_exact,
         "synthetic_dmrg_gap": float(e_it - e_exact),
         "synthetic_random_e": e_rand,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

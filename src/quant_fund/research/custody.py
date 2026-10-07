@@ -402,12 +402,14 @@ def verify_custody_bundle(
 
     corpus_dir = str(bundle["corpus_dir"])
     hops = bundle["hops"]
-    assert isinstance(hops, list)
+    if not (isinstance(hops, list)):
+        raise ValueError("isinstance(hops, list)")
     hop_docs: list[dict[str, Any]] = []
     hop_bytes: list[bytes] = []
     for i, hop in enumerate(hops):
         raw = _unb64(hop["bytes_b64"])
-        assert raw is not None
+        if not (raw is not None):
+            raise ValueError("raw is not None")
         if hash_bytes(raw) != hop["sha256"]:
             errors.append(f"hop_digest_mismatch:{i}")
         try:
@@ -423,7 +425,8 @@ def verify_custody_bundle(
     # epoch_root_sha256 is a different digest — canonical member map, not
     # the RFC 6962 tree — so the path must land on merkle_root, not it).
     inc = bundle["inclusion"]
-    assert isinstance(inc, Mapping)
+    if not (isinstance(inc, Mapping)):
+        raise ValueError("isinstance(inc, Mapping)")
     from quant_fund.research.epoch_merkle import merkle_root, verify_inclusion
 
     epoch_doc = hop_docs[0]
@@ -471,10 +474,12 @@ def verify_custody_bundle(
     (corpus_root / str(bundle["member"])).write_bytes(member_bytes)
 
     embedded = bundle["embedded_files"]
-    assert isinstance(embedded, Mapping)
+    if not (isinstance(embedded, Mapping)):
+        raise ValueError("isinstance(embedded, Mapping)")
     for rel, b64v in embedded.items():
         raw = _unb64(b64v)
-        assert raw is not None
+        if not (raw is not None):
+            raise ValueError("raw is not None")
         dest = tmp / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(raw)
@@ -514,7 +519,8 @@ def verify_custody_bundle(
         layers["checkpoint"] = {"ok": True, "absent": True}
 
     witnesses = bundle["witness_proofs"]
-    assert isinstance(witnesses, Mapping)
+    if not (isinstance(witnesses, Mapping)):
+        raise ValueError("isinstance(witnesses, Mapping)")
     if witnesses:
         from quant_fund.research.integrity_witness import verify_witness_file
 
@@ -522,7 +528,8 @@ def verify_custody_bundle(
         w_errors: list[str] = []
         for rel, b64v in witnesses.items():
             raw = _unb64(b64v)
-            assert raw is not None
+            if not (raw is not None):
+                raise ValueError("raw is not None")
             dest = tmp / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(raw)

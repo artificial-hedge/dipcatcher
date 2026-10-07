@@ -1,4 +1,4 @@
-"""First-order resolution refutation with full unification.
+"""First-order resolution refutation with full unification (SYNTHETIC).
 
 Clauses = frozensets of literals (pred, args, neg). unify computes
 MGUs over terms ("var",x)/("f",...)/consts; resolution factorizes and

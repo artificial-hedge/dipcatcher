@@ -348,26 +348,32 @@ def test_predict_rejects_invalid_current_regime() -> None:
 def test_bench_unconditional_coverage_near_nominal() -> None:
     alpha = 0.10
     row = bench_regime_weighted_conformal_var(seed=11, alpha=alpha)
-    assert row["dgp"] == "fixture"
-    assert row["claim"] == "research_metric_only"
-    assert row["regimes"] == "oracle_true_states_synthetic"
+    assert row["synthetic_dgp"] == "fixture"
+    assert row["synthetic_claim"] == "research_metric_only"
+    assert row["synthetic_regimes"] == "oracle_true_states_synthetic"
     assert all("sharpe" not in str(key).lower() for key in row)
     # Unconditional coverage approximately nominal at 1 - alpha.
-    assert float(row["coverage"]) == pytest.approx(1.0 - alpha, abs=0.05)
-    assert float(row["n"]) > 0
+    assert float(row["synthetic_coverage"]) == pytest.approx(1.0 - alpha, abs=0.05)
+    assert float(row["synthetic_n"]) > 0
 
 
 def test_bench_highvol_conditional_coverage_beats_unweighted() -> None:
     for seed in (11, 12, 13):
         row = bench_regime_weighted_conformal_var(seed=seed, alpha=0.10)
-        gain = float(row["highvol_coverage_gain"])
+        gain = float(row["synthetic_highvol_coverage_gain"])
         assert gain > 0.05, f"seed {seed}: high-vol coverage gain {gain:.4f} too small"
-        assert float(row["highvol_coverage"]) >= 0.82
-        assert float(row["unweighted_highvol_coverage"]) < float(row["highvol_coverage"])
+        assert float(row["synthetic_highvol_coverage"]) >= 0.82
+        assert float(row["synthetic_unweighted_highvol_coverage"]) < float(
+            row["synthetic_highvol_coverage"]
+        )
         # Regime adaptivity: wider than the pooled interval under stress,
         # narrower in the calm regime (oracle-regime synthetic check).
-        assert float(row["highvol_mean_width"]) > float(row["unweighted_mean_width"])
-        assert float(row["lowvol_mean_width"]) < float(row["unweighted_mean_width"])
+        assert float(row["synthetic_highvol_mean_width"]) > float(
+            row["synthetic_unweighted_mean_width"]
+        )
+        assert float(row["synthetic_lowvol_mean_width"]) < float(
+            row["synthetic_unweighted_mean_width"]
+        )
 
 
 def test_bench_deterministic_and_seed_sensitive() -> None:
@@ -375,13 +381,16 @@ def test_bench_deterministic_and_seed_sensitive() -> None:
     b = bench_regime_weighted_conformal_var(seed=23)
     c = bench_regime_weighted_conformal_var(seed=24)
     assert a == b  # same seed -> bit-identical research row
-    assert a["coverage"] != c["coverage"] or a["mean_width"] != c["mean_width"]
+    assert (
+        a["synthetic_coverage"] != c["synthetic_coverage"]
+        or a["synthetic_mean_width"] != c["synthetic_mean_width"]
+    )
 
 
 def test_bench_label_shift_correction_also_covers() -> None:
     row = bench_regime_weighted_conformal_var(seed=11, label_shift_correction=True)
-    assert float(row["coverage"]) == pytest.approx(0.90, abs=0.05)
-    assert float(row["highvol_coverage_gain"]) > 0.05
+    assert float(row["synthetic_coverage"]) == pytest.approx(0.90, abs=0.05)
+    assert float(row["synthetic_highvol_coverage_gain"]) > 0.05
 
 
 def test_bench_fail_closed() -> None:

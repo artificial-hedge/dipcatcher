@@ -165,7 +165,7 @@ def bench_sac_agent(
         "synthetic_sac_det_reward": rew_det,
         "synthetic_sac_margin_vs_det": rew_sac - rew_det,
         "synthetic_sac_alpha": alpha,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

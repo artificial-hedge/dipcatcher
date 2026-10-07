@@ -34,7 +34,7 @@
     },
     "train": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 13,
+      "n_modules": 14,
       "status": "audited"
     }
   },
@@ -61,6 +61,22 @@
       "status": "audited"
     },
     "ext_bench_audit.py": {
+      "status": "audited"
+    },
+    "extensions/contracts.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/feature_catalog.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/naming.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/registry.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
     "harness.py": {
@@ -102,6 +118,42 @@
     "mrm_audit.py": {
       "status": "audited"
     },
+    "operations/base.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/inspect_numpy_array.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/inspect_parquet.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/inspect_zip.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/read_csv.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/read_jsonl.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/read_toml.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/registry.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/verify_file_hash.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
     "reward.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
@@ -131,6 +183,22 @@
     },
     "selftest.py": {
       "status": "pending"
+    },
+    "serve/anthropic_compat.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/chat.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/contract.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/openai_compat.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
     },
     "tail_audit.py": {
       "status": "audited"

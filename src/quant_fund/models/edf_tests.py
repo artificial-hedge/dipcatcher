@@ -1,4 +1,4 @@
-"""Empirical-distribution-function goodness-of-fit tests.
+"""Empirical-distribution-function goodness-of-fit tests (SYNTHETIC).
 
 Canonical references:
 

@@ -1,4 +1,4 @@
-"""Shared synthetic risk-sensitive bandit-MDP for the wave-137
+"""Shared synthetic risk-sensitive bandit-MDP for the wave-137 (SYNTHETIC)
 distributional-RL canon.
 
 States are 4 contexts; two actions share near-equal means but differ in

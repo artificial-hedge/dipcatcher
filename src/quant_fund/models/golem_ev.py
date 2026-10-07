@@ -1,4 +1,4 @@
-"""GOLEM (Ng et al. 2020) — likelihood-based DAG recovery: Gaussian
+"""GOLEM (Ng et al. 2020) — likelihood-based DAG recovery: Gaussian (SYNTHETIC)
 equal-variance score (replaces least-squares BIC) + NOTEARS acyclicity.
 Better under unequal variances; SHD vs corr baseline.
 """
@@ -52,5 +52,5 @@ def bench_golem_ev(seed: int = 2329, edges: int = 7, steps: int = 400) -> dict[s
         "synthetic_golem_shd": float(shd_g),
         "synthetic_corr_shd": float(shd_cb),
         "synthetic_golem_gain": float(shd_cb - shd_g),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

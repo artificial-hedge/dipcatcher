@@ -1,4 +1,4 @@
-"""TT rounding: compress a noisy low-TT-rank tensor back to small chi —
+"""TT rounding: compress a noisy low-TT-rank tensor back to small chi — (SYNTHETIC)
 error vs naive truncation to CP-rank-1 baseline.
 """
 
@@ -35,5 +35,5 @@ def bench_tt_round(seed: int = 3109, d: int = 4, n: int = 8, chi: int = 4) -> di
         "synthetic_ttround_err": err_tt,
         "synthetic_rank1_err": err_rank1,
         "synthetic_ttround_gain": float(err_rank1 - err_tt),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

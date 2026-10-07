@@ -1,4 +1,4 @@
-"""Rust (1987) nested fixed-point dynamic discrete choice.
+"""Rust (1987) nested fixed-point dynamic discrete choice (SYNTHETIC).
 
 The canonical optimal-stopping problem: a durable asset with
 state x (wear) is either kept at maintenance cost c(x) or
@@ -137,7 +137,8 @@ def rust_nfxp(
                     "rc": float(r.x[1]),
                     "nll": float(r.fun),
                 }
-    assert best is not None
+    if not (best is not None):
+        raise ValueError("best is not None")
     return best
 
 

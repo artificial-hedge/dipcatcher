@@ -1,4 +1,4 @@
-"""Lomb-Scargle periodogram for unevenly sampled data.
+"""Lomb-Scargle periodogram for unevenly sampled data (SYNTHETIC).
 
 Canonical references:
 

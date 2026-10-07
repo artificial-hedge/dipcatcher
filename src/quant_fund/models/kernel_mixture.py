@@ -1,4 +1,4 @@
-"""Kernel Mixture Network (Ambrogioni et al. 2017, Rothfuss-style) —
+"""Kernel Mixture Network (Ambrogioni et al. 2017, Rothfuss-style) — (SYNTHETIC)
 conditioned Gaussian-kernel mixture: net emits (pi_j, mu_j) for fixed
 bandwidth grid → conditional density. Test LL vs Gaussian.
 """
@@ -54,5 +54,5 @@ def bench_kernel_mixture(
         "synthetic_kmn_test_ll": float(ll_te.mean()),
         "synthetic_kmn_gauss_ll": float(ll_gauss.mean()),
         "synthetic_kmn_ll_gain": float(ll_te.mean() - ll_gauss.mean()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

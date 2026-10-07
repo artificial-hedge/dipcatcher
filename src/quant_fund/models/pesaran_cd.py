@@ -1,4 +1,4 @@
-"""Pesaran (2004) CD test for cross-sectional dependence.
+"""Pesaran (2004) CD test for cross-sectional dependence (SYNTHETIC).
 
 After a panel regression, errors should be independent across
 units if the model captures the common structure. The CD

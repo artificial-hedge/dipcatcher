@@ -1,4 +1,4 @@
-"""MVCC snapshot isolation lite — SYNTHIC.
+"""MVCC snapshot isolation lite — SYNTHIC (SYNTHETIC).
 
 Each write creates a version (txid, commit_ts). Readers at snapshot ts
 see last committed <= ts. Verified: snapshot reads stable under

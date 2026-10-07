@@ -1,4 +1,4 @@
-"""WCET estimation via longest-path on a CFG DAG."""
+"""WCET estimation via longest-path on a CFG DAG (SYNTHETIC)."""
 
 import numpy as np
 

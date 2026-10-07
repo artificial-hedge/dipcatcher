@@ -100,7 +100,8 @@ class CoverageFloor:
         silently folding it would deflate the measured breach rate, so
         anything outside {False, True, 0, 1} raises.
         """
-        assert self._log_w_hi is not None and self._log_w_lo is not None
+        if not (self._log_w_hi is not None and self._log_w_lo is not None):
+            raise ValueError("self._log_w_hi is not None and self._log_w_lo is not None")
         b = float(_strict_breach(breach))
         p0 = np.asarray(self.p0_grid, dtype=float)
         fracs = np.asarray(self.wallet_fracs, dtype=float)
@@ -125,7 +126,8 @@ class CoverageFloor:
 
     def _breach_bounds(self, alpha: float) -> tuple[float, float]:
         """Two-sided CS on the breach rate at level ``alpha``."""
-        assert self._log_w_hi is not None and self._log_w_lo is not None
+        if not (self._log_w_hi is not None and self._log_w_lo is not None):
+            raise ValueError("self._log_w_hi is not None and self._log_w_lo is not None")
         p0 = np.asarray(self.p0_grid, dtype=float)
         thr = math.log(1.0 / alpha)
         alive_hi = self._log_mix(self._log_w_hi) < thr  # rate >= p0 unrejected
@@ -143,7 +145,8 @@ class CoverageFloor:
 
     def _hi_breach_bound(self, alpha: float) -> float:
         """Upper bound on the breach rate at one-sided level ``alpha``."""
-        assert self._log_w_hi is not None
+        if not (self._log_w_hi is not None):
+            raise ValueError("self._log_w_hi is not None")
         p0 = np.asarray(self.p0_grid, dtype=float)
         thr = math.log(1.0 / alpha)
         rejected = self._log_mix(self._log_w_hi) >= thr
@@ -160,7 +163,8 @@ class CoverageFloor:
 
     def _lo_breach_bound(self, alpha: float) -> float:
         """Lower bound on the breach rate at one-sided level ``alpha``."""
-        assert self._log_w_lo is not None
+        if not (self._log_w_lo is not None):
+            raise ValueError("self._log_w_lo is not None")
         p0 = np.asarray(self.p0_grid, dtype=float)
         thr = math.log(1.0 / alpha)
         rejected = self._log_mix(self._log_w_lo) >= thr
@@ -186,7 +190,8 @@ class CoverageFloor:
 
     def evalue_above(self, p: float) -> float:
         """E-value for the composite null `rate >= p` (hi-side wallets)."""
-        assert self._log_w_hi is not None
+        if not (self._log_w_hi is not None):
+            raise ValueError("self._log_w_hi is not None")
         p0 = np.asarray(self.p0_grid, dtype=float)
         i = int(np.argmin(np.abs(p0 - p)))
         if abs(float(p0[i]) - p) > 1e-9:
@@ -195,7 +200,8 @@ class CoverageFloor:
 
     def evalue_below(self, p: float) -> float:
         """E-value for the composite null `rate <= p` (lo-side wallets)."""
-        assert self._log_w_lo is not None
+        if not (self._log_w_lo is not None):
+            raise ValueError("self._log_w_lo is not None")
         p0 = np.asarray(self.p0_grid, dtype=float)
         i = int(np.argmin(np.abs(p0 - p)))
         if abs(float(p0[i]) - p) > 1e-9:

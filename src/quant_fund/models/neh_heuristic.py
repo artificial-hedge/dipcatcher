@@ -1,4 +1,4 @@
-"""NEH heuristic (Nawaz et al. 1983) for m-machine permutation flow-shop
+"""NEH heuristic (Nawaz et al. 1983) for m-machine permutation flow-shop (SYNTHETIC)
 — insertion-improved ordering vs Johnson/random baselines.
 """
 
@@ -33,5 +33,5 @@ def bench_neh_heuristic(seed: int = 3045) -> dict[str, float]:
         "synthetic_neh_ms": ms_n,
         "synthetic_neh_random_mean": float(rnd),
         "synthetic_neh_gain": float(rnd - ms_n),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

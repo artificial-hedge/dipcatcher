@@ -1,4 +1,4 @@
-"""Kernel methods: kernel ridge regression on the RBF Gram,
+"""Kernel methods: kernel ridge regression on the RBF Gram, (SYNTHETIC)
 random Fourier features (Rahimi & Recht 2007) approximating
 the same kernel linearly, and Nyström low-rank Gram
 approximation. Synthetic bench gates nonlinear-fit quality

@@ -1,4 +1,4 @@
-"""0/1 knapsack exact DP vs greedy density heuristic — optimal-value
+"""0/1 knapsack exact DP vs greedy density heuristic — optimal-value (SYNTHETIC)
 recovery and greedy gap on random instances.
 """
 
@@ -34,5 +34,5 @@ def bench_knapsack_dp(seed: int = 3053) -> dict[str, float]:
         "synthetic_ks_greedy": float(val),
         "synthetic_ks_gap": float(opt - val),
         "synthetic_ks_greedy_ratio": float(val / opt),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

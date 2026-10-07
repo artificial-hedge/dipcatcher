@@ -1,4 +1,4 @@
-"""Nash-MTL (Navon et al. 2022) — combined direction proportional to
+"""Nash-MTL (Navon et al. 2022) — combined direction proportional to (SYNTHETIC)
 task-gradient terms weighted by inverse of their contribution to the
 log barrier: d solves sum_i (1/d^T g_i-scaled) — closed-form 2-task
 approx via equal-angle bisector weighting.
@@ -27,5 +27,5 @@ def bench_nash_mtl(seed: int = 2027, iters: int = 600) -> dict[str, float]:
         "synthetic_nash_mean_acc": mean,
         "synthetic_naive_min_acc": mn0,
         "synthetic_nash_min_gain": mn - mn0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

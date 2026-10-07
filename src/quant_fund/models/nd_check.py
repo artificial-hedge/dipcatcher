@@ -1,4 +1,4 @@
-"""Natural deduction proof checker (propositional core).
+"""Natural deduction proof checker (propositional core) (SYNTHETIC).
 
 Derivations are trees over rules: ax, and_i, and_e{l,r}, or_i{l,r},
 or_e, imp_i (discharges hypothesis), imp_e, bot_e, not_i, not_e.

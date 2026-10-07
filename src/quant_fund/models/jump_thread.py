@@ -1,4 +1,4 @@
-"""Jump threading (wave 294).
+"""Jump threading (wave 294) (SYNTHETIC).
 
 Fold conditional jumps through chains: if A: if B: T — when A implies
 B, thread A's edge directly to T. Verified on branch-chain CFGs vs

@@ -1,4 +1,4 @@
-"""Bayesian structural time series causal impact (BSTS / CausalImpact).
+"""Bayesian structural time series causal impact (BSTS / CausalImpact) (SYNTHETIC).
 
 Estimates the causal effect of a discrete intervention on a univariate
 series by forecasting its counterfactual from a pre-period structural
@@ -273,7 +273,8 @@ def bench_causal_impact(seed: int = 20261231 + 185) -> dict[str, float]:
         np.asarray(d0["y"]), int(d0["t_int"]), x=np.asarray(d0["x"]), n_sims=800, seed=seed + 3
     )
     scale = max(cum_sd := float(est["cum_effect_sd"]), 1e-12)
-    assert cum_sd > 0
+    if not (cum_sd > 0):
+        raise ValueError("cum_sd > 0")
 
     return {
         "synthetic_cum_effect": float(est["cum_effect"]),

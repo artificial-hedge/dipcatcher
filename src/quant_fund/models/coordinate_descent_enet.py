@@ -1,4 +1,4 @@
-"""Elastic-net regularization paths by cyclic coordinate
+"""Elastic-net regularization paths by cyclic coordinate (SYNTHETIC)
 descent (Friedman, Hastie & Tibshirani 2010): soft-threshold
 updates with warm starts along a geometric λ grid. Synthetic
 bench gates sparse-support recovery vs an OLS baseline."""

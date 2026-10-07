@@ -1,4 +1,4 @@
-"""Copula models for dependence structure (bivariate focus).
+"""Copula models for dependence structure (bivariate focus) (SYNTHETIC).
 
 References:
 - Sklar (1959). Fonctions de repartition a n dimensions — C(u,v) separates

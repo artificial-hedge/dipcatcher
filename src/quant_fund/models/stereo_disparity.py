@@ -1,4 +1,4 @@
-"""Block-matching stereo disparity; recovers planted shift."""
+"""Block-matching stereo disparity; recovers planted shift (SYNTHETIC)."""
 
 import numpy as np
 

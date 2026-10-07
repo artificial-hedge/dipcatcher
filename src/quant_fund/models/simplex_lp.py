@@ -1,4 +1,4 @@
-"""Simplex tableau method for max LP: cᵀx s.t. Ax ≤ b, x ≥ 0."""
+"""Simplex tableau method for max LP: cᵀx s.t. Ax ≤ b, x ≥ 0 (SYNTHETIC)."""
 
 import itertools
 

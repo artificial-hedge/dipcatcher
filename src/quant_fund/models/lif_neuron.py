@@ -1,4 +1,4 @@
-"""LIF neuron classifier (leaky integrate-and-fire) — Poisson-encoded
+"""LIF neuron classifier (leaky integrate-and-fire) — Poisson-encoded (SYNTHETIC)
 inputs drive a membrane-potential readout trained by logistic loss on
 final voltage vs ANN on raw features.
 """
@@ -42,5 +42,5 @@ def bench_lif_neuron(seed: int = 1901) -> dict[str, float]:
         "synthetic_lif_gap": acc_lif - acc_ann,
         "synthetic_lif_mean_v": float(v.mean()),
         "synthetic_lif_spike_rate": float(sp.mean()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

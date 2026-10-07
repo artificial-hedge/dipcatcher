@@ -55,6 +55,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_model_confidence_set()
-    for k in ("n_survivors", "best_survives", "worst_dropped", "p_best", "p_worst", "score"):
+    for k in (
+        "synthetic_n_survivors",
+        "synthetic_best_survives",
+        "synthetic_worst_dropped",
+        "synthetic_p_best",
+        "synthetic_p_worst",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

@@ -1,4 +1,4 @@
-"""Coarse CRR binomial tree on the shared American-put contract.
+"""Coarse CRR binomial tree on the shared American-put contract (SYNTHETIC).
 
 A 200-step tree measured against the 2000-step reference — the honest
 discretization benchmark for tree methods in this wave.

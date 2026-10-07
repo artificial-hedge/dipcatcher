@@ -1,4 +1,4 @@
-"""Alternating conditional expectations (ACE) and AVAS.
+"""Alternating conditional expectations (ACE) and AVAS (SYNTHETIC).
 
 Canonical references:
 

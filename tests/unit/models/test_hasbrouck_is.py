@@ -52,6 +52,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_hasbrouck()
-    for k in ("is1_mid", "is1_lo", "is1_null_mid", "gg_w1", "beta", "score"):
+    for k in (
+        "synthetic_is1_mid",
+        "synthetic_is1_lo",
+        "synthetic_is1_null_mid",
+        "synthetic_gg_w1",
+        "synthetic_beta",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

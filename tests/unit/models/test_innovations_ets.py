@@ -71,5 +71,5 @@ def test_ets_input_validation():
 
 def test_bench_innovations_ets():
     out = bench_innovations_ets()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_ets_mase_ratio"] < 0.85

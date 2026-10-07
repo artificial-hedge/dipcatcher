@@ -1,4 +1,4 @@
-"""Grover amplitude amplification on 4 qubits: marked-state probability
+"""Grover amplitude amplification on 4 qubits: marked-state probability (SYNTHETIC)
 after optimal iterations vs O(N) classical expected queries.
 """
 
@@ -29,5 +29,5 @@ def bench_grover_search(seed: int = 3073, n: int = 4, marked: int = 5) -> dict[s
         "synthetic_grover_p_marked": p_final,
         "synthetic_grover_classical_queries": classical,
         "synthetic_grover_speedup": float(classical / k_opt),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

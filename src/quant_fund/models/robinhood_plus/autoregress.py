@@ -1,4 +1,4 @@
-"""Hierarchical autoregressive decoding on (s1, s2) K-line tokens.
+"""Hierarchical autoregressive decoding on (s1, s2) K-line tokens (SYNTHETIC).
 
 Kronos samples coarse s1 then fine s2 conditioned on s1 (Shi et al., 2025).
 The default research decoder is a Laplace-smoothed hierarchical Markov model

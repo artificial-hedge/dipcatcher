@@ -1,4 +1,4 @@
-"""Matching networks (Vinyals et al. 2016) — attention kernel regression:
+"""Matching networks (Vinyals et al. 2016) — attention kernel regression: (SYNTHETIC)
 query embeds against support embeddings; y = softmax-attention-weighted
 support y's. Query MSE vs flat 1-NN cosine baseline.
 """
@@ -51,5 +51,5 @@ def bench_matching_net(seed: int = 859, n_tasks: int = 30, K: int = 5) -> dict[s
         "synthetic_mn_query_mse": float(np.mean(mses)),
         "synthetic_mn_1nn_mse": float(np.mean(mses_1nn)),
         "synthetic_mn_gain": float(np.mean(mses_1nn) - np.mean(mses)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Memorizing-Transformer-style kNN memory (Wu et al. 2022).
+"""Memorizing-Transformer-style kNN memory (Wu et al. 2022) (SYNTHETIC).
 
 Each token can attend to frozen keys/values from earlier training
 examples through an external kNN memory — on the retrieval task the
@@ -94,5 +94,5 @@ def bench_memorizing_transformer(
         "synthetic_memtr_full_acc": float(acc_o),
         "synthetic_memtr_acc_gain": float(acc - acc_o),
         "synthetic_memtr_cost_ratio": float(attn_dot_cost(xte.shape[1], "memknn", _TOPK)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

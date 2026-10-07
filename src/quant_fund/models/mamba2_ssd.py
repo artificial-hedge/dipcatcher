@@ -1,4 +1,4 @@
-"""Mamba-2 / SSD (Dao & Gu 2024) — scalar-per-channel selective SSM
+"""Mamba-2 / SSD (Dao & Gu 2024) — scalar-per-channel selective SSM (SYNTHETIC)
 h_t = a_t h_{t-1} + b_t x_t with b_t,c_t,a_t input-dependent (the SSD
 restricted form = attention-like dual), trained on induction recall.
 """
@@ -59,5 +59,5 @@ def bench_mamba2_ssd(seed: int = 2243, iters: int = 800, D: int = 16) -> dict[st
         "synthetic_mamba2_recall": float(acc),
         "synthetic_attn_recall": base,
         "synthetic_mamba2_gain": float(acc) - base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

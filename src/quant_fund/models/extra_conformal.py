@@ -785,20 +785,20 @@ def _bimodal_cqr_bench(
     m_t = set_metrics(data.y_test, tlo, thi)
     m_u = set_metrics(data.y_test, ulo, uhi)
     return {
-        "coverage": m_t.coverage,
-        "mean_width": m_t.mean_width,
-        "unweighted_coverage": m_u.coverage,
-        "unweighted_mean_width": m_u.mean_width,
-        "coverage_error": abs(m_t.coverage - (1.0 - a)),
-        "unweighted_coverage_error": abs(m_u.coverage - (1.0 - a)),
-        "ess_fraction": res.ess_fraction,
-        "weights_mode": res.weights_mode,
-        "theta_label_block": float(theta_label_block),
-        "n": float(m_t.n),
-        "alpha": float(a),
-        "dgp": "SYNTHETIC_bimodal_joint_shift",
-        "claim": "research_metric_only",
-        "seed": float(seed),
+        "synthetic_coverage": m_t.coverage,
+        "synthetic_mean_width": m_t.mean_width,
+        "synthetic_unweighted_coverage": m_u.coverage,
+        "synthetic_unweighted_mean_width": m_u.mean_width,
+        "synthetic_coverage_error": abs(m_t.coverage - (1.0 - a)),
+        "synthetic_unweighted_coverage_error": abs(m_u.coverage - (1.0 - a)),
+        "synthetic_ess_fraction": res.ess_fraction,
+        "synthetic_weights_mode": res.weights_mode,
+        "synthetic_theta_label_block": float(theta_label_block),
+        "synthetic_n": float(m_t.n),
+        "synthetic_alpha": float(a),
+        "synthetic_dgp": "SYNTHETIC_bimodal_joint_shift",
+        "synthetic_claim": "research_metric_only",
+        "synthetic_seed": float(seed),
     }
 
 
@@ -840,6 +840,8 @@ def bench_extra_harm(
     positive means the tilt hurt.
     """
     row = _bimodal_cqr_bench(-1.2, eta=eta, alpha=alpha, n_cal=n_cal, n_test=n_test, seed=seed)
-    row["harm_coverage_gap"] = float(row["unweighted_coverage"]) - float(row["coverage"])
-    row["harm_mode"] = "misspecified_label_tilt"
+    row["synthetic_harm_coverage_gap"] = float(row["synthetic_unweighted_coverage"]) - float(
+        row["synthetic_coverage"]
+    )
+    row["synthetic_harm_mode"] = "misspecified_label_tilt"
     return row

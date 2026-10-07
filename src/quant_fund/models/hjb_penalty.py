@@ -1,4 +1,4 @@
-"""Penalty-method HJB solver for the American put (semi-smooth iteration).
+"""Penalty-method HJB solver for the American put (semi-smooth iteration) (SYNTHETIC).
 
 Backward Euler with penalty ρ·max(payoff − V, 0): each step solves
 (I/dt − A + ρ·diag(1_{V<f})) V = V_prev/dt + ρ·1_{V<f}·f by a few

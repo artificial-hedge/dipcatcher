@@ -1,4 +1,4 @@
-"""Hu moment invariants — 7 rotation/scale/translation-invariant image moments.
+"""Hu moment invariants — 7 rotation/scale/translation-invariant image moments (SYNTHETIC).
 
 Central moments eta_pq normalized by m00^(1+(p+q)/2); the seven Hu
 invariants are polynomial combinations. Bench: invariants match between

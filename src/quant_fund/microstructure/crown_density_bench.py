@@ -139,15 +139,18 @@ def tape_crown(message_path: Path, orderbook_path: Path) -> dict[str, Any]:
     )
     cb, ca = np.asarray(crown_b, float), np.asarray(crown_a, float)
     tb, ta = np.asarray(tot_b, float), np.asarray(tot_a, float)
-    crown_share = float(np.mean((cb + ca) / np.maximum(tb + ta, 1.0)))
     return {
         "regime": "tape",
         "n_events": int(len(bb)),
         "n_fills": int(len(fills)),
         "crown_ticks": _CROWN_TICKS,
-        "crown_units_mean": round(float(np.mean(cb + ca)), 2),
-        "visible_units_mean": round(float(np.mean(tb + ta)), 2),
-        "crown_share_of_visible": round(crown_share, 4),
+        "crown_units_mean": (round(float(np.mean(cb + ca)), 2) if cb.size else None),
+        "visible_units_mean": (round(float(np.mean(tb + ta)), 2) if tb.size else None),
+        # None on an empty tape slice — np.mean of an empty array would
+        # seal a NaN into the receipt payload.
+        "crown_share_of_visible": (
+            round(float(np.mean((cb + ca) / np.maximum(tb + ta, 1.0))), 4) if cb.size else None
+        ),
         "reveal_gap_ticks_mean": None if not gaps else round(float(np.mean(gaps)), 4),
         "reveal_gap_ticks_p50": (None if not gaps else round(float(np.median(gaps)), 4)),
         "n_reveals": len(gaps),
@@ -180,8 +183,18 @@ def _sim_crown(
     signs: list[int] = []
     levels: list[int] = []
     seen = 0
-    for _ in range(horizon):
+    for e in range(horizon):
         sim.step()
+        # Drain trades before the book check: a fill that fires on a
+        # one-sided-book step still belongs to row e — deferring it to
+        # the next non-empty step would record the fill under the wrong
+        # index and merge it into that event's sweep footprint.
+        while seen < len(sim.trades):
+            tr = sim.trades[seen]
+            fills.append(e)
+            signs.append(1 if tr.aggressor == "buy" else -1)
+            levels.append(tr.level)
+            seen += 1
         bids, asks = sim._bids, sim._asks
         if not bids or not asks:
             bb.append(-(10**9))
@@ -197,17 +210,6 @@ def _sim_crown(
             + sum(len(asks[lvl]) for lvl in asks if lvl - bav <= _CROWN_TICKS)
         )
         tot.append(sum(len(d) for d in bids.values()) + sum(len(d) for d in asks.values()))
-        while seen < len(sim.trades):
-            tr = sim.trades[seen]
-            # sim.n_events is the just-completed 1-indexed step; the
-            # per-step snapshots below are 0-indexed, so the fill's own
-            # row is n_events - 1. Recording n_events would compare the
-            # book one event *after* the fill — an emptied touch that
-            # re-seeds next event never counts as a reveal.
-            fills.append(sim.n_events - 1)
-            signs.append(1 if tr.aggressor == "buy" else -1)
-            levels.append(tr.level)
-            seen += 1
     bb_a = np.asarray(bb, dtype=np.int64)
     ba_a = np.asarray(ba, dtype=np.int64)
     gaps = _empty_gaps(

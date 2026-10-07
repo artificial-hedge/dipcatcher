@@ -1,4 +1,4 @@
-"""Open Jackson network: product-form steady-state.
+"""Open Jackson network: product-form steady-state (SYNTHETIC).
 
 Traffic equations lam = gamma + P^T lam give per-node arrival rates; under
 exponential service the network factorizes into independent M/M/1 marginals,

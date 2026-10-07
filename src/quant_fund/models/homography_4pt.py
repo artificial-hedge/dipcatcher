@@ -1,4 +1,4 @@
-"""4-point homography via DLT, verified on a synthetic planar pair."""
+"""4-point homography via DLT, verified on a synthetic planar pair (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""QuantCode-Bench-style spec->code pipeline (Exec-Summary Feature 1).
+"""QuantCode-Bench-style spec->code pipeline (Exec-Summary Feature 1) (SYNTHETIC).
 A StrategySpec (title + params) compiles to strategy code via a
 deterministic template compiler, executes in a restricted sandbox on
 synthetic bars, and is judge-passed on run/finiteness/trade criteria.
@@ -175,7 +175,8 @@ def bench_quantcode_bench(seed: int = 7) -> dict[str, float]:
     for spec in _TASKS:
         code = compile_spec(spec)
         errs = static_check(code)
-        assert not errs, errs
+        if errs:
+            raise ValueError("not errs")
         res = backtest(code, px, spec.params)
         backtests += 1
         passes += int(judge_pass(res))

@@ -1,4 +1,4 @@
-"""Barnes-Hut quadtree N-body force approximation (synthetic).
+"""Barnes-Hut quadtree N-body force approximation (synthetic) (SYNTHETIC).
 
 θ-criterion opening; verified: (i) forces match direct O(N²)
 summation within bounded relative error; (ii) error shrinks as

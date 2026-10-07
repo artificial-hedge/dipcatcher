@@ -1,4 +1,4 @@
-"""USAD (Audibert et al. 2020) — autoencoder with two decoders trained
+"""USAD (Audibert et al. 2020) — autoencoder with two decoders trained (SYNTHETIC)
 adversarially (D1 reconstructs honestly, D2 fools D1); score = recon error
 + mutual-discrepancy weight — vs single AE.
 """
@@ -74,5 +74,5 @@ def bench_usad(
         "synthetic_usad_auc": auc_u,
         "synthetic_usad_ae_auc": auc_ae,
         "synthetic_usad_gain": auc_u - auc_ae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""SPSC lock-free ring buffer: no loss/reorder under interleaved ops."""
+"""SPSC lock-free ring buffer: no loss/reorder under interleaved ops (SYNTHETIC)."""
 
 import numpy as np
 

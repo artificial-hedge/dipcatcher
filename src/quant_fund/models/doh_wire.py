@@ -1,4 +1,4 @@
-"""DoH/DNS wire format (wave 292).
+"""DoH/DNS wire format (wave 292) (SYNTHETIC).
 
 RFC1035 name encoding (length-prefixed labels), header + question +
 answer encode/decode round-trip; pointers not used in question names.

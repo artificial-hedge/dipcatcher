@@ -1,4 +1,4 @@
-"""LZ78 dictionary compression (synthetic).
+"""LZ78 dictionary compression (synthetic) (SYNTHETIC).
 
 Phrase dictionary grows as (index, next-symbol) pairs; decoder
 rebuilds phrases exactly. Verified: exact round-trip; dictionary

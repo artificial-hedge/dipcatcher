@@ -1,4 +1,4 @@
-"""QMIX (Rashid et al., 2018) — monotonic value decomposition:
+"""QMIX (Rashid et al., 2018) — monotonic value decomposition: (SYNTHETIC)
 Q_tot = f_s(Q_1, ..., Q_n) with ∂Q_tot/∂Q_i ≥ 0 enforced by
 non-negative mixing weights produced by a hypernetwork on the
 global state. Per-agent Q tables + linear hypernet params.

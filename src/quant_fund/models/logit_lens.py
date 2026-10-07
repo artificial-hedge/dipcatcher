@@ -1,4 +1,4 @@
-"""Logit lens / tuned lens (nostalgebraist, Belrose et al.).
+"""Logit lens / tuned lens (nostalgebraist, Belrose et al.) (SYNTHETIC).
 
 Reads intermediate activations straight through the output head:
 project each layer's residual stream to logits and measure answer

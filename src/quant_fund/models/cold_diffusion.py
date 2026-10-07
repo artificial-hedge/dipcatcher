@@ -1,4 +1,4 @@
-"""Cold diffusion (Bansal et al. 2022) — non-noise degradation: blur/
+"""Cold diffusion (Bansal et al. 2022) — non-noise degradation: blur/ (SYNTHETIC)
 downsample degradation operator D(x,t) = blur(x, sigma_t); train
 restoration net R(x_t,t)≈x0; sample by iterative restore. MMD vs
 noise-only baseline.
@@ -67,5 +67,5 @@ def bench_cold_diffusion(seed: int = 1523, iters: int = 900, steps: int = 20) ->
         "synthetic_cold_mmd": m,
         "synthetic_cold_gauss_mmd": g,
         "synthetic_cold_mmd_gain": g - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

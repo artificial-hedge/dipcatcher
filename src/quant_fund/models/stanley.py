@@ -1,4 +1,4 @@
-"""Stanley cross-track steering controller."""
+"""Stanley cross-track steering controller (SYNTHETIC)."""
 
 import numpy as np
 

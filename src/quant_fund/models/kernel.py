@@ -1,4 +1,4 @@
-"""Kernel methods for nonlinear regression and dimensionality.
+"""Kernel methods for nonlinear regression and dimensionality (SYNTHETIC).
 
 References:
 - Rasmussen & Williams (2006): Gaussian process regression (exact

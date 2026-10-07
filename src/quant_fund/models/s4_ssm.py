@@ -1,4 +1,4 @@
-"""S4-style diagonal state-space model (Gu et al. 2021).
+"""S4-style diagonal state-space model (Gu et al. 2021) (SYNTHETIC).
 
 h_t = a ⊙ h_{t-1} + B x_t with learned per-dim decay a — an O(T·h)
 scan vs attention's O(T²). On the associative-recall fixture the pure
@@ -95,5 +95,5 @@ def bench_s4_ssm(
         "synthetic_s4_full_acc": acc_full,
         "synthetic_s4_acc_gap": acc_full - acc,
         "synthetic_s4_cost_ratio": cost,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

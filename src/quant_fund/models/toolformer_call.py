@@ -1,4 +1,4 @@
-"""Toolformer — learned API-call insertion (Schick et al. 2023).
+"""Toolformer — learned API-call insertion (Schick et al. 2023) (SYNTHETIC).
 
 A policy predicts WHEN to call a tool vs rely on the parametric guess.
 On the tool-graph, a learned gate that calls the oracle tool only when

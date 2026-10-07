@@ -1,4 +1,4 @@
-"""MINRES (Paige-Saunders) for symmetric indefinite systems.
+"""MINRES (Paige-Saunders) for symmetric indefinite systems (SYNTHETIC).
 
 Lanczos builds the tridiagonal basis; the iterate minimizes the residual
 over the Krylov subspace via the QR-on-the-fly update (implemented here

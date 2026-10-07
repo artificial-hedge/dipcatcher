@@ -1,4 +1,4 @@
-"""Gumbel-softmax relaxation (Jang et al. 2017; Maddison et al. 2017) —
+"""Gumbel-softmax relaxation (Jang et al. 2017; Maddison et al. 2017) — (SYNTHETIC)
 continuous top-k via temperature-annealed Gumbel-softmax mask; gradient
 correlation vs finite-diff on the selection task.
 """
@@ -39,5 +39,5 @@ def bench_gumbel_relax(seed: int = 2393, trials: int = 20, tau: float = 0.4) -> 
     return {
         "synthetic_gumbel_grad_corr": float(np.mean(corrs)),
         "synthetic_gumbel_tau": float(tau),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,0 +1,9 @@
+{
+ "generated_utc": "2026-10-07T14:41:46.408657Z",
+ "scope": "src/quant_fund/models bench_* returned dict literals",
+ "n_modules": 10400,
+ "n_bench_fns": 10131,
+ "bare_key_violations": 0,
+ "synthetic_label_contract": "all returned metric keys prefixed synthetic_ (bare `synthetic` sentinel exempt)",
+ "violations": []
+}

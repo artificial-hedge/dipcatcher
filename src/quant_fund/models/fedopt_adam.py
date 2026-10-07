@@ -1,4 +1,4 @@
-"""FedOpt-Adam (Reddi et al. 2021) — treat the averaged client delta as a
+"""FedOpt-Adam (Reddi et al. 2021) — treat the averaged client delta as a (SYNTHETIC)
 pseudo-gradient and apply server-side Adam — vs vanilla FedAvg aggregation.
 """
 

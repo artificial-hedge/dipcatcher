@@ -1,4 +1,4 @@
-"""Horvitz-Thompson and Hajek estimators for design-based survey
+"""Horvitz-Thompson and Hajek estimators for design-based survey (SYNTHETIC)
 inference.
 
 Horvitz & Thompson (1952): for a probability sample with
@@ -111,5 +111,5 @@ def bench_horvitz_thompson(seed: int = 20261231 + 444) -> dict[str, float]:
         "synthetic_ht_z_err": err,
         "synthetic_ht_naive_bias": naive_bias,
         "synthetic_hajek_err": hj_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

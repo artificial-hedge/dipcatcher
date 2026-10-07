@@ -1,4 +1,4 @@
-"""Feynman-Kac Monte Carlo — u(t,x) = E[u0(x + σW_t)] estimated by
+"""Feynman-Kac Monte Carlo — u(t,x) = E[u0(x + σW_t)] estimated by (SYNTHETIC)
 Brownian sampling at each grid point; stochastic baseline for the PDE.
 """
 
@@ -20,4 +20,4 @@ def bench_feynman_kac_mc(seed: int = 2531, n_mc: int = 4000) -> dict[str, float]
     def pred(xq: np.ndarray, tq: float) -> np.ndarray:
         return np.asarray(np.interp(xq, x, uT))
 
-    return {"synthetic_fkmc_rel_l2": eval_error(pred), "torch_available": 0.0}
+    return {"synthetic_fkmc_rel_l2": eval_error(pred), "synthetic_torch_available": 0.0}

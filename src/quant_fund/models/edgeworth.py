@@ -1,4 +1,4 @@
-"""Gram-Charlier Type A / Edgeworth density with skewness and kurtosis terms.
+"""Gram-Charlier Type A / Edgeworth density with skewness and kurtosis terms (SYNTHETIC).
 
 The Gram-Charlier A series corrects a Gaussian with the first non-Gaussian
 cumulants via Hermite polynomials:

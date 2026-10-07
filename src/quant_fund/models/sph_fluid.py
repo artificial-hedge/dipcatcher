@@ -1,4 +1,4 @@
-"""Smoothed-particle hydrodynamics (synthetic 2D SPH-lite).
+"""Smoothed-particle hydrodynamics (synthetic 2D SPH-lite) (SYNTHETIC).
 
 Poly6 density kernel + spiky pressure gradient + viscosity.
 Verified: (i) poly6 kernel integrates to ~1 (partition of unity

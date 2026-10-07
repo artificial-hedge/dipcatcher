@@ -1,4 +1,4 @@
-"""Tukey (1977) g-and-h distribution with Hoaglin (1985) quantile fitting.
+"""Tukey (1977) g-and-h distribution with Hoaglin (1985) quantile fitting (SYNTHETIC).
 
 The g-and-h family is defined through a monotone transform of a standard
 normal ``Z``:

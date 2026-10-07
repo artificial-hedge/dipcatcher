@@ -1,4 +1,4 @@
-"""Survival conformal (Candès et al. 2023) — right-censored calibration
+"""Survival conformal (Candès et al. 2023) — right-censored calibration (SYNTHETIC)
 with oracle censoring weights; lower-bound prediction interval on the
 survival time. Empirical coverage of the true event time vs naive
 interval.
@@ -50,5 +50,5 @@ def bench_survival_cp(seed: int = 1307, alpha: float = 0.1) -> dict[str, float]:
         "synthetic_scp_target": 1 - alpha,
         "synthetic_scp_naive_coverage": cov2,
         "synthetic_scp_cov_gain": cov - cov2,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

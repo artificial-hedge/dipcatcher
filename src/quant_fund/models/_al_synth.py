@@ -1,4 +1,4 @@
-"""Shared fixture for wave-188 active-learning canon.
+"""Shared fixture for wave-188 active-learning canon (SYNTHETIC).
 
 Pool-based AL: 2-D binary classification with a curved boundary
 y = 1[x2 > sin(2.5x1) + 0.3x1²]; feature map (x1, x2, x1², sinx1, x1x2)

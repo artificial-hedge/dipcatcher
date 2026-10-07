@@ -1,4 +1,4 @@
-"""NAT hole-punch sim (STUN/UDP): outbound packet creates pinhole; peer can
+"""NAT hole-punch sim (STUN/UDP): outbound packet creates pinhole; peer can (SYNTHETIC)
 reach back only through a live pinhole."""
 
 import numpy as np

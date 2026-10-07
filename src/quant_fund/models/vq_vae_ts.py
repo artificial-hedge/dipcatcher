@@ -1,4 +1,4 @@
-"""VQ-VAE for time series: discrete latent codebook.
+"""VQ-VAE for time series: discrete latent codebook (SYNTHETIC).
 
 van den Oord et al. 2017: encoder outputs are snapped to a learned
 codebook of prototypes (commitment + codebook losses); the discrete
@@ -128,7 +128,7 @@ def bench_vq_vae_ts(
         "synthetic_vqvae_code_mi": float(mi),
         "synthetic_vqvae_mi_ratio": float(mi / np.log(4)),
         "synthetic_vqvae_bits_per_window": float(np.log2(K)) / (win * 32),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

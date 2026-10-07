@@ -1,4 +1,4 @@
-"""Kahneman-Tversky Optimization (Ethayarajh et al. 2024).
+"""Kahneman-Tversky Optimization (Ethayarajh et al. 2024) (SYNTHETIC).
 
 Binary desirable/undesirable labels instead of pairs. KTO loss uses
 value-function asymmetry: λ_D σ(β(z_ref − r_θ)) on good examples,
@@ -77,5 +77,5 @@ def bench_kto_train(
         "synthetic_kto_best_rate": acc,
         "synthetic_kto_random_rate": acc_rand,
         "synthetic_kto_gain": acc - acc_rand,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Signature kernel via the Goursat PDE — full signature inner product.
+"""Signature kernel via the Goursat PDE — full signature inner product (SYNTHETIC).
 
 The (untruncated) signature kernel of two paths is the inner product of
 their full signatures in the tensor algebra:

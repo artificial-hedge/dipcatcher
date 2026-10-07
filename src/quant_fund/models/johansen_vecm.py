@@ -1,4 +1,4 @@
-"""Johansen cointegration rank tests + VECM estimation.
+"""Johansen cointegration rank tests + VECM estimation (SYNTHETIC).
 
 Johansen's maximum-likelihood rank test on the vector error-
 correction model Δy_t = Π y_{t-1} + Σ_i Γ_i Δy_{t-i} + u_t with

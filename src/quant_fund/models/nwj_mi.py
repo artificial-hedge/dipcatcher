@@ -1,4 +1,4 @@
-"""NWJ / f-GAN MI estimator (Nguyen, Wainwright & Jordan 2010):
+"""NWJ / f-GAN MI estimator (Nguyen, Wainwright & Jordan 2010): (SYNTHETIC)
 E_joint[T] - E_marg[e^(T-1)]. Torch-gated twin-net to MINE.
 """
 
@@ -59,5 +59,5 @@ def bench_nwj_mi(seed: int = 2893) -> dict[str, float]:
         "synthetic_nwj_mi_indep": float(mi_ind),
         "synthetic_nwj_true_mi": float(true_dep),
         "synthetic_nwj_gap": float(abs(mi_dep - true_dep)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

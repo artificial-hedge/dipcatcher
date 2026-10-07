@@ -1,4 +1,4 @@
-"""Goertzel single-bin DFT detection vs a full FFT.
+"""Goertzel single-bin DFT detection vs a full FFT (SYNTHETIC).
 
 The Goertzel recurrence computes one DFT bin in O(N) with O(1) state;
 bench checks it matches rfft at the DTMF bins (941 + 1336 Hz) and that

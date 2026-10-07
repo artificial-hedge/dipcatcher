@@ -71,4 +71,4 @@ def test_fail_closed_nonunit_diag():
 
 def test_bench():
     out = bench_mst_topology()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

@@ -1,4 +1,4 @@
-"""Parity game solver — Zielonka's recursive algorithm on small arenas.
+"""Parity game solver — Zielonka's recursive algorithm on small arenas (SYNTHETIC).
 
 Game: vertices with owner (0=Even,1=Odd), priorities, edges. solve returns
 (win_even, win_odd) partition. Zielonka: pick max priority p, attractor

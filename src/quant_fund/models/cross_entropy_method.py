@@ -1,4 +1,4 @@
-"""Cross-entropy method canon: elite-refit Gaussian search distribution
+"""Cross-entropy method canon: elite-refit Gaussian search distribution (SYNTHETIC)
 with per-coordinate variance adaptation, optional smoothing, and a
 quantile-based elite cutoff. ``bench_cross_entropy_method`` minimizes the
 shifted sphere, Rastrigin-lite, and a noisy quadratic, gating final

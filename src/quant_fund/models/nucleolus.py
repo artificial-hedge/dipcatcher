@@ -1,4 +1,4 @@
-"""Nucleolus (Schmeidler 1969) — lexicographic minimization of the
+"""Nucleolus (Schmeidler 1969) — lexicographic minimization of the (SYNTHETIC)
 sorted excess vector via successive LPs. Also hosts the shared
 coalitional-game spec + classic factories (glove, airport, voting)
 used across the wave-120 cooperative-game modules.

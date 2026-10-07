@@ -1,4 +1,4 @@
-"""DR-learner (Kennedy 2020) — doubly-robust pseudo-outcome regressed
+"""DR-learner (Kennedy 2020) — doubly-robust pseudo-outcome regressed (SYNTHETIC)
 by a small net: phi = (m1−m0) + (t−e)/(e(1−e))·(y−m_t). PEHE vs plugin.
 """
 
@@ -60,5 +60,5 @@ def bench_net_drlearner(seed: int = 1229, iters: int = 800) -> dict[str, float]:
         "synthetic_ndr_pehe": pehe(cate, tau),
         "synthetic_ndr_plugin_pehe": pehe(m1 - m0, tau),
         "synthetic_ndr_pehe_gain": pehe(m1 - m0, tau) - pehe(cate, tau),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

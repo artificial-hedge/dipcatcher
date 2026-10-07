@@ -96,5 +96,5 @@ def bench_performer_attn(
         "synthetic_performer_full_acc": acc_full,
         "synthetic_performer_acc_gap": acc_full - acc_pf,
         "synthetic_performer_cost_ratio": cost,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

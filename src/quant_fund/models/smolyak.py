@@ -1,4 +1,4 @@
-"""Smolyak sparse-grid quadrature and interpolation.
+"""Smolyak sparse-grid quadrature and interpolation (SYNTHETIC).
 
 Clenshaw–Curtis 1-D rules composed by the Smolyak combination over
 the downward-closed multi-index set {i : |i|₁ ≤ d + l}. Handles both

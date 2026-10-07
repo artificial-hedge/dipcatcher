@@ -1,4 +1,4 @@
-"""Bloom filter with optimal m,k sizing (synthetic).
+"""Bloom filter with optimal m,k sizing (synthetic) (SYNTHETIC).
 
 m = −n·ln(p)/(ln 2)², k = round(m/n·ln 2) hash functions via
 double hashing h_i = h1 + i·h2. Verified: zero false negatives;

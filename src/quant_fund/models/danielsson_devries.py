@@ -184,10 +184,10 @@ def bench_danielsson_devries(
     beat_gauss = abs(sim["var"] - true_q) < abs(gauss_q - true_q)
     ok = xi_ok and var_ok and beat_gauss
     return {
-        "xi_hat": r["xi"],
-        "var_hat": sim["var"],
-        "var_true": true_q,
-        "var_gauss": gauss_q,
-        "k_opt": float(k),
-        "score": float(ok),
+        "synthetic_xi_hat": r["xi"],
+        "synthetic_var_hat": sim["var"],
+        "synthetic_var_true": true_q,
+        "synthetic_var_gauss": gauss_q,
+        "synthetic_k_opt": float(k),
+        "synthetic_score": float(ok),
     }

@@ -1,4 +1,4 @@
-"""SIS-based compression hash: h(x) = A x mod q, x in {0,1}^m."""
+"""SIS-based compression hash: h(x) = A x mod q, x in {0,1}^m (SYNTHETIC)."""
 
 import numpy as np
 

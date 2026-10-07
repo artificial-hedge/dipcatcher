@@ -151,5 +151,5 @@ def bench_diff_mpc(
         "synthetic_mpc_cl_err": err_mpc,
         "synthetic_mpc_bc_err": err_bc,
         "synthetic_mpc_err_gain": err_bc - err_mpc,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

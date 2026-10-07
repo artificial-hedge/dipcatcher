@@ -1,4 +1,4 @@
-"""Differential item functioning — Mantel-Haenszel and logistic-
+"""Differential item functioning — Mantel-Haenszel and logistic- (SYNTHETIC)
 regression DIF screens.
 
 Holland & Thayer (1988): stratifying a binary item's 2x2 table
@@ -178,5 +178,5 @@ def bench_dif(seed: int = 20261231 + 440) -> dict[str, float]:
         "synthetic_dif_p": out["p"],
         "synthetic_dif_null_p": out0["p"],
         "synthetic_dif_logistic_p": lg["p_uniform"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

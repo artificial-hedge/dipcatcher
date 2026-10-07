@@ -1,4 +1,4 @@
-"""Envy-free allocation — EF1 via round-robin picking plus envy-cycle
+"""Envy-free allocation — EF1 via round-robin picking plus envy-cycle (SYNTHETIC)
 elimination (Lipton et al. 2004) for indivisible goods; includes the
 envy-graph machinery and an envy-freeness check.
 """

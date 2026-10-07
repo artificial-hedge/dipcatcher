@@ -65,4 +65,4 @@ def test_state_lp_rejects_short_series() -> None:
 
 def test_bench_state_dependent_lp_score() -> None:
     out = bench_state_dependent_lp()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)

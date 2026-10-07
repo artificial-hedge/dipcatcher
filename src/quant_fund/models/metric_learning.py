@@ -1,4 +1,4 @@
-"""Metric learning: neighborhood components analysis (NCA,
+"""Metric learning: neighborhood components analysis (NCA, (SYNTHETIC)
 Goldberger et al. 2004) and an LMNN-style Mahalanobis
 objective (Weinberger & Saul 2009) trained by gradient
 descent. Synthetic bench gates kNN gain on overlapping

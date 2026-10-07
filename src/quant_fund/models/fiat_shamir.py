@@ -1,4 +1,4 @@
-"""Fiat-Shamir non-interactive Schnorr: sigma + RO hash transcript."""
+"""Fiat-Shamir non-interactive Schnorr: sigma + RO hash transcript (SYNTHETIC)."""
 
 import hashlib
 

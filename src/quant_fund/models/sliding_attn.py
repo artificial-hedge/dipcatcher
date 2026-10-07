@@ -92,5 +92,5 @@ def bench_sliding_attn(
         "synthetic_sliding_full_acc": acc_full,
         "synthetic_sliding_acc_gap": acc_full - acc_sw,
         "synthetic_sliding_cost_ratio": cost,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

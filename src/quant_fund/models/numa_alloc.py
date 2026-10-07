@@ -1,4 +1,4 @@
-"""NUMA first-touch allocation: local vs remote access ratio metric."""
+"""NUMA first-touch allocation: local vs remote access ratio metric (SYNTHETIC)."""
 
 import numpy as np
 

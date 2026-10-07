@@ -1,4 +1,4 @@
-"""Functional principal component analysis (Karhunen-Loeve).
+"""Functional principal component analysis (Karhunen-Loeve) (SYNTHETIC).
 
 Ramsay & Silverman (2005): a square-integrable stochastic process X(t)
 admits the expansion
@@ -142,5 +142,5 @@ def bench_functional_pca(seed: int = 20261231 + 398) -> dict[str, float]:
         "synthetic_fpca_phi_err": phi_err,
         "synthetic_fpca_fve1": float(fve[0]),
         "synthetic_fpca_resid": resid_frac,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

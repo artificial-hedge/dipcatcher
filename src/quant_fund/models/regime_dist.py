@@ -1,4 +1,4 @@
-"""Two-state volatility-regime mixture distribution head (dip_regime).
+"""Two-state volatility-regime mixture distribution head (dip_regime) (SYNTHETIC).
 
 A Gaussian HMM infers a low/high-volatility state sequence over the fit
 window; per-state empirical CDFs are mixed with the one-step state

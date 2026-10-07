@@ -1,4 +1,4 @@
-"""Robins marginal structural models via stabilized IPTW.
+"""Robins marginal structural models via stabilized IPTW (SYNTHETIC).
 
 Two-visit marginal structural model for time-varying
 treatment with treatment-confounder feedback. For
@@ -203,5 +203,5 @@ def bench_msm_causal(seed: int = 20261231 + 465) -> dict[str, float]:
         "synthetic_psi1": psi,
         "synthetic_naive_gap": float(naive - true_psi),
         "synthetic_msm_gap": float(psi - true_psi),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

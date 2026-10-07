@@ -1,4 +1,4 @@
-"""Generalized additive model via backfitting (Hastie & Tibshirani 1986).
+"""Generalized additive model via backfitting (Hastie & Tibshirani 1986) (SYNTHETIC).
 
 An additive model ``y = intercept + sum_j f_j(x_j) + e`` is fitted by the
 backfitting algorithm: cycle through the features, and re-estimate each smooth

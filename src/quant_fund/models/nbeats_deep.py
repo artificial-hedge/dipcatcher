@@ -1,4 +1,4 @@
-"""N-BEATS: deep stack of interpretable basis blocks.
+"""N-BEATS: deep stack of interpretable basis blocks (SYNTHETIC).
 
 Oreshkin et al. 2020: a stack of residual blocks, each producing a
 backcast (input reconstruction) and a forecast on a shared basis.
@@ -123,7 +123,7 @@ def bench_nbeats_deep(
         "synthetic_nbeats_naive_mae": naive_mae,
         "synthetic_nbeats_margin_vs_mlp": mlp_mae - nb_mae,
         "synthetic_nbeats_margin_vs_naive": naive_mae - nb_mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

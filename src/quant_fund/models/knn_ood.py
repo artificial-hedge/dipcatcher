@@ -1,4 +1,4 @@
-"""k-NN OOD detection in penultimate features (Sun et al. 2022).
+"""k-NN OOD detection in penultimate features (Sun et al. 2022) (SYNTHETIC).
 
 Score = distance to the k-th nearest training feature (after
 normalization). Non-parametric and surprisingly SOTA vs density
@@ -114,7 +114,7 @@ def bench_knn_ood(
         "synthetic_knnood_auc": auc_knn,
         "synthetic_knnood_msp_auc": auc_msp,
         "synthetic_knnood_margin_vs_msp": auc_knn - auc_msp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

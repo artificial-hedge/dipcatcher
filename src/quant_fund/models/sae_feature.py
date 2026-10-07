@@ -1,4 +1,4 @@
-"""Sparse autoencoder feature recovery (Bricken et al. 2023).
+"""Sparse autoencoder feature recovery (Bricken et al. 2023) (SYNTHETIC).
 
 Activations a = s·F (sparse superposition, 8 ground-truth directions
 in 16 dims). An SAE with L1 penalty recovers decoder directions; the
@@ -64,5 +64,5 @@ def bench_sae_feature(
         "synthetic_sae_match": m_sae,
         "synthetic_sae_pca_match": m_pca,
         "synthetic_sae_gain": m_sae - m_pca,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

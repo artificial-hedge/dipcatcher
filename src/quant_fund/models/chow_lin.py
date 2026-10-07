@@ -226,6 +226,6 @@ def bench_chow_lin(seed: int = 20261231 + 356) -> dict[str, float]:
         "synthetic_cl_rho_hat": float(r["rho_hat"]),
         "synthetic_denton_agg_err": a_err_d,
         "synthetic_denton_rmse": rmse_d,
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

@@ -1,4 +1,4 @@
-"""FedAvg under client heterogeneity (McMahan 2017 + Li 2020).
+"""FedAvg under client heterogeneity (McMahan 2017 + Li 2020) (SYNTHETIC).
 
 IID vs non-IID client shards: non-IID FedAvg diverges relative to
 centralized training; FedProx (proximal term μ) recovers part of the
@@ -88,5 +88,5 @@ def bench_fedavg_hetero(
         "synthetic_fed_prox_acc": acc_prox,
         "synthetic_fed_hetero_gap": acc_iid - acc_niid,
         "synthetic_fed_prox_recovery": acc_prox - acc_niid,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

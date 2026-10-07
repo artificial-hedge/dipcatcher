@@ -1,4 +1,4 @@
-"""Particle Gibbs for state-space models (Andrieu, Doucet & Holenstein 2010).
+"""Particle Gibbs for state-space models (Andrieu, Doucet & Holenstein 2010) (SYNTHETIC).
 
 Particle Gibbs is a Gibbs sampler over the joint posterior
 p(theta, x_{0:T} | y_{0:T}) that alternates:
@@ -235,5 +235,5 @@ def bench_particle_gibbs(seed: int = 20261231 + 399) -> dict[str, float]:
         "synthetic_pg_coverage": cover,
         "synthetic_pg_phi": phi_hat,
         "synthetic_pg_phi_err": phi_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

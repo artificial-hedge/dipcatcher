@@ -63,7 +63,8 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-from quant_fund.research.receipt_v2 import git_revision, verify_receipt_payload
+from quant_fund.schemas.receipt import verify_receipt_payload
+from quant_fund.utils.reproducibility import git_revision
 
 __all__ = ["jobs_audit", "jobs_audit_bench"]
 

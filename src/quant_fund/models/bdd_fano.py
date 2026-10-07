@@ -1,4 +1,4 @@
-"""Bounded Fano (SYNTHIC)."""
+"""Bounded Fano (SYNTHIC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

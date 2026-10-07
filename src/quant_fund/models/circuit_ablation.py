@@ -1,4 +1,4 @@
-"""Circuit ablation / mean-ablation (Olah lab conventions).
+"""Circuit ablation / mean-ablation (Olah lab conventions) (SYNTHETIC).
 
 Zeroing the activation mass along feature direction k degrades the
 probe for k but leaves other features readable — the circuit-surgery

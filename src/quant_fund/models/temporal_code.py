@@ -1,4 +1,4 @@
-"""Temporal coding comparison — rank-order (latency) vs rate (Poisson
+"""Temporal coding comparison — rank-order (latency) vs rate (Poisson (SYNTHETIC)
 count) coding on the same classifier: information per spike (acc /
 mean spikes) favors latency coding.
 """
@@ -50,5 +50,5 @@ def bench_temporal_code(seed: int = 1933, T: int = 30) -> dict[str, float]:
         "synthetic_rate_spikes_per_input": spikes_r,
         "synthetic_latency_spikes_per_input": spikes_l,
         "synthetic_latency_efficiency": acc_l / spikes_l - acc_r / spikes_r,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

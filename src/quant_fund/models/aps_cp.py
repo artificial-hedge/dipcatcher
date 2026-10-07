@@ -1,4 +1,4 @@
-"""APS — adaptive prediction sets (Romano et al. 2020) — split-conformal
+"""APS — adaptive prediction sets (Romano et al. 2020) — split-conformal (SYNTHETIC)
 sets accumulating class probabilities until the quantile threshold;
 set size vs top-k/threshold-set baselines at fixed coverage.
 """
@@ -57,5 +57,5 @@ def bench_aps_cp(seed: int = 1309, alpha: float = 0.1) -> dict[str, float]:
         "synthetic_aps_set_size": float(np.mean(sizes)),
         "synthetic_aps_thresh_coverage": cov2,
         "synthetic_aps_thresh_size": float(np.mean(sizes2)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

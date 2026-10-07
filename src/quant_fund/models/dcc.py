@@ -1,4 +1,4 @@
-"""Engle (2002) DCC(1,1) dynamic conditional correlation.
+"""Engle (2002) DCC(1,1) dynamic conditional correlation (SYNTHETIC).
 
 Two-stage QMLE:
   Stage 1: univariate GARCH(1,1) per series -> standardized residuals z_t.

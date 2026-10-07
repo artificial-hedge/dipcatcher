@@ -129,7 +129,8 @@ def attribute_pair(
     if backtest is None and shadow is None:
         raise ValueError("at least one side of a parity row must be present")
     if backtest is None:
-        assert shadow is not None
+        if not (shadow is not None):
+            raise ValueError("shadow is not None")
         return _missing_cause(shadow, other_backtest)
     if shadow is None:
         return _missing_cause(backtest, other_shadow)

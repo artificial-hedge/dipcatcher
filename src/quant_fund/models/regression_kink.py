@@ -1,4 +1,4 @@
-"""Regression kink design — slope discontinuity estimation.
+"""Regression kink design — slope discontinuity estimation (SYNTHETIC).
 
 When a treatment's SLOPE in the running variable kinks at a
 threshold (e.g. benefit schedule slope), the outcome's slope kink

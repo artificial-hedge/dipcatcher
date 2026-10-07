@@ -33,4 +33,4 @@ def test_bad_inputs():
 
 
 def test_bench():
-    assert bench_epps_singleton()["score"] == 1.0
+    assert bench_epps_singleton()["synthetic_score"] == 1.0

@@ -1,4 +1,4 @@
-"""Conformal PID control: online quantile-level control for conformal coverage.
+"""Conformal PID control: online quantile-level control for conformal coverage (SYNTHETIC).
 
 Proportional-integral-derivative (PID) control of the coverage level
 alpha_t, closing the loop between realized miscoverage and the conformal

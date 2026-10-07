@@ -1,4 +1,4 @@
-"""Gain-scheduled controller: operating-point-varying PI."""
+"""Gain-scheduled controller: operating-point-varying PI (SYNTHETIC)."""
 
 import numpy as np
 

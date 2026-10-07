@@ -526,7 +526,8 @@ def _cash_ok(
         if delta > 0 and not funded(state.book.cash, notional + total_trade_cost):
             return False
         return not (not spec.allow_margin and delta <= 0.0 and post < -1e-12)
-    assert state.constraints is not None
+    if not (state.constraints is not None):
+        raise ValueError("state.constraints is not None")
     if delta > 0:
         return not (
             not spec.allow_margin
@@ -562,7 +563,8 @@ def _move_cash(
     if spec.settlement_bars == 0:
         state.book.cash -= notional + total_trade_cost
     else:
-        assert state.constraints is not None
+        if not (state.constraints is not None):
+            raise ValueError("state.constraints is not None")
         need_or_proceeds = -(notional + total_trade_cost)
         if delta > 0:
             ok = state.constraints.apply_buy(sid, delta, notional + total_trade_cost, bar_index)

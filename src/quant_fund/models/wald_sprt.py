@@ -1,4 +1,4 @@
-"""Wald (1947) Sequential Probability Ratio Test.
+"""Wald (1947) Sequential Probability Ratio Test (SYNTHETIC).
 
 The SPRT accumulates the log-likelihood ratio of two simple
 hypotheses and stops the moment it crosses either boundary —

@@ -297,12 +297,18 @@ class _MutateCheckpointModel(_SpyModel):
 
     name = "audit-mutate"
 
+    def __init__(self, allowed_root: Path) -> None:
+        super().__init__()
+        self._allowed_root = Path(allowed_root).resolve()
+
     def load(
         self,
         checkpoint_path: str | Path | None = None,
         config: Mapping[str, Any] | None = None,
     ) -> None:
-        path = Path(str(checkpoint_path))
+        path = Path(str(checkpoint_path)).resolve()
+        if not path.is_relative_to(self._allowed_root) or not path.is_file():
+            raise ValueError("refusing to mutate outside the audit workspace")
         path.write_bytes(path.read_bytes() + b"\x00")
 
 
@@ -333,10 +339,8 @@ def _raised(
     expected = kinds if isinstance(kinds, tuple) else (kinds,)
     try:
         fn()
-    except expected:
-        return True
-    except Exception:
-        return False
+    except Exception as exc:  # noqa: BLE001 — probe re-checks the type below
+        return isinstance(exc, expected)
     return False
 
 
@@ -970,7 +974,7 @@ def _runner_probes(tmp: Path) -> dict[str, ProbeValue]:
             UntrustedArtifactError,
             lambda: run_inference(
                 config,
-                model=_MutateCheckpointModel(),
+                model=_MutateCheckpointModel(tmp),
                 provider=_MemoryProvider(bars),
             ),
         )

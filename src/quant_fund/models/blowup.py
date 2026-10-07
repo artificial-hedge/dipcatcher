@@ -22,7 +22,8 @@ def strict_transform_x_chart(
         out[key] = out.get(key, Fraction(0)) + c
         if e_min is None or i + j < e_min:
             e_min = i + j
-    assert e_min is not None
+    if not (e_min is not None):
+        raise ValueError("e_min is not None")
     # divide by x^e_min
     g: dict[tuple[int, int], Fraction] = {}
     for (i, j), c in out.items():

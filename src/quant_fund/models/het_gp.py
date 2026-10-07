@@ -1,4 +1,4 @@
-"""Heteroscedastic GP regression — two-stage: homoscedastic RBF GP for
+"""Heteroscedastic GP regression — two-stage: homoscedastic RBF GP for (SYNTHETIC)
 the mean, then RBF regression on log squared residuals for σ²(x), refit
 with input-dependent noise. Test log-density vs Gaussian baseline.
 """

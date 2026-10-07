@@ -1,4 +1,4 @@
-"""Ricart-Agrawala mutual exclusion: request/reply on logical clocks."""
+"""Ricart-Agrawala mutual exclusion: request/reply on logical clocks (SYNTHETIC)."""
 
 import heapq
 

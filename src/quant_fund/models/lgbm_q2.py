@@ -1,4 +1,4 @@
-"""LightGBM quantile head on the full causal feature matrix (dip_lgbm_q2, P1.8)."""
+"""LightGBM quantile head on the full causal feature matrix (dip_lgbm_q2, P1.8) (SYNTHETIC)."""
 
 from __future__ import annotations
 

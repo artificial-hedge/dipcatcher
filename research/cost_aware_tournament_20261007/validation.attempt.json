@@ -1,0 +1,12 @@
+{
+  "manifest_sha256": "158da08cfd8c6a9dceabc6f10190199b6e06efae8cf642755c177ff4b5ed3402",
+  "phase": "validation",
+  "created_at": "2026-10-07T11:22:53.104531+00:00",
+  "candidates": [
+    "momentum_20",
+    "reversal_1",
+    "momentum_20_cost_aware",
+    "reversal_1_cost_aware"
+  ],
+  "receipt_sha256": "b8fc569944e01847b19dba198fae0f28203c19dcee1ae27e3b83a5c258067681"
+}

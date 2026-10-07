@@ -142,5 +142,5 @@ def bench_mask_autoencoder(seed: int = 103) -> dict[str, float]:
         "synthetic_mae_scratch_acc": acc_scratch,
         "synthetic_mae_margin_vs_raw": acc_mae - acc_raw,
         "synthetic_mae_margin_vs_scratch": acc_mae - acc_scratch,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

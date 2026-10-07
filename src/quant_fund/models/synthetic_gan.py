@@ -1,4 +1,4 @@
-"""Time-series GAN (Exec-Summary synthetic-data item). Vanilla minimax
+"""Time-series GAN (Exec-Summary synthetic-data item). Vanilla minimax (SYNTHETIC)
 GAN on return windows: 1-hidden-layer generator and discriminator with
 manual backprop; label smoothing + instance noise for stability.
 

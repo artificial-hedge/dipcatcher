@@ -1,4 +1,4 @@
-"""Consistent hashing with virtual nodes (synthetic).
+"""Consistent hashing with virtual nodes (synthetic) (SYNTHETIC).
 
 Karger-style ring hashing: each physical node gets V virtual tokens
 on a 2^32 ring; keys map to the successor token's owner. Verified:

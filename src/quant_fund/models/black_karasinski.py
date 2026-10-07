@@ -203,5 +203,5 @@ def bench_black_karasinski(seed: int = 20261231 + 385) -> dict[str, float]:
         "synthetic_bk_caplet": c1,
         "synthetic_bk_caplet_vol_ratio": c2 / c1,
         "synthetic_bk_min_rate": rmin,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Adafactor (Shazeer-Stern 2018) — factored second-moment estimate
+"""Adafactor (Shazeer-Stern 2018) — factored second-moment estimate (SYNTHETIC)
 for matrices: row/col RMS factors → O(n+m) memory vs Adam's O(nm).
 """
 
@@ -73,5 +73,5 @@ def bench_adafactor_opt(
         "synthetic_af_adam_loss": loss_a,
         "synthetic_af_gain": loss_a - loss_af,
         "synthetic_af_mem_ratio": mem_ratio,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

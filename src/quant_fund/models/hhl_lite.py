@@ -1,4 +1,4 @@
-"""HHL linear solver on 3 qubits: A x = b for a 2x2 Hermitian A.
+"""HHL linear solver on 3 qubits: A x = b for a 2x2 Hermitian A (SYNTHETIC).
 
 Phase estimation on exp(2 pi i A) with a 2-qubit clock register resolves both
 eigenvalue bits (the 2x2 example uses eigenvalues on a dyadic grid), ancilla

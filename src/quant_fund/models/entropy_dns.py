@@ -1,4 +1,4 @@
-"""DNS-tunneling detection via label entropy (defensive) — wave 286.
+"""DNS-tunneling detection via label entropy (defensive) — wave 286 (SYNTHETIC).
 
 Tunneled lookups carry high-entropy encoded subdomains; lexical Shannon
 entropy of the query label separates them from human-typed names.

@@ -1,4 +1,4 @@
-"""Localized kernel-weighted split CQR (Lei–Wasserman / Guan).
+"""Localized kernel-weighted split CQR (Lei–Wasserman / Guan) (SYNTHETIC).
 
 RBF weights on a PIT-safe 1-d covariate (vol). Smoother than Mondrian
 bins (ADR-009) and complementary to likelihood-ratio weighted CQR (ADR-013).
@@ -284,21 +284,25 @@ def bench_localized_cqr(
     else:
         rate, lr, kp = float("nan"), float("nan"), float("nan")
     out: dict[str, float | str] = {
-        "coverage": local.coverage,
-        "mean_width": local.mean_width,
-        "median_width": local.median_width,
-        "high_vol_mean_width": float(np.mean(width[high])) if bool(high.any()) else float("nan"),
-        "low_vol_mean_width": float(np.mean(width[low])) if bool(low.any()) else float("nan"),
-        "global_mean_width": plain.mean_width,
-        "global_coverage": plain.coverage,
-        "n": float(local.n),
-        "alpha": float(alpha),
-        "bandwidth": float(model.bandwidth_),
-        "miss_rate": rate,
-        "kupiec_lr": lr,
-        "kupiec_p": kp,
-        "dgp": dgp_label,
-        "claim": "research_metric_only",
+        "synthetic_coverage": local.coverage,
+        "synthetic_mean_width": local.mean_width,
+        "synthetic_median_width": local.median_width,
+        "synthetic_high_vol_mean_width": float(np.mean(width[high]))
+        if bool(high.any())
+        else float("nan"),
+        "synthetic_low_vol_mean_width": float(np.mean(width[low]))
+        if bool(low.any())
+        else float("nan"),
+        "synthetic_global_mean_width": plain.mean_width,
+        "synthetic_global_coverage": plain.coverage,
+        "synthetic_n": float(local.n),
+        "synthetic_alpha": float(alpha),
+        "synthetic_bandwidth": float(model.bandwidth_),
+        "synthetic_miss_rate": rate,
+        "synthetic_kupiec_lr": lr,
+        "synthetic_kupiec_p": kp,
+        "synthetic_dgp": dgp_label,
+        "synthetic_claim": "research_metric_only",
     }
     if dates_test is not None:
         from quant_fund.metrics.inference import grouped_mean_tstat
@@ -309,10 +313,10 @@ def bench_localized_cqr(
         mean_miss, t_miss, p_miss, n_dates = grouped_mean_tstat(
             1.0 - covered(y_t, plo, phi), date_arr, target=float(alpha)
         )
-        out["date_clustered_miss_rate"] = mean_miss
-        out["date_clustered_t"] = t_miss
-        out["date_clustered_p"] = p_miss
-        out["date_clustered_n_dates"] = float(n_dates)
+        out["synthetic_date_clustered_miss_rate"] = mean_miss
+        out["synthetic_date_clustered_t"] = t_miss
+        out["synthetic_date_clustered_p"] = p_miss
+        out["synthetic_date_clustered_n_dates"] = float(n_dates)
     if dgp_label == "fixture":
-        out["seed"] = float(seed)
+        out["synthetic_seed"] = float(seed)
     return out

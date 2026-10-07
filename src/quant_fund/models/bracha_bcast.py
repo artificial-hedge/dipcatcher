@@ -1,4 +1,4 @@
-"""Bracha reliable broadcast (n = 3f+1 synchronous rounds).
+"""Bracha reliable broadcast (n = 3f+1 synchronous rounds) (SYNTHETIC).
 
 Phases: SEND -> ECHO -> VOTE -> DELIVER. Honest party rules:
   echo v  on SEND(v) from sender, or > (n+f)/2 distinct ECHO(v),

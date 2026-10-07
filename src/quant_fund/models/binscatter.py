@@ -1,4 +1,4 @@
-"""Binscatter — Cattaneo, Crump, Farrell, Feng (2024).
+"""Binscatter — Cattaneo, Crump, Farrell, Feng (2024) (SYNTHETIC).
 
 The canonical conditional-expectation plot: partition x into
 J equal-mass (quantile) bins and replace the cloud by per-bin

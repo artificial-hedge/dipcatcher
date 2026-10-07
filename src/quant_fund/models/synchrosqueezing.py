@@ -1,4 +1,4 @@
-"""Synchrosqueezed wavelet-transform time-frequency analysis.
+"""Synchrosqueezed wavelet-transform time-frequency analysis (SYNTHETIC).
 
 Daubechies, Lu & Wu (2011): the CWT of x with mother wavelet psi
 smeares energy across scales near the instantaneous frequency
@@ -137,5 +137,5 @@ def bench_synchrosqueezing(seed: int = 20261231 + 401) -> dict[str, float]:
     return {
         "synthetic_sst_ridge_err": err,
         "synthetic_sst_concentration": conc,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

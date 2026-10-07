@@ -1,4 +1,4 @@
-"""Conformal risk control (Angelopoulos et al. 2022) — calibrate lambda
+"""Conformal risk control (Angelopoulos et al. 2022) — calibrate lambda (SYNTHETIC)
 so E[risk(lambda)] <= alpha for a non-binary risk (relative absolute
 error truncated); risk level vs naive quantile calibration.
 """
@@ -36,5 +36,5 @@ def bench_risk_cp(seed: int = 1321, alpha: float = 0.2) -> dict[str, float]:
         "synthetic_rcp_naive_risk": risk_t2,
         "synthetic_rcp_risk_gain": risk_t2 - risk_t,
         "synthetic_rcp_radius": lam_star,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

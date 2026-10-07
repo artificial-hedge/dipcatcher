@@ -1,4 +1,4 @@
-"""Implicit score matching (Hyvärinen 2005) — train E(x) so that
+"""Implicit score matching (Hyvärinen 2005) — train E(x) so that (SYNTHETIC)
 ∇E ≈ -∇ log p_data via tr(∇²E) + 0.5|∇E|²; Langevin samples then
 MMD-evaluated vs moons data.
 """
@@ -42,5 +42,5 @@ def bench_score_matching(seed: int = 2423, iters: int = 400) -> dict[str, float]
         "synthetic_sm_mmd": m,
         "synthetic_gauss_mmd": mb,
         "synthetic_sm_gain": mb - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

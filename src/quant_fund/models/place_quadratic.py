@@ -1,4 +1,4 @@
-"""Analytical quadratic placement (wave 291).
+"""Analytical quadratic placement (wave 291) (SYNTHETIC).
 
 Fixed cells on boundary; free cells minimize sum of squared wirelength
 over nets — solve the linear system via conjugate-gradient-free direct

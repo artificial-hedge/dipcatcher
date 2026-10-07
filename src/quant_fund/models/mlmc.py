@@ -177,5 +177,5 @@ def bench_mlmc(seed: int = 20261231 + 384) -> dict[str, float]:
         "synthetic_mlmc_se": se,
         "synthetic_mlmc_bs_err": err,
         "synthetic_mlmc_var_decay": beta,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

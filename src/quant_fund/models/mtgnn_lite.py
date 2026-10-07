@@ -1,4 +1,4 @@
-"""MTGNN-lite (Wu et al. 2020) — mixhop propagation (sum of A^k powers)
+"""MTGNN-lite (Wu et al. 2020) — mixhop propagation (sum of A^k powers) (SYNTHETIC)
 + dilated inception temporal conv + learned uni-directional adjacency.
 Next-step MSE vs plain GCN-TCN.
 """
@@ -86,5 +86,5 @@ def bench_mtgnn_lite(seed: int = 1627, iters: int = 800, K: int = 3) -> dict[str
         "synthetic_mtg_ar2_mse": base,
         "synthetic_mtg_mse_gain": base - mse,
         "synthetic_mtg_mixhop_gain": mse2 - mse,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

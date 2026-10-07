@@ -1,4 +1,4 @@
-"""Weak convergence / Portmanteau (wave 288).
+"""Weak convergence / Portmanteau (wave 288) (SYNTHETIC).
 
 Empirical measure mu_n -> mu weakly iff E_mu_n[f] -> E_mu[f] for all
 bounded Lipschitz f — verified for f in a Lipschitz test family as the

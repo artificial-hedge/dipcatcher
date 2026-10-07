@@ -1,4 +1,4 @@
-"""Monotonic-by-construction network (min-max lattice-style).
+"""Monotonic-by-construction network (min-max lattice-style) (SYNTHETIC).
 
 Outputs are a min over max-pools of affine terms with positive weights
 (Daniels & Velikova style) — monotone in x by construction; a plain MLP
@@ -69,5 +69,5 @@ def bench_monotonic_net(
         "synthetic_mono_mlp_viol": viol_r,
         "synthetic_mono_mse": mse_m,
         "synthetic_mono_mlp_mse": mse_r,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Direct Preference Optimization (Rafailov et al. 2023).
+"""Direct Preference Optimization (Rafailov et al. 2023) (SYNTHETIC).
 
 Policy logits θ·φ(x,a) trained by the DPO surrogate
 log σ(β(log πθ/πref)(w) − β(log πθ/πref)(l)) against a frozen reference
@@ -74,5 +74,5 @@ def bench_dpo_train(
         "synthetic_dpo_best_rate": acc_dpo,
         "synthetic_dpo_ref_rate": acc_ref,
         "synthetic_dpo_gain": acc_dpo - acc_ref,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

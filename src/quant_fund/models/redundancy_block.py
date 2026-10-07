@@ -1,4 +1,4 @@
-"""Reliability block diagram: series/parallel/k-out-of-n/cold standby.
+"""Reliability block diagram: series/parallel/k-out-of-n/cold standby (SYNTHETIC).
 
 Exponential unit reliabilities R_i(t) = exp(-lam_i t). Series = prod;
 parallel = 1-prod(1-R); k-of-n via the binomial tail; cold standby

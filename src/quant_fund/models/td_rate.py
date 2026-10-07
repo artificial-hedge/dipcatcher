@@ -1,4 +1,4 @@
-"""TD(0) convergence rate on the chain random walk.
+"""TD(0) convergence rate on the chain random walk (SYNTHETIC).
 
 TD(0) with step size alpha_t = c/(c+t) satisfies Robbins-Monro and
 converges; a constant step size is *biased* in general but can win

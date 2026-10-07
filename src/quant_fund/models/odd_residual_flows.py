@@ -1079,7 +1079,8 @@ class TORFForecaster:
 
     def fit(self, X: Array, y: Array) -> TORFForecaster:
         Xm, y_ = self._check_xy(X, y)
-        assert y_ is not None
+        if not (y_ is not None):
+            raise ValueError("y_ is not None")
         yv = y_
         self.stage1.fit(Xm, yv)
         mu = self._stage1_mu(Xm)
@@ -1234,23 +1235,23 @@ def bench_odd_residual_flows(
     q = torf.predict_quantiles(Xte, np.array([0.05, 0.95]))
     pit_stat, pit_p = pit_ks(torf.pit(Xte, yte))
     return {
-        "torf_crps": torf_crps,
-        "ngboost_crps": ngb_crps,
-        "crps_gain_vs_ngboost": ngb_crps - torf_crps,
-        "torf_log_score": torf.log_score(Xte, yte),
-        "ngboost_log_score": float(ngb.log_score(Xte, yte)),
-        "torf_mae": torf_mae,
-        "stage1_mae": stage1_mae,
-        "mae_preservation_gap": abs(torf_mae - stage1_mae),
-        "residual_sample_mean": float(np.mean(samples - mu[:, None])),
-        "coverage_90": float(np.mean((yte >= q[:, 0]) & (yte <= q[:, 1]))),
-        "pit_ks": float(pit_stat),
-        "pit_ks_pvalue": float(pit_p),
-        "n_train": float(n_train),
-        "n_test": float(n_test),
-        "seed": float(seed),
-        "noise": str(noise),
-        "dgp": "fixture",
-        "claim": "research_metric_only",
-        "synthetic": "heteroskedastic_symmetric_seeded",
+        "synthetic_torf_crps": torf_crps,
+        "synthetic_ngboost_crps": ngb_crps,
+        "synthetic_crps_gain_vs_ngboost": ngb_crps - torf_crps,
+        "synthetic_torf_log_score": torf.log_score(Xte, yte),
+        "synthetic_ngboost_log_score": float(ngb.log_score(Xte, yte)),
+        "synthetic_torf_mae": torf_mae,
+        "synthetic_stage1_mae": stage1_mae,
+        "synthetic_mae_preservation_gap": abs(torf_mae - stage1_mae),
+        "synthetic_residual_sample_mean": float(np.mean(samples - mu[:, None])),
+        "synthetic_coverage_90": float(np.mean((yte >= q[:, 0]) & (yte <= q[:, 1]))),
+        "synthetic_pit_ks": float(pit_stat),
+        "synthetic_pit_ks_pvalue": float(pit_p),
+        "synthetic_n_train": float(n_train),
+        "synthetic_n_test": float(n_test),
+        "synthetic_seed": float(seed),
+        "synthetic_noise": str(noise),
+        "synthetic_dgp": "fixture",
+        "synthetic_claim": "research_metric_only",
+        "synthetic_synthetic": "heteroskedastic_symmetric_seeded",
     }

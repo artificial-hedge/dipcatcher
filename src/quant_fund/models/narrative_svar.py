@@ -196,6 +196,6 @@ def bench_narrative(seed: int = 20261231 + 361) -> dict[str, float]:
         "synthetic_ns_med_impact": med0,
         "synthetic_ns_true_impact": true_impact,
         "synthetic_ns_unrestr_impact": float(unrestr[0, 0]),
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

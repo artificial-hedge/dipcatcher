@@ -1,4 +1,4 @@
-"""Yield-curve fitting: Nelson-Siegel, Svensson, Diebold-Li dynamics.
+"""Yield-curve fitting: Nelson-Siegel, Svensson, Diebold-Li dynamics (SYNTHETIC).
 
 Nelson-Siegel (1987):
   y(m) = b0 + b1 f1(m) + b2 f2(m),

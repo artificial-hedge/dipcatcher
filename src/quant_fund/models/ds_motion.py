@@ -1,4 +1,4 @@
-"""Second-order damped dynamical-system motion generator w/ obstacle modulation.
+"""Second-order damped dynamical-system motion generator w/ obstacle modulation (SYNTHETIC).
 
 Base field: xdd = k (x* - x) - d xd (critically damped spring-damper, globally
 asymptotically stable). Obstacle modulation: velocity is rotated away via a

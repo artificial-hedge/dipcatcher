@@ -1,4 +1,4 @@
-"""DDIM deterministic sampling (Song et al. 2021).
+"""DDIM deterministic sampling (Song et al. 2021) (SYNTHETIC).
 
 Toy 2-point "image" distribution; compare DDIM (η=0, k steps) vs
 ancestral DDPM at equal step budget — FID-proxy (W1) gap.

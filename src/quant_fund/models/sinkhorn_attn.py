@@ -105,5 +105,5 @@ def bench_sinkhorn_attn(
         "synthetic_sinkhorn_full_acc": acc_full,
         "synthetic_sinkhorn_acc_gap": acc_full - acc_sk,
         "synthetic_sinkhorn_cost_ratio": cost,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

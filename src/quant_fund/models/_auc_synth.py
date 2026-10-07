@@ -1,4 +1,4 @@
-"""Synthetic auction fixtures shared by the auction-theory canon.
+"""Synthetic auction fixtures shared by the auction-theory canon (SYNTHETIC).
 
 Uniform/regular value distributions, bidder count, and a planted order
 book for the double-auction module. All numbers deterministic (seeded).

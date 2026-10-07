@@ -1,4 +1,4 @@
-"""Many-to-one hospital/resident deferred acceptance with quotas."""
+"""Many-to-one hospital/resident deferred acceptance with quotas (SYNTHETIC)."""
 
 import numpy as np
 

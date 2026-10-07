@@ -1,4 +1,4 @@
-"""Virtual method dispatch: per-class vtables, single-inheritance override."""
+"""Virtual method dispatch: per-class vtables, single-inheritance override (SYNTHETIC)."""
 
 import numpy as np
 

@@ -242,11 +242,11 @@ def bench_pmg_ardl(seed: int = 20261231 + 295) -> dict[str, float]:
     err_m = float(np.linalg.norm(th_m - th_t) / np.linalg.norm(th_t))
     ok = err_p < 0.15 and pmg["phi_mean"] < 0.0
     return {
-        "theta_hat": float(th_p[0]),
-        "theta_true": float(th_t[0]),
-        "theta_mg": float(th_m[0]),
-        "err_pmg": err_p,
-        "err_mg": err_m,
-        "phi_mean": float(pmg["phi_mean"]),
-        "score": float(ok),
+        "synthetic_theta_hat": float(th_p[0]),
+        "synthetic_theta_true": float(th_t[0]),
+        "synthetic_theta_mg": float(th_m[0]),
+        "synthetic_err_pmg": err_p,
+        "synthetic_err_mg": err_m,
+        "synthetic_phi_mean": float(pmg["phi_mean"]),
+        "synthetic_score": float(ok),
     }

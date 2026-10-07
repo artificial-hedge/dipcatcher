@@ -1,4 +1,4 @@
-"""Button-debounce FSM: output changes only after N stable samples."""
+"""Button-debounce FSM: output changes only after N stable samples (SYNTHETIC)."""
 
 import numpy as np
 

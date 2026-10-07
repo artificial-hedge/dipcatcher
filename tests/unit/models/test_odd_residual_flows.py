@@ -635,37 +635,37 @@ def test_bench_keys_labels_and_claims() -> None:
     fixture DGP — never market evidence."""
     out = orf.bench_odd_residual_flows(n_train=1000, n_test=600, seed=0, epochs=200)
     expected = {
-        "torf_crps",
-        "ngboost_crps",
-        "crps_gain_vs_ngboost",
-        "torf_log_score",
-        "ngboost_log_score",
-        "torf_mae",
-        "stage1_mae",
-        "mae_preservation_gap",
-        "residual_sample_mean",
-        "coverage_90",
-        "pit_ks",
-        "pit_ks_pvalue",
-        "n_train",
-        "n_test",
-        "seed",
-        "noise",
-        "dgp",
-        "claim",
-        "synthetic",
+        "synthetic_torf_crps",
+        "synthetic_ngboost_crps",
+        "synthetic_crps_gain_vs_ngboost",
+        "synthetic_torf_log_score",
+        "synthetic_ngboost_log_score",
+        "synthetic_torf_mae",
+        "synthetic_stage1_mae",
+        "synthetic_mae_preservation_gap",
+        "synthetic_residual_sample_mean",
+        "synthetic_coverage_90",
+        "synthetic_pit_ks",
+        "synthetic_pit_ks_pvalue",
+        "synthetic_n_train",
+        "synthetic_n_test",
+        "synthetic_seed",
+        "synthetic_noise",
+        "synthetic_dgp",
+        "synthetic_claim",
+        "synthetic_synthetic",
     }
     assert set(out) == expected
-    assert out["dgp"] == "fixture"
-    assert out["claim"] == "research_metric_only"
-    assert out["synthetic"] == "heteroskedastic_symmetric_seeded"
-    assert out["mae_preservation_gap"] == 0.0
-    assert out["torf_mae"] == out["stage1_mae"]
-    assert out["crps_gain_vs_ngboost"] > 0.0
-    assert out["torf_crps"] <= out["ngboost_crps"] + CRPS_TOL
-    assert 0.80 <= out["coverage_90"] <= 0.97
-    assert abs(out["residual_sample_mean"]) <= 0.02
-    assert out["pit_ks_pvalue"] > 0.01
+    assert out["synthetic_dgp"] == "fixture"
+    assert out["synthetic_claim"] == "research_metric_only"
+    assert out["synthetic_synthetic"] == "heteroskedastic_symmetric_seeded"
+    assert out["synthetic_mae_preservation_gap"] == 0.0
+    assert out["synthetic_torf_mae"] == out["synthetic_stage1_mae"]
+    assert out["synthetic_crps_gain_vs_ngboost"] > 0.0
+    assert out["synthetic_torf_crps"] <= out["synthetic_ngboost_crps"] + CRPS_TOL
+    assert 0.80 <= out["synthetic_coverage_90"] <= 0.97
+    assert abs(out["synthetic_residual_sample_mean"]) <= 0.02
+    assert out["synthetic_pit_ks_pvalue"] > 0.01
     for key, value in out.items():
         if isinstance(value, float):
             assert math.isfinite(value), key

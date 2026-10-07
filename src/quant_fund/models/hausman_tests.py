@@ -1,4 +1,4 @@
-"""Hausman specification tests: FE vs RE and Durbin–Wu–Hausman.
+"""Hausman specification tests: FE vs RE and Durbin–Wu–Hausman (SYNTHETIC).
 
 Two classical specification diagnostics:
 

@@ -1,4 +1,4 @@
-"""Region/'outlives' constraint solving.
+"""Region/'outlives' constraint solving (SYNTHETIC).
 
 Constraints: ("outlives",a,b) meaning region a ⊇ region b; ("eq_at",a,pt)
 region a must contain program point pt. Solve by propagating point sets

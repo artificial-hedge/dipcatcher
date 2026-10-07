@@ -38,5 +38,6 @@ def embargo_mask(
             continue
         drop = end_i < i <= end_i + embargo_bars
         keep.append(not drop)
-    assert len(keep) == n
+    if not (len(keep) == n):
+        raise ValueError("len(keep) == n")
     return keep

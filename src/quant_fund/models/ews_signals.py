@@ -136,5 +136,5 @@ def bench_ews_signals(seed: int = 20261231 + 387) -> dict[str, float]:
         "synthetic_ews_tau_var": tau_var,
         "synthetic_ews_surrogate_p": p,
         "synthetic_ews_tau_control": tau_ctl,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

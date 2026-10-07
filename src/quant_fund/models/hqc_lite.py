@@ -1,4 +1,4 @@
-"""HQC-lite: Hamming Quasi-Cyclic KEM structure over R = F2[x]/(x^r - 1).
+"""HQC-lite: Hamming Quasi-Cyclic KEM structure over R = F2[x]/(x^r - 1) (SYNTHETIC).
 
 pk (h, s = x + h*y) with x, y sparse; encryption u = r1 + r2*h,
 v = m*G + s*r2 + e; decryption C.decode(v - trunc(u*y)) — the error term

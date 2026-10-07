@@ -1,4 +1,4 @@
-"""Buchberger's algorithm for Gröbner bases over QQ[x,y] (synthetic).
+"""Buchberger's algorithm for Gröbner bases over QQ[x,y] (synthetic) (SYNTHETIC).
 
 Polynomials as ``{(i,j): Fraction}`` monomial maps with graded reverse
 lexicographic order. Computes a (non-reduced) Gröbner basis via the

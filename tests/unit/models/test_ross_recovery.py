@@ -61,6 +61,12 @@ def test_different_sizes() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_ross_recovery(seed=3)
-    for k in ("p_err", "gamma_err", "row_sum_err", "gamma", "score"):
+    for k in (
+        "synthetic_p_err",
+        "synthetic_gamma_err",
+        "synthetic_row_sum_err",
+        "synthetic_gamma",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

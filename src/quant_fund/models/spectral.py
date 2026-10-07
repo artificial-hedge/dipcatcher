@@ -1,4 +1,4 @@
-"""Spectral-density estimation and cross-spectral analysis.
+"""Spectral-density estimation and cross-spectral analysis (SYNTHETIC).
 
 References:
 - Welch (1967): averaged periodogram over overlapped segments.

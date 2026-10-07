@@ -1,4 +1,4 @@
-"""GF(p) arithmetic, primitive elements, and discrete log (wave 281).
+"""GF(p) arithmetic, primitive elements, and discrete log (wave 281) (SYNTHETIC).
 
 Field axioms via brute-force table checks; primitive element generates all
 nonzero residues; discrete log inverts exponentiation exactly.

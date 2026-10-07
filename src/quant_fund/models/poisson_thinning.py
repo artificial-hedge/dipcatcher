@@ -1,4 +1,4 @@
-"""Lewis–Shedler thinning for an inhomogeneous Poisson process:
+"""Lewis–Shedler thinning for an inhomogeneous Poisson process: (SYNTHETIC)
 rate λ(t) = a + b·sin(2πt). Thinned event times should match the
 theoretical intensity profile; flat-homogeneous sampler baseline.
 """
@@ -40,5 +40,5 @@ def bench_poisson_thinning(seed: int = 2943, T: float = 20.0) -> dict[str, float
         "synthetic_thin_count_err": float(abs(len(ev) - exp_n) / exp_n),
         "synthetic_thin_rate_corr": corr,
         "synthetic_unif_rate_corr": corr_b,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

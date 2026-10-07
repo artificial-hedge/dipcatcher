@@ -1,4 +1,4 @@
-"""Newton divided-difference interpolation over QQ (synthetic).
+"""Newton divided-difference interpolation over QQ (synthetic) (SYNTHETIC).
 
 Builds the exact interpolating polynomial through (x_i, y_i) in
 Newton form via divided differences; verified by evaluating back at

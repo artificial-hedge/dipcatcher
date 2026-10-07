@@ -19,7 +19,7 @@ def measured() -> dict[str, Any]:
 
 
 def test_contract_probes_hold(measured: dict[str, Any]) -> None:
-    assert len(measured) == 182
+    assert len(measured) == 183
     assert all(value is True for value in measured.values()), measured
 
 
@@ -28,9 +28,10 @@ def test_channel_and_ordering_contract(measured: dict[str, Any]) -> None:
         "x_api_key_admits",
         "bearer_admits_v1",
         "bearer_ignored_off_v1",
-        "x_api_key_garbage_no_bearer_fallback",
-        "x_api_key_empty_falls_through_to_bearer",
-        "dup_x_api_key_first_wins_refuse",
+        "x_api_key_garbage_plus_bearer_ambiguous_400",
+        "x_api_key_empty_plus_bearer_ambiguous_400",
+        "dup_x_api_key_bad_first_ambiguous_400",
+        "dup_x_api_key_same_value_ambiguous_400",
         "garbage_admin_route_401_not_403",
         "under_scoped_admin_route_403",
         "expired_admin_route_401_not_403",

@@ -155,5 +155,5 @@ def bench_convexity(seed: int = 20261231 + 369) -> dict[str, float]:
         "synthetic_cx_mc_se_bp": se_mc * 1e4,
         "synthetic_cx_mc_err_bp": err_mc * 1e4,
         "synthetic_cx_long_bp": conv_ex2 * 1e4,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

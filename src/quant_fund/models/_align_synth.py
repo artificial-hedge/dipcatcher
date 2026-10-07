@@ -1,4 +1,4 @@
-"""Synthetic alignment fixture: context-action rewards and preferences.
+"""Synthetic alignment fixture: context-action rewards and preferences (SYNTHETIC).
 
 Contexts x ~ N(0,I_4); 20 actions with embeddings E_a; true reward
 r(x,a) = x·E_a / ||x||·||E_a|| (cosine, bounded). Preference pairs

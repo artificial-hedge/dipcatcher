@@ -1,4 +1,4 @@
-"""Hierarchical risk parity — Lopez de Prado (2016) allocation.
+"""Hierarchical risk parity — Lopez de Prado (2016) allocation (SYNTHETIC).
 
 HRP avoids inverting the covariance matrix: it clusters assets on
 the correlation distance d_ij = sqrt(0.5 (1 - corr_ij)), quasi-
@@ -120,5 +120,5 @@ def bench_hrp(seed: int = 20261231 + 419) -> dict[str, float]:
         "synthetic_hrp_block_spread": spread,
         "synthetic_hrp_ivp_dev": dev,
         "synthetic_hrp_min_w": float(w.min()),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

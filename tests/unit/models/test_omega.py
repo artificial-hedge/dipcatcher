@@ -38,4 +38,4 @@ def test_fail_closed_two_items():
 
 def test_bench():
     out = bench_omega()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

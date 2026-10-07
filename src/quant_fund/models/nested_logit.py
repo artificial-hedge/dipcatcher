@@ -1,4 +1,4 @@
-"""Nested logit — McFadden two-level choice with correlated utilities.
+"""Nested logit — McFadden two-level choice with correlated utilities (SYNTHETIC).
 
 Alternatives sit inside nests; errors share a nest component, so IIA
 holds within a nest but not across nests. The inclusive value

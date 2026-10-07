@@ -65,6 +65,6 @@ def test_surrogate_pvalue_in_unit_interval() -> None:
 
 def test_bench_ews_signals_score() -> None:
     out = bench_ews_signals()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     assert out["synthetic_ews_tau_ac1"] > 0.3
     assert out["synthetic_ews_surrogate_p"] <= 0.15

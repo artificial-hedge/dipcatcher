@@ -1,4 +1,4 @@
-"""Normalized spectral clustering (Ng, Jordan & Weiss 2002).
+"""Normalized spectral clustering (Ng, Jordan & Weiss 2002) (SYNTHETIC).
 
 The algorithm builds a Gaussian affinity graph, forms the symmetric normalized
 Laplacian ``L_sym = I - D^{-1/2} W D^{-1/2}``, embeds points using its ``k``

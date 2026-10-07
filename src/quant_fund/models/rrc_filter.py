@@ -19,6 +19,10 @@ FloatArray = NDArray[np.float64]
 def rrc_taps(sps: int, num_taps: int, beta: float = 0.35) -> FloatArray:
     """Root-raised-cosine impulse response, normalized to unit
     DC gain at symbol rate."""
+    if not math.isfinite(beta) or not (0.0 < beta <= 1.0):
+        raise ValueError(f"rolloff beta must be in (0, 1]; got {beta!r}")
+    if int(sps) < 1 or int(num_taps) < 1:
+        raise ValueError("sps and num_taps must be positive")
     t = (np.arange(num_taps) - (num_taps - 1) / 2) / sps
     h = np.zeros(num_taps)
     for i, tt in enumerate(t):

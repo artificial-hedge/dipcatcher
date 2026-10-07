@@ -1,4 +1,4 @@
-"""Covariance estimators and PSD repair."""
+"""Covariance estimators and PSD repair (SYNTHETIC)."""
 
 from __future__ import annotations
 

@@ -75,5 +75,5 @@ def test_rejects_nonfinite_likelihood() -> None:
 
 def test_bench_nested_sampling_score() -> None:
     out = bench_nested_sampling()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     assert out["synthetic_ns_logz_err"] < 0.4

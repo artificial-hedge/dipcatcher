@@ -1,4 +1,4 @@
-"""D2Q9 lattice-Boltzmann BGK channel flow; mass conservation."""
+"""D2Q9 lattice-Boltzmann BGK channel flow; mass conservation (SYNTHETIC)."""
 
 import numpy as np
 

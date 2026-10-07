@@ -1,4 +1,4 @@
-"""Sundial flow-matching foundation head (P2.3). Research-only.
+"""Sundial flow-matching foundation head (P2.3). Research-only (SYNTHETIC).
 
 THU-MT ``Sundial`` (``thuml/sundial-base-128m`` on HF) is a generative
 foundation model — ``generate(seqs, max_new_tokens=pred_len,

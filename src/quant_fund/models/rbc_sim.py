@@ -1,4 +1,4 @@
-"""RBC model: log-linearized capital dynamics + TFP AR(1)."""
+"""RBC model: log-linearized capital dynamics + TFP AR(1) (SYNTHETIC)."""
 
 import numpy as np
 

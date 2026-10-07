@@ -1,4 +1,4 @@
-"""Asymmetric GARCH: Nelson (1991) EGARCH and Glosten-Jagannathan-Runkle
+"""Asymmetric GARCH: Nelson (1991) EGARCH and Glosten-Jagannathan-Runkle (SYNTHETIC)
 (1993) GJR-GARCH, both Gaussian QMLE.
 
 EGARCH(1,1):  ln sig2_t = w + b ln sig2_{t-1} + a z_{t-1} + g (|z_{t-1}|

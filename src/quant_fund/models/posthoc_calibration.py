@@ -1,4 +1,4 @@
-"""Post-hoc recalibration of distributional forecasts (CRPS / quantile grid).
+"""Post-hoc recalibration of distributional forecasts (CRPS / quantile grid) (SYNTHETIC).
 
 Post-hoc recalibration adjusts an already-fitted forecast with a small,
 sample-based correction so the predictive distribution matches the

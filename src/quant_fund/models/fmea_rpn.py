@@ -1,4 +1,4 @@
-"""FMEA risk-priority scoring and criticality-matrix ordering.
+"""FMEA risk-priority scoring and criticality-matrix ordering (SYNTHETIC).
 
 Each failure mode gets Severity/Occurrence/Detection scores (1-10).
 RPN = S*O*D; criticality = S*O. Bench checks the ranking recovers the

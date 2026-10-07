@@ -1,4 +1,4 @@
-"""BALD active learning (Houlsby et al. 2011) — query-by-committee
+"""BALD active learning (Houlsby et al. 2011) — query-by-committee (SYNTHETIC)
 disagreement (5 bagged logistic voters): select top-k highest
 vote-entropy samples each round vs random selection, same budget.
 """
@@ -54,5 +54,5 @@ def bench_active_bald(seed: int = 1801, budget: int = 60, rounds: int = 3) -> di
         "synthetic_random_acc": acc_rand,
         "synthetic_full_acc": acc_full,
         "synthetic_bald_gain": acc_bald - acc_rand,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

@@ -1,4 +1,4 @@
-"""C-vine copula with Gaussian pair copulas.
+"""C-vine copula with Gaussian pair copulas (SYNTHETIC).
 
 A vine decomposes a d-dimensional copula density into d(d-1)/2 bivariate
 pair copulas on a tree of nested conditionals.  The canonical (C-) vine

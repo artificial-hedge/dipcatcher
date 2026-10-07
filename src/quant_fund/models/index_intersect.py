@@ -1,4 +1,4 @@
-"""Multi-index conjunctive lookup: intersect sorted posting lists."""
+"""Multi-index conjunctive lookup: intersect sorted posting lists (SYNTHETIC)."""
 
 import numpy as np
 

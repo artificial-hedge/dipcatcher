@@ -1,4 +1,4 @@
-"""Competing-risks analysis — Aalen-Johansen CIF + pseudo-value regression.
+"""Competing-risks analysis — Aalen-Johansen CIF + pseudo-value regression (SYNTHETIC).
 
 For event types j∈{1..K}: the cumulative incidence function F_j(t) =
 P(T≤t, cause j) estimated by Aalen-Johansen on the cause-specific

@@ -1,4 +1,4 @@
-"""ML-DSA / Dilithium-style signatures — Fiat-Shamir with aborts over R_q.
+"""ML-DSA / Dilithium-style signatures — Fiat-Shamir with aborts over R_q (SYNTHETIC).
 
 Module structure: keygen t = A s1 + s2; sign samples y, sets w = Ay, hashes
 c = H(mu || HighBits(w)), z = y + c s1 with rejection sampling; verify checks

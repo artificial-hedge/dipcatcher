@@ -1,4 +1,4 @@
-"""Surrogate arch-performance predictor (Wen et al. 2020, NASBench).
+"""Surrogate arch-performance predictor (Wen et al. 2020, NASBench) (SYNTHETIC).
 
 An MLP surrogate trained on few (arch encoding → acc) pairs predicts
 held-out arch performance — rank corr + best-arch-found vs budget.
@@ -60,5 +60,5 @@ def bench_arch_predictor(
         "synthetic_ap_best_found": best_found,
         "synthetic_ap_random_best": best_rand,
         "synthetic_ap_oracle": float(true_all.max()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

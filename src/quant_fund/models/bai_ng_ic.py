@@ -134,11 +134,11 @@ def bench_bai_ng(seed: int = 20261231 + 333) -> dict[str, float]:
     majority = float(np.median(votes))
     ok = majority == 3.0 and res["r_ic1"] == 3.0 and res["r_er"] == 3.0 and res0["r_er"] <= 2.0
     return {
-        "r_ic1": res["r_ic1"],
-        "r_ic2": res["r_ic2"],
-        "r_ic3": res["r_ic3"],
-        "r_er": res["r_er"],
-        "r_gr": res["r_gr"],
-        "r_er_null": res0["r_er"],
-        "score": float(ok),
+        "synthetic_r_ic1": res["r_ic1"],
+        "synthetic_r_ic2": res["r_ic2"],
+        "synthetic_r_ic3": res["r_ic3"],
+        "synthetic_r_er": res["r_er"],
+        "synthetic_r_gr": res["r_gr"],
+        "synthetic_r_er_null": res0["r_er"],
+        "synthetic_score": float(ok),
     }

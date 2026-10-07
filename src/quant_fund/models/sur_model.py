@@ -1,4 +1,4 @@
-"""Zellner seemingly unrelated regressions (SUR / FGLS system).
+"""Zellner seemingly unrelated regressions (SUR / FGLS system) (SYNTHETIC).
 
 Equations with correlated errors gain efficiency from joint
 estimation: β_SUR = (X' (Σ⁻¹ ⊗ I) X)⁻¹ X' (Σ⁻¹ ⊗ I) y exploits

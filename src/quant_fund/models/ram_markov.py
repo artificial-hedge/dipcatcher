@@ -1,4 +1,4 @@
-"""Repairable-system RAM model: 2-unit parallel + one repair crew.
+"""Repairable-system RAM model: 2-unit parallel + one repair crew (SYNTHETIC).
 
 CTMC on states 2/1/0 up-units (state 0 is absorbing for availability):
 Q_{k,k-1} = k*lam (failure), Q_{k,k+1} = mu (repair, single crew).

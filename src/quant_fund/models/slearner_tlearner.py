@@ -1,4 +1,4 @@
-"""S/T-learner comparison (Künzel taxonomy) — single-net with treatment
+"""S/T-learner comparison (Künzel taxonomy) — single-net with treatment (SYNTHETIC)
 feature vs two arm-specific nets; PEHE of both vs truth. Diagnostic:
 T-learner wins with strong confounding on this fixture.
 """
@@ -52,5 +52,5 @@ def bench_slearner_tlearner(seed: int = 1213, iters: int = 700) -> dict[str, flo
         "synthetic_st_s_pehe": pehe(s_cate, tau),
         "synthetic_st_t_pehe": pehe(t_cate, tau),
         "synthetic_st_t_gain": pehe(s_cate, tau) - pehe(t_cate, tau),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

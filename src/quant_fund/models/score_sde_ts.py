@@ -1,4 +1,4 @@
-"""Score-based SDE diffusion for TS generation.
+"""Score-based SDE diffusion for TS generation (SYNTHETIC).
 
 Song et al. 2021: learn the score of noise-perturbed data at all
 noise scales (VP SDE), then sample by solving the reverse SDE.
@@ -112,7 +112,7 @@ def bench_score_sde_ts(
         "synthetic_scoresde_gauss_mmd": mmd_gauss,
         "synthetic_scoresde_margin_vs_gauss": mmd_gauss - mmd_sde,
         "synthetic_scoresde_steps": float(gen_steps),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

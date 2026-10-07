@@ -1,4 +1,4 @@
-"""Dynamic movement primitives: LWR-fitted forcing term w/ goal generalization.
+"""Dynamic movement primitives: LWR-fitted forcing term w/ goal generalization (SYNTHETIC).
 
 Canonical system: tau * s_dot = -alpha_s * s  (s: 1 -> 0).
 Transformation:   tau * v_dot = a (b (g - y) - v) + f(s)

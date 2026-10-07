@@ -1,4 +1,4 @@
-"""Zig-Zag Sampler (Bierkens et al. 2019) — coordinate-wise PDMP:
+"""Zig-Zag Sampler (Bierkens et al. 2019) — coordinate-wise PDMP: (SYNTHETIC)
 v_i ∈ {±1}, event i at rate max(0, v_i ∂_i U) flips v_i. ESS vs RWM.
 """
 
@@ -56,5 +56,5 @@ def bench_zigzag_sampler(seed: int = 2207) -> dict[str, float]:
         "synthetic_rwm_ess": ess_b,
         "synthetic_zz_ess_gain": ess - ess_b,
         "synthetic_zz_moment_err": moment_err(smp, mu, sd),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

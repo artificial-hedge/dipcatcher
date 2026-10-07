@@ -1,4 +1,4 @@
-"""Evolution strategies: (μ/μ,λ)-ES with log-rank
+"""Evolution strategies: (μ/μ,λ)-ES with log-rank (SYNTHETIC)
 recombination weights and global σ self-adaptation
 (Rechenberg/Schwefel lineage; Hansen's modern weights),
 plus a (1+1)-ES with the 1/5 success rule. Distinct from

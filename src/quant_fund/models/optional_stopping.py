@@ -1,4 +1,4 @@
-"""Doob's optional stopping theorem on bounded stopping times (SYNTHIC MC)."""
+"""Doob's optional stopping theorem on bounded stopping times (SYNTHIC MC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Random projections for dimensionality reduction (Johnson-Lindenstrauss).
+"""Random projections for dimensionality reduction (Johnson-Lindenstrauss) (SYNTHETIC).
 
 The Johnson-Lindenstrauss (1984) lemma states that ``n`` points can be embedded
 into ``k = O(log n / eps^2)`` dimensions while preserving pairwise distances to

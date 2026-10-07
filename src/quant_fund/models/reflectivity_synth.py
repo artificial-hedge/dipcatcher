@@ -1,4 +1,4 @@
-"""Convolutional synthetic seismogram: layered impedance -> reflectivity -> trace.
+"""Convolutional synthetic seismogram: layered impedance -> reflectivity -> trace (SYNTHETIC).
 
 Reflectivity series r_i = (Z_{i+1} - Z_i) / (Z_{i+1} + Z_i) convolved with a
 Ricker wavelet; the canonical zero-phase model of seismic trace generation.

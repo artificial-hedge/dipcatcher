@@ -1,4 +1,4 @@
-"""DeepHit (Lee et al. 2018) — discrete-time competing-risk network:
+"""DeepHit (Lee et al. 2018) — discrete-time competing-risk network: (SYNTHETIC)
 softmax over time-bin pmf + event indicators trained by likelihood on
 discretized (time, event) vs Cox PH C-index.
 """
@@ -53,5 +53,5 @@ def bench_deephit(seed: int = 2107, iters: int = 500, K: int = 12) -> dict[str, 
         "synthetic_deephit_cindex": c_dh,
         "synthetic_cox_cindex": c_cox,
         "synthetic_deephit_gain": c_dh - c_cox,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

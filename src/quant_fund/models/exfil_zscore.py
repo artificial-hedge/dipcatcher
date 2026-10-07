@@ -1,4 +1,4 @@
-"""Egress-volume exfil detection (defensive) — wave 286.
+"""Egress-volume exfil detection (defensive) — wave 286 (SYNTHETIC).
 
 Robust z-score (median + MAD) on daily egress flags volume spikes while
 ignoring heavy-tailed baseline.

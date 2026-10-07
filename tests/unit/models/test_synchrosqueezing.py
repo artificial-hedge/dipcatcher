@@ -71,5 +71,5 @@ def test_rejects_bad_input() -> None:
 
 def test_bench_synchrosqueezing_score() -> None:
     out = bench_synchrosqueezing()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     assert out["synthetic_sst_ridge_err"] < 0.03

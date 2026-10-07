@@ -1,4 +1,4 @@
-"""BIKE-lite: QC-MDPC-style code KEM with Gallager bit-flipping decoding.
+"""BIKE-lite: QC-MDPC-style code KEM with Gallager bit-flipping decoding (SYNTHETIC).
 
 Ring R = F2[x]/(x^r - 1). Secret h0, h1 sparse; public h = h1 * h0^{-1}.
 Ciphertext c = e0 + e1 * h; syndrome s = c * h0 = e0*h0 + e1*h1 is decoded by

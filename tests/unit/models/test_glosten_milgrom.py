@@ -74,13 +74,13 @@ def test_lb_p_uniform_on_white() -> None:
 def test_bench_schema_and_score() -> None:
     r = bench_glosten_milgrom()
     for k in (
-        "posterior_acc",
-        "theory_spread",
-        "first_spread",
-        "late_spread",
-        "gm_lag1_acf",
-        "naive_lag1_acf",
-        "score",
+        "synthetic_posterior_acc",
+        "synthetic_theory_spread",
+        "synthetic_first_spread",
+        "synthetic_late_spread",
+        "synthetic_gm_lag1_acf",
+        "synthetic_naive_lag1_acf",
+        "synthetic_score",
     ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

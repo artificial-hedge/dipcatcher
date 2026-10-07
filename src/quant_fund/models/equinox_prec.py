@@ -1,4 +1,4 @@
-"""IAU-1976 equinox precession — rotation of mean equatorial coords.
+"""IAU-1976 equinox precession — rotation of mean equatorial coords (SYNTHETIC).
 
 Angles in arcsec (Lieske et al. 1977): zeta, z, theta of Julian
 centuries T. Precession matrix P = R3(-z) R2(+theta) R3(-zeta).

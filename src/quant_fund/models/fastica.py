@@ -138,5 +138,5 @@ def bench_fastica(seed: int = 20261231 + 462) -> dict[str, float]:
     return {
         "synthetic_min_abs_corr": rec,
         "synthetic_mean_iters": float(np.asarray(out["iters"]).mean()),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

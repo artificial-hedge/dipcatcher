@@ -1,4 +1,4 @@
-"""Class numbers of imaginary quadratic fields (SYNTHIC table)."""
+"""Class numbers of imaginary quadratic fields (SYNTHIC table) (SYNTHETIC)."""
 
 from __future__ import annotations
 

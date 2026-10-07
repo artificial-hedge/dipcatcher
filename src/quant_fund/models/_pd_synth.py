@@ -1,4 +1,4 @@
-"""Shared fixture for wave-180 PDMP / exotic-sampling canon.
+"""Shared fixture for wave-180 PDMP / exotic-sampling canon (SYNTHETIC).
 
 Banana posterior in d=4 (Rosenbrock-style): p(x) ∝ exp(-0.5*x0² -0.5*Σ (x_i - (x_{i-1}² + 1))²/0.1²).
 Analytic gradient available; target moment ground truth from a long

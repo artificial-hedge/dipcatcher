@@ -1,4 +1,4 @@
-"""PNA (Corso et al. 2020) — multi-aggregator message passing: per-neighbor
+"""PNA (Corso et al. 2020) — multi-aggregator message passing: per-neighbor (SYNTHETIC)
 messages aggregated by {mean,max,min,std}, concatenated → node MLP.
 Planted-clique node AUC vs mean-only aggregator.
 """
@@ -86,5 +86,5 @@ def bench_pna_agg(seed: int = 881, iters: int = 200) -> dict[str, float]:
         "synthetic_pna_auc": auc_pna,
         "synthetic_pna_mean_auc": auc_m,
         "synthetic_pna_gain": auc_pna - auc_m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

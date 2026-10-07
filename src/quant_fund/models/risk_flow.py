@@ -1,4 +1,4 @@
-"""Normalizing-flow tail-risk model (Exec-Summary generative item). A
+"""Normalizing-flow tail-risk model (Exec-Summary generative item). A (SYNTHETIC)
 quantile-map marginal flow + Gaussian-copula core learns the joint density
 of factor returns: each marginal is pushed through its empirical CDF ->
 normal quantiles (an exact, monotone normalizing flow), and the latent

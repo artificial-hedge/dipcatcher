@@ -1,4 +1,4 @@
-"""Latent Dirichlet allocation via collapsed Gibbs sampling
+"""Latent Dirichlet allocation via collapsed Gibbs sampling (SYNTHETIC)
 (Griffiths & Steyvers 2004): z-di token draws with α/β
 Dirichlet priors; returns topic-word φ and doc-topic θ.
 Synthetic bench gates recovery of two planted topic

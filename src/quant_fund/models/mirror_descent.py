@@ -1,4 +1,4 @@
-"""Mirror descent (exponentiated gradient) on simplex-constrained LS.
+"""Mirror descent (exponentiated gradient) on simplex-constrained LS (SYNTHETIC).
 
 min_x ||Ax - b||^2 s.t. x in the probability simplex. Exponentiated-gradient
 updates x <- softmax(log x - eta grad) vs projected-gradient with simplex

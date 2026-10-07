@@ -445,7 +445,7 @@ def sdk_audit() -> dict[str, bool]:
     from fx1.harness_bench import run_bench as _run_bench  # noqa: PLC0415
     from fx1.sdk import CompletionResult as _CR  # noqa: PLC0415
     from fx1.serve.ops_receipt import bench_receipt as _bench_rcpt  # noqa: PLC0415
-    from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+    from quant_fund.schemas.receipt import (  # noqa: PLC0415
         verify_receipt_payload as _vrp,
     )
 

@@ -1,4 +1,4 @@
-"""Vietoris-Rips H1 detection of a hole in a point cloud (wave 280).
+"""Vietoris-Rips H1 detection of a hole in a point cloud (wave 280) (SYNTHETIC).
 
 Ring-shaped samples produce an H1 class at a band of epsilon; a filled disk
 at the same epsilon has none. H1 is computed via the flag complex Betti-1.

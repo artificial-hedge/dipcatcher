@@ -1,4 +1,4 @@
-"""HEGY seasonal unit-root and Canova-Hansen seasonal-stability
+"""HEGY seasonal unit-root and Canova-Hansen seasonal-stability (SYNTHETIC)
 tests.
 
 Hylleberg, Engle, Granger & Yoo (1990) decompose the seasonal
@@ -66,7 +66,8 @@ def _hegy_regressors(y: FloatArray, s: int) -> tuple[FloatArray, FloatArray]:
     # z4 = -(y_{t-2} - y_{t-4})
     z4 = np.array([-(y[k - 2] - y[k - 4]) for k in range(s, t)])
     z = np.column_stack([z1, z2, z3, z4])
-    assert z.shape[0] == m
+    if not (z.shape[0] == m):
+        raise ValueError("z.shape[0] == m")
     return np.asarray(d4, dtype=np.float64), np.asarray(z, dtype=np.float64)
 
 
@@ -216,5 +217,5 @@ def bench_hegy(seed: int = 20261231 + 454) -> dict[str, float]:
         "synthetic_rw_p34": out_rw["p_pi34"],
         "synthetic_ch_stable_p": ch_s["p_value"],
         "synthetic_ch_rw_p": ch_rw["p_value"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

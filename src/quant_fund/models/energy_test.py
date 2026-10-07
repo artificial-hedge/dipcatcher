@@ -113,5 +113,5 @@ def bench_energy_test(seed: int = 20261231 + 473) -> dict[str, float]:
         "synthetic_mix_p": float(out_mix["p"]),
         "synthetic_e_mvn": float(out_mvn["e_stat"]),
         "synthetic_e_mix": float(out_mix["e_stat"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

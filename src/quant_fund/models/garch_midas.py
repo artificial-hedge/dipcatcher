@@ -1,4 +1,4 @@
-"""GARCH-MIDAS (Engle, Ghysels & Sohn 2013): volatility decomposed into
+"""GARCH-MIDAS (Engle, Ghysels & Sohn 2013): volatility decomposed into (SYNTHETIC)
 a short-run unit-mean GARCH component and a slowly varying long-run
 component driven by MIDAS-weighted realized variances.
 

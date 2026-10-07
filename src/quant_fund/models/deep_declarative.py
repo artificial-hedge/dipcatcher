@@ -110,5 +110,5 @@ def bench_deep_declarative(
         "synthetic_decl_mse_gain": mse_reg - mse_decl,
         "synthetic_decl_bound_viol": bound_viol,
         "synthetic_decl_reg_bound_viol": reg_bound_viol,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

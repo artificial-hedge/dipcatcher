@@ -1,4 +1,4 @@
-"""Homotopy levels on finite types.
+"""Homotopy levels on finite types (SYNTHETIC).
 
 n=-2: contractible (exactly one element + all equal);
 n=-1: mere proposition (any two elements equal);

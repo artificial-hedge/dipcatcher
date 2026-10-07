@@ -1,4 +1,4 @@
-"""MambaTS: selective-scan state-space model for time series.
+"""MambaTS: selective-scan state-space model for time series (SYNTHETIC).
 
 Gu & Dao 2024 (Mamba): a linear state-space recurrence whose
 transition/ input/ output maps are *input-dependent* (selective
@@ -140,7 +140,7 @@ def bench_mambats(
         "synthetic_mamba_flat_mae": f_mae,
         "synthetic_mamba_margin_vs_gru": g_mae - m_mae,
         "synthetic_mamba_margin_vs_flat": f_mae - m_mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

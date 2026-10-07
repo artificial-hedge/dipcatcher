@@ -1,4 +1,4 @@
-"""Expected-gradient-length (Settles et al. 2007) — query the point
+"""Expected-gradient-length (Settles et al. 2007) — query the point (SYNTHETIC)
 whose label would change the model most: ||φ_i||·p(1−p) (expected
 gradient magnitude over both label outcomes). Accuracy vs random.
 """
@@ -24,5 +24,5 @@ def bench_egl_change(seed: int = 2631, trials: int = 5) -> dict[str, float]:
         "synthetic_egl_acc": float(np.mean(accs)),
         "synthetic_random_acc": float(np.mean(bases)),
         "synthetic_egl_gain": float(np.mean(accs) - np.mean(bases)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

@@ -1,4 +1,4 @@
-"""Marginal likelihood (model evidence) estimators.
+"""Marginal likelihood (model evidence) estimators (SYNTHETIC).
 
 Canonical references:
 

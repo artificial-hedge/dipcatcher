@@ -1,4 +1,4 @@
-"""Root heights and Coxeter numbers (SYNTHIC)."""
+"""Root heights and Coxeter numbers (SYNTHIC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

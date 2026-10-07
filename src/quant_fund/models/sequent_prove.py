@@ -1,4 +1,4 @@
-"""Intuitionistic sequent calculus prover (LJ-lite) by backward search.
+"""Intuitionistic sequent calculus prover (LJ-lite) by backward search (SYNTHETIC).
 
 Sequent Gamma |- G. Rules: ax, and_L/and_R, or_L/or_R, imp_L/imp_R
 (imp_R only rule producing implication on the right), top_R, bot_L.

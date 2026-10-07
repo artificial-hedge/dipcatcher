@@ -1,4 +1,4 @@
-"""Multiple imputation by chained equations (MICE) with
+"""Multiple imputation by chained equations (MICE) with (SYNTHETIC)
 predictive mean matching, plus Rubin's pooling rules.
 
 van Buuren & Groothuis-Oudshoorn (2011): for a data matrix with
@@ -174,5 +174,5 @@ def bench_mice(seed: int = 20261231 + 455) -> dict[str, float]:
         "synthetic_imputed_err": err_imp,
         "synthetic_cc_err": err_cc,
         "synthetic_fmi": float(pooled["fmi"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

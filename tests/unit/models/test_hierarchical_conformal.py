@@ -370,32 +370,32 @@ def test_fail_closed_validation() -> None:
 
 def test_synthetic_coverage_and_width_shrink_across_m() -> None:
     row = bench_ghcp(n_reps=300, seed=11)
-    assert row["dgp"] == "synthetic_hierarchical_gaussian"
-    assert row["claim"] == "research_metric_only"
-    nominal = 1.0 - float(row["alpha"])
+    assert row["synthetic_dgp"] == "synthetic_hierarchical_gaussian"
+    assert row["synthetic_claim"] == "research_metric_only"
+    nominal = 1.0 - float(row["synthetic_alpha"])
     tol = 0.04
     widths = []
     for m in (0, 1, 3, 10):
-        coverage = float(row[f"coverage_m{m}"])
+        coverage = float(row[f"synthetic_coverage_m{m}"])
         assert coverage >= nominal - tol, f"m={m}: coverage {coverage}"
-        assert float(row[f"trivial_share_m{m}"]) == 0.0
-        widths.append(float(row[f"mean_width_m{m}"]))
+        assert float(row[f"synthetic_trivial_share_m{m}"]) == 0.0
+        widths.append(float(row[f"synthetic_mean_width_m{m}"]))
     assert all(np.isfinite(widths))
     # The value of the generalization: sets shrink as the in-group sample grows.
     assert widths[3] < 0.75 * widths[0]
     for earlier, later in zip(widths, widths[1:], strict=False):
         assert later <= earlier * 1.05
-    assert float(row["width_shrinks"]) == 1.0
-    assert float(row["min_coverage"]) >= nominal - tol
+    assert float(row["synthetic_width_shrinks"]) == 1.0
+    assert float(row["synthetic_min_coverage"]) >= nominal - tol
 
 
 def test_synthetic_coverage_second_seed_and_level() -> None:
     row = bench_ghcp(n_reps=200, seed=77, alpha=0.20)
     nominal = 0.80
     for m in (0, 1, 3, 10):
-        assert float(row[f"coverage_m{m}"]) >= nominal - 0.04
-        assert float(row[f"trivial_share_m{m}"]) == 0.0
-    assert float(row["width_shrinks"]) == 1.0
+        assert float(row[f"synthetic_coverage_m{m}"]) >= nominal - 0.04
+        assert float(row[f"synthetic_trivial_share_m{m}"]) == 0.0
+    assert float(row["synthetic_width_shrinks"]) == 1.0
 
 
 def test_bench_determinism_and_key_hygiene() -> None:
@@ -406,9 +406,9 @@ def test_bench_determinism_and_key_hygiene() -> None:
     for key in a:
         lowered = key.lower()
         assert all(token not in lowered for token in forbidden)
-    assert a["seed"] == 3.0
-    assert a["n_reps"] == 20.0
-    assert 0.0 <= float(a["min_coverage"]) <= 1.0
+    assert a["synthetic_seed"] == 3.0
+    assert a["synthetic_n_reps"] == 20.0
+    assert 0.0 <= float(a["synthetic_min_coverage"]) <= 1.0
     with pytest.raises(ValueError):
         bench_ghcp(n_reps=0)
     with pytest.raises(ValueError):

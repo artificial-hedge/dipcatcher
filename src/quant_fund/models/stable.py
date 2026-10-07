@@ -1,4 +1,4 @@
-"""Alpha-stable (Levy stable) distribution: simulation, ECF fit, density.
+"""Alpha-stable (Levy stable) distribution: simulation, ECF fit, density (SYNTHETIC).
 
 Stable laws are the only possible limits of normalised sums of i.i.d. variables
 (generalised CLT) and model heavy tails and skew with four parameters:

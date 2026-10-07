@@ -1,4 +1,4 @@
-"""Frank-Wolfe / conditional gradient (FW 1956; Jaggi 2013):
+"""Frank-Wolfe / conditional gradient (FW 1956; Jaggi 2013): (SYNTHETIC)
 projection-free quadratic minimization over the probability
 simplex and the ℓ1-ball, plus a pairwise-step variant that
 escapes zig-zag slowdown. Synthetic bench gates FW error vs

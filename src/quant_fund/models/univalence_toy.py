@@ -1,4 +1,4 @@
-"""Toy univalence: isomorphisms between finite types induce paths.
+"""Toy univalence: isomorphisms between finite types induce paths (SYNTHETIC).
 
 On a small universe of finite sets, ua : (A ≃ B) -> (A = B) maps each
 bijection to an identity. We check the toy direction: equivalent

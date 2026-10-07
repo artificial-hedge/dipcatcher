@@ -1,4 +1,4 @@
-"""Hybrid Logical Clock (HLC): Lamport-style causality over physical time.
+"""Hybrid Logical Clock (HLC): Lamport-style causality over physical time (SYNTHETIC).
 
 hlc = (l, c): l tracks max observed physical time, c disambiguates events
 at equal l. Verified: happens-before edges imply strict HLC order, l stays

@@ -1,4 +1,4 @@
-"""Synthetic fixtures for the w141 certified-robustness canon."""
+"""Synthetic fixtures for the w141 certified-robustness canon (SYNTHETIC)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Consistency model for few-step TS generation.
+"""Consistency model for few-step TS generation (SYNTHETIC).
 
 Song et al. 2023: train a single network to map any point on the
 PF-ODE trajectory to its endpoint — generate in 1-2 steps instead of
@@ -122,7 +122,7 @@ def bench_consistency_ts(
         "synthetic_consistency_gauss_mmd": mmd_g,
         "synthetic_consistency_margin_vs_gauss": mmd_g - mmd_c,
         "synthetic_consistency_steps": 2.0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

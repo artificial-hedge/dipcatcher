@@ -1,4 +1,4 @@
-"""Coreset selection — greedy herding (Welling 2009).
+"""Coreset selection — greedy herding (Welling 2009) (SYNTHETIC).
 
 Greedy selection of k samples that best cover the class-conditional
 feature mean; model trained on the coreset beats a random k-subset —

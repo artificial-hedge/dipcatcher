@@ -1,4 +1,4 @@
-"""Soft decision tree (Irsoy et al. 2012; Frost-Hinton 2017).
+"""Soft decision tree (Irsoy et al. 2012; Frost-Hinton 2017) (SYNTHETIC).
 
 Every internal node is a logistic gate; leaf probabilities mix —
 interpretable routing vs hard tree on the synth task.
@@ -71,5 +71,5 @@ def bench_soft_tree(
         "synthetic_st_acc": acc_s,
         "synthetic_st_mlp_acc": acc_m,
         "synthetic_st_gain": acc_s - acc_m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

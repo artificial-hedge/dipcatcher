@@ -1,4 +1,4 @@
-"""Shared fixture for wave-192 info-theory canon — dependent/independent
+"""Shared fixture for wave-192 info-theory canon — dependent/independent (SYNTHETIC)
 data pairs for two-sample and independence testing.
 """
 

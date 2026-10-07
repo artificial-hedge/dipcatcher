@@ -1,4 +1,4 @@
-"""Liquid state machine (Maass et al. 2002) — random recurrent spiking
+"""Liquid state machine (Maass et al. 2002) — random recurrent spiking (SYNTHETIC)
 reservoir driven by encoded inputs; linear readout on reservoir state
 vs direct linear readout. Reservoir adds short-term memory.
 """
@@ -53,5 +53,5 @@ def bench_lsm_reservoir(seed: int = 1927, R: int = 64, T: int = 25) -> dict[str,
         "synthetic_lsm_direct_acc": acc_d,
         "synthetic_lsm_gap": acc_l - acc_d,
         "synthetic_lsm_state_std": float(Z.std()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

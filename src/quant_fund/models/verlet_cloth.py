@@ -1,4 +1,4 @@
-"""Verlet rope/cloth with Jakobsen constraints (synthetic).
+"""Verlet rope/cloth with Jakobsen constraints (synthetic) (SYNTHETIC).
 
 Verlet integration + iterative distance-constraint projection.
 Verified: (i) rope segment lengths stay within tolerance after

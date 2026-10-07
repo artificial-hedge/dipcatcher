@@ -1,4 +1,4 @@
-"""PMP bang-bang minimum-time control: double integrator, |u|<=1,
+"""PMP bang-bang minimum-time control: double integrator, |u|<=1, (SYNTHETIC)
 minimize time to reach target. Optimal switching curve
 v = -sign(x)·sqrt(2|x|). Time to reach vs PD baseline time.
 """
@@ -37,5 +37,5 @@ def bench_pmp_bangbang(seed: int = 2921) -> dict[str, float]:
         "synthetic_bangbang_time": float(t_bb),
         "synthetic_pd_time": float(t_pd),
         "synthetic_bangbang_speedup": float(t_pd - t_bb),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

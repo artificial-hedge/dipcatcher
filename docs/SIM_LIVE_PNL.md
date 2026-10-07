@@ -146,6 +146,118 @@ Sharpe-negative at every level (p99 cut → SR 1.27): crowded-long
 regimes carry the biggest trends. Same verdict shape as the vol
 breaker — the signal's best days are exactly the scary ones.
 
+## Chop-regime robustness sweep — PRE-REGISTRATION (first written 2026-10-07T16:47+05:30)
+
+**PRE-REGISTRATION — first written 2026-10-07T16:47+05:30 (Asia/Calcutta),
+before any sweep run.** Provenance (three checkable anchors, plus one
+disclosed disagreement and one disclosed gap):
+
+1. **Sweep driver (durable anchor).** `research/chop_robustness/run_sweep.py`
+   encodes exactly this declaration — the mechanisms and their single fixed
+   parameterizations, the four windows, and the decision rules — and has
+   filesystem mtime **2026-10-07T16:50:24+05:30**, sha256
+   `c8dcaddae5adc09965fee5ecf4e0f026cc273d7d7873a8b5b6499519ca833740`.
+   It predates every outcome.
+2. **Sweep receipts (outcome times/hashes).** All four window receipts were
+   written strictly after: W1 `fca29eb5beac1ede9ff7be84a1cb240df8cb7dd50c5171539229841deb59fce3`
+   (16:51:43+05:30), W2 `d88420a191e8c6475edefb026a056e78ec8dd0e5a09cb67b0a756dcb16ca209e`
+   (16:52:05), W3 `8312d27c6162bbea02e4b586091bbb9e59b4a7ff6edc3ee25521afa4f28ef885`
+   (16:52:30), W4 `18a1537ed3ee59d97ca5c5ede9de284b2da1e6fe2ca50e2ad73fd207ea09f1fc`
+   (16:53:02).
+3. **Commit timestamp.** This block and the driver are committed together,
+   immediately after this insertion; the commit time corroborates the
+   ordering story in the agent transcript.
+
+Disclosed gap: the original in-doc insertion (first written ~16:47+05:30)
+was deleted at ~16:48+05:30 by the second of two destructive external tree
+resets (~16:41, ~16:48), and it left **no** surviving filesystem or patch
+artifact — the exported `stash@{0}` patch contains zero hunks of this file
+(verified by the Lead). Only the agent transcript retains the original prose.
+The SUBSTANCE (mechanisms, parameterizations, windows, decision rules) is
+independently anchored by the driver in (1), which predates all outcomes.
+Disclosed disagreement: the self-recollection for the driver's write time was
+~16:49+05:30; the measured mtime is 16:50:24+05:30. The measurement is
+authoritative; nothing is smoothed. The mechanism/parameterization/window/
+decision-rule text below is verbatim unchanged from the original pre-run
+insertion. This block is never edited after the fact; any deviation from it
+is itself a finding and must be recorded as such. Everything in this sweep is
+**retrospective analytics** — simulated books through `run_backtest` on
+collected Binance USDT spot bars with the lane's modeled costs, risk gate and
+kill switch — carried as `live_pnl_claim=false`. **Binance USDT spot majors
+only; not market evidence; not a live-trading claim.** The Sharpe/return/
+drawdown figures here are book-reporting analytics under this label; they are
+not research scorecards (which remain proper-scores-only).
+
+**Base book (fixed, not re-tuned).** The flagship full stack above: spec
+`vincent(ewma_emp+ewma_emp94+ewma_emp99)` (Vincentized mean of three fixed
+EWMA memories 0.94/0.97/0.99) with policy
+`mode=long_flat, kappa=0.15, gross_target=2.0, name_cap=0.5, cost_gate=0.15,
+gate_on=edge, sizing=risk, deadband=0.01, band_lo=0.05, band_hi=0.95,
+book_vol_target=0.03, exit_persist=3, leader_sid=BTCUSDT,
+leader_edge_min=0.0, w_alpha=1.0, persist_bars=1, meta_lookback=60,
+rebal_every=1` and all remaining gates off (`tail_gate, mkt_disp_cut, top_k,
+mkt_edge_min, gate_out, meta_min, accel_min, fund_cut = null`,
+`breadth_gross=false`). This is byte-for-byte the `vin3stack` policy recorded
+in `.dsh-24x7/lane-simlive/sim_live_bench-1d-deep3-stack.json`. Each
+mechanism below is exactly ONE change from this base; the base is evaluated
+on every window as the control.
+
+**Mechanisms (at most three, exactly ONE fixed parameterization each, chosen
+a priori — no grid, no second value will be run):**
+
+1. **`vol_scale_002` — one fixed-target vol scale.** `book_vol_target=0.02`
+   (replacing 0.03). Chosen a priori as the round per-bar book-dispersion
+   target one third below the base's own 0.03 — the hypothesis being tested is
+   that a fixed, slightly conservative dispersion target mechanically
+   de-risks exactly in chop regimes, where realized dispersion outruns trend.
+   Not fitted to any window in the cross-window table below.
+2. **`breadth_gross` — one fixed breadth-proportional exposure rule.**
+   `breadth_gross=true` (gross cap scaled by the fraction of names with
+   positive edge). A binary rule with NO free parameter to tune; the
+   hypothesis is that in chop, fewer names carry edge, so exposure shrinks
+   mechanically instead of being cut by a fitted threshold.
+3. **`trend_gate_010` — one fixed trend-strength threshold.**
+   `mkt_edge_min=0.10` (flat the book when mean cross-asset edge z ≤ 0.10).
+   Chosen a priori as two-thirds of the base book's own fixed entry gate
+   (`edge z ≥ 0.15`) — the only anchor used is the base's existing scale.
+   Declared influence: `mkt_edge_min` was previously judged ~Sharpe-neutral on
+   the full window in this doc; that prior judgment is disclosed here and no
+   other level will be tried.
+
+**Evaluation windows (declared up front; all four are locally available — the
+8.3y deep bars from 2017-08 are present for BTC/ETH/XRP, so no window is
+blocked):**
+
+| id | window | universe | implementation |
+|---|---|---|---|
+| W1 | 2020-08→2026-09 (full) | 5 majors (BNB, BTC, ETH, SOL, XRP) | no tail cut |
+| W2 | last 800 days | 5 majors | `eval_tail_bars=800` (panels see full history) |
+| W3 | last 500 days | 5 majors | `eval_tail_bars=500` (panels see full history) |
+| W4 | 2018-05→2026-09 (8.3y, bear-inclusive) | BTC/ETH/XRP | no tail cut on deep bars (3 majors) |
+
+**Metrics per cell (analytics, `live_pnl_claim=false`):** `sharpe_simulated`
+(primary), `total_return`, `max_drawdown`, `n_fills`, all from the same
+`run_backtest` fill semantics on identical bars. Every mechanism × every
+window cell is published below, losers included; nothing is dropped.
+
+**Pre-declared decision rules (fixed before running):**
+
+- **Chop-lift success** (the goal) requires ALL of:
+  (a) `Δsharpe_simulated(W3) > 0` versus base — W3 (last 500d) is the
+  pre-declared worst window (the chop regime);
+  (b) `Δsharpe_simulated(W1) ≥ 0` versus base — the full window is not hurt;
+  (c) no REGIME-FITTING trigger below fires.
+- **REGIME-FITTING (mandatory rejection):** if the mechanism helps in any one
+  window and hurts in any other (`Δsharpe_simulated > 0` in one and `< 0` in
+  another), it is recorded as **REGIME-FITTING and rejected**, in the same
+  verdict shape as `leader_edge_min` / `fund_cut` above — even if it satisfies
+  (a) and (b). No materiality band: any sign reversal counts.
+- If no mechanism satisfies all rules, the recorded verdict is **none of the
+  pre-registered mechanisms lifts the worst window without hurting the full
+  window** — a first-class, expected-possible outcome.
+- Any attractive parameter value discovered by this sweep is NOT run. It
+  would require a new dated pre-registration and is out of scope here.
+
 ## Per-asset attribution (same policy, single-name books)
 
 BNB +195% (SR 0.95) · BTC +112% (0.99) · ETH +100% (0.75) ·

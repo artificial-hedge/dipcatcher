@@ -1,4 +1,4 @@
-"""Three-valued (Kleene) predicate logic over logical structures — TVLA core.
+"""Three-valued (Kleene) predicate logic over logical structures — TVLA core (SYNTHETIC).
 
 Structures map individuals + predicate valuations to truth values in
 {0, 1/2, 1}. Formulas evaluate three-valuedly; transitive closure is an

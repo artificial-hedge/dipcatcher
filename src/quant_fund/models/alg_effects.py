@@ -1,4 +1,4 @@
-"""Algebraic effects and handlers (Plotkin–Pretnar style).
+"""Algebraic effects and handlers (Plotkin–Pretnar style) (SYNTHETIC).
 
 Computation trees: ("ret",v) | ("do",eff,k). handle walks the tree
 top-down: each handler clause either transforms an effect and resumes

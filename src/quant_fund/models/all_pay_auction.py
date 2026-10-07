@@ -1,4 +1,4 @@
-"""All-pay auction — symmetric BNE for uniform values.
+"""All-pay auction — symmetric BNE for uniform values (SYNTHETIC).
 
 Every bidder pays their bid; the symmetric BNE for iid U[0,1] values is
 b(v) = (n-1)/n * v^n. Expected revenue = n E[b(v_(n))]... equals the

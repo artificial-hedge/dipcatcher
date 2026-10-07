@@ -1,4 +1,4 @@
-"""Shared fixture for wave-183 causal-structure-DL canon.
+"""Shared fixture for wave-183 causal-structure-DL canon (SYNTHETIC).
 
 Linear SEM on a random DAG: X = W^T X + noise (upper-triangular W under
 random permutation). Ground-truth DAG + SHD metric; baseline = sort by

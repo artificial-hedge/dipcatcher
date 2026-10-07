@@ -1,4 +1,4 @@
-"""Linear-quadratic mean-field game (Lasry-Lions LQ-MFG).
+"""Linear-quadratic mean-field game (Lasry-Lions LQ-MFG) (SYNTHETIC).
 
 Agent: dx = (a x + b u) dt + sigma dW,
 cost E[int_0^H (0.5*(q x^2 + r u^2) + eta*(x - mbar)^2) dt].

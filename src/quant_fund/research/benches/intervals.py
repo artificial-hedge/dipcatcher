@@ -706,9 +706,9 @@ def bench_crc(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
         "crc_stat": float((n * risk + 1.0) / (n + 1)),
         "kupiec_lr": float(lr),
         "kupiec_p": float(kp),
-        "cal_risk": cal_bench.get("risk"),
-        "cal_lambda_hat": cal_bench.get("lambda_hat"),
-        "cal_crc_stat": cal_bench.get("crc_stat"),
+        "cal_risk": cal_bench.get("synthetic_risk"),
+        "cal_lambda_hat": cal_bench.get("synthetic_lambda_hat"),
+        "cal_crc_stat": cal_bench.get("synthetic_crc_stat"),
         "high_vol_mean_bound": high_b,
         "low_vol_mean_bound": low_b,
         "gaussian_raw": {

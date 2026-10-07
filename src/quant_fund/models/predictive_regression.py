@@ -1,4 +1,4 @@
-"""Predictive regression with Stambaugh bias and Bonferroni bounds.
+"""Predictive regression with Stambaugh bias and Bonferroni bounds (SYNTHETIC).
 
 y_t = a + b*x_{t-1} + u_t with persistent, endogenous regressor x
 (x_t = rho*x_{t-1} + v_t, corr(u,v) < 0). The OLS slope is biased upward

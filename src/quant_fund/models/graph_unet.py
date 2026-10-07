@@ -104,5 +104,5 @@ def bench_graph_unet(
         "synthetic_gunet_mlp_acc": acc_mlp,
         "synthetic_gunet_acc_gain": acc_unet - acc_mlp,
         "synthetic_gunet_pool_size": float(k_pool),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

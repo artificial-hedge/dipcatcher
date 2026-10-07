@@ -1,4 +1,4 @@
-"""Hoare-logic triple verifier on a tiny while-language (synthetic).
+"""Hoare-logic triple verifier on a tiny while-language (synthetic) (SYNTHETIC).
 
 Programs are tuples of statements; the verifier computes the weakest
 liberal precondition through assignments and (annotated) while-loops

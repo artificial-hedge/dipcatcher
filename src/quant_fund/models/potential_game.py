@@ -1,4 +1,4 @@
-"""Congestion potential game — best-response dynamics to Nash.
+"""Congestion potential game — best-response dynamics to Nash (SYNTHETIC).
 
 N users each pick one of R routes; cost to a user on route r is
 l_r(n_r) = a_r * n_r + b_r. Rosenthal potential

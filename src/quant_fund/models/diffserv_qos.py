@@ -1,4 +1,4 @@
-"""DiffServ QoS: priority-weighted dequeuing vs strict-PQ oracle."""
+"""DiffServ QoS: priority-weighted dequeuing vs strict-PQ oracle (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""Tensor cross interpolation (maxvol-style fiber sampling): recover a
+"""Tensor cross interpolation (maxvol-style fiber sampling): recover a (SYNTHETIC)
 smooth tensor from O(chi·d·n) entries vs FFT-free random sampling.
 """
 
@@ -29,5 +29,5 @@ def bench_tensor_cross(seed: int = 3097, d: int = 3, n: int = 12, chi: int = 4) 
         "synthetic_tcross_entries": float(chi * d * n),
         "synthetic_tcross_full": float(T.size),
         "synthetic_tcross_ratio": float(chi * d * n / T.size),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

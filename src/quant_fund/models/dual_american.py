@@ -1,4 +1,4 @@
-"""Andersen-Broadie dual upper bound for the American put.
+"""Andersen-Broadie dual upper bound for the American put (SYNTHETIC).
 
 Builds a martingale from the tree-implied value function: at each outer path
 step the conditional expectation E[V_t | F_{t-1}] is estimated by one-step

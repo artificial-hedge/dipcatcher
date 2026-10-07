@@ -102,14 +102,14 @@ def test_ess_is_n_for_uniform_weights() -> None:
 
 def test_bench_coverage_width_no_sharpe() -> None:
     row = bench_localized_cqr(seed=21)
-    assert "coverage" in row
-    assert "mean_width" in row
-    assert "high_vol_mean_width" in row
-    assert "low_vol_mean_width" in row
+    assert "synthetic_coverage" in row
+    assert "synthetic_mean_width" in row
+    assert "synthetic_high_vol_mean_width" in row
+    assert "synthetic_low_vol_mean_width" in row
     assert all("sharpe" not in key.lower() for key in row)
-    assert row["n"] > 0
-    assert row["high_vol_mean_width"] > row["low_vol_mean_width"]
-    assert row["coverage"] >= 0.85
+    assert row["synthetic_n"] > 0
+    assert row["synthetic_high_vol_mean_width"] > row["synthetic_low_vol_mean_width"]
+    assert row["synthetic_coverage"] >= 0.85
 
 
 def test_localized_rejects_bad_alpha() -> None:

@@ -1,4 +1,4 @@
-"""Full (transductive) conformal — refit ridge per candidate y on a
+"""Full (transductive) conformal — refit ridge per candidate y on a (SYNTHETIC)
 coarse grid and invert the p-value; tighter intervals than split
 conformal at the cost of refits. Width vs split conformal.
 """
@@ -47,5 +47,5 @@ def bench_full_cp(seed: int = 1319, alpha: float = 0.1, n_eval: int = 120) -> di
         "synthetic_fcp_split_coverage": cov2,
         "synthetic_fcp_split_width": 2 * Q,
         "synthetic_fcp_width_gain": 2 * Q - float(np.mean(hi_f - lo_f)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

@@ -1,4 +1,4 @@
-"""Shared synthetic fixtures for the wave-210 coding-theory canon."""
+"""Shared synthetic fixtures for the wave-210 coding-theory canon (SYNTHETIC)."""
 
 import numpy as np
 

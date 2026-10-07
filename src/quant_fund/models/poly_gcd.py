@@ -1,4 +1,4 @@
-"""Polynomial GCD over QQ via the Euclidean algorithm (synthetic).
+"""Polynomial GCD over QQ via the Euclidean algorithm (synthetic) (SYNTHETIC).
 
 Univariate polynomials as coefficient lists (highest degree first,
 Fraction coefficients). Exact remainder sequences; verified against

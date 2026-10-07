@@ -1,4 +1,4 @@
-"""Banded Needleman-Wunsch vs full-matrix oracle (wave 284).
+"""Banded Needleman-Wunsch vs full-matrix oracle (wave 284) (SYNTHETIC).
 
 For sequences differing by few edits, a width-w band around the diagonal
 contains the optimal alignment — DP restricted to |i-j| <= w matches full NW.

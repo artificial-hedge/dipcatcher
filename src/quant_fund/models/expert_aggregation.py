@@ -1,4 +1,4 @@
-"""Prediction with expert advice — regret-bounded adaptive forecaster mixing.
+"""Prediction with expert advice — regret-bounded adaptive forecaster mixing (SYNTHETIC).
 
 Online aggregation of a panel of expert forecasters under proper losses,
 with finite-sample regret guarantees: Hedge / exponentially weighted

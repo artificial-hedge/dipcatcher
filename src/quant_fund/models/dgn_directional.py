@@ -1,4 +1,4 @@
-"""DGN-lite (Beaini et al. 2021) — directional aggregation: message along
+"""DGN-lite (Beaini et al. 2021) — directional aggregation: message along (SYNTHETIC)
 edge (i,j) weighted by directionality (unit vector between node positions
 in a learned embedding). Planted-clique AUC vs isotropic GCN.
 """
@@ -59,5 +59,5 @@ def bench_dgn_directional(seed: int = 893, iters: int = 200) -> dict[str, float]
         "synthetic_dgn_auc": auc_dgn,
         "synthetic_dgn_random_auc": 0.5,
         "synthetic_dgn_lift": auc_dgn - 0.5,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

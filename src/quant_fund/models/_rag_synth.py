@@ -1,4 +1,4 @@
-"""Synthetic corpus for the w145 retrieval canon.
+"""Synthetic corpus for the w145 retrieval canon (SYNTHETIC).
 
 Documents = bags of tokens drawn from hidden topic mixtures; queries
 sample a topic. Semantic relevance = shared dominant topic (lexical

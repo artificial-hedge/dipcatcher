@@ -1,4 +1,4 @@
-"""Sparse Cholesky with AMD-style fill-reducing order (toy dense verify)."""
+"""Sparse Cholesky with AMD-style fill-reducing order (toy dense verify) (SYNTHETIC)."""
 
 import numpy as np
 

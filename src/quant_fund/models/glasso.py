@@ -1,4 +1,4 @@
-"""Graphical lasso: sparse precision matrix estimation
+"""Graphical lasso: sparse precision matrix estimation (SYNTHETIC)
 (Friedman, Hastie & Tibshirani 2008).
 
 Maximizes  logdet Theta - tr(S Theta) - rho ||Theta||_1  over PD

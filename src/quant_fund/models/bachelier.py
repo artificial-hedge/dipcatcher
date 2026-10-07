@@ -1,4 +1,4 @@
-"""Bachelier (1900) normal option-pricing model.
+"""Bachelier (1900) normal option-pricing model (SYNTHETIC).
 
 Under the Bachelier model the forward follows arithmetic Brownian motion, so
 option prices are expressed with an *absolute* (normal) volatility ``sigma`` in

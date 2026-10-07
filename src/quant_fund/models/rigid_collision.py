@@ -1,4 +1,4 @@
-"""2D rigid-ball impulse collisions (synthetic).
+"""2D rigid-ball impulse collisions (synthetic) (SYNTHETIC).
 
 Positional wall bounce + pair impulse with restitution e.
 Verified: (i) momentum conserved in elastic collisions; (ii)

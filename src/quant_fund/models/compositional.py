@@ -1,4 +1,4 @@
-"""Compositional data analysis — Aitchison geometry on the simplex.
+"""Compositional data analysis — Aitchison geometry on the simplex (SYNTHETIC).
 
 Aitchison (1982, 1986): proportions x = (x_1..x_D) live on the
 simplex where the right geometry is not Euclidean. The log-ratio
@@ -142,5 +142,5 @@ def bench_compositional(seed: int = 20261231 + 412) -> dict[str, float]:
         "synthetic_coda_var_trace": float(np.trace(t)),
         "synthetic_coda_alpha0_err": float(a0_err),
         "synthetic_coda_alpha0_hat": float(fit["alpha0"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

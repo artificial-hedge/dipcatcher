@@ -1,4 +1,4 @@
-"""NODE-lite — neural oblivious decision ensemble (Popov et al. 2020).
+"""NODE-lite — neural oblivious decision ensemble (Popov et al. 2020) (SYNTHETIC).
 
 Soft oblivious trees: all leaves share the same decision function
 per depth; differentiable routing → tabular accuracy vs MLP.
@@ -70,5 +70,5 @@ def bench_node_net(
         "synthetic_node_acc": acc_n,
         "synthetic_node_mlp_acc": acc_m,
         "synthetic_node_gain": acc_n - acc_m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

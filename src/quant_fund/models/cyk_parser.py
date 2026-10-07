@@ -1,4 +1,4 @@
-"""CYK parser for CNF grammars (synthetic).
+"""CYK parser for CNF grammars (synthetic) (SYNTHETIC).
 
 Bottom-up chart parsing: X[i,j] = set of nonterminals deriving
 w[i:j]. Verified: membership verdicts agree with exhaustive

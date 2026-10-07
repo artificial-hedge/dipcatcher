@@ -1,4 +1,4 @@
-"""EKF-SLAM 2D: joint pose+landmark state, predict + range-bearing updates."""
+"""EKF-SLAM 2D: joint pose+landmark state, predict + range-bearing updates (SYNTHETIC)."""
 
 import numpy as np
 

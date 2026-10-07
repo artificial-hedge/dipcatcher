@@ -1,4 +1,4 @@
-"""STDP learning (Bi & Poo 1998) — classic selectivity demo: half the
+"""STDP learning (Bi & Poo 1998) — classic selectivity demo: half the (SYNTHETIC)
 inputs fire causally before the post-synaptic spike, half are
 uncorrelated noise; STDP potentiates only the causal inputs.
 Weight selectivity = mean W_causal - mean W_noise.
@@ -41,5 +41,5 @@ def bench_stdp_learn(seed: int = 1907, n_inputs: int = 8, T: int = 400) -> dict[
         "synthetic_stdp_selectivity": sel,
         "synthetic_stdp_w_causal": float(W[:4].mean()),
         "synthetic_stdp_w_noise": float(W[4:].mean()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

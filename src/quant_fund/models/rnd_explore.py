@@ -1,4 +1,4 @@
-"""RND (Burda et al. 2019): fixed random target network vs trained
+"""RND (Burda et al. 2019): fixed random target network vs trained (SYNTHETIC)
 predictor; intrinsic reward = feature prediction error. Torch-gated
 MLP pair on state features.
 """
@@ -48,5 +48,5 @@ def bench_rnd_explore(seed: int = 2847) -> dict[str, float]:
         "synthetic_baseline_coverage": float(cov_b),
         "synthetic_rnd_success": float(succ),
         "synthetic_baseline_success": float(succ_b),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

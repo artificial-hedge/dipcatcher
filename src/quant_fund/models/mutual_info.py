@@ -146,5 +146,5 @@ def bench_mutual_info(seed: int = 20261231 + 373) -> dict[str, float]:
         "synthetic_mi_gauss": mi_dep,
         "synthetic_mi_gauss_true": mi_true,
         "synthetic_mi_nonlin": mi_nl,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

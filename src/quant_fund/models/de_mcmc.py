@@ -1,4 +1,4 @@
-"""DE-MCMC (ter Braak 2006): population MCMC where proposals are
+"""DE-MCMC (ter Braak 2006): population MCMC where proposals are (SYNTHETIC)
 scaled differences of other chains — self-tuning jump distribution.
 Correlated-Gaussian recovery vs MH.
 """
@@ -33,5 +33,5 @@ def bench_de_mcmc(seed: int = 2967, k: int = 8, steps: int = 500) -> dict[str, f
         "synthetic_demc_cov_err": ce,
         "synthetic_mh_mean_err": me_b,
         "synthetic_mh_cov_err": ce_b,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

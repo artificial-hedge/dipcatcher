@@ -1,4 +1,4 @@
-"""CFRNet-style IPM-balanced representation (Shalit et al. 2017).
+"""CFRNet-style IPM-balanced representation (Shalit et al. 2017) (SYNTHETIC).
 
 Trunk trained to predict y AND minimize an MMD penalty between
 treated/control representations — balance penalty vs unpenalized
@@ -74,5 +74,5 @@ def bench_causal_rep(
         "synthetic_crep_pehe": pehe_i,
         "synthetic_crep_free_pehe": pehe_f,
         "synthetic_crep_gain": pehe_f - pehe_i,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

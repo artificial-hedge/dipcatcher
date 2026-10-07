@@ -109,5 +109,5 @@ def bench_deep_kernel_gp(
         "synthetic_dkgp_mse_gain": mse_base - mse_dk,
         "synthetic_dkgp_cov90": cov90,
         "synthetic_dkgp_cov90_err": abs(cov90 - 0.90),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

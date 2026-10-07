@@ -1,4 +1,4 @@
-"""Shared fixture for wave-184 training-dynamics canon.
+"""Shared fixture for wave-184 training-dynamics canon (SYNTHETIC).
 
 Small MLP trained on the XOR-mixture regime task (`_lm_synth.regime_task`);
 each module probes a distinct learning-dynamics property. Baseline: a

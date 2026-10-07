@@ -1,4 +1,4 @@
-"""MESI cache-coherence protocol simulator — state-transition invariant check."""
+"""MESI cache-coherence protocol simulator — state-transition invariant check (SYNTHETIC)."""
 
 import numpy as np
 

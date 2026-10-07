@@ -1,4 +1,4 @@
-"""Risk-parity / equal-risk-contribution portfolios.
+"""Risk-parity / equal-risk-contribution portfolios (SYNTHETIC).
 
 Roncalli (2013): the risk contribution of asset i to
 sigma(w) = sqrt(w' S w) is
@@ -136,5 +136,5 @@ def bench_risk_parity(seed: int = 20261231 + 459) -> dict[str, float]:
     return {
         "synthetic_max_dev": dev,
         "synthetic_naive_dev": naive_dev,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

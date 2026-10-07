@@ -1,4 +1,4 @@
-"""Toy BFV homomorphic encryption over Z_q[x]/(x^N + 1)."""
+"""Toy BFV homomorphic encryption over Z_q[x]/(x^N + 1) (SYNTHETIC)."""
 
 import numpy as np
 

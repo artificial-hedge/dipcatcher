@@ -1,4 +1,4 @@
-"""Mood's median test and pairwise median contrasts.
+"""Mood's median test and pairwise median contrasts (SYNTHETIC).
 
 Mood (1950): for k independent samples, count observations above
 the grand median in each group; under H0 (common median) the
@@ -97,5 +97,5 @@ def bench_median_tests(seed: int = 20261231 + 433) -> dict[str, float]:
         "synthetic_mood_p": out["p"],
         "synthetic_mood_p_null": out_n["p"],
         "synthetic_pair_median_p": pair["p_two_sample"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

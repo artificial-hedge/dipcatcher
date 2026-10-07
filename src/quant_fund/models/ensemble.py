@@ -1,4 +1,4 @@
-"""Forecast-combination methods.
+"""Forecast-combination methods (SYNTHETIC).
 
 References:
 - Bates, Granger (1969). The combination of forecasts.  *Operations

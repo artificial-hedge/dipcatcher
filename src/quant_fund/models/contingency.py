@@ -1,4 +1,4 @@
-"""Contingency-table inference — Fisher exact, McNemar, CMH, effect sizes.
+"""Contingency-table inference — Fisher exact, McNemar, CMH, effect sizes (SYNTHETIC).
 
 Fisher (1922), McNemar (1947), Cochran-Mantel-Haenszel (1954/1959):
 for 2x2 and stratified tables the exact/conditional tests avoid the
@@ -166,5 +166,5 @@ def bench_contingency(seed: int = 20261231 + 430) -> dict[str, float]:
         "synthetic_phi": phi,
         "synthetic_mcnemar_p": mn["p"],
         "synthetic_cmh_p": cm["p"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

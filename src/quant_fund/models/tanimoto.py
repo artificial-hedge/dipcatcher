@@ -1,4 +1,4 @@
-"""Tanimoto similarity (wave 290).
+"""Tanimoto similarity (wave 290) (SYNTHETIC).
 
 J(A,B) = |A∩B| / |A∪B| on fingerprint sets; verified against brute-force
 Jaccard plus known self/extreme values, and identity A~A=1.

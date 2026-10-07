@@ -1,4 +1,4 @@
-"""Cross-sectional factor models.
+"""Cross-sectional factor models (SYNTHETIC).
 
 Fama–MacBeth two-pass regression (with Shanken correction), characteristic-
 sorted factor construction (Fama–French style 2x3 sorts and momentum),

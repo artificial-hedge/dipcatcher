@@ -1,4 +1,4 @@
-"""Dark Experience Replay (Buzzega et al. 2020) — reservoir buffer stores
+"""Dark Experience Replay (Buzzega et al. 2020) — reservoir buffer stores (SYNTHETIC)
 past (x, teacher logits); new-task loss + replay of stored points with
 logit matching to the stored teacher outputs.
 """

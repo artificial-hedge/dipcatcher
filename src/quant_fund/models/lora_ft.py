@@ -1,4 +1,4 @@
-"""LoRA low-rank adaptation (Hu et al. 2021).
+"""LoRA low-rank adaptation (Hu et al. 2021) (SYNTHETIC).
 
 W' = W + (α/r)·BA with base frozen — trains r(A+B) params per layer
 instead of d². On the rotated-boundary fixture LoRA recovers most of
@@ -99,5 +99,5 @@ def bench_lora_ft(
         "synthetic_lora_full_t0_retention": acc_full_t0,
         "synthetic_lora_base_t0_acc": acc_base_t0,
         "synthetic_lora_param_frac": float(n_lora) / n_full,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

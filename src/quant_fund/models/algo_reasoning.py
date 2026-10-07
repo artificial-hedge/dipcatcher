@@ -1,4 +1,4 @@
-"""Neural algorithm execution (Veličković et al., "Neural Execution of
+"""Neural algorithm execution (Veličković et al., "Neural Execution of (SYNTHETIC)
 Graph Algorithms") — GNN learns BFS-relaxation: predict hop-distance to a
 source node on random graphs (clamped to graph diameter). MAE vs
 degree-feature MLP.
@@ -101,5 +101,5 @@ def bench_algo_reasoning(seed: int = 877, iters: int = 300) -> dict[str, float]:
         "synthetic_algo_mae": mae,
         "synthetic_algo_trivial_mae": mae_mlp,
         "synthetic_algo_gain": mae_mlp - mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Latent class analysis — EM for Bernoulli-response mixtures.
+"""Latent class analysis — EM for Bernoulli-response mixtures (SYNTHETIC).
 
 Lazarsfeld & Henry (1968), Goodman (1974): subjects belong to one of
 K unobserved classes; given the class, item responses are independent
@@ -119,5 +119,5 @@ def bench_latent_class(seed: int = 20261231 + 415) -> dict[str, float]:
     return {
         "synthetic_lca_acc": acc,
         "synthetic_lca_pi_err": pi_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

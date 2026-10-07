@@ -1,4 +1,4 @@
-"""Christoffel symbols from the metric (wave 287).
+"""Christoffel symbols from the metric (wave 287) (SYNTHETIC).
 
 Gamma^k_ij = 1/2 g^{kl} (d_i g_jl + d_j g_il - d_l g_ij) computed by
 finite differences of the metric tensor match analytic values on the

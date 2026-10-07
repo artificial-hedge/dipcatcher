@@ -1,4 +1,4 @@
-"""Gradual typing: consistent-equality (~), casts, and blame tracking.
+"""Gradual typing: consistent-equality (~), casts, and blame tracking (SYNTHETIC).
 
 Types: ("int",) ("bool",) ("fun",A,B) ("dyn",). Consistent-equality treats
 dyn as matching everything both ways. Cast insertion: e::A⇒B wraps the

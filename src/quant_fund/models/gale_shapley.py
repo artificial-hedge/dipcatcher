@@ -1,4 +1,4 @@
-"""Gale-Shapley deferred acceptance + blocking-pair oracle."""
+"""Gale-Shapley deferred acceptance + blocking-pair oracle (SYNTHETIC)."""
 
 import numpy as np
 

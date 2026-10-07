@@ -1,4 +1,4 @@
-"""Lennard-Jones molecular dynamics: velocity-Verlet + LJ force + energy drift."""
+"""Lennard-Jones molecular dynamics: velocity-Verlet + LJ force + energy drift (SYNTHETIC)."""
 
 import numpy as np
 

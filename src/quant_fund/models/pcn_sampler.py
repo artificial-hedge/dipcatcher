@@ -1,4 +1,4 @@
-"""Preconditioned Crank–Nicolson (Cotter et al. 2013): dimension-robust
+"""Preconditioned Crank–Nicolson (Cotter et al. 2013): dimension-robust (SYNTHETIC)
 function-space proposal u' = sqrt(1-beta²)u + beta·xi on a GP target —
 acceptance stays healthy where RWM dies as dimension grows.
 """
@@ -39,5 +39,5 @@ def bench_pcn_sampler(
         "synthetic_pcn_accept": float(acc / steps),
         "synthetic_pcn_fit_err": fit_err,
         "synthetic_pcn_dim": float(d),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

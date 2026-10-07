@@ -1,4 +1,4 @@
-"""Tseitin transformation: boolean formula AST -> equisatisfiable CNF.
+"""Tseitin transformation: boolean formula AST -> equisatisfiable CNF (SYNTHETIC).
 
 Each subformula gets a fresh variable; gate clauses encode the subformula's
 local semantics. Equisatisfiability is verified against a truth-table oracle

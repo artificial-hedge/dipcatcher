@@ -1,4 +1,4 @@
-"""Lion (Chen et al. 2023) — sign-momentum update:
+"""Lion (Chen et al. 2023) — sign-momentum update: (SYNTHETIC)
 w -= lr * sign(β1·m + (1-β1)·g), m ← β2·m + (1-β2)·g.
 Memory-light vs Adam.
 """
@@ -67,5 +67,5 @@ def bench_lion_opt(
         "synthetic_lion_loss": loss_l,
         "synthetic_lion_adam_loss": loss_a,
         "synthetic_lion_gain": loss_a - loss_l,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Gated DeltaNet (Yang et al. 2024) — delta-rule memory with an
+"""Gated DeltaNet (Yang et al. 2024) — delta-rule memory with an (SYNTHETIC)
 output gate: S = S W + beta (v - S^T k) ⊗ k, o = g ⊙ (q^T S). The gate
 adds non-recall forgetting control. Induction recall bench.
 """
@@ -61,5 +61,5 @@ def bench_gated_deltanet(seed: int = 2269, iters: int = 800, D: int = 16) -> dic
         "synthetic_gdn_recall": float(acc),
         "synthetic_attn_recall": base,
         "synthetic_gdn_gain": float(acc) - base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -166,10 +166,10 @@ def bench_lasso_pds(seed: int = 20261231 + 335) -> dict[str, float]:
     found = int(((np.abs(by) > 1e-8) | (np.abs(bd) > 1e-8))[:5].sum())
     ok = covers == 1.0 and bias < 0.35 and found >= 4
     return {
-        "d_hat": r["d_hat"],
-        "ci_lo": r["ci_lo"],
-        "ci_hi": r["ci_hi"],
-        "n_sel": r["n_sel"],
-        "true_found": float(found),
-        "score": float(ok),
+        "synthetic_d_hat": r["d_hat"],
+        "synthetic_ci_lo": r["ci_lo"],
+        "synthetic_ci_hi": r["ci_hi"],
+        "synthetic_n_sel": r["n_sel"],
+        "synthetic_true_found": float(found),
+        "synthetic_score": float(ok),
     }

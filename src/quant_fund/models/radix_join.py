@@ -1,4 +1,4 @@
-"""Radix-partitioned hash join."""
+"""Radix-partitioned hash join (SYNTHETIC)."""
 
 import numpy as np
 

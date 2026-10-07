@@ -1,4 +1,4 @@
-"""Multi-agent debate (Du et al. 2023).
+"""Multi-agent debate (Du et al. 2023) (SYNTHETIC).
 
 Three op-policies trained on disjoint noisy-label subsets disagree;
 debate = averaging logits + argmax (consensus) beats the median
@@ -72,5 +72,5 @@ def bench_debate_multiagent(
         "synthetic_debate_single_mean": float(single.mean()),
         "synthetic_debate_single_max": float(single.max()),
         "synthetic_debate_gain": acc_debate - float(single.max()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

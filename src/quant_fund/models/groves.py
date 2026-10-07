@@ -1,4 +1,4 @@
-"""Groves mechanism family — welfare-maximizing allocation with
+"""Groves mechanism family — welfare-maximizing allocation with (SYNTHETIC)
 payments p_i = h_i(v_{−i}) − Σ_{j≠i} v_j(x*); VCG/Clarke pivot is the
 special case h_i = max_x Σ_{j≠i} v_j(x). Any Groves-scheme h_i
 independent of v_i preserves DSIC.

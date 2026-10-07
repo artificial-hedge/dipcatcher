@@ -1,4 +1,4 @@
-"""Linear integer arithmetic via Omega-style elimination + bounded search.
+"""Linear integer arithmetic via Omega-style elimination + bounded search (SYNTHETIC).
 
 Constraints are tuples ("<=", coeffs, rhs) / ("==", coeffs, rhs) /
 (">=", coeffs, rhs) over variables x0..x_{n-1}, coefficients int. Feasibility
@@ -113,7 +113,8 @@ def bench_omega_lia(seed: int = _SEED) -> dict[str, float]:
     del seed
     checks: list[bool] = []
     # 2x + 2y = 5 : LP-feasible, integer-infeasible (Omega catches parity)
-    assert _fm_feasible([("==", (2, 2), 5)], 2)
+    if not (_fm_feasible([("==", (2, 2), 5)], 2)):
+        raise ValueError('_fm_feasible([("==", (2, 2), 5)], 2)')
     checks.append(not lia_feasible([("==", (2, 2), 5)], 2))
     # x + y >= 5, x <= 3, y <= 3: integer-feasible (3,2)
     checks.append(lia_feasible([(">=", (1, 1), 5), ("<=", (1, 0), 3), ("<=", (0, 1), 3)], 2))

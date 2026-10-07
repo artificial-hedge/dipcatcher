@@ -1,4 +1,4 @@
-"""GC skew: (G-C)/(G+C) sliding window; origin detection."""
+"""GC skew: (G-C)/(G+C) sliding window; origin detection (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""Software pipelining / modulo scheduling (wave 294).
+"""Software pipelining / modulo scheduling (wave 294) (SYNTHETIC).
 
 Initiation interval II = max(ResII, RecII): resource-bound from issue
 slots per unit, recurrence-bound from loop-carried dependency cycle

@@ -1,4 +1,4 @@
-"""Minimum-spanning-tree and planar-filtered network topology.
+"""Minimum-spanning-tree and planar-filtered network topology (SYNTHETIC).
 
 Mantegna (1999): pairwise distances d_ij = sqrt(2(1 - rho_ij))
 on a correlation matrix span a minimum spanning tree whose
@@ -171,5 +171,5 @@ def bench_mst_topology(seed: int = 20261231 + 460) -> dict[str, float]:
         "synthetic_hub": float(out["hub_node"]),
         "synthetic_max_deg": float(out["max_degree"]),
         "synthetic_pmfg_edges": float(p["n_edges"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

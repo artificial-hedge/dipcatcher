@@ -1,4 +1,4 @@
-"""SMILES parser (wave 290).
+"""SMILES parser (wave 290) (SYNTHETIC).
 
 Minimal SMILES tokenizer → molecular graph: atoms C, N, O, S, P, H,
 aromatic lowercase c/n, bonds =, #, ring digits 1-9, branches ().

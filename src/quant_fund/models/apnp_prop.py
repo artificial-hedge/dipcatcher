@@ -88,5 +88,5 @@ def bench_apnp_prop(
         "synthetic_apnp_blind_acc": acc_blind,
         "synthetic_apnp_acc_gain": acc_apnp - acc_blind,
         "synthetic_apnp_logit_spread": spread,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

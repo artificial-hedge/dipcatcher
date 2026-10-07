@@ -1,4 +1,4 @@
-"""Elliptical Slice Sampling (Murray et al. 2010) — likelihood×Gaussian
+"""Elliptical Slice Sampling (Murray et al. 2010) — likelihood×Gaussian (SYNTHETIC)
 prior posterior sampling via ellipse bracketing; no gradient needed.
 ESS + moment error vs RWM on the banana likelihood.
 """
@@ -54,5 +54,5 @@ def bench_elliptical_slice(seed: int = 2227) -> dict[str, float]:
         "synthetic_rwm_ess": ess_b,
         "synthetic_ess_ess_gain": ess - ess_b,
         "synthetic_ess_moment_err": moment_err(smp, mu, sd),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

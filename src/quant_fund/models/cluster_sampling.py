@@ -1,4 +1,4 @@
-"""Two-stage cluster sampling — design-based total/mean with
+"""Two-stage cluster sampling — design-based total/mean with (SYNTHETIC)
 cluster-robust variance.
 
 Särndal, Swensson & Wretman (1992) ch. 4: for m sampled PSU
@@ -122,5 +122,5 @@ def bench_cluster_sampling(seed: int = 20261231 + 448) -> dict[str, float]:
         "synthetic_cluster_se": out["se"],
         "synthetic_srs_se": se_srs,
         "synthetic_icc": out["icc"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

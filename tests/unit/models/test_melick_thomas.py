@@ -96,6 +96,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_melick_thomas()
-    for k in ("tail_hat", "tail_true", "tail_err", "var_err_rel", "rmse_rel", "score"):
+    for k in (
+        "synthetic_tail_hat",
+        "synthetic_tail_true",
+        "synthetic_tail_err",
+        "synthetic_var_err_rel",
+        "synthetic_rmse_rel",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

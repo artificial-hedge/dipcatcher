@@ -1,4 +1,4 @@
-"""Randomized smoothing certification (Cohen et al. 2019).
+"""Randomized smoothing certification (Cohen et al. 2019) (SYNTHETIC).
 
 Certified radius R = σ·Φ^{-1}(p_A) where p_A is the lower confidence
 bound on the smoothed classifier's majority probability under N(0, σ²I)
@@ -82,5 +82,5 @@ def bench_randomized_smoothing(
         "synthetic_smooth_base_noise": acc_base_noise,
         "synthetic_smooth_certified_frac": float((radius > 0).mean()),
         "synthetic_smooth_mean_radius": float(radius.mean()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

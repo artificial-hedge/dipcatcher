@@ -1,4 +1,4 @@
-"""Vickrey (second-price) auction — revenue equivalence check.
+"""Vickrey (second-price) auction — revenue equivalence check (SYNTHETIC).
 
 With truthful bidding the winner pays the second-highest value; revenue
 equivalence says E[revenue] = E[max of order statistic 2] which for

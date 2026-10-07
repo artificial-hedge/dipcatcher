@@ -1,4 +1,4 @@
-"""Subgraph isomorphism on molecular graphs (wave 290).
+"""Subgraph isomorphism on molecular graphs (wave 290) (SYNTHETIC).
 
 VF2-lite backtracking: pattern atoms must match by symbol; bonds by
 edge presence (order ignored). Benzene ring found in toluene, not in

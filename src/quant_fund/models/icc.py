@@ -1,4 +1,4 @@
-"""Intraclass correlation coefficients — McGraw & Wong (1996).
+"""Intraclass correlation coefficients — McGraw & Wong (1996) (SYNTHETIC).
 
 For an (n targets, k raters) matrix the one-way/two-way ANOVA
 mean squares give the standard ICC family:
@@ -90,5 +90,5 @@ def bench_icc(seed: int = 20261231 + 439) -> dict[str, float]:
         "synthetic_icc_agree": out["icc_2_1"],
         "synthetic_icc_noise": out_n["icc_2_1"],
         "synthetic_icc_sem": out["sem"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

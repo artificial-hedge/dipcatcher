@@ -1,4 +1,4 @@
-"""Conjugate gradient: linear CG (Hestenes-Stiefel 1952)
+"""Conjugate gradient: linear CG (Hestenes-Stiefel 1952) (SYNTHETIC)
 for SPD systems and nonlinear Polak-Ribière+ CG with
 backtracking line search (Nocedal-Wright). Synthetic bench
 gates CG solve against dense solve and nonlinear CG on a

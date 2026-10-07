@@ -1,4 +1,4 @@
-"""Raft log replication: AppendEntries consistency + commit advancement.
+"""Raft log replication: AppendEntries consistency + commit advancement (SYNTHETIC).
 
 Simulates a leader replicating entries to followers over a flaky network.
 AppendEntries(prev_index, prev_term, entries): follower rejects on log

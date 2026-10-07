@@ -1,4 +1,4 @@
-"""Bayesian stacking and pseudo-BMA(+) of predictive distributions.
+"""Bayesian stacking and pseudo-BMA(+) of predictive distributions (SYNTHETIC).
 
 Combination rules for *distributional* forecasts, working on a pointwise
 log predictive density matrix ``(N, K)`` whose row ``i`` holds

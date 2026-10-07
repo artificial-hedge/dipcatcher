@@ -1,4 +1,4 @@
-"""P-splines — Eilers-Marx penalized B-spline regression.
+"""P-splines — Eilers-Marx penalized B-spline regression (SYNTHETIC).
 
 Eilers & Marx (1996): a B-spline basis B(x) of degree q on
 equidistant knots is penalized by a difference penalty ||D_d beta||^2
@@ -138,5 +138,5 @@ def bench_p_spline(seed: int = 20261231 + 423) -> dict[str, float]:
         "synthetic_pspline_mse_ratio": ratio,
         "synthetic_pspline_lambda": lam,
         "synthetic_pspline_gcv": float(out["gcv"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

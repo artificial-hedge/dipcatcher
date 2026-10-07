@@ -1,4 +1,4 @@
-"""Bayesian linear regression (Bishop 2006 §3.3) with the
+"""Bayesian linear regression (Bishop 2006 §3.3) with the (SYNTHETIC)
 evidence procedure for α/β and automatic relevance
 determination (ARD, Tipping 2001 — irrelevant weights get
 α_j → ∞ and are pruned). Synthetic bench gates ARD

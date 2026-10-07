@@ -1,4 +1,4 @@
-"""Chan-Vese active-contour segmentation — level-set two-region energy.
+"""Chan-Vese active-contour segmentation — level-set two-region energy (SYNTHETIC).
 
 phi evolves to minimize mu*length + lambda1*int_in |I-c1|^2 + lambda2*int_out |I-c2|^2
 with explicit Euler updates on the regularized Heaviside. Bench: energy

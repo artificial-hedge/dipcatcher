@@ -1,4 +1,4 @@
-"""Oversmoothing diagnostic + correction: Dirichlet energy of node
+"""Oversmoothing diagnostic + correction: Dirichlet energy of node (SYNTHETIC)
 embeddings decays with depth; residual-scaled propagation (α·A +
 (1−α)·I) preserves energy. Reports energy ratio after k rounds and
 clique AUC for deep vs shallow propagation.

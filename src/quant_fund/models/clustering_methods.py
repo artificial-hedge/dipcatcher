@@ -1,4 +1,4 @@
-"""Classical clustering canon: k-means++, PAM
+"""Classical clustering canon: k-means++, PAM (SYNTHETIC)
 (k-medoids), DBSCAN, and an OPTICS reachability
 ordering — the density/medoid complement to the
 spectral and centroid methods already in canon.

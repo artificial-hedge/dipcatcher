@@ -1,4 +1,4 @@
-"""Hoeffding's D — rank-based independence test sensitive to
+"""Hoeffding's D — rank-based independence test sensitive to (SYNTHETIC)
 non-monotone dependence.
 
 Hoeffding (1948): for paired samples (x_i, y_i) the statistic
@@ -102,5 +102,5 @@ def bench_hoeffding(seed: int = 20261231 + 431) -> dict[str, float]:
         "synthetic_hoeffding_nd_dep": out_dep["nd"],
         "synthetic_hoeffding_nd_ind": out_ind["nd"],
         "synthetic_hoeffding_rho_mask": abs(rho),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

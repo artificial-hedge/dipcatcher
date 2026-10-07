@@ -22,9 +22,9 @@ synthetic fixture passes.
 | API security boundary | Implemented for local/service operation | API-key authentication, loopback fail-closed default, constant-time key comparison, secure response headers, artifact-root containment, 64 KiB streamed request-body cap, and strict request schemas |
 | Dependency and code security | Implemented as CI gates | Locked dependency `pip-audit` report, medium/high Bandit gate, and retained machine-readable audit artifact |
 | Container operations | CI-gated | Non-root runtime user, loopback default, healthcheck, immutable dependency sync, host-local optional MLflow binding; CI builds the image and waits for its healthcheck |
-| Vendor market data | Adapter interface implemented; prospective feed unavailable | A fail-closed licensed-vendor HTTP adapter skeleton checks release and ingest timestamps, but no entitlement or qualifying externally timestamped complete-universe next-open feed is configured. The paired paper prototype fails closed without that evidence; the local retrospective snapshot does not qualify. |
-| Live broker connectivity | Not implemented | No live orders, broker credentials, or live P&L claims are supported |
-| Live readiness | Blocked by missing external evidence | Requires authorized vendor data, broker adapter, operational controls, and independently verified holdout/forward evidence |
+| Vendor market data | **Blocked — procurement/authorization pending** | A fail-closed licensed-vendor adapter and a condition-1 `QUALIFYING` gate exist (`quant_fund.data.qualifying`), enforcing `event_time <= available_time <= ingested_time`, `available_time <= decision_time`, revision handling, and hashed PIT receipts, with an `UNAVAILABLE` path and **no synthetic substitution**. This is **not evidence**: no entitlement and no qualifying externally timestamped complete-universe feed are configured. The local retrospective snapshot does not qualify. See [EVIDENCE_PROCUREMENT.md](EVIDENCE_PROCUREMENT.md). |
+| Live broker connectivity | **Not implemented — authorization pending** | No live orders, broker credentials, or live P&L claims are supported. The paper/simulated order/fill reconciliation surface (`quant_fund.execution.order_recon`, `quant_fund.paper.broker_adapter`) is the condition-2 reference shape only; configuring a live endpoint **raises** (`LiveEndpointRefused`). See [EVIDENCE_PROCUREMENT.md](EVIDENCE_PROCUREMENT.md). |
+| Live readiness | **Blocked by missing external evidence** | Requires authorized vendor data, a real broker adapter with authenticated reconciliation, venue measurements, a non-synthetic forward record, and independently verified evidence. The 2025 holdout is **SPENT**; the named forward window `forward_2026H2` (start 2026-07-01) is **NOT YET COLLECTED**. |
 
 
 ## Dual honesty catalogs (research vs analytics export)
@@ -58,6 +58,19 @@ All of the following must be present and independently reviewable:
 
 Until those conditions exist, Dipcatcher outputs are research, backtest, or
 simulated paper/shadow evidence only.
+
+A working fail-closed adapter, a compiling module, or a passing SYNTHETIC
+fixture is **not** evidence and never marks a condition ready. Conditions 1 and
+2 remain **BLOCKED on procurement/authorization** — they require an external
+purchase/entitlement and an independently reviewable artifact, not code. The
+actionable checklist for what to buy/authorize and the pass/fail acceptance
+tests for each condition is [EVIDENCE_PROCUREMENT.md](EVIDENCE_PROCUREMENT.md).
+
+**Holdout status:** the 2025 holdout is **SPENT** (the vendor pool already has
+results for it and discloses survivorship bias). The named forward window is
+**`forward_2026H2`, start 2026-07-01**, currently **NOT YET COLLECTED**; its
+pre-registration is hash-sealed and must be externally timestamped and frozen
+before it runs (see [REALITY_PREREGISTRATION.md](REALITY_PREREGISTRATION.md)).
 
 ## Waves 12–16 addendum (2026-09-30)
 

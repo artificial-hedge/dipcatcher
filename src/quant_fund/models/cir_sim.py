@@ -1,4 +1,4 @@
-"""CIR process exact/noncentral-χ² simulation vs Euler — verifies the
+"""CIR process exact/noncentral-χ² simulation vs Euler — verifies the (SYNTHETIC)
 exact scheme's mean/variance against analytic CIR moments where Euler
 drifts and goes negative.
 """
@@ -48,5 +48,5 @@ def bench_cir_sim(seed: int = 2933, n: int = 4000) -> dict[str, float]:
         "synthetic_cir_euler_mean_err": float(abs(euler.mean() - mean_t)),
         "synthetic_cir_exact_var_err": float(abs(exact.var() - var_t)),
         "synthetic_cir_euler_neg_frac": float((euler < 0).mean()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

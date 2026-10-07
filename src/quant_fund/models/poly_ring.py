@@ -1,4 +1,4 @@
-"""Polynomial ring over Z_p: Euclid gcd, evaluation, derivative (wave 281).
+"""Polynomial ring over Z_p: Euclid gcd, evaluation, derivative (wave 281) (SYNTHETIC).
 
 Dense coefficient lists (lowest degree first). gcd via Euclidean algorithm
 exact; (f/g)*g == f when g | f.

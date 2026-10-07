@@ -1,4 +1,4 @@
-"""Semi-space copying collector (Cheney algorithm) with forwarding pointers."""
+"""Semi-space copying collector (Cheney algorithm) with forwarding pointers (SYNTHETIC)."""
 
 import numpy as np
 

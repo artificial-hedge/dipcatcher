@@ -56,5 +56,5 @@ def test_scd_input_validation():
 
 def test_bench_cyclostationary():
     out = bench_cyclostationary()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_cyclostat_alpha_err"] < 0.01

@@ -1,4 +1,4 @@
-"""Dataset cartography (Swayamdipta et al. 2020) — confidence &
+"""Dataset cartography (Swayamdipta et al. 2020) — confidence & (SYNTHETIC)
 variability map across checkpoint epochs; splits data into
 easy/ambiguous/hard regions and reports per-region accuracy and the
 ambiguous-fraction data-point score.
@@ -40,5 +40,5 @@ def bench_data_cartography(seed: int = 1807, epochs: int = 60) -> dict[str, floa
         "synthetic_cart_amb_acc": acc_amb,
         "synthetic_cart_hardonly_acc": acc_hard,
         "synthetic_cart_full_acc": acc_full,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

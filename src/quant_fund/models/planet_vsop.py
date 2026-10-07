@@ -1,4 +1,4 @@
-"""Low-precision planetary ephemeris — JPL mean Keplerian elements.
+"""Low-precision planetary ephemeris — JPL mean Keplerian elements (SYNTHETIC).
 
 Table from "Keplerian Elements for Approximate Positions of the Major
 Planets" (JPL/SSD): a [AU], e, i [deg], L, long. perihelion, long.

@@ -1,4 +1,4 @@
-"""Bayesian VAR with Minnesota (Litterman) prior via dummy observations.
+"""Bayesian VAR with Minnesota (Litterman) prior via dummy observations (SYNTHETIC).
 
 The reduced-form VAR(p) is estimated by augmenting the data with
 dummy (Theil mixed-estimation) observations encoding the prior:

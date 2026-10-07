@@ -379,11 +379,11 @@ def bench_diffusion_forecaster() -> dict[str, float]:
             torf_epochs=_DIFF_TORF_EPOCHS,
         )
         mapped = {
-            "diffpts_crps": float(raw["diffpts_crps"]),
-            "ngboost_crps": float(raw["ngboost_crps"]),
-            "crps_gain_vs_ngboost": float(raw["crps_gain_vs_ngboost"]),
-            "diffpts_coverage_90": float(raw["coverage_90"]),
-            "diffpts_pit_ks_pvalue": float(raw["pit_ks_pvalue"]),
+            "diffpts_crps": float(raw["synthetic_diffpts_crps"]),
+            "ngboost_crps": float(raw["synthetic_ngboost_crps"]),
+            "crps_gain_vs_ngboost": float(raw["synthetic_crps_gain_vs_ngboost"]),
+            "diffpts_coverage_90": float(raw["synthetic_coverage_90"]),
+            "diffpts_pit_ks_pvalue": float(raw["synthetic_pit_ks_pvalue"]),
         }
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}

@@ -1,4 +1,4 @@
-"""Diffusion Monte Carlo: branching random walkers sample ground-state."""
+"""Diffusion Monte Carlo: branching random walkers sample ground-state (SYNTHETIC)."""
 
 import numpy as np
 

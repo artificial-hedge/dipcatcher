@@ -1,4 +1,4 @@
-"""Pollard's rho integer factorization (synthetic).
+"""Pollard's rho integer factorization (synthetic) (SYNTHETIC).
 
 Brent's improved cycle detection on f(x) = x² + c mod n with
 batched gcd. Verified by recovering planted semiprimes and

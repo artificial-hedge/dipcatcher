@@ -113,7 +113,12 @@ from quant_fund.research.catalog import (
 )
 from quant_fund.research.receipt_schema import overfitting_block_errors
 from quant_fund.robustness.schema import robustness_extension_errors
-from quant_fund.utils.hashing import SHA256_HEX_LENGTH, hash_bytes, hash_file
+from quant_fund.utils.hashing import (
+    SHA256_HEX_LENGTH,
+    canonical_json_bytes,
+    hash_bytes,
+    hash_file,
+)
 
 
 def _receipt_digest(payload: dict[str, Any]) -> str:
@@ -912,6 +917,10 @@ def verify_research_artifact(path: Path) -> dict[str, Any]:
         }
         return cast(dict[str, Any], not_object)
     notebook: dict[str, Any] = loaded
+    if _promotion_looks_like_promotion_receipt(notebook):
+        # Additive dispatch (promotion-receipt.v1): content-fingerprinted, so a
+        # claimed schema/kind cannot steer a notebook away from its checks.
+        return _verify_promotion_receipt_document(path, notebook)
     errors: list[str] = []
     errors.extend(_notebook_identity_errors(notebook))
     errors.extend(_ranker_errors(notebook))
@@ -933,3 +942,505 @@ def verify_research_artifact(path: Path) -> dict[str, Any]:
         "claim": "research_only",
     }
     return cast(dict[str, Any], verified)
+
+
+# ---------------------------------------------------------------------------
+# Promotion-receipt verification (``promotion_receipt.v1``, additive).
+#
+# A promotion receipt is one composed, immutable record binding artifact
+# identity (payload hash, class, feature/label/horizon identity and full
+# dataset identity), the ``evidence_report.v1`` bytes by hash, the
+# ``promotion.v1`` decision with its input metrics and gate results, and the
+# approving identity. Every binding is re-derived from the files on disk
+# here — this side of the contract shares no code with the composition side
+# (``quant_fund.proof.promotion_receipt``) on purpose.
+#
+# Dispatch is content-fingerprinted (never schema/kind-claimed) and purely
+# additive: documents without the promotion payload shape keep taking the
+# notebook path above, unchanged. Fail-closed throughout: synthetic evidence,
+# a missing/unverified dataset identity, a stale dataset identity, a missing
+# gate result, a missing/dishonest approver, or any tampered payload or
+# evidence-report hash makes the receipt invalid.
+# ---------------------------------------------------------------------------
+
+PROMOTION_RECEIPT_PAYLOAD_KEYS = frozenset(
+    {
+        "artifact_identity",
+        "evidence_report",
+        "promotion_decision",
+        "input_metrics",
+        "gate_results",
+        "approver",
+    }
+)
+PROMOTION_REQUIRED_GATES = (
+    "artifact_manifest",
+    "dataset_identity",
+    "evidence_report",
+    "research_receipt",
+    "leakage",
+)
+PROMOTION_DISHONEST_APPROVER_NAMES = frozenset(
+    {"", "unknown", "anonymous", "none", "null", "n/a", "na", "tbd", "unspecified", "someone"}
+)
+# Stage-aware completeness, mirrored independently of proof.promotion_receipt:
+# a training-time evidence report whose only warning is the stage-expected
+# ``promotion_receipt_missing`` is resolved by the receipt under verification.
+# Every other warning keeps the report blocking.
+PROMOTION_STAGE_EXPECTED_REPORT_WARNINGS = frozenset({"promotion_receipt_missing"})
+
+
+def _promotion_looks_like_promotion_receipt(notebook: dict[str, Any]) -> bool:
+    """Content fingerprint of a composed promotion receipt payload."""
+    payload = notebook.get("payload")
+    return isinstance(payload, dict) and set(payload) >= PROMOTION_RECEIPT_PAYLOAD_KEYS
+
+
+def _promotion_path(root: Path, raw: object) -> Path | None:
+    """Resolve a receipt-bound file path; relative paths anchor on the receipt."""
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    candidate = Path(raw)
+    return candidate if candidate.is_absolute() else root / candidate
+
+
+def _promotion_iso_timestamp(value: object) -> bool:
+    """Accept an ISO-8601 timestamp (panel dtypes may be timezone-naive)."""
+    if not isinstance(value, str) or not value.strip():
+        return False
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return True
+
+
+def _promotion_seal_errors(doc: dict[str, Any]) -> list[str]:
+    """Check the receipt.v2 self-seal under both repo digest conventions."""
+    seal = doc.get("receipt_sha256")
+    if not _is_sha256(seal):
+        return ["promotion_receipt_seal_missing"]
+    body = {key: value for key, value in doc.items() if key != "receipt_sha256"}
+    try:
+        canonical = hash_bytes(canonical_json_bytes(body))
+        strict = hash_bytes(
+            json.dumps(body, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+        )
+    except (TypeError, ValueError, RecursionError):
+        return ["promotion_receipt_seal_uncomputable"]
+    if seal != canonical and seal != strict:
+        return ["promotion_receipt_seal_mismatch"]
+    return []
+
+
+def _promotion_envelope_errors(doc: dict[str, Any]) -> list[str]:
+    """Envelope checks: seal, schema, kind, verdict and self-hash bindings."""
+    errors = _promotion_seal_errors(doc)
+    if doc.get("schema") != "receipt.v2":
+        errors.append("promotion_receipt_schema_invalid")
+    if doc.get("schema_version") != 2:
+        errors.append("promotion_receipt_schema_version_invalid")
+    if doc.get("kind") != "promotion_receipt":
+        errors.append("promotion_receipt_kind_invalid")
+    if doc.get("verdict") != "pass":
+        errors.append("promotion_receipt_verdict_invalid")
+    if doc.get("live_pnl_claim") is not False:
+        errors.append("promotion_receipt_live_pnl_claim")
+    for key in ("dataset_hash", "params_hash", "code_sha256"):
+        if not _is_sha256(doc.get(key)):
+            errors.append(f"promotion_receipt_{key}_invalid")
+    code_files = doc.get("code_files")
+    if (
+        not isinstance(code_files, dict)
+        or not code_files
+        or any(not _is_sha256(value) for value in code_files.values())
+    ):
+        errors.append("promotion_receipt_code_files_invalid")
+    else:
+        try:
+            if hash_bytes(canonical_json_bytes(code_files)) != doc.get("code_sha256"):
+                errors.append("promotion_receipt_code_sha256_mismatch")
+        except (TypeError, ValueError, RecursionError):
+            errors.append("promotion_receipt_code_sha256_uncomputable")
+    environment = doc.get("environment")
+    if not isinstance(environment, dict):
+        errors.append("promotion_receipt_environment_missing")
+    else:
+        fingerprint_body = {
+            key: value for key, value in environment.items() if key != "fingerprint_sha256"
+        }
+        claimed = environment.get("fingerprint_sha256")
+        try:
+            if (
+                not _is_sha256(claimed)
+                or hash_bytes(canonical_json_bytes(fingerprint_body)) != claimed
+            ):
+                errors.append("promotion_receipt_environment_fingerprint_mismatch")
+        except (TypeError, ValueError, RecursionError):
+            errors.append("promotion_receipt_environment_fingerprint_uncomputable")
+    if not _timestamp_valid(doc.get("generated_at")):
+        errors.append("promotion_receipt_generated_at_invalid")
+    return errors
+
+
+def _promotion_dataset_identity_errors(block: object) -> list[str]:
+    """Dataset identity is mandatory and must be complete to be trusted."""
+    prefix = "promotion_dataset_identity"
+    if not isinstance(block, dict):
+        return [f"{prefix}_missing"]
+    errors: list[str] = []
+    for key in ("materialized_panel_sha256", "source_manifest_sha256"):
+        if not _is_sha256(block.get(key)):
+            errors.append(f"{prefix}_{key}_invalid")
+    for key in ("row_count", "column_count"):
+        value = block.get(key)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+            errors.append(f"{prefix}_{key}_invalid")
+    for key in ("time_start", "time_end"):
+        if not _promotion_iso_timestamp(block.get(key)):
+            errors.append(f"{prefix}_{key}_invalid")
+    for key in ("label", "data_source"):
+        value = block.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{prefix}_{key}_invalid")
+    horizon = block.get("label_horizon_bars")
+    if not isinstance(horizon, int) or isinstance(horizon, bool) or horizon < 1:
+        errors.append(f"{prefix}_label_horizon_bars_invalid")
+    return errors
+
+
+def _promotion_identity_block_errors(block: object) -> list[str]:
+    """Artifact identity block: dataset + features + label/horizon + code."""
+    prefix = "promotion_identity"
+    if not isinstance(block, dict):
+        return [f"{prefix}_missing"]
+    errors: list[str] = []
+    if block.get("identity_schema") != "artifact_identity.v1":
+        errors.append(f"{prefix}_schema_invalid")
+    errors.extend(_promotion_dataset_identity_errors(block.get("dataset")))
+    features = block.get("features")
+    if not isinstance(features, dict):
+        errors.append(f"{prefix}_features_missing")
+    else:
+        names = features.get("features")
+        if (
+            not isinstance(names, list)
+            or not names
+            or any(not isinstance(name, str) or not name.strip() for name in names)
+            or len(set(names)) != len(names)
+        ):
+            errors.append(f"{prefix}_features_invalid")
+        version = features.get("feature_set_version")
+        if not isinstance(version, str) or not version.strip():
+            errors.append(f"{prefix}_feature_set_version_invalid")
+        if not _is_sha256(features.get("feature_set_sha256")):
+            errors.append(f"{prefix}_feature_set_sha256_invalid")
+    label = block.get("label")
+    if (
+        not isinstance(label, dict)
+        or not isinstance(label.get("name"), str)
+        or not label["name"].strip()
+    ):
+        errors.append(f"{prefix}_label_invalid")
+    else:
+        horizon_bars = label.get("horizon_bars")
+        if not isinstance(horizon_bars, int) or isinstance(horizon_bars, bool) or horizon_bars < 1:
+            errors.append(f"{prefix}_label_horizon_invalid")
+    horizon = block.get("horizon")
+    if not isinstance(horizon, dict):
+        errors.append(f"{prefix}_horizon_invalid")
+    else:
+        bars = horizon.get("bars")
+        grid_names = horizon.get("names")
+        if (
+            not isinstance(bars, list)
+            or not bars
+            or any(not isinstance(bar, int) or isinstance(bar, bool) or bar < 1 for bar in bars)
+        ):
+            errors.append(f"{prefix}_horizon_bars_invalid")
+        if (
+            not isinstance(grid_names, list)
+            or not grid_names
+            or any(not isinstance(name, str) or not name.strip() for name in grid_names)
+        ):
+            errors.append(f"{prefix}_horizon_names_invalid")
+        if isinstance(bars, list) and isinstance(grid_names, list) and len(bars) != len(grid_names):
+            errors.append(f"{prefix}_horizon_grid_mismatch")
+    if not _is_sha256(block.get("config_sha256")):
+        errors.append(f"{prefix}_config_sha256_invalid")
+    revision = block.get("git_revision")
+    if not isinstance(revision, str) or not revision.strip():
+        errors.append(f"{prefix}_git_revision_invalid")
+    worktree = block.get("git_worktree_sha256")
+    if not isinstance(worktree, str) or not worktree.strip():
+        errors.append(f"{prefix}_git_worktree_sha256_invalid")
+    return errors
+
+
+def _promotion_evidence_report_errors(
+    root: Path, report_block: object, artifact_sha: object, dataset_panel_sha: object
+) -> list[str]:
+    """Evidence-report binding: bytes by hash, cross-bound to artifact/dataset."""
+    errors: list[str] = []
+    if not isinstance(report_block, dict):
+        return ["promotion_evidence_report_missing"]
+    report_sha = report_block.get("sha256")
+    if not _is_sha256(report_sha):
+        errors.append("promotion_evidence_report_sha256_invalid")
+    if report_block.get("schema") != "evidence_report.v1":
+        errors.append("promotion_evidence_report_schema_invalid")
+    report_file = _promotion_path(root, report_block.get("path"))
+    report_body: dict[str, Any] | None = None
+    if report_file is None or not report_file.is_file():
+        errors.append("promotion_evidence_report_file_missing")
+    else:
+        if hash_file(report_file) != report_sha:
+            errors.append("promotion_evidence_report_sha256_mismatch")
+        sidecar = report_file.with_name(f"{report_file.name}.sha256")
+        if sidecar.is_file():
+            expected = sidecar.read_text(encoding="ascii").strip()
+            if expected != hash_file(report_file):
+                errors.append("promotion_evidence_report_sidecar_mismatch")
+        try:
+            loaded_report = json.loads(report_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            loaded_report = None
+        if not isinstance(loaded_report, dict):
+            errors.append("promotion_evidence_report_unreadable")
+        else:
+            report_body = loaded_report
+    if report_body is not None:
+        if report_body.get("schema") != "evidence_report.v1":
+            errors.append("promotion_evidence_report_payload_schema_invalid")
+        if report_body.get("research_only") is not True:
+            errors.append("promotion_evidence_report_research_only_invalid")
+        if report_body.get("live_pnl_claim") is not False:
+            errors.append("promotion_evidence_report_live_pnl_claim")
+        report_status = report_body.get("status")
+        report_warnings = report_body.get("warnings")
+        warning_set = (
+            {str(item) for item in report_warnings} if isinstance(report_warnings, list) else set()
+        )
+        if report_status == "complete":
+            pass
+        elif (
+            report_status == "insufficient_evidence"
+            and warning_set <= PROMOTION_STAGE_EXPECTED_REPORT_WARNINGS
+        ):
+            pass  # resolved by the receipt itself (stage-expected warning only)
+        else:
+            errors.append("promotion_evidence_report_incomplete")
+        warnings = report_body.get("warnings")
+        if isinstance(warnings, list) and "synthetic_evidence_not_promotable" in warnings:
+            errors.append("promotion_synthetic_evidence")
+        provenance = report_body.get("provenance")
+        if not isinstance(provenance, dict):
+            errors.append("promotion_evidence_report_provenance_missing")
+        else:
+            if provenance.get("artifact_sha256") != artifact_sha:
+                errors.append("promotion_evidence_report_artifact_mismatch")
+            if provenance.get("dataset_content_sha256") != dataset_panel_sha:
+                errors.append("promotion_evidence_report_dataset_mismatch")
+            if provenance.get("manifest_valid") is not True:
+                errors.append("promotion_evidence_report_manifest_unverified")
+            source = provenance.get("data_source")
+            if isinstance(source, str) and source.strip().upper() == "SYNTHETIC":
+                errors.append("promotion_synthetic_evidence")
+    return errors
+
+
+def _promotion_decision_errors(decision: object, artifact_sha: object) -> tuple[list[str], object]:
+    """promotion.v1 decision checks — approved, non-synthetic, artifact-bound."""
+    errors: list[str] = []
+    if not isinstance(decision, dict):
+        return ["promotion_decision_missing"], None
+    if decision.get("receipt_schema") != "promotion.v1":
+        errors.append("promotion_decision_schema_invalid")
+    if decision.get("promote") is not True:
+        errors.append("promotion_decision_not_approved")
+    if decision.get("reasons") != []:
+        errors.append("promotion_decision_reasons_present")
+    for flag in ("evidence_complete", "research_receipt_valid", "leakage_ok", "manifest_valid"):
+        if decision.get(flag) is not True:
+            errors.append(f"promotion_decision_{flag}_invalid")
+    if bool(decision.get("synthetic", False)):
+        errors.append("promotion_synthetic_evidence")
+    source = decision.get("data_source")
+    if not isinstance(source, str) or not source.strip():
+        errors.append("promotion_decision_data_source_invalid")
+    elif source.strip().upper() == "SYNTHETIC":
+        errors.append("promotion_synthetic_evidence")
+    if decision.get("artifact_sha256") != artifact_sha:
+        errors.append("promotion_decision_artifact_mismatch")
+    run_id = decision.get("run_id")
+    if not isinstance(run_id, str) or not run_id.strip():
+        errors.append("promotion_decision_run_id_invalid")
+        return errors, None
+    return errors, run_id
+
+
+def _promotion_input_metrics_errors(
+    metrics: object, artifact_sha: object, dataset_panel_sha: object, decision: dict[str, Any]
+) -> list[str]:
+    """Input metrics must bind the same artifact, dataset and data source."""
+    errors: list[str] = []
+    if not isinstance(metrics, dict) or not metrics:
+        return ["promotion_input_metrics_missing"]
+    if metrics.get("artifact_sha256") != artifact_sha:
+        errors.append("promotion_input_metrics_artifact_mismatch")
+    if metrics.get("dataset_content_sha256") != dataset_panel_sha:
+        errors.append("promotion_input_metrics_dataset_stale_or_absent")
+    if metrics.get("synthetic") is True:
+        errors.append("promotion_synthetic_evidence")
+    source = metrics.get("data_source")
+    if not isinstance(source, str) or not source.strip():
+        errors.append("promotion_input_metrics_data_source_invalid")
+    elif source.strip().upper() == "SYNTHETIC":
+        errors.append("promotion_synthetic_evidence")
+    decision_source = decision.get("data_source")
+    if isinstance(decision_source, str) and isinstance(source, str) and decision_source != source:
+        errors.append("promotion_data_source_mismatch")
+    return errors
+
+
+def _promotion_gate_errors(gates: object) -> list[str]:
+    """Every required gate result must be present and passing."""
+    errors: list[str] = []
+    if not isinstance(gates, dict) or not gates:
+        return ["promotion_gate_results_missing"]
+    for name in PROMOTION_REQUIRED_GATES:
+        if name not in gates:
+            errors.append(f"promotion_gate_result_missing:{name}")
+    for name, row in gates.items():
+        if not isinstance(row, dict) or row.get("status") != "pass":
+            errors.append(f"promotion_gate_result_not_passing:{name}")
+    return errors
+
+
+def _promotion_approver_errors(approver: object) -> list[str]:
+    """An approving identity must exist, be named honestly, and be stamped."""
+    if not isinstance(approver, dict):
+        return ["promotion_approver_missing"]
+    errors: list[str] = []
+    name = approver.get("name")
+    if (
+        not isinstance(name, str)
+        or not name.strip()
+        or name.strip().lower() in PROMOTION_DISHONEST_APPROVER_NAMES
+    ):
+        errors.append("promotion_approver_dishonest")
+    role = approver.get("role")
+    if not isinstance(role, str) or not role.strip():
+        errors.append("promotion_approver_role_invalid")
+    if not _timestamp_valid(approver.get("decided_at")):
+        errors.append("promotion_approver_decided_at_invalid")
+    return errors
+
+
+def _verify_promotion_receipt_document(path: Path, doc: dict[str, Any]) -> dict[str, Any]:
+    """Fail-closed verification of one composed ``promotion_receipt.v1``."""
+    root = path.parent
+    errors: list[str] = []
+    errors.extend(_promotion_envelope_errors(doc))
+    payload = doc.get("payload")
+    if not isinstance(payload, dict):
+        errors.append("promotion_payload_missing")
+        payload = {}
+    if payload.get("schema") != "promotion_receipt.v1":
+        errors.append("promotion_payload_schema_invalid")
+    if payload.get("claim") != "research_only" or payload.get("execution_claim") != "research_only":
+        errors.append("promotion_claim_invalid")
+    if payload.get("research_only") is not True:
+        errors.append("promotion_research_only_invalid")
+    if payload.get("live_pnl_claim") is not False:
+        errors.append("promotion_live_pnl_claim")
+    if not _timestamp_valid(payload.get("generated_at")):
+        errors.append("promotion_generated_at_invalid")
+
+    artifact_block = payload.get("artifact_identity")
+    if not isinstance(artifact_block, dict):
+        errors.append("promotion_artifact_identity_missing")
+        artifact_block = {}
+    artifact_sha = artifact_block.get("artifact_sha256")
+    identity_block = artifact_block.get("identity")
+    errors.extend(_promotion_identity_block_errors(identity_block))
+    dataset_panel_sha: object = None
+    if isinstance(identity_block, dict):
+        dataset = identity_block.get("dataset")
+        if isinstance(dataset, dict):
+            dataset_panel_sha = dataset.get("materialized_panel_sha256")
+    if not _is_sha256(artifact_sha):
+        errors.append("promotion_artifact_sha256_invalid")
+    if not _is_sha256(artifact_block.get("manifest_sha256")):
+        errors.append("promotion_manifest_sha256_invalid")
+
+    artifact_file = _promotion_path(root, artifact_block.get("path"))
+    if artifact_file is None or not artifact_file.is_file():
+        errors.append("promotion_artifact_file_missing")
+    elif hash_file(artifact_file) != artifact_sha:
+        errors.append("promotion_artifact_sha256_mismatch")
+    manifest_file = _promotion_path(root, artifact_block.get("manifest_path"))
+    manifest_body: dict[str, Any] | None = None
+    if manifest_file is None or not manifest_file.is_file():
+        errors.append("promotion_manifest_file_missing")
+    else:
+        if hash_file(manifest_file) != artifact_block.get("manifest_sha256"):
+            errors.append("promotion_manifest_sha256_mismatch")
+        try:
+            loaded_manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            loaded_manifest = None
+        if not isinstance(loaded_manifest, dict):
+            errors.append("promotion_manifest_unreadable")
+        else:
+            manifest_body = loaded_manifest
+    if manifest_body is not None:
+        if manifest_body.get("schema") != "model_artifact.v1":
+            errors.append("promotion_manifest_schema_invalid")
+        if artifact_file is not None and manifest_body.get("artifact") != artifact_file.name:
+            errors.append("promotion_manifest_artifact_mismatch")
+        if manifest_body.get("sha256") != artifact_sha:
+            errors.append("promotion_manifest_payload_hash_mismatch")
+        if manifest_body.get("identity") != identity_block:
+            # Stale/tampered dataset identity: the receipt binds exactly the
+            # identity the artifact manifest carries.
+            errors.append("promotion_identity_stale_or_tampered")
+    else:
+        errors.append("promotion_identity_unbound")
+
+    errors.extend(
+        _promotion_evidence_report_errors(
+            root, payload.get("evidence_report"), artifact_sha, dataset_panel_sha
+        )
+    )
+
+    decision = payload.get("promotion_decision")
+    decision_map: dict[str, Any] = decision if isinstance(decision, dict) else {}
+    decision_errors, run_id = _promotion_decision_errors(decision, artifact_sha)
+    errors.extend(decision_errors)
+    errors.extend(
+        _promotion_input_metrics_errors(
+            payload.get("input_metrics"), artifact_sha, dataset_panel_sha, decision_map
+        )
+    )
+    errors.extend(_promotion_gate_errors(payload.get("gate_results")))
+    errors.extend(_promotion_approver_errors(payload.get("approver")))
+
+    verified: ResearchVerification = {
+        "valid": not errors,
+        "path": str(path),
+        "run_id": run_id,
+        "scorecard_families": 0,
+        "errors": errors,
+        "claim": "research_only",
+    }
+    return cast(dict[str, Any], verified)
+
+
+def verify_promotion_receipt(path: Path) -> dict[str, Any]:
+    """Fail-closed verification entry point for composed promotion receipts.
+
+    Thin wrapper over :func:`verify_research_artifact`: one verifier, one
+    fail-closed contract, dispatched on receipt content.
+    """
+    return verify_research_artifact(Path(path))

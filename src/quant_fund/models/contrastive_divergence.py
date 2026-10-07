@@ -1,4 +1,4 @@
-"""Contrastive divergence (Hinton 2002) — CD-k: positive phase from
+"""Contrastive divergence (Hinton 2002) — CD-k: positive phase from (SYNTHETIC)
 data, negative phase from k-step Langevin initialized at data. EBM
 loss = E_pos - E_neg; MMD vs Gaussian baseline.
 """
@@ -40,5 +40,5 @@ def bench_contrastive_divergence(
         "synthetic_cd_mmd": m,
         "synthetic_gauss_mmd": mb,
         "synthetic_cd_gain": mb - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

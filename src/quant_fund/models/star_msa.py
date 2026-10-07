@@ -1,4 +1,4 @@
-"""Star multiple-sequence alignment: align each seq to the center seq."""
+"""Star multiple-sequence alignment: align each seq to the center seq (SYNTHETIC)."""
 
 import numpy as np
 

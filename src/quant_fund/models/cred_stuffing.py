@@ -1,4 +1,4 @@
-"""Credential-stuffing detection (defensive) — wave 286.
+"""Credential-stuffing detection (defensive) — wave 286 (SYNTHETIC).
 
 Attack signature: sustained high failed-login rate with high unique-IP
 ratio; organic failures are low-rate and repeat-IP.

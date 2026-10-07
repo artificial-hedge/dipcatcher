@@ -90,5 +90,5 @@ def bench_gin_gnn(
         "synthetic_gin_mlp_acc": acc_mlp,
         "synthetic_gin_acc_gain": acc_gin - acc_mlp,
         "synthetic_gin_eps1": float(eps1.detach().abs()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

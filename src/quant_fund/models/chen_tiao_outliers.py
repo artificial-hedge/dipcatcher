@@ -235,6 +235,6 @@ def bench_outliers(seed: int = 20261231 + 357) -> dict[str, float]:
         ),
         "synthetic_n_hits": float(len(hits)),
         "synthetic_clean_hits": float(clean_hits),
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

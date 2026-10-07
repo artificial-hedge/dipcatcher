@@ -1,4 +1,4 @@
-"""Arnoldi + GMRES canon: Arnoldi–Gram-Schmidt Krylov basis
+"""Arnoldi + GMRES canon: Arnoldi–Gram-Schmidt Krylov basis (SYNTHETIC)
 construction with modified Gram-Schmidt orthogonalization,
 and restarted GMRES(m) for nonsymmetric sparse systems,
 checked against the dense solve residual.

@@ -1,4 +1,4 @@
-"""1-out-of-2 oblivious transfer (toy Even-Goldreich-Lempel over prime group)."""
+"""1-out-of-2 oblivious transfer (toy Even-Goldreich-Lempel over prime group) (SYNTHETIC)."""
 
 import numpy as np
 

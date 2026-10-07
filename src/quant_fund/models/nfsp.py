@@ -1,4 +1,4 @@
-"""Neural Fictitious Self-Play (Heinrich & Silver 2016) — Kuhn poker:
+"""Neural Fictitious Self-Play (Heinrich & Silver 2016) — Kuhn poker: (SYNTHETIC)
 each player keeps a best-response net Q (DQN-style, ε-greedy) and an
 average-policy net π trained supervised on the actions Q took. π is
 the deployable strategy; exploitability vs random baseline.
@@ -109,5 +109,5 @@ def bench_nfsp(
         "synthetic_nfsp_expl": expl,
         "synthetic_random_expl": ref,
         "synthetic_nfsp_drop": ref - expl,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

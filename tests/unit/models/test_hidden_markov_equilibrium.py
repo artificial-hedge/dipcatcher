@@ -497,6 +497,6 @@ def test_bench_flat_float_dict_deterministic() -> None:
     b2 = bench_hidden_markov_equilibrium(seed=SEED)
     assert b1 == b2  # bit-identical repeat
     assert all(isinstance(k, str) and isinstance(v, float) for k, v in b1.items())
-    assert b1["ode_residual_max"] < 1e-5
-    assert b1["sigmaS_max"] == pytest.approx(0.356, abs=0.01)
-    assert b1["filter_state_corr"] > 0.7
+    assert b1["synthetic_ode_residual_max"] < 1e-5
+    assert b1["synthetic_sigmaS_max"] == pytest.approx(0.356, abs=0.01)
+    assert b1["synthetic_filter_state_corr"] > 0.7

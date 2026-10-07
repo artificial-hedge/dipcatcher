@@ -1,4 +1,4 @@
-"""CBOE-style variance-swap replication from an OTM option strip.
+"""CBOE-style variance-swap replication from an OTM option strip (SYNTHETIC).
 
 Carr & Madan (1998) / Demeterfi, Derman, Kamal & Zou (1999) show the fair
 strike of a variance swap is replicated by a static strip of out-of-the-money
@@ -162,5 +162,5 @@ def bench_vix_replication(seed: int = 20261231 + 396) -> dict[str, float]:
         "synthetic_vix_sig_err": sig_err,
         "synthetic_vix_fwd_err": abs(f_hat - fwd),
         "synthetic_vix_corridor": float(np.sqrt(cor)),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

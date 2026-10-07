@@ -1,4 +1,4 @@
-"""ENAS-style RL controller (Pham et al. 2018).
+"""ENAS-style RL controller (Pham et al. 2018) (SYNTHETIC).
 
 REINFORCE over arch genes (width/depth/act), reward = val acc;
 moving-average baseline. Final sampled arch acc vs uniform prior.
@@ -69,5 +69,5 @@ def bench_enas_controller(
         "synthetic_ec_prior_acc": acc_prior,
         "synthetic_ec_best": best,
         "synthetic_ec_gain": acc_final - acc_prior,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

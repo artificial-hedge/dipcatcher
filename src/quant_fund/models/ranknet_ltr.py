@@ -1,4 +1,4 @@
-"""RankNet (Burges et al. 2005) — pairwise logistic on doc pairs.
+"""RankNet (Burges et al. 2005) — pairwise logistic on doc pairs (SYNTHETIC).
 
 Scores with an MLP; pairwise BCE weighted by label difference —
 NDCG@10 vs unsupervised feature-mean baseline.
@@ -55,5 +55,5 @@ def bench_ranknet_ltr(
         "synthetic_ranknet_ndcg10": nd,
         "synthetic_ranknet_base_ndcg10": nd_base,
         "synthetic_ranknet_gain": nd - nd_base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

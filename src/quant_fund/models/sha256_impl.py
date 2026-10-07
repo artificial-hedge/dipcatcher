@@ -1,4 +1,4 @@
-"""SHA-256 compression function implemented from spec (FIPS 180-4).
+"""SHA-256 compression function implemented from spec (FIPS 180-4) (SYNTHETIC).
 
 Full padding, message schedule, and 64-round compression in pure Python;
 bench cross-checks the hex digest of a fixture message against hashlib

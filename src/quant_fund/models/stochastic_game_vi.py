@@ -1,4 +1,4 @@
-"""Zero-sum stochastic game via Shapley value iteration.
+"""Zero-sum stochastic game via Shapley value iteration (SYNTHETIC).
 
 Each stage game solves the 2x2 minimax of M + gamma * E[v(next)|actions]
 by the closed-form 2x2 value (saddle check, then mixed-strategy formula).

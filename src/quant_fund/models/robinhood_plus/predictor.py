@@ -1,4 +1,4 @@
-"""Kronos-style K-line predictor: normalize, tokenize, sample, invert.
+"""Kronos-style K-line predictor: normalize, tokenize, sample, invert (SYNTHETIC).
 
 Public output is horizon returns / path quantiles for Dipcatcher fusion — not
 a live BUY/SELL signal. The numpy backend implements the two-stage Kronos

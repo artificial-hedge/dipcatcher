@@ -1,4 +1,4 @@
-"""Rank aggregation — Plackett-Luce, Borda, Condorcet, MC3.
+"""Rank aggregation — Plackett-Luce, Borda, Condorcet, MC3 (SYNTHETIC).
 
 Plackett (1975) / Luce (1959): partial orderings are treated
 as sequential choices p(i first of S) = w_i / sum_{j in S} w_j
@@ -198,5 +198,5 @@ def bench_rank_aggregation(seed: int = 20261231 + 457) -> dict[str, float]:
     return {
         "synthetic_top_item": float(est_order[0]),
         "synthetic_w_top": float(np.asarray(out["w"]).max()),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

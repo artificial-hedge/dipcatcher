@@ -71,4 +71,4 @@ def test_fail_closed_fully_missing_col():
 
 def test_bench():
     out = bench_mice()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

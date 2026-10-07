@@ -1,4 +1,4 @@
-"""Sliding-window KV cache (ring buffer, Mistral-style).
+"""Sliding-window KV cache (ring buffer, Mistral-style) (SYNTHETIC).
 
 The KV cache holds only the last W tokens — memory W·d vs T·d. On a
 local-dependence fixture (label depends on the last L tokens, L < W)

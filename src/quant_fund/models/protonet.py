@@ -1,4 +1,4 @@
-"""Prototypical networks (Snell et al. 2017) — few-shot REGRESSION via
+"""Prototypical networks (Snell et al. 2017) — few-shot REGRESSION via (SYNTHETIC)
 task-conditioned prototypes: embed (x,y) support pairs; class protos per
 task → weighted kernel regression for queries. Query MSE vs pooled.
 """
@@ -55,5 +55,5 @@ def bench_protonet(seed: int = 857, n_tasks: int = 30, K: int = 5) -> dict[str, 
         "synthetic_pn_query_mse": float(np.mean(mses)),
         "synthetic_pn_zero_proto_mse": mse0,
         "synthetic_pn_gain": mse0 - float(np.mean(mses)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

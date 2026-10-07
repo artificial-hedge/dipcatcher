@@ -1,4 +1,4 @@
-"""Aho-Corasick multi-pattern string search (synthetic).
+"""Aho-Corasick multi-pattern string search (synthetic) (SYNTHETIC).
 
 Trie + failure links; O(n + total pattern length + matches).
 Verified: match set equals naive per-pattern find oracle on random

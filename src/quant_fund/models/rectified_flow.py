@@ -1,4 +1,4 @@
-"""Rectified flow (Liu et al. 2023) — learn velocity on the straight
+"""Rectified flow (Liu et al. 2023) — learn velocity on the straight (SYNTHETIC)
 interp path x_t = (1-t)x0 + t·eps with target eps − x0; sample by
 Euler-ODE from noise. MMD vs single-step gauss draw.
 """
@@ -47,5 +47,5 @@ def bench_rectified_flow(seed: int = 1507, iters: int = 900, steps: int = 24) ->
         "synthetic_rf_mmd": m,
         "synthetic_rf_gauss_mmd": g,
         "synthetic_rf_mmd_gain": g - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

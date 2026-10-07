@@ -1,4 +1,4 @@
-"""Cyclostationary analysis — Gardner's cyclic autocorrelation and
+"""Cyclostationary analysis — Gardner's cyclic autocorrelation and (SYNTHETIC)
 spectral correlation density (SCD).
 
 A cyclostationary process has periodically time-varying second-order
@@ -137,5 +137,5 @@ def bench_cyclostationary(seed: int = 20261231 + 408) -> dict[str, float]:
         "synthetic_cyclostat_alpha_err": float(err),
         "synthetic_cyclostat_contrast": contrast,
         "synthetic_cyclostat_alpha_hat": peak,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

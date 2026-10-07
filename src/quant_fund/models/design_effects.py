@@ -1,4 +1,4 @@
-"""Design-effect diagnostics — Kish DEFF, effective sample size,
+"""Design-effect diagnostics — Kish DEFF, effective sample size, (SYNTHETIC)
 and weighting-cost decomposition.
 
 Kish (1965, 1992): unequal weights inflate the variance of a
@@ -101,5 +101,5 @@ def bench_design_effects(seed: int = 20261231 + 449) -> dict[str, float]:
         "synthetic_deff_bad": d_bad["deff"],
         "synthetic_deff_exact": exact,
         "synthetic_deff_trimmed": float(curve[0]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

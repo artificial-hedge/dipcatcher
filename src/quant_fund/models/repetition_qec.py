@@ -1,4 +1,4 @@
-"""Repetition-code QEC under the bit-flip channel.
+"""Repetition-code QEC under the bit-flip channel (SYNTHETIC).
 
 Distance-d code: |0_L> = |0>^d, |1_L> = |1>^d, majority-vote decoding.
 Logical failure prob = P(Bin(d, p) > d/2); bench verifies the simulated

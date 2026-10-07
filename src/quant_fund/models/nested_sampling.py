@@ -193,5 +193,5 @@ def bench_nested_sampling(seed: int = 20261231 + 390) -> dict[str, float]:
         "synthetic_ns_mean_err": mean_err,
         "synthetic_ns_sd_err": sd_err,
         "synthetic_ns_h": h,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

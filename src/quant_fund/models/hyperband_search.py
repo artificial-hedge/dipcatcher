@@ -1,4 +1,4 @@
-"""Successive halving and Hyperband (Li et al. 2017)
+"""Successive halving and Hyperband (Li et al. 2017) (SYNTHETIC)
 multi-fidelity hyperparameter schedulers. Synthetic bench
 gates best-loss vs uniform-budget random search at equal
 total resource."""

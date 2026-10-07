@@ -627,6 +627,8 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
         import shutil
         import tempfile
 
+        if not _RUN_ID_RE.fullmatch(run_id):
+            raise HTTPException(400, "run_id must be a 64-char lowercase sha256")
         path = _run_path(run_id)
         raw = path.read_bytes()
         digest = _sha256_bytes(raw)

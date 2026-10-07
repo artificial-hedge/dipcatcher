@@ -280,7 +280,7 @@ class SourceConditional:
             self._log_pi_z(xp, z)
             - 0.5 * _LOG2PI
             - log_sig
-            + log_ndtr(t)
+            - log_ndtr(t)
             - 0.5 * np.square((yy - mu) * np.exp(-log_sig)),
             dtype=float,
         )
@@ -412,7 +412,7 @@ def fit_source_model(x_train: Array, y_train: Array, *, c_gate: float = 100.0) -
         options={"maxiter": 500, "ftol": 1e-12, "gtol": 1e-8},
     )
     theta = np.asarray(res.x, dtype=float)
-    if not np.all(np.isfinite(theta)) or not np.isfinite(float(res.fun)):
+    if not np.all(np.isfinite(theta)) or not np.isfinite(float(res.fun)) or float(res.fun) >= 1e11:
         raise ValueError("source truncated-normal MLE failed to reach a finite optimum")
     return SourceConditional(
         gate=np.asarray(gate, dtype=float),
@@ -823,7 +823,7 @@ def extra_prediction_intervals(
         q_src = q + (b[0] * u_t + b[1] * z_arr - log_moment_t) if tilt_score else q
         mu = source_model.mean_z(x_t, z_arr)
         log_pi_z = np.where(z > 0.0, -np.logaddexp(0.0, -gate_t), -np.logaddexp(0.0, gate_t))
-        c_z = -log_pi_z + 0.5 * _LOG2PI + log_sig_t - log_ndtr(z * mu / sig_t)
+        c_z = -log_pi_z + 0.5 * _LOG2PI + log_sig_t + log_ndtr(z * mu / sig_t)
         full = np.isinf(q_src)
         valid = (~full) & (q_src >= c_z)
         radius = sig_t * np.sqrt(2.0 * np.maximum(np.where(valid, q_src - c_z, 0.0), 0.0))
@@ -1377,26 +1377,26 @@ def bench_extra_tilt(
         return float(np.mean(col(get)))
 
     return {
-        "coverage_standard_cp": mean(lambda r: r.coverage_standard),
-        "mean_length_standard_cp": mean(lambda r: r.length_standard),
-        "coverage_extra_wcp": mean(lambda r: r.coverage_wcp),
-        "mean_length_extra_wcp": mean(lambda r: r.length_wcp),
-        "coverage_extra_wcp_t": mean(lambda r: r.coverage_wcp_t),
-        "mean_length_extra_wcp_t": mean(lambda r: r.length_wcp_t),
-        "paired_length_reduction_percent": mean(lambda r: r.length_reduction_percent),
-        "coverage_diff_wcp_t_minus_wcp": mean(lambda r: r.coverage_diff_wcp_t_minus_wcp),
-        "a_hat_mean": float(np.mean(betas[:, 0])),
-        "b_hat_mean": float(np.mean(betas[:, 1])),
-        "b_hat_spread_mean": float(np.mean(spreads)),
-        "mode_signal_sd": mean(lambda r: r.mode_signal_sd),
-        "weight_ess_percent": mean(lambda r: r.weight_ess_percent),
-        "replications": float(reps),
-        "n": float(n_test),
-        "alpha": a,
-        "eta": float(eta),
-        "a_star": float(a_star),
-        "b_star": float(b_star),
-        "dgp": "fixture",
-        "claim": "research_metric_only",
-        "seed": float(seed),
+        "synthetic_coverage_standard_cp": mean(lambda r: r.coverage_standard),
+        "synthetic_mean_length_standard_cp": mean(lambda r: r.length_standard),
+        "synthetic_coverage_extra_wcp": mean(lambda r: r.coverage_wcp),
+        "synthetic_mean_length_extra_wcp": mean(lambda r: r.length_wcp),
+        "synthetic_coverage_extra_wcp_t": mean(lambda r: r.coverage_wcp_t),
+        "synthetic_mean_length_extra_wcp_t": mean(lambda r: r.length_wcp_t),
+        "synthetic_paired_length_reduction_percent": mean(lambda r: r.length_reduction_percent),
+        "synthetic_coverage_diff_wcp_t_minus_wcp": mean(lambda r: r.coverage_diff_wcp_t_minus_wcp),
+        "synthetic_a_hat_mean": float(np.mean(betas[:, 0])),
+        "synthetic_b_hat_mean": float(np.mean(betas[:, 1])),
+        "synthetic_b_hat_spread_mean": float(np.mean(spreads)),
+        "synthetic_mode_signal_sd": mean(lambda r: r.mode_signal_sd),
+        "synthetic_weight_ess_percent": mean(lambda r: r.weight_ess_percent),
+        "synthetic_replications": float(reps),
+        "synthetic_n": float(n_test),
+        "synthetic_alpha": a,
+        "synthetic_eta": float(eta),
+        "synthetic_a_star": float(a_star),
+        "synthetic_b_star": float(b_star),
+        "synthetic_dgp": "fixture",
+        "synthetic_claim": "research_metric_only",
+        "synthetic_seed": float(seed),
     }

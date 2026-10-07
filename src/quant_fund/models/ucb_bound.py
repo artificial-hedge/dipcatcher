@@ -1,4 +1,4 @@
-"""UCB1 regret growth vs the Auer/Cesa-Bianchi/Fischer bound.
+"""UCB1 regret growth vs the Auer/Cesa-Bianchi/Fischer bound (SYNTHETIC).
 
 UCB1 pseudo-regret satisfies E[R_T] <= 8 * sum_i ln(T)/Delta_i + const.
 Bench: simulated UCB1 pseudo-regret at several horizons vs the bound

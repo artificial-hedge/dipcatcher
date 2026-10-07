@@ -1,4 +1,4 @@
-"""Structured VI — full-rank Cholesky Gaussian posterior vs mean-field:
+"""Structured VI — full-rank Cholesky Gaussian posterior vs mean-field: (SYNTHETIC)
 captures posterior covariance the mean-field family misses. Covariance
 Frobenius deviation vs MCMC oracle, both families.
 """
@@ -99,5 +99,5 @@ def bench_structured_vi(seed: int = 733, iters: int = 2200) -> dict[str, float]:
         "synthetic_svi_cov_dev_fr": dev_fr,
         "synthetic_svi_cov_gain": dev_mf - dev_fr,
         "synthetic_svi_oracle_sd": float(np.linalg.norm(s_m)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

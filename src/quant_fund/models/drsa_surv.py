@@ -1,4 +1,4 @@
-"""DRSA (Ren et al. 2019) — deep recurrent survival analysis: LSTM
+"""DRSA (Ren et al. 2019) — deep recurrent survival analysis: LSTM (SYNTHETIC)
 over time slices outputs per-interval event probabilities; C-index vs
 Cox.
 """
@@ -61,5 +61,5 @@ def bench_drsa_surv(seed: int = 2127, iters: int = 500, K: int = 10) -> dict[str
         "synthetic_drsa_cindex": c_dr,
         "synthetic_cox_cindex": c_cox,
         "synthetic_drsa_gain": c_dr - c_cox,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

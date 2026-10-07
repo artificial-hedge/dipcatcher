@@ -1,4 +1,4 @@
-"""Online convex learning: classic perceptron,
+"""Online convex learning: classic perceptron, (SYNTHETIC)
 passive-aggressive (PA-I, Crammer et al. 2006), online
 gradient descent on logistic loss, and follow-the-
 regularized-leader (FTRL-Proximal, McMahan 2011). Synthetic

@@ -63,6 +63,11 @@ from quant_fund.models.ranking import (
     XGBRegRanker,
     group_sizes,
 )
+from quant_fund.pipeline.artifact_manifest import (
+    identity_for_training,
+    identity_from_artifact,
+    save_training_artifact,
+)
 from quant_fund.pipeline.dataset import design_matrix, panel
 from quant_fund.registry.mlflow_store import configure_tracking, log_run
 from quant_fund.utils.seeds import set_global_seed
@@ -147,7 +152,17 @@ def train_ranking(
         tags={"git": "local", "data": config.data.source},
     )
     out = Path(config.data.root) / "metadata" / f"ranker_{model_name}.joblib"
-    last_model.save(out)
+    save_training_artifact(
+        last_model,
+        out,
+        identity=identity_for_training(
+            df,
+            config=config,
+            label=label,
+            features=feats,
+            label_horizon_bars=_label_horizon(label),
+        ),
+    )
     return {
         "metrics": metrics,
         "run_id": run_id,
@@ -182,7 +197,11 @@ def train_ranking_auto(config: AppConfig) -> dict[str, Any]:
     )
     selected_model = JoblibMixin.load(Path(str(selected["path"])))
     auto_path = Path(config.data.root) / "metadata" / "ranker_auto.joblib"
-    selected_model.save(auto_path)
+    save_training_artifact(
+        selected_model,
+        auto_path,
+        identity=identity_from_artifact(Path(str(selected["path"]))),
+    )
     return {
         **selected,
         "path": str(auto_path),
@@ -263,7 +282,17 @@ def train_calibration(config: AppConfig, model_name: str = "isotonic") -> dict[s
         if oos_dates.size:
             final.oos_start = str(oos_dates.min())
             final.oos_end = str(oos_dates.max())
-    final.save(path)
+    save_training_artifact(
+        final,
+        path,
+        identity=identity_for_training(
+            df,
+            config=config,
+            label=label,
+            features=["cs_pct_mom_20"],
+            label_horizon_bars=_label_horizon(label),
+        ),
+    )
     return {"metrics": metrics, "run_id": run_id, "path": str(path), "research_only": True}
 
 
@@ -280,7 +309,11 @@ def train_calibration_auto(config: AppConfig) -> dict[str, Any]:
     selected = min(viable, key=lambda result: float(result["metrics"]["oos_brier"]))
     selected_model = JoblibMixin.load(Path(str(selected["path"])))
     auto_path = Path(config.data.root) / "metadata" / "calibrator_auto.joblib"
-    selected_model.save(auto_path)
+    save_training_artifact(
+        selected_model,
+        auto_path,
+        identity=identity_from_artifact(Path(str(selected["path"]))),
+    )
     selected_name = Path(str(selected["path"])).stem.removeprefix("calibrator_")
     return {
         **selected,

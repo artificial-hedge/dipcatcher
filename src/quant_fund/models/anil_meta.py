@@ -1,4 +1,4 @@
-"""ANIL (Raghu et al. 2020) — meta-learn the body only; the linear head is
+"""ANIL (Raghu et al. 2020) — meta-learn the body only; the linear head is (SYNTHETIC)
 re-fit on each task's support. Query MSE vs pooled baseline.
 """
 
@@ -68,5 +68,5 @@ def bench_anil_meta(seed: int = 863, n_tasks: int = 30, K: int = 5) -> dict[str,
         "synthetic_anil_query_mse": float(np.mean(mses)),
         "synthetic_anil_pooled_mse": mse_pool,
         "synthetic_anil_gain": mse_pool - float(np.mean(mses)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

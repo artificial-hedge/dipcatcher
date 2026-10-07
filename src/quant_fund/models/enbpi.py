@@ -1,4 +1,4 @@
-"""EnbPI — ensemble batch prediction intervals for time series.
+"""EnbPI — ensemble batch prediction intervals for time series (SYNTHETIC).
 
 Xu & Xie (2021, ICML, PMLR 139, pp. 11559-11569; 2023, IEEE TPAMI 45(10),
 "Conformal prediction for time series", arXiv:2010.09107). Distribution-free

@@ -1,4 +1,4 @@
-"""Hessian spectrum — top eigenvalue (sharpness) via power iteration on
+"""Hessian spectrum — top eigenvalue (sharpness) via power iteration on (SYNTHETIC)
 Hessian-vector products; trained net vs untrained baseline sharpness.
 """
 
@@ -46,5 +46,5 @@ def bench_hessian_eig(seed: int = 2353) -> dict[str, float]:
         "synthetic_hess_top_trained": lam_trained,
         "synthetic_hess_top_init": lam_init,
         "synthetic_hess_curv_gain": lam_trained - lam_init,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

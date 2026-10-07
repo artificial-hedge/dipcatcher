@@ -1,4 +1,4 @@
-"""Diebold-Yilmaz connectedness index from VAR forecast-error
+"""Diebold-Yilmaz connectedness index from VAR forecast-error (SYNTHETIC)
 variance decomposition (generalized FEVD).
 
 Fit a VAR(p) on a multivariate series, decompose each variable's

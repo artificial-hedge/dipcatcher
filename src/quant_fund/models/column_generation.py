@@ -1,4 +1,4 @@
-"""Gilmore-Gomory column generation for the cutting-stock problem.
+"""Gilmore-Gomory column generation for the cutting-stock problem (SYNTHETIC).
 
 Restricted master: min sum_p x_p over generated patterns with
 sum_p a_ip x_p >= demand_i. Pricing: knapsack subproblem on duals via

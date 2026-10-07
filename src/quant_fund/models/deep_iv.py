@@ -1,4 +1,4 @@
-"""DeepIV-style two-stage IV (Hartford et al. 2017).
+"""DeepIV-style two-stage IV (Hartford et al. 2017) (SYNTHETIC).
 
 Stage 1: z + net → t̂; Stage 2: t̂ → y. Effect estimate vs OLS
 (confounded) — IV recovers the true causal slope 1.5.
@@ -53,5 +53,5 @@ def bench_deep_iv(
         "synthetic_div_true": 1.5,
         "synthetic_div_iv_err": abs(iv_est - 1.5),
         "synthetic_div_ols_err": abs(ols_est - 1.5),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

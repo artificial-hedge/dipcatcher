@@ -1,4 +1,4 @@
-"""Diffie-Hellman key agreement in a safe-prime group.
+"""Diffie-Hellman key agreement in a safe-prime group (SYNTHETIC).
 
 Alice g^a, Bob g^b; shared secret g^(ab). Bench: agreement exactness,
 symmetric shared-secret equality, and the DDH sanity that g^a * g^b =

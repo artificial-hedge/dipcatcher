@@ -1,4 +1,4 @@
-"""PCGrad (Yu et al. 2020) — project conflicting gradients: when
+"""PCGrad (Yu et al. 2020) — project conflicting gradients: when (SYNTHETIC)
 g1.g2 < 0, subtract the mutual projection from both. Min-task acc
 vs naive-sum SGD on the conflicting two-task fixture.
 """
@@ -28,5 +28,5 @@ def bench_pcgrad(seed: int = 2001, iters: int = 600) -> dict[str, float]:
         "synthetic_naive_min_acc": mn0,
         "synthetic_naive_mean_acc": mean0,
         "synthetic_pcgrad_min_gain": mn - mn0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

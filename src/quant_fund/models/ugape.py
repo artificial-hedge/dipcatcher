@@ -1,4 +1,4 @@
-"""UGapE (Gabillon et al. 2012) — fixed-budget BAI by adaptive
+"""UGapE (Gabillon et al. 2012) — fixed-budget BAI by adaptive (SYNTHETIC)
 gap exploration: each round pull the arm minimizing the UCB-gap
 confidence index B(i) = max_{j≠i} UCB_j − LCB_i, stopping at the
 budget."""

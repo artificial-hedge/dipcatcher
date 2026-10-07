@@ -1,4 +1,4 @@
-"""Memory coalescing: count 128-byte transactions for a warp's accesses."""
+"""Memory coalescing: count 128-byte transactions for a warp's accesses (SYNTHETIC)."""
 
 import numpy as np
 

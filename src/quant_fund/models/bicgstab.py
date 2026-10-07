@@ -1,4 +1,4 @@
-"""BiCGSTAB for nonsymmetric systems.
+"""BiCGSTAB for nonsymmetric systems (SYNTHETIC).
 
 A random nonsymmetric but well-conditioned matrix (diagonal dominance
 guarantees solvability); BiCGSTAB residual history is compared against

@@ -104,5 +104,5 @@ def bench_campbell_shiller(seed: int = 20261231 + 377) -> dict[str, float]:
         "synthetic_cs_share_disc": float(out["share_disc"]),
         "synthetic_cs_share_cov": float(out["share_cov"]),
         "synthetic_cs_corr_news": corr,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Reinforcement-learning optimal execution with auction logic (Exec-Summary
+"""Reinforcement-learning optimal execution with auction logic (Exec-Summary (SYNTHETIC)
 Feature 2). Simulated market: GBM mid with short-horizon autocorrelation plus
 temporary impact, a limit step and a terminal closing auction. A tabular
 Q-learning agent learns order-placement schedules to minimize inventory-
@@ -137,7 +137,8 @@ class QExecAgent:
         self._reward += r
 
     def _update(self, s_next: tuple[int, int, int]) -> None:
-        assert self._s is not None
+        if not (self._s is not None):
+            raise ValueError("self._s is not None")
         t_, q_, m_ = self._s
         td = (
             self._reward
@@ -147,7 +148,8 @@ class QExecAgent:
         self.q[t_, q_, m_, self._a] += self.alpha * td
 
     def finish(self, terminal_r: float) -> None:
-        assert self._s is not None
+        if not (self._s is not None):
+            raise ValueError("self._s is not None")
         self._reward += terminal_r
         t_, q_, m_ = self._s
         td = self._reward - float(self.q[t_, q_, m_, self._a])

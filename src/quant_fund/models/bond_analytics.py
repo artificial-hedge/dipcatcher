@@ -1,4 +1,4 @@
-"""Fixed-income analytics: price, yield, duration and convexity.
+"""Fixed-income analytics: price, yield, duration and convexity (SYNTHETIC).
 
 Uses continuous compounding: for cashflows ``c_i`` at times ``t_i`` and
 continuously-compounded yield ``y``,

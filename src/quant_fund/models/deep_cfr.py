@@ -1,4 +1,4 @@
-"""Deep CFR / strategy amortization (Brown et al. 2019 adapted) —
+"""Deep CFR / strategy amortization (Brown et al. 2019 adapted) — (SYNTHETIC)
 tabular outcome CFR generates counterfactual-value + average-strategy
 targets on Kuhn; policy nets are trained to amortize both. Reports the
 exploitability of the net policy vs its tabular teacher — the
@@ -107,5 +107,5 @@ def bench_deep_cfr(seed: int = 2707, iters: int = 600) -> dict[str, float]:
         "synthetic_dcfr_expl": net_expl,
         "synthetic_tabular_expl": teacher_expl,
         "synthetic_amortize_gap": net_expl - teacher_expl,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Pluto-lite affine scheduler for loop nests.
+"""Pluto-lite affine scheduler for loop nests (SYNTHETIC).
 
 Statements iterate over index vectors; dependences are distance vectors
 dst - src (constant). A schedule is per-statement coefficients s_i where

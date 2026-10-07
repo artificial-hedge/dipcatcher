@@ -1,4 +1,4 @@
-"""Karhunen–Loève expansion of a Gaussian process.
+"""Karhunen–Loève expansion of a Gaussian process (SYNTHETIC).
 
 Eigen-decomposes the covariance matrix sampled on a grid — the KL
 basis are the eigenfunctions weighted by √eigenvalues; projecting a

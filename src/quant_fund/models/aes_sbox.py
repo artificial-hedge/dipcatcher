@@ -1,4 +1,4 @@
-"""AES S-box derived from GF(2^8) inversion + affine transform.
+"""AES S-box derived from GF(2^8) inversion + affine transform (SYNTHETIC).
 
 S(x) = A * x^{-1} + 0x63 computed bitwise over the Rijndael field with
 modulus x^8 + x^4 + x^3 + x + 1. Bench: all 256 entries vs spot-checked

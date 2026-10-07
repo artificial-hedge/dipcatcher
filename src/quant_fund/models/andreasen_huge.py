@@ -1,4 +1,4 @@
-"""Andreasen-Huge single-step arbitrage-free vol interpolation.
+"""Andreasen-Huge single-step arbitrage-free vol interpolation (SYNTHETIC).
 
 Given call prices at discrete strikes, solve the coupled system
 C(K_i) consistent with a piecewise-constant local vol via one

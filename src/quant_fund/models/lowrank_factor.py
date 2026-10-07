@@ -1,4 +1,4 @@
-"""Low-rank weight factorization (SVD compression).
+"""Low-rank weight factorization (SVD compression) (SYNTHETIC).
 
 Truncate the first-layer weight SVD to rank r → (8×r + r×24) params
 vs 8×24; accuracy retention vs parameter fraction.
@@ -44,5 +44,5 @@ def bench_lowrank_factor(
         "synthetic_lr_full_acc": acc_full,
         "synthetic_lr_retention": acc_lr / max(acc_full, 1e-9),
         "synthetic_lr_param_frac": float(frac),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

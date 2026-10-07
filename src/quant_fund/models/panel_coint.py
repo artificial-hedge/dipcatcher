@@ -1,4 +1,4 @@
-"""Panel cointegration tests.
+"""Panel cointegration tests (SYNTHETIC).
 
 Complements ``metrics/panel.py`` (panel unit roots) and
 ``models/var_coint.py`` (single-series cointegration) with panel

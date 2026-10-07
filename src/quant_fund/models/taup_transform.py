@@ -1,4 +1,4 @@
-"""Linear tau-p (slant-stack) transform.
+"""Linear tau-p (slant-stack) transform (SYNTHETIC).
 
 tau(p) = t - p*x summed over offsets. Maps linear moveout events in
 (t, x) to points in (tau, p). Seismic canon.

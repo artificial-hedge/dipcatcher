@@ -1,4 +1,4 @@
-"""R(3,3) = 6 verification (wave 282).
+"""R(3,3) = 6 verification (wave 282) (SYNTHETIC).
 
 Any 2-coloring of K6 contains a monochromatic triangle: verified by
 exhaustive check that every one of the 2^15 colorings has one, plus a

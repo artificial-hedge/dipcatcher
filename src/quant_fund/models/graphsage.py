@@ -96,5 +96,5 @@ def bench_graphsage(
         "synthetic_sage_acc": acc_sage,
         "synthetic_sage_mlp_acc": acc_mlp,
         "synthetic_sage_acc_gain": acc_sage - acc_mlp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

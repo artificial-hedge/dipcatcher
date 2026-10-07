@@ -1,4 +1,4 @@
-"""Variational quantum deflation: ground + first-excited state via overlap penalty.
+"""Variational quantum deflation: ground + first-excited state via overlap penalty (SYNTHETIC).
 
 Circuit ansatz on 2 qubits: RY on each, CNOT, RY on each (4 angles).
 Ground state: coordinate-descent on <H>. Excited state: same descent on

@@ -1,4 +1,4 @@
-"""Static timing analysis (wave 291).
+"""Static timing analysis (wave 291) (SYNTHETIC).
 
 Longest-path arrival times on a combinational DAG: at(node) =
 max(at(fanin) + gate_delay). Critical path and slack vs a brute-force

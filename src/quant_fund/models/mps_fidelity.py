@@ -1,4 +1,4 @@
-"""MPS round-trip fidelity: compress an arbitrary dense state to
+"""MPS round-trip fidelity: compress an arbitrary dense state to (SYNTHETIC)
 chi-bond MPS, measure retained fidelity vs chi.
 """
 
@@ -29,5 +29,5 @@ def bench_mps_fidelity(seed: int = 3105, n: int = 6, chi: int = 4) -> dict[str, 
         "synthetic_mps_fid_rand": fid,
         "synthetic_mps_fid_ghz": fid_ghz,
         "synthetic_mps_chi": float(chi),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

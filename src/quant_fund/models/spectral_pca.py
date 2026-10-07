@@ -92,7 +92,8 @@ def dynamic_pca(
     """Brillinger dynamic PCA: per-frequency eigendecomp."""
     cs = cross_spectral_density(x, m=m)
     s = cs["S"]
-    assert isinstance(s, np.ndarray)
+    if not (isinstance(s, np.ndarray)):
+        raise ValueError("isinstance(s, np.ndarray)")
     nf, n, _ = s.shape
     ev = np.empty((nf, n))
     v1 = np.empty((nf, n), dtype=np.complex128)
@@ -144,6 +145,6 @@ def bench_spectral_pca(seed: int = 20261231 + 341) -> dict[str, float]:
         "synthetic_dpca_eig1_share_factor": float(r_p["eig1_share_mean"][0]),
         "synthetic_dpca_eig1_share_noise": float(r_n["eig1_share_mean"][0]),
         "synthetic_dpca_share_gap": gap,
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

@@ -1,4 +1,4 @@
-"""Markov chain entropy rate (wave 285).
+"""Markov chain entropy rate (wave 285) (SYNTHETIC).
 
 Analytic H = sum_s pi_s * H(P_s.) for a 2-state chain vs simulated
 block-entropy rate H(X_1..n)/n for large n.

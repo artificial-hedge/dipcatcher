@@ -1,4 +1,4 @@
-"""Mixup / CutMix augmentation (Zhang et al. 2018, Yun et al. 2019).
+"""Mixup / CutMix augmentation (Zhang et al. 2018, Yun et al. 2019) (SYNTHETIC).
 
 Interpolated (λx + (1−λ)x', λy + (1−λ)y') samples regularize the
 decision boundary; on held-out inputs with amplified distractor noise
@@ -68,5 +68,5 @@ def bench_mixup_cutmix(
         "synthetic_mixup_acc": acc_mix,
         "synthetic_mixup_plain_acc": acc_plain,
         "synthetic_mixup_gain": acc_mix - acc_plain,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

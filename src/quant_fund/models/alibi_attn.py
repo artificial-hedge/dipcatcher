@@ -1,4 +1,4 @@
-"""ALiBi attention (Press et al. 2022) — fixed linear distance bias on
+"""ALiBi attention (Press et al. 2022) — fixed linear distance bias on (SYNTHETIC)
 attention logits (no position embeddings at all) vs learned absolute on
 the induction-head task at train length and 2x extrapolation.
 """
@@ -73,5 +73,5 @@ def bench_alibi_attn(seed: int = 1707, iters: int = 800) -> dict[str, float]:
         "synthetic_learned_recall": acc_a,
         "synthetic_learned_recall_2x": acc_a2,
         "synthetic_alibi_extrap_gain": acc_al2 - acc_a2,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

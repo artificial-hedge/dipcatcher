@@ -1,4 +1,4 @@
-"""Impossible-travel detection (defensive) — wave 286.
+"""Impossible-travel detection (defensive) — wave 286 (SYNTHETIC).
 
 Login at (lat,lon,t) flagged when required speed between consecutive
 events exceeds max_travel_kmh.

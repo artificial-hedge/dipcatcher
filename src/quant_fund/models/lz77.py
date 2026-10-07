@@ -1,4 +1,4 @@
-"""LZ77 sliding-window compression (synthetic).
+"""LZ77 sliding-window compression (synthetic) (SYNTHETIC).
 
 Greedy longest-match encoder with window W and literal/match
 tokens; exact round-trip verified. Compression ratio reported

@@ -1,4 +1,4 @@
-"""Wagner–Whitin (1958) dynamic lot-sizing DP for deterministic
+"""Wagner–Whitin (1958) dynamic lot-sizing DP for deterministic (SYNTHETIC)
 time-varying demand — optimal plan cost vs naive policies.
 """
 
@@ -36,5 +36,5 @@ def bench_wagner_whitin(seed: int = 3029) -> dict[str, float]:
         "synthetic_alt_cost": c_alt,
         "synthetic_ww_gain_lfl": float(c_lfl - c_opt),
         "synthetic_ww_gain_alt": float(c_alt - c_opt),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

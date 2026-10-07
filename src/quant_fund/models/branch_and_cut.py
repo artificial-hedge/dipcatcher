@@ -1,4 +1,4 @@
-"""Branch-and-cut on the shared 2-variable ILP.
+"""Branch-and-cut on the shared 2-variable ILP (SYNTHETIC).
 
 Depth-first branch-and-bound over fractional LP solutions (bounds from
 scipy linprog since bound rows can carry negative RHS), vs the same

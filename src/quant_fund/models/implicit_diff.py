@@ -1,4 +1,4 @@
-"""Implicit function theorem differentiation — through the ridge
+"""Implicit function theorem differentiation — through the ridge (SYNTHETIC)
 fixed-point z*(θ) = (θI + A^T A)^{-1} A^T b: dz/dθ via IFT vs finite
 difference on θ.
 """
@@ -28,5 +28,5 @@ def bench_implicit_diff(seed: int = 2405) -> dict[str, float]:
     return {
         "synthetic_ift_corr": grad_corr(dz_ift, dz_fd),
         "synthetic_ift_max_err": float(np.abs(dz_ift - dz_fd).max()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

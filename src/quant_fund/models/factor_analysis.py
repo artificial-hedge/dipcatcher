@@ -1,4 +1,4 @@
-"""Exploratory factor analysis — principal axis + varimax rotation.
+"""Exploratory factor analysis — principal axis + varimax rotation (SYNTHETIC).
 
 Thurstone (1947), Harman (1976): the common-factor model writes the
 correlation matrix R ≈ LL^T + Psi with loadings L (p x k) and
@@ -139,5 +139,5 @@ def bench_factor_analysis(seed: int = 20261231 + 420) -> dict[str, float]:
         "synthetic_fa_congruence": congr_min,
         "synthetic_fa_h2_err": h2_err,
         "synthetic_fa_fit_resid": float(out["fit_residual"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

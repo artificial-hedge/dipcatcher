@@ -1,4 +1,4 @@
-"""Cartesian state <-> classical Keplerian elements (two-body)."""
+"""Cartesian state <-> classical Keplerian elements (two-body) (SYNTHETIC)."""
 
 from __future__ import annotations
 

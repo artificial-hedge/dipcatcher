@@ -230,6 +230,13 @@ def _vr_pairs(
     and dimension at its sorted position.
     """
     n = dist.shape[0]
+    # Fail before materializing anything when the full complex provably
+    # exceeds the cap (r_max=None keeps every edge and triangle).
+    if r_max is None and n + n * (n - 1) // 2 + n * (n - 1) * (n - 2) // 6 > _MAX_SIMPLICES:
+        raise ValueError(
+            f"complex has {n + n * (n - 1) // 2 + n * (n - 1) * (n - 2) // 6} simplices "
+            f"(cap {_MAX_SIMPLICES}); subsample the cloud or pass a smaller r_max"
+        )
     edge_index: dict[tuple[int, int], int] = {}
     fvals: list[float] = [0.0] * n
     dims: list[int] = [0] * n
@@ -242,6 +249,11 @@ def _vr_pairs(
         edge_verts.append((i, j))
         fvals.append(w)
         dims.append(1)
+    if len(fvals) > _MAX_SIMPLICES:
+        raise ValueError(
+            f"complex has {len(fvals)} simplices (cap {_MAX_SIMPLICES}); "
+            "subsample the cloud or pass a smaller r_max"
+        )
     tri_edges: list[tuple[int, int, int]] = []
     for i, j, k in combinations(range(n), 3):
         e1 = edge_index.get((i, j))
@@ -252,12 +264,13 @@ def _vr_pairs(
         tri_edges.append((e1, e2, e3))
         fvals.append(max(fvals[e1], fvals[e2], fvals[e3]))
         dims.append(2)
+        # check incrementally: never materialize the whole C(n,3) complex
+        if len(fvals) > _MAX_SIMPLICES:
+            raise ValueError(
+                f"complex exceeds {_MAX_SIMPLICES} simplices; "
+                "subsample the cloud or pass a smaller r_max"
+            )
     n_total = len(fvals)
-    if n_total > _MAX_SIMPLICES:
-        raise ValueError(
-            f"complex has {n_total} simplices (cap {_MAX_SIMPLICES}); "
-            "subsample the cloud or pass a smaller r_max"
-        )
 
     # Filtration order: (value, dimension, index) — faces before cofaces.
     order = sorted(range(n_total), key=lambda s: (fvals[s], dims[s], s))
@@ -451,21 +464,42 @@ def _bottleneck_greedy(cost: Array, diag_a: Array, diag_b: Array) -> float:
 
 
 def _max_matching(adj: list[list[int]], n_right: int) -> list[int]:
-    """Augmenting-path bipartite matching; returns match of right vertices."""
+    """Augmenting-path bipartite matching; returns match of right vertices.
+
+    Iterative Kuhn search (explicit stack) — augmenting paths of length
+    ~2n blow the recursion limit on large diagrams and must fail into a
+    correct answer, not a RecursionError.
+    """
     match_r = [-1] * n_right
-
-    def augment(u: int, seen: list[bool]) -> bool:
-        for v in adj[u]:
-            if seen[v]:
+    for u0 in range(len(adj)):
+        seen = [False] * n_right
+        # via[u] = right vertex whose matching edge led to left vertex u;
+        # disc[v] = left vertex that discovered right vertex v.
+        via: dict[int, int] = {}
+        disc: dict[int, int] = {}
+        stack = [u0]
+        while stack:
+            u = stack.pop()
+            for v in adj[u]:
+                if seen[v]:
+                    continue
+                seen[v] = True
+                disc[v] = u
+                w = match_r[v]
+                if w < 0:
+                    # free right vertex: flip the alternating path back to u0
+                    match_r[v] = u
+                    while u != u0:
+                        v_prev = via[u]
+                        u_prev = disc[v_prev]
+                        match_r[v_prev] = u_prev
+                        u = u_prev
+                    break
+                via[w] = v
+                stack.append(w)
+            else:
                 continue
-            seen[v] = True
-            if match_r[v] < 0 or augment(match_r[v], seen):
-                match_r[v] = u
-                return True
-        return False
-
-    for u in range(len(adj)):
-        augment(u, [False] * n_right)
+            break
     return match_r
 
 

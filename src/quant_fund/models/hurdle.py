@@ -1,4 +1,4 @@
-"""Cragg two-part hurdle model for semi-continuous outcomes.
+"""Cragg two-part hurdle model for semi-continuous outcomes (SYNTHETIC).
 
 A point mass at zero plus a continuous positive part: logit
 decides participation, a truncated-normal governs the amount

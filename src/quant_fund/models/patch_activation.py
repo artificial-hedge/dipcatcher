@@ -1,4 +1,4 @@
-"""Activation patching / causal tracing (Vig et al., Meng et al.).
+"""Activation patching / causal tracing (Vig et al., Meng et al.) (SYNTHETIC).
 
 Run A (feature present) → patched into run B (absent) at the site
 of feature k: downstream probe flips to A's label. Patching the

@@ -44,4 +44,4 @@ def test_fail_closed_single_rater():
 
 def test_bench():
     out = bench_icc()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

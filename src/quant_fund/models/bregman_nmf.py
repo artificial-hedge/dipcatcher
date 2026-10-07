@@ -1,4 +1,4 @@
-"""Bregman NMF: Itakura-Saito divergence vs Euclidean on Poisson counts.
+"""Bregman NMF: Itakura-Saito divergence vs Euclidean on Poisson counts (SYNTHETIC).
 
 IS-NMF uses the multiplicative updates for D_IS(V|WH) = sum v/wh - log(v/wh) - 1,
 the right geometry for Poisson-generated data. Euclidean NMF is the planted

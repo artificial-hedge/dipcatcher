@@ -49,4 +49,4 @@ def test_fail_closed_small_p():
 
 def test_bench():
     out = bench_james_stein()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

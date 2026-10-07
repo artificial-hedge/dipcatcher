@@ -1,4 +1,4 @@
-"""Permission/capability types for alias control.
+"""Permission/capability types for alias control (SYNTHETIC).
 
 Permissions: U (unique, split/join), S (shared, immutable through alias),
 R (readonly view). State maps place -> perm. Operations:

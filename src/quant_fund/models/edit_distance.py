@@ -1,4 +1,4 @@
-"""Edit distance + alignment recovery (synthetic).
+"""Edit distance + alignment recovery (synthetic) (SYNTHETIC).
 
 Levenshtein DP with backtrace producing an actual edit script.
 Verified: (i) distance equals reference DP oracle; (ii) applying

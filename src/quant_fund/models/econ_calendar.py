@@ -1,4 +1,4 @@
-"""Economic calendar & news impact engine (Exec-Summary item).
+"""Economic calendar & news impact engine (Exec-Summary item) (SYNTHETIC).
 Releases carry (name, consensus, actual); surprise z-scores feed a
 ridge regression estimating per-event price impact and half-life.
 

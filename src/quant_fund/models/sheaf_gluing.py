@@ -35,7 +35,8 @@ def _bench_sheaf_gluing(seed: int = 0) -> float:
     overlaps = [(0, 1, {1})]
     s1, s2 = {0: 5, 1: 7}, {1: 7, 2: 9}
     g = glue([s1, s2], cover, overlaps)
-    assert g is not None
+    if not (g is not None):
+        raise ValueError("g is not None")
     checks.append(g == {0: 5, 1: 7, 2: 9})
     checks.append(restriction(g, {0, 1}) == s1)
     # incompatible: no glue
@@ -43,7 +44,8 @@ def _bench_sheaf_gluing(seed: int = 0) -> float:
     checks.append(glue([s1, s3], cover, overlaps) is None)
     # locally constant sheaf: gluing unique (identity axiom)
     g2 = glue([{0: 3, 1: 3}, {1: 3, 2: 3}], cover, overlaps)
-    assert g2 is not None
+    if not (g2 is not None):
+        raise ValueError("g2 is not None")
     checks.append(g2 == {0: 3, 1: 3, 2: 3})
     # sheaf axiom: restrictions of a global section always agree
     checks.append(agree_on_overlap(restriction(g, u1), restriction(g, u2), {1}))

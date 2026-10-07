@@ -1,4 +1,4 @@
-"""Stambaugh bias and Bonferroni-Q inference for predictive
+"""Stambaugh bias and Bonferroni-Q inference for predictive (SYNTHETIC)
 regressions.
 
 When y_{t+1} = a + β x_t + ε_{t+1} and the persistent

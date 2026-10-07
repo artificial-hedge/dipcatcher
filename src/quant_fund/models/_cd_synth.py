@@ -1,4 +1,4 @@
-"""Shared conditional-density fixture: multimodal target — sign branch
+"""Shared conditional-density fixture: multimodal target — sign branch (SYNTHETIC)
 switches on x0; heteroscedastic noise. Score: test log-density vs
 single-Gaussian baseline.
 """

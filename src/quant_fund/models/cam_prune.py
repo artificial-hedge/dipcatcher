@@ -1,4 +1,4 @@
-"""CAM pruning (Bühlmann et al. 2014) — order by residual-variance
+"""CAM pruning (Bühlmann et al. 2014) — order by residual-variance (SYNTHETIC)
 greedy search then prune edges by significance of GAM-style nonlinear
 fit; here a two-stage regression-prune implementation. SHD vs corr.
 """
@@ -55,5 +55,5 @@ def bench_cam_prune(seed: int = 2347, edges: int = 7) -> dict[str, float]:
         "synthetic_cam_shd": float(shd_cam),
         "synthetic_corr_shd": float(shd_cb),
         "synthetic_cam_gain": float(shd_cb - shd_cam),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

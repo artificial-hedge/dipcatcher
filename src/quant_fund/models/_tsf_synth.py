@@ -1,4 +1,4 @@
-"""Shared multi-frequency forecasting fixture for the TS-foundation
+"""Shared multi-frequency forecasting fixture for the TS-foundation (SYNTHETIC)
 canon: sinusoid + trend + AR noise at random frequencies; score = pinball
 (mean over quantiles) vs seasonal-naive baseline.
 """

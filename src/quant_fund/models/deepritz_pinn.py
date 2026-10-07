@@ -1,4 +1,4 @@
-"""DeepRitz PINN (E & Yu 2018) — energy-functional residual network
+"""DeepRitz PINN (E & Yu 2018) — energy-functional residual network (SYNTHETIC)
 for the heat equation; L2 error vs analytic + FD-style baseline.
 """
 
@@ -58,4 +58,4 @@ def bench_deepritz_pinn(seed: int = 2501, iters: int = 800) -> dict[str, float]:
             return np.asarray(net(q).squeeze(1).numpy())
 
     err = eval_error(pred)
-    return {"synthetic_pinn_rel_l2": err, "torch_available": 1.0}
+    return {"synthetic_pinn_rel_l2": err, "synthetic_torch_available": 1.0}

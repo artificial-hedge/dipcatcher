@@ -1,4 +1,4 @@
-"""Heteroskedasticity diagnostics for OLS residuals.
+"""Heteroskedasticity diagnostics for OLS residuals (SYNTHETIC).
 
 Canonical references:
 

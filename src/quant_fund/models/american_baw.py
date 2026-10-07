@@ -1,4 +1,4 @@
-"""Barone-Adesi & Whaley (1987) American option approximation.
+"""Barone-Adesi & Whaley (1987) American option approximation (SYNTHETIC).
 
 The BAW quadratic approximation writes the American price as the European price
 plus an early-exercise premium proportional to a power of the underlying.  With

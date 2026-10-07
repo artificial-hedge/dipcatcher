@@ -1,4 +1,4 @@
-"""Vine copulas (R-vine, C-vine, D-vine) and GAS dynamic copulas.
+"""Vine copulas (R-vine, C-vine, D-vine) and GAS dynamic copulas (SYNTHETIC).
 
 Regular vine (R-vine) pair-copula constructions for high-dimensional
 dependence modelling, plus the Generalized Autoregressive Score (GAS)
@@ -258,10 +258,11 @@ def _dvine_edges(dim: int) -> list[list[tuple[int, int, tuple[int, ...]]]]:
     edges: list[list[tuple[int, int, tuple[int, ...]]]] = []
     for tree in range(dim - 1):
         level: list[tuple[int, int, tuple[int, ...]]] = []
-        cond = tuple(range(tree)) if tree > 0 else ()
         for start in range(dim - tree - 1):
             a = start
             b = start + tree + 1
+            # D-vine tree-t edge (a, b) conditions on the nodes between them
+            cond = tuple(range(a + 1, b))
             level.append((a, b, cond))
         edges.append(level)
     return edges
@@ -1624,7 +1625,8 @@ def gas_copula_fit(
     for theta0 in candidates:
         try:
             res = opt.minimize(nll, theta0, method="L-BFGS-B", bounds=bounds)
-            if np.isfinite(res.fun) and res.fun < best_ll:
+            # res.fun == 1e12 is the penalty sentinel, never a valid optimum
+            if np.isfinite(res.fun) and res.fun < 1e11 and res.fun < best_ll:
                 best_ll = float(res.fun)
                 best_x = res.x.copy()
                 best_success = float(res.success)

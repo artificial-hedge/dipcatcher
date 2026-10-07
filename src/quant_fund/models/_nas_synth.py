@@ -1,4 +1,4 @@
-"""NAS fixture: a discrete architecture space over small MLPs.
+"""NAS fixture: a discrete architecture space over small MLPs (SYNTHETIC).
 
 Arch = (hidden ∈ {4,8,16,24,48}, depth ∈ {1,2,3}, act ∈ {0=relu,1=tanh})
 evaluated by short training on the compression synth split.

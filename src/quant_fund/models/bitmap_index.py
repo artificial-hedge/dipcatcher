@@ -1,4 +1,4 @@
-"""Bitmap index: per-value bitmaps + bitwise query evaluation."""
+"""Bitmap index: per-value bitmaps + bitwise query evaluation (SYNTHETIC)."""
 
 import numpy as np
 

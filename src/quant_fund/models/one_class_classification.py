@@ -1,4 +1,4 @@
-"""One-class classification: SVDD (Tax & Duin 2004) with a
+"""One-class classification: SVDD (Tax & Duin 2004) with a (SYNTHETIC)
 quadratic-program-lite center/radius fit, Mahalanobis
 outlier scoring with shrinkage covariance, and local
 outlier factor (Breunig et al. 2000). Synthetic bench gates

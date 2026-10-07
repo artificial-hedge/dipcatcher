@@ -1,4 +1,4 @@
-"""OB2I / OAC-style optimism (Ciosek et al. 2019) — exploration bonus =
+"""OB2I / OAC-style optimism (Ciosek et al. 2019) — exploration bonus = (SYNTHETIC)
 ensemble Q-disagreement added to the actor's effective reward at acting
 time (upper-confidence exploration). Mean reward vs greedy-SAC.
 """
@@ -82,5 +82,5 @@ def bench_ob2i(
     return {
         "synthetic_ob2i_mean_reward": tot / n,
         "synthetic_ob2i_random_reward": -0.2,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Weighted finite-state transducer over the tropical semiring (min,+)."""
+"""Weighted finite-state transducer over the tropical semiring (min,+) (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""dqds: differential quotient-difference-with-shifts for bidiag singular values."""
+"""dqds: differential quotient-difference-with-shifts for bidiag singular values (SYNTHETIC)."""
 
 import numpy as np
 

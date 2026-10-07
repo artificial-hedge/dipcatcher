@@ -1,4 +1,4 @@
-"""MMD two-sample test (Gretton et al. 2012): unbiased U-statistic with
+"""MMD two-sample test (Gretton et al. 2012): unbiased U-statistic with (SYNTHETIC)
 median-heuristic Gaussian kernel; permutation p-value. Correctly
 accepts H0 at shift 0, rejects at shift 0.6.
 """
@@ -40,5 +40,5 @@ def bench_mmd_two_sample(seed: int = 2873, perms: int = 200) -> dict[str, float]
         "synthetic_mmd_pval_null": float(pvals["null"]),
         "synthetic_mmd_pval_alt": float(pvals["alt"]),
         "synthetic_mmd_sep": float(pvals["null"] - pvals["alt"]),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

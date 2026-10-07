@@ -116,7 +116,8 @@ def apply_cross_sectional(
         ]
     )
     if use_sector:
-        assert sector is not None
+        if not (sector is not None):
+            raise ValueError("sector is not None")
         # Null sector labels are their own group. A left join does not match
         # null keys, so the key is (is_null, filled label) instead of the raw
         # column the window expression grouped on.

@@ -1,4 +1,4 @@
-"""CFG simplification (wave 294).
+"""CFG simplification (wave 294) (SYNTHETIC).
 
 Iterative: merge a block into its single unconditional predecessor,
 remove unreachable blocks, collapse empty blocks — fixpoint result vs

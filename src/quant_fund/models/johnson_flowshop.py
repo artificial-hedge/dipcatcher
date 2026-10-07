@@ -1,4 +1,4 @@
-"""Johnson's rule (1954): optimal 2-machine flow-shop sequencing.
+"""Johnson's rule (1954): optimal 2-machine flow-shop sequencing (SYNTHETIC).
 Makespan vs random-order + SPT baselines; certified by exhaustive check
 on small instances.
 """
@@ -43,5 +43,5 @@ def bench_johnson_flowshop(seed: int = 3041) -> dict[str, float]:
         "synthetic_spt_ms": float(spt),
         "synthetic_johnson_gap": float(ms_j - best),
         "synthetic_johnson_vs_random": float(rnd - ms_j),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

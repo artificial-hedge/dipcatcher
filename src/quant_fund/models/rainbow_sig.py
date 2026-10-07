@@ -1,4 +1,4 @@
-"""Rainbow-lite: two-layer oil-vinegar signature over GF(2).
+"""Rainbow-lite: two-layer oil-vinegar signature over GF(2) (SYNTHETIC).
 
 Layer 1: o1 equations in vinegars v and oils o1 (no o1^2 terms).
 Layer 2: o2 equations in vinegars v+o1 and oils o2 (no o2^2 terms).

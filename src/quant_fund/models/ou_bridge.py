@@ -1,4 +1,4 @@
-"""Ornstein–Uhlenbeck bridge: conditional path pinned at both endpoints
+"""Ornstein–Uhlenbeck bridge: conditional path pinned at both endpoints (SYNTHETIC)
 (mean-reverting interpolation). Endpoint adherence + intermediate
 variance vs unconditional OU paths.
 """
@@ -47,5 +47,5 @@ def bench_ou_bridge(seed: int = 2939, trials: int = 300) -> dict[str, float]:
         "synthetic_oub_endpoint_err": float(np.mean(end_err)),
         "synthetic_oub_mid_var": var_mid,
         "synthetic_oub_uncond_var": float(sig_u),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

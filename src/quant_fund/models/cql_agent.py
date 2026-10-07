@@ -126,7 +126,7 @@ def bench_cql_agent(
         "synthetic_cql_dataset_reward": rew_dataset,
         "synthetic_cql_margin_vs_plain": rew_cql - rew_plain,
         "synthetic_cql_margin_vs_dataset": rew_cql - rew_dataset,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

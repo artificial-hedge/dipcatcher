@@ -33,4 +33,4 @@ def test_fail_closed_mismatch():
 
 def test_bench():
     out = bench_p_spline()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

@@ -1,4 +1,4 @@
-"""Primal-dual 2-approximation for minimum vertex cover.
+"""Primal-dual 2-approximation for minimum vertex cover (SYNTHETIC).
 
 Raises dual prices on edges uniformly until a vertex constraint goes
 tight (sum_e y_e <= w_v saturated), freezes the tight vertex into the

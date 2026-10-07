@@ -1,4 +1,4 @@
-"""Congruence closure for EUF — union-find over terms with signature merging.
+"""Congruence closure for EUF — union-find over terms with signature merging (SYNTHETIC).
 
 Ground equations between first-order terms (atoms and function applications)
 are decided by saturating congruence: if a = b then f(a) = f(b). Classes are

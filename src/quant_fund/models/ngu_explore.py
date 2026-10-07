@@ -1,4 +1,4 @@
-"""NGU-lite (Badia et al. 2020): intrinsic reward = episodic novelty
+"""NGU-lite (Badia et al. 2020): intrinsic reward = episodic novelty (SYNTHETIC)
 (kNN distance to this-episode history) gated by a lifelong RND-style
 modulator min(max(alpha_lifelong, 1), L). Numpy: hash-count episodic
 counts + ridge-feature prediction error for the lifelong factor.
@@ -46,5 +46,5 @@ def bench_ngu_explore(seed: int = 2857, n_ep_knn: int = 5) -> dict[str, float]:
         "synthetic_baseline_coverage": float(cov_b),
         "synthetic_ngu_success": float(succ),
         "synthetic_baseline_success": float(succ_b),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

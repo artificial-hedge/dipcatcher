@@ -1,4 +1,4 @@
-"""Shared synthetic fixtures for the wave-209 reliability canon."""
+"""Shared synthetic fixtures for the wave-209 reliability canon (SYNTHETIC)."""
 
 import numpy as np
 

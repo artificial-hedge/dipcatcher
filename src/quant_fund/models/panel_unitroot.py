@@ -1,4 +1,4 @@
-"""Panel unit-root tests — Im-Pesaran-Shin and Levin-Lin-Chu.
+"""Panel unit-root tests — Im-Pesaran-Shin and Levin-Lin-Chu (SYNTHETIC).
 
 Cross-sectional power lets panels detect mean reversion invisible to
 single-series ADF tests. LLC pools the ADF regression under a common

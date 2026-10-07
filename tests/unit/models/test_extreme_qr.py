@@ -11,7 +11,7 @@ from quant_fund.models.extreme_qr import (
 
 def test_bench_extreme_qr_passes():
     r = bench_extreme_qr()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_hill_positive_on_pareto():

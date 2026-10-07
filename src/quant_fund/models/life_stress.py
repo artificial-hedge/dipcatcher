@@ -1,4 +1,4 @@
-"""Arrhenius accelerated-life model from stress-temperature test data.
+"""Arrhenius accelerated-life model from stress-temperature test data (SYNTHETIC).
 
 Fits log-life = log(C) + Ea/(k_B T) by least squares on the reciprocal
 Kelvin scale, then extrapolates the use-condition life. Bench compares

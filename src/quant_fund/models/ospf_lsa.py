@@ -1,4 +1,4 @@
-"""Link-state routing: LSA flood + SPF (Dijkstra) vs shortest-path oracle."""
+"""Link-state routing: LSA flood + SPF (Dijkstra) vs shortest-path oracle (SYNTHETIC)."""
 
 import heapq
 

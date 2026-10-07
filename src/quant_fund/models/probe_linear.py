@@ -1,4 +1,4 @@
-"""Linear probing (Alain & Bengio).
+"""Linear probing (Alain & Bengio) (SYNTHETIC).
 
 A logistic probe on mid-layer activations detects feature presence;
 compared layer-0 vs layer-final probe accuracy — interpretability's
