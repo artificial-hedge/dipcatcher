@@ -95,6 +95,8 @@ def sv_pf_loglik(
 ) -> float:
     """Unbiased-ish marginal loglik estimate via the composed bootstrap PF."""
     r = _check_returns(returns)
+    if not np.isfinite(mu) or not np.isfinite(phi) or not np.isfinite(sigma_eta):
+        raise ValueError("mu/phi/sigma_eta must be finite")
     if abs(phi) >= 1.0 or sigma_eta <= 0:
         raise ValueError("need |phi|<1 and sigma_eta>0")
 
@@ -194,6 +196,13 @@ def pmmh_sv(
     if psd.size != 3 or (psd <= 0).any():
         raise ValueError("proposal_sd must be 3 positive scales")
 
+    def _log_jacobian(th: FloatArray) -> float:
+        # |d(theta)/d(z)| = (1 - phi^2) * sigma_eta for z = (mu, atanh phi,
+        # log sigma_eta).  A symmetric random walk in z that omits this
+        # factor does NOT target the flat-prior posterior of theta — it
+        # quietly weights toward |phi| -> 1 and small sigma_eta.
+        return float(np.log(1.0 - th[1] ** 2) + np.log(th[2]))
+
     z = to_z(th0)
     seeds = rng.integers(0, 2**31 - 1, size=n_iter * 2 + 2)
     th = from_z(z)
@@ -205,6 +214,7 @@ def pmmh_sv(
         n_particles=n_particles,
         seed=int(seeds[0]),
     )
+    logj_cur = _log_jacobian(th)
     chain = np.empty((n_iter, 3))
     chain_ll = np.empty(n_iter)
     accepted = 0
@@ -222,8 +232,10 @@ def pmmh_sv(
             n_particles=n_particles,
             seed=int(seeds[2 * i + 1]),
         )
-        if ll_prop >= ll_cur or rng.random() < exp(min(ll_prop - ll_cur, 0.0)):
+        log_alpha = ll_prop - ll_cur + _log_jacobian(th_prop) - logj_cur
+        if log_alpha >= 0.0 or rng.random() < exp(log_alpha):
             z, ll_cur = z_prop, ll_prop
+            logj_cur = _log_jacobian(th_prop)
             accepted += 1
         chain[i], chain_ll[i] = from_z(z), ll_cur
     burn = int(n_iter * burnin_frac)

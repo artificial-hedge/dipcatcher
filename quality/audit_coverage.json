@@ -615,6 +615,9 @@
   "models/pike_vm.py": {
    "status": "audited"
   },
+  "models/pmcmc_sv.py": {
+   "status": "audited"
+  },
   "models/point_process.py": {
    "status": "audited"
   },
