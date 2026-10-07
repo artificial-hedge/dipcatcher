@@ -372,6 +372,9 @@
   "models/bandits.py": {
    "status": "audited"
   },
+  "models/base.py": {
+   "status": "audited"
+  },
   "models/bkm_moments.py": {
    "status": "audited"
   },
@@ -408,6 +411,9 @@
   "models/count_data.py": {
    "status": "audited"
   },
+  "models/covariance.py": {
+   "status": "audited"
+  },
   "models/cv_plus.py": {
    "status": "audited"
   },
@@ -433,6 +439,9 @@
    "status": "audited"
   },
   "models/diffpts.py": {
+   "status": "audited"
+  },
+  "models/distribution.py": {
    "status": "audited"
   },
   "models/dml.py": {
@@ -546,6 +555,9 @@
   "models/random_projection.py": {
    "status": "audited"
   },
+  "models/ranking.py": {
+   "status": "audited"
+  },
   "models/rbergomi.py": {
    "status": "audited"
   },
@@ -631,6 +643,9 @@
    "status": "audited"
   },
   "models/vol_per_security.py": {
+   "status": "audited"
+  },
+  "models/volatility.py": {
    "status": "audited"
   },
   "models/watch.py": {
