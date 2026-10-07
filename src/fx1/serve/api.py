@@ -10558,13 +10558,22 @@ def create_app(
     batch_store = _BatchStore(batch_max, journal=_journal("batches.jsonl"))
     abatch_store = _AnthropicBatchStore(batch_max, journal=_journal("abatches.jsonl"))
     # The OpenAI-shaped fine-tuning surface: bounded like the other job
-    # stores; the runner defaults to the real staged Pipeline (its own
-    # trainer fails honestly when no GPU backend is configured).
+    # stores; the runner defaults to the real staged Pipeline over the
+    # in-repo tiny-LM trainer. Job work dirs — and the checkpoints they
+    # mint — default under --state-dir so a completed job's ft: model
+    # still resolves and serves after a restart.
     ft_store = FTJobStore(job_max, journal=_journal("ft_jobs.jsonl"))
     ft_work_root = Path(
         ft_dir
         if ft_dir is not None
-        else os.environ.get("FX1_FT_DIR", str(Path(tempfile.gettempdir()) / "fx1_ft"))
+        else os.environ.get(
+            "FX1_FT_DIR",
+            str(
+                state_path / "ft"
+                if state_path is not None
+                else Path(tempfile.gettempdir()) / "fx1_ft"
+            ),
+        )
     )
     ft_runner_eff = ft_runner or default_ft_runner(resolve_backend)
     # The /v1 retrieval index behind GET/DELETE /v1/chat/completions/{id}
