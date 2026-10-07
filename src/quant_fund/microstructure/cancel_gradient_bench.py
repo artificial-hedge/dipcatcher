@@ -104,13 +104,29 @@ def cancel_gradient_bench(horizon: float = 2000.0, *, seed: int = 13) -> dict[st
     uni: Any = arms[0]["buckets"]
     biased: Any = arms[1]["buckets"]
     decayed: Any = arms[2]["buckets"]
+
+    def _prop(bucket: dict[str, Any]) -> float | None:
+        v = bucket["propensity"]
+        return float(v) if v is not None else None
+
+    u_t = _prop(uni["touch"])
+    b_t = _prop(biased["touch"])
+    b13 = _prop(biased["d1_3"])
+    b11 = _prop(biased["d11_plus"])
+    d_t = _prop(decayed["touch"])
+    d13 = _prop(decayed["d1_3"])
+    d410 = _prop(decayed["d4_10"])
+    d11 = _prop(decayed["d11_plus"])
     divergences: list[str] = []
-    if abs(float(biased["d1_3"]["propensity"]) - 1.44) > 0.4:
-        divergences.append(f"biased_d1_3_propensity_{biased['d1_3']['propensity']}_vs_1.44")
-    if float(decayed["touch"]["propensity"]) > 2.5:
-        divergences.append(f"decay_touch_propensity_{decayed['touch']['propensity']}_vs_1.37")
-    if float(decayed["d11_plus"]["propensity"]) < 0.4:
-        divergences.append(f"decay_deep_propensity_{decayed['d11_plus']['propensity']}_vs_0.68")
+    for label, v in (("biased_d1_3", b13), ("decay_touch", d_t), ("decay_d11_plus", d11)):
+        if v is None:
+            divergences.append(f"{label}_propensity_unmeasured")
+    if b13 is not None and abs(b13 - 1.44) > 0.4:
+        divergences.append(f"biased_d1_3_propensity_{b13}_vs_1.44")
+    if d_t is not None and d_t > 2.5:
+        divergences.append(f"decay_touch_propensity_{d_t}_vs_1.37")
+    if d11 is not None and d11 < 0.4:
+        divergences.append(f"decay_deep_propensity_{d11}_vs_0.68")
 
     payload: dict[str, Any] = {
         "schema": CANCEL_GRADIENT_BENCH_SCHEMA,
@@ -121,18 +137,14 @@ def cancel_gradient_bench(horizon: float = 2000.0, *, seed: int = 13) -> dict[st
         "real_tape_targets": real,
         "divergences": divergences,
         "claims": {
-            "uniform_is_flat": bool(abs(float(uni["touch"]["propensity"]) - 1.0) < 0.35),
-            "bias_concentrates_at_touch": bool(float(biased["touch"]["propensity"]) > 1.2),
-            "bias_touch_magnitude_realistic": bool(float(biased["touch"]["propensity"]) < 2.2),
-            "deep_residual_logged": bool(
-                abs(float(biased["d11_plus"]["propensity"]) - 0.68) > 0.15
-            ),
+            "uniform_is_flat": bool(u_t is not None and abs(u_t - 1.0) < 0.35),
+            "bias_concentrates_at_touch": bool(b_t is not None and b_t > 1.2),
+            "bias_touch_magnitude_realistic": bool(b_t is not None and b_t < 2.2),
+            "deep_residual_logged": bool(b11 is not None and abs(b11 - 0.68) > 0.15),
             "decay_shapes_near_ring": bool(
-                float(decayed["d1_3"]["propensity"])
-                > float(decayed["d4_10"]["propensity"])
-                > float(decayed["d11_plus"]["propensity"])
+                d13 is not None and d410 is not None and d11 is not None and d13 > d410 > d11
             ),
-            "thin_touch_overshoots": bool(float(decayed["touch"]["propensity"]) > 2.5),
+            "thin_touch_overshoots": bool(d_t is not None and d_t > 2.5),
         },
         "interpretation": (
             "Touch bias b redirects fraction ~b of cancels to the front: "

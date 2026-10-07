@@ -479,6 +479,54 @@ def harness_run(
     raise typer.Exit(code=result.exit_code)
 
 
+@harness_app.command("doctor")
+def harness_doctor(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    receipts_dir: Path = typer.Option(
+        Path("receipts"),
+        "--receipts-dir",
+        help="Local leg: sealed-receipt store for the round-trip check.",
+    ),
+    state_dir: Path | None = typer.Option(
+        None,
+        "--state-dir",
+        help="Local leg: also probe durable-state replay on this dir.",
+    ),
+) -> None:
+    """Run the harness diagnostic battery; exit 1 when any check fails.
+
+    With ``--remote`` the battery diagnoses the deployment over the wire
+    (readiness, health, wire-contract negotiation, auth enforcement, the
+    managed-key lifecycle, metrics, a sealed-receipt round-trip); without
+    it the same report is produced in-process against ``Fx1Harness`` —
+    honesty gate, a gated completion through a deterministic injected
+    backend, the managed-key lifecycle, and a sealed-receipt round-trip.
+    Checks a target legitimately cannot answer report ``skipped`` and do
+    not fail the run. Secrets never appear in the output.
+    """
+    from fx1.serve.harness_doctor import run_local_doctor, run_remote_doctor
+
+    if remote is not None:
+        from fx1.serve.client import HarnessClient
+
+        def make_client(key: str | None) -> HarnessClient:
+            return HarnessClient(remote, api_key=key, timeout_s=timeout_s)
+
+        report = run_remote_doctor(
+            make_client(api_key or os.environ.get("FX1_API_KEY") or None),
+            make_client,
+        )
+    else:
+        report = run_local_doctor(
+            receipts_dir=receipts_dir,
+            state_dir=state_dir,
+        )
+    typer.echo(json.dumps(report, indent=2))
+    raise typer.Exit(code=0 if report["ok"] else 1)
+
+
 @harness_app.command("serve")
 def harness_serve(
     host: str = typer.Option("127.0.0.1", help="Bind host."),
@@ -2054,23 +2102,47 @@ def harness_eval_spec_update(
     metadata_json: str | None = typer.Option(
         None, "--metadata", help="Replacement metadata as a JSON object."
     ),
+    datasource_json: str | None = typer.Option(
+        None,
+        "--datasource",
+        help="Replacement data_source_config as a JSON object — hot-reloads "
+        "the declared shape only while no run binds the spec (409 once bound).",
+    ),
+    criteria_json: str | None = typer.Option(
+        None,
+        "--criteria",
+        help="Replacement testing_criteria as a JSON list — same bound-freeze rule.",
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
-    """Edit a spec's name/metadata — the datasource is frozen once runs bind."""
+    """Edit a spec's name/metadata, or hot-reload its declared shape while
+    it has no runs — datasource/criteria freeze once a run binds."""
     metadata = _json_meta(metadata_json)
+    datasource = _json_meta(datasource_json)
+    criteria = _json_list_opt(criteria_json, "--criteria")
     if remote is not None:
         spec = _or_exit(
             lambda: _remote_client(remote, api_key, timeout_s).eval_spec_update(
-                eval_id, name=name, metadata=metadata
+                eval_id,
+                name=name,
+                metadata=metadata,
+                data_source_config=datasource,
+                testing_criteria=criteria,
             )
         )
     else:
         from fx1.sdk import Fx1Harness
 
         spec = _or_exit(
-            lambda: Fx1Harness().eval_spec_update(eval_id, name=name, metadata=metadata)
+            lambda: Fx1Harness().eval_spec_update(
+                eval_id,
+                name=name,
+                metadata=metadata,
+                data_source_config=datasource,
+                testing_criteria=criteria,
+            )
         )
     typer.echo(json.dumps(spec, indent=2))
 

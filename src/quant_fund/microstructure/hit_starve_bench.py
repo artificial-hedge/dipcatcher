@@ -20,6 +20,7 @@ verdict is a FALSIFICATION: starving the hit side amplifies both gaps.
 
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 
 from quant_fund.microstructure.continuation_attr_bench import (
@@ -124,7 +125,7 @@ def _starve_cell(
             rel = "hit" if side == hit_side else "unhit"
             per_event.append((j, sign, m_ev, ch, rel, d1 - d0))
 
-    attr = _attr_totals(per_event)
+    attr = _attr_totals(per_event, Counter(j for j, _ in fills))
     per_ch = attr["k200_per_channel_ticks"]
     return {
         "hit_refill_damp": damp,

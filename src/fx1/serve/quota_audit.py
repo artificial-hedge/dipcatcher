@@ -776,8 +776,9 @@ def _persistence_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     client_a, _ = _client(backends, api_key=_ROOT, state_dir=state_dir)
     p_raw, p_id = _mint(client_a, root_h, max_requests=5, max_tokens=20, rpm=2)
     p_h = {_H_KEY: p_raw}
-    assert _complete(client_a, p_h).status_code == 200  # uses 1, tokens 6, slot 1
-    assert _complete(client_a, p_h).status_code == 200  # uses 2, tokens 12, window full
+    # two spends: uses 1 (tokens 6, slot 1) then uses 2 (tokens 12, window full)
+    for _ in range(2):
+        assert _complete(client_a, p_h).status_code == 200
     v_raw, v_id = _mint(client_a, root_h)
     assert client_a.delete(f"{_KEYS_PATH}/{v_id}", headers=root_h).status_code == 200
     dead_h = {_H_KEY: v_raw}
@@ -792,8 +793,8 @@ def _persistence_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     # burned on process A, three left on its declared budget
     b_raw, b_id = _mint(client_a, root_h, max_requests=5)
     b_h = {_H_KEY: b_raw}
-    assert _complete(client_a, b_h).status_code == 200
-    assert _complete(client_a, b_h).status_code == 200
+    for _ in range(2):
+        assert _complete(client_a, b_h).status_code == 200
 
     # process B — same --state-dir; nothing but the journal survives
     client_b, _ = _client(backends, api_key=_ROOT, state_dir=state_dir)

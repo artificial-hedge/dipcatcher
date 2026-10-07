@@ -179,7 +179,6 @@ class _FlowSim(ZILobSimulator):
 
     def __init__(self, cfg: Any, flow: Any) -> None:
         self.flow_log: list[tuple[str, str, int, int]] = []
-        self._rm_kind = "?"
         super().__init__(cfg, flow)
         self.flow_log.clear()  # drop seed-book placements
 
@@ -190,23 +189,65 @@ class _FlowSim(ZILobSimulator):
     def _remove_resting_at(
         self, book: dict[int, deque[int]], level: int, idx: int, cause: str = "cancel"
     ) -> Any:
+        # The call's own ``cause`` labels the removal: "fill" for the
+        # consumed order inside ``_consume_best``, "cancel" for every
+        # other path — including the ones that fire outside any event
+        # wrapper (post-fill touch pull, hit_flee, maker expiry, the
+        # relief/requote routes). Those run between dispatched events,
+        # so a wrapper-flag scheme mislabels touch_pull removals as
+        # "fill" and logs a "?" for anything fired between events — a
+        # kind the channel cells do not contain (KeyError once armed).
+        kind = "fill" if cause == "fill" else "cxl"
         side = "buy" if book is self._bids else "sell"  # noqa: SLF001
-        self.flow_log.append((self._rm_kind, side, level, self.n_events))
+        self.flow_log.append((kind, side, level, self.n_events))
         return super()._remove_resting_at(book, level, idx, cause)
 
-    def _consume_best(self, aggressor: Side) -> Any:
-        self._rm_kind = "fill"
-        try:
-            return super()._consume_best(aggressor)
-        finally:
-            self._rm_kind = "?"
 
-    def _cancel_event(self) -> None:
-        self._rm_kind = "cxl"
-        try:
-            super()._cancel_event()
-        finally:
-            self._rm_kind = "?"
+def _flow_window_panes(
+    flow_log: list[tuple[str, str, int, int]],
+    touch_before: list[tuple[int | None, int | None]],
+    horizon: int,
+) -> dict[str, Any]:
+    """Channel×distance panes over a mutation log.
+
+    Anchors are "fill" removals; every mutation logged at a later event
+    inside the anchor's forward window lands in a (hit|unhit)
+    channel×distance bucket. ``touch_before[k]`` must be the touch
+    standing at the START of the (k+1)-th event — events are 1-indexed,
+    so the pre-event touch of event e2 is ``touch_before[e2 - 1]``;
+    indexing it by e2 would consume the post-event state, a look-ahead
+    inside the event. A window start exists iff ``ev + lo <= horizon``
+    — inclusive, or the last event and any anchor whose window starts
+    at the horizon would be dropped.
+    """
+    by_ev: dict[int, list[tuple[str, str, int]]] = {}
+    for kind, side, lvl, ev in flow_log:
+        by_ev.setdefault(ev, []).append((kind, side, lvl))
+
+    cells = {f"{lo}_{hi}": _empty_cell() for lo, hi in _WINDOWS}
+    n_anchor = {f"{lo}_{hi}": 0 for lo, hi in _WINDOWS}
+    horizon_max = _WINDOWS[-1][1]
+    for kind, side, _lvl, ev in flow_log:
+        if kind != "fill":
+            continue
+        # side = maker side consumed; the "hit" side of the anchor fill.
+        hit_is_buy = side == "buy"
+        for lo, _hi in _WINDOWS:
+            if ev + lo <= horizon:
+                n_anchor[f"{lo}_{_hi}"] += 1
+        for e2 in range(ev + 1, min(ev + 1 + horizon_max, horizon + 1)):
+            wname = _window_of(e2 - ev)
+            if wname is None:
+                continue
+            for kind2, side2, lvl in by_ev.get(e2, ()):
+                bb, ba = touch_before[e2 - 1]
+                own_touch = bb if side2 == "buy" else ba
+                if own_touch is None:
+                    continue
+                dist = own_touch - lvl if side2 == "buy" else lvl - own_touch
+                rel = "hit" if (side2 == "buy") == hit_is_buy else "unhit"
+                cells[wname][rel][kind2][_dist_bucket(dist)] += 1
+    return _finish(cells, n_anchor)
 
 
 def sim_aftermath(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
@@ -216,38 +257,14 @@ def sim_aftermath(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
     for _ in range(horizon):
         touch_before.append((sim.best_bid_level, sim.best_ask_level))
         sim.step()
-    # touch_before[e] = the book touch at the START of event e.
-    by_ev: dict[int, list[tuple[str, str, int]]] = {}
-    for kind, side, lvl, ev in sim.flow_log:
-        by_ev.setdefault(ev, []).append((kind, side, lvl))
-
-    cells = {f"{lo}_{hi}": _empty_cell() for lo, hi in _WINDOWS}
-    n_anchor = {f"{lo}_{hi}": 0 for lo, hi in _WINDOWS}
-    horizon_max = _WINDOWS[-1][1]
-    for kind, side, _lvl, ev in sim.flow_log:
-        if kind != "fill":
-            continue
-        # side = maker side consumed; the "hit" side of the anchor fill.
-        hit_is_buy = side == "buy"
-        for lo, _hi in _WINDOWS:
-            if ev + lo < horizon:
-                n_anchor[f"{lo}_{_hi}"] += 1
-        for e2 in range(ev + 1, min(ev + 1 + horizon_max, horizon)):
-            wname = _window_of(e2 - ev)
-            if wname is None:
-                continue
-            for kind2, side2, lvl in by_ev.get(e2, ()):
-                bb, ba = touch_before[e2]
-                own_touch = bb if side2 == "buy" else ba
-                if own_touch is None:
-                    continue
-                dist = own_touch - lvl if side2 == "buy" else lvl - own_touch
-                rel = "hit" if (side2 == "buy") == hit_is_buy else "unhit"
-                cells[wname][rel][kind2][_dist_bucket(dist)] += 1
+    # touch_before[k] = the book touch at the START of the (k+1)-th
+    # event: it is appended before sim.step(), and flow_log event ids
+    # are 1-indexed (n_events), so the pre-event touch of event e lives
+    # at touch_before[e - 1].
     return {
         "ok": True,
         "n_events": sim.n_events,
-        "windows": _finish(cells, n_anchor),
+        "windows": _flow_window_panes(sim.flow_log, touch_before, horizon),
     }
 
 

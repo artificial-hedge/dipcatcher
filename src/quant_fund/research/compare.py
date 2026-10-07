@@ -652,6 +652,48 @@ def receipt_payload(comparison: RunComparison) -> dict[str, Any]:
     }
 
 
+#: A paired comparison reads two already-stored runs; it cannot know whether
+#: either was SYNTHETIC, so the envelope says so rather than guessing.
+COMPARE_DATA_LABEL = "UNKNOWN"
+
+
+def build_compare_receipt(comparison: RunComparison, *, version: int = 1) -> dict[str, Any]:
+    """Receipt document for a comparison, v1 blob or sealed ``receipt.v2``.
+
+    Single implementation shared by ``python -m quant_fund.research.compare``
+    and ``dipcatcher compare`` so the two surfaces cannot drift.
+    """
+    document = receipt_payload(comparison)
+    if version == 1:
+        return document
+    if version != 2:
+        raise ValueError("receipt version must be 1 or 2")
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    return seal_receipt(
+        wrap_receipt_v2(
+            document,
+            code_files=(Path(__file__),),
+            verdict="pass",
+            kind=COMPARE_RECEIPT_SCHEMA,
+            data_label=COMPARE_DATA_LABEL,
+            dataset={
+                "run_a": comparison.label_a,
+                "run_b": comparison.label_b,
+                "schema_a": str(comparison.schema_a),
+                "schema_b": str(comparison.schema_b),
+            },
+            params={
+                "higher_is_better": comparison.higher_is_better,
+                "alpha": comparison.alpha,
+                "min_paired": comparison.min_paired,
+                "n_boot": comparison.n_boot,
+                "seed": comparison.seed,
+            },
+        )
+    )
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("run_a", type=Path, help="receipt JSON or result dir for run A")
@@ -718,32 +760,7 @@ def main(argv: list[str] | None = None) -> None:
     else:
         print(text)
     if args.receipt_out is not None:
-        document = receipt_payload(comparison)
-        if args.receipt_version == 2:
-            from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
-
-            document = seal_receipt(
-                wrap_receipt_v2(
-                    document,
-                    code_files=(Path(__file__),),
-                    verdict="pass",
-                    kind=COMPARE_RECEIPT_SCHEMA,
-                    data_label="UNKNOWN",
-                    dataset={
-                        "run_a": comparison.label_a,
-                        "run_b": comparison.label_b,
-                        "schema_a": str(comparison.schema_a),
-                        "schema_b": str(comparison.schema_b),
-                    },
-                    params={
-                        "higher_is_better": comparison.higher_is_better,
-                        "alpha": comparison.alpha,
-                        "min_paired": comparison.min_paired,
-                        "n_boot": comparison.n_boot,
-                        "seed": comparison.seed,
-                    },
-                )
-            )
+        document = build_compare_receipt(comparison, version=args.receipt_version)
         args.receipt_out.write_text(json.dumps(document, indent=2, allow_nan=False) + "\n")
 
 

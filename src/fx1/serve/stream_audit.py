@@ -157,9 +157,12 @@ _TOOL_SPEC_ANTH = {
 }
 _STUB_USAGE = {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18}
 _CONC_N = 6
+_EV_CREATED = "response.created"
+_EV_INCOMPLETE = "response.incomplete"
+_KEEPALIVE = ": keepalive"
 _TERMINAL_EVENTS = {
     "response.completed",
-    "response.incomplete",
+    _EV_INCOMPLETE,
     "response.failed",
     "response.cancelled",
 }
@@ -362,6 +365,21 @@ class _FailBackend(_StubBackend):
     def complete(self, messages: list[dict[str, Any]], *, sampling: Any = None) -> str:
         del messages, sampling
         raise RuntimeError("backend boom — gate never reached")
+
+
+class _SlowFailBackend(_StubBackend):
+    """Sleeps past the grace window then dies — a mid-window backend
+    fault: the wire is already a keepalived SSE stream, so the failure
+    lands as an in-band error frame, never a JSON 5xx."""
+
+    def __init__(self, delay_s: float = 0.4) -> None:
+        super().__init__()
+        self._delay = delay_s
+
+    def complete(self, messages: list[dict[str, Any]], *, sampling: Any = None) -> str:
+        del messages, sampling
+        time.sleep(self._delay)
+        raise RuntimeError("engine died mid-generation")
 
 
 class _SlowBackend(_StubBackend):
@@ -739,7 +757,7 @@ def _probe_responses(ctx: _Ctx) -> dict[str, bool]:
     )
     out["resp_no_done_sentinel"] = all(f.data != "[DONE]" for f in datas)
     out["resp_seq_head"] = names[:4] == [
-        "response.created",
+        _EV_CREATED,
         "response.in_progress",
         "response.output_item.added",
         "response.content_part.added",
@@ -842,7 +860,7 @@ def _probe_resp_tools(ctx: _Ctx) -> dict[str, bool]:
     events2 = _event_payloads(_sse_frames(r2.text))
     names2 = [e for e, _ in events2]
     term = events2[-1][1]["response"]
-    out["resp_incomplete_terminal"] = names2[-1] == "response.incomplete"
+    out["resp_incomplete_terminal"] = names2[-1] == _EV_INCOMPLETE
     out["resp_incomplete_reason"] = term["status"] == "incomplete" and term[
         "incomplete_details"
     ] == {"reason": "max_tool_calls"}
@@ -1056,7 +1074,7 @@ def _probe_hstream_keepalive(ctx: _Ctx) -> dict[str, bool]:
     first_data_idx = next((i for i, f in enumerate(frames) if not f.comment_only), len(frames))
     out["hstream_keepalive_comments"] = (
         len(comments) >= 1
-        and all(f.raw.startswith(": keepalive") for f in comments)
+        and all(f.raw.startswith(_KEEPALIVE) for f in comments)
         and all(i < first_data_idx for i, f in enumerate(frames) if f.comment_only)
     )
     out["hstream_keepalive_then_stream"] = datas[-1].data == "[DONE]" and [
@@ -1093,6 +1111,134 @@ def _probe_hstream_miderr(ctx: _Ctx) -> dict[str, bool]:
         and bool(payloads2)
         and payloads2[-1].get("type") == "error"
         and _data_frames(frames2)[-1].data == "[DONE]"
+    )
+    return out
+
+
+# ---------------------------------------------------------------------------
+# /v1 create-stream keepalive — the grace-window dialect on every surface:
+# ``: keepalive`` comments on the OpenAI legs, unnumbered ``ping`` events
+# on /v1/messages, an in-band error frame on a mid-window fault, and the
+# ordinary contract (headers included) when work resolves inside the
+# window.
+# ---------------------------------------------------------------------------
+
+
+def _probe_v1_keepalive(wd: Path) -> dict[str, bool]:  # noqa: C901 — probe accumulator
+    out: dict[str, bool] = {}
+    ka = _make_ctx(wd / "slow", _SlowBackend(0.4), sse_keepalive_s=0.05)
+
+    rc = ka.client.post("/v1/chat/completions", json=_chat_body(_ECHO_PROMPT, stream=True))
+    fc = _sse_frames(rc.text)
+    comments = [f for f in fc if f.comment_only]
+    first_chunk = next((i for i, f in enumerate(fc) if f.raw.startswith("id:")), len(fc))
+    out["chat_ka_comments_before_chunks"] = (
+        rc.status_code == 200
+        and bool(comments)
+        and all(f.raw.startswith(_KEEPALIVE) for f in comments)
+        and all(i < first_chunk for i, f in enumerate(fc) if f.comment_only)
+    )
+    # headers committed before the worker resolved — the fingerprint is
+    # in-band only on the keepalived leg
+    out["chat_ka_cid_inband"] = (
+        "x-fx1-completion-id" not in rc.headers and '"id":"chatcmpl-' in rc.text
+    )
+    out["chat_ka_done_terminates"] = _data_frames(fc)[-1].data == "[DONE]"
+    # keepalive comments consume no ``id:`` slot — the numbered sequence
+    # stays contiguous for Last-Event-ID resume arithmetic
+    numbered = [int(f.seq) for f in fc if f.seq is not None]
+    out["chat_ka_ids_contiguous"] = numbered == list(range(len(numbered)))
+
+    rm = ka.client.post("/v1/messages", json=_anth_body(_ECHO_PROMPT, stream=True))
+    fm = _sse_frames(rm.text)
+    names = [f.event for f in fm]
+    ms_idx = names.index("message_start") if "message_start" in names else len(fm)
+    ka_pings = [
+        f for f in fm[:ms_idx] if f.event == "ping" and f.data is not None and '"ping"' in f.data
+    ]
+    out["msg_ka_ping_unnumbered"] = (
+        rm.status_code == 200
+        and bool(ka_pings)
+        and all(f.seq is None for f in ka_pings)
+        and all(n in ("ping",) for n in names[:ms_idx])
+    )
+    numbered_m = [int(f.seq) for f in fm if f.seq is not None]
+    out["msg_ka_ids_contiguous"] = numbered_m == list(range(len(numbered_m)))
+    out["msg_ka_cid_inband"] = "x-fx1-completion-id" not in rm.headers and '"id":"msg_' in rm.text
+
+    rr = ka.client.post(
+        "/v1/responses", json={"model": "fx1", "input": _ECHO_PROMPT, "stream": True}
+    )
+    fr = _sse_frames(rr.text)
+    r_comments = [f for f in fr if f.comment_only]
+    first_event = next((i for i, f in enumerate(fr) if not f.comment_only), len(fr))
+    out["resp_ka_comments_before_events"] = (
+        rr.status_code == 200
+        and bool(r_comments)
+        and all(f.raw.startswith(_KEEPALIVE) for f in r_comments)
+        and all(i < first_event for i, f in enumerate(fr) if f.comment_only)
+    )
+    names_r = [f.event for f in fr]
+    out["resp_ka_then_lifecycle"] = _EV_CREATED in names_r and names_r[-1] in (
+        "response.completed",
+        _EV_INCOMPLETE,
+    )
+
+    rl = ka.client.post(
+        "/v1/completions", json={"model": "fx1", "prompt": _ECHO_PROMPT, "stream": True}
+    )
+    fl = _sse_frames(rl.text)
+    out["legacy_ka_comments_done"] = (
+        rl.status_code == 200
+        and any(f.comment_only and f.raw.startswith(_KEEPALIVE) for f in fl)
+        and _data_frames(fl)[-1].data == "[DONE]"
+    )
+
+    # mid-window fault: headers are already committed, so the failure is
+    # an in-band frame in each leg's grammar — never a JSON 5xx.
+    fk = _make_ctx(wd / "fail", _SlowFailBackend(0.4), sse_keepalive_s=0.05)
+    frc = fk.client.post("/v1/chat/completions", json=_chat_body(_ECHO_PROMPT, stream=True))
+    frc_j = _json_datas(_sse_frames(frc.text))
+    errs = [p for p in frc_j if p.get("error")]
+    out["chat_ka_fault_inband"] = (
+        frc.status_code == 200
+        and bool(errs)
+        and errs[0]["error"].get("type") == "server_error"
+        and _data_frames(_sse_frames(frc.text))[-1].data == "[DONE]"
+    )
+    frm = fk.client.post("/v1/messages", json=_anth_body(_ECHO_PROMPT, stream=True))
+    frm_ev = _event_payloads(_sse_frames(frm.text))
+    m_errs = [p for e, p in frm_ev if e == "error"]
+    out["msg_ka_fault_event_error"] = (
+        frm.status_code == 200
+        and bool(m_errs)
+        and m_errs[0].get("type") == "error"
+        and "message_start" not in [e for e, _ in frm_ev]
+    )
+    frr = fk.client.post(
+        "/v1/responses", json={"model": "fx1", "input": _ECHO_PROMPT, "stream": True}
+    )
+    frr_ev = [e for e, _ in _event_payloads(_sse_frames(frr.text))]
+    out["resp_ka_fault_event_error"] = (
+        frr.status_code == 200 and "error" in frr_ev and "response.completed" not in frr_ev
+    )
+
+    # inside the grace window the ordinary contract is byte-identical —
+    # full headers, no keepalive frames, and a fault stays a JSON 5xx.
+    fast = _make_ctx(wd / "fast", _StubBackend(), sse_keepalive_s=30.0)
+    rf = fast.client.post("/v1/chat/completions", json=_chat_body(_ECHO_PROMPT, stream=True))
+    out["v1grace_fast_unchanged"] = (
+        rf.status_code == 200
+        and "x-fx1-completion-id" in rf.headers
+        and _KEEPALIVE not in rf.text
+        and _data_frames(_sse_frames(rf.text))[-1].data == "[DONE]"
+    )
+    ff = _make_ctx(wd / "ff", _SlowFailBackend(0.4), sse_keepalive_s=30.0)
+    fj = ff.client.post("/v1/chat/completions", json=_chat_body(_ECHO_PROMPT, stream=True))
+    out["v1grace_fault_json"] = (
+        fj.status_code == 502
+        and not fj.headers.get("content-type", "").startswith(_SSE_CT)
+        and fj.json().get("error", {}).get("type") == "server_error"
     )
     return out
 
@@ -1310,13 +1456,13 @@ def _probe_replay_live(workdir: Path) -> dict[str, bool]:
     names = [e for e, _ in events]
     datas = _data_frames(frames)
     out["replay_live_prelude_queued"] = names[:2] == [
-        "response.created",
+        _EV_CREATED,
         "response.queued",
     ]
     out["replay_live_queued_status"] = events[0][1]["response"]["status"] == "queued"
     out["replay_live_in_progress"] = "response.in_progress" in names
     out["replay_live_keepalives"] = len(comments) >= 1 and all(
-        f.raw == ": keepalive" for f in comments
+        f.raw == _KEEPALIVE for f in comments
     )
     out["replay_live_completed_last"] = (
         names[-1] == "response.completed" and events[-1][1]["response"]["status"] == "completed"
@@ -1624,6 +1770,7 @@ def stream_audit() -> dict[str, Any]:
             out.update(_probe_hstream_keepalive(ctx_ka))
             ctx_ka2 = _make_ctx(wd / "g", _FailStreamBackend(), sse_keepalive_s=0.05)
             out.update(_probe_hstream_miderr(ctx_ka2))
+            out.update(_probe_v1_keepalive(wd / "v1ka"))
             ctx_fail = _make_ctx(wd / "h", _FailBackend())
             out.update(_probe_replay_failed(ctx_fail))
             out.update(_probe_prestream(ctx_fail))

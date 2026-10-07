@@ -1,0 +1,22 @@
+{
+  "version": "fx-1.v0.1",
+  "base_model": "moonshotai/Kimi-K3",
+  "base_checkpoint_sha256": null,
+  "corpus_sha256": "b6068e2eddf63663810247ee0edc39ddc04eb92560517f4fa57ef5068b7e5023",
+  "corpus_receipt_range": "fx1_seed_corpus.jsonl",
+  "training_manifest_sha256": "f8edf63a1625ef4177bd1591ac7f5adfb486e815d7dea1bdbecad3cc6d23eeac",
+  "eval_delta": {
+    "domain_pass_rate_base": 0.5,
+    "domain_pass_rate_candidate": 0.51,
+    "general_pass_rate_base": 0.9,
+    "general_pass_rate_candidate": 0.9,
+    "honesty_gate_candidate": true
+  },
+  "license_tier": "internal_research",
+  "known_limits": [
+    "fixture-scale byte-level LM (~31k params) trained for seconds on CPU over fx1_seed_corpus.jsonl — exists so the weights-direct path loads a real artifact; not an fx-1 release candidate",
+    "eval_delta values are synthetic ship-gate placeholders, not measured evals"
+  ],
+  "live_pnl_claim": false,
+  "research_only": true
+}

@@ -25,7 +25,6 @@ import numpy as np
 import numpy.typing as npt
 
 from quant_fund.fusion.quantile_stack import QuantileStackResult, _pinball
-from quant_fund.research.evalues import LossEProcess, promotion_report
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -70,6 +69,8 @@ def stack_watch(
     lam: float = 0.5,
 ) -> dict[str, Any]:
     """Stream the OOF rows through per-member + oracle e-processes."""
+    from quant_fund.research.evalues import LossEProcess, promotion_report
+
     y = np.asarray(target, dtype=float).reshape(-1)
     q = np.asarray(member_quantiles, dtype=float)
     elig = result.fold_ids >= 0

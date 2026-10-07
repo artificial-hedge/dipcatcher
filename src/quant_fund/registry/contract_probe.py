@@ -32,7 +32,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from quant_fund.research.receipt_v2 import seal_receipt, verify_receipt_payload
+from quant_fund.schemas.receipt import seal_receipt, verify_receipt_payload
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 

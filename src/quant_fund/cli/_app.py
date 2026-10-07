@@ -11,6 +11,11 @@ from typing import TYPE_CHECKING
 
 import typer
 
+from quant_fund.cli.benchmark_cmds import (
+    net_tournament_app,
+    ranker_probability_app,
+    real_benchmark_app,
+)
 from quant_fund.hmm.cli import hmm_app as hmm_app
 from quant_fund.leakage.cli import leakage_app
 from quant_fund.lightspeed.cli import ls_app as ls_app
@@ -19,6 +24,8 @@ from quant_fund.proof.cli import proof_app
 from quant_fund.proofcore.cli import proofcore_app
 from quant_fund.quant_models.cli import qm_app as qm_app
 from quant_fund.reality.cli import reality_app
+from quant_fund.research.allocation_cli import allocation_app
+from quant_fund.research.explainability_cli import explainability_app
 from quant_fund.research.research100_cli import research100_app
 from quant_fund.stress.cli import stress_app
 
@@ -71,6 +78,11 @@ app.add_typer(leakage_app, name="leakage")
 app.add_typer(reality_app, name="reality")
 app.add_typer(proofcore_app, name="proofcore")
 app.add_typer(stress_app, name="stress")
+app.add_typer(allocation_app, name="allocation")
+app.add_typer(explainability_app, name="explain")
+app.add_typer(real_benchmark_app, name="real-benchmark")
+app.add_typer(net_tournament_app, name="net-tournament")
+app.add_typer(ranker_probability_app, name="ranker-probability")
 
 
 def _cfg(config: Path) -> AppConfig:

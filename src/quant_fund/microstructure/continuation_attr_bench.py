@@ -26,6 +26,7 @@ tape's continuation and whether the sim's gap sits in that channel.
 from __future__ import annotations
 
 import csv
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -54,12 +55,27 @@ def _zero_attr() -> dict[str, dict[str, float]]:
 
 def _attr_totals(
     records: list[tuple[int, float, int, str, str, float]],
+    anchor_mult: dict[int, int] | None = None,
 ) -> dict[str, Any]:
     """Aggregate (anchor_ev, sign, ev, channel, rel, unsigned_Δmid) records.
 
     Each record is already attributed to one anchor, so overlapping
-    windows are handled exactly once per (anchor, event) pair.
+    windows are handled exactly once per (anchor fill, event) pair.
+
+    ``anchor_mult`` maps an anchor event index to the number of fills it
+    carried. On the tape every execution is its own message — a k-unit
+    sweep prints k executions at adjacent rows, i.e. k anchors with
+    (staggered) forward windows each. In the sim one market event can
+    consume several levels, so k anchor fills share one event index and
+    their forward windows are identical records. Anchors must be
+    counted per fill — counting them per distinct event deflates the
+    denominator and inflates the per-fill drift by the burst
+    multiplicity.
     """
+
+    def _n(j: int) -> int:
+        return anchor_mult.get(j, 1) if anchor_mult else 1
+
     acc = {f"{lo}_{hi}": _zero_attr() for lo, hi in _WINDOWS}
     anchor_seen: dict[str, set[int]] = {f"{lo}_{hi}": set() for lo, hi in _WINDOWS}
     tot = _zero_attr()
@@ -77,7 +93,7 @@ def _attr_totals(
     windows: dict[str, dict[str, Any]] = {}
     for lo, hi in _WINDOWS:
         wname = f"{lo}_{hi}"
-        n_anchor = len(anchor_seen[wname])
+        n_anchor = sum(_n(j) for j in anchor_seen[wname])
         windows[wname] = {
             "n_anchor_fills": n_anchor,
             "per_channel_ticks": {
@@ -89,7 +105,7 @@ def _attr_totals(
                 for ch in _CHANNELS
             },
         }
-    n_k = len(k_anchor)
+    n_k = sum(_n(j) for j in k_anchor)
     per_fill = {ch: (tot[ch]["hit"] + tot[ch]["unhit"]) / max(1, n_k) for ch in _CHANNELS}
     drift = sum(v for v in per_fill.values() if v > 0)
     shares = {ch: (per_fill[ch] / drift if drift > 1e-12 else 0.0) for ch in _CHANNELS}
@@ -147,7 +163,6 @@ class _AttrSim(ZILobSimulator):
 
     def __init__(self, cfg: Any, flow: Any) -> None:
         self.mut_log: list[tuple[int, str, str]] = []
-        self._rm_kind = "cxl"
         super().__init__(cfg, flow)
 
     def _rest(self, side: Side, level: int, tag: str) -> int:
@@ -157,16 +172,15 @@ class _AttrSim(ZILobSimulator):
     def _remove_resting_at(
         self, book: dict[int, Any], level: int, idx: int, cause: str = "cancel"
     ) -> Any:
+        # The call's own ``cause`` is the channel: "fill" for the order
+        # consumed inside ``_consume_best``, "cancel" for everything
+        # else — touch pulls, hit_flee, maker expiry and the
+        # relief/requote routes all run outside the event wrappers, so
+        # a wrapper-flag default silently relabels them.
+        ch = "fill" if cause == "fill" else "cxl"
         side = "buy" if book is self._bids else "sell"
-        self.mut_log.append((self.n_events, self._rm_kind, side))
+        self.mut_log.append((self.n_events, ch, side))
         return super()._remove_resting_at(book, level, idx, cause)
-
-    def _consume_best(self, aggressor: Side) -> Any:
-        self._rm_kind = "fill"
-        try:
-            return super()._consume_best(aggressor)
-        finally:
-            self._rm_kind = "cxl"
 
 
 def sim_attr(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
@@ -204,7 +218,7 @@ def sim_attr(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
             ch, side = mut
             rel = "hit" if side == hit_side else "unhit"
             per_event.append((j, sign, m_ev, ch, rel, m1 - m0))
-    res = _attr_totals(per_event)
+    res = _attr_totals(per_event, Counter(j for j, _ in anchors))
     res["n_events"] = n_ev
     res["ok"] = True
     return res

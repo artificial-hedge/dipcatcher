@@ -31,6 +31,51 @@ packages, point-in-time status, and the versioned 23-family benchmark catalog.
 Synthetic output is diagnostic evidence only; it is not a live-performance
 claim.
 
+### Research lanes with their own command
+
+Every research lane is reachable from `dipcatcher` — two gates enforce it
+(`tests/unit/research/test_research_cli_reachability.py`): an import-closure
+ratchet over all of `research/`, and an `OPERATOR_SURFACE` registry asserting
+that every module defining `main()`/argparse/a Typer app resolves to a live
+command path. New lanes must be registered or exempted with a reason.
+
+SYNTHETIC evidence lanes, each sealing a receipt under `--out-dir`:
+
+```bash
+uv run dipcatcher coherence        # quantile-reconciliation methods (CRPS/PIT-KS/coverage)
+uv run dipcatcher concordance      # selection concordance vs DM elimination
+uv run dipcatcher multih-fleet     # h-step constructions across the fleet
+uv run dipcatcher expert-mixture --dev   # prediction with expert advice (regret)
+uv run dipcatcher compare A.json B.json  # paired comparison of two stored runs
+```
+
+Construction and explainability packs:
+
+```bash
+uv run dipcatcher allocation compare        # causal weight engines, tracking error/turnover/ERC
+uv run dipcatcher explain demo              # proper-score attribution on a seeded panel
+uv run dipcatcher explain attach-sidecar RECEIPT.json REPORT_DIR/
+```
+
+Forward-evidence and real-data lanes — these freeze before they score, and
+`score`/`run` refuse to proceed if the frozen digests no longer match:
+
+```bash
+uv run dipcatcher real-benchmark prepare --protocol p.json --output run/
+uv run dipcatcher real-benchmark score --run run/ --phase validation
+uv run dipcatcher net-tournament prepare --benchmark-run run/ --spec slate.json --output t/
+uv run dipcatcher prospective-sota commitment protocol.json
+uv run dipcatcher forward-shadow freeze --spec s.json --bootstrap b.json --run f.sqlite
+uv run dipcatcher sota effects --losses panel.parquet --targets cand
+```
+
+`dipcatcher reality sweep` and `reality survivorship` fetch from Yahoo and fail
+closed rather than substituting synthetic data (exit 4). `dipcatcher
+total-return` reinvests cash dividends onto a total-return basis and preserves
+the original quote columns alongside. The `python -m quant_fund.research.*`
+entry points still work and call the same functions, so the two surfaces cannot
+drift.
+
 ## Paper and shadow operation
 
 Run the simulated broker with the paper profile:

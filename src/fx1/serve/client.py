@@ -783,13 +783,22 @@ class HarnessClient:
         *,
         name: str | None = None,
         metadata: dict[str, str] | None = None,
+        data_source_config: dict[str, Any] | None = None,
+        testing_criteria: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        """POST /v1/evals/{eval_id} — name/metadata edits."""
+        """POST /v1/evals/{eval_id} — name/metadata edits plus the
+        hot-reload fields: ``data_source_config``/``testing_criteria``
+        replace the spec's declared shape only while no run binds it
+        (the server answers 409 ``eval_spec_frozen`` afterwards)."""
         body: dict[str, Any] = {}
         if name is not None:
             body["name"] = name
         if metadata is not None:
             body["metadata"] = metadata
+        if data_source_config is not None:
+            body["data_source_config"] = data_source_config
+        if testing_criteria is not None:
+            body["testing_criteria"] = testing_criteria
         return dict(self._json("POST", f"/v1/evals/{urllib.parse.quote(eval_id)}", body))
 
     def eval_spec_delete(self, eval_id: str) -> dict[str, Any]:

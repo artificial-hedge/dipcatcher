@@ -247,7 +247,7 @@ from fx1.serve.vectorstores import (
     VectorStoreStore,
 )
 from fx1.serve.webhooks import check_callback_url, deliver_signed
-from quant_fund.research.receipt_v2 import verify_receipt_bytes, verify_receipt_payload
+from quant_fund.schemas.receipt import verify_receipt_bytes, verify_receipt_payload
 
 _OBJ_CHAT_COMPLETION = "chat.completion"
 _EV_JOB_CANCELLED = "job cancelled"
@@ -1238,18 +1238,27 @@ class EvalSpecCreate(_Model):
 
 
 class EvalSpecUpdate(_Model):
-    """``POST /v1/evals/{id}`` — metadata/name edits; the datasource is
-    frozen (a spec's declared shape is evidence once runs bind to it)."""
+    """``POST /v1/evals/{id}`` — metadata/name edits plus the hot-reload
+    fields: ``data_source_config``/``testing_criteria`` replace the spec's
+    declared shape ONLY while no run binds it — once a run exists the
+    shape is evidence and the update answers 409 ``eval_spec_frozen``."""
 
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(default=None, min_length=1, max_length=255)
     metadata: dict[str, str] | None = None
+    data_source_config: EvalSpecDataSource | None = None
+    testing_criteria: list[EvalSpecCriterion] | None = Field(default=None, max_length=64)
 
     @model_validator(mode="after")
     def _some_field(self) -> EvalSpecUpdate:
-        if self.name is None and self.metadata is None:
-            raise ValueError("update must carry name or metadata")
+        if (
+            self.name is None
+            and self.metadata is None
+            and self.data_source_config is None
+            and self.testing_criteria is None
+        ):
+            raise ValueError("update must carry a field")
         return self
 
 
@@ -2339,6 +2348,72 @@ def _resume_skip(last_event_id: str | None, *, stream: bool, idempotency_key: st
             code="resume_needs_key",
         )
     return seen + 1
+
+
+# Headers every SSE leg on the create surfaces sends — the jobs-status
+# stream set the precedent: proxies must not buffer event frames.
+_SSE_STREAM_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+# OpenAI-dialect SSE wire literals shared by every create-stream leg.
+_SSE_DATA_PREFIX = "data: "
+_SSE_DONE = "data: [DONE]\n\n"
+# The chat-surface gated call's resolved payload: response envelope plus
+# the completion fingerprint that rides headers or in-band ids.
+_ChatEnv = tuple[dict[str, Any], str]
+
+
+def _grace_pipe(work: Callable[[], Any]) -> queue.Queue[tuple[str, Any]]:
+    """Run ``work`` on a daemon thread, publishing ``("ok", result)`` or
+    ``("error", HTTPException)`` — the transport for the grace-window
+    streams on the ``/v1`` create surfaces (the same pattern
+    ``/harness/complete/stream`` uses).
+
+    ``contextvars.copy_context`` carries request-scoped attribution into
+    the worker — auth key id and request logging live on contextvars
+    that a fresh thread does not inherit, so without this a keepalived
+    call would record completions unattributed and skip credential
+    metering. A generic failure wraps to a 502 HTTPException so a
+    backend fault lands as an honest in-band frame, never a hang."""
+    pipe: queue.Queue[tuple[str, Any]] = queue.Queue()
+    ctx = contextvars.copy_context()
+
+    def _produce() -> None:
+        try:
+            pipe.put(("ok", ctx.run(work)))
+        except HTTPException as exc:
+            pipe.put(("error", exc))
+        except Exception as exc:  # noqa: BLE001
+            # a dead pipe is an honest in-band frame, never a hang
+            pipe.put(("error", HTTPException(502, f"backend failed: {exc}")))
+
+    threading.Thread(target=_produce, daemon=True).start()
+    return pipe
+
+
+def _grace_await(pipe: queue.Queue[tuple[str, Any]], keepalive_s: float) -> tuple[str, Any] | None:
+    """First published outcome inside the grace window, or ``None`` when
+    the window lapses — the caller then commits to the keepalived
+    stream."""
+    try:
+        return pipe.get(timeout=keepalive_s)
+    except queue.Empty:
+        return None
+
+
+def _grace_stage(
+    generate: Callable[[], Any], *, stream: bool, keepalive_s: float
+) -> tuple[tuple[str, Any] | None, queue.Queue[tuple[str, Any]] | None]:
+    """Run ``generate`` through the grace-window pipe when ``stream`` and
+    ``keepalive_s`` are on; resolve inline otherwise. Returns the outcome
+    (``None`` once the window lapsed — the caller then commits to the
+    keepalived stream) and the pipe for that leg to drain."""
+    pipe: queue.Queue[tuple[str, Any]] | None = None
+    outcome: tuple[str, Any] | None = None
+    if stream and keepalive_s > 0:
+        pipe = _grace_pipe(generate)
+        outcome = _grace_await(pipe, keepalive_s)
+    if outcome is None and (not stream or keepalive_s <= 0):
+        outcome = ("ok", generate())
+    return outcome, pipe
 
 
 def _deliver_callback(
@@ -4011,8 +4086,13 @@ def _is_anthropic_path(path: str) -> bool:
 def _is_anthropic_surface(request: Request) -> bool:
     """Requests answered in Anthropic's dialect — the /v1/messages tree,
     plus any /v1/* path addressed with an ``anthropic-version`` header
-    (the dual-grammar routes, e.g. model listing)."""
-    return _is_anthropic_path(request.url.path) or "anthropic-version" in request.headers
+    (the dual-grammar routes, e.g. model listing). The header is only
+    meaningful on the OpenAI surface: an ``anthropic-version`` header on a
+    non-/v1 path (ops endpoints, harness control) must not upgrade the
+    answer to Anthropic's dialect."""
+    return _is_anthropic_path(request.url.path) or (
+        is_openai_path(request.url.path) and "anthropic-version" in request.headers
+    )
 
 
 # Statuses the stock anthropic SDK retries by default — x-should-retry
@@ -4843,6 +4923,25 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def eval_spec_update(eval_id: str, body: EvalSpecUpdate) -> EvalSpecWire:
         _drain_refusal(metrics)
         spec = _spec_or_404(eval_id)
+        if body.data_source_config is not None or body.testing_criteria is not None:
+            # Hot-reload window: the declared shape may only change while
+            # no run binds the spec — a bound run's evidence must not have
+            # its criteria shifted under it. Total counts every record
+            # bound to the spec (queued/running/terminal all freeze it).
+            _page, bound = eval_store.list_records(spec=eval_id, limit=1)
+            if bound:
+                raise ApiError(
+                    409,
+                    f"eval '{eval_id}' is bound to {bound} run(s) — "
+                    "datasource/criteria are frozen evidence",
+                    code="eval_spec_frozen",
+                )
+            if body.data_source_config is not None:
+                spec.data_source_config = body.data_source_config.model_dump(exclude_none=True)
+            if body.testing_criteria is not None:
+                spec.testing_criteria = [
+                    c.model_dump(exclude_none=True) for c in body.testing_criteria
+                ]
         if body.name is not None:
             spec.name = body.name
         if body.metadata is not None:
@@ -5453,7 +5552,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             for chunk in chunks:
                 yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
             yield (
-                "data: "
+                _SSE_DATA_PREFIX
                 + json.dumps(
                     {
                         "type": "final",
@@ -5468,7 +5567,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
                 + "\n\n"
             )
-            yield "data: [DONE]\n\n"
+            yield _SSE_DONE
 
         if sse_keepalive_s <= 0:
             chunks, model_name, latency_ms, usage, cid = _gather()
@@ -5484,7 +5583,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 pipe.put(("ok", _gather()))
             except HTTPException as exc:
                 pipe.put(("error", exc))
-            except Exception as exc:  # noqa: BLE001 — dead pipe, honest frame
+            except Exception as exc:  # noqa: BLE001
+                # a dead pipe is an honest in-band frame, never a hang
                 pipe.put(("error", HTTPException(502, f"backend failed: {exc}")))
 
         threading.Thread(target=_produce, daemon=True).start()
@@ -5516,7 +5616,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     continue
                 if tag == "error":
                     yield (
-                        "data: "
+                        _SSE_DATA_PREFIX
                         + json.dumps(
                             {
                                 "type": "error",
@@ -5527,7 +5627,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         )
                         + "\n\n"
                     )
-                    yield "data: [DONE]\n\n"
+                    yield _SSE_DONE
                     return
                 chunks, model_name, latency_ms, usage, cid = payload
                 yield from _events(chunks, model_name, latency_ms, usage, cid)
@@ -5562,7 +5662,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _openai_chat_core(
         body: OpenAIChatRequest,
         headers: Mapping[str, str],
-    ) -> tuple[dict[str, Any], str]:
+    ) -> _ChatEnv:
         """The non-streaming chat-completions completion core, shared by
         the ``/v1/chat/completions`` route and the ``/v1/batches`` worker —
         one gated path, one envelope. Raises ``OpenAICompatError`` on
@@ -5848,7 +5948,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _openai_embeddings_core(
         body: OpenAIEmbeddingRequest,
         headers: Mapping[str, str],
-    ) -> tuple[dict[str, Any], str]:
+    ) -> _ChatEnv:
         """The embeddings core, shared by the ``/v1/embeddings`` route and
         the ``/v1/batches`` worker — same chain contract as chat:
         availability faults advance the fallback chain, capability gaps
@@ -6153,6 +6253,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         and a stored record for that key (otherwise 409 — executing
         fresh and skipping would graft a different completion onto the
         client's earlier frames).
+
+        Slow generations keepalived under `sse_keepalive_s` emit
+        `: keepalive` comment frames — spec-valid and invisible to both
+        SSE parsers and the `id:` sequence resume counts — until the
+        gated call lands, then the normal chunk sequence; a backend
+        fault mid-window answers an in-band `{error}` + `[DONE]` instead
+        of a hang. The `X-Fx1-Completion-Id` header only exists once the
+        completion lands, so keepalived legs carry the fingerprint
+        in-band as `chatcmpl-<cid>` on every chunk.
         """
         # resume parsing first — a malformed Last-Event-ID fails before
         # any idempotency store work or model spend
@@ -6187,30 +6296,86 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     headers=headers,
                 )
             return JSONResponse(env, headers=headers)
-        try:
-            env_chat, cid = _openai_chat_core(body, request.headers)
-        except OpenAICompatError as exc:
-            raise ApiError(exc.status, str(exc), code=exc.code) from exc
-        if key is not None:
-            openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_chat))
-        headers = _completion_headers(cid)
-        if body.stream:
-            return StreamingResponse(
-                _openai_sse(
-                    body,
-                    content=[c["message"]["content"] or "" for c in env_chat["choices"]],
-                    tool_calls=[c["message"].get("tool_calls") for c in env_chat["choices"]],
-                    finish_reasons=[c["finish_reason"] for c in env_chat["choices"]],
-                    logprobs=[c.get("logprobs") for c in env_chat["choices"]],
-                    backend=env_chat["system_fingerprint"],
-                    model=env_chat["model"],
-                    usage=env_chat["usage"],
-                    cid=cid,
-                ),
-                media_type="text/event-stream",
-                headers=headers,
+
+        def _generate() -> _ChatEnv:
+            """The gated call packaged for the grace pipe — translation
+            faults surface as ApiError so the keepalived leg answers them
+            in grammar, and the keyed replay pins only on a real
+            completion."""
+            try:
+                env, cid = _openai_chat_core(body, request.headers)
+            except OpenAICompatError as exc:
+                raise ApiError(exc.status, str(exc), code=exc.code) from exc
+            if key is not None:
+                openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env))
+            return env, cid
+
+        def _sse_frames(env_chat: dict[str, Any], cid: str) -> Iterator[str]:
+            return _openai_sse(
+                body,
+                content=[c["message"]["content"] or "" for c in env_chat["choices"]],
+                tool_calls=[c["message"].get("tool_calls") for c in env_chat["choices"]],
+                finish_reasons=[c["finish_reason"] for c in env_chat["choices"]],
+                logprobs=[c.get("logprobs") for c in env_chat["choices"]],
+                backend=env_chat["system_fingerprint"],
+                model=env_chat["model"],
+                usage=env_chat["usage"],
+                cid=cid,
             )
-        return JSONResponse(env_chat, headers=headers)
+
+        keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
+        outcome, pipe = _grace_stage(_generate, stream=body.stream, keepalive_s=keepalive_s)
+        if outcome is not None:
+            tag, payload = outcome
+            if tag == "error":
+                raise cast("HTTPException", payload)
+            env_chat, cid = cast("_ChatEnv", payload)
+            headers = _completion_headers(cid)
+            if body.stream:
+                return StreamingResponse(
+                    _sse_frames(env_chat, cid),
+                    media_type="text/event-stream",
+                    headers={**headers, **_SSE_STREAM_HEADERS},
+                )
+            return JSONResponse(env_chat, headers=headers)
+
+        def _keepalived() -> Iterator[str]:
+            """Past the grace window: ``: keepalive`` comment frames hold
+            the connection (spec-valid, invisible to SSE parsers and to
+            the ``id:`` sequence ``Last-Event-ID`` counts), the
+            ``chatcmpl-<cid>`` id rides in-band on every chunk, and a
+            backend fault lands as an in-band ``{error}`` + ``[DONE]``
+            rather than a hung stream."""
+            assert pipe is not None
+            while True:
+                outcome = _grace_await(pipe, keepalive_s)
+                if outcome is None:
+                    yield ": keepalive\n\n"
+                    continue
+                tag, payload = outcome
+                if tag == "error":
+                    fault = cast("HTTPException", payload)
+                    yield (
+                        _SSE_DATA_PREFIX
+                        + json.dumps(
+                            openai_error_body(
+                                str(fault.detail), fault.status_code, _err_code(fault)
+                            ),
+                            separators=(",", ":"),
+                        )
+                        + "\n\n"
+                    )
+                    yield _SSE_DONE
+                    return
+                env_chat, cid = cast("_ChatEnv", payload)
+                yield from _sse_frames(env_chat, cid)
+                return
+
+        return StreamingResponse(
+            _keepalived(),
+            media_type="text/event-stream",
+            headers=_SSE_STREAM_HEADERS,
+        )
 
     @app.post(
         "/v1/messages",
@@ -6252,6 +6417,14 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         record (`GET /harness/completions/{id}`) and its sealed receipt.
         `X-Fx1-*` backend headers and the `fx1` extension object carry
         over from the OpenAI surface (backend selection, BYOK, deadline).
+
+        Slow generations keepalived under `sse_keepalive_s` emit
+        unnumbered `ping` frames until the gated call lands — Anthropic's
+        own keepalive grammar — then the normal event sequence; a backend
+        fault mid-window answers `event: error` in grammar instead of a
+        hang. The `X-Fx1-Completion-Id` header only exists once the
+        completion lands, so keepalived legs carry the same fingerprint
+        in-band as `msg_<cid>` on `message_start`.
         """
 
         def _refusal(status: int, message: str) -> JSONResponse:
@@ -6284,22 +6457,74 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return _refusal(exc.status, str(exc))
         except ValidationError as exc:
             return _refusal(400, str(exc))
+
+        def _generate() -> _ChatEnv:
+            """The gated call packaged for the grace pipe — translation
+            faults surface as HTTPException so the keepalived leg answers
+            them in grammar, and the keyed replay pins only on a real
+            completion."""
+            try:
+                env, cid = _openai_chat_core(oai_body, request.headers)
+            except OpenAICompatError as exc:
+                raise ApiError(exc.status, str(exc), code=exc.code) from exc
+            if key is not None:
+                anthropic_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env))
+            return env, cid
+
+        keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
         try:
-            env_chat, cid = _openai_chat_core(oai_body, request.headers)
-        except OpenAICompatError as exc:
-            return _refusal(exc.status, str(exc))
+            outcome, pipe = _grace_stage(_generate, stream=body.stream, keepalive_s=keepalive_s)
         except ApiError as exc:
             return _refusal(exc.status_code, str(exc.detail))
-        if key is not None:
-            anthropic_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_chat))
-        headers = _completion_headers(cid)
-        if body.stream:
-            return StreamingResponse(
-                anthropic_sse(env_chat, model=body.model),
-                media_type="text/event-stream",
-                headers=headers,
-            )
-        return JSONResponse(anthropic_envelope(env_chat, model=body.model), headers=headers)
+        if outcome is not None:
+            tag, payload = outcome
+            if tag == "error":
+                fault = cast("HTTPException", payload)
+                return _refusal(fault.status_code, str(fault.detail))
+            env_chat, cid = cast("_ChatEnv", payload)
+            headers = _completion_headers(cid)
+            if body.stream:
+                return StreamingResponse(
+                    anthropic_sse(env_chat, model=body.model),
+                    media_type="text/event-stream",
+                    headers={**headers, **_SSE_STREAM_HEADERS},
+                )
+            return JSONResponse(anthropic_envelope(env_chat, model=body.model), headers=headers)
+
+        def _keepalived() -> Iterator[str]:
+            """Past the grace window: unnumbered ``ping`` frames keep the
+            connection live (they consume no ``id:`` slot, so a
+            ``Last-Event-ID`` resume still counts only real events), the
+            completion id rides in-band as ``msg_<cid>`` on
+            ``message_start``, and a backend fault lands as an honest
+            ``event: error`` in Anthropic grammar — never a hung stream."""
+            assert pipe is not None
+            while True:
+                outcome = _grace_await(pipe, keepalive_s)
+                if outcome is None:
+                    yield 'event: ping\ndata: {"type":"ping"}\n\n'
+                    continue
+                tag, payload = outcome
+                if tag == "error":
+                    fault = cast("HTTPException", payload)
+                    yield (
+                        "event: error\ndata: "
+                        + json.dumps(
+                            anthropic_error_body(str(fault.detail), fault.status_code),
+                            separators=(",", ":"),
+                        )
+                        + "\n\n"
+                    )
+                    return
+                env_chat, _cid = cast("_ChatEnv", payload)
+                yield from anthropic_sse(env_chat, model=body.model)
+                return
+
+        return StreamingResponse(
+            _keepalived(),
+            media_type="text/event-stream",
+            headers=_SSE_STREAM_HEADERS,
+        )
 
     # ------------------------------------------------------------------
     # Anthropic Message Batches — POST /v1/messages/batches
@@ -6825,7 +7050,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         retrieval twin); ``Idempotency-Key`` replay and ``Last-Event-ID``
         stream resume work exactly like the chat surface — a pinned call
         replays byte-identically (JSON or SSE) and a resumed keyed stream
-        drops frames at or below the delivered index.
+        drops frames at or below the delivered index. Slow generations
+        keepalived under ``sse_keepalive_s`` emit ``: keepalive`` comment
+        frames, and a mid-window backend fault answers an in-band
+        ``{error}`` + ``[DONE]`` — same contract as the chat surface.
         """
         # resume parsing first — a malformed Last-Event-ID fails before
         # any idempotency store work or model spend
@@ -6846,31 +7074,81 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
             return JSONResponse(env_legacy, headers=headers)
         prompts = [body.prompt] if isinstance(body.prompt, str) else list(body.prompt)
-        try:
-            envs: list[dict[str, Any]] = []
-            cid = ""
-            for prompt_text in prompts:
-                env_chat, cid = _openai_chat_core(
-                    legacy_to_chat(body, prompt_text), request.headers
+
+        def _generate() -> _ChatEnv:
+            """The gated call packaged for the grace pipe — one chat call
+            per prompt element, translation faults surfacing as ApiError,
+            the keyed replay pinning only on a real completion."""
+            try:
+                envs: list[dict[str, Any]] = []
+                cid = ""
+                for prompt_text in prompts:
+                    env_chat, cid = _openai_chat_core(
+                        legacy_to_chat(body, prompt_text), request.headers
+                    )
+                    envs.append(env_chat)
+                env_legacy = openai_completion_envelope(
+                    cid=cid, envs=envs, prompts=prompts, echo=body.echo
                 )
-                envs.append(env_chat)
-            env_legacy = openai_completion_envelope(
-                cid=cid, envs=envs, prompts=prompts, echo=body.echo
-            )
-        except OpenAICompatError as exc:
-            raise ApiError(exc.status, str(exc), code=exc.code) from exc
-        except ValidationError as exc:
-            raise ApiError(400, str(exc)) from exc
-        if key is not None:
-            legacy_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_legacy))
-        headers = _completion_headers(cid)
-        if body.stream:
-            return StreamingResponse(
-                _legacy_sse(env_legacy, body=body),
-                media_type="text/event-stream",
-                headers=headers,
-            )
-        return JSONResponse(env_legacy, headers=headers)
+            except OpenAICompatError as exc:
+                raise ApiError(exc.status, str(exc), code=exc.code) from exc
+            except ValidationError as exc:
+                raise ApiError(400, str(exc)) from exc
+            if key is not None:
+                legacy_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_legacy))
+            return env_legacy, cid
+
+        keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
+        outcome, pipe = _grace_stage(_generate, stream=body.stream, keepalive_s=keepalive_s)
+        if outcome is not None:
+            tag, payload = outcome
+            if tag == "error":
+                raise cast("HTTPException", payload)
+            env_legacy, cid = cast("_ChatEnv", payload)
+            headers = _completion_headers(cid)
+            if body.stream:
+                return StreamingResponse(
+                    _legacy_sse(env_legacy, body=body),
+                    media_type="text/event-stream",
+                    headers={**headers, **_SSE_STREAM_HEADERS},
+                )
+            return JSONResponse(env_legacy, headers=headers)
+
+        def _keepalived() -> Iterator[str]:
+            """Past the grace window: ``: keepalive`` comment frames hold
+            the connection without consuming ``id:`` slots, and a backend
+            fault lands as an in-band ``{error}`` + ``[DONE]`` — never a
+            hang."""
+            assert pipe is not None
+            while True:
+                outcome = _grace_await(pipe, keepalive_s)
+                if outcome is None:
+                    yield ": keepalive\n\n"
+                    continue
+                tag, payload = outcome
+                if tag == "error":
+                    fault = cast("HTTPException", payload)
+                    yield (
+                        _SSE_DATA_PREFIX
+                        + json.dumps(
+                            openai_error_body(
+                                str(fault.detail), fault.status_code, _err_code(fault)
+                            ),
+                            separators=(",", ":"),
+                        )
+                        + "\n\n"
+                    )
+                    yield _SSE_DONE
+                    return
+                env_legacy, _cid = cast("_ChatEnv", payload)
+                yield from _legacy_sse(env_legacy, body=body)
+                return
+
+        return StreamingResponse(
+            _keepalived(),
+            media_type="text/event-stream",
+            headers=_SSE_STREAM_HEADERS,
+        )
 
     @app.post(
         "/v1/responses",
@@ -6894,6 +7172,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         (``{type: "message", role, content: [{type: "input_text", text}]}``
         or the shorthand ``{role, content: "..."}``); ``instructions``
         prepends a system turn; ``developer`` roles map to ``system``.
+        Slow generations keepalived under ``sse_keepalive_s`` emit
+        ``: keepalive`` comment frames (no ``id:`` slot consumed — resume
+        still counts only real events), then the normal event sequence;
+        a mid-window backend fault answers ``event: error`` in grammar.
         ``max_output_tokens`` lands on the decode cap, ``reasoning.effort``
         on the reasoning hint, ``text.format`` on the post-validated
         ``response_format`` channel (a violation is a provider-side 502),
@@ -7136,53 +7418,111 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 bg_cancel.pop(rid, None)
                 raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
             return JSONResponse(queued, status_code=200)
-        try:
-            envelope, cid, usage = _openai_response_core(body, request.headers)
-        except OpenAICompatError as exc:
-            raise ApiError(exc.status, str(exc), code=exc.code) from exc
-        rid = str(envelope["id"])
-        msg_text, msg_item_id, call_list, env_search_items, env_logprobs = response_output_pieces(
-            envelope
+
+        def _generate() -> tuple[dict[str, Any], str, dict[str, int] | None]:
+            """The gated call packaged for the grace pipe — translation
+            faults surface as ApiError, and the keyed replay pins the
+            completion id + raw usage into the stored envelope (both
+            stripped before the JSON leaves)."""
+            try:
+                env, cid, usage = _openai_response_core(body, request.headers)
+            except OpenAICompatError as exc:
+                raise ApiError(exc.status, str(exc), code=exc.code) from exc
+            if key is not None:
+                openai_idem_store.put(
+                    key,
+                    body_fp,
+                    _OpenAIIdemRecord(
+                        envelope={
+                            **env,
+                            "_fx1_completion_id": cid,
+                            "_fx1_usage": usage,
+                        }
+                    ),
+                )
+            return env, cid, usage
+
+        def _sse_frames(env: dict[str, Any], usage: dict[str, int] | None) -> Iterator[str]:
+            (
+                msg_text,
+                msg_item_id,
+                call_list,
+                env_search_items,
+                env_logprobs,
+            ) = response_output_pieces(env)
+            return _responses_sse(
+                body,
+                content=msg_text,
+                rid=str(env["id"]),
+                item_id=msg_item_id,
+                model=env.get("model"),
+                usage=usage,
+                created=int(env["created_at"]),
+                call_items=call_list,
+                search_items=env_search_items,
+                logprobs=env_logprobs,
+                final_status=str(env.get("status") or "completed"),
+                incomplete_details=env.get("incomplete_details"),
+            )
+
+        keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
+        outcome, pipe = _grace_stage(_generate, stream=body.stream, keepalive_s=keepalive_s)
+        if outcome is not None:
+            tag, payload = outcome
+            if tag == "error":
+                raise cast("HTTPException", payload)
+            envelope, cid, usage = cast(
+                "tuple[dict[str, Any], str, dict[str, int] | None]", payload
+            )
+            headers = {"X-Fx1-Completion-Id": cid}
+            _rsha = _completion_receipt_sha(cid)
+            if _rsha is not None:
+                headers["X-Fx1-Receipt-Sha256"] = _rsha
+            if body.stream:
+                return StreamingResponse(
+                    _sse_frames(envelope, usage),
+                    media_type="text/event-stream",
+                    headers={**headers, **_SSE_STREAM_HEADERS},
+                )
+            return JSONResponse(envelope, headers=headers)
+
+        def _keepalived() -> Iterator[str]:
+            """Past the grace window: ``: keepalive`` comment frames hold
+            the connection without consuming ``id:`` slots (resume counts
+            only real events), the ``resp_<id>`` of the response rides
+            in-band on every frame, and a backend fault lands as an
+            ``event: error`` in grammar — never a hung stream."""
+            assert pipe is not None
+            while True:
+                outcome = _grace_await(pipe, keepalive_s)
+                if outcome is None:
+                    yield ": keepalive\n\n"
+                    continue
+                tag, payload = outcome
+                if tag == "error":
+                    fault = cast("HTTPException", payload)
+                    yield (
+                        "event: error\ndata: "
+                        + json.dumps(
+                            openai_error_body(
+                                str(fault.detail), fault.status_code, _err_code(fault)
+                            ),
+                            separators=(",", ":"),
+                        )
+                        + "\n\n"
+                    )
+                    return
+                env, _cid, usage = cast(
+                    "tuple[dict[str, Any], str, dict[str, int] | None]", payload
+                )
+                yield from _sse_frames(env, usage)
+                return
+
+        return StreamingResponse(
+            _keepalived(),
+            media_type="text/event-stream",
+            headers=_SSE_STREAM_HEADERS,
         )
-        if key is not None:
-            # the cid + raw usage ride the stored envelope so the replay can
-            # re-link the completion-log record and regenerate byte-identical
-            # stream frames; both are stripped before the JSON leaves.
-            openai_idem_store.put(
-                key,
-                body_fp,
-                _OpenAIIdemRecord(
-                    envelope={
-                        **envelope,
-                        "_fx1_completion_id": cid,
-                        "_fx1_usage": usage,
-                    }
-                ),
-            )
-        headers = {"X-Fx1-Completion-Id": cid}
-        _rsha = _completion_receipt_sha(cid)
-        if _rsha is not None:
-            headers["X-Fx1-Receipt-Sha256"] = _rsha
-        if body.stream:
-            return StreamingResponse(
-                _responses_sse(
-                    body,
-                    content=msg_text,
-                    rid=rid,
-                    item_id=msg_item_id,
-                    model=envelope.get("model"),
-                    usage=usage,
-                    created=int(envelope["created_at"]),
-                    call_items=call_list,
-                    search_items=env_search_items,
-                    logprobs=env_logprobs,
-                    final_status=str(envelope.get("status") or "completed"),
-                    incomplete_details=envelope.get("incomplete_details"),
-                ),
-                media_type="text/event-stream",
-                headers=headers,
-            )
-        return JSONResponse(envelope, headers=headers)
 
     # --- /v1 retrieval tier --------------------------------------------------
     # The OpenAI retrieval surface: GET by the issued id returns the stored
@@ -9006,8 +9346,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         except ApiError as exc:
             # An unconfigured/unreachable backend is a verdict, not an
             # HTTP fault — report it as ok:false. Client-side arg errors
-            # (404/422) still propagate as request errors.
+            # (404/422) still propagate as request errors. The verdict
+            # still meters under probe:<name> — a resolver failure is a
+            # probe outcome, and a monitoring scrape that only watches the
+            # series must see it.
             if exc.status_code == 503:
+                metrics.record_complete(
+                    f"probe:{name}",
+                    False,
+                    (time.monotonic() - t0) * 1000.0,
+                    usage=None,
+                )
                 return _verdict(
                     BackendProbeResponse(
                         backend=name,
@@ -10209,13 +10558,22 @@ def create_app(
     batch_store = _BatchStore(batch_max, journal=_journal("batches.jsonl"))
     abatch_store = _AnthropicBatchStore(batch_max, journal=_journal("abatches.jsonl"))
     # The OpenAI-shaped fine-tuning surface: bounded like the other job
-    # stores; the runner defaults to the real staged Pipeline (its own
-    # trainer fails honestly when no GPU backend is configured).
+    # stores; the runner defaults to the real staged Pipeline over the
+    # in-repo tiny-LM trainer. Job work dirs — and the checkpoints they
+    # mint — default under --state-dir so a completed job's ft: model
+    # still resolves and serves after a restart.
     ft_store = FTJobStore(job_max, journal=_journal("ft_jobs.jsonl"))
     ft_work_root = Path(
         ft_dir
         if ft_dir is not None
-        else os.environ.get("FX1_FT_DIR", str(Path(tempfile.gettempdir()) / "fx1_ft"))
+        else os.environ.get(
+            "FX1_FT_DIR",
+            str(
+                state_path / "ft"
+                if state_path is not None
+                else Path(tempfile.gettempdir()) / "fx1_ft"
+            ),
+        )
     )
     ft_runner_eff = ft_runner or default_ft_runner(resolve_backend)
     # The /v1 retrieval index behind GET/DELETE /v1/chat/completions/{id}

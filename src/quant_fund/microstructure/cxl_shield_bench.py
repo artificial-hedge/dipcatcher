@@ -26,12 +26,8 @@ from __future__ import annotations
 from typing import Any
 
 from quant_fund.microstructure.aftermath_flow_bench import (
-    _WINDOWS,
-    _dist_bucket,
-    _empty_cell,
-    _finish,
+    _flow_window_panes,
     _FlowSim,
-    _window_of,
 )
 from quant_fund.microstructure.place_law_bench import _calibrated, _split
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -102,32 +98,7 @@ def _shield_cell(
             seen += 1
 
     # Flow-channel pane (same bucketing as aftermath_flow.sim_aftermath).
-    by_ev: dict[int, list[tuple[str, str, int]]] = {}
-    for kind, side, lvl, ev in sim.flow_log:
-        by_ev.setdefault(ev, []).append((kind, side, lvl))
-    cells = {f"{lo}_{hi}": _empty_cell() for lo, hi in _WINDOWS}
-    n_anchor = {f"{lo}_{hi}": 0 for lo, hi in _WINDOWS}
-    horizon_max = _WINDOWS[-1][1]
-    for kind, side, _lvl, ev in sim.flow_log:
-        if kind != "fill":
-            continue
-        hit_is_buy = side == "buy"
-        for lo, _hi in _WINDOWS:
-            if ev + lo < horizon:
-                n_anchor[f"{lo}_{_hi}"] += 1
-        for e2 in range(ev + 1, min(ev + 1 + horizon_max, horizon)):
-            wname = _window_of(e2 - ev)
-            if wname is None:
-                continue
-            for kind2, side2, lvl in by_ev.get(e2, ()):
-                bb2, ba2 = touch_before[e2]
-                own_touch = bb2 if side2 == "buy" else ba2
-                if own_touch is None:
-                    continue
-                dist = own_touch - lvl if side2 == "buy" else lvl - own_touch
-                rel = "hit" if (side2 == "buy") == hit_is_buy else "unhit"
-                cells[wname][rel][kind2][_dist_bucket(dist)] += 1
-    windows = _finish(cells, n_anchor)
+    windows = _flow_window_panes(sim.flow_log, touch_before, horizon)
 
     # Price kernel: instant signed drift + continuation at +200.
     mid_before = [None, *mid_after[:-1]]

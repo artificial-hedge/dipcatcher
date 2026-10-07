@@ -20,7 +20,12 @@ from typing import Any
 
 import numpy as np
 
-from quant_fund.microstructure.lobster import EXECUTION, parse_messages, parse_orderbook_row
+from quant_fund.microstructure.lobster import (
+    EXECUTION,
+    EXECUTION_HIDDEN,
+    parse_messages,
+    parse_orderbook_row,
+)
 from quant_fund.microstructure.split_flow import SplitFlow
 from quant_fund.microstructure.zi_lob_simulator import (
     MarkovRegimeFlow,
@@ -83,7 +88,7 @@ def lobster_spread_response(msg_path: Path, ob_path: Path) -> dict[str, Any]:
             spread_now = asks[0][0] - bids[0][0] if asks and bids else -1
             times.append(ev.time_s)
             spreads.append(spread_now)
-            if ev.event_type == EXECUTION:
+            if ev.event_type in (EXECUTION, EXECUTION_HIDDEN):
                 exec_idx.append(i)
                 exec_dirs.append(-ev.direction)
     sp = np.asarray(spreads)

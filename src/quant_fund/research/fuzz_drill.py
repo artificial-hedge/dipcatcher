@@ -52,7 +52,16 @@ def _flip_byte(path: Path, rng: random.Random) -> str:
     return f"byte[{i}]^={data[i]:02x}"
 
 
-def _truncate(path: Path, rng: random.Random) -> str:
+def _corpus_file(root: Path, path: Path) -> Path:
+    """Resolve *path* and require it to stay under *root* (fail closed)."""
+    resolved = path.resolve()
+    if not resolved.is_relative_to(root.resolve()) or not resolved.is_file():
+        raise ValueError(f"refusing to mutate outside corpus root: {path}")
+    return resolved
+
+
+def _truncate(root: Path, path: Path, rng: random.Random) -> str:
+    path = _corpus_file(root, path)
     data = path.read_bytes()
     if len(data) < 8:
         raise ValueError("too small to truncate")
@@ -61,7 +70,8 @@ def _truncate(path: Path, rng: random.Random) -> str:
     return f"truncated_to:{keep}"
 
 
-def _json_key_rename(path: Path, rng: random.Random) -> str:
+def _json_key_rename(root: Path, path: Path, rng: random.Random) -> str:
+    path = _corpus_file(root, path)
     body = json.loads(path.read_bytes())
     if not isinstance(body, dict) or not body:
         raise ValueError("not a json object")
@@ -111,9 +121,11 @@ def _mutations(clone: Path, rng: random.Random) -> list[tuple[str, str, Any]]:
         v = rng.choice(corpus)
         out.append(("corpus_byte_flip", _EXPECT_FAIL, lambda v=v: _flip_byte(v, rng)))
         if v.suffix == ".json":
-            out.append(("corpus_key_rename", _EXPECT_FAIL, lambda v=v: _json_key_rename(v, rng)))
+            out.append(
+                ("corpus_key_rename", _EXPECT_FAIL, lambda v=v: _json_key_rename(clone, v, rng))
+            )
         v2 = rng.choice(corpus)
-        out.append(("corpus_truncate", _EXPECT_FAIL, lambda v=v2: _truncate(v2, rng)))
+        out.append(("corpus_truncate", _EXPECT_FAIL, lambda v=v2: _truncate(clone, v2, rng)))
     if pinned:
         v = rng.choice(pinned)
         out.append(("jewel_byte_flip", _EXPECT_FAIL, lambda v=v: _flip_byte(v, rng)))

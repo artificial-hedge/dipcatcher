@@ -19,6 +19,7 @@ below half their unit-size value.
 
 from __future__ import annotations
 
+import math
 from dataclasses import asdict
 from typing import Any
 
@@ -125,9 +126,15 @@ def empirical_flow_bench(
     emp = arms[1]["multi_level_share"]
     emp_sign = arms[2]["sign_lag1"]
     divergences: list[str] = []
-    if abs(emp - real_multi_level) > 0.5 * real_multi_level:
+    # NaN comparisons are False — an unmeasured arm must land in the
+    # divergence log itself, not slip through the gap check silently.
+    if math.isnan(emp):
+        divergences.append("empirical_multi_level_share_unmeasured")
+    elif abs(emp - real_multi_level) > 0.5 * real_multi_level:
         divergences.append(f"empirical_sweep_share_gap_{emp:.4f}_vs_{real_multi_level}")
-    if emp_sign is not None and abs(emp_sign - 0.72) > 0.15:
+    if emp_sign is None:
+        divergences.append("empirical_split_sign_lag1_unmeasured")
+    elif abs(emp_sign - 0.72) > 0.15:
         divergences.append(f"empirical_split_sign_lag1_gap_{emp_sign:.3f}_vs_0.72")
     payload: dict[str, Any] = {
         "schema": EMPIRICAL_FLOW_SCHEMA,

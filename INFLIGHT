@@ -1446,6 +1446,44 @@ feat(research): wave 269 — computer-vision canon (lk_flow, orb_feature, homogr
 feat(research): wave 268 — crypto-4 canon (elgamal_enc, paillier_he, fiat_shamir, ot_12, chacha_stream, poly1305_mac) (1581->1587 families)
 feat(research): wave 267 — GPU-architecture canon (warp_scheduler, simt_divergence, bank_conflict, mem_coalesce, occupancy_calc, shared_mem_tile) (1575->1581 families)
 feat(research): wave 266 — graphics-2 canon (triangle_raster, phong_shade, mipmap_sample, shadow_map, bump_map, ssao_lite) (1569->1575 families)
+owner: kimi-code (session 2026-10-06/07, lane rebuild status)
+slice: RECONCILE REBUILT LANES WITH CURRENT MAIN AND EXACT-HEAD REVIEWS
+status: PARTIAL — #2895 and #2898 merged; six lanes remain open with blockers
+detail: |
+  The session rebuilt eight local lanes as pull requests. Current repository
+  state and exact-head maintenance review supersede the original local notes:
+  - #2895 merged as 5a6cbe6910dfa6d1da3bb01fc9fdf8f070f09859.
+  - #2898 merged as 62579b23b3865df9f9839a978687208f23363fe0.
+  - #2860 remains open: the new Typer command groups are not mounted on the
+    root CLI; its focused suite produced 37 failures and 3 passes. Evidence
+    paths also omit DATA_LABEL and accept duplicate-key JSON.
+  - #2864 remains open: release URLs use the wrong owner, the wheel does not
+    provide the advertised `fxi` executable, the formula contains a release
+    placeholder, the installer does not verify the wheel, and uninstall can
+    recursively delete unrelated user data.
+  - #2870 remains open: operator-supplied `joblib.load()` permits pickle code
+    execution; receipt comparison can pass unverified inputs; provenance can
+    be mislabeled REAL or overwritten; volatility units and feature-column
+    handling are incorrect.
+  - #2871 remains open: default pytest collection finds no tests in the added
+    files; 96 of 125 operation IDs do not exist, and 7 of the 29 real cases
+    have stale or incomplete expectations.
+  - #2882 remains open: recovery fills can escape terminal accounting,
+    Poisson overshoot can create zero-time decisions, the receipt records the
+    configured rather than active reset seed, and float actions/seeds are
+    silently truncated. The advertised Linux learning regression failed.
+  - #2899 remains open: it makes the architecture gates green by permitting a
+    non-leaf FX1-to-research dependency and adding nine upward-dependency
+    baselines. `quant_fund.research.receipt_v2` executes research imports and
+    must be split into a true leaf schema/verifier before lower layers use it.
+  Closed without merge as superseded: #2873, #2884, and #2885.
+  The prior clean-source attribution is not retained: scanning selected files
+  with a strict-superset allowlist cannot prove they pass the gate's actual
+  policy. The cited `tests/fx1/test_interactive.py` path is absent from the
+  reviewed tree. Remote-only logs are not treated as repository evidence.
+note: This record changes no production code, receipts, or workflow policy.
+
+---
 owner: opencode (resumed session)
 slice: DATA-SNOOPING SUITE — max-level enhancement of the multiple-testing layer
 status: COMPLETE + VERIFIED 2026-09-17 ~18:45 IST

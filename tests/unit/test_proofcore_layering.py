@@ -50,7 +50,14 @@ LAZY_WHITELIST: dict[str, frozenset[str]] = {
     "leakage": frozenset({"pit", "cli", "config", "utils", "research"}),
     # Adjudicated lazy edge (this durability sweep): reality/cli writes its
     # outputs via utils.atomicio — same layer-0 reasoning as proofcore.
-    "reality": frozenset({"cli", "utils"}),
+    # reality/cli also lazily drives research.reality_sweep and
+    # research.reality_survivorship (the `dipcatcher reality` commands). Those
+    # two modules lazily import reality.cscv / reality.report back, so the pair
+    # is a mutual *lazy* dependency: neither edge exists at import time, which
+    # is this codebase's documented cycle-breaking mechanism
+    # (configs/arch_boundaries.toml). Mirrors LH011_LAZY_WHITELIST in
+    # leakage/rules.py.
+    "reality": frozenset({"cli", "utils", "research"}),
 }
 
 # Third-party roots each package may use (stdlib is always allowed).

@@ -4030,8 +4030,18 @@
       },
       "EvalSpecUpdate": {
         "additionalProperties": false,
-        "description": "``POST /v1/evals/{id}`` \u2014 metadata/name edits; the datasource is\nfrozen (a spec's declared shape is evidence once runs bind to it).",
+        "description": "``POST /v1/evals/{id}`` \u2014 metadata/name edits plus the hot-reload\nfields: ``data_source_config``/``testing_criteria`` replace the spec's\ndeclared shape ONLY while no run binds it \u2014 once a run exists the\nshape is evidence and the update answers 409 ``eval_spec_frozen``.",
         "properties": {
+          "data_source_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalSpecDataSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "metadata": {
             "anyOf": [
               {
@@ -4058,6 +4068,21 @@
               }
             ],
             "title": "Name"
+          },
+          "testing_criteria": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvalSpecCriterion"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Testing Criteria"
           }
         },
         "title": "EvalSpecUpdate",
