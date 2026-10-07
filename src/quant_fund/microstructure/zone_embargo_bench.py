@@ -50,7 +50,7 @@ _SEEDS = (7, 11)
 
 
 def _cell_draws(
-    zone: int, delay: int, rp: float, inten: float | None, *, horizon: int
+    zone: int, delay: int, rp: float, inten: float | None, *, horizon: int, seed: int
 ) -> list[dict[str, Any]]:
     """Per seed: occupancy pass + crown surface + reseed surface."""
     extra = dict(
@@ -65,16 +65,17 @@ def _cell_draws(
     )
     draws: list[dict[str, Any]] = []
     for s in _SEEDS:
-        prof = _sim_spread_profile(extra, horizon=horizon, seed=s, inten=inten)
+        draw_seed = seed * 1000 + s
+        prof = _sim_spread_profile(extra, horizon=horizon, seed=draw_seed, inten=inten)
         crown = _sim_crown(
             f"z{zone}",
             extra,
             horizon=horizon,
-            seed=s,
+            seed=draw_seed,
             collect_counts=True,
             flow_intensity=inten,
         )
-        st = sim_reseed(f"z{zone}", extra, horizon=horizon, seed=s, flow_intensity=inten)
+        st = sim_reseed(f"z{zone}", extra, horizon=horizon, seed=draw_seed, flow_intensity=inten)
         pin_cell = {
             "spread_mean": prof["mean_spread_ticks"],
             "crown_share_of_visible": crown["crown_share_of_visible"],
@@ -89,7 +90,7 @@ def _cell_draws(
         pins = _pins_ok(pin_cell)
         draws.append(
             {
-                "run_seed": s,
+                "run_seed": draw_seed,
                 "n_fills": crown["n_fills"],
                 "mean_spread_ticks": prof["mean_spread_ticks"],
                 "median_spread_ticks": prof["median_spread_ticks"],
@@ -108,7 +109,7 @@ def _cell_draws(
 def zone_embargo_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
     cells: list[dict[str, Any]] = []
     for label, zone, delay, rp, inten in _CELLS:
-        draws = _cell_draws(zone, delay, rp, inten, horizon=horizon)
+        draws = _cell_draws(zone, delay, rp, inten, horizon=horizon, seed=seed)
         occ = [d["share_9_63"] for d in draws]
         tight = [d["tight_share_le2"] for d in draws]
         cells.append(
@@ -169,7 +170,7 @@ def zone_embargo_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]
                 for label, z, d, rp, i in _CELLS
             ],
         },
-        "tape_reference": _TAPE,
+        "tape_reference": dict(_TAPE),
         "cells": cells,
         "claims": claims,
         "notes": (

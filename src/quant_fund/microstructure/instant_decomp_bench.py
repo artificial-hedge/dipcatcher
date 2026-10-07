@@ -136,10 +136,15 @@ def sim_instant_decomp(
         )
         if pre_mid is not None and post_mid is not None:
             dmids.append(sign * (post_mid - pre_mid))
+        # Tape parity: "emptied" means the pre-fill touch level is absent
+        # from the post-fill side — a touch change by improvement (e.g.
+        # a deeper ask stepping inside the spread) is not an emptying.
+        post_side = sim._asks if agg == "buy" else sim._bids  # noqa: SLF001
         post_touch = _touch(agg)
-        if pre_touch is not None and post_touch is not None and post_touch != pre_touch:
+        if pre_touch is not None and not post_side.get(pre_touch):
             n_empty += 1
-            gaps.append(sign * float(post_touch - pre_touch))
+            if post_touch is not None:
+                gaps.append(sign * float(post_touch - pre_touch))
     return _decomp_stats(n_fills=n_fills, n_empty=n_empty, gap_ticks=gaps, signed_dmids=dmids)
 
 

@@ -50,6 +50,7 @@ def decompose(
     mids: NDArray[np.float64],
     rets: NDArray[np.float64] | None = None,
     horizon_trades: int = 5,
+    mean_spread_ticks: float | None = None,
 ) -> DecompFit:
     """Fit Huang–Stoll λ: revision ``horizon_trades`` trades *before* t.
 
@@ -87,7 +88,7 @@ def decompose(
         r2=r2,
         n_trades=int(mids.size),
         roll_spread=roll,
-        mean_spread_ticks=float("nan"),
+        mean_spread_ticks=float("nan") if mean_spread_ticks is None else mean_spread_ticks,
     )
 
 
@@ -106,6 +107,7 @@ def lambda_session(
     sim = ZILobSimulator(config) if flow is None else ZILobSimulator(config, flow=flow)
     signs: list[float] = []
     mids: list[float] = []
+    spreads: list[float] = []
     n_tr = 0
     while sim.t < horizon:
         kind = sim.step()
@@ -113,12 +115,20 @@ def lambda_session(
             tr = sim.trades[-1]
             n_tr = len(sim.trades)
             m = sim.mid
-            if m is not None:
+            s_ticks = sim.spread_ticks
+            if m is not None and s_ticks is not None:
                 signs.append(1.0 if tr.aggressor == "buy" else -1.0)
                 mids.append(m)
+                spreads.append(float(s_ticks))
     s = np.asarray(signs, dtype=np.float64)
     px = np.asarray(mids, dtype=np.float64)
-    return decompose(s, px, np.diff(px), horizon_trades=horizon_trades)
+    return decompose(
+        s,
+        px,
+        np.diff(px),
+        horizon_trades=horizon_trades,
+        mean_spread_ticks=float(np.mean(spreads)) if spreads else None,
+    )
 
 
 def _flow(seed: int, p_buy_trend: float) -> MarkovRegimeFlow:

@@ -70,6 +70,12 @@ def zone_churn_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
     return _emit(cells, horizon, seed)
 
 
+def _mean(vals: list[Any]) -> float | None:
+    """Mean over the non-missing draws; None when every draw is missing."""
+    xs = [float(v) for v in vals if v is not None]
+    return sum(xs) / len(xs) if xs else None
+
+
 def _emit(cell_rows: list[Any], horizon: int, seed: int) -> dict[str, Any]:
     cells: list[dict[str, Any]] = []
     for label, zone, ttl, rq, inten, draws in cell_rows:
@@ -114,21 +120,8 @@ def _emit(cell_rows: list[Any], horizon: int, seed: int) -> dict[str, Any]:
                 "tape_mix_gap": tape_gap,
                 "life_ev_p50_mean": round(sum(lifes) / len(lifes), 2) if lifes else None,
                 "n_pins_mean": sum(d["n_pins"] for d in draws) / len(draws),
-                "instant_mean": (
-                    sum(
-                        d["instant_signed_ticks"]
-                        for d in draws
-                        if d["instant_signed_ticks"] is not None
-                    )
-                    / max(
-                        1,
-                        sum(1 for d in draws if d["instant_signed_ticks"] is not None),
-                    )
-                ),
-                "k200_mean": (
-                    sum(d["k200"] for d in draws if d["k200"] is not None)
-                    / max(1, sum(1 for d in draws if d["k200"] is not None))
-                ),
+                "instant_mean": _mean([d["instant_signed_ticks"] for d in draws]),
+                "k200_mean": _mean([d["k200"] for d in draws]),
                 "draws": draws,
             }
         )
@@ -164,7 +157,10 @@ def _emit(cell_rows: list[Any], horizon: int, seed: int) -> dict[str, Any]:
             for c in cells
         ),
         "kernel_carried": any(
-            c["maker_requote"] > 0 and abs(c["instant_mean"] - 0.887) <= 0.35 for c in cells
+            c["maker_requote"] > 0
+            and c["instant_mean"] is not None
+            and abs(c["instant_mean"] - 0.887) <= 0.35
+            for c in cells
         ),
     }
 
@@ -190,7 +186,7 @@ def _emit(cell_rows: list[Any], horizon: int, seed: int) -> dict[str, Any]:
             ],
         },
         "tape_reference": {
-            "mix_share": _TAPE_MIX,
+            "mix_share": dict(_TAPE_MIX),
             "events_per_s": _TAPE_EV_PER_S,
             "executed_p50_events": round(tape_life_ev, 1),
             "sources": ["event_matrix.v1", "order_lifetime.v1"],

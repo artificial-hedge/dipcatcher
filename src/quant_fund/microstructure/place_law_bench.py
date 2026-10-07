@@ -355,7 +355,7 @@ def place_law_bench(
             if best_binom is not None
             else None
         ),
-        "compose_targets": _TARGETS,
+        "compose_targets": dict(_TARGETS),
         "divergences": divergences,
         "claims": claims,
         "interpretation": (

@@ -197,8 +197,10 @@ def validate_reconstruction(
         for ev, ob_row in zip(parse_messages(message_path), csv.reader(f_ob), strict=True):
             asks_exp, bids_exp = parse_orderbook_row(ob_row)
             if not seeded:
+                # Row 0 is the state AFTER message 0 — seeding it and then
+                # applying event 0 would double-count that event's size
+                # and fabricate a resync at event 1.
                 book.seed(asks_exp, bids_exp)
-                book.apply(ev)
                 seeded = True
                 n_events += 1
                 continue  # row 0 consumed as seed
@@ -268,8 +270,9 @@ def tape_measurements(
         ):
             asks_exp, bids_exp = parse_orderbook_row(ob_row)
             if not seeded:
+                # Row 0 is the post-message-0 state; event 0 must not be
+                # replayed on top of its own snapshot.
                 book.seed(asks_exp, bids_exp)
-                book.apply(ev)
                 seeded = True
                 continue
             book.apply(ev)

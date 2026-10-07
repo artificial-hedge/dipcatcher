@@ -182,9 +182,22 @@ def sim_reseed(
         while seen < len(sim.trades):
             tr = sim.trades[seen]
             seen += 1
+            if tr.maker_tag == "mid_dark":
+                # Pegged-mid fills record a doubled-lattice index, never
+                # a real book level — excluding them keeps the vacancy
+                # accounting on the visible book only.
+                continue
             lvl = tr.level
             book = "a" if tr.aggressor == "buy" else "b"
             d = sim._asks if book == "a" else sim._bids
+            if (lvl, book) in pending:
+                # A fill lands only at the touch: depth re-rested on the
+                # still-vacant level inside this same step (iceberg
+                # reload mid-burst, immediate repost), so the vacancy
+                # resolved as a reseed-at-touch and the level is now
+                # emptied again — close the episode and reopen it.
+                lat.append(ev_i - pending.pop((lvl, book)))
+                resed_touch += 1
             if (lvl not in d or len(d[lvl]) == 0) and (lvl, book) not in pending:
                 n_emp += 1
                 pending[(lvl, book)] = ev_i

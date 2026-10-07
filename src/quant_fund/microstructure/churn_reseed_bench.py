@@ -110,9 +110,20 @@ def _reseed_fates(
         while seen < len(sim.trades):
             tr = sim.trades[seen]
             seen += 1
+            if tr.maker_tag == "mid_dark":
+                # Pegged-mid fills record a doubled-lattice index, never
+                # a real book level.
+                continue
             lvl = tr.level
             book = "a" if tr.aggressor == "buy" else "b"
             d = sim._asks if book == "a" else sim._bids
+            if (lvl, book) in pending:
+                # Fill at a still-vacant level: depth re-rested inside
+                # this same step, so the episode resolved as a
+                # reseed-at-touch and the level is emptied again —
+                # close it and reopen the episode.
+                lat.append(ev_i - pending.pop((lvl, book)))
+                resed_touch += 1
             if (lvl not in d or len(d[lvl]) == 0) and (lvl, book) not in pending:
                 n_emp += 1
                 pending[(lvl, book)] = ev_i

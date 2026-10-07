@@ -107,9 +107,10 @@ def repost_frontier_bench(
         "fill_trigger_composes_too": bool(evt_in_tol),
         "delay_sets_latency": p40 < p160 < p320,
         "joint_undeerseeds": bool(tape is not None and _f(cells[0]["reseed_rate_500"]) < _RATE_LO),
-        "tape_reseeds_majority": bool(tape is None or _f(tape["reseed_rate_500"]) > 0.5),
+        # Tape-dependent claims fail closed when the tape arm is absent.
+        "tape_reseeds_majority": bool(tape is not None and _f(tape["reseed_rate_500"]) > 0.5),
         "tape_reseed_returns_to_touch": bool(
-            tape is None or _f(tape["reseed_as_touch_share"]) >= 0.6
+            tape is not None and _f(tape["reseed_as_touch_share"]) >= 0.6
         ),
     }
     body: dict[str, Any] = {

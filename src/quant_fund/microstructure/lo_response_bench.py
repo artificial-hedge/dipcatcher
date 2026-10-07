@@ -104,7 +104,7 @@ def lobster_lo_response(
         _touch(*parse_orderbook_row(r)) for r in rows[: len(events)]
     ]
 
-    def _acc(idxs: list[int], agg: dict[str, Any]) -> None:
+    def _acc(idxs: list[int], agg: dict[str, Any], sign: float) -> None:
         for j in idxs:
             ev = events[j]
             if ev.event_type != SUBMISSION:
@@ -113,7 +113,7 @@ def lobster_lo_response(
             if t is None:
                 continue
             ask0, bid0 = t
-            is_unhit = (ev.direction == 1) == (agg["sign"] > 0)
+            is_unhit = (ev.direction == 1) == (sign > 0)
             touch = bid0 if ev.direction == 1 else ask0
             dist = abs(ev.price - touch) / _TICK_UNITS
             agg["n_sub"] += 1
@@ -121,7 +121,7 @@ def lobster_lo_response(
             agg["dist_unhit"].append(dist) if is_unhit else agg["dist_hit"].append(dist)
 
     per_h: dict[int, dict[str, Any]] = {
-        h: {"n_sub": 0, "n_unhit": 0, "dist_unhit": [], "dist_hit": [], "n_win": 0}
+        h: {"n_sub": 0, "n_unhit": 0, "dist_unhit": [], "dist_hit": [], "n_win": 0, "n_ev": 0}
         for h in horizons
     }
     n_base_ev = sum(1 for j in range(len(events)) if j not in is_post)
@@ -138,8 +138,8 @@ def lobster_lo_response(
             idxs = [j for j in range(i + 1, min(i + h + 1, len(events)))]
             a = per_h[h]
             a["n_win"] += 1
-            a["sign"] = sign
-            _acc(idxs, a)
+            a["n_ev"] += len(idxs)
+            _acc(idxs, a, sign)
     for j, ev in enumerate(events):
         if j in is_post or ev.event_type != SUBMISSION:
             continue
@@ -165,10 +165,7 @@ def lobster_lo_response(
             else None,
             "mean_dist_hit": (sum(a["dist_hit"]) / len(a["dist_hit"])) if a["dist_hit"] else None,
         }
-        if sign_aware:
-            out["submissions_per_event"] = (n / a["n_win"]) if a["n_win"] else None
-        else:
-            out["submissions_per_event"] = (n / a["n_ev"]) if a["n_ev"] else None
+        out["submissions_per_event"] = (n / a["n_ev"]) if a["n_ev"] else None
         return out
 
     return {
@@ -247,10 +244,13 @@ def sim_lo_response(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
     for h in _HORIZONS:
         n_tot = 0
         n_un = 0
+        n_ev = 0
         d_u: list[float] = []
         d_h: list[float] = []
         for fev, sign in fills:
-            for ev in range(fev + 1, min(fev + h + 1, horizon + 1)):
+            win = range(fev + 1, min(fev + h + 1, horizon + 1))
+            n_ev += len(win)
+            for ev in win:
                 t = touch_at[ev - 2] if ev >= 2 else None
                 if t is None:
                     continue
@@ -268,7 +268,7 @@ def sim_lo_response(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
             "share_unhit": (n_un / n_tot) if n_tot else None,
             "mean_dist_unhit": (sum(d_u) / len(d_u)) if d_u else None,
             "mean_dist_hit": (sum(d_h) / len(d_h)) if d_h else None,
-            "submissions_per_event": (n_tot / (h * len(fills))) if fills else None,
+            "submissions_per_event": (n_tot / n_ev) if n_ev else None,
         }
     base_ents = [(ev, wb, lv) for (ev, wb, lv) in sim.lo_log if ev not in post_idx]
     base = _decomp(base_ents, 1.0)

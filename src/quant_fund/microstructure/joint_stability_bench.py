@@ -91,7 +91,7 @@ def joint_stability_bench(*, horizon: int = 15000) -> dict[str, Any]:
                 emp=emp,
                 sp=c["spread_mean"],
                 crown=c["crown_share_of_visible"],
-                hid=c["hidden_fill_share"],
+                hid=c["hidden_fill_share"] if c["hidden_fill_share"] is not None else 0.0,
             )
             per_seed.append(
                 {
@@ -137,6 +137,8 @@ def joint_stability_bench(*, horizon: int = 15000) -> dict[str, Any]:
         "tape_pins": {
             "crown_share": _TAPE_CROWN_SHARE,
             "spread_band": [_TAPE_OCC_LO, _TAPE_OCC_HI],
+            # The pin tolerates up to 3x the tape occupancy ceiling.
+            "spread_band_used": [_TAPE_OCC_LO, 3 * _TAPE_OCC_HI],
             "empty_share": _TAPE_EMPTY_RATE,
             "empty_band_used": [_EMP_LO, _EMP_HI],
             "hidden_fill_share": _TAPE_HIDDEN_SHARE,

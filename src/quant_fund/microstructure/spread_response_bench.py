@@ -15,7 +15,7 @@ selection).
 Arms: ``static`` (lo_offset=12, no coupling) vs ``coupled`` (same floor
 plus lo_offset_gain over the cross-excited clock). The kernel is
 measured per fill as (spread at first observation >= t+h) minus
-(spread just after the fill), matching spread_response.v1's convention.
+(spread just before the fill), matching spread_response.v1's convention.
 """
 
 from __future__ import annotations

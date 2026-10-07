@@ -142,7 +142,7 @@ def queue_class_bench(horizon: float = 1500.0, seed: int = 13) -> dict[str, Any]
         "horizon": horizon,
         "seed": seed,
         "arms": arms,
-        "real_tape_targets": _REAL,
+        "real_tape_targets": dict(_REAL),
         "divergences": divergences,
         "claims": claims,
         "interpretation": (

@@ -31,10 +31,10 @@ _REAL = {"p_ge2": 0.045, "max_levels": 8}
 _PMF = ((1, 0.90), (2, 0.05), (4, 0.03), (8, 0.02))
 
 
-def _arm(seed: int, *, sized: bool) -> dict[str, Any]:
+def _arm(seed: int, *, sized: bool, horizon: float) -> dict[str, Any]:
     cfg = replace(santa_fe_config(seed=seed), band=14, mo_size_pmf=_PMF if sized else None)
     sim = ZILobSimulator(cfg)
-    while sim.t < 1500.0:
+    while sim.t < horizon:
         sim.step()
     bursts: dict[tuple[float, str], set[int]] = {}
     for tr in sim.trades:
@@ -52,8 +52,8 @@ def _arm(seed: int, *, sized: bool) -> dict[str, Any]:
 def sweep_width_bench(horizon: float = 1500.0, seed: int = 13) -> dict[str, Any]:
     """Run the sweep-width arms and seal the receipt."""
     arms = {
-        "unit_lot": _arm(seed, sized=False),
-        "sized_tail": _arm(seed, sized=True),
+        "unit_lot": _arm(seed, sized=False, horizon=horizon),
+        "sized_tail": _arm(seed, sized=True, horizon=horizon),
     }
     sized, unit = arms["sized_tail"], arms["unit_lot"]
     ratio = sized["p_ge2"] / _REAL["p_ge2"] if _REAL["p_ge2"] else math.inf
@@ -70,7 +70,7 @@ def sweep_width_bench(horizon: float = 1500.0, seed: int = 13) -> dict[str, Any]
         "horizon": horizon,
         "seed": seed,
         "arms": arms,
-        "real_tape_targets": _REAL,
+        "real_tape_targets": dict(_REAL),
         "divergences": divergences,
         "claims": claims,
         "interpretation": (

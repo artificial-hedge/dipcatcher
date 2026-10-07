@@ -145,7 +145,7 @@ def pin_stability_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any
         "seed": seed,
         "n_seeds": _N_SEEDS,
         "lags": list(_LAGS),
-        "tape_targets": _REAL,
+        "tape_targets": dict(_REAL),
         "rows": rows,
         "divergences": divergences,
         "claims": claims,

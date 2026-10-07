@@ -110,8 +110,8 @@ def load_tape_stats(receipts_root: str | Path, ticker: str = "amzn") -> TapeStat
     return TapeStats(
         ticker=tag,
         size_pmf=_size_pmf(hist),
-        events_per_s={str(k): float(v) for k, v in eps.items()},
-        spread_occupancy={str(k): float(v) for k, v in occ.items()},
+        events_per_s={str(k): _nonneg(v, f"events_per_s[{k!r}]") for k, v in eps.items()},
+        spread_occupancy={str(k): _nonneg(v, f"spread_occupancy[{k!r}]") for k, v in occ.items()},
         mean_spread_ticks=mean_spread,
     )
 

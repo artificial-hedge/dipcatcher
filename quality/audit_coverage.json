@@ -240,6 +240,120 @@
     "backtest/event_sim/simulator.py": {
       "status": "audited"
     },
+    "microstructure/instant_decomp_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/joint_fit_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/joint_stability_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/joint_tune_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/level_gap_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/lo_response_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/maker_age_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/mid_dark_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/mortal_repost_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/pin_stability_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/place_law_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/place_mix_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/queue_class_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/regime_clock_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/reload_gate_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/repost_frontier_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/repost_latency_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/reseed_hazard_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/split_flow_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/spread_decomp.py": {
+      "status": "audited"
+    },
+    "microstructure/spread_floor_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/spread_reopen_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/spread_response_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/streak_calibrate_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/sweep_crown_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/sweep_width_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/tape_digest.py": {
+      "status": "audited"
+    },
+    "microstructure/tape_stats.py": {
+      "status": "audited"
+    },
+    "microstructure/tape_surgery.py": {
+      "status": "audited"
+    },
+    "microstructure/touch_empty_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/touch_follow_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/unhit_chase_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/vac_chase_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/zone_card_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/zone_churn_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/zone_embargo_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/zone_stability_bench.py": {
+      "status": "audited"
+    },
+    "microstructure/zone_ttl_bench.py": {
+      "status": "audited"
+    },
     "parity_leak_audit.py": {
       "status": "audited"
     },

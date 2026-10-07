@@ -199,19 +199,23 @@ def level_gap_bench(
                 }
             )
     divergences: list[str] = []
-    if real.get("ok"):
-        rg1 = (real["g1_ask"]["mean"] + real["g1_bid"]["mean"]) / 2.0
+    rg1_a = real["g1_ask"].get("mean") if real.get("ok") else None
+    rg1_b = real["g1_bid"].get("mean") if real.get("ok") else None
+    if rg1_a is not None and rg1_b is not None:
+        rg1 = (rg1_a + rg1_b) / 2.0
         for name, arm in arms.items():
             if not arm.get("ok"):
                 divergences.append(f"{name}:empty")
                 continue
-            ag1 = (arm["g1_ask"]["mean"] + arm["g1_bid"]["mean"]) / 2.0
+            ag1_a, ag1_b = arm["g1_ask"].get("mean"), arm["g1_bid"].get("mean")
+            if ag1_a is None or ag1_b is None:
+                divergences.append(f"{name}:g1_degenerate")
+                continue
+            ag1 = (ag1_a + ag1_b) / 2.0
             if abs(ag1 - rg1) > 0.5:
                 divergences.append(f"{name}:g1_{ag1}_vs_{rg1}")
     claims = {
-        "tape_near_touch_is_sparse": bool(
-            real.get("ok") and real["g1_ask"]["mean"] is not None and real["g1_ask"]["mean"] > 2.0
-        ),
+        "tape_near_touch_is_sparse": bool(rg1_a is not None and rg1_a > 2.0),
         "placement_law_can_match_g1": any(
             c["g1_mean"] is not None and c["g1_mean"] > 2.0 for c in scan
         ),

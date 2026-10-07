@@ -143,8 +143,10 @@ def touch_follow_lobster(
         for ev, ob_row in zip(parse_messages(message_path), csv.reader(f_ob), strict=True):
             asks_exp, bids_exp = parse_orderbook_row(ob_row)
             if not seeded:
+                # LOBSTER row i is the book state AFTER message i — the
+                # seed row already carries event 0; applying it again
+                # would double-count its size until the next resync.
                 book.seed(asks_exp, bids_exp)
-                book.apply(ev)
                 seeded = True
                 continue
             book.apply(ev)

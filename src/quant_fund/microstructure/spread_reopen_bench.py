@@ -88,8 +88,11 @@ def spread_reopen_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any
             c["pins"]["spread"] and c["pins"]["empty"] for c in iid_cells
         ),
         # The deepest offset does not push the spread past the band
-        # ceiling (63) — the occupancy floor is bounded.
-        "spread_bounded_above": all((c["spread_mean"] or 0.0) < 63.0 for c in cells),
+        # ceiling (63) — the occupancy floor is bounded. Fails closed
+        # on unmeasured cells.
+        "spread_bounded_above": all(
+            c["spread_mean"] is not None and c["spread_mean"] < 63.0 for c in cells
+        ),
     }
     body: dict[str, Any] = {
         "schema": SPREAD_REOPEN_SCHEMA,

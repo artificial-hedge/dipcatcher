@@ -195,9 +195,9 @@ def zone_card_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
             ],
         },
         "tape_reference": {
-            "mix_share": _TAPE_MIX,
+            "mix_share": dict(_TAPE_MIX),
             "events_per_s": _TAPE_EV_PER_S,
-            "life_seconds": _TAPE_LIFE_S,
+            "life_seconds": dict(_TAPE_LIFE_S),
             "executed_p50_events": round(tape_life_ev, 1),
             "sources": ["event_matrix.v1", "order_lifetime.v1"],
         },

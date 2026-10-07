@@ -83,11 +83,17 @@ def streak_calibrate_bench(*, seed: int = 9) -> dict[str, Any]:
     }
     cal: Any = calibrated
     leg: Any = legacy
+    # _streak_stats marks a degenerate arm with a `reason` key.
+    cal_xs = cal.get("excess_mass_gt5_vs_geo")
+    leg_xs = leg.get("excess_mass_gt5_vs_geo")
+    cal_lag1 = (cal.get("sign_autocorr") or {}).get("lag1")
     divergences: list[str] = []
-    if float(cal["excess_mass_gt5_vs_geo"]) < float(real["excess_mass_gt5_vs_geo"]) - 0.10:
+    for name, arm in (("calibrated", cal), ("legacy", leg)):
+        if arm.get("reason") is not None:
+            divergences.append(f"{name}_arm_degenerate:{arm['reason']}")
+    if cal_xs is not None and float(cal_xs) < float(real["excess_mass_gt5_vs_geo"]) - 0.10:
         divergences.append(
-            f"calibrated_excess_gap_{float(cal['excess_mass_gt5_vs_geo']):.3f}"
-            f"_vs_{float(real['excess_mass_gt5_vs_geo'])}"
+            f"calibrated_excess_gap_{float(cal_xs):.3f}_vs_{float(real['excess_mass_gt5_vs_geo'])}"
         )
 
     payload: dict[str, Any] = {
@@ -98,12 +104,16 @@ def streak_calibrate_bench(*, seed: int = 9) -> dict[str, Any]:
         "real_tape_targets": real,
         "divergences": divergences,
         "claims": {
-            "legacy_undershoots_run_tail": bool(float(leg["excess_mass_gt5_vs_geo"]) < 0.20),
-            "calibrated_closes_most_of_gap": bool(float(cal["excess_mass_gt5_vs_geo"]) > 0.20),
-            "mean_run_matches": bool(5.0 <= float(cal["mean_run"]) <= 10.0),
-            "long_runs_emerge": bool(int(cal["max_run"]) >= 50),
-            "p_ge10_matches": bool(0.12 <= float(cal["p_ge_10"]) <= 0.30),
-            "autocorr_preserved": bool(float(cal["sign_autocorr"]["lag1"]) > 0.55),
+            "legacy_undershoots_run_tail": bool(leg_xs is not None and float(leg_xs) < 0.20),
+            "calibrated_closes_most_of_gap": bool(cal_xs is not None and float(cal_xs) > 0.20),
+            "mean_run_matches": bool(
+                cal.get("mean_run") is not None and 5.0 <= float(cal["mean_run"]) <= 10.0
+            ),
+            "long_runs_emerge": bool(cal.get("max_run") is not None and int(cal["max_run"]) >= 50),
+            "p_ge10_matches": bool(
+                cal.get("p_ge_10") is not None and 0.12 <= float(cal["p_ge_10"]) <= 0.30
+            ),
+            "autocorr_preserved": bool(cal_lag1 is not None and float(cal_lag1) > 0.55),
         },
         "interpretation": (
             "Splitting reproduces the tape's run-length signature once "

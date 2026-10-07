@@ -112,7 +112,7 @@ def _measure_cell(
 
 
 def _score(cell: dict[str, Any]) -> float | None:
-    """Sum of squared normalized deviations from the tape targets."""
+    """Root-sum-square of normalized deviations from the tape targets."""
     parts: list[float] = []
     inst = cell["instant_signed_ticks"]
     k200 = cell["kernel"]["200"]
@@ -196,8 +196,8 @@ def joint_fit_bench(*, horizon: int = 30000, seed: int = 7) -> dict[str, Any]:
         "kind": "joint_fit_bench",
         "horizon": horizon,
         "seed": seed,
-        "targets": _TARGET,
-        "tolerances": _TOL,
+        "targets": dict(_TARGET),
+        "tolerances": dict(_TOL),
         "cells": cells,
         "divergences": divergences,
         "claims": claims,
@@ -209,7 +209,7 @@ def joint_fit_bench(*, horizon: int = 30000, seed: int = 7) -> dict[str, Any]:
             "kills continuation; fill-anchoring restores continuation but "
             "caps instant at ~0.78; passive EMA recovers continuation "
             "within a cell while draining instant further. score is the "
-            "RMS of fractional deviations from the four tape targets; "
+            "root-sum-square of fractional deviations from the four tape targets; "
             "residual_tension=True means no scanned cell meets all "
             "tolerances — the remaining gap is a real mechanism gap "
             "(side-conditional placement or a fast refill channel), not "

@@ -166,6 +166,7 @@ def mortal_repost_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any
         # The all-pins cell survives mortality (control vs rr0 both >=6).
         "pins_survive_mortal": (
             fast_ctl is not None
+            and fast_ctl["n_pins_mean"] >= 6.0
             and any(c["regime"] == "joint_d60_rr0" and c["n_pins_mean"] >= 6.0 for c in cells)
         ),
     }

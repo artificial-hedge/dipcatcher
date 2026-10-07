@@ -20,10 +20,11 @@ later cancels/execs referencing it are dropped too — the order never
 existed in the counterfactual world.
 
 Facts per modified stream come from our own ``LobsterBook`` replay
-(seeded from the first orderbook row), keeping baseline and ablations on
-the same measurement substrate: exec share, cancel:exec ratio, mean
-spread (ticks), median touch depth (shares), exec-sign lag-1
-autocorrelation.
+(seeded from the first orderbook row — LOBSTER row i is the book state
+AFTER message i, so the first message is part of the seed, not replayed),
+keeping baseline and ablations on the same measurement substrate: exec
+share, cancel:exec ratio, mean spread (ticks), median touch depth
+(shares), exec-sign lag-1 autocorrelation.
 
 Receipt ``tape_surgery.v1``, data_label REAL (tape-forensic lane; no sim
 arm — the sim's generators do not offer a removable event class).
@@ -96,10 +97,13 @@ def lobster_tape_surgery(tape_dir: Path, ticker: str = "AMZN") -> dict[str, Any]
     for name, pred in [("baseline", None), *_ABLATIONS]:
         tombstoned: set[int] = set()
         if pred is not None:
-            # first pass: find order_ids whose birth event is dropped
+            # first pass: find order_ids whose birth event is dropped.
+            # The seed row already carries event 0's post-state, so
+            # event 0 is unreplayable (no pre-state to predicate on or
+            # to un-ring): every arm inherits it as the initial book.
             book = LobsterBook()
             book.seed(seed_asks, seed_bids)
-            for ev in events:
+            for ev in events[1:]:
                 if ev.order_id in tombstoned:
                     continue
                 if pred(ev, book):
@@ -117,7 +121,7 @@ def lobster_tape_surgery(tape_dir: Path, ticker: str = "AMZN") -> dict[str, Any]
                     continue
                 kept.append(ev)
         # measurement replay through a fresh seeded book
-        arms[name] = _facts_seeded(kept, seed_asks, seed_bids)
+        arms[name] = _facts_seeded(kept, seed_asks, seed_bids, skip_apply_of=events[0])
         arms[name]["n_dropped"] = len(events) - len(kept)
     deltas: dict[str, Any] = {}
     base = arms["baseline"]
@@ -137,14 +141,16 @@ def _facts_seeded(
     events: list[LobsterEvent],
     seed_asks: list[tuple[int, int]],
     seed_bids: list[tuple[int, int]],
+    skip_apply_of: LobsterEvent | None = None,
 ) -> dict[str, Any]:
-    return _facts_with_seed(events, seed_asks, seed_bids)
+    return _facts_with_seed(events, seed_asks, seed_bids, skip_apply_of=skip_apply_of)
 
 
 def _facts_with_seed(
     events: list[LobsterEvent],
     seed_asks: list[tuple[int, int]],
     seed_bids: list[tuple[int, int]],
+    skip_apply_of: LobsterEvent | None = None,
 ) -> dict[str, Any]:
     book = LobsterBook()
     book.seed(seed_asks, seed_bids)
@@ -158,7 +164,10 @@ def _facts_with_seed(
             signs.append(-ev.direction)
         elif ev.event_type in (CANCEL_PARTIAL, DELETE):
             n_cancel += 1
-        book.apply(ev)
+        if ev is not skip_apply_of:
+            # The seed row is this event's post-state; applying it a
+            # second time would double-count its size/effect.
+            book.apply(ev)
         if i % 8 == 0:
             bid = book.top("bid", 1)
             ask = book.top("ask", 1)
