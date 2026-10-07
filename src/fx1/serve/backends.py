@@ -1431,6 +1431,16 @@ class OpenAICompatBackend(_UsageTracker):
         )
 
 
+def _free_tcp_port() -> int:
+    """An ephemeral 127.0.0.1 port for a per-backend engine spawn."""
+    sock = socket.socket()
+    try:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+    finally:
+        sock.close()
+
+
 class LocalFx1Backend(_UsageTracker):
     """A local fx-1 checkpoint served by a local OpenAI-compatible engine.
 
@@ -1494,6 +1504,22 @@ class LocalFx1Backend(_UsageTracker):
                     "is configured"
                 )
         self._root = root
+        # The weights sha this checkpoint's manifest pins — compared against
+        # the sha a live engine advertises before we attach (see
+        # ``_verify_served_weights``). None when the dir has no readable
+        # manifest (e.g. a raw vLLM checkpoint layout) — then there is
+        # nothing to verify against and attach stays a liveness probe.
+        self._expected_weights_sha: str | None = None
+        manifest_path = root / "weights.manifest.json"
+        if manifest_path.is_file():
+            try:
+                manifest_obj = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                manifest_obj = {}
+            sha = manifest_obj.get("weights_sha256") if isinstance(manifest_obj, dict) else None
+            if isinstance(sha, str):
+                self._expected_weights_sha = sha
+        self._verified_attach = False
         url = serve_url if serve_url is not None else os.environ.get(LOCAL_SERVE_URL_ENV, "")
         if url:
             parsed = urllib.parse.urlparse(url)
@@ -1502,6 +1528,23 @@ class LocalFx1Backend(_UsageTracker):
         self._url = _chat_completions_url(url) if url else ""
         cmd = serve_cmd if serve_cmd is not None else os.environ.get(LOCAL_SERVE_CMD_ENV, "")
         self._serve_cmd = cmd
+        if (
+            serve_url is None
+            and serve_cmd is None
+            and (root / "weights.safetensors").is_file()
+            and not self._shares_env_checkpoint(root)
+        ):
+            # A checkpoint dir that is not the environment's pinned
+            # FX1_CHECKPOINT_DIR can never be served by the shared
+            # FX1_LOCAL_SERVE_URL engine — that engine holds different
+            # weights, so attaching would silently serve the wrong model
+            # (``_verify_served_weights`` refuses it). Give this backend a
+            # dedicated in-repo engine instead: a free port per instance.
+            port = _free_tcp_port()
+            self._url = _chat_completions_url(f"http://127.0.0.1:{port}/v1")
+            self._serve_cmd = (
+                f"$python -m fx1.serve.local_engine --checkpoint-dir $checkpoint_dir --port {port}"
+            )
         self._model = (
             model if model is not None else (os.environ.get(LOCAL_MODEL_ENV) or self.card.version)
         )
@@ -1512,6 +1555,23 @@ class LocalFx1Backend(_UsageTracker):
         self._proc: subprocess.Popen[bytes] | None = None
         # Guards spawn/close so a shared backend is safe under complete_many.
         self._engine_lock = threading.Lock()
+
+    @staticmethod
+    def _shares_env_checkpoint(root: Path) -> bool:
+        """True when *root* is the checkpoint the env's engine config serves.
+
+        ``FX1_LOCAL_SERVE_URL``/``_CMD`` describe one engine holding one
+        checkpoint — the ``FX1_CHECKPOINT_DIR`` pin. When the pin is unset
+        the env can't be assumed to serve *this* dir: an unverified attach
+        is worth less than a dedicated engine that provably loads *root*.
+        """
+        env_ckpt = os.environ.get("FX1_CHECKPOINT_DIR")
+        if not env_ckpt:
+            return False
+        try:
+            return Path(env_ckpt).resolve() == root.resolve()
+        except OSError:
+            return False
 
     def _engine_up(self) -> bool:
         """True once the attach URL's engine answers a models probe."""
@@ -1525,38 +1585,105 @@ class LocalFx1Backend(_UsageTracker):
         except (urllib.error.URLError, OSError):
             return False
 
+    def _verify_served_weights(self) -> None:
+        """Refuse to attach when the live engine serves different weights.
+
+        A port answering ``/v1/models`` could be *any* engine — including
+        one holding another checkpoint. When the engine advertises the
+        fx-1 weights pin (as ``LocalWeightsEngine.describe`` does), it
+        must equal the sha256 this backend's checkpoint manifest pins;
+        otherwise the attach would silently serve the wrong model.
+        Engines that don't advertise the key can't be verified — attach
+        proceeds, same contract as before.
+        """
+        if self._expected_weights_sha is None or not self._url:
+            self._verified_attach = True
+            return
+        parsed = urllib.parse.urlparse(self._url)
+        probe = f"{parsed.scheme}://{parsed.netloc}/v1/models"
+        try:
+            with urllib.request.urlopen(probe, timeout=2) as resp:  # noqa: S310 — declared local engine  # nosec B310
+                payload = json.loads(resp.read())
+        except (urllib.error.URLError, OSError, ValueError):
+            return  # not up / not parseable — liveness is _engine_up's job
+        data = payload.get("data") if isinstance(payload, dict) else None
+        for item in data or []:
+            fx1_meta = item.get("fx1") if isinstance(item, dict) else None
+            served_sha = fx1_meta.get("weights_sha256") if isinstance(fx1_meta, dict) else None
+            if served_sha is not None and served_sha != self._expected_weights_sha:
+                raise RuntimeError(
+                    f"local fx-1 engine at {probe} advertises weights_sha256 "
+                    f"{str(served_sha)[:16]}… but this backend's checkpoint "
+                    f"manifest pins {self._expected_weights_sha[:16]}… — "
+                    "refusing to attach to weights it did not verify"
+                )
+        self._verified_attach = True
+
     def _ensure_engine(self) -> None:
         """Spawn the engine from the serve template, once, and wait for it."""
-        if not self._serve_cmd or self._proc is not None or self._engine_up():
+        if self._proc is not None or self._verified_attach:
             return
-        with self._engine_lock:
-            if self._proc is not None or self._engine_up():
-                return  # another thread spawned/attached it while we waited
-            argv = shlex.split(
-                string.Template(self._serve_cmd).substitute(
-                    checkpoint_dir=str(self._root), python=shlex.quote(sys.executable)
-                )
-            )
-            env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
-            try:
-                self._proc = subprocess.Popen(  # noqa: S603 — argv list, no shell  # nosec B603
-                    argv, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                )
-            except OSError as exc:
-                raise RuntimeError(
-                    f"failed to spawn local fx-1 engine {self._serve_cmd!r}: {exc}"
-                ) from exc
-            deadline = time.monotonic() + self._start_timeout_s
-            while time.monotonic() < deadline:
-                if self._proc.poll() is not None:
-                    raise RuntimeError(
-                        "local fx-1 engine exited during startup "
-                        f"(rc={self._proc.returncode}): {self._serve_cmd!r}"
-                    )
+        if not self._serve_cmd:
+            if self._engine_up():
+                self._verify_served_weights()
+            return  # attach-only: the wire call itself is the liveness check
+        if self._engine_up():
+            self._verify_served_weights()
+            return
+        proc: subprocess.Popen[bytes] | None = None
+        try:
+            with self._engine_lock:
+                if self._proc is not None:
+                    return  # another thread spawned it while we waited
                 if self._engine_up():
+                    self._verify_served_weights()
                     return
-                time.sleep(0.1)
-        self.close()
+                proc = self._spawn_engine()
+                self._wait_for_engine(proc)
+                # Publish only a ready child. Until then this call owns
+                # cleanup, including interruptions and weight refusals.
+                self._proc = proc
+        except BaseException as exc:
+            # close() reacquires the engine lock and could take ownership of a
+            # replacement child. Clean up only our unpublished child, outside
+            # the lock, preserving the startup failure if cleanup also fails.
+            try:
+                self._close_process(proc)
+            except Exception as cleanup_exc:
+                exc.add_note(f"local fx-1 engine cleanup also failed: {cleanup_exc!r}")
+            raise
+
+    def _spawn_engine(self) -> subprocess.Popen[bytes]:
+        """Start the declared command; the caller owns the returned child."""
+        argv = shlex.split(
+            string.Template(self._serve_cmd).substitute(
+                checkpoint_dir=str(self._root), python=shlex.quote(sys.executable)
+            )
+        )
+        env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
+        try:
+            return subprocess.Popen(  # noqa: S603 — argv list, no shell  # nosec B603
+                argv, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+        except OSError as exc:
+            raise RuntimeError(
+                f"failed to spawn local fx-1 engine {self._serve_cmd!r}: {exc}"
+            ) from exc
+
+    def _wait_for_engine(self, proc: subprocess.Popen[bytes]) -> None:
+        """Verify startup, retaining the child's exit status before cleanup."""
+        deadline = time.monotonic() + self._start_timeout_s
+        while time.monotonic() < deadline:
+            returncode = proc.poll()
+            if returncode is not None:
+                raise RuntimeError(
+                    "local fx-1 engine exited during startup "
+                    f"(rc={returncode}): {self._serve_cmd!r}"
+                )
+            if self._engine_up():
+                self._verify_served_weights()
+                return
+            time.sleep(0.1)
         raise RuntimeError(
             "local fx-1 engine did not become ready within "
             f"{self._start_timeout_s:g}s: {self._serve_cmd!r}"
@@ -1674,6 +1801,11 @@ class LocalFx1Backend(_UsageTracker):
         """Terminate a spawned engine; a no-op when only attaching."""
         with self._engine_lock:
             proc, self._proc = self._proc, None
+        self._close_process(proc)
+
+    @staticmethod
+    def _close_process(proc: subprocess.Popen[bytes] | None) -> None:
+        """Stop and reap one owned child without acquiring the engine lock."""
         if proc is None or proc.poll() is not None:
             return
         proc.terminate()

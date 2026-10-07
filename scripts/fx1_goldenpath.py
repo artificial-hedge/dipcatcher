@@ -11,8 +11,11 @@ product story through it and seals the run as ``goldenpath.v1``:
   pointed at the same booted server (the SDK twin answers without a socket);
 * the three consumption modes, honestly: ``byok`` end-to-end against a real
   OpenAI-compatible stub engine, ``local_fx1`` end-to-end over the wire
-  against a card-only checkpoint dir, and ``weights_direct_ran`` pinned
-  ``false`` — no fx-1 weight artifact exists anywhere in this repository;
+  against the committed ``artifacts/fx1_tiny_lm`` checkpoint (a real
+  safetensors weight file the in-repo ``fx1.serve.local_engine`` loads and
+  runs inference through), and ``weights_direct_ran`` measuring the same
+  artifact loaded in-process — the wire completion is pinned byte-for-byte
+  equal to the direct generation;
 * an eval suite submitted over ``/harness/evals``, polled to terminal, its
   sealed receipt fetched and verified, and two runs diffed through the
   promotion-gate diff route;
@@ -44,6 +47,7 @@ import argparse
 import contextlib
 import json
 import os
+import socket
 import subprocess
 import sys
 import tempfile
@@ -185,25 +189,74 @@ def _all_weight_hits() -> list[str]:
     )
 
 
-def _make_checkpoint(ckpt: Path) -> None:
-    """Write a real, ship-gate-passing model card — the checkpoint dir is real,
-    the weight tensors it would point at do not exist (recorded honestly)."""
-    from fx1.modelcard import EvalDelta, ModelCard
+def _committed_checkpoint() -> Path | None:
+    """The committed fx-1 fixture checkpoint: card + manifest + real weights.
 
-    ckpt.mkdir(parents=True, exist_ok=True)
-    ModelCard(
-        version="fx-1.v0.1",
-        corpus_sha256="a" * 64,
-        corpus_receipt_range="b5942241..f0e1d2c3",
-        training_manifest_sha256="b" * 64,
-        eval_delta=EvalDelta(
-            domain_pass_rate_base=0.5,
-            domain_pass_rate_candidate=0.7,
-            general_pass_rate_base=0.9,
-            general_pass_rate_candidate=0.9,
-            honesty_gate_candidate=True,
+    ``artifacts/fx1_tiny_lm`` is produced by ``scripts/fx1_tiny_lm_train.py``
+    (a few seconds of real CPU training) and pinned by sha256 in its
+    manifest. Absent or incomplete members land as an honest gap, not a
+    synthesized stand-in."""
+    ckpt = _REPO_ROOT / "artifacts" / "fx1_tiny_lm"
+    members = ("modelcard.json", "weights.manifest.json", "weights.safetensors")
+    if all((ckpt / m).is_file() for m in members):
+        return ckpt
+    return None
+
+
+def _ft_corpus() -> bytes:
+    """A real training corpus for the fine-tune leg.
+
+    The job pipeline is real: the quality gate drops near-duplicate rows
+    (a padded corpus honestly fails the split) and the trainer needs
+    enough message text to tokenize — so these are distinct, substantive
+    receipt-lore Q/A pairs, not filler."""
+    pairs = [
+        (
+            "How does the checkpoint journal recover a job killed mid-train?",
+            "On restart the journal replays every record; a non-terminal status is a "
+            "run that never finished, so it is recovered as failed — an honest "
+            "terminal state rather than a fabricated resume.",
         ),
-    ).save(ckpt / "modelcard.json")
+        (
+            "What does the weights manifest pin?",
+            "The manifest records the sha256 of weights.safetensors plus architecture "
+            "and training provenance; the engine refuses to load bytes that do not "
+            "match the pin.",
+        ),
+        (
+            "Why does the quality gate drop near-duplicate corpus rows?",
+            "A corpus padded with paraphrases of one example inflates eval pass rates "
+            "without evidence; dedup keeps only genuinely distinct supervision.",
+        ),
+        (
+            "What certifies a frozen split?",
+            "The split manifest pins train and val file digests with the seed that "
+            "produced them, so a later run cannot quietly re-split onto different data.",
+        ),
+        (
+            "How is a fine-tuned model name minted?",
+            "The route composes ft: from the base model name, the caller suffix, and "
+            "the job id prefix, then registers the minted name against the produced "
+            "checkpoint dir.",
+        ),
+        (
+            "What does ship_eligible mean on a model card?",
+            "The card may only be served when its eval delta records a passing honesty "
+            "gate and a strict domain improvement over the measured base.",
+        ),
+    ]
+    return b"".join(
+        json.dumps(
+            {
+                "messages": [
+                    {"role": "user", "content": q},
+                    {"role": "assistant", "content": a},
+                ]
+            }
+        ).encode()
+        + b"\n"
+        for q, a in pairs
+    )
 
 
 def _openai_legs(legs: _Legs, base: str, api_key: str) -> None:
@@ -337,6 +390,101 @@ def _leg_detail(obj: Any, limit: int = 180) -> str:
         return str(obj)[:limit]
 
 
+def _weights_direct_leg(legs: _Legs, ckpt_dir: Path | None, weight_hits: list[str]) -> Any:
+    """In-process load of the committed checkpoint → ``weights_direct_ran``.
+
+    Returns the loaded engine (for the wire-equality pin in
+    ``_local_link_leg``) or ``None`` when the checkpoint cannot serve."""
+    if ckpt_dir is None:
+        legs.record(
+            "weights_direct_ran",
+            False,
+            False,
+            "no loadable fx-1 checkpoint exists in this checkout "
+            f"(weight-artifact suffix search over {sorted(_WEIGHT_SUFFIXES)} "
+            f"found {len(weight_hits)} candidate(s): {weight_hits[:3] or 'none'}; "
+            "artifacts/fx1_tiny_lm needs modelcard.json + weights.manifest.json "
+            "+ weights.safetensors — regenerate via scripts/fx1_tiny_lm_train.py)",
+        )
+        return None
+    try:
+        from fx1.serve.local_engine import LocalWeightsEngine  # noqa: PLC0415
+
+        engine = LocalWeightsEngine(ckpt_dir)
+        prompt = [{"role": "user", "content": "weights-direct-ping"}]
+        first = engine.complete_messages(prompt)
+        second = engine.complete_messages(prompt)
+        legs.record(
+            "weights_direct_ran",
+            True,
+            first.text == second.text and bool(first.text.strip()),
+            f"in-process load of {ckpt_dir.relative_to(_REPO_ROOT)} "
+            f"(weights_sha256={engine.weights_sha256[:16]}… "
+            f"n_params={engine.model.n_params} "
+            f"model={engine.served_model}); deterministic "
+            f"greedy completion ran twice: {first.text[:64]!r}",
+        )
+        return engine
+    except Exception as exc:  # noqa: BLE001
+        legs.record("weights_direct_ran", True, False, f"{type(exc).__name__}: {exc}")
+        return None
+
+
+def _local_link_leg(
+    legs: _Legs,
+    base: str,
+    client: Any,
+    weights_engine: Any,
+    leg_timeout_s: float,
+    engine_sock: socket.socket | None,
+) -> None:
+    """``local_fx1`` wire path: backend spawns the engine; pin is byte-equality
+    between wire output and the same checkpoint completed in-process."""
+    # Release the held engine port at leg start — only the live-request path
+    # needs it held (until the spawn fires); on every other branch it just
+    # frees the reservation.
+    if engine_sock is not None:
+        engine_sock.close()
+    try:
+        import openai as _openai_mod
+    except ImportError:
+        _openai_mod = None
+    if _openai_mod is None:
+        legs.record("local_fx1_link_ran", False, False, "openai package not installed")
+        return
+    if weights_engine is None:
+        legs.record("local_fx1_link_ran", False, False, "no committed weight checkpoint to serve")
+        return
+    try:
+        oai = _openai_mod.OpenAI(base_url=f"{base}/v1", api_key=_PROBE_KEY, timeout=leg_timeout_s)
+        loc = oai.chat.completions.create(
+            model="local_fx1", messages=[{"role": "user", "content": "local-ping"}]
+        )
+        loc_done = client.complete([{"role": "user", "content": "local-hc"}], backend="local_fx1")
+        wire_text = loc.choices[0].message.content or ""
+        direct_text = weights_engine.complete_messages(
+            [{"role": "user", "content": "local-ping"}]
+        ).text
+        # The served engine is spawned per request and terminated on
+        # teardown — no probe can outlive its request — so the pin is
+        # byte-equality: wire output must equal the same checkpoint
+        # completed in-process. Only identical weights can produce
+        # identical bytes under greedy decode.
+        legs.record(
+            "local_fx1_link_ran",
+            True,
+            wire_text == direct_text
+            and bool(wire_text.strip())
+            and loc.model == weights_engine.served_model
+            and loc_done.backend == "local_fx1",
+            f"oai_model={loc.model} hc_model={loc_done.model} "
+            f"wire==in-process-direct={wire_text == direct_text} "
+            f"served_model={loc.model} content={wire_text[:48]!r}",
+        )
+    except Exception as exc:  # noqa: BLE001
+        legs.record("local_fx1_link_ran", True, False, f"{type(exc).__name__}: {exc}")
+
+
 def run_goldenpath(
     *,
     work_dir: Path | None = None,
@@ -365,19 +513,9 @@ def run_goldenpath(
     receipts_dir.mkdir(exist_ok=True)
     out_path = Path(out) if out is not None else _REPO_ROOT / "receipts" / "fx1_goldenpath.json"
 
-    # --- real checkpoint dir (card only — no weight tensors exist in-repo) ---
-    weight_hits = _all_weight_hits()
-    _make_checkpoint(ckpt_dir)
-    legs.record(
-        "weights_direct_ran",
-        False,
-        False,
-        "no loadable fx-1 checkpoint exists in this checkout "
-        f"(weight-artifact suffix search over {sorted(_WEIGHT_SUFFIXES)} "
-        f"found {len(weight_hits)} candidate(s): {weight_hits[:3] or 'none'}) — "
-        "the local_fx1 wire path still ran end-to-end against a real "
-        "card-only checkpoint dir",
-    )
+    # --- weights-direct leg: load the committed artifact in-process ------
+    ckpt_dir = _committed_checkpoint()
+    weights_engine = _weights_direct_leg(legs, ckpt_dir, _all_weight_hits())
 
     # --- real stub engine (the closest-to-real in-repo OpenAI-compatible) ----
     from fx1.serve.e2e_audit import _StubChat  # noqa: PLC0415 — audit stub reuse
@@ -404,10 +542,26 @@ def run_goldenpath(
             "FX1_BYOK_MODEL": "stub-v0",
             "FX1_BYOK_ALLOW_PRIVATE_NETWORKS": "1",
             "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1",
-            "FX1_CHECKPOINT_DIR": str(ckpt_dir),
-            "FX1_LOCAL_SERVE_URL": stub_url,
         }
     )
+    engine_sock: socket.socket | None = None
+    if ckpt_dir is not None:
+        # The harness's own spawn path: LocalFx1Backend launches the in-repo
+        # weights engine on this port and attaches to the declared URL — the
+        # child loads weights.safetensors out of the verified checkpoint dir.
+        # Hold the port bound until serve is healthy: a free-but-advertised
+        # port can be re-dealt to serve's own bind, which would make
+        # FX1_LOCAL_SERVE_URL point the backend at the harness itself.
+        engine_sock = socket.socket()
+        engine_sock.bind(("127.0.0.1", 0))
+        engine_sock.listen(1)
+        engine_port = int(engine_sock.getsockname()[1])
+        server_env["FX1_CHECKPOINT_DIR"] = str(ckpt_dir)
+        server_env["FX1_LOCAL_SERVE_URL"] = f"http://127.0.0.1:{engine_port}/v1"
+        server_env["FX1_LOCAL_SERVE_CMD"] = (
+            "$python -m fx1.serve.local_engine "
+            f"--checkpoint-dir $checkpoint_dir --port {engine_port}"
+        )
 
     saved_local = {k: os.environ.get(k) for k in _ENV_KEYS}
     proc: subprocess.Popen[bytes] | None = None
@@ -442,32 +596,12 @@ def run_goldenpath(
         _openai_legs(legs, base, _PROBE_KEY)
         _anthropic_legs(legs, base, _PROBE_KEY)
 
-        # weights-direct wire path (card-only checkpoint; honest gap above) ---
-        try:
-            import openai as _openai_mod
-        except ImportError:
-            _openai_mod = None
-        if _openai_mod is None:
-            legs.record("local_fx1_link_ran", False, False, "openai package not installed")
-        else:
-            try:
-                oai = _openai_mod.OpenAI(base_url=f"{base}/v1", api_key=_PROBE_KEY, timeout=30.0)
-                loc = oai.chat.completions.create(
-                    model="local_fx1", messages=[{"role": "user", "content": "local-ping"}]
-                )
-                loc_done = client.complete(
-                    [{"role": "user", "content": "local-hc"}], backend="local_fx1"
-                )
-                legs.record(
-                    "local_fx1_link_ran",
-                    True,
-                    "local-ping" in (loc.choices[0].message.content or "")
-                    and loc_done.backend == "local_fx1",
-                    f"oai_model={loc.model} hc_model={loc_done.model} "
-                    f"content={(loc.choices[0].message.content or '')[:48]!r}",
-                )
-            except Exception as exc:  # noqa: BLE001
-                legs.record("local_fx1_link_ran", True, False, f"{type(exc).__name__}: {exc}")
+        # weights-direct wire path: the backend spawns fx1.serve.local_engine
+        # on the declared URL and serves the committed checkpoint's real
+        # weights. The pin is byte-equality: wire output must equal the same
+        # checkpoint loaded in-process — no stub could produce it.
+        _local_link_leg(legs, base, client, weights_engine, leg_timeout_s, engine_sock)
+        engine_sock = None  # closed inside _local_link_leg (or already None)
 
         # in-process SDK twin (no socket — parity surface) --------------------
         try:
@@ -610,19 +744,9 @@ def run_goldenpath(
         # fine-tune: submit for real, carry to its honest terminal -------------
         ft_job_id = ""
         try:
-            ft_jsonl = b"".join(
-                json.dumps(
-                    {
-                        "messages": [
-                            {"role": "user", "content": f"q{i}"},
-                            {"role": "assistant", "content": f"a{i}"},
-                        ]
-                    }
-                ).encode()
-                + b"\n"
-                for i in range(3)
+            fup = client.upload_file(
+                _ft_corpus(), filename="goldenpath-ft.jsonl", purpose="fine-tune"
             )
-            fup = client.upload_file(ft_jsonl, filename="goldenpath-ft.jsonl", purpose="fine-tune")
             ft = client.create_finetune_job(
                 model="fx1", training_file=str(fup["id"]), suffix="goldenpath"
             )
@@ -695,6 +819,48 @@ def run_goldenpath(
             except Exception as exc:  # noqa: BLE001
                 legs.record("finetune_terminal", True, False, f"{type(exc).__name__}: {exc}")
 
+        # the whole point of the surface: a job that REALLY trains and the
+        # minted ft: model serving its own trained weights (post-restart)
+        try:
+            fup2 = client.upload_file(
+                _ft_corpus(), filename="goldenpath-ft2.jsonl", purpose="fine-tune"
+            )
+            ft2 = client.create_finetune_job(
+                model="fx1", training_file=str(fup2["id"]), suffix="gptrain"
+            )
+            ft2_id = str(ft2["id"])
+            fin2 = _wait_terminal(client.finetune_job, ft2_id, 120.0)
+            ckpts2 = client.finetune_job_checkpoints(ft2_id).get("data", [])
+            ft_model = fin2.get("fine_tuned_model")
+            ft_content = ""
+            served_as = ""
+            if fin2.get("status") == "succeeded" and ft_model:
+                ft_chat, _cid = client.chat_completion(
+                    [{"role": "user", "content": "what does a weights manifest pin?"}],
+                    model=str(ft_model),
+                )
+                served_as = str(ft_chat.get("model") or "")
+                choices = ft_chat.get("choices") or []
+                if choices:
+                    ft_content = str((choices[0].get("message") or {}).get("content") or "")
+            ok = (
+                fin2.get("status") == "succeeded"
+                and bool(fin2.get("trained_tokens"))
+                and any(str(c.get("id", "")).startswith("ftckpt-") for c in ckpts2)
+                and served_as == ft_model
+                and bool(ft_content.strip())
+            )
+            legs.record(
+                "ft_lifecycle_ran",
+                True,
+                bool(ok),
+                f"status={fin2.get('status')} tokens={fin2.get('trained_tokens')} "
+                f"ckpts={len(ckpts2)} served={served_as or 'none'} "
+                f"completion_len={len(ft_content)}",
+            )
+        except Exception as exc:  # noqa: BLE001
+            legs.record("ft_lifecycle_ran", True, False, f"{type(exc).__name__}: {exc}")
+
         # every wire receipt re-verifies from disk ------------------------------
         try:
             job_rc = client.job_receipt(doctor_job) if doctor_job else None
@@ -714,6 +880,8 @@ def run_goldenpath(
         except Exception as exc:  # noqa: BLE001
             legs.record("wire_receipts_verify", True, False, f"{type(exc).__name__}: {exc}")
     finally:
+        if engine_sock is not None:
+            engine_sock.close()
         for p in (proc, proc2):
             if p is not None and p.poll() is None:
                 p.kill()
@@ -753,8 +921,15 @@ def run_goldenpath(
                 "completed; a fine-tune job reached its honest terminal state; a "
                 "signed webhook delivered to loopback; SIGKILL + same-state-dir "
                 "restart recovered every journaled record. weights_direct_ran is "
-                "false — no fx-1 weight artifact exists in this checkout, so the "
-                "card-only local_fx1 link carried the wire path instead."
+                "true — the committed artifacts/fx1_tiny_lm checkpoint (a real "
+                "safetensors fixture trained by scripts/fx1_tiny_lm_train.py) "
+                "loaded in-process and served over the wire through "
+                "fx1.serve.local_engine, with the wire completion byte-identical "
+                "to direct-weights generation. ft_lifecycle_ran is true — a "
+                "fine-tune job ran the real in-repo trainer end-to-end: quality "
+                "gate, receipted training on the job corpus, a servable "
+                "ft:<name> checkpoint under --state-dir, and a real completion "
+                "from those trained weights after restart."
                 if runnable_ok
                 else f"GOLDENPATH DEFECT: {results}"
             ),
