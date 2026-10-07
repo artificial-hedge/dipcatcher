@@ -33,6 +33,18 @@
       ],
       "sha256": "61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f"
     },
+    "cp_real_drill_gaussian_minus_conf_t_pinball.json": {
+      "errors": [
+        "missing_params"
+      ],
+      "sha256": "64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7"
+    },
+    "cp_real_drill_gaussian_pit.json": {
+      "errors": [
+        "missing_params"
+      ],
+      "sha256": "6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62"
+    },
     "crossvenue_basis_3f4ff76f517655a7.json": {
       "errors": [
         "tape_manifest_unknown"
