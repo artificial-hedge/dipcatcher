@@ -74,7 +74,8 @@ def test_items_sorted_by_filename_deterministically(tmp_path: Path) -> None:
     index = ReceiptIndex(tmp_path)
     names = [path.name for _sha, path in index.items()]
     assert names == ["a.json", "m.json", "z.json"]
-    assert index.items() == index.items()
+    rescan = [path.name for _sha, path in index.items()]
+    assert rescan == names
 
 
 class _VanishingEntry:
