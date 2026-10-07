@@ -12,4 +12,6 @@ __all__ = ["_mmd", "synth_regime_windows", "gauss_mmd"]
 
 
 def gauss_mmd(rng: np.random.Generator, Xte: np.ndarray, n: int = 300) -> float:
+    if n < 1:
+        raise ValueError(f"n must be >= 1 for an MMD estimate, got {n}")
     return _mmd(rng.standard_normal((n, Xte.shape[1])).astype(np.float64), Xte, bw=1.0)

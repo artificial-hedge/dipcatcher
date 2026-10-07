@@ -21,11 +21,15 @@ def lingam_sem(
     noise: str = "uniform",
 ) -> tuple[FloatArray, FloatArray, list[int]]:
     """Random DAG SEM with selectable noise. Returns (X, B, order)."""
+    if noise not in ("uniform", "laplace", "student", "gauss", "gaussian"):
+        raise ValueError(f"unknown noise family {noise!r}")
     rng = np.random.default_rng(seed)
     order = rng.permutation(d).tolist()
     B = np.zeros((d, d))
     pairs = [(i, j) for i in range(d) for j in range(d) if order.index(i) < order.index(j)]
-    sel = rng.choice(len(pairs), size=min(edges, len(pairs)), replace=False)
+    if edges > len(pairs):
+        raise ValueError(f"edges={edges} exceeds {len(pairs)} acyclic pairs for d={d}")
+    sel = rng.choice(len(pairs), size=edges, replace=False)
     for k in sel:
         i, j = pairs[k]
         B[i, j] = rng.uniform(0.6, 1.2) * rng.choice([-1, 1])

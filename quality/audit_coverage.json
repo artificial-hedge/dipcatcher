@@ -411,6 +411,24 @@
   "models/_crypto_synth.py": {
    "status": "audited"
   },
+  "models/_cs_synth.py": {
+   "status": "audited"
+  },
+  "models/_csl_synth.py": {
+   "status": "audited"
+  },
+  "models/_da_synth.py": {
+   "status": "audited"
+  },
+  "models/_data_synth.py": {
+   "status": "audited"
+  },
+  "models/_dc_synth.py": {
+   "status": "audited"
+  },
+  "models/_dfx_synth.py": {
+   "status": "audited"
+  },
   "models/_lm_synth.py": {
    "status": "audited"
   },

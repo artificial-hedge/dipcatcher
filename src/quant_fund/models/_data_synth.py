@@ -15,14 +15,18 @@ FloatArray = NDArray[np.float64]
 IntArray = NDArray[np.int64]
 
 
-def synth_dataset(n: int, rng: np.random.Generator, hard_frac: float = 0.3):
+def synth_dataset(
+    n: int, rng: np.random.Generator, hard_frac: float = 0.3
+) -> tuple[FloatArray, IntArray, NDArray[np.bool_]]:
+    if not 0.0 <= hard_frac <= 1.0:
+        raise ValueError(f"hard_frac must be a fraction in [0, 1], got {hard_frac}")
     w = np.zeros(8)
     w[:3] = np.array([1.0, 0.8, 0.6])
     y = rng.integers(0, 2, n)
     x = rng.normal(0, 1, (n, 8))
     x[:, :3] += (2 * y - 1)[:, None] * w[:3][None, :] * 0.25
     hard = rng.random(n) < hard_frac
-    x[hard, 3:] *= 4.0  # distractor noise ×4 on hard examples
+    x[hard, 4:] *= 4.0  # distractor noise ×4 on hard examples (dims 4–7 only)
     # shortcut feature: dim 3 weakly label-correlated (spurious)
     spurious = rng.random(n) < 0.9
     x[spurious, 3] = (2 * y[spurious] - 1) * 1.5 + rng.normal(0, 0.2, spurious.sum())

@@ -1,5 +1,5 @@
 """Shared SYNTHETIC fixture for wave-176 data-centric canon:
-2-class task — clean cluster + 20% label-flipped/hard region; a
+2-class task — clean cluster + 15% label-flipped/hard region; a
 labeled pool + oracle that returns true labels on query. Metric:
 post-budget accuracy vs random selection / full-data upper bound.
 """
@@ -16,6 +16,8 @@ def dc_data(
     seed: int, n: int = 400, d: int = 6, flip: float = 0.15
 ) -> tuple[FloatArray, NDArray[np.int64], FloatArray, NDArray[np.int64]]:
     """Pool X with noisy labels, test set clean."""
+    if not 0.0 <= flip <= 1.0:
+        raise ValueError(f"flip must be a fraction in [0, 1], got {flip}")
     rng = np.random.default_rng(seed)
     X = rng.standard_normal((n, d))
     w = rng.standard_normal(d)
