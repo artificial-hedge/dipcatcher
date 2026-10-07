@@ -57,6 +57,9 @@ def _check_cbs(
         raise ValueError("cbs length mismatch")
     if (xa < 0).any() or (ta < 0).any() or (Ta <= 0).any() or (ta > Ta).any():
         raise ValueError("invalid (x, t_x, T)")
+    for arr in (xa, ta, Ta):
+        if not np.all(np.isfinite(arr)):
+            raise ValueError("cbs entries must be finite")
     return xa, ta, Ta
 
 
@@ -76,9 +79,12 @@ def bgnbd_loglik(
     A1 = gammaln(r + xa) - gammaln(r) + gammaln(a + b) + gammaln(b + xa)
     A2 = -(gammaln(b) + gammaln(a + b + xa)) + r * np.log(alpha)
     A3 = -(r + xa) * np.log(alpha + Ta)
+    # FHL eq. 3 second brace term: delta_{x>0} * a/(b+x-1) * (alpha+t_x)^{-(r+x)}
+    # (the dropout-after-last-transaction contribution).  The coefficient must
+    # be a/(b+x-1) alone — consistent with the eq. 11 P(alive) denominator.
     A4 = np.where(
         xa > 0,
-        np.log(a) + np.log(b + xa - 1) - np.log(a + b + xa - 1) - (r + xa) * np.log(alpha + ta),
+        np.log(a) - np.log(b + xa - 1) - (r + xa) * np.log(alpha + ta),
         -np.inf,
     )
     ll_vec = A1 + A2 + np.logaddexp(A3, A4)
@@ -115,7 +121,7 @@ def fit_bgnbd(x: FloatArray, tx: FloatArray, T: FloatArray) -> dict[str, float]:
             bounds=bounds,
             options={"maxiter": 2000},
         )
-        if best is None or res.fun < best.fun:
+        if np.isfinite(res.fun) and (best is None or res.fun < best.fun):
             best = res
     if best is None or not np.isfinite(best.fun):
         raise ValueError("BG/NBD fit failed")
@@ -143,6 +149,8 @@ def bgnbd_expected_purchases(
     xa, ta, Ta = _check_cbs(x, tx, T)
     if t <= 0:
         raise ValueError("horizon positive")
+    if min(r, alpha, a, b) <= 0:
+        raise ValueError("hyperparameters must be positive")
     hyp = hyp2f1(
         r + xa,
         b + xa,
@@ -151,12 +159,12 @@ def bgnbd_expected_purchases(
     )
     # FHL eq. 10: (a+b+x-1)/(a-1) *
     #   [1 - ((aT)/(aT+t))^{r+x} * 2F1] /
-    #   [1 + delta_{x>0} (a/(b+x-1)) ((a+tx)/(a+T))^{r+x}]
+    #   [1 + delta_{x>0} (a/(b+x-1)) ((a+T)/(a+tx))^{r+x}]
     with np.errstate(all="ignore"):
         num = (a + b + xa - 1) / (a - 1) * (1 - ((alpha + Ta) / (alpha + Ta + t)) ** (r + xa) * hyp)
     denom = 1 + np.where(
         xa > 0,
-        (a / (b + xa - 1)) * ((alpha + ta) / (alpha + Ta)) ** (r + xa),
+        (a / (b + xa - 1)) * ((alpha + Ta) / (alpha + ta)) ** (r + xa),
         0.0,
     )
     pred = np.where(np.isfinite(num) & (num > 0), num, 0.0) / denom
@@ -174,9 +182,13 @@ def p_alive_bgnbd(
 ) -> FloatArray:
     """P(alive at T | x, t_x, T) (FHL 2005, eq. 11)."""
     xa, ta, Ta = _check_cbs(x, tx, T)
+    if min(r, alpha, a, b) <= 0:
+        raise ValueError("hyperparameters must be positive")
+    # dead/alive likelihood ratio: died right after last txn at t_x vs
+    # survived to T -> (alpha+T)/(alpha+t_x) exponent, NOT its reciprocal.
     add = np.where(
         xa > 0,
-        (a / (b + xa - 1)) * ((alpha + ta) / (alpha + Ta)) ** (r + xa),
+        (a / (b + xa - 1)) * ((alpha + Ta) / (alpha + ta)) ** (r + xa),
         0.0,
     )
     return np.asarray(1.0 / (1.0 + add))

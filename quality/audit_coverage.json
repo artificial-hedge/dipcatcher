@@ -618,6 +618,9 @@
   "models/pair_vine_copula.py": {
    "status": "audited"
   },
+  "models/pareto_nbd.py": {
+   "status": "audited"
+  },
   "models/path_signatures.py": {
    "status": "audited"
   },
