@@ -179,10 +179,4 @@ def sanitize_for_json(value: Any) -> Any:
     sanitized before ``payload_sha256``/receipt serialization never emit
     literal ``NaN``/``Infinity``, which strict JSON parsers reject.
     """
-    if isinstance(value, dict):
-        return {str(key): sanitize_for_json(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [sanitize_for_json(item) for item in value]
-    if isinstance(value, float):
-        return value if math.isfinite(value) else None
-    return value
+    return _canonicalize(value)
