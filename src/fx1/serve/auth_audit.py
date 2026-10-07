@@ -564,6 +564,12 @@ def _header_parsing_probes() -> dict[
         ).status_code
         == 400
     )
+    # repeated *same-value* duplicates are just as ambiguous — a client that
+    # collapses them must not get through either
+    out["dup_x_api_key_same_value_ambiguous_400"] = (
+        _dup_get(client, _MODELS_PATH, [(_H_KEY_LOWER, k_raw), (_H_KEY_LOWER, k_raw)]).status_code
+        == 400
+    )
     return out
 
 
