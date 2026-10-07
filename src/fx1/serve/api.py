@@ -6283,7 +6283,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         except OpenAICompatError as exc:
             return _refusal(exc.status, str(exc))
         except ValidationError as exc:
-            return _refusal(400, str(exc))
+            # msgs only — str(exc) embeds input values (fx1.byok credentials
+            # ride the translated dict and would echo into the envelope).
+            return _refusal(400, _validation_msgs(exc))
         try:
             env_chat, cid = _openai_chat_core(oai_body, request.headers)
         except OpenAICompatError as exc:
@@ -6322,7 +6324,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         elif isinstance(exc, ApiError):
             body = anthropic_error_body(str(exc.detail), exc.status_code)
         elif isinstance(exc, ValidationError):
-            body = anthropic_error_body(str(exc), 400)
+            # msgs only — the journaled row is durable; str(exc) would
+            # persist request input values (fx1.byok secrets) on disk.
+            body = anthropic_error_body(_validation_msgs(exc), 400)
         else:
             body = anthropic_error_body(f"{type(exc).__name__}: {exc}", 500)
         # the row's `error` is the inner {type, message} object, not the
@@ -6860,7 +6864,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
         except ValidationError as exc:
-            raise ApiError(400, str(exc)) from exc
+            raise ApiError(400, _validation_msgs(exc)) from exc
         if key is not None:
             legacy_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_legacy))
         headers = _completion_headers(cid)

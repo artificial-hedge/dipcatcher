@@ -678,6 +678,16 @@ def openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, Any]]:
     return out
 
 
+def _validation_msgs(exc: ValidationError) -> str:
+    """Validation-failure message text only — never ``str(exc)``.
+
+    pydantic renders ``input_value`` reprs into ``str(exc)``; a
+    ``ByokOverride.api_key`` or a userinfo URL would then leak into error
+    envelopes and journaled batch rows. The ``msg`` fields carry the
+    verdict wording without the submitted values."""
+    return "; ".join(str(e.get("msg", "invalid request")) for e in exc.errors())
+
+
 def _resolve_openai_link(
     model: str,
     ext: OpenAIFx1 | None,
@@ -788,7 +798,7 @@ def _resolve_openai_link(
             # the header path must land the same verdict, never a bare
             # 500 when the exception escapes the translator.
             raise OpenAICompatError(
-                "; ".join(str(e.get("msg", "invalid byok override")) for e in exc.errors()),
+                _validation_msgs(exc),
                 status=422,
                 code="invalid_byok_headers",
             ) from exc
@@ -2865,6 +2875,10 @@ def batch_line_body(
         if endpoint == "/v1/embeddings":
             return OpenAIEmbeddingRequest.model_validate(line["body"])
         return OpenAIChatRequest.model_validate(line["body"])
+    except ValidationError as exc:
+        # the row lands in a journaled output file — msgs only, never the
+        # input_value repr (a line body may carry fx1.byok credentials).
+        raise OpenAICompatError(f"invalid request body: {_validation_msgs(exc)}") from exc
     except ValueError as exc:
         raise OpenAICompatError(f"invalid request body: {exc}") from exc
 

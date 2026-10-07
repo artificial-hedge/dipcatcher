@@ -132,6 +132,10 @@
     "selftest.py": {
       "status": "pending"
     },
+    "serve/api.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
     "tail_audit.py": {
       "status": "audited"
     }
