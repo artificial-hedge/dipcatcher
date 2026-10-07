@@ -70,5 +70,5 @@ def test_rejects_bad_inputs() -> None:
 
 def test_bench_vix_replication_score() -> None:
     out = bench_vix_replication()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     assert out["synthetic_vix_sig_err"] < 0.02

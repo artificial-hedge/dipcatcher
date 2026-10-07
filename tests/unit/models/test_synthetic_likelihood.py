@@ -77,4 +77,4 @@ def test_synthetic_loglik_deterministic_with_seed() -> None:
 
 def test_bench_synthetic_likelihood_score() -> None:
     out = bench_synthetic_likelihood()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)

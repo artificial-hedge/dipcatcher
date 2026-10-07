@@ -51,6 +51,12 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_corradi_swanson()
-    for k in ("mspe_diff_alt", "p_alt", "p_null", "enc_new_alt", "score"):
+    for k in (
+        "synthetic_mspe_diff_alt",
+        "synthetic_p_alt",
+        "synthetic_p_null",
+        "synthetic_enc_new_alt",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

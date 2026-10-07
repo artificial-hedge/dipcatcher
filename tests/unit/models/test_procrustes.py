@@ -55,4 +55,4 @@ def test_fail_closed_degenerate():
 
 def test_bench():
     out = bench_procrustes()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

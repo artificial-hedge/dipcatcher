@@ -68,4 +68,4 @@ def test_rejects_bad_alpha() -> None:
 
 def test_bench_euler_risk_score() -> None:
     out = bench_euler_risk()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)

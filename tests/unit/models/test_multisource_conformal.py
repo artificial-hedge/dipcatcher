@@ -631,92 +631,99 @@ def test_envelope_bound_fail_closed() -> None:
 # ---------------------------------------------------------------------------
 
 BENCH_KEYS = {
-    "dgp",
-    "claim",
-    "kernel",
-    "seed",
-    "alpha",
-    "bandwidth",
-    "bump_std",
-    "bump_sep",
-    "gap_std",
-    "n_sources",
-    "n_train",
-    "n_cal",
-    "n_eff",
-    "alignment_threshold",
-    "n_test_in",
-    "n_test_gap",
-    "coverage_in_source",
-    "coverage_in_source_region_a",
-    "coverage_in_source_region_b",
-    "mean_width_in_source",
-    "qhat_median_in_source",
-    "frac_vacuous_in_source",
-    "poorly_represented_rate_in_source",
-    "coverage_gap",
-    "mean_width_gap_finite",
-    "qhat_median_gap_finite",
-    "frac_vacuous_gap",
-    "poorly_represented_rate_gap",
-    "selection_rate_a_region_a",
-    "selection_rate_b_region_b",
-    "selection_rate_a_gap",
-    "envelope_b",
-    "envelope_g_source_sup",
-    "envelope_g_test_sup_in_source",
-    "envelope_g_test_sup_gap",
-    "envelope_lipschitz_in_source",
-    "envelope_lipschitz_gap",
-    "mean_perturb_distance",
-    "localization_term_in_source",
-    "localization_term_gap",
-    "representation_term_in_source",
-    "representation_term_gap",
-    "bound_in_source",
-    "bound_gap",
-    "bound_vacuous_in_source",
-    "bound_vacuous_gap",
+    "synthetic_dgp",
+    "synthetic_claim",
+    "synthetic_kernel",
+    "synthetic_seed",
+    "synthetic_alpha",
+    "synthetic_bandwidth",
+    "synthetic_bump_std",
+    "synthetic_bump_sep",
+    "synthetic_gap_std",
+    "synthetic_n_sources",
+    "synthetic_n_train",
+    "synthetic_n_cal",
+    "synthetic_n_eff",
+    "synthetic_alignment_threshold",
+    "synthetic_n_test_in",
+    "synthetic_n_test_gap",
+    "synthetic_coverage_in_source",
+    "synthetic_coverage_in_source_region_a",
+    "synthetic_coverage_in_source_region_b",
+    "synthetic_mean_width_in_source",
+    "synthetic_qhat_median_in_source",
+    "synthetic_frac_vacuous_in_source",
+    "synthetic_poorly_represented_rate_in_source",
+    "synthetic_coverage_gap",
+    "synthetic_mean_width_gap_finite",
+    "synthetic_qhat_median_gap_finite",
+    "synthetic_frac_vacuous_gap",
+    "synthetic_poorly_represented_rate_gap",
+    "synthetic_selection_rate_a_region_a",
+    "synthetic_selection_rate_b_region_b",
+    "synthetic_selection_rate_a_gap",
+    "synthetic_envelope_b",
+    "synthetic_envelope_g_source_sup",
+    "synthetic_envelope_g_test_sup_in_source",
+    "synthetic_envelope_g_test_sup_gap",
+    "synthetic_envelope_lipschitz_in_source",
+    "synthetic_envelope_lipschitz_gap",
+    "synthetic_mean_perturb_distance",
+    "synthetic_localization_term_in_source",
+    "synthetic_localization_term_gap",
+    "synthetic_representation_term_in_source",
+    "synthetic_representation_term_gap",
+    "synthetic_bound_in_source",
+    "synthetic_bound_gap",
+    "synthetic_bound_vacuous_in_source",
+    "synthetic_bound_vacuous_gap",
 }
 
 
 def test_bench_two_bumps_coverage_and_gap_honesty() -> None:
     row = bench_ms_rlcp_two_bumps()
     assert set(row) == BENCH_KEYS
-    assert row["claim"] == "research_metric_only"
-    assert row["dgp"] == "synthetic_two_bumps"
+    assert row["synthetic_claim"] == "research_metric_only"
+    assert row["synthetic_dgp"] == "synthetic_two_bumps"
     assert all("sharpe" not in key.lower() for key in row)
-    nominal = 1.0 - float(row["alpha"])
+    nominal = 1.0 - float(row["synthetic_alpha"])
     for key, v in row.items():
-        if key not in ("dgp", "claim", "kernel"):
+        if key not in ("synthetic_dgp", "synthetic_claim", "synthetic_kernel"):
             assert np.isfinite(float(v)), key
     # in-source coverage: at nominal within MC tolerance, in both regions
-    assert float(row["coverage_in_source"]) >= nominal - 0.035
-    assert float(row["coverage_in_source_region_a"]) >= nominal - 0.05
-    assert float(row["coverage_in_source_region_b"]) >= nominal - 0.05
-    assert float(row["coverage_in_source"]) <= 0.98  # not vacuously over-covering
+    assert float(row["synthetic_coverage_in_source"]) >= nominal - 0.035
+    assert float(row["synthetic_coverage_in_source_region_a"]) >= nominal - 0.05
+    assert float(row["synthetic_coverage_in_source_region_b"]) >= nominal - 0.05
+    assert float(row["synthetic_coverage_in_source"]) <= 0.98  # not vacuously over-covering
     # selection sanity: aligned source wins in-region; gap is near a coin flip
-    assert float(row["selection_rate_a_region_a"]) >= 0.9
-    assert float(row["selection_rate_b_region_b"]) >= 0.9
-    assert 0.25 <= float(row["selection_rate_a_gap"]) <= 0.75
+    assert float(row["synthetic_selection_rate_a_region_a"]) >= 0.9
+    assert float(row["synthetic_selection_rate_b_region_b"]) >= 0.9
+    assert 0.25 <= float(row["synthetic_selection_rate_a_gap"]) <= 0.75
     # gap honesty: degradation flagged, not hidden
-    assert float(row["poorly_represented_rate_gap"]) >= (
-        float(row["poorly_represented_rate_in_source"]) + 0.4
+    assert float(row["synthetic_poorly_represented_rate_gap"]) >= (
+        float(row["synthetic_poorly_represented_rate_in_source"]) + 0.4
     )
-    assert float(row["representation_term_gap"]) >= 0.9
-    assert float(row["representation_term_in_source"]) <= 0.5
-    assert float(row["frac_vacuous_gap"]) >= float(row["frac_vacuous_in_source"]) + 0.1
-    assert float(row["bound_gap"]) < float(row["bound_in_source"])
-    assert float(row["bound_vacuous_gap"]) == 1.0  # vacuity surfaced explicitly
-    assert float(row["localization_term_gap"]) > 100.0 * float(row["localization_term_in_source"])
-    assert float(row["envelope_g_test_sup_gap"]) > 100.0 * float(
-        row["envelope_g_test_sup_in_source"]
+    assert float(row["synthetic_representation_term_gap"]) >= 0.9
+    assert float(row["synthetic_representation_term_in_source"]) <= 0.5
+    assert (
+        float(row["synthetic_frac_vacuous_gap"])
+        >= float(row["synthetic_frac_vacuous_in_source"]) + 0.1
+    )
+    assert float(row["synthetic_bound_gap"]) < float(row["synthetic_bound_in_source"])
+    assert float(row["synthetic_bound_vacuous_gap"]) == 1.0  # vacuity surfaced explicitly
+    assert float(row["synthetic_localization_term_gap"]) > 100.0 * float(
+        row["synthetic_localization_term_in_source"]
+    )
+    assert float(row["synthetic_envelope_g_test_sup_gap"]) > 100.0 * float(
+        row["synthetic_envelope_g_test_sup_in_source"]
     )
     # Lemma 3.1 through the bench's oracle grid constants
-    assert float(row["envelope_g_source_sup"]) == pytest.approx(float(row["envelope_b"]), rel=1e-3)
+    assert float(row["synthetic_envelope_g_source_sup"]) == pytest.approx(
+        float(row["synthetic_envelope_b"]), rel=1e-3
+    )
     # widths are informative in-source (localization keeps sets tight)
-    assert float(row["mean_width_in_source"]) > 0.0
-    assert float(row["qhat_median_in_source"]) < 3.0
+    assert float(row["synthetic_mean_width_in_source"]) > 0.0
+    assert float(row["synthetic_qhat_median_in_source"]) < 3.0
 
 
 def test_bench_deterministic_and_seed_sensitive() -> None:
@@ -724,18 +731,20 @@ def test_bench_deterministic_and_seed_sensitive() -> None:
     b = bench_ms_rlcp_two_bumps(seed=13)
     assert a == b
     c = bench_ms_rlcp_two_bumps(seed=14)
-    assert c["seed"] == 14.0
+    assert c["synthetic_seed"] == 14.0
     # different data, same qualitative story: in-source coverage still valid
-    assert float(c["coverage_in_source"]) >= 1.0 - float(c["alpha"]) - 0.05
-    assert float(c["representation_term_gap"]) > float(c["representation_term_in_source"])
+    assert float(c["synthetic_coverage_in_source"]) >= 1.0 - float(c["synthetic_alpha"]) - 0.05
+    assert float(c["synthetic_representation_term_gap"]) > float(
+        c["synthetic_representation_term_in_source"]
+    )
 
 
 def test_bench_second_seed_coverage_holds() -> None:
     row = bench_ms_rlcp_two_bumps(seed=7, n_test_in=800, n_test_gap=400)
-    nominal = 1.0 - float(row["alpha"])
-    assert float(row["coverage_in_source"]) >= nominal - 0.035
-    assert float(row["coverage_gap"]) >= nominal - 0.035
-    assert float(row["bound_gap"]) < float(row["bound_in_source"])
+    nominal = 1.0 - float(row["synthetic_alpha"])
+    assert float(row["synthetic_coverage_in_source"]) >= nominal - 0.035
+    assert float(row["synthetic_coverage_gap"]) >= nominal - 0.035
+    assert float(row["synthetic_bound_gap"]) < float(row["synthetic_bound_in_source"])
 
 
 def test_bench_fail_closed() -> None:

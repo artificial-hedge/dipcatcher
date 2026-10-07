@@ -61,5 +61,5 @@ def test_input_validation() -> None:
 
 def test_bench_score() -> None:
     out = bench_jarrow_turnbull()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_jt_calib_err"] < 1e-6

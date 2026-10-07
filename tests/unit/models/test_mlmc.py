@@ -80,4 +80,4 @@ def test_variance_decay_rate_rejects_bad() -> None:
 
 def test_bench_mlmc_score() -> None:
     out = bench_mlmc()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)

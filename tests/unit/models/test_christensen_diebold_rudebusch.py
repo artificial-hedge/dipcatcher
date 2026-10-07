@@ -73,13 +73,13 @@ def test_determinism() -> None:
 def test_bench_schema_and_score() -> None:
     r = bench_christensen_diebold_rudebusch()
     for k in (
-        "factor_corr",
-        "lam_hat",
-        "lam_true",
-        "factor_rmse",
-        "yield_rmse",
-        "adj_mag",
-        "score",
+        "synthetic_factor_corr",
+        "synthetic_lam_hat",
+        "synthetic_lam_true",
+        "synthetic_factor_rmse",
+        "synthetic_yield_rmse",
+        "synthetic_adj_mag",
+        "synthetic_score",
     ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

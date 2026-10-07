@@ -55,6 +55,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_engle_ng()
-    for k in ("lm_lev", "p_lev", "p_sym", "b_sign", "r2_lev", "score"):
+    for k in (
+        "synthetic_lm_lev",
+        "synthetic_p_lev",
+        "synthetic_p_sym",
+        "synthetic_b_sign",
+        "synthetic_r2_lev",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

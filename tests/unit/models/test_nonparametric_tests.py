@@ -66,7 +66,7 @@ def test_input_validation():
 
 def test_bench_nonparametric_tests():
     out = bench_nonparametric_tests()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_mwu_p_alt"] < 0.01
     assert out["synthetic_jt_p_alt"] < 0.01
     assert out["synthetic_mwu_p_null"] > 0.01

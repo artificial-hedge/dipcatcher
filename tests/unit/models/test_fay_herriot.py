@@ -59,4 +59,4 @@ def test_fail_closed_neg_var():
 
 def test_bench():
     out = bench_fay_herriot()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

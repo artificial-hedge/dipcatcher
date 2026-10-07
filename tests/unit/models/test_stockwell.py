@@ -52,5 +52,5 @@ def test_s_transform_input_validation():
 
 def test_bench_stockwell():
     out = bench_stockwell()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_stockwell_ridge_err"] < 0.04

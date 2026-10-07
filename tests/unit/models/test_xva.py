@@ -558,30 +558,34 @@ def test_bench_xva_deterministic_labeled_and_clean() -> None:
     for k in b1:
         assert b1[k] == b2[k], k
     expected_keys = {
-        "xva_cva",
-        "xva_fva",
-        "xva_mva",
-        "xva_cva_mc_rho0",
-        "xva_cva_wwr",
-        "xva_cva_rwr",
-        "xva_wwr_uplift",
-        "xva_rwr_relief",
-        "xva_epe_final",
-        "xva_ee_q99_max",
-        "xva_pd_horizon",
-        "xva_closed_form_abs_err",
-        "source",
-        "claim",
-        "dgp",
+        "synthetic_xva_cva",
+        "synthetic_xva_fva",
+        "synthetic_xva_mva",
+        "synthetic_xva_cva_mc_rho0",
+        "synthetic_xva_cva_wwr",
+        "synthetic_xva_cva_rwr",
+        "synthetic_xva_wwr_uplift",
+        "synthetic_xva_rwr_relief",
+        "synthetic_xva_epe_final",
+        "synthetic_xva_ee_q99_max",
+        "synthetic_xva_pd_horizon",
+        "synthetic_xva_closed_form_abs_err",
+        "synthetic_source",
+        "synthetic_claim",
+        "synthetic_dgp",
     }
     assert expected_keys <= set(b1)
-    assert b1["source"] == "SYNTHETIC"
-    assert b1["claim"] == "diagnostics_only"
+    assert b1["synthetic_source"] == "SYNTHETIC"
+    assert b1["synthetic_claim"] == "diagnostics_only"
     # closed-form anchor: deterministic-exposure CVA reproduced exactly
-    assert _f(b1, "xva_closed_form_abs_err") < 1e-8
+    assert _f(b1, "synthetic_xva_closed_form_abs_err") < 1e-8
     # planted WWR uplift positive even at bench size (CRN baseline)
-    assert _f(b1, "xva_wwr_uplift") > 0.0
-    assert _f(b1, "xva_cva") > 0.0 and _f(b1, "xva_fva") > 0.0 and _f(b1, "xva_mva") > 0.0
+    assert _f(b1, "synthetic_xva_wwr_uplift") > 0.0
+    assert (
+        _f(b1, "synthetic_xva_cva") > 0.0
+        and _f(b1, "synthetic_xva_fva") > 0.0
+        and _f(b1, "synthetic_xva_mva") > 0.0
+    )
     # honesty: no forbidden headline-metric tokens in bench keys
     for key in b1:
         tokens = set(str(key).lower().split("_"))

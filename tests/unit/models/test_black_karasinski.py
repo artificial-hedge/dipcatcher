@@ -72,4 +72,4 @@ def test_rates_stay_positive() -> None:
 
 def test_bench_black_karasinski_score() -> None:
     out = bench_black_karasinski()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)

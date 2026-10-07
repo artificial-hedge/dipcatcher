@@ -39,4 +39,4 @@ def test_bad_inputs():
 
 
 def test_bench():
-    assert bench_energy_test()["score"] == 1.0
+    assert bench_energy_test()["synthetic_score"] == 1.0

@@ -59,5 +59,5 @@ def test_svgd_gaussian_moments() -> None:
 
 def test_bench_svgd_score() -> None:
     out = bench_svgd()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     assert 0.35 < out["synthetic_svgd_right_frac"] < 0.65

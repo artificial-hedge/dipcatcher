@@ -48,4 +48,4 @@ def test_bad_inputs():
 
 
 def test_bench():
-    assert bench_watson()["score"] == 1.0
+    assert bench_watson()["synthetic_score"] == 1.0

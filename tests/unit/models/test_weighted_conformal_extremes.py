@@ -104,6 +104,6 @@ def test_bench_forbids_sharpe_pnl_keys() -> None:
     for key in row:
         low = key.lower()
         assert all(tok not in low for tok in forbidden), key
-    assert "coverage" in row
-    assert "mean_width" in row
-    assert row["n"] > 0
+    assert "synthetic_coverage" in row
+    assert "synthetic_mean_width" in row
+    assert row["synthetic_n"] > 0

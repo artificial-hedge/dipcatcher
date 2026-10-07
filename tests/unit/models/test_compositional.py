@@ -68,5 +68,5 @@ def test_compositional_input_validation():
 
 def test_bench_compositional():
     out = bench_compositional()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_coda_rec_err"] < 1e-9

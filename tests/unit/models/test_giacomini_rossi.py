@@ -59,6 +59,12 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_giacomini_rossi()
-    for k in ("p_null", "p_alt", "break_idx", "max_stat_alt", "score"):
+    for k in (
+        "synthetic_p_null",
+        "synthetic_p_alt",
+        "synthetic_break_idx",
+        "synthetic_max_stat_alt",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

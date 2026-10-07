@@ -54,5 +54,5 @@ def test_ewt_input_validation():
 
 def test_bench_empirical_wavelets():
     out = bench_empirical_wavelets()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_ewt_leakage"] < 0.05

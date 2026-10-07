@@ -61,6 +61,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_muller_watson()
-    for k in ("rho_shared", "rho_indep", "p_beta", "beta_lf", "ur_stat", "score"):
+    for k in (
+        "synthetic_rho_shared",
+        "synthetic_rho_indep",
+        "synthetic_p_beta",
+        "synthetic_beta_lf",
+        "synthetic_ur_stat",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

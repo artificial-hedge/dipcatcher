@@ -142,13 +142,13 @@ def test_fail_closed_one_sided() -> None:
 
 def test_bench_score() -> None:
     out = bench_bkm_moments()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert set(out) == {
-        "var_q",
-        "var_true",
-        "skew_q",
-        "skew_true",
-        "kurt_q",
-        "kurt_true",
-        "score",
+        "synthetic_var_q",
+        "synthetic_var_true",
+        "synthetic_skew_q",
+        "synthetic_skew_true",
+        "synthetic_kurt_q",
+        "synthetic_kurt_true",
+        "synthetic_score",
     }

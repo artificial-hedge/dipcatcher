@@ -55,12 +55,12 @@ def test_determinism() -> None:
 def test_bench_schema_and_score() -> None:
     r = bench_romano_wolf()
     for k in (
-        "n_reject",
-        "n_bonf_reject",
-        "strongest_survives",
-        "null_dropped",
-        "min_null_padj",
-        "score",
+        "synthetic_n_reject",
+        "synthetic_n_bonf_reject",
+        "synthetic_strongest_survives",
+        "synthetic_null_dropped",
+        "synthetic_min_null_padj",
+        "synthetic_score",
     ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

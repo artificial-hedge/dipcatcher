@@ -38,4 +38,4 @@ def test_bench_schema_and_score() -> None:
     r = bench_bai_ng()
     for k, v in r.items():
         assert np.isfinite(v), k
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
