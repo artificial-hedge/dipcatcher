@@ -119,7 +119,12 @@ def load_tombstones(corpus_dir: Path | str) -> dict[str, Any]:
             invalid.append(f"{path.name}:{','.join(errs)}")
             continue
         target_rel = str(body["target_receipt"])
-        target_path = root / target_rel
+        target_path = (root / target_rel).resolve()
+        if not target_path.is_relative_to(root.resolve()):
+            # A tombstone must name a corpus member — an escaping path makes
+            # the drift check hash arbitrary files (digest bit-oracle).
+            invalid.append(f"{path.name}:tombstone_target_uncontained:{target_rel}")
+            continue
         if not target_path.is_file():
             invalid.append(f"{path.name}:tombstone_target_missing:{target_rel}")
             continue

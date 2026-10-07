@@ -288,6 +288,57 @@
     },
     "research/auditor_bundle.py": {
       "status": "audited"
+    },
+    "research/verdict_run.py": {
+      "status": "audited"
+    },
+    "research/mean_eprocess.py": {
+      "status": "audited"
+    },
+    "research/admission.py": {
+      "status": "audited"
+    },
+    "research/witness_scan.py": {
+      "status": "audited"
+    },
+    "research/receipt_lattice.py": {
+      "status": "audited"
+    },
+    "research/monitor_run.py": {
+      "status": "audited"
+    },
+    "research/fuzz_drill.py": {
+      "status": "audited"
+    },
+    "research/evalue_contracts.py": {
+      "status": "audited"
+    },
+    "research/timestamp_anchor.py": {
+      "status": "audited"
+    },
+    "research/receipt_tombstone.py": {
+      "status": "audited"
+    },
+    "research/tamper_drill.py": {
+      "status": "audited"
+    },
+    "research/crown_jewels.py": {
+      "status": "audited"
+    },
+    "research/epoch_delta.py": {
+      "status": "audited"
+    },
+    "research/conformal_monitor.py": {
+      "status": "audited"
+    },
+    "research/phase1_verify.py": {
+      "status": "audited"
+    },
+    "research/replay_proof.py": {
+      "status": "audited"
+    },
+    "research/ots_anchor.py": {
+      "status": "audited"
     }
   },
   "schema_version": "audit-coverage/v1",

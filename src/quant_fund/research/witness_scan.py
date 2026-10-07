@@ -161,8 +161,13 @@ def scan_witness_log(
     try:
         uuids = _entry_uuids(pub_file.read_bytes(), rekor_url, timeout)
     except Exception as exc:  # noqa: BLE001 — online lane reports, not raises
+        # Fail closed: an unreachable index is NOT a clean scan — a
+        # key-misuse oracle reporting ok while blind waves through a
+        # stolen-key fork exactly when it matters. `online` separates the
+        # unreachable case from a real negative scan; the tail formula
+        # (`not foreign and not errors`) already implies ok=False here.
         return {
-            "ok": True,
+            "ok": False,
             "online": False,
             "scanned": 0,
             "foreign": [],

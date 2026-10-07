@@ -195,6 +195,7 @@ def monitor_fleet(
                 "coverage_alarmed": None,
                 "tail_alarmed": None,
                 "calibration_evalue": None,
+                "calibration_alarmed": None,
                 "conformal_alarmed": None,
                 "drift_alarmed": None,
             }
@@ -294,10 +295,14 @@ def monitor_fleet(
         },
         "lanes_available": lanes_available,
         "n_rows": frame.height,
+        # Every alarm column must feed the count — a head whose only alarm
+        # is calibration must still read as an alarm row (the v2 envelope
+        # verdict below maps n_alarm_rows>0 to "fail").
         "n_alarm_rows": int(
             frame.filter(
                 (pl.col("coverage_alarmed") == True)  # noqa: E712
                 | (pl.col("tail_alarmed") == True)  # noqa: E712
+                | (pl.col("calibration_alarmed") == True)  # noqa: E712
                 | (pl.col("conformal_alarmed") == True)  # noqa: E712
                 | (pl.col("drift_alarmed") == True)  # noqa: E712
             ).height

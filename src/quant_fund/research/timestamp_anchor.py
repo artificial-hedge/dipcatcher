@@ -278,10 +278,17 @@ def verify_timestamps(
             errors.append(f"imprint_mismatch:{label}")
             continue
         target = root_path / target_rel
-        if not target.is_file():
+        resolved = target.resolve()
+        if not resolved.is_relative_to(root_path.resolve()):
+            # Manifest-declared path must stay inside the tree — otherwise
+            # the freshness check hashes arbitrary host paths, a sealed
+            # digest bit-oracle over files the corpus never covered.
+            errors.append(f"anchor_target_uncontained:{label}")
+            continue
+        if not resolved.is_file():
             errors.append(f"anchor_target_missing:{label}")
             continue
-        fresh[label] = hash_bytes(target.read_bytes()) == declared
+        fresh[label] = hash_bytes(resolved.read_bytes()) == declared
         if openssl_ok:
             cmd = [
                 "openssl",

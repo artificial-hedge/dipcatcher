@@ -76,8 +76,8 @@ def test_valid_fixtures_pass_all_four_kinds() -> None:
 
 
 def test_promotion_arithmetic_must_hold() -> None:
-    bad = dict(_BASE_PROMOTION, anytime_p=0.5)  # not 1/25
-    assert "anytime_p_not_reciprocal_of_evalue" in evalue_family_contract_errors(bad)
+    bad = dict(_BASE_PROMOTION, anytime_p=0.5)  # > 1/25 — impossible under Ville
+    assert "anytime_p_exceeds_reciprocal_of_evalue" in evalue_family_contract_errors(bad)
     bad2 = dict(_BASE_PROMOTION, promotion_origin=200)
     assert "promotion_origin_out_of_range" in evalue_family_contract_errors(bad2)
     bad3 = dict(_BASE_PROMOTION, promoted=False, promotion_origin=None)
@@ -290,7 +290,7 @@ _BASE_HONEST_VERDICT = {
     "data_label": "SYNTHETIC",
     "research_only": True,
     "live_pnl_claim": False,
-    "verdict": "supported_with_caveats",
+    "verdict": "inconclusive",
     "winner": "gmm",
     "alpha": 0.05,
     "n_obs": 1152,
@@ -402,8 +402,12 @@ def test_lane_power_contract() -> None:
 
 
 def test_honest_verdict_contract() -> None:
-    bad = dict(_BASE_HONEST_VERDICT, unavailable_lanes=["winner_curse"])
-    assert "core_lane_missing_but_verdict_not_inconclusive" in evalue_family_contract_errors(bad)
+    bad = dict(
+        _BASE_HONEST_VERDICT,
+        verdict="supported_with_caveats",
+        unavailable_lanes=["winner_curse"],
+    )
+    assert "unavailable_lanes_but_verdict_not_inconclusive" in evalue_family_contract_errors(bad)
     ok = dict(_BASE_HONEST_VERDICT, verdict="inconclusive", unavailable_lanes=["drift"])
     assert evalue_family_contract_errors(ok) == []
     bad2 = dict(_BASE_HONEST_VERDICT, unavailable_lanes=["bogus"])

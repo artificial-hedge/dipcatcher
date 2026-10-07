@@ -86,11 +86,26 @@ def _shadow_corpus(corpus_dir: Path, extra: Path | None = None) -> Path:
 
 
 def _inconsistent_groups(lattice: Mapping[str, Any]) -> set[str]:
-    """Fingerprints of the inconsistent claim groups in a lattice receipt."""
+    """Inconsistency signatures of the claim groups in a lattice receipt.
+
+    Keyed on ``fingerprint | disagreement-digest`` rather than the bare
+    fingerprint: a candidate that lands a *new* contradiction inside an
+    already-inconsistent group changes the group's disagreement set, and a
+    fingerprint-only key would let that second contradiction slip the gate
+    (the group was already inconsistent, so the set delta stays empty).
+    """
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
     out: set[str] = set()
     for group in lattice.get("groups") or []:
         if isinstance(group, Mapping) and group.get("verdict") == "inconsistent":
-            out.add(str(group.get("fingerprint", "?")))
+            fp = str(group.get("fingerprint", "?"))
+            disagreements = group.get("disagreements")
+            if isinstance(disagreements, list) and disagreements:
+                digest = hash_bytes(canonical_json_bytes(disagreements))[:16]
+                out.add(f"{fp}|{digest}")
+            else:
+                out.add(fp)
     return out
 
 

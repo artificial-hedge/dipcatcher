@@ -331,37 +331,42 @@ def fuzz_drill(root: str | Path, seed: int = 1, rounds: int | None = None) -> di
                 detail = mutate()
             except (OSError, ValueError, json.JSONDecodeError) as exc:
                 results.append({"mutation": name, "expect": expect, "skipped": f"setup:{exc}"})
-                continue
-            if str(detail).startswith("no_"):
-                # Closure could not apply the mutation on this tree — a
-                # no-op must not be graded as an escape.
-                results.append({"mutation": name, "expect": expect, "skipped": str(detail)})
-                continue
-            res = verify_repo(clone)
-            got_ok = bool(res.get("ok", True))
-            gate_errors = sorted(
-                f"{g}:{e}"
-                for g, gate in res.get("gates", {}).items()
-                for e in (gate.get("errors") or [])
-            )
-            entry: dict[str, Any] = {
-                "mutation": name,
-                "expect": expect,
-                "detail": detail,
-                "verifier_ok": got_ok,
-            }
-            if expect == _EXPECT_FAIL and got_ok:
-                entry["outcome"] = "escaped"
-            elif expect == _EXPECT_OK and not got_ok:
-                entry["outcome"] = "false_positive"
-                entry["errors"] = gate_errors[:8]
             else:
-                entry["outcome"] = "correct"
-                if gate_errors:
-                    entry["errors"] = gate_errors[:8]
-            results.append(entry)
-            shutil.rmtree(clone)
-            shutil.move(str(snapshot), clone)
+                if str(detail).startswith("no_"):
+                    # Closure could not apply the mutation on this tree — a
+                    # no-op must not be graded as an escape.
+                    results.append({"mutation": name, "expect": expect, "skipped": str(detail)})
+                else:
+                    res = verify_repo(clone)
+                    got_ok = bool(res.get("ok", True))
+                    gate_errors = sorted(
+                        f"{g}:{e}"
+                        for g, gate in res.get("gates", {}).items()
+                        for e in (gate.get("errors") or [])
+                    )
+                    entry: dict[str, Any] = {
+                        "mutation": name,
+                        "expect": expect,
+                        "detail": detail,
+                        "verifier_ok": got_ok,
+                    }
+                    if expect == _EXPECT_FAIL and got_ok:
+                        entry["outcome"] = "escaped"
+                    elif expect == _EXPECT_OK and not got_ok:
+                        entry["outcome"] = "false_positive"
+                        entry["errors"] = gate_errors[:8]
+                    else:
+                        entry["outcome"] = "correct"
+                        if gate_errors:
+                            entry["errors"] = gate_errors[:8]
+                    results.append(entry)
+            finally:
+                # Restore the pristine clone EVERY iteration — a mutation
+                # that failed halfway (or was skipped) must not leak into
+                # the next grade's baseline, or every later mutation is
+                # judged against a contaminated tree.
+                shutil.rmtree(clone)
+                shutil.move(str(snapshot), clone)
     n_escaped = sum(1 for r in results if r.get("outcome") == "escaped")
     n_fp = sum(1 for r in results if r.get("outcome") == "false_positive")
     n_ran = sum(1 for r in results if "outcome" in r)

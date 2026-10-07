@@ -84,10 +84,15 @@ def test_quarantine_missing_stamps(corpus: Path, tmp_path: Path) -> None:
     del body["data_label"]
     candidate = _write(tmp_path, "bare.json", body)
     result = admission_check(candidate, corpus)
-    assert result["verdict"] == "quarantine"
+    # Missing stamps still surface as quarantine errors, but without a
+    # data_label the declared dataset digest is a non-synthetic tape
+    # binding no committed manifest attests — reject, not quarantine.
+    assert result["verdict"] == "reject"
     honesty = next(c for c in result["checks"] if c["name"] == "honesty")
     assert "research_only_missing" in honesty["quarantine_errors"]
     assert "data_label_missing" in honesty["quarantine_errors"]
+    seal = next(c for c in result["checks"] if c["name"] == "seal")
+    assert "tape_manifest_unknown" in seal["errors"]
 
 
 def test_quarantine_new_inconsistent_group(corpus: Path, tmp_path: Path) -> None:

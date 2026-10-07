@@ -87,9 +87,14 @@ def _evalue_promotion_errors(p: Mapping[str, Any]) -> list[str]:
     if ap is None or not (0.0 < ap <= 1.0):
         errors.append("anytime_p_out_of_unit_interval")
     if ev is not None and ap is not None and ev > 0.0:
+        # anytime_p derives from the RUNNING MAX e-value (Ville): a process
+        # that crossed 1/alpha then dipped reports ap = 1/max_e < 1/e_t —
+        # an equality pin would false-flag every legitimate post-peak
+        # receipt. The valid contract is one-sided: ap must never exceed
+        # 1/current_e (it is exactly 1/current_e only at the peak).
         expected = min(1.0, 1.0 / ev)
-        if not np.isclose(ap, expected, rtol=1e-6, atol=1e-9):
-            errors.append("anytime_p_not_reciprocal_of_evalue")
+        if ap > expected + max(1e-9, 1e-6 * expected):
+            errors.append("anytime_p_exceeds_reciprocal_of_evalue")
     origin = p.get("promotion_origin")
     promoted = p.get("promoted")
     if promoted not in (True, False):
@@ -557,9 +562,13 @@ def _honest_verdict_errors(p: Mapping[str, Any]) -> list[str]:
     for lane in unavailable:
         if lane not in components:
             errors.append(f"unavailable_lane_unknown:{lane}")
-    core_missing = {"winner_curse", "promotion", "drift"} & set(unavailable)
-    if core_missing and verdict != "inconclusive":
-        errors.append("core_lane_missing_but_verdict_not_inconclusive")
+    # The writer degrades to inconclusive when ANY component lane is
+    # unavailable — a lane that cannot run can neither vouch nor veto.
+    # Pinning the rule to a three-lane core would let a forged receipt
+    # claim "confirmed" while admitting magnitude/calibration/localize
+    # never ran.
+    if unavailable and verdict != "inconclusive":
+        errors.append("unavailable_lanes_but_verdict_not_inconclusive")
     promotion_detail = components.get("promotion")
     if verdict == "confirmed" and (
         not isinstance(promotion_detail, Mapping) or promotion_detail.get("promoted") is not True
@@ -845,10 +854,21 @@ def _serial_watch_errors(p: Mapping[str, Any]) -> list[str]:
     ):
         errors.append("alarmed_lags_not_int_list")
         alarmed_lags = []
-    elif n_lags is not None:
-        for k in alarmed_lags:
-            if not (1 <= k <= n_lags):
-                errors.append(f"alarmed_lag_out_of_range:{k}")
+    else:
+        if n_lags is not None:
+            for k in alarmed_lags:
+                if not (1 <= k <= n_lags):
+                    errors.append(f"alarmed_lag_out_of_range:{k}")
+        # alarmed_lags must be exactly the lags whose per-lag row alarms —
+        # the mirror check xwatch enforces; without it a forged receipt can
+        # carry alarmed_lags=[1] while per_lag.1.alarmed is false.
+        per_lag_alarmed = {
+            int(key)
+            for key, entry in per_lag.items()
+            if str(key).isdigit() and isinstance(entry, Mapping) and entry.get("alarmed") is True
+        }
+        if per_lag_alarmed != set(alarmed_lags):
+            errors.append("alarmed_lags_not_per_lag_partition")
     alarm_origins = p.get("alarm_origins")
     if not isinstance(alarm_origins, Mapping):
         errors.append("alarm_origins_not_mapping")

@@ -434,6 +434,25 @@ def lattice_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     elif payload.get("n_receipts") != len(digests):
         errors.append("n_receipts")
 
+    # Every advertised count must equal the length of the list it claims to
+    # summarize — an understated count drives `expected_verdict` below.
+    for field, list_key in (
+        ("n_parse_errors", "parse_errors"),
+        ("n_inputs_unspecified", "inputs_unspecified"),
+        ("n_dataset_unspecified", "dataset_unspecified"),
+        ("n_stale_code", "stale_code"),
+    ):
+        listing = payload.get(list_key)
+        if not isinstance(listing, list):
+            errors.append(f"{list_key}_not_list")
+        elif payload.get(field) != len(listing):
+            errors.append(field)
+    retracted = payload.get("retracted")
+    if not isinstance(retracted, Mapping):
+        errors.append("retracted_not_mapping")
+    elif payload.get("n_retracted") != len(retracted):
+        errors.append("n_retracted")
+
     if payload.get("n_claim_groups") != len(groups):
         errors.append("n_claim_groups")
     counts = {"consistent": 0, "numeric_drift": 0, "inconsistent": 0}

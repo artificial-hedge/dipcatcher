@@ -410,7 +410,10 @@ def audit_mean_eprocess(
                 )
                 continue
             for t_idx, tau in enumerate(tau_arr):
-                n_rows = min(n_eval, q.shape[0], y_eval.shape[0])
+                # Bound on BOTH prediction matrices: a baseline that returns
+                # fewer rows than the head would broadcast-crash pinball_loss
+                # mid-audit (uncaught — it sits outside the fit/predict try).
+                n_rows = min(n_eval, q.shape[0], q_base.shape[0], y_eval.shape[0])
                 lh = np.asarray(
                     pinball_loss(y_eval[:n_rows], q[:n_rows, t_idx], float(tau)),
                     dtype=float,

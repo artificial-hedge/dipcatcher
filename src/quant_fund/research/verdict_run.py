@@ -214,6 +214,10 @@ def run_verdict(
 
 
 _ENVELOPE_VERDICTS = {
+    # honest_verdict emits "confirmed" (never "supported") — an unmapped
+    # verdict silently degrades to "blocked" below, which would stamp a
+    # confirmed claim as blocked on the envelope.
+    "confirmed": "pass",
     "supported": "pass",
     "supported_with_caveats": "pass",
     "not_supported": "fail",
