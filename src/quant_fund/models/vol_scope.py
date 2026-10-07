@@ -162,6 +162,8 @@ def validate_scope_token(scope: object) -> str:
 
 def _validate_consumer_token(consumer_scope: object) -> str:
     """Return a consumer token exactly as registered, or raise fail-closed."""
+    if consumer_scope is None:
+        raise MissingScopeError("consumer_scope must be a non-empty string")
     if not isinstance(consumer_scope, str):
         raise CorruptedScopeError(
             f"consumer_scope must be a string token, got {type(consumer_scope).__name__}"
@@ -171,7 +173,12 @@ def _validate_consumer_token(consumer_scope: object) -> str:
     token = consumer_scope.strip()
     if token in KNOWN_CONSUMER_SCOPES:
         return token
-    _raise_unregistered(consumer_scope, token, KNOWN_CONSUMER_SCOPES, "consumer")
+    # Corruption classification spans every registered token — a near-miss of
+    # an artifact-side token on the consumer boundary is still a corrupted
+    # rendering, not an unknown one.
+    _raise_unregistered(
+        consumer_scope, token, KNOWN_ARTIFACT_SCOPES | KNOWN_CONSUMER_SCOPES, "consumer"
+    )
 
 
 def _mismatch_error(artifact: str, consumer: str) -> ScopeMismatchError:

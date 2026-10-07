@@ -140,7 +140,7 @@ def test_garch_metadata_reflects_spec() -> None:
         "q": 1,
         "dist": "t",
         "vol": "egarch",
-        "series_scope": "univariate_return_series",
+        "series_scope": "date_level_equal_weight_cross_section",
     }
 
 

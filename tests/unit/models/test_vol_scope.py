@@ -231,3 +231,9 @@ def test_mismatch_messages_are_directional_and_stable() -> None:
         assert_scope_compatible(PER_SECURITY_SCOPE, DATE_LEVEL_PORTFOLIO_CONSUMER)
     assert "scope mismatch" in str(per_security_error.value)
     assert PER_SECURITY_SCOPE in str(per_security_error.value)
+
+
+def test_none_consumer_is_missing_not_corrupted() -> None:
+    """Absent consumer token reports MissingScopeError (docstring taxonomy)."""
+    with pytest.raises(MissingScopeError):
+        assert_scope_compatible(PER_SECURITY_SCOPE, None)

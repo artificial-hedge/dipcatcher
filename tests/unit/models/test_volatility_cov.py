@@ -211,8 +211,12 @@ def test_garch_assert_consumer_scope_validates_and_matches() -> None:
         model.assert_consumer_scope("   ")
     with pytest.raises(ValueError, match="consumer_scope"):
         model.assert_consumer_scope(5)  # type: ignore[arg-type]
-    # Matching artifact/consumer scopes are admitted without error.
-    model.assert_consumer_scope("univariate_return_series")
+    # GARCHVol defaults to the pooled date-level overlay scope, so only the
+    # date_level_portfolio consumer is admitted; legacy univariate consumers
+    # must be rejected symmetrically.
+    model.assert_consumer_scope("date_level_portfolio")
+    with pytest.raises(ValueError, match="consumable only by date_level_portfolio"):
+        model.assert_consumer_scope("univariate_return_series")
 
 
 # --- in-sample sigma / z path validation ---

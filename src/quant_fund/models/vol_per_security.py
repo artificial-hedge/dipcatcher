@@ -58,6 +58,7 @@ from quant_fund.models.garch_ext import figarch_variance, fit_aparch, fit_figarc
 from quant_fund.models.vol_scope import (
     PER_SECURITY_CONSUMER,
     PER_SECURITY_SCOPE,
+    SECURITY_LEVEL_RET_1_SCOPE,
     assert_scope_compatible,
 )
 from quant_fund.models.volatility import GARCHVol, HARVol, ewma_variance
@@ -216,9 +217,16 @@ def _validate_time_axis(keys: NDArray[Any], times: NDArray[Any]) -> None:
 
 
 def _finite_history(history: Array, min_obs: int) -> Array:
-    """Finite trailing returns; insufficient history fails the key honestly."""
+    """Finite trailing returns; insufficient history fails the key honestly.
+
+    Any non-finite observation fails the key rather than silently shrinking
+    the fit window — a corrupted history must not launder into a shorter
+    clean sample.
+    """
     values = np.asarray(history, dtype=float).reshape(-1)
     finite = values[np.isfinite(values)]
+    if finite.size != values.size:
+        raise PerKeyVolError(f"non_finite_observations:{int(values.size - finite.size)}")
     if finite.size < min_obs:
         raise PerKeyVolError(f"insufficient_observations:{finite.size}<{min_obs}")
     return finite
@@ -334,7 +342,13 @@ def _fit_ewma_key(returns: Array, config: PerSecurityVol) -> _KeyFit:
 
 
 def _fit_garch_key(returns: Array, config: PerSecurityVol) -> _KeyFit:
-    model = GARCHVol(p=config.p, q=config.q, dist=config.dist, min_obs=config.min_obs)
+    model = GARCHVol(
+        p=config.p,
+        q=config.q,
+        dist=config.dist,
+        min_obs=config.min_obs,
+        series_scope=SECURITY_LEVEL_RET_1_SCOPE,
+    )
     model.fit_returns(returns)
     if model.fit_status != "fitted":
         raise PerKeyVolError(f"fallback:{model.fallback_reason or model.fit_status}")

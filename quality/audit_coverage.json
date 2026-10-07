@@ -825,6 +825,9 @@
   "models/vol_per_security.py": {
    "status": "audited"
   },
+  "models/vol_scope.py": {
+   "status": "audited"
+  },
   "models/volatility.py": {
    "status": "audited"
   },

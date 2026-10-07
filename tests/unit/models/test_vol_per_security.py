@@ -270,7 +270,7 @@ def test_ewma_forecast_matches_the_documented_recursion() -> None:
     var = history[0] ** 2
     for value in history[1:-1]:
         var = lam * var + (1.0 - lam) * value**2
-    expected = lam * var + (1.0 - lam) * history[-2] ** 2
+    expected = lam * var + (1.0 - lam) * history[-1] ** 2
     assert np.allclose(model.forecast("S00")["variance"][0], expected)
 
 
@@ -337,9 +337,11 @@ def test_unknown_key_raises_but_failed_key_returns_nan() -> None:
 
 
 def test_statuses_are_reported_per_key() -> None:
-    panel = _synthetic_keyed_panel(keys=("G1", "B1"), key_lengths={"G1": 120, "B1": 3})
+    panel = _synthetic_keyed_panel(keys=("A1", "B1"), key_lengths={"A1": 120, "B1": 3})
     model = PerSecurityVol("ewma", min_obs=20).fit(panel)
     batch = model.forecast_keys()
+    # keys are emitted in sorted order (documented key axis)
+    assert batch.keys == ("A1", "B1")
     assert batch.status == ("ok", "failed:insufficient_observations:3<20")
 
 
