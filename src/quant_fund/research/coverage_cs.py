@@ -90,7 +90,8 @@ class CoverageCS:
         silently folding it would deflate the measured breach rate, so
         anything outside {False, True, 0, 1} raises.
         """
-        assert self._log_w is not None
+        if not (self._log_w is not None):
+            raise ValueError("self._log_w is not None")
         b = float(_strict_breach(breach))
         p0 = np.asarray(self.p0_grid, dtype=float)
         for j, g in enumerate(self.alt_grid):
@@ -105,7 +106,8 @@ class CoverageCS:
 
     def _log_e(self) -> np.ndarray:
         """Log of the uniform mixture e-value per tested p0."""
-        assert self._log_w is not None
+        if not (self._log_w is not None):
+            raise ValueError("self._log_w is not None")
         lw = self._log_w
         m = lw.max(axis=1)
         out: np.ndarray = m + np.log(np.exp(lw - m[:, None]).mean(axis=1))

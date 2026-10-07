@@ -220,7 +220,8 @@ def _bars_to_matrices(
         dates = et_col.unique(maintain_order=False).sort().to_list()
     else:
         dates = sorted(set(et_col.to_list()))
-    assert len(dates) == n_dates
+    if not (len(dates) == n_dates):
+        raise ValueError("len(dates) == n_dates")
     return dates, dates_ns, sids, open_px, close_px, ctr, adv, vol, synthetic
 
 

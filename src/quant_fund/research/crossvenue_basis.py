@@ -488,7 +488,8 @@ def run_crossvenue_basis(
         )
         leg_rows.append(row)
         if row["status"] == "ok":
-            assert basis is not None
+            if not (basis is not None):
+                raise ValueError("basis is not None")
             basis_by_venue[leg.venue] = basis
             daily_by_venue[leg.venue] = daily
 

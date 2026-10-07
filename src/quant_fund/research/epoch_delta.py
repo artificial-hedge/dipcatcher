@@ -91,7 +91,8 @@ def _rows_with_paths(
             "path": p["path"],
         }
         if side == "changed":
-            assert isinstance(names, dict)
+            if not (isinstance(names, dict)):
+                raise ValueError("isinstance(names, dict)")
             row["from_sha256"], row["to_sha256"] = names[name]
         rows.append(row)
     return rows
@@ -305,7 +306,8 @@ def verify_epoch_delta(payload: Mapping[str, Any], corpus_dir: Path | str) -> li
         if load_err is not None:
             errors.append(f"{label}_{load_err}")
             continue
-        assert receipt is not None
+        if not (receipt is not None):
+            raise ValueError("receipt is not None")
         if receipt.get("epoch_root_sha256") != block.get("epoch_root_sha256"):
             errors.append(f"{label}_root_mismatch")
             continue

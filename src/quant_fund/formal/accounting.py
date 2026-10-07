@@ -144,7 +144,8 @@ class Account:
         )
         self.qty[security_id] = new_qty
         self.avg[security_id] = new_avg
-        assert self.cash is not None
+        if not (self.cash is not None):
+            raise ValueError("self.cash is not None")
         self.cash -= signed_qty * price + cost
 
     def position_value(self, marks: dict[str, float]) -> float:
@@ -156,7 +157,8 @@ class Account:
         return total
 
     def nav(self, marks: dict[str, float]) -> float:
-        assert self.cash is not None
+        if not (self.cash is not None):
+            raise ValueError("self.cash is not None")
         return self.cash + self.position_value(marks)
 
     def unrealized(self, marks: dict[str, float]) -> float:

@@ -427,7 +427,8 @@ class WATCHMonitor:
                 ),
                 False,
             )
-        assert self._cal_y is not None and self._cal_x is not None
+        if not (self._cal_y is not None and self._cal_x is not None):
+            raise ValueError("self._cal_y is not None and self._cal_x is not None")
         self._test_x.append(self._x[-1].copy())
         x_test = np.stack(self._test_x, axis=0)
         if self.weight_fn is None:

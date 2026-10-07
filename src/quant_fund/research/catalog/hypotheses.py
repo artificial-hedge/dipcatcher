@@ -1255,7 +1255,8 @@ def coverage_guarantee_scope_consistency_errors(families: object) -> list[str]:
         blob = families.get(fam)
         if not jp_cv_blob_requires_marginal_coverage_scope(blob):
             continue
-        assert isinstance(blob, dict)
+        if not (isinstance(blob, dict)):
+            raise ValueError("isinstance(blob, dict)")
         if "coverage_guarantee_scope" not in blob:
             errors.append(f"coverage_guarantee_scope_missing:{fam}")
         elif blob.get("coverage_guarantee_scope") != COVERAGE_GUARANTEE_SCOPE_MARGINAL:

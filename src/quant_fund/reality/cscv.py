@@ -89,7 +89,8 @@ def cscv_splits(
         is_idx = np.concatenate([blocks[b] for b in sorted(is_set)])
         oos_idx = np.concatenate([blocks[b] for b in range(s) if b not in is_set])
         splits.append((is_idx, oos_idx))
-    assert len(splits) == comb(s, s // 2)  # noqa: S101 — combinatorial invariant
+    if not (len(splits) == comb(s, s // 2)):
+        raise ValueError("len(splits) == comb(s, s // 2)")  # noqa: S101 — combinatorial invariant
     return splits
 
 
