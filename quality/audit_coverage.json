@@ -405,6 +405,9 @@
   "models/conformal.py": {
    "status": "audited"
   },
+  "models/conformal_transfer.py": {
+   "status": "audited"
+  },
   "models/copula.py": {
    "status": "audited"
   },
@@ -465,6 +468,9 @@
   "models/enkf.py": {
    "status": "audited"
   },
+  "models/extra_conformal.py": {
+   "status": "audited"
+  },
   "models/extra_tilt_conformal.py": {
    "status": "audited"
   },
@@ -486,7 +492,13 @@
   "models/hawkes_em.py": {
    "status": "audited"
   },
+  "models/hierarchical_conformal.py": {
+   "status": "audited"
+  },
   "models/honest_did.py": {
+   "status": "audited"
+  },
+  "models/hpd_conformal.py": {
    "status": "audited"
   },
   "models/ivs_diffusion.py": {
@@ -511,6 +523,9 @@
    "status": "audited"
   },
   "models/msgarch.py": {
+   "status": "audited"
+  },
+  "models/multisource_conformal.py": {
    "status": "audited"
   },
   "models/nardl.py": {
@@ -552,6 +567,9 @@
   "models/quantile_bandit.py": {
    "status": "audited"
   },
+  "models/quest.py": {
+   "status": "audited"
+  },
   "models/random_projection.py": {
    "status": "audited"
   },
@@ -571,6 +589,9 @@
    "status": "audited"
   },
   "models/regime_switch.py": {
+   "status": "audited"
+  },
+  "models/replicable_conformal.py": {
    "status": "audited"
   },
   "models/rl.py": {
