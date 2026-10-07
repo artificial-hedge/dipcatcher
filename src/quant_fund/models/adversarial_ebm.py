@@ -16,6 +16,16 @@ def _torch():
     return torch
 
 
+def _critic_loss(net, xr, xf):
+    """Critic objective: low energy on real, high on generated (+ L2 calm)."""
+    return net(xr).mean() - net(xf).mean() + 0.1 * ((net(xf) ** 2).mean() + (net(xr) ** 2).mean())
+
+
+def _gen_loss(net, gen, z):
+    """Generator objective: pull generated samples toward low energy."""
+    return net(gen(z)).mean()
+
+
 def bench_adversarial_ebm(seed: int = 2453, iters: int = 500) -> dict[str, float]:
     torch = _torch()
     Xtr, Xte = moon_data(seed)
@@ -29,12 +39,12 @@ def bench_adversarial_ebm(seed: int = 2453, iters: int = 500) -> dict[str, float
         x = Xt[torch.randint(0, len(Xt), (256,))]
         z = torch.randn(256, 4)
         xg = gen(z)
-        lc = -net(x).mean() + net(xg).mean() + 0.1 * ((net(xg) ** 2).mean() + (net(x) ** 2).mean())
+        lc = _critic_loss(net, x, xg)
         oc.zero_grad()
         lc.backward()
         oc.step()
         z = torch.randn(256, 4)
-        lg = -net(gen(z)).mean()  # gen wants low energy
+        lg = _gen_loss(net, gen, z)  # gen wants low energy
         og.zero_grad()
         lg.backward()
         og.step()

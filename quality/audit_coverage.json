@@ -741,6 +741,15 @@
   "models/activation_patch_studies.py": {
    "status": "audited"
   },
+  "models/activation_steering.py": {
+   "status": "audited"
+  },
+  "models/active_bald.py": {
+   "status": "audited"
+  },
+  "models/active_subspace.py": {
+   "status": "audited"
+  },
   "models/activitynet_qa_studies.py": {
    "status": "audited"
   },
@@ -756,7 +765,16 @@
   "models/ad_period.py": {
    "status": "audited"
   },
+  "models/adaboost.py": {
+   "status": "audited"
+  },
   "models/adad_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/adafactor_opt.py": {
+   "status": "audited"
+  },
+  "models/adams.py": {
    "status": "audited"
   },
   "models/adams_diff.py": {
@@ -771,6 +789,9 @@
   "models/adams_ss.py": {
    "status": "audited"
   },
+  "models/adapt_vqe.py": {
+   "status": "audited"
+  },
   "models/adapt_wavelet.py": {
    "status": "audited"
   },
@@ -781,6 +802,9 @@
    "status": "audited"
   },
   "models/adaptive_method_theory.py": {
+   "status": "audited"
+  },
+  "models/adaptive_qp.py": {
    "status": "audited"
   },
   "models/adaptive_quad2.py": {
@@ -810,6 +834,9 @@
   "models/adem_relations.py": {
    "status": "audited"
   },
+  "models/adi.py": {
+   "status": "audited"
+  },
   "models/adic_formal.py": {
    "status": "audited"
   },
@@ -819,7 +846,13 @@
   "models/adic_space.py": {
    "status": "audited"
   },
+  "models/adjoint_check.py": {
+   "status": "audited"
+  },
   "models/adjoint_functor.py": {
+   "status": "audited"
+  },
+  "models/adjoint_op.py": {
    "status": "audited"
   },
   "models/adjoint_sparse.py": {
@@ -829,6 +862,9 @@
    "status": "audited"
   },
   "models/adjule_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/adjunction.py": {
    "status": "audited"
   },
   "models/adjunction2.py": {
@@ -843,7 +879,13 @@
   "models/admissible_cat.py": {
    "status": "audited"
   },
+  "models/admm_lasso.py": {
+   "status": "audited"
+  },
   "models/adolescent_medicine_studies.py": {
+   "status": "audited"
+  },
+  "models/adpcm_ima.py": {
    "status": "audited"
   },
   "models/adrenal_medicine.py": {
@@ -858,16 +900,31 @@
   "models/adver_qa_studies.py": {
    "status": "audited"
   },
+  "models/adversarial_bandits.py": {
+   "status": "audited"
+  },
+  "models/adversarial_ebm.py": {
+   "status": "audited"
+  },
   "models/adversarial_eval_studies.py": {
    "status": "audited"
   },
   "models/adversarial_irl_studies.py": {
    "status": "audited"
   },
+  "models/adversarial_robust.py": {
+   "status": "audited"
+  },
   "models/advertising_studies.py": {
    "status": "audited"
   },
+  "models/advi_bbvi.py": {
+   "status": "audited"
+  },
   "models/adze_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/aead_etm.py": {
    "status": "audited"
   },
   "models/aegis_studies.py": {
@@ -882,6 +939,9 @@
   "models/aerospace_medicine.py": {
    "status": "audited"
   },
+  "models/aes_sbox.py": {
+   "status": "audited"
+  },
   "models/aesthetics.py": {
    "status": "audited"
   },
@@ -891,7 +951,13 @@
   "models/affect_qa_studies.py": {
    "status": "audited"
   },
+  "models/affine_karr.py": {
+   "status": "audited"
+  },
   "models/affine_lie.py": {
+   "status": "audited"
+  },
+  "models/affine_term.py": {
    "status": "audited"
   },
   "models/affinoid_alg.py": {
@@ -909,6 +975,12 @@
   "models/african_studies.py": {
    "status": "audited"
   },
+  "models/aft_model.py": {
+   "status": "audited"
+  },
+  "models/agaci.py": {
+   "status": "audited"
+  },
   "models/agama_qa_studies.py": {
    "status": "audited"
   },
@@ -918,7 +990,13 @@
   "models/agave_qa_studies.py": {
    "status": "audited"
   },
+  "models/agcrn.py": {
+   "status": "audited"
+  },
   "models/age_bias_studies.py": {
+   "status": "audited"
+  },
+  "models/agem_cl.py": {
    "status": "audited"
   },
   "models/agency_qa_studies.py": {
@@ -960,6 +1038,9 @@
   "models/ahb_ring.py": {
    "status": "audited"
   },
+  "models/aho_corasick.py": {
+   "status": "audited"
+  },
   "models/ahriman_qa_studies.py": {
    "status": "audited"
   },
@@ -981,6 +1062,9 @@
   "models/aider_polyglot_studies.py": {
    "status": "audited"
   },
+  "models/aig_rewrite.py": {
+   "status": "audited"
+  },
   "models/aime24_studies.py": {
    "status": "audited"
   },
@@ -988,6 +1072,9 @@
    "status": "audited"
   },
   "models/ainf_cohom.py": {
+   "status": "audited"
+  },
+  "models/aipw_ate.py": {
    "status": "audited"
   },
   "models/air_bench_studies.py": {
@@ -1021,6 +1108,9 @@
    "status": "audited"
   },
   "models/aiten_chayes.py": {
+   "status": "audited"
+  },
+  "models/aitken_delta.py": {
    "status": "audited"
   },
   "models/aitken_steffensen.py": {
@@ -1083,6 +1173,9 @@
   "models/alg_cobordism.py": {
    "status": "audited"
   },
+  "models/alg_effects.py": {
+   "status": "audited"
+  },
   "models/algebra_cat.py": {
    "status": "audited"
   },
@@ -1090,6 +1183,12 @@
    "status": "audited"
   },
   "models/algebraization.py": {
+   "status": "audited"
+  },
+  "models/algo_reasoning.py": {
+   "status": "audited"
+  },
+  "models/alibi_attn.py": {
    "status": "audited"
   },
   "models/alicanto_qa_studies.py": {
@@ -1105,6 +1204,12 @@
    "status": "audited"
   },
   "models/alkonost_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/all_pay_auction.py": {
+   "status": "audited"
+  },
+  "models/allan_variance.py": {
    "status": "audited"
   },
   "models/allday_k.py": {
@@ -1146,7 +1251,16 @@
   "models/alpacaeval_studies.py": {
    "status": "audited"
   },
+  "models/alpha.py": {
+   "status": "audited"
+  },
+  "models/alpha_beta.py": {
+   "status": "audited"
+  },
   "models/alpha_divergence.py": {
+   "status": "audited"
+  },
+  "models/alpha_geodesic.py": {
    "status": "audited"
   },
   "models/alpha_shape.py": {

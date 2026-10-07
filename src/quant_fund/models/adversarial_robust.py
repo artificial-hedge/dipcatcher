@@ -57,11 +57,17 @@ class Mlp:
         p = self.prob(x)
         n = len(y)
         dz = p - y
-        self.w2 -= lr * (h.T @ dz / n)
-        self.b2 -= lr * float(dz.mean())
+        # all gradients evaluated against the same forward pass — compute
+        # every update before mutating any parameter
+        gw2 = h.T @ dz / n
+        gb2 = float(dz.mean())
         dh = dz[:, None] * self.w2[None, :] * (1 - h**2)
-        self.w1 -= lr * (x.T @ dh / n)
-        self.b1 -= lr * dh.mean(0)
+        gw1 = x.T @ dh / n
+        gb1 = dh.mean(0)
+        self.w2 -= lr * gw2
+        self.b2 -= lr * gb2
+        self.w1 -= lr * gw1
+        self.b1 -= lr * gb1
 
     def fit(
         self, x: FloatArray, y: FloatArray, lr: float = 0.1, epochs: int = 300, eps: float = 0.0

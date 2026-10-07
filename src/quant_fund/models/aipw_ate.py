@@ -45,13 +45,25 @@ from numpy.typing import NDArray
 FloatArray = NDArray[np.float64]
 
 
+_IRLS_LAM = 1e-6
+
+
+def _irls_step(x: FloatArray, d: FloatArray, beta: FloatArray) -> FloatArray:
+    """One penalized Newton step for ridge-regularized logit IRLS."""
+    eta = np.clip(x @ beta, -30.0, 30.0)
+    p = 1.0 / (1.0 + np.exp(-eta))
+    w = np.clip(p * (1.0 - p), 1e-8, None)
+    k = x.shape[1]
+    return np.linalg.solve(
+        (x * w[:, None]).T @ x + _IRLS_LAM * np.eye(k),
+        x.T @ (d - p) - _IRLS_LAM * beta,
+    )
+
+
 def _irls_logit(x: FloatArray, d: FloatArray, iters: int = 50) -> FloatArray:
     beta = np.zeros(x.shape[1])
     for _ in range(iters):
-        eta = np.clip(x @ beta, -30.0, 30.0)
-        p = 1.0 / (1.0 + np.exp(-eta))
-        w = np.clip(p * (1.0 - p), 1e-8, None)
-        step = np.linalg.solve((x * w[:, None]).T @ x, x.T @ (d - p) + 1e-6 * beta)
+        step = _irls_step(x, d, beta)
         beta = beta + step
         if float(np.max(np.abs(step))) < 1e-8:
             break

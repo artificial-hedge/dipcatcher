@@ -48,8 +48,9 @@ def _train_and_eval(seed: int, alibi: bool, iters: int = 800) -> tuple[float, fl
         att = torch.softmax(logits, -1)
         return head(att @ v(h))[:, -1]
 
+    rng = np.random.default_rng(seed + 7)
     for _ in range(iters):
-        x, y = recall_batch(int(np.random.default_rng().integers(0, 1 << 30)))
+        x, y = recall_batch(int(rng.integers(0, 1 << 30)))
         xt, yt = torch.tensor(x), torch.tensor(y)
         loss = torch.nn.functional.cross_entropy(forward(xt, xt.shape[1]), yt)
         opt.zero_grad()

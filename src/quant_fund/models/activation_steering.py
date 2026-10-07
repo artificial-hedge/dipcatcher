@@ -25,8 +25,13 @@ def bench_activation_steering(
     a, s = synth_activations(n, dirs, rng)
     probe = LogisticRegression(max_iter=400).fit(a[: n // 2], s[: n // 2, target] > 0)
     acc0 = float(probe.score(a[n // 2 :], s[n // 2 :, target] > 0))
-    # steering vector: mean activation diff between s_k>0 and s_k=0
-    v = a[s[:, target] > 0].mean(0) - a[s[:, target] == 0].mean(0)
+    # steering vector: mean activation diff between s_k>0 and s_k=0 —
+    # estimated on the train half only so eval-half labels cannot leak in
+    a_tr, s_tr = a[: n // 2], s[: n // 2, target]
+    pos, neg = a_tr[s_tr > 0], a_tr[s_tr == 0]
+    if pos.size == 0 or neg.size == 0:
+        raise ValueError("target feature must appear on and off in the train half")
+    v = pos.mean(0) - neg.mean(0)
     v = v / np.linalg.norm(v)
     a_steer = a[n // 2 :] - lam * v[None, :]  # subtract feature
     flip = float((probe.predict(a_steer) != (s[n // 2 :, target] > 0)).mean())

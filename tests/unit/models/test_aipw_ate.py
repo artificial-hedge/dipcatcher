@@ -60,6 +60,28 @@ def test_validation() -> None:
         aipw_ate(y, tr, x, trim=0.5)
 
 
+def test_irls_step_is_penalized_newton() -> None:
+    # One IRLS step must be (XᵀWX + λI)⁻¹ (Xᵀ(d−p) − λβ) — the previous
+    # code added +λβ on the RHS and never put λI on the LHS, which inflates
+    # ‖β‖ instead of penalizing it.
+    from quant_fund.models.aipw_ate import _IRLS_LAM, _irls_step
+
+    rng = np.random.default_rng(0)
+    n = 200
+    x = np.column_stack([np.ones(n), rng.normal(0, 1, n), rng.normal(0, 1, n)])
+    d = rng.binomial(1, 0.5, n).astype(float)
+    beta = np.array([0.4, -0.7, 0.2])
+    step = _irls_step(x, d, beta)
+    eta = np.clip(x @ beta, -30.0, 30.0)
+    p = 1.0 / (1.0 + np.exp(-eta))
+    w = np.clip(p * (1.0 - p), 1e-8, None)
+    want = np.linalg.solve(
+        (x * w[:, None]).T @ x + _IRLS_LAM * np.eye(x.shape[1]),
+        x.T @ (d - p) - _IRLS_LAM * beta,
+    )
+    np.testing.assert_allclose(step, want, atol=1e-12)
+
+
 def test_bench() -> None:
     out = bench_aipw_ate()
     assert out["synthetic_detects"] == 1.0

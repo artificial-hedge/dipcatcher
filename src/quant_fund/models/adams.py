@@ -63,8 +63,8 @@ def ab3(f, y0: float, t: FloatArray) -> FloatArray:
 
 
 def abm3(f, y0: float, t: FloatArray) -> FloatArray:
-    """AB2 predict / Adams–Moulton-3 (trapezoid AM2) correct — a
-    classic PECE pair, order 3 overall with two corrector passes."""
+    """AB3 predict / Adams–Moulton-3 (5f_{n+1}+8f_n−f_{n-1})/12 correct —
+    a classic PECE pair, order 3 overall with two corrector passes."""
     out = np.empty(len(t))
     out[0] = y0
     h = t[1] - t[0]

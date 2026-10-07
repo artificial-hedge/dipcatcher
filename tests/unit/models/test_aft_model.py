@@ -68,6 +68,19 @@ def test_determinism():
     assert float(a["beta_1"]) == float(b["beta_1"])
 
 
+def test_median_at_mean_includes_intercept():
+    # median survival at x=mean must be exp(β0 + x̄β)·(ln2)^σ — dropping
+    # β0 shrinks the median by e^{-β0} (synth DGP fits β0 ≈ 0.35).
+    d = synth_aft(beta=-0.5, seed=37)
+    x = np.asarray(d["x"])
+    out = aft_fit(np.asarray(d["t"]), np.asarray(d["d"]), x)
+    expected = float(
+        np.exp(float(out["beta_0"]) + float(x.mean(0) @ np.array([out["beta_1"]])))
+        * math.log(2) ** float(out["sigma"])
+    )
+    assert abs(float(out["median_at_mean"]) / expected - 1.0) < 1e-9
+
+
 def test_bench_keys():
     out = bench_aft_model()
     for k, v in out.items():

@@ -116,8 +116,8 @@ def aft_fit(t: FloatArray, d: FloatArray, x: FloatArray) -> dict[str, float]:
 
     # reference: naive OLS on log-times ignoring censoring
     b_naive = np.linalg.lstsq(xx1, lt, rcond=None)[0]
-    # median survival at x=mean: exp(x̄β)·(ln2)^σ
-    med = float(np.exp(xx.mean(0) @ beta[1:]) * (math.log(2)) ** sig)
+    # median survival at x=mean: exp(β0 + x̄β)·(ln2)^σ
+    med = float(np.exp(float(beta[0]) + xx.mean(0) @ beta[1:]) * (math.log(2)) ** sig)
 
     return {
         "n": float(n),

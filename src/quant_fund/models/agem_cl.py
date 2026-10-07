@@ -10,6 +10,19 @@ import numpy as np
 from quant_fund.models.continual_learning import regime_panel
 
 
+def _agem_projected(g: np.ndarray, gref: np.ndarray | None) -> np.ndarray:
+    """Return the gradient actually applied by A-GEM: clip, then project.
+
+    Clipping must precede the projection check — clipping after the
+    projection can re-introduce a negative g·gref and silently void the
+    non-interference guarantee.
+    """
+    g = np.clip(g, -50, 50)
+    if gref is not None and float(g @ gref) < 0:
+        g = g - (g @ gref) / max(float(gref @ gref), 1e-12) * gref
+    return np.asarray(g)
+
+
 def bench_agem_cl(seed: int = 771, T: int = 200, buf: int = 40) -> dict[str, float]:
     rng = np.random.default_rng(seed)
     kinds = ["momentum", "reversal", "volatility"]
@@ -24,10 +37,10 @@ def bench_agem_cl(seed: int = 771, T: int = 200, buf: int = 40) -> dict[str, flo
             if mx:
                 Xm = np.asarray(mx)
                 ym = np.asarray(my)
-                gref = Xm.T @ (Xm @ w - ym) / len(Xm)
-                if float(g @ gref) < 0:
-                    g = g - (g @ gref) / max(float(gref @ gref), 1e-12) * gref
-            w -= lr * np.clip(g, -50, 50)
+                gref: np.ndarray | None = Xm.T @ (Xm @ w - ym) / len(Xm)
+            else:
+                gref = None
+            w -= lr * _agem_projected(g, gref)
         idx = rng.choice(len(x), min(buf, len(x)), replace=False)
         mx = list(x[idx])
         my = list(y[idx])
