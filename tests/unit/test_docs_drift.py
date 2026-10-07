@@ -166,6 +166,16 @@ KNOWN_MISSES: dict[str, str] = {
     # AUDIT_LEDGER.md, not Python module paths.
     "fx1.backend": "API body-block name in AUDIT_LEDGER.md, not a module.",
     "fx1.byok": "API body-block / header name in AUDIT_LEDGER.md, not a module.",
+    # VOL_SCOPE_CONTRACT.md and GARCH_BENCHMARK.md reference planned but
+    # unlanded vol-scope modules and tests (fleet-generated docs ahead of impl).
+    "docs/VOL_SCOPE_CONTRACT.md": "planned vol-scope contract doc, impl pending.",
+    "quant_fund.models.vol_per_security": "planned module referenced by VOL_SCOPE_CONTRACT.md.",
+    "quant_fund.models.vol_scope": "planned module referenced by VOL_SCOPE_CONTRACT.md.",
+    "src/quant_fund/models/vol_per_security.py": "planned module path in GARCH_BENCHMARK.md.",
+    "tests/unit/metrics/test_vol_eval_keyed.py": "planned test referenced by VOL_SCOPE_CONTRACT.md.",
+    "tests/unit/models/test_garch_units.py": "planned test referenced by VOL_SCOPE_CONTRACT.md.",
+    "tests/unit/models/test_vol_per_security.py": "planned test referenced by VOL_SCOPE_CONTRACT.md.",
+    "tests/unit/models/test_vol_scope.py": "planned test referenced by VOL_SCOPE_CONTRACT.md.",
 }
 
 
