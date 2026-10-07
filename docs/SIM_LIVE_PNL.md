@@ -258,6 +258,47 @@ window cell is published below, losers included; nothing is dropped.
 - Any attractive parameter value discovered by this sweep is NOT run. It
   would require a new dated pre-registration and is out of scope here.
 
+## Chop-regime robustness sweep — RESULTS (run 2026-10-07T16:51–16:53+05:30)
+
+**Retrospective analytics, `live_pnl_claim=false`. Binance USDT spot majors
+only; not market evidence; not a live-trading claim.** Every pre-registered
+mechanism × every pre-registered window is published; losers included,
+nothing dropped. `sharpe_simulated` / total return / max drawdown / fills via
+`run_backtest`, identical bars per window.
+
+| window | base | `vol_scale_002` | `breadth_gross` | `trend_gate_010` |
+|---|---|---|---|---|
+| W1 full (5 majors) | 0.39 / +3.6% / −3.4% / 151 fills | **1.22 / +15.7% / −3.0% / 931** | = base (no effect) | 0.36 / +3.3% / −3.5% / 216 |
+| W2 last 800d | no trades (0 fills) | 0.13 / +0.10% / −0.39% / 25 | no trades | no trades |
+| W3 last 500d | no trades (0 fills) | 0.83 / +0.05% / −0.02% / 6 | no trades | no trades |
+| W4 8.3y (3 majors) | no trades (0 fills) | −0.03 / −0.05% / −0.40% / 25 | no trades | no trades |
+
+**Run-environment anomaly (disclosed, unresolved).** The base book here does
+NOT reproduce the lane's historical bench receipts: on W4's exact bars
+(sha256-identical) and byte-identical `vin3stack` policy, the historical
+receipt reports SR 1.127 / +652% / 1,078 fills; this run records 0 fills and
+a flat book on 3 of 4 windows. The divergence is therefore in the run
+configuration, not the declaration: this sweep used `AppConfig()` defaults
+where the lane's bench runs used a different config object. A corrective
+re-run pinning `data.source=binance_public_data` produced byte-identical
+outcomes, so the data label is not the cause. Within this round the
+environment could not be reconciled to the historical bench config.
+
+**Pre-declared verdicts (applied mechanically):** `vol_scale_002` — NOT
+chop-lift success (criterion (a) not evaluable: base degenerate on W2/W3/W4;
+known cells help W1 strongly); `breadth_gross` — NOT success (zero effect in
+every evaluable cell); `trend_gate_010` — NOT success (criterion (b) fails:
+ΔW1 = −0.026). REGIME-FITTING is **not evaluable** — the sign-reversal test
+needs a live base in every window and the control book is degenerate in three
+of four. Recorded verdict, in the `leader_edge_min`/`fund_cut` verdict shape:
+**none of the pre-registered mechanisms lifts the worst window without
+hurting the full window**, and the sweep is additionally recorded as a
+**NON-RESULT pending run-environment reconciliation** — it must not be read
+as out-sample or forward evidence (the 2025 holdout is spent;
+`forward_2026H2` is not yet collected). Per the pre-declaration, no
+parameter value discovered here will be tried; any future sweep needs a new
+dated pre-registration.
+
 ## Per-asset attribution (same policy, single-name books)
 
 BNB +195% (SR 0.95) · BTC +112% (0.99) · ETH +100% (0.75) ·

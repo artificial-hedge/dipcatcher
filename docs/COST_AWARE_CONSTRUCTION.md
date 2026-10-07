@@ -21,6 +21,24 @@ are in `data/metadata/research/phase1_20260925.md`, linked by
 candidate and no test receipt. The test command below applies only after a
 new frozen run has selected a validation candidate.
 
+**2026-10-07 re-run verdict (receipt `receipts/cost_aware_rerun_20261007.json`,
+seal `618fadcd…`).** The conditioning repair and the fail-closed solver chain
+are mechanically proven (see *Numerical solve protocol*), but the matched
+validation re-run on the tracked 424-name snapshot under the committed chain
+**selects nothing again** — `selected: null`, `complete: false`. Some
+cost-aware decisions still end in `optimal_inaccurate`, which the chain
+records as a diagnostic and refuses, exactly as designed. Said loudly and
+clearly: **no candidate is selected; no test receipt exists;
+`economic_evidence_gate` is `false`; `selected_holdout_adjusted_rejection`
+never turned true because no test phase ever ran.** A superseded run under
+the pre-rewrite 314-line repair did select `momentum_20_cost_aware`, but
+forensic byte-hash evidence shows that run used the older, looser-acceptance
+code (`058afffc…`), not this chain; its own test phase was refused by the
+run's code lock after external tree wipes. The disagreement between the two
+runs is disclosed in the receipt and is not reconciled: the fail-closed
+refusal is binding, and the earlier selection is not claimed as evidence of
+a conditioning-fix success.
+
 ## Run a matched comparison
 
 After preparing the benchmark manifest as described in [REAL_DATA_BENCHMARK.md](REAL_DATA_BENCHMARK.md):
@@ -125,25 +143,69 @@ implementation.
 
 ## Numerical solve protocol
 
-The frozen September 25 receipt remains a failed run. The later numerical repair
-tries these formulations in this fixed order, with fresh CVXPY variables and
-CLARABEL gap and feasibility tolerances of `1e-8` on every attempt:
+The frozen September 25 receipt remains a failed run. The 2026-10-07 repair
+fixes problem conditioning and adds a fail-closed multi-solver chain; the
+acceptance bar is not lowered anywhere. Solvers are the installed set only
+(CLARABEL, OSQP, SCS, HiGHS/SCIPY; ECOS is absent and no dependency is
+added).
+
+**Solver chain and capability gating.** Each solve attempt runs
+CLARABEL → OSQP → SCS → HIGHS in order, skipping solvers that cannot
+represent the problem: the 3/2-power impact cone (`imp·δ^1.5`) is supported
+by CLARABEL and SCS only; OSQP is QP-only (eligible when `impact=0`); HIGHS
+is LP-only and is never eligible because the quadratic risk term is always
+present — recorded honestly as `not_attempted_unsupported_cone`. Every
+attempt records solver name, normalized status, iteration count and
+wall-clock solve time; wall-clock is stripped from the hashed ledger so
+allocations stay deterministic across runs.
+
+**Status normalization (fail-closed dispatch table).** Only a genuinely
+`optimal`, constraint-satisfying solution is selectable.
+`optimal_inaccurate`, `suboptimal`, `feasible`, `user_limit`, `infeasible`,
+`unbounded`, `numerical_error`, `solver_error` and `indeterminate` are
+recorded as diagnostics with `selection_verdict: not_selectable` and can
+never supply weights; an unrecognized status string maps to `("unknown",
+not_selectable)`. The independent recomputation gate is unchanged: capacity,
+turnover, buffered exposure and cash limits must hold and the recomputed
+objective must agree within `1e-7` before any weight is accepted.
+
+**Formulation ladder (mathematically equivalent only).** Fixed order, fresh
+CVXPY variables per attempt:
 
 | Formulation | Exact change from the original model |
 |---|---|
-| `original` | Original objective scaled by 100. |
-| `bounded_capacity` | Limit each nonnegative trade variable by `min(capacity, turnover_limit)` and scale the objective by 1. `sum(delta) <= turnover_limit` already implies each bound. |
+| `original` | Original problem with the conditioning fixes below. |
+| `bounded_capacity` | Limit each nonnegative trade variable by `min(capacity, turnover_limit)`. `sum(delta) <= turnover_limit` already implies each bound. |
 | `factored_risk` | Write the same PSD quadratic risk as a squared eigenfactor norm. |
-| `scaled_cost` | Express the same transaction-cost epigraph in units 10,000 times larger, then divide it in the objective and constraints. |
+| `scaled_cost` | Express the same transaction-cost epigraph in nondimensional units (`cost_unit`), divided out in objective and constraints. |
 
-Only an `optimal` status may supply weights. The returned weights must satisfy
-the original capacity, turnover, buffered exposure, and cash limits when costs
-are recomputed in NAV fractions. The recomputed objective must agree with the
-solver objective within `1e-7`. Failed attempts, solver statuses, and selected
-formulation are recorded in each allocation diagnostic. No risk, cost, or
-feasibility threshold is relaxed. Four market-derived numerical fixtures in
-`tests/fixtures/cost_allocation/` exercise the previously failing decisions;
-their success measures solver reliability, not a market edge.
+**Conditioning diagnosis (why CLARABEL returned `optimal_inaccurate`).** The
+September formulation amplified the objective by 100 while keeping fixed
+absolute solver tolerances — effectively demanding a `1e-10` gap in original
+units on a badly scaled cost-epigraph variable (~`1e-4`), next to redundant
+capacity bounds of order `1e3`. On the market-derived `momentum_factor359`
+fixture a one-change-at-a-time flip experiment isolates the cause: objective
+scale 100→1 alone → `optimal` (41 iterations) instead of
+`optimal_inaccurate` (58); bound presolve alone → still `optimal_inaccurate`
+(90); cost-epigraph nondimensionalization alone → `optimal` (118); all three
+→ `optimal` (18). The repair therefore rescales and reformulates the problem
+— deterministic uniform objective scaling `1/s_obj` (the objective is
+degree-1 homogeneous, so this is exact), cost-epigraph nondimensionalization,
+bound presolve `min(capacity, turnover_limit)`, and the eigenfactor risk form
+— and applies uniform original-unit tolerances: `GAP_TOL_ORIGINAL = 1e-10`
+(the strictest gap any historical formulation effectively demanded —
+tightened, never loosened) and `FEAS_TOL_ORIGINAL = 1e-8`.
+
+**Equivalence proof.** `tests/unit/backtest/test_cost_solver_chain.py`
+proves scaled and unscaled problems return the same solution (uniform
+scaling `k ∈ {1e-2, 1e-1, 1e1, 1e2}`, `atol=1e-6`) and that every
+exactly-equivalent formulation agrees (`atol=1e-5`, ~0.001% NAV; measured
+agreement ~3e-6). A status-matrix test pins that only `optimal` is
+selectable; forced non-selectable statuses and injected constraint
+violations never provide weights. Four market-derived numerical fixtures in
+`tests/fixtures/cost_allocation/` exercise the previously failing decisions
+as a numerical regression only: their success measures solver reliability,
+not a market edge.
 
 ## Validation and research basis
 
