@@ -115,7 +115,8 @@ def test_committed_receipt_binds_head_source() -> None:
     clone can't resolve the revision (exports, shallow trees)."""
     payload = json.loads(Path("receipts/fx1_webhook_delivery_audit.json").read_text())
     rev = payload.get("git_revision")
-    assert isinstance(rev, str) and re.fullmatch(r"[0-9a-f]{40}", rev)
+    assert isinstance(rev, str)
+    assert re.fullmatch(r"[0-9a-f]{40}", rev)
     show = subprocess.run(
         ["git", "show", f"{rev}:src/fx1/serve/webhook_delivery_audit.py"],
         capture_output=True,

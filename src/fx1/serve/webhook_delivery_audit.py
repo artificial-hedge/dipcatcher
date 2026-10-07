@@ -666,7 +666,7 @@ def _probe_deliver() -> dict[str, bool]:
 
     # 3xx is retryable (not <300 → error → not 4xx → outer retry)
     with _allow_private(), _Recorder([302, 200]) as rec:
-        with mock.patch("time.sleep", lambda s: None):
+        with mock.patch("time.sleep", return_value=None):
             ok, _err, attempts = deliver_signed(rec.url, _SECRET, _BODY)
         out["redirect_is_retried_not_followed"] = ok and attempts == 2 and len(rec.hits) == 2
 
@@ -675,7 +675,7 @@ def _probe_deliver() -> dict[str, bool]:
     # burns time.time() for its Date header, so call counts lie).
     with _allow_private(), _Recorder([500, 200]) as rec:
         with (
-            mock.patch("time.sleep", lambda s: None),
+            mock.patch("time.sleep", return_value=None),
             mock.patch(
                 "time.time",
                 side_effect=lambda: 1700000001.1 if rec.hits else 1700000000.9,
@@ -694,7 +694,7 @@ def _probe_deliver() -> dict[str, bool]:
     # the same second even with the Date-header burn in between.
     with _allow_private(), _Recorder([500, 200]) as rec:
         with (
-            mock.patch("time.sleep", lambda s: None),
+            mock.patch("time.sleep", return_value=None),
             mock.patch(
                 "time.time",
                 side_effect=lambda: 1700000002.9 if rec.hits else 1700000002.1,
@@ -710,7 +710,7 @@ def _probe_deliver() -> dict[str, bool]:
     dead_port = dead.getsockname()[1]
     dead.close()
     with _allow_private():
-        with mock.patch("time.sleep", lambda s: None):
+        with mock.patch("time.sleep", return_value=None):
             ok, err, attempts = deliver_signed(
                 f"http://{_LOOPBACK}:{dead_port}/x", _SECRET, _BODY, max_attempts=3
             )
@@ -732,7 +732,7 @@ def _probe_deliver() -> dict[str, bool]:
 
     # a slow endpoint runs past timeout_s → fault retried, never raised
     with _allow_private(), _Recorder([200], delay_s=0.4) as rec:
-        with mock.patch("time.sleep", lambda s: None):
+        with mock.patch("time.sleep", return_value=None):
             ok, err, attempts = deliver_signed(
                 rec.url, _SECRET, _BODY, max_attempts=2, timeout_s=0.15
             )
@@ -772,7 +772,7 @@ def _probe_deliver_address_walk() -> dict[str, bool]:
     with (
         _allow_private(),
         mock.patch("fx1.serve.webhooks._post_once", side_effect=fake_post),
-        mock.patch("time.sleep", lambda s: None),
+        mock.patch("time.sleep", return_value=None),
         mock.patch.object(socket, "getaddrinfo", gai_for(["93.184.216.34", "93.184.216.35"])),
     ):
         # first address faults → second is tried
@@ -840,7 +840,7 @@ def _probe_deliver_misc() -> dict[str, bool]:
 
     # max_attempts=1 honored; max_attempts=0 never dials
     with _allow_private(), _Recorder([500]) as rec:
-        with mock.patch("time.sleep", lambda s: None):
+        with mock.patch("time.sleep", return_value=None):
             ok, err, att = deliver_signed(rec.url, "s", _BODY, max_attempts=1)
         out["max_attempts_one_single_call"] = not ok and att == 1 and len(rec.hits) == 1
     with _allow_private():
@@ -852,7 +852,7 @@ def _probe_deliver_misc() -> dict[str, bool]:
     # resolution failure counts as a per-attempt fault
     with (
         _allow_private(),
-        mock.patch("time.sleep", lambda s: None),
+        mock.patch("time.sleep", return_value=None),
         mock.patch.object(socket, "getaddrinfo", side_effect=socket.gaierror("no such host")),
     ):
         ok, err, att = deliver_signed(

@@ -104,6 +104,17 @@ _SECRET_A = "whsec-del-a"  # NOSONAR — loopback-only test key, not a real cred
 _SECRET_B = "whsec-del-b"  # NOSONAR — loopback-only test key, not a real credential
 _PRIV_ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
 
+_P_STALL = "/stall"
+_P_LANDING = "/landing"
+_P_S429 = "/s429"
+_P_S500 = "/s500"
+_P_ORD_A = "/ord-a"
+_P_ORD_B = "/ord-b"
+_P_FO_JOB = "/fo-job"
+_P_FO_JC = "/fo-jc"
+_P_FO_B = "/fo-b"
+_P_FO_AB = "/fo-ab"
+_P_LED_Q = "/led-queued"
 _URL_NXHOST = "http://nonexistent.invalid./hook"  # NOSONAR — intentionally unresolvable
 _URL_BAD_FILE = "file:///etc/passwd"  # NOSONAR — intentionally insecure scheme
 _URL_BAD_GOPHER = "gopher://x/hook"  # NOSONAR — intentionally insecure scheme
@@ -185,17 +196,17 @@ class _Sink:
                     )
                     seen = sink.path_n.get(path, 0) + 1
                     sink.path_n[path] = seen
-                if path.startswith("/stall"):
+                if path.startswith(_P_STALL):
                     time.sleep(sink.stall_s)
                     code = 200
                 elif path == "/flaky":
                     code = 500 if seen < 3 else 200
                 elif path.startswith("/r") and path[2:].isdigit():
                     self.send_response(int(path[2:]))
-                    self.send_header("Location", "/landing")
+                    self.send_header("Location", _P_LANDING)
                     self.end_headers()
                     return
-                elif path == "/s429":
+                elif path == _P_S429:
                     self.send_response(429)
                     self.send_header("Retry-After", "1")
                     self.end_headers()
@@ -208,7 +219,8 @@ class _Sink:
                 self.end_headers()
 
             def log_message(self, *args: Any) -> None:
-                pass
+                # keep the default stderr request log out of probe output
+                return None
 
         self._srv = ThreadingHTTPServer(("127.0.0.1", 0), _H)
         self._thread = threading.Thread(target=self._srv.serve_forever, daemon=True)
@@ -256,7 +268,8 @@ class _V6Sink:
                 self.end_headers()
 
             def log_message(self, *args: Any) -> None:
-                pass
+                # keep the default stderr request log out of probe output
+                return None
 
         self._srv = _V6Server(("::1", 0), _H)
         self._thread = threading.Thread(target=self._srv.serve_forever, daemon=True)
@@ -350,14 +363,14 @@ def _probe_verdict_table(sink: _Sink) -> dict[str, bool]:
 
     # 429 + Retry-After is *definitive* under the 4xx contract — the
     # dispatcher does not honor the hint; pinned as the measured verdict.
-    ok, err, att = deliver_signed(sink.url("/s429"), None, body, backoff_s=0)
+    ok, err, att = deliver_signed(sink.url(_P_S429), None, body, backoff_s=0)
     out["verdict_429_definitive_despite_retry_after"] = (
-        ok is False and att == 1 and "429" in (err or "") and sink.path_n.get("/s429") == 1
+        ok is False and att == 1 and "429" in (err or "") and sink.path_n.get(_P_S429) == 1
     )
 
     # redirects are never followed: each code retries bounded, and the
     # Location target never receives a request
-    land0 = sink.path_n.get("/landing", 0)
+    land0 = sink.path_n.get(_P_LANDING, 0)
     redir = [
         (c, deliver_signed(sink.url(f"/r{c}"), None, body, backoff_s=0))
         for c in (301, 302, 307, 308)
@@ -365,7 +378,7 @@ def _probe_verdict_table(sink: _Sink) -> dict[str, bool]:
     out["verdict_3xx_retried_never_followed"] = (
         all(ok is False and att == WEBHOOK_MAX_ATTEMPTS for _c, (ok, _e, att) in redir)
         and all(sink.path_n.get(f"/r{c}") == WEBHOOK_MAX_ATTEMPTS for c, _r in redir)
-        and sink.path_n.get("/landing", 0) == land0
+        and sink.path_n.get(_P_LANDING, 0) == land0
         and all(f"returned {c}" in (err or "") for c, (_o, err, _a) in redir)
     )
     return out
@@ -378,7 +391,7 @@ def _probe_backoff(sink: _Sink) -> dict[str, bool]:
 
     n0 = len(sink.hits)
     t0 = time.monotonic()
-    ok, err, att = deliver_signed(sink.url("/s503"), _SECRET_A, body, backoff_s=0.5)
+    ok, _err, att = deliver_signed(sink.url("/s503"), _SECRET_A, body, backoff_s=0.5)
     elapsed = time.monotonic() - t0
     hs = [h for h in sink.hits[n0:] if h.path == "/s503"]
     gaps = [hs[i + 1].t - hs[i].t for i in range(len(hs) - 1)]
@@ -406,7 +419,7 @@ def _probe_backoff(sink: _Sink) -> dict[str, bool]:
 
     # zero backoff is honored — three attempts land back-to-back
     t0 = time.monotonic()
-    deliver_signed(sink.url("/s500"), None, body, backoff_s=0.0)
+    deliver_signed(sink.url(_P_S500), None, body, backoff_s=0.0)
     out["backoff_zero_no_sleep"] = (time.monotonic() - t0) < 0.5
 
     # DNS re-resolves every attempt — instrumentation wraps the real
@@ -426,7 +439,7 @@ def _probe_backoff(sink: _Sink) -> dict[str, bool]:
 
     with patch.object(socket, "getaddrinfo", _counting):
         deliver_signed(
-            sink.url("/s500").replace("127.0.0.1", "localhost"),
+            sink.url(_P_S500).replace("127.0.0.1", "localhost"),
             None,
             body,
             backoff_s=0,
@@ -464,15 +477,15 @@ def _probe_faults(sink: _Sink) -> dict[str, bool]:
 
     # read timeout — the sink accepts then stalls past the deadline
     sink.stall_s = 0.8
-    prev_stall = sink.path_n.get("/stall", 0)
+    prev_stall = sink.path_n.get(_P_STALL, 0)
     t0 = time.monotonic()
-    ok, err, att = deliver_signed(sink.url("/stall"), None, body, backoff_s=0.05, timeout_s=0.2)
+    ok, err, att = deliver_signed(sink.url(_P_STALL), None, body, backoff_s=0.05, timeout_s=0.2)
     to_elapsed = time.monotonic() - t0
     sink.stall_s = 1.0
     out["fault_read_timeout_retried"] = (
         ok is False
         and att == WEBHOOK_MAX_ATTEMPTS
-        and sink.path_n.get("/stall", 0) - prev_stall == WEBHOOK_MAX_ATTEMPTS
+        and sink.path_n.get(_P_STALL, 0) - prev_stall == WEBHOOK_MAX_ATTEMPTS
         and to_elapsed < 10.0
         and ("timed out" in (err or "") or "Timeout" in (err or ""))
     )
@@ -484,7 +497,13 @@ def _probe_faults(sink: _Sink) -> dict[str, bool]:
         ok is False and att == WEBHOOK_MAX_ATTEMPTS and "SSL" in (err or "")
     )
 
-    # private-address refusals — env opt-out scoped to this probe only
+    _probe_faults_refusals(out, body)
+    return out
+
+
+def _probe_faults_refusals(out: dict[str, bool], body: bytes) -> None:
+    """Private-address refusals (env opt-out scoped to this leg) and the
+    multi-address failover."""
     saved = os.environ.pop(_PRIV_ENV, None)
     try:
         ok, err, att = deliver_signed("http://127.0.0.1:9/hook", None, body, backoff_s=0)
@@ -512,7 +531,6 @@ def _probe_faults(sink: _Sink) -> dict[str, bool]:
         out["fault_multiaddr_delivers"] = ok is True and att == 1 and len(v6.hits) == 1
     finally:
         v6.close()
-    return out
 
 
 def _probe_validation(ctx: _Ctx, sink: _Sink) -> dict[str, bool]:
@@ -684,7 +702,7 @@ def _probe_timing(td: Path, sink: _Sink) -> dict[str, bool]:
     # a failing delivery holds its inflight slot for the whole retry
     # schedule: a second submit is refused 503 while the worker sleeps
     # between attempts, and only admitted once the verdict lands
-    j1 = _submit_job(ctx.client, sink.url("/s500"))["job_id"]
+    j1 = _submit_job(ctx.client, sink.url(_P_S500))["job_id"]
     r_mid = ctx.client.post(
         _JOB_POST, json={"command": "doctor", "callback_url": sink.url("/held")}
     )
@@ -747,12 +765,12 @@ def _probe_ordering(td: Path, sink: _Sink) -> dict[str, bool]:
 
     # serial executor — deliveries land strictly in submit order
     ctx1 = _make_ctx(td / "ord-serial", max_inflight=1)
-    j1 = _submit_job(ctx1.client, sink.url("/ord-a"))["job_id"]
-    j2 = _submit_job(ctx1.client, sink.url("/ord-b"))["job_id"]
+    j1 = _submit_job(ctx1.client, sink.url(_P_ORD_A))["job_id"]
+    j2 = _submit_job(ctx1.client, sink.url(_P_ORD_B))["job_id"]
     _wait_job(ctx1.client, j1)
     _wait_job(ctx1.client, j2)
-    seq = [h.path for h in sink.hits if h.path in ("/ord-a", "/ord-b")]
-    out["ordering_serial_fifo"] = seq == ["/ord-a", "/ord-b"]
+    seq = [h.path for h in sink.hits if h.path in (_P_ORD_A, _P_ORD_B)]
+    out["ordering_serial_fifo"] = seq == [_P_ORD_A, _P_ORD_B]
 
     # a pool dispatches concurrently — two stalled deliveries overlap
     ctx2 = _make_ctx(td / "ord-par", max_inflight=2)
@@ -803,29 +821,29 @@ def _probe_fire_once(ctx: _Ctx, sink: _Sink) -> dict[str, bool]:
     out: dict[str, bool] = {}
 
     n0 = len(sink.hits)
-    jid = _submit_job(client, sink.url("/fo-job"))["job_id"]
+    jid = _submit_job(client, sink.url(_P_FO_JOB))["job_id"]
     st = _wait_job(client, jid)
     _wait_hits(sink, n0 + 1)
     out["fire_job_success_once"] = (
-        st.get("status") == "succeeded" and sink.path_n.get("/fo-job") == 1
+        st.get("status") == "succeeded" and sink.path_n.get(_P_FO_JOB) == 1
     )
     # a cancel on the terminal record 409s and never re-fires
     d = client.delete(f"/harness/jobs/{jid}")
     time.sleep(0.2)
-    out["fire_job_cancel_terminal_409"] = d.status_code == 409 and sink.path_n.get("/fo-job") == 1
+    out["fire_job_cancel_terminal_409"] = d.status_code == 409 and sink.path_n.get(_P_FO_JOB) == 1
     # repeated GET polling never re-fires
     client.get(f"/harness/jobs/{jid}")
     client.get(f"/harness/jobs/{jid}")
     time.sleep(0.2)
-    out["fire_job_gets_no_refire"] = sink.path_n.get("/fo-job") == 1
+    out["fire_job_gets_no_refire"] = sink.path_n.get(_P_FO_JOB) == 1
 
     # queued-cancel: occupy every worker so the delete lands pre-start
     _busy_executor(ctx.app, 4, sleep_s=3.0)
-    qjob = _submit_job(client, sink.url("/fo-jc"))
+    qjob = _submit_job(client, sink.url(_P_FO_JC))
     n0 = len(sink.hits)
     cxl = client.delete(f"/harness/jobs/{qjob['job_id']}")
     _wait_hits(sink, n0 + 1)
-    jchits = sink.hits_on("/fo-jc")
+    jchits = sink.hits_on(_P_FO_JC)
     out["fire_job_queued_cancel_once"] = (
         cxl.status_code == 200
         and len(jchits) == 1
@@ -835,7 +853,7 @@ def _probe_fire_once(ctx: _Ctx, sink: _Sink) -> dict[str, bool]:
     cxl2 = client.delete(f"/harness/jobs/{qjob['job_id']}")
     time.sleep(0.25)
     out["fire_job_repeated_cancel_no_refire"] = (
-        cxl2.status_code == 200 and sink.path_n.get("/fo-jc") == 1
+        cxl2.status_code == 200 and sink.path_n.get(_P_FO_JC) == 1
     )
 
     n0 = len(sink.hits)
@@ -857,28 +875,28 @@ def _probe_fire_once(ctx: _Ctx, sink: _Sink) -> dict[str, bool]:
     )
 
     n0 = len(sink.hits)
-    b = _batch_create(client, sink.url("/fo-b"))
+    b = _batch_create(client, sink.url(_P_FO_B))
     bst = _wait_batch(client, b["id"])
     _wait_hits(sink, n0 + 1)
     out["fire_batch_completed_once"] = (
-        bst.get("status") == "completed" and sink.path_n.get("/fo-b") == 1
+        bst.get("status") == "completed" and sink.path_n.get(_P_FO_B) == 1
     )
     client.get(f"/v1/batches/{b['id']}")
     client.get(f"/v1/batches/{b['id']}")
     time.sleep(0.2)
-    out["fire_batch_gets_no_refire"] = sink.path_n.get("/fo-b") == 1
+    out["fire_batch_gets_no_refire"] = sink.path_n.get(_P_FO_B) == 1
 
     n0 = len(sink.hits)
-    ab = _abatch_create(client, sink.url("/fo-ab"))
+    ab = _abatch_create(client, sink.url(_P_FO_AB))
     abst = _wait_abatch(client, ab["id"])
     _wait_hits(sink, n0 + 1)
     out["fire_abatch_ended_once"] = (
-        abst.get("processing_status") == "ended" and sink.path_n.get("/fo-ab") == 1
+        abst.get("processing_status") == "ended" and sink.path_n.get(_P_FO_AB) == 1
     )
     client.get(f"/v1/messages/batches/{ab['id']}")
     client.get(f"/v1/messages/batches/{ab['id']}")
     time.sleep(0.2)
-    out["fire_abatch_gets_no_refire"] = sink.path_n.get("/fo-ab") == 1
+    out["fire_abatch_gets_no_refire"] = sink.path_n.get(_P_FO_AB) == 1
     return out
 
 
@@ -935,7 +953,7 @@ def _probe_ledger(td: Path, sink: _Sink) -> dict[str, bool]:
     jdir2 = td / "state2"
     ctxa = _make_ctx(td / "wA", state_dir=jdir2)
     _busy_executor(ctxa.app, 4, sleep_s=6.0)
-    qjob = _submit_job(ctxa.client, sink.url("/led-queued"), secret=_SECRET_A, idem="wdel-1")
+    qjob = _submit_job(ctxa.client, sink.url(_P_LED_Q), secret=_SECRET_A, idem="wdel-1")
     n0 = len(sink.hits)
     ctxb = _make_ctx(td / "wB", state_dir=jdir2)
     qst = ctxb.client.get(f"/harness/jobs/{qjob['job_id']}").json()
@@ -944,7 +962,7 @@ def _probe_ledger(td: Path, sink: _Sink) -> dict[str, bool]:
         and "restarted" in str(qst.get("error"))
         and qst.get("callback_status") is None
         and qst.get("callback_attempts") == 0
-        and sink.path_n.get("/led-queued", 0) == 0
+        and sink.path_n.get(_P_LED_Q, 0) == 0
         and len(sink.hits) == n0
     )
     # the idempotency mapping survives the restart — a same-key retry
@@ -953,7 +971,7 @@ def _probe_ledger(td: Path, sink: _Sink) -> dict[str, bool]:
         _JOB_POST,
         json={
             "command": "doctor",
-            "callback_url": sink.url("/led-queued"),
+            "callback_url": sink.url(_P_LED_Q),
             "callback_secret": _SECRET_A,
         },
         headers={"Idempotency-Key": "wdel-1"},
@@ -1058,7 +1076,7 @@ def _probe_records(ctx: _Ctx, sink: _Sink) -> dict[str, bool]:
         and "callback_secret" not in st
     )
     # failed delivery: the verdict names the class, never silent
-    jid2 = _submit_job(client, sink.url("/s500"))["job_id"]
+    jid2 = _submit_job(client, sink.url(_P_S500))["job_id"]
     st2 = _wait_job(client, jid2)
     out["record_fields_failed_verdict"] = (
         st2.get("callback_status") == "failed"
