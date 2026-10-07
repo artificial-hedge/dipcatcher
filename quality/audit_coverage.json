@@ -372,6 +372,24 @@
   "models/_anom_synth.py": {
    "status": "audited"
   },
+  "models/_lm_synth.py": {
+   "status": "audited"
+  },
+  "models/_ltr_synth.py": {
+   "status": "audited"
+  },
+  "models/_mc2_synth.py": {
+   "status": "audited"
+  },
+  "models/_mem_synth.py": {
+   "status": "audited"
+  },
+  "models/_meta_synth.py": {
+   "status": "audited"
+  },
+  "models/_mfg_synth.py": {
+   "status": "audited"
+  },
   "models/a1_degrees.py": {
    "status": "audited"
   },

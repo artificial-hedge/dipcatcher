@@ -13,6 +13,10 @@ FloatArray = NDArray[np.float64]
 
 
 def pinwheel(seed: int, n: int = 2000, d: int = 2, arms: int = 4) -> FloatArray:
+    if d != 2:
+        raise ValueError(f"pinwheel is a 2-D fixture; got d={d}")
+    if n < 1 or arms < 2:
+        raise ValueError(f"need n>=1 and arms>=2, got {n},{arms}")
     rng = np.random.default_rng(seed)
     r = 2.5
     out = np.zeros((n, d))
@@ -29,6 +33,12 @@ def pinwheel(seed: int, n: int = 2000, d: int = 2, arms: int = 4) -> FloatArray:
 
 
 def gauss_nll(Xtr: FloatArray, Xte: FloatArray) -> float:
+    if Xtr.ndim != 2 or Xte.ndim != 2 or Xtr.shape[0] < 2 or Xte.shape[0] < 1:
+        raise ValueError("need (n_tr>=2, d) and (n_te>=1, d) arrays")
+    if Xtr.shape[1] != Xte.shape[1]:
+        raise ValueError(f"dim mismatch: {Xtr.shape[1]} vs {Xte.shape[1]}")
+    if not np.isfinite(Xtr).all() or not np.isfinite(Xte).all():
+        raise ValueError("non-finite input")
     mu = Xtr.mean(0)
     C = np.cov(Xtr.T) + 1e-6 * np.eye(Xtr.shape[1])
     Ci = np.linalg.inv(C)
@@ -43,6 +53,8 @@ def gauss_nll(Xtr: FloatArray, Xte: FloatArray) -> float:
 
 
 def two_moons(seed: int, n: int = 2000) -> FloatArray:
+    if n < 1:
+        raise ValueError(f"need n>=1, got {n}")
     rng = np.random.default_rng(seed)
     half = n // 2
     t1 = rng.uniform(0, np.pi, half)

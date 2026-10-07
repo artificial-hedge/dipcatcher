@@ -19,6 +19,8 @@ def recall_batch(
     seed: int, B: int = 32, T: int = 12
 ) -> tuple[NDArray[np.int64], NDArray[np.int64]]:
     """x: (B,T) tokens; y: (B,) value token after first key occurrence."""
+    if B < 1 or T < 7:
+        raise ValueError(f"need B>=1 and T>=7, got B={B}, T={T}")
     rng = np.random.default_rng(seed)
     x = rng.integers(1, VOCAB, (B, T))
     key = rng.integers(1, VOCAB, (B,))
@@ -36,6 +38,8 @@ def recall_batch(
 
 def regime_task(seed: int, n: int = 600, k: int = 4, d: int = 8) -> tuple[FloatArray, FloatArray]:
     """n samples, k regimes: y = sigmoid(x @ w_r) with regime-dependent w."""
+    if n < 1 or k < 1 or d < 1:
+        raise ValueError(f"need n,k,d >= 1, got n={n}, k={k}, d={d}")
     rng = np.random.default_rng(seed)
     W = rng.standard_normal((k, d))
     W = W / np.linalg.norm(W, axis=1, keepdims=True) * 3.0
@@ -51,6 +55,8 @@ def attn_baseline(seed: int, iters: int = 800) -> float:
     """Single-head full-attention readout on recall_batch — shared comparator."""
     import torch
 
+    if iters < 1:
+        raise ValueError(f"need iters>=1, got {iters}")
     with torch.random.fork_rng():
         torch.manual_seed(seed)
         x, y = recall_batch(seed)

@@ -14,8 +14,15 @@ def opt_task(
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Quadratic bowl with condition number ~100 → exposes optimizer
     geometry: y = x'Ax/2 + noise with eigenvalues log-spaced."""
+    if n < 1 or d < 2:
+        raise ValueError(f"need n>=1 and d>=2 (eigenspectrum needs >=2 modes), got {n},{d}")
     rng = np.random.default_rng(seed)
-    q, _ = np.linalg.qr(rng.standard_normal((d, d)))
+    q, r_ = np.linalg.qr(rng.standard_normal((d, d)))
+    # canonicalize the QR sign convention (LAPACK-arbitrary across BLAS
+    # builds): force positive R diagonal so A's spectrum/basis are stable.
+    s = np.sign(np.diag(r_))
+    s[s == 0] = 1.0
+    q = q * s[None, :]
     eigs = np.logspace(-2, 0, d)
     a = q @ np.diag(eigs) @ q.T
     x = rng.standard_normal((n, d))

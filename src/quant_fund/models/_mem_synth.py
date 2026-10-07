@@ -21,20 +21,22 @@ def synth_copy(n: int, t: int, rng: np.random.Generator) -> tuple[FloatArray, ND
     """x: (n, 2t+1, K) — first t tokens are the payload, a separator token
     (all-zero + delim channel is implicit: we use a dedicated flag dim),
     then t blank slots the model must fill with the payload again."""
+    if n < 1 or t < 1:
+        raise ValueError(f"need n,t >= 1, got {n},{t}")
     k = _K + 1
     x = np.zeros((n, 2 * t + 1, k))
-    y = np.zeros((n, t), dtype=np.int64)
     payload = rng.integers(0, _K, (n, t))
     x[:, :t, :_K] = np.eye(_K)[payload]
     x[:, t, _K] = 1.0
-    y = payload
-    return x, y
+    return x, payload
 
 
 def synth_dynamics(
     n: int, horizon: int, rng: np.random.Generator
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
     """x_{t+1} = A x_t + b u_t + eps; returns (x_seq, u_seq, x_next_seq)."""
+    if n < 1 or horizon < 1:
+        raise ValueError(f"need n,horizon >= 1, got {n},{horizon}")
     a = np.array([[0.9, -0.4], [0.4, 0.9]])
     b = np.array([0.3, 0.15])
     x = np.zeros((n, horizon + 1, 2))

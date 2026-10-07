@@ -12,6 +12,8 @@ from numpy.typing import NDArray
 def sine_task(
     rng: np.random.Generator, K: int = 5, M: int = 15
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    if K < 1 or M < 1:
+        raise ValueError(f"need K,M >= 1, got {K},{M}")
     A = rng.uniform(0.1, 5.0)
     phi = rng.uniform(0, np.pi)
     xs = rng.uniform(-5, 5, K)

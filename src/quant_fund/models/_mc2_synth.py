@@ -23,6 +23,8 @@ def logp(x: FloatArray) -> float:
 def ess(x: FloatArray, max_lag: int = 50) -> float:
     """Effective sample size via autocorrelation cutoff."""
     n = len(x)
+    if n < 2 or max_lag < 2:
+        raise ValueError(f"need len(x)>=2 and max_lag>=2, got {n},{max_lag}")
     x = x - x.mean()
     var = float((x**2).mean())
     if var < 1e-12:
@@ -39,12 +41,19 @@ def ess(x: FloatArray, max_lag: int = 50) -> float:
 
 
 def errors(samples: FloatArray) -> tuple[float, float]:
+    samples = np.asarray(samples)
+    if samples.ndim != 2 or samples.shape[0] < 2 or samples.shape[1] != 2:
+        raise ValueError("samples must be (n>=2, 2)")
     mean_err = float(np.linalg.norm(samples.mean(0) - MU))
     cov_err = float(np.linalg.norm(np.cov(samples.T) - SIGMA))
     return mean_err, cov_err
 
 
 def indep_mh(n: int, rng, prop_sd: float = 1.5) -> FloatArray:
+    if n < 1:
+        raise ValueError(f"need n>=1, got {n}")
+    if not np.isfinite(prop_sd) or prop_sd <= 0:
+        raise ValueError(f"prop_sd must be positive and finite, got {prop_sd}")
     x = np.zeros(2)
     out = []
     for _ in range(n):

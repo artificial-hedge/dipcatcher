@@ -28,6 +28,12 @@ def stage_cost(x: FloatArray, u: float, target: float = 1.0) -> float:
 
 
 def rollout(u_seq: FloatArray, x0: FloatArray, target: float = 1.0) -> tuple[FloatArray, float]:
+    x0 = np.asarray(x0, dtype=np.float64)
+    u_seq = np.asarray(u_seq, dtype=np.float64)
+    if x0.shape != (2,) or not np.isfinite(x0).all():
+        raise ValueError("x0 must be a finite (2,) state")
+    if u_seq.ndim != 1 or not np.isfinite(u_seq).all():
+        raise ValueError("u_seq must be a finite 1-D control sequence")
     x = np.array(x0, dtype=np.float64)
     tot = 0.0
     xs = [x.copy()]
@@ -41,6 +47,9 @@ def rollout(u_seq: FloatArray, x0: FloatArray, target: float = 1.0) -> tuple[Flo
 def pd_baseline(
     x0: FloatArray, target: float = 1.0, kp: float = 0.6, kd: float = 1.2
 ) -> tuple[FloatArray, float]:
+    x0 = np.asarray(x0, dtype=np.float64)
+    if x0.shape != (2,) or not np.isfinite(x0).all():
+        raise ValueError("x0 must be a finite (2,) state")
     x = np.array(x0, dtype=np.float64)
     tot = 0.0
     xs = [x.copy()]

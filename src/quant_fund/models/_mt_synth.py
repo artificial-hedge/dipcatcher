@@ -15,6 +15,8 @@ FloatArray = NDArray[np.float64]
 def mt_data(
     seed: int, n: int = 300, d: int = 8
 ) -> tuple[FloatArray, NDArray[np.int64], NDArray[np.int64]]:
+    if n < 1 or d < 1:
+        raise ValueError(f"need n,d >= 1, got {n},{d}")
     rng = np.random.default_rng(seed)
     X = rng.standard_normal((n, d))
     w1 = rng.standard_normal(d)

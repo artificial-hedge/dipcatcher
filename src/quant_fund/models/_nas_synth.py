@@ -24,9 +24,13 @@ def _torch():
 
 
 def build_net(torch, arch, seed: int = 0):
+    h, d, a = arch
+    if a not in (0, 1):
+        raise ValueError(f"act must be 0 (relu) or 1 (tanh), got {a}")
+    if h <= 0 or d < 1:
+        raise ValueError(f"need hidden>0 and depth>=1, got {h},{d}")
     with torch.random.fork_rng():
         torch.manual_seed(seed)
-        h, d, a = arch
         act = torch.nn.ReLU() if a == 0 else torch.nn.Tanh()
         layers = [torch.nn.Linear(8, h), act]
         for _i in range(d - 1):
@@ -38,6 +42,8 @@ def build_net(torch, arch, seed: int = 0):
 def eval_arch(
     arch, x_tr_t, y_tr_t, x_te_t, y_te_t, iters: int = 40, lr: float = 0.02, seed: int = 0
 ) -> float:
+    if iters < 1 or lr <= 0 or not np.isfinite(lr):
+        raise ValueError(f"need iters>=1 and finite lr>0, got {iters},{lr}")
     torch = _torch()
     net = build_net(torch, arch, seed)
     opt = torch.optim.Adam(net.parameters(), lr=lr)
@@ -50,8 +56,14 @@ def eval_arch(
 
 
 def noisy_labels(y, seed: int, frac: float = 0.2):
+    y2 = np.asarray(y).copy()
+    if not 0.0 <= frac <= 1.0:
+        raise ValueError(f"frac must be in [0,1], got {frac}")
+    if not set(np.unique(y2)) <= {0, 1}:
+        raise ValueError("noisy_labels is defined for binary labels {0,1}")
+    if len(y2) == 0:
+        raise ValueError("empty label array")
     rng = np.random.default_rng(seed)
-    y2 = y.copy()
     flips = rng.choice(len(y2), int(frac * len(y2)), replace=False)
     y2[flips] = 1 - y2[flips]
     return y2
