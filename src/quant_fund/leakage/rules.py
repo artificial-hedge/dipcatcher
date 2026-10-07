@@ -201,12 +201,17 @@ LH003_ALLOWLIST: frozenset[str] = frozenset(
         # own training input — the caller slices folds, same model-self-fit
         # idiom as ranking.py / asset_pricing.py above.
         "src/quant_fund/models/regime.py",
-        # kit_paths.py: fit_ohlcv (line 1395) is called from pipeline/train.py
-        # within CV fold loops; bench_kit_paths (line 1588) is a synthetic
-        # benchmark correctness test, not a production training path.
-        "src/quant_fund/models/kit_paths.py",
     }
 )
+
+# kit_paths.py accepts caller-supplied training arrays. Keep the file scanned
+# and exempt only the reviewed self-fit entry points: fit_ohlcv trains a model
+# on its input, while bench_kit_paths is a synthetic benchmark. There is no
+# production pipeline caller proving fold isolation yet, so callers must pass
+# an already isolated training slice.
+LH003_FUNCTION_ALLOWLIST: dict[str, frozenset[str]] = {
+    "src/quant_fund/models/kit_paths.py": frozenset({"fit_ohlcv", "bench_kit_paths"}),
+}
 
 # LH004: backward as-of joins on event_time over frames that are already
 # PIT-filtered upstream (funding/roll calendars, factor exposures) — verified
@@ -232,10 +237,6 @@ LH004_ALLOWLIST: frozenset[str] = frozenset(
 LH005_ALLOWLIST: frozenset[str] = frozenset(
     {
         "src/quant_fund/lightspeed/specs.py",
-        # receipt_graph.py _MEMBERSHIP_PREFIXES is a tuple of field-name
-        # prefixes for corpus-member reference detection, NOT a ticker
-        # universe. No survivorship-bias risk.
-        "src/quant_fund/research/receipt_graph.py",
     }
 )
 
@@ -353,6 +354,7 @@ RULE_ALLOWLISTS: dict[str, frozenset[str]] = {
 # glob: a same-named function in another file is still scanned.
 FUNCTION_ALLOWLISTS: dict[str, dict[str, frozenset[str]]] = {
     "LH001": LH001_FUNCTION_ALLOWLIST,
+    "LH003": LH003_FUNCTION_ALLOWLIST,
 }
 
 # LH009 / LH010 scope exemptions (these rules are warning-severity at HEAD but
