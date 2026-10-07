@@ -20,8 +20,13 @@
    "status": "audited"
   },
   "cli": {
-   "n_modules": 16,
+   "n_modules": 17,
    "status": "audited"
+  },
+  "combination": {
+   "n_modules": 8,
+   "reason": "New proper-score ensemble-combination package; line-level audit not yet performed.",
+   "status": "partial"
   },
   "compute": {
    "n_modules": 7,
@@ -34,8 +39,13 @@
   },
   "data": {
    "doc": "docs/AUDIT_P63_DATA.md",
-   "n_modules": 42,
+   "n_modules": 45,
    "status": "audited"
+  },
+  "decay": {
+   "n_modules": 7,
+   "reason": "New IC-decay package; line-level audit not yet performed.",
+   "status": "partial"
   },
   "diffbacktest": {
    "n_modules": 8,
@@ -43,12 +53,17 @@
   },
   "execution": {
    "doc": "docs/AUDIT_P61_MONEY.md",
-   "n_modules": 14,
+   "n_modules": 15,
    "status": "audited"
   },
   "features": {
    "n_modules": 9,
    "status": "audited"
+  },
+  "flowbars": {
+   "n_modules": 9,
+   "reason": "New information-driven bars package; line-level audit not yet performed.",
+   "status": "partial"
   },
   "formal": {
    "n_modules": 8,
@@ -102,7 +117,7 @@
   },
   "models": {
    "doc": "docs/AUDIT_MODELS.md",
-   "n_modules": 10397,
+   "n_modules": 10400,
    "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
    "status": "partial"
   },
@@ -124,7 +139,7 @@
    "status": "audited"
   },
   "paper": {
-   "n_modules": 9,
+   "n_modules": 10,
    "status": "audited"
   },
   "parity": {
@@ -132,7 +147,7 @@
    "status": "audited"
   },
   "pipeline": {
-   "n_modules": 23,
+   "n_modules": 24,
    "status": "audited"
   },
   "pit": {
@@ -150,7 +165,7 @@
   },
   "proof": {
    "doc": "docs/AUDIT_FRONTIER.md",
-   "n_modules": 9,
+   "n_modules": 10,
    "status": "audited"
   },
   "proofcore": {
@@ -166,6 +181,11 @@
    "doc": "docs/AUDIT_FRONTIER.md",
    "n_modules": 8,
    "status": "audited"
+  },
+  "realized": {
+   "n_modules": 2,
+   "reason": "New HF-RV package; line-level audit not yet performed.",
+   "status": "partial"
   },
   "registry": {
    "n_modules": 7,
@@ -191,7 +211,7 @@
    "status": "audited"
   },
   "schemas": {
-   "n_modules": 8,
+   "n_modules": 9,
    "status": "audited"
   },
   "simtest": {

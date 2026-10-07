@@ -82,8 +82,11 @@ def gaussian_copula_samples(
     out = np.empty((m, d))
     for j, x in enumerate(marginals):
         xs = np.sort(x)
-        idx = np.clip((u[:, j] * m).astype(int), 0, m - 1)
-        out[:, j] = xs[idx]
+        # Rank-preserving inversion: the i-th smallest u takes the i-th order
+        # statistic, so each column is an exact permutation of its marginal.
+        # The naive idx=floor(u*m) draws indices WITH replacement (duplicates).
+        ranks = np.argsort(np.argsort(u[:, j]))
+        out[:, j] = xs[ranks]
     return out
 
 

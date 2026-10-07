@@ -13149,17 +13149,22 @@ FORBIDDEN_RESEARCH_METRIC_KEYS = frozenset(
 )
 
 
-def _iter_mapping_keys(obj: object) -> list[str]:
-    """Collect nested mapping keys (dicts only; list elements walked)."""
-    keys: list[str] = []
+def _iter_mapping_pairs(obj: object) -> list[tuple[str, object]]:
+    """Collect nested mapping (key, value) pairs (dicts only; list elements walked)."""
+    pairs: list[tuple[str, object]] = []
     if isinstance(obj, dict):
         for k, v in obj.items():
-            keys.append(str(k))
-            keys.extend(_iter_mapping_keys(v))
+            pairs.append((str(k), v))
+            pairs.extend(_iter_mapping_pairs(v))
     elif isinstance(obj, (list, tuple)):
         for item in obj:
-            keys.extend(_iter_mapping_keys(item))
-    return keys
+            pairs.extend(_iter_mapping_pairs(item))
+    return pairs
+
+
+def _iter_mapping_keys(obj: object) -> list[str]:
+    """Collect nested mapping keys — key-only view of :func:`_iter_mapping_pairs`."""
+    return [k for k, _ in _iter_mapping_pairs(obj)]
 
 
 def family_blob_forbidden_metrics_absent(payload: object) -> bool:
@@ -13172,14 +13177,19 @@ def family_blob_forbidden_metrics_absent(payload: object) -> bool:
     contain equity ``nav_*`` / stress ``*_pnl`` diagnostics; validate those with
     ``validate_analytics_export`` (live_pnl_claim fail-closed), not this helper.
 
-    ``live_pnl_claim`` itself is exempt at any depth: it is the honesty flag,
-    not a metric — receipts that embed other receipts carry it nested (e.g. a
-    tournament manifest quoting its benchmark manifest).
+    ``live_pnl_claim`` with literal value ``False`` is exempt at any depth: it
+    is the honesty flag, not a metric — receipts that embed other receipts
+    carry it nested (e.g. a tournament manifest quoting its benchmark
+    manifest). The exemption is exact-name + literal-False only: any other
+    value (``True``, ``"false"``, ``0``, ``None``, malformed payloads) or any
+    variant spelling (``LIVE_PNL_CLAIM``, ``live-pnl-claim``,
+    ``nested_live_pnl_claim``) fails closed, since the tokens already include
+    ``pnl``.
     """
-    for key in _iter_mapping_keys(payload):
-        if key == "live_pnl_claim":
+    for key, value in _iter_mapping_pairs(payload):
+        if key == "live_pnl_claim" and value is False:
             continue
-        parts = str(key).lower().replace("-", "_").split("_")
+        parts = key.lower().replace("-", "_").split("_")
         if any(tok in FORBIDDEN_RESEARCH_METRIC_KEYS for tok in parts if tok):
             return False
     return True
