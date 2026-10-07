@@ -360,6 +360,9 @@
   "models/bkm_moments.py": {
    "status": "audited"
   },
+  "models/blp_demand.py": {
+   "status": "audited"
+  },
   "models/bocpd_changepoint.py": {
    "status": "audited"
   },
@@ -371,6 +374,9 @@
    "status": "partial"
   },
   "models/causal_forest.py": {
+   "status": "audited"
+  },
+  "models/causal_impact.py": {
    "status": "audited"
   },
   "models/changepoint.py": {
@@ -389,6 +395,9 @@
    "status": "audited"
   },
   "models/did_diagnostics.py": {
+   "status": "audited"
+  },
+  "models/double_ml.py": {
    "status": "audited"
   },
   "models/enkf.py": {
@@ -412,6 +421,12 @@
   "models/gsadf_bubble.py": {
    "status": "audited"
   },
+  "models/hawkes_em.py": {
+   "status": "audited"
+  },
+  "models/honest_did.py": {
+   "status": "audited"
+  },
   "models/ivs_diffusion.py": {
    "status": "audited"
   },
@@ -428,6 +443,9 @@
    "status": "audited"
   },
   "models/nexcp.py": {
+   "status": "audited"
+  },
+  "models/ngboost_lite.py": {
    "status": "audited"
   },
   "models/odd_residual_flows.py": {
@@ -458,6 +476,9 @@
    "status": "audited"
   },
   "models/spectral_atiyah.py": {
+   "status": "audited"
+  },
+  "models/state_space.py": {
    "status": "audited"
   },
   "models/svi_surface.py": {

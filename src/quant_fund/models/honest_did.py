@@ -168,10 +168,13 @@ def honest_did_sd(
     if int(post_rp) not in rp.astype(int):
         raise ValueError("post_rp not in rel_periods")
 
-    # fit linear trend on pre betas (wLS by 1/se^2)
+    # fit linear trend on pre betas (wLS by 1/se^2): lstsq minimizes the
+    # squared residual, so rows must be scaled by sqrt(w) = 1/se — scaling
+    # by w itself would implement 1/se^4 weights.
     w = 1.0 / se[pre] ** 2
+    sw = np.sqrt(w)
     X = np.column_stack([np.ones(pre.sum()), rp[pre]])
-    coef, *_ = np.linalg.lstsq(X * w[:, None], beta[pre] * w, rcond=None)
+    coef, *_ = np.linalg.lstsq(X * sw[:, None], beta[pre] * sw, rcond=None)
     dev = beta[pre] - X @ coef
     max_dev = float(np.abs(dev).max())
 
