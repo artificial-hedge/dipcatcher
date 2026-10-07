@@ -74,3 +74,48 @@ def test_bench_keys_and_pass() -> None:
     assert all(np.isfinite(v) for v in out.values())
     assert out["synthetic_detects"] == 1.0
     assert out["synthetic_determinism"] == 1.0
+
+
+def test_synth_acd_deterministic() -> None:
+    a = synth_acd(seed=9, n=200)
+    b = synth_acd(seed=9, n=200)
+    np.testing.assert_array_equal(a["durations"], b["durations"])
+    np.testing.assert_array_equal(a["psi_true"], b["psi_true"])
+
+
+def test_synth_acd_hostile_params() -> None:
+    with pytest.raises(ValueError):
+        synth_acd(n=100, alpha=0.6, beta=0.6)  # nonstationary: a+b>1
+    with pytest.raises(ValueError):
+        synth_acd(n=100, alpha=1.0, beta=0.0)  # boundary
+    with pytest.raises(ValueError):
+        synth_acd(n=100, omega=0.0)
+    with pytest.raises(ValueError):
+        synth_acd(n=100, omega=-0.1)
+    with pytest.raises(ValueError):
+        synth_acd(n=100, alpha=-0.1)
+
+
+def test_synth_acd_durations_positive_finite() -> None:
+    d = synth_acd(seed=11, n=500)
+    assert (d["durations"] > 0).all()
+    assert np.isfinite(d["durations"]).all()
+    assert (d["psi_true"] > 0).all()
+
+
+def test_acd_fit_max_iter_guard() -> None:
+    d = synth_acd(seed=7, n=100)
+    with pytest.raises(ValueError):
+        acd_fit(d["durations"], max_iter=0)
+
+
+def test_acd_fit_2d_rejected() -> None:
+    with pytest.raises(ValueError):
+        acd_fit(np.ones((100, 2)))
+
+
+def test_fit_recovers_stationarity() -> None:
+    d = synth_acd(seed=13, n=1500, alpha=0.15, beta=0.75)
+    out = acd_fit(d["durations"])
+    assert 0.5 < out["persistence"] < 1.0
+    assert out["eps_mean"] == pytest.approx(1.0, abs=0.1)

@@ -36,7 +36,7 @@ FloatArray = NDArray[np.float64]
 def _check_xy(x: FloatArray, y: FloatArray) -> tuple[FloatArray, FloatArray]:
     xa = np.asarray(x, dtype=np.float64)
     ya = np.asarray(y, dtype=np.float64).ravel()
-    if xa.ndim != 2 or xa.shape[0] != ya.size or xa.shape[0] < 30:
+    if xa.ndim != 2 or xa.shape[1] < 1 or xa.shape[0] != ya.size or xa.shape[0] < 30:
         raise ValueError("bad design")
     if not np.isfinite(xa).all() or not np.isfinite(ya).all():
         raise ValueError("non-finite")
@@ -48,6 +48,10 @@ def _running_mean(x: FloatArray, y: FloatArray, span: float = 0.3) -> FloatArray
     (window of the k nearest sorted neighbours)."""
     xa = np.asarray(x, dtype=np.float64).ravel()
     ya = np.asarray(y, dtype=np.float64).ravel()
+    if xa.size != ya.size or xa.size < 1:
+        raise ValueError("x/y must be non-empty equal lengths")
+    if not np.isfinite(span) or span <= 0:
+        raise ValueError(f"need finite span>0, got {span}")
     n = xa.size
     k = max(int(np.ceil(span * n)), 5)
     order = np.argsort(xa)
@@ -76,6 +80,10 @@ def ace(
 
     Returns transformed ``phi`` (of y), ``theta``
     (summed x-transforms), and the achieved R^2."""
+    if max_iter < 1:
+        raise ValueError(f"need max_iter>=1, got {max_iter}")
+    if tol <= 0:
+        raise ValueError(f"need tol>0, got {tol}")
     xa, ya = _check_xy(x, y)
     n, p = xa.shape
     phi = ya - ya.mean()
@@ -117,6 +125,8 @@ def avas(
 ) -> dict[str, float | FloatArray]:
     """AVAS: ACE plus the variance-stabilizing transform
     of y against its fitted mean (Tibshirani 1988)."""
+    if max_iter < 1:
+        raise ValueError(f"need max_iter>=1, got {max_iter}")
     xa, ya = _check_xy(x, y)
     n, p = xa.shape
     phi = ya - ya.mean()

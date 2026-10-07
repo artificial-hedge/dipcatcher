@@ -56,3 +56,62 @@ def test_input_validation():
         ace(np.ones((8, 2)), np.ones(4))
     with pytest.raises(ValueError):
         avas(np.full((30, 1), np.nan), np.ones(30))
+
+
+def test_ace_vacuous_max_iter_raises():
+    x, y = _nonlinear_fixture()
+    with pytest.raises(ValueError):
+        ace(x, y, max_iter=0)  # would return r2=-inf as a metric
+    with pytest.raises(ValueError):
+        avas(x, y, max_iter=0)
+
+
+def test_ace_hostile_params():
+    x, y = _nonlinear_fixture()
+    with pytest.raises(ValueError):
+        ace(x, y, tol=0.0)
+    with pytest.raises(ValueError):
+        ace(x, y, span=0.0)  # running_mean: span<=0
+    with pytest.raises(ValueError):
+        ace(x, y, span=np.inf)
+    with pytest.raises(ValueError):
+        avas(x, y, span=-0.5)
+
+
+def test_ace_zero_feature_design():
+    rng = np.random.default_rng(0)
+    y = rng.normal(0, 1, 40)
+    x0 = np.zeros((40, 0))  # (n,0) — no features → would div-by-zero r2
+    with pytest.raises(ValueError):
+        ace(x0, y)
+
+
+def test_running_mean_guards():
+    from quant_fund.models.ace_avas import _running_mean
+
+    xs = np.linspace(0, 1, 10)
+    with pytest.raises(ValueError):
+        _running_mean(xs[:0], xs[:0])
+    with pytest.raises(ValueError):
+        _running_mean(xs, xs[:5])
+    with pytest.raises(ValueError):
+        _running_mean(xs, xs, span=0.0)
+
+
+def test_ace_deterministic():
+    x, y = _nonlinear_fixture(7)
+    a = ace(x, y, max_iter=5)
+    b = ace(x, y, max_iter=5)
+    assert a["r2"] == b["r2"]
+    np.testing.assert_array_equal(a["phi"], b["phi"])
+
+
+def test_running_mean_sorted_locality():
+    from quant_fund.models.ace_avas import _running_mean
+
+    xs = np.arange(10, dtype=np.float64)
+    ys = xs**2  # locally increasing
+    sm = _running_mean(xs, ys, span=0.3)
+    # smoothed value near xs=0 must be below value near xs=9
+    assert sm[0] < sm[-1]
+    assert np.isfinite(sm).all()

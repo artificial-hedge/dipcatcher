@@ -54,6 +54,8 @@ def acd_fit(
     max_iter: int = 400,
 ) -> dict[str, float]:
     """QMLE fit of ACD(1,1) on positive durations."""
+    if max_iter < 1:
+        raise ValueError(f"need max_iter>=1, got {max_iter}")
     x = np.asarray(durations, dtype=np.float64)
     if x.ndim != 1 or x.shape[0] < 60:
         raise ValueError("need >= 60 durations")
@@ -116,9 +118,13 @@ def synth_acd(
     beta: float = 0.75,
 ) -> dict[str, FloatArray]:
     """Simulated ACD(1,1) with exponential innovations."""
-    rng = np.random.default_rng(seed)
     if n < 60:
         raise ValueError("n too small")
+    if omega <= 0 or alpha < 0 or beta < 0 or alpha + beta >= 0.999:
+        raise ValueError(
+            f"need omega>0, alpha,beta>=0, alpha+beta<0.999, got ({omega},{alpha},{beta})"
+        )
+    rng = np.random.default_rng(seed)
     eps = rng.exponential(1.0, n)
     x = np.empty(n)
     psi = np.empty(n)
