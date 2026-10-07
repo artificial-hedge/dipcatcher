@@ -486,6 +486,9 @@
   "models/enkf.py": {
    "status": "audited"
   },
+  "models/ets.py": {
+   "status": "audited"
+  },
   "models/extra_conformal.py": {
    "status": "audited"
   },

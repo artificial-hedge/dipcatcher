@@ -88,6 +88,8 @@ def ses_fit(y: Array, alpha: float | None = None) -> ETSFit:
         a = float(res.x[0])
     else:
         a = float(alpha)
+        if not 0.0 < a < 1.0:
+            raise ValueError("alpha must lie in (0, 1)")
     fitted, level = _ses_recursion(arr, a, level0)
     resid = arr - fitted
     sse = float(resid[1:] @ resid[1:])
@@ -136,6 +138,8 @@ def holt_fit(y: Array, damped: bool = False) -> ETSFit:
     bounds = [(1e-4, 1.0 - 1e-4), (1e-4, 1.0 - 1e-4), (0.8, 1.0) if damped else (1.0, 1.0)]
     x0 = np.array([0.3, 0.1, 0.98 if damped else 1.0])
     res = minimize(sse_of, x0=x0, bounds=bounds)
+    if not np.isfinite(res.fun):
+        raise ValueError("smoothing-parameter fit failed (non-finite SSE)")
     a, b, phi = (float(v) for v in res.x)
     fitted, level, trend = _holt_recursion(arr, a, b, phi, level0, trend0)
     resid = arr - fitted
@@ -192,8 +196,8 @@ def _hw_recursion(
 
 def holt_winters_fit(y: Array, period: int, seasonal: str = "add", damped: bool = False) -> ETSFit:
     """Holt-Winters seasonal smoothing.  ``seasonal`` is ``"add"`` or ``"mul"``."""
-    if period < 2:
-        raise ValueError("period must be >= 2")
+    if not isinstance(period, (int, np.integer)) or period < 2:
+        raise ValueError("period must be an integer >= 2")
     mul = seasonal == "mul"
     if seasonal not in {"add", "mul"}:
         raise ValueError("seasonal must be 'add' or 'mul'")
@@ -221,6 +225,8 @@ def holt_winters_fit(y: Array, period: int, seasonal: str = "add", damped: bool 
     ]
     x0 = np.array([0.3, 0.05, 0.1, 0.98 if damped else 1.0])
     res = minimize(sse_of, x0=x0, bounds=bounds)
+    if not np.isfinite(res.fun):
+        raise ValueError("smoothing-parameter fit failed (non-finite SSE)")
     a, b, g, phi = (float(v) for v in res.x)
     fitted, level, trend, season = _hw_recursion(arr, m, a, b, g, phi, level0, trend0, season0, mul)
     resid = arr - fitted
@@ -243,8 +249,8 @@ def holt_winters_fit(y: Array, period: int, seasonal: str = "add", damped: bool 
 
 def ets_forecast(fit: ETSFit, h: int) -> Array:
     """Multi-step point forecasts from a fitted model."""
-    if h < 1:
-        raise ValueError("h must be >= 1")
+    if not isinstance(h, (int, np.integer)) or h < 1:
+        raise ValueError("h must be an integer >= 1")
     if fit.kind == "ses":
         return np.full(h, fit.level)
     phi = fit.params.get("phi", 1.0)
