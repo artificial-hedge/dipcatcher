@@ -89,11 +89,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "ae326dee4fce213e3ffe77f057fd0d0cee6d11f7",
+  "git_revision": "f8e860b6fb22dc46ba58a5a16200a37a74fb1c23",
   "interpretation": "the committed docs are the served surface: every documented route/field/env-var/command/error resolves, every served route is documented or pinned excluded, and the goldens regenerate byte-identically",
   "kind": "fx1_docs_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "e0b93a6a8e78c72a6e4b01474ac3b88ada6d186c967741b4ec6cc33cffb225aa",
+  "receipt_sha256": "53aa1b7e5c382586e65a95c68d6a705efd44a8271df08ed74c1b985555e34702",
   "research_only": true,
   "schema": "fx1_docs_audit.v1"
 }
