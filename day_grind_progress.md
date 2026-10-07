@@ -2155,6 +2155,97 @@ Process rule generalised: an import that references a not-yet-written module mus
 left in the tree between steps. Write the module and its import in the same shell
 invocation.
 
+---
+
+## Round 3 — canon retirement landed, and two findings that change the verdict
+
+### Landed and independently verified by the Lead
+
+**Problem #5 — canon retirement (the headline of this round).** `canon-integrity` replaced
+the placeholder with the real audit-derived set (`b5cd491133`, module 180 KB, byte-identical
+regeneration from `quality/canon_qualification_audit.json`). Verified in-process:
+
+| quantity | value |
+|---|---|
+| `OPTIONAL_BENCHMARK_FAMILIES` | 10,222 (append-only, UNCHANGED — old receipts keep verifying) |
+| `REQUIRED_BENCHMARK_FAMILIES` | 23 |
+| `RETIRED_BENCHMARK_FAMILIES` | **7,529** |
+| `LIVE_OPTIONAL_BENCHMARK_FAMILIES` | **2,693** |
+
+Every invariant checked directly: `LIVE == OPTIONAL - RETIRED`, `RETIRED <= OPTIONAL`,
+`RETIRED` disjoint `REQUIRED`, `LIVE` disjoint `RETIRED`, and **0** of 7,529 entries carry a
+vague or absent retirement reason (the test enforces `len(reason) >= 30` and that the reason
+states the template evidence). Note the real figure is 7,529, not the 1,883 `*_qa_studies`
+names in the original brief — 1,883 was only that naming subset; the template-family
+problem is ~4x larger than it appeared.
+
+Regression guard `tests/unit/research/test_catalog_retired_families.py` also proves the
+property the design turns on: an **archived receipt naming a now-RETIRED family still
+verifies**, while an unknown family still fails closed.
+
+All **66 lane-authored tests** green in one focused run (registry retirement, live-family
+de-emission, manifest dataset identity, promotion receipt, verify promotion receipt, drift
+wiring, perf budget).
+
+**Problem #7 — P0 evidence inventory.** `quality/p0_evidence_inventory.json` (7 rows) with
+verdicts `closeable-now` 3 / `runbook-ready` 2 / `blocked` 2, sealed as NEW
+`receipts/p0_evidence_inventory_v1.json` (`.sha256` sidecar). Lead verified it directly:
+`valid: True | errors: [] | schema: receipt.v2 | digest: canonical_json`. Freshly minted,
+never an edit. `docs/evidence/index.md` regenerated (`make evidence`, `71808e6773`).
+
+### Finding 1 — the suite SEGFAULTS, so `make test` is not currently measurable
+
+`make test` reports `127 failed / 12,083 passed / 9 errors` and then dies with 41
+`INTERNALERROR` frames and `KeyError: <WorkerController gw10>`. The cause is not a
+scheduler flake. Line 167 of the log:
+
+```
+Fatal Python error: Segmentation faultFatal Python error: [gw3] node down: Not properly terminated
+```
+
+A test segfaults inside native code, the worker dies uncleanly, and xdist's
+`worker_collectionfinish` then raises `KeyError` against a node it has already dropped. So
+the headline pass/fail counts from every `make test` this session are **unreliable** — they
+are counts from a run that died mid-flight. Reported here as measured, with that caveat,
+rather than as a verdict. The Lead is running an isolated `PYTHONFAULTHANDLER=1` serial
+pass to name the crashing test.
+
+### Finding 2 — `n_boot: 1000`, not the mandated 2000 (P0.3 honestly downgraded)
+
+`evidence-debt` probed all five merged receipts (`merge_d1_v2aug`, `merge_h4f_v2aug`,
+`merge_h4fix_aug2`, `merge_s11_v2aug`, `merge_s23_v2aug`) and found every one binds
+`n_boot: 1000`, **not** the contract-mandated 2000. This is a real evidence-integrity gap,
+not a wording issue: the §4.1 re-merge at `n_boot=2000` has genuinely not been executed. The
+lane therefore **downgraded P0.3 from `closeable-now` to `blocked`** rather than leave a
+comfortable verdict standing on receipts that contradict it. That downgrade cost the lane
+nothing and is the single most valuable judgement call in this round. A from-scratch re-merge
+additionally needs the `eval-full` part matrices, which are remote-only on `D:\dipcatcher`.
+
+Conversely P0.6 **is** closeable, and was closed on evidence rather than assertion: the
+`dip_student_t` coverage row inside `evidence-sota-eval-h4f-v2.json` reads `emitted 1500 /
+finite_crps 1500 / missing_or_failed 0`, per-asset 300x5, `coverage_fraction 1.0`.
+
+Final P0 verdicts: **closeable-now** P0.4 / P0.5 / P0.6 · **runbook-ready** P0.1 / P0.2 ·
+**blocked** P0.3 (n_boot) / P0.7 (writes under `.dsh-24x7\`, outside lane scope; draft
+handoff text in `docs/P0_CLOSURE.md` §P0.7).
+
+### Finding 3 — `check_mccabe_ratchet.py --write` refuses to write at all right now
+
+The ratchet reports **30** ceiling regressions (not 26 — four appeared this round) and 736
+unlisted-at-or-over-10 functions. `--write` was run and made the baseline **byte-identical**
+(362 lines before and after): while any ceiling violation exists it refuses to pin anything.
+So `make lint` cannot be brought green by pinning; the 30 must be reduced first. Attribution
+of the four new ones (`caviar_fit` 15>14, `NGBoostGaussian.fit` 17>15, `bench_northset`
+18>14, `attribute_pair` 16>15) is **external** — they arrive via `dbd00ac5a8`,
+`d18caafd4c`, `6a63fafbce` ("unstrip 64 residual contract asserts", which adds branches),
+`150f1b448e`, `4b0d47d2f3`. **None of the 30 is in a file any of our lanes wrote.** The
+external session is itself running `refactor(northset): extract helpers to cut McCabe
+complexity`, so mass-refactoring the same list would collide; the Lead is deliberately not
+duplicating it.
+
+Ruff is clean (`All checks passed!`, 19,018 files formatted) as of `612544cd0d`, so the
+ratchet is the *only* thing left between here and `make lint` green.
+
 ### Honesty contract — verified intact (independently, not taken on assertion)
 
 - `FORBIDDEN_RESEARCH_METRIC_KEYS` (`quant_fund.research.catalog`) and
