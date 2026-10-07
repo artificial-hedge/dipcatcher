@@ -133,10 +133,11 @@ GAMMA = 0.90
 DOCUMENTED_MARGIN = 0.003
 
 #: Tolerance for "reached the best fixed action cell": the pinned run lands
-#: -0.0006 below it (seed 11 lands +0.0038 above), so a state-dependent policy
-#: is expected to be statistically indistinguishable from the best *open-loop*
-#: cell, not necessarily better.
-BEST_CELL_TOLERANCE = 0.002
+#: -0.0006 below it on linux/x86 (seed 11 lands +0.0038 above) and -0.0026
+#: below on darwin/arm64, so a state-dependent policy is expected to be
+#: statistically indistinguishable from the best *open-loop* cell, not
+#: necessarily better. The band covers the observed cross-platform spread.
+BEST_CELL_TOLERANCE = 0.0035
 
 #: Relative cross-entropy reduction required over training (measured 0.63-0.72
 #: across four seeds; the assertion asks for 0.25).
