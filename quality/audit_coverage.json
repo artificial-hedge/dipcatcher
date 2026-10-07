@@ -1269,6 +1269,9 @@
   "models/alpha_tensor_studies.py": {
    "status": "audited"
   },
+  "models/alphazero_lite.py": {
+   "status": "audited"
+  },
   "models/als_studies.py": {
    "status": "audited"
   },
@@ -1314,6 +1317,9 @@
   "models/ambiguity_fn.py": {
    "status": "audited"
   },
+  "models/american_baw.py": {
+   "status": "audited"
+  },
   "models/american_lsm.py": {
    "status": "audited"
   },
@@ -1321,6 +1327,9 @@
    "status": "audited"
   },
   "models/amethyst_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/amg_lite.py": {
    "status": "audited"
   },
   "models/amg_precond.py": {
@@ -1374,6 +1383,9 @@
   "models/analytic_semigroup.py": {
    "status": "audited"
   },
+  "models/analytic_sets.py": {
+   "status": "audited"
+  },
   "models/analytic_sheaf.py": {
    "status": "audited"
   },
@@ -1425,7 +1437,16 @@
   "models/andersen_lannes.py": {
    "status": "audited"
   },
+  "models/andersen_pta.py": {
+   "status": "audited"
+  },
+  "models/anderson_accel.py": {
+   "status": "audited"
+  },
   "models/anderson_mixing.py": {
+   "status": "audited"
+  },
+  "models/andreasen_huge.py": {
    "status": "audited"
   },
   "models/android_env_studies.py": {
@@ -1446,6 +1467,9 @@
   "models/anesthesiology_studies.py": {
    "status": "audited"
   },
+  "models/anf_cps.py": {
+   "status": "audited"
+  },
   "models/angelfish_qa_studies.py": {
    "status": "audited"
   },
@@ -1462,6 +1486,9 @@
    "status": "audited"
   },
   "models/anick_htpy.py": {
+   "status": "audited"
+  },
+  "models/anil_meta.py": {
    "status": "audited"
   },
   "models/animal_qa_studies.py": {
@@ -1492,6 +1519,9 @@
    "status": "audited"
   },
   "models/anole_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/anom_transformer.py": {
    "status": "audited"
   },
   "models/anosov.py": {
@@ -1569,6 +1599,9 @@
   "models/api_eval_studies.py": {
    "status": "audited"
   },
+  "models/apnp_prop.py": {
+   "status": "audited"
+  },
   "models/apophis_qa_studies.py": {
    "status": "audited"
   },
@@ -1587,10 +1620,16 @@
   "models/applied_mathematics.py": {
    "status": "audited"
   },
+  "models/approx_ndcg_ltr.py": {
+   "status": "audited"
+  },
   "models/apps_bench_studies.py": {
    "status": "audited"
   },
   "models/apps_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/aps_cp.py": {
    "status": "audited"
   },
   "models/apsara_qa_studies.py": {
@@ -1609,6 +1648,9 @@
    "status": "audited"
   },
   "models/aquamarine_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/ar_estimation.py": {
    "status": "audited"
   },
   "models/aracari_qa_studies.py": {
@@ -1642,6 +1684,12 @@
    "status": "audited"
   },
   "models/arc_hard2_studies.py": {
+   "status": "audited"
+  },
+  "models/arch_fit.py": {
+   "status": "audited"
+  },
+  "models/arch_predictor.py": {
    "status": "audited"
   },
   "models/arch_qa_studies.py": {
@@ -1686,6 +1734,9 @@
   "models/area_studies_2.py": {
    "status": "audited"
   },
+  "models/arellano_bond.py": {
+   "status": "audited"
+  },
   "models/arena_battle_studies.py": {
    "status": "audited"
   },
@@ -1701,13 +1752,22 @@
   "models/argue_eval_studies.py": {
    "status": "audited"
   },
+  "models/argument_principle.py": {
+   "status": "audited"
+  },
   "models/argus_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/aries_recovery.py": {
    "status": "audited"
   },
   "models/arinkin_gaitsgory.py": {
    "status": "audited"
   },
   "models/arinniti_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/arith_hierarchy.py": {
    "status": "audited"
   },
   "models/arith_qa_studies.py": {
@@ -1722,13 +1782,22 @@
   "models/arithmetic_chow.py": {
    "status": "audited"
   },
+  "models/arithmetic_coding.py": {
+   "status": "audited"
+  },
   "models/arithmetic_dm.py": {
    "status": "audited"
   },
   "models/arithmetic_ht.py": {
    "status": "audited"
   },
+  "models/arithmetization.py": {
+   "status": "audited"
+  },
   "models/arkowitz_htpy.py": {
+   "status": "audited"
+  },
+  "models/arma.py": {
    "status": "audited"
   },
   "models/armadillo_qa_studies.py": {
@@ -1738,6 +1807,15 @@
    "status": "audited"
   },
   "models/arnoldi_eig.py": {
+   "status": "audited"
+  },
+  "models/arnoldi_gmres.py": {
+   "status": "audited"
+  },
+  "models/arp_table.py": {
+   "status": "audited"
+  },
+  "models/array_theory.py": {
    "status": "audited"
   },
   "models/arroyo_qa_studies.py": {
@@ -1756,6 +1834,9 @@
    "status": "audited"
   },
   "models/art_nli_studies.py": {
+   "status": "audited"
+  },
+  "models/art_sirt.py": {
    "status": "audited"
   },
   "models/art_therapy.py": {
@@ -1779,6 +1860,9 @@
   "models/artin_stack.py": {
    "status": "audited"
   },
+  "models/artin_symbol.py": {
+   "status": "audited"
+  },
   "models/artinian_alg.py": {
    "status": "audited"
   },
@@ -1795,6 +1879,12 @@
    "status": "audited"
   },
   "models/asag_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/asan_shadow.py": {
+   "status": "audited"
+  },
+  "models/ascending_clock.py": {
    "status": "audited"
   },
   "models/asdiv_lite_studies.py": {
@@ -1824,19 +1914,34 @@
   "models/assessment_theory.py": {
    "status": "audited"
   },
+  "models/asset_gnn.py": {
+   "status": "audited"
+  },
   "models/asset_pricing.py": {
+   "status": "audited"
+  },
+  "models/assignment.py": {
    "status": "audited"
   },
   "models/assistantbench_studies.py": {
    "status": "audited"
   },
+  "models/association_rules.py": {
+   "status": "audited"
+  },
   "models/assyriology.py": {
+   "status": "audited"
+  },
+  "models/astar_search.py": {
    "status": "audited"
   },
   "models/aster_qa_studies.py": {
    "status": "audited"
   },
   "models/asteroid_science.py": {
+   "status": "audited"
+  },
+  "models/astgcn.py": {
    "status": "audited"
   },
   "models/astghik_qa_studies.py": {
@@ -1914,7 +2019,16 @@
   "models/atomic_topos.py": {
    "status": "audited"
   },
+  "models/atomics_tas.py": {
+   "status": "audited"
+  },
   "models/atoms_decomp.py": {
+   "status": "audited"
+  },
+  "models/attention_rollout.py": {
+   "status": "audited"
+  },
+  "models/attentive_np.py": {
    "status": "audited"
   },
   "models/attribute_infer_studies.py": {

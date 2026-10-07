@@ -4,6 +4,8 @@ approximate ranks: rank_j(s_i) ≈ 1 + Σ_k sigmoid((s_i - s_k)/τ).
 
 from __future__ import annotations
 
+from typing import Any
+
 from quant_fund.models._ltr_synth import ltr_data, ndcg_at
 
 
@@ -13,6 +15,19 @@ def _torch():
     except ImportError as exc:
         raise ImportError("approx_ndcg_ltr requires torch (pip install -e .[nn])") from exc
     return torch
+
+
+def _soft_ndcg(s: Any, gains: Any, tau: float, torch: Any) -> Any:
+    """Soft NDCG per query. The ideal DCG sorts gains descending — an
+    unsorted ideal lets the ratio exceed 1."""
+    # soft ranks: r_ij = 1 + sum_k sigmoid((s_j - s_k)/tau) for doc j in query i
+    diff = (s[:, :, None] - s[:, None, :]) / tau
+    ranks = 1.0 + torch.sigmoid(-diff).sum(-1)  # position = 1 + #docs that beat j
+    disc = 1.0 / torch.log2(ranks + 1.0)
+    ideal_gains = torch.sort(gains, dim=-1, descending=True).values
+    pos = torch.arange(2, gains.shape[1] + 2, dtype=torch.float32)
+    ideal = (ideal_gains * (1.0 / torch.log2(pos))).sum(-1).clamp_min(1e-9)
+    return (gains * disc).sum(-1) / ideal
 
 
 def bench_approx_ndcg_ltr(
@@ -30,18 +45,7 @@ def bench_approx_ndcg_ltr(
     opt = torch.optim.Adam(net.parameters(), lr=0.005)
     for _i in range(iters):
         s = net(xt).squeeze(-1)  # (q,doc)
-        # soft ranks: r_ij = 1 + sum_k sigmoid((s_j - s_k)/τ) for doc j in query i
-        diff = (s[:, :, None] - s[:, None, :]) / tau
-        ranks = 1.0 + torch.sigmoid(-diff).sum(-1)  # position = 1 + #docs that beat j
-        disc = 1.0 / torch.log2(ranks + 1.0)
-        ndcg = (gains * disc).sum(-1) / (
-            torch.tensor(
-                [
-                    (gains[i] * (1.0 / torch.log2(torch.arange(2, len(gains[i]) + 2)))).sum()
-                    for i in range(len(gains))
-                ]
-            ).clamp_min(1e-9)
-        )
+        ndcg = _soft_ndcg(s, gains, tau, torch)
         loss = -ndcg.mean()
         opt.zero_grad()
         loss.backward()

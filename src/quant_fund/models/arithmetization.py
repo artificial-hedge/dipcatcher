@@ -12,6 +12,10 @@ def code_seq(seq: list[int]) -> tuple[int, int]:
     """Pick b > max(seq) factorial-ish and solve a by CRT over the
     pairwise-coprime moduli 1+(i+1)b for b = max+1! ... simple choice:
     b = m! where m > max elements ensures coprimality."""
+    if not seq:
+        raise ValueError("seq must be non-empty")
+    if min(seq) < 0:
+        raise ValueError("beta coding requires non-negative elements")
     m = max(seq) + len(seq) + 1
     b = 1
     for k in range(2, m + 1):

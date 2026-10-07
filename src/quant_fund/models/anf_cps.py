@@ -8,23 +8,47 @@ _SEED = 20261231 + 544
 Term = tuple
 
 
-def _anf(t: Term, k: list) -> Term:
+def _used_names(t: Term) -> set:
+    """All names mentioned in t (vars and let-binders) — fresh _tN
+    names must avoid these or they capture/shadow user variables."""
+    return _used_names_into(t, set())
+
+
+def _used_names_into(t: Term, acc: set) -> set:
+    if t[0] == "var":
+        acc.add(t[1])
+    elif t[0] == "let":
+        acc.add(t[1])
+        _used_names_into(t[2], acc)
+        _used_names_into(t[3], acc)
+    elif t[0] in ("add", "mul"):
+        _used_names_into(t[1], acc)
+        _used_names_into(t[2], acc)
+    return acc
+
+
+def _anf(t: Term, k: list, used: set) -> Term:
     """Return (anf_term) with fresh names appended to k."""
     tag = t[0]
     if tag in ("lit", "var"):
         return t
     if tag == "let":
-        bound = _anf(t[2], k)
-        body = _anf(t[3], k)
+        bound = _anf(t[2], k, used)
+        body = _anf(t[3], k, used)
         return ("let", t[1], bound, body)
-    a, b = _hoist(_anf(t[1], k), k), _hoist(_anf(t[2], k), k)
+    a = _hoist(_anf(t[1], k, used), k, used)
+    b = _hoist(_anf(t[2], k, used), k, used)
     return (tag, a, b)
 
 
-def _hoist(t: Term, k: list) -> Term:
+def _hoist(t: Term, k: list, used: set) -> Term:
     if t[0] in ("lit", "var"):
         return t
-    name = f"_t{len(k)}"
+    i = len(k)
+    while f"_t{i}" in used:
+        i += 1
+    name = f"_t{i}"
+    used.add(name)
     k.append(("let", name, t, ("var", name)))
     return ("var", name)
 
@@ -32,11 +56,7 @@ def _hoist(t: Term, k: list) -> Term:
 def anf(t: Term) -> Term:
     """Fully let-nested ANF term."""
     k: list = []
-    core = _anf(t, k)
-
-    def flatten(tt: Term) -> Term:
-        return tt
-
+    core = _anf(t, k, _used_names(t))
     # rebuild: wrap every hoisted let around the body in order
     out = core
     for let in reversed(k):
@@ -95,8 +115,7 @@ def bench_anf_cps(seed: int = _SEED) -> dict[str, float]:
             eval_ok += int(np.isclose(v0, v1))
             form_ok += int(_is_anf(a))
         except (ValueError, KeyError):
-            eval_ok += 1
-            form_ok += 1
+            pass  # errors count as failures, never as passes
     return {
         "synthetic_eval_preserved": float(eval_ok / n),
         "synthetic_anf_form": float(form_ok / n),

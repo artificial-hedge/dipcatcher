@@ -47,7 +47,8 @@ def bench_anil_meta(seed: int = 863, n_tasks: int = 30, K: int = 5) -> dict[str,
         opt.zero_grad()
         loss.backward()
         opt.step()
-    mses = []
+    mses: list[float] = []
+    pools: list[float] = []
     for i in range(8):
         xs, ys, xq, yq = sine_task(np.random.default_rng(seed + 4000 + i), K=K)
         h = torch.nn.Linear(16, 1)
@@ -61,9 +62,11 @@ def bench_anil_meta(seed: int = 863, n_tasks: int = 30, K: int = 5) -> dict[str,
         with torch.no_grad():
             pred = h(body(torch.tensor(xq).float()[:, None])).squeeze(-1).numpy()
         mses.append(float(((pred - yq) ** 2).mean()))
-    # pooled: linear on raw x
-    w, _, _, _ = np.linalg.lstsq(np.stack([xs, np.ones(len(xs))], 1), ys, rcond=None)
-    mse_pool = float(((xq * w[0] + w[1] - yq) ** 2).mean())
+        # pooled baseline for THIS task: linear on raw x — pair with the
+        # meta MSE on the same task, not the mean over other tasks
+        w, _, _, _ = np.linalg.lstsq(np.stack([xs, np.ones(len(xs))], 1), ys, rcond=None)
+        pools.append(float(((xq * w[0] + w[1] - yq) ** 2).mean()))
+    mse_pool = float(np.mean(pools))
     return {
         "synthetic_anil_query_mse": float(np.mean(mses)),
         "synthetic_anil_pooled_mse": mse_pool,

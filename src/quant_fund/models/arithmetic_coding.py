@@ -30,6 +30,8 @@ def _cum(freq: dict[int, int]) -> tuple[list[int], list[int], int]:
 def encode(msg: list[int], freq: dict[int, int]) -> tuple[list[int], int]:
     """Returns (bit list, total frequency)."""
     syms, cum, tot = _cum(freq)
+    if tot > TOP:
+        raise ValueError(f"frequency total {tot} exceeds {PREC}-bit range capacity")
     idx = {s: i for i, s in enumerate(syms)}
     lo, hi = 0, TOP - 1
     bits: list[int] = []
@@ -69,6 +71,8 @@ def encode(msg: list[int], freq: dict[int, int]) -> tuple[list[int], int]:
 
 def decode(bits: list[int], n: int, freq: dict[int, int]) -> list[int]:
     syms, cum, tot = _cum(freq)
+    if tot > TOP:
+        raise ValueError(f"frequency total {tot} exceeds {PREC}-bit range capacity")
     lo, hi = 0, TOP - 1
     code = 0
     pos = 0

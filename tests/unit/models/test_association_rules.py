@@ -24,3 +24,17 @@ def test_bench_association_rules():
     out = bench_association_rules(seed=568)
     assert out["synthetic_rule_conf"] > 0.75
     assert out["synthetic_spurious_rules"] == 0
+
+
+def test_min_support_count_ceils() -> None:
+    """int() floors the count threshold, admitting itemsets strictly
+    below min_support — 2/6 = 0.333 < 0.4 must NOT be frequent."""
+    tx = [{1}, {1}, set(), set(), set(), set()]
+    sup = apriori(tx, min_support=0.4)
+    assert frozenset({1}) not in sup
+
+
+def test_min_support_boundary_admits_exact() -> None:
+    tx = [{1}, {1}, set(), set(), set()]
+    sup = apriori(tx, min_support=0.4)
+    assert frozenset({1}) in sup  # 2/5 = 0.4 exactly

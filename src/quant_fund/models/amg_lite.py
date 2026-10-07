@@ -44,8 +44,10 @@ def interp_matrix(a: np.ndarray, s: np.ndarray, is_c: np.ndarray) -> np.ndarray:
             continue
         strong_c = [j for j in np.where(s[i])[0] if is_c[j]]
         if not strong_c:
-            # fall back: strongest connection overall
-            j = int(np.argmax(np.abs(a[i] - np.diag(a)[i])))
+            # fall back: strongest off-diagonal connection |a_ij|, j != i
+            mag = np.abs(a[i]).astype(float)
+            mag[i] = 0.0
+            j = int(np.argmax(mag))
             strong_c = [j] if is_c[j] else [int(cidx[np.argmin(np.abs(cidx - i))])]
         for j in strong_c:
             p[i, cmap[j]] = 1.0 / len(strong_c)

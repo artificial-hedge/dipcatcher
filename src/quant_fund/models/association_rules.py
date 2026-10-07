@@ -21,7 +21,9 @@ def apriori(
 ) -> dict[frozenset[int], float]:
     """Level-wise Apriori; returns itemset → support."""
     n_t = len(transactions)
-    min_cnt = max(1, int(min_support * n_t))
+    # ceil (not floor): support >= min_support must hold, so the count
+    # threshold rounds up; epsilon guards float noise at exact integers.
+    min_cnt = max(1, int(np.ceil(min_support * n_t - 1e-9)))
     items = sorted({i for t in transactions for i in t})
     sup: dict[frozenset[int], float] = {}
     prev = [frozenset([i]) for i in items]
