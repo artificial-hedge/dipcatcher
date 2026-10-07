@@ -4586,7 +4586,7 @@ def _probe_backend_probes(  # NOSONAR
     # one logged call exports as a sealed fx1_completion_record.v1 doc:
     # seal re-derives, verify_receipt accepts it, tampering the record's
     # output hash breaks the seal, and exports are byte-deterministic.
-    from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+    from quant_fund.schemas.receipt import (  # noqa: PLC0415
         verify_receipt_payload as _vrp,
     )
     from quant_fund.utils.hashing import (  # noqa: PLC0415

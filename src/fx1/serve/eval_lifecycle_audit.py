@@ -880,7 +880,7 @@ def _store_probes() -> dict[str, Any]:
 def _receipt_probes() -> dict[str, Any]:
     """Sealed fx1_eval_record.v1 export: verifies, tamper fails closed."""
     out: dict[str, Any] = {}
-    from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+    from quant_fund.schemas.receipt import (  # noqa: PLC0415
         verify_receipt_file,
         verify_receipt_payload,
     )
@@ -1416,7 +1416,7 @@ def _cli_probes() -> dict[str, Any]:
                 and wdocs[1]["schema"] == "fx1_eval_record.v1"
                 and wdocs[1]["record"]["eval_id"] == eval_id
             )
-            from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+            from quant_fund.schemas.receipt import (  # noqa: PLC0415
                 verify_receipt_payload,
             )
 
