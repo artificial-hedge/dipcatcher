@@ -1663,15 +1663,21 @@ class MSFECombinationRanker(JoblibMixin):
                     raise ValueError("hold_y is not None and hold_d is not None")
                 pred = inner_int + inner_slope * hold_x[:, j]
                 msfe[j] = _discounted_date_mse(pred, hold_y, hold_d, self.theta)
-        finite_msfe = np.where(np.isfinite(msfe) & (msfe > 0.0), msfe, np.nan)
+        finite_msfe = np.where(np.isfinite(msfe) & (msfe >= 0.0), msfe, np.nan)
         if not np.isfinite(finite_msfe).any():
             w = np.ones(n_char, dtype=float)
         else:
-            inv = 1.0 / np.where(np.isfinite(finite_msfe), finite_msfe, np.inf)
-            if float(np.sum(inv)) <= 0.0:
-                w = np.ones(n_char, dtype=float)
+            best = float(np.nanmin(finite_msfe))
+            if best <= 0.0:
+                # a zero-MSFE forecaster dominates the inverse-MSFE rule
+                # (w_i ~ 1/msfe_i -> +inf); share weight among the perfect fits
+                w = np.where(finite_msfe <= 0.0, 1.0, 0.0)
             else:
-                w = inv
+                inv = np.where(np.isfinite(finite_msfe), 1.0 / finite_msfe, 0.0)
+                if float(np.sum(inv)) <= 0.0 or not bool(np.isfinite(np.sum(inv))):
+                    w = np.where(finite_msfe <= best, 1.0, 0.0)
+                else:
+                    w = inv
         self.intercepts = intercepts
         self.slopes = slopes
         self.weights = w / float(np.sum(w))

@@ -400,6 +400,23 @@ def test_combo_msfe_upweights_low_error_univariate() -> None:
     assert ranker.metadata().name == "combo_msfe"
 
 
+def test_combo_msfe_zero_msfe_forecaster_dominates(monkeypatch) -> None:
+    """Adversarial: a holdout-perfect forecaster (MSFE exactly 0) must take all
+    the inverse-MSFE weight; the old `msfe > 0` filter zero-weighted it."""
+    import quant_fund.models.cs_papers as csp
+
+    msv = iter([0.0, 0.25])
+    monkeypatch.setattr(csp, "_discounted_date_mse", lambda *a, **k: next(msv))
+    n_dates, n_names = 16, 3
+    x = np.ones((n_dates * n_names, 2))
+    dates = np.repeat(np.arange(n_dates), n_names)
+    y = np.ones(n_dates * n_names)
+    ranker = csp.MSFECombinationRanker(theta=0.99).fit(x, y, dates=dates)
+    assert ranker.weights is not None
+    assert ranker.weights[0] == pytest.approx(1.0)
+    assert ranker.weights[1] == pytest.approx(0.0)
+
+
 def test_ridge_st_masks_to_short_horizon_columns() -> None:
     from quant_fund.models.cs_papers import SHORT_HORIZON_FEATURES, make_ridge_st
 
