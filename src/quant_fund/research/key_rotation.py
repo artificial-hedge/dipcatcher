@@ -106,13 +106,24 @@ def _live_pubkey_hex(root: Path) -> str | None:
 
 
 def load_keyring(root: str | Path) -> dict[str, str]:
-    """Every authorized gate key: live + each rotation terminus + genesis."""
+    """Every authorized gate key: live + each rotation terminus + genesis.
+
+    Only records *on the verified rotation chain* admit keys: a forged
+    ``rotation_*.json`` — well-formed but never authorized under the
+    previous key — must not inject a public key that ``checkpoint_spine``
+    then accepts as a legitimate record signer. When the chain fails
+    verification the keyring keeps only the live pubkey (fail closed).
+    """
     root_path = Path(root)
     ring: dict[str, str] = {}
     live = _live_pubkey_hex(root_path)
     if live:
         ring[_key_id(live)] = live
+    res = verify_rotations(root_path)
+    admitted = {e["file"] for e in res.get("lineage", [])} if res.get("ok") else set()
     for f in sorted(root_path.glob(f"{ROTATION_DIR}/{ROTATION_GLOB}")):
+        if f.name not in admitted:
+            continue
         rec = _record(f)
         payload = rec.get("payload") or {}
         for key in ("old_pubkey", "new_pubkey"):

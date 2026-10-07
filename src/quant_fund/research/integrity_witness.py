@@ -303,12 +303,13 @@ def verify_witness_record(
     current = target_bytes is not None and hash_bytes(target_bytes) == logged_digest
     if witness_pubkey_pem is None:
         errors.append("witness_pubkey_missing")
-    elif (
-        current
-        and isinstance(spec.get("signature"), dict)
+    elif current and (
+        not isinstance(spec.get("signature"), dict)
         # The logged signature covers the ORIGINAL artifact bytes — only
-        # re-verifiable while the supplied bytes still match the digest.
-        and not _ecdsa_verify(
+        # re-verifiable while the supplied bytes still match the digest. A
+        # record whose spec carries no signature proves no attribution —
+        # fail closed rather than skip the check.
+        or not _ecdsa_verify(
             witness_pubkey_pem,
             spec["signature"].get("content", ""),
             target_bytes or b"",
@@ -366,7 +367,10 @@ def verify_witness_record(
         note = str(ip.get("checkpoint_note", ""))
         payload, _, sig_block = note.partition("\n\n")
         if payload and sig_block:
-            raw = base64.b64decode(sig_block.strip().split(" ")[-1])
+            try:
+                raw = base64.b64decode(sig_block.strip().split(" ")[-1])
+            except ValueError:
+                raw = b""
             if not _ecdsa_verify(
                 rekor_pubkey_pem, base64.b64encode(raw[4:]).decode(), (payload + "\n").encode()
             ):
@@ -466,7 +470,10 @@ def verify_witness_online(
         errors.append("sth_root_mismatch")
     if pub_file.is_file():
         payload, _, sig_block = note.partition("\n\n")
-        raw = base64.b64decode(sig_block.strip().split(" ")[-1]) if sig_block else b""
+        try:
+            raw = base64.b64decode(sig_block.strip().split(" ")[-1]) if sig_block else b""
+        except ValueError:
+            raw = b""
         if not sig_block or not _ecdsa_verify(
             pub_file.read_bytes(), base64.b64encode(raw[4:]).decode(), (payload + "\n").encode()
         ):

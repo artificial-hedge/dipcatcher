@@ -346,6 +346,8 @@ def custody_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         for rel, b64v in embedded.items():
             if not isinstance(rel, str) or _unb64(b64v) is None:
                 errors.append("embedded_malformed")
+            elif not _safe_member_relpath(rel):
+                errors.append(f"embedded_path_uncontained:{rel!a}")
     witnesses = payload.get("witness_proofs")
     if not isinstance(witnesses, Mapping):
         errors.append("witness_proofs_missing")
@@ -353,7 +355,22 @@ def custody_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         for rel, b64v in witnesses.items():
             if not isinstance(rel, str) or _unb64(b64v) is None:
                 errors.append("witness_malformed")
+            elif not _safe_member_relpath(rel):
+                errors.append(f"witness_path_uncontained:{rel!a}")
     return errors
+
+
+def _safe_member_relpath(rel: object) -> bool:
+    """True iff ``rel`` is a plain relative path that cannot escape its root.
+
+    Verification materializes an untrusted bundle's member paths to disk —
+    an absolute anchor or a ``..`` segment would turn a ``tmp / rel`` join
+    into an arbitrary write (or read) outside the sandbox root.
+    """
+    if not isinstance(rel, str) or not rel:
+        return False
+    path = Path(rel)
+    return not path.is_absolute() and ".." not in path.parts
 
 
 def verify_custody_bundle(
@@ -463,18 +480,40 @@ def verify_custody_bundle(
     layers["chain"] = {"ok": chain_ok}
 
     # Materialize a synthetic root and hand off to the existing verifiers.
+    # Every attacker-controlled path must resolve *inside* the temp root:
+    # corpus_dir, hop names, the member name, embedded and witness rel keys
+    # all come from the bundle and are written verbatim — a ``..`` or
+    # absolute component is an arbitrary file write under verification.
     tmp = Path(tempfile.mkdtemp(prefix="custody_verify_"))
-    corpus_root = tmp / corpus_dir
-    corpus_root.mkdir(parents=True, exist_ok=True)
-    for hop, raw in zip(hops, hop_bytes, strict=True):
-        (corpus_root / str(hop["name"])).write_bytes(raw)
-    (corpus_root / str(bundle["member"])).write_bytes(member_bytes)
+    corpus_root: Path | None = None
+    if _safe_member_relpath(corpus_dir):
+        cand = (tmp / corpus_dir).resolve()
+        if cand.is_relative_to(tmp.resolve()):
+            corpus_root = cand
+    if corpus_root is None:
+        errors.append("corpus_dir_uncontained")
+    else:
+        corpus_root.mkdir(parents=True, exist_ok=True)
+        for hop, raw in zip(hops, hop_bytes, strict=True):
+            hop_name = hop["name"]
+            if not _safe_member_relpath(hop_name):
+                errors.append(f"hop_path_uncontained:{str(hop_name)!a}")
+                continue
+            (corpus_root / hop_name).write_bytes(raw)
+        member_rel = bundle["member"]
+        if not _safe_member_relpath(member_rel):
+            errors.append("member_path_uncontained")
+        else:
+            (corpus_root / member_rel).write_bytes(member_bytes)
 
     embedded = bundle["embedded_files"]
     assert isinstance(embedded, Mapping)
     for rel, b64v in embedded.items():
         raw = _unb64(b64v)
         assert raw is not None
+        if not _safe_member_relpath(rel) or not (tmp / rel).resolve().is_relative_to(tmp.resolve()):
+            errors.append(f"embedded_path_uncontained:{str(rel)!a}")
+            continue
         dest = tmp / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(raw)
@@ -523,6 +562,11 @@ def verify_custody_bundle(
         for rel, b64v in witnesses.items():
             raw = _unb64(b64v)
             assert raw is not None
+            if not _safe_member_relpath(rel) or not (tmp / rel).resolve().is_relative_to(
+                tmp.resolve()
+            ):
+                errors.append(f"witness_path_uncontained:{str(rel)!a}")
+                continue
             dest = tmp / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(raw)

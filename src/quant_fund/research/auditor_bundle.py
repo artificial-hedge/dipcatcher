@@ -72,6 +72,20 @@ SPINE_PREFIXES: tuple[str, ...] = (
 )
 
 
+def _safe_member_relpath(rel: object) -> bool:
+    """True iff ``rel`` is a plain relative path that cannot escape its root.
+
+    ``verify_bundle`` materializes member paths to disk — an absolute
+    anchor or ``..`` segment (e.g. ``quality/witness/../../../x``, which
+    still passes the ``SPINE_PREFIXES`` startswith check) would turn the
+    ``tmp_root / rel`` join into a write outside the sandbox.
+    """
+    if not isinstance(rel, str) or not rel:
+        return False
+    path = Path(rel)
+    return not path.is_absolute() and ".." not in path.parts
+
+
 def _fetch_json(url: str, timeout: int = 30) -> dict[str, Any]:
     with urllib.request.urlopen(url, timeout=timeout) as resp:  # noqa: S310  # nosec B310
         result: dict[str, Any] = json.loads(resp.read())
@@ -227,6 +241,11 @@ def verify_bundle(
     with tempfile.TemporaryDirectory() as tmp:
         tmp_root = Path(tmp)
         for rel, raw in decoded.items():
+            if not _safe_member_relpath(rel) or not (tmp_root / rel).resolve().is_relative_to(
+                tmp_root.resolve()
+            ):
+                errors.append(f"member_path_uncontained:{rel!a}")
+                continue
             dest = tmp_root / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_bytes(raw)

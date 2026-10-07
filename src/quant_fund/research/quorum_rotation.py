@@ -219,7 +219,14 @@ def load_registry_lineage(root: str | Path) -> dict[str, tuple[dict[str, str], i
             pass
     rot_dir = root_path / QUORUM_ROTATION_DIR
     if rot_dir.is_dir():
+        # Only records on the *verified* rotation chain admit registries —
+        # a forged rotation_*.json must not inject an attacker-controlled
+        # registry that v2 checkpoint signatures then resolve against.
+        res = verify_quorum_rotations(root_path)
+        admitted = {e["file"] for e in res.get("lineage", [])} if res.get("ok") else set()
         for f in sorted(rot_dir.glob(QUORUM_ROTATION_GLOB)):
+            if f.name not in admitted:
+                continue
             rec = _record(f)
             if rec["errors"]:
                 continue

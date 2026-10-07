@@ -651,11 +651,61 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     looks_fleet = _looks_like_fleet_eval(inner)
     errors: list[str] = []
     # Outer kind or sealed inner claims route through the shared lane map.
+    # Deep lane checks beyond the shared map — dispatched on the *claimed*
+    # set (envelope ``kind`` ∪ sealed inner ``kind``/``schema``) exactly like
+    # ``_LANE_CONSISTENCY``: a renamed outer kind cannot strip them.
+    _LANE_KIND_CONSISTENCY: dict[str, tuple[str, str]] = {
+        "identity_sweep": (
+            "quant_fund.research.identity_sweep.identity_v2_consistency_errors",
+            "identity_v2_consistency",
+        ),
+        "hstep_bench": (
+            "quant_fund.research.hstep_bench.hstep_bench_v2_consistency_errors",
+            "hstep_bench_v2_consistency",
+        ),
+        "fleet_significance_eval": (
+            "quant_fund.research.fleet_significance.fleet_significance_v2_consistency_errors",
+            "fleet_significance_v2_consistency",
+        ),
+        "coherence_eval": (
+            "quant_fund.research.coherence.coherence_v2_consistency_errors",
+            "coherence_v2",
+        ),
+        "mixture_stability_eval": (
+            "quant_fund.research.mixture_stability.mixture_stability_consistency_errors",
+            "mixture_stability",
+        ),
+        "selection_concordance": (
+            "quant_fund.research.concordance.concordance_consistency_errors",
+            "concordance",
+        ),
+        "evidence_audit": (
+            "quant_fund.research.evidence_audit.evidence_audit_consistency_errors",
+            "evidence_audit",
+        ),
+        "nautilus_conformance": (
+            "quant_fund.backtest.nautilus_conformance.nautilus_conformance_consistency_errors",
+            "nautilus_conformance",
+        ),
+        "multih_fleet_eval": (
+            "quant_fund.research.multih_fleet.multih_fleet_consistency_errors",
+            "multih_fleet",
+        ),
+        "calibration_eval": (
+            "quant_fund.research.calibration_eval.calibration_v2_consistency_errors",
+            "calibration_v2",
+        ),
+    }
     for claimed in sorted({kind, *_inner_claimed_kinds(payload)}, key=str):
+        path: str | None = None
+        label = f"{claimed}_consistency"
         if claimed in _LANE_CONSISTENCY:
             path = _LANE_CONSISTENCY[claimed]
+        elif claimed in _LANE_KIND_CONSISTENCY:
+            path, label = _LANE_KIND_CONSISTENCY[claimed]
+        if path is not None:
             module, _, func = path.rpartition(".")
-            errors.extend(_lane_checker(module, func, f"{claimed}_consistency")(payload))
+            errors.extend(_lane_checker(module, func, label)(payload))
             if claimed != kind:
                 errors.append("kind_fingerprint_mismatch")
             break  # one lane contract per envelope
@@ -668,69 +718,7 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
             )(payload)
         )
         errors.append("kind_fingerprint_mismatch")
-    if errors:
-        return errors
-    if kind == "identity_sweep":
-        return _lane_checker(
-            "quant_fund.research.identity_sweep",
-            "identity_v2_consistency_errors",
-            "identity_v2_consistency",
-        )(payload)
-    if kind == "hstep_bench":
-        return _lane_checker(
-            "quant_fund.research.hstep_bench",
-            "hstep_bench_v2_consistency_errors",
-            "hstep_bench_v2_consistency",
-        )(payload)
-    if kind == "fleet_significance_eval":
-        return _lane_checker(
-            "quant_fund.research.fleet_significance",
-            "fleet_significance_v2_consistency_errors",
-            "fleet_significance_v2_consistency",
-        )(payload)
-    if kind == "coherence_eval":
-        return _lane_checker(
-            "quant_fund.research.coherence",
-            "coherence_v2_consistency_errors",
-            "coherence_v2",
-        )(payload)
-    if kind == "mixture_stability_eval":
-        return _lane_checker(
-            "quant_fund.research.mixture_stability",
-            "mixture_stability_consistency_errors",
-            "mixture_stability",
-        )(payload)
-    if kind == "selection_concordance":
-        return _lane_checker(
-            "quant_fund.research.concordance",
-            "concordance_consistency_errors",
-            "concordance",
-        )(payload)
-    if kind == "evidence_audit":
-        return _lane_checker(
-            "quant_fund.research.evidence_audit",
-            "evidence_audit_consistency_errors",
-            "evidence_audit",
-        )(payload)
-    if kind == "nautilus_conformance":
-        return _lane_checker(
-            "quant_fund.backtest.nautilus_conformance",
-            "nautilus_conformance_consistency_errors",
-            "nautilus_conformance",
-        )(payload)
-    if kind == "multih_fleet_eval":
-        return _lane_checker(
-            "quant_fund.research.multih_fleet",
-            "multih_fleet_consistency_errors",
-            "multih_fleet",
-        )(payload)
-    if kind == "calibration_eval":
-        return _lane_checker(
-            "quant_fund.research.calibration_eval",
-            "calibration_v2_consistency_errors",
-            "calibration_v2",
-        )(payload)
-    return []
+    return errors
 
 
 def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
@@ -852,7 +840,11 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.evalue_contracts import evalue_family_contract_errors
 
         errors.extend(evalue_family_contract_errors(payload))
-    elif schema == "capacity_overlay.v1":
+    # Claimed schemas are independent claims — every one is checked. An
+    # elif-chain lets a ``kind`` in a matched family swallow a second
+    # claimed contract (e.g. kind=evalue_* + schema=capacity_overlay.v1
+    # would skip the capacity checks entirely).
+    if schema == "capacity_overlay.v1":
         from quant_fund.research.capacity_overlay import (
             capacity_contract_errors,
             capacity_v1_audit_errors,
@@ -860,7 +852,7 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
 
         errors.extend(capacity_contract_errors(payload))
         errors.extend(_guarded(capacity_v1_audit_errors, "capacity_v1")(payload))
-    elif schema == "cross_sectional_rankic.v1":
+    if schema == "cross_sectional_rankic.v1":
         from quant_fund.research.cross_sectional import (
             rankic_contract_errors,
             rankic_v1_audit_errors,
@@ -868,7 +860,7 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
 
         errors.extend(rankic_contract_errors(payload))
         errors.extend(_guarded(rankic_v1_audit_errors, "rankic_v1")(payload))
-    elif payload.get("kind") == "ranker_probability_experiment":
+    if payload.get("kind") == "ranker_probability_experiment":
         from quant_fund.research.ranker_probability import ranker_prob_contract_errors
 
         errors.extend(ranker_prob_contract_errors(payload))
@@ -894,7 +886,7 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
                 "hstep_bench_v1_contract",
             )(payload)
         )
-    elif payload.get("schema") == "calibration_eval.v1":
+    if payload.get("schema") == "calibration_eval.v1":
         from quant_fund.research.calibration_eval import calibration_contract_errors
 
         errors.extend(calibration_contract_errors(payload))

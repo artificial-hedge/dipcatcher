@@ -246,6 +246,48 @@
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
+    },
+    "research/receipt_v2.py": {
+      "status": "audited"
+    },
+    "research/lane_contracts.py": {
+      "status": "audited"
+    },
+    "research/verify.py": {
+      "status": "audited"
+    },
+    "research/gate_signatures.py": {
+      "status": "audited"
+    },
+    "research/integrity_witness.py": {
+      "status": "audited"
+    },
+    "research/key_rotation.py": {
+      "status": "audited"
+    },
+    "research/quorum_rotation.py": {
+      "status": "audited"
+    },
+    "research/custody.py": {
+      "status": "audited"
+    },
+    "research/checkpoint_chain.py": {
+      "status": "audited"
+    },
+    "research/corpus_epoch.py": {
+      "status": "audited"
+    },
+    "research/epoch_merkle.py": {
+      "status": "audited"
+    },
+    "research/epoch_consistency.py": {
+      "status": "audited"
+    },
+    "research/integrity_checkpoint.py": {
+      "status": "audited"
+    },
+    "research/auditor_bundle.py": {
+      "status": "audited"
     }
   },
   "schema_version": "audit-coverage/v1",
