@@ -138,6 +138,9 @@ def measure_lobster(msg: Path, ob: Path, *, tick_units: float = 100.0) -> dict[s
                 book.seed(ae, be)
                 seeded = True
                 n_events += 1
+                if ev.event_type in (EXECUTION, EXECUTION_HIDDEN):
+                    n_mo += 1
+                    signs.append(float(-ev.direction))
                 continue
             book.apply(ev)
             n_events += 1
