@@ -43,7 +43,7 @@ def bfs_solution(s0: int, max_len: int = 12) -> list[int] | None:
     seen = {s0}
     while q:
         s, path = q.popleft()
-        if is_goal(s) and path:
+        if is_goal(s):
             return path
         if len(path) >= max_len:
             continue

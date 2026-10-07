@@ -354,6 +354,9 @@
   "microstructure/initiative_fade_bench.py": {
    "status": "audited"
   },
+  "models/_agent_synth.py": {
+   "status": "audited"
+  },
   "models/ait_sahalia.py": {
    "status": "audited"
   },
