@@ -1894,7 +1894,11 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
         "prompt_cache_key": body.prompt_cache_key,
         "prompt_cache_retention": body.prompt_cache_retention,
         "truncation": "disabled",
-        "background": body.background,
+        # a ``background:true`` + ``stream:true`` request runs the sync
+        # stream path (the route only queues when the caller is not
+        # streaming) — the echo reports what actually happened, so the
+        # ``?stream=true`` replay grammar emits the lifecycle that ran
+        "background": body.background and not body.stream,
         "previous_response_id": body.previous_response_id,
         # OpenAI echoes ``conversation: {id}`` on the response when set
         "conversation": (
@@ -2592,8 +2596,12 @@ def openai_response_replay_events(
     carries the as-created state (``output: []``, ``usage: null``, status
     ``queued`` for a background response / ``in_progress`` otherwise);
     ``response.queued`` follows for ``background: true`` envelopes (the
-    recorded lifecycle); ``response.in_progress`` emits once the record
-    left ``queued``. Non-terminal envelopes emit only this prelude — the
+    recorded lifecycle); ``response.in_progress`` emits only when the
+    record genuinely left ``queued`` — every non-``cancelled`` terminal
+    status implies it, and a ``cancelled`` record proves it through the
+    ``_fx1_progressed`` marker the ``queued → in_progress`` transition
+    stamps (a record cancelled while still queued emits no phantom
+    ``in_progress``). Non-terminal envelopes emit only this prelude — the
     route's follow loop emits the rest once the record lands terminal
     (``response.completed`` / ``response.incomplete`` / ``response.failed``
     / ``response.cancelled``). ``_fx1_*`` internals never reach the wire.
@@ -2612,7 +2620,7 @@ def openai_response_replay_events(
     yield "response.created", {"type": "response.created", "response": created_obj}
     if background:
         yield "response.queued", {"type": "response.queued", "response": created_obj}
-    if status != "queued":
+    if status != "queued" and (status != "cancelled" or env.get("_fx1_progressed") is True):
         yield (
             "response.in_progress",
             {
@@ -3122,6 +3130,13 @@ class OpenAIEnvelopeStore:
                 return False
             updated = deepcopy(cur)
             updated["status"] = status
+            if status == "in_progress":
+                # the queued → in_progress claim is the only signal that a
+                # record actually left the queue — ``cancelled`` alone is
+                # reachable from either side of it. The marker lets the
+                # replay grammar emit ``response.in_progress`` only when the
+                # phase genuinely ran. ``_fx1_*`` internals never hit the wire.
+                updated["_fx1_progressed"] = True
             self._put_locked(updated, refresh=False)
             return True
 
