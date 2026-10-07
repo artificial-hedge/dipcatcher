@@ -72710,6 +72710,108 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `ticker`: AMZN
 - `window_s`: 0.5
 
+### `receipts/p0_evidence_inventory_v1.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/p0_evidence_inventory_v1.json | 14ec1043293364e48787bc29446dbfb51b0fb55d69e20d0ba1328c905269cab4 | d00b83801fa1626144bc1b024ca0a063802c75bc6269b472302f96cea097420f | not_checked | 612544cd0db394d4ee51e37ebd0c7f6586618712 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `P0_CLOSURE.md`: 4c038db2cd6667bbcc9c9c0c92d63f194c0eadb74b0eb2f99faa2fbab88ed66f
+  - `p0_evidence_inventory.json`: e45b3e84c2ba1a833ec1be2f63d87eea17b72c8a584608970a4d12c464a95e64
+- `data_label`: p0_evidence_inventory.v1
+- `dataset_hash`: e4cb06095c616aff9aec8ed49182d1f7b2268c3690627adcae7d262e6fc377f1
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 14cbc0c77eb7e6a2e7b6d92379eab4333e761bce75119c88b7d056f69fb1a70b
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-27.0-arm64-arm-64bit
+  - `python`: 3.12.13
+  - `threadpools`:
+- `generated_at`: 2026-10-07T16:21:49.264025+00:00
+- `git_revision`: 612544cd0db394d4ee51e37ebd0c7f6586618712
+- `kind`: p0_evidence_inventory
+- `params_hash`: 426f3280cc5370739e645af69ec0c6dfc74378e41e0b5b785a4b742ee8aa071f
+- `payload`:
+  - `claim`: research_only
+  - `inventory_path`: quality/p0_evidence_inventory.json
+  - `inventory_sha256`: e45b3e84c2ba1a833ec1be2f63d87eea17b72c8a584608970a4d12c464a95e64
+  - `items`:
+    - [0]
+      - `blocker`: Execution requires the Windows host D:\dipcatcher (WMI spawn/respawn via scripts/fleet_spawn.ps1 + scripts/fleet_watchdog.ps1, stderr capture for twice-dead shards); no SSH execution path from this session. Post-run evidence that must result: updated .dsh-24x7\fleet_heartbeat.json and spawn_receipt.json per respawn.
+      - `evidence_path`: docs/P0_CLOSURE.md §P0.1
+      - `id`: P0.1
+      - `schema_version`: p0_evidence_inventory.v1
+      - `verdict`: runbook-ready
+    - [1]
+      - `blocker`: v4-deep and h4f cell part matrices exist only under .dsh-24x7\eval-full\ on D:\dipcatcher, so contract-v2 TimesFM splice bit-identity checks for those cells cannot execute here. Local proof covers the v3 d1/h4 cells only: .dsh-24x7/eval-shards/*.tfmv2.npz (post-splice, pre-splice originals retained) + .dsh-24x7/evidence-sota-tfmfix-probe.json.
+      - `evidence_path`: docs/P0_CLOSURE.md §P0.2
+      - `id`: P0.2
+      - `schema_version`: p0_evidence_inventory.v1
+      - `verdict`: runbook-ready
+    - [2]
+      - `blocker`: All five merged receipts (merge_d1_v2aug.json, merge_h4f_v2aug.json, merge_h4fix_aug2.json, merge_s11_v2aug.json, merge_s23_v2aug.json) bind n_boot=1000 (probed 2026-10-07), NOT the mandated n_boot=2000; the contract-v2 re-merge at n_boot=2000 has not been executed. A from-scratch re-merge additionally needs .dsh-24x7/eval-full/ part matrices that exist only on D:\dipcatcher. Runbook: docs/P0_CLOSURE.md §P0.3.
+      - `evidence_path`: .dsh-24x7/merge_d1_v2aug.json
+      - `id`: P0.3
+      - `schema_version`: p0_evidence_inventory.v1
+      - `verdict`: blocked
+    - [3]
+      - `blocker`: null
+      - `evidence_path`: .dsh-24x7/native/MERGED_d1_native.json
+      - `id`: P0.4
+      - `schema_version`: p0_evidence_inventory.v1
+      - `verdict`: closeable-now
+    - [4]
+      - `blocker`: null
+      - `evidence_path`: .dsh-24x7/merge_s11_v2aug.json
+      - `id`: P0.5
+      - `schema_version`: p0_evidence_inventory.v1
+      - `verdict`: closeable-now
+    - [5]
+      - `blocker`: null
+      - `evidence_path`: .dsh-24x7/evidence-sota-eval-h4f-v2.json
+      - `id`: P0.6
+      - `schema_version`: p0_evidence_inventory.v1
+      - `verdict`: closeable-now
+    - [6]
+      - `blocker`: PROOF.md, HANDOFF.md and PROGRESS.md live under .dsh-24x7/ outside this lane's write scope; draft text for all three is prepared in docs/P0_CLOSURE.md §P0.7 for the Lead to apply. The docs/EVAL_REPORT_SOTA.md verdict-checklist item 'status line in PROOF.md updated with final scope' cannot close until then; no DRAFT flip was performed (the report's status line was already final).
+      - `evidence_path`: null
+      - `id`: P0.7
+      - `schema_version`: p0_evidence_inventory.v1
+      - `verdict`: blocked
+  - `research_only`: true
+  - `schema`: p0_evidence_inventory.v1
+  - `source_doc`: docs/P0_CLOSURE.md
+  - `source_doc_sha256`: 4c038db2cd6667bbcc9c9c0c92d63f194c0eadb74b0eb2f99faa2fbab88ed66f
+  - `summary`:
+    - `blocked`:
+      - P0.3
+      - P0.7
+    - `closeable-now`:
+      - P0.4
+      - P0.5
+      - P0.6
+    - `runbook-ready`:
+      - P0.1
+      - P0.2
+- `receipt_sha256`: d00b83801fa1626144bc1b024ca0a063802c75bc6269b472302f96cea097420f
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
 ### `receipts/panel_audit_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
