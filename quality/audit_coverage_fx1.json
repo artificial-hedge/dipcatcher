@@ -102,6 +102,90 @@
     "mrm_audit.py": {
       "status": "audited"
     },
+    "operations/bipower_variation.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/drawdown_path.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/ewma_variance.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/join_asof_observations.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/permutation_entropy.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/resolve_security_identity.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/rolling_autocorrelation.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/rolling_linear_trend.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/rolling_mad.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/rolling_rank.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/rolling_zscore.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/score_binary_forecasts.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/score_empirical_crps.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/score_intervals.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/score_quantiles.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/select_asof_revisions.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/select_universe_membership.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/simple_returns.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/spectral_summary.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/summarize_ingestion_latency.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "operations/time_weighted_mean.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
     "reward.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
