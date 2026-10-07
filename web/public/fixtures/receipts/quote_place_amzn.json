@@ -1,0 +1,105 @@
+{
+  "claim": "placement_distance_distribution_measured",
+  "data_label": "MIXED",
+  "git_revision": "0a8f128a77ebca91e0842281e61ea15d1855ae10",
+  "interpretation": "Real submissions cluster at the touch and inside the spread (queue-priority competition) with a heavy deep tail; the sim places uniformly over its band \u2014 a structural gap flagged rather than hidden.",
+  "kind": "quote_place",
+  "real": {
+    "dist_hist_ticks": {
+      "-1..0": 14241,
+      "-2..-1": 6326,
+      "-5..-2": 4713,
+      "0..1": 6681,
+      "1..2": 7182,
+      "13..21": 10859,
+      "2..3": 4858,
+      "21..34": 1263,
+      "3..5": 11329,
+      "34..55": 236,
+      "5..8": 20625,
+      "8..13": 41035,
+      "gt55": 41,
+      "le-5": 2565
+    },
+    "median_dist_ticks": 7.0,
+    "n_submissions": 131954,
+    "share_at_touch": 0.1079,
+    "share_behind_touch": 0.789,
+    "share_improves_spread": 0.1031
+  },
+  "receipt_sha256": "dac1c8c76b0111c53e8f706620af665933db8abfacab84b212a1f704324f254f",
+  "research_only": true,
+  "schema": "quote_place.v1",
+  "sim_arms": {
+    "iid": {
+      "dist_hist_ticks": {
+        "-1..0": 1979,
+        "-2..-1": 1027,
+        "-5..-2": 616,
+        "0..1": 1967,
+        "1..2": 1869,
+        "13..21": 0,
+        "2..3": 1573,
+        "21..34": 0,
+        "3..5": 965,
+        "34..55": 0,
+        "5..8": 0,
+        "8..13": 0,
+        "gt55": 0,
+        "le-5": 13
+      },
+      "median_dist_ticks": 1.0,
+      "n_submissions": 10009,
+      "share_at_touch": 0.1977,
+      "share_behind_touch": 0.6368,
+      "share_improves_spread": 0.1655
+    },
+    "regime": {
+      "dist_hist_ticks": {
+        "-1..0": 1964,
+        "-2..-1": 1088,
+        "-5..-2": 675,
+        "0..1": 1902,
+        "1..2": 1792,
+        "13..21": 0,
+        "2..3": 1466,
+        "21..34": 0,
+        "3..5": 914,
+        "34..55": 0,
+        "5..8": 0,
+        "8..13": 0,
+        "gt55": 0,
+        "le-5": 38
+      },
+      "median_dist_ticks": 1.0,
+      "n_submissions": 9839,
+      "share_at_touch": 0.1996,
+      "share_behind_touch": 0.6173,
+      "share_improves_spread": 0.183
+    },
+    "split": {
+      "dist_hist_ticks": {
+        "-1..0": 1630,
+        "-2..-1": 1003,
+        "-5..-2": 896,
+        "0..1": 1538,
+        "1..2": 1328,
+        "13..21": 0,
+        "2..3": 1104,
+        "21..34": 0,
+        "3..5": 571,
+        "34..55": 0,
+        "5..8": 0,
+        "8..13": 0,
+        "gt55": 0,
+        "le-5": 45
+      },
+      "median_dist_ticks": 1.0,
+      "n_submissions": 8115,
+      "share_at_touch": 0.2009,
+      "share_behind_touch": 0.5596,
+      "share_improves_spread": 0.2396
+    }
+  },
+  "ticker": "AMZN"
+}

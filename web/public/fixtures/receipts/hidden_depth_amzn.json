@@ -1,0 +1,39 @@
+{
+  "claim": "hidden_liquidity_share_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "sim_has_no_hidden_liquidity_mechanism"
+  ],
+  "git_revision": "e8b34ae795fa79929e58571ab89ac629beba6a5b",
+  "interpretation": "EXECUTION_HIDDEN counts iceberg/hidden fills. A sim without hidden orders cannot model the iceberg retreat-and-reload dynamic that makes displayed depth understate true depth.",
+  "kind": "hidden_depth",
+  "real": {
+    "hidden": {
+      "mean_size": 80.78,
+      "median_size": 90.0,
+      "n": 2445,
+      "p95_size": 200.0
+    },
+    "hidden_notional_share": 0.2436,
+    "hidden_trade_share": 0.2141,
+    "hidden_volume_share": 0.2436,
+    "n_execs": 11419,
+    "n_hidden_execs": 2445,
+    "visible": {
+      "mean_size": 68.34,
+      "median_size": 60.0,
+      "n": 8974,
+      "p95_size": 183.0
+    }
+  },
+  "receipt_sha256": "ea597d6f8c8128ddff388ab0b6de37307e4e353b066a5cb5f8f1258d6f671e55",
+  "research_only": true,
+  "schema": "hidden_depth.v1",
+  "sim": {
+    "hidden_trade_share": 0.0,
+    "hidden_volume_share": 0.0,
+    "mechanism_present": false,
+    "n_execs": 1350
+  },
+  "ticker": "AMZN"
+}

@@ -192,6 +192,12 @@ def test_hash_matches_hashlib_including_empty() -> None:
     assert empty == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     assert native.hash_bytes(b"") == empty
     blobs = [b"", b"abc", b"\x00\xff", "café".encode()]
+    # SHA-256 padding and compression boundaries, including multiple blocks.
+    blobs.extend(
+        bytes(i % 256 for i in range(n)) for n in (55, 56, 63, 64, 65, 127, 128, 129, 4096)
+    )
+    for blob in blobs:
+        assert native.hash_bytes(blob) == hashlib.sha256(blob).hexdigest()
     assert native.hash_many(blobs) == [hashlib.sha256(blob).hexdigest() for blob in blobs]
     assert native.hash_many([]) == []
 

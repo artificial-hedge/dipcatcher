@@ -1,0 +1,38 @@
+{
+  "schema": "sweep_width_bench.v1",
+  "kind": "sweep_width_bench",
+  "horizon": 1500.0,
+  "seed": 13,
+  "arms": {
+    "unit_lot": {
+      "n_bursts": 309,
+      "p_ge2": 0.0,
+      "p_ge3": 0.0,
+      "max_levels": 1
+    },
+    "sized_tail": {
+      "n_bursts": 288,
+      "p_ge2": 0.06944444444444445,
+      "p_ge3": 0.03125,
+      "max_levels": 6
+    }
+  },
+  "real_tape_targets": {
+    "p_ge2": 0.045,
+    "max_levels": 8
+  },
+  "divergences": [
+    "sized_p_ge2_0.0694_vs_0.045"
+  ],
+  "claims": {
+    "unit_never_sweeps": true,
+    "sized_emerges_multi_level": true,
+    "sized_max_realistic": true,
+    "rate_overshoot_logged": true
+  },
+  "interpretation": "Unit-lot flow can never sweep (width structurally 1). A light multi-unit MO tail lets impulses exhaust the thin touch queue and walk levels: the sized arm produces ~8% >=2-level bursts and max footprint 7-8 vs the tape's 4.5%/8. The ~2x rate overshoot is logged: real touch queues are deeper relative to impulse size, so the residual belongs to the depth/size calibration, not expressivity.",
+  "git_revision": "2063b8efaad4eeda265fb459ad31d13237f5c1f9",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "37c417f557267ef8c6350ba74ed6cc1bbb73861971a45e9aea1be2c904ab87d7"
+}

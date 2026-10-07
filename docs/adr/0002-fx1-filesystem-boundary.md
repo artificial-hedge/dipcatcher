@@ -28,6 +28,14 @@ The generated module graph (`docs/architecture/module_deps.mmd`,
   and fails the pin. Matching only the exact name `fx1` would miss it.
 - `fx1.forecast` and `fx1.eval` import a fixed set of harness modules
   (scoring, point-in-time validation, hashing, schemas, walk-forward).
+  The existing forecast audit lanes additionally use synthetic adapters,
+  fleet-evaluation data loading, and reproducibility metadata: eight exact
+  edges from `fx1.forecast.core_audit` and `fx1.forecast.data_audit` are
+  enumerated in the pin.
+- Six artifact writers (`fx1.bench.run`, `fx1.data.quality`, `fx1.mrm`,
+  `fx1.train.pipeline`, `fx1.train.receipts`, `fx1.train.run`) share only
+  `quant_fund.utils.atomicio.atomic_write_text`, for atomic publication
+  of their own artifacts. This adds no corpus or model dependency.
   Any other `fx1.*` → `quant_fund.*` edge fails the same pin.
 
 ## Decision

@@ -44,6 +44,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Ruff
         run: uv run ruff check src tests
       - name: Ruff format check
@@ -73,6 +75,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Lockfile consistency
         run: uv lock --check
       - name: Dependency vulnerability audit
@@ -111,6 +115,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync locked dependencies without installing the workspace
         run: uv sync --frozen --all-groups --no-install-project
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Build wheel and source distribution
         run: uv build
       - name: Install wheel and smoke-test the installed console scripts
@@ -195,6 +201,8 @@ jobs:
             dipcatcher-session-${{ runner.os }}-py${{ matrix.python }}-
       - name: Sync
         run: uv sync --frozen --all-groups --all-extras
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Pytest
         run: |
           set -euo pipefail
@@ -263,6 +271,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups --all-extras
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Download coverage shards
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -319,6 +329,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --group dev
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Synthetic performance subset
         run: |
           uv run pytest tests/perf -q -m "not perf_full" -o addopts= --strict-markers \
@@ -353,6 +365,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Collect paper and analytics tests
         run: uv run pytest --collect-only -q -m smoke
       - name: Synthetic research smoke
@@ -462,6 +476,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Monte Carlo engine unit tests
         run: uv run pytest tests/unit/mc_engine -q -m "not slow"
       - name: CLI smoke
@@ -510,6 +526,8 @@ jobs:
           components: rustfmt, clippy
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Install maturin
         run: uv pip install "maturin>=1.7,<2"
       - name: Rustfmt and clippy
@@ -534,6 +552,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups --all-extras
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: C compiler
         run: cc --version
       - name: Market simulator smoke
@@ -553,6 +573,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups --all-extras
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Parity unit tests and SYNTHETIC smoke
         run: make parity-smoke
       - name: Upload parity smoke report
@@ -578,6 +600,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups --all-extras
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Examples gallery
         run: make examples
 
@@ -595,6 +619,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Audit ledger and observability tests
         run: uv run pytest tests/unit/audit tests/unit/observe -q
       - name: Types for the new packages
@@ -619,6 +645,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync JAX extra
         run: uv sync --frozen --group dev --extra jax
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: CPU differentiable backtest
         run: JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" uv run pytest -q tests/unit/diffbacktest
 
@@ -636,6 +664,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Robustness tests
         run: uv run pytest -q tests/unit/robustness tests/property/test_robustness_bounds.py
       - name: Certifier smoke
@@ -657,6 +687,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: TLC order-lifecycle model check
         run: bash scripts/run_tlc.sh
       - name: SMT proofs, conformance, and stateful tests
@@ -674,6 +706,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Re-verify every committed receipt (strict)
         run: make evidence-audit
       - name: Evidence bundle round-trip — export, then audit with the standalone script
@@ -707,6 +741,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups --all-extras
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Pre-trade unit and property tests
         run: uv run pytest -q tests/unit/pretrade tests/property/test_pretrade_risk.py
       - name: Hot-path latency gate
@@ -730,6 +766,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Fast stress tests
         run: uv run pytest -q -m "not network and not slow" tests/unit/stress
       - name: Catalog report smoke

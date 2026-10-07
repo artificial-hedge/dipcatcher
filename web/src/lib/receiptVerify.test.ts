@@ -11,13 +11,13 @@ import {
 const FIXTURES = join(import.meta.dirname, "..", "..", "public", "fixtures");
 const REAL_RECEIPT = JSON.parse(
   readFileSync(
-    join(FIXTURES, "receipts", "adaptive_mix_20asset_1d_20260922.json"),
+    join(import.meta.dirname, "..", "..", "..", "receipts", "legacy-unsealed", "adaptive_mix_20asset_1d_20260922.json"),
     "utf8",
   ),
 ) as Record<string, unknown>;
 const REAL_INDEX = JSON.parse(
   readFileSync(join(FIXTURES, "index.json"), "utf8"),
-) as { hash_matches: Record<string, string> };
+) as { hash_matches: Record<string, string>; receipts: { file: string }[] };
 
 const h = (c: string) => c.repeat(64);
 
@@ -91,7 +91,9 @@ describe("extractHashFields", () => {
   it("resolves the real fast-replay code_sha256 match", () => {
     const receipt = JSON.parse(
       readFileSync(
-        join(FIXTURES, "receipts", "fast_replay_p42_conformance_20260927.json"),
+        join(FIXTURES, REAL_INDEX.receipts.find((r) =>
+          /^receipts\/fast_replay_p42_conformance_.*\.json$/.test(r.file),
+        )!.file),
         "utf8",
       ),
     ) as Record<string, unknown>;

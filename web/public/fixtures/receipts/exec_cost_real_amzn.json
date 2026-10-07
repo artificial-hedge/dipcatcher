@@ -1,0 +1,84 @@
+{
+  "claim": "per_fill_slippage_measured_real_vs_sim",
+  "data_label": "MIXED",
+  "git_revision": "18d7701d415d85f742c2b6f3e5fe9b9be632f711",
+  "interpretation": "ticks_beyond_mid > 0 pays the touch; < 0 means the fill was inside the mid (size dependence walks the book). The size-cost exponent is the local pre-cursor of the sqrt impact law \u2014 a deep-book sim and the real tape will not agree in buckets.",
+  "kind": "exec_cost_real",
+  "real": {
+    "mean_ticks_beyond_mid": 5.2024,
+    "median_ticks": 4.5,
+    "n_execs": 8974,
+    "share_negative_fills": 0.0,
+    "size_buckets": {
+      "qty_1001_5000": {
+        "mean_ticks_beyond_mid": 4.0714,
+        "n": 7,
+        "p90_ticks": 5.9
+      },
+      "qty_101_300": {
+        "mean_ticks_beyond_mid": 4.7003,
+        "n": 397,
+        "p90_ticks": 9.2
+      },
+      "qty_1_100": {
+        "mean_ticks_beyond_mid": 5.5641,
+        "n": 5468,
+        "p90_ticks": 10.0
+      },
+      "qty_301_1000": {
+        "mean_ticks_beyond_mid": 4.1455,
+        "n": 110,
+        "p90_ticks": 8.0
+      }
+    },
+    "size_cost_exponent": -0.0865
+  },
+  "receipt_sha256": "9d3f1266772640aed1d1d4976f057e2933a0ee3fb3b3c6076ef4b140fd628497",
+  "research_only": true,
+  "schema": "exec_cost_real.v1",
+  "sim_arms": {
+    "iid": {
+      "mean_ticks_beyond_mid": 0.9253,
+      "median_ticks": 1.0,
+      "n_execs": 3312,
+      "share_negative_fills": 0.0,
+      "size_buckets": {
+        "qty_1_100": {
+          "mean_ticks_beyond_mid": 0.9253,
+          "n": 3312,
+          "p90_ticks": 1.5
+        }
+      },
+      "size_cost_exponent": null
+    },
+    "regime": {
+      "mean_ticks_beyond_mid": 1.006,
+      "median_ticks": 1.0,
+      "n_execs": 3643,
+      "share_negative_fills": 0.0,
+      "size_buckets": {
+        "qty_1_100": {
+          "mean_ticks_beyond_mid": 1.006,
+          "n": 3643,
+          "p90_ticks": 2.0
+        }
+      },
+      "size_cost_exponent": null
+    },
+    "split": {
+      "mean_ticks_beyond_mid": 1.231,
+      "median_ticks": 1.0,
+      "n_execs": 4193,
+      "share_negative_fills": 0.0,
+      "size_buckets": {
+        "qty_1_100": {
+          "mean_ticks_beyond_mid": 1.231,
+          "n": 4193,
+          "p90_ticks": 2.0
+        }
+      },
+      "size_cost_exponent": null
+    }
+  },
+  "ticker": "AMZN"
+}

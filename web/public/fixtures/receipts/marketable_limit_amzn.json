@@ -1,0 +1,102 @@
+{
+  "claim": "placement_aggression_spectrum_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_inside_0.000_vs_0.103",
+    "regime_inside_0.000_vs_0.103",
+    "split_inside_0.000_vs_0.103"
+  ],
+  "git_revision": "498c56b09eccedf72e5592e7284f57e6de890dec",
+  "interpretation": "Share of SUBMISSIONs priced relative to the pre-event opposite and own touches: rel>=0 marketable (executes immediately: at or through the touch), rel>0 strictly crossing, inside = strictly inside the spread, at_own_touch = joins the own-side queue, behind = deeper. In LOBSTER data, marketable orders are logged as executions rather than resting submissions \u2014 a near-zero marketable share is a recording convention, not absent aggression. volume_share weights by size. The sim's placements are dist>=1 \u2014 marketable LOs structurally absent, an expressivity gap not a calibration miss.",
+  "kind": "marketable_limit",
+  "real": {
+    "mean_size_marketable": null,
+    "mean_size_resting": 98.72701850644921,
+    "n": 131954,
+    "ok": true,
+    "rel_median_ticks": -20.0,
+    "share": {
+      "at_own_touch": 0.10792397350591873,
+      "behind": 0.7889794928535702,
+      "crossing": 0.0,
+      "inside": 0.10309653364051109,
+      "marketable": 0.0
+    },
+    "volume_share": {
+      "at_own_touch": 0.08082426112604756,
+      "behind": 0.7950230379372746,
+      "crossing": 0.0,
+      "inside": 0.12415270093667781,
+      "marketable": 0.0
+    }
+  },
+  "receipt_sha256": "d8d1bed2b6478b072a17d31c59c33ebd4b4828c4c42193a48e970ec2932984c0",
+  "research_only": true,
+  "schema": "marketable_limit.v1",
+  "sim_arms": {
+    "iid": {
+      "mean_size_marketable": null,
+      "mean_size_resting": 1.0,
+      "n": 14949,
+      "ok": true,
+      "rel_median_ticks": -3.0,
+      "share": {
+        "at_own_touch": 0.36470666934243096,
+        "behind": 0.6352933306575691,
+        "crossing": 0.0,
+        "inside": 0.0,
+        "marketable": 0.0
+      },
+      "volume_share": {
+        "at_own_touch": 0.36470666934243096,
+        "behind": 0.6352933306575691,
+        "crossing": 0.0,
+        "inside": 0.0,
+        "marketable": 0.0
+      }
+    },
+    "regime": {
+      "mean_size_marketable": null,
+      "mean_size_resting": 1.0,
+      "n": 14537,
+      "ok": true,
+      "rel_median_ticks": -3.0,
+      "share": {
+        "at_own_touch": 0.38680608103460135,
+        "behind": 0.6131939189653987,
+        "crossing": 0.0,
+        "inside": 0.0,
+        "marketable": 0.0
+      },
+      "volume_share": {
+        "at_own_touch": 0.38680608103460135,
+        "behind": 0.6131939189653987,
+        "crossing": 0.0,
+        "inside": 0.0,
+        "marketable": 0.0
+      }
+    },
+    "split": {
+      "mean_size_marketable": null,
+      "mean_size_resting": 1.0,
+      "n": 12026,
+      "ok": true,
+      "rel_median_ticks": -3.0,
+      "share": {
+        "at_own_touch": 0.5099783801762847,
+        "behind": 0.4900216198237153,
+        "crossing": 0.0,
+        "inside": 0.0,
+        "marketable": 0.0
+      },
+      "volume_share": {
+        "at_own_touch": 0.5099783801762847,
+        "behind": 0.4900216198237153,
+        "crossing": 0.0,
+        "inside": 0.0,
+        "marketable": 0.0
+      }
+    }
+  },
+  "ticker": "AMZN"
+}

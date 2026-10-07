@@ -1,0 +1,97 @@
+{
+  "data_label": "MIXED",
+  "divergences": [
+    "sim_underestimates_sign_memory"
+  ],
+  "git_revision": "17c1e4d59806b28f67f7051bd80bf47edf3bed9d",
+  "interpretation": "Same event-granular measurements on ZI-LOB sim arms and the real LOBSTER tape. Ratios near 1 mean the sim reproduces the stylized fact; systematic gaps are named in `divergences` \u2014 calibration targets for the sim, not defects of the measurement",
+  "kind": "sim_real_ledger",
+  "real": {
+    "depth_l1_5_mean": [
+      357.78205128205127,
+      243.0430769230769,
+      226.4046153846154,
+      273.4384615384615,
+      311.12666666666667
+    ],
+    "hump_level": 1.0,
+    "mid_move_std": 0.7346732017169699,
+    "mo_fraction": 0.0332682105825088,
+    "n_events": 269747,
+    "n_trades": 8974,
+    "sign_lag1": 0.7213059950969467,
+    "spread_ticks_median": 13.0,
+    "spread_ticks_p95": 22.0,
+    "units": "ticks"
+  },
+  "receipt_sha256": "629e96e83a89ef356b3942b5a1fc60ef4089856fd044fef35e93ba2225ad0ecc",
+  "research_only": true,
+  "schema": "sim_real_ledger.v1",
+  "sim_calm": {
+    "depth_l1_5_mean": [
+      0.4672,
+      0.39535,
+      0.2556,
+      0.08775,
+      0.1126
+    ],
+    "hump_level": 1.0,
+    "mid_move_std": 0.3495203755732281,
+    "mo_fraction": 0.16645,
+    "n_events": 20000,
+    "n_trades": 3319,
+    "sign_lag1": -0.004218137993371497,
+    "spread_ticks_median": 1.999999999999602,
+    "spread_ticks_p95": 3.999999999999204,
+    "units": "ticks"
+  },
+  "sim_regime": {
+    "depth_l1_5_mean": [
+      0.2121,
+      0.3136,
+      0.3332,
+      0.36365,
+      0.3086
+    ],
+    "hump_level": 4.0,
+    "mid_move_std": 0.4104383455064869,
+    "mo_fraction": 0.19915,
+    "n_events": 20000,
+    "n_trades": 3847,
+    "sign_lag1": 0.0509487912659215,
+    "spread_ticks_median": 1.999999999999602,
+    "spread_ticks_p95": 4.000000000000625,
+    "units": "ticks"
+  },
+  "table": {
+    "mid_move_std": {
+      "calm_over_real": 0.4757494553447446,
+      "real": 0.7346732017169699,
+      "regime_over_real": 0.5586679145874259,
+      "sim_calm": 0.3495203755732281,
+      "sim_regime": 0.4104383455064869
+    },
+    "mo_fraction": {
+      "calm_over_real": 5.00327481056385,
+      "real": 0.0332682105825088,
+      "regime_over_real": 5.986195124804992,
+      "sim_calm": 0.16645,
+      "sim_regime": 0.19915
+    },
+    "sign_lag1": {
+      "calm_over_real": -0.005847917557935396,
+      "real": 0.7213059950969467,
+      "regime_over_real": 0.07063408818482614,
+      "sim_calm": -0.004218137993371497,
+      "sim_regime": 0.0509487912659215
+    },
+    "spread_ticks_median": {
+      "calm_over_real": 0.15384615384612324,
+      "real": 13.0,
+      "regime_over_real": 0.15384615384612324,
+      "sim_calm": 1.999999999999602,
+      "sim_regime": 1.999999999999602
+    }
+  },
+  "ticker": "AMZN"
+}

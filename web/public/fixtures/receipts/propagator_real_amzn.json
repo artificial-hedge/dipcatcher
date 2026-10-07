@@ -1,0 +1,102 @@
+{
+  "claim": "propagator_measured_on_real_tape_vs_sim_arms",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_lag1_response_off",
+    "regime_lag1_response_off",
+    "split_lag1_response_off"
+  ],
+  "estimator": "R(l) = E[sign_i * (mid_{i+l} - mid_i)] over book-event index; tick units",
+  "git_revision": "348b39b2b126b875d514ce5297d980ed63888ead",
+  "interpretation": "Immediate response R(1) is the effective spread-paid-per-trade; the log-log slope marks whether impact accumulates (positive) or is absorbed (negative) over the horizon. Sim arms share the estimator, so gaps isolate the flow mechanism, not the measurement.",
+  "kind": "propagator_real",
+  "lags_events": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "receipt_sha256": "17a49ca16655f30787e47400a77a6d09b09cbb12857d3cd756f2b3a65497bb98",
+  "research_only": true,
+  "schema": "propagator_real.v1",
+  "table": {
+    "ratio_real_over_iid@1": -40.4418,
+    "ratio_real_over_split@1": 3.7704,
+    "real": {
+      "fit_log_intercept": -1.2875872062613942,
+      "loglog_exponent": -0.5528611870175507,
+      "n_events": 267303,
+      "n_trades": 8974,
+      "response_ticks": {
+        "1": 0.24532,
+        "128": 3.978006,
+        "16": 1.327463,
+        "2": 0.408235,
+        "256": 5.183774,
+        "32": 2.051455,
+        "4": 0.606809,
+        "64": 2.927233,
+        "8": 0.910175
+      }
+    },
+    "sim_arms": {
+      "iid": {
+        "fit_log_intercept": -22.54082943207911,
+        "loglog_exponent": -3.6568033785895304,
+        "n_events": 19927,
+        "n_trades": 3297,
+        "response_ticks": {
+          "1": -0.006066,
+          "128": 0.016952,
+          "16": -0.016237,
+          "2": -0.015469,
+          "256": 0.072551,
+          "32": -0.007438,
+          "4": -0.011677,
+          "64": 0.000456,
+          "8": -0.017137
+        }
+      },
+      "regime": {
+        "fit_log_intercept": null,
+        "loglog_exponent": null,
+        "n_events": 19410,
+        "n_trades": 3515,
+        "response_ticks": {
+          "1": 0.0,
+          "128": -0.04884,
+          "16": -0.069069,
+          "2": -0.031873,
+          "256": -0.104802,
+          "32": -0.132592,
+          "4": -0.046826,
+          "64": -0.135286,
+          "8": -0.05467
+        }
+      },
+      "split": {
+        "fit_log_intercept": -2.2525025454241305,
+        "loglog_exponent": -0.8197297583374065,
+        "n_events": 14734,
+        "n_trades": 3289,
+        "response_ticks": {
+          "1": 0.065065,
+          "128": 4.639613,
+          "16": 1.404784,
+          "2": 0.171481,
+          "256": 6.663833,
+          "32": 2.493744,
+          "4": 0.372415,
+          "64": 3.517421,
+          "8": 0.758138
+        }
+      }
+    }
+  },
+  "ticker": "AMZN"
+}

@@ -43,8 +43,8 @@
     ],
     "artifacts": [
       {
-        "path": "data/metadata/replay/vol_bench_c584407c8097493e.json",
-        "sha256": "8594d8d5d8b0f4a50891ce3c47ae273d06890af537ed27a6274eb85587ecfd32"
+        "path": "data/metadata/replay/vol_bench_64bffaaea4cc9f89.json",
+        "sha256": "4fc1bfd62da2003a7e232eda66e72ba0fc603d160cfc79ce06d044751f636974"
       }
     ]
   },

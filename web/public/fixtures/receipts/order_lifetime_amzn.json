@@ -1,0 +1,81 @@
+{
+  "claim": "resting_order_survival_measured_real_vs_sim",
+  "data_label": "MIXED",
+  "git_revision": "21a9d20632f3269a6de8f9391919aa0f9126ea87",
+  "interpretation": "Real books: most resting volume is canceled, not executed \u2014 HFT churn. Exec-vs-cancel volume share is the honest depth discount. Sim arm measures maker fill delay only (cancels are anonymous theta_cxl events), so cross-side comparison is on fill-delay shape, not cancel share.",
+  "kind": "order_lifetime",
+  "real": {
+    "exec_share_of_resolved_volume": 0.6341,
+    "lifetime_hist_s": {
+      "0-0.001s": 8567,
+      "0.001-0.01s": 13932,
+      "0.01-0.1s": 14978,
+      "0.1-1s": 27483,
+      "1-10s": 41503,
+      "10-60s": 15756,
+      "60-600s": 1403,
+      ">=600s": 22
+    },
+    "lifetime_s_p50_canceled": null,
+    "lifetime_s_p50_deleted": 0.7995869840015075,
+    "lifetime_s_p50_executed": 2.2129897920021904,
+    "lifetime_s_p90_all": 13.671243681004851,
+    "n_canceled": 0,
+    "n_deleted": 117507,
+    "n_execs_on_pre_window_orders": 557,
+    "n_executed": 6137,
+    "n_open_at_end_censored": 8310,
+    "n_orders_tracked": 131954
+  },
+  "receipt_sha256": "760858e20cc94d120844f481a80789aa54467865cc4a70afcd88c2926fb1077f",
+  "research_only": true,
+  "schema": "order_lifetime.v1",
+  "sim_arms": {
+    "iid": {
+      "fill_delay_hist_s": {
+        "0-0.1s": 8,
+        "0.1-1s": 154,
+        "1-5s": 542,
+        "100-500s": 77,
+        "20-100s": 1232,
+        "5-20s": 1306,
+        ">=500s": 0
+      },
+      "fill_delay_p50_s": 14.765332126718931,
+      "fill_delay_p90_s": 56.62861664482774,
+      "fill_delay_p99_s": 129.7411414264772,
+      "n_fills": 3319
+    },
+    "regime": {
+      "fill_delay_hist_s": {
+        "0-0.1s": 27,
+        "0.1-1s": 242,
+        "1-5s": 722,
+        "100-500s": 62,
+        "20-100s": 1307,
+        "5-20s": 1363,
+        ">=500s": 0
+      },
+      "fill_delay_p50_s": 12.693208113794753,
+      "fill_delay_p90_s": 52.450767955759,
+      "fill_delay_p99_s": 119.8742838419741,
+      "n_fills": 3723
+    },
+    "split": {
+      "fill_delay_hist_s": {
+        "0-0.1s": 104,
+        "0.1-1s": 624,
+        "1-5s": 1366,
+        "100-500s": 78,
+        "20-100s": 887,
+        "5-20s": 1185,
+        ">=500s": 0
+      },
+      "fill_delay_p50_s": 5.133737587262431,
+      "fill_delay_p90_s": 43.32272652808678,
+      "fill_delay_p99_s": 129.5209876726353,
+      "n_fills": 4244
+    }
+  },
+  "ticker": "AMZN"
+}

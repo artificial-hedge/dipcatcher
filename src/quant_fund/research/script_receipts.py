@@ -392,61 +392,6 @@ def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]
 #: The wave-21b tape/sim measurement lanes emit ``schema``-tagged receipts
 #: with a shared envelope; each registers the measurement contract so no
 #: committed receipt verifies on its seal alone.
-_MEASUREMENT_SCHEMAS = ("queue_class.v1",)
-
-
-#: script-schema tag → contract-check function (dispatch lives in receipt_v2).
-def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]:
-    """Deep-check the wave-21b measurement receipts (tape/sim lanes).
-
-    These receipts share a common envelope — ``kind``, ``data_label``,
-    ``research_only``, ``git_revision``, optional ``real``/``sim_arms``/
-    ``divergences`` sections — rather than a lane-specific claim
-    structure. The contract re-derives the envelope invariants that make
-    the sealed body admissible evidence: honesty markers present and
-    correctly typed, no forbidden headline metric key at top level, and
-    the evidence sections, when present, well-formed.
-    """
-    from quant_fund.research.catalog.registry import FORBIDDEN_RESEARCH_METRIC_KEYS
-
-    errors: list[str] = []
-    if not isinstance(payload.get("kind"), str) or not payload["kind"]:
-        errors.append("kind_missing")
-    if payload.get("research_only") is not True:
-        errors.append("research_only_not_true")
-    label = payload.get("data_label")
-    if label not in ("SYNTHETIC", "MIXED", "REAL"):
-        errors.append(f"data_label_bad:{label}")
-    rev = payload.get("git_revision")
-    if not isinstance(rev, str) or not rev:
-        errors.append("git_revision_missing")
-    seal = payload.get("receipt_sha256")
-    if (
-        not isinstance(seal, str)
-        or len(seal) != 64
-        or any(c not in "0123456789abcdef" for c in seal)
-    ):
-        errors.append("receipt_sha256_not_sha256_hex")
-    for key in payload:
-        if str(key).lower() in FORBIDDEN_RESEARCH_METRIC_KEYS:
-            errors.append(f"forbidden_headline_metric:{key}")
-    divergences = payload.get("divergences")
-    if divergences is not None and (
-        not isinstance(divergences, list) or any(not isinstance(d, str) for d in divergences)
-    ):
-        errors.append("divergences_not_str_list")
-    real = payload.get("real")
-    if real is not None and not isinstance(real, Mapping):
-        errors.append("real_not_object")
-    sim_arms = payload.get("sim_arms")
-    if sim_arms is not None and not isinstance(sim_arms, (Mapping, list)):
-        errors.append("sim_arms_bad_type")
-    return errors
-
-
-#: The wave-21b tape/sim measurement lanes emit ``schema``-tagged receipts
-#: with a shared envelope; each registers the measurement contract so no
-#: committed receipt verifies on its seal alone.
 _MEASUREMENT_SCHEMAS = (
     "abc_calibrate.v1",
     "cancel_cluster.v1",

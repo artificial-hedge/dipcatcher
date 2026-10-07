@@ -1,0 +1,168 @@
+{
+  "arm_coverage_score": {
+    "iid": 1,
+    "regime": 1,
+    "split": 1
+  },
+  "best_arm": "iid",
+  "claim": "sim_realism_coverage_matrix",
+  "data_label": "MIXED",
+  "git_revision": "b4fcb3c35e65d30799c96c86a83dd4c177f3e440",
+  "interpretation": "arm_status: covered = lane flagged no divergence for that arm; diverged = flagged; unscored = lane measured but has no per-arm divergence list. uncovered_lanes flag facts no arm reproduces \u2014 the sim's priority list.",
+  "kind": "tape_digest",
+  "lanes": {
+    "cancel_cluster": {
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      },
+      "n_divergences": 0,
+      "present": true,
+      "receipt_sha256": "be7a95df9f31b2ee1fbf316e727812797c04f0c1f418cc1da3777737d1a76ee0"
+    },
+    "event_matrix": {
+      "arm_status": {
+        "iid": "covered",
+        "regime": "covered",
+        "split": "covered"
+      },
+      "n_divergences": 0,
+      "present": true,
+      "receipt_sha256": "6a5f2b8d9b839f2668ac9d06d99c1581a7ac0c7c0c5b7b35e58829272adde588"
+    },
+    "exec_cost": {
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      },
+      "n_divergences": 0,
+      "present": true,
+      "receipt_sha256": "9d3f1266772640aed1d1d4976f057e2933a0ee3fb3b3c6076ef4b140fd628497"
+    },
+    "hawkes": {
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      },
+      "n_divergences": 0,
+      "present": true,
+      "receipt_sha256": "fe7a75a8f2e78ebaa84b49d520cc017b2892cf0e1f364e4bd99bd5feb865c2f7"
+    },
+    "hidden_depth": {
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      },
+      "n_divergences": 1,
+      "present": true,
+      "receipt_sha256": "ea597d6f8c8128ddff388ab0b6de37307e4e353b066a5cb5f8f1258d6f671e55"
+    },
+    "intraday_shape": {
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      },
+      "n_divergences": 0,
+      "present": true,
+      "receipt_sha256": "d343852f17997a1327850c071d00ed98c343a00c74d570c6fb6b8a027c1aa55d"
+    },
+    "order_lifetime": {
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      },
+      "n_divergences": 0,
+      "present": true,
+      "receipt_sha256": "760858e20cc94d120844f481a80789aa54467865cc4a70afcd88c2926fb1077f"
+    },
+    "propagator": {
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      },
+      "n_divergences": 3,
+      "present": true,
+      "receipt_sha256": "17a49ca16655f30787e47400a77a6d09b09cbb12857d3cd756f2b3a65497bb98"
+    },
+    "quote_place": {
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      },
+      "n_divergences": 0,
+      "present": true,
+      "receipt_sha256": "dac1c8c76b0111c53e8f706620af665933db8abfacab84b212a1f704324f254f"
+    },
+    "round_lot": {
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      },
+      "n_divergences": 3,
+      "present": true,
+      "receipt_sha256": "86a822594a3e07b62a370a550784abb3b8deebf49476879c6f9edbac837f756b"
+    },
+    "sign_autocorr": {
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      },
+      "n_divergences": 3,
+      "present": true,
+      "receipt_sha256": "2f8af3a9183602565838580c444635cca457b23795483509b783cc87e2b11cc9"
+    },
+    "spread_dynamics": {
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      },
+      "n_divergences": 1,
+      "present": true,
+      "receipt_sha256": "f69e67a4a30362cf19c2b67b685a216ca848af31c1d3bd7834aa61b2e7a1e400"
+    },
+    "streak_stats": {
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      },
+      "n_divergences": 3,
+      "present": true,
+      "receipt_sha256": "9ce5f51523c39e49457969c9ea62ee5a107640973ba914d27097a65ffdf8d5fc"
+    },
+    "vpin": {
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      },
+      "n_divergences": 0,
+      "present": true,
+      "receipt_sha256": "710f032cb569df5fa2684e5656f99669b66233db555035ac25285c88f2a98acd"
+    }
+  },
+  "n_lanes_present": 14,
+  "n_lanes_scored": 7,
+  "receipt_sha256": "0a966a32d1138941086a64e15423e9741e24c624add39a8630296ea437b7e49e",
+  "research_only": true,
+  "schema": "tape_digest.v1",
+  "uncovered_lanes": [
+    "propagator",
+    "sign_autocorr",
+    "round_lot",
+    "hidden_depth",
+    "spread_dynamics",
+    "streak_stats"
+  ]
+}

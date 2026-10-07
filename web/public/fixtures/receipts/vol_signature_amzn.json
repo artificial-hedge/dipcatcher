@@ -1,0 +1,87 @@
+{
+  "claim": "vol_signature_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_signature_ratio_2.26_vs_0.8906",
+    "regime_signature_ratio_2.96_vs_0.8906"
+  ],
+  "git_revision": "e2f20ef336f119d80dcbc5d6479506b533d46e19",
+  "interpretation": "rv_fine_to_coarse_ratio > 1 = microstructure noise inflating fine-scale variance (bid-ask bounce / Epps signature); ~1 = diffusive.",
+  "kind": "vol_signature",
+  "real": {
+    "n_samples": 269748,
+    "rv_fine_to_coarse_ratio": 0.8906,
+    "rv_per_tau": {
+      "0.1": 3.71527733,
+      "0.5": 3.86619701,
+      "1.0": 3.95963364,
+      "10.0": 4.3350542,
+      "30.0": 4.5590928,
+      "300.0": 4.17179738,
+      "5.0": 4.14316158,
+      "60.0": 4.51252327
+    },
+    "span_s": 23399.94
+  },
+  "receipt_sha256": "51399220b3452398eaf874c6174afc7ef74bef36aa43d9a98b90b47908da69d2",
+  "research_only": true,
+  "schema": "vol_signature.v1",
+  "sim_arms": {
+    "iid": {
+      "n_samples": 59707,
+      "rv_fine_to_coarse_ratio": 2.2552,
+      "rv_per_tau": {
+        "0.1": 0.14120807,
+        "0.5": 0.13631507,
+        "1.0": 0.1347187,
+        "10.0": 0.09943076,
+        "30.0": 0.07805062,
+        "300.0": 0.06261543,
+        "5.0": 0.11325143,
+        "60.0": 0.07044835
+      },
+      "span_s": 50071.6
+    },
+    "regime": {
+      "n_samples": 57562,
+      "rv_fine_to_coarse_ratio": 2.9558,
+      "rv_per_tau": {
+        "0.1": 0.21331426,
+        "0.5": 0.20936239,
+        "1.0": 0.19871695,
+        "10.0": 0.14373523,
+        "30.0": 0.10584617,
+        "300.0": 0.07216792,
+        "5.0": 0.16425357,
+        "60.0": 0.09219596
+      },
+      "span_s": 49763.26
+    },
+    "split": {
+      "n_samples": 44790,
+      "rv_fine_to_coarse_ratio": 0.2968,
+      "rv_per_tau": {
+        "0.1": 0.40813241,
+        "0.5": 0.3944228,
+        "1.0": 0.38767111,
+        "10.0": 0.4022671,
+        "30.0": 0.5081894,
+        "300.0": 1.37499167,
+        "5.0": 0.37662807,
+        "60.0": 0.68406321
+      },
+      "span_s": 44743.47
+    }
+  },
+  "taus_s": [
+    0.1,
+    0.5,
+    1.0,
+    5.0,
+    10.0,
+    30.0,
+    60.0,
+    300.0
+  ],
+  "ticker": "AMZN"
+}

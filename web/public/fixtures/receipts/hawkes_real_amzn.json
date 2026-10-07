@@ -1,0 +1,58 @@
+{
+  "claim": "branching_ratio_measured_real_vs_sim",
+  "data_label": "MIXED",
+  "estimator": "exp-kernel Hawkes MLE: lambda=mu+sum(eta*beta*e^{-beta*dt}); eta=branching ratio",
+  "git_revision": "742f25cc767ee04d37c246206c917137856467bf",
+  "interpretation": "eta=0 is Poisson; eta->1 critical self-excitation. The Poisson delta-loglik quantifies whether clustering is statistically real, not just nonzero. Split flow should show intermediate eta \u2014 parents burst but with constant intra-parent intensity, unlike genuine recursive excitation.",
+  "kind": "hawkes_real",
+  "real": {
+    "branching_ratio_eta": 0.536,
+    "decay_beta": 1367.6236,
+    "hawkes_neg_loglik": -13831.262,
+    "horizon_s": 23400.0,
+    "loglik_gain_vs_poisson": 31405.984,
+    "mu": 0.177953,
+    "n": 8974,
+    "ok": true,
+    "poisson_neg_loglik": 17574.722
+  },
+  "receipt_sha256": "fe7a75a8f2e78ebaa84b49d520cc017b2892cf0e1f364e4bd99bd5feb865c2f7",
+  "research_only": true,
+  "schema": "hawkes_real.v1",
+  "sim_arms": {
+    "iid": {
+      "branching_ratio_eta": 0.1441,
+      "decay_beta": 0.0203,
+      "hawkes_neg_loglik": 8679.277,
+      "horizon_s": 16698.62,
+      "loglik_gain_vs_poisson": 2.107,
+      "mu": 0.170199,
+      "n": 3319,
+      "ok": true,
+      "poisson_neg_loglik": 8681.384
+    },
+    "regime": {
+      "branching_ratio_eta": 0.5224,
+      "decay_beta": 0.0307,
+      "hawkes_neg_loglik": 9189.893,
+      "horizon_s": 16573.673,
+      "loglik_gain_vs_poisson": 92.61,
+      "mu": 0.107528,
+      "n": 3723,
+      "ok": true,
+      "poisson_neg_loglik": 9282.503
+    },
+    "split": {
+      "branching_ratio_eta": 0.3782,
+      "decay_beta": 0.1192,
+      "hawkes_neg_loglik": 9556.756,
+      "horizon_s": 15201.503,
+      "loglik_gain_vs_poisson": 102.113,
+      "mu": 0.173665,
+      "n": 4244,
+      "ok": true,
+      "poisson_neg_loglik": 9658.869
+    }
+  },
+  "ticker": "AMZN"
+}

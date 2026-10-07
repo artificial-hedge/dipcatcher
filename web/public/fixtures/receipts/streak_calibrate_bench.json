@@ -1,0 +1,119 @@
+{
+  "arms": [
+    {
+      "excess_mass_gt5_vs_geo": 0.1184,
+      "intensity_mult": 3.0,
+      "k_max": 600,
+      "k_min": 10,
+      "max_run": 176,
+      "mean_run": 5.207,
+      "n_execs": 4244,
+      "n_runs": 815,
+      "name": "legacy_split",
+      "p_ge_10": 0.1313,
+      "p_ge_5": 0.1755,
+      "p_start": 0.1,
+      "purity": 1.0,
+      "run_hist": {
+        "1": 0.4503,
+        "10": 0.011,
+        "11": 0.0025,
+        "12": 0.0147,
+        "13": 0.0123,
+        "14": 0.0086,
+        "15": 0.0074,
+        "16": 0.0074,
+        "17": 0.0049,
+        "18": 0.0049,
+        "19": 0.0025,
+        "2": 0.2368,
+        "20": 0.0552,
+        "3": 0.0982,
+        "4": 0.0393,
+        "5": 0.0258,
+        "6": 0.0025,
+        "7": 0.0049,
+        "8": 0.0049,
+        "9": 0.0061
+      },
+      "sign_autocorr": {
+        "lag1": 0.6161639962299718,
+        "lag10": 0.3765315739868049,
+        "lag50": 0.07492931196983978
+      },
+      "size_tail": 1.2
+    },
+    {
+      "excess_mass_gt5_vs_geo": 0.2552,
+      "intensity_mult": 1.9,
+      "k_max": 1800,
+      "k_min": 70,
+      "max_run": 102,
+      "mean_run": 7.75,
+      "n_execs": 4247,
+      "n_runs": 548,
+      "name": "calibrated_split",
+      "p_ge_10": 0.2208,
+      "p_ge_5": 0.3102,
+      "p_start": 0.07,
+      "purity": 0.96,
+      "run_hist": {
+        "1": 0.4799,
+        "10": 0.0128,
+        "11": 0.0109,
+        "12": 0.0128,
+        "13": 0.0091,
+        "14": 0.0073,
+        "15": 0.0164,
+        "16": 0.0055,
+        "17": 0.0055,
+        "18": 0.0036,
+        "19": 0.0036,
+        "2": 0.1077,
+        "20": 0.1332,
+        "3": 0.0602,
+        "4": 0.042,
+        "5": 0.0237,
+        "6": 0.0164,
+        "7": 0.0128,
+        "8": 0.0182,
+        "9": 0.0182
+      },
+      "sign_autocorr": {
+        "lag1": 0.742170944195903,
+        "lag10": 0.6868377678361196,
+        "lag50": 0.47492347539439606
+      },
+      "size_tail": 0.9
+    }
+  ],
+  "claims": {
+    "autocorr_preserved": true,
+    "calibrated_closes_most_of_gap": true,
+    "legacy_undershoots_run_tail": true,
+    "long_runs_emerge": true,
+    "mean_run_matches": true,
+    "p_ge10_matches": true
+  },
+  "data_label": "MIXED",
+  "divergences": [],
+  "git_revision": "318bada58dde194c7b523fdda43e06d39bc8f936",
+  "interpretation": "Splitting reproduces the tape's run-length signature once parents admit interleaving (purity<1) and the metaorder size law is longer-tailed (K~Pareto(0.9) on [70,1800]): mean_run and p_ge10 land inside ~10-25% of the tape and the calibrated arm's max run equals the tape's 102. The autocorr target is preserved simultaneously (lag-1 ~0.74 vs 0.72) \u2014 the two facts pin the same mechanism. Residual divergence: the calibrated tail overshoots at k>=20 while under-filling k\u2208[5,9] \u2014 the real parent law has a shorter body and fatter tail than one clipped Pareto; a two-component size mixture is the next refinement, left to the ABC lane.",
+  "kind": "streak_calibrate_bench",
+  "real_tape_targets": {
+    "excess_mass_gt5_vs_geo": 0.3476,
+    "max_run": 102,
+    "mean_run": 7.173,
+    "p_ge10": 0.2214,
+    "p_ge5": 0.4436,
+    "sign_autocorr_lag1": 0.72,
+    "source_receipts": [
+      "streak_stats.v1",
+      "sign_autocorr_real.v1"
+    ]
+  },
+  "receipt_sha256": "009a4adcb87629b0b603c345a9da444a998a19d6a6926dd766dc7bcf19b452b0",
+  "research_only": true,
+  "schema": "streak_calibrate.v1",
+  "seed": 9
+}

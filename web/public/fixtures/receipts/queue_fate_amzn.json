@@ -1,0 +1,154 @@
+{
+  "claim": "queue_position_determines_fate",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_joinfill_0.524_vs_0.137",
+    "regime_joinfill_0.543_vs_0.137",
+    "split_joinfill_0.465_vs_0.137"
+  ],
+  "git_revision": "30f8870d57bb4d961d9294c3fb4a7cd18b9c1785",
+  "interpretation": "Entry position vs the same-side touch: improve (strictly better price, new queue front), join (at the touch, queue ahead = displayed level size in shares on the real side / order count in the sim), behind (deeper level). Outcome filled = any EXECUTION on the order id; deleted = DELETE or cancelled-to-zero; open = still resting at the horizon. Hidden-order executions have no submission id and are skipped. Position is the strongest determinant of getting filled \u2014 this receipt measures the gradient on real tape and checks whether ZI flow reproduces it.",
+  "kind": "queue_fate",
+  "real": {
+    "fill_rate_overall": 0.04993406793276445,
+    "join_fill_by_ahead": {
+      "0_99": {
+        "fill_rate": 0.16217094572635685,
+        "n": 3077
+      },
+      "100_499": {
+        "fill_rate": 0.1308411214953271,
+        "n": 10272
+      },
+      "2000_plus": {
+        "fill_rate": 0.09565217391304348,
+        "n": 115
+      },
+      "500_1999": {
+        "fill_rate": 0.12483912483912483,
+        "n": 777
+      }
+    },
+    "n_submissions": 131954,
+    "ok": true,
+    "per_category": {
+      "behind": {
+        "delete_rate": 0.9027269496393203,
+        "fill_rate": 0.019594847707690977,
+        "median_time_to_outcome_s": 0.8651964215023327,
+        "n": 104109
+      },
+      "improve": {
+        "delete_rate": 0.802043516612761,
+        "fill_rate": 0.19097324316377537,
+        "median_time_to_outcome_s": 0.3033671579978545,
+        "n": 13604
+      },
+      "join": {
+        "delete_rate": 0.8543641598202374,
+        "fill_rate": 0.13699880626360508,
+        "median_time_to_outcome_s": 1.419089086997701,
+        "n": 14241
+      }
+    }
+  },
+  "receipt_sha256": "d2d4b64cf98ba8bb6dc489a1fe4d8683f3895f199c81fa98d61ee79553c15418",
+  "research_only": true,
+  "schema": "queue_fate.v1",
+  "sim_arms": {
+    "iid": {
+      "fill_rate_overall": 0.33622472809768467,
+      "join_fill_by_ahead": {
+        "0_99": {
+          "fill_rate": 0.5235978112175103,
+          "n": 2924
+        }
+      },
+      "n_submissions": 14987,
+      "ok": true,
+      "per_category": {
+        "behind": {
+          "delete_rate": 0.8321810182275299,
+          "fill_rate": 0.16677142258537608,
+          "median_time_to_outcome_s": 29.249645918983788,
+          "n": 9546
+        },
+        "improve": {
+          "delete_rate": 0.23718712753277713,
+          "fill_rate": 0.7612236789829162,
+          "median_time_to_outcome_s": 6.31055020902204,
+          "n": 2517
+        },
+        "join": {
+          "delete_rate": 0.47571819425444595,
+          "fill_rate": 0.5235978112175103,
+          "median_time_to_outcome_s": 16.782788525044452,
+          "n": 2924
+        }
+      }
+    },
+    "regime": {
+      "fill_rate_overall": 0.3827093994074872,
+      "join_fill_by_ahead": {
+        "0_99": {
+          "fill_rate": 0.5430882870207527,
+          "n": 2843
+        }
+      },
+      "n_submissions": 14852,
+      "ok": true,
+      "per_category": {
+        "behind": {
+          "delete_rate": 0.7820540308747856,
+          "fill_rate": 0.2169811320754717,
+          "median_time_to_outcome_s": 26.975611231417133,
+          "n": 9328
+        },
+        "improve": {
+          "delete_rate": 0.2103692651995524,
+          "fill_rate": 0.7892577396493845,
+          "median_time_to_outcome_s": 5.480336753411848,
+          "n": 2681
+        },
+        "join": {
+          "delete_rate": 0.45550474850510025,
+          "fill_rate": 0.5430882870207527,
+          "median_time_to_outcome_s": 15.18985470130474,
+          "n": 2843
+        }
+      }
+    },
+    "split": {
+      "fill_rate_overall": 0.4707613093048915,
+      "join_fill_by_ahead": {
+        "0_99": {
+          "fill_rate": 0.46466356326703345,
+          "n": 2363
+        }
+      },
+      "n_submissions": 13595,
+      "ok": true,
+      "per_category": {
+        "behind": {
+          "delete_rate": 0.5748344370860927,
+          "fill_rate": 0.4234798314268513,
+          "median_time_to_outcome_s": 14.877543652703025,
+          "n": 8305
+        },
+        "improve": {
+          "delete_rate": 0.3894772804919713,
+          "fill_rate": 0.6098394260334814,
+          "median_time_to_outcome_s": 6.356849207430059,
+          "n": 2927
+        },
+        "join": {
+          "delete_rate": 0.5349132458738891,
+          "fill_rate": 0.46466356326703345,
+          "median_time_to_outcome_s": 15.435308916723443,
+          "n": 2363
+        }
+      }
+    }
+  },
+  "ticker": "AMZN"
+}

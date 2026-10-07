@@ -107,7 +107,9 @@ build-backend = "hatchling.build"
 # Security floors for transitive packages; these are not runtime imports.
 # urllib3: CVE-2026-97687/97688/97689; virtualenv: activation/config injection
 # and downloaded-wheel integrity fixes through 21.7.13.
-constraint-dependencies = ["urllib3>=2.8.0", "virtualenv>=21.7.13"]
+# z3 5.x publishes invalid macOS ARM wheel tags (13_3 vs 13_0).
+# Keep the validated 4.x line until upstream repairs the wheel metadata.
+constraint-dependencies = ["urllib3>=2.8.0", "virtualenv>=21.7.13", "z3-solver<5"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fx1", "src/quant_fund"]

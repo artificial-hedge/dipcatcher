@@ -1,0 +1,227 @@
+{
+  "arms": [
+    {
+      "all": {
+        "burstiness_B": 0.007163940138839517,
+        "cv": 1.01443126499624,
+        "mean_gap": 0.8272097676209891,
+        "n_gaps": 4835
+      },
+      "fano_1s": 1.0147386269644332,
+      "horizon_t": 4000.1342576872685,
+      "n_events": 4836,
+      "n_hawkes_rejected": 0,
+      "name": "poisson",
+      "per_type": {
+        "cancel": {
+          "burstiness_B": 0.04356575855427752,
+          "cv": 1.0911003740067369,
+          "mean_gap": 2.469424180400864,
+          "n_gaps": 1619
+        },
+        "limit": {
+          "burstiness_B": 0.003457601510534688,
+          "cv": 1.0069391959956258,
+          "mean_gap": 1.657266220583031,
+          "n_gaps": 2412
+        },
+        "market": {
+          "burstiness_B": 0.014290852866800508,
+          "cv": 1.028996084511062,
+          "mean_gap": 4.9827691485209336,
+          "n_gaps": 802
+        }
+      },
+      "post_mo_cxl_lift": {
+        "baseline_cxl_per_s": 0.4050446332404804,
+        "lift": 0.9469614268605573,
+        "n_mo": 803,
+        "post_cxl_per_s": 0.3835616438356164,
+        "window_s": 0.5
+      }
+    },
+    {
+      "all": {
+        "burstiness_B": 0.22498000673640048,
+        "cv": 1.580578588144578,
+        "mean_gap": 0.22158286415540615,
+        "n_gaps": 18049
+      },
+      "fano_1s": 3.005616343490305,
+      "horizon_t": 4000.3361511713715,
+      "n_events": 18050,
+      "n_hawkes_rejected": 6519,
+      "name": "hawkes_self",
+      "per_type": {
+        "cancel": {
+          "burstiness_B": 0.3217179581539702,
+          "cv": 1.948625905761486,
+          "mean_gap": 0.7472625401982298,
+          "n_gaps": 5352
+        },
+        "limit": {
+          "burstiness_B": 0.24703180943475836,
+          "cv": 1.6561547022306888,
+          "mean_gap": 0.45159006347737646,
+          "n_gaps": 8853
+        },
+        "market": {
+          "burstiness_B": 0.36472535902844894,
+          "cv": 2.1482446661829906,
+          "mean_gap": 1.0396611457129596,
+          "n_gaps": 3842
+        }
+      },
+      "post_mo_cxl_lift": {
+        "baseline_cxl_per_s": 1.3384677971058736,
+        "lift": 0.7655920245803673,
+        "n_mo": 3843,
+        "post_cxl_per_s": 1.02472027062191,
+        "window_s": 0.5
+      }
+    },
+    {
+      "all": {
+        "burstiness_B": 0.3670342338142636,
+        "cv": 2.159728545908632,
+        "mean_gap": 0.09540731317477259,
+        "n_gaps": 41913
+      },
+      "fano_1s": 11.035795308993304,
+      "horizon_t": 4000.581453293118,
+      "n_events": 41914,
+      "n_hawkes_rejected": 9434,
+      "name": "hawkes_cross",
+      "per_type": {
+        "cancel": {
+          "burstiness_B": 0.4300768423192244,
+          "cv": 2.509245014957326,
+          "mean_gap": 0.20554091504814978,
+          "n_gaps": 19454
+        },
+        "limit": {
+          "burstiness_B": 0.3091506125813997,
+          "cv": 1.8949870064633316,
+          "mean_gap": 0.20540748604429906,
+          "n_gaps": 19464
+        },
+        "market": {
+          "burstiness_B": 0.2940832463182552,
+          "cv": 1.8331952593119487,
+          "mean_gap": 1.3324595028233879,
+          "n_gaps": 2993
+        }
+      },
+      "post_mo_cxl_lift": {
+        "baseline_cxl_per_s": 4.865201390413061,
+        "lift": 3.910502890800401,
+        "n_mo": 2994,
+        "post_cxl_per_s": 19.025384101536407,
+        "window_s": 0.5
+      }
+    },
+    {
+      "all": {
+        "burstiness_B": 0.10372601211074346,
+        "cv": 1.2314604987142834,
+        "mean_gap": 0.10952158748313193,
+        "n_gaps": 36522
+      },
+      "fano_1s": 3.3303019398735043,
+      "horizon_t": 4000.183930000457,
+      "n_events": 36523,
+      "n_hawkes_rejected": 5594,
+      "name": "hawkes_powerlaw",
+      "per_type": {
+        "cancel": {
+          "burstiness_B": 0.17744971805106707,
+          "cv": 1.4314622994976587,
+          "mean_gap": 0.21675232567784458,
+          "n_gaps": 18454
+        },
+        "limit": {
+          "burstiness_B": 0.06840047677710714,
+          "cv": 1.1468452378345448,
+          "mean_gap": 0.263332078565893,
+          "n_gaps": 15186
+        },
+        "market": {
+          "burstiness_B": 0.2020350768354179,
+          "cv": 1.5063758342514204,
+          "mean_gap": 1.3883014170487116,
+          "n_gaps": 2880
+        }
+      },
+      "post_mo_cxl_lift": {
+        "baseline_cxl_per_s": 4.613810650779921,
+        "lift": 1.8904051765076595,
+        "n_mo": 2881,
+        "post_cxl_per_s": 8.721971537660535,
+        "window_s": 0.5
+      }
+    }
+  ],
+  "claims": {
+    "cross_excitation_produces_retreat": true,
+    "excitation_produces_clustering": true,
+    "poisson_stream_is_memoryless": true,
+    "powerlaw_spread_smooths_bursts": true
+  },
+  "clock_spec": {
+    "beta": 4.0,
+    "cross_kernel_eta": [
+      [
+        1.6,
+        0.0,
+        0.0
+      ],
+      [
+        1.2,
+        2.0,
+        8.0
+      ],
+      [
+        0.6,
+        0.0,
+        1.6
+      ]
+    ],
+    "self_kernel_eta": [
+      [
+        1.6,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        2.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.6
+      ]
+    ]
+  },
+  "data_label": "MIXED",
+  "divergences": [
+    "hawkes_self_lift_0.766_vs_6.52",
+    "hawkes_self_B_0.2250_vs_0.8617",
+    "hawkes_cross_B_0.3670_vs_0.8617",
+    "hawkes_powerlaw_lift_1.890_vs_6.52",
+    "hawkes_powerlaw_B_0.1037_vs_0.8617"
+  ],
+  "git_revision": "613039b31b1bbfb6c3beccdef5df5f7e6a19ae1a",
+  "horizon": 4000.0,
+  "interpretation": "The homogeneous Poisson clock is measurably memoryless (B~0) while the real message stream is strongly bursty (B=0.86). A self-exciting Hawkes clock makes event clustering and post-execution cancel retreats expressible in the sim \u2014 the cross-excited arm reproduces the retreat signature (lift ~4 vs real ~6.5). The power-law arm yields a non-obvious negative result: at fixed branching ratio, spreading each jump across decay-bank timescales SMOOTHS the intensity \u2014 B falls even though the memory tail lengthens \u2014 because burst height, not tail mass, drives the Goh-Barabasi statistic. Closing the residual gap (B ~0.4 vs 0.86) likely requires non-Markovian baseline modulation (session-level rate regimes on the clock itself), not fatter kernels. Branching ratios (eta) are declared per edge; kernels are sub-critical by construction.",
+  "kind": "hawkes_clock_bench",
+  "receipt_sha256": "53085804a8fd2be168765632da66284b0cc5af199ebb4c1ad8b732c0ac2f9ba6",
+  "research_only": true,
+  "schema": "hawkes_clock.v1",
+  "tape_targets": {
+    "burstiness_B_all": 0.8617,
+    "cv_all": 3.6689,
+    "post_mo_cxl_lift_0p5s": 6.5203500000000005
+  }
+}

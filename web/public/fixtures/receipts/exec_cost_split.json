@@ -1,0 +1,38 @@
+{
+  "arms": {
+    "iid": {
+      "fill_fraction_mean": 0.7875000000000001,
+      "mid_drift_ticks_mean": 4.5000000000001705,
+      "n_episodes": 12,
+      "shortfall_ticks_mean": 2.0851814516134937,
+      "shortfall_ticks_sd": 1.1335685483899738
+    },
+    "regime": {
+      "fill_fraction_mean": 0.6708333333333334,
+      "mid_drift_ticks_mean": 1.1818181818182696,
+      "n_episodes": 12,
+      "shortfall_ticks_mean": 3.7764149428721083,
+      "shortfall_ticks_sd": 1.6375763990019745
+    },
+    "split": {
+      "fill_fraction_mean": 0.4535714285714286,
+      "mid_drift_ticks_mean": 8.899999999999864,
+      "n_episodes": 7,
+      "shortfall_ticks_mean": 5.721031746030698,
+      "shortfall_ticks_sd": 1.451675928282667
+    }
+  },
+  "claims": {
+    "correlated_flow_raises_cost": true
+  },
+  "data_label": "SYNTHETIC",
+  "events_per_child": 25,
+  "git_revision": "5b84fdf95053244318f67e141b2a80617bfa6124",
+  "interpretation": "Same TWAP schedule, same book parameters, three flow drivers. If split shortfall exceeds iid, correlated metaorder flow is inflating measured impact \u2014 the TWAP buys while a buy parent is already walking the book",
+  "kind": "exec_cost_split",
+  "n_children": 8,
+  "parent_size": 40,
+  "receipt_sha256": "6b797d7204f9f066805f69227c1bc2a6262572445487cc3d7779f9f631ef4240",
+  "research_only": true,
+  "schema": "exec_cost_split.v1"
+}

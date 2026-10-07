@@ -23,12 +23,19 @@ advisory families rather than inflating the count with duplicated records.
 
 The Rust NumPy binding moves from 0.23.0 to 0.29.0 with PyO3. The only source
 compatibility change is `Bound.downcast` to `Bound.cast` in `hash_many`.
-The Rust lock regeneration removes four obsolete transitive crates.
+The initial Rust lock regeneration removes four obsolete transitive crates.
+The follow-up enables runtime-detected SHA-256 acceleration on AArch64,
+with the existing software fallback and unchanged timing thresholds.
+Hash parity now also covers padding and compression-block boundaries.
 Python NumPy stays at 2.5.3. Root and Kronos Torch minimums are raised to 2.6;
 the root lock's existing Torch version is unchanged.
 
 Root transitive security floors are resolver constraints (`urllib3>=2.8.0`,
 `virtualenv>=21.7.13`), avoiding artificial direct runtime dependencies.
+Z3 is constrained to `<5` (locked at 4.16.0.0): the 5.0.0.0 and 5.1.0.0
+macOS ARM wheels have unsupported internal `macosx_13_3_arm64` tags,
+despite their `macosx_13_0_arm64` filenames. The validated 4.16 wheel
+passes `uv pip check`; no installed metadata is patched.
 Kronos UI requirements include the shared parent requirements rather than
 duplicating pandas, NumPy, Torch and Hugging Face Hub declarations. The shared
 NumPy minimum preserves the previous UI constraint.
@@ -41,6 +48,8 @@ NumPy minimum preserves the previous UI constraint.
   requirements files through pip, and also covers npm and Cargo.
 - `make audit-all` combines Python, npm, Rust and Kronos audits. Individual
   commands and the cargo-audit installation command are in `SECURITY.md`.
+- `make sync` and CI frozen-install steps also run `uv pip check`, so
+  incompatible wheel metadata fails setup rather than going unnoticed.
 - Root Python audits inspect pinned versions without pip resolution and strip
   platform markers to include Windows/Linux extras on every audit host.
 - A dependency-change and weekly CI workflow covers all four ecosystems,
@@ -50,56 +59,27 @@ Kronos has independent requirements files rather than a full transitive lock;
 its audit checks a fresh Python 3.12 resolution. No model weights were fetched,
 and no remote fleet jobs or research receipts were changed by this cleanup.
 
-## Validation
+## Validation follow-up
 
-The broad checks below ran in the original working tree based on `f4c8ac801b`,
-including its unrelated local changes. For publication, the dependency-only
-patch was applied to current remote main (`2a0253d7ed`) in an isolated worktree.
-Lock consistency and `make audit-all` were checked again there. The complete
-lab suite has not been rerun against that newer base; CI must validate the PR.
+The first run found baseline validation failures in both the original
+working tree (`f4c8ac801b` plus existing local feature work) and the PR's
+isolated remote-main base (`2a0253d7ed`). The follow-up fixes the causes:
 
-Audit results: no known vulnerabilities in all 220 locked third-party Python
-distributions, all three npm trees, the Rust lock (cargo-audit and OSV), or
-the freshly resolved Kronos UI/model requirements. The audits query current
-advisory databases and do not establish the absence of unknown vulnerabilities.
+- Remove a byte-identical duplicate measurement validator without removing
+  any receipt schema or weakening the shared contract.
+- Refresh generated architecture artifacts and document/pin the exact
+  existing forecast-audit and atomic-write imports in ADR-0002.
+- Restore the primary checkout's five missing strict-allowlist modules from
+  remote main; keep its existing blueprint command work lazy and typed;
+  align its API comparison test with the existing encoded-byte comparison.
+  These feature-work repairs stay in the original checkout.
+- Check web coverage against committed receipts, matching the exporter;
+  read legacy unsealed evidence from its separate archive; locate the
+  fast-replay fixture through the generated index instead of an old date.
+  Refresh fixture copies from committed evidence without changing receipts.
+- Fail closed for a near-zero crash-gate wealth anchor; the existing
+  branch-regression test now passes.
+- Use a compatible Z3 wheel and enable ARM SHA-256 acceleration rather
+  than altering installed metadata or lowering performance thresholds.
 
-Passed: frozen Python sync, lock consistency, Ruff check and formatting,
-fx1 tests and types, strict public-facade types, Rust formatting and Clippy, native extension release
-build, web production build, replay typecheck/build, client typecheck, and
-Kronos HTTP smoke checks for `/`, data files, available models and model status
-(including CORS headers).
-
-Full offline lab gate: **15,797 passed, 6 failed, 190 skipped, 1 xfailed** in
-28 minutes. Failed tests:
-
-- `tests/unit/cli/test_cli_api.py::test_api_key_comparison_is_constant_time`
-  expects strings while the already modified API compares encoded bytes.
-- `tests/unit/docs/test_arch_atlas.py::test_committed_artifacts_are_fresh`
-  and `test_check_cli_exit_zero`: existing modified architecture artifacts
-  are stale.
-- `tests/unit/test_quality_ratchet.py::test_mypy_strict_allowlist_only_grows`:
-  the existing modified allowlist refers to missing files.
-- `tests/unit/cli/test_cli_startup.py::test_package_and_cli_imports_skip_heavy_modules`:
-  NumPy and SciPy enter the CLI import path in the checkout with existing CLI
-  changes.
-- `tests/unit/pretrade/test_latency.py::test_allow_path_meets_latency_gate`:
-  the 5-microsecond latency threshold fails during the concurrent suite;
-  the pretrade latency tests pass on the final isolated recheck.
-
-Additional validation issues:
-
-- `make lint`'s allowlist check references five missing files in the already
-  modified `quality/mypy_strict_modules.txt`.
-- Web unit tests lack `adaptive_mix_20asset_1d_20260922.json` and have an
-  existing fixture-index mismatch for an untracked cost-calibration receipt.
-- Harness mypy reports one missing annotation for `pooled` at line 244 of
-  the existing untracked `src/quant_fund/cli/blueprint_cmds.py` (888 files checked).
-- `uv pip check` rejects the existing z3-solver wheel's platform metadata.
-- Native numeric parity passes, but the timed `hash_many` benchmark initially
-  failed its speed floor under concurrent load. The committed PyO3 0.23.5
-  baseline was built separately, but macOS rejects its binary with a
-  misaligned LINKEDIT string pool, preventing a reliable baseline comparison.
-  The upgraded extension builds and loads successfully; no timing gate was
-  weakened. Reruns also failed; after the large suite finished, `hash_many`
-  measured 0.95x versus the 1.5x speed floor. This performance gate remains
-  unresolved, despite passing native correctness checks.
+Final check results will be recorded after the complete recheck.

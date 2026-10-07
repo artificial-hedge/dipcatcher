@@ -705,6 +705,20 @@ def fx1_to_quant_fund_edges(module_edges: set[tuple[str, str]]) -> set[tuple[str
 QUANT_FUND_TO_FX1_EDGES: frozenset[tuple[str, str]] = frozenset({("quant_fund", "fx1")})
 FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
     {
+        ("fx1.forecast.core_audit", "quant_fund.data.adapters.synthetic"),
+        ("fx1.forecast.core_audit", "quant_fund.schemas.errors"),
+        ("fx1.forecast.core_audit", "quant_fund.utils.hashing"),
+        ("fx1.forecast.core_audit", "quant_fund.utils.reproducibility"),
+        ("fx1.forecast.data_audit", "quant_fund.research.fleet_eval"),
+        ("fx1.forecast.data_audit", "quant_fund.schemas.errors"),
+        ("fx1.forecast.data_audit", "quant_fund.utils.hashing"),
+        ("fx1.forecast.data_audit", "quant_fund.utils.reproducibility"),
+        ("fx1.bench.run", "quant_fund.utils.atomicio"),
+        ("fx1.data.quality", "quant_fund.utils.atomicio"),
+        ("fx1.mrm", "quant_fund.utils.atomicio"),
+        ("fx1.train.pipeline", "quant_fund.utils.atomicio"),
+        ("fx1.train.receipts", "quant_fund.utils.atomicio"),
+        ("fx1.train.run", "quant_fund.utils.atomicio"),
         ("fx1.eval.calibration_eval", "quant_fund.metrics.calibration_tests"),
         ("fx1.eval.options_reasoning_eval", "quant_fund.models.iv_approx"),
         ("fx1.eval.options_reasoning_eval", "quant_fund.models.options"),
@@ -742,7 +756,9 @@ def cross_root_errors(module_edges: set[tuple[str, str]]) -> list[str]:
     model_to_harness = fx1_to_quant_fund_edges(module_edges)
     if model_to_harness != FX1_TO_QUANT_FUND_EDGES:
         rendered = ", ".join(f"{src} -> {dst}" for src, dst in sorted(model_to_harness))
-        errors.append(f"fx1→quant_fund edges drifted from the forecast/eval pin: {rendered}")
+        errors.append(
+            f"fx1→quant_fund edges drifted from the forecast/eval/atomic-write pin: {rendered}"
+        )
     return errors
 
 

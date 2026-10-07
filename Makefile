@@ -8,6 +8,7 @@ help: ## Show targets
 
 sync: ## Install the locked environment (all groups and extras)
 	uv sync --frozen --all-groups --all-extras
+	uv pip check
 
 test: ## PR-gate lab tests (not network, not slow; xdist)
 	uv run pytest -n auto --dist loadfile -m "not network and not slow"
