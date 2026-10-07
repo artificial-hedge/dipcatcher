@@ -1,0 +1,51 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "c0bf8884466c125798c232d74e890bb830ccd095f12e1b43a5397f40505e62a2",
+  "inputs_sha256": "61966577a1ca5c9a3986c46b88ead7bc4b4130128eecd7e77485750811a21417",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "7162b46cd62bfeb70830cb174c6e76f6a6e12c9c50ba0b5dab3677024215b2ff",
+  "members": [
+    {
+      "name": "corpus_epoch_1082ec3a7e7ac439.json",
+      "sha256": "8b2ce09f0381bf73f9d46e295def707f53a70eba22f7035b2776bf56dd39067f"
+    },
+    {
+      "name": "corpus_epoch_e800f329be176332.json",
+      "sha256": "1cffd9137165ccc89cf05128f94460a6ad2db8a9ed555fa9d84da11abb3b13b0"
+    },
+    {
+      "name": "tla/OrderLifecycle.cfg",
+      "sha256": "66a6f98faf7313a4b311f228266dd75077f48592a6ad1118b2ac26ddf8c6323d"
+    },
+    {
+      "name": "tla/OrderLifecycle.tla",
+      "sha256": "a578c79bd8e56242abb332b325f1b550f9da823228b5021e02c0094038ba7187"
+    },
+    {
+      "name": "tla/OrderLifecycleLiveness.cfg",
+      "sha256": "c7bb5af13ee4be33fa98441dca4ff172610f5ae01d284dd40faaf80cc074f8a4"
+    },
+    {
+      "name": "tla/README.md",
+      "sha256": "596ffdfbb283470de08edf4f4b8ea12468bd6bfee9afc99cf3f2a63fa3739705"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_e800f329be176332.json",
+    "tla/README.md"
+  ],
+  "members_removed": [],
+  "n_members": 6,
+  "params": {
+    "head_sha": "34ce633d802f8fab08dcf8b0e39a031d8f67a3a5",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_e800f329be176332.json",
+  "prev_epoch_sha256": "6b818ce0da358271b29d6b08c8cbb7fca464134a7a7ff2f4758f9f4dd12420cb",
+  "receipt_sha256": "4f70055f74e84dc4524accdd5ce1e8fd4d051318c349e47f6b175ea69ad93c7a",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

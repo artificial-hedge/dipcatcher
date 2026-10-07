@@ -3633,6 +3633,12 @@ def admit_batch_cmd(
         help="JSON map of receipt filename -> sha256 whose byte-exact "
         "inconsistent claim groups are acknowledged (demo artifacts).",
     ),
+    allowed_removals: Path | None = typer.Option(
+        None,
+        "--allowed-removals",
+        help="JSON map of corpus member name -> sha256 whose epoch-stamped "
+        "removal is acknowledged (e.g. moved to legacy-unsealed/).",
+    ),
     strict: bool = typer.Option(
         False,
         "--strict",
@@ -3668,8 +3674,24 @@ def admit_batch_cmd(
                 "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
             )
         pins = dict(raw_pins)
+    removals: dict[str, str] | None = None
+    if allowed_removals is not None:
+        if not allowed_removals.is_file():
+            raise typer.BadParameter(f"allowed-removals file {allowed_removals} does not exist")
+        try:
+            raw_removals = json.loads(allowed_removals.read_text())
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"allowed-removals is not JSON: {exc}") from exc
+        if not isinstance(raw_removals, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and len(v) == 64
+            for k, v in raw_removals.items()
+        ):
+            raise typer.BadParameter(
+                "allowed-removals must be a JSON object mapping name -> 64-hex sha256"
+            )
+        removals = dict(raw_removals)
     try:
-        batch = admit_batch(receipts, root, q=q, known_inconsistent=pins)
+        batch = admit_batch(receipts, root, q=q, known_inconsistent=pins, allowed_removals=removals)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))

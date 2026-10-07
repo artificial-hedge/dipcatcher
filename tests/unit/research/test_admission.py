@@ -82,6 +82,10 @@ def test_quarantine_missing_stamps(corpus: Path, tmp_path: Path) -> None:
     body = _claim_body(1.0)
     del body["research_only"]
     del body["data_label"]
+    # With the label gone the tape ratchet reads this as a non-synthetic
+    # binding claim and the seal check rejects before honesty can quarantine
+    # — drop the binding so the honesty path is what fires.
+    del body["dataset_sha256"]
     candidate = _write(tmp_path, "bare.json", body)
     result = admission_check(candidate, corpus)
     assert result["verdict"] == "quarantine"

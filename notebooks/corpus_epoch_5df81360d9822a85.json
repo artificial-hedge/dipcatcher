@@ -1,0 +1,38 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "ea7a4b37e9193ade74daf7a4f481150f8b768933b281db3da2e40dcf6cd1263b",
+  "inputs_sha256": "01ea9eef732fd0648ed9605e072d962e1bffe5e1332a9fc65e01e7cebcdb55ae",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "aa1f221f69eb955f4062b63c66569ae5d0366fddfa012cff2ebf09b6406edfef",
+  "members": [
+    {
+      "name": ".gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "corpus_epoch_36082828c4beed51.json",
+      "sha256": "e2cd01716eb84ad3653a3cdc49af08c414a1b10196832fc1dc4ee81d8dc54151"
+    },
+    {
+      "name": "corpus_epoch_42bfddfae00a5833.json",
+      "sha256": "3e7b116a8bf96d6fbca1b06ad032f6f4da6254510513cc68037cbc4a8c816758"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_42bfddfae00a5833.json"
+  ],
+  "members_removed": [],
+  "n_members": 3,
+  "params": {
+    "head_sha": "34ce633d802f8fab08dcf8b0e39a031d8f67a3a5",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_42bfddfae00a5833.json",
+  "prev_epoch_sha256": "858eee0d3629a79b5e4509b344c5a4d2749dcba2e0d119b09ad81c31abb15a45",
+  "receipt_sha256": "5df81360d9822a8559204560713d1eeee3fdd55cc7d90fc137ea6b9233c571a3",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

@@ -1,6 +1,15 @@
 {
   "corpus_history_absence_1791a18109fce973.json": "35a5a663f861c0ac399faefa432ca410da4fae597a0a9111d6c9a2341e0dfe03",
+  "corpus_real_drill.json": "082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119",
   "fuzz_drill_b966c0d125b2a999.json": "1e404fef2428d0c1f9fc0c0b32f5904e0c3dd1ad7f743d1587d4f95f04b471ac",
   "fuzz_drill_cb1a0f56a4e67716.json": "977431c492d834e0c4817e9e032f8ef6e36c998facda0415385ba8b80d3ac49c",
-  "public/fixtures/receipts/fast_replay_p42_conformance_20260927.json": "8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8"
+  "public/fixtures/receipts/fast_replay_p42_conformance_20260927.json": "8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8",
+  "scripts/README.md": "ba0562b22f96e7606e26028fc862dfb07576355671d83a7afe9c6341c5659ccc",
+  "scripts/benchmark_crypto_external.py": "2b67812dd0f8a0409d76a9c0a7722c8c72c4e56e214ebb5a5cb52d93dcdc3206",
+  "scripts/benchmark_garch.py": "3ccc0eb5b9c8ab196b95f4dcb77e003a7e70d8272564074271c6ecfbdd446eb6",
+  "scripts/benchmark_paper_loop.py": "cbdfaa22ae5cc55d04fc9116400b1def62c0e304aae9a6b8476861235f28a725",
+  "scripts/keep_awake_for_agents.sh": "072909f25152892bdbbcbe5ac96bc002f4c3a92eb523cb2608b9e3f6da121256",
+  "scripts/verify_binance_receipt.py": "72a85d71f24a02143c42f5b16cd088fa6443b1d03a0157e4d3e2726ccafc5276",
+  "scripts/verify_bugbot_findings.py": "c191397754af2fa19289022a3c29dfd74be9e01b0754f0f57ae8ecfcb7b2aece",
+  "scripts/verify_external_receipt.py": "951663c2ae6dc094cb5bc946bb28fade7d36d069192a3e195f38e90f751a772f"
 }

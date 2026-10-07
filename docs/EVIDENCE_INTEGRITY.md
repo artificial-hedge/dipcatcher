@@ -136,4 +136,6 @@ make stamp-epochs          # re-stamp chains + heads pin after touching a corpus
 dipcatcher verify-repo     # compose every gate into one sealed verdict
 dipcatcher verify-repo --out quality/repo_integrity.json   # seal the attestation
 dipcatcher admit-batch receipts/<new>.json --strict          # gate a new receipt
+                                                             # (+ --allowed-removals quality/epoch_allowed_removals.json
+                                                             #  to acknowledge declared removals, as the Makefile gates do)
 ```
