@@ -602,6 +602,19 @@ def _dts_operation_block(text: str, path: str, method: str) -> str:
     return m2.group(1) if m2 else path_block
 
 
+def _op_missing_params(path: str, ops: dict[str, Any], text: str) -> list[str]:
+    missing: list[str] = []
+    for method, op in ops.items():
+        if not isinstance(op, dict):
+            continue
+        block = _dts_operation_block(text, path, method)
+        for prm in op.get("parameters", []):
+            name = prm.get("name", "")
+            if name and not re.search(rf"\b{re.escape(name)}\b", block):
+                missing.append(f"{method.upper()} {path}:{name}")
+    return missing
+
+
 def _schema_missing_params(spec: dict[str, Any], dts_paths: set[str], text: str) -> list[str]:
     """Spec operation parameters whose name is absent from the matching
     ``.d.ts`` block."""
@@ -609,14 +622,7 @@ def _schema_missing_params(spec: dict[str, Any], dts_paths: set[str], text: str)
     for path, ops in spec.get("paths", {}).items():
         if path not in dts_paths:
             continue
-        for method, op in ops.items():
-            if not isinstance(op, dict):
-                continue
-            block = _dts_operation_block(text, path, method)
-            for prm in op.get("parameters", []):
-                name = prm.get("name", "")
-                if name and not re.search(rf"\b{re.escape(name)}\b", block):
-                    missing.append(f"{method.upper()} {path}:{name}")
+        missing += _op_missing_params(path, ops, text)
     return missing
 
 
@@ -1001,10 +1007,11 @@ _DUMMY_CALLABLE_NAMES = {"fn", "func", "callable", "sleep", "clock", "on_event"}
 _DUMMY_FILE_NAMES = {"file", "fh", "stream", "fp", "f"}
 
 
-def _dummy_for(name: str, ptype: Any) -> Any:
-    n = name.lower()
-    if ptype is bytes:
-        return b"x"
+_MISSING = object()
+
+
+def _dummy_by_name(n: str) -> Any:
+    """Name-driven dummies; ``_MISSING`` when no name rule matches."""
     if n.endswith("_id") or n == "id" or n in _DUMMY_ID_NAMES:
         return "x"
     if n in _DUMMY_STR_NAMES:
@@ -1015,11 +1022,11 @@ def _dummy_for(name: str, ptype: Any) -> Any:
         return [[{"role": "user", "content": "x"}]]
     if n in _DUMMY_FILE_NAMES:
         return io.BytesIO(b"x")
-    if ptype is int or n.startswith(_DUMMY_INT_PREFIXES):
+    if n.startswith(_DUMMY_INT_PREFIXES):
         return 1
-    if ptype is float or n.endswith("_s") or n.endswith("_ms"):
+    if n.endswith("_s") or n.endswith("_ms"):
         return 1.0
-    if ptype is bool or n.startswith(_DUMMY_BOOL_PREFIXES):
+    if n.startswith(_DUMMY_BOOL_PREFIXES):
         return True
     if n in _DUMMY_LIST_NAMES or n.endswith("s"):
         return []
@@ -1027,6 +1034,22 @@ def _dummy_for(name: str, ptype: Any) -> Any:
         return {}
     if n in _DUMMY_CALLABLE_NAMES:
         return lambda *a, **k: None
+    return _MISSING
+
+
+def _dummy_for(name: str, ptype: Any) -> Any:
+    n = name.lower()
+    if ptype is bytes:
+        return b"x"
+    named = _dummy_by_name(n)
+    if named is not _MISSING:
+        return named
+    if ptype is int:
+        return 1
+    if ptype is float:
+        return 1.0
+    if ptype is bool:
+        return True
     return "x"
 
 
