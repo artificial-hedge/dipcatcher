@@ -30,7 +30,13 @@ SEPARATE_LANES = {
     "native": "tests/native",
 }
 LANES = (*LAB_LANES, *SEPARATE_LANES)
-SOURCE_ROOTS = ("src", "scripts", "examples")
+# ``SOURCE_ROOTS`` enumerates the first-party Python roots whose
+# coverage denominator is included in the full-offline report. Anything
+# outside these roots is excluded and stamped as ``uncovered_path_outside``
+# in the report (see #2851 — replay/scripts and web/scripts were omitted
+# in the prior revision). To add a new root: append the path, then run a
+# full lane to refresh ``unrepresented_source_files``.
+SOURCE_ROOTS = ("src", "scripts", "examples", "replay/scripts", "web/scripts")
 SCHEMA = "full-offline-coverage.v1"
 
 
