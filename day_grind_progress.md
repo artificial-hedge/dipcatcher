@@ -2123,6 +2123,38 @@ automation runs merges and resets on this tree. This note is the correction of r
 Rule adopted from it: before a mechanical bulk-operation commit, capture the changed-file
 list BEFORE running the operation and commit only that intersection.
 
+### Lead disclosure — collectability placeholder `catalog/retired_families.py`
+
+An in-flight edit added `from .retired_families import RETIRED_BENCHMARK_FAMILIES` to
+`src/quant_fund/research/catalog/registry.py` (line 10) before that module existed.
+Because `catalog/__init__.py` imports `registry`, the single missing file made
+`quant_fund.research.catalog` **un-importable**, which broke collection for the entire
+suite (pytest exit 4) and caused the cascading xdist `INTERNALERROR: KeyError:
+<WorkerController gw10>` worker crashes seen in two full `make test` runs. Those crashes
+were a symptom of the import break, not a scheduling flake.
+
+After roughly fifteen minutes with every lane blocked, the Lead landed a
+**deliberately-empty placeholder** (`6f2e2c5740`) purely to restore collectability. It is
+wrong on purpose and says so at length in its own docstring: `RETIRED_BENCHMARK_FAMILIES
+= {}`, so `LIVE_OPTIONAL == OPTIONAL` (10,222) and the `research/agent.py` de-emission
+filter is a silent no-op. Verified at the time: `IMPORT OK / RETIRED 0 / OPTIONAL 10222 /
+LIVE_OPTIONAL 10222 / REQUIRED 23`.
+
+Why an empty stub is acceptable *only* with loud labelling: shipping an empty retirement
+set would quietly make the runtime de-emission filter a no-op — a silent non-function. The
+guard is that the derivation-dependent tests in
+`tests/unit/research/test_catalog_retired_families.py`
+(`test_retired_set_matches_qualification_audit`,
+`test_archived_receipt_with_retired_family_still_verifies`) **fail loudly** until
+`canon-integrity` lands the real set derived from `quality/canon_qualification_audit.json`.
+The placeholder docstring explicitly instructs the next reader not to "fix" those failures
+by weakening the tests. `canon-integrity` owns overwriting the file; the Lead will not
+touch it again.
+
+Process rule generalised: an import that references a not-yet-written module must never be
+left in the tree between steps. Write the module and its import in the same shell
+invocation.
+
 ### Honesty contract — verified intact (independently, not taken on assertion)
 
 - `FORBIDDEN_RESEARCH_METRIC_KEYS` (`quant_fund.research.catalog`) and
