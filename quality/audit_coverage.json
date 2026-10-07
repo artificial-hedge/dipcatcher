@@ -396,6 +396,9 @@
   "models/bounds.py": {
    "status": "audited"
   },
+  "models/breeden_litzenberger.py": {
+   "status": "audited"
+  },
   "models/bvar_minnesota.py": {
    "status": "audited"
   },
@@ -468,6 +471,9 @@
   "models/diffpts.py": {
    "status": "audited"
   },
+  "models/diffusion_forecaster.py": {
+   "status": "audited"
+  },
   "models/distribution.py": {
    "status": "audited"
   },
@@ -510,6 +516,9 @@
   "models/fbm.py": {
    "status": "audited"
   },
+  "models/fourier_pricing.py": {
+   "status": "audited"
+  },
   "models/fractional_ou.py": {
    "status": "audited"
   },
@@ -528,7 +537,13 @@
   "models/graded_irt.py": {
    "status": "audited"
   },
+  "models/greek_neutral_portfolios.py": {
+   "status": "audited"
+  },
   "models/gsadf_bubble.py": {
+   "status": "audited"
+  },
+  "models/gslice.py": {
    "status": "audited"
   },
   "models/hawkes_em.py": {
@@ -562,6 +577,9 @@
    "status": "audited"
   },
   "models/kronos_fleet.py": {
+   "status": "audited"
+  },
+  "models/local_stoch_vol.py": {
    "status": "audited"
   },
   "models/malliavin_greeks.py": {
@@ -781,6 +799,9 @@
    "status": "audited"
   },
   "models/watch.py": {
+   "status": "audited"
+  },
+  "models/xva.py": {
    "status": "audited"
   },
   "parity_leak_audit.py": {
