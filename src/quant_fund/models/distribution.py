@@ -103,12 +103,7 @@ class ScaledGaussianDistribution(JoblibMixin):
         scale: NDArray[np.float64],
         **kwargs: Any,
     ) -> ScaledGaussianDistribution:
-        yy = np.asarray(y, dtype=float).reshape(-1)
-        sc = np.maximum(np.asarray(scale, dtype=float).reshape(-1), 1e-8)
-        if yy.size != sc.size:
-            raise ValueError("y and scale must have the same length")
-        mask = np.isfinite(yy) & np.isfinite(sc)
-        yy, sc = yy[mask], sc[mask]
+        yy, sc = _finite_y_scale(y, scale)
         self.mu = float(np.mean(yy)) if yy.size else 0.0
         z = (yy - self.mu) / sc if yy.size else np.array([0.0])
         self.z_sig = float(np.std(z, ddof=1)) if z.size > 1 else 1.0
@@ -183,11 +178,14 @@ def _finite_y_scale(
     y: NDArray[np.float64], scale: NDArray[np.float64]
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     yy = np.asarray(y, dtype=float).reshape(-1)
-    sc = np.maximum(np.asarray(scale, dtype=float).reshape(-1), 1e-8)
-    if yy.size != sc.size:
+    sc_raw = np.asarray(scale, dtype=float).reshape(-1)
+    if yy.size != sc_raw.size:
         raise ValueError("y and scale must have the same length")
-    mask = np.isfinite(yy) & np.isfinite(sc)
-    return yy[mask], sc[mask]
+    # Mask BEFORE clamping: a non-finite or non-positive scale is broken
+    # input and must be dropped, not silently repaired to the 1e-8 floor
+    # (clamping first let -inf/negative scales survive the finite check).
+    mask = np.isfinite(yy) & np.isfinite(sc_raw) & (sc_raw > 0.0)
+    return yy[mask], np.maximum(sc_raw[mask], 1e-8)
 
 
 def _fit_student_z(z: NDArray[np.float64]) -> tuple[float, float]:
@@ -462,6 +460,8 @@ class TreeQuantileDistribution(JoblibMixin):
                     alpha=tau,
                     n_estimators=60,
                     num_leaves=15,
+                    n_jobs=1,
+                    num_threads=1,
                     random_state=self.seed,
                     verbosity=-1,
                 )

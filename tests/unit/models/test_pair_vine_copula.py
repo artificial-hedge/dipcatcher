@@ -653,3 +653,197 @@ class TestFailClosed:
         u = rng.random((30, _MAX_DIM + 1))
         with pytest.raises(ValueError):
             vine_fit(u)
+
+
+# ============================================================================
+# Honesty/determinism audit probes
+# ============================================================================
+
+
+class TestHinvClampDirection:
+    """The no-sign-change fallback must clamp to the boundary h points at.
+
+    h(u|v) is increasing in u; when w exceeds h over the whole interval the
+    inverse sits at the top, not the floor.  The previous fallback clamped
+    to the WRONG end (lo when h < w, hi when h > w), silently flipping
+    sampled uniforms to the opposite tail.
+    """
+
+    @pytest.mark.parametrize(
+        ("hinv_name", "h_name", "theta_key", "theta"),
+        [
+            ("_clayton_hinv", "_clayton_h", "theta", 2.0),
+            ("_gumbel_hinv", "_gumbel_h", "alpha", 2.0),
+            ("_frank_hinv", "_frank_h", "theta", 3.0),
+            ("_joe_hinv", "_joe_h", "theta", 2.5),
+        ],
+    )
+    def test_clamps_to_reached_boundary(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        hinv_name: str,
+        h_name: str,
+        theta_key: str,
+        theta: float,
+    ) -> None:
+        import quant_fund.models.pair_vine_copula as pvc
+
+        # Force h(u|v) to saturate at 0.5 — unreachable target both ways.
+        monkeypatch.setattr(
+            pvc,
+            h_name,
+            lambda u, v, t: np.full(np.asarray(u).shape, 0.5),
+        )
+        hinv = getattr(pvc, hinv_name)
+        kw = {theta_key: theta}
+        # w above the plateau → inverse at the TOP boundary.
+        hi_out = hinv(np.array([0.9]), np.array([0.5]), **{k: v for k, v in kw.items()})
+        assert float(hi_out[0]) > 0.9, f"{hinv_name} clamped low when h < w"
+        # w below the plateau → inverse at the BOTTOM boundary.
+        lo_out = hinv(np.array([0.1]), np.array([0.5]), **{k: v for k, v in kw.items()})
+        assert float(lo_out[0]) < 0.1, f"{hinv_name} clamped high when h > w"
+
+
+class TestFamilyParamValidation:
+    """Out-of-domain pair-copula params must fail loudly at dispatch."""
+
+    @pytest.mark.parametrize(
+        ("family", "params"),
+        [
+            ("gaussian", {"rho": 1.5}),
+            ("gaussian", {"rho": np.nan}),
+            ("t", {"rho": 0.3, "nu": -1.0}),
+            ("t", {"rho": 0.3}),  # missing nu
+            ("clayton", {"theta": -2.0}),
+            ("gumbel", {"alpha": 0.5}),
+            ("joe", {"theta": 0.5}),
+            ("frank", {"theta": np.inf}),
+        ],
+    )
+    def test_invalid_params_rejected(self, family: str, params: dict) -> None:
+        from quant_fund.models.pair_vine_copula import _h_eval, _hinv_eval
+
+        u = np.array([0.3, 0.7])
+        with pytest.raises(ValueError):
+            _h_eval(u, u, family, params)
+        with pytest.raises(ValueError):
+            _hinv_eval(u, u, family, params)
+
+    def test_invalid_params_rejected_in_vine_pipeline(self) -> None:
+        """A hand-built VineMatrix with garbage params must not sample."""
+        vm = cvine_structure(3)
+        vm.families[(0, 0)] = "gaussian"
+        vm.params[(0, 0)] = {"rho": 5.0}
+        with pytest.raises(ValueError):
+            vine_sample(vm, 50, seed=0)
+
+
+class TestStructureDetection:
+    def test_handbuilt_cvine_diag_routes_to_cvine_sampler(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A legacy VineMatrix (structure='rvine') with a C-vine diagonal
+        must sample via the C-vine path — the sorted-diagonal heuristic used
+        to send every permutation diagonal to the D-vine sampler.
+        """
+        import quant_fund.models.pair_vine_copula as pvc
+
+        vm = cvine_structure(3)
+        vm.families[(0, 0)] = "gaussian"
+        vm.params[(0, 0)] = {"rho": 0.5}
+        vm.structure = "rvine"  # simulate a hand-built object w/o the tag
+        called: dict[str, bool] = {"cvine": False, "dvine": False}
+        monkeypatch.setattr(
+            pvc,
+            "_cvine_sample_inner",
+            lambda *a, **k: called.__setitem__("cvine", True) or np.zeros((1, 3)),
+        )
+        monkeypatch.setattr(
+            pvc,
+            "_dvine_sample_inner",
+            lambda *a, **k: called.__setitem__("dvine", True) or np.zeros((1, 3)),
+        )
+        pvc.vine_sample(vm, 1, seed=0)
+        assert called == {"cvine": True, "dvine": False}
+
+    def test_handbuilt_dvine_diag_routes_to_dvine_sampler(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import quant_fund.models.pair_vine_copula as pvc
+
+        vm = dvine_structure(3)
+        vm.families[(0, 0)] = "gaussian"
+        vm.params[(0, 0)] = {"rho": 0.5}
+        vm.structure = "rvine"
+        called: dict[str, bool] = {"cvine": False, "dvine": False}
+        monkeypatch.setattr(
+            pvc,
+            "_cvine_sample_inner",
+            lambda *a, **k: called.__setitem__("cvine", True) or np.zeros((1, 3)),
+        )
+        monkeypatch.setattr(
+            pvc,
+            "_dvine_sample_inner",
+            lambda *a, **k: called.__setitem__("dvine", True) or np.zeros((1, 3)),
+        )
+        pvc.vine_sample(vm, 1, seed=0)
+        assert called == {"cvine": False, "dvine": True}
+
+
+class TestGasValidation:
+    def test_filter_rejects_nonstationary_beta(self) -> None:
+        rng = np.random.default_rng(700)
+        u = rng.random((200, 2))
+        with pytest.raises(ValueError, match="beta"):
+            gas_copula_filter(u, 0.0, 0.1, 1.5)
+        with pytest.raises(ValueError, match="beta"):
+            gas_copula_filter(u, 0.0, 0.1, -1.0)
+
+    def test_filter_rejects_nonfinite_params(self) -> None:
+        u = np.random.default_rng(701).random((200, 2))
+        with pytest.raises(ValueError):
+            gas_copula_filter(u, np.nan, 0.1, 0.5)
+        with pytest.raises(ValueError):
+            gas_copula_filter(u, 0.0, np.inf, 0.5)
+
+    def test_filter_rejects_wrong_width(self) -> None:
+        """The silent m[:, :2] truncation is gone — wrong width raises."""
+        rng = np.random.default_rng(702)
+        with pytest.raises(ValueError, match="2 columns"):
+            gas_copula_filter(rng.random((100, 5)), 0.0, 0.1, 0.5)
+        with pytest.raises(ValueError, match="2 columns"):
+            gas_copula_filter(rng.normal(size=(100, 3)), 0.0, 0.1, 0.5)
+
+    def test_filter_rejects_constant_column(self) -> None:
+        """Constant column → corrcoef undefined → must raise, not init κ=±3."""
+        rng = np.random.default_rng(703)
+        u = rng.random((200, 2))
+        u[:, 0] = 0.5  # constant
+        with pytest.raises(ValueError, match="constant|correlation"):
+            gas_copula_filter(u, 0.0, 0.1, 0.5)
+
+    def test_fit_rejects_wrong_width_and_constant_column(self) -> None:
+        rng = np.random.default_rng(704)
+        with pytest.raises(ValueError, match="2 columns"):
+            gas_copula_fit(rng.random((100, 4)))
+        u = rng.random((100, 2))
+        u[:, 1] = 0.25
+        with pytest.raises(ValueError, match="constant|correlation"):
+            gas_copula_fit(u)
+
+
+class TestUnitIntervalDomain:
+    def test_vine_fit_rejects_out_of_range_pseudo_obs(self) -> None:
+        """Raw (unranked) data must not be silently clipped into uniforms."""
+        rng = np.random.default_rng(705)
+        bad = rng.normal(size=(40, 3))  # mostly outside [0, 1]
+        with pytest.raises(ValueError, match="\\[0, 1\\]"):
+            vine_fit(bad)
+
+    def test_vine_logpdf_rejects_out_of_range(self) -> None:
+        rng = np.random.default_rng(706)
+        u = rng.random((40, 3))
+        vm = vine_fit(u, families=("gaussian",))
+        bad = rng.normal(size=(10, 3)) * 2.0
+        with pytest.raises(ValueError, match="\\[0, 1\\]"):
+            vine_logpdf(vm, bad)

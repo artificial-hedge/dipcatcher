@@ -30,8 +30,8 @@ Probe classes:
 * ``ordering_*`` — fitted ``ordering`` permutes eval inputs and restores
   sampled columns to the caller's original axis order.
 * ``flag_*`` — documented warts pinned for review (silent hinv fallback,
-  gas_copula_filter's silent m[:, :2] truncation and unenforced |β|<1
-  precondition, generic-R-vine degrade-to-independent).
+  generic-R-vine degrade-to-independent); ``gas_*`` keys pin the beta/width
+  guards added after the truncation/stationarity warts were fixed.
 """
 
 from __future__ import annotations
@@ -344,16 +344,19 @@ def vine_audit() -> dict[str, bool]:
     gauss2 = _u_matrix(rng, np.array([[1.0, 0.5], [0.5, 1.0]]), 500)
     rho_path, _, _ = gas_copula_filter(gauss2, omega=0.0, alpha=0.1, beta=0.8)
     results["gas_filter_rho_bounded"] = bool(np.all(np.abs(rho_path) < 1.0))
-    # wart: >2-col input silently truncated instead of rejected
+    # wart fixed: >2-col input is now rejected instead of silently truncated
     three_col = np.column_stack([gauss2, gauss2[:, 0]])
-    rho3, _, _ = gas_copula_filter(three_col, omega=0.0, alpha=0.1, beta=0.8)
-    results["flag_gas_truncates_extra_cols"] = np.array_equal(rho3, rho_path)
-    # wart: docstring requires |β| < 1 but no guard enforces it
+    try:
+        gas_copula_filter(three_col, omega=0.0, alpha=0.1, beta=0.8)
+        results["gas_rejects_extra_cols"] = False
+    except ValueError:
+        results["gas_rejects_extra_cols"] = True
+    # wart fixed: the |β| < 1 stationarity precondition is now enforced
     try:
         gas_copula_filter(gauss2, omega=0.0, alpha=0.1, beta=1.5)
-        results["flag_gas_beta_unenforced"] = True
+        results["gas_beta_enforced"] = False
     except ValueError:
-        results["flag_gas_beta_unenforced"] = False
+        results["gas_beta_enforced"] = True
 
     # wart: _hinv_eval families silently fall back to the input on bracket
     # failure (e.g. joe hinv near an impossible corner)
@@ -403,8 +406,9 @@ def vine_audit_bench() -> dict[str, Any]:
             "rediscovers the D-vine loglik exactly on AR(1) data, is never "
             "the worst structure, and recovers the full pairwise τ surface "
             "from samples.  flag_* keys pin documented warts on spec-less "
-            "hand-built matrices (silent hinv fallback, gas truncation/|β| "
-            "guard, degrade-to-independent without a fitted spec)."
+            "hand-built matrices (silent hinv fallback, degrade-to-independent "
+            "without a fitted spec); gas_* keys pin the guards added when the "
+            "truncation/|β| warts were fixed)."
         ),
     }
     payload["receipt_sha256"] = hash_bytes(canonical_json_bytes(payload))

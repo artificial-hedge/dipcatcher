@@ -75,6 +75,19 @@ def _as_finite_matrix(x: Array, *, min_rows: int = 10, min_cols: int = 2) -> Arr
     return m
 
 
+def _as_uniform_matrix(x: Array, *, min_rows: int = 10, min_cols: int = 2) -> Array:
+    """Finite matrix whose entries lie in [0, 1] — the copula domain.
+
+    Pseudo-observations outside [0, 1] are contract violations; ``_clip``
+    exists for boundary epsilon handling, not for repairing raw returns or
+    z-scores a caller forgot to rank-transform.
+    """
+    m = _as_finite_matrix(x, min_rows=min_rows, min_cols=min_cols)
+    if (m < 0.0).any() or (m > 1.0).any():
+        raise ValueError("pseudo-observations must lie in [0, 1]")
+    return m
+
+
 def _clip(u: Array) -> Array:
     return np.asarray(np.clip(np.asarray(u, dtype=np.float64), _EPS, 1.0 - _EPS), dtype=np.float64)
 
@@ -121,6 +134,37 @@ def _finite_param(
     if not np.isfinite(v) or v <= lo or v >= hi:
         raise ValueError(f"{name} must be finite and in ({lo}, {hi})")
     return v
+
+
+def _validate_family_params(family: str, params: dict[str, float]) -> None:
+    """Enforce each family's parameter domain at the dispatch seam.
+
+    Fitted params always satisfy these bounds; a hand-built ``VineMatrix``
+    (or a corrupted stamp) must fail loudly rather than evaluate a density
+    or draw a sample from a copula that does not exist.
+    """
+    try:
+        if family == "gaussian":
+            _finite_param(params["rho"], lo=-1.0, hi=1.0, name="gaussian rho")
+        elif family == "t":
+            _finite_param(params["rho"], lo=-1.0, hi=1.0, name="t rho")
+            _finite_param(params["nu"], lo=0.0, name="t nu")
+        elif family == "clayton":
+            _finite_param(params["theta"], lo=0.0, name="clayton theta")
+        elif family == "gumbel":
+            _finite_param(params["alpha"], lo=0.0, hi=np.inf, name="gumbel alpha")
+            if float(params["alpha"]) < 1.0:
+                raise ValueError("gumbel alpha must be >= 1")
+        elif family == "frank":
+            _finite_param(params["theta"], name="frank theta")
+        elif family == "joe":
+            _finite_param(params["theta"], lo=0.0, hi=np.inf, name="joe theta")
+            if float(params["theta"]) < 1.0:
+                raise ValueError("joe theta must be >= 1")
+        else:
+            raise ValueError(f"unknown family {family}")
+    except KeyError as exc:
+        raise ValueError(f"{family} params missing key {exc}") from exc
 
 
 # --------------------------------------------------------------- VineMatrix
@@ -305,15 +349,13 @@ def _gaussian_logpdf(u: Array, v: Array, rho: float) -> float:
 
 
 def _gaussian_fit(u: Array, v: Array) -> dict[str, float]:
-    tau = _kendall_tau_pair(u, v)
-    rho_init = _rho_from_tau(tau)
+    _kendall_tau_pair(u, v)  # validates the pair is not degenerate
 
     def nll(r: float) -> float:
         if not (-0.999 < r < 0.999):
             return 1e12
         return -_gaussian_logpdf(u, v, r)
 
-    _ = nll(rho_init)  # fast path; bail if degeneracy surfaces early
     res = opt.minimize_scalar(nll, bounds=(-0.998, 0.998), method="bounded")
     rho_hat = float(res.x)
     ll = -float(res.fun)
@@ -416,8 +458,10 @@ def _clayton_hinv(w: Array, v: Array, theta: float) -> Array:
         try:
             lo, hi = _EPS, 1.0 - _EPS
             if _f(lo) * _f(hi) >= 0:
-                # fallback: clamp
-                out[i] = lo if _f(lo) < 0 else hi
+                # No sign change: h(u|v) never reaches w on (lo, hi). Clamp
+                # to the boundary the monotone h actually points at — h < w
+                # everywhere means the inverse sits at the top, not the floor.
+                out[i] = hi if _f(lo) < 0 else lo
                 continue
             out[i] = float(opt.brentq(_f, lo, hi, xtol=1e-10))
         except (ValueError, RuntimeError, ArithmeticError):
@@ -438,12 +482,7 @@ def _clayton_logpdf(u: Array, v: Array, theta: float) -> float:
 
 
 def _clayton_fit(u: Array, v: Array) -> dict[str, float]:
-    tau = _kendall_tau_pair(u, v)
-    if tau <= 0.0:
-        # fallback: use a very small theta
-        pass
-    else:
-        float(np.clip(2.0 * tau / (1.0 - tau), 0.02, 20.0))
+    _kendall_tau_pair(u, v)  # validates the pair is not degenerate
     n = u.shape[0]
 
     def nll(th: float) -> float:
@@ -491,7 +530,8 @@ def _gumbel_hinv(w: Array, v: Array, alpha: float) -> Array:
         try:
             lo, hi = _EPS, 1.0 - _EPS
             if _f(lo) * _f(hi) >= 0:
-                out[i] = lo if _f(lo) < 0 else hi
+                # Same as above: clamp to the boundary h points at.
+                out[i] = hi if _f(lo) < 0 else lo
                 continue
             out[i] = float(opt.brentq(_f, lo, hi, xtol=1e-10))
         except (ValueError, RuntimeError, ArithmeticError):
@@ -523,11 +563,7 @@ def _gumbel_logpdf(u: Array, v: Array, alpha: float) -> float:
 
 
 def _gumbel_fit(u: Array, v: Array) -> dict[str, float]:
-    tau = _kendall_tau_pair(u, v)
-    if tau <= 0.0:
-        pass
-    else:
-        float(np.clip(1.0 / (1.0 - tau), 1.05, 12.0))
+    _kendall_tau_pair(u, v)  # validates the pair is not degenerate
     n = u.shape[0]
 
     def nll(a: float) -> float:
@@ -582,7 +618,8 @@ def _frank_hinv(w: Array, v: Array, theta: float) -> Array:
         try:
             lo, hi = _EPS, 1.0 - _EPS
             if _f(lo) * _f(hi) >= 0:
-                out[i] = lo if _f(lo) < 0 else hi
+                # Same as above: clamp to the boundary h points at.
+                out[i] = hi if _f(lo) < 0 else lo
                 continue
             out[i] = float(opt.brentq(_f, lo, hi, xtol=1e-10))
         except (ValueError, RuntimeError, ArithmeticError):
@@ -615,9 +652,6 @@ def _frank_fit(u: Array, v: Array) -> dict[str, float]:
     tau = _kendall_tau_pair(u, v)
     if abs(tau) < 1e-4:
         return {"theta": 0.0, "loglik": 0.0, "aic": 0.0, "bic": 0.0}
-    theta0 = float(np.clip(6.0 * tau, -30.0, 30.0))
-    if abs(theta0) < 0.01:
-        theta0 = 0.5 if tau > 0 else -0.5
     n = u.shape[0]
 
     def nll(th: float) -> float:
@@ -677,7 +711,8 @@ def _joe_hinv(w: Array, v: Array, theta: float) -> Array:
         try:
             lo, hi = _EPS, 1.0 - _EPS
             if _f(lo) * _f(hi) >= 0:
-                out[i] = lo if _f(lo) < 0 else hi
+                # Same as above: clamp to the boundary h points at.
+                out[i] = hi if _f(lo) < 0 else lo
                 continue
             out[i] = float(opt.brentq(_f, lo, hi, xtol=1e-10))
         except (ValueError, RuntimeError, ArithmeticError):
@@ -805,6 +840,7 @@ def _select_family(
 
 def _h_eval(u: Array, v: Array, family: str, params: dict[str, float]) -> Array:
     fn = _H_FN[family]
+    _validate_family_params(family, params)
     if family == "t":
         return fn(u, v, float(params["rho"]), float(params["nu"]))
     elif family == "gaussian":
@@ -820,6 +856,7 @@ def _h_eval(u: Array, v: Array, family: str, params: dict[str, float]) -> Array:
 
 def _hinv_eval(w: Array, v: Array, family: str, params: dict[str, float]) -> Array:
     fn = _HINV_FN[family]
+    _validate_family_params(family, params)
     if family == "t":
         return fn(w, v, float(params["rho"]), float(params["nu"]))
     elif family == "gaussian":
@@ -852,67 +889,31 @@ def vine_sample(
         raise ValueError(f"n must be >= 1, got {n}")
     rng = np.random.default_rng(seed)
     w = rng.random((n, dim))
-    uniforms = np.empty((n, dim), dtype=np.float64)
 
-    # Column-assignment map: variable index -> column in output
-    # For the standard R-vine matrix, sampling proceeds through
-    # columns of the matrix.  We use the implicit ordering implied
-    # by the edge list.
     vm_edges = vm.tree_edges
     if not vm_edges:
         # If no edges fitted, just return independent uniforms
         return w
-
-    # Determine variable ordering from tree edges.
-    # We need a DAG structure.  For C/D-vines, variable 0 is the
-    # root of the first tree.
-    # Implement the Aas et al. (2009) general sampling algorithm (Algorithm 2).
-    v_direct = np.zeros((dim, dim), dtype=np.float64)  # direct variables
-    v_indirect = np.zeros((dim, dim), dtype=np.float64)  # indirect variables
-
-    # Build the sampling arrays from tree_edges
-    for tree, edges in enumerate(vm_edges):
-        for edge_idx, (a, b, _cond) in enumerate(edges):
-            v_direct[tree, edge_idx] = float(a)
-            v_indirect[tree, edge_idx] = float(b)
-
-    uniforms[:, 0] = w[:, 0]
-
-    # For the sampling, we need to know for each edge where the
-    # h-inverse gets its conditioning variable.  This is implicit
-    # in the vine structure.
-    # A simpler approach: implement the sampling as:
-    # for i in range(1, dim):
-    #   cur = w[:, i]
-    #   for tree from (dim-2) down to 0:
-    #     ... apply h-inverse using the appropriate pair
-    # This requires knowing the pair-copula at each (tree, edge).
-    #
-    # Since we have vm.tree_edges, we can use the column-based
-    # sampling algorithm for C-vines and D-vines.
-    # For a general R-vine, we need the full matrix inversion.
-    #
-    # Let's implement C-vine and D-vine sampling explicitly first,
-    # then generalize.
 
     # Dispatch on the recorded structure (vine_fit sets it; the factories
     # tag themselves).  The diagonal heuristic remains as a fallback for
     # hand-built VineMatrix objects that predate the ``structure`` field.
     structure = getattr(vm, "structure", None) or "rvine"
     diag = np.array([vm.matrix[j, j] for j in range(dim)])
-    dvals = np.sort(diag)
 
     if structure == "rvine" and vm.rvine_spec is not None:
         from quant_fund.models.rvine import rvine_sample as _rvine_sim
 
         return _rvine_sim(n, vm.rvine_spec, rng)
 
+    # Compare the UNSORTED diagonal: C-vine diag is [d, d-1, ..., 1], D-vine
+    # is [1, 2, ..., d] — sorting destroys the signal and silently misroutes.
     if structure == "cvine" or (
-        structure == "rvine" and np.allclose(dvals, np.arange(1, dim + 1, dtype=float)[::-1])
+        structure == "rvine" and np.allclose(diag, np.arange(1, dim + 1, dtype=float)[::-1])
     ):
         out = _cvine_sample_inner(vm, n, rng)
     elif structure == "dvine" or (
-        structure == "rvine" and np.allclose(dvals, np.arange(1, dim + 1, dtype=float))
+        structure == "rvine" and np.allclose(diag, np.arange(1, dim + 1, dtype=float))
     ):
         out = _dvine_sample_inner(vm, n, rng)
     else:
@@ -1007,11 +1008,13 @@ def _rvine_sample_inner(vm: VineMatrix, n: int, w: Array, rng: np.random.Generat
     dim = vm.dim
     diag_vals = np.array([int(vm.matrix[i, i]) for i in range(dim)])
     dvals = np.arange(1, dim + 1)
-    diag_sorted = np.sort(diag_vals)
-    if np.allclose(diag_sorted, dvals[::-1]):
+    # Compare the UNSORTED diagonal: C-vine diag is [d, ..., 1], D-vine is
+    # [1, ..., d].  A sorted comparison is permutation-invariant and cannot
+    # distinguish them (it silently routed every vine to the D-vine path).
+    if np.allclose(diag_vals, dvals[::-1]):
         return _cvine_sample_inner(vm, n, rng)
 
-    if np.allclose(diag_sorted, dvals):
+    if np.allclose(diag_vals, dvals):
         return _dvine_sample_inner(vm, n, rng)
 
     # Generic R-vine sampling needs per-edge Rosenblatt transforms of the
@@ -1032,6 +1035,7 @@ def _rvine_sample_inner(vm: VineMatrix, n: int, w: Array, rng: np.random.Generat
 
 def _edge_loglik(fam: str, par: dict[str, float], u1: Array, u2: Array) -> float:
     fn = _LOGLIK_FN[fam]
+    _validate_family_params(fam, par)
     if fam == "t":
         return fn(u1, u2, float(par["rho"]), float(par["nu"]))
     if fam == "gaussian":
@@ -1070,12 +1074,13 @@ def _edge_logpdf_rows(fam: str, par: dict[str, float], u1: Array, u2: Array) -> 
     """Per-observation log pair-copula density (vectorized, no row sum)."""
     from quant_fund.models.rvine import _vec_logpdf
 
+    _validate_family_params(fam, par)
     return _vec_logpdf(fam, par, u1, u2)
 
 
 def _vine_logpdf_rows(vm: VineMatrix, u: Array) -> Array:
     """Per-observation vine log-density — the row-wise spine of vine_logpdf."""
-    m = _as_finite_matrix(u)
+    m = _as_uniform_matrix(u, min_cols=1)
     if m.shape[1] != vm.dim:
         raise ValueError(f"u has {m.shape[1]} columns but vine has dim={vm.dim}")
     if vm.ordering is not None:
@@ -1242,7 +1247,7 @@ def vine_fit(
     -------
     VineMatrix with fitted families, params, and edge structure.
     """
-    m = _as_finite_matrix(u)
+    m = _as_uniform_matrix(u)
     n_obs, d = m.shape
     if d > max_dim:
         raise ValueError(f"dimension {d} exceeds max_dim={max_dim}")
@@ -1527,22 +1532,35 @@ def gas_copula_filter(
     omega, alpha, beta : GAS(1,1) parameters.  Requires |β| < 1.
     kappa0 : initial κ value.  If None, use atanh(sample correlation).
     """
+    for p_val, p_name in ((omega, "omega"), (alpha, "alpha"), (beta, "beta")):
+        _finite_param(float(p_val), name=p_name)
+    if abs(float(beta)) >= 1.0:
+        raise ValueError(f"beta must satisfy |beta| < 1 for a stationary filter, got {beta}")
     m = _as_finite_matrix(u, min_cols=2)
     if m.shape[1] != 2:
-        m = m[:, :2]
+        raise ValueError(f"u must have exactly 2 columns, got {m.shape[1]}")
     T = m.shape[0]
     rho = np.empty(T, dtype=np.float64)
     kappa = np.empty(T, dtype=np.float64)
     scores = np.empty(T, dtype=np.float64)
 
     if kappa0 is None:
+        if float(np.std(m[:, 0])) == 0.0 or float(np.std(m[:, 1])) == 0.0:
+            raise ValueError(
+                "cannot initialize kappa: sample correlation is undefined (constant column in u)"
+            )
         corr = float(
             np.corrcoef(sstats.norm.ppf(_clip(m[:, 0])), sstats.norm.ppf(_clip(m[:, 1])))[0, 1]
         )
+        if not np.isfinite(corr):
+            raise ValueError(
+                "cannot initialize kappa: sample correlation is undefined (constant column in u)"
+            )
         corr = float(np.clip(corr, -0.98, 0.98))
         k0 = math.atanh(corr) if abs(corr) < 0.999 else math.copysign(3.0, corr)
     else:
-        k0 = float(np.clip(kappa0, -4.0, 4.0))
+        k0 = _finite_param(float(kappa0), name="kappa0")
+        k0 = float(np.clip(k0, -4.0, 4.0))
 
     k_prev = float(k0)
     for t in range(T):
@@ -1579,15 +1597,23 @@ def gas_copula_fit(
     """
     m = _as_finite_matrix(u, min_cols=2)
     if m.shape[1] != 2:
-        m = m[:, :2]
+        raise ValueError(f"u must have exactly 2 columns, got {m.shape[1]}")
     T = m.shape[0]
     if T < 30:
         raise ValueError("need at least 30 observations for GAS fit")
 
     # Initial kappa from sample correlation
+    if float(np.std(m[:, 0])) == 0.0 or float(np.std(m[:, 1])) == 0.0:
+        raise ValueError(
+            "cannot initialize kappa: sample correlation is undefined (constant column in u)"
+        )
     corr = float(
         np.corrcoef(sstats.norm.ppf(_clip(m[:, 0])), sstats.norm.ppf(_clip(m[:, 1])))[0, 1]
     )
+    if not np.isfinite(corr):
+        raise ValueError(
+            "cannot initialize kappa: sample correlation is undefined (constant column in u)"
+        )
     corr = float(np.clip(corr, -0.98, 0.98))
     kappa_init = math.atanh(corr) if abs(corr) < 0.999 else math.copysign(3.0, corr)
 

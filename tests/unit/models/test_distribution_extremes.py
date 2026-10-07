@@ -279,3 +279,64 @@ def test_tree_quantile_metadata_backend() -> None:
     meta = m.metadata()
     assert meta.family == "distribution"
     assert "lightgbm" in meta.name
+
+
+# ============================================================================
+# Honesty/determinism audit probes
+# ============================================================================
+
+
+def test_scaled_gaussian_drops_nonpositive_scale_rows() -> None:
+    """scale <= 0 (incl. -inf) is invalid — the row must be DROPPED, not
+    clamped to 1e-8 (which made z_i = y_i / 1e-8 an enormous outlier that
+    dominated mu/z_sig)."""
+    y = np.array([0.05, -0.03, 0.02, 0.07, -0.01, 0.04])
+    scale = np.array([1.0, 1.0, -np.inf, 1.0, 0.0, -2.0])  # rows 2,4,5 invalid
+    m = ScaledGaussianDistribution(LO_HI).fit(y, scale)
+    # Surviving rows: 0,1,3 → z = y/scale on those rows.
+    yy = np.array([0.05, -0.03, 0.07])
+    want_mu = float(np.mean(yy))
+    assert m.mu == pytest.approx(want_mu, abs=1e-10)
+    z = (yy - want_mu) / np.array([1.0, 1.0, 1.0])
+    assert m.z_sig == pytest.approx(float(np.std(z, ddof=1)), abs=1e-10)
+
+
+def test_scaled_gaussian_scale_nan_rows_dropped() -> None:
+    y = np.array([0.01, 0.02, 0.03, 0.04, 0.05])
+    scale = np.array([1.0, np.nan, 1.0, 1.0, 1.0])
+    m = ScaledGaussianDistribution(LO_HI).fit(y, scale)
+    yy = np.array([0.01, 0.03, 0.04, 0.05])
+    assert m.mu == pytest.approx(float(np.mean(yy)), abs=1e-10)
+
+
+def test_tree_quantile_lightgbm_single_threaded(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The LGBMRegressor must pin n_jobs=1/num_threads=1 like every sibling —
+    an unpinned booster makes 'seeded' fits nondeterministic on shared hosts."""
+    import sys
+    import types
+
+    captured: list[dict] = []
+
+    class _FakeLGBM:
+        def __init__(self, **kw: object) -> None:
+            captured.append(dict(kw))
+
+        def fit(self, x: np.ndarray, y: np.ndarray) -> _FakeLGBM:
+            return self
+
+        def predict(self, x: np.ndarray) -> np.ndarray:
+            return np.zeros(len(x))
+
+    fake = types.SimpleNamespace(LGBMRegressor=_FakeLGBM)
+    monkeypatch.setitem(sys.modules, "lightgbm", fake)
+    from quant_fund.models.distribution import TreeQuantileDistribution
+
+    rng = np.random.default_rng(32)
+    x = rng.normal(size=(40, 2))
+    y = 0.1 * x[:, 0] + rng.normal(size=40) * 0.01
+    TreeQuantileDistribution(LO_HI, backend="lightgbm", seed=32).fit(x, y)
+    assert len(captured) == len(LO_HI)
+    for kw in captured:
+        assert kw["n_jobs"] == 1
+        assert kw["num_threads"] == 1
+        assert kw["random_state"] == 32

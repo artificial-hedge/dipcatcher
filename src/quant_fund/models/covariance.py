@@ -912,7 +912,12 @@ def _adcc_kappa(qbar: Array, nbar: Array) -> float:
         raise ValueError("ADCC Qbar and Nbar must be matching square matrices")
     q, _ = repair_psd(q, tol=1e-12)
     try:
-        evals = np.linalg.eigvalsh(np.linalg.solve(q, n))
+        from scipy.linalg import eigh as _geigh
+
+        # eig(q^{-1} n) equals the generalized spectrum of n v = λ q v; the
+        # product q^{-1} n is NOT symmetric, so eigvalsh on it would read a
+        # single triangle and return the wrong kappa.
+        evals = _geigh(n, q, eigvals_only=True)
     except np.linalg.LinAlgError as exc:
         raise ValueError("ADCC kappa is non-finite") from exc
     kappa = float(np.max(evals))
@@ -1346,8 +1351,10 @@ def dcc_gaussian(
         constraints={"type": "ineq", "fun": lambda p: 0.999 - p[0] - p[1]},
         method="SLSQP",
     )
-    candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) else x0)
+    candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) and res.fun < 1e11 else x0)
     a, b = float(candidate[0]), float(candidate[1])
+    if a < 0 or b < 0 or a + b >= 1.0:
+        a, b = float(x0[0]), float(x0[1])
     q = qbar.copy()
     # In-sample Q_1..Q_t, then one extra step Q_{t+1} from z_t.
     for i in range(1, t + 1):
@@ -1451,8 +1458,10 @@ def dcc_student_t(
         constraints={"type": "ineq", "fun": lambda p: 0.999 - p[0] - p[1]},
         method="SLSQP",
     )
-    candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) else x0)
+    candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) and res.fun < 1e11 else x0)
     a, b, nu_hat = float(candidate[0]), float(candidate[1]), float(candidate[2])
+    if a < 0 or b < 0 or a + b >= 1.0:
+        a, b = float(x0[0]), float(x0[1])
     if not np.isfinite(nu_hat) or nu_hat <= 2.0:
         raise ValueError("student-t DCC nu must be finite and greater than 2")
     h = _dcc_one_step_h(z, qbar, a, b, sigma_one_step)
@@ -1569,7 +1578,7 @@ def adcc(
         constraints={"type": "ineq", "fun": lambda p: 0.999 - p[0] - p[1] - kappa * p[2]},
         method="SLSQP",
     )
-    candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) else x0)
+    candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) and res.fun < 1e11 else x0)
     a, b, g = float(candidate[0]), float(candidate[1]), float(candidate[2])
     if a < 0 or b < 0 or g < 0 or a + b + kappa * g >= 1.0 + 1e-8:
         a, b, g = float(x0[0]), float(x0[1]), float(x0[2])
@@ -1673,7 +1682,7 @@ def agdcc(
     x0 = np.concatenate([start_a, start_b, start_g])
     bounds = [(0.0, 0.8)] * n + [(1e-6, 0.995)] * n + [(0.0, 0.8)] * n
     res = minimize(nll, x0, bounds=bounds, method="SLSQP")
-    candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) else x0)
+    candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) and res.fun < 1e11 else x0)
     a, b, g = _unpack(candidate)
     intercept = _agdcc_intercept(qbar, nbar, a, b, g)
     if np.any(a < 0) or np.any(b < 0) or np.any(g < 0) or min_eigenvalue(intercept) < -1e-10:
@@ -1783,7 +1792,7 @@ def agdcc_full(
         return float(ll / t)
 
     res = minimize(nll, x0, bounds=_agdcc_full_bounds(n), method="SLSQP")
-    candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) else x0)
+    candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) and res.fun < 1e11 else x0)
     a, b, g = _agdcc_full_unpack(candidate, n)
     intercept = _agdcc_full_intercept(qbar, nbar, a, b, g)
     radius = _agdcc_full_kronecker_radius(a, b, g)

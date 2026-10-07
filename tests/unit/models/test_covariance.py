@@ -527,3 +527,86 @@ def test_dcc_finite_psd_on_constant_plus_noise() -> None:
     assert params["stage1"] == "garch"
     assert params["covariance_object"] == "one_step_ahead"
     assert float(params["horizon"]) == 1.0
+
+
+def test_adcc_kappa_uses_generalized_eigenvalues() -> None:
+    """κ must be max eig of Q⁻¹N = generalized spectrum of (N, Q).
+
+    ``eigvalsh(solve(q, n))`` on the non-symmetric product reads a single
+    triangle and returns the wrong spectrum — the PD constraint a+b+κg<1
+    then polices the wrong κ.  Adversarial check: pick (Q, N) whose product
+    is visibly non-symmetric and compare against scipy's generalized
+    symmetric eigensolver.
+    """
+    from scipy.linalg import eigh as geigh
+
+    from quant_fund.models.covariance import _adcc_kappa
+
+    q = np.array([[2.0, 0.9], [0.9, 1.0]])
+    n = np.array([[1.0, 0.4], [0.4, 0.5]])
+    product = np.linalg.solve(q, n)
+    assert not np.allclose(product, product.T)  # asymmetric → the old bug's domain
+
+    want = float(np.max(geigh(n, q, eigvals_only=True)))
+    got = _adcc_kappa(q, n)
+    assert got == pytest.approx(want, abs=1e-9)
+
+
+def test_dcc_gaussian_rejects_penalty_plateau_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """res.success + res.fun=1e12 (the nll penalty sentinel) is NOT a valid
+    optimum — the candidate must fall back to the admissible x0 rather than
+    stamp non-stationary (a, b)."""
+    from types import SimpleNamespace
+
+    import scipy.optimize as opt_mod
+
+    fake_x = np.array([0.499, 0.500])  # sums to 0.999 — violates the nll guard
+
+    def fake_minimize(fn: object, x0: object, **kw: object) -> object:
+        return SimpleNamespace(x=fake_x, fun=1e12, success=True)
+
+    monkeypatch.setattr(opt_mod, "minimize", fake_minimize)
+    rng = np.random.default_rng(11)
+    common = rng.normal(0, 0.01, 120)
+    x = np.column_stack(
+        [
+            0.6 * common + rng.normal(0, 0.008, 120) + 0.02 * np.sin(np.arange(120) / (7 + j))
+            for j in range(3)
+        ]
+    )
+    _h, params = dcc_gaussian(x)
+    a, b = float(params["a"]), float(params["b"])
+    assert a + b < 1.0, f"penalty-plateau params accepted: a+b={a + b}"
+    assert np.isfinite(a) and np.isfinite(b)
+
+
+def test_dcc_student_t_rejects_penalty_plateau_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from types import SimpleNamespace
+
+    import scipy.optimize as opt_mod
+
+    from quant_fund.models.covariance import dcc_student_t
+
+    fake_x = np.array([0.499, 0.500, 8.0])
+
+    def fake_minimize(fn: object, x0: object, **kw: object) -> object:
+        return SimpleNamespace(x=fake_x, fun=1e12, success=True)
+
+    monkeypatch.setattr(opt_mod, "minimize", fake_minimize)
+    rng = np.random.default_rng(12)
+    common = rng.standard_t(8.0, 120) * 0.01
+    x = np.column_stack(
+        [
+            0.6 * common
+            + rng.standard_t(8.0, 120) * 0.008
+            + 0.02 * np.sin(np.arange(120) / (7 + j))
+            for j in range(3)
+        ]
+    )
+    _h, params = dcc_student_t(x)
+    assert float(params["a"]) + float(params["b"]) < 1.0
+    assert float(params["nu"]) > 2.0

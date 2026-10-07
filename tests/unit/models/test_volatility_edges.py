@@ -99,3 +99,61 @@ def test_rolling_vol_short_window_prefix_nan() -> None:
     assert np.isnan(out[0]) and np.isnan(out[1])
     assert np.isfinite(out[2:]).all()
     assert out[2] == pytest.approx(float(np.std(r[0:3], ddof=1)))
+
+
+# ============================================================================
+# Honesty/determinism audit probes
+# ============================================================================
+
+
+def test_rolling_vol_degenerate_window_fails_loudly() -> None:
+    """window < 2 used to return an all-NaN array that passed silent
+    validation downstream; now it must raise."""
+    with pytest.raises(ValueError, match="window"):
+        RollingVol(window=1)
+    with pytest.raises(ValueError, match="window"):
+        RollingVol(window=0)
+    with pytest.raises(ValueError, match="window"):
+        RollingVol(window=-3)
+    # Non-integral windows would silently floor to a different window.
+    with pytest.raises(ValueError, match="window"):
+        RollingVol(window=2.5)
+
+
+def test_rolling_vol_rejects_multidimensional_input() -> None:
+    """A 2-D input was silently looped row-wise with a whole-slice np.std —
+    wrong values, no error.  Must raise instead."""
+    r = np.random.default_rng(41).normal(size=(10, 3))
+    with pytest.raises(ValueError, match="1-D"):
+        RollingVol(window=3).predict_from_returns(r)
+
+
+def test_har_drops_nonpositive_targets_in_log_mode() -> None:
+    """log(target <= 0) is undefined — the row must be DROPPED.  The old
+    clip-to-1e-12 injected log(1e-12) ≈ -27.6 pseudo-observations that
+    dragged the OLS fit."""
+    rng = np.random.default_rng(42)
+    x = rng.normal(size=(60, 5))
+    y = np.abs(rng.normal(size=60)) * 0.02 + 0.005  # strictly positive
+    clean = HARVol(use_log=True).fit(x.copy(), y.copy())
+    # Add junk rows with nonpositive targets — identical x ordering, then junk.
+    x_junk = np.vstack([x, rng.normal(size=(8, 5))])
+    y_junk = np.concatenate([y, np.array([0.0, -1e-4, -0.3, 0.0, np.nan, -9.0, 0.0, -0.01])])
+    dirty = HARVol(use_log=True).fit(x_junk, y_junk)
+    np.testing.assert_allclose(dirty.model.coef_, clean.model.coef_, atol=1e-10)
+    assert dirty.model.intercept_ == pytest.approx(clean.model.intercept_, abs=1e-10)
+
+
+def test_har_nonpositive_targets_fall_back_when_too_few() -> None:
+    """Below the 10-row minimum AFTER dropping nonpositive targets the fit
+    must remain unfitted (not silently fit on clipped rows)."""
+    rng = np.random.default_rng(43)
+    x = rng.normal(size=(15, 5))
+    y = np.abs(rng.normal(size=15)) * 0.02
+    y[10:] = 0.0  # only 10 positive targets → exactly at the boundary
+    m = HARVol(use_log=True).fit(x, y)
+    assert m.fitted is True  # 10 rows survive
+    y2 = np.abs(rng.normal(size=15)) * 0.02
+    y2[9:] = 0.0  # 9 positive → below minimum
+    m2 = HARVol(use_log=True).fit(x, y2)
+    assert m2.fitted is False

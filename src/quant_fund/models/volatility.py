@@ -109,24 +109,26 @@ def _restore_garch_snapshot(model: Any, snap: dict[str, Any]) -> None:
 
 class RollingVol(JoblibMixin):
     def __init__(self, window: int = 20) -> None:
-        self.window = window
+        # ddof=1 std is undefined below window 2; silently all-NaN output is
+        # the failure mode being guarded against.
+        if int(window) != window or int(window) < 2:
+            raise ValueError(f"window must be an integer >= 2, got {window}")
+        self.window = int(window)
 
     def fit(self, x: NDArray[np.float64], y: NDArray[np.float64], **kwargs: Any) -> RollingVol:
         return self
 
     def predict_from_returns(self, log_returns: NDArray[np.float64]) -> NDArray[np.float64]:
         r = np.asarray(log_returns, dtype=float)
+        if r.ndim != 1:
+            raise ValueError(f"log_returns must be a 1-D series, got ndim={r.ndim}")
         window = int(self.window)
         # Sliding-window std matches the per-slice ``np.std(..., ddof=1)``
         # bit for bit on a 1-d series (NumPy reduces each window the same way).
-        if r.ndim == 1 and window >= 2 and r.size >= window:
-            out = np.full_like(r, np.nan)
+        out = np.full_like(r, np.nan)
+        if r.size >= window:
             view = np.lib.stride_tricks.sliding_window_view(r, window)
             out[window - 1 :] = np.std(view, axis=1, ddof=1)
-            return out
-        out = np.full_like(r, np.nan)
-        for i in range(window, r.size + 1):
-            out[i - 1] = np.std(r[i - window : i], ddof=1)
         return out
 
     def predict(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -697,10 +699,14 @@ class HARVol(JoblibMixin):
         if features.shape[0] != target.size:
             raise ValueError("x and y must have the same number of rows")
         mask = np.isfinite(features).all(axis=1) & np.isfinite(target)
+        if self.use_log:
+            # log(target <= 0) is undefined; clipping to 1e-12 would fabricate
+            # a -27.6 pseudo-observation that contaminates the OLS fit.
+            mask &= target > 0.0
         if mask.sum() < 10:
             return self
-        response = np.log(np.clip(target, 1e-12, None)) if self.use_log else target
-        self.model.fit(features[mask], response[mask])
+        response = np.log(target[mask]) if self.use_log else target[mask]
+        self.model.fit(features[mask], response)
         self.fitted = True
         return self
 
