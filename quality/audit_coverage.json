@@ -367,6 +367,60 @@
       "evidence": [
         "tests/unit/models/test_c51_rl.py"
       ]
+    },
+    "models/delayed_aci.py": {
+      "status": "audited"
+    },
+    "models/extra_tilt_conformal.py": {
+      "status": "audited"
+    },
+    "models/favar.py": {
+      "status": "audited"
+    },
+    "models/graded_irt.py": {
+      "status": "audited"
+    },
+    "models/neural_tpp.py": {
+      "status": "audited"
+    },
+    "models/odd_residual_flows.py": {
+      "status": "audited"
+    },
+    "models/pair_vine_copula.py": {
+      "status": "audited"
+    },
+    "models/path_signatures.py": {
+      "status": "audited"
+    },
+    "models/regime_conformal_var.py": {
+      "status": "audited"
+    },
+    "models/rrc_filter.py": {
+      "status": "audited"
+    },
+    "models/svi_surface.py": {
+      "status": "audited"
+    },
+    "models/tda_persistence.py": {
+      "status": "audited"
+    },
+    "models/viterbi_decode.py": {
+      "status": "audited"
+    },
+    "models/rolling_conformal.py": {
+      "status": "audited"
+    },
+    "models/rbergomi.py": {
+      "status": "audited"
+    },
+    "models/fbm.py": {
+      "status": "audited"
+    },
+    "models/deep_regime_mixture.py": {
+      "status": "audited"
+    },
+    "models/ivs_diffusion.py": {
+      "status": "audited"
     }
   },
   "schema_version": "audit-coverage/v1",

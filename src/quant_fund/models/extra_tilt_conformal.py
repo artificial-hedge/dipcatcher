@@ -280,7 +280,7 @@ class SourceConditional:
             self._log_pi_z(xp, z)
             - 0.5 * _LOG2PI
             - log_sig
-            + log_ndtr(t)
+            - log_ndtr(t)
             - 0.5 * np.square((yy - mu) * np.exp(-log_sig)),
             dtype=float,
         )
@@ -412,7 +412,7 @@ def fit_source_model(x_train: Array, y_train: Array, *, c_gate: float = 100.0) -
         options={"maxiter": 500, "ftol": 1e-12, "gtol": 1e-8},
     )
     theta = np.asarray(res.x, dtype=float)
-    if not np.all(np.isfinite(theta)) or not np.isfinite(float(res.fun)):
+    if not np.all(np.isfinite(theta)) or not np.isfinite(float(res.fun)) or float(res.fun) >= 1e11:
         raise ValueError("source truncated-normal MLE failed to reach a finite optimum")
     return SourceConditional(
         gate=np.asarray(gate, dtype=float),
@@ -823,7 +823,7 @@ def extra_prediction_intervals(
         q_src = q + (b[0] * u_t + b[1] * z_arr - log_moment_t) if tilt_score else q
         mu = source_model.mean_z(x_t, z_arr)
         log_pi_z = np.where(z > 0.0, -np.logaddexp(0.0, -gate_t), -np.logaddexp(0.0, gate_t))
-        c_z = -log_pi_z + 0.5 * _LOG2PI + log_sig_t - log_ndtr(z * mu / sig_t)
+        c_z = -log_pi_z + 0.5 * _LOG2PI + log_sig_t + log_ndtr(z * mu / sig_t)
         full = np.isinf(q_src)
         valid = (~full) & (q_src >= c_z)
         radius = sig_t * np.sqrt(2.0 * np.maximum(np.where(valid, q_src - c_z, 0.0), 0.0))

@@ -65,7 +65,7 @@ def _cell_params(kappa: int, alpha: float, dt: float) -> tuple[float, float]:
     """Variance of the frozen cell field Z_j and its covariance with the
     cell increment dW1_j.
 
-    Z_j = ∫_{cell j} K(t_{j+kappa} - s) dW_s / sqrt(dt),  K(r) = r^alpha:
+    Z_j = ∫_{cell j} K(t_{j+kappa+1} - s) dW_s / sqrt(dt),  K(r) = r^alpha:
       Var(Z_j)  = dt^{2a} * ((kappa+1)^{2a+1} - kappa^{2a+1}) / (2a+1)
       Cov(dW1_j/√dt, Z_j) = dt^{a} * ((kappa+1)^{a+1} - kappa^{a+1}) / (a+1)
     """
@@ -207,9 +207,9 @@ def rough_vol_bench(
     """Measure the rough-vol machinery's defining signatures.
 
     Claims (all measured, never asserted):
-      * volterra_variance: Var(W^H_t)·2H/t^{2H} inside [0.7, 1.3] mid-grid
+      * volterra_variance: Var(W^H_t)·2H/t^{2H} inside (0.6, 1.5) mid-grid
       * gbm_limit_flat: |ATM skew| at H=0.45 well below the H=0.10 level
-      * skew_power_law: fitted exponent of |skew(T)| in [-0.65, -0.25] for
+      * skew_power_law: fitted exponent of |skew(T)| in (-0.55, -0.30) for
         H=0.10 (theory: H-1/2 = -0.4)
       * martingale: E[S_T] within 1% of S0
       * smile_smirking: negative-ρ smile is negatively sloped

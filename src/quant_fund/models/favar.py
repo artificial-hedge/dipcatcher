@@ -149,6 +149,8 @@ def favar_forecast(
     z_hist = np.hstack([np.asarray(y_hist, dtype=float), np.asarray(f_hist, dtype=float)])
     if z_hist.ndim != 2 or z_hist.shape[0] < p or z_hist.shape[1] != n:
         raise ValueError("history must be (t >= p, m + r) matching the fit")
+    if not np.isfinite(z_hist).all():
+        raise ValueError("history contains non-finite values")
     buf = z_hist[-p:].copy()
     out = np.empty((steps, m))
     for i in range(steps):
