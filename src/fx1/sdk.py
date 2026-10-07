@@ -547,7 +547,15 @@ class Fx1Harness:
             256,
             journal=JobJournal(state_path / "ft_jobs.jsonl") if state_path is not None else None,
         )
-        self._ft_dir = Path(ft_dir or tempfile.gettempdir()) / "fx1_ft_sdk"
+        # ft job work dirs — and the checkpoints they mint — default under
+        # state_dir so a completed job's ft: model keeps resolving to real
+        # weights after a process restart.
+        if ft_dir is not None:
+            self._ft_dir = Path(ft_dir) / "fx1_ft_sdk"
+        elif state_path is not None:
+            self._ft_dir = state_path / "ft"
+        else:
+            self._ft_dir = Path(tempfile.gettempdir()) / "fx1_ft_sdk"
         self._ft_runner = ft_runner or default_ft_runner(self._resolve_backend)
         # The /v1/uploads twin — chunked assembly into process-local file
         # records; journaled under state_dir like every other store.
@@ -1603,6 +1611,34 @@ class Fx1Harness:
             if entry.cancel.is_set():
                 job.status = "cancelled"
             else:
+                # The wire worker registers runner artifacts back into
+                # the files store so GET /v1/files/{id}/content downloads
+                # them; the in-process twin lands them in the same
+                # {job.id}-{name} shape under purpose fine-tune-result.
+                for name, path in outcome.artifacts.items():
+                    try:
+                        content = Path(path).read_bytes()
+                    except OSError:
+                        continue
+                    file_id = f"file-{uuid.uuid4().hex}"
+                    fobj = {
+                        "id": file_id,
+                        "object": "file",
+                        "purpose": "fine-tune-result",
+                        "filename": f"{job.id}-{Path(path).name}",
+                        "bytes": len(content),
+                        "created_at": int(time.time()),
+                        "status": "processed",
+                    }
+                    with self._files_lock:
+                        self._files[file_id] = {**fobj, "_content": content}
+                    job.result_files.append(file_id)
+                    self._ft_store.add_event(
+                        job.id,
+                        "info",
+                        f"result artifact registered: {name}",
+                        {"file_id": file_id, "path": str(path)},
+                    )
                 job.fine_tuned_model = outcome.fine_tuned_model
                 job.trained_tokens = outcome.trained_tokens
                 job.status = "succeeded"

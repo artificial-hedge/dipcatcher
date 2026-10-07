@@ -66,6 +66,12 @@ def test_goldenpath_end_to_end(tmp_path: Path) -> None:
     assert "weights_direct_ran" not in claim["gaps"]
     assert results["local_fx1_link_ran"]["ok"] is True
 
+    # ft_lifecycle is a measured leg too: a real trained checkpoint minted,
+    # listed, and served as the ft: model — never a recorded gap.
+    assert results["ft_lifecycle_ran"]["ran"] is True
+    assert results["ft_lifecycle_ran"]["ok"] is True
+    assert "ft_lifecycle_ran" not in claim["gaps"]
+
     # the non-negotiable legs all ran for real
     for must in (
         "serve_subprocess_boots",
@@ -77,6 +83,7 @@ def test_goldenpath_end_to_end(tmp_path: Path) -> None:
         "webhook_signed_delivery",
         "finetune_submitted",
         "finetune_terminal",
+        "ft_lifecycle_ran",
         "sigkill_recovery",
         "wire_receipts_verify",
         "goldenpath_receipt_verifies",
