@@ -107,8 +107,15 @@ def proximal_ate(
     k_w = ww.shape[1]
     ca = float(beta[1])
     caw = beta[k_exo + k_w : k_exo + 2 * k_w]
-    ate = float(ca + caw @ ww.mean(axis=0))
-    se_ate = float(np.sqrt(max(s2 * xtx_inv[1, 1], 0.0)))
+    wbar = ww.mean(axis=0)
+    ate = float(ca + caw @ wbar)
+    # ate = ca + caw'wbar — its SE needs the delta method over the full
+    # coefficient block (gradient g' Sigma g), not just Var(ca): the old
+    # form ignored Var(caw) and the covariance with ca.
+    g = np.zeros(reg2.shape[1])
+    g[1] = 1.0
+    g[k_exo + k_w : k_exo + 2 * k_w] = wbar
+    se_ate = float(np.sqrt(max(s2 * float(g @ xtx_inv @ g), 0.0)))
 
     # Naive coefficient for the honesty comparison.
     naive = float(_ols(yy, np.column_stack([one, tt, xx]))[1])
