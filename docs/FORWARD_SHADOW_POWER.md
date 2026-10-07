@@ -40,3 +40,21 @@ Collect at least the predeclared `N` **eligible paired sessions**, measured from
 For each decision persist the externally timestamped inputs and decision cutoff, intended quantities, simulated orders and fills (including partials), rejects and reasons, positions, cash, costs, NAV and net-return accounting, kill-switch state, software/config/data hashes, broker-state cursor, and immutable receipt chain. Reconcile the cursor, prior fills, cash and positions after every restart before advancing. The same ledger must produce both configured-impact and doubled-impact sensitivity views. Normal health checks may run during collection; they do not expose a primary significance result or authorize strategy changes.
 
 At the sole predeclared analysis, report the entire paired differential stream, mean, a dependence-robust confidence interval and p-value (10-session block length plus sensitivity at 5/20/30), both impact scenarios, all failed/ineligible dates, costs, and any protocol deviations. A success claim requires a positive primary mean and one-sided adjusted p-value below 0.05, positive differential under doubled impact, completed reconciliations and terminal accounting, and intact receipts. A failure or insufficient power is reported as such. Even a passing shadow result is simulated research evidence; it does not satisfy the separate licensed-data, broker reconciliation, venue measurement, independent review, and explicit authorization gates for live trading.
+
+## Frozen forward pre-registration (2026-10-07) and named window
+
+This power plan is now bound to a **hash-sealed forward pre-registration** for
+the named window **`forward_2026H2` (start 2026-07-01)** — declared in
+[REALITY_PREREGISTRATION.md](REALITY_PREREGISTRATION.md) and sealed at
+`receipts/forward_record_preregistration_v1.json` (+ `.seal.json` sidecar,
+tamper-detected by `quant_fund.data.prereg_seal` / `tests/unit/data/test_prereg_seal.py`).
+The window is **NOT YET COLLECTED** and must be **externally timestamped and
+frozen before it runs**. The **2025 holdout is SPENT** (the vendor pool already
+has results for it and discloses survivorship bias) and cannot serve as new
+forward evidence. The admission rule is the frozen `validation/agent_referee.py`
+betting referee (anytime-valid at every stopping time); the primary test,
+material effect (+5 bps/day) and required 1,400 eligible paired sessions are
+unchanged from the table above. Even a passing result is simulated/shadow
+research evidence and does not satisfy the separate licensed-data, broker
+reconciliation, venue measurement, independent review, and explicit
+authorization gates for live trading.

@@ -457,3 +457,46 @@ Takeaways (research-only):
 MLFLOW_DISABLE_AGENT_HINT=1 .venv/bin/python -c "..."  # clear_panel_cache + clear_forecast_caches / clear_wrappee_cache
 uv run pytest -q -m 'not network'
 ```
+
+## Wave T8 — causal-forecast conformal/Student-t latency rebenchmark (task 8)
+
+Fresh WALL-CLOCK latency rebenchmark of the causal-forecast conformal /
+Student-t path on a seeded SYNTHETIC workload (`scripts/bench_causal_latency.py`,
+`--reps 200 --n 5000`, seed 20261007). Honesty: correctness/performance
+measurement only, `live_pnl_claim=false`; no Sharpe/P&L/NAV computed. This is
+the task-8 deliverable and it **confirms the suspicion: the Student-t fit is the
+dominant cost**.
+
+| Stage | n per call | mean ms | median ms | max ms |
+|---|---:|---:|---:|---:|
+| `fit_student_t` (Student-t fit) | 5000 | 110.42 | 108.37 | 163.30 |
+| `crps_student_t` (`student_t.cdf`/`pdf`) | 5000 | 3.05 | 2.84 | 4.41 |
+| `conformal_quantile` (split conformal) | 5000 | 0.043 | 0.040 | 0.166 |
+| conformal + Student-t interval (composed) | 5000 | 114.24 | 109.56 | 219.08 |
+
+Reproduce exactly:
+
+```bash
+uv run python scripts/bench_causal_latency.py --reps 200 --n 5000
+```
+
+Findings (research-only):
+
+- `fit_student_t` ≈ **110 ms/call** is **~97%** of the composed interval cost
+  (114 ms). `crps_student_t` ≈ 3 ms and `conformal_quantile` ≈ 0.04 ms are
+  negligible. The suspected dominant cost (conformal Student-t MLE) is confirmed.
+- `fit_student_t` lives in `src/quant_fund/metrics/risk_parametric.py` and the
+  Student-t conformal fit is reached through `pipeline.forecast.conformal_sets_asof`
+  (`forecast._WRAPPEE_CACHE` already caches it — PERF.md item 5). **A latency
+  FIX requires editing `src/quant_fund/metrics/**`, which this lane does not
+  own.** Per the scope contract the change is **REPORTed to the Lead** (metrics
+  owner = `vol-scope`) rather than edited here.
+
+**Blocked note — end-to-end causal path + the MLE fix.** The table above
+measures the conformal/Student-t building blocks directly. Remeasuring the full
+`pipeline.forecast.build_causal_weight_panel` end-to-end path and shipping the
+`fit_student_t` optimization are **blocked on the metrics owner**. Exact command
+to run the building-block rebenchmark is given above; the end-to-end causal
+rebench is the existing Wave-N harness (`data/metadata/perf_bench.json`), run
+by the metrics/pipeline owner, not by this lane.
+
