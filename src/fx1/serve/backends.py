@@ -1630,43 +1630,60 @@ class LocalFx1Backend(_UsageTracker):
         if self._engine_up():
             self._verify_served_weights()
             return
-        with self._engine_lock:
-            if self._proc is not None:
-                return  # another thread spawned it while we waited
+        proc: subprocess.Popen[bytes] | None = None
+        try:
+            with self._engine_lock:
+                if self._proc is not None:
+                    return  # another thread spawned it while we waited
+                if self._engine_up():
+                    self._verify_served_weights()
+                    return
+                proc = self._spawn_engine()
+                self._wait_for_engine(proc)
+                # Publish only a ready child. Until then this call owns
+                # cleanup, including interruptions and weight refusals.
+                self._proc = proc
+        except BaseException as exc:
+            # close() reacquires the engine lock and could take ownership of a
+            # replacement child. Clean up only our unpublished child, outside
+            # the lock, preserving the startup failure if cleanup also fails.
+            try:
+                self._close_process(proc)
+            except Exception as cleanup_exc:
+                exc.add_note(f"local fx-1 engine cleanup also failed: {cleanup_exc!r}")
+            raise
+
+    def _spawn_engine(self) -> subprocess.Popen[bytes]:
+        """Start the declared command; the caller owns the returned child."""
+        argv = shlex.split(
+            string.Template(self._serve_cmd).substitute(
+                checkpoint_dir=str(self._root), python=shlex.quote(sys.executable)
+            )
+        )
+        env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
+        try:
+            return subprocess.Popen(  # noqa: S603 — argv list, no shell  # nosec B603
+                argv, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+        except OSError as exc:
+            raise RuntimeError(
+                f"failed to spawn local fx-1 engine {self._serve_cmd!r}: {exc}"
+            ) from exc
+
+    def _wait_for_engine(self, proc: subprocess.Popen[bytes]) -> None:
+        """Verify startup, retaining the child's exit status before cleanup."""
+        deadline = time.monotonic() + self._start_timeout_s
+        while time.monotonic() < deadline:
+            returncode = proc.poll()
+            if returncode is not None:
+                raise RuntimeError(
+                    "local fx-1 engine exited during startup "
+                    f"(rc={returncode}): {self._serve_cmd!r}"
+                )
             if self._engine_up():
                 self._verify_served_weights()
                 return
-            argv = shlex.split(
-                string.Template(self._serve_cmd).substitute(
-                    checkpoint_dir=str(self._root), python=shlex.quote(sys.executable)
-                )
-            )
-            env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
-            try:
-                self._proc = subprocess.Popen(  # noqa: S603 — argv list, no shell  # nosec B603
-                    argv, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                )
-            except OSError as exc:
-                raise RuntimeError(
-                    f"failed to spawn local fx-1 engine {self._serve_cmd!r}: {exc}"
-                ) from exc
-            deadline = time.monotonic() + self._start_timeout_s
-            while time.monotonic() < deadline:
-                if self._proc.poll() is not None:
-                    self.close()
-                    raise RuntimeError(
-                        "local fx-1 engine exited during startup "
-                        f"(rc={self._proc.returncode}): {self._serve_cmd!r}"
-                    )
-                if self._engine_up():
-                    try:
-                        self._verify_served_weights()
-                    except Exception:
-                        self.close()  # a spawned engine on wrong weights must not outlive the refusal
-                        raise
-                    return
-                time.sleep(0.1)
-        self.close()
+            time.sleep(0.1)
         raise RuntimeError(
             "local fx-1 engine did not become ready within "
             f"{self._start_timeout_s:g}s: {self._serve_cmd!r}"
@@ -1784,6 +1801,11 @@ class LocalFx1Backend(_UsageTracker):
         """Terminate a spawned engine; a no-op when only attaching."""
         with self._engine_lock:
             proc, self._proc = self._proc, None
+        self._close_process(proc)
+
+    @staticmethod
+    def _close_process(proc: subprocess.Popen[bytes] | None) -> None:
+        """Stop and reap one owned child without acquiring the engine lock."""
         if proc is None or proc.poll() is not None:
             return
         proc.terminate()
