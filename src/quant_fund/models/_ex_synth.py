@@ -60,6 +60,12 @@ def q_learn(
 ) -> tuple[FloatArray, float, float]:
     """Tabular Q-learning with intrinsic bonus. bonus_fn(s, s', step, ep,
     rng) -> float. Returns (Q, coverage, success_rate)."""
+    if episodes < 1 or steps < 1:
+        raise ValueError(f"episodes and steps must be >= 1, got episodes={episodes}, steps={steps}")
+    if not 0.0 <= eps <= 1.0 or not 0.0 <= gamma <= 1.0 or not lr > 0.0:
+        raise ValueError(
+            f"require 0<=eps<=1, 0<=gamma<=1, lr>0; got eps={eps}, gamma={gamma}, lr={lr}"
+        )
     rng = np.random.default_rng(seed)
     Q = np.zeros((SIDE * SIDE, 4))
     visited: set[int] = set()

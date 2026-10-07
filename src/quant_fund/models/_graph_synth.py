@@ -24,6 +24,10 @@ def synth_sbm_graph(
     seed: int = 0,
 ) -> tuple[FloatArray, FloatArray, NDArray[np.int64]]:
     """Returns (adj (n,n), x (n,d), y (n,))."""
+    if n < 1 or not 0.0 <= p_in <= 1.0 or not 0.0 <= p_out <= 1.0 or feat_noise < 0.0:
+        raise ValueError(
+            f"require n>=1, 0<=p_in<=1, 0<=p_out<=1, feat_noise>=0; got n={n}, p_in={p_in}, p_out={p_out}, feat_noise={feat_noise}"
+        )
     rng = np.random.default_rng(seed)
     y = rng.integers(0, k, n).astype(np.int64)
     adj = np.zeros((n, n))
@@ -39,6 +43,8 @@ def synth_sbm_graph(
 
 def normalize_adj(adj: FloatArray, self_loops: bool = True) -> FloatArray:
     """Symmetric-normalized adjacency D^{-1/2} (A+I) D^{-1/2}."""
+    if (np.asarray(adj) < 0).any():
+        raise ValueError("adjacency must be non-negative for degree normalization")
     a = adj + (np.eye(adj.shape[0]) if self_loops else 0.0)
     deg = a.sum(1)
     dinv = np.power(np.maximum(deg, 1e-9), -0.5)
@@ -48,6 +54,8 @@ def normalize_adj(adj: FloatArray, self_loops: bool = True) -> FloatArray:
 def split_masks(
     n: int, frac_train: float, seed: int
 ) -> tuple[NDArray[np.bool_], NDArray[np.bool_]]:
+    if n < 1 or not 0.0 <= frac_train <= 1.0:
+        raise ValueError(f"require n>=1 and 0<=frac_train<=1, got n={n}, frac_train={frac_train}")
     rng = np.random.default_rng(seed + 777)
     perm = rng.permutation(n)
     n_tr = int(n * frac_train)

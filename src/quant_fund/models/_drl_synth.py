@@ -43,12 +43,21 @@ def sample_return(states: FloatArray, actions: FloatArray, rng: np.random.Genera
 
 def mc_return_dist(state: int, action: int, rng: np.random.Generator, n: int = 4000) -> FloatArray:
     """Monte-Carlo ground-truth return distribution."""
+    if action not in (0, 1):
+        raise ValueError(f"action must be 0 or 1, got {action!r}")
+    if n < 1:
+        raise ValueError(f"n must be >= 1, got {n}")
     s = np.full(n, float(state))
     a = np.full(n, float(action))
     return sample_return(s, a, rng)
 
 
 def cvar(x: FloatArray, alpha: float = 0.1) -> float:
+    if not 0.0 < alpha <= 1.0:
+        raise ValueError(f"alpha must be in (0, 1], got {alpha}")
+    x = np.asarray(x)
+    if x.size == 0:
+        raise ValueError("cvar of an empty sample is undefined")
     qs = np.quantile(x, alpha)
     tail = x[x <= qs]
     return float(tail.mean()) if tail.size else float(qs)

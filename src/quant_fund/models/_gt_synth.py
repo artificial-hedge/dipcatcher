@@ -13,6 +13,8 @@ FloatArray = NDArray[np.float64]
 
 
 def ring_adj(n: int = 8) -> FloatArray:
+    if n < 3:
+        raise ValueError(f"a ring needs n >= 3 nodes, got {n}")
     A = np.zeros((n, n))
     for i in range(n):
         A[i, (i - 1) % n] = A[i, (i + 1) % n] = 1.0
@@ -21,6 +23,8 @@ def ring_adj(n: int = 8) -> FloatArray:
 
 
 def gt_data(seed: int, T: int = 300, n: int = 8) -> FloatArray:
+    if T < 4 or n < 1:
+        raise ValueError(f"need T>=4 steps and n>=1 nodes, got T={T}, n={n}")
     rng = np.random.default_rng(seed)
     t = np.arange(T)
     ph = np.linspace(0, 2 * np.pi, n, endpoint=False)
@@ -37,6 +41,8 @@ def gt_data(seed: int, T: int = 300, n: int = 8) -> FloatArray:
 def ar2_baseline(X: FloatArray) -> float:
     """Per-node AR(2) one-step MSE."""
     T, n = X.shape
+    if T < 4:
+        raise ValueError(f"AR(2) baseline needs T >= 4, got {T}")
     errs = []
     for k in range(n):
         y = X[3:, k]

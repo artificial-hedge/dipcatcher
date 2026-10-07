@@ -26,6 +26,8 @@ def synth_hierarchy(
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
     """Leaves of a binary tree of given depth; returns leaf vectors,
     leaf indices, and the true tree distance matrix."""
+    if depth < 1:
+        raise ValueError(f"depth must be >= 1, got {depth}")
     n_leaves = 2**depth
     vecs = np.zeros((n_leaves, 2))
     for i in range(n_leaves):
@@ -48,9 +50,10 @@ def synth_partwhole(n: int, rng: np.random.Generator) -> tuple[FloatArray, NDArr
     n_parts = 4
     d_part = 4
     x = rng.standard_normal((n, n_parts, d_part))
+    x += rng.normal(0, 0.1, x.shape)
+    # label from the OBSERVED (noisy) parts so the class stays computable from x
     same = (x[:, 0] * x[:, 1]).sum(-1) > 0
     y = same.astype(np.int64)
-    x += rng.normal(0, 0.1, x.shape)
     return x, y
 
 
@@ -73,6 +76,8 @@ def synth_rot_cloud(
 ) -> tuple[FloatArray, NDArray[np.int64]]:
     """Point clouds; label = mean pairwise distance above threshold —
     invariant to global rotation. Test set can be freely rotated."""
+    if n < 1 or m_pts < 2:
+        raise ValueError(f"need n>=1 clouds of m_pts>=2 points, got n={n}, m_pts={m_pts}")
     x = rng.normal(0, 1.0, (n, m_pts, 3))
     spread = rng.uniform(0.4, 1.6, (n, 1, 1))
     x = x * spread

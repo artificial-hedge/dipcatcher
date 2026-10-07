@@ -429,6 +429,30 @@
   "models/_dfx_synth.py": {
    "status": "audited"
   },
+  "models/_drl_synth.py": {
+   "status": "audited"
+  },
+  "models/_eb_synth.py": {
+   "status": "audited"
+  },
+  "models/_eig_synth.py": {
+   "status": "audited"
+  },
+  "models/_ex_synth.py": {
+   "status": "audited"
+  },
+  "models/_geo_synth.py": {
+   "status": "audited"
+  },
+  "models/_gex_synth.py": {
+   "status": "audited"
+  },
+  "models/_graph_synth.py": {
+   "status": "audited"
+  },
+  "models/_gt_synth.py": {
+   "status": "audited"
+  },
   "models/_lm_synth.py": {
    "status": "audited"
   },

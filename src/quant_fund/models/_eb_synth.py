@@ -21,6 +21,10 @@ def moon_data(seed: int = 0, n: int = 1500) -> tuple[FloatArray, FloatArray]:
 
 def mmd(X: FloatArray, Y: FloatArray, gam: float = 1.0) -> float:
     """Biased Gaussian-kernel MMD estimate."""
+    if not gam > 0.0 or not np.isfinite(gam):
+        raise ValueError(f"kernel bandwidth gam must be positive and finite, got {gam}")
+    if np.asarray(X).size == 0 or np.asarray(Y).size == 0:
+        raise ValueError("MMD requires non-empty samples")
 
     def k(A: FloatArray, B: FloatArray) -> float:
         d2 = ((A[:, None] - B[None]) ** 2).sum(-1)
@@ -47,6 +51,11 @@ def make_energy(torch):
 
 
 def langevin(torch, net, n: int, steps: int = 80, step: float = 0.1, seed: int | None = 0, x0=None):
+    if n < 1 or steps < 1 or not step > 0.0 or not np.isfinite(step):
+        raise ValueError(
+            f"langevin requires n>=1, steps>=1 and finite step>0; got n={n}, steps={steps}, step={step}"
+        )
+
     def _run():
         x = torch.randn(n, 2) * 2 if x0 is None else x0.clone()
         for _ in range(steps):
