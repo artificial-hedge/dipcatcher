@@ -39,6 +39,8 @@ def anom_series(
 def windows(x: NDArray[np.float64], w: int = 16) -> tuple[NDArray[np.float64], NDArray[np.int64]]:
     """Return (n-w+1, w, d) windows + index of each window's center."""
     n, d = x.shape
+    if not 1 <= w <= n:
+        raise ValueError(f"window w={w} must satisfy 1 <= w <= n={n}")
     out = np.stack([x[t : t + w] for t in range(n - w + 1)])
     ctr = np.arange(n - w + 1) + w // 2
     return out.astype(np.float64), ctr
