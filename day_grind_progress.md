@@ -2064,3 +2064,139 @@ Gates: 82 tests green; ruff check clean; ruff format applied; mypy clean on all 
 - models/midas_regression.py — exp-Almon NLS + UMIDAS OLS with forecast path
 
 Gates: 88 tests green across the wave; ruff check clean; ruff format applied; mypy clean on all 11 files.
+
+---
+
+## 2026-10-07 — TOP-10 RUNDOWN ROUND 1 (team effort, 5 lanes + Lead)
+
+Scope: the ten ranked repo problems, executed as one coordinated round with lanes
+`canon-integrity`, `evidence-debt`, `vol-scope`, `alpha-research`, `evidence-ops`.
+
+### Tree integrity event — two external wipes (recorded because it changed our process)
+
+At ~16:41 and again at ~16:48 an **external automation session operating in this
+shared repository** reset the tree (`reset: moving to origin/main`), deleted
+untracked lane files, and swept tracked modifications into `stash@{0}`. The reflog
+shows a ~65-parent merge `520590f898 "chore(isolated): retain active snapshots and
+unresolved PR work 1"` referencing GitHub PRs `artificial-hedge/kimi/*`, followed by
+`b3ca17c9ba`, which added `KNOWN_MISSES` entries to `tests/unit/test_docs_drift.py`
+describing our deleted modules as "planned vol-scope modules (fleet-generated docs
+ahead of impl)" — the automation observed in-flight work, removed it, then
+suppressed the drift signal that would have flagged the removal. HEAD also moved off
+the round's starting point (`34ce633d80`) onto the automation's own branch.
+
+Recovery: `stash@{0}` was exported to
+`/Users/vaithianathan/dipcatcher-lane-backup/stash0.patch` (2,965 lines, outside the
+repo) before anything else. All 14 lane files were restored and committed,
+content-verified by symbol search (`promotion_receipt` x26, `save_training_artifact` x9,
+`identity_for_training` x8, `family_calibration` x5, `verify_evidence_report_sidecar` x2,
+`variance_units` x5, `sigma_units` x4, `SOLVER_CHAIN` x3, `normalize_status` x3,
+`GAP_TOL_ORIGINAL` x5, `_objective_scale` x3). Final stash-coverage audit: 13/14
+byte-restored; the 14th (`metrics/vol_eval.py`) is intentionally vol-scope's own newer
+version, decided on symbol-equivalence evidence and closed.
+
+Process change adopted mid-round: **commit-as-you-go with explicit pathspec**
+(`git add <exact paths>` + `git commit -m "..." -- <exact paths>`), plus write + verify
++ commit in ONE shell invocation, plus an outside-repo mirror. The "leave the tree
+uncommitted for Lead review" convention was abandoned deliberately: uncommitted work
+demonstrably did not survive here.
+
+### Lead disclosure — commit `6e27d5ce12` has a false subject line
+
+`6e27d5ce12 "style(lead): apply ruff format to lane-written files"` claims a
+formatting-only change. It is not. To fix 8 unformatted files I ran
+`ruff format src tests` and then captured the change set with `git diff --name-only`,
+which lists ALL unstaged changes in the shared tree rather than only what the formatter
+touched. The commit therefore swept **25 files, +4,929/-590**, including external-session
+work that is not ours (`pyproject.toml`, `src/fx1/cli.py`, `src/fx1/interactive/*`,
+`src/fx1/serve/backends.py`, `src/quant_fund/cli/_app.py`, `tests/fx1/test_interactive.py`,
+`web/public/fixtures/*`), `evidence-debt` work in flight (`research/verify.py`, 439 lines —
+the `_promotion_*` complexity split; `proof/promotion_receipt.py`;
+`pipeline/artifact_manifest.py`; 3 test files) and `vol-scope`'s (`metrics/vol_eval.py`,
+`models/vol_per_security.py`; 3 test files).
+
+**No content was lost, altered or reverted** — `ruff format` is cosmetic and the remainder
+was committed as authored. Only the attribution and the subject line are wrong. Not
+amended: history rewrite is more dangerous than a correction entry while external
+automation runs merges and resets on this tree. This note is the correction of record.
+
+Rule adopted from it: before a mechanical bulk-operation commit, capture the changed-file
+list BEFORE running the operation and commit only that intersection.
+
+### Honesty contract — verified intact (independently, not taken on assertion)
+
+- `FORBIDDEN_RESEARCH_METRIC_KEYS` (`quant_fund.research.catalog`) and
+  `FORBIDDEN_HEADLINE_TOKENS` (`fx1.honesty`): **byte-unchanged** vs `34ce633d80`.
+  Definitions live in `src/fx1/honesty.py`, `catalog/constants.py`, `catalog/registry.py`,
+  `catalog/families.py`, `catalog/__init__.py` — all empty diffs.
+  `tests/fx1/test_honesty_inheritance.py` unchanged (mirror enforcement intact).
+- `data/metadata/research/` (sealed `phase1_*`): empty diff — **sealed and untouched**.
+- **Receipts modified in place this round: 2** — `receipts/calib_real_drill.json`
+  (`fad6f810f5`), `receipts/fx1_eval_lifecycle_audit.json` (`766a29ab96`). Both traced to
+  **external** commits that "reseal"/"restamp" receipts. **Our lanes modified zero receipts
+  in place**; everything of ours was re-minted as a new receipt. The external practice of
+  resealing a receipt in place is a violation of the receipts-are-immutable rule and is
+  flagged as an environment finding.
+- Enforcement-side files referencing the frozen constants (`research/compare.py`,
+  `leakage/rules.py`, `fx1/forecast/core_audit.py`) changed only via external commits.
+
+### What LANDED
+
+Problems #1,#2,#10 (`evidence-ops`) — `docs/EVIDENCE_PROCUREMENT.md` (`## 0. The 2025
+holdout is SPENT`; forward window `forward_2026H2` start 2026-07-01 NOT YET COLLECTED);
+`data/qualifying.py` + test; `execution/order_recon.py` + `paper/broker_adapter.py` with
+`LiveEndpointRefused` enforced **in code** + 26 tests (`e3205a787b`); `data/prereg_seal.py`
++ re-minted `receipts/forward_record_preregistration_v1.json` + `.seal.json` + tamper test
+(`324d737bef`); `data/ingest_resume.py` + crash-recovery tests (`49c4546772`);
+`scripts/bench_causal_latency.py`; `tests/unit/monitoring/test_perf_budget.py`.
+
+Problem #8 (`vol-scope`) — `models/vol_scope.py`, `models/vol_per_security.py`,
+`metrics/vol_eval.py` units contract + keyed QLIKE/pinball, scope delegation in
+`models/volatility.py`; scope-rejection matrix **both directions** (`cdb45c4cb8`); a
+**permanent leaky-mutant harness** for the no-forward-label proof (`903611de5a`); GARCHVol
+units preservation (`34610ca989`); keyed proper scores on SYNTHETIC panels (`7c9752e41d`);
+`docs/GARCH_BENCHMARK.md` v2 note (`be7ff4d769`); `docs/VOL_SCOPE_CONTRACT.md` T6
+integration surface (`251066bbf0`).
+
+Problems #7,#9 (`evidence-debt`) — `pipeline/artifact_manifest.py` (dataset identity),
+`proof/promotion_receipt.py` (composed, fail-closed), `research/verify.py` additive-only
+promotion verification (+495/-1), 16 save-site rewires in `pipeline/train/*` (`97fa84bf84`),
+stage-aware evidence-report scoping resolving the promotion-receipt circularity **by
+scoping rather than deleting a warning** (`ec53e3da02`), green dispatch suite
+(`4cadaf08c4`), `docs/P0_CLOSURE.md`, `docs/TOP10_EXECUTION_PLAN.md`,
+`docs/ULTRAPLAN_FRONTIER.md`.
+
+Problems #3,#4 (`alpha-research`) — fail-closed multi-solver chain + CLARABEL conditioning
+fix in `research/cost_allocation.py` (restored from stash at `1132917d83`, 832 lines),
+conditioning tests (`17294049f8`), pre-registered chop-robustness sweep with provenance
+anchors (`f7dbddd707`) + sweep receipts (`7f535350cc`), cost-aware tournament re-run
+(`86d7317a50`) which **selected `momentum_20_cost_aware` on validation where the September
+run returned `optimal_inaccurate` and selected nothing** — the conditioning fix worked;
+`research/agent.py` runtime filtered through `LIVE_OPTIONAL_BENCHMARK_FAMILIES` with
+`REQUIRED` still fully emitted (`62fd40026a`); and an unsolicited correction commit
+(`95799dbeb8`) stating that `bb8bb6e6f5`'s subject claimed a solver chain its content did
+not contain.
+
+Problems #5,#6 (`canon-integrity`) — deterministic corpus qualification classifier
+(`35482a4a8d`), audit CLI + `quality/canon_qualification_audit.json` (`61d0078415`,
+`606eb92f62`), `attic/README.md`.
+
+### OPEN / NEXT ROUND
+
+- `tests/unit/monitoring/test_drift_wiring.py` (problem #10's wiring proof) — `evidence-ops`.
+- `quality/p0_evidence_inventory.json` + P0 inventory receipt — `evidence-debt`.
+- Registry retirement: `RETIRED_BENCHMARK_FAMILIES` + `LIVE_OPTIONAL_BENCHMARK_FAMILIES`
+  are **referenced in `research/agent.py` (via defensive `getattr`) but defined nowhere**;
+  `catalog/registry.py` has zero references. Definition derived from the audit is still
+  owed — `canon-integrity`.
+- T8 `fit_student_t` optimization (≈110ms = 97% of the composed interval) — `vol-scope`.
+  Golden baseline first; convergence tolerances must not be loosened for speed.
+
+### BLOCKED-ON-EXTERNAL (unchanged, cannot be closed by code)
+
+1. Licensed PIT market data — procurement.
+2. Live-capable broker adapter with order/fill reconciliation — authorization. A fail-closed
+   adapter + SYNTHETIC fixture is a reference shape, NOT evidence. `live_pnl_claim=false`
+   everywhere; no live-trading or profitability claims.
+- The 2025 holdout is **SPENT**; `forward_2026H2` is **NOT YET COLLECTED**.
+- ULTRAPLAN P0.1–P0.7 remote-fleet compute (`h4f_*`, `tfmfix_*`, `nd_*`/`nh_*`, `s11_*`).
