@@ -131,7 +131,8 @@ def fit_bekk(e: FloatArray) -> dict[str, FloatArray | float]:
     a = np.asarray(best.x[:k])
     b = np.asarray(best.x[k:])
     cc = _cc_target(a, b, s0)
-    assert cc is not None
+    if not (cc is not None):
+        raise ValueError("cc is not None")
     c = np.linalg.cholesky(cc)
     h = _h_path(ee, c, a, b)
     aa = np.diag(a)

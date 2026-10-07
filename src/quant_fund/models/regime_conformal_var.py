@@ -332,7 +332,8 @@ class RegimeWeightedConformalVaR(JoblibMixin):
         """Weighted conformal quantile qhat for one current regime posterior."""
         self._require_calibrated()
         w = self.weights(current_regime)
-        assert self.scores_ is not None  # for mypy; calibrate() guarantees it
+        if not (self.scores_ is not None):
+            raise ValueError("self.scores_ is not None")  # for mypy; calibrate() guarantees it
         if float(np.sum(w)) <= 0.0:
             return float(self.global_qhat)
         if self.min_ess is not None and effective_sample_size(w) < float(self.min_ess):
@@ -366,7 +367,10 @@ class RegimeWeightedConformalVaR(JoblibMixin):
         """
         self._require_calibrated()
         n_states = self.n_states_
-        assert n_states is not None  # for mypy; _require_calibrated() guarantees it
+        if not (n_states is not None):
+            raise ValueError(
+                "n_states is not None"
+            )  # for mypy; _require_calibrated() guarantees it
         arr = np.asarray(current_regime)
         if arr.ndim == 0:
             return self.quantile_at(arr)
@@ -395,7 +399,10 @@ class RegimeWeightedConformalVaR(JoblibMixin):
             raise ValueError("center must be finite")
         self._require_calibrated()
         n_states = self.n_states_
-        assert n_states is not None  # for mypy; _require_calibrated() guarantees it
+        if not (n_states is not None):
+            raise ValueError(
+                "n_states is not None"
+            )  # for mypy; _require_calibrated() guarantees it
         k = int(n_states)
         arr = np.asarray(current_regimes)
         if arr.ndim == 0 or (

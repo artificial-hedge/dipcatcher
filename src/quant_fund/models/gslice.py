@@ -1019,7 +1019,8 @@ def train_gslice(
             if context is None:
                 x0 = _draw_prior(torch, cfg, g, b, d_x, gen)
             else:
-                assert post_mean is not None  # set when context is given
+                if not (post_mean is not None):
+                    raise ValueError("post_mean is not None")  # set when context is given
                 x0 = _draw_posterior(torch, post_mean, post_chol, idx, gen)
             if cfg.ot_couple and b >= 2:
                 perm_ot = ot_coupling(x0.numpy(), x1.numpy())

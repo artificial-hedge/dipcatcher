@@ -138,7 +138,8 @@ def implied_pdf(
         res = _opt.least_squares(resid, p_init, method="lm", max_nfev=4000)
         if best is None or float(res.cost) < float(best.cost):
             best = res
-    assert best is not None
+    if not (best is not None):
+        raise ValueError("best is not None")
     w, m, s = unpack(np.asarray(best.x))
     comp_mean = np.exp(m + 0.5 * s * s)
     mix_mean = float(w @ comp_mean)

@@ -27,7 +27,8 @@ def is_rvar(t: Any) -> bool:
 
 def _fields(t: Ty, s: Subst) -> tuple[dict[str, Ty], Any]:
     """Flatten a record's labeled fields; returns (fields, tail)."""
-    assert t[0] == "rec"
+    if not (t[0] == "rec"):
+        raise ValueError('t[0] == "rec"')
     row = t[1]
     tail = t[2]
     seen: dict[str, Ty] = dict(row)
@@ -62,7 +63,8 @@ def subtype(a: Ty, b: Ty, s: Subst | None = None) -> bool:
 def unify_row(rec: Ty, label: str, s: Subst) -> Ty | None:
     """Split `rec` at `label`: bind its row tail to a fresh record holding the
     remaining fields; returns the field type for label or None."""
-    assert rec[0] == "rec"
+    if not (rec[0] == "rec"):
+        raise ValueError('rec[0] == "rec"')
     row, tail = rec[1], rec[2]
     if label in row:
         field: Ty = row[label]

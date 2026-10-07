@@ -1079,7 +1079,8 @@ class TORFForecaster:
 
     def fit(self, X: Array, y: Array) -> TORFForecaster:
         Xm, y_ = self._check_xy(X, y)
-        assert y_ is not None
+        if not (y_ is not None):
+            raise ValueError("y_ is not None")
         yv = y_
         self.stage1.fit(Xm, yv)
         mu = self._stage1_mu(Xm)

@@ -138,7 +138,8 @@ def _chain_with_push(
     img: tuple[int, int] | None = push
     for i in range(e):
         ri = mul(deg ** (e - 1 - i), cur, cur_a, p)
-        assert ri is not None and order(ri, a=cur_a, p=p) == deg
+        if not (ri is not None and order(ri, a=cur_a, p=p) == deg):
+            raise ValueError("ri is not None and order(ri, a=cur_a, p=p) == deg")
         ker = _subgroup(ri, cur_a, p)
         next_a, next_b = velu(ker, cur_a, cur_b, p)
         cur = isogeny_eval(cur, ker, cur_a, p)

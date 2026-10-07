@@ -61,7 +61,8 @@ def bayes_opt(
     ys = np.array([f(x) for x in xs])
     for _ in range(n_iter):
         model = gp_fit(xs, ys, n_restarts=2, seed=seed)["model"]
-        assert isinstance(model, GPModel)
+        if not (isinstance(model, GPModel)):
+            raise ValueError("isinstance(model, GPModel)")
         cand = lo + (hi - lo) * rng.uniform(size=(grid, d))
         pred = gp_predict(model, cand, latent=True)
         mean, sd = pred["mean"], pred["sd"]

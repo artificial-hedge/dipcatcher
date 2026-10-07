@@ -27,7 +27,8 @@ class RTTEst:
 
     @property
     def rto(self) -> float:
-        assert self.srtt is not None
+        if not (self.srtt is not None):
+            raise ValueError("self.srtt is not None")
         return self.srtt + 4 * self.var
 
 

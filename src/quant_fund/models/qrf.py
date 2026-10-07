@@ -153,7 +153,8 @@ class QuantileRegressionForest:
     def weights(self, X: Array) -> Array:
         """Forest weights w_i(x) over training responses; shape (m, n_train)."""
         X = self._check(X)
-        assert self._forest is not None
+        if not (self._forest is not None):
+            raise ValueError("self._forest is not None")
         test_leaves = np.asarray(self._forest.apply(X), dtype=np.int64)  # (m, B)
         n = self._y.shape[0]
         m = X.shape[0]

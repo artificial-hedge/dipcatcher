@@ -40,7 +40,8 @@ def lda_predict(model: dict[str, object], x: FloatArray) -> FloatArray:
     x = np.asarray(x, dtype=np.float64)
     classes = np.asarray(model["classes"])
     mu = model["mu"]
-    assert isinstance(mu, list)
+    if not (isinstance(mu, list)):
+        raise ValueError("isinstance(mu, list)")
     cov = np.asarray(model["cov"])
     scores = np.stack(
         [_log_gauss(x, np.asarray(m), cov) for m in mu],
@@ -76,7 +77,8 @@ def qda_predict(model: dict[str, object], x: FloatArray) -> FloatArray:
     classes = np.asarray(model["classes"])
     mu = model["mu"]
     covs = model["covs"]
-    assert isinstance(mu, list) and isinstance(covs, list)
+    if not (isinstance(mu, list) and isinstance(covs, list)):
+        raise ValueError("isinstance(mu, list) and isinstance(covs, list)")
     scores = np.stack(
         [_log_gauss(x, np.asarray(m), np.asarray(c)) for m, c in zip(mu, covs, strict=True)],
         axis=1,

@@ -92,7 +92,8 @@ def dynamic_pca(
     """Brillinger dynamic PCA: per-frequency eigendecomp."""
     cs = cross_spectral_density(x, m=m)
     s = cs["S"]
-    assert isinstance(s, np.ndarray)
+    if not (isinstance(s, np.ndarray)):
+        raise ValueError("isinstance(s, np.ndarray)")
     nf, n, _ = s.shape
     ev = np.empty((nf, n))
     v1 = np.empty((nf, n), dtype=np.complex128)

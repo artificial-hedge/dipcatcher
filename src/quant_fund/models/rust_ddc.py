@@ -137,7 +137,8 @@ def rust_nfxp(
                     "rc": float(r.x[1]),
                     "nll": float(r.fun),
                 }
-    assert best is not None
+    if not (best is not None):
+        raise ValueError("best is not None")
     return best
 
 

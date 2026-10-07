@@ -68,7 +68,8 @@ def adaboost_predict(model: dict[str, object], x: FloatArray) -> FloatArray:
     x = np.asarray(x, dtype=np.float64)
     stumps = model["stumps"]
     alphas = model["alphas"]
-    assert isinstance(stumps, list) and isinstance(alphas, list)
+    if not (isinstance(stumps, list) and isinstance(alphas, list)):
+        raise ValueError("isinstance(stumps, list) and isinstance(alphas, list)")
     s = np.zeros(len(x))
     for st, a in zip(stumps, alphas, strict=True):
         s += a * _stump_pred(x, st)
@@ -117,7 +118,8 @@ def logitboost_predict(model: dict[str, object], x: FloatArray) -> FloatArray:
     x = np.asarray(x, dtype=np.float64)
     stumps = model["stumps"]
     nu = float(np.asarray(model["nu"]))
-    assert isinstance(stumps, list)
+    if not (isinstance(stumps, list)):
+        raise ValueError("isinstance(stumps, list)")
     f = np.zeros(len(x))
     for j, t, ml, mr in stumps:
         f += nu * np.where(x[:, j] <= t, ml, mr)

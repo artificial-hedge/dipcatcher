@@ -10,7 +10,8 @@ def orbit_count(g_elems: frozenset, act, elems: frozenset) -> int:
         for x in elems:
             if act(g, x) == x:
                 fix_sum += 1
-    assert fix_sum % len(g_elems) == 0
+    if not (fix_sum % len(g_elems) == 0):
+        raise ValueError("fix_sum % len(g_elems) == 0")
     return fix_sum // len(g_elems)
 
 

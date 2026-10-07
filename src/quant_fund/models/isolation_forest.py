@@ -118,7 +118,8 @@ def _path_length(tree: _Node, row: FloatArray) -> float:
     else:
         side = float(row[tree.j]) <= tree.cut
     nxt = tree.left if side else tree.right
-    assert nxt is not None
+    if not (nxt is not None):
+        raise ValueError("nxt is not None")
     return _path_length(nxt, row)
 
 

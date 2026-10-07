@@ -76,7 +76,8 @@ def pin_estimate(buys: FloatArray, sells: FloatArray) -> dict[str, float]:
             )
             if best is None or res.fun < best.fun:
                 best = res
-    assert best is not None
+    if not (best is not None):
+        raise ValueError("best is not None")
     th = np.asarray(best.x, dtype=np.float64)
     alpha, delta, mu, eb, es = (float(x) for x in th)
     pin = alpha * mu / (alpha * mu + eb + es)

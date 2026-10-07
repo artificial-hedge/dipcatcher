@@ -65,7 +65,8 @@ def intt(a: np.ndarray, w: int = OMEGA) -> np.ndarray:
 
 def ntt_mul(a: np.ndarray, b: np.ndarray, q: int = Q) -> np.ndarray:
     """Negacyclic product a*b mod (x^N + 1, q) via evaluation at psi^(2i+1)."""
-    assert q == Q and a.size == N and b.size == N
+    if not (q == Q and a.size == N and b.size == N):
+        raise ValueError("q == Q and a.size == N and b.size == N")
     tw = np.array([_pow(PSI, i) for i in range(N)])
     twi = np.array([_pow(PSI, -i) for i in range(N)])
     ah = ntt((a % Q) * tw % Q)

@@ -66,7 +66,8 @@ def _hegy_regressors(y: FloatArray, s: int) -> tuple[FloatArray, FloatArray]:
     # z4 = -(y_{t-2} - y_{t-4})
     z4 = np.array([-(y[k - 2] - y[k - 4]) for k in range(s, t)])
     z = np.column_stack([z1, z2, z3, z4])
-    assert z.shape[0] == m
+    if not (z.shape[0] == m):
+        raise ValueError("z.shape[0] == m")
     return np.asarray(d4, dtype=np.float64), np.asarray(z, dtype=np.float64)
 
 

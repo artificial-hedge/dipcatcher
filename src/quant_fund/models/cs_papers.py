@@ -1659,7 +1659,8 @@ class MSFECombinationRanker(JoblibMixin):
                 pred = inner_int + inner_slope * train_x[:, j]
                 msfe[j] = _discounted_date_mse(pred, train_y, train_d, self.theta)
             else:
-                assert hold_y is not None and hold_d is not None
+                if not (hold_y is not None and hold_d is not None):
+                    raise ValueError("hold_y is not None and hold_d is not None")
                 pred = inner_int + inner_slope * hold_x[:, j]
                 msfe[j] = _discounted_date_mse(pred, hold_y, hold_d, self.theta)
         finite_msfe = np.where(np.isfinite(msfe) & (msfe > 0.0), msfe, np.nan)

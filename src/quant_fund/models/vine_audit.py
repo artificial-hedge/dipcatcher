@@ -176,7 +176,8 @@ def vine_audit() -> dict[str, bool]:
     s_p = vine_sample(vm_p, 4000, seed=9)
     # sampled col 2 of the permuted data = original col ordering[2]
     o = vm_p.ordering
-    assert o is not None
+    if not (o is not None):
+        raise ValueError("o is not None")
     results["ordering_roundtrip_sample"] = (
         abs(_kendall_tau_pair(s_p[:, 0], s_p[:, 1]) - _kendall_tau_pair(u_perm[:, 0], u_perm[:, 1]))
         < 0.05

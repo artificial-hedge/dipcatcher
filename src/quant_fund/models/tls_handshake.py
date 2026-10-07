@@ -20,28 +20,32 @@ class Handshake:
         self.traffic_key = b""
 
     def client_hello(self, ciphers: list[str]) -> bytes:
-        assert self.state == _START
+        if not (self.state == _START):
+            raise ValueError("self.state == _START")
         msg = b"CH|" + ",".join(ciphers).encode()
         self.transcript += msg
         self.state = _CH_SENT
         return msg
 
     def server_hello(self, server: "Handshake") -> bytes:
-        assert server.state == _CH_SENT or server.state == _START
+        if not (server.state == _CH_SENT or server.state == _START):
+            raise ValueError("server.state == _CH_SENT or server.state == _START")
         msg = b"SH|tls13"
         server.transcript += msg
         server.state = _SH_RECV
         return msg
 
     def encrypted_extensions(self, server: "Handshake") -> bytes:
-        assert server.state == _SH_RECV
+        if not (server.state == _SH_RECV):
+            raise ValueError("server.state == _SH_RECV")
         msg = b"EE"
         server.transcript += msg
         server.state = _EE_RECV
         return msg
 
     def finished(self, peer: "Handshake") -> bytes:
-        assert peer.state in (_EE_RECV, _CH_SENT)
+        if peer.state not in (_EE_RECV, _CH_SENT):
+            raise ValueError("peer.state in (_EE_RECV, _CH_SENT)")
         mac = _hmac.new(self.secret, self.transcript, hashlib.sha256).digest()[:16]
         peer.transcript += b"FIN|" + mac
         peer.state = _FIN_RECV

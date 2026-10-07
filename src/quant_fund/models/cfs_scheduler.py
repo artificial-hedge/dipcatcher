@@ -28,7 +28,8 @@ def run_cfs(tasks: list[tuple[float, int]], horizon: int, tick: int = 4) -> dict
         granted[pid] += step
         vrt[pid] += step * NICE_0 / tasks[pid][0]
         t += step
-    assert picks_min
+    if not (picks_min):
+        raise ValueError("picks_min")
     return dict(enumerate(granted))
 
 

@@ -127,7 +127,8 @@ def gp_fit(x: FloatArray, y: FloatArray, n_restarts: int = 4, seed: int = 0) -> 
         if res.fun < best_nll:
             best_nll = float(res.fun)
             best = res.x
-    assert best is not None
+    if not (best is not None):
+        raise ValueError("best is not None")
     ls = np.exp(best[:p])
     sf2 = math.exp(best[p])
     sn2 = math.exp(best[p + 1])

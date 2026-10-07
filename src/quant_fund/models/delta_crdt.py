@@ -42,7 +42,10 @@ class ORSetDelta:
         elems = delta["elems"]
         tomb = delta["tomb"]
         clock = delta["clock"]
-        assert isinstance(elems, dict) and isinstance(tomb, set) and isinstance(clock, dict)
+        if not (isinstance(elems, dict) and isinstance(tomb, set) and isinstance(clock, dict)):
+            raise ValueError(
+                "isinstance(elems, dict) and isinstance(tomb, set) and isinstance(clock, dict)"
+            )
         for e, ds in elems.items():
             keep = {d for d in ds if d not in self.tomb}
             if keep:

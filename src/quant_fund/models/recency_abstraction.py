@@ -28,11 +28,13 @@ class RecencyHeap:
         self.next_id += 1
 
     def set_field(self, field: str, val: int) -> None:
-        assert self.mr is not None
+        if not (self.mr is not None):
+            raise ValueError("self.mr is not None")
         self.mr[field] = val
 
     def fresh_val_range(self) -> tuple[int, int]:
-        assert self.mr is not None
+        if not (self.mr is not None):
+            raise ValueError("self.mr is not None")
         return (self.mr["val"], self.mr["val"])
 
     def old_val_bounds(self) -> tuple[int, int]:

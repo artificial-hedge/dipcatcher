@@ -113,7 +113,8 @@ def caviar_fit(
     if not np.isfinite(best_val):
         raise ValueError("caviar fit failed")
     q = _q_path(y, best_beta, spec, tau)
-    assert q is not None
+    if not (q is not None):
+        raise ValueError("q is not None")
     hits = (y < q).mean() if tau < 0.5 else (y > q).mean()
     return {
         "beta": best_beta,
