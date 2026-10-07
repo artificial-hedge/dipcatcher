@@ -34,7 +34,7 @@ def _set_catalog(monkeypatch, optional, retired=None, live=None) -> None:
 def test_required_families_still_fully_emitted(monkeypatch):
     _set_catalog(monkeypatch, optional=["opt_live", "opt_retired"], retired=["opt_retired"])
     emitted = agent._emit_live_families(_families("opt_live", "opt_retired"))
-    assert _REQUIRED <= set(emitted)
+    assert set(emitted) >= _REQUIRED
 
 
 def test_no_retired_family_is_emitted(monkeypatch):
