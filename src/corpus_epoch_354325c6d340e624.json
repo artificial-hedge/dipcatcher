@@ -1,0 +1,42 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "cfff9966d189de3e9bff62cc3b81c4672099899046b4a0f485fb3ae6b36b15d2",
+  "inputs_sha256": "da00ab14f5ce47d436c6a42c9a65ade4c10b965962e7f82dfd7c87ba85d25d6a",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "72b8141a8580e2474089344c9e4af59eb8bc62fe41f06812c7c509c8123d81fd",
+  "members": [
+    {
+      "name": "corpus_epoch_91b0bc4448620e2f.json",
+      "sha256": "9e07031a0fde9665504ccb9e7ce2b1895e222cf999074564df61db3385d3622c"
+    },
+    {
+      "name": "quant_fund/research/receipt_v2.schema.json",
+      "sha256": "5349b289f041d18fd69b850102dc20be53808d9898197a3705b97dcd812ce8a9"
+    },
+    {
+      "name": "quant_fund/research/research100.json",
+      "sha256": "f5a87e26a51193548ca794ba08f96e7fd69977b0ea576db2e62065d82e744e4d"
+    },
+    {
+      "name": "quant_fund/stress/public_domain/fred_h10_h15.json",
+      "sha256": "47ae18ae05f6111c395f5906cf1605c1a88321c8d3640753edd8d14aa6506504"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_91b0bc4448620e2f.json"
+  ],
+  "members_removed": [],
+  "n_members": 4,
+  "params": {
+    "head_sha": "a64b9199c7f52a17810930562042b290d573b52d",
+    "pattern": "*.json"
+  },
+  "prev_epoch_receipt": "corpus_epoch_91b0bc4448620e2f.json",
+  "prev_epoch_sha256": "0c5f1fd188e125063a0dfab932f28ce1b0abf7ad9ef47d93b63d4b5d3efcf242",
+  "receipt_sha256": "354325c6d340e6241124ab5190b5d3697889cfc93819f9e80258ec52511294a6",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
