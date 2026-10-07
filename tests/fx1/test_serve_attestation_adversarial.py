@@ -114,26 +114,27 @@ def test_quote_binding_accepts_sha256_of_checkpoint_anywhere() -> None:
     assert verify_quote(quote, expected_checkpoint_sha256=_CKPT, nonce=_NONCE)
 
 
-def test_manifest_artifacts_anchor_at_manifest_dir_not_cwd(tmp_path: Path) -> None:
+def test_manifest_artifacts_anchor_at_manifest_dir_not_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """A relative proof claim resolves against the manifest's directory via
     the ladder — a same-named file in the process cwd cannot satisfy it."""
     ckpt = tmp_path / "ckpt"
     ckpt.mkdir()
     manifest = _manifest()
     _write_manifest(ckpt, manifest)
-    # Artifact missing relative to manifest; decoy planted in process cwd.
-    cwd = Path.cwd()
+    # Keep the decoy outside the checkpoint, without touching the caller's cwd.
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
     decoy = cwd / "calibration_head.proof"
     decoy.write_bytes(b"decoy")
-    try:
-        status = attestation_ladder_status(ckpt)
-        assert status[AttestationTier.SELECTIVE_ZKML.value] is False
-        # Plant the real artifact next to the manifest → rung verifies.
-        (ckpt / "calibration_head.proof").write_bytes(b"real proof")
-        status = attestation_ladder_status(ckpt)
-        assert status[AttestationTier.SELECTIVE_ZKML.value] is True
-    finally:
-        decoy.unlink()
+    status = attestation_ladder_status(ckpt)
+    assert status[AttestationTier.SELECTIVE_ZKML.value] is False
+    # Plant the real artifact next to the manifest → rung verifies.
+    (ckpt / "calibration_head.proof").write_bytes(b"real proof")
+    status = attestation_ladder_status(ckpt)
+    assert status[AttestationTier.SELECTIVE_ZKML.value] is True
 
 
 def test_verify_without_root_resolves_against_process_cwd(
