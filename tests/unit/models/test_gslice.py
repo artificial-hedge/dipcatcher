@@ -522,9 +522,56 @@ def test_train_fail_closed_edges() -> None:
 @requires_torch
 def test_bench_gslice_scorecard() -> None:
     out = gs.bench_gslice(n_train=128, n_eval=48, config=gs.GSliceConfig(epochs=30, batch_size=64))
-    assert "gslice_synth_energy_score_mean" in out
+    assert "synthetic_gslice_synth_energy_score_mean" in out
     assert "synthetic_gslice_synth_energy_score_prior" in out
-    assert "gslice_synth_coverage_80" in out
+    assert "synthetic_gslice_synth_coverage_80" in out
     assert out["synthetic_gslice_synth_energy_score_gain"] > 0.0
     assert out["synthetic_gslice_synth_loss_drop"] > 0.0
     assert all(np.isfinite(v) for v in out.values())
+
+
+@requires_torch
+def test_bench_keys_all_synthetic_prefixed() -> None:
+    """AGENTS.md bench contract: every emitted key carries the ``synthetic_``
+    prefix.  The earlier sweep renamed the literals but missed the dict
+    comprehension over ``evaluate_samples``, leaving a mixed namespace that
+    broke the w18 adapter with KeyError — pinned uniformly now."""
+    out = gs.bench_gslice(
+        n_train=48,
+        n_eval=16,
+        n_grid=9,
+        seed=5,
+        config=gs.GSliceConfig(epochs=2, hidden_dim=16, block_size=16, flow_steps=4),
+    )
+    assert out
+    bad = [k for k in out if not k.startswith("synthetic_")]
+    assert not bad, f"bare keys leaked: {sorted(bad)}"
+
+
+def test_gp_posterior_obs_times_must_lie_inside_grid_span() -> None:
+    """obs_times outside [grid[0], grid[-1]] were silently extrapolated:
+    wiener's kernel min(t-t0, t_obs-t0) then produces negative cross
+    covariance.  Now fail-closed."""
+    grid = np.linspace(0.0, 1.0, 9)
+    y = np.zeros((2, 1))
+    with pytest.raises(ValueError, match="inside the grid span"):
+        gs.gp_posterior_moments(grid, np.array([-0.05, 0.5]), y)
+    with pytest.raises(ValueError, match="inside the grid span"):
+        gs.gp_posterior_moments(grid, np.array([0.5, 1.05]), y)
+    # endpoints are inside (inclusive bounds)
+    m, c = gs.gp_posterior_moments(grid, np.array([0.0, 1.0]), y)
+    assert m.shape == (grid.size, 1)
+    assert c.shape == (grid.size, grid.size)
+
+
+def test_train_post_mean_guard_message_is_not_inverted() -> None:
+    """The context-branch invariant in train_gslice asserts that post_mean
+    must be SET — the pre-fix message raised 'post_mean is not None', the
+    negation of what it guards.  The guard is defensive/unreachable through
+    the public path (the concatenate would fail first), so this pins the
+    message text at source level."""
+    import inspect
+
+    src = inspect.getsource(gs.train_gslice)
+    assert "post_mean must be set when context is given" in src
+    assert 'post_mean is not None")' not in src

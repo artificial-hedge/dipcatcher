@@ -107,7 +107,7 @@ here is SYNTHETIC or model-produced -- correctness evidence, never market
 evidence. Path realism is reported through PROPER scores (energy score,
 CRPS, pinball, coverage/width) plus candle-consistency violation rates;
 there is no Sharpe/Sortino/Calmar/P&L/NAV headline anywhere in this module,
-and ``bench_kit_paths`` keys are prefixed ``SYNTHETIC_`` accordingly. No
+and ``bench_kit_paths`` keys are prefixed ``synthetic_`` accordingly. No
 live-trading claims, no broker connectivity. Fail-closed: invalid candles
 (non-positive prices, H < max(O, C) beyond float tolerance, L > min(O, C),
 negative volume), non-finite or shape-mismatched inputs, degenerate
@@ -1577,7 +1577,7 @@ def bench_kit_paths(
 ) -> dict[str, float | str]:
     """Seeded SYNTHETIC battery for the KiT path pipeline -- correctness only.
 
-    All keys carry the ``SYNTHETIC_`` prefix (AGENTS.md honesty contract):
+    All keys carry the ``synthetic_`` prefix (AGENTS.md honesty contract):
     encode/decode round-trip fidelity on a seeded stream (the map is
     exactly invertible), the scaler tanh round-trip, bootstrap-resampled
     horizon ensembles decoded through the structural map (violation rates

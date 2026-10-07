@@ -323,8 +323,8 @@ def gp_posterior_moments(
     m_post(t) = K(t, T) [K(T, T) + νI]^{-1} y applied per channel; the
     covariance k_post is shared across channels (same input locations).
     ``obs_times`` is a shared observation grid of length m >= 1 lying inside
-    the span of ``grid``; ``obs_values`` is (m, d). Fails closed on empty or
-    non-finite observations.
+    the span of ``grid``; ``obs_values`` is (m, d). Fails closed on empty,
+    non-finite, or out-of-span observations.
     """
     t = _as_grid(grid)
     t_obs = np.asarray(obs_times, dtype=float).reshape(-1)
@@ -333,8 +333,12 @@ def gp_posterior_moments(
         y = y[:, None]
     if t_obs.shape[0] < 1:
         raise ValueError("obs_times must be non-empty")
-    if not bool(np.all(np.isfinite(t_obs))):
-        raise ValueError("obs_times must be finite")
+    in_span = (t_obs >= t[0]) & (t_obs <= t[-1])
+    if not bool(np.all(np.isfinite(t_obs) & in_span)):
+        raise ValueError(
+            "obs_times must be finite and inside the grid span "
+            f"[{t[0]}, {t[-1]}]; got [{t_obs.min()}, {t_obs.max()}]"
+        )
     if y.ndim != 2 or y.shape[0] != t_obs.shape[0] or y.shape[1] < 1:
         raise ValueError(
             f"obs_values must have shape (n_obs, d) with n_obs={t_obs.shape[0]}; got {y.shape}"
@@ -1019,8 +1023,8 @@ def train_gslice(
             if context is None:
                 x0 = _draw_prior(torch, cfg, g, b, d_x, gen)
             else:
-                if not (post_mean is not None):
-                    raise ValueError("post_mean is not None")  # set when context is given
+                if post_mean is None:
+                    raise ValueError("post_mean must be set when context is given")
                 x0 = _draw_posterior(torch, post_mean, post_chol, idx, gen)
             if cfg.ot_couple and b >= 2:
                 perm_ot = ot_coupling(x0.numpy(), x1.numpy())
@@ -1213,8 +1217,8 @@ def bench_gslice(
     Trains on ``synthetic_switching_paths`` (non-Gaussian increments),
     samples an ensemble, and scores it against a held-out independently
     seeded batch of the same law plus a raw GP-prior ensemble baseline.
-    All keys are ``gslice_synth_*`` — SYNTHETIC correctness evidence only,
-    never market evidence (AGENTS.md).
+    All keys are ``synthetic_gslice_synth_*`` — SYNTHETIC correctness evidence
+    only, never market evidence (AGENTS.md).
     """
     cfg = config if config is not None else GSliceConfig(epochs=40, hidden_dim=16)
     grid = np.linspace(0.0, 1.0, n_grid)
@@ -1232,7 +1236,9 @@ def bench_gslice(
     )
     ev_gen = evaluate_samples(gen, held)
     ev_prior = evaluate_samples(prior, held)
-    out: dict[str, float] = {"gslice_synth_" + k[len("gslice_") :]: v for k, v in ev_gen.items()}
+    out: dict[str, float] = {
+        "synthetic_gslice_synth_" + k[len("gslice_") :]: v for k, v in ev_gen.items()
+    }
     out["synthetic_gslice_synth_energy_score_prior"] = ev_prior["gslice_energy_score_mean"]
     out["synthetic_gslice_synth_energy_score_gain"] = (
         ev_prior["gslice_energy_score_mean"] - ev_gen["gslice_energy_score_mean"]

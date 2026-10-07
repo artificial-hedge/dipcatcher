@@ -141,7 +141,8 @@ def bench_gslice() -> dict[str, float]:
     """G-SLiCE path-space flow matching on a regime-switching law (torch).
 
     Thin adapter over the module's own ``bench_gslice`` (already flat
-    ``gslice_synth_*`` float keys): trains the block-diagonal SLiCE field on
+    ``synthetic_gslice_synth_*`` float keys): trains the block-diagonal SLiCE
+    field on
     ``synthetic_switching_paths`` and scores the generated ensemble by
     energy score / band coverage / PIT vs a held-out batch of the same law,
     with a raw GP-prior ensemble baseline for the gain diagnostic.  Shrunk:
