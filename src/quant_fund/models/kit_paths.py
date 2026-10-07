@@ -577,15 +577,22 @@ class KitStateScaler:
 
 
 def kit_windows(states: Array, context: int, horizon: int) -> tuple[Array, Array]:
-    """Sliding (context, horizon) windows over an encoded state sequence.
+    """Sliding (context, horizon) windows over a per-bar feature sequence.
 
-    ``states`` (n, 5) -> (``ctx`` (B, Lc, 5), ``tgt`` (B, Lh, 5)) with
+    ``states`` (n, d) -> (``ctx`` (B, Lc, d), ``tgt`` (B, Lh, d)) with
     B = n - Lc - Lh + 1 aligned windows (the paper's single-token-stream
-    train pairs). Fail-closed when no complete window exists.
+    train pairs). The candle-state call carries d = KIT_STATE_DIM (enforced
+    upstream by the scaler/encoder); the same windowing is applied to
+    arbitrary-width calendar conditioning, so d is generic here.
+    Fail-closed on degenerate input and when no complete window exists.
     """
-    st = _check_states(states)
+    st = np.asarray(states, dtype=float)
     if st.ndim != 2:
-        raise ValueError("states must be a single (n, 5) sequence")
+        raise ValueError("states must be a single (n, d) sequence")
+    if st.shape[0] < 1 or st.shape[1] < 1:
+        raise ValueError("states must be non-empty")
+    if not bool(np.all(np.isfinite(st))):
+        raise ValueError("states must be finite (NaN/inf rejected)")
     lc = _check_count(context, "context")
     lh = _check_count(horizon, "horizon")
     n = int(st.shape[0])
@@ -1426,6 +1433,11 @@ class KitPathGenerator:
             raise ValueError("calendar given but calendar_dim = 0")
 
         torch = _torch()
+        # Seed BEFORE backbone construction: every Linear/Embedding init draw
+        # inside _build_kit_backbone consumes the torch stream, so seeding here
+        # is what makes the init (and hence the whole fit) deterministic in
+        # cfg.seed. _train_kit re-asserts the same seed before the train loop.
+        torch.manual_seed(int(cfg.seed))
         model = _build_kit_backbone(torch, cfg, lc, lh)
         curve = _train_kit(torch, model, ctx, tgt, ids_np, cal_ctx_np, cal_tgt_np, cfg)
         self._model = model

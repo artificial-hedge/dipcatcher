@@ -354,6 +354,22 @@ class TestWindows:
         with pytest.raises(ValueError, match="single"):
             kp.kit_windows(np.zeros((2, 10, 5)), 8, 4)
 
+    def test_generic_feature_dim(self):
+        # calendar conditioning windows a (n, d) sequence with d != 5
+        st = np.arange(30 * 3, dtype=float).reshape(30, 3) / 100.0
+        ctx, tgt = kp.kit_windows(st, context=8, horizon=4)
+        assert ctx.shape == (30 - 8 - 4 + 1, 8, 3)
+        assert tgt.shape == (30 - 8 - 4 + 1, 4, 3)
+        np.testing.assert_array_equal(ctx[0], st[:8])
+        np.testing.assert_array_equal(tgt[0], st[8:12])
+        np.testing.assert_array_equal(tgt[-1], st[-4:])
+        bad = st.copy()
+        bad[5, 1] = np.nan
+        with pytest.raises(ValueError, match="finite"):
+            kp.kit_windows(bad, 8, 4)
+        with pytest.raises(ValueError, match="non-empty"):
+            kp.kit_windows(np.zeros((10, 0)), 8, 4)
+
 
 # ---------------------------------------------------------------------------
 # Consistency diagnostics
@@ -673,3 +689,34 @@ class TestKitTorch:
         bad[0, 1] = bad[0, 0] * 0.5
         with pytest.raises(ValueError):
             gen.sample_ohlcv(bad)
+
+    def test_fit_determinism_same_seed(self):
+        # backbone Linear/Embedding init draws must be seeded by cfg.seed;
+        # before the fix they consumed the unseeded global torch stream.
+        s = _stream(200)
+        ctx = _stream(220)[184:200]
+        ga = kp.KitPathGenerator(self._cfg(seed=11)).fit_ohlcv(s, context=16, horizon=8)
+        gb = kp.KitPathGenerator(self._cfg(seed=11)).fit_ohlcv(s, context=16, horizon=8)
+        assert ga.fit_info is not None and gb.fit_info is not None
+        np.testing.assert_array_equal(ga.fit_info.loss_curve, gb.fit_info.loss_curve)
+        np.testing.assert_array_equal(
+            ga.sample_states(ctx, n_samples=4, seed=3),
+            gb.sample_states(ctx, n_samples=4, seed=3),
+        )
+
+    def test_calendar_conditioning_fit_and_sample(self):
+        # calendar_dim != 5 must reach the model: previously kit_windows
+        # rejected any non-5 trailing dim, so calendar conditioning never ran.
+        gen = kp.KitPathGenerator(self._cfg(calendar_dim=3))
+        rng = np.random.default_rng(5)
+        cal = rng.normal(size=(200, 3))
+        gen.fit_ohlcv(_stream(200), context=16, horizon=8, calendar=cal)
+        assert gen.is_fitted
+        out = gen.sample_states(
+            _stream(16),
+            n_samples=4,
+            calendar_context=rng.normal(size=(16, 3)),
+            calendar_target=rng.normal(size=(8, 3)),
+            seed=2,
+        )
+        assert out.shape == (4, 8, 5)
