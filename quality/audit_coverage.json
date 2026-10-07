@@ -453,6 +453,24 @@
   "models/_gt_synth.py": {
    "status": "audited"
   },
+  "models/_heat_synth.py": {
+   "status": "audited"
+  },
+  "models/_ig_synth.py": {
+   "status": "audited"
+  },
+  "models/_ilp_synth.py": {
+   "status": "audited"
+  },
+  "models/_interp_synth.py": {
+   "status": "audited"
+  },
+  "models/_inv_synth.py": {
+   "status": "audited"
+  },
+  "models/_it_synth.py": {
+   "status": "audited"
+  },
   "models/_lm_synth.py": {
    "status": "audited"
   },

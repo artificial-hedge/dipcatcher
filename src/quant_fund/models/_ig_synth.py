@@ -14,11 +14,15 @@ def fr_gauss_pair() -> tuple[tuple[float, float], tuple[float, float]]:
 
 
 def gauss_fit(seed: int, n: int = 400) -> np.ndarray:
+    if n < 1:
+        raise ValueError(f"n must be >= 1, got {n}")
     rng = np.random.default_rng(seed)
     return rng.normal(2.0, 0.35, n)
 
 
 def simplex_ls(seed: int, d: int = 24) -> tuple[np.ndarray, np.ndarray]:
+    if d < 1:
+        raise ValueError(f"d must be >= 1, got {d}")
     rng = np.random.default_rng(seed)
     A = rng.normal(size=(d, d)) * rng.lognormal(0, 1.5, (d, d))
     x_star = rng.dirichlet(np.ones(d) * 0.4)
@@ -27,6 +31,8 @@ def simplex_ls(seed: int, d: int = 24) -> tuple[np.ndarray, np.ndarray]:
 
 
 def poisson_nmf(seed: int, m: int = 30, n: int = 20, r: int = 4) -> np.ndarray:
+    if m < 1 or n < 1 or r < 1:
+        raise ValueError(f"m, n, r must all be >= 1, got m={m}, n={n}, r={r}")
     rng = np.random.default_rng(seed)
     w = rng.gamma(1.0, 1.0, (m, r))
     h = rng.gamma(1.0, 1.0, (r, n))

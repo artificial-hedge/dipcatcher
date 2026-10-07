@@ -63,6 +63,8 @@ HK_D = np.array(
 
 def simplex(c: np.ndarray, a: np.ndarray, b: np.ndarray) -> tuple[np.ndarray, float]:
     """max c'x, a x <= b, x >= 0 — tableau simplex with Bland's rule."""
+    if (np.asarray(b) < 0).any():
+        raise ValueError("negative b makes the slack basis infeasible; two-phase simplex required")
     m, n = a.shape
     t = np.hstack([a.astype(float), np.eye(m), b.reshape(-1, 1)])
     basis = list(range(n, n + m))

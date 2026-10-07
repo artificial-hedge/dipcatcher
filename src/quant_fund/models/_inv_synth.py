@@ -16,6 +16,8 @@ K_ORDER = 60.0  # fixed order cost
 
 
 def demand(seed: int, weeks: int = 104, rate: float = D_RATE) -> FloatArray:
+    if weeks < 1 or rate < 0.0:
+        raise ValueError(f"need weeks>=1 and rate>=0, got weeks={weeks}, rate={rate}")
     rng = np.random.default_rng(seed)
     return np.asarray(rng.poisson(rate, weeks).astype(np.float64))
 
@@ -23,6 +25,8 @@ def demand(seed: int, weeks: int = 104, rate: float = D_RATE) -> FloatArray:
 def simulate(policy, seed: int, weeks: int = 104) -> tuple[float, float, float]:
     """policy(inventory_position, week) -> order qty.
     Returns (avg_cost, fill_rate, n_orders). Lead time = 1 week."""
+    if weeks < 1:
+        raise ValueError(f"weeks must be >= 1, got {weeks}")
     d = demand(seed, weeks)
     inv = 0.0
     pending: list[tuple[int, float]] = []
@@ -41,10 +45,12 @@ def simulate(policy, seed: int, weeks: int = 104) -> tuple[float, float, float]:
         tot_hold += H_COST * max(inv, 0.0)
         ip = inv + sum(q for _, q in pending)
         q = float(policy(ip, w))
+        if q < 0.0 or not np.isfinite(q):
+            raise ValueError(f"policy returned invalid order qty {q!r} at week {w}")
         if q > 0:
             pending.append((w + 1, q))
             tot_cost += K_ORDER
             n_orders += 1
     avg = (tot_cost + tot_hold + tot_short) / weeks
-    fill = filled / max(float(d.sum()), 1e-9)
+    fill = filled / float(d.sum()) if d.sum() > 0 else 1.0
     return avg, fill, float(n_orders)

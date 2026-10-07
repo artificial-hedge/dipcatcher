@@ -19,6 +19,8 @@ L, T_, SIG, MU0, S0 = 4.0, 0.5, 0.7, 0.0, 0.4
 
 
 def grid(nx: int = 101) -> FloatArray:
+    if nx < 2:
+        raise ValueError(f"grid needs nx >= 2, got {nx}")
     return np.asarray(np.linspace(-L, L, nx), dtype=np.float64)
 
 
@@ -27,12 +29,17 @@ def u0(x: FloatArray) -> FloatArray:
 
 
 def u_exact(x: FloatArray, t: float) -> FloatArray:
+    if t < 0.0 or not np.isfinite(t):
+        raise ValueError(f"heat equation is forward-parabolic; need finite t >= 0, got {t}")
     v = S0**2 + SIG**2 * t
     return np.asarray(np.exp(-0.5 * (x - MU0) ** 2 / v) / np.sqrt(2 * np.pi * v))
 
 
 def rel_l2(pred: FloatArray, truth: FloatArray) -> float:
-    return float(np.linalg.norm(pred - truth) / np.linalg.norm(truth))
+    nt = float(np.linalg.norm(truth))
+    if nt == 0.0:
+        raise ValueError("relative L2 is undefined against a zero truth")
+    return float(np.linalg.norm(pred - truth) / nt)
 
 
 def eval_error(pred_fn: Callable[[FloatArray, float], FloatArray]) -> float:
@@ -42,6 +49,8 @@ def eval_error(pred_fn: Callable[[FloatArray, float], FloatArray]) -> float:
 
 def mc_paths(n: int, t: float, seed: int) -> FloatArray:
     """Feynman-Kac helper: terminal positions of BM from x0=u0-sampled."""
+    if n < 1 or t < 0.0 or not np.isfinite(t):
+        raise ValueError(f"need n>=1 and finite t>=0, got n={n}, t={t}")
     rng = np.random.default_rng(seed)
     x0 = rng.normal(MU0, S0, n)
     return np.asarray(x0 + SIG * np.sqrt(t) * rng.standard_normal(n))

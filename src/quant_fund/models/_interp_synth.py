@@ -24,8 +24,12 @@ def feature_directions(rng: np.random.Generator) -> FloatArray:
     return f / np.linalg.norm(f, axis=-1, keepdims=True)
 
 
-def synth_activations(n: int, dirs: FloatArray, rng: np.random.Generator, sparsity: float = 0.7):
+def synth_activations(
+    n: int, dirs: FloatArray, rng: np.random.Generator, sparsity: float = 0.7
+) -> tuple[FloatArray, FloatArray]:
     """s (n,8) sparse; a = s @ dirs + tiny noise."""
+    if not 0.0 <= sparsity <= 1.0:
+        raise ValueError(f"sparsity must be in [0, 1], got {sparsity}")
     s = rng.uniform(0.5, 1.5, (n, N_FEAT)) * (rng.random((n, N_FEAT)) > sparsity)
     a = s @ dirs + rng.normal(0, 0.02, (n, D_ACT))
     return a, s
