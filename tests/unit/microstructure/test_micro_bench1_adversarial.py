@@ -107,22 +107,27 @@ def test_sim_aftermath_matches_independent_recomputation() -> None:
     for kind, side, lvl, ev in sim.flow_log:
         by_ev.setdefault(ev, []).append((kind, side, lvl))
 
+    # Independent recomputation: group by follower event first and walk
+    # anchors backwards — a structurally different traversal producing
+    # the same bucket multiset, so exact equality pins the product
+    # loop's causal indexing rather than its implementation.
+    # fills as a per-row list, not a dict on ev — a multi-fill event's
+    # anchors each re-run the same window (per-fill normalization).
+    fill_rows = [(ev, side == "buy") for kind, side, _l, ev in sim.flow_log if kind == "fill"]
     cells = {f"{lo}_{hi}": _empty_cell() for lo, hi in _WINDOWS}
     n_anchor = {f"{lo}_{hi}": 0 for lo, hi in _WINDOWS}
-    for kind, side, _l, ev in sim.flow_log:
-        if kind != "fill":
-            continue
-        hit_is_buy = side == "buy"
+    for ev, _hb in fill_rows:
         for lo, hi in _WINDOWS:
             if ev + lo <= horizon:
                 n_anchor[f"{lo}_{hi}"] += 1
-        for e2 in range(ev + 1, min(ev + 1 + _WINDOWS[-1][1], horizon + 1)):
+    for e2, muts in by_ev.items():
+        pre_bb, pre_ba = touch_before[e2 - 1]
+        for ev, hit_is_buy in fill_rows:
             wname = _window_of(e2 - ev)
             if wname is None:
                 continue
-            for kind2, side2, lvl in by_ev.get(e2, ()):
-                bb, ba = touch_before[e2 - 1]
-                own_touch = bb if side2 == "buy" else ba
+            for kind2, side2, lvl in muts:
+                own_touch = pre_bb if side2 == "buy" else pre_ba
                 if own_touch is None:
                     continue
                 dist = own_touch - lvl if side2 == "buy" else lvl - own_touch

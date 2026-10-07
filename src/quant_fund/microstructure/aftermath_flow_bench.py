@@ -203,33 +203,36 @@ class _FlowSim(ZILobSimulator):
         return super()._remove_resting_at(book, level, idx, cause)
 
 
-def sim_aftermath(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
-    """Post-fill flow decomposition on one sim arm."""
-    sim = _FlowSim(cfg, flow)
-    touch_before: list[tuple[int | None, int | None]] = []
-    for _ in range(horizon):
-        touch_before.append((sim.best_bid_level, sim.best_ask_level))
-        sim.step()
-    # touch_before[k] = the book touch at the START of the (k+1)-th
-    # event: it is appended before sim.step(), and flow_log event ids
-    # are 1-indexed (n_events), so the pre-event touch of event e lives
-    # at touch_before[e - 1].
+def _flow_window_panes(
+    flow_log: list[tuple[str, str, int, int]],
+    touch_before: list[tuple[int | None, int | None]],
+    horizon: int,
+) -> dict[str, Any]:
+    """Channel×distance panes over a mutation log.
+
+    Anchors are "fill" removals; every mutation logged at a later event
+    inside the anchor's forward window lands in a (hit|unhit)
+    channel×distance bucket. ``touch_before[k]`` must be the touch
+    standing at the START of the (k+1)-th event — events are 1-indexed,
+    so the pre-event touch of event e2 is ``touch_before[e2 - 1]``;
+    indexing it by e2 would consume the post-event state, a look-ahead
+    inside the event. A window start exists iff ``ev + lo <= horizon``
+    — inclusive, or the last event and any anchor whose window starts
+    at the horizon would be dropped.
+    """
     by_ev: dict[int, list[tuple[str, str, int]]] = {}
-    for kind, side, lvl, ev in sim.flow_log:
+    for kind, side, lvl, ev in flow_log:
         by_ev.setdefault(ev, []).append((kind, side, lvl))
 
     cells = {f"{lo}_{hi}": _empty_cell() for lo, hi in _WINDOWS}
     n_anchor = {f"{lo}_{hi}": 0 for lo, hi in _WINDOWS}
     horizon_max = _WINDOWS[-1][1]
-    for kind, side, _lvl, ev in sim.flow_log:
+    for kind, side, _lvl, ev in flow_log:
         if kind != "fill":
             continue
         # side = maker side consumed; the "hit" side of the anchor fill.
         hit_is_buy = side == "buy"
         for lo, _hi in _WINDOWS:
-            # sim events are numbered 1..horizon, so the window start
-            # exists iff ev + lo <= horizon (the tape side uses a strict
-            # < on a 0-indexed range — equivalent).
             if ev + lo <= horizon:
                 n_anchor[f"{lo}_{_hi}"] += 1
         for e2 in range(ev + 1, min(ev + 1 + horizon_max, horizon + 1)):
@@ -244,10 +247,24 @@ def sim_aftermath(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
                 dist = own_touch - lvl if side2 == "buy" else lvl - own_touch
                 rel = "hit" if (side2 == "buy") == hit_is_buy else "unhit"
                 cells[wname][rel][kind2][_dist_bucket(dist)] += 1
+    return _finish(cells, n_anchor)
+
+
+def sim_aftermath(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
+    """Post-fill flow decomposition on one sim arm."""
+    sim = _FlowSim(cfg, flow)
+    touch_before: list[tuple[int | None, int | None]] = []
+    for _ in range(horizon):
+        touch_before.append((sim.best_bid_level, sim.best_ask_level))
+        sim.step()
+    # touch_before[k] = the book touch at the START of the (k+1)-th
+    # event: it is appended before sim.step(), and flow_log event ids
+    # are 1-indexed (n_events), so the pre-event touch of event e lives
+    # at touch_before[e - 1].
     return {
         "ok": True,
         "n_events": sim.n_events,
-        "windows": _finish(cells, n_anchor),
+        "windows": _flow_window_panes(sim.flow_log, touch_before, horizon),
     }
 
 
