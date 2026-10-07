@@ -64,7 +64,9 @@ def verify_quote(quote: TEEQuote, *, expected_checkpoint_sha256: str, nonce: str
         return False
     if not quote.binds_checkpoint:
         return False
-    return bool(quote.signature)
+    # A whitespace-only claim is no signature at all — the structural gate
+    # requires actual signature material before crypto is delegated.
+    return bool(quote.signature.strip())
 
 
 class OperatorProofManifest(BaseModel):
@@ -87,8 +89,27 @@ class OperatorProofManifest(BaseModel):
             )
         return self
 
-    def verify_artifacts_exist(self) -> bool:
-        return all(Path(p).exists() for p in self.proof_artifacts.values())
+    def verify_artifacts_exist(self, root: Path | None = None) -> bool:
+        """Every declared proof artifact must resolve to a real file.
+
+        Relative paths anchor at ``root`` — the manifest's own directory
+        when the caller knows it — so a checkpoint can only claim proofs
+        that exist relative to it. Without ``root`` they resolve against
+        the process cwd, which cannot anchor a remote checkpoint's claim.
+        A directory is not a proof artifact, and an empty path
+        (``Path("")`` → ``.``) never counts as one. An empty manifest
+        attests nothing — vacuous truth would claim tier-3 coverage for
+        zero proofs.
+        """
+        if not self.proof_artifacts:
+            return False
+        for artifact in self.proof_artifacts.values():
+            path = Path(artifact)
+            if root is not None and not path.is_absolute():
+                path = root / path
+            if not path.is_file():
+                return False
+        return True
 
 
 def attestation_ladder_status(checkpoint_dir: str | Path) -> dict[str, bool]:
@@ -107,7 +128,9 @@ def attestation_ladder_status(checkpoint_dir: str | Path) -> dict[str, bool]:
             quote = TEEQuote.model_validate_json(quote_path.read_text(encoding="utf-8"))
             # Structural check: the quote must self-bind its checkpoint hash
             # and carry a platform signature; crypto at deploy (see verify_quote).
-            status[AttestationTier.TEE.value] = quote.binds_checkpoint and bool(quote.signature)
+            status[AttestationTier.TEE.value] = quote.binds_checkpoint and bool(
+                quote.signature.strip()
+            )
         except Exception:  # noqa: BLE001 - fail closed
             status[AttestationTier.TEE.value] = False
     manifest_path = root / "zkml.manifest.json"
@@ -116,7 +139,9 @@ def attestation_ladder_status(checkpoint_dir: str | Path) -> dict[str, bool]:
             manifest = OperatorProofManifest.model_validate_json(
                 manifest_path.read_text(encoding="utf-8")
             )
-            status[AttestationTier.SELECTIVE_ZKML.value] = manifest.verify_artifacts_exist()
+            status[AttestationTier.SELECTIVE_ZKML.value] = manifest.verify_artifacts_exist(
+                manifest_path.parent
+            )
         except Exception:  # noqa: BLE001 - fail closed
             status[AttestationTier.SELECTIVE_ZKML.value] = False
     return status

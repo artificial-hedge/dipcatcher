@@ -228,7 +228,6 @@ class JobJournal:
             _fsync_parent(self.path.parent)
             self._seq = seq
             self._chain = chain
-            self._appends_since_compact = 0
             self._append_blocked = False
 
 

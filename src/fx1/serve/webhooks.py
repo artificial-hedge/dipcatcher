@@ -53,6 +53,13 @@ def _private_networks_allowed() -> bool:
     }
 
 
+# These legacy ranges can be classified as global by supported Python
+# versions. The 6a44 assignment at 192.88.99.2 is not globally reachable
+# either; IPv6 site-local addresses are outside the deliberately narrow
+# private-network opt-in (mirrors the BYOK destination policy).
+_LEGACY_SPECIAL_USE = tuple(ipaddress.ip_network(cidr) for cidr in ("192.88.99.0/24", "fec0::/10"))
+
+
 def _is_public_unicast(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     """Classify an address conservatively for an outbound callback."""
     if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
@@ -74,6 +81,10 @@ def _validate_literal_host(host: str) -> None:
         address = ipaddress.ip_address(candidate)
     except ValueError:
         return
+    if any(address in network for network in _LEGACY_SPECIAL_USE):
+        raise ValueError(
+            f"callback_url must not target a deprecated special-use address: {address}"
+        )
     if not _private_networks_allowed() and not _is_public_unicast(address):
         raise ValueError("callback_url must not target a private or special-use address")
 
@@ -91,6 +102,10 @@ def _resolved_addresses(host: str, port: int) -> tuple[str, ...]:
         raw = str(sockaddr[0])
         candidate = raw.split("%", 1)[0]
         address = ipaddress.ip_address(candidate)
+        if any(address in network for network in _LEGACY_SPECIAL_USE):
+            raise ValueError(
+                f"callback_url resolved to a deprecated special-use address: {address}"
+            )
         if not _private_networks_allowed() and not _is_public_unicast(address):
             raise ValueError(
                 f"callback_url resolved to a private or special-use address: {address}"

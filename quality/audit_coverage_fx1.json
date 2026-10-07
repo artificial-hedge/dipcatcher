@@ -132,6 +132,30 @@
     "selftest.py": {
       "status": "pending"
     },
+    "serve/attestation.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/journal.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/ops_receipt.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/receipt_store.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/usage_report.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "serve/webhooks.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
     "tail_audit.py": {
       "status": "audited"
     }
