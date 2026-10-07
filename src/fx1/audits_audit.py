@@ -138,7 +138,7 @@ def _resolve(
 
 
 def _apply_baseline_env() -> None:
-    for key in list(os.environ):
+    for key in set(os.environ):
         if key.startswith(_ENV_PREFIXES):
             del os.environ[key]
     os.environ.update(_BASELINE_ENV)
@@ -148,7 +148,7 @@ def _env_delta(before: dict[str, str]) -> bool:
     return dict(os.environ) == before
 
 
-def _receipt_contract_ok(blob: Any, stem_kind: str | None = None) -> bool:
+def _receipt_contract_ok(blob: Any) -> bool:
     if not isinstance(blob, dict):
         return False
     if any(k not in blob for k in _REQUIRED_KEYS):
