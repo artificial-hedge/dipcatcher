@@ -94,6 +94,7 @@ from quant_fund.microstructure.sim_real_ledger import measure_lobster
 from quant_fund.microstructure.spread_response import lobster_spread_response
 from quant_fund.microstructure.stale_quote import sim_stale_quote
 from quant_fund.microstructure.zone_map import zone_map
+from quant_fund.utils.hashing import sanitize_for_json
 from tests.unit.microstructure.test_sim_real_ledger import _ev, _write_pair
 
 
@@ -240,6 +241,19 @@ def test_event_zero_execution_stays_in_aggressor_ledgers(tmp_path: Path, event_t
     assert ledger["n_events"] == 3
     assert ledger["n_trades"] == 1
     assert ledger["mo_fraction"] == 1 / 3
+
+
+def test_json_sanitizer_handles_numpy_values() -> None:
+    sanitized = sanitize_for_json(
+        {
+            "nan": np.float32(np.nan),
+            "integer": np.int64(3),
+            "array": np.asarray([1.0, np.inf]),
+        }
+    )
+
+    assert sanitized == {"nan": None, "integer": 3, "array": [1.0, None]}
+    json.dumps(sanitized, allow_nan=False)
 
 
 def test_cancel_cluster_counts_hidden_execs(tmp_path: Path) -> None:
