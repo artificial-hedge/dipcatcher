@@ -63,6 +63,22 @@
     "ext_bench_audit.py": {
       "status": "audited"
     },
+    "extensions/contracts.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/feature_catalog.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/naming.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "extensions/registry.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
     "harness.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
