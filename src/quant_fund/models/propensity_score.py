@@ -44,10 +44,19 @@ FloatArray = NDArray[np.float64]
 
 def _as_1d(x: FloatArray, name: str, n_min: int) -> FloatArray:
     a = np.asarray(x, dtype=np.float64).ravel()
-    a = a[np.isfinite(a)]
+    # fail closed: silently dropping NaN positions here would leave
+    # paired arrays (y, d, x) misaligned downstream.
+    if not np.all(np.isfinite(a)):
+        raise ValueError(f"{name}: non-finite values present")
     if a.size < n_min:
         raise ValueError(f"{name}: need >= {n_min} finite obs, got {a.size}")
     return a
+
+
+def _binary(d: FloatArray, name: str = "d") -> FloatArray:
+    if not np.isin(np.unique(d), [0.0, 1.0]).all():
+        raise ValueError(f"{name} must be binary 0/1")
+    return d
 
 
 def _logit_fit(x: FloatArray, d: FloatArray, iters: int = 50) -> FloatArray:
@@ -136,7 +145,7 @@ def ps_match(
     """1:1 nearest-neighbor matching on the logit score with caliper;
     ATT estimator on matched pairs."""
     y = _as_1d(y, "y", 8)
-    d = _as_1d(d, "d", y.size)
+    d = _binary(_as_1d(d, "d", y.size))
     if d.size != y.size:
         raise ValueError("d must match y")
     ps = np.asarray(propensity_score(x, d)["ps"])
@@ -171,8 +180,12 @@ def ipw_ate(
     y: FloatArray, d: FloatArray, ps: FloatArray, *, trim: float = 0.02
 ) -> dict[str, float]:
     """Hájek IPW ATE with propensity trimming at ``trim`` tails."""
+    if not 0.0 <= trim < 0.5:
+        raise ValueError("trim must be in [0, 0.5)")
     y = _as_1d(y, "y", 8)
-    d = _as_1d(d, "d", y.size)
+    d = _binary(_as_1d(d, "d", y.size))
+    if d.size != y.size:
+        raise ValueError("d must match y")
     e = np.asarray(ps, dtype=np.float64).ravel()
     if e.size != y.size or not np.all(np.isfinite(e)):
         raise ValueError("ps must be finite and match y")
@@ -200,15 +213,23 @@ def overlap_ate(y: FloatArray, d: FloatArray, ps: FloatArray) -> dict[str, float
     (1-e) for treated and e for control — targets the population with
     clinical equipoise and is the variance-minimizing PS weighting."""
     y = _as_1d(y, "y", 8)
-    d = _as_1d(d, "d", y.size)
+    d = _binary(_as_1d(d, "d", y.size))
+    if d.size != y.size:
+        raise ValueError("d must match y")
     e = np.asarray(ps, dtype=np.float64).ravel()
-    if e.size != y.size:
-        raise ValueError("ps must match y")
+    if e.size != y.size or not np.all(np.isfinite(e)):
+        raise ValueError("ps must be finite and match y")
+    if np.any(e < 0.0) or np.any(e > 1.0):
+        raise ValueError("ps must lie in [0, 1]")
     w1 = 1.0 - e
     w0 = e
     d1, d0 = d == 1, d == 0
-    mu1 = float(np.sum(y[d1] * w1[d1]) / np.sum(w1[d1]))
-    mu0 = float(np.sum(y[d0] * w0[d0]) / np.sum(w0[d0]))
+    den1 = float(np.sum(w1[d1]))
+    den0 = float(np.sum(w0[d0]))
+    if den1 <= 0.0 or den0 <= 0.0:
+        raise ValueError("overlap weights sum to zero (degenerate ps)")
+    mu1 = float(np.sum(y[d1] * w1[d1]) / den1)
+    mu0 = float(np.sum(y[d0] * w0[d0]) / den0)
     return {"ato": mu1 - mu0, "mu1_ow": mu1, "mu0_ow": mu0}
 
 
