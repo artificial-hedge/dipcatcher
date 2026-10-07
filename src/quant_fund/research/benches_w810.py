@@ -7,20 +7,28 @@ vendor data is consumed, and no payload contains headline performance
 ratios. Each bench returns a flat dict of proper diagnostic statistics
 (conformal coverage, pinball/CRPS improvements, FDR control rates,
 detection delays), or ``{}`` if its synthetic setup cannot be constructed.
+
+Capability imports resolve to the canonical (already merged) modules only:
+``models.enbpi.EnbPI``, ``models.ngboost_lite.NGBoostGaussian``,
+``models.qrf.QuantileRegressionForest``, and
+``metrics.conformal_martingale.WatchMonitor``. The wave-9 lane's parallel
+duplicates (``models.quantile_forest``, ``models.watch``) were removed in the
+wave-9/10 consolidation; do not reintroduce a second implementation.
 """
 
 from __future__ import annotations
 
 import numpy as np
+from sklearn.linear_model import Ridge
 
 from quant_fund.metrics.anytime_fdr import ELond, e_bh, stopped_e_bh
+from quant_fund.metrics.conformal_martingale import WatchMonitor
 from quant_fund.metrics.e_detectors import EDetectorGaussian, run_detector
 from quant_fund.metrics.energy_score import energy_score
 from quant_fund.metrics.scoring import crps_gaussian
 from quant_fund.models.enbpi import EnbPI
-from quant_fund.models.ngboost_lite import NGBoostLite
-from quant_fund.models.quantile_forest import QuantileRegressionForest
-from quant_fund.models.watch import run_watch
+from quant_fund.models.ngboost_lite import NGBoostGaussian
+from quant_fund.models.qrf import QuantileRegressionForest
 from quant_fund.validation.leakage_redteam import (
     run_leaky_oracle_study,
     structural_lookahead_audit,
@@ -128,7 +136,18 @@ def bench_ts_conformal() -> dict[str, float]:
     """Time-series conformal battery (waves 9-10): EnbPI coverage on an
     AR(1) volatility-regime stream (Xu & Xie 2021/2023) and WATCH
     exchangeability monitoring on a mid-stream conformity shift
-    (Prinster, Han & Saria 2025)."""
+    (Prinster, Han & Saria 2025).
+
+    EnbPI needs a 2-D design, so the stream is embedded with two lagged
+    responses as features; ``alpha=0.2`` is the nominal 80% central band.
+    The mid-stream volatility increase is the regime break the interval
+    must absorb, so the reported coverage is expected to sit *below*
+    nominal (the residual window lags the shift) — the bench reports the
+    gap instead of claiming nominal coverage holds under a regime break.
+    WATCH runs the canonical ``WatchMonitor`` label martingale on
+    nonconformity scores and reports the first alarm index plus a seeded
+    exchangeable-null false-alarm control.
+    """
     try:
         rng = np.random.default_rng(_SEED)
         t_total = 520
@@ -137,28 +156,40 @@ def bench_ts_conformal() -> dict[str, float]:
         y = np.zeros(t_total)
         for t in range(1, t_total):
             y[t] = 0.6 * y[t - 1] + sigma[t] * eps[t]
-        train, test = y[:320], y[320:]
-        levels = np.linspace(0.1, 0.9, 9)
-        enbpi = EnbPI(quantile_levels=levels, n_bootstraps=10, random_state=7)
-        enbpi.fit(train)
-        hits = 0
-        n_test = test.size
-        for val in test:
-            grid = enbpi.update(float(val))
-            lo, hi = grid[0], grid[-1]
-            hits += int(lo <= val <= hi)
-        coverage = hits / n_test
+        # 2-D lagged design; bootstrap resampling needs n_estimators high
+        # enough that no training point lands in every bootstrap sample.
+        design = np.column_stack([y[1:-1], y[:-2]])
+        target = y[2:]
+        n_train = 318
+        enbpi = EnbPI(
+            lambda: Ridge(alpha=1e-3),
+            n_estimators=20,
+            alpha=0.2,
+            block_size=10,
+            seed=7,
+        )
+        enbpi.fit(design[:n_train], target[:n_train])
+        online = enbpi.predict_online(design[n_train:], target[n_train:])
+        coverage = float(online.coverage)
         # WATCH: conformity scores, scale doubles mid-stream
-        s = np.abs(rng.standard_normal(800))
-        s[500:] *= 2.5
-        watch = run_watch(s, alpha=0.05)
+        scores = np.abs(rng.standard_normal(800))
+        scores[500:] *= 2.5
+        watch = WatchMonitor(alpha=0.05, seed=0).run(scores)
+        first_alarm = watch.alarms[0] if watch.alarms else -1
+        # Null control: exchangeable streams must stay quiet at the same
+        # alpha (Ville: the anytime false-alarm probability is <= alpha).
+        fa_hits, fa_reps = 0, 50
+        for rep in range(fa_reps):
+            null = np.abs(np.random.default_rng(4_000 + rep).standard_normal(800))
+            fa_hits += int(bool(WatchMonitor(alpha=0.05, seed=rep).run(null).alarms))
         return {
             "enbpi_nominal_central": 0.8,
-            "enbpi_central_coverage": float(coverage),
+            "enbpi_central_coverage": coverage,
             "enbpi_abs_coverage_error": float(abs(coverage - 0.8)),
-            "enbpi_n_test": float(n_test),
-            "watch_detected": 1.0 if watch.alarm_time is not None else 0.0,
-            "watch_alarm_time": float(watch.alarm_time if watch.alarm_time is not None else -1.0),
+            "enbpi_n_test": float(target.size - n_train),
+            "watch_detected": 1.0 if watch.alarms else 0.0,
+            "watch_alarm_time": float(first_alarm),
+            "watch_null_fa_rate": fa_hits / fa_reps,
         }
     except (ValueError, RuntimeError, FloatingPointError):
         return {}
@@ -214,7 +245,7 @@ def bench_leakage_redteam() -> dict[str, float]:
 
 
 def bench_distributional_ml() -> dict[str, float]:
-    """Distributional-ML baselines (wave 9): NGBoostLite must beat a global
+    """Distributional-ML baselines (wave 9): NGBoostGaussian must beat a global
     constant location-scale baseline under CRPS; the quantile regression
     forest median must track the conditional median."""
     try:
@@ -224,14 +255,14 @@ def bench_distributional_ml() -> dict[str, float]:
         mu = np.sin(3.0 * x[:, 0]) + 0.5 * x[:, 1]
         sig = 0.3 + 0.4 * np.abs(x[:, 2])
         y = mu + sig * rng.standard_normal(n)
-        model = NGBoostLite(n_estimators=80, max_depth=2, random_state=3).fit(x, y)
+        model = NGBoostGaussian(n_estimators=80, max_depth=2, score="crps", seed=3).fit(x, y)
         mu_hat, sig_hat = model.predict_params(x)
         ngboost_crps = float(np.mean(crps_gaussian(y, mu_hat, sig_hat)))
         base_crps = float(np.mean(crps_gaussian(y, np.full(n, y.mean()), np.full(n, y.std()))))
         n2 = 300
         x2 = rng.uniform(0.0, 1.0, (n2, 2))
         y2 = 2.0 * x2[:, 0] + rng.standard_normal(n2) * (0.2 + x2[:, 1])
-        qrf = QuantileRegressionForest(n_estimators=40, min_samples_leaf=5, random_state=5).fit(
+        qrf = QuantileRegressionForest(n_estimators=40, min_samples_leaf=5, seed=5).fit(
             x2, y2
         )
         med = qrf.predict_quantiles(x2, np.array([0.5]))[:, 0]

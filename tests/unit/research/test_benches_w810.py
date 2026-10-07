@@ -66,6 +66,11 @@ def test_ts_conformal_coverage_and_watch_alarm() -> None:
     blob = bench_ts_conformal()
     assert blob["enbpi_abs_coverage_error"] < 0.15
     assert blob["watch_detected"] == 1.0
+    # The alarm must follow the mid-stream shift (index 500), not fire
+    # during the exchangeable pre-shift segment.
+    assert blob["watch_alarm_time"] >= 500.0
+    # Exchangeable-null control: Ville-style anytime false alarm <= alpha.
+    assert blob["watch_null_fa_rate"] <= 0.10
 
 
 def test_regime_eval_gate_directions() -> None:

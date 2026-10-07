@@ -159,3 +159,54 @@ def test_watch_monitor_weights_and_edges() -> None:
         weighted_conformal_p_value(np.array([np.nan, 1.0]), 0.0, np.ones(3), 0.2)
     with pytest.raises(ValueError):
         mixture_martingale(np.array([1.5]))
+
+
+# --- Ported from the deleted wave-9 duplicate suite
+# --- (tests/unit/models/test_watch.py) during the wave-9/10 consolidation.
+# --- The canonical suite already covers Ville false-alarm control, shift
+# --- detection, reset-on-alarm, weighted/oracle weights, and fail-closed
+# --- parameter edges. Not ported (deliberate interface differences): the
+# --- local ``weight_fn(i, t)`` index-ramp betting contract and the
+# --- ``conformity_from_quantiles`` score helper — the canonical modules take
+# --- nonconformity scores as input and score construction lives with callers.
+
+
+def test_watch_monitor_seed_reproducibility_and_wealth_bookkeeping() -> None:
+    scores = np.abs(np.random.default_rng(11).standard_normal(200))
+    a = WatchMonitor(alpha=ALPHA, seed=5).run(scores)
+    b = WatchMonitor(alpha=ALPHA, seed=5).run(scores)
+    np.testing.assert_array_equal(a.p_values, b.p_values)
+    np.testing.assert_array_equal(a.wealth, b.wealth)
+    # Nonnegative wealth started at 1 (Ville's inequality applies to this path).
+    assert a.wealth[0] == 1.0
+    assert np.all(a.wealth >= 0.0) and np.all(np.isfinite(a.wealth))
+    assert np.all((a.p_values > 0.0) & (a.p_values < 1.0))
+
+
+def test_watch_monitor_step_matches_run_and_warms_up_flat() -> None:
+    scores = np.abs(np.random.default_rng(11).standard_normal(200))
+    reference = WatchMonitor(alpha=ALPHA, seed=5, warmup=20).run(scores)
+    monitor = WatchMonitor(alpha=ALPHA, seed=5, warmup=20)
+    stepped = np.array([monitor.step(float(s))[1] for s in scores])
+    np.testing.assert_allclose(stepped, reference.wealth)
+    # No bet is placed during warm-up, so the wealth stays at 1.
+    np.testing.assert_array_equal(reference.wealth[:20], np.ones(20))
+    # Alarm indices are 0-based positions into the wealth path.
+    assert all(0 <= int(i) < scores.size for i in reference.alarms)
+
+
+def test_watch_monitor_detection_power_and_delay_under_scale_shift() -> None:
+    """Scale shift 1 -> 2 at t=1000: detection probability >= 0.85."""
+    n_rep, t0, horizon = 40, 1000, 2000
+    detections = 0
+    delays: list[int] = []
+    for rep in range(n_rep):
+        rng = np.random.default_rng(20_000 + rep)
+        scores = np.abs(rng.standard_normal(horizon))
+        scores[t0:] = np.abs(rng.standard_normal(horizon - t0)) * 2.0
+        alarms = [int(a) for a in WatchMonitor(alpha=ALPHA, seed=rep).run(scores).alarms if a >= t0]
+        if alarms:
+            detections += 1
+            delays.append(alarms[0] - t0)
+    assert detections / n_rep >= 0.85
+    assert float(np.median(delays)) < horizon - t0

@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from scipy.stats import kstest
+from scipy.stats import kstest, spearmanr
 
 from quant_fund.metrics.scoring import mean_pinball
 from quant_fund.models.qrf import QuantileRegressionForest, weighted_quantiles
@@ -140,3 +140,91 @@ def test_fail_closed_edges() -> None:
         qrf.predict_cdf(X[:2], np.array([np.nan]))
     with pytest.raises(ValueError):
         qrf.pit(X[:2], np.array([np.nan, 0.0]))
+
+
+# --- Ported from the deleted wave-9 duplicate suite
+# --- (tests/unit/models/test_quantile_forest.py) during the wave-9/10
+# --- consolidation. Only assertions the canonical suite did not already make:
+# --- median tracking, width-vs-sigma rank ordering, sample-size monotonicity,
+# --- shape/seed reproducibility, and NaN designs. Not ported (deliberate
+# --- canonical behaviour differences): the "levels must be strictly
+# --- increasing" contract (canonical maps each tau independently) and the
+# --- fixed n >= 30 fit floor (canonical uses n >= 2 * min_samples_leaf).
+
+
+def _linear_homoskedastic(n: int, seed: int) -> tuple[np.ndarray, np.ndarray]:
+    """y = 2x + N(0, 1) on x ~ U(-3, 3), one feature."""
+    rng = np.random.default_rng(seed)
+    x = rng.uniform(-3.0, 3.0, size=(n, 1))
+    return x, 2.0 * x[:, 0] + rng.normal(0.0, 1.0, size=n)
+
+
+def test_predict_quantiles_median_tracks_conditional_median() -> None:
+    x_tr, y_tr = _linear_homoskedastic(800, seed=1)
+    qrf = QuantileRegressionForest(n_estimators=50, seed=20260927).fit(x_tr, y_tr)
+    x_te = np.linspace(-3.0, 3.0, 200).reshape(-1, 1)
+    med = qrf.predict_quantiles(x_te, TAUS)[:, 1]
+    true_med = 2.0 * x_te[:, 0]
+    corr = float(np.corrcoef(med, true_med)[0, 1])
+    mae = float(np.mean(np.abs(med - true_med)))
+    assert corr > 0.8, f"median correlation {corr:.3f}"
+    assert mae < 0.6, f"median MAE {mae:.3f}"
+
+
+def test_predict_quantiles_width_ranks_with_heteroskedastic_sigma() -> None:
+    rng = np.random.default_rng(7)
+    x_tr = rng.uniform(-2.0, 2.0, size=(800, 1))
+    sigma = 0.3 + np.abs(x_tr[:, 0])
+    y_tr = x_tr[:, 0] + sigma * rng.standard_normal(800)
+    qrf = QuantileRegressionForest(n_estimators=50, seed=20260927).fit(x_tr, y_tr)
+    x_te = np.linspace(-2.0, 2.0, 150).reshape(-1, 1)
+    grid = qrf.predict_quantiles(x_te, np.array([0.1, 0.9]))
+    width = grid[:, 1] - grid[:, 0]
+    rho = float(spearmanr(width, 0.3 + np.abs(x_te[:, 0])).statistic)
+    assert rho > 0.4, f"width-vs-sigma rank correlation {rho:.3f}"
+
+
+def test_more_training_data_lowers_oos_median_pinball() -> None:
+    small_losses: list[float] = []
+    large_losses: list[float] = []
+    for split in range(5):
+        x_small, y_small = _linear_homoskedastic(120, seed=100 + split)
+        x_large, y_large = _linear_homoskedastic(800, seed=100 + split)
+        rng = np.random.default_rng(200 + split)
+        x_te = rng.uniform(-3.0, 3.0, size=(150, 1))
+        y_te = 2.0 * x_te[:, 0] + rng.normal(0.0, 1.0, size=150)
+        for x_tr, y_tr, acc in (
+            (x_small, y_small, small_losses),
+            (x_large, y_large, large_losses),
+        ):
+            qrf = QuantileRegressionForest(n_estimators=30, seed=20260927 + split).fit(x_tr, y_tr)
+            med = qrf.predict_quantiles(x_te, np.array([0.5]))[:, 0]
+            acc.append(mean_pinball(y_te, med, 0.5))
+    assert float(np.mean(large_losses)) < float(np.mean(small_losses))
+
+
+def test_predict_quantiles_shape_and_seed_reproducibility() -> None:
+    x_tr, y_tr = _linear_homoskedastic(300, seed=71)
+    qrf = QuantileRegressionForest(n_estimators=50, seed=20260927).fit(x_tr, y_tr)
+    x_te = np.linspace(-2.0, 2.0, 40).reshape(-1, 1)
+    first = qrf.predict_quantiles(x_te, TAUS)
+    assert first.shape == (40, TAUS.size)
+    np.testing.assert_array_equal(first, qrf.predict_quantiles(x_te, TAUS))
+    refit = QuantileRegressionForest(n_estimators=50, seed=20260927).fit(x_tr, y_tr)
+    np.testing.assert_array_equal(first, refit.predict_quantiles(x_te, TAUS))
+
+
+def test_nan_design_raises_at_fit_and_predict() -> None:
+    x_tr, y_tr = _linear_homoskedastic(120, seed=41)
+    x_bad = x_tr.copy()
+    x_bad[0, 0] = np.nan
+    with pytest.raises(ValueError):
+        QuantileRegressionForest(n_estimators=30, seed=0).fit(x_bad, y_tr)
+    qrf = QuantileRegressionForest(n_estimators=30, seed=0).fit(x_tr, y_tr)
+    with pytest.raises(ValueError):
+        qrf.predict_quantiles(np.array([[np.nan], [0.0]]), np.array([0.5]))
+
+
+def test_min_samples_leaf_must_be_positive() -> None:
+    with pytest.raises(ValueError):
+        QuantileRegressionForest(min_samples_leaf=0)
