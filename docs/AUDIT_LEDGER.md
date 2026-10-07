@@ -346,3 +346,48 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Audit-contract meta battery (this PR)
+
+`src/fx1/audits_audit.py` audits the audit suite itself: 922 probes over
+the 72 discovered `*_audit.py` modules plus suite-level conventions. For
+each battery it pins that the module imports, exports an audit/bench
+callable pair (resolving the documented stem-prefix exceptions —
+`dip_run_audit`, `eval_core_audit`, `forecast_*`, `train_receipt_audit`,
+`run_audit`, `fx1_tail_audit` — via a unique-callable fallback), executes
+inside a shared 180s budget, restores the process environment and leaves
+no leaked non-daemon threads behind. Its returned bench pins the sealed
+receipt contract: required keys, `SYNTHETIC`/`research_only`/
+`live_pnl_claim=False` honesty fields, `*.v1` schema, non-empty
+`claim.results` (probe-keyed dict or verdict-row list), boolean
+`claim.ok`, and a 64-hex `receipt_sha256` that the verifier accepts.
+
+Batteries claiming literal-bool `claim.results` get `bools_literal` and
+`ok_consistent` probes (`ok == all(results)`); the 16 older batteries
+whose results deliberately carry measured values are pinned in
+`_MEASURED_RESULTS` — a module may only appear there while its results
+actually are non-bool, so the allowlist flags itself stale instead of
+growing silently. `_DEFERRED` carries `fx1.serve.api_audit` whose
+offline-DNS/callback repair rides an open lane; the set is pinned to
+exactly that one entry. Convention probes require every battery to be
+imported by at least one `test_*.py` (dotted or `from <parent> import
+<stem>` forms), require every fx1-root `*.py` to hold a census `modules`
+entry, and recount each directory census `n_modules` recursively.
+
+The first full run exposed eight contract-level defects in existing
+batteries, all repaired in this PR rather than waived: five batteries
+leaked `fx1-job` thread-pool workers (`create_app`'s
+`ThreadPoolExecutor` is only shut down by the lifespan, which bare
+`TestClient(app)` never enters) — `anthropic_sdk_audit`,
+`oai_sdk_audit`, `stream_audit`, `webhook_audit` and
+`eval_lifecycle_audit` now register created apps and drain
+`app.state.jobs_executor` in teardown; `ds_audit` left its
+`DS_AUDIT_SENTINEL` marker set; `calibration_audit` inherited
+BLAS/numexpr `KMP_*`/`_RJEM_MALLOC_CONF` mutations and `tail_audit`
+inherited mlflow `_MLFLOW_TELEMETRY_SESSION_ID`/`MLFLOW_TRACKING_URI`
+mutations — both now snapshot and restore `os.environ`. These are
+teardown defects in the batteries, not in `api.py`'s executor contract.
+
+The receipt is `SYNTHETIC`, `research_only`, makes no live-PnL claim, and
+a running battery in the caller's process necessarily shares ambient
+state — budget/thread checks bound, not eliminate, that coupling.

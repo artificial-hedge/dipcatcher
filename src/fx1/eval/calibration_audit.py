@@ -38,6 +38,9 @@ def _raises(fn: Any) -> str:
 
 
 def calibration_audit() -> dict[str, Any]:
+    import os
+
+    env_before = dict(os.environ)
     from fx1.eval.calibration_eval import (
         build_calibration_bank,
         extract_probability,
@@ -91,6 +94,9 @@ def calibration_audit() -> dict[str, Any]:
     out["bad_bins_refuses"] = (
         _raises(lambda: run_calibration_eval(oracle, seed=3, n_bins=0)) == "ValueError"
     )
+    # BLAS/numexpr init inside the eval import mutates os.environ — restore
+    os.environ.clear()
+    os.environ.update(env_before)
     return out
 
 

@@ -169,12 +169,17 @@ def _sdk_client() -> Iterator[Any]:
         app = api_mod.create_app(backend_resolver=lambda *a, **k: _SdkBackend())
         transport = httpx2.ASGITransport(app=app)
         http = httpx2.AsyncClient(transport=transport, base_url="http://sdk-audit")
-        yield openai.AsyncOpenAI(
-            base_url="http://sdk-audit/v1",
-            api_key="sdk-audit",
-            http_client=http,
-            max_retries=0,
-        )
+        try:
+            yield openai.AsyncOpenAI(
+                base_url="http://sdk-audit/v1",
+                api_key="sdk-audit",
+                http_client=http,
+                max_retries=0,
+            )
+        finally:
+            # the app's job pool spawns non-daemon workers on first submit;
+            # the TestClient never runs the lifespan hook that shuts it down
+            app.state.jobs_executor.shutdown(wait=True)
     finally:
         for k, v in saved.items():
             if v is None:

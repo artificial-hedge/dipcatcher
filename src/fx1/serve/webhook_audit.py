@@ -80,6 +80,10 @@ _SECRET = "whsec-audit"  # NOSONAR — loopback-only test key, not a real creden
 _JOB_TERMINAL = ("succeeded", "failed", "cancelled")
 _WAIT_S = 15.0
 
+# Every app built by _make_ctx — each owns a non-daemon job pool whose
+# lifespan hook never runs under a bare TestClient; webhook_audit drains them.
+_APPS: list[Any] = []
+
 # intentionally insecure callback URLs — every surface must refuse them
 _URL_FILE = "file:///etc/passwd"  # NOSONAR — intentionally insecure scheme
 _URL_GOPHER = "gopher://x/hook"  # NOSONAR — intentionally insecure scheme
@@ -239,6 +243,7 @@ def _make_ctx(
     from fastapi.testclient import TestClient  # noqa: PLC0415
 
     app = _app(workdir, runner=runner, state_dir=state_dir)
+    _APPS.append(app)
     return _Ctx(client=TestClient(app, raise_server_exceptions=False), app=app, sink=sink)
 
 
@@ -1008,6 +1013,9 @@ def webhook_audit() -> dict[str, Any]:
             out.update(_probe_security(ctx))
     finally:
         sink.close()
+        for app in _APPS:
+            app.state.jobs_executor.shutdown(wait=True)
+        _APPS.clear()
         for k, v in saved.items():
             if v is None:
                 os.environ.pop(k, None)

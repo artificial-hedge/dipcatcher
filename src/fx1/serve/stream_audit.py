@@ -165,6 +165,11 @@ _TERMINAL_EVENTS = {
 }
 
 
+# Every app built by _make_ctx — each owns a non-daemon job pool whose
+# lifespan hook never runs under a bare TestClient; stream_audit drains them.
+_APPS: list[Any] = []
+
+
 # ---------------------------------------------------------------------------
 # SSE grammar parser — every physical line must be a spec field; anything
 # else is a malformed frame the probes flag by name.
@@ -440,6 +445,7 @@ def _make_ctx(
     from fastapi.testclient import TestClient  # noqa: PLC0415
 
     app = _app(workdir, backend, sse_keepalive_s=sse_keepalive_s)
+    _APPS.append(app)
     return _Ctx(client=TestClient(app, raise_server_exceptions=False), app=app)
 
 
@@ -1631,6 +1637,9 @@ def stream_audit() -> dict[str, Any]:
             out.update(_probe_buffered_reads(ctx, wd / "k"))
             out.update(_probe_concurrent(ctx, ctx_stream, rid_pool))
     finally:
+        for app in _APPS:
+            app.state.jobs_executor.shutdown(wait=True)
+        _APPS.clear()
         for k, v in saved.items():
             if v is None:
                 os.environ.pop(k, None)

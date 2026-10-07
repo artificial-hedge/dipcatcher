@@ -124,6 +124,11 @@ __all__ = ["eval_lifecycle_audit", "eval_lifecycle_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
 _ROOT = "k3y-material"
+
+# Every app built by _client — each owns a non-daemon job pool whose
+# lifespan hook never runs under a bare TestClient; the audit drains them.
+_APPS: list[Any] = []
+
 _SWEPT_ENVS = (
     _API_KEY_ENV,
     "MOONSHOT_API_KEY",
@@ -318,6 +323,7 @@ def _client(
             backend_resolver=resolve,
             **app_kw,
         )
+        _APPS.append(app)
         return TestClient(app, raise_server_exceptions=False), api_mod
     finally:
         for k, v in saved.items():
@@ -1706,6 +1712,9 @@ def eval_lifecycle_audit() -> dict[str, Any]:
     out.update(_boundary_probes())
     out.update(_callback_probes())
     out.update(_diff_probes())
+    for app in _APPS:
+        app.state.jobs_executor.shutdown(wait=True)
+    _APPS.clear()
     return out
 
 

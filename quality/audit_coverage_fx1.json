@@ -43,6 +43,10 @@
       "reason": "package surface only",
       "status": "waived"
     },
+    "audits_audit.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
     "capabilities.py": {
       "status": "pending"
     },
