@@ -7823,7 +7823,7 @@
     }
   ],
   "main_commit": "c57d3760c466294238f1efc05f1ed7c0ad219e7d",
-  "isolated_commit": "14a02621c34e1dac9af2fa87585636753db845fe",
+  "isolated_commit": "9b489aad43f409e908145899e79cf0bdc9bd1338",
   "github_ruleset_id": 24646693,
   "local_creation_guard": "hooks/reference-transaction",
   "recovery": "Original work is reachable by the recorded commit SHA. Inspect with git show SHA:path or apply commits onto isolated/main.",
@@ -7831,7 +7831,8 @@
     "refs/heads/devin/1791353234-audit-wave-book": "0fd7ca9331dfa5fb98fed868837addeaa727c5f6",
     "refs/heads/kimi/20261007-frechet-fix": "b3ca17c9ba708c54be83da0813f9e9afd7f7899d"
   },
-  "late_local_refs": {
-    "refs/heads/isolated@final-capture": "da5c3e78c7f618fb15e42169850bb01044c3ea77"
-  }
+  "late_local_refs": {},
+  "final_isolated_capture_head": "da5c3e78c7f618fb15e42169850bb01044c3ea77",
+  "github_retention_ruleset_id": 24648163,
+  "local_branch_retention_guard": true
 }
