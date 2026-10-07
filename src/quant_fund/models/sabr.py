@@ -47,6 +47,8 @@ def sabr_implied_vol(
     _check_sabr_params(alpha, beta, rho, nu)
     if not np.isfinite(forward) or not np.isfinite(tenor) or tenor <= 0.0:
         raise ValueError("forward must be finite, tenor > 0")
+    if not np.isfinite(float(shift)):
+        raise ValueError("shift must be finite")
     f = float(forward) + float(shift)
     k = np.asarray(strike, dtype=float) + float(shift)
     if not np.isfinite(k).all():
