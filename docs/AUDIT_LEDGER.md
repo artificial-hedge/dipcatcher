@@ -365,3 +365,27 @@ collisions and zero cross-kind shadowing, so resolve is a total
 injective owner lookup. ~115 literal-bool probes seal into a
 `capabilities_audit.v1` receipt; `capabilities.py` moves to `audited`,
 completing the fx1 root-module surface.
+
+## Cited completion + release signing audit (`chat.py`, `signing.py`)
+
+`fx1.serve.chat_signing_audit` pins the two contracts the serving layer
+leans on. `chat.py`: `sampling.stop` truncates before the gate (a
+forbidden tail cut by the stop list passes; one left in fails),
+`validate_fx1_output` raises `Fx1HonestyError` inside the wrapper so
+the footer can never be reached ungated, and provenance footers carry
+16-char receipt prefixes plus the `verify-research` hint. The tool
+half: a backend without `complete_with_tools` fails closed naming the
+backend class, the gate reads `content` only (forbidden text inside
+`tool_calls[].function.arguments` is machine JSON, not a claim),
+`logprobs` ride through verbatim (`None` under silence), and an
+untouched completion returns the identical object while a gated one
+preserves tool_calls/finish_reason/logprobs. `signing.py`: manifest
+covers the complete regular-file inventory minus the two root
+metadata files (nested `release.sig` under a subdir is a real
+artifact), signing needs `FX1_SIGNING_KEY` (never hardcoded),
+verification authenticates before hashing and fails closed on
+tampered bytes, added/removed files, forged manifest or signature,
+corrupt manifest JSON, a manifest declaring traversal paths (never
+opened — key comparison first), missing metadata, missing key
+(RuntimeError), symlink artifacts and FIFOs. ~55 literal-bool probes
+seal into a `chat_signing_audit.v1` receipt.
