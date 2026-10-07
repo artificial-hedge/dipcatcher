@@ -389,3 +389,27 @@ corrupt manifest JSON, a manifest declaring traversal paths (never
 opened — key comparison first), missing metadata, missing key
 (RuntimeError), symlink artifacts and FIFOs. ~55 literal-bool probes
 seal into a `chat_signing_audit.v1` receipt.
+
+## Managed key store audit (`keys.py`)
+
+`fx1.serve.keys_audit` pins the multi-tenant auth store the wire
+batteries lean on. Mint: `fx1k_`+40-hex secrets shown once,
+sha256-only storage, `key_id`/`prefix` display fingerprints, wire
+views strip `sha256` and every `_`-counter, scope resolution
+(defaults, additive `admin`, canonical `SCOPES` order, empty/unknown
+refused), per-field validation, and the store cap. Authenticate:
+uniform `None` for wrong/unknown/disabled/expired (no oracle),
+refusal ordering budgets → scope → window so a refused call never
+counts as a use nor burns a window slot, `rate_limited` carrying
+honest `retry_after` + `key_id`, rolling-window recovery, token
+budgets charged after served responses. Revoke/update/rotate:
+tombstones not deletes, double-revoke refuses `key_revoked`, patches
+keep counters while `clear` reverts only `CLEARABLE_KEY_FIELDS`,
+rotation inherits declared policy verbatim (absolute `expires_at`
+carried unless a fresh `ttl_s` rebases it), the predecessor's
+tombstone and successor journal in one line, and `keys_cap` is
+checked before the predecessor is touched. Durability: replay
+restores records + counters, live rate windows stay process-local,
+torn journals quarantine recovered keys while keeping auth required,
+and a later clean mint is not re-quarantined. ~75 literal-bool probes
+seal into a `keys_audit.v1` receipt.
