@@ -127,11 +127,14 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
     _context: ssl.SSLContext
 
     def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
+        context = ssl.create_default_context()
+        # Explicit contexts must advertise the protocol used by http.client.
+        context.set_alpn_protocols(["http/1.1"])
         super().__init__(
             host,
             port=port,
             timeout=timeout,
-            context=ssl.create_default_context(),
+            context=context,
         )
         self._address = address
 

@@ -55,7 +55,7 @@ from quant_fund.utils.reproducibility import git_revision
 GRAPH_SCHEMA = "receipt_graph.v1"
 
 # Field-name prefixes that imply a digest is meant to name a corpus member.
-_MEMBERSHIP_PREFIXES = ("prev_", "prior_", "cited_", "parent_", "next_", "child_")
+_REFERENCE_PREFIXES = ("prev_", "prior_", "cited_", "parent_", "next_", "child_")
 
 # Corpus-meta audit kinds exempt from orphan classification: they describe
 # the corpus itself, so standing alone carries no provenance signal.
@@ -80,7 +80,7 @@ def _field_name(field_path: str) -> str:
 
 def _implies_membership(field_name: str) -> bool:
     """Whether a digest field's name claims the value names a corpus member."""
-    if field_name.startswith(_MEMBERSHIP_PREFIXES):
+    if field_name.startswith(_REFERENCE_PREFIXES):
         return True
     return any(t in ("receipt", "receipts") for t in field_name.split("_"))
 

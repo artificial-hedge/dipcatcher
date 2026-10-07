@@ -91,8 +91,10 @@ def lobster_queue_jump(tape_dir: Path, ticker: str = "AMZN") -> dict[str, Any]:
         for ev, ob_row in zip(parse_messages(msg), csv.reader(f_ob), strict=True):
             asks_exp, bids_exp = parse_orderbook_row(ob_row)
             if not seeded:
+                # Row 0 is the book state AFTER message 0: seeding from it
+                # already includes event 0 — applying it would double-count
+                # the first event.
                 book.seed(asks_exp, bids_exp)
-                book.apply(ev)
                 seeded = True
                 continue
             asks, bids = book.top("ask", 1), book.top("bid", 1)
@@ -149,7 +151,9 @@ def sim_queue_jump(horizon: int = 8000, seed: int = 7) -> dict[str, Any]:
     offset; there is no queue-conditional placement choice to measure."""
     sim = ZILobSimulator(ZILobConfig(seed=seed))
     n_lo = 0
-    seen: set[int] = set()
+    # Seed orders exist before the first step; only ids appearing after a
+    # step are submissions (order ids are monotonic in the engine).
+    seen: set[int] = set(sim._orders)
     for _ in range(horizon):
         sim.step()
         for oid in sim._orders:

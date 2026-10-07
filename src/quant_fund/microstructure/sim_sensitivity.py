@@ -42,7 +42,7 @@ from quant_fund.microstructure.zi_lob_simulator import (
     ZILobSimulator,
     order_flow_autocorrelation,
 )
-from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes, sanitize_for_json
 from quant_fund.utils.reproducibility import git_revision
 
 SIM_SENSITIVITY_KIND = "sim_sensitivity"
@@ -230,17 +230,6 @@ def sensitivity_grid(*, horizon: int = 8000, seed: int = 7) -> dict[str, Any]:
     }
 
 
-def _sanitize(value: Any) -> Any:
-    """Replace non-finite floats with ``None`` recursively (strict-JSON safe)."""
-    if isinstance(value, dict):
-        return {str(key): _sanitize(item) for key, item in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_sanitize(item) for item in value]
-    if isinstance(value, float):
-        return value if math.isfinite(value) else None
-    return value
-
-
 def sim_sensitivity_bench(*, horizon: int = 8000, seed: int = 7) -> dict[str, Any]:
     """Sealed ``sim_sensitivity.v1`` receipt over the response surface.
 
@@ -258,7 +247,7 @@ def sim_sensitivity_bench(*, horizon: int = 8000, seed: int = 7) -> dict[str, An
         **sensitivity_grid(horizon=horizon, seed=seed),
         "interpretation": INTERPRETATION,
     }
-    payload = _sanitize(payload)
+    payload = sanitize_for_json(payload)
     payload["receipt_sha256"] = hash_bytes(canonical_json_bytes(payload))
     return payload
 

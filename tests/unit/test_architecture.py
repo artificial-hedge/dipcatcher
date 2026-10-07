@@ -5,6 +5,8 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+import pytest
+
 SRC = Path("src")
 MAX_MODULE_LINES = 2000
 LIBRARY_ROOTS = (SRC / "quant_fund", SRC / "fx1")
@@ -66,12 +68,20 @@ def _line_budgets() -> dict[str, int]:
     """Pinned budgets for legacy oversized modules; the pin may only shrink."""
     manifest = Path("quality/module_line_budgets.txt")
     budgets: dict[str, int] = {}
-    for raw in manifest.read_text(encoding="utf-8").splitlines():
+    for line_number, raw in enumerate(manifest.read_text(encoding="utf-8").splitlines(), start=1):
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
-        rel, count = line.rsplit(" ", 1)
-        budgets[rel] = int(count)
+        fields = line.split()
+        if len(fields) != 2:
+            raise AssertionError(f"{manifest}:{line_number}: expected PATH COUNT")
+        rel, count_text = fields
+        if rel in budgets:
+            raise AssertionError(f"{manifest}:{line_number}: duplicate budget for {rel}")
+        count = int(count_text)
+        if count <= MAX_MODULE_LINES:
+            raise AssertionError(f"{manifest}:{line_number}: remove unnecessary budget for {rel}")
+        budgets[rel] = count
     return budgets
 
 
@@ -88,10 +98,53 @@ def test_modules_stay_under_max_lines() -> None:
                 seen.add(rel)
                 if lines > budget:
                     offenders.append(f"{rel}:{lines} over pinned budget {budget}")
+                elif lines < budget:
+                    action = (
+                        "remove the pin"
+                        if lines <= MAX_MODULE_LINES
+                        else f"lower the pin to {lines}"
+                    )
+                    offenders.append(f"{rel}:{lines} below pinned budget {budget}; {action}")
             elif lines > MAX_MODULE_LINES:
                 offenders.append(f"{rel}:{lines}")
     offenders.extend(f"stale budget pin: {rel}" for rel in sorted(set(budgets) - seen))
     assert offenders == []
+
+
+def test_line_budget_manifest_rejects_duplicate_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    quality = tmp_path / "quality"
+    quality.mkdir()
+    (quality / "module_line_budgets.txt").write_text(
+        "quant_fund/legacy.py 2001\nquant_fund/legacy.py 2002\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with pytest.raises(AssertionError, match="duplicate budget"):
+        _line_budgets()
+
+
+def test_module_line_budget_must_follow_shrinks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = tmp_path / "src" / "quant_fund" / "legacy.py"
+    module.parent.mkdir(parents=True)
+    module.write_text("line\n" * 2001, encoding="utf-8")
+    quality = tmp_path / "quality"
+    quality.mkdir()
+    (quality / "module_line_budgets.txt").write_text(
+        "quant_fund/legacy.py 2002\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with pytest.raises(
+        AssertionError,
+        match="below pinned budget 2002; lower the pin to 2001",
+    ):
+        test_modules_stay_under_max_lines()
 
 
 def test_library_does_not_import_cli() -> None:

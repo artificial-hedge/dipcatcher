@@ -60,8 +60,9 @@ def _resilience_stats(
                     found = True
                     break
             if not found:
+                # An unrecovered depletion ends ITS episode, not the scan:
+                # later drops vs later baselines are still depletions.
                 n_unrecovered += 1
-                break
         i += 1
     arr = np.asarray(refill_s)
     out: dict[str, Any] = {
