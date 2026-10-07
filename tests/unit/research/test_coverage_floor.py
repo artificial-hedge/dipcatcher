@@ -224,3 +224,27 @@ def test_audit_fail_closed() -> None:
         audit_coverage_floor({"x": _GaussianFactory(1.0)}, n_train=0)
     with pytest.raises(ValueError):
         audit_coverage_floor({"x": _GaussianFactory(1.0)}, levels=(0.9999,))
+
+
+def test_alarm_off_grid_nominal() -> None:
+    """Off-grid nominal must not dead-end: the composite null
+    {rate <= 1 - nominal} is tested at the smallest grid p0 >= target,
+    so a biased stream still alarms and a nominal-rate stream stays quiet."""
+    biased = CoverageFloor(alpha=0.05)
+    for b in _stream(0.45, 400, seed=11):
+        biased.update(b)
+    assert biased.alarm(0.855) is True  # target 0.145 is off the 0.01 grid
+
+    nominal = CoverageFloor(alpha=0.05)
+    for b in _stream(0.145, 400, seed=12):
+        nominal.update(b)
+    assert nominal.alarm(0.855) is False
+
+
+def test_alarm_above_grid_top_is_conservative() -> None:
+    """A target above the grid's largest p0 is untestable — the lo-side
+    wallet can't certify it, so the alarm stays silent."""
+    cf = CoverageFloor(alpha=0.05, p0_grid=(0.10, 0.20))
+    for b in _stream(0.45, 400, seed=1):
+        cf.update(b)
+    assert cf.alarm(0.70) is False

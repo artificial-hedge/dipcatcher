@@ -77,3 +77,14 @@ def test_bench_smoke_and_schema() -> None:
         assert "variogram_score" in out["arms"][arm]
     assert out["data_label"] == "SYNTHETIC"
     assert len(out["payload_sha256"]) == 64
+
+
+def test_empty_sample_set_fails_closed() -> None:
+    """m = 0 means over an empty set silently yields nan — the score must
+    fail closed instead."""
+    y = np.zeros(3)
+    empty = np.empty((0, 3))
+    with pytest.raises(ValueError):
+        energy_score(y, empty)
+    with pytest.raises(ValueError):
+        variogram_score(y, empty)

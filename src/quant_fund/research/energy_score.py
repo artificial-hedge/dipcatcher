@@ -33,8 +33,8 @@ def energy_score(y: NDArray[np.float64], samples: NDArray[np.float64]) -> float:
     """ES(y, X) = E‖X−y‖ − ½E‖X−X′‖. samples: (m, d), y: (d,)."""
     y = np.asarray(y, dtype=np.float64)
     s = np.asarray(samples, dtype=np.float64)
-    if s.ndim != 2 or y.ndim != 1 or s.shape[1] != y.size:
-        raise ValueError("samples must be (m, d) and y (d,)")
+    if s.ndim != 2 or s.shape[0] < 1 or y.ndim != 1 or s.shape[1] != y.size:
+        raise ValueError("samples must be (m >= 1, d) and y (d,)")
     term1 = float(np.linalg.norm(s - y, axis=1).mean())
     diff = s[:, None, :] - s[None, :, :]
     term2 = float(np.linalg.norm(diff, axis=2).mean())
@@ -50,8 +50,8 @@ def variogram_score(
     """VS_p = Σᵢⱼ (|yᵢ−yⱼ|^p − E|Xᵢ−Xⱼ|^p)²."""
     y = np.asarray(y, dtype=np.float64)
     s = np.asarray(samples, dtype=np.float64)
-    if s.ndim != 2 or y.ndim != 1 or s.shape[1] != y.size:
-        raise ValueError("samples must be (m, d) and y (d,)")
+    if s.ndim != 2 or s.shape[0] < 1 or y.ndim != 1 or s.shape[1] != y.size:
+        raise ValueError("samples must be (m >= 1, d) and y (d,)")
     dy = np.abs(y[:, None] - y[None, :]) ** p
     ds = np.abs(s[:, :, None] - s[:, None, :]) ** p  # (m, d, d)
     return float(((dy[None] - ds.mean(axis=0)) ** 2).sum())

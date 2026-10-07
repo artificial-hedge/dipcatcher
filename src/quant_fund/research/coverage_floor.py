@@ -208,7 +208,18 @@ class CoverageFloor:
         1 - nominal` is rejected by the lo-side wallet e-process."""
         if not (0.0 < nominal_coverage < 1.0):
             raise ValueError(f"nominal_coverage must be in (0,1), got {nominal_coverage}")
-        e = self.evalue_below(1.0 - nominal_coverage)
+        # The lo-side wallet at p0 tests {rate <= p0}; its e-value stays
+        # valid under the smaller null {rate <= 1-nominal} whenever
+        # p0 >= 1-nominal. The tightest valid proxy is therefore the
+        # smallest grid point at or above the target — an exact grid hit
+        # reduces to the direct test, and a target above the grid top is
+        # untestable (conservative: no alarm).
+        p0 = np.asarray(self.p0_grid, dtype=float)
+        target = 1.0 - nominal_coverage
+        above = p0[p0 >= target]
+        if above.size == 0:
+            return False
+        e = self.evalue_below(float(above.min()))
         return math.isfinite(e) and e >= 1.0 / self.alpha
 
 

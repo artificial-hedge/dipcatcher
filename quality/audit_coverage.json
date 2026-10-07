@@ -246,6 +246,63 @@
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
+    },
+    "research/adaptive_conformal.py": {
+      "status": "audited"
+    },
+    "research/calibration_eprocess.py": {
+      "status": "audited"
+    },
+    "research/calibration_eval.py": {
+      "status": "audited"
+    },
+    "research/coverage_cs.py": {
+      "status": "audited"
+    },
+    "research/coverage_floor.py": {
+      "status": "audited"
+    },
+    "research/coverage_watch.py": {
+      "status": "audited"
+    },
+    "research/emerge.py": {
+      "status": "audited"
+    },
+    "research/energy_score.py": {
+      "status": "audited"
+    },
+    "research/evalues.py": {
+      "status": "audited"
+    },
+    "research/honest_verdict.py": {
+      "status": "audited"
+    },
+    "research/online_fdr.py": {
+      "status": "audited"
+    },
+    "research/policy_eprocess.py": {
+      "status": "audited"
+    },
+    "research/selective_inference.py": {
+      "status": "audited"
+    },
+    "research/serial_watch.py": {
+      "status": "audited"
+    },
+    "research/tail_watch.py": {
+      "status": "audited"
+    },
+    "research/xwatch.py": {
+      "status": "audited"
+    },
+    "research/mcs_seq.py": {
+      "status": "audited"
+    },
+    "research/spa_test.py": {
+      "status": "audited"
+    },
+    "research/winner_curse.py": {
+      "status": "audited"
     }
   },
   "schema_version": "audit-coverage/v1",

@@ -205,3 +205,12 @@ def test_tail_receipt_v2_round_trip(tmp_path) -> None:
     assert payload["payload"]["kind"] == "tail_audit"
     assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
     assert verify_receipt_file(path)["valid"] is True
+
+
+def test_deep_breach_without_outer_fails_closed() -> None:
+    """deep ⊆ outer by construction (q_lo < q_hi): a deep flag on a
+    non-outer row is impossible input — likely swapped args upstream —
+    and must raise rather than silently drop the event."""
+    proc = TailDepthEProcess(alpha=0.05, p0=0.5)
+    with pytest.raises(ValueError):
+        proc.update(False, True)

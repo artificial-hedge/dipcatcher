@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 
 import numpy as np
 import pytest
@@ -161,3 +162,37 @@ def test_dataset_sha256_includes_supplied_pits() -> None:
     same_pits = honest_verdict(scores, pits=_pits(17, scores), seed=5, n_boot=150)
     assert with_pits["dataset_sha256"] != without["dataset_sha256"]
     assert with_pits["dataset_sha256"] == same_pits["dataset_sha256"]
+
+
+def test_page_hinkley_only_alarm_demotes_confirmed() -> None:
+    """Declared gate: a PageHinkley alarm without an e-process crossing is
+    the 'drift diagnostic fired while the e-process did not' case —
+    supported_with_caveats, not confirmed."""
+    rng = np.random.default_rng(0)
+    winner = rng.normal(-1.5, 1.0, 200)
+    winner[100:] += 1.0  # mid-stream level shift: PH alarms, e-process quiet
+    scores = {
+        "winner": winner,
+        "runner": rng.normal(0.0, 1.0, 200),
+        "far": rng.normal(0.8, 1.0, 200),
+    }
+    rep = honest_verdict(scores, seed=0, n_boot=500)
+    drift = rep["components"]["drift"]
+    assert drift["page_hinkley_alarmed"] is True
+    assert drift["eprocess_alarmed"] is False
+    assert rep["components"]["promotion"]["promoted"] is True
+    assert rep["verdict"] == "supported_with_caveats"
+
+
+def test_reported_drift_evalue_capped_finite() -> None:
+    """A strongly drifting stream drives log_e past 700; the reported
+    final_evalue must stay finite (strict JSON has no Infinity literal)."""
+    n = 2500
+    scores = {
+        "winner": np.linspace(0.0, 1.0, n) ** 3 - 10.0,  # increasing diffs
+        "runner": np.random.default_rng(2).normal(0.0, 1.0, n),
+    }
+    rep = honest_verdict(scores, seed=0, n_boot=200)
+    fe = rep["components"]["drift"]["final_evalue"]
+    assert math.isfinite(fe)
+    json.dumps(rep, default=float, allow_nan=False)

@@ -143,7 +143,10 @@ def _drift_component(
         detail={
             "eprocess_alarmed": ep.alarmed,
             "alarm_index": ep.alarm_index,
-            "final_evalue": float(np.exp(ep.log_e)),
+            # capped like evalues.LossEProcess — an unbounded exp turns the
+            # reported e-value into inf, which json.dumps renders as the
+            # non-standard literal Infinity and breaks strict consumers.
+            "final_evalue": float(np.exp(min(ep.log_e, 700.0))),
             "page_hinkley_alarmed": ph_alarm,
         },
     )
@@ -307,15 +310,15 @@ def honest_verdict(
             edge_erased = corrected >= float(arrays[runner].mean())
         miscalibrated = bool(calib.detail.get("miscalibrated", False))
         cs_excludes_zero = bool(magnitude.detail.get("excludes_zero", False))
+        # PageHinkley is the diagnostic half of the drift lane: an alarm
+        # there without an e-process crossing is exactly the "drift
+        # diagnostic fired while the e-process did not" caveat case.
+        ph_alarmed = bool(drift.detail.get("page_hinkley_alarmed", False))
         if drifted or edge_erased or miscalibrated:
             verdict = "not_supported"
         elif promoted:
-            # only demote when the magnitude lane actually ran and its CS
-            # still contains zero — a missing lane can't disprove size
             verdict = (
-                "confirmed"
-                if (not magnitude.available or cs_excludes_zero)
-                else "supported_with_caveats"
+                "confirmed" if (cs_excludes_zero and not ph_alarmed) else "supported_with_caveats"
             )
         else:
             verdict = "supported_with_caveats"

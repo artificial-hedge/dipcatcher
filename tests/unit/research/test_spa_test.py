@@ -80,3 +80,16 @@ def test_bench_smoke_and_schema() -> None:
     assert set(out["arms"]) == {"delta=0.0", "delta=0.3"}
     assert out["data_label"] == "SYNTHETIC"
     assert len(out["payload_sha256"]) == 64
+
+
+def test_loss_diffs_positive_for_dominant_head() -> None:
+    """Sign convention pinned: d_j = bench - head, so a dominant head
+    gives positive mean diffs (matches the max_j sqrt(n)·d̄_j statistic)."""
+    from quant_fund.research.spa_test import _loss_diffs
+
+    rng = np.random.default_rng(6)
+    losses = rng.standard_normal((200, 3))
+    losses[:, 2] -= 1.0  # head 2 dominates benchmark col 0
+    d = _loss_diffs(losses, 0)
+    assert d.shape == (200, 2)
+    assert d.mean(axis=0).argmax() == 1  # diff-column 1 is head 2

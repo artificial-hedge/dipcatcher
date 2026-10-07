@@ -51,7 +51,7 @@ def reality_check_pvalue(
 ) -> float:
     """White RC: H0 = no head beats the benchmark.
 
-    d_j = L_j − L_bench (lower d_j = better). Statistic
+    d_j = L_bench − L_j (higher d_j = head j better). Statistic
     T = max_j √n·d̄_j clipped at 0; bootstrap null resamples the
     recentered diffs with the stationary bootstrap.
     """

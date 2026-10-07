@@ -120,6 +120,11 @@ class TailDepthEProcess:
         """
         outer = _strict_breach(outer_breach)
         deep = _strict_breach(deep_breach)
+        if deep and not outer:
+            # deep ⊆ outer by construction (q_lo < q_hi); a deep breach on
+            # a non-outer row is impossible input — likely swapped args —
+            # and must fail closed rather than drop an event silently.
+            raise ValueError("deep_breach cannot be set on a non-outer row")
         self._n += 1
         if not outer:
             return self.evalue

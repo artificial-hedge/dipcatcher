@@ -111,3 +111,27 @@ def test_online_fdr_receipt_v2_round_trip(tmp_path) -> None:
     assert payload["payload"]["kind"] == "online_fdr.v1"
     assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
     assert verify_receipt_file(path)["valid"] is True
+
+
+def test_stream_report_feeds_own_sealer(tmp_path) -> None:
+    """The producer must satisfy the sealer's contract: stream_report with
+    the caller's dataset digest + params passes write_online_fdr_receipt
+    without hand-assembling contract keys."""
+    import json
+
+    from quant_fund.research.online_fdr import write_online_fdr_receipt
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+    proc = OnlineFDR(level=0.05)
+    for p in [0.5, 0.9, 0.01, 0.4]:
+        proc.update(p)
+    digest = hash_bytes(canonical_json_bytes({"digests": {"a.json": "0" * 64}}))
+    rep = proc.stream_report(
+        inputs_sha256=digest, params={"level": 0.05, "receipts_dir": "receipts"}
+    )
+    path = write_online_fdr_receipt(rep, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["payload"]["kind"] == "online_fdr.v1"
+    assert payload["payload"]["inputs_sha256"] == digest
+    assert verify_receipt_file(path)["valid"] is True

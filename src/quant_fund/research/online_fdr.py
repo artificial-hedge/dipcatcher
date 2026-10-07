@@ -123,9 +123,21 @@ class OnlineFDR:
     def rejections(self) -> list[int]:
         return [s.index for s in self._states if s.rejected]
 
-    def stream_report(self) -> dict[str, Any]:
-        return {
+    def stream_report(
+        self,
+        *,
+        inputs_sha256: str | None = None,
+        params: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Streaming summary; with ``inputs_sha256`` and ``params``
+        supplied it is also a complete ``online_fdr.v1`` receipt body for
+        :func:`write_online_fdr_receipt` (the sealer's contract requires
+        them — the digest and run params belong to the caller's dataset)."""
+        report: dict[str, Any] = {
             "kind": "online_fdr.v1",
+            "schema": "online_fdr.v1",
+            "research_only": True,
+            "live_pnl_claim": False,
             "n_tests": len(self._states),
             "n_rejections": self._n_rejections,
             "rejection_indices": self.rejections,
@@ -133,6 +145,11 @@ class OnlineFDR:
             "level": self.level,
             "evidence": ["foster_stine_alpha_investing", "mfdr_bounded", "summable_gamma"],
         }
+        if inputs_sha256 is not None:
+            report["inputs_sha256"] = inputs_sha256
+        if params is not None:
+            report["params"] = dict(params)
+        return report
 
 
 def write_online_fdr_receipt(

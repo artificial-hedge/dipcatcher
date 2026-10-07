@@ -139,7 +139,8 @@ class EProcessDriftAlarm:
         self._n += 1
         self._sum += v
 
-        e_value = float(np.exp(self._log_e))
+        # capped like evalues.LossEProcess — unbounded exp overflows to inf
+        e_value = float(np.exp(min(self._log_e, 700.0)))
         if self._alarm_index is None and np.log(1.0 / self.alpha) <= self._log_e:
             self._alarm_index = len(self._steps)
         step = _Step(v, self._running_mean(), e_value, self._alarm_index is not None, False)
