@@ -203,6 +203,62 @@ def _committed_checkpoint() -> Path | None:
     return None
 
 
+def _ft_corpus() -> bytes:
+    """A real training corpus for the fine-tune leg.
+
+    The job pipeline is real: the quality gate drops near-duplicate rows
+    (a padded corpus honestly fails the split) and the trainer needs
+    enough message text to tokenize — so these are distinct, substantive
+    receipt-lore Q/A pairs, not filler."""
+    pairs = [
+        (
+            "How does the checkpoint journal recover a job killed mid-train?",
+            "On restart the journal replays every record; a non-terminal status is a "
+            "run that never finished, so it is recovered as failed — an honest "
+            "terminal state rather than a fabricated resume.",
+        ),
+        (
+            "What does the weights manifest pin?",
+            "The manifest records the sha256 of weights.safetensors plus architecture "
+            "and training provenance; the engine refuses to load bytes that do not "
+            "match the pin.",
+        ),
+        (
+            "Why does the quality gate drop near-duplicate corpus rows?",
+            "A corpus padded with paraphrases of one example inflates eval pass rates "
+            "without evidence; dedup keeps only genuinely distinct supervision.",
+        ),
+        (
+            "What certifies a frozen split?",
+            "The split manifest pins train and val file digests with the seed that "
+            "produced them, so a later run cannot quietly re-split onto different data.",
+        ),
+        (
+            "How is a fine-tuned model name minted?",
+            "The route composes ft: from the base model name, the caller suffix, and "
+            "the job id prefix, then registers the minted name against the produced "
+            "checkpoint dir.",
+        ),
+        (
+            "What does ship_eligible mean on a model card?",
+            "The card may only be served when its eval delta records a passing honesty "
+            "gate and a strict domain improvement over the measured base.",
+        ),
+    ]
+    return b"".join(
+        json.dumps(
+            {
+                "messages": [
+                    {"role": "user", "content": q},
+                    {"role": "assistant", "content": a},
+                ]
+            }
+        ).encode()
+        + b"\n"
+        for q, a in pairs
+    )
+
+
 def _openai_legs(legs: _Legs, base: str, api_key: str) -> None:
     try:
         import openai
@@ -688,19 +744,9 @@ def run_goldenpath(
         # fine-tune: submit for real, carry to its honest terminal -------------
         ft_job_id = ""
         try:
-            ft_jsonl = b"".join(
-                json.dumps(
-                    {
-                        "messages": [
-                            {"role": "user", "content": f"q{i}"},
-                            {"role": "assistant", "content": f"a{i}"},
-                        ]
-                    }
-                ).encode()
-                + b"\n"
-                for i in range(3)
+            fup = client.upload_file(
+                _ft_corpus(), filename="goldenpath-ft.jsonl", purpose="fine-tune"
             )
-            fup = client.upload_file(ft_jsonl, filename="goldenpath-ft.jsonl", purpose="fine-tune")
             ft = client.create_finetune_job(
                 model="fx1", training_file=str(fup["id"]), suffix="goldenpath"
             )
@@ -773,6 +819,48 @@ def run_goldenpath(
             except Exception as exc:  # noqa: BLE001
                 legs.record("finetune_terminal", True, False, f"{type(exc).__name__}: {exc}")
 
+        # the whole point of the surface: a job that REALLY trains and the
+        # minted ft: model serving its own trained weights (post-restart)
+        try:
+            fup2 = client.upload_file(
+                _ft_corpus(), filename="goldenpath-ft2.jsonl", purpose="fine-tune"
+            )
+            ft2 = client.create_finetune_job(
+                model="fx1", training_file=str(fup2["id"]), suffix="gptrain"
+            )
+            ft2_id = str(ft2["id"])
+            fin2 = _wait_terminal(client.finetune_job, ft2_id, 120.0)
+            ckpts2 = client.finetune_job_checkpoints(ft2_id).get("data", [])
+            ft_model = fin2.get("fine_tuned_model")
+            ft_content = ""
+            served_as = ""
+            if fin2.get("status") == "succeeded" and ft_model:
+                ft_chat, _cid = client.chat_completion(
+                    [{"role": "user", "content": "what does a weights manifest pin?"}],
+                    model=str(ft_model),
+                )
+                served_as = str(ft_chat.get("model") or "")
+                choices = ft_chat.get("choices") or []
+                if choices:
+                    ft_content = str((choices[0].get("message") or {}).get("content") or "")
+            ok = (
+                fin2.get("status") == "succeeded"
+                and bool(fin2.get("trained_tokens"))
+                and any(str(c.get("id", "")).startswith("ftckpt-") for c in ckpts2)
+                and served_as == ft_model
+                and bool(ft_content.strip())
+            )
+            legs.record(
+                "ft_lifecycle_ran",
+                True,
+                bool(ok),
+                f"status={fin2.get('status')} tokens={fin2.get('trained_tokens')} "
+                f"ckpts={len(ckpts2)} served={served_as or 'none'} "
+                f"completion_len={len(ft_content)}",
+            )
+        except Exception as exc:  # noqa: BLE001
+            legs.record("ft_lifecycle_ran", True, False, f"{type(exc).__name__}: {exc}")
+
         # every wire receipt re-verifies from disk ------------------------------
         try:
             job_rc = client.job_receipt(doctor_job) if doctor_job else None
@@ -837,7 +925,11 @@ def run_goldenpath(
                 "safetensors fixture trained by scripts/fx1_tiny_lm_train.py) "
                 "loaded in-process and served over the wire through "
                 "fx1.serve.local_engine, with the wire completion byte-identical "
-                "to direct-weights generation."
+                "to direct-weights generation. ft_lifecycle_ran is true — a "
+                "fine-tune job ran the real in-repo trainer end-to-end: quality "
+                "gate, receipted training on the job corpus, a servable "
+                "ft:<name> checkpoint under --state-dir, and a real completion "
+                "from those trained weights after restart."
                 if runnable_ok
                 else f"GOLDENPATH DEFECT: {results}"
             ),
