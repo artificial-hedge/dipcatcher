@@ -16,8 +16,8 @@
 #   4. update `url` and FXI_VERSION below, commit to the tap repo
 class Fxi < Formula
   desc "Interactive CLI for fx-1: plug fx1/fx1-lite API keys into the dipcatcher harness"
-  homepage "https://github.com/artificial-hedra/dipcatcher"
-  url "https://github.com/artificial-hedra/dipcatcher/releases/download/v0.4.0/fx_1-0.4.0-py3-none-any.whl"
+  homepage "https://github.com/artificial-hedge/dipcatcher"
+  url "https://github.com/artificial-hedge/dipcatcher/releases/download/v0.4.0/fx_1-0.4.0-py3-none-any.whl"
   sha256 "FILL_AT_RELEASE"
   license :cannot_represent # proprietary; see LICENSE in the repository
 
