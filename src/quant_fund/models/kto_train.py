@@ -73,6 +73,8 @@ def bench_kto_train(
         th = theta.detach().numpy().reshape(N_ACT, DX)
         acc = best_action_rate(x_e @ th.T, x_e, emb)
         acc_rand = 1.0 / N_ACT
+    if acc <= 2.0 * acc_rand:
+        raise ValueError("KTO policy did not beat random action rate")
     return {
         "synthetic_kto_best_rate": acc,
         "synthetic_kto_random_rate": acc_rand,

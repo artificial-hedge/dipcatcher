@@ -77,6 +77,9 @@ def bench_knowledge_graph_embed(
             rank = int((s > s[t_te[i]]).sum()) + 1
             hits += rank <= 10
     rand_hit = 10.0 / _NENT
+    hit_rate = hits / len(t_te)
+    if hit_rate <= 2.0 * rand_hit or hit_rate < 0.4:
+        raise ValueError("KGE hits@10 not meaningfully above random")
     return {
         "synthetic_kge_hits10": hits / len(t_te),
         "synthetic_kge_random_hits10": rand_hit,

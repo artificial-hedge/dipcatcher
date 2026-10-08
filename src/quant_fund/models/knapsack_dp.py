@@ -29,6 +29,8 @@ def bench_knapsack_dp(seed: int = 3053) -> dict[str, float]:
         if load + w[i] <= cap:
             load += w[i]
             val += v[i]
+    if val > opt + 1e-9 or opt <= 0:
+        raise ValueError("DP knapsack under greedy or empty")
     return {
         "synthetic_ks_opt": opt,
         "synthetic_ks_greedy": float(val),

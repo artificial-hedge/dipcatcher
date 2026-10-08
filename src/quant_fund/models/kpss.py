@@ -120,6 +120,8 @@ def bench_kpss(seed: int = 20261231 + 324) -> dict[str, float]:
     r_rw = kpss_test(rw)
     r_st = kpss_test(st)
     ok = r_rw["reject_stationarity"] == 1.0 and r_st["reject_stationarity"] == 0.0
+    if not ok:
+        raise ValueError("KPSS verdict off stationarity oracle")
     return {
         "synthetic_eta_rw": r_rw["eta"],
         "synthetic_eta_st": r_st["eta"],

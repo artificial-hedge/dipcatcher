@@ -85,6 +85,8 @@ def bench_klobuchar(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_klobuchar_day_gt_night"] = float(noon > night)
     out["synthetic_klobuchar_obliquity"] = float(low_el / zen)
     out["synthetic_klobuchar_floor_ok"] = float(night >= 5e-9 * _C - 1e-6)
+    if not (noon > night and night >= 5e-9 * _C - 1e-6 and low_el > zen):
+        raise ValueError("Klobuchar day/night/obliquity structure broken")
     return out
 
 

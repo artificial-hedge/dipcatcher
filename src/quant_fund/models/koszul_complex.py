@@ -54,6 +54,8 @@ def _bench_koszul_complex(seed: int = 0) -> float:
     # differentials square to zero
     d2, d1 = koszul_differentials([2, 3], 5)
     checks.append(bool(np.all((d1 @ d2) % 5 == 0)))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

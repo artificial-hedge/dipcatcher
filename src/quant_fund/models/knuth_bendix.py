@@ -86,6 +86,8 @@ def _bench_knuth_bendix(seed: int = 0) -> float:
     checks.append(
         locally_confluent(kb_complete(r1)) and reduce_str("aab", r1) == reduce_str("aab", r1)
     )
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

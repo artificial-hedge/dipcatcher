@@ -41,6 +41,8 @@ def _bench_kleene_normal(seed: int = 0) -> float:
     # U extraction of a halt gives output, of divergence gives 0
     checks.append(u_extract(t_pred(0, 7, 1)) == 8)
     checks.append(u_extract(t_pred(2, 7, 9)) == 0)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

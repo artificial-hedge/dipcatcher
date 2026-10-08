@@ -42,4 +42,6 @@ def bench_kepler_solve(seed: int = 20261231 + 855) -> dict[str, float]:
         total += 2
         checks += float(abs(E - e * np.sin(E) - M) < 1e-10)
         checks += float(abs(E - _kepler_E_bisect(M, e)) < 1e-9)
+    if checks != total:
+        raise ValueError("Kepler solve off residual/bisection oracle")
     return {"synthetic_kepler": checks / total}

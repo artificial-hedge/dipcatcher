@@ -15308,6 +15308,27 @@
   "models/kenyon_wilson.py": {
    "status": "audited"
   },
+  "models/kepler_solve.py": {
+   "status": "audited"
+  },
+  "models/kernel.py": {
+   "status": "audited"
+  },
+  "models/kernel_fun.py": {
+   "status": "audited"
+  },
+  "models/kernel_iv.py": {
+   "status": "audited"
+  },
+  "models/kernel_methods.py": {
+   "status": "audited"
+  },
+  "models/kernel_mixture.py": {
+   "status": "audited"
+  },
+  "models/kernel_regression.py": {
+   "status": "audited"
+  },
   "models/kerr_metric.py": {
    "status": "audited"
   },
@@ -15356,6 +15377,9 @@
   "models/kikimora_qa_studies.py": {
    "status": "audited"
   },
+  "models/killing_form.py": {
+   "status": "audited"
+  },
   "models/kimmel_branch.py": {
    "status": "audited"
   },
@@ -15369,6 +15393,9 @@
    "status": "audited"
   },
   "models/kinetic_ising.py": {
+   "status": "audited"
+  },
+  "models/kinetic_langevin.py": {
    "status": "audited"
   },
   "models/kingfish_qa_studies.py": {
@@ -15402,6 +15429,9 @@
    "status": "audited"
   },
   "models/kirchhoff_matrix.py": {
+   "status": "audited"
+  },
+  "models/kirchhoff_mig.py": {
    "status": "audited"
   },
   "models/kirchhoff_plate.py": {
@@ -15446,10 +15476,22 @@
   "models/kkt_solve.py": {
    "status": "audited"
   },
+  "models/kl_bandits.py": {
+   "status": "audited"
+  },
   "models/kl_div_eval_studies.py": {
    "status": "audited"
   },
+  "models/kl_expand.py": {
+   "status": "audited"
+  },
+  "models/kl_knn.py": {
+   "status": "audited"
+  },
   "models/kladenets_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/kleene_normal.py": {
    "status": "audited"
   },
   "models/klein_gordon.py": {
@@ -15464,19 +15506,37 @@
   "models/klipspringer_qa_studies.py": {
    "status": "audited"
   },
+  "models/klobuchar.py": {
+   "status": "audited"
+  },
   "models/klt_mmp.py": {
    "status": "audited"
   },
   "models/klt_pair.py": {
    "status": "audited"
   },
+  "models/kmer_count.py": {
+   "status": "audited"
+  },
+  "models/kmp_search.py": {
+   "status": "audited"
+  },
   "models/kmt_approx.py": {
+   "status": "audited"
+  },
+  "models/kmv.py": {
+   "status": "audited"
+  },
+  "models/knapsack_dp.py": {
    "status": "audited"
   },
   "models/knifefish_qa_studies.py": {
    "status": "audited"
   },
   "models/knight_theorem.py": {
+   "status": "audited"
+  },
+  "models/knn_ood.py": {
    "status": "audited"
   },
   "models/knoll_qa_studies.py": {
@@ -15500,7 +15560,13 @@
   "models/knot_signature.py": {
    "status": "audited"
   },
+  "models/knowledge_graph_embed.py": {
+   "status": "audited"
+  },
   "models/knowledge_organization.py": {
+   "status": "audited"
+  },
+  "models/knuth_bendix.py": {
    "status": "audited"
   },
   "models/knuth_rsk.py": {
@@ -15569,6 +15635,9 @@
   "models/kongamato_qa_studies.py": {
    "status": "audited"
   },
+  "models/konig_cover.py": {
+   "status": "audited"
+  },
   "models/kontsevich_mgn.py": {
    "status": "audited"
   },
@@ -15576,6 +15645,9 @@
    "status": "audited"
   },
   "models/kookaburra_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/koopman_edmd.py": {
    "status": "audited"
   },
   "models/korolyuk.py": {
@@ -15590,6 +15662,12 @@
   "models/kostroma_qa_studies.py": {
    "status": "audited"
   },
+  "models/koszul_complex.py": {
+   "status": "audited"
+  },
+  "models/koszul_dual.py": {
+   "status": "audited"
+  },
   "models/koszul_duality.py": {
    "status": "audited"
   },
@@ -15597,6 +15675,9 @@
    "status": "audited"
   },
   "models/koszul_duality3.py": {
+   "status": "audited"
+  },
+  "models/koszul_homology.py": {
    "status": "audited"
   },
   "models/koszul_operad2.py": {
@@ -15609,6 +15690,9 @@
    "status": "audited"
   },
   "models/kp_hierarchy.py": {
+   "status": "audited"
+  },
+  "models/kpss.py": {
    "status": "audited"
   },
   "models/kpz_equation.py": {
@@ -15635,7 +15719,13 @@
   "models/kreyn_resolvent.py": {
    "status": "audited"
   },
+  "models/kriging.py": {
+   "status": "audited"
+  },
   "models/krill_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/kripke_semantics.py": {
    "status": "audited"
   },
   "models/kron_product.py": {
@@ -15671,6 +15761,9 @@
   "models/krylov_subspace_time.py": {
    "status": "audited"
   },
+  "models/kto_train.py": {
+   "status": "audited"
+  },
   "models/kuafu_qa_studies.py": {
    "status": "audited"
   },
@@ -15684,6 +15777,12 @@
    "status": "audited"
   },
   "models/kudu_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/kuhn_munkres.py": {
+   "status": "audited"
+  },
+  "models/kuiper.py": {
    "status": "audited"
   },
   "models/kukulcan_qa_studies.py": {
@@ -15713,6 +15812,9 @@
   "models/kuritja_qa_studies.py": {
    "status": "audited"
   },
+  "models/kushner_mca.py": {
+   "status": "audited"
+  },
   "models/kushner_strat.py": {
    "status": "audited"
   },
@@ -15734,7 +15836,19 @@
   "models/ky_fan.py": {
    "status": "audited"
   },
+  "models/kyber_kem.py": {
+   "status": "audited"
+  },
   "models/kyfan_norm.py": {
+   "status": "audited"
+  },
+  "models/kyle_lambda.py": {
+   "status": "audited"
+  },
+  "models/kzg_commit.py": {
+   "status": "audited"
+  },
+  "models/l2_gain.py": {
    "status": "audited"
   },
   "models/l2_hodge.py": {

@@ -31,6 +31,8 @@ def _run(seed: int, feedback: bool, steps: int = 1000) -> float:
 def bench_l2_gain(seed: int = _SEED) -> dict[str, float]:
     g_open = _run(seed, feedback=False)
     g_closed = _run(seed, feedback=True)
+    if not (g_closed < 0.7 * g_open) or not np.isfinite(g_closed):
+        raise ValueError("closed-loop L2 gain did not attenuate")
     return {
         "synthetic_l2_attenuate": float(g_closed < 0.7 * g_open),
         "synthetic_l2_stable": float(np.isfinite(g_closed)),

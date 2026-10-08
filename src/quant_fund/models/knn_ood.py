@@ -111,6 +111,8 @@ def bench_knn_ood(
             ]
         )
     auc_msp = _auc(np.asarray(msp), is_ood)
+    if auc_knn <= auc_msp or auc_knn < 0.9:
+        raise ValueError("kNN OOD score did not beat MSP")
     return {
         "synthetic_knnood_auc": auc_knn,
         "synthetic_knnood_msp_auc": auc_msp,

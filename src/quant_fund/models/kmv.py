@@ -78,3 +78,49 @@ def merton_kmv_solve(
         "DD": dd,
         "PD": pd,
     }
+
+
+def bench_kmv(seed: int = 20261231 + 971) -> dict[str, float]:
+    """Verify the KMV solve reproduces the Merton system exactly and that
+    PD is monotone in leverage."""
+    rng = np.random.default_rng(seed)
+    resid = 0.0
+    for _ in range(15):
+        e = float(rng.uniform(20.0, 200.0))
+        se = float(rng.uniform(0.15, 0.8))
+        d = float(rng.uniform(10.0, 0.9 * e * (1.0 + se)))
+        r = float(rng.uniform(0.0, 0.05))
+        T = float(rng.uniform(0.5, 2.0))
+        out = merton_kmv_solve(np.array([e]), np.array([se]), np.array([d]), r=r, t_horizon=T)
+        v = float(out["V"][0])
+        sv = float(out["sigma_V"][0])
+        sqt = sv * np.sqrt(T)
+        d1 = (np.log(v / d) + (r + 0.5 * sv * sv) * T) / sqt
+        d2 = d1 - sqt
+        f1 = v * stats.norm.cdf(d1) - d * np.exp(-r * T) * stats.norm.cdf(d2) - e
+        f2 = (v / e) * stats.norm.cdf(d1) * sv - se
+        resid = max(resid, abs(f1), abs(f2))
+    if resid > 1e-6:
+        raise ValueError(f"KMV solution violates Merton system: {resid}")
+
+    # leverage monotonicity: more debt at fixed equity => higher PD
+    pd_lo = float(
+        merton_kmv_solve(np.array([100.0]), np.array([0.4]), np.array([40.0]), t_horizon=1.0)["PD"][
+            0
+        ]
+    )
+    pd_hi = float(
+        merton_kmv_solve(np.array([100.0]), np.array([0.4]), np.array([80.0]), t_horizon=1.0)["PD"][
+            0
+        ]
+    )
+    if not (pd_hi > pd_lo):
+        raise ValueError("KMV PD not monotone in leverage")
+    # sanity bounds: PD is a probability; V exceeds equity
+    if not (0.0 <= pd_lo <= 1.0 and 0.0 <= pd_hi <= 1.0):
+        raise ValueError("KMV PD outside [0,1]")
+    return {
+        "synthetic_kmv_max_resid": resid,
+        "synthetic_kmv_pd_low_debt": pd_lo,
+        "synthetic_kmv_pd_high_debt": pd_hi,
+    }

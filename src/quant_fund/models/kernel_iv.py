@@ -272,6 +272,10 @@ def bench_kernel_iv(seed: int = 20261231 + 173) -> dict[str, float]:
     cmt = conditional_moment_test(y, x, w, g_hat)
     e1 = kernel_iv_estimate(y, x, w, alpha=0.1)
     e2 = kernel_iv_estimate(y, x, w, alpha=0.1)
+    if not (iv_err < naive_err):
+        raise ValueError("kernel IV did not beat endogeneity-biased smoothing")
+    if not np.allclose(np.asarray(e1["g_hat"]), np.asarray(e2["g_hat"])):
+        raise ValueError("kernel IV not deterministic")
     return {
         "synthetic_iv_relerr": iv_err,
         "synthetic_naive_relerr": naive_err,

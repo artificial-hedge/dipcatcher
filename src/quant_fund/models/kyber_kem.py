@@ -119,4 +119,6 @@ def bench_kyber_kem(seed: int = _SEED) -> dict[str, float]:
         agree += int(decap(sk, c) == ss)
         bad = (c[0].copy(), (c[1] + 1) % Q)
         tamper += int(decap(sk, bad) != ss)
+    if agree != 6 or tamper != 6:
+        raise ValueError("KEM shared-secret agreement or tamper rejection failed")
     return {"synthetic_kyber_kem": 1.0 if (agree == 6 and tamper == 6) else agree / 6.0}

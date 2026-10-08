@@ -88,6 +88,10 @@ def bench_kl_expand(seed: int = 20261231) -> dict[str, float]:
         np.linalg.norm(empirical - target) / np.linalg.norm(target)
     )
     out["synthetic_kl_valid"] = float(order99 < n and out["synthetic_kl_coef_cov_err"] < 0.15)
+    if not (order99 < n and out["synthetic_kl_coef_cov_err"] < 0.15):
+        raise ValueError("KL truncation/coef-covariance off oracle")
+    if out["synthetic_kl_rec_err"] > 1e-6:
+        raise ValueError("KL reconstruction lossy")
     return out
 
 

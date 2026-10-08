@@ -59,4 +59,6 @@ def bench_kuhn_munkres(seed: int = _SEED) -> dict[str, float]:
             sum(C[i, perm[i]] for i in range(n)) for perm in itertools.permutations(range(n))
         )
         ok += abs(val - best) < 1e-6 and sum(C[i, a] for i, a in enumerate(assign)) - best < 1e-6
+    if ok != 25:
+        raise ValueError("Hungarian assignment off exhaustive optimum")
     return {"synthetic_hungarian_optimal": float(ok) / 25}

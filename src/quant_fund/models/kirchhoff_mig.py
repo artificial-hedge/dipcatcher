@@ -68,4 +68,6 @@ def bench_kirchhoff_mig(seed: int = _SEED) -> dict[str, float]:
     img2 = kirchhoff_migrate(flat, x, t, v)
     col = np.argmax(img2[:, nx // 2])
     score += 1.0 if abs(col - it0) <= 2 else 0.0
+    if score < 3.0:
+        raise ValueError("Kirchhoff migration missed apex/focus/flat-event oracle")
     return {"synthetic_kirchhoff_mig": score / 3.0}

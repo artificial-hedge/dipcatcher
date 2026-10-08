@@ -174,6 +174,10 @@ def bench_kernel_regression(
     rmse0 = float(np.sqrt(np.mean((f0 - 0.5 * xe) ** 2)))
 
     f_llb, _ = local_linear(x, y, xe, bw)
+    if not (rmse_ll < 0.35 and corr_d > 0.5):
+        raise ValueError("local-linear fit missed the smooth-curve oracle")
+    if not np.allclose(f_ll, f_llb, rtol=0, atol=0):
+        raise ValueError("local-linear fit not deterministic")
     return {
         "synthetic_rmse_ll": rmse_ll,
         "synthetic_rmse_nw": rmse_nw,

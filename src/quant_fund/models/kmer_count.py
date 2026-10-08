@@ -24,4 +24,6 @@ def bench_kmer_count(seed: int = _SEED) -> dict[str, float]:
     windows = [seq[i : i + k] for i in range(len(seq) - k + 1)]
     brute = max(windows.count(w) for w in set(windows))
     ok = float(total == len(seq) - k + 1 and top == brute)
+    if not ok:
+        raise ValueError("k-mer spectrum off brute-force oracle")
     return {"synthetic_kmer_exact": ok}

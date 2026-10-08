@@ -26,4 +26,6 @@ def bench_kl_knn(seed: int = _SEED) -> dict[str, float]:
     x = rng.randn(3000)
     y = rng.randn(3000) + 1.0
     est = kl_nn(x, y)
+    if abs(est - 0.5) >= 0.15:
+        raise ValueError(f"KL kNN estimate off oracle: {est}")
     return {"synthetic_kl_nn": float(abs(est - 0.5) < 0.15)}

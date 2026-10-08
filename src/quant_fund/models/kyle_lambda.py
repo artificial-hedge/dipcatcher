@@ -112,6 +112,10 @@ def bench_kyle_lambda(seed: int = 20261231 + 253) -> dict[str, float]:
     out = kyle_lambda(d["signed_flow"], d["price_change"])
     out_b = kyle_lambda(d["signed_flow"], d["price_change"])
     lam_hat = float(out["lambda"])
+    if not (abs(lam_hat / eq["lambda"] - 1) < 0.15 and float(out["p_lambda"]) < 0.01):
+        raise ValueError("Kyle lambda recovery off equilibrium oracle")
+    if lam_hat != float(out_b["lambda"]):
+        raise ValueError("Kyle lambda not deterministic")
     return {
         "synthetic_lambda": lam_hat,
         "synthetic_lambda_true": eq["lambda"],

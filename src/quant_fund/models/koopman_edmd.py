@@ -357,4 +357,12 @@ def bench_koopman_edmd(seed: int = 20260131) -> dict[str, float]:
     a1 = hankel_dmd(x, dim=12).eigenvalues
     a2 = hankel_dmd(x, dim=12).eigenvalues
     out["synthetic_determinism_delta"] = float(np.max(np.abs(a1 - a2)))
+    if out["synthetic_eig_modulus_err"] > 0.01 or out["synthetic_eig_angle_err"] > 0.01:
+        raise ValueError("Hankel-DMD eigenvalues off oscillator oracle")
+    if out["synthetic_forecast_beats_persistence"] != 1.0:
+        raise ValueError("Koopman forecast did not beat persistence")
+    if out["synthetic_drift_auc"] < 0.6:
+        raise ValueError("eigenfunction drift AUC below oracle")
+    if out["synthetic_determinism_delta"] != 0.0:
+        raise ValueError("Hankel-DMD not deterministic")
     return out

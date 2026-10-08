@@ -28,6 +28,8 @@ def _bench_koszul_homology(seed: int = 0) -> float:
     # x = 0: H_0 = R size r, H_1 = R size r
     checks.append(koszul_h0(12, 0) == 12)
     checks.append(koszul_h1(12, 0) == 12)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

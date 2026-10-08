@@ -50,6 +50,8 @@ def bench_kernel_mixture(
         )
         ll_te = torch.logsumexp(torch.log(pi) + kern, 1).numpy()
     ll_gauss = gauss_logpdf(y_te, float(y.mean()), float(y.std()))
+    if float(ll_te.mean()) <= float(ll_gauss.mean()):
+        raise ValueError("kernel mixture LL did not beat unimodal Gaussian")
     return {
         "synthetic_kmn_test_ll": float(ll_te.mean()),
         "synthetic_kmn_gauss_ll": float(ll_gauss.mean()),

@@ -57,6 +57,8 @@ def _bench_kripke_semantics(seed: int = 0) -> float:
     checks.append(valid_on_frame(worlds, rel, "4"))
     checks.append(not valid_on_frame(worlds, rel, "T"))  # 0 not reflexive
     checks.append(not valid_on_frame(worlds, rel, "B"))  # 0->1 but 1 not ->0
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

@@ -44,6 +44,8 @@ def _bench_killing_form(seed: int = 0) -> float:
     # nondegenerate: gram matrix det != 0
     g = np.array([[killing(BASIS[i], BASIS[j]) for j in range(3)] for i in range(3)])
     checks.append(abs(np.linalg.det(g)) > 1e-9)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

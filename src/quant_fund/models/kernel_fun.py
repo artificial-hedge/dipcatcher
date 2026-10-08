@@ -24,8 +24,11 @@ def _bench_kernel_fun(seed: int = 0) -> float:
     checks = []
     checks.append(kernel_compose_ok(a, b, a @ b))
     checks.append(not kernel_compose_ok(a, b, a + b))
+    # Hecke kernel valid when the correspondence size covers the dual-group rank
     checks.append(hecke_kernel_rank(3, 2))
-    checks.append(True)  # geometric Satake gives the kernels
+    checks.append(not hecke_kernel_rank(1, 2))
+    if sum(checks) != len(checks):
+        raise ValueError("kernel composition/Hecke oracle failed")
     return float(sum(checks) / len(checks))
 
 

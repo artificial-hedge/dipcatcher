@@ -83,4 +83,6 @@ def bench_kzg_commit(seed: int = _SEED) -> dict[str, float]:
     checks.append(verify(c2, 7, v2, pi2, tau) and v2 == _eval(p2, 7))
     # opening at a different point's proof fails
     checks.append(not verify(c2, 5, v2, pi2, tau))
+    if sum(checks) != len(checks):
+        raise ValueError("KZG open/verify oracle failed")
     return {"synthetic_kzg_commit": float(sum(checks)) / len(checks)}

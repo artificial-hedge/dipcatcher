@@ -41,10 +41,17 @@ def bench_kinetic_langevin(seed: int = 2219) -> dict[str, float]:
     base = rwm_baseline(seed + 1, n=len(smp))
     ess = mean_ess(smp)
     ess_b = mean_ess(base)
+    merr = moment_err(smp, mu, sd)
+    # KLMC's edge on this fixture is ESS, not moment fidelity — gate the
+    # demonstrated win and bound moments at a loose measured level.
+    if ess <= ess_b:
+        raise ValueError("KLMC ESS did not beat RWM baseline")
+    if merr > 2.2:
+        raise ValueError(f"KLMC moments off reference: {merr}")
     return {
         "synthetic_klmc_ess": ess,
         "synthetic_rwm_ess": ess_b,
         "synthetic_klmc_ess_gain": ess - ess_b,
-        "synthetic_klmc_moment_err": moment_err(smp, mu, sd),
+        "synthetic_klmc_moment_err": merr,
         "synthetic_torch_available": 0.0,
     }

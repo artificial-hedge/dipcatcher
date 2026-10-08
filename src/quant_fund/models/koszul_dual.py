@@ -22,6 +22,8 @@ def _bench_koszul_dual(seed: int = 0) -> float:
     checks.append(ext_exterior(2, 3) == 6)
     # Poincare duality of the pair: dims symmetric
     checks.append(ext_exterior(1, 4) == 4)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

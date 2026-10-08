@@ -35,6 +35,10 @@ def bench_kushner_mca(seed: int = 4105) -> dict[str, float]:
     ref, _ = crr_price(2000)
     price = _mca_put()
     eur = european_put()
+    if abs(price - ref) > 0.05:
+        raise ValueError("MCA American put off CRR oracle")
+    if price < eur - 1e-9:
+        raise ValueError("American put priced below European floor")
     return {
         "synthetic_mca_price": price,
         "synthetic_mca_err": abs(price - ref),

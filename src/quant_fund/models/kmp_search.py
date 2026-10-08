@@ -54,6 +54,8 @@ def bench_kmp_search(seed: int = 20261231 + 262) -> dict[str, float]:
     worst = kmp_find(text, pat) == [len(text) - len(pat)]
     # overlapping: 'aaa' in 'aaaaa' → positions 0,1,2
     overlap = kmp_find("aaaaa", "aaa") == [0, 1, 2]
+    if agree != trials or not worst or not overlap:
+        raise ValueError("KMP search off substring oracle")
     return {
         "synthetic_agree": float(agree / trials),
         "synthetic_worstcase": float(worst),

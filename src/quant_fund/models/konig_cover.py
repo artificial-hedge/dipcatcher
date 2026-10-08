@@ -40,4 +40,6 @@ def bench_konig_cover(seed: int = _SEED) -> dict[str, float]:
         cover_l, cover_r = konig_cover(adj, n_r)
         valid = all(u in cover_l or v in cover_r for u in range(n_l) for v in adj[u])
         ok += valid and len(cover_l) + len(cover_r) == len(hopcroft_karp(adj, n_r))
+    if ok != 30:
+        raise ValueError("Konig cover size != max matching")
     return {"synthetic_konig_min_cover": ok / 30}

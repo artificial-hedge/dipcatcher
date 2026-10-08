@@ -81,6 +81,8 @@ def bench_kl_bandits(seed: int | None = None) -> dict[str, float]:
     steps, runs = 2000, 8
     kl = float(np.mean([kl_ucb(probs, steps, rng) for _ in range(runs)]))
     u = float(np.mean([_ucb1_regret(probs, steps, rng) for _ in range(runs)]))
+    if kl >= u:
+        raise ValueError("KL-UCB regret not below UCB1")
     return {
         "synthetic_klucb_regret": kl,
         "synthetic_ucb1_regret": u,
