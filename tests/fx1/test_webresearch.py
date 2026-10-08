@@ -434,6 +434,61 @@ def test_group_claims_detects_polarity_conflict() -> None:
     assert contested, f"expected a contested group, got {[g.status for g in groups]}"
 
 
+def test_group_claims_detects_quantitative_conflict() -> None:
+    claims = [
+        Claim(
+            text="US inflation was 3.4% in August 2026",
+            source_url="https://a",
+            tokens=frozenset(tokenize("US inflation was 3.4% in August 2026")),
+        ),
+        Claim(
+            text="US inflation was 8.9% in August 2026",
+            source_url="https://b",
+            tokens=frozenset(tokenize("US inflation was 8.9% in August 2026")),
+        ),
+    ]
+    groups = group_claims(claims)
+    assert len(groups) == 1
+    assert groups[0].status == "contested"
+    assert groups[0].contradictions
+
+
+def test_group_claims_normalizes_equivalent_numeric_facts() -> None:
+    claims = [
+        Claim(
+            text="US inflation was 3.40 percent in August 2026",
+            source_url="https://a",
+            tokens=frozenset(tokenize("US inflation was 3.40 percent in August 2026")),
+        ),
+        Claim(
+            text="US inflation was 3.4% in August 2026 per CPI",
+            source_url="https://b",
+            tokens=frozenset(tokenize("US inflation was 3.4% in August 2026 per CPI")),
+        ),
+    ]
+    groups = group_claims(claims)
+    assert len(groups) == 1
+    assert groups[0].status == "corroborated"
+
+
+def test_group_claims_does_not_conflate_periods_or_units() -> None:
+    claims = [
+        Claim(
+            text="US inflation was 3.4% in August 2025",
+            source_url="https://a",
+            tokens=frozenset(tokenize("US inflation was 3.4% in August 2025")),
+        ),
+        Claim(
+            text="US inflation was 3.4 basis points in August 2026",
+            source_url="https://b",
+            tokens=frozenset(tokenize("US inflation was 3.4 basis points in August 2026")),
+        ),
+    ]
+    groups = group_claims(claims)
+    assert len(groups) == 1
+    assert groups[0].status == "contested"
+
+
 def test_group_claims_single_source_honest() -> None:
     claims = [
         Claim(

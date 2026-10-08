@@ -26,6 +26,7 @@ import urllib.parse
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 
 from fx1.webresearch.fetch import FetchResult, fetch_page, robots_allowed
 from fx1.webresearch.search import DEFAULT_MAX_RESULTS, Searcher, SearchHit
@@ -86,6 +87,15 @@ _ANTONYMS: tuple[tuple[str, str], ...] = (
 _CLAIM_MARKERS = re.compile(
     r"\d|%|\b(?:more|less|than|since|after|before|now|latest|report(?:s|ed)?|"
     r"found|shows?|estimates?|according to|vs\.?|versus|compared)\b",
+    re.IGNORECASE,
+)
+_NUMERIC_FACT = re.compile(
+    r"(?<![\w.])"
+    r"(?P<currency>[$€£¥])?\s*"
+    r"(?P<value>[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)"
+    r"\s*(?P<unit>%|percent(?:age)?(?:\s+points?)?|bp(?:s)?|basis\s+points?|"
+    r"thousand|million|billion|trillion|[kmbt])?"
+    r"(?!\w|[.]\d)",
     re.IGNORECASE,
 )
 _BOILERPLATE = re.compile(
@@ -295,6 +305,52 @@ def _polarity(claim: Claim) -> set[str]:
     return out
 
 
+def _numeric_facts(claim: Claim) -> frozenset[tuple[str, str]]:
+    """Return normalized value/unit facts mentioned by a claim.
+
+    Numeric web claims are corroborated only when independently sourced text
+    agrees on every explicit number and unit.  This deliberately includes
+    dates and counts: text about different periods or sample sizes is not the
+    same factual claim.  The parser is intentionally small and conservative;
+    unsupported quantitative phrasing cannot manufacture corroboration.
+    """
+    facts: set[tuple[str, str]] = set()
+    unit_aliases = {
+        "percent": "%",
+        "percentage": "%",
+        "percentage point": "percentage-point",
+        "percentage points": "percentage-point",
+        "bp": "basis-point",
+        "bps": "basis-point",
+        "basis point": "basis-point",
+        "basis points": "basis-point",
+        "k": "thousand",
+        "m": "million",
+        "b": "billion",
+        "t": "trillion",
+    }
+    for match in _NUMERIC_FACT.finditer(claim.text):
+        raw_value = match.group("value").replace(",", "")
+        try:
+            value = format(Decimal(raw_value).normalize(), "f")
+        except InvalidOperation:
+            continue
+        if value == "-0":
+            value = "0"
+        currency = match.group("currency") or ""
+        raw_unit = " ".join((match.group("unit") or "").lower().split())
+        unit = currency + unit_aliases.get(raw_unit, raw_unit)
+        facts.add((value, unit))
+    return frozenset(facts)
+
+
+def _numeric_disagreement(left: Claim, right: Claim) -> bool:
+    """Fail closed when grouped quantitative claims do not exactly agree."""
+    left_facts = _numeric_facts(left)
+    right_facts = _numeric_facts(right)
+    return bool(left_facts or right_facts) and left_facts != right_facts
+
+
 def group_claims(claims: list[Claim], *, threshold: float = 0.6) -> list[ClaimGroup]:
     """Cluster claims by token overlap and detect contradictions inside each
     cluster: negation, or antonym polarity in opposite directions."""
@@ -323,6 +379,8 @@ def group_claims(claims: list[Claim], *, threshold: float = 0.6) -> list[ClaimGr
                 left_pol = _polarity(left)
                 right_pol = _polarity(right)
                 if left_pol and right_pol and left_pol != right_pol:
+                    conflict = True
+                if _numeric_disagreement(left, right):
                     conflict = True
                 if conflict and (left.text, right.text) not in group.contradictions:
                     group.contradictions.append((left.text, right.text))
