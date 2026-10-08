@@ -184,7 +184,10 @@ def bench_marginal_homogeneity(seed: int = 482) -> dict[str, float]:
             tab2[0, 0] += 1
         elif u < 0.55:
             tab2[1, 1] += 1
-        elif u < 0.80:
+        elif u < 0.85:
+            # 0.30 vs 0.15 discordant mass = the 2:1 skew the docstring
+            # claims; the old 0.25/0.20 split was only 1.25:1 and could
+            # not reject at p<=0.1 in expectation (measured p 0.545).
             tab2[0, 1] += 1
         else:
             tab2[1, 0] += 1

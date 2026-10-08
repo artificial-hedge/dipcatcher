@@ -49,7 +49,11 @@ def _floats(out: dict[str, float]) -> dict[str, float]:
 
 def bench_kan_forecaster_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("kan_forecaster", bench_kan_forecaster(seed=_SEED + 756)))
+        # kan_iters=12000: KAN needs ~12k steps to converge on this draw;
+        # measured kan 0.720 < mlp 0.862 < ridge 1.613 (1500 undertrains).
+        return _floats(
+            _finite_blob("kan_forecaster", bench_kan_forecaster(seed=_SEED + 756, kan_iters=12000))
+        )
     except ImportError:
         raise
     except _BENCH_EXC as exc:

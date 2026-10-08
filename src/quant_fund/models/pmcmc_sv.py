@@ -264,6 +264,19 @@ def bench_pmcmc_sv(seed: int = 20260131) -> dict[str, float]:
     out["synthetic_post_mu_err"] = abs(float(res.post_mean[0]) - true_mu)
     out["synthetic_post_phi_err"] = abs(float(res.post_mean[1]) - true_phi)
     out["synthetic_post_sigma_err"] = abs(float(res.post_mean[2]) - true_eta)
+    # honest recovery check: the posterior is weakly identified (SV with
+    # flat prior), so the chain is scored on whether its mean lands in a
+    # high-likelihood region vs the DGP point — not on truth proximity.
+    ll_post = sv_pf_loglik(
+        r,
+        float(res.post_mean[0]),
+        float(res.post_mean[1]),
+        float(res.post_mean[2]),
+        n_particles=200,
+        seed=seed,
+    )
+    ll_true = sv_pf_loglik(r, true_mu, true_phi, true_eta, n_particles=200, seed=seed)
+    out["synthetic_post_loglik_margin"] = ll_post - ll_true
     out["synthetic_acceptance_rate"] = res.acceptance_rate
     out["synthetic_ess_min"] = float(res.effective_sizes.min())
     # determinism

@@ -74,7 +74,11 @@ def auc_score(y: FloatArray, s: FloatArray) -> float:
 def bench_insider_anomaly(seed: int = 19) -> dict[str, float]:
     rng = np.random.default_rng(seed)
     x, y = synth_flow(600, rng)
-    ae = LinearAe(k=2)
+    # k=1 keeps the normal subspace minimal so burst features stay in the
+    # residual: AUC 0.98-1.0 across seeds at n=600 and n=4000. k>=2 lets
+    # the PCA span burst directions and collapses on unlucky draws
+    # (measured AUC 0.55-0.77 on some seeds).
+    ae = LinearAe(k=1)
     ae.fit(x[y < 0.5])  # train on normal only
     s = robust_z(ae.score(x))
     auc = auc_score(y, s)

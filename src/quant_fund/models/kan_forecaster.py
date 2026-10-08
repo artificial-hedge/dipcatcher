@@ -52,7 +52,7 @@ def synth_nonlinear(n: int, lag: int, rng: np.random.Generator) -> tuple[FloatAr
     return xs, y
 
 
-def bench_kan_forecaster(seed: int = 89) -> dict[str, float]:
+def bench_kan_forecaster(seed: int = 89, kan_iters: int = 1500) -> dict[str, float]:
     rng = np.random.default_rng(seed)
     torch = _torch()
     torch.manual_seed(seed)
@@ -79,7 +79,7 @@ def bench_kan_forecaster(seed: int = 89) -> dict[str, float]:
         return kan_edges(h, w2).squeeze(-1)
 
     opt = torch.optim.Adam([w1, w2], lr=5e-3)
-    for _ in range(1500):
+    for _ in range(kan_iters):
         idx = torch.randint(0, tr, (256,))
         loss = torch.mean((kan(xs[idx]) - ys[idx]) ** 2)
         opt.zero_grad()

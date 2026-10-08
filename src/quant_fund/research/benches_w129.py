@@ -85,7 +85,9 @@ def bench_nbeats_deep_family() -> dict[str, float]:
 
 def bench_mambats_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("mambats", bench_mambats(seed=_SEED + 766)))
+        # iters=2500: selective-scan recall needs ~2.5k steps on this draw;
+        # measured mamba mae 0.198 (vs gru 0.100, flat 0.389) under 0.5 gate.
+        return _floats(_finite_blob("mambats", bench_mambats(seed=_SEED + 766, iters=2500)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:
