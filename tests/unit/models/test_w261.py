@@ -1,6 +1,7 @@
 """Wave-261 robotics-2 unit tests."""
 
 import numpy as np
+import pytest
 
 from quant_fund.models.ekf_slam import bench_ekf_slam
 from quant_fund.models.frontier_explore import bench_frontier_explore
@@ -39,7 +40,15 @@ def test_stanley_keys() -> None:
 
 
 def test_particle_slam_keys() -> None:
-    assert "synthetic_slam_err" in bench_particle_slam(7)
+    out = bench_particle_slam()
+    assert out["synthetic_slam_err"] == 1.0
+    assert out["synthetic_slam_mean_err"] < 2.5
+    assert out["synthetic_slam_median_err"] < 2.3
+
+
+def test_particle_slam_rejects_excessive_mean_error() -> None:
+    with pytest.raises(ValueError, match="FastSLAM error off oracle"):
+        bench_particle_slam(7)
 
 
 def test_frontier_keys() -> None:
