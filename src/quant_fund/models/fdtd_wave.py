@@ -18,14 +18,24 @@ def fdtd(u0: np.ndarray, c: float, dx: float, dt: float, steps: int) -> np.ndarr
 
 
 def bench_fdtd_wave(seed: int = _SEED) -> dict[str, float]:
-    del seed  # deterministic CFL sweep
-    ok = 0.0
-    trials = 20
-    for _ in range(trials):
-        x = np.linspace(0, 1, 100)
-        u0 = np.exp(-((x - 0.5) ** 2) / 0.005)
-        c = 1.0
-        dt = 0.3 * (x[1] - x[0]) / c  # CFL-safe
-        u = fdtd(u0, c, x[1] - x[0], dt, 80)
-        ok += float(np.isfinite(u).all() and np.abs(u).max() < 10)
-    return {"synthetic_fdtd_stable": ok / trials}
+    # two-sided CFL oracle: stable iff c*dt/dx <= 1. Same deterministic
+    # sim below the boundary must stay bounded; above it must blow up.
+    x = np.linspace(0, 1, 100)
+    dx = x[1] - x[0]
+    u0 = np.exp(-((x - 0.5) ** 2) / 0.005)
+    c = 1.0
+    stable_ok = 0.0
+    for lam_frac in (0.3, 0.6, 0.9):
+        dt = lam_frac * dx / c
+        u = fdtd(u0, c, dx, dt, 120)
+        stable_ok += float(np.isfinite(u).all() and np.abs(u).max() < 10)
+    unstable_ok = 0.0
+    for lam_frac in (1.05, 1.3):
+        dt = lam_frac * dx / c
+        u = fdtd(u0, c, dx, dt, 120)
+        unstable_ok += float((not np.isfinite(u).all()) or np.abs(u).max() >= 10)
+    return {
+        "synthetic_fdtd_stable_frac": stable_ok / 3,
+        "synthetic_fdtd_unstable_caught_frac": unstable_ok / 2,
+        "synthetic_fdtd_score": float(stable_ok == 3 and unstable_ok == 2),
+    }

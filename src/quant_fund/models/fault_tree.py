@@ -61,11 +61,19 @@ def bench_fault_tree(seed: int = 4903) -> dict[str, float]:
     mcs = _minimal(_cut_sets(tree))
     top = _eval_prob(tree, TREE_P)
     mc = _mc_prob(tree, TREE_P, seed=seed)
+    top_err = abs(top - fault_tree_top_prob())
+    mc_err = abs(top - mc)
+    if top_err > 1e-12:
+        raise ValueError(f"eval diverges from closed form: {top_err:.2e}")
+    if mc_err > 0.02:
+        raise ValueError(f"MC diverges from exact: {mc_err:.3f}")
+    if not mcs or min(len(cs) for cs in mcs) < 1:
+        raise ValueError("no minimal cut sets")
     return {
         "synthetic_ft_top_prob": top,
         "synthetic_ft_top_true": fault_tree_top_prob(),
-        "synthetic_ft_top_err": abs(top - fault_tree_top_prob()),
-        "synthetic_ft_mc_err": abs(top - mc),
+        "synthetic_ft_top_err": top_err,
+        "synthetic_ft_mc_err": mc_err,
         "synthetic_ft_n_min_cut": float(len(mcs)),
         "synthetic_ft_min_cut_size": float(min(len(cs) for cs in mcs)),
     }

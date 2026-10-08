@@ -59,23 +59,45 @@ def peval(f: Poly, x: Poly, p: int, modulus: Poly) -> Poly:
     return acc
 
 
+def _monics(deg: int, p: int) -> list[Poly]:
+    """All monic polynomials of degree `deg` over GF(p)."""
+    out: list[Poly] = []
+    total = p**deg
+    for code in range(total):
+        coeffs = []
+        v = code
+        for _ in range(deg):
+            coeffs.append(v % p)
+            v //= p
+        coeffs.append(1)
+        out.append(coeffs)
+    return out
+
+
 def is_irreducible(f: Poly, p: int) -> bool:
-    """f irreducible over GF(p) iff no root factorizable: check x^{p^d}-x gcd test (deg<=3 brute)."""
-    if len(f) - 1 <= 1:
+    """f irreducible over GF(p): no root (kills linear factors), and for
+    deg > 3 no monic divisor of degree 2..deg//2 either — a composite like
+    (x^2+x+1)^2 over GF(2) has no roots but is reducible."""
+    deg = len(f) - 1
+    if deg <= 1:
         return True
-    for a in range(p):
-        if peval(f, [a], p, [0] * 10 + [1]) and all(
-            c == 0 for c in pmod(peval(f, [a], p, [0, 1]), p)
-        ):
-            return False
-    # proper check: no linear factor (deg<=3 suffices)
+    if f[-1] % p == 0:
+        return False  # not monic after reduction / degenerate lead
+    # linear factors: root test
     for a in range(p):
         ev = 0
         for c in reversed(f):
             ev = (ev * a + c) % p
         if ev == 0:
             return False
-    return True if len(f) - 1 <= 3 else True
+    if deg <= 3:
+        return True  # no linear factor => irreducible
+    # higher degrees: trial division by every monic poly of degree 2..deg//2
+    for d in range(2, deg // 2 + 1):
+        for g in _monics(d, p):
+            if pdivmod(f, g, p)[1] == [0]:
+                return False
+    return True
 
 
 def _bench_field_ext(seed: int = 0) -> float:
@@ -96,6 +118,12 @@ def _bench_field_ext(seed: int = 0) -> float:
     # minimal poly of alpha over GF(2) divides x^4-x = x^4+x (char 2)
     r = pdivmod([0, 1, 0, 0, 1], mod, p)[1]
     checks.append(r == [0])
+    # degree>3 irreducibility: (x^2+x+1)^2 = x^4+x^2+1 has no roots but
+    # is reducible; x^4+x+1 is genuinely irreducible over GF(2)
+    sq = pmul(mod, mod, p)
+    checks.append(sq == [1, 0, 1, 0, 1])
+    checks.append(not is_irreducible(sq, p))
+    checks.append(is_irreducible([1, 1, 0, 0, 1], p))  # x^4+x+1
     return float(sum(checks) / len(checks))
 
 

@@ -35,8 +35,14 @@ def _bench_fejer_kernel(seed: int = 0) -> float:
     f = fejer_mean(sq, 40)
     checks.append(float(np.max(np.abs(d))) > 1.05)  # Gibbs overshoot present
     checks.append(float(np.max(np.abs(f))) < 1.02)  # Fejer stays inside range
-    # Fejer kernel nonnegative: weights positive
-    checks.append(True)
+    # Fejer kernel is nonnegative -> positivity preserving: the Cesaro
+    # mean of a nonnegative signal stays ~>= 0 (up to discretization),
+    # while the Dirichlet partial sum undershoots below the signal floor
+    box = np.where((x > 0.3) & (x < 0.7), 1.0, 0.0)
+    fb = fejer_mean(box, 40)
+    db = dirichlet_partial(box, 40)
+    checks.append(float(fb.min()) > -0.02)
+    checks.append(float(db.min()) < -0.05)
     # away from the jump Fejer still converges
     mid = n // 4
     checks.append(abs(f[mid] - 1.0) < 0.05)

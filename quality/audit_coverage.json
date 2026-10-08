@@ -9437,6 +9437,12 @@
   "models/experimental_psychology.py": {
    "status": "audited"
   },
+  "models/expert_aggregation.py": {
+   "status": "audited"
+  },
+  "models/expert_iteration.py": {
+   "status": "audited"
+  },
   "models/expert_qa_studies.py": {
    "status": "audited"
   },
@@ -9447,6 +9453,9 @@
    "status": "audited"
   },
   "models/expm_int.py": {
+   "status": "audited"
+  },
+  "models/expm_pade.py": {
    "status": "audited"
   },
   "models/expokit.py": {
@@ -9462,6 +9471,12 @@
    "status": "audited"
   },
   "models/exponential_motive.py": {
+   "status": "audited"
+  },
+  "models/exponential_obj.py": {
+   "status": "audited"
+  },
+  "models/ext_compute.py": {
    "status": "audited"
   },
   "models/ext_functor.py": {
@@ -9489,6 +9504,15 @@
    "status": "audited"
   },
   "models/extremal_ray.py": {
+   "status": "audited"
+  },
+  "models/extreme_learning.py": {
+   "status": "audited"
+  },
+  "models/extreme_qr.py": {
+   "status": "audited"
+  },
+  "models/extremogram.py": {
    "status": "audited"
   },
   "models/f_divergence.py": {
@@ -9533,6 +9557,9 @@
   "models/factcc_lite_studies.py": {
    "status": "audited"
   },
+  "models/factor_analysis.py": {
+   "status": "audited"
+  },
   "models/factor_homology.py": {
    "status": "audited"
   },
@@ -9552,6 +9579,9 @@
    "status": "audited"
   },
   "models/factorization_hom3.py": {
+   "status": "audited"
+  },
+  "models/factorization_machine.py": {
    "status": "audited"
   },
   "models/factscore_studies.py": {
@@ -9608,6 +9638,9 @@
   "models/faltings_thm.py": {
    "status": "audited"
   },
+  "models/fama_macbeth.py": {
+   "status": "audited"
+  },
   "models/family_law.py": {
    "status": "audited"
   },
@@ -9656,10 +9689,19 @@
   "models/farkas_lemma.py": {
    "status": "audited"
   },
+  "models/farrow.py": {
+   "status": "audited"
+  },
   "models/fashion_studies.py": {
    "status": "audited"
   },
+  "models/fast_marching.py": {
+   "status": "audited"
+  },
   "models/fast_multipole.py": {
+   "status": "audited"
+  },
+  "models/fastica.py": {
    "status": "audited"
   },
   "models/fat_tailed_qa_studies.py": {
@@ -9668,7 +9710,13 @@
   "models/fatigue_life.py": {
    "status": "audited"
   },
+  "models/fatou_lemma.py": {
+   "status": "audited"
+  },
   "models/fatou_set.py": {
+   "status": "audited"
+  },
+  "models/fault_tree.py": {
    "status": "audited"
   },
   "models/faun_qa_studies.py": {
@@ -9686,6 +9734,9 @@
   "models/favar.py": {
    "status": "audited"
   },
+  "models/fay_herriot.py": {
+   "status": "audited"
+  },
   "models/fbi_transform.py": {
    "status": "audited"
   },
@@ -9695,10 +9746,19 @@
   "models/fbsde_markov.py": {
    "status": "audited"
   },
+  "models/fbsde_solver.py": {
+   "status": "audited"
+  },
+  "models/fci_alg.py": {
+   "status": "audited"
+  },
   "models/fclt_invariance.py": {
    "status": "audited"
   },
   "models/fdm_grid.py": {
+   "status": "audited"
+  },
+  "models/fdtd_wave.py": {
    "status": "audited"
   },
   "models/feather_duster_qa_studies.py": {
@@ -9713,6 +9773,18 @@
   "models/feature_geometry_studies.py": {
    "status": "audited"
   },
+  "models/fed_avg.py": {
+   "status": "audited"
+  },
+  "models/fedavg_hetero.py": {
+   "status": "audited"
+  },
+  "models/fednova_fl.py": {
+   "status": "audited"
+  },
+  "models/fedopt_adam.py": {
+   "status": "audited"
+  },
   "models/fefferman_stein.py": {
    "status": "audited"
   },
@@ -9720,6 +9792,9 @@
    "status": "audited"
   },
   "models/feichtinger_alg.py": {
+   "status": "audited"
+  },
+  "models/fejer_kernel.py": {
    "status": "audited"
   },
   "models/fejer_monotone.py": {
@@ -9738,6 +9813,9 @@
    "status": "audited"
   },
   "models/fem_assembly.py": {
+   "status": "audited"
+  },
+  "models/fem_truss.py": {
    "status": "audited"
   },
   "models/feminist_philosophy.py": {
@@ -9809,19 +9887,37 @@
   "models/fever_lite_studies.py": {
    "status": "audited"
   },
+  "models/feynman_kac_mc.py": {
+   "status": "audited"
+  },
   "models/feynman_rules.py": {
    "status": "audited"
   },
   "models/ff_kakeya.py": {
    "status": "audited"
   },
+  "models/fft_radix2.py": {
+   "status": "audited"
+  },
   "models/ffusion_lims.py": {
+   "status": "audited"
+  },
+  "models/fgls_ar1.py": {
+   "status": "audited"
+  },
+  "models/fgmres.py": {
    "status": "audited"
   },
   "models/fgsl_group.py": {
    "status": "audited"
   },
   "models/fgsl_group2.py": {
+   "status": "audited"
+  },
+  "models/fhs.py": {
+   "status": "audited"
+  },
+  "models/fiat_shamir.py": {
    "status": "audited"
   },
   "models/fib_infty.py": {
@@ -9855,6 +9951,9 @@
    "status": "audited"
   },
   "models/field_archaeology.py": {
+   "status": "audited"
+  },
+  "models/field_ext.py": {
    "status": "audited"
   },
   "models/field_linguistics.py": {
@@ -9894,6 +9993,12 @@
    "status": "audited"
   },
   "models/filtered_prism.py": {
+   "status": "audited"
+  },
+  "models/filters.py": {
+   "status": "audited"
+  },
+  "models/filtfilt.py": {
    "status": "audited"
   },
   "models/fin_cat.py": {
@@ -9938,16 +10043,25 @@
   "models/finger_tree.py": {
    "status": "audited"
   },
+  "models/finitary_induct.py": {
+   "status": "audited"
+  },
   "models/finite_chromatic.py": {
    "status": "audited"
   },
   "models/finite_diff_bvp.py": {
    "status": "audited"
   },
+  "models/finite_difference.py": {
+   "status": "audited"
+  },
   "models/finite_dim.py": {
    "status": "audited"
   },
   "models/finite_element_theory.py": {
+   "status": "audited"
+  },
+  "models/finite_field.py": {
    "status": "audited"
   },
   "models/finite_height.py": {

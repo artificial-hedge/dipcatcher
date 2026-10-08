@@ -114,4 +114,16 @@ def bench_fast_marching(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_fmm_wall_straight"] = float(straight)
     out["synthetic_fmm_detour"] = float(left / max(straight, 1e-30))
     out["synthetic_fmm_wall_finite"] = float(np.isfinite(left))
+    # gate on the references: 2-neighbor upwind FMM has ~20% worst-cell
+    # discretization error on this grid but small mean error, and the
+    # walled path must strictly detour through the gap
+    if out["synthetic_fmm_mean_rel_err"] > 0.05:
+        raise ValueError(f"fmm mean error off: {out['synthetic_fmm_mean_rel_err']}")
+    if out["synthetic_fmm_max_rel_err"] > 0.30:
+        raise ValueError(f"fmm max error off: {out['synthetic_fmm_max_rel_err']}")
+    if out["synthetic_fmm_detour"] < 1.3 or out["synthetic_fmm_wall_finite"] != 1.0:
+        raise ValueError(
+            f"fmm wall detour off: {out['synthetic_fmm_detour']} "
+            f"finite={out['synthetic_fmm_wall_finite']}"
+        )
     return out

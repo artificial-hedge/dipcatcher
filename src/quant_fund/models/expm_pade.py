@@ -113,4 +113,16 @@ def bench_expm_pade(seed: int = 20261231) -> dict[str, float]:
     Bd_exact = (Ad[0, 0] - 1.0) * Bz[0, 0] / Az[0, 0]
     out["synthetic_zoh_bd_err"] = float(abs(Bd[0, 0] - Bd_exact))
     out["synthetic_zoh_ad_err"] = float(abs(Ad[0, 0] - np.exp(-0.7)))
+    # gate on every reference: Padé-13 is accurate to ~1e-10 on these
+    # fixtures, so any drift beyond 1e-6 means the solver is broken
+    for name, tol in [
+        ("synthetic_expm_rot_err", 1e-8),
+        ("synthetic_expm_nilp_err", 1e-8),
+        ("synthetic_expm_scaled_err", 1e-8),
+        ("synthetic_expmv_err", 1e-8),
+        ("synthetic_zoh_bd_err", 1e-6),
+        ("synthetic_zoh_ad_err", 1e-8),
+    ]:
+        if out[name] > tol:
+            raise ValueError(f"{name} = {out[name]:.2e} exceeds {tol}")
     return out
