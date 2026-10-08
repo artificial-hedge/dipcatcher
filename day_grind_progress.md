@@ -2354,6 +2354,70 @@ independently. A session-scoped fixture sharing ONE export would cut ~700 MB of 
 and most of the runtime, with identical coverage; alternatively mark them `slow`. Reported,
 not patched — not our file, and the current shape passes whenever disk allows.
 
+---
+
+## Round 4 — problems #5 and #6 LANDED complete (`9a527daff`), guard proven live
+
+### The canon deliverable, completed by the Lead after the lane's next stall
+
+`canon-integrity` went inactive again with six files modified-uncommitted and two new files
+untracked — work that had already survived two external tree wipes by luck rather than by
+design. The Lead completed and landed it as `9a527daff`, authored and attributed to the
+lane, with the Lead's completion fixes named as such in the commit body. Before completing,
+the Lead obtained the lane's own diagnostic answers: the +221/−30 script change contains
+**no detection-rule change** (two-artifact split + `--emit-retired-families` codegen +
+`--check`), `ruleset_version` stays 1 with hash `7274f95d…`, and the failing fixtures were a
+**from-memory reconstruction** of the corpus template whose bench body didn't match the
+recognizers the real corpus is calibrated on.
+
+Lead completion fixes (both verified against the lane's stated intent):
+1. **Fixture honesty** — `_TEMPLATE_COPY` in `test_canon_qualification.py` now carries the
+   VERBATIM text of the retired representative `src/quant_fund/models/aa_tree.py`
+   (stem-templatized, dict braces doubled for `.format`, checklist docstring lines literal
+   because they are byte-identical across the real pair). A guard test whose fixture is a
+   lossy paraphrase of the thing it guards was the actual bug — the real files classify
+   `NON_QUALIFYING_TEMPLATE` (shared shape `27b95100f4ee`); the paraphrase did not.
+2. **Population mirror** — `_models_dir_hashes` now filters
+   `RULESET["population"]["excluded_stems"]` (`__init__`, `canon_qualification`), matching
+   the audit population the summary's `models_tree_sha256` binds. Globbing wider than the
+   audit made a correct summary look stale.
+3. **Ruff-clean codegen** — the emitter printed `(\n)` for an empty tuple; generated code
+   must pass `ruff format --check` without a post-hoc pass. Re-emission verified
+   byte-stable (idempotent codegen, sha `acd6d01f…`).
+
+### The digest guard earned its keep within hours of landing
+
+The mccabe lane's batch-1 commit `5c2805685` refactored `models/caviar.py` and
+`models/ngboost_lite.py` — two files INSIDE the audited corpus. The new
+`models_tree_sha256` guard fired immediately and precisely (0 added / 0 removed / exactly
+those 2 edited; the dump-row digest reproduced `bc4329…` to the byte, proving the summary
+self-consistent and the drift real). This is the guard working as designed: any edit to an
+audited module demands a deliberate re-audit. Regeneration (`scripts/canon_qualify.py`,
+ruleset untouched) confirmed: **10,388 modules / 7,529 NON_QUALIFYING_TEMPLATE / 2,859
+QUALIFYING — zero verdict flips** from the refactors; retired set stable at 7,529; only the
+provenance dump-sha moved. Cross-lane rule adopted: refactor lanes must not touch
+`src/quant_fund/models/` while a summary regeneration is in flight, and any models/ edit
+obligates a re-run of `canon_qualify.py` in the same landing.
+
+### Problems #5/#6 final state (all verified in-process, not narrated)
+
+- `RETIRED 7,529 / LIVE_OPTIONAL 2,693 / OPTIONAL 10,222 append-only / REQUIRED 23`;
+  every invariant holds; 0 vague retirement reasons; guards 19/19 green (canon
+  qualification 8, retired families 8, live-family de-emission 3).
+- `quality/canon_qualification_summary.json` (233 KB, slim Option A) TRACKED; full 24.5 MB
+  dump regenerated at `.dsh-24x7/` (gitignored); orphaned old-path 23 MB dump deleted.
+- `docs/CAPABILITY_QUALIFICATION.md` is the standard: five named zero-credit failure modes,
+  mechanical decision (classifier + ruleset hash + tree digest), honest position (**31 of
+  1,000,000; 999,969 remain; million-LOC unmet**), and the load-bearing line: *"When the
+  count and the truth diverge, this standard requires the smaller number."*
+- Census re-baselined in `docs/BENCHMARK_FAMILY_LIFECYCLE.md` (2026-10-07 row; budgets now
+  LIVE-based — "the 7,529 retired template-backed families … must not be read as
+  headroom"); old census kept as history. `docs/FX1_CAPABILITY_PROGRESS.md` carries the
+  measured credit table (7,529 template / 351 synthetic fixtures / 2,508 benchmark modules
+  = 0 credit each; 31 registered = 31) and the pace arithmetic (~88 years at the
+  demonstrated rate; ~2,740/day needed for one year — "about three orders of magnitude
+  beyond").
+
 ### Finding 2 — `n_boot: 1000`, not the mandated 2000 (P0.3 honestly downgraded)
 
 `evidence-debt` probed all five merged receipts (`merge_d1_v2aug`, `merge_h4f_v2aug`,
