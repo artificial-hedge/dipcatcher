@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-07T12:08:24.760266+00:00",
+ "generated_at": "2026-10-08T00:56:55.834655+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
   "01268826f737dc0fc1fc7e28555ce3aeb54760c7d759a29bf6ad7c8be3c59e64": "configs/corpus_epoch_3c319fb43ab0351e.json",
@@ -340,6 +340,7 @@
   "ce5203012f63807d82146868ab26fd44cc23019364feadfdbffb03cda064f522": "receipts/ledger_audit.json",
   "d01943ba6fa197eb7b8f259b796acc28a6cde10a2bee9995dd47a98b0535a91e": "receipts/cancel_gradient_bench.json",
   "d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec": "receipts/legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json",
+  "d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3": "receipts/forward_record_preregistration_v1.json",
   "d22bb5a384368a0d383a9cf6df4f38b40e148830e700784a96ae446354aed406": "receipts/spread_reopen.json",
   "d2b4dce996ab14b7e2e16112862b073e87294c06fe07b755942230c65ed65438": "receipts/sign_autocorr_real_amzn.json",
   "d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c": "receipts/concordance_df424fa2f6b1c4e9.json",
@@ -2107,6 +2108,28 @@
    "n_hashes": 1,
    "research_only": true,
    "schema": "forecast_pipeline_audit.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/forward_record_preregistration_v1.json",
+   "id": "forward_record_preregistration_v1",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": null,
+   "schema": "forward_record_preregistration.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/forward_record_preregistration_v1.json.seal.json",
+   "id": "forward_record_preregistration_v1.json.seal",
+   "live_pnl_claim": null,
+   "n_hash_matches": 1,
+   "n_hashes": 1,
+   "research_only": null,
+   "schema": "prereg_seal.v1"
   },
   {
    "created_at": null,
@@ -4672,7 +4695,7 @@
    "schema": "zone_ttl.v1"
   }
  ],
- "repo_revision": "1132917d83dc2d90d30c31b5e5b2d5d2105c3411",
+ "repo_revision": "73acc9d982915e557afd44357de87c34aacbcaad",
  "strategies": [
   {
    "data_source": "UNVERIFIED",

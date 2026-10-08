@@ -1,0 +1,62 @@
+{
+ "claims": {
+  "identity_respects": true,
+  "sim_instant_gap_is_sparse": true
+ },
+ "data_label": "MIXED",
+ "divergences": [
+  "iid:gap_1.301_vs_3.7554",
+  "iid:instant_0.3126_vs_0.887",
+  "split:gap_1.5983_vs_3.7554",
+  "split:instant_0.4616_vs_0.887",
+  "lv_split:gap_1.4895_vs_3.7554",
+  "lv_split:instant_0.4238_vs_0.887"
+ ],
+ "git_revision": "53c1a1c6ddc6c6f76d50f00d015ba369fd82c3aa",
+ "horizon": 60000,
+ "interpretation": "The instant term decomposes as P(empty the touch) times half the gap to the next level. On the tape both factors are set by near-touch book sparsity \u2014 fills frequently consume the whole visible level and the book behind it is not dense. unexplained_instant_ticks is the part of same-event \u0394mid not carried by touch-emptying (opposite-side improvements).",
+ "kind": "instant_decomp_bench",
+ "real": {
+  "mean_gap_ticks_when_empty": 3.7554,
+  "n_fills": 8974,
+  "ok": true,
+  "p_empty_touch": 0.4724,
+  "predicted_instant_ticks": 0.887,
+  "realized_instant_ticks": 0.887,
+  "unexplained_instant_ticks": -0.0
+ },
+ "receipt_sha256": "226a2c9be7eda55c12c3900e9c48c25fc344861b0d8defa3301b3ec567fce10f",
+ "research_only": true,
+ "schema": "instant_decomp.v1",
+ "seed": 7,
+ "sim_arms": {
+  "iid": {
+   "mean_gap_ticks_when_empty": 1.301,
+   "n_fills": 10141,
+   "ok": true,
+   "p_empty_touch": 0.4795,
+   "predicted_instant_ticks": 0.312,
+   "realized_instant_ticks": 0.3126,
+   "unexplained_instant_ticks": 0.0007
+  },
+  "lv_split": {
+   "mean_gap_ticks_when_empty": 1.4895,
+   "n_fills": 12694,
+   "ok": true,
+   "p_empty_touch": 0.4344,
+   "predicted_instant_ticks": 0.3235,
+   "realized_instant_ticks": 0.4238,
+   "unexplained_instant_ticks": 0.1003
+  },
+  "split": {
+   "mean_gap_ticks_when_empty": 1.5983,
+   "n_fills": 12779,
+   "ok": true,
+   "p_empty_touch": 0.4444,
+   "predicted_instant_ticks": 0.3552,
+   "realized_instant_ticks": 0.4616,
+   "unexplained_instant_ticks": 0.1065
+  }
+ },
+ "ticker": "AMZN"
+}

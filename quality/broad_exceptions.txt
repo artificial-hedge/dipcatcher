@@ -22,6 +22,7 @@ src/quant_fund/models/covariance.py 1
 src/quant_fund/models/fracdiff.py 1
 src/quant_fund/models/robinhood_plus/compare.py 2
 src/quant_fund/models/robinhood_plus/torch_backend.py 1
+src/quant_fund/models/vol_per_security.py 2
 src/quant_fund/models/volatility.py 3
 src/quant_fund/native/boundary_audit.py 1
 src/quant_fund/native/causality_scan.py 1
@@ -31,6 +32,7 @@ src/quant_fund/paper/loop.py 2
 src/quant_fund/paper/quantile_signals.py 3
 src/quant_fund/paper/sim_live.py 2
 src/quant_fund/parity/__main__.py 1
+src/quant_fund/pipeline/artifact_manifest.py 1
 src/quant_fund/pipeline/flat_audit.py 3
 src/quant_fund/pipeline/forecast_audit.py 2
 src/quant_fund/pit/asof_audit.py 3
@@ -39,6 +41,7 @@ src/quant_fund/portfolio/optimizer.py 2
 src/quant_fund/pretrade/config.py 1
 src/quant_fund/pretrade/engine.py 3
 src/quant_fund/pretrade/shadow.py 6
+src/quant_fund/proof/promotion_receipt.py 1
 src/quant_fund/proof/verify.py 4
 src/quant_fund/proofcore/ci.py 1
 src/quant_fund/proofcore/provenance.py 3

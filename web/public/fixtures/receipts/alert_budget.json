@@ -1,0 +1,40 @@
+{
+  "kind": "alert_budget",
+  "schema": "alert_budget.v1",
+  "git_revision": "1f66fd48188cbe610a787ee8eccbbef9efa37742",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "fleet false-alarm spending stays within alpha_total; confirmed rules stay funded",
+    "verdict": "ok"
+  },
+  "interpretation": {
+    "n_rules": 6,
+    "horizon": 500,
+    "total_wealth_end": 0.06666666666666667,
+    "spent_total": 10.233333333332087,
+    "conservation_bound_holds": true,
+    "null_freeze_step": {
+      "rule_0": 239,
+      "rule_1": 215,
+      "rule_2": 182,
+      "rule_3": 159
+    },
+    "signal_freeze_step": {
+      "rule_4": null,
+      "rule_5": null
+    },
+    "null_alarms": {
+      "rule_0": 11,
+      "rule_1": 11,
+      "rule_2": 11,
+      "rule_3": 11
+    },
+    "signal_alarms": {
+      "rule_4": 301,
+      "rule_5": 305
+    }
+  },
+  "receipt_sha256": "29b9526e2f532a88c995cfbbbb05fff4a2743a506a144379a5a26ff616eab5bd"
+}

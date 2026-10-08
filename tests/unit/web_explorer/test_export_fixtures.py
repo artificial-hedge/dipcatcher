@@ -90,9 +90,18 @@ def test_receipts_declare_non_live_evidence() -> None:
         # A missing live_pnl_claim key is no claim; only an explicit True is a
         # live-P&L claim. Sealed real-corpus drills (data_label=yahoo_eod and
         # friends) and META audit envelopes are evidence without the flag.
-        assert payload.get("live_pnl_claim") is not True, path.name
+        if path.name.endswith(".seal.json"):
+            # Seal envelopes attest another receipt's bytes; the declaration
+            # lives in the parent they name.
+            parent = FIXTURES / "receipts" / payload["file"]
+            payload = json.loads(parent.read_text())
+        honesty = payload.get("honesty")
+        assert payload.get("live_pnl_claim") is not True and not (
+            isinstance(honesty, dict) and honesty.get("live_pnl_claim") is True
+        ), path.name
         assert (
             payload.get("research_only") is True
+            or (isinstance(honesty, dict) and honesty.get("research_only") is True)
             or isinstance(payload.get("data_label"), str)
             or payload.get("dev_only") is True
             or payload.get("level") == "research"

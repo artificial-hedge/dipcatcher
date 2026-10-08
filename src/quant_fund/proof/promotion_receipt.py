@@ -35,15 +35,13 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from quant_fund.pipeline.artifact_manifest import (
-    ArtifactIdentity,
-    ArtifactManifestError,
-    manifest_path,
-    verify_artifact_manifest,
-)
-from quant_fund.registry.mlflow_store import promotion_is_approved
-from quant_fund.research.receipt_v2 import build_receipt_v2, seal_receipt
 from quant_fund.utils.hashing import hash_file
+
+# pipeline/registry/research are lazy edges (LH011 adjudicated): the receipt
+# composer reads upstream artifact manifests, promotion approvals and the
+# receipt_v2 envelope — none of those layers import proof back at top level.
+# research lazily reaches proof.bundle, so this pair is the documented
+# mutual-lazy cycle-breaker (same pattern as reality<->research).
 
 PROMOTION_RECEIPT_SCHEMA = "promotion_receipt.v1"
 PROMOTION_RECEIPT_KIND = "promotion_receipt"
@@ -113,7 +111,12 @@ def _load_evidence_report(path: Path) -> dict[str, Any]:
     return report
 
 
-def _require_dataset_identity(identity: ArtifactIdentity) -> None:
+def _require_dataset_identity(identity: Any) -> None:
+    """Fail closed unless the identity carries a real dataset block.
+
+    ``identity`` is a ``quant_fund.pipeline.artifact_manifest.ArtifactIdentity``
+    — typed loosely here because the import is a lazy edge (see module note).
+    """
     dataset = identity.dataset
     _require(
         bool(dataset.materialized_panel_sha256) and bool(dataset.source_manifest_sha256),
@@ -156,6 +159,14 @@ def compose_promotion_receipt(
     stale, synthetic or dishonest input. The written receipt is never
     overwritten; a second composition to the same ``out_path`` raises.
     """
+    from quant_fund.pipeline.artifact_manifest import (
+        ArtifactManifestError,
+        manifest_path,
+        verify_artifact_manifest,
+    )
+    from quant_fund.registry.mlflow_store import promotion_is_approved
+    from quant_fund.research.receipt_v2 import build_receipt_v2, seal_receipt
+
     # 1. Artifact manifest with verified dataset identity (mandated blocker).
     try:
         identity = verify_artifact_manifest(Path(artifact))

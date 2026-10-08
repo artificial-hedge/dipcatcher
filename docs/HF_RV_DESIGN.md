@@ -128,7 +128,7 @@ sigma, fail-closed on missing intraday.
 
 ### Synthetic intraday
 
-- `tests/unit/test_hf_rv_synthetic.py` — Brownian motion + sparse jumps,
+- `tests/unit/test_hf_rv.py` (synthetic section) — Brownian motion + sparse jumps,
   expect `rv_5min ≈ σ^2 * window` and `n_jumps` matching the injected count.
 - Jump detection accuracy: at SNR=10, ≥ 95% true-positive rate; at SNR=1,
   ≤ 5% false-positive rate (Lee–Mykland operating characteristics).
@@ -136,19 +136,19 @@ sigma, fail-closed on missing intraday.
 
 ### PIT contamination
 
-- `tests/unit/test_hf_rv_pit.py` — feed a bar with
+- `tests/unit/test_hf_rv.py` (PIT section) — feed a bar with
   `available_time > asof`, expect drop + receipt stamp. Feed null
   `available_time`, expect `HFRVResult(honest=False)`.
 
 ### Fail-closed for missing intraday
 
-- `tests/unit/test_hf_rv_fail_closed.py` — empty bars, single-bar
+- `tests/unit/test_hf_rv.py` (fail-closed section) — empty bars, single-bar
   windows, 100% holes, expect `HFRVResult(honest=False)` and no
   `market_risk_overlay=hf_rv` stamp.
 
 ### Source authority
 
-- `tests/unit/test_hf_rv_source_authority.py` — CLS + Binance both
+- `tests/unit/test_hf_rv.py` (source-authority section) — CLS + Binance both
   available → CLS wins, receipt records `primary=cls, secondary=binance`.
 - Source missing → `hf_rv_source_missing` stamp + `honest=False`.
 
@@ -198,21 +198,23 @@ sigma, fail-closed on missing intraday.
 from dataclasses import dataclass
 import pandas as pd
 
+
 @dataclass
 class HFRVResult:
-    rv_5min: float                  # realized variance, 5-min grid
-    bpv: float                      # bipower variation
-    jump_stat: float                # max |Lee-Mykland| over the window
-    n_jumps: int                    # count of bars flagged as jumps
-    rv_5min_jump_clean: float       # RV excluding flagged bars
-    n_obs: int                      # # of 5-min bars used
+    rv_5min: float  # realized variance, 5-min grid
+    bpv: float  # bipower variation
+    jump_stat: float  # max |Lee-Mykland| over the window
+    n_jumps: int  # count of bars flagged as jumps
+    rv_5min_jump_clean: float  # RV excluding flagged bars
+    n_obs: int  # # of 5-min bars used
     asof: pd.Timestamp
-    available_time: pd.Timestamp    # latest observable restatement
-    source: str                     # 'cls' / 'binance' / 'imf'
-    source_secondary: str | None    # cross-check source if present
+    available_time: pd.Timestamp  # latest observable restatement
+    source: str  # 'cls' / 'binance' / 'imf'
+    source_secondary: str | None  # cross-check source if present
     clock_drift_seconds: float
-    holes_count: int                # single-bar holes interpolated
-    honest: bool                    # fail-closed flag (False = not used)
+    holes_count: int  # single-bar holes interpolated
+    honest: bool  # fail-closed flag (False = not used)
+
 
 def compute_hf_rv(
     bars: pd.DataFrame,

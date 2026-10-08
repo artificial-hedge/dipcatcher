@@ -1,0 +1,81 @@
+{
+ "schema": "zone_map.v1",
+ "kind": "wave24_map",
+ "asset": "AMZN",
+ "n_lanes": 4,
+ "lanes": [
+  {
+   "receipt": "wave24_map.json",
+   "mechanism": "capstone over the floor-vs-band sweep",
+   "sealed": true,
+   "claims": {
+    "all_member_receipts_sealed": true,
+    "all_lanes_present": true,
+    "band_opened": true,
+    "floor_composes": true,
+    "seven_pin_reachable": true,
+    "stable_closure": false
+   }
+  },
+  {
+   "receipt": "band_occupancy.json",
+   "mechanism": "per-step occupancy of the floored cells",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "floor_reaches_occupancy": false,
+    "tight_regime_cleared": false,
+    "median_on_tape": false
+   }
+  },
+  {
+   "receipt": "zone_embargo.json",
+   "mechanism": "whole-class no-quote zone (zone_embargo)",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "zone_reaches_occupancy": true,
+    "zone_clears_tight": true,
+    "zone_seven_pin_draw": true
+   }
+  },
+  {
+   "receipt": "zone_stability.json",
+   "mechanism": "seed-panel hold rates + drift kernel on the zone",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "zone_closure_structural": false,
+    "zone_closure_majority": true,
+    "zone_carries_instant": true
+   }
+  }
+ ],
+ "mechanism_map": {
+  "spread_band": "zone_embargo \u2014 whole-class no-quote zone",
+  "occupancy": "clamp every visible class to |level - ref| >= z",
+  "reseed": "fill-triggered reposts + vacancy reposts",
+  "empty_persistence": "split-flow metaorder sweeps",
+  "joint": "z12-iid: 7/7 at rate 0.75; kernel 1.05/5.20 near tape"
+ },
+ "falsified_channels": [
+  "anchor depth (spread_reopen \u2014 non-monotone)",
+  "deposit density family (band_shape \u2014 equilibrium, not grammar)",
+  "repost geometry (gap_close \u2014 reveal bound to floor height)",
+  "pure iid floor (iid_floor \u2014 band rate capped ~1/3)",
+  "ambient-only floor (band_occupancy \u2014 opens the mean, not the occupancy)"
+ ],
+ "claims": {
+  "all_member_receipts_sealed": true,
+  "all_lanes_present": true,
+  "ambient_floor_falsified": true,
+  "zone_reaches_occupancy": true,
+  "closure_near_structural": true,
+  "kernel_carried": true
+ },
+ "interpretation": "Standing-spread campaign closed. wave24_map.v1's stable_closure=False verdict is superseded: the ambient-only floor opened the mean but occupancy stayed at 0-20% in-band (band_occupancy.v1) because crown/join/improve/chase/repost classes still landed inside. zone_embargo clamps EVERY visible class to |level - ref| >= z; at z12 under iid the cell holds all seven pins at rate 0.75 across four seeds (six pins structural at 1.0; reveal_gap the one fragile pin), occupancy 0.956 vs tape 0.804, tight share 0.023 vs 0.014, and the drift kernel lands at instant 1.048 / k200 5.20 vs tape 0.887/4.64. The tape's standing 9-21-tick spread is a persistent no-quote zone the whole maker class set respects. Residuals: reveal_gap hold rate 0.75 (<1.0 \u2014 honest rate, not certainty), empty pin collapses under split flow.",
+ "git_revision": "bd5cd1a4403a885e2a5ed1d93a97c6b4eb3461ae",
+ "data_label": "MIXED",
+ "research_only": true,
+ "receipt_sha256": "16e70f2214a8c09c85b89bc4186bb9adb1feca7ac30a8c4b30a4040b5d92d278"
+}

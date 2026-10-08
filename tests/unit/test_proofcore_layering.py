@@ -46,7 +46,14 @@ LAZY_WHITELIST: dict[str, frozenset[str]] = {
     # proof lazily reaches pit (W1 vault seam), leakage (W3 watchdog), and
     # metrics (A1 F2 headline recompute); none import proof back, so the lazy
     # edges cannot create a cycle.
-    "proof": frozenset({"backtest", "cli", "leakage", "metrics", "pit"}),
+    # Adjudicated lazy edges (promotion-receipt composition seam): proof's
+    # compose_promotion_receipt lazily reads pipeline.artifact_manifest,
+    # registry.mlflow_store and research.receipt_v2 — none import proof back
+    # at top level; research's own lazy proof.bundle edge makes the pair the
+    # documented mutual-lazy cycle-breaker (same as reality<->research).
+    "proof": frozenset(
+        {"backtest", "cli", "leakage", "metrics", "pipeline", "pit", "registry", "research"}
+    ),
     "leakage": frozenset({"pit", "cli", "config", "utils", "research"}),
     # Adjudicated lazy edge (this durability sweep): reality/cli writes its
     # outputs via utils.atomicio — same layer-0 reasoning as proofcore.

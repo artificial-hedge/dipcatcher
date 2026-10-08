@@ -166,6 +166,21 @@ KNOWN_MISSES: dict[str, str] = {
     # AUDIT_LEDGER.md, not Python module paths.
     "fx1.backend": "API body-block name in AUDIT_LEDGER.md, not a module.",
     "fx1.byok": "API body-block / header name in AUDIT_LEDGER.md, not a module.",
+    # `dipcatcher blueprint` is documented in EXECUTIVE_BLUEPRINT_IMPLEMENTATION
+    # but `cli/blueprint_cmds.py` never landed on this lineage — only the
+    # (since dropped) `add_typer` mount did.
+    "dipcatcher blueprint": "blueprint_cmds module never landed (mount dropped).",
+    # The atlas renders `fx1.flash` with the :::ghost class — a documented
+    # future module, intentionally absent.
+    "fx1.flash": "ghost node in ARCHITECTURE_ATLAS (planned module).",
+    # HF-RV eval emits this receipt on a run; absent in a clean checkout.
+    "quality/hf_rv_receipt.json": "generated HF-RV eval receipt.",
+    # Blueprint-implementation table entry for a planned eval bench module.
+    "src/fx1/eval/quantcode_bench.py": "planned eval bench module, not landed.",
+    # Runbook-described reachability gate for research CLIs; not yet landed.
+    "tests/unit/research/test_research_cli_reachability.py": (
+        "planned reachability gate, not landed."
+    ),
 }
 
 

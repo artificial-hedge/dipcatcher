@@ -47,7 +47,10 @@ MCCABE_BASELINE_FLOOR = 1
 # adds fourteen more deliberate noqa: BLE001 handlers whose whole POINT is
 # that unexpected exception classes are themselves audit findings — narrowing
 # them would blind the audit. Deliberate baseline rewrite: ceiling 78 -> 92.
-EXCEPT_EXCEPTION_CEILING = 92
+# Bump 92 -> 96: vol_per_security (2, per-key isolation contract), artifact_manifest
+# (1, pydantic fail-closed), promotion_receipt (1, approver fail-closed) — all
+# deliberate isolation catches carrying noqa: BLE001 justifications.
+EXCEPT_EXCEPTION_CEILING = 96
 
 
 def test_mypy_strict_allowlist_only_grows() -> None:

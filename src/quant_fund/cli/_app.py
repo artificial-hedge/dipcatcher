@@ -16,6 +16,11 @@ from quant_fund.cli.benchmark_cmds import (
     ranker_probability_app,
     real_benchmark_app,
 )
+from quant_fund.cli.sota_cmds import (
+    forward_shadow_app,
+    prospective_sota_app,
+    sota_app,
+)
 from quant_fund.hmm.cli import hmm_app as hmm_app
 from quant_fund.leakage.cli import leakage_app
 from quant_fund.lightspeed.cli import ls_app as ls_app
@@ -104,6 +109,9 @@ app.add_typer(explainability_app, name="explain")
 app.add_typer(real_benchmark_app, name="real-benchmark")
 app.add_typer(net_tournament_app, name="net-tournament")
 app.add_typer(ranker_probability_app, name="ranker-probability")
+app.add_typer(prospective_sota_app, name="prospective-sota")
+app.add_typer(forward_shadow_app, name="forward-shadow")
+app.add_typer(sota_app, name="sota")
 
 
 def _cfg(config: Path) -> AppConfig:

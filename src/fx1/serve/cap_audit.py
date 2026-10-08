@@ -1549,6 +1549,10 @@ def _probe_managed() -> _Probe:
 
 def _run() -> tuple[dict[str, bool], dict[str, dict[str, str]]]:
     """The full battery: probe map + measured config × surface matrix."""
+    # The byok probes reach a real loopback upstream; production BYOK stays
+    # public-network-only unless opted in. ``_audit_context`` (which every
+    # caller holds) restores the process env on exit.
+    os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     out: dict[str, bool] = {}
     matrix: dict[str, dict[str, str]] = {}
     for fn in (

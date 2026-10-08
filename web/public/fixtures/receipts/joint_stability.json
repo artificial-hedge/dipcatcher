@@ -1,0 +1,414 @@
+{
+  "schema": "joint_stability.v1",
+  "kind": "sim_bench",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "git_revision": "4bc0c3b4f12969243dce8bb81ac7ba9ed88fb4cb",
+  "seeds": [
+    7,
+    11,
+    19,
+    23
+  ],
+  "horizon_events": 15000,
+  "tape_pins": {
+    "crown_share": 0.2082,
+    "spread_band": [
+      9,
+      21
+    ],
+    "empty_share": 0.4737,
+    "empty_band_used": [
+      0.28422,
+      0.66318
+    ],
+    "hidden_fill_share": 0.214
+  },
+  "cells": [
+    {
+      "cell": "joint",
+      "overrides": {},
+      "n_seeds": 4,
+      "n_joint_seeds": 0,
+      "per_pin_pass": {
+        "empty_share": 0,
+        "spread_mean": 2,
+        "crown_share": 4,
+        "hidden_share": 4
+      },
+      "seeds": [
+        {
+          "seed": 7,
+          "empty_share": 0.689,
+          "spread_mean": 14.2644,
+          "crown_share_of_visible": 0.14,
+          "hidden_fill_share": 0.1822,
+          "n_fills": 807,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 11,
+          "empty_share": 0.7674,
+          "spread_mean": 8.1943,
+          "crown_share_of_visible": 0.2066,
+          "hidden_fill_share": 0.2369,
+          "n_fills": 705,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": false,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 19,
+          "empty_share": 0.7037,
+          "spread_mean": 6.5965,
+          "crown_share_of_visible": 0.2107,
+          "hidden_fill_share": 0.2152,
+          "n_fills": 827,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": false,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 23,
+          "empty_share": 0.7983,
+          "spread_mean": 17.9153,
+          "crown_share_of_visible": 0.1329,
+          "hidden_fill_share": 0.2326,
+          "n_fills": 1195,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        }
+      ]
+    },
+    {
+      "cell": "cf50",
+      "overrides": {
+        "crown_stack_frac": 0.5
+      },
+      "n_seeds": 4,
+      "n_joint_seeds": 0,
+      "per_pin_pass": {
+        "empty_share": 0,
+        "spread_mean": 3,
+        "crown_share": 4,
+        "hidden_share": 4
+      },
+      "seeds": [
+        {
+          "seed": 7,
+          "empty_share": 0.7372,
+          "spread_mean": 10.7618,
+          "crown_share_of_visible": 0.1624,
+          "hidden_fill_share": 0.2415,
+          "n_fills": 704,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 11,
+          "empty_share": 0.8079,
+          "spread_mean": 14.1956,
+          "crown_share_of_visible": 0.1598,
+          "hidden_fill_share": 0.2048,
+          "n_fills": 786,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 19,
+          "empty_share": 0.8144,
+          "spread_mean": 8.9492,
+          "crown_share_of_visible": 0.1482,
+          "hidden_fill_share": 0.2335,
+          "n_fills": 668,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": false,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 23,
+          "empty_share": 0.781,
+          "spread_mean": 16.4256,
+          "crown_share_of_visible": 0.13,
+          "hidden_fill_share": 0.2414,
+          "n_fills": 1073,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        }
+      ]
+    },
+    {
+      "cell": "cf70",
+      "overrides": {
+        "crown_stack_frac": 0.7
+      },
+      "n_seeds": 4,
+      "n_joint_seeds": 1,
+      "per_pin_pass": {
+        "empty_share": 3,
+        "spread_mean": 2,
+        "crown_share": 4,
+        "hidden_share": 4
+      },
+      "seeds": [
+        {
+          "seed": 7,
+          "empty_share": 0.5402,
+          "spread_mean": 2.725,
+          "crown_share_of_visible": 0.4058,
+          "hidden_fill_share": 0.1126,
+          "n_fills": 435,
+          "pins": {
+            "empty_share": true,
+            "spread_mean": false,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 11,
+          "empty_share": 0.5964,
+          "spread_mean": 10.7915,
+          "crown_share_of_visible": 0.2682,
+          "hidden_fill_share": 0.2052,
+          "n_fills": 887,
+          "pins": {
+            "empty_share": true,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": true
+        },
+        {
+          "seed": 19,
+          "empty_share": 0.5894,
+          "spread_mean": 4.8362,
+          "crown_share_of_visible": 0.2816,
+          "hidden_fill_share": 0.148,
+          "n_fills": 777,
+          "pins": {
+            "empty_share": true,
+            "spread_mean": false,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 23,
+          "empty_share": 0.6873,
+          "spread_mean": 14.2155,
+          "crown_share_of_visible": 0.2106,
+          "hidden_fill_share": 0.2373,
+          "n_fills": 1100,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        }
+      ]
+    },
+    {
+      "cell": "ff35",
+      "overrides": {
+        "hit_flee_frac": 0.35
+      },
+      "n_seeds": 4,
+      "n_joint_seeds": 0,
+      "per_pin_pass": {
+        "empty_share": 2,
+        "spread_mean": 2,
+        "crown_share": 4,
+        "hidden_share": 4
+      },
+      "seeds": [
+        {
+          "seed": 7,
+          "empty_share": 0.6548,
+          "spread_mean": 3.8549,
+          "crown_share_of_visible": 0.2614,
+          "hidden_fill_share": 0.2268,
+          "n_fills": 785,
+          "pins": {
+            "empty_share": true,
+            "spread_mean": false,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 11,
+          "empty_share": 0.7101,
+          "spread_mean": 11.189,
+          "crown_share_of_visible": 0.1818,
+          "hidden_fill_share": 0.2327,
+          "n_fills": 1014,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 19,
+          "empty_share": 0.6442,
+          "spread_mean": 3.687,
+          "crown_share_of_visible": 0.2139,
+          "hidden_fill_share": 0.2147,
+          "n_fills": 489,
+          "pins": {
+            "empty_share": true,
+            "spread_mean": false,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 23,
+          "empty_share": 0.8172,
+          "spread_mean": 9.6358,
+          "crown_share_of_visible": 0.1415,
+          "hidden_fill_share": 0.2185,
+          "n_fills": 952,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        }
+      ]
+    },
+    {
+      "cell": "ff55",
+      "overrides": {
+        "hit_flee_frac": 0.55
+      },
+      "n_seeds": 4,
+      "n_joint_seeds": 1,
+      "per_pin_pass": {
+        "empty_share": 1,
+        "spread_mean": 3,
+        "crown_share": 4,
+        "hidden_share": 4
+      },
+      "seeds": [
+        {
+          "seed": 7,
+          "empty_share": 0.705,
+          "spread_mean": 9.6535,
+          "crown_share_of_visible": 0.203,
+          "hidden_fill_share": 0.2402,
+          "n_fills": 766,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 11,
+          "empty_share": 0.6276,
+          "spread_mean": 17.2303,
+          "crown_share_of_visible": 0.1496,
+          "hidden_fill_share": 0.1966,
+          "n_fills": 870,
+          "pins": {
+            "empty_share": true,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": true
+        },
+        {
+          "seed": 19,
+          "empty_share": 0.6764,
+          "spread_mean": 7.4985,
+          "crown_share_of_visible": 0.1946,
+          "hidden_fill_share": 0.2226,
+          "n_fills": 584,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": false,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        },
+        {
+          "seed": 23,
+          "empty_share": 0.7615,
+          "spread_mean": 16.5234,
+          "crown_share_of_visible": 0.1769,
+          "hidden_fill_share": 0.1935,
+          "n_fills": 889,
+          "pins": {
+            "empty_share": false,
+            "spread_mean": true,
+            "crown_share": true,
+            "hidden_share": true
+          },
+          "joint": false
+        }
+      ]
+    }
+  ],
+  "claims": {
+    "joint_cell_stable": false,
+    "joint_ridge": false,
+    "emp_is_binding_pin": true
+  },
+  "notes": "The touch_empty joint cell held all four pins at one seed; this bench prices its robustness. A joint claim that flips on re-seeding is a knife-edge, not a mechanism \u2014 per-pin pass rates identify which channel is binding.",
+  "receipt_sha256": "b76c749252fe8846d1e1f2f7cb0cae3f57d42b1f3d1b843de8bc6a8503f8da83"
+}

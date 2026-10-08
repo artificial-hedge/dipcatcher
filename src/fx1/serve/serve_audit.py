@@ -298,21 +298,34 @@ def serve_audit() -> dict[str, Any]:
             )
             captured2["urls"] = []
 
+            import subprocess  # noqa: PLC0415
+
+            real_popen = subprocess.Popen
+            spawn_attempts = [0]
+
+            def recording_popen(*a: Any, **kw: Any) -> Any:
+                spawn_attempts[0] += 1
+                return real_popen(*a, **kw)
+
             def fake_urlopen_cold(req: Any, **kw: Any) -> _Resp2:
-                # The engine reads as down only until a proc exists — the
-                # spawn template must actually run (a concurrent-ready fake
+                # The engine reads as down only until a spawn has been
+                # attempted — the publish-after-ready fix keeps
+                # ``backend._proc`` unset until startup verifies, so the
+                # readiness gate keys on the Popen call itself. The spawn
+                # template must actually run (a concurrent-ready fake
                 # would let the lock's re-check skip spawning entirely).
                 url = req.full_url if hasattr(req, "full_url") else str(req)
-                if url.endswith("/v1/models") and spawned._proc is None:
+                if url.endswith("/v1/models") and spawn_attempts[0] == 0:
                     raise urllib.error.URLError("connection refused")
                 return fake_urlopen2(req, **kw)
 
             with (
+                patch.object(subprocess, "Popen", recording_popen),
                 patch.object(urllib.request, "urlopen", fake_urlopen_cold),
                 patch.object(_be_mod, "_openai_urlopen", fake_urlopen_cold),
             ):
                 spawned.complete([{"role": "user", "content": "hi"}])
-            out["local_spawn_template_ran"] = spawned._proc is not None
+            out["local_spawn_template_ran"] = spawn_attempts[0] == 1 and spawned._proc is not None
             spawned.close()
             out["local_close_terminates"] = spawned._proc is None
             # Real urlopen here: 127.0.0.1:9 refuses, so the spawn template
