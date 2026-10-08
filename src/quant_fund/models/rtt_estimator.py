@@ -57,6 +57,8 @@ def bench_rtt_estimator(seed: int = 20261231 + 403) -> dict[str, float]:
         est3 = RTTEst()
         est3.update(100.0)
         first += int(abs(est3.rto - 300.0) < 1e-9)
+    if track != trials or first != trials or cover / trials < 0.9:
+        raise ValueError("Jacobson RTT estimator oracle failed")
     return {
         "synthetic_tracks_step": float(track / trials),
         "synthetic_rto_coverage": float(cover / trials),

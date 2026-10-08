@@ -59,6 +59,10 @@ def bench_rlearner(seed: int = 1207, iters: int = 900) -> dict[str, float]:
         x1 = np.concatenate([X, np.ones((len(X), 1)), X], 1)
         x0 = np.concatenate([X, np.zeros((len(X), 1)), np.zeros(X.shape)], 1)
         naive = x1 @ w - x0 @ w
+    # honest gate: recovered CATE must track the true tau (naive may win
+    # PEHE on unconfounded fixtures — residualization is not free)
+    if not (float(np.corrcoef(cate, tau)[0, 1]) > 0.25 and np.isfinite(pehe(cate, tau))):
+        raise ValueError("R-learner CATE does not track true effect")
     return {
         "synthetic_rlearner_pehe": pehe(cate, tau),
         "synthetic_rlearner_naive_pehe": pehe(naive, tau),

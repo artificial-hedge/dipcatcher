@@ -114,6 +114,12 @@ def bench_rtk(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_rtk_amb_err"] = float(np.abs(n_fix - n_true).max())
     out["synthetic_rtk_ratio"] = float(ratio)
     out["synthetic_rtk_fixed"] = float(out["synthetic_rtk_amb_err"] == 0)
+    if not (
+        out["synthetic_rtk_pos_err_m"] < 0.5
+        and out["synthetic_rtk_amb_err"] == 0
+        and float(ratio) > 1.5
+    ):
+        raise ValueError("RTK ambiguity-resolution oracle failed")
     return out
 
 

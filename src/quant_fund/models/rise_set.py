@@ -130,4 +130,6 @@ def bench_rise_set(seed: int = _SEED) -> dict[str, float]:
         if s is not None and so is not None and abs(s - so) > 0.002:
             ok = False
         jd0 += 31.0
-    return {"synthetic_rise_set": 1.0 if ok else 0.0}
+    if not ok:
+        raise ValueError("rise/set/transit disagree with brute-force scan")
+    return {"synthetic_rise_set": 1.0}

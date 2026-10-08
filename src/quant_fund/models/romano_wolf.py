@@ -152,6 +152,8 @@ def bench_romano_wolf(
     bonf_p = np.minimum(1.0, 6 * _stats.norm.sf(t))
     bonf_rej = int(np.sum(bonf_p < 0.10))
     ok = ok and len(rej) >= bonf_rej
+    if not ok:
+        raise ValueError("Romano-Wolf stepdown off FWER oracle")
     return {
         "synthetic_n_reject": float(len(rej)),
         "synthetic_n_bonf_reject": float(bonf_rej),

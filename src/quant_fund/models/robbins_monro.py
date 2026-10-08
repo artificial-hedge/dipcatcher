@@ -180,6 +180,13 @@ def bench_robbins_monro(seed: int = 477) -> dict[str, float]:
     pr = robbins_monro_averaged(oracle_root, 0.0, n_iter=1500, a0=2.0, seed=seed)
     kw = kiefer_wolfowitz(oracle_kw, 0.0, n_iter=1200, a0=0.6, c0=0.8, seed=seed + 1)
     sp = spsa(oracle_quad, np.zeros(3), n_iter=2500, a0=0.8, c0=0.3, seed=seed + 2)
+    if not (
+        abs(float(rm["root"]) - 10.0) < 0.5
+        and abs(float(pr["root"]) - 10.0) < 0.5
+        and abs(float(kw["argmax"]) - 3.0) < 0.5
+        and float(np.linalg.norm(np.asarray(sp["argmax"]) - 2.0)) < 0.5
+    ):
+        raise ValueError("stochastic-approximation oracle failed")
     return {
         "synthetic_rm_err": abs(float(rm["root"]) - 10.0),
         "synthetic_pr_err": abs(float(pr["root"]) - 10.0),

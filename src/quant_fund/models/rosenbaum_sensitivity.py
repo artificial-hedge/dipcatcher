@@ -136,6 +136,13 @@ def bench_rosenbaum_sensitivity(seed: int = 20261231 + 269) -> dict[str, float]:
     clean = sensitivity_bounds(np.asarray(d_clean["diff"]))
     conf = sensitivity_bounds(np.asarray(d_conf["diff"]))
     out2 = sensitivity_bounds(np.asarray(d_conf["diff"]))
+    if not (
+        clean["gamma_star"] > 1.5
+        and conf["gamma_star"] < clean["gamma_star"]
+        and clean["p_at_gamma1"] < 0.01
+        and out2["gamma_star"] == conf["gamma_star"]
+    ):
+        raise ValueError("Rosenbaum sensitivity oracle failed")
     return {
         "synthetic_gamma_star_clean": clean["gamma_star"],
         "synthetic_gamma_star_confounded": conf["gamma_star"],

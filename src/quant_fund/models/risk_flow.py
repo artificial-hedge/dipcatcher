@@ -99,6 +99,9 @@ def bench_risk_flow(seed: int = 41) -> dict[str, float]:
     qs = np.quantile(draws, 0.02, axis=0)
     td_true = float(np.mean((x[:, 0] <= q[0]) & (x[:, 1] <= q[1])))
     td_flow = float(np.mean((draws[:, 0] <= qs[0]) & (draws[:, 1] <= qs[1])))
+    # flow must beat the Gaussian baseline on ES and tail dependence
+    if not (abs(es_flow - es_true) < abs(es_g - es_true) and abs(td_flow - td_true) < 0.1):
+        raise ValueError("normalizing-flow ES/tail oracle failed")
     return {
         "synthetic_flow_es": es_flow,
         "synthetic_flow_es_true": es_true,

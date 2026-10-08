@@ -166,6 +166,15 @@ def bench_roy_model(seed: int = 20261231 + 243) -> dict[str, float]:
     out_b = roy_fit(d["wage"], d["sector"], d["x"])
 
     p1 = float(out["skill_price1"])
+    if not (
+        0.35 < p1 < 0.7
+        and 0.0 < float(out["skill_price0"]) < 0.55
+        and float(out["rho1_mills"]) > 0.2
+        and float(out["gap_naive"]) > float(out["gap_corrected"]) + 0.3
+        and 0.3 < float(out["share_sector1"]) < 0.7
+        and p1 == float(out_b["skill_price1"])
+    ):
+        raise ValueError("Roy self-selection oracle failed")
     return {
         "synthetic_skill_price1": p1,
         "synthetic_skill_price0": float(out["skill_price0"]),

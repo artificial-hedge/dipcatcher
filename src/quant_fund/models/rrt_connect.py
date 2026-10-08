@@ -141,6 +141,9 @@ def bench_rrt_connect(seed: int = _SEED) -> dict[str, float]:
     rng3 = np.random.default_rng(seed + 7)
     obs_wall = [(np.array([0.5, y]), 0.2) for y in np.linspace(0.0, 1.0, 7)]
     p_none, _ = rrt_connect(start, goal, obs_wall, rng3, max_nodes=500)
-    checks.append(p_none is None or p_none is not None)
+    # a solid wall across the space must not admit a path (fail closed)
+    checks.append(p_none is None)
     score = float(np.mean(checks))
+    if not all(checks):
+        raise ValueError("RRT-connect feasibility oracle failed")
     return {"synthetic_rrt_connect": score}

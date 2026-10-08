@@ -39,6 +39,8 @@ def _bench_root_system(seed: int = 0) -> float:
     orbit.add(tuple(np.round(a1, 9)))
     orbit.update(tuple(np.round(weyl_reflect(weyl_reflect(a1, roots[2]), r), 9)) for r in roots)
     checks.append(bool(len(orbit) >= 3))
+    if not all(checks):
+        raise ValueError("root-system/Weyl oracle failed")
     return float(sum(checks) / len(checks))
 
 

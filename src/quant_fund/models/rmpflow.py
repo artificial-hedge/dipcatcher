@@ -90,5 +90,7 @@ def bench_rmpflow(seed: int = _SEED) -> dict[str, float]:
     f_o_far, m_o_far = obstacle_rmp(np.array([1.8, 1.2]), np.zeros(2), obs, 0.15)
     checks.append(float(m_o_far[0, 0]) == 0.0)
     _ = rng
+    if not all(checks):
+        raise ValueError("RMPflow goal/obstacle-metric oracle failed")
     score = float(np.mean(checks))
     return {"synthetic_rmpflow": score}

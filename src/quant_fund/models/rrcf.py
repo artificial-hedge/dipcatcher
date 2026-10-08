@@ -87,6 +87,10 @@ def bench_rrcf(
             sc_if[i] -= plen(root, x[i])
     sc_if /= n_trees
     auc_if = auc(sc_if, y)
+    # honest gate: RRCF detects the planted anomalies; IF parity is not
+    # promised (streaming CoDisp trades accuracy for online updates)
+    if auc_r < 0.75:
+        raise ValueError("RRCF anomaly AUC off oracle")
     return {
         "synthetic_rrcf_auc": auc_r,
         "synthetic_rrcf_if_auc": auc_if,

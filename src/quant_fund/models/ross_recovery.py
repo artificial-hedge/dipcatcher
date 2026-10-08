@@ -126,6 +126,8 @@ def bench_ross_recovery(seed: int = 20261231 + 297) -> dict[str, float]:
     err = float(np.max(np.abs(p_hat - p_true)))
     g_err = abs(float(r["gamma"]) - float(d["gamma_true"]))
     ok = err < 1e-6 and g_err < 1e-8 and float(r["row_sum_err"]) < 1e-8
+    if not ok:
+        raise ValueError("Ross recovery off implied-measure oracle")
     return {
         "synthetic_p_err": err,
         "synthetic_gamma_err": g_err,

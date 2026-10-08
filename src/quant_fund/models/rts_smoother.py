@@ -113,4 +113,6 @@ def bench_rts_smoother(seed: int = 20261231 + 864) -> dict[str, float]:
         checks += float(mse_s <= mse_f + 1e-9)
         checks += float(np.max(np.abs(xs_s - xs_map)) < 0.1)
         checks += float(xs_s.shape == xt.shape)
+    if checks != total:
+        raise ValueError("RTS smoother off Kalman/MAP oracle")
     return {"synthetic_rts": checks / total}

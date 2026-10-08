@@ -24650,6 +24650,21 @@
   "models/ripley_k.py": {
    "status": "audited"
   },
+  "models/rips_h1.py": {
+   "status": "audited"
+  },
+  "models/rise_set.py": {
+   "status": "audited"
+  },
+  "models/risk_cp.py": {
+   "status": "audited"
+  },
+  "models/risk_flow.py": {
+   "status": "audited"
+  },
+  "models/risk_parity.py": {
+   "status": "audited"
+  },
   "models/rissos_qa_studies.py": {
    "status": "audited"
   },
@@ -24657,6 +24672,9 @@
    "status": "audited"
   },
   "models/rivera_cle.py": {
+   "status": "audited"
+  },
+  "models/rjmcmc.py": {
    "status": "audited"
   },
   "models/rkdg_step.py": {
@@ -24668,10 +24686,34 @@
   "models/rlaif_studies.py": {
    "status": "audited"
   },
+  "models/rlearner.py": {
+   "status": "audited"
+  },
+  "models/rlhf_ppo.py": {
+   "status": "audited"
+  },
   "models/rlvr_studies.py": {
    "status": "audited"
   },
   "models/rm_btd_studies.py": {
+   "status": "audited"
+  },
+  "models/rmpflow.py": {
+   "status": "audited"
+  },
+  "models/rms_scheduler.py": {
+   "status": "audited"
+  },
+  "models/rmsnorm_block.py": {
+   "status": "audited"
+  },
+  "models/rmst.py": {
+   "status": "audited"
+  },
+  "models/rmt.py": {
+   "status": "audited"
+  },
+  "models/rnd_explore.py": {
    "status": "audited"
   },
   "models/ro_grading.py": {
@@ -24690,6 +24732,9 @@
    "status": "audited"
   },
   "models/robbins_bvp.py": {
+   "status": "audited"
+  },
+  "models/robbins_monro.py": {
    "status": "audited"
   },
   "models/robin_hood_hash.py": {
@@ -24734,7 +24779,13 @@
   "models/robust_bench_studies.py": {
    "status": "audited"
   },
+  "models/robust_budget.py": {
+   "status": "audited"
+  },
   "models/robust_cov.py": {
+   "status": "audited"
+  },
+  "models/robust_regression.py": {
    "status": "audited"
   },
   "models/roc_qa_studies.py": {
@@ -24764,7 +24815,13 @@
   "models/rolling_conformal.py": {
    "status": "audited"
   },
+  "models/romano_wolf.py": {
+   "status": "audited"
+  },
   "models/romanticism.py": {
+   "status": "audited"
+  },
+  "models/romberg.py": {
    "status": "audited"
   },
   "models/rompo_qa_studies.py": {
@@ -24785,7 +24842,16 @@
   "models/root_height.py": {
    "status": "audited"
   },
+  "models/root_lattice_a2.py": {
+   "status": "audited"
+  },
   "models/root_stack.py": {
+   "status": "audited"
+  },
+  "models/root_system.py": {
+   "status": "audited"
+  },
+  "models/rope_attn.py": {
    "status": "audited"
   },
   "models/rope_scaling_studies.py": {
@@ -24797,10 +24863,16 @@
   "models/rosemary_qa_studies.py": {
    "status": "audited"
   },
+  "models/rosenbaum_sensitivity.py": {
+   "status": "audited"
+  },
   "models/rosenbrock_w.py": {
    "status": "audited"
   },
   "models/rosenthal_mom.py": {
+   "status": "audited"
+  },
+  "models/ross_recovery.py": {
    "status": "audited"
   },
   "models/ross_seal_qa_studies.py": {
@@ -24810,6 +24882,9 @@
    "status": "audited"
   },
   "models/rostmotive.py": {
+   "status": "audited"
+  },
+  "models/rotating_calipers.py": {
    "status": "audited"
   },
   "models/rotating_sweep.py": {
@@ -24857,13 +24932,40 @@
   "models/rough_vol2.py": {
    "status": "audited"
   },
+  "models/round_robin_sched.py": {
+   "status": "audited"
+  },
   "models/rouquier_dim.py": {
    "status": "audited"
   },
   "models/route_qa_studies.py": {
    "status": "audited"
   },
+  "models/row_types.py": {
+   "status": "audited"
+  },
+  "models/roy_model.py": {
+   "status": "audited"
+  },
   "models/rrc_filter.py": {
+   "status": "audited"
+  },
+  "models/rrcf.py": {
+   "status": "audited"
+  },
+  "models/rrf_fusion.py": {
+   "status": "audited"
+  },
+  "models/rrt.py": {
+   "status": "audited"
+  },
+  "models/rrt_connect.py": {
+   "status": "audited"
+  },
+  "models/rsa_toy.py": {
+   "status": "audited"
+  },
+  "models/rssm_world.py": {
    "status": "audited"
   },
   "models/rstar_tree.py": {
@@ -24873,6 +24975,15 @@
    "status": "audited"
   },
   "models/rte_studies.py": {
+   "status": "audited"
+  },
+  "models/rtk.py": {
+   "status": "audited"
+  },
+  "models/rts_smoother.py": {
+   "status": "audited"
+  },
+  "models/rtt_estimator.py": {
    "status": "audited"
   },
   "models/rtt_formalism.py": {
@@ -24930,6 +25041,9 @@
    "status": "audited"
   },
   "models/russo_seymour.py": {
+   "status": "audited"
+  },
+  "models/rust_ddc.py": {
    "status": "audited"
   },
   "models/rusty_spotted_qa_studies.py": {

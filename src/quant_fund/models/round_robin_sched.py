@@ -95,6 +95,8 @@ def bench_round_robin_sched(seed: int = 20261231 + 370) -> dict[str, float]:
         # FCFS first-start times are nondecreasing in arrival index
         starts = [r_fcfs[p][1] + procs[p][0] for p in range(n)]
         fifo_ord += int(all(starts[i] <= starts[i + 1] + 1e-9 for i in range(n - 1)))
+    if sjf_best != trials or rr_resp != trials or fifo_ord != trials:
+        raise ValueError("SJF/RR/FCFS scheduling oracle failed")
     return {
         "synthetic_sjf_min_tat": float(sjf_best / trials),
         "synthetic_rr_min_response": float(rr_resp / trials),

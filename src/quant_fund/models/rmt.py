@@ -203,3 +203,47 @@ def risk_in_eigenmodes(weights: Array, cov: Array) -> Array:
     if total <= 0.0:
         raise ValueError("portfolio variance is zero")
     return np.asarray(contrib / total, dtype=float)
+
+
+def bench_rmt(seed: int = 20261231 + 720) -> dict[str, float]:
+    """Marchenko-Pastur oracle: iid noise spectrum stays inside MP bounds,
+    a planted market factor escapes the upper edge, and denoising pushes
+    eigenvalues toward the noise floor."""
+    rng = np.random.default_rng(seed)
+    t, n = 2000, 100
+    q = n / t
+    lo, hi = marchenko_pastur_bounds(q)
+    x_iid = rng.standard_normal((t, n))
+    ev_iid, _ = correlation_eigenvalues(x_iid)
+    frac_in = float(np.mean((ev_iid >= lo * 0.9) & (ev_iid <= hi * 1.15)))
+    # planted single-factor market: r = beta*m + eps with strong common loading
+    m = rng.standard_normal(t)
+    beta = rng.uniform(0.6, 0.9, n)
+    x_mkt = beta[None, :] * m[:, None] + rng.standard_normal((t, n))
+    ev_mkt, vec_mkt = correlation_eigenvalues(x_mkt)
+    spike = float(ev_mkt[0])
+    cov_mkt = np.asarray(np.corrcoef(x_mkt.T), dtype=float)
+    cov_clip = eigenvalue_clip(cov_mkt, q)
+    ev_clip = np.linalg.eigvalsh(cov_clip)[::-1]
+    cov_det = detone_cov(cov_mkt, n_market=1)
+    ev_det = np.linalg.eigvalsh(cov_det)[::-1]
+    checks = [
+        frac_in > 0.95,
+        spike > hi * 1.5,
+        float(ev_clip[0]) >= hi,
+        float(ev_clip[-1]) >= float(ev_mkt[-1]) - 1e-9,
+        float(ev_det[0]) < spike,
+        absorption_ratio(ev_mkt) > absorption_ratio(ev_iid),
+        effective_rank(ev_iid) > effective_rank(ev_mkt),
+        noise_fraction(ev_iid, q) > 0.8,
+        0.0 < inverse_participation_ratio(vec_mkt[:, 0]) <= 1.0 + 1e-9,
+    ]
+    if not all(checks):
+        raise ValueError("RMT denoising oracle failed")
+    return {
+        "synthetic_rmt_iid_in_mp_frac": frac_in,
+        "synthetic_rmt_market_spike": spike,
+        "synthetic_rmt_mp_upper": hi,
+        "synthetic_rmt_ar_gain": absorption_ratio(ev_mkt) - absorption_ratio(ev_iid),
+        "synthetic_rmt_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

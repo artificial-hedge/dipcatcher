@@ -66,6 +66,8 @@ def bench_rsa_toy(seed: int = 20261231 + 420) -> dict[str, float]:
         # tampered ciphertext fails
         c2 = (c + 1) % n
         tamper += int(pow(c2, priv[1], n) != m)
+    if rt != trials or sig != trials or tamper != trials:
+        raise ValueError("RSA toy roundtrip/sign/tamper oracle failed")
     return {
         "synthetic_roundtrip": float(rt / trials),
         "synthetic_signature_verifies": float(sig / trials),

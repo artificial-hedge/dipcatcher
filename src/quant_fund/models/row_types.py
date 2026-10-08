@@ -109,4 +109,6 @@ def bench_row_types(seed: int = _SEED) -> dict[str, float]:
     s2: Subst = {}
     rec2 = ("rec", {"x": i}, ("rec", {"y": b}, None))
     checks.append(unify_row(rec2, "y", s2) == b)
+    if not all(checks):
+        raise ValueError("row-type unification oracle failed")
     return {"synthetic_row_types": float(sum(checks)) / len(checks)}

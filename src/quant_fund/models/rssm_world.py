@@ -93,6 +93,8 @@ def bench_rssm_world(
                 best = max(best, d)
             reach += best
             reach_r += best_r
+    if not (mse < mse_ar and reach / n_test >= reach_r / n_test):
+        raise ValueError("RSSM world model no better than AR/random plan")
     return {
         "synthetic_rssm_mse": mse,
         "synthetic_rssm_ar_mse": mse_ar,

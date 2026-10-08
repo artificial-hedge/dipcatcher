@@ -34,6 +34,8 @@ def bench_rips_h1(seed: int = _SEED) -> dict[str, float]:
     disk[:, 1] *= 3.0
     h1_ring = _vr_betti1(ring, 0.8)
     h1_disk = _vr_betti1(disk, 0.8)
+    if not (h1_ring >= 1 and h1_disk == 0):
+        raise ValueError("Vietoris-Rips H1 oracle failed (ring/blob)")
     return {
         "synthetic_rips_ring": float(h1_ring >= 1),
         "synthetic_rips_disk": float(h1_disk == 0),

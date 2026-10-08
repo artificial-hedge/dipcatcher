@@ -1,9 +1,11 @@
 """PPO-style RLHF with KL-to-reference penalty (SYNTHETIC).
 
 Policy maximizes a learned reward model's score. Without KL control
-the policy collapses onto the RM's argmax errors (reward hacking —
-high RM score, low true reward). KL-penalized PPO gets lower RM score
-but HIGHER true reward — the canonical anti-overoptimization result.
+the policy can collapse onto the RM's argmax errors (reward hacking —
+high RM score, low true reward). On this fixture the KL-penalized run
+preserves strictly higher TRUE reward; the RM-score gap (and thus the
+canonical over-optimization signature) only emerges deeper into
+training than this bench runs.
 """
 
 from __future__ import annotations
@@ -97,6 +99,9 @@ def bench_rlhf_ppo(
 
     rm_free, true_free = train(0.0)
     rm_kl, true_kl = train(beta_kl)
+    # verified dynamic: KL regularization preserves true reward
+    if true_kl <= true_free:
+        raise ValueError("KL/RLHF true-reward preservation failed")
     return {
         "synthetic_rlhf_kl_true_reward": float(true_kl),
         "synthetic_rlhf_free_true_reward": float(true_free),

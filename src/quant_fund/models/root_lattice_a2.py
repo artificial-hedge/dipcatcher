@@ -33,6 +33,8 @@ def _bench_root_lattice_a2(seed: int = 0) -> float:
     checks.append(np.isclose(ROOTS[0] @ ROOTS[1] / 2.0, -0.5))
     # highest root = a1+a2
     checks.append(np.allclose(ROOTS[0] + ROOTS[1], ROOTS[2]))
+    if not all(checks):
+        raise ValueError("A2 root-lattice oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -190,6 +190,10 @@ def bench_rust_ddc(seed: int = 20261231 + 265) -> dict[str, float]:
         np.asarray(d["choice"]),
         np.asarray(d["trans"]),
     )
+    if not (
+        abs(est["theta"] - 0.1) < 0.08 and abs(est["rc"] - 8.0) < 3.0 and est2["rc"] == est["rc"]
+    ):
+        raise ValueError("Rust NFXP parameter-recovery oracle failed")
     return {
         "synthetic_theta": est["theta"],
         "synthetic_rc": est["rc"],

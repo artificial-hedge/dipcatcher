@@ -37,4 +37,6 @@ def bench_rms_scheduler(seed: int = _SEED) -> dict[str, float]:
                 feasible = False
         # Liu-Layland sufficient: pred => RTA feasible
         sound += 1.0 if (not pred or feasible) else 0.0
+    if sound != trials:
+        raise ValueError("Liu-Layland predicted-infeasible set that RTA accepts")
     return {"synthetic_rms_ll_sound": float(sound) / trials}

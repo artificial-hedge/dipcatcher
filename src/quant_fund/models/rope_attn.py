@@ -82,6 +82,9 @@ def _train_and_eval(seed: int, rope: bool, iters: int = 800) -> tuple[float, flo
 def bench_rope_attn(seed: int = 1701, iters: int = 800) -> dict[str, float]:
     acc_r, acc_r2 = _train_and_eval(seed, True, iters)
     acc_a, acc_a2 = _train_and_eval(seed + 1, False, iters)
+    # RoPE's claim is length extrapolation; in-distribution may be a wash
+    if acc_r2 - acc_a2 <= 0.0:
+        raise ValueError("RoPE extrapolation no better than learned positions")
     return {
         "synthetic_rope_recall": acc_r,
         "synthetic_rope_recall_2x": acc_r2,

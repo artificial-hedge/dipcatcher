@@ -33,6 +33,8 @@ def _bench_romberg(seed: int = 0) -> float:
     # int_0^1 e^x = e - 1
     r3 = romberg(np.exp, 0.0, 1.0, 6)
     checks.append(abs(r3[-1, -1] - (np.e - 1)) < 1e-11)
+    if not all(checks):
+        raise ValueError("Romberg extrapolation oracle failed")
     return float(sum(checks) / len(checks))
 
 

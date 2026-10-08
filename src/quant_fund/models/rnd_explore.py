@@ -43,6 +43,8 @@ def bench_rnd_explore(seed: int = 2847) -> dict[str, float]:
 
     _, cov, succ = q_learn(bonus, seed=seed)
     _, cov_b, succ_b = q_learn(lambda s, sp, st, ep, rng: 0.0, seed=seed)
+    if not (cov >= cov_b and succ >= succ_b and (cov > cov_b or succ > succ_b)):
+        raise ValueError("RND novelty bonus no better than plain Q-learning")
     return {
         "synthetic_rnd_coverage": float(cov),
         "synthetic_baseline_coverage": float(cov_b),

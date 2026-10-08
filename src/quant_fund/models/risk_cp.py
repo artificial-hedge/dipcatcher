@@ -30,6 +30,10 @@ def bench_risk_cp(seed: int = 1321, alpha: float = 0.2) -> dict[str, float]:
     risk_t = float(np.clip(np.abs(yt - mu_t) - lam_star, 0, 1).mean())
     lam_naive = float(np.quantile(r, 1 - alpha))
     risk_t2 = float(np.clip(np.abs(yt - mu_t) - lam_naive, 0, 1).mean())
+    # adaptive conformal must track the alpha target (naive may be more
+    # conservative); the claim is coverage tracking, not min risk
+    if abs(risk_t - alpha) > 0.1:
+        raise ValueError("adaptive conformal risk off target oracle")
     return {
         "synthetic_rcp_risk": risk_t,
         "synthetic_rcp_target": alpha,

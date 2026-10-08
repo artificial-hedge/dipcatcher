@@ -52,6 +52,8 @@ def bench_rjmcmc(seed: int = 2977, steps: int = 1200) -> dict[str, float]:
             if i > steps // 3 and k == 2:
                 k2 += 1
         out[tag] = k2 / (steps - steps // 3)
+    if out["bimodal"] - out["unimodal"] <= 0.2:
+        raise ValueError("RJMCMC fails to separate bimodal vs unimodal")
     return {
         "synthetic_rj_p2_bimodal": float(out["bimodal"]),
         "synthetic_rj_p2_unimodal": float(out["unimodal"]),

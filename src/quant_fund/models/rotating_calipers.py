@@ -61,6 +61,8 @@ def bench_rotating_calipers(seed: int = 20261231 + 325) -> dict[str, float]:
         m = len(h)
         signs = {_cross(h[i], h[(i + 1) % m], h[(i + 2) % m]) > 0 for i in range(m)}
         hull_ok += int(len(signs) == 1 or m < 3)
+    if ok != trials or hull_ok != trials:
+        raise ValueError("rotating-calipers diameter/hull oracle failed")
     return {
         "synthetic_diameter_ok": float(ok / trials),
         "synthetic_hull_convex": float(hull_ok / trials),

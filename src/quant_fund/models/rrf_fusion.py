@@ -78,6 +78,9 @@ def bench_rrf_fusion(
     r_bm = recall_at_k(s_bm, td, tq, 5)
     r_dn = recall_at_k(s_dn, td, tq, 5)
     r_f = recall_at_k(s_f, td, tq, 5)
+    # honest gate: fusion must not collapse below the weakest ranker
+    if r_f < max(min(r_bm, r_dn), 0.5):
+        raise ValueError("RRF fusion fell below worst-ranker floor")
     return {
         "synthetic_rrf_recall5": r_f,
         "synthetic_rrf_bm25_recall5": r_bm,

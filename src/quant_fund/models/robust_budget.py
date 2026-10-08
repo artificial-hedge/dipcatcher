@@ -26,6 +26,9 @@ def bench_robust_budget(seed: int = 5511) -> dict[str, float]:
     nominal = _robust_obj(0.0)
     rob = _robust_obj(1.0)
     worst = _robust_obj(2.0)
+    # more protection can only cost objective value (price of robustness >= 0)
+    if not (nominal >= rob >= worst >= 0.0):
+        raise ValueError("robust-objective monotonicity violated")
     return {
         "synthetic_rb_nominal": nominal,
         "synthetic_rb_gamma1": rob,

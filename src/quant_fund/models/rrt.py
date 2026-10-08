@@ -147,4 +147,6 @@ def bench_rrt(seed: int = 20261231) -> dict[str, float]:
     # obstacle-free sanity: straight-line ≈ optimal
     L_free, _, _ = rrt((0.1, 0.1), (0.9, 0.9), [], seed=seed, max_iter=2000)
     out["synthetic_rrt_free_ratio"] = L_free / math.hypot(0.8, 0.8)
+    if not (Ls <= out["synthetic_rrt_min_cost"] + 1e-9 and out["synthetic_rrt_free_ratio"] < 1.6):
+        raise ValueError("RRT*/free-space oracle failed")
     return out
