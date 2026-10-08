@@ -74,3 +74,54 @@ condition = "AND"
 paths = ['''(?:^|/)quality/crown_jewels\.json$''']
 regexTarget = "line"
 regexes = ['''^\s*"[^"]{1,300}\.[a-z0-9]{1,8}":\s*"[0-9a-f]{64}",?\s*$''']
+
+# docs/maintenance validation manifests pin OpenAPI documents by sha256
+# ("actual_openapi_sha256" / "proposed_openapi_sha256" -> 64-hex digest).
+# Content pins, not credentials; scoped to those key names and digest
+# values only.
+[[allowlists]]
+description = "Maintenance manifests: OpenAPI documents pinned by sha256 digest"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)docs/maintenance/.+\.json$''']
+regexTarget = "line"
+regexes = ['''^\s*"(?:actual|proposed)_openapi_sha256":\s*"[0-9a-f]{64}",?\s*$''']
+
+# docs/maintenance/fault-validation-*.json narrates a fault battery in
+# prose; one sentence says "tokens on token-write failure,
+# scope/expiry/rotation semantics". generic-api-key keyed on the word
+# "token" and swallowed the following phrase. English, not a credential —
+# bound to that exact sentence fragment and file family.
+[[allowlists]]
+description = "Fault-validation narrative prose (sentence fragment, not a credential)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)docs/maintenance/fault-validation-[^/]*\.json$''']
+regexTarget = "line"
+regexes = ['''token-write failure,\s*scope/expiry/rotation semantics''']
+
+# tests/fx1/operation_cases_chunk2.py carries a checkpoint-verification
+# case whose `supplied_key_sha256` is the sha256 FINGERPRINT of a test key
+# (the key id is its first 16 hex chars) — a fingerprint cannot authenticate
+# anything. Same class as the digest allowlists above.
+[[allowlists]]
+description = "Test fixture: sha256 key fingerprint in a checkpoint case"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/fx1/operation_cases_chunk2\.py$''']
+regexTarget = "line"
+regexes = ['''^\s*"supplied_key_sha256":\s*"[0-9a-f]{64}",?\s*$''']
+
+# web/public/fixtures/index.json maps sha256 content digests -> fixture
+# receipt paths ("64-hex": "receipts/<name>.json"). Same content-pin class
+# as the .dsh-24x7 evidence allowlist. generic-api-key's match here spans
+# a line break (path line tail -> next line's digest key), so line-targeted
+# regexes cannot see it; target the captured secret instead and require it
+# to be exactly a lowercase 64-hex digest, in this one manifest only.
+[[allowlists]]
+description = "Web fixture manifest: sha256 digest -> fixture path pins"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)web/public/fixtures/index\.json$''']
+regexTarget = "secret"
+regexes = ['''^[0-9a-f]{64}$''']

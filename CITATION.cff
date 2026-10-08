@@ -3,9 +3,10 @@ message: If you use this software, please cite it using this metadata.
 type: software
 title: dipcatcher
 abstract: >-
-  Receipt-bound quant research on US equities and crypto for a small Alpaca
-  account. Research and simulated paper only. The Python distribution name
-  is fx-1.
+  Receipt-bound quant research on US equities and crypto in the dipcatcher
+  harness: data engine, evaluation, and verification for the fx-1 model.
+  Research and simulated paper only — no live trading. The Python
+  distribution name is fx-1.
 authors:
   - family-names: Vaithianathan
     given-names: Advaith
