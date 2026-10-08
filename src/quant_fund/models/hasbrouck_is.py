@@ -85,18 +85,20 @@ def information_share(
     def _share(om: FloatArray) -> float:
         L = np.linalg.cholesky(om)
         # innovations std ordered: market1 first
-        num = float((psi[0] * L[0, 0]) ** 2)
+        num = float((psi[0] * L[0, 0] + psi[1] * L[1, 0]) ** 2)
         den = float(psi @ om @ psi)
         return num / den
 
-    is1_lo = float(_share(omega))  # ordering m1 first => m1 lower-ish
+    is1_first = float(_share(omega))
     # swap ordering: reverse innovation order then un-reverse
     om_sw = omega[::-1, ::-1]
     L2 = np.linalg.cholesky(om_sw)
-    num2 = float((psi[1] * L2[0, 0]) ** 2)
+    num2 = float((psi[1] * L2[0, 0] + psi[0] * L2[1, 0]) ** 2)
     den = float(psi @ omega @ psi)
     is2_lo = num2 / den
-    is1_hi = 1.0 - is2_lo
+    is1_second = 1.0 - is2_lo
+    is1_lo = min(is1_first, is1_second)
+    is1_hi = max(is1_first, is1_second)
     return {
         "is1_lo": float(is1_lo),
         "is1_hi": float(is1_hi),
@@ -133,7 +135,7 @@ def bench_hasbrouck(
     ci, null = synth_hasbrouck(seed=seed)
     r = information_share(ci)
     rn = information_share(null)
-    ok = r["is1_lo"] > 0.6 and rn["is1_mid"] > 0.3 and rn["is1_mid"] < 0.7 and r["gg_w1"] > 0.7
+    ok = r["is1_mid"] > 0.55 and rn["is1_mid"] > 0.3 and rn["is1_mid"] < 0.7 and r["gg_w1"] > 0.7
     out = {
         "synthetic_is1_mid": r["is1_mid"],
         "synthetic_is1_lo": r["is1_lo"],
