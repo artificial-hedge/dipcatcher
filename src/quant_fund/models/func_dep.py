@@ -49,4 +49,9 @@ def bench_func_dep(seed: int = _SEED) -> dict[str, float]:
         fds = discover_fds(rows)
         if ((1,), 2) in fds and ((0, 1), 3) in fds:
             ok += 1
-    return {"synthetic_fd_found": ok / 25}
+    found = ok / 25
+    # both FDs hold by construction on every trial — discovery must
+    # always find them
+    if found < 1.0:
+        raise ValueError(f"planted fds missed: {ok}/25")
+    return {"synthetic_fd_found": found}

@@ -46,4 +46,9 @@ def bench_gale_chu(seed: int = _SEED) -> dict[str, float]:
         valid = all(len(v) <= quota[h] for h, v in out.items())
         flat = [s for v in out.values() for s in v]
         ok += valid and len(flat) == len(set(flat))
-    return {"synthetic_gc_valid": ok / 40}
+    frac = ok / 40
+    # quotas and unique assignment are invariants of the algorithm —
+    # they must hold on every draw
+    if frac < 1.0:
+        raise ValueError(f"gale-chu validity broken: {ok}/40")
+    return {"synthetic_gc_valid": frac}

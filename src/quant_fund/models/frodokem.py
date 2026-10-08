@@ -73,4 +73,10 @@ def bench_frodokem(seed: int = _SEED) -> dict[str, float]:
         agree += int(decap(sk, ct) == ss)
         bad = (ct[0], (ct[1] + Q // 2) % Q)
         tamper += int(decap(sk, bad) != ss)
-    return {"synthetic_frodokem": 1.0 if (agree == 8 and tamper == 8) else agree / 8.0}
+    # agreement and tamper detection both count — a decap that ignores
+    # ciphertext tampering must not score like a correct one
+    return {
+        "synthetic_frodokem": (agree + tamper) / 16.0,
+        "synthetic_frodokem_agree": agree / 8.0,
+        "synthetic_frodokem_tamper": tamper / 8.0,
+    }

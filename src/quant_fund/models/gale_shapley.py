@@ -45,4 +45,9 @@ def bench_gale_shapley(seed: int = _SEED) -> dict[str, float]:
         men = np.stack([rng.permutation(n) for _ in range(n)])
         women = np.stack([rng.permutation(n) for _ in range(n)])
         ok += _is_stable(gale_shapley(men, women), men, women)
-    return {"synthetic_gs_stable": ok / 40}
+    frac = ok / 40
+    # deferred acceptance's guarantee is a stable matching — the
+    # blocking-pair oracle must pass on every draw
+    if frac < 1.0:
+        raise ValueError(f"gale-shapley stability broken: {ok}/40")
+    return {"synthetic_gs_stable": frac}

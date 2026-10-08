@@ -146,4 +146,17 @@ def bench_frenet(seed: int = 20261231) -> dict[str, float]:
     c = quintic_poly(0.1, 0.0, 0.0, 0.3, 0.0, 0.0, 2.0)
     out["synthetic_quintic_end_err"] = abs(_eval(c, 2.0) - 0.3)
     out["synthetic_quintic_jerk"] = jerk_cost(c, 2.0)
+    # gates: the boundary solve is exact; an obstacle-free plan exists
+    # and ends centered at the min-cost offset; the obstacle case keeps
+    # at least one candidate outside the 0.1 clearance floor
+    if out["synthetic_quintic_end_err"] > 1e-8:
+        raise ValueError(f"quintic boundary off: {out['synthetic_quintic_end_err']}")
+    if nf < 1:
+        raise ValueError("no feasible candidate without obstacles")
+    if out["synthetic_frenet_end_offset"] > 0.05:
+        raise ValueError(f"chosen end offset off: {out['synthetic_frenet_end_offset']}")
+    if nf2 < 1 or out["synthetic_frenet_obs_clearance"] < 0.0999:
+        raise ValueError(
+            f"obstacle plan off: feas={nf2} clr={out['synthetic_frenet_obs_clearance']}"
+        )
     return out

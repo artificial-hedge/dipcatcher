@@ -10577,6 +10577,9 @@
   "models/frank_wolfe2.py": {
    "status": "audited"
   },
+  "models/frechet.py": {
+   "status": "audited"
+  },
   "models/frechet_derivative.py": {
    "status": "audited"
   },
@@ -10616,10 +10619,16 @@
   "models/free_fisher_info.py": {
    "status": "audited"
   },
+  "models/free_group.py": {
+   "status": "audited"
+  },
   "models/free_list.py": {
    "status": "audited"
   },
   "models/free_loop.py": {
+   "status": "audited"
+  },
+  "models/free_monad.py": {
    "status": "audited"
   },
   "models/free_prob.py": {
@@ -10646,6 +10655,12 @@
   "models/freiman_thm.py": {
    "status": "audited"
   },
+  "models/frenet.py": {
+   "status": "audited"
+  },
+  "models/frenet_frame.py": {
+   "status": "audited"
+  },
   "models/fresh_qa_studies.py": {
    "status": "audited"
   },
@@ -10659,6 +10674,12 @@
    "status": "audited"
   },
   "models/friedlander_voev.py": {
+   "status": "audited"
+  },
+  "models/friedman.py": {
+   "status": "audited"
+  },
+  "models/friedman_supersmoother.py": {
    "status": "audited"
   },
   "models/friedmann_eq.py": {
@@ -10694,16 +10715,25 @@
   "models/frobenius_el.py": {
    "status": "audited"
   },
+  "models/frobenius_group.py": {
+   "status": "audited"
+  },
   "models/frobenius_mfd.py": {
    "status": "audited"
   },
   "models/frobenius_prism.py": {
    "status": "audited"
   },
+  "models/frodokem.py": {
+   "status": "audited"
+  },
   "models/frog_qa_studies.py": {
    "status": "audited"
   },
   "models/frogmouth_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/frontier_explore.py": {
    "status": "audited"
   },
   "models/frontier_math_studies.py": {
@@ -10730,10 +10760,16 @@
   "models/fruit_qa_studies.py": {
    "status": "audited"
   },
+  "models/frustum_cull.py": {
+   "status": "audited"
+  },
   "models/fruticose_qa_studies.py": {
    "status": "audited"
   },
   "models/fs_diamond.py": {
+   "status": "audited"
+  },
+  "models/fs_journal.py": {
    "status": "audited"
   },
   "models/fsdp_sharding_studies.py": {
@@ -10743,6 +10779,12 @@
    "status": "audited"
   },
   "models/fsum_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/ft_transformer.py": {
+   "status": "audited"
+  },
+  "models/fubini_swap.py": {
    "status": "audited"
   },
   "models/fuchsian_group.py": {
@@ -10757,19 +10799,31 @@
   "models/fukaya_cat.py": {
    "status": "audited"
   },
+  "models/full_cp.py": {
+   "status": "audited"
+  },
   "models/fulmar_qa_studies.py": {
    "status": "audited"
   },
   "models/fulton_mclarty.py": {
    "status": "audited"
   },
+  "models/func_dep.py": {
+   "status": "audited"
+  },
   "models/function_vector_studies.py": {
+   "status": "audited"
+  },
+  "models/functional.py": {
    "status": "audited"
   },
   "models/functional_ito.py": {
    "status": "audited"
   },
   "models/functional_linear.py": {
+   "status": "audited"
+  },
+  "models/functional_pca.py": {
    "status": "audited"
   },
   "models/functional_sde.py": {
@@ -10784,13 +10838,25 @@
   "models/fundamental_cat.py": {
    "status": "audited"
   },
+  "models/fundamental_group.py": {
+   "status": "audited"
+  },
   "models/fundamental_grp.py": {
+   "status": "audited"
+  },
+  "models/fundamental_laplace.py": {
+   "status": "audited"
+  },
+  "models/funext_toy.py": {
    "status": "audited"
   },
   "models/fur_seal_qa_studies.py": {
    "status": "audited"
   },
   "models/furstenberg.py": {
+   "status": "audited"
+  },
+  "models/fused_gromov.py": {
    "status": "audited"
   },
   "models/fusion_algebra.py": {
@@ -10823,6 +10889,12 @@
   "models/fuxi_qa_studies.py": {
    "status": "audited"
   },
+  "models/fuzzer_mutate.py": {
+   "status": "audited"
+  },
+  "models/fuzzy_clustering.py": {
+   "status": "audited"
+  },
   "models/fv_mart.py": {
    "status": "audited"
   },
@@ -10833,6 +10905,9 @@
    "status": "audited"
   },
   "models/g_spectrum.py": {
+   "status": "audited"
+  },
+  "models/g_theory.py": {
    "status": "audited"
   },
   "models/gaboon_qa_studies.py": {
@@ -10847,6 +10922,9 @@
   "models/gadwall_qa_studies.py": {
    "status": "audited"
   },
+  "models/gae.py": {
+   "status": "audited"
+  },
   "models/gaia_bench_studies.py": {
    "status": "audited"
   },
@@ -10854,6 +10932,12 @@
    "status": "audited"
   },
   "models/gaia_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/gail_imitation.py": {
+   "status": "audited"
+  },
+  "models/gain_schedule.py": {
    "status": "audited"
   },
   "models/gaines_sle.py": {
@@ -10874,6 +10958,12 @@
   "models/galdef_ring.py": {
    "status": "audited"
   },
+  "models/gale_chu.py": {
+   "status": "audited"
+  },
+  "models/gale_shapley.py": {
+   "status": "audited"
+  },
   "models/galerkin_bem.py": {
    "status": "audited"
   },
@@ -10889,10 +10979,25 @@
   "models/gallai_thm.py": {
    "status": "audited"
   },
+  "models/gallant_snp.py": {
+   "status": "audited"
+  },
   "models/gallinule_qa_studies.py": {
    "status": "audited"
   },
   "models/galois_cat.py": {
+   "status": "audited"
+  },
+  "models/galois_connection.py": {
+   "status": "audited"
+  },
+  "models/galois_corresp.py": {
+   "status": "audited"
+  },
+  "models/galois_field.py": {
+   "status": "audited"
+  },
+  "models/galois_group.py": {
    "status": "audited"
   },
   "models/galois_insertion.py": {
@@ -10907,7 +11012,13 @@
   "models/galton_watson.py": {
    "status": "audited"
   },
+  "models/gam.py": {
+   "status": "audited"
+  },
   "models/gamayun_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/gambler_ruin.py": {
    "status": "audited"
   },
   "models/game_design.py": {
@@ -10935,6 +11046,9 @@
    "status": "audited"
   },
   "models/gana_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/gandh.py": {
    "status": "audited"
   },
   "models/gandharva_qa_studies.py": {

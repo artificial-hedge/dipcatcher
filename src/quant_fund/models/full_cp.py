@@ -40,7 +40,7 @@ def bench_full_cp(seed: int = 1319, alpha: float = 0.1, n_eval: int = 120) -> di
     Q = np.quantile(r, np.ceil((len(r) + 1) * (1 - alpha)) / len(r))
     mu_t = ridge_pred(w, Xt)
     cov2 = float(np.mean((yt >= mu_t - Q) & (yt <= mu_t + Q)))
-    return {
+    out = {
         "synthetic_fcp_coverage": cov,
         "synthetic_fcp_target": 1 - alpha,
         "synthetic_fcp_width": float(np.mean(hi_f - lo_f)),
@@ -49,3 +49,10 @@ def bench_full_cp(seed: int = 1319, alpha: float = 0.1, n_eval: int = 120) -> di
         "synthetic_fcp_width_gain": 2 * Q - float(np.mean(hi_f - lo_f)),
         "synthetic_torch_available": 0.0,
     }
+    # conformal's marginal guarantee (empirical, n_eval=120 → loose band)
+    # and the tighter-than-split property the module exists for
+    if cov < 0.75 or cov2 < 0.75:
+        raise ValueError(f"conformal coverage off: full={cov:.3f} split={cov2:.3f}")
+    if out["synthetic_fcp_width_gain"] <= 0:
+        raise ValueError("full cp not tighter than split")
+    return out

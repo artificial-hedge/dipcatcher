@@ -100,7 +100,7 @@ def bench_ft_transformer(
         np.linalg.solve(xs[tr].T @ xs[tr] + 1e-2 * np.eye(d), xs[tr].T @ (y[tr] - 0.5))
     )
     log_acc = _acc(xs[te] @ beta + 0.5, y[te])
-    return {
+    out = {
         "synthetic_ft_acc": ft_acc,
         "synthetic_ft_mlp_acc": mlp_acc,
         "synthetic_ft_logistic_acc": log_acc,
@@ -108,6 +108,11 @@ def bench_ft_transformer(
         "synthetic_ft_margin_vs_mlp": ft_acc - mlp_acc,
         "synthetic_torch_available": 1.0,
     }
+    # the module's claim: attention captures the x1*x2 interaction a
+    # linear probe cannot; must beat it and clear chance
+    if ft_acc <= log_acc or ft_acc < 0.6:
+        raise ValueError(f"ft-transformer off: ft={ft_acc:.3f} log={log_acc:.3f}")
+    return out
 
 
 if __name__ == "__main__":  # pragma: no cover

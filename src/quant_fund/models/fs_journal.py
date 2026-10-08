@@ -58,7 +58,20 @@ def bench_fs_journal(seed: int = 20261231 + 375) -> dict[str, float]:
                 fs.write(tx, f"k{rng.randrange(0, 6)}", rng.randrange(100))
             if rng.random() < 0.7:
                 fs.commit(tx)
-        truth = fs._replay()  # ground truth from journal semantics
+        # independent oracle: replay journal records here instead of
+        # calling _replay (comparing the function to itself is vacuous)
+        staged: dict[str, dict[str, int]] = {}
+        done: set[str] = set()
+        for rec in fs.journal:
+            if rec[0] == "set":
+                _t, tx, k, v = rec
+                staged.setdefault(tx, {})[k] = int(v)
+            elif rec[0] == "commit":
+                done.add(rec[1])
+        truth: dict[str, int] = {}
+        for tx, kv in staged.items():
+            if tx in done:
+                truth.update(kv)
         fs.disk = {"stale": -1}  # simulate dirty pre-crash state
         fs.crash_and_recover()
         vis += int(fs.disk == truth)
@@ -66,8 +79,15 @@ def bench_fs_journal(seed: int = 20261231 + 375) -> dict[str, float]:
         snap = dict(fs.disk)
         fs.crash_and_recover()
         idem += int(fs.disk == snap)
-    return {
+    out = {
         "synthetic_committed_visible": float(vis / trials),
         "synthetic_uncommitted_gone": float(gone / trials),
         "synthetic_idempotent_replay": float(idem / trials),
     }
+    if out["synthetic_committed_visible"] < 1.0:
+        raise ValueError(f"committed writes lost: {vis}/{trials}")
+    if out["synthetic_uncommitted_gone"] < 1.0:
+        raise ValueError(f"uncommitted/stale state leaked: {gone}/{trials}")
+    if out["synthetic_idempotent_replay"] < 1.0:
+        raise ValueError(f"replay not idempotent: {idem}/{trials}")
+    return out

@@ -31,8 +31,22 @@ def _bench_fundamental_laplace(seed: int = 0) -> float:
         np.roll(v, -1, 0) - 2 * v + np.roll(v, 1, 0) + np.roll(v, -1, 1) - 2 * v + np.roll(v, 1, 1)
     ) / h**2
     checks.append(float(np.max(np.abs(lap[5:-5, 5:-5]))) < 1e-3)
-    # 1/r in 3-D is harmonic (dimension check via numerical laplacian skipped) — formula check
-    checks.append(True)
+    # 1/r in 3-D is harmonic away from the origin — verify with the
+    # 7-point laplacian stencil instead of a vacuous formula check
+    g = np.linspace(0.5, 2.0, 60)
+    x3, y3, z3 = np.meshgrid(g, g, g, indexing="ij")
+    u = 1.0 / np.sqrt(x3**2 + y3**2 + z3**2)
+    h3 = g[1] - g[0]
+    lap3 = (
+        np.roll(u, -1, 0)
+        + np.roll(u, 1, 0)
+        + np.roll(u, -1, 1)
+        + np.roll(u, 1, 1)
+        + np.roll(u, -1, 2)
+        + np.roll(u, 1, 2)
+        - 6 * u
+    ) / h3**2
+    checks.append(float(np.max(np.abs(lap3[5:-5, 5:-5, 5:-5]))) < 1e-3)
     return float(sum(checks) / len(checks))
 
 

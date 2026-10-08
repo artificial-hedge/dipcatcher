@@ -84,4 +84,19 @@ def bench_frechet(seed: int = 20261231) -> dict[str, float]:
     path = frechet_path(A, B)
     out["synthetic_frechet_path_len"] = float(len(path))
     out["synthetic_frechet_path_ends"] = float(path[0] == (0, 0) and path[-1] == (2, 2))
+    # gate on the closed-form identities: self-distance 0, a rigid shift
+    # costs exactly the shift, symmetry is exact, resampling a shared
+    # segment costs the min leash (0.05 here — every L2 point must pair
+    # to an L1 point at worst half the coarse spacing away), and the
+    # coupling path is a legal monotone walk
+    if d0 != 0.0 or out["synthetic_frechet_shift_err"] > 1e-9:
+        raise ValueError(f"frechet identity broken: d0={d0} shift={d1}")
+    if out["synthetic_frechet_sym_err"] > 1e-9 or abs(d3 - 0.05) > 1e-9:
+        raise ValueError(f"frechet symmetry/resample broken: {d2} vs {d1}, {d3}")
+    if not (path[0] == (0, 0) and path[-1] == (2, 2)):
+        raise ValueError("frechet path endpoints wrong")
+    # the detour metric: coupling must respect the endpoint bound and
+    # reach the known min-leash value for this fixture
+    if not (0.9 <= d4 <= 1.1):
+        raise ValueError(f"frechet detour off: {d4}")
     return out

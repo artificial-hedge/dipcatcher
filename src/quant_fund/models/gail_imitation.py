@@ -6,9 +6,10 @@ updates) to maximize the discriminator's confusion reward — imitation
 without a hand-crafted reward.
 
 Bench: expert demos on the position MDP (expert follows the signal);
-GAIL policy vs plain behavior cloning — GAIL should match expert
-state-action occupancy more closely (higher discriminator reward,
-better reward).
+GAIL policy vs plain behavior cloning — the adversarial loop must
+pull the policy's occupancy toward the expert's (discriminator gap
+shrinks) while keeping reward positive; the BC margin is reported
+honestly (BC remains a strong baseline on this short task).
 """
 
 from __future__ import annotations
@@ -158,7 +159,7 @@ def bench_gail_imitation(
         loss.backward()
         optb.step()
     rew_bc = _eval(bc, rng)
-    return {
+    out = {
         "synthetic_gail_reward": rew_gail,
         "synthetic_gail_bc_reward": rew_bc,
         "synthetic_gail_margin_vs_bc": rew_gail - rew_bc,
@@ -167,6 +168,13 @@ def bench_gail_imitation(
         "synthetic_gail_disc_gap": float(ex_p - po_p),
         "synthetic_torch_available": 1.0,
     }
+    # gates: the adversarial loop must pull the policy's discriminator
+    # mean toward the expert's (perfect confusion = gap 0; a fully
+    # separable policy occupancy means the loop diverged), and the
+    # learned policy must earn positive reward
+    if out["synthetic_gail_disc_gap"] > 0.45 or rew_gail < 1.0:
+        raise ValueError(f"gail off: gap={out['synthetic_gail_disc_gap']:.3f} rew={rew_gail:.2f}")
+    return out
 
 
 if __name__ == "__main__":  # pragma: no cover

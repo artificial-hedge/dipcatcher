@@ -84,4 +84,10 @@ def bench_frontier_explore(seed: int = _SEED) -> dict[str, float]:
         grid = (rng.rand(n, n) < 0.12).astype(int)
         grid[0, :] = grid[-1, :] = grid[:, 0] = grid[:, -1] = 1
         covs.append(_explore(grid, rng))
-    return {"synthetic_frontier_coverage": float(np.mean(covs))}
+    cov = float(np.mean(covs))
+    # BFS oracle says the agent knows every reachable free cell; the
+    # explore loop's budget is far above the map size, so it must get
+    # nearly all of them
+    if cov < 0.9:
+        raise ValueError(f"frontier coverage too low: {cov:.3f}")
+    return {"synthetic_frontier_coverage": cov}

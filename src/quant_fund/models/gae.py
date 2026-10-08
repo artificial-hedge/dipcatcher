@@ -69,6 +69,17 @@ def bench_gae(seed: int = 20261231) -> dict[str, float]:
             - 1.0
         )
     )
+    # all four are algebraic identities, not statistical checks:
+    # λ=0 must equal the raw TD residuals, λ=1 the MC-return minus V,
+    # the constant stream the geometric closed form, and a done mask
+    # must zero the bootstrap carry-over — all exact at 1e-9
+    if (
+        out["synthetic_gae_lam0_err"] > 1e-9
+        or out["synthetic_gae_lam1_err"] > 1e-9
+        or out["synthetic_gae_const_err"] > 1e-9
+        or out["synthetic_gae_dones_reset"] > 1e-9
+    ):
+        raise ValueError(f"gae identity broken: {out}")
     return out
 
 

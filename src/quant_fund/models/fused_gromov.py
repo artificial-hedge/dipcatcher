@@ -65,9 +65,16 @@ def bench_fused_gromov(seed: int | None = None) -> dict[str, float]:
         f1, f1[rng.permutation(n)], c1, c2, p, q, alpha=0.5, eps=0.005, max_iter=40
     )
     marg = float(max(np.max(np.abs(t_f.sum(1) - p)), np.max(np.abs(t_f.sum(0) - q))))
+    sep = fgw_s - fgw_f
+    # entropic sinkhorn must return near-exact marginals, and the
+    # feature-aligned plan must price below a feature-shuffled one
+    if marg > 1e-4:
+        raise ValueError(f"fgw marginals off: {marg:.2e}")
+    if sep <= 0:
+        raise ValueError(f"fgw not separating: aligned={fgw_f} shuffled={fgw_s}")
     return {
         "synthetic_fgw_aligned": fgw_f,
         "synthetic_fgw_shuffled": fgw_s,
         "synthetic_marginal_err": marg,
-        "synthetic_sep": fgw_s - fgw_f,
+        "synthetic_sep": sep,
     }
