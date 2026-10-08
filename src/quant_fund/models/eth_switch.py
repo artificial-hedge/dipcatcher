@@ -24,16 +24,17 @@ class Switch:
         return False
 
 
-def bench_eth_switch(seed: int = _SEED) -> dict[str, float]:
+def bench_eth_switch(seed: int = _SEED, ttl: int = 100) -> dict[str, float]:
     rng = np.random.RandomState(seed)
-    sw = Switch(ttl=100)
+    sw = Switch(ttl=ttl)
     hosts = {"a": 1, "b": 2, "c": 3, "d": 4}
     names = list(hosts)
     unicast_ratio_hits = 0
     n = 0
     for _ in range(60):
         src, dst = rng.choice(names, 2, replace=False)
-        known = dst in sw.table and sw.now - sw.table[dst][1] <= sw.ttl
+        # frame() stamps now+1 before the table lookup — predict the same
+        known = dst in sw.table and (sw.now + 1) - sw.table[dst][1] <= sw.ttl
         direct = sw.frame(src, dst, hosts[src])
         n += 1
         unicast_ratio_hits += direct == known

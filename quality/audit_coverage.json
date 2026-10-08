@@ -9158,13 +9158,22 @@
   "models/entropy_ks.py": {
    "status": "audited"
   },
+  "models/entropy_pooling.py": {
+   "status": "audited"
+  },
   "models/entropy_production.py": {
+   "status": "audited"
+  },
+  "models/entropy_query.py": {
    "status": "audited"
   },
   "models/entropy_regular.py": {
    "status": "audited"
   },
   "models/entropy_stable_dg.py": {
+   "status": "audited"
+  },
+  "models/env_map.py": {
    "status": "audited"
   },
   "models/environmental_anthropology.py": {
@@ -9197,6 +9206,15 @@
   "models/environmental_toxicology.py": {
    "status": "audited"
   },
+  "models/envy_free.py": {
+   "status": "audited"
+  },
+  "models/eoq_model.py": {
+   "status": "audited"
+  },
+  "models/epaxos.py": {
+   "status": "audited"
+  },
   "models/epi_rk.py": {
    "status": "audited"
   },
@@ -9224,6 +9242,9 @@
   "models/epilepsy_studies.py": {
    "status": "audited"
   },
+  "models/epipolar_8pt.py": {
+   "status": "audited"
+  },
   "models/episodic_memory_studies.py": {
    "status": "audited"
   },
@@ -9234,6 +9255,12 @@
    "status": "audited"
   },
   "models/epoch_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/epoch_reclaim.py": {
+   "status": "audited"
+  },
+  "models/epps_singleton.py": {
    "status": "audited"
   },
   "models/epsilon_algo.py": {
@@ -9260,10 +9287,19 @@
   "models/equine_medicine.py": {
    "status": "audited"
   },
+  "models/equinox_prec.py": {
+   "status": "audited"
+  },
   "models/equipment_cat.py": {
    "status": "audited"
   },
   "models/equiv_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/equivalence_cat.py": {
+   "status": "audited"
+  },
+  "models/equivar_gnn.py": {
    "status": "audited"
   },
   "models/equivariant_cohomology2.py": {
@@ -9290,6 +9326,9 @@
   "models/ergodic_pp.py": {
    "status": "audited"
   },
+  "models/ergodic_thm.py": {
+   "status": "audited"
+  },
   "models/ergonomics.py": {
    "status": "audited"
   },
@@ -9297,6 +9336,9 @@
    "status": "audited"
   },
   "models/erlang_c.py": {
+   "status": "audited"
+  },
+  "models/erlang_queueing.py": {
    "status": "audited"
   },
   "models/erlik_qa_studies.py": {
@@ -9308,13 +9350,25 @@
   "models/error_fn.py": {
    "status": "audited"
   },
+  "models/ers_dfgls.py": {
+   "status": "audited"
+  },
   "models/esc_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/escape_analysis.py": {
+   "status": "audited"
+  },
+  "models/escape_region.py": {
    "status": "audited"
   },
   "models/eshmun_qa_studies.py": {
    "status": "audited"
   },
   "models/esports_studies.py": {
+   "status": "audited"
+  },
+  "models/esscher.py": {
    "status": "audited"
   },
   "models/essential_morph.py": {
@@ -9386,7 +9440,13 @@
   "models/etd_rk4_classic.py": {
    "status": "audited"
   },
+  "models/etdrk4.py": {
+   "status": "audited"
+  },
   "models/etemadi_ineq.py": {
+   "status": "audited"
+  },
+  "models/eth_switch.py": {
    "status": "audited"
   },
   "models/ethic_jiminy_studies.py": {
@@ -9428,16 +9488,31 @@
   "models/eucalyptus_qa_studies.py": {
    "status": "audited"
   },
+  "models/euler_char.py": {
+   "status": "audited"
+  },
   "models/euler_class.py": {
    "status": "audited"
   },
   "models/euler_equations.py": {
    "status": "audited"
   },
+  "models/euler_homology.py": {
+   "status": "audited"
+  },
   "models/euler_lagrange.py": {
    "status": "audited"
   },
+  "models/euler_risk.py": {
+   "status": "audited"
+  },
   "models/euler_system.py": {
+   "status": "audited"
+  },
+  "models/euler_trail.py": {
+   "status": "audited"
+  },
+  "models/eulerian_num.py": {
    "status": "audited"
   },
   "models/european_studies.py": {
@@ -9461,6 +9536,9 @@
   "models/event_qa_studies.py": {
    "status": "audited"
   },
+  "models/event_study.py": {
+   "status": "audited"
+  },
   "models/everyday_qa_studies.py": {
    "status": "audited"
   },
@@ -9468,6 +9546,15 @@
    "status": "audited"
   },
   "models/evidence_law.py": {
+   "status": "audited"
+  },
+  "models/evidential.py": {
+   "status": "audited"
+  },
+  "models/evolution_nas.py": {
+   "status": "audited"
+  },
+  "models/evolution_strategies.py": {
    "status": "audited"
   },
   "models/evolutionary_biology.py": {
@@ -9482,6 +9569,9 @@
   "models/evolutionary_psychology.py": {
    "status": "audited"
   },
+  "models/ews_signals.py": {
+   "status": "audited"
+  },
   "models/exact_cat.py": {
    "status": "audited"
   },
@@ -9489,6 +9579,9 @@
    "status": "audited"
   },
   "models/exact_couple.py": {
+   "status": "audited"
+  },
+  "models/exact_cover.py": {
    "status": "audited"
   },
   "models/exact_seq.py": {
@@ -9509,6 +9602,9 @@
   "models/exchangeable_pf.py": {
    "status": "audited"
   },
+  "models/excision.py": {
+   "status": "audited"
+  },
   "models/excisive_fn.py": {
    "status": "audited"
   },
@@ -9518,7 +9614,16 @@
   "models/excursion_theory.py": {
    "status": "audited"
   },
+  "models/exec_rl.py": {
+   "status": "audited"
+  },
+  "models/exercise_boundary.py": {
+   "status": "audited"
+  },
   "models/exercise_physiology.py": {
+   "status": "audited"
+  },
+  "models/exfil_zscore.py": {
    "status": "audited"
   },
   "models/existentialism.py": {
@@ -9536,7 +9641,16 @@
   "models/expectation_param.py": {
    "status": "audited"
   },
+  "models/expectation_propagation.py": {
+   "status": "audited"
+  },
   "models/expected_sig.py": {
+   "status": "audited"
+  },
+  "models/expectile.py": {
+   "status": "audited"
+  },
+  "models/expectimax.py": {
    "status": "audited"
   },
   "models/experimental_archaeology.py": {

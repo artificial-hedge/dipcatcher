@@ -36,6 +36,7 @@ def _ebr_trace(rng: np.random.RandomState) -> bool:
     """Invariant: no object freed while a thread in an earlier epoch could
     still hold a reference. Modelled: freed ⊂ retired ≥2 epochs ago."""
     ebr = EBR()
+    retired_at: dict[int, int] = {}
     oid = 0
     for _ in range(300):
         r = rng.rand()
@@ -45,14 +46,19 @@ def _ebr_trace(rng: np.random.RandomState) -> bool:
         elif r < 0.5:
             ebr.exit(tid)
         elif r < 0.8:
+            retired_at[oid] = ebr.epoch
             ebr.retire(oid)
             oid += 1
         else:
+            before = ebr.freed.copy()
             ebr.try_advance()
-            for t in list(ebr.local):
-                le = ebr.local[t]
-                if le is not None and le < ebr.epoch:
-                    pass  # still critical — allowed
+            for o in ebr.freed - before:
+                # freed objects must have been retired >=2 epochs ago
+                if ebr.epoch - retired_at[o] < 2:
+                    return False
+                # and no live critical section may predate its retirement
+                if any(le is not None and le <= retired_at[o] for le in ebr.local.values()):
+                    return False
     return True
 
 

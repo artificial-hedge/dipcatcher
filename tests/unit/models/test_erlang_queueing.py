@@ -54,6 +54,16 @@ def test_erlang_a_less_than_c():
     assert 0 <= ea["p_abandon"] <= 1
 
 
+def test_erlang_a_overload_regime_valid():
+    # rho >= 1: the stable-regime formula's denominator goes non-positive;
+    # the ED-fluid asymptote must give a valid probability and wait instead.
+    ea = erlang_a(50.0, 1.0, 0.1, 40)
+    assert ea["rho"] == pytest.approx(1.25)
+    assert 0.0 <= ea["p_abandon"] <= 1.0
+    assert ea["wq"] >= 0.0
+    assert ea["p_abandon"] == pytest.approx(1.0 - 1.0 / 1.25)
+
+
 def test_jackson_network():
     lam = jackson_throughputs(np.array([10.0, 0.0]), np.array([[0.0, 0.6], [0.4, 0.0]]))
     assert lam[1] == pytest.approx(6.0 / 0.76)

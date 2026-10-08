@@ -13,6 +13,9 @@ FACES = ["+x", "-x", "+y", "-y", "+z", "-z"]
 
 
 def face_uv(d: np.ndarray) -> tuple[int, float, float]:
+    d = np.asarray(d, dtype=float)
+    if not np.all(np.isfinite(d)):
+        raise ValueError("direction must be finite")
     ax = int(np.argmax(np.abs(d)))
     s = np.sign(d[ax]) or 1
     face = 2 * ax + int(s < 0)
@@ -23,6 +26,8 @@ def face_uv(d: np.ndarray) -> tuple[int, float, float]:
     else:
         u, v = d[0] * s, d[1]
     m = abs(d[ax])
+    if m <= 0:
+        raise ValueError("zero direction has no cubemap face")
     return face, (u / m + 1) / 2, (v / m + 1) / 2
 
 

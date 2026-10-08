@@ -85,15 +85,23 @@ def infer(e: Expr) -> dict[str, str]:
     flows out of its letregion — allocation plan."""
     plan: dict[str, str] = {}
 
-    def walk(x: Any, inscope: frozenset[str]) -> None:
+    def walk(x: Any, scope: dict[str, bool]) -> None:
         if not isinstance(x, tuple):
             return
+        if x[0] == "letregion":
+            r = x[1]
+            # region r is confined iff the body's result never inhabits r
+            confined = r not in _result_regions(x[2], frozenset())
+            walk(x[2], {**scope, r: confined})
+            return
         if x[0] == "at":
-            plan[f"r{len(plan)}:{x[2]}"] = "stack"
+            plan[f"r{len(plan)}:{x[2]}"] = "stack" if scope.get(x[2], False) else "escape"
+            walk(x[1], scope)
+            return
         for sub in x[1:]:
-            walk(sub, inscope | ({x[1]} if x[0] == "letregion" else frozenset()))
+            walk(sub, scope)
 
-    walk(e, frozenset())
+    walk(e, {})
     return plan
 
 

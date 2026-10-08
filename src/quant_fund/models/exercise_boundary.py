@@ -16,8 +16,7 @@ def bench_exercise_boundary(seed: int = 4111, n_coarse: int = 400) -> dict[str, 
     ref_price, ref_bnd = crr_price(2000)
     _price, bnd = crr_price(n_coarse)
     lo, hi = n_coarse // 4, (3 * n_coarse) // 4
-    rr = np.linspace(lo, hi, hi - lo) / n_coarse * 2000
-    rr = np.clip(rr.astype(int), 0, 1999)
+    rr = np.clip(np.arange(lo, hi) * 2000 // n_coarse, 0, 1999)
     ref_seg = ref_bnd[rr]
     seg = bnd[lo:hi]
     err = float(np.sqrt(np.mean((seg - ref_seg) ** 2)))

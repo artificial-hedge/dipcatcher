@@ -58,6 +58,9 @@ def run_episode(
     policy, mid: FloatArray, sim: MarketSim, inventory: float = 1.0
 ) -> dict[str, float]:
     """Sell `inventory` units over sim.steps slots + auction."""
+    reset = getattr(policy, "reset", None)
+    if reset is not None:
+        reset()
     remaining = inventory
     proceeds = 0.0
     rem_hist = []
@@ -107,6 +110,9 @@ class QExecAgent:
         self.eps = eps
         self.lam = lam
         self.q = np.zeros((self.t_bins, q_bins, 2, len(_ACTIONS)))
+        self.rng = np.random.default_rng(0)  # per-instance; train_q_agent overrides
+        self.training = True  # Q updates only while training
+        self._mom = 0.0
         self._s: tuple[int, int, int] | None = None
         self._a = 0
         self._reward = 0.0
@@ -114,7 +120,7 @@ class QExecAgent:
     def _state(self, s: ExecState) -> tuple[int, int, int]:
         tb = min(int(s.t / self.steps * self.t_bins), self.t_bins - 1)
         qb = min(int(s.remaining * self.q_bins), self.q_bins - 1)
-        mb = int(getattr(self, "_mom", 0.0) > 0.0)
+        mb = int(self._mom > 0.0)
         return (tb, qb, mb)
 
     def act(self, s: ExecState) -> float:
@@ -123,7 +129,7 @@ class QExecAgent:
             a = int(self.rng.integers(len(_ACTIONS)))
         else:
             a = int(np.argmax(self.q[st]))
-        if self._s is not None:
+        if self._s is not None and self.training:
             self._update(st)
         self._s, self._a = st, a
         self._reward = 0.0
@@ -156,7 +162,11 @@ class QExecAgent:
         self.q[t_, q_, m_, self._a] += self.alpha * td
         self._s = None
 
-    rng = np.random.default_rng(0)
+    def reset(self) -> None:
+        """Episode boundary: clear momentum/pending-transition state."""
+        self._mom = 0.0
+        self._s = None
+        self._reward = 0.0
 
 
 def train_q_agent(
@@ -167,7 +177,7 @@ def train_q_agent(
     for _ in range(episodes):
         mid = sim.episode(rng)
         remaining = inventory
-        agent._mom = 0.0
+        agent.reset()
         for t in range(sim.steps):
             frac = agent.act(ExecState(t, remaining, mid[t]))
             qty = remaining * float(np.clip(frac, 0.0, 1.0))
@@ -177,6 +187,7 @@ def train_q_agent(
             agent.observe(mid[t + 1] / mid[t] - 1.0)
         agent.finish(remaining * mid[sim.steps + 1] / (inventory * mid[0]))
     agent.eps = 0.0
+    agent.training = False
     return agent
 
 

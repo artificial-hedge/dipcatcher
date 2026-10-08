@@ -38,6 +38,7 @@ steady-state performance metrics.
 from __future__ import annotations
 
 import heapq
+import math
 
 import numpy as np
 from numpy.typing import NDArray
@@ -113,7 +114,17 @@ def erlang_a(lam: float, mu: float, theta: float, c: int) -> dict[str, float]:
     # P(ab) ~ (theta/(lam)) * E[(Q)+] with Q ~ approx
     # via the hazard-rate asymptote; use Erlang-C upper bound
     # corrected by abandonment thinning:
-    c_wait = erlang_c(lam, mu, c) if rho < 1 else 1.0
+    if rho >= 1:
+        # Overload (ED) regime, deterministic fluid limit (Whitt 2004):
+        # abandonment balances excess demand, P(ab) = 1 - 1/rho, and the
+        # fluid waiting time satisfies lam(1 - e^{-theta v}) = lam - c*mu.
+        return {
+            "p_abandon": float(1.0 - 1.0 / rho),
+            "wq": float(math.log(rho) / theta),
+            "p_wait_inf": 1.0,
+            "rho": float(rho),
+        }
+    c_wait = erlang_c(lam, mu, c)
     # expected wait conditional on service vs patience:
     # GMR approximation P(ab) ~= (theta * E[Q])/(1 + theta*E[Q])
     eq_approx = (c_wait * lam) / (c * mu - lam + theta * c)

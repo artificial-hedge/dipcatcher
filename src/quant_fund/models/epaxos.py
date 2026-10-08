@@ -24,7 +24,7 @@ def build_dag(cmds: list[tuple[str, int]]) -> dict[int, set[int]]:
 
 def topo_order(deps: dict[int, set[int]]) -> list[int]:
     out: list[int] = []
-    remaining = dict(deps)
+    remaining = {i: set(d) for i, d in deps.items()}  # copy: never mutate caller
     while remaining:
         ready = sorted(i for i, d in remaining.items() if not d)
         if not ready:
@@ -45,6 +45,24 @@ def _apply(state: dict[str, int], cmds: list[tuple[str, int]], order: list[int])
     return s
 
 
+def _alt_linear_order(deps: dict[int, set[int]], rng: random.Random) -> list[int]:
+    """A different valid linear extension of the same DAG: random ready
+    choice instead of lowest-index — replicas that break ties differently
+    must still land on the same final state."""
+    remaining = {i: set(d) for i, d in deps.items()}
+    out: list[int] = []
+    while remaining:
+        ready = sorted(i for i, d in remaining.items() if not d)
+        if not ready:
+            break
+        nxt = ready[rng.randrange(len(ready))]
+        out.append(nxt)
+        del remaining[nxt]
+        for d in remaining.values():
+            d.discard(nxt)
+    return out
+
+
 def bench_epaxos(seed: int = 20261231 + 441) -> dict[str, float]:
     rng = random.Random(seed)
     agree = commute_ok = det = 0
@@ -55,9 +73,9 @@ def bench_epaxos(seed: int = 20261231 + 441) -> dict[str, float]:
         deps = build_dag(cmds)
         order = topo_order(deps)
         s1 = _apply({}, cmds, order)
-        # a replica seeing a shuffled arrival order rebuilds the same DAG
-        # when arrival sequence is preserved by slot index
-        s2 = _apply({}, cmds, topo_order(build_dag(cmds)))
+        # a replica linearizing the same agreed DAG with a different
+        # ready-tiebreak converges to the same state
+        s2 = _apply({}, cmds, _alt_linear_order(deps, rng))
         agree += int(s1 == s2)
         # commuting subsequence: all a-ops then b-ops equals interleaved
         sa = _apply(
@@ -67,7 +85,8 @@ def bench_epaxos(seed: int = 20261231 + 441) -> dict[str, float]:
             sa, [c for c in cmds if c[0] == "b"], list(range(sum(c[0] == "b" for c in cmds)))
         )
         commute_ok += int(sa2 == s1)
-        det += int(order == topo_order(deps))
+        # deterministic + non-mutating: deps is still intact after sorting
+        det += int(order == topo_order(deps) and deps == build_dag(cmds))
     return {
         "synthetic_replicas_agree": float(agree / trials),
         "synthetic_commutes_preserve_state": float(commute_ok / trials),
