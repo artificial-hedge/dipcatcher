@@ -47,9 +47,14 @@ def _fptas(eps: float = 0.1) -> tuple[float, int]:
 def bench_fptas_knapsack(seed: int = 5207) -> dict[str, float]:
     approx, items = _fptas(0.1)
     truth = brute_knapsack(KS_V, KS_W, KS_CAP)
+    ratio = approx / truth
+    # the Ibarra-Kim guarantee is a (1-eps)-approximation: eps=0.1 means
+    # the FPTAS must recover >= 0.9 of the brute-force optimum
+    if ratio < 0.9 or ratio > 1.0 + 1e-9:
+        raise ValueError(f"fptas outside guarantee: ratio={ratio:.3f}")
     return {
         "synthetic_fptas_val": approx,
         "synthetic_fptas_items": float(items),
         "synthetic_fptas_truth": truth,
-        "synthetic_fptas_ratio": approx / truth,
+        "synthetic_fptas_ratio": ratio,
     }

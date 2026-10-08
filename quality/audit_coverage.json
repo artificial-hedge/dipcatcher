@@ -10082,6 +10082,12 @@
   "models/fir_qa_studies.py": {
    "status": "audited"
   },
+  "models/fir_window.py": {
+   "status": "audited"
+  },
+  "models/fire_sales.py": {
+   "status": "audited"
+  },
   "models/fire_science_studies.py": {
    "status": "audited"
   },
@@ -10097,6 +10103,9 @@
   "models/firmly_nonexpansive.py": {
    "status": "audited"
   },
+  "models/first_ff.py": {
+   "status": "audited"
+  },
   "models/first_hitting.py": {
    "status": "audited"
   },
@@ -10109,13 +10118,25 @@
   "models/first_order_rel.py": {
    "status": "audited"
   },
+  "models/first_passage.py": {
+   "status": "audited"
+  },
+  "models/first_price_auction.py": {
+   "status": "audited"
+  },
   "models/fish_qa_studies.py": {
    "status": "audited"
   },
   "models/fisher_metric2.py": {
    "status": "audited"
   },
+  "models/fisher_prune.py": {
+   "status": "audited"
+  },
   "models/fisher_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/fisher_rao.py": {
    "status": "audited"
   },
   "models/fisheries_2.py": {
@@ -10127,10 +10148,22 @@
   "models/fishing_cat_qa_studies.py": {
    "status": "audited"
   },
+  "models/fitch_pars.py": {
+   "status": "audited"
+  },
+  "models/fixed_point_combinator.py": {
+   "status": "audited"
+  },
   "models/fixed_points_ord.py": {
    "status": "audited"
   },
   "models/fjord_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/fk_dh.py": {
+   "status": "audited"
+  },
+  "models/fkml.py": {
    "status": "audited"
   },
   "models/flame_qa_studies.py": {
@@ -10139,10 +10172,16 @@
   "models/flamingo_qa_studies.py": {
    "status": "audited"
   },
+  "models/flash_attn.py": {
+   "status": "audited"
+  },
   "models/flat_bundle.py": {
    "status": "audited"
   },
   "models/flat_chains.py": {
+   "status": "audited"
+  },
+  "models/flat_combining.py": {
    "status": "audited"
   },
   "models/flat_functor.py": {
@@ -10152,6 +10191,9 @@
    "status": "audited"
   },
   "models/flat_monad.py": {
+   "status": "audited"
+  },
+  "models/flat_track.py": {
    "status": "audited"
   },
   "models/flattening.py": {
@@ -10178,10 +10220,19 @@
   "models/floer_homology.py": {
    "status": "audited"
   },
+  "models/floorplan_sa.py": {
+   "status": "audited"
+  },
   "models/flow_cytometry_studies.py": {
    "status": "audited"
   },
+  "models/flow_matching_ts.py": {
+   "status": "audited"
+  },
   "models/flow_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/flow_regression.py": {
    "status": "audited"
   },
   "models/floyd_farey.py": {
@@ -10212,6 +10263,18 @@
    "status": "audited"
   },
   "models/flying_fox_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/fm_index.py": {
+   "status": "audited"
+  },
+  "models/fm_partition.py": {
+   "status": "audited"
+  },
+  "models/fmea_rpn.py": {
+   "status": "audited"
+  },
+  "models/fno_1d.py": {
    "status": "audited"
   },
   "models/fock_space.py": {
@@ -10274,6 +10337,9 @@
   "models/forcing2.py": {
    "status": "audited"
   },
+  "models/forcing_lite.py": {
+   "status": "audited"
+  },
   "models/forcing_poset.py": {
    "status": "audited"
   },
@@ -10310,7 +10376,13 @@
   "models/forge_qa_studies.py": {
    "status": "audited"
   },
+  "models/forgetting_events.py": {
+   "status": "audited"
+  },
   "models/fork_marked_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/fork_resolution.py": {
    "status": "audited"
   },
   "models/forking_seq.py": {
@@ -10391,13 +10463,25 @@
   "models/fourier_decay.py": {
    "status": "audited"
   },
+  "models/fourier_finite.py": {
+   "status": "audited"
+  },
   "models/fourier_galerkin.py": {
+   "status": "audited"
+  },
+  "models/fourier_hermite.py": {
    "status": "audited"
   },
   "models/fourier_io.py": {
    "status": "audited"
   },
+  "models/fourier_motzkin.py": {
+   "status": "audited"
+  },
   "models/fourier_mukai.py": {
+   "status": "audited"
+  },
+  "models/fourier_multiplier.py": {
    "status": "audited"
   },
   "models/fourier_optics.py": {
@@ -10407,6 +10491,9 @@
    "status": "audited"
   },
   "models/fourier_sato.py": {
+   "status": "audited"
+  },
+  "models/fourier_sn.py": {
    "status": "audited"
   },
   "models/fox_qa_studies.py": {
@@ -10421,16 +10508,34 @@
   "models/fpqc_site.py": {
    "status": "audited"
   },
+  "models/fpras_dnf.py": {
+   "status": "audited"
+  },
+  "models/fptas_knapsack.py": {
+   "status": "audited"
+  },
   "models/fqmotive.py": {
    "status": "audited"
   },
+  "models/fracdiff.py": {
+   "status": "audited"
+  },
+  "models/fractional.py": {
+   "status": "audited"
+  },
   "models/fractional_cascade.py": {
+   "status": "audited"
+  },
+  "models/fractional_coint.py": {
    "status": "audited"
   },
   "models/fractional_heston.py": {
    "status": "audited"
   },
   "models/fractional_ou.py": {
+   "status": "audited"
+  },
+  "models/fractional_response.py": {
    "status": "audited"
   },
   "models/fracture_mechanics.py": {
@@ -10443,6 +10548,9 @@
    "status": "audited"
   },
   "models/fragility_index_studies.py": {
+   "status": "audited"
+  },
+  "models/frailty.py": {
    "status": "audited"
   },
   "models/frailty_medicine.py": {
@@ -10461,6 +10569,12 @@
    "status": "audited"
   },
   "models/frank_copula.py": {
+   "status": "audited"
+  },
+  "models/frank_wolfe.py": {
+   "status": "audited"
+  },
+  "models/frank_wolfe2.py": {
    "status": "audited"
   },
   "models/frechet_derivative.py": {

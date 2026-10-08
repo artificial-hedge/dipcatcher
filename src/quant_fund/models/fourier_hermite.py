@@ -225,6 +225,13 @@ def bench_fourier_hermite(seed: int = 20260201) -> dict[str, float]:
     z = (x - x.mean()) / x.std()
     out["synthetic_skew_err"] = float(abs(moms["skew"] - np.mean(z**3)))
     out["synthetic_exkurt_err"] = float(abs(moms["exkurt"] - (np.mean(z**4) - 3.0)))
+    # a_3 = skew and a_4 = excess kurtosis are algebraic identities for a
+    # standardized sample — any nonzero gap means the moment map is broken
+    if out["synthetic_skew_err"] > 1e-9 or out["synthetic_exkurt_err"] > 1e-9:
+        raise ValueError(
+            f"hermite moment identities broken: skew={out['synthetic_skew_err']:.2e} "
+            f"exkurt={out['synthetic_exkurt_err']:.2e}"
+        )
     # --- pricing vs empirical expectation ------------------------------
     strikes = np.array([-1.0, 0.0, 0.5, 1.0, 2.0])
     xs = synth_mixture_samples(20000, seed=seed + 1)
@@ -237,6 +244,9 @@ def bench_fourier_hermite(seed: int = 20260201) -> dict[str, float]:
         errs.append(abs(est - emp) / max(emp, 1e-6))
     out["synthetic_call_relerr_max"] = float(max(errs))
     out["synthetic_call_relerr_mean"] = float(np.mean(errs))
+    # order-8 expansion prices within a few % of the empirical payoff
+    if out["synthetic_call_relerr_max"] > 0.05:
+        raise ValueError(f"call pricing off empirical: {out['synthetic_call_relerr_max']:.3f}")
     # --- determinism ---------------------------------------------------
     a8b = hermite_coefficients(xs, order=8)
     out["synthetic_determinism"] = float(np.allclose(a8, a8b))

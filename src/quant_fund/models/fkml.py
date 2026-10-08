@@ -189,10 +189,20 @@ def bench_fkml(seed: int = 475) -> dict[str, float]:
     fit2 = gld_starship(x, n_grid=25)
     lam1 = np.asarray(fit1["lam"])
     lam2 = np.asarray(fit2["lam"])
-    return {
+    errs = {
         "synthetic_mom_l3_err": float(abs(lam1[2] - lam_true[2])),
         "synthetic_mom_l4_err": float(abs(lam1[3] - lam_true[3])),
         "synthetic_starship_l1_err": float(abs(lam2[0] - lam_true[0])),
-        "synthetic_valid": 1.0 if gld_valid_pdf(lam2) else 0.0,
+    }
+    valid = gld_valid_pdf(lam2)
+    # loose recovery tolerances per the docstring's contract: a broken
+    # estimator (e.g. lam2 sign flip, shape confusion) must not pass
+    if errs["synthetic_mom_l3_err"] > 0.3 or errs["synthetic_mom_l4_err"] > 0.3:
+        raise ValueError(f"mom recovery off: {errs}")
+    if errs["synthetic_starship_l1_err"] > 0.6 or not valid:
+        raise ValueError(f"starship recovery off: {errs} valid={valid}")
+    return {
+        **errs,
+        "synthetic_valid": 1.0 if valid else 0.0,
         "synthetic_score": 1.0,
     }
