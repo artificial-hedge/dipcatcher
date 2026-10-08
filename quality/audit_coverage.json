@@ -25433,6 +25433,9 @@
   "models/wavelet_tree.py": {
    "status": "audited"
   },
+  "models/wavelets.py": {
+   "status": "audited"
+  },
   "models/wavl_tree.py": {
    "status": "audited"
   },
@@ -25443,6 +25446,18 @@
    "status": "audited"
   },
   "models/wcep_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/wcet_est.py": {
+   "status": "audited"
+  },
+  "models/weak_conv.py": {
+   "status": "audited"
+  },
+  "models/weak_convergence.py": {
+   "status": "audited"
+  },
+  "models/weak_form_pinn.py": {
    "status": "audited"
   },
   "models/weak_heap.py": {
@@ -25457,7 +25472,13 @@
   "models/weak_law.py": {
    "status": "audited"
   },
+  "models/weak_solution.py": {
+   "status": "audited"
+  },
   "models/weak_to_strong_studies.py": {
+   "status": "audited"
+  },
+  "models/weakest_precond.py": {
    "status": "audited"
   },
   "models/weasel_qa_studies.py": {
@@ -25526,6 +25547,9 @@
   "models/weight_share_studies.py": {
    "status": "audited"
   },
+  "models/weight_space.py": {
+   "status": "audited"
+  },
   "models/weighted_conformal.py": {
    "status": "audited"
   },
@@ -25589,6 +25613,9 @@
   "models/weyl_equidist.py": {
    "status": "audited"
   },
+  "models/weyl_group_a2.py": {
+   "status": "audited"
+  },
   "models/weyl_ineq.py": {
    "status": "audited"
   },
@@ -25599,6 +25626,9 @@
    "status": "audited"
   },
   "models/weyl_theorem.py": {
+   "status": "audited"
+  },
+  "models/wg_ik.py": {
    "status": "audited"
   },
   "models/whale_qa_studies.py": {
@@ -25629,6 +25659,9 @@
    "status": "audited"
   },
   "models/whitefish_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/whitehead.py": {
    "status": "audited"
   },
   "models/whitehead_prod.py": {

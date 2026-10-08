@@ -37,8 +37,11 @@ def _bench_whitehead(seed: int = 0) -> float:
     # degree multiplicativity: z^k then z^m has degree k*m
     checks.append(degree_multiplicative(3, 2) == 6)
     checks.append(degree_multiplicative(-1, -1) == 1)
-    # degree of antipodal map on S^n = (-1)^{n+1}
-    checks.append(all((-1) ** (n + 1) in (1, -1) for n in range(4)))
+    # antipodal∘antipodal = identity: deg = (-1)^{n+1} * (-1)^{n+1} = 1 —
+    # the previous "check" asserted (-1)^k in (1,-1), which cannot fail.
+    checks.append(
+        all(degree_multiplicative((-1) ** (n + 1), (-1) ** (n + 1)) == 1 for n in range(4))
+    )
     return float(sum(checks) / len(checks))
 
 
