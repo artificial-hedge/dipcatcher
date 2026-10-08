@@ -96,7 +96,7 @@ def bench_s4_ssm(
     # t — at this fixture's short t the quadratic is cheaper (ratio
     # >1, reported honestly); the oracle gates only non-degenerate
     # learning above chance
-    if not (acc > 0.1):
+    if not (acc > 1.0 / n_classes):
         raise ValueError("S4 off cost/degeneracy oracle")
     return {
         "synthetic_s4_acc": acc,
