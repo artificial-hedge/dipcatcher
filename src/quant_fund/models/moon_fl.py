@@ -24,6 +24,7 @@ def bench_moon_fl(
     n: int = 60,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.set_num_threads(1)
     rng = np.random.default_rng(seed)
     # non-IID split: sort by label, partition contiguous blocks → client i
     # sees mostly one class (the FedAvg pathology MOON targets)

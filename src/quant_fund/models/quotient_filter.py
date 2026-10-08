@@ -80,7 +80,7 @@ def bench_quotient_filter(seed: int = 20261231 + 313) -> dict[str, float]:
         want = sum(1 for x in dels if x not in keep)
         kept_ok = all(qf.contains(x) for x in items[n // 3 :])
         del_ok += int(kept_ok and (want == 0 or gone / max(1, want) >= 0.9))
-    if fn != 0 or del_ok != trials or fpr_ok != trials:
+    if fn != trials or del_ok != trials or fpr_ok != trials:
         raise ValueError("quotient-filter false-negative/delete oracle failed")
     return {
         "synthetic_no_fn": float(fn / trials),

@@ -16,7 +16,8 @@ def test_tls_establishes():
     c.client_hello(["aes"])
     s.server_hello(c)
     s.encrypted_extensions(c)
-    s.finished(c)
+    mac = s.finished(c)
+    assert c.recv_finished(mac)
     assert len(c.traffic_key) == 32
 
 

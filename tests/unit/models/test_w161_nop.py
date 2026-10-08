@@ -43,13 +43,13 @@ class TestLO:
 
 class TestPINO:
     def test_bench(self) -> None:
-        out = bench_pino_residual(seed=11, iters=15, n_keep=20)
+        out = bench_pino_residual(seed=11, iters=60, n_keep=20)
         assert np.isfinite(out["synthetic_pino_rell2"])
 
 
 class TestGNO:
     def test_bench(self) -> None:
-        out = bench_gno_lite(seed=13, iters=15)
+        out = bench_gno_lite(seed=13, iters=60)
         assert np.isfinite(out["synthetic_gno_rell2"])
 
 

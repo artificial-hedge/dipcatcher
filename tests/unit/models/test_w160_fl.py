@@ -32,7 +32,7 @@ class TestDitto:
 
 class TestMoon:
     def test_bench(self) -> None:
-        out = bench_moon_fl(seed=9, n_clients=2, rounds=2, local_ep=3, n=40)
+        out = bench_moon_fl(seed=9, n_clients=2, rounds=6, local_ep=8, n=40)
         assert 0 <= out["synthetic_moon_acc"] <= 1
 
 

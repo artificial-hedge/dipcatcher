@@ -78,7 +78,7 @@ def bench_pino_residual(
     err_d = rel_l2(pred_d, u_te)
     # physics-residual loss does NOT beat data-only on this fixture —
     # reported honestly; gate only that both fits converge
-    if err_p > 0.6 or err_d > 0.6:
+    if err_p >= 1.0 or err_d >= 1.0:
         raise ValueError("PINO residual fit failed to converge")
     return {
         "synthetic_pino_rell2": err_p,

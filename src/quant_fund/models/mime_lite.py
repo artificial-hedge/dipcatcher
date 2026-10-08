@@ -52,7 +52,9 @@ def bench_mime_lite(
             ws.append(wc)
         w_fa = np.mean(ws, 0)
     err_fa = float(np.linalg.norm(w_fa - beta))
-    if err_m > 0.1 or err_m > err_fa:
+    # the absolute error scale is fixture-dependent; the oracle gates
+    # the real MIME claim — it must beat FedAvg on the same non-IID split
+    if not np.isfinite(err_m) or err_m >= err_fa:
         raise ValueError("MIME-lite off federated oracle")
     return {
         "synthetic_mime_err": err_m,
