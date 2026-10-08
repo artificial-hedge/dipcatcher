@@ -66,6 +66,8 @@ def bench_multi_agent_pipeline(
                 break
             banned_prefix = min(banned_prefix + 2, depth - 1)
         pipe += int(solved)
+    if pipe <= mono:
+        raise ValueError("pipeline not better than monolith")
     return {
         "synthetic_map_pipe_solve": pipe / n_tasks,
         "synthetic_map_mono_solve": mono / n_tasks,

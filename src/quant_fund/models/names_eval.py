@@ -53,6 +53,8 @@ def _bench_names_eval(seed: int = 0) -> float:
     branch: Name = [(5, {0: 1}), (7, {0: 0})]
     checks.append(check_name(branch, g1) == {5})
     checks.append(check_name(branch, g2) == {7})
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

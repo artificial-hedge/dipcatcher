@@ -35,6 +35,10 @@ def bench_nash_cournot(seed: int = 4205) -> dict[str, float]:
     qmono = max(0.0, (COU_A - float(np.mean(COU_C))) / (2 * COU_B))
     price = COU_A - COU_B * qtot
     profit = (price - COU_C) @ q
+    # Cournot total output exceeds monopoly output, stays below perfect
+    # competition, and solves each firm's best-response condition
+    if resid > 1e-6 or qtot <= qmono or qtot <= 0:
+        raise ValueError("Cournot equilibrium off oracle")
     return {
         "synthetic_cournot_resid": resid,
         "synthetic_cournot_q": qtot,

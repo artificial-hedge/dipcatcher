@@ -114,6 +114,8 @@ def bench_nbody_leapfrog(seed: int = 20261231 + 270) -> dict[str, float]:
     orbit_r = math.hypot(p2v[1][0], p2v[1][1])
     # softened potential ⇒ mildly eccentric, but orbit must stay bounded
     orbit_ok = 0.5 < orbit_r < 1.25
+    if not (drift_v < drift_e and orbit_ok and mom_err < 1e-9):
+        raise ValueError("leapfrog integrator off oracle")
     return {
         "synthetic_energy_drift": float(drift_v),
         "synthetic_euler_drift": float(drift_e),

@@ -140,4 +140,6 @@ def bench_nd_check(seed: int = _SEED) -> dict[str, float]:
         ("imp_i", A, ("not_e", ("hyp", ("not", A)), ("hyp", A))),
     )
     checks.append(proves(p6, ("imp", ("not", A), ("imp", A, ("bot",)))))
+    if sum(checks) != len(checks):
+        raise ValueError("ND proof-checker oracle failed")
     return {"synthetic_nd_check": float(sum(checks)) / len(checks)}

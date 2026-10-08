@@ -46,6 +46,8 @@ def _bench_natural_ded(seed: int = 0) -> float:
     # failed elimination adds nothing
     c6 = deduce(frozenset({"A"}), "imp_e", "A", "(A>B)")
     checks.append("B" not in c6)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

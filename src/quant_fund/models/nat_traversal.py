@@ -25,10 +25,12 @@ def bench_nat_traversal(seed: int = _SEED) -> dict[str, float]:
     rng = np.random.RandomState(seed)
     delivered = 0
     blocked = 0
+    punched_n = 0
     for _ in range(40):
         nat_a, nat_b = NAT(), NAT()
         pa, pb = ("10.1.0.1", 5000), ("10.2.0.1", 6000)
         punched = rng.rand() < 0.7
+        punched_n += int(punched)
         if punched:
             nat_a.send(pb)
             nat_b.send(pa)
@@ -38,4 +40,11 @@ def bench_nat_traversal(seed: int = _SEED) -> dict[str, float]:
             delivered += 1
         if not punched:
             blocked += not (nat_a.inbound_ok(pb) or nat_b.inbound_ok(pa))
-    return {"synthetic_nat_punched": delivered / 40}
+    # unpunched traffic must never pass; punched delivers at least half
+    if blocked != 40 - punched_n or delivered == 0:
+        raise ValueError("NAT traversal leaked or never delivered")
+    return {
+        "synthetic_nat_punched": delivered / 40,
+        "synthetic_nat_deliver_rate": delivered / max(1, punched_n),
+        "synthetic_nat_blocked_rate": blocked / max(1, 40 - punched_n),
+    }

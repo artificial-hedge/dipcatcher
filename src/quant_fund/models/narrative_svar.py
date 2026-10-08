@@ -191,6 +191,8 @@ def bench_narrative(seed: int = 20261231 + 361) -> dict[str, float]:
     # unrestricted impact dispersion is wider -> narrative binds
     unrestr = np.asarray(r.get("unrestr_med_irf", np.zeros((8, 2))))
     ok = share > 0.05 and med0 > 0.4 * true_impact and abs(float(unrestr[0, 0]) - med0) > 0.0
+    if not ok:
+        raise ValueError("narrative SVAR off oracle")
     out: dict[str, float] = {
         "synthetic_ns_share": share,
         "synthetic_ns_med_impact": med0,

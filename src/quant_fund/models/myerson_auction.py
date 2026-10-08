@@ -64,6 +64,13 @@ def bench_myerson(seed: int = 20261231) -> dict[str, float]:
         rev_v += min(b) if np.argmax(b) >= 0 else 0.0
     out["synthetic_myerson_rev_gain"] = float((rev_m - rev_v) / 500)
     out["synthetic_myerson_optimal"] = float(rev_m >= rev_v - 1e-9)
+    if not (
+        out["synthetic_myerson_reserve"] == 1.0
+        and out["synthetic_myerson_no_sale"] == 1.0
+        and out["synthetic_myerson_threshold_ok"] == 1.0
+        and rev_m >= rev_v - 1e-9
+    ):
+        raise ValueError("Myerson auction off oracle")
     return out
 
 

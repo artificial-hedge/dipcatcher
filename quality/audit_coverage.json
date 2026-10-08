@@ -16367,10 +16367,16 @@
   "models/levy_ineq.py": {
    "status": "audited"
   },
+  "models/levy_jump.py": {
+   "status": "audited"
+  },
   "models/levy_khinchine.py": {
    "status": "audited"
   },
   "models/levy_measure.py": {
+   "status": "audited"
+  },
+  "models/lewbel_iv.py": {
    "status": "audited"
   },
   "models/lex_reflect.py": {
@@ -16388,10 +16394,16 @@
   "models/li_yau.py": {
    "status": "audited"
   },
+  "models/lia_branch.py": {
+   "status": "audited"
+  },
   "models/liang_barsky.py": {
    "status": "audited"
   },
   "models/liar_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/libor_market.py": {
    "status": "audited"
   },
   "models/library_science.py": {
@@ -16403,10 +16415,25 @@
   "models/lichtenbaum_k.py": {
    "status": "audited"
   },
+  "models/licm_hoist.py": {
+   "status": "audited"
+  },
   "models/lidskii_thm.py": {
    "status": "audited"
   },
   "models/lie_algebroid.py": {
+   "status": "audited"
+  },
+  "models/lie_bracket.py": {
+   "status": "audited"
+  },
+  "models/lif_neuron.py": {
+   "status": "audited"
+  },
+  "models/life_stress.py": {
+   "status": "audited"
+  },
+  "models/lifetime_outlives.py": {
    "status": "audited"
   },
   "models/liggett_exclusion.py": {
@@ -16421,6 +16448,9 @@
   "models/likelihood_order.py": {
    "status": "audited"
   },
+  "models/lil_ucb.py": {
+   "status": "audited"
+  },
   "models/lila_lite_studies.py": {
    "status": "audited"
   },
@@ -16428,6 +16458,9 @@
    "status": "audited"
   },
   "models/limit_mhs.py": {
+   "status": "audited"
+  },
+  "models/limit_prod.py": {
    "status": "audited"
   },
   "models/limit_set.py": {
@@ -16454,6 +16487,9 @@
   "models/limpkin_qa_studies.py": {
    "status": "audited"
   },
+  "models/lin_ccc_blandaltman.py": {
+   "status": "audited"
+  },
   "models/lin_htpy.py": {
    "status": "audited"
   },
@@ -16478,13 +16514,28 @@
   "models/line_sampling.py": {
    "status": "audited"
   },
+  "models/linear_attn.py": {
+   "status": "audited"
+  },
+  "models/linear_extension.py": {
+   "status": "audited"
+  },
+  "models/linear_logic.py": {
+   "status": "audited"
+  },
   "models/linear_multistep.py": {
    "status": "audited"
   },
   "models/linear_probe.py": {
    "status": "audited"
   },
+  "models/linear_use.py": {
+   "status": "audited"
+  },
   "models/linearization.py": {
+   "status": "audited"
+  },
+  "models/linformer_attn.py": {
    "status": "audited"
   },
   "models/linguistic_anthropology.py": {
@@ -16502,10 +16553,19 @@
   "models/linnik_thm.py": {
    "status": "audited"
   },
+  "models/linscan_regalloc.py": {
+   "status": "audited"
+  },
+  "models/lion_opt.py": {
+   "status": "audited"
+  },
   "models/lion_qa_studies.py": {
    "status": "audited"
   },
   "models/lionfish_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/liouville.py": {
    "status": "audited"
   },
   "models/liouville_flow.py": {
@@ -16515,6 +16575,9 @@
    "status": "audited"
   },
   "models/lipid_studies.py": {
+   "status": "audited"
+  },
+  "models/lipschitz_net.py": {
    "status": "audited"
   },
   "models/liquid_group.py": {
@@ -16529,7 +16592,16 @@
   "models/lisse_sheaf.py": {
    "status": "audited"
   },
+  "models/listmle_ltr.py": {
+   "status": "audited"
+  },
+  "models/listnet_ltr.py": {
+   "status": "audited"
+  },
   "models/literacy_studies.py": {
+   "status": "audited"
+  },
+  "models/literal_prefilter.py": {
    "status": "audited"
   },
   "models/literary_theory.py": {
@@ -16545,6 +16617,9 @@
    "status": "audited"
   },
   "models/little_cubes2.py": {
+   "status": "audited"
+  },
+  "models/little_discs.py": {
    "status": "audited"
   },
   "models/little_discs3.py": {
@@ -16571,10 +16646,28 @@
   "models/livecodebench_studies.py": {
    "status": "audited"
   },
+  "models/liveness_dce.py": {
+   "status": "audited"
+  },
   "models/liverwort_qa_studies.py": {
    "status": "audited"
   },
+  "models/lj_md.py": {
+   "status": "audited"
+  },
+  "models/lk_flow.py": {
+   "status": "audited"
+  },
+  "models/ll1_table.py": {
+   "status": "audited"
+  },
   "models/llama_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/llaplace_gp.py": {
+   "status": "audited"
+  },
+  "models/lll_reduce.py": {
    "status": "audited"
   },
   "models/llm_judge_studies.py": {
@@ -16583,7 +16676,16 @@
   "models/lm_eval_harness_studies.py": {
    "status": "audited"
   },
+  "models/lmm.py": {
+   "status": "audited"
+  },
+  "models/lmoments.py": {
+   "status": "audited"
+  },
   "models/lmsys_eval_studies.py": {
+   "status": "audited"
+  },
+  "models/lob_transformer.py": {
    "status": "audited"
   },
   "models/loc_system.py": {
@@ -16604,6 +16706,15 @@
   "models/local_mart2.py": {
    "status": "audited"
   },
+  "models/local_projection.py": {
+   "status": "audited"
+  },
+  "models/local_ring_zn.py": {
+   "status": "audited"
+  },
+  "models/local_search_maxcut.py": {
+   "status": "audited"
+  },
   "models/local_shimura.py": {
    "status": "audited"
   },
@@ -16613,10 +16724,16 @@
   "models/local_stoch_vol.py": {
    "status": "audited"
   },
+  "models/local_time.py": {
+   "status": "audited"
+  },
   "models/local_time_process.py": {
    "status": "audited"
   },
   "models/localization_mc.py": {
+   "status": "audited"
+  },
+  "models/localized_conformal.py": {
    "status": "audited"
   },
   "models/locally_compact.py": {
@@ -16649,7 +16766,13 @@
   "models/loewner_matrix.py": {
    "status": "audited"
   },
+  "models/log_acd.py": {
+   "status": "audited"
+  },
   "models/log_canonical.py": {
+   "status": "audited"
+  },
+  "models/log_concave.py": {
    "status": "audited"
   },
   "models/log_crystalline.py": {
@@ -16697,6 +16820,9 @@
   "models/logic_philosophy.py": {
    "status": "audited"
   },
+  "models/logic_topos.py": {
+   "status": "audited"
+  },
   "models/logical_morph.py": {
    "status": "audited"
   },
@@ -16709,10 +16835,19 @@
   "models/logistics_2.py": {
    "status": "audited"
   },
+  "models/logit_lens.py": {
+   "status": "audited"
+  },
   "models/logsig_rde.py": {
    "status": "audited"
   },
+  "models/lomb_scargle.py": {
+   "status": "audited"
+  },
   "models/long_code_bench_studies.py": {
+   "status": "audited"
+  },
+  "models/long_memory.py": {
    "status": "audited"
   },
   "models/longbench_studies.py": {
@@ -16721,7 +16856,13 @@
   "models/longevity_medicine.py": {
    "status": "audited"
   },
+  "models/longhorn_ssm.py": {
+   "status": "audited"
+  },
   "models/longmem_studies.py": {
+   "status": "audited"
+  },
+  "models/lookahead_opt.py": {
    "status": "audited"
   },
   "models/loon_qa_studies.py": {
@@ -16739,6 +16880,15 @@
   "models/loop_space.py": {
    "status": "audited"
   },
+  "models/loop_subdiv.py": {
+   "status": "audited"
+  },
+  "models/loop_unroll.py": {
+   "status": "audited"
+  },
+  "models/lora_ft.py": {
+   "status": "audited"
+  },
   "models/lorentz_lorenz.py": {
    "status": "audited"
   },
@@ -16754,6 +16904,9 @@
   "models/loris_qa_studies.py": {
    "status": "audited"
   },
+  "models/los_theorem.py": {
+   "status": "audited"
+  },
   "models/loser_tree.py": {
    "status": "audited"
   },
@@ -16766,6 +16919,9 @@
   "models/lotka_volterra.py": {
    "status": "audited"
   },
+  "models/lottery_ticket.py": {
+   "status": "audited"
+  },
   "models/louhi_qa_studies.py": {
    "status": "audited"
   },
@@ -16775,16 +16931,76 @@
   "models/low_rank_svd.py": {
    "status": "audited"
   },
+  "models/lowess.py": {
+   "status": "audited"
+  },
+  "models/lowrank_factor.py": {
+   "status": "audited"
+  },
+  "models/lowrank_op.py": {
+   "status": "audited"
+  },
+  "models/lp_did.py": {
+   "status": "audited"
+  },
+  "models/lp_duality.py": {
+   "status": "audited"
+  },
+  "models/lp_iv.py": {
+   "status": "audited"
+  },
   "models/lp_multiplier.py": {
+   "status": "audited"
+  },
+  "models/lp_rounding_sc.py": {
+   "status": "audited"
+  },
+  "models/lpc_analysis.py": {
+   "status": "audited"
+  },
+  "models/lpc_formant.py": {
+   "status": "audited"
+  },
+  "models/lpt_schedule.py": {
+   "status": "audited"
+  },
+  "models/lqg_control.py": {
+   "status": "audited"
+  },
+  "models/lqr_control.py": {
+   "status": "audited"
+  },
+  "models/lqr_funnel.py": {
    "status": "audited"
   },
   "models/lsat_log_studies.py": {
    "status": "audited"
   },
+  "models/lsd_deptest.py": {
+   "status": "audited"
+  },
   "models/lseries_toy.py": {
    "status": "audited"
   },
+  "models/lsh_dedup.py": {
+   "status": "audited"
+  },
+  "models/lsm_reservoir.py": {
+   "status": "audited"
+  },
+  "models/lsm_tree.py": {
+   "status": "audited"
+  },
   "models/lsqr_solver.py": {
+   "status": "audited"
+  },
+  "models/ltl_mc.py": {
+   "status": "audited"
+  },
+  "models/ltt_cp.py": {
+   "status": "audited"
+  },
+  "models/lu_pivots.py": {
    "status": "audited"
   },
   "models/luan_yao.py": {
@@ -16800,6 +17016,9 @@
    "status": "audited"
   },
   "models/ludology.py": {
+   "status": "audited"
+  },
+  "models/luen_obsv.py": {
    "status": "audited"
   },
   "models/lugh_qa_studies.py": {
@@ -16835,7 +17054,22 @@
   "models/lv_eval_studies.py": {
    "status": "audited"
   },
+  "models/lwe_kex.py": {
+   "status": "audited"
+  },
+  "models/lwf_cl.py": {
+   "status": "audited"
+  },
+  "models/lww_map.py": {
+   "status": "audited"
+  },
+  "models/lyap_synth.py": {
+   "status": "audited"
+  },
   "models/lyapunov_chart.py": {
+   "status": "audited"
+  },
+  "models/lyapunov_stability.py": {
    "status": "audited"
   },
   "models/lying_over.py": {
@@ -16845,6 +17079,9 @@
    "status": "audited"
   },
   "models/lymphocyte_studies.py": {
+   "status": "audited"
+  },
+  "models/lyndon_factor.py": {
    "status": "audited"
   },
   "models/lyndon_ss.py": {
@@ -16865,7 +17102,19 @@
   "models/lysosomal_medicine.py": {
    "status": "audited"
   },
+  "models/lz77.py": {
+   "status": "audited"
+  },
+  "models/lz78_dict.py": {
+   "status": "audited"
+  },
+  "models/lzw_compress.py": {
+   "status": "audited"
+  },
   "models/m_bar_gn.py": {
+   "status": "audited"
+  },
+  "models/ma_toy.py": {
    "status": "audited"
   },
   "models/macaque_qa_studies.py": {
@@ -16886,7 +17135,13 @@
   "models/mackerel_qa_studies.py": {
    "status": "audited"
   },
+  "models/mackey_functor.py": {
+   "status": "audited"
+  },
   "models/macpherson_chern.py": {
+   "status": "audited"
+  },
+  "models/macro_expand.py": {
    "status": "audited"
   },
   "models/macular_studies.py": {
@@ -16895,10 +17150,19 @@
   "models/madame_berthe_qa_studies.py": {
    "status": "audited"
   },
+  "models/maddpg.py": {
+   "status": "audited"
+  },
   "models/madoqua_qa_studies.py": {
    "status": "audited"
   },
+  "models/maf_flow.py": {
+   "status": "audited"
+  },
   "models/magnetic_reconnection.py": {
+   "status": "audited"
+  },
+  "models/magnitude_pruning.py": {
    "status": "audited"
   },
   "models/magnolia_qa_studies.py": {
@@ -16908,6 +17172,9 @@
    "status": "audited"
   },
   "models/mahalanobis_div.py": {
+   "status": "audited"
+  },
+  "models/mahalanobis_ood.py": {
    "status": "audited"
   },
   "models/maharam_lift.py": {
@@ -16928,6 +17195,9 @@
   "models/makima_interp.py": {
    "status": "audited"
   },
+  "models/mala.py": {
+   "status": "audited"
+  },
   "models/malcev_cat.py": {
    "status": "audited"
   },
@@ -16946,13 +17216,22 @@
   "models/malle_conj.py": {
    "status": "audited"
   },
+  "models/malliavin.py": {
+   "status": "audited"
+  },
   "models/malliavin_cov.py": {
    "status": "audited"
   },
   "models/malliavin_greeks.py": {
    "status": "audited"
   },
+  "models/malloc_freelist.py": {
+   "status": "audited"
+  },
   "models/mamaquilla_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/mamba2_ssd.py": {
    "status": "audited"
   },
   "models/mamba_qa_studies.py": {
@@ -16961,7 +17240,13 @@
   "models/mambabarang_qa_studies.py": {
    "status": "audited"
   },
+  "models/mambats.py": {
+   "status": "audited"
+  },
   "models/mamiwata_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/maml_portfolio.py": {
    "status": "audited"
   },
   "models/mammography_studies.py": {
@@ -17009,10 +17294,19 @@
   "models/mango_qa_studies.py": {
    "status": "audited"
   },
+  "models/manifold_learning.py": {
+   "status": "audited"
+  },
   "models/mann_iter.py": {
    "status": "audited"
   },
+  "models/manova.py": {
+   "status": "audited"
+  },
   "models/manta_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/mantel.py": {
    "status": "audited"
   },
   "models/manticore_2_qa_studies.py": {
@@ -17042,6 +17336,9 @@
   "models/manx_qa_studies.py": {
    "status": "audited"
   },
+  "models/many_iv.py": {
+   "status": "audited"
+  },
   "models/map_turtle_qa_studies.py": {
    "status": "audited"
   },
@@ -17063,6 +17360,9 @@
   "models/mapping_space.py": {
    "status": "audited"
   },
+  "models/mappo.py": {
+   "status": "audited"
+  },
   "models/mara_qa_studies.py": {
    "status": "audited"
   },
@@ -17075,10 +17375,16 @@
   "models/marchenko_eq.py": {
    "status": "audited"
   },
+  "models/marching_cubes.py": {
+   "status": "audited"
+  },
   "models/marcinkiewicz_interp.py": {
    "status": "audited"
   },
   "models/marckert_mokkadem.py": {
+   "status": "audited"
+  },
+  "models/mardia.py": {
    "status": "audited"
   },
   "models/marduk_qa_studies.py": {
@@ -17091,6 +17397,15 @@
    "status": "audited"
   },
   "models/margin_reward_studies.py": {
+   "status": "audited"
+  },
+  "models/margin_sampling.py": {
+   "status": "audited"
+  },
+  "models/marginal_homogeneity.py": {
+   "status": "audited"
+  },
+  "models/marginal_likelihood.py": {
    "status": "audited"
   },
   "models/marginal_treatment.py": {
@@ -17126,6 +17441,9 @@
   "models/marked_point.py": {
    "status": "audited"
   },
+  "models/market_making.py": {
+   "status": "audited"
+  },
   "models/marketing_2.py": {
    "status": "audited"
   },
@@ -17135,10 +17453,28 @@
   "models/markhor_qa_studies.py": {
    "status": "audited"
   },
+  "models/marking_paging.py": {
+   "status": "audited"
+  },
   "models/marking_qcat.py": {
    "status": "audited"
   },
   "models/markov_brothers.py": {
+   "status": "audited"
+  },
+  "models/markov_chain.py": {
+   "status": "audited"
+  },
+  "models/markov_discretization.py": {
+   "status": "audited"
+  },
+  "models/markov_entropy.py": {
+   "status": "audited"
+  },
+  "models/markov_hitting.py": {
+   "status": "audited"
+  },
+  "models/markov_ineq.py": {
    "status": "audited"
   },
   "models/markov_partition.py": {
@@ -17171,6 +17507,9 @@
   "models/marrow_studies.py": {
    "status": "audited"
   },
+  "models/mars_regression.py": {
+   "status": "audited"
+  },
   "models/marsh_deer_qa_studies.py": {
    "status": "audited"
   },
@@ -17195,10 +17534,22 @@
   "models/martin_qa_studies.py": {
    "status": "audited"
   },
+  "models/martingale_check.py": {
+   "status": "audited"
+  },
+  "models/martingale_clt.py": {
+   "status": "audited"
+  },
   "models/martingale_fclt.py": {
    "status": "audited"
   },
   "models/martingale_ot.py": {
+   "status": "audited"
+  },
+  "models/mask_autoencoder.py": {
+   "status": "audited"
+  },
+  "models/mast_playout.py": {
    "status": "audited"
   },
   "models/master_protocol_studies.py": {
@@ -17211,6 +17562,12 @@
    "status": "audited"
   },
   "models/matched_asymptotic_pde.py": {
+   "status": "audited"
+  },
+  "models/matching_net.py": {
+   "status": "audited"
+  },
+  "models/mate_calc.py": {
    "status": "audited"
   },
   "models/mate_dual.py": {
@@ -17255,6 +17612,9 @@
   "models/mathvista_studies.py": {
    "status": "audited"
   },
+  "models/matrix_completion.py": {
+   "status": "audited"
+  },
   "models/matrix_det.py": {
    "status": "audited"
   },
@@ -17264,10 +17624,22 @@
   "models/matrix_geom.py": {
    "status": "audited"
   },
+  "models/matrix_grp.py": {
+   "status": "audited"
+  },
   "models/matrix_model_free.py": {
    "status": "audited"
   },
   "models/matrix_pencil.py": {
+   "status": "audited"
+  },
+  "models/matrix_profile.py": {
+   "status": "audited"
+  },
+  "models/matrix_sign.py": {
+   "status": "audited"
+  },
+  "models/matrix_sqrt.py": {
    "status": "audited"
   },
   "models/matrix_square_root.py": {
@@ -17279,10 +17651,22 @@
   "models/matrix_truncate.py": {
    "status": "audited"
   },
+  "models/matroid_axioms.py": {
+   "status": "audited"
+  },
+  "models/matroid_greedy.py": {
+   "status": "audited"
+  },
+  "models/matroid_intersect.py": {
+   "status": "audited"
+  },
   "models/matroid_minor.py": {
    "status": "audited"
   },
   "models/matroid_rep.py": {
+   "status": "audited"
+  },
+  "models/matroid_union.py": {
    "status": "audited"
   },
   "models/maui_qa_studies.py": {
@@ -17294,7 +17678,16 @@
   "models/max_ineq.py": {
    "status": "audited"
   },
+  "models/max_softmax_ood.py": {
+   "status": "audited"
+  },
   "models/maximal_monotone.py": {
+   "status": "audited"
+  },
+  "models/maximum_principle.py": {
+   "status": "audited"
+  },
+  "models/maximum_score.py": {
    "status": "audited"
   },
   "models/maxwell_equations.py": {
@@ -17306,10 +17699,16 @@
   "models/maxwell_rw.py": {
    "status": "audited"
   },
+  "models/may_recognition.py": {
+   "status": "audited"
+  },
   "models/may_ss.py": {
    "status": "audited"
   },
   "models/mayahuel_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/mayer_vietoris.py": {
    "status": "audited"
   },
   "models/mayfly_qa_studies.py": {
@@ -17333,10 +17732,19 @@
   "models/mbti_eval_studies.py": {
    "status": "audited"
   },
+  "models/mc_dropout.py": {
+   "status": "audited"
+  },
+  "models/mccfr_outcome.py": {
+   "status": "audited"
+  },
   "models/mcdiarmid_ineq.py": {
    "status": "audited"
   },
   "models/mcduff_polterovich.py": {
+   "status": "audited"
+  },
+  "models/mceliece_lite.py": {
    "status": "audited"
   },
   "models/mckay_correspond.py": {
@@ -17354,10 +17762,31 @@
   "models/mcp_protocol_studies.py": {
    "status": "audited"
   },
+  "models/mcsat_lite.py": {
+   "status": "audited"
+  },
   "models/mctest_qa_studies.py": {
    "status": "audited"
   },
+  "models/mcts.py": {
+   "status": "audited"
+  },
+  "models/mcts_reason.py": {
+   "status": "audited"
+  },
+  "models/mdn_cond.py": {
+   "status": "audited"
+  },
+  "models/mdp_solvers.py": {
+   "status": "audited"
+  },
+  "models/mds.py": {
+   "status": "audited"
+  },
   "models/mds_news_studies.py": {
+   "status": "audited"
+  },
+  "models/mealy_moore.py": {
    "status": "audited"
   },
   "models/mean_curvature_flow.py": {
@@ -17373,6 +17802,9 @@
    "status": "audited"
   },
   "models/mean_value.py": {
+   "status": "audited"
+  },
+  "models/meanshift_track.py": {
    "status": "audited"
   },
   "models/measur_select.py": {
@@ -17409,6 +17841,15 @@
    "status": "audited"
   },
   "models/medial_axis.py": {
+   "status": "audited"
+  },
+  "models/median_elim.py": {
+   "status": "audited"
+  },
+  "models/median_tests.py": {
+   "status": "audited"
+  },
+  "models/mediation_analysis.py": {
    "status": "audited"
   },
   "models/medical_anthropology.py": {
@@ -17480,7 +17921,13 @@
   "models/mehta_rmt.py": {
    "status": "audited"
   },
+  "models/mel_cepstrum.py": {
+   "status": "audited"
+  },
   "models/meliae_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/melick_thomas.py": {
    "status": "audited"
   },
   "models/mellin_transform.py": {
@@ -17498,10 +17945,16 @@
   "models/melusine_qa_studies.py": {
    "status": "audited"
   },
+  "models/mem_coalesce.py": {
+   "status": "audited"
+  },
   "models/membership_infer_studies.py": {
    "status": "audited"
   },
   "models/membership_inference_studies.py": {
+   "status": "audited"
+  },
+  "models/memorizing_transformer.py": {
    "status": "audited"
   },
   "models/memory_bank_studies.py": {
@@ -17534,10 +17987,22 @@
   "models/mergesort.py": {
    "status": "audited"
   },
+  "models/merkle_damgard.py": {
+   "status": "audited"
+  },
+  "models/merkle_ots.py": {
+   "status": "audited"
+  },
+  "models/merkle_tree.py": {
+   "status": "audited"
+  },
   "models/merlin_qa_studies.py": {
    "status": "audited"
   },
   "models/merton_jump.py": {
+   "status": "audited"
+  },
+  "models/merton_model.py": {
    "status": "audited"
   },
   "models/mesa_qa_studies.py": {
@@ -17546,13 +18011,25 @@
   "models/meshless_local.py": {
    "status": "audited"
   },
+  "models/mesi_cache.py": {
+   "status": "audited"
+  },
   "models/mesoscale_meteorology.py": {
+   "status": "audited"
+  },
+  "models/meta_analysis.py": {
    "status": "audited"
   },
   "models/meta_analysis_studies.py": {
    "status": "audited"
   },
+  "models/meta_sgd.py": {
+   "status": "audited"
+  },
   "models/meta_tool_studies.py": {
+   "status": "audited"
+  },
+  "models/meta_uq.py": {
    "status": "audited"
   },
   "models/metabolic_health.py": {
@@ -17568,6 +18045,12 @@
    "status": "audited"
   },
   "models/metabolomics.py": {
+   "status": "audited"
+  },
+  "models/metadynamics.py": {
+   "status": "audited"
+  },
+  "models/metaheuristic_optimizers.py": {
    "status": "audited"
   },
   "models/metallurgy.py": {
@@ -17588,13 +18071,31 @@
   "models/metric_entropy.py": {
    "status": "audited"
   },
+  "models/metric_learning.py": {
+   "status": "audited"
+  },
   "models/metsik_qa_studies.py": {
    "status": "audited"
   },
   "models/meyers_process.py": {
    "status": "audited"
   },
+  "models/mf_q.py": {
+   "status": "audited"
+  },
+  "models/mfdfa.py": {
+   "status": "audited"
+  },
+  "models/mfg_flocking.py": {
+   "status": "audited"
+  },
+  "models/mfg_lq.py": {
+   "status": "audited"
+  },
   "models/mg1_queue.py": {
+   "status": "audited"
+  },
+  "models/mgda_mtl.py": {
    "status": "audited"
   },
   "models/mgl_spec.py": {
@@ -17604,6 +18105,18 @@
    "status": "audited"
   },
   "models/mhd_equations.py": {
+   "status": "audited"
+  },
+  "models/mhe.py": {
+   "status": "audited"
+  },
+  "models/mht.py": {
+   "status": "audited"
+  },
+  "models/mi_register.py": {
+   "status": "audited"
+  },
+  "models/mice.py": {
    "status": "audited"
   },
   "models/micro_supp.py": {
@@ -17628,6 +18141,9 @@
    "status": "audited"
   },
   "models/mictlan_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/midas_regression.py": {
    "status": "audited"
   },
   "models/middle_eastern_studies.py": {
@@ -17666,6 +18182,12 @@
   "models/military_sociology.py": {
    "status": "audited"
   },
+  "models/miller_madow.py": {
+   "status": "audited"
+  },
+  "models/miller_rabin.py": {
+   "status": "audited"
+  },
   "models/miller_sheffield.py": {
    "status": "audited"
   },
@@ -17702,13 +18224,25 @@
   "models/milstein_scheme.py": {
    "status": "audited"
   },
+  "models/mimc.py": {
+   "status": "audited"
+  },
+  "models/mime_lite.py": {
+   "status": "audited"
+  },
   "models/min_area_rect.py": {
    "status": "audited"
   },
   "models/min_max_eig.py": {
    "status": "audited"
   },
+  "models/min_snap.py": {
+   "status": "audited"
+  },
   "models/min_var_closure.py": {
+   "status": "audited"
+  },
+  "models/mincost_flow.py": {
    "status": "audited"
   },
   "models/mind2web_studies.py": {
@@ -17718,6 +18252,9 @@
    "status": "audited"
   },
   "models/mine_design.py": {
+   "status": "audited"
+  },
+  "models/mine_mi.py": {
    "status": "audited"
   },
   "models/mine_ventilation.py": {
@@ -17735,6 +18272,9 @@
   "models/minerva_math_studies.py": {
    "status": "audited"
   },
+  "models/minhash_lsh.py": {
+   "status": "audited"
+  },
   "models/mini_f2f_studies.py": {
    "status": "audited"
   },
@@ -17748,6 +18288,9 @@
    "status": "audited"
   },
   "models/minimal_model_op.py": {
+   "status": "audited"
+  },
+  "models/minimal_poly.py": {
    "status": "audited"
   },
   "models/minimal_surface.py": {
@@ -17771,6 +18314,9 @@
   "models/minke_qa_studies.py": {
    "status": "audited"
   },
+  "models/minkowski_bound.py": {
+   "status": "audited"
+  },
   "models/minkowski_sum.py": {
    "status": "audited"
   },
@@ -17789,6 +18335,9 @@
   "models/minotaur_qa_studies.py": {
    "status": "audited"
   },
+  "models/minres.py": {
+   "status": "audited"
+  },
   "models/minres_solver.py": {
    "status": "audited"
   },
@@ -17804,7 +18353,13 @@
   "models/minty_browder.py": {
    "status": "audited"
   },
+  "models/mipmap_sample.py": {
+   "status": "audited"
+  },
   "models/mirage_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/mirror_descent.py": {
    "status": "audited"
   },
   "models/mirror_functor.py": {
@@ -17840,6 +18395,9 @@
   "models/mixed_hodge.py": {
    "status": "audited"
   },
+  "models/mixed_logit.py": {
+   "status": "audited"
+  },
   "models/mixed_volume.py": {
    "status": "audited"
   },
@@ -17852,7 +18410,19 @@
   "models/mixture.py": {
    "status": "audited"
   },
+  "models/mixture_of_depths.py": {
+   "status": "audited"
+  },
+  "models/mixup_cutmix.py": {
+   "status": "audited"
+  },
   "models/mkqa_studies.py": {
+   "status": "audited"
+  },
+  "models/mlfq_sched.py": {
+   "status": "audited"
+  },
+  "models/mlmc.py": {
    "status": "audited"
   },
   "models/mls_shape.py": {
@@ -17861,7 +18431,13 @@
   "models/mm1_queue.py": {
    "status": "audited"
   },
+  "models/mmap_pager.py": {
+   "status": "audited"
+  },
   "models/mmbench_agent_studies.py": {
+   "status": "audited"
+  },
+  "models/mmd_two_sample.py": {
    "status": "audited"
   },
   "models/mmind2web_studies.py": {
@@ -17874,6 +18450,9 @@
    "status": "audited"
   },
   "models/mmlu_studies.py": {
+   "status": "audited"
+  },
+  "models/mmmb_select.py": {
    "status": "audited"
   },
   "models/mmmlu_lite_studies.py": {
@@ -17906,6 +18485,9 @@
   "models/mnop_conj.py": {
    "status": "audited"
   },
+  "models/moc_lines.py": {
+   "status": "audited"
+  },
   "models/moc_transport.py": {
    "status": "audited"
   },
@@ -17918,13 +18500,22 @@
   "models/modal_completeness.py": {
    "status": "audited"
   },
+  "models/mode_connectivity.py": {
+   "status": "audited"
+  },
   "models/mode_n_product.py": {
+   "status": "audited"
+  },
+  "models/model_averaging.py": {
    "status": "audited"
   },
   "models/model_category.py": {
    "status": "audited"
   },
   "models/model_checking_2.py": {
+   "status": "audited"
+  },
+  "models/model_confidence_set.py": {
    "status": "audited"
   },
   "models/model_inversion_studies.py": {
@@ -17957,7 +18548,19 @@
   "models/module_cat.py": {
    "status": "audited"
   },
+  "models/moduli_naive.py": {
+   "status": "audited"
+  },
+  "models/moduli_stable.py": {
+   "status": "audited"
+  },
   "models/moduli_stack.py": {
+   "status": "audited"
+  },
+  "models/modulo_sched.py": {
+   "status": "audited"
+  },
+  "models/moe_router.py": {
    "status": "audited"
   },
   "models/moe_shared_expert_studies.py": {
@@ -17973,6 +18576,12 @@
    "status": "audited"
   },
   "models/moirai2.py": {
+   "status": "audited"
+  },
+  "models/moirai_lite.py": {
+   "status": "audited"
+  },
+  "models/mol_descriptors.py": {
    "status": "audited"
   },
   "models/mole_qa_studies.py": {
@@ -18005,10 +18614,25 @@
   "models/mollymawk_qa_studies.py": {
    "status": "audited"
   },
+  "models/moment_generating.py": {
+   "status": "audited"
+  },
+  "models/moment_inequalities.py": {
+   "status": "audited"
+  },
+  "models/moment_lite.py": {
+   "status": "audited"
+  },
   "models/moment_map.py": {
    "status": "audited"
   },
   "models/moment_polytope.py": {
+   "status": "audited"
+  },
+  "models/momentum.py": {
+   "status": "audited"
+  },
+  "models/monad_laws.py": {
    "status": "audited"
   },
   "models/monad_theorem.py": {
@@ -18041,6 +18665,9 @@
   "models/monk_seal_qa_studies.py": {
    "status": "audited"
   },
+  "models/monoidal_cat.py": {
+   "status": "audited"
+  },
   "models/monoidal_derived.py": {
    "status": "audited"
   },
@@ -18053,6 +18680,9 @@
   "models/monolith_qa_studies.py": {
    "status": "audited"
   },
+  "models/monomial_ideal.py": {
+   "status": "audited"
+  },
   "models/monopole_floer.py": {
    "status": "audited"
   },
@@ -18060,6 +18690,9 @@
    "status": "audited"
   },
   "models/monotone_chain.py": {
+   "status": "audited"
+  },
+  "models/monotone_conv.py": {
    "status": "audited"
   },
   "models/monotone_inclusion.py": {
@@ -18072,6 +18705,9 @@
    "status": "audited"
   },
   "models/monotone_partition.py": {
+   "status": "audited"
+  },
+  "models/monotonic_net.py": {
    "status": "audited"
   },
   "models/monotreme_qa_studies.py": {
@@ -18090,6 +18726,9 @@
    "status": "audited"
   },
   "models/mood_disorders.py": {
+   "status": "audited"
+  },
+  "models/moon_fl.py": {
    "status": "audited"
   },
   "models/moon_qa_studies.py": {
@@ -18141,6 +18780,9 @@
    "status": "audited"
   },
   "models/moral_stories_studies.py": {
+   "status": "audited"
+  },
+  "models/moran.py": {
    "status": "audited"
   },
   "models/morava_e.py": {
@@ -18197,10 +18839,16 @@
   "models/morel_voev.py": {
    "status": "audited"
   },
+  "models/morgan_fp.py": {
+   "status": "audited"
+  },
   "models/mori_bir.py": {
    "status": "audited"
   },
   "models/morita_hall.py": {
+   "status": "audited"
+  },
+  "models/morley_rank.py": {
    "status": "audited"
   },
   "models/morozko_qa_studies.py": {
@@ -18213,6 +18861,9 @@
    "status": "audited"
   },
   "models/morrigan_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/morse_theory.py": {
    "status": "audited"
   },
   "models/mortar_dd.py": {
@@ -18246,6 +18897,9 @@
    "status": "audited"
   },
   "models/mothman_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/motif_scan.py": {
    "status": "audited"
   },
   "models/motility_studies.py": {
@@ -18572,7 +19226,22 @@
   "models/mozgovoy_hall.py": {
    "status": "audited"
   },
+  "models/mpc_planning.py": {
+   "status": "audited"
+  },
+  "models/mpc_qp.py": {
+   "status": "audited"
+  },
+  "models/mppi_control.py": {
+   "status": "audited"
+  },
+  "models/mps_fidelity.py": {
+   "status": "audited"
+  },
   "models/mr_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/mrac_adapt.py": {
    "status": "audited"
   },
   "models/mri_studies.py": {
@@ -18584,7 +19253,13 @@
   "models/ms2_lite_studies.py": {
    "status": "audited"
   },
+  "models/ms_queue.py": {
+   "status": "audited"
+  },
   "models/ms_studies.py": {
+   "status": "audited"
+  },
+  "models/ms_var.py": {
    "status": "audited"
   },
   "models/msgarch.py": {
@@ -18596,6 +19271,9 @@
   "models/msrvtt_qa_studies.py": {
    "status": "audited"
   },
+  "models/mst_topology.py": {
+   "status": "audited"
+  },
   "models/mt_bench_judge_studies.py": {
    "status": "audited"
   },
@@ -18603,6 +19281,12 @@
    "status": "audited"
   },
   "models/mtc_motive.py": {
+   "status": "audited"
+  },
+  "models/mtgnn_lite.py": {
+   "status": "audited"
+  },
+  "models/mu_recursion.py": {
    "status": "audited"
   },
   "models/mud_crab_qa_studies.py": {
@@ -18614,6 +19298,9 @@
   "models/muin_lite_studies.py": {
    "status": "audited"
   },
+  "models/mulaw_compand.py": {
+   "status": "audited"
+  },
   "models/mule_deer_qa_studies.py": {
    "status": "audited"
   },
@@ -18623,7 +19310,13 @@
   "models/muller_root.py": {
    "status": "audited"
   },
+  "models/muller_watson.py": {
+   "status": "audited"
+  },
   "models/mullin_bijection.py": {
+   "status": "audited"
+  },
+  "models/multi_agent_pipeline.py": {
    "status": "audited"
   },
   "models/multi_news_eval_studies.py": {
@@ -18632,10 +19325,19 @@
   "models/multi_news_studies.py": {
    "status": "audited"
   },
+  "models/multi_paxos.py": {
+   "status": "audited"
+  },
+  "models/multi_task.py": {
+   "status": "audited"
+  },
   "models/multi_type_branch.py": {
    "status": "audited"
   },
   "models/multi_woz_studies.py": {
+   "status": "audited"
+  },
+  "models/multiclass.py": {
    "status": "audited"
   },
   "models/multidomain_sem.py": {
@@ -18647,10 +19349,19 @@
   "models/multifractal_formal.py": {
    "status": "audited"
   },
+  "models/multifractal_vol.py": {
+   "status": "audited"
+  },
   "models/multifusion.py": {
    "status": "audited"
   },
+  "models/multimodal_fusion.py": {
+   "status": "audited"
+  },
   "models/multipl_e_studies.py": {
+   "status": "audited"
+  },
+  "models/multiple_comparisons.py": {
    "status": "audited"
   },
   "models/multiple_scales.py": {
@@ -18687,6 +19398,12 @@
    "status": "audited"
   },
   "models/muntjac_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/muon_opt.py": {
+   "status": "audited"
+  },
+  "models/mup_init.py": {
    "status": "audited"
   },
   "models/murre_qa_studies.py": {
@@ -18728,6 +19445,9 @@
   "models/music_cognition_2.py": {
    "status": "audited"
   },
+  "models/music_esprit.py": {
+   "status": "audited"
+  },
   "models/music_history.py": {
    "status": "audited"
   },
@@ -18764,7 +19484,25 @@
   "models/mutation_class.py": {
    "status": "audited"
   },
+  "models/mutual_info.py": {
+   "status": "audited"
+  },
   "models/mutual_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/mvcc_gc.py": {
+   "status": "audited"
+  },
+  "models/mvcc_isolation.py": {
+   "status": "audited"
+  },
+  "models/mvdr_beamformer.py": {
+   "status": "audited"
+  },
+  "models/mvp_transform.py": {
+   "status": "audited"
+  },
+  "models/mw_hedge.py": {
    "status": "audited"
   },
   "models/mycology.py": {
@@ -18774,6 +19512,9 @@
    "status": "audited"
   },
   "models/mycosis_studies.py": {
+   "status": "audited"
+  },
+  "models/myerson_auction.py": {
    "status": "audited"
   },
   "models/myositis_studies.py": {
@@ -18803,13 +19544,22 @@
   "models/nahm_transform.py": {
    "status": "audited"
   },
+  "models/naive_bayes.py": {
+   "status": "audited"
+  },
   "models/najafi_gff.py": {
    "status": "audited"
   },
   "models/namahage_qa_studies.py": {
    "status": "audited"
   },
+  "models/names_eval.py": {
+   "status": "audited"
+  },
   "models/namtar_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/nan_tagging.py": {
    "status": "audited"
   },
   "models/nane_qa_studies.py": {
@@ -18836,19 +19586,46 @@
   "models/narrative_qa_studies.py": {
    "status": "audited"
   },
+  "models/narrative_svar.py": {
+   "status": "audited"
+  },
   "models/narratology.py": {
    "status": "audited"
   },
   "models/narwhal_qa_studies.py": {
    "status": "audited"
   },
+  "models/nash_bargain.py": {
+   "status": "audited"
+  },
+  "models/nash_cournot.py": {
+   "status": "audited"
+  },
+  "models/nash_equilibrium.py": {
+   "status": "audited"
+  },
   "models/nash_ineq.py": {
+   "status": "audited"
+  },
+  "models/nash_mtl.py": {
+   "status": "audited"
+  },
+  "models/nat_table.py": {
    "status": "audited"
   },
   "models/nat_trans.py": {
    "status": "audited"
   },
+  "models/nat_traversal.py": {
+   "status": "audited"
+  },
+  "models/natural_ded.py": {
+   "status": "audited"
+  },
   "models/natural_filtration.py": {
+   "status": "audited"
+  },
+  "models/natural_gradient.py": {
    "status": "audited"
   },
   "models/natural_qa_studies.py": {
@@ -18875,10 +19652,22 @@
   "models/navier_stokes.py": {
    "status": "audited"
   },
+  "models/nba_emptiness.py": {
+   "status": "audited"
+  },
   "models/nbanda_qa_studies.py": {
    "status": "audited"
   },
+  "models/nbe_eval.py": {
+   "status": "audited"
+  },
   "models/nbeats.py": {
+   "status": "audited"
+  },
+  "models/nbeats_deep.py": {
+   "status": "audited"
+  },
+  "models/nbody_leapfrog.py": {
    "status": "audited"
   },
   "models/nc_k_theory.py": {
@@ -18890,7 +19679,13 @@
   "models/nc_scheme.py": {
    "status": "audited"
   },
+  "models/nd_check.py": {
+   "status": "audited"
+  },
   "models/nearby_cycles.py": {
+   "status": "audited"
+  },
+  "models/nearest_centroid.py": {
    "status": "audited"
   },
   "models/nebula_qa_studies.py": {
@@ -18903,6 +19698,9 @@
    "status": "audited"
   },
   "models/needle_multi_studies.py": {
+   "status": "audited"
+  },
+  "models/needleman_wunsch.py": {
    "status": "audited"
   },
   "models/needletail_qa_studies.py": {
@@ -34303,690 +35101,6 @@
    "status": "audited"
   },
   "research/xwatch.py": {
-   "status": "audited"
-  },
-  "models/levy_jump.py": {
-   "status": "audited"
-  },
-  "models/lewbel_iv.py": {
-   "status": "audited"
-  },
-  "models/lia_branch.py": {
-   "status": "audited"
-  },
-  "models/libor_market.py": {
-   "status": "audited"
-  },
-  "models/licm_hoist.py": {
-   "status": "audited"
-  },
-  "models/lie_bracket.py": {
-   "status": "audited"
-  },
-  "models/lif_neuron.py": {
-   "status": "audited"
-  },
-  "models/life_stress.py": {
-   "status": "audited"
-  },
-  "models/lifetime_outlives.py": {
-   "status": "audited"
-  },
-  "models/lil_ucb.py": {
-   "status": "audited"
-  },
-  "models/limit_prod.py": {
-   "status": "audited"
-  },
-  "models/lin_ccc_blandaltman.py": {
-   "status": "audited"
-  },
-  "models/linear_attn.py": {
-   "status": "audited"
-  },
-  "models/linear_extension.py": {
-   "status": "audited"
-  },
-  "models/linear_logic.py": {
-   "status": "audited"
-  },
-  "models/linear_use.py": {
-   "status": "audited"
-  },
-  "models/linformer_attn.py": {
-   "status": "audited"
-  },
-  "models/linscan_regalloc.py": {
-   "status": "audited"
-  },
-  "models/lion_opt.py": {
-   "status": "audited"
-  },
-  "models/liouville.py": {
-   "status": "audited"
-  },
-  "models/lipschitz_net.py": {
-   "status": "audited"
-  },
-  "models/listmle_ltr.py": {
-   "status": "audited"
-  },
-  "models/listnet_ltr.py": {
-   "status": "audited"
-  },
-  "models/literal_prefilter.py": {
-   "status": "audited"
-  },
-  "models/little_discs.py": {
-   "status": "audited"
-  },
-  "models/liveness_dce.py": {
-   "status": "audited"
-  },
-  "models/lj_md.py": {
-   "status": "audited"
-  },
-  "models/lk_flow.py": {
-   "status": "audited"
-  },
-  "models/ll1_table.py": {
-   "status": "audited"
-  },
-  "models/llaplace_gp.py": {
-   "status": "audited"
-  },
-  "models/lll_reduce.py": {
-   "status": "audited"
-  },
-  "models/lmm.py": {
-   "status": "audited"
-  },
-  "models/lmoments.py": {
-   "status": "audited"
-  },
-  "models/lob_transformer.py": {
-   "status": "audited"
-  },
-  "models/local_projection.py": {
-   "status": "audited"
-  },
-  "models/local_ring_zn.py": {
-   "status": "audited"
-  },
-  "models/local_search_maxcut.py": {
-   "status": "audited"
-  },
-  "models/local_time.py": {
-   "status": "audited"
-  },
-  "models/localized_conformal.py": {
-   "status": "audited"
-  },
-  "models/log_acd.py": {
-   "status": "audited"
-  },
-  "models/log_concave.py": {
-   "status": "audited"
-  },
-  "models/logic_topos.py": {
-   "status": "audited"
-  },
-  "models/logit_lens.py": {
-   "status": "audited"
-  },
-  "models/lomb_scargle.py": {
-   "status": "audited"
-  },
-  "models/long_memory.py": {
-   "status": "audited"
-  },
-  "models/longhorn_ssm.py": {
-   "status": "audited"
-  },
-  "models/lookahead_opt.py": {
-   "status": "audited"
-  },
-  "models/loop_subdiv.py": {
-   "status": "audited"
-  },
-  "models/loop_unroll.py": {
-   "status": "audited"
-  },
-  "models/lora_ft.py": {
-   "status": "audited"
-  },
-  "models/los_theorem.py": {
-   "status": "audited"
-  },
-  "models/lottery_ticket.py": {
-   "status": "audited"
-  },
-  "models/lowess.py": {
-   "status": "audited"
-  },
-  "models/lowrank_factor.py": {
-   "status": "audited"
-  },
-  "models/lowrank_op.py": {
-   "status": "audited"
-  },
-  "models/lp_did.py": {
-   "status": "audited"
-  },
-  "models/lp_duality.py": {
-   "status": "audited"
-  },
-  "models/lp_iv.py": {
-   "status": "audited"
-  },
-  "models/lp_rounding_sc.py": {
-   "status": "audited"
-  },
-  "models/lpc_analysis.py": {
-   "status": "audited"
-  },
-  "models/lpc_formant.py": {
-   "status": "audited"
-  },
-  "models/lpt_schedule.py": {
-   "status": "audited"
-  },
-  "models/lqg_control.py": {
-   "status": "audited"
-  },
-  "models/lqr_control.py": {
-   "status": "audited"
-  },
-  "models/lqr_funnel.py": {
-   "status": "audited"
-  },
-  "models/lsd_deptest.py": {
-   "status": "audited"
-  },
-  "models/lsh_dedup.py": {
-   "status": "audited"
-  },
-  "models/lsm_reservoir.py": {
-   "status": "audited"
-  },
-  "models/lsm_tree.py": {
-   "status": "audited"
-  },
-  "models/ltl_mc.py": {
-   "status": "audited"
-  },
-  "models/ltt_cp.py": {
-   "status": "audited"
-  },
-  "models/lu_pivots.py": {
-   "status": "audited"
-  },
-  "models/luen_obsv.py": {
-   "status": "audited"
-  },
-  "models/lwe_kex.py": {
-   "status": "audited"
-  },
-  "models/lwf_cl.py": {
-   "status": "audited"
-  },
-  "models/lww_map.py": {
-   "status": "audited"
-  },
-  "models/lyap_synth.py": {
-   "status": "audited"
-  },
-  "models/lyapunov_stability.py": {
-   "status": "audited"
-  },
-  "models/lyndon_factor.py": {
-   "status": "audited"
-  },
-  "models/lz77.py": {
-   "status": "audited"
-  },
-  "models/lz78_dict.py": {
-   "status": "audited"
-  },
-  "models/lzw_compress.py": {
-   "status": "audited"
-  },
-  "models/ma_toy.py": {
-   "status": "audited"
-  },
-  "models/mackey_functor.py": {
-   "status": "audited"
-  },
-  "models/macro_expand.py": {
-   "status": "audited"
-  },
-  "models/maddpg.py": {
-   "status": "audited"
-  },
-  "models/maf_flow.py": {
-   "status": "audited"
-  },
-  "models/magnitude_pruning.py": {
-   "status": "audited"
-  },
-  "models/mahalanobis_ood.py": {
-   "status": "audited"
-  },
-  "models/mala.py": {
-   "status": "audited"
-  },
-  "models/malliavin.py": {
-   "status": "audited"
-  },
-  "models/malloc_freelist.py": {
-   "status": "audited"
-  },
-  "models/mamba2_ssd.py": {
-   "status": "audited"
-  },
-  "models/mambats.py": {
-   "status": "audited"
-  },
-  "models/maml_portfolio.py": {
-   "status": "audited"
-  },
-  "models/manifold_learning.py": {
-   "status": "audited"
-  },
-  "models/manova.py": {
-   "status": "audited"
-  },
-  "models/mantel.py": {
-   "status": "audited"
-  },
-  "models/many_iv.py": {
-   "status": "audited"
-  },
-  "models/mappo.py": {
-   "status": "audited"
-  },
-  "models/marching_cubes.py": {
-   "status": "audited"
-  },
-  "models/mardia.py": {
-   "status": "audited"
-  },
-  "models/margin_sampling.py": {
-   "status": "audited"
-  },
-  "models/marginal_homogeneity.py": {
-   "status": "audited"
-  },
-  "models/marginal_likelihood.py": {
-   "status": "audited"
-  },
-  "models/market_making.py": {
-   "status": "audited"
-  },
-  "models/marking_paging.py": {
-   "status": "audited"
-  },
-  "models/markov_chain.py": {
-   "status": "audited"
-  },
-  "models/markov_discretization.py": {
-   "status": "audited"
-  },
-  "models/markov_entropy.py": {
-   "status": "audited"
-  },
-  "models/markov_hitting.py": {
-   "status": "audited"
-  },
-  "models/markov_ineq.py": {
-   "status": "audited"
-  },
-  "models/mars_regression.py": {
-   "status": "audited"
-  },
-  "models/martingale_check.py": {
-   "status": "audited"
-  },
-  "models/martingale_clt.py": {
-   "status": "audited"
-  },
-  "models/mask_autoencoder.py": {
-   "status": "audited"
-  },
-  "models/mast_playout.py": {
-   "status": "audited"
-  },
-  "models/matching_net.py": {
-   "status": "audited"
-  },
-  "models/mate_calc.py": {
-   "status": "audited"
-  },
-  "models/matrix_completion.py": {
-   "status": "audited"
-  },
-  "models/matrix_grp.py": {
-   "status": "audited"
-  },
-  "models/matrix_profile.py": {
-   "status": "audited"
-  },
-  "models/matrix_sign.py": {
-   "status": "audited"
-  },
-  "models/matrix_sqrt.py": {
-   "status": "audited"
-  },
-  "models/matroid_axioms.py": {
-   "status": "audited"
-  },
-  "models/matroid_greedy.py": {
-   "status": "audited"
-  },
-  "models/matroid_intersect.py": {
-   "status": "audited"
-  },
-  "models/matroid_union.py": {
-   "status": "audited"
-  },
-  "models/max_softmax_ood.py": {
-   "status": "audited"
-  },
-  "models/maximum_principle.py": {
-   "status": "audited"
-  },
-  "models/maximum_score.py": {
-   "status": "audited"
-  },
-  "models/may_recognition.py": {
-   "status": "audited"
-  },
-  "models/mayer_vietoris.py": {
-   "status": "audited"
-  },
-  "models/mc_dropout.py": {
-   "status": "audited"
-  },
-  "models/mccfr_outcome.py": {
-   "status": "audited"
-  },
-  "models/mceliece_lite.py": {
-   "status": "audited"
-  },
-  "models/mcsat_lite.py": {
-   "status": "audited"
-  },
-  "models/mcts.py": {
-   "status": "audited"
-  },
-  "models/mcts_reason.py": {
-   "status": "audited"
-  },
-  "models/mdn_cond.py": {
-   "status": "audited"
-  },
-  "models/mdp_solvers.py": {
-   "status": "audited"
-  },
-  "models/mds.py": {
-   "status": "audited"
-  },
-  "models/mealy_moore.py": {
-   "status": "audited"
-  },
-  "models/meanshift_track.py": {
-   "status": "audited"
-  },
-  "models/median_elim.py": {
-   "status": "audited"
-  },
-  "models/median_tests.py": {
-   "status": "audited"
-  },
-  "models/mediation_analysis.py": {
-   "status": "audited"
-  },
-  "models/mel_cepstrum.py": {
-   "status": "audited"
-  },
-  "models/melick_thomas.py": {
-   "status": "audited"
-  },
-  "models/mem_coalesce.py": {
-   "status": "audited"
-  },
-  "models/memorizing_transformer.py": {
-   "status": "audited"
-  },
-  "models/merkle_damgard.py": {
-   "status": "audited"
-  },
-  "models/merkle_ots.py": {
-   "status": "audited"
-  },
-  "models/merkle_tree.py": {
-   "status": "audited"
-  },
-  "models/merton_model.py": {
-   "status": "audited"
-  },
-  "models/mesi_cache.py": {
-   "status": "audited"
-  },
-  "models/meta_analysis.py": {
-   "status": "audited"
-  },
-  "models/meta_sgd.py": {
-   "status": "audited"
-  },
-  "models/meta_uq.py": {
-   "status": "audited"
-  },
-  "models/metadynamics.py": {
-   "status": "audited"
-  },
-  "models/metaheuristic_optimizers.py": {
-   "status": "audited"
-  },
-  "models/metric_learning.py": {
-   "status": "audited"
-  },
-  "models/mf_q.py": {
-   "status": "audited"
-  },
-  "models/mfdfa.py": {
-   "status": "audited"
-  },
-  "models/mfg_flocking.py": {
-   "status": "audited"
-  },
-  "models/mfg_lq.py": {
-   "status": "audited"
-  },
-  "models/mgda_mtl.py": {
-   "status": "audited"
-  },
-  "models/mhe.py": {
-   "status": "audited"
-  },
-  "models/mht.py": {
-   "status": "audited"
-  },
-  "models/mi_register.py": {
-   "status": "audited"
-  },
-  "models/mice.py": {
-   "status": "audited"
-  },
-  "models/midas_regression.py": {
-   "status": "audited"
-  },
-  "models/miller_madow.py": {
-   "status": "audited"
-  },
-  "models/miller_rabin.py": {
-   "status": "audited"
-  },
-  "models/mimc.py": {
-   "status": "audited"
-  },
-  "models/mime_lite.py": {
-   "status": "audited"
-  },
-  "models/min_snap.py": {
-   "status": "audited"
-  },
-  "models/mincost_flow.py": {
-   "status": "audited"
-  },
-  "models/mine_mi.py": {
-   "status": "audited"
-  },
-  "models/minhash_lsh.py": {
-   "status": "audited"
-  },
-  "models/minimal_poly.py": {
-   "status": "audited"
-  },
-  "models/minkowski_bound.py": {
-   "status": "audited"
-  },
-  "models/minres.py": {
-   "status": "audited"
-  },
-  "models/mipmap_sample.py": {
-   "status": "audited"
-  },
-  "models/mirror_descent.py": {
-   "status": "audited"
-  },
-  "models/mixed_logit.py": {
-   "status": "audited"
-  },
-  "models/mixture_of_depths.py": {
-   "status": "audited"
-  },
-  "models/mixup_cutmix.py": {
-   "status": "audited"
-  },
-  "models/mlfq_sched.py": {
-   "status": "audited"
-  },
-  "models/mlmc.py": {
-   "status": "audited"
-  },
-  "models/mmap_pager.py": {
-   "status": "audited"
-  },
-  "models/mmd_two_sample.py": {
-   "status": "audited"
-  },
-  "models/mmmb_select.py": {
-   "status": "audited"
-  },
-  "models/moc_lines.py": {
-   "status": "audited"
-  },
-  "models/mode_connectivity.py": {
-   "status": "audited"
-  },
-  "models/model_averaging.py": {
-   "status": "audited"
-  },
-  "models/model_confidence_set.py": {
-   "status": "audited"
-  },
-  "models/moduli_naive.py": {
-   "status": "audited"
-  },
-  "models/moduli_stable.py": {
-   "status": "audited"
-  },
-  "models/modulo_sched.py": {
-   "status": "audited"
-  },
-  "models/moe_router.py": {
-   "status": "audited"
-  },
-  "models/moirai_lite.py": {
-   "status": "audited"
-  },
-  "models/mol_descriptors.py": {
-   "status": "audited"
-  },
-  "models/moment_generating.py": {
-   "status": "audited"
-  },
-  "models/moment_inequalities.py": {
-   "status": "audited"
-  },
-  "models/moment_lite.py": {
-   "status": "audited"
-  },
-  "models/momentum.py": {
-   "status": "audited"
-  },
-  "models/monad_laws.py": {
-   "status": "audited"
-  },
-  "models/monoidal_cat.py": {
-   "status": "audited"
-  },
-  "models/monomial_ideal.py": {
-   "status": "audited"
-  },
-  "models/monotone_conv.py": {
-   "status": "audited"
-  },
-  "models/monotonic_net.py": {
-   "status": "audited"
-  },
-  "models/moon_fl.py": {
-   "status": "audited"
-  },
-  "models/moran.py": {
-   "status": "audited"
-  },
-  "models/morgan_fp.py": {
-   "status": "audited"
-  },
-  "models/morley_rank.py": {
-   "status": "audited"
-  },
-  "models/morse_theory.py": {
-   "status": "audited"
-  },
-  "models/motif_scan.py": {
-   "status": "audited"
-  },
-  "models/mpc_planning.py": {
-   "status": "audited"
-  },
-  "models/mpc_qp.py": {
-   "status": "audited"
-  },
-  "models/mppi_control.py": {
-   "status": "audited"
-  },
-  "models/mps_fidelity.py": {
-   "status": "audited"
-  },
-  "models/mrac_adapt.py": {
-   "status": "audited"
-  },
-  "models/ms_queue.py": {
-   "status": "audited"
-  },
-  "models/ms_var.py": {
-   "status": "audited"
-  },
-  "models/mst_topology.py": {
-   "status": "audited"
-  },
-  "models/mtgnn_lite.py": {
-   "status": "audited"
-  },
-  "models/mu_recursion.py": {
    "status": "audited"
   }
  },

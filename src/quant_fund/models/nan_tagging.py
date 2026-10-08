@@ -64,6 +64,8 @@ def bench_nan_tagging(seed: int = 20261231 + 485) -> dict[str, float]:
         bools += int(
             decode(encode(vals[1])) == vals[1] and isinstance(decode(encode(vals[1])), bool)
         )
+    if rt != trials or dist != trials or bools != trials:
+        raise ValueError("NaN-tagging oracle failed")
     return {
         "synthetic_roundtrip": float(rt / trials),
         "synthetic_tag_discrimination": float(dist / trials),

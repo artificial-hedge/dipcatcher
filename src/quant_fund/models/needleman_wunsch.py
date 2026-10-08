@@ -115,6 +115,8 @@ def bench_needleman_wunsch(seed: int = 20261231 + 511) -> dict[str, float]:
         b = "".join(rng.choice(alpha) for _ in range(rng.randrange(1, 5)))
         s, _, _ = nw_affine(a, b)
         exact += int(s == _brute_global(a, b, 2, -1, -3, -1))
+    if consistent != n or exact != n2:
+        raise ValueError("Needleman-Wunsch off brute-force oracle")
     return {
         "synthetic_traceback_consistent": consistent / n,
         "synthetic_score_exact": exact / n2,

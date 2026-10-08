@@ -69,4 +69,6 @@ def bench_nba_emptiness(seed: int = _SEED) -> dict[str, float]:
     checks.append(is_empty(3, {0}, {2}, {0: [1], 1: [1], 2: [2]}))
     # accept on a non-trivial cycle reachable from init: nonempty
     checks.append(not is_empty(3, {0}, {1}, {0: [1], 1: [2], 2: [1]}))
+    if sum(checks) != len(checks):
+        raise ValueError("NBA emptiness oracle failed")
     return {"synthetic_nba_emptiness": float(sum(checks)) / len(checks)}

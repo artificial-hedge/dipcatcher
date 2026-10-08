@@ -56,6 +56,8 @@ def bench_nat_table(seed: int = 20261231 + 404) -> dict[str, float]:
         reverse += int(
             all(nat.inbound(o) == k for k, o in zip(ins, outs, strict=True) if o is not None)
         )
+    if stable != trials or unique != trials or exhaust != trials or reverse != trials:
+        raise ValueError("NAT table oracle failed")
     return {
         "synthetic_stable_mapping": float(stable / trials),
         "synthetic_no_collisions": float(unique / trials),

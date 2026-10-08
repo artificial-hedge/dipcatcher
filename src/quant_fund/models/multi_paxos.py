@@ -52,17 +52,21 @@ def bench_multi_paxos(seed: int = 20261231 + 440) -> dict[str, float]:
         crashed = set(rng.sample(acc, rng.randrange(0, 3)))
         slots = rng.randrange(2, 6)
         log: list[int | None] = []
+        all_ballots: set[int] = set()
         for _s in range(slots):
             ballots = [rng.randrange(1, 100) for _ in range(3)]
+            all_ballots.update(ballots)
             log.append(_paxos_slot(acc, ballots, crashed))
-        # safety: each slot has ≤1 chosen value (return type is single)
-        safe += 1
+        # safety: every chosen value is one of the proposed ballots
+        safe += int(all(v is None or v in all_ballots for v in log))
         # consistency: a second run with different ballot numbers picks the
         # SAME value only if it observes prior accepts — with static
         # crashed sets and fresh runs, values may differ honestly; check
         # chosen log is a valid prefix decision sequence instead.
         consistent += int(all(v is not None for v in log))
         live += int(sum(v is not None for v in log) == slots)
+    if safe != trials or live != trials or consistent != trials:
+        raise ValueError("multi-paxos oracle failed")
     return {
         "synthetic_single_value_per_slot": float(safe / trials),
         "synthetic_all_slots_decided": float(live / trials),

@@ -52,6 +52,10 @@ def bench_mup_init(seed: int = 1733, iters: int = 500) -> dict[str, float]:
     a64 = _train(seed, 64, True, iters)
     b16 = _train(seed + 1, 16, False, iters)
     b64 = _train(seed + 1, 64, False, iters)
+    # on this fixture muP does not close the width gap better than std —
+    # both gaps reported honestly; gate a floor on absolute stability
+    if abs(a64 - a16) > 0.05:
+        raise ValueError("muP width gap above floor")
     return {
         "synthetic_mup_w16": a16,
         "synthetic_mup_w64": a64,

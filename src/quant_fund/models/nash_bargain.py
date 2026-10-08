@@ -75,11 +75,14 @@ def bench_nash_bargain(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_nb_hull_err"] = float(np.linalg.norm(uh - 0.5))
     # gains equal for symmetric problem (symmetry axiom)
     out["synthetic_nb_symmetry"] = float(abs(uh[0] - uh[1]) < 0.02)
-    out["synthetic_nb_ok"] = float(
+    ok = (
         out["synthetic_nb_symmetric_err"] < 1e-9
         and out["synthetic_nb_asym_err"] < 1e-9
         and out["synthetic_nb_hull_err"] < 0.05
     )
+    out["synthetic_nb_ok"] = float(ok)
+    if not ok:
+        raise ValueError("Nash-bargain oracle failed")
     return out
 
 

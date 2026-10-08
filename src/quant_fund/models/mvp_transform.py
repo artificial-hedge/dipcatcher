@@ -70,6 +70,8 @@ def bench_mvp_transform(seed: int = 20261231 + 386) -> dict[str, float]:
         P = persp(1.0, 0.1, 100.0)
         pv = _mv(P, (0.5, 0.0, -2.0, 1.0))
         proj += int(abs(pv[3] - 2.0) < 1e-6 and pv[0] > 0)
+    if comp != trials or inv != trials or proj != trials:
+        raise ValueError("MVP transform oracle failed")
     return {
         "synthetic_trs_composed": float(comp / trials),
         "synthetic_inverse_exact": float(inv / trials),

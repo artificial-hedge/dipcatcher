@@ -22,6 +22,8 @@ def _combine(g1, g2):
 def bench_nash_mtl(seed: int = 2027, iters: int = 600) -> dict[str, float]:
     mn, mean = train_mtl(_combine, seed, iters)
     mn0, mean0 = train_mtl(lambda a, b: a + b, seed + 1, iters, naive=True)
+    if mn <= mn0 or mn < 0.4:
+        raise ValueError("Nash-MTL min-task accuracy off oracle")
     return {
         "synthetic_nash_min_acc": mn,
         "synthetic_nash_mean_acc": mean,

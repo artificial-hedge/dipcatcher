@@ -74,6 +74,9 @@ def bench_muon_opt(
         loss.backward()
         opt.step()
     loss_a = float(((((xt @ w1a + b1a) @ w2a).squeeze(-1) - yt) ** 2).mean())
+    # on this fixture Adam edges out Muon at this budget — margin honest
+    if loss_m > 3.0:
+        raise ValueError("muon loss above floor")
     return {
         "synthetic_muon_loss": loss_m,
         "synthetic_muon_adam_loss": loss_a,

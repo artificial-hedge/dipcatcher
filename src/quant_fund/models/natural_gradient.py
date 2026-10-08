@@ -47,6 +47,10 @@ def bench_natural_gradient(seed: int = 4303) -> dict[str, float]:
     x = gauss_fit(seed)
     it_ng = _run(x, natural=True, lr=0.05)
     it_gd = _run(x, natural=False, lr=0.05)
+    # at this lr plain GD edges out the natural-gradient step here —
+    # both iteration counts reported honestly; gate convergence only
+    if it_ng >= 400:
+        raise ValueError("natural gradient failed to converge")
     return {
         "synthetic_ng_iters": float(it_ng),
         "synthetic_gd_iters": float(it_gd),

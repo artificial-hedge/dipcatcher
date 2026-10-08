@@ -104,6 +104,8 @@ def bench_nbe_eval(seed: int = _SEED) -> dict[str, float]:
     checks.append(_alpha(lhs) == _alpha(rhs))
     two = ("lit", 2)
     checks.append(normalize(("app", idf, two)) == ("lit", 2))
+    if sum(checks) != len(checks):
+        raise ValueError("NbE oracle checks failed")
     return {"synthetic_nbe_eval": float(sum(checks) / len(checks))}
 
 

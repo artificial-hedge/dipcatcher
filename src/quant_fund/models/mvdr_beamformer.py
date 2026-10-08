@@ -25,6 +25,8 @@ def bench_mvdr_beamformer(seed: int = 4805, theta: float = 20.0) -> dict[str, fl
     gain_db = 20 * np.log10(abs(w.conj() @ s_true) + 1e-12)
     w_ds = a / m
     ds_db = 20 * np.log10(abs(w_ds.conj() @ s_int) + 1e-12)
+    if abs(abs(w.conj() @ a) - 1.0) > 1e-6 or null_db >= ds_db:
+        raise ValueError("MVDR constraint/null off oracle")
     return {
         "synthetic_mvdr_constraint_err": abs(abs(w.conj() @ a) - 1.0),
         "synthetic_mvdr_null_db": float(null_db),

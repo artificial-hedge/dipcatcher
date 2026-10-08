@@ -56,4 +56,6 @@ def bench_mulaw_compand(seed: int = _SEED) -> dict[str, float]:
     # full-scale ≈ -1..1 preserved within 1%
     xf = mu_decode(mu_encode(np.array([0.95])))
     score += 1.0 if abs(xf[0] - 0.95) < 0.01 else 0.0
+    if score != 5.0:
+        raise ValueError("mu-law compand oracle failed")
     return {"synthetic_mulaw_compand": score / 5.0}

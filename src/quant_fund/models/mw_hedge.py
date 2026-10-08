@@ -33,6 +33,8 @@ def bench_mw_hedge(seed: int = 4603) -> dict[str, float]:
     cum_best = np.cumsum(losses, axis=0).min(axis=1)
     realized = cum_h - cum_best
     bnd = 2.0 * np.sqrt(t * np.log(len(EXP_P)))
+    if pseudo[-1] >= bnd[-1]:
+        raise ValueError("multiplicative-weights regret bound violated")
     return {
         "synthetic_mw_pseudo": float(pseudo[-1]),
         "synthetic_mw_bound": float(bnd[-1]),

@@ -118,6 +118,8 @@ def bench_nbeats_deep(
 
     naive = np.tile(xs[:, -8:], (1, h // 8 + 1))[:, :h]
     naive_mae = float(np.mean(np.abs(naive[te] - ys[te])))
+    if nb_mae >= mlp_mae or nb_mae >= naive_mae:
+        raise ValueError("N-BEATS off MLP/naive oracles")
     return {
         "synthetic_nbeats_mae": nb_mae,
         "synthetic_nbeats_mlp_mae": mlp_mae,

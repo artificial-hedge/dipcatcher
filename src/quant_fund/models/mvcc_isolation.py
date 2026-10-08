@@ -50,6 +50,8 @@ def bench_mvcc_isolation(seed: int = 20261231 + 364) -> dict[str, float]:
             exp = max((val for c, val in m.vers["x"] if c <= ts), default=None)
             reads_ok += int(v == exp)
             reads_tot += 1
+    if stable != trials or reads_ok != reads_tot:
+        raise ValueError("MVCC snapshot-isolation oracle failed")
     return {
         "synthetic_snapshot_stable": float(stable / trials),
         "synthetic_read_correct": float(reads_ok / reads_tot),

@@ -49,6 +49,8 @@ def bench_mvcc_gc(seed: int = 20261231 + 433) -> dict[str, float]:
         # collected versions are truly invisible to all snapshots
         removed = [v for v in vers if v not in keep]
         chains += int(all(not any(v[0] <= s < v[1] for s in snaps) for v in removed))
+    if keeps_visible != trials or drops_dead != trials or chains != trials:
+        raise ValueError("MVCC GC oracle failed")
     return {
         "synthetic_snapshots_readable": float(keeps_visible / trials),
         "synthetic_live_version_kept": float(drops_dead / trials),

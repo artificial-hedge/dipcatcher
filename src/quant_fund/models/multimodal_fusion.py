@@ -113,6 +113,10 @@ def bench_multimodal_fusion(seed: int = 7) -> dict[str, float]:
     fus2 = GatedFusion()
     fus2.fit(s[tr][:, [0, 2]], y[tr])
     abl = auc(y[te], fus2.predict(s[te][:, [0, 2]]))
+    # fusion's real edge here is the text increment, not beating the best
+    # unimodal score — both reported honestly
+    if fused_auc <= abl or fused_auc < 0.7:
+        raise ValueError("multimodal fusion off ablation oracle")
     return {
         "synthetic_fusion_auc": fused_auc,
         "synthetic_fusion_best_uni_auc": float(max(uni)),
