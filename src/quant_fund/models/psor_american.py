@@ -60,6 +60,8 @@ def bench_psor_american(seed: int = 4101) -> dict[str, float]:
     ref, _bnd = crr_price(2000)
     price = _psor_put()
     eur = european_put()
+    if abs(price - ref) > 0.05 or price < eur - 1e-9:
+        raise ValueError("PSOR American price off CRR oracle / below European floor")
     return {
         "synthetic_psor_price": price,
         "synthetic_psor_err": abs(price - ref),

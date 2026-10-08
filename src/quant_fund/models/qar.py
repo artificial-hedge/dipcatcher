@@ -142,3 +142,33 @@ class QARDistribution(JoblibMixin):
             version="v1",
             extra={"persistence_a1": persistence, "n_pairs": self.n_pairs_},
         )
+
+
+def bench_qar(seed: int = 20261231 + 521) -> dict[str, float]:
+    """QAR(1) oracle: on an AR(1) series with symmetric innovations the
+    fitted persistence a1(tau) must sit near the true phi across quantiles
+    and the fitted surface's unconditional coverage must match tau."""
+    rng = np.random.default_rng(seed)
+    n, phi = 3000, 0.6
+    y = np.zeros(n)
+    e = rng.standard_normal(n)
+    for t in range(1, n):
+        y[t] = phi * y[t - 1] + e[t]
+    taus = np.array([0.1, 0.5, 0.9])
+    fit = qar_fit(y, 1, taus)
+    summ = qar_summary(fit)
+    a1 = np.asarray(summ["persistence_a1"], dtype=float)
+    cov_dev = np.asarray(summ["coverage_dev"], dtype=float)
+    fit_b = qar_fit(y, 1, taus)
+    checks = [
+        bool(np.all(np.abs(a1 - phi) < 0.15)),
+        bool(np.all(cov_dev < 0.05)),
+        bool(np.allclose(fit["coef"], fit_b["coef"])),
+    ]
+    if not all(checks):
+        raise ValueError("QAR persistence/coverage oracle failed")
+    return {
+        "synthetic_qar_persist_err": float(np.abs(a1 - phi).max()),
+        "synthetic_qar_coverage_dev": float(cov_dev.max()),
+        "synthetic_qar_score": float(sum(checks) / len(checks)),
+    }

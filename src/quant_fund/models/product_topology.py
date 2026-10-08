@@ -38,6 +38,8 @@ def _bench_product_topology(seed: int = 0) -> float:
     checks.append(len(prod_di) == 4)  # {empty, {0}x{0,1}, {1}x{0,1}, all}
     checks.append(pi1_cont(prod_dd, disc, u, u))
     checks.append(pi1_cont(prod_di, disc, u, u))
+    if not all(checks):
+        raise ValueError("product-topology oracle failed")
     return float(sum(checks) / len(checks))
 
 

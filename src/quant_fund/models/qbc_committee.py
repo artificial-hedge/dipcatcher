@@ -28,6 +28,8 @@ def _select(uP, u_idx, lP, ly, w):
 def bench_qbc_committee(seed: int = 2613, trials: int = 4) -> dict[str, float]:
     accs = [al_loop(_select, seed=seed + 2 * t) for t in range(trials)]
     bases = [random_baseline(seed=seed + 2 * t) for t in range(trials)]
+    if float(np.mean(accs)) <= float(np.mean(bases)):
+        raise ValueError("QBC active learning no better than random")
     return {
         "synthetic_qbc_acc": float(np.mean(accs)),
         "synthetic_random_acc": float(np.mean(bases)),

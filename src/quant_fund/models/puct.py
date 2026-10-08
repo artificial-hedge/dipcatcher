@@ -124,4 +124,6 @@ def bench_puct(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_uniform_correct"] = float(take_u == opt)
     out["synthetic_prior_opt_visits"] = float(visits_p.get(s0 - opt, 0))
     out["synthetic_uniform_opt_visits"] = float(visits_u.get(s0 - opt, 0))
+    if take_p != opt or take_u != opt:
+        raise ValueError("PUCT search off optimal-move oracle")
     return out

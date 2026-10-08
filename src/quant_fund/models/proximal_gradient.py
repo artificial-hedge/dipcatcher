@@ -104,6 +104,12 @@ def bench_proximal_gradient(seed: int = 20261231) -> dict[str, float]:
     supp_i = np.flatnonzero(np.abs(w_i) > 0.1)
     supp_f = np.flatnonzero(np.abs(w_f) > 0.1)
     ridge = solve(a + 0.05 * np.eye(d), b)
+    if not (
+        f_f <= f_i + 1e-4
+        and np.intersect1d(supp_f, true_supp).size >= 3
+        and np.linalg.norm(w_f - w_true) < np.linalg.norm(ridge - w_true)
+    ):
+        raise ValueError("FISTA sparse-recovery off oracle")
     return {
         "synthetic_fista_support_hit": float(np.intersect1d(supp_f, true_supp).size),
         "synthetic_ista_support_hit": float(np.intersect1d(supp_i, true_supp).size),

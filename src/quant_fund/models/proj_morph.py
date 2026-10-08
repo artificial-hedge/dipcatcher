@@ -34,6 +34,8 @@ def _bench_proj_morph(seed: int = 0) -> float:
     # twisted cubic v_3(P1) in P3: degree 3
     checks.append(veronese_target(1, 3) == 3)
     checks.append(veronese_degree(1, 3) == 3)
+    if not all(checks):
+        raise ValueError("Veronese/projective-morphism oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -48,6 +48,8 @@ def bench_qkernel_svm(seed: int = 3081) -> dict[str, float]:
     # linear baseline
     w = np.linalg.lstsq(X, y, rcond=None)[0]
     acc_l = float((np.sign(X @ w) == y).mean())
+    if acc_q <= acc_l:
+        raise ValueError("quantum kernel no better than linear baseline")
     return {
         "synthetic_qk_acc": acc_q,
         "synthetic_linear_acc": acc_l,

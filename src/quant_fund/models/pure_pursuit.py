@@ -34,4 +34,6 @@ def bench_pure_pursuit(seed: int = _SEED) -> dict[str, float]:
         e_pp = _track(path, 1.0, rng, "pure")
         e_nv = _track(path, 1.0, rng, "naive")
         wins += e_pp <= e_nv + 0.5
+    if wins < 9:
+        raise ValueError("pure-pursuit tracking off lookahead oracle")
     return {"synthetic_pp_win": wins / 12}

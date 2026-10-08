@@ -53,6 +53,8 @@ def _bench_psi_intersect(seed: int = 0) -> float:
     checks.append(oprf_psi(alice, bob, rng) == [5, 7])
     checks.append(dh_psi([1, 2], [3, 4], rng) == [])
     checks.append(oprf_psi([1, 2, 3], [2, 3, 4], rng) == [2, 3])
+    if not all(checks):
+        raise ValueError("PSI oracle failed")
     return sum(checks) / len(checks)
 
 

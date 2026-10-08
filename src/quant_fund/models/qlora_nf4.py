@@ -99,6 +99,8 @@ def bench_qlora_nf4(
         acc_q_t0 = float((fwd(x_t).argmax(-1) == y_t).float().mean())
     bits_q = (idx1.size + idx2.size) * 4
     bits_full = (w1.size + w2.size) * 32
+    if acc_q <= acc_q_t0 - 0.02 or qerr > 0.3 or bits_q >= bits_full * 0.2:
+        raise ValueError("QLoRA NF4 off accuracy/quantization oracle")
     return {
         "synthetic_qlora_acc_shift": acc_q,
         "synthetic_qlora_t0_acc": acc_q_t0,

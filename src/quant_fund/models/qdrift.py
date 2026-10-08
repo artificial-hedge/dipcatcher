@@ -103,5 +103,7 @@ def bench_qdrift(seed: int = _SEED) -> dict[str, float]:
         [expectation(psi0, qdrift_unitary(hs, ps, t, 4 * l_steps, rng), obs) for _ in range(200)]
     )
     checks.append(bool(s2 < s1))
+    if not all(checks):
+        raise ValueError("qDRIFT oracle failed")
     score = float(np.mean(checks))
     return {"synthetic_qdrift": score}

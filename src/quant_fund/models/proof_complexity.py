@@ -57,6 +57,8 @@ def _bench_proof_complexity(seed: int = 0) -> float:
     checks.append(refutable(php_clauses(1, 2)))
     # clause count: PHP_2^3 = 3 pigeon + 3 holes*C(3,2)=9 clash = 12
     checks.append(len(php_clauses(2, 3)) == 9)
+    if not all(checks):
+        raise ValueError("PHP/resolution oracle failed")
     return float(sum(checks) / len(checks))
 
 

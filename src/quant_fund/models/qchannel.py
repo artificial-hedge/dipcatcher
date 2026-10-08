@@ -59,6 +59,8 @@ def _bench_qchannel(seed: int = 0) -> float:
     out3 = apply(rho, depolarizing(1.0))
     checks.append(np.allclose(out3, np.eye(2) / 2, atol=1e-9))
     checks.append(is_tp(compose(amplitude_damping(0.1), depolarizing(0.1))))
+    if not all(checks):
+        raise ValueError("quantum-channel oracle failed")
     return sum(checks) / len(checks)
 
 

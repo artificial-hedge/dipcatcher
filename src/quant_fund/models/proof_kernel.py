@@ -127,4 +127,6 @@ def bench_proof_kernel(seed: int = _SEED) -> dict[str, float]:
         AND(a, b),
     )
     checks.append(swap.concl == IMP(AND(a, b), AND(b, a)) and len(swap.ctx) == 0)
+    if not all(checks):
+        raise ValueError("proof-kernel oracle failed")
     return {"synthetic_proof_kernel": float(sum(checks) / len(checks))}

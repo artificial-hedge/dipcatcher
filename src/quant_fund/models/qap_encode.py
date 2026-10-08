@@ -162,4 +162,6 @@ def bench_qap_encode(seed: int = _SEED) -> dict[str, float]:
     # poly machinery: t(1..3) vanishes at 1,2,3
     t = vanishing(3)
     checks.append(poly_eval(t, 1) == 0 and poly_eval(t, 3) == 0 and poly_eval(t, 4) != 0)
+    if not all(checks):
+        raise ValueError("QAP/R1CS encoding oracle failed")
     return {"synthetic_qap_encode": float(sum(checks)) / len(checks)}

@@ -90,6 +90,8 @@ def bench_prompt_tuning(
     with torch.no_grad():
         acc_full = float((out(attn(xs_t)).argmax(-1) == ys_t).float().mean())
     n_full = sum(p.numel() for p in list(proj.parameters()) + list(out.parameters()))
+    if acc_prompt <= acc_frozen:
+        raise ValueError("prompt tuning did not improve frozen model")
     return {
         "synthetic_prompt_acc_shift": acc_prompt,
         "synthetic_prompt_frozen_acc": acc_frozen,

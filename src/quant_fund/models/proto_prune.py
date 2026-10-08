@@ -1,6 +1,9 @@
 """Prototypicality pruning (Sorscher et al. 2022) — keep examples (SYNTHETIC)
-closest to class centroids (high prototypicality) vs random; on
-label-noise data, centroid-distance is a mislabel detector.
+closest to class centroids (high prototypicality); on label-noise data,
+centroid-distance is a mislabel detector. Measured on this bench: centroid
+pruning at 70% keep matches the full set within ~1pt but loses slightly to
+a random keep (0.867 vs 0.893) — the paper's gain needs harder datasets;
+gate keeps the retention-within-5pts check, not a random-keep win claim.
 """
 
 from __future__ import annotations
@@ -46,6 +49,8 @@ def bench_proto_prune(seed: int = 1833, keep_frac: float = 0.7) -> dict[str, flo
     keep2 = rng.choice(n, k, replace=False)
     acc_r = fit_eval(X[keep2], y[keep2], Xt, yt)
     acc_full = fit_eval(X, y, Xt, yt)
+    if acc_p < acc_full - 0.05:
+        raise ValueError("prototype pruning lost too much accuracy vs full set")
     return {
         "synthetic_proto_clean_auc": auc,
         "synthetic_proto_pruned_acc": acc_p,

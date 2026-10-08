@@ -44,6 +44,8 @@ def bench_qaoa_maxcut(seed: int = 3065) -> dict[str, float]:
     res = minimize(qaoa, np.array([0.3, 0.4]), method="Nelder-Mead", options={"maxiter": 60})
     exp_cut = -res.fun
     uniform = float(np.mean([maxcut_cost(x, edges) for x in range(2**n)]))
+    if exp_cut <= uniform + 0.1:
+        raise ValueError("QAOA expectation no better than uniform sampling")
     return {
         "synthetic_qaoa_cut": exp_cut,
         "synthetic_maxcut_opt": float(opt),

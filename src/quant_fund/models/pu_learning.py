@@ -192,6 +192,8 @@ def bench_pu(seed: int = 507) -> dict[str, float]:
     pi_hat = fit["pi_p"]
     if not isinstance(pi_hat, float):
         raise TypeError("pi_p must be scalar")
+    if abs(pi_hat - 0.4) > 0.15:
+        raise ValueError("PU class-prior estimate off oracle")
     return {
         "synthetic_auc": auc,
         "synthetic_pi_hat": float(pi_hat),

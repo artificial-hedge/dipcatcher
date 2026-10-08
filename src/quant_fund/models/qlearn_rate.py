@@ -35,6 +35,8 @@ def bench_qlearn_rate(seed: int = 4611) -> dict[str, float]:
     steps = 60000
     e_dec = _qlearn(seed, steps, True)
     e_con = _qlearn(seed + 1, steps, False)
+    if float(e_dec[-1]) <= 1e-9:
+        raise ValueError("decaying-rate Q-learn failed to move off init")
     return {
         "synthetic_ql_err_early": float(e_dec[steps // 10 - 1]),
         "synthetic_ql_err_late": float(e_dec[-1]),

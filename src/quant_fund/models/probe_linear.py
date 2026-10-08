@@ -32,6 +32,8 @@ def bench_probe_linear(
         y_perm = np.random.default_rng(seed + k).permutation(y)
         pp = LogisticRegression(max_iter=300).fit(a[:cut], y_perm[:cut])
         accs_perm.append(pp.score(a[cut:], y_perm[cut:]))
+    if float(np.mean(accs)) <= float(np.mean(accs_perm)) + 0.2:
+        raise ValueError("linear probe no better than permuted-label null")
     return {
         "synthetic_probe_acc": float(np.mean(accs)),
         "synthetic_probe_null_acc": float(np.mean(accs_perm)),

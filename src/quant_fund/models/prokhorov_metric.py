@@ -47,6 +47,8 @@ def _bench_prokhorov_metric(seed: int = 0) -> float:
     checks.append(tight([p, q], 0.0))
     # shifted family still tight (finite support)
     checks.append(tight([{10.0: 1.0}, {-10.0: 1.0}], 0.0))
+    if not all(checks):
+        raise ValueError("Levy/Prokhorov oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -60,6 +60,8 @@ def bench_psro(seed: int = 2731, epochs: int = 6, games: int = 10) -> dict[str, 
         return int(pop[-1](e, legal))
 
     nl_or, nl_rd = ttt_eval(mix_policy, games=40)
+    if nl_rd < 0.9 or nl_or < 0.5:
+        raise ValueError("PSRO meta-mixture underperforms trivial opponents")
     return {
         "synthetic_psro_nonloss_oracle": nl_or,
         "synthetic_psro_nonloss_random": nl_rd,

@@ -28,6 +28,8 @@ def _bench_projection_thm(seed: int = 0) -> float:
     p_mat = q @ q.T
     checks.append(np.allclose(p_mat @ p_mat, p_mat))
     checks.append(np.allclose(p_mat, p_mat.T))
+    if not all(checks):
+        raise ValueError("projection-theorem oracle failed")
     return float(sum(checks) / len(checks))
 
 

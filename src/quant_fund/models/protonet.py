@@ -51,6 +51,8 @@ def bench_protonet(seed: int = 857, n_tasks: int = 30, K: int = 5) -> dict[str, 
         inp = torch.cat([torch.tensor(xq).float()[:, None], zp.expand(len(xq), 16)], 1)
         pred0 = head(inp).squeeze(-1).numpy()
     mse0 = float(((pred0 - yq) ** 2).mean())
+    if float(np.mean(mses)) >= mse0:
+        raise ValueError("protonet conditioning no better than zero-proto")
     return {
         "synthetic_pn_query_mse": float(np.mean(mses)),
         "synthetic_pn_zero_proto_mse": mse0,

@@ -39,6 +39,8 @@ def bench_proof_of_work(seed: int = 20261231 + 341) -> dict[str, float]:
         total_work += work
     exp = float(1 << bits)
     ratio = (total_work / trials) / exp
+    if valid != trials or not (0.25 <= ratio <= 4.0):
+        raise ValueError("PoW validity/work-rate off oracle")
     return {
         "synthetic_valid_solutions": float(valid / trials),
         "synthetic_mean_work_ratio": float(ratio),

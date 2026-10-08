@@ -66,4 +66,6 @@ def bench_proj_gradient(seed: int = _SEED) -> dict[str, float]:
         obj = 0.5 * x @ Q @ x + c @ x
         obj_ref = 0.5 * ref @ Q @ ref + c @ ref
         ok += int(np.isclose(obj, obj_ref, atol=1e-4) and abs(x.sum() - 1) < 1e-6)
+    if ok != n:
+        raise ValueError("projected-gradient off simplex-QP oracle")
     return {"synthetic_simplex_optimal": float(ok / n)}

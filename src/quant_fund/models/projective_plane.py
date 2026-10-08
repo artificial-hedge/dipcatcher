@@ -51,6 +51,8 @@ def _bench_projective_plane(seed: int = 0) -> float:
     # p=3: 13 points
     checks.append(len(proj_points(3)) == 13)
     checks.append(len(proj_points(5)) == 31)
+    if not all(checks):
+        raise ValueError("projective-plane oracle failed")
     return float(sum(checks) / len(checks))
 
 

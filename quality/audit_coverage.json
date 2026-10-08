@@ -22802,6 +22802,9 @@
   "models/prime_gaps.py": {
    "status": "audited"
   },
+  "models/primitive_elem.py": {
+   "status": "audited"
+  },
   "models/primitive_elts.py": {
    "status": "audited"
   },
@@ -22827,6 +22830,9 @@
    "status": "audited"
   },
   "models/prion_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/prioritized_replay.py": {
    "status": "audited"
   },
   "models/priority_queue.py": {
@@ -22865,6 +22871,9 @@
   "models/privacy_meter_studies.py": {
    "status": "audited"
   },
+  "models/prm.py": {
+   "status": "audited"
+  },
   "models/pro_etale.py": {
    "status": "audited"
   },
@@ -22875,6 +22884,9 @@
    "status": "audited"
   },
   "models/probability_4.py": {
+   "status": "audited"
+  },
+  "models/probe_linear.py": {
    "status": "audited"
   },
   "models/proboscis_qa_studies.py": {
@@ -22890,6 +22902,12 @@
    "status": "audited"
   },
   "models/process_reward_studies.py": {
+   "status": "audited"
+  },
+  "models/procrustes.py": {
+   "status": "audited"
+  },
+  "models/product_topology.py": {
    "status": "audited"
   },
   "models/production_engineering.py": {
@@ -22916,6 +22934,12 @@
   "models/prohorov_thm2.py": {
    "status": "audited"
   },
+  "models/proj_gradient.py": {
+   "status": "audited"
+  },
+  "models/proj_morph.py": {
+   "status": "audited"
+  },
   "models/project_eval_studies.py": {
    "status": "audited"
   },
@@ -22925,7 +22949,19 @@
   "models/projection_operator.py": {
    "status": "audited"
   },
+  "models/projection_pursuit.py": {
+   "status": "audited"
+  },
   "models/projection_theorem.py": {
+   "status": "audited"
+  },
+  "models/projection_thm.py": {
+   "status": "audited"
+  },
+  "models/projective_plane.py": {
+   "status": "audited"
+  },
+  "models/prokhorov_metric.py": {
    "status": "audited"
   },
   "models/prometheus_eval_studies.py": {
@@ -22937,13 +22973,31 @@
   "models/prompt_injection_studies.py": {
    "status": "audited"
   },
+  "models/prompt_tuning.py": {
+   "status": "audited"
+  },
   "models/pronoun_bias_studies.py": {
+   "status": "audited"
+  },
+  "models/prony_model.py": {
    "status": "audited"
   },
   "models/proof_calculus.py": {
    "status": "audited"
   },
+  "models/proof_complexity.py": {
+   "status": "audited"
+  },
+  "models/proof_kernel.py": {
+   "status": "audited"
+  },
   "models/proof_mining.py": {
+   "status": "audited"
+  },
+  "models/proof_number.py": {
+   "status": "audited"
+  },
+  "models/proof_of_work.py": {
    "status": "audited"
   },
   "models/proof_pile_studies.py": {
@@ -23018,6 +23072,12 @@
   "models/proteus_qa_studies.py": {
    "status": "audited"
   },
+  "models/proto_prune.py": {
+   "status": "audited"
+  },
+  "models/protonet.py": {
+   "status": "audited"
+  },
   "models/protter_ito.py": {
    "status": "audited"
   },
@@ -23028,6 +23088,9 @@
    "status": "audited"
   },
   "models/proximal_causal.py": {
+   "status": "audited"
+  },
+  "models/proximal_gradient.py": {
    "status": "audited"
   },
   "models/proximal_map.py": {
@@ -23060,10 +23123,22 @@
   "models/pseudospectral_coll.py": {
    "status": "audited"
   },
+  "models/psi_intersect.py": {
+   "status": "audited"
+  },
   "models/pso_swarm.py": {
    "status": "audited"
   },
+  "models/psor_american.py": {
+   "status": "audited"
+  },
   "models/psoriasis_studies.py": {
+   "status": "audited"
+  },
+  "models/psrl.py": {
+   "status": "audited"
+  },
+  "models/psro.py": {
    "status": "audited"
   },
   "models/psychiatry.py": {
@@ -23097,6 +23172,9 @@
    "status": "audited"
   },
   "models/ptarmigan_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/pu_learning.py": {
    "status": "audited"
   },
   "models/public_administration.py": {
@@ -23144,6 +23222,9 @@
   "models/puca_qa_studies.py": {
    "status": "audited"
   },
+  "models/puct.py": {
+   "status": "audited"
+  },
   "models/pudu_qa_studies.py": {
    "status": "audited"
   },
@@ -23169,6 +23250,9 @@
    "status": "audited"
   },
   "models/puma_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/pure_pursuit.py": {
    "status": "audited"
   },
   "models/pure_queue.py": {
@@ -23207,6 +23291,15 @@
   "models/qald_lite_studies.py": {
    "status": "audited"
   },
+  "models/qaoa_maxcut.py": {
+   "status": "audited"
+  },
+  "models/qap_encode.py": {
+   "status": "audited"
+  },
+  "models/qar.py": {
+   "status": "audited"
+  },
   "models/qasc_sci2_studies.py": {
    "status": "audited"
   },
@@ -23214,6 +23307,18 @@
    "status": "audited"
   },
   "models/qasper_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/qbc_committee.py": {
+   "status": "audited"
+  },
+  "models/qchannel.py": {
+   "status": "audited"
+  },
+  "models/qcqp_relax.py": {
+   "status": "audited"
+  },
+  "models/qdrift.py": {
    "status": "audited"
   },
   "models/qe_dense_order.py": {
@@ -23225,7 +23330,16 @@
   "models/qiongqi_qa_studies.py": {
    "status": "audited"
   },
+  "models/qkernel_svm.py": {
+   "status": "audited"
+  },
   "models/ql_sheaf.py": {
+   "status": "audited"
+  },
+  "models/qlearn_rate.py": {
+   "status": "audited"
+  },
+  "models/qlora_nf4.py": {
    "status": "audited"
   },
   "models/qmr_solver.py": {

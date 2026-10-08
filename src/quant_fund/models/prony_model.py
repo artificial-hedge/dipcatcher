@@ -27,4 +27,6 @@ def bench_prony_model(seed: int = _SEED) -> dict[str, float]:
     got = sorted(np.abs(roots), reverse=True)
     expect = sorted([r1, r2], reverse=True)
     err = float(max(abs(g - e) for g, e in zip(got, expect, strict=True)))
+    if err >= 0.05:
+        raise ValueError("Prony root recovery off oracle")
     return {"synthetic_prony_roots": float(err < 0.05)}

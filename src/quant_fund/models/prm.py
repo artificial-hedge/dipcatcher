@@ -118,4 +118,6 @@ def bench_prm(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_prm_dense_cost"] = cost2
     out["synthetic_prm_density_gain"] = cost - cost2
     out["synthetic_prm_feasible"] = float(math.isfinite(cost) and math.isfinite(cost2))
+    if not (out["synthetic_prm_feasible"] == 1.0 and cost2 <= cost and cost <= 2.0 * lb):
+        raise ValueError("PRM roadmap off oracle")
     return out

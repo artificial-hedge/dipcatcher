@@ -45,6 +45,8 @@ def bench_qcqp_relax(seed: int = 5307) -> dict[str, float]:
     truth = max(float(x @ q @ x) for x in itertools.product([-1.0, 1.0], repeat=n))
     # simpler SDP bound: n * lambda_max(Q)
     eig_bound = float(np.linalg.eigvalsh(q).max() * n)
+    if bound < truth - 1e-9:
+        raise ValueError("QCQP relaxation violated upper-bound guarantee")
     return {
         "synthetic_qcqp_sdp_bound": bound,
         "synthetic_qcqp_truth": truth,

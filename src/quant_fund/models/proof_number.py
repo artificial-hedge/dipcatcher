@@ -118,4 +118,6 @@ def bench_proof_number(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_expansions_31"] = float(exp31)
     out["synthetic_expansions_32"] = float(exp32)
     out["synthetic_exact_status"] = float(bool(proved31) and proved32 is False)
+    if not (proved31 is True and proved32 is False):
+        raise ValueError("proof-number search off N/P-position oracle")
     return out

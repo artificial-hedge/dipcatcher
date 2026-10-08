@@ -53,6 +53,8 @@ def bench_psrl(seed: int = 1401, T: int = 3000, epoch: int = 60) -> dict[str, fl
         Q[s, a] += 0.1 * (r + 0.95 * Q[s2].max() - Q[s, a])
         tot2 += r
         s = s2
+    if tot <= tot2:
+        raise ValueError("posterior sampling no better than eps-greedy")
     return {
         "synthetic_psrl_total_reward": tot / T,
         "synthetic_psrl_eps_reward": tot2 / T,

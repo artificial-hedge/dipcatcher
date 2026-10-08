@@ -27,6 +27,8 @@ def _bench_primitive_elem(seed: int = 0) -> float:
     for eps in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
         r = eps[0] * s2 + eps[1] * s3
         checks.append(abs(r**4 - 10 * r**2 + 1) < 1e-9)
+    if not all(checks):
+        raise ValueError("primitive-element oracle failed")
     return float(sum(checks) / len(checks))
 
 

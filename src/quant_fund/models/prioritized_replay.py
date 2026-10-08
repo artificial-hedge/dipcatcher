@@ -87,6 +87,8 @@ def bench_prioritized_replay(
 
     mae_per = _tail_mae(q_per)
     mae_uni = _tail_mae(q_uni)
+    if mae_per >= mae_uni:
+        raise ValueError("PER no better than uniform replay on tail states")
     return {
         "synthetic_per_tail_mae": mae_per,
         "synthetic_per_uniform_mae": mae_uni,
