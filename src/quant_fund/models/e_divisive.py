@@ -60,7 +60,7 @@ def _best_split(x: FloatArray, lo: int, hi: int, min_seg: int) -> tuple[int, flo
     n = hi - lo
     best_t, best_d = -1, 0.0
     seg = x[lo:hi]
-    for t in range(min_seg, n - min_seg):
+    for t in range(min_seg, n - min_seg + 1):
         d = _ediv(seg, t, n)
         if d > best_d:
             best_d, best_t = d, t

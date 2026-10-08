@@ -8192,13 +8192,37 @@
   "models/dove_qa_studies.py": {
    "status": "audited"
   },
+  "models/downset_lattice.py": {
+   "status": "audited"
+  },
   "models/downy_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/dp_mixture.py": {
    "status": "audited"
   },
   "models/dp_mm.py": {
    "status": "audited"
   },
   "models/dp_rank.py": {
+   "status": "audited"
+  },
+  "models/dp_sgd.py": {
+   "status": "audited"
+  },
+  "models/dpllt.py": {
+   "status": "audited"
+  },
+  "models/dpo_train.py": {
+   "status": "audited"
+  },
+  "models/dpr_retriever.py": {
+   "status": "audited"
+  },
+  "models/dqds.py": {
+   "status": "audited"
+  },
+  "models/dr3_reg.py": {
    "status": "audited"
   },
   "models/dragon_2_qa_studies.py": {
@@ -8216,7 +8240,13 @@
   "models/dragonfly_qa_studies.py": {
    "status": "audited"
   },
+  "models/dragonnet_dr.py": {
+   "status": "audited"
+  },
   "models/drakk_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/dram.py": {
    "status": "audited"
   },
   "models/dramaturgy.py": {
@@ -8258,6 +8288,12 @@
   "models/drinfeld_tower.py": {
    "status": "audited"
   },
+  "models/driscoll_kraay.py": {
+   "status": "audited"
+  },
+  "models/dro_wasserstein.py": {
+   "status": "audited"
+  },
   "models/dromedary_qa_studies.py": {
    "status": "audited"
   },
@@ -8274,6 +8310,9 @@
    "status": "audited"
   },
   "models/dror_smith.py": {
+   "status": "audited"
+  },
+  "models/drsa_surv.py": {
    "status": "audited"
   },
   "models/drug_metabolism.py": {
@@ -8294,10 +8333,16 @@
   "models/ds_category.py": {
    "status": "audited"
   },
+  "models/ds_motion.py": {
+   "status": "audited"
+  },
   "models/dstc_lite_studies.py": {
    "status": "audited"
   },
   "models/dsu_rollback.py": {
+   "status": "audited"
+  },
+  "models/dtw_warp.py": {
    "status": "audited"
   },
   "models/du_val_sing.py": {
@@ -8306,10 +8351,16 @@
   "models/dual_ab_var.py": {
    "status": "audited"
   },
+  "models/dual_american.py": {
+   "status": "audited"
+  },
   "models/dual_connection.py": {
    "status": "audited"
   },
   "models/dual_goal_est.py": {
+   "status": "audited"
+  },
+  "models/dual_matroid.py": {
    "status": "audited"
   },
   "models/dual_weighted_res.py": {
@@ -8328,6 +8379,9 @@
    "status": "audited"
   },
   "models/dubedat_cle.py": {
+   "status": "audited"
+  },
+  "models/dubins.py": {
    "status": "audited"
   },
   "models/dudley_theorem.py": {
@@ -8363,6 +8417,9 @@
   "models/dunn_additivity.py": {
    "status": "audited"
   },
+  "models/dunn_test.py": {
+   "status": "audited"
+  },
   "models/duo_rc_studies.py": {
    "status": "audited"
   },
@@ -8370,6 +8427,9 @@
    "status": "audited"
   },
   "models/dupire_functional.py": {
+   "status": "audited"
+  },
+  "models/dupire_localvol.py": {
    "status": "audited"
   },
   "models/duplantier_sheffield.py": {
@@ -8408,6 +8468,9 @@
   "models/dw_theory.py": {
    "status": "audited"
   },
+  "models/dwa.py": {
+   "status": "audited"
+  },
   "models/dwarf_lemur_qa_studies.py": {
    "status": "audited"
   },
@@ -8421,6 +8484,9 @@
    "status": "audited"
   },
   "models/dynamic_borrowing_studies.py": {
+   "status": "audited"
+  },
+  "models/dynamic_panel.py": {
    "status": "audited"
   },
   "models/dynamic_programming.py": {
@@ -8451,6 +8517,9 @@
    "status": "audited"
   },
   "models/e5_algebra.py": {
+   "status": "audited"
+  },
+  "models/e_divisive.py": {
    "status": "audited"
   },
   "models/e_infinity3.py": {
@@ -8484,6 +8553,12 @@
    "status": "audited"
   },
   "models/eagle_ray_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/ear_clipping.py": {
+   "status": "audited"
+  },
+  "models/earley_parser.py": {
    "status": "audited"
   },
   "models/early_childhood_education.py": {
@@ -8525,13 +8600,28 @@
   "models/ebanch_diverge.py": {
    "status": "audited"
   },
+  "models/ec_scalar.py": {
+   "status": "audited"
+  },
   "models/ecare_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/ecc_secp256k1.py": {
    "status": "audited"
   },
   "models/echeveria_qa_studies.py": {
    "status": "audited"
   },
   "models/echidna_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/echo_state.py": {
+   "status": "audited"
+  },
+  "models/eclipse_circ.py": {
+   "status": "audited"
+  },
+  "models/econ_calendar.py": {
    "status": "audited"
   },
   "models/econ_neuroscience.py": {
@@ -8561,13 +8651,31 @@
   "models/eczema_studies.py": {
    "status": "audited"
   },
+  "models/edf_scheduler.py": {
+   "status": "audited"
+  },
+  "models/edf_tests.py": {
+   "status": "audited"
+  },
   "models/edge_elements.py": {
+   "status": "audited"
+  },
+  "models/edge_stability.py": {
+   "status": "audited"
+  },
+  "models/edgeworth.py": {
    "status": "audited"
   },
   "models/edimmu_qa_studies.py": {
    "status": "audited"
   },
+  "models/edit_distance.py": {
+   "status": "audited"
+  },
   "models/editorial_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/edm_karras.py": {
    "status": "audited"
   },
   "models/education_5.py": {
@@ -8583,6 +8691,12 @@
    "status": "audited"
   },
   "models/eells_sampson.py": {
+   "status": "audited"
+  },
+  "models/ef_game.py": {
+   "status": "audited"
+  },
+  "models/ef_game_toy.py": {
    "status": "audited"
   },
   "models/effect_qa_studies.py": {

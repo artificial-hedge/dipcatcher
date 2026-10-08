@@ -71,8 +71,14 @@ def bench_dr3_reg(seed: int = 923, steps: int = 2500, lam: float = 0.1) -> dict[
         st, r = _env_step(st, a, rng)
         tot += r
         n += 1
+    tot_r, n_r = 0.0, 0
+    st = np.zeros(4)
+    for _ in range(200):
+        st, r = _env_step(st, float(rng.uniform(-1.0, 1.0)), rng)
+        tot_r += r
+        n_r += 1
     return {
         "synthetic_dr3_mean_reward": tot / n,
-        "synthetic_dr3_random_reward": -0.2,
+        "synthetic_dr3_random_reward": tot_r / n_r,
         "synthetic_torch_available": 1.0,
     }

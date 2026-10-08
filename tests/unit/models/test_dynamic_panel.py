@@ -61,3 +61,37 @@ class TestArellanoBond:
             arellano_bond(np.ones((3, 3)))
         with pytest.raises(ValueError):
             arellano_bond(np.full((20, 10), np.nan))
+
+
+class TestAHCovariance:
+    def test_se_matches_iv_covariance(self):
+        """The just-identified IV covariance is
+        s2 * (Z'W)^{-1} Z'Z (W'Z)^{-1} — the second factor must be the
+        transpose of the first (Z'W is asymmetric once X is present)."""
+        rng = np.random.default_rng(11)
+        n, t = 80, 40
+        a = rng.normal(size=n)
+        X = rng.normal(size=(t + 50, n, 1))
+        p = np.empty((t + 50, n))
+        p[0] = a
+        for s in range(1, t + 50):
+            p[s] = a + 0.4 * p[s - 1] + 0.9 * X[s, :, 0] + rng.normal(size=n)
+        y, Xe = p[50:], X[50:]
+        out = anderson_hsiao(y, Xe)
+
+        T, N = y.shape
+        dy = np.diff(y, axis=0)
+        dep = dy[1:].reshape(-1)
+        dyl = dy[:-1].reshape(-1)
+        inst = y[:-2].reshape(-1)
+        dx = np.diff(Xe[:, :, 0], axis=0)[1:].reshape(-1)
+        W = np.column_stack([dyl, dx])
+        Z = np.column_stack([inst, dx])
+        zw_inv = np.linalg.inv(Z.T @ W)
+        beta = zw_inv @ (Z.T @ dep)
+        u = dep - W @ beta
+        s2 = float(u @ u / max(dep.size - 2, 1))
+        cov_ref = s2 * zw_inv @ (Z.T @ Z) @ zw_inv.T
+        se_ref = np.sqrt(np.diag(cov_ref))
+        np.testing.assert_allclose(np.asarray(out["se"]), se_ref, rtol=1e-8)
+        assert np.all(np.asarray(out["se"]) > 0)

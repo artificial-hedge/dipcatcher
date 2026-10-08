@@ -61,3 +61,16 @@ def test_fail_closed_constant():
 def test_bench():
     out = bench_e_divisive()
     assert out["synthetic_score"] == 1.0
+
+
+def test_right_edge_boundary_admissible():
+    """A split leaving exactly min_seg on the right is a valid
+    boundary — the candidate loop must include t = n - min_seg
+    (it previously stopped one early, asymmetric vs the left edge)."""
+    x = np.zeros((200, 1))
+    x[190:] = 5.0
+    from quant_fund.models.e_divisive import _best_split
+
+    t, d = _best_split(x, 0, 200, 10)
+    assert t == 190
+    assert d > 0

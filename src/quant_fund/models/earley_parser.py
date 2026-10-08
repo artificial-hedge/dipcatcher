@@ -26,6 +26,36 @@ def earley_accepts(grammar: list[Rule], start: str, tokens: list[str]) -> bool:
     for i in range(n + 1):
         agenda = list(chart[i])
         seen = set(chart[i])
+        # Completed items with origin == i, by lhs. A completed item's
+        # forward pass only sees waiters present when it pops — waiters
+        # added to chart[i] afterwards must complete against these.
+        done_i: dict[str, list[tuple[int, int, int]]] = {}
+        for ri0, dot0, org0 in chart[i]:
+            if org0 == i and dot0 == len(grammar[ri0][1]):
+                done_i.setdefault(grammar[ri0][0], []).append((ri0, dot0, org0))
+
+        def add_item(
+            ni: tuple[int, int, int],
+            i: int = i,
+            agenda: list[tuple[int, int, int]] = agenda,
+            seen: set[tuple[int, int, int]] = seen,
+            done_i: dict[str, list[tuple[int, int, int]]] = done_i,
+        ) -> None:
+            if ni in seen:
+                return
+            seen.add(ni)
+            chart[i].add(ni)
+            agenda.append(ni)
+            ri2, dot2, org2 = ni
+            lhs2, rhs2 = grammar[ri2]
+            if org2 != i:
+                return
+            if dot2 == len(rhs2):
+                done_i.setdefault(lhs2, []).append(ni)
+            elif rhs2[dot2] in rules_by_lhs:
+                for _ci in done_i.get(rhs2[dot2], ()):
+                    add_item((ri2, dot2 + 1, org2))
+
         while agenda:
             item = agenda.pop()
             ri, dot, org = item
@@ -34,11 +64,7 @@ def earley_accepts(grammar: list[Rule], start: str, tokens: list[str]) -> bool:
                 sym = rhs[dot]
                 if sym in rules_by_lhs:  # nonterminal → predict
                     for r in rules_by_lhs[sym]:
-                        ni = (grammar.index(r), 0, i)
-                        if ni not in seen:
-                            seen.add(ni)
-                            chart[i].add(ni)
-                            agenda.append(ni)
+                        add_item((grammar.index(r), 0, i))
                 else:  # terminal → scan
                     if i < n and tokens[i] == sym:
                         ni = (ri, dot + 1, org)
@@ -48,11 +74,7 @@ def earley_accepts(grammar: list[Rule], start: str, tokens: list[str]) -> bool:
                 for rj, dj, oj in list(chart[org]):
                     lhs2, rhs2 = grammar[rj]
                     if dj < len(rhs2) and rhs2[dj] == lhs:
-                        ni = (rj, dj + 1, oj)
-                        if ni not in seen:
-                            seen.add(ni)
-                            chart[i].add(ni)
-                            agenda.append(ni)
+                        add_item((rj, dj + 1, oj))
     return any(
         grammar[ri][0] == start and dot == len(grammar[ri][1]) and org == 0
         for (ri, dot, org) in chart[n]

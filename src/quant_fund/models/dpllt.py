@@ -42,16 +42,22 @@ def solve(
     clauses: CNF,
     n_atoms: int,
     theory_ok: Any,
-    depth: int = 12,
+    depth: int | None = None,
 ) -> dict[int, bool] | None:
     """DPLL(T): search Boolean assignment; check theory consistency on partials.
 
     theory_ok(partial_assign) -> True if theory-consistent so far, False to
     prune (a real solver would return a lemma clause; we just backtrack).
+
+    ``depth`` bounds the decision recursion; when the bound is hit the
+    result is honestly inconclusive and a ``RuntimeError`` is raised —
+    returning ``None`` would silently claim UNSAT for an unexplored subtree.
     """
     assign, conflict = _unit_prop(clauses, {})
     if conflict:
         return None
+    if depth is None:
+        depth = max(2 * n_atoms + 2, 12)
     return _search(clauses, assign, n_atoms, theory_ok, depth)
 
 
@@ -59,7 +65,7 @@ def _search(
     clauses: CNF, assign: dict[int, bool], n_atoms: int, theory_ok: Any, depth: int
 ) -> dict[int, bool] | None:
     if depth <= 0:
-        return None
+        raise RuntimeError("dpllt search depth exhausted — result inconclusive")
     if not theory_ok(assign):
         return None
     if len(assign) == n_atoms:

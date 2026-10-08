@@ -69,7 +69,7 @@ def anderson_hsiao(y: Array, X: Array | None = None) -> dict[str, Array | float]
     u = dep_v - W @ beta
     dof = max(dep_v.size - n_reg, 1)
     s2 = float(u @ u / dof)
-    cov = s2 * zw_inv @ (Z.T @ Z) @ zw_inv
+    cov = s2 * zw_inv @ (Z.T @ Z) @ zw_inv.T
     se = np.sqrt(np.maximum(np.diag(cov), 0.0))
     return {
         "rho": float(beta[0]),

@@ -24,7 +24,12 @@ def dqds(B: np.ndarray, iters: int = 60, shift: float = 0.0) -> np.ndarray:
         q, ee = q_new, e_new
         if np.max(np.abs(ee)) < 1e-10:
             break
-    return np.sort(np.sqrt(np.abs(q)))
+    tol = 1e-9 * max(float(np.max(np.abs(q))), 1.0)
+    if float(np.min(q)) < -tol:
+        raise ValueError(
+            f"dqds diverged: negative q ({float(np.min(q)):.3e}) — shift too large or ill-conditioned"
+        )
+    return np.sort(np.sqrt(np.clip(q, 0.0, None)))
 
 
 def bench_dqds(seed: int = _SEED) -> dict[str, float]:
