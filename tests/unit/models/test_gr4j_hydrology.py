@@ -51,4 +51,6 @@ def test_nse_kge_perfect():
 
 def test_bench_hydrology():
     out = bench_hydrology()
-    assert out["synthetic_nse_self"] > 0.99
+    assert out["synthetic_nse_near_param"] > 0.99
+    assert out["synthetic_kge_near_param"] > 0.9
+    assert out["synthetic_muskingum_mass_err"] < 0.05
