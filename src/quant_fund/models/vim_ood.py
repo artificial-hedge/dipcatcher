@@ -92,7 +92,11 @@ def bench_vim_ood(
     mu = f_tr.mean(0)
     cov = np.cov((f_tr - mu).T)
     _, V = np.linalg.eigh(cov)
-    P = V[:, :8] @ V[:, :8].T  # principal subspace (top-8 of 16)
+    # eigh returns ASCENDING eigenvalues: the top-8 principal subspace is
+    # the LAST 8 columns.  V[:, :8] is the least-variance subspace, which
+    # left the ID signal itself inside the residual — the virtual logit
+    # then fired on in-distribution points.
+    P = V[:, -8:] @ V[:, -8:].T
 
     def resid(f: FloatArray) -> FloatArray:
         r = (f - mu) - (f - mu) @ P

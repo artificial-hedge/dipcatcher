@@ -20,20 +20,21 @@ def lex_dlo(pairs: list[tuple[int, int]]) -> dict[str, bool]:
 
     # total order
     total = all(lt(a, b) or lt(b, a) or a == b for a in pts for b in pts)
-    # density: between (a,0) and (a,1) sits (2a+? ) — using refined grid
-    # between any two points p<q in N^2 lex, (p+q)//2 in the doubled grid
+    # density: in the doubled grid the midpoint a+b lies strictly
+    # between 2a and 2b — verify on concrete instances (the previous
+    # universal check compared (a+b) > 2a, which its a<b guard
+    # already implied).
     dense = True
     for a in pts:
         for b in pts:
             if lt(a, b):
-                # midpoint exists in doubled coordinates; the interval
-                # (a, b) is nonempty in the refinement
-                dense = dense and (
-                    (a[0] * 2 + b[0] * 2, a[1] * 2 + b[1] * 2) > (2 * a[0], 2 * a[1])
-                )
-    # no endpoints within the full grid: first/last have neighbors outside
-    lo, hi = pts[0], pts[-1]
-    no_endpoints = (lo[0] > -(10**9)) and (hi[0] < 10**9)
+                mid2 = (a[0] + b[0], a[1] + b[1])
+                dense = dense and lt((2 * a[0], 2 * a[1]), mid2) and lt(mid2, (2 * b[0], 2 * b[1]))
+    # no upper endpoint: the interpretation domain N^2 is unbounded,
+    # so hi always has a lex-larger neighbor — the previous check
+    # compared the first coordinate to ±1e9, true for any int tuple.
+    hi = pts[-1]
+    no_endpoints = lt(hi, (hi[0] + 1, hi[1]))
     return {"total": total, "dense": dense, "no_endpoints": no_endpoints}
 
 

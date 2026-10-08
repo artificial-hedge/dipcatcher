@@ -29,6 +29,9 @@ def bench_vrnn_seq(seed: int = 739, steps: int = 2200, T: int = 16) -> dict[str,
         xs[i] = 0.75 * xs[i - 1] + vol[i] * rng.standard_normal()
     X = torch.tensor(xs[:-1]).float().reshape(-1, T, 1)
     nseq = X.shape[0]
+    # hold out the tail sequences for eval — they are excluded from the
+    # training sampler below (previously eval re-used train sequences).
+    n_te = max(5, nseq // 5)
     H, Z = 24, 4
     prior = torch.nn.Sequential(torch.nn.Linear(H, 16), torch.nn.ReLU(), torch.nn.Linear(16, 2 * Z))
     enc = torch.nn.Sequential(
@@ -44,7 +47,7 @@ def bench_vrnn_seq(seed: int = 739, steps: int = 2200, T: int = 16) -> dict[str,
         lr=0.01,
     )
     for _ in range(steps):
-        k = int(rng.integers(0, nseq))
+        k = int(rng.integers(0, nseq - n_te))
         x_seq = X[k : k + 1]
         h0 = torch.zeros(1, 1, H)
         hs, zs = [], []
@@ -73,10 +76,10 @@ def bench_vrnn_seq(seed: int = 739, steps: int = 2200, T: int = 16) -> dict[str,
         opt.zero_grad()
         loss.backward()
         opt.step()
-    # eval: one-step NLL
+    # eval: one-step NLL on the held-out tail only.
     nll = torch.tensor(0.0)
     with torch.no_grad():
-        for k in range(20):
+        for k in range(nseq - n_te, nseq):
             x_seq = X[k : k + 1]
             h0 = torch.zeros(1, 1, H)
             for t in range(T - 1):

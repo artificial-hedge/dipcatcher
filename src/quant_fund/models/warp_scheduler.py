@@ -36,6 +36,19 @@ def bench_warp_scheduler(seed: int = _SEED) -> dict[str, float]:
         out = schedule(instr)
         issued = sum(len(x) for x in out)
         total = sum(len(x) for x in instr)
-        # invariant: all instructions issued, at most one per cycle
-        ok += float(issued == total and all(len(x) <= 1 for x in out))
+        # invariants: all instructions issued, at most one per cycle,
+        # AND each warp's issue times respect its per-instruction
+        # latencies — the previous total/count checks hold by
+        # construction of the loop itself.
+        order_ok = issued == total and all(len(x) <= 1 for x in out)
+        times: dict[int, list[int]] = {}
+        for c, ws in enumerate(out):
+            for w_ in ws:
+                times.setdefault(w_, []).append(c)
+        lat_ok = all(
+            ts[i + 1] - ts[i] >= instr[w_][i]
+            for w_, ts in times.items()
+            for i in range(len(ts) - 1)
+        )
+        ok += float(order_ok and lat_ok)
     return {"synthetic_warp_issues_all": ok / trials}

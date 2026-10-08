@@ -24929,6 +24929,12 @@
   "models/vector_mart.py": {
    "status": "audited"
   },
+  "models/vector_neurons.py": {
+   "status": "audited"
+  },
+  "models/vectorized_exec.py": {
+   "status": "audited"
+  },
   "models/vedmak_qa_studies.py": {
    "status": "audited"
   },
@@ -24962,10 +24968,16 @@
   "models/verifier_gated_studies.py": {
    "status": "audited"
   },
+  "models/verifier_prm.py": {
+   "status": "audited"
+  },
   "models/verifier_reward_studies.py": {
    "status": "audited"
   },
   "models/verity_gray.py": {
+   "status": "audited"
+  },
+  "models/verlet_cloth.py": {
    "status": "audited"
   },
   "models/verma_module.py": {
@@ -25028,6 +25040,15 @@
   "models/vibrational_spectra.py": {
    "status": "audited"
   },
+  "models/vibroseis_sweep.py": {
+   "status": "audited"
+  },
+  "models/vickrey_auction.py": {
+   "status": "audited"
+  },
+  "models/vicreg.py": {
+   "status": "audited"
+  },
   "models/victimology.py": {
    "status": "audited"
   },
@@ -25064,10 +25085,19 @@
   "models/vidyadhara_qa_studies.py": {
    "status": "audited"
   },
+  "models/viewstamped.py": {
+   "status": "audited"
+  },
   "models/viklund_sle.py": {
    "status": "audited"
   },
   "models/vila_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/vim_ood.py": {
+   "status": "audited"
+  },
+  "models/vine_audit.py": {
    "status": "audited"
   },
   "models/vine_copula.py": {
@@ -25118,6 +25148,9 @@
   "models/virtual_hodge.py": {
    "status": "audited"
   },
+  "models/virtual_node.py": {
+   "status": "audited"
+  },
   "models/virtual_pull.py": {
    "status": "audited"
   },
@@ -25160,10 +25193,19 @@
   "models/visual_web_studies.py": {
    "status": "audited"
   },
+  "models/vit_classifier.py": {
+   "status": "audited"
+  },
   "models/vitali_conv.py": {
    "status": "audited"
   },
+  "models/vitali_set.py": {
+   "status": "audited"
+  },
   "models/viterbi_decode.py": {
+   "status": "audited"
+  },
+  "models/viterbi_vad.py": {
    "status": "audited"
   },
   "models/vitiligo_studies.py": {
@@ -25178,6 +25220,9 @@
   "models/vla_model_studies.py": {
    "status": "audited"
   },
+  "models/vlan_tag.py": {
+   "status": "audited"
+  },
   "models/vlasov_eq.py": {
    "status": "audited"
   },
@@ -25187,7 +25232,13 @@
   "models/vlur_studies.py": {
    "status": "audited"
   },
+  "models/vmd.py": {
+   "status": "audited"
+  },
   "models/vns_search.py": {
+   "status": "audited"
+  },
+  "models/vocab_interp.py": {
    "status": "audited"
   },
   "models/vocational_education.py": {
@@ -25280,6 +25331,18 @@
   "models/vpin.py": {
    "status": "audited"
   },
+  "models/vq_vae_ts.py": {
+   "status": "audited"
+  },
+  "models/vqd_states.py": {
+   "status": "audited"
+  },
+  "models/vqe_ising.py": {
+   "status": "audited"
+  },
+  "models/vrnn_seq.py": {
+   "status": "audited"
+  },
   "models/vsi_bench_studies.py": {
    "status": "audited"
   },
@@ -25295,16 +25358,28 @@
   "models/vuong_test.py": {
    "status": "audited"
   },
+  "models/vz_raytrace.py": {
+   "status": "audited"
+  },
   "models/wagner_platen.py": {
    "status": "audited"
   },
+  "models/wagner_whitin.py": {
+   "status": "audited"
+  },
   "models/wakwak_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/wal_recovery.py": {
    "status": "audited"
   },
   "models/wald_sprt.py": {
    "status": "audited"
   },
   "models/waldhausen_k.py": {
+   "status": "audited"
+  },
+  "models/walksat.py": {
    "status": "audited"
   },
   "models/wall_turbulence.py": {
@@ -25331,6 +25406,9 @@
   "models/wan_sss.py": {
    "status": "audited"
   },
+  "models/wand_bmw.py": {
+   "status": "audited"
+  },
   "models/wang_landau.py": {
    "status": "audited"
   },
@@ -25343,7 +25421,13 @@
   "models/warbler_qa_studies.py": {
    "status": "audited"
   },
+  "models/wardrop.py": {
+   "status": "audited"
+  },
   "models/warehousing_2.py": {
+   "status": "audited"
+  },
+  "models/warp_scheduler.py": {
    "status": "audited"
   },
   "models/warthog_qa_studies.py": {
@@ -25389,6 +25473,9 @@
    "status": "audited"
   },
   "models/watermark_studies.py": {
+   "status": "audited"
+  },
+  "models/watershed_seg.py": {
    "status": "audited"
   },
   "models/watson.py": {
