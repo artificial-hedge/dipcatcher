@@ -424,10 +424,14 @@ def load_config(path: Path) -> Config:
         packages = _str_list(item.get("packages", []), f"layers[{i}].packages")
         if not isinstance(name, str):
             raise ValueError(f"layers[{i}]: missing string 'name'")
-        dup = seen_packages & set(packages)
+        package_set = set(packages)
+        if len(package_set) != len(packages):
+            repeated = sorted({package for package in packages if packages.count(package) > 1})
+            raise ValueError(f"layers[{i}]: duplicate packages: {repeated}")
+        dup = seen_packages & package_set
         if dup:
             raise ValueError(f"layers[{i}]: packages claimed twice: {sorted(dup)}")
-        seen_packages |= set(packages)
+        seen_packages |= package_set
         layers.append(Layer(name, frozenset(packages)))
 
     denies = tuple(

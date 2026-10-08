@@ -317,6 +317,16 @@ class TestConfigLoading(unittest.TestCase):
             with self.assertRaises(ValueError):
                 checker.load_config(Path(tmp) / "missing.toml")
 
+    def test_duplicate_package_in_one_layer_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bad = Path(tmp) / "duplicate.toml"
+            bad.write_text(
+                '[[layers]]\nname = "research"\npackages = ["research", "research"]\n',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "duplicate packages: \\['research'\\]"):
+                checker.load_config(bad)
+
 
 class TestEndToEnd(unittest.TestCase):
     """run() against a synthetic tree + generated config."""
