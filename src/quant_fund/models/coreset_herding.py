@@ -13,6 +13,23 @@ from sklearn.linear_model import LogisticRegression
 from quant_fund.models._data_synth import synth_dataset
 
 
+def _herd_select(x_pool: np.ndarray, k: int) -> list[int]:
+    """Greedy herding (Welling 2009): each pick maximizes the inner product
+    with the residual target-mean minus running-selected-mean, so the
+    coreset's mean tracks the pool mean."""
+    mu = x_pool.mean(0)
+    sel: list[int] = []
+    mean = np.zeros(x_pool.shape[1])
+    for _j in range(k):
+        residual = mu - mean
+        scores = x_pool @ residual
+        scores[sel] = -np.inf
+        i = int(np.argmax(scores))
+        sel.append(i)
+        mean = x_pool[sel].mean(0)
+    return sel
+
+
 def bench_coreset_herding(
     seed: int = 307,
     n: int = 600,
@@ -23,19 +40,7 @@ def bench_coreset_herding(
     cut = n // 2
     x_tr, y_tr = x[:cut], y[:cut]
     x_te, y_te = x[cut:], y[cut:]
-    # herding: pick samples minimizing running mean residual per class
-    sel: list[int] = []
-    mean = np.zeros(8)
-    for _j in range(k):
-        err = (x_tr - mean[None, :]) ** 2
-        i = int(np.argmin(np.abs(err.sum(-1) - err.sum(-1).min()) - err.sum(-1).min()))
-        # true herding: argmax inner product with residual
-        residual = mean - x_tr.mean(0)
-        scores = x_tr @ residual
-        scores[sel] = -np.inf
-        i = int(np.argmax(scores))
-        sel.append(i)
-        mean = x_tr[sel].mean(0)
+    sel = _herd_select(x_tr, k)
     acc_h = LogisticRegression(max_iter=300).fit(x_tr[sel], y_tr[sel]).score(x_te, y_te)
     accs = []
     for s in range(5):

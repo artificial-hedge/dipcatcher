@@ -30,7 +30,10 @@ def convex_hull(P: FloatArray) -> FloatArray:
     others = np.delete(pts, start, axis=0)
     ang = np.arctan2(others[:, 1] - anchor[1], others[:, 0] - anchor[0])
     dist = np.sum((others - anchor) ** 2, axis=1)
-    order = np.lexsort((-dist, ang))
+    # equal angle -> nearest first so the farther point pops it later
+    # (descending order would leave the nearer point on the hull and drop
+    # the true extreme vertex of the minimum-angle ray).
+    order = np.lexsort((dist, ang))
     others = others[order]
     hull = [anchor, others[0]]
     for p in others[1:]:

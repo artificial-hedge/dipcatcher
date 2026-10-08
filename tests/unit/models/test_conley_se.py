@@ -63,6 +63,19 @@ def test_validation() -> None:
         conley_vcov(x, e * np.nan, c, cutoff=10.0)
 
 
+def test_nonfinite_coord_fails_closed() -> None:
+    # coord finiteness was unchecked: a NaN coordinate silently produced a
+    # NaN vcov instead of raising like non-finite x/e do.
+    rng = np.random.default_rng(0)
+    n = 60
+    x = np.column_stack([np.ones(n), rng.normal(0, 1, n)])
+    e = rng.normal(0, 1, n)
+    c = rng.uniform(0, 50, n)
+    c[10] = np.nan
+    with pytest.raises(ValueError):
+        conley_vcov(x, e, c, cutoff=10.0)
+
+
 def test_bench() -> None:
     out = bench_conley_se()
     assert out["synthetic_detects"] == 1.0

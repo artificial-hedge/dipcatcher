@@ -38,7 +38,9 @@ def enet_fit(
         delta = 0.0
         r = y - x @ beta
         for j in range(p):
-            rho = beta[j] * x2[j] - lam * (1 - alpha) + (x[:, j] @ r) / n
+            # rho_j = (x_j' r)/n + beta_j * mean(x_j^2)  (partial residual);
+            # the ridge shift lam(1-alpha) belongs only in the x2 divisor.
+            rho = beta[j] * (x2[j] - lam * (1 - alpha)) + (x[:, j] @ r) / n
             new = _soft(rho, lam * alpha) / x2[j]
             r += x[:, j] * (beta[j] - new)
             delta = max(delta, abs(new - beta[j]))

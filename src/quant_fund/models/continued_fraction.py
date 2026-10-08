@@ -39,6 +39,8 @@ def convergent(cf0: int, period: list[int], k: int) -> tuple[int, int]:
 
 def pell_min(d: int) -> tuple[int, int]:
     """Minimal x,y > 0 with x² - d·y² = 1 (d nonsquare)."""
+    if d < 1 or isqrt(d) ** 2 == d:
+        raise ValueError("d must be a positive nonsquare integer")
     a0, period = sqrt_cf(d)
     r = len(period)
     # minimal solution is convergent at index r-1 (r even) or 2r-1 (r odd)

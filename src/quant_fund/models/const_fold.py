@@ -23,6 +23,8 @@ def fold(stmts: list[Stmt]) -> dict[str, int]:
         if st[1] == "const":
             env[name] = int(st[2])
             continue
+        if st[1] not in ("add", "mul"):
+            raise ValueError(f"unsupported op {st[1]!r}")
         a, b = val(st[2]), val(st[3])
         if a is not None and b is not None:
             env[name] = a + b if st[1] == "add" else a * b

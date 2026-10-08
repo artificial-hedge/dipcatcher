@@ -39,6 +39,17 @@ class CtxPTA:
 
     def solve(self, entry: str) -> None:
         wl: list[tuple[Ctx, str]] = [((), entry)]
+        # (callee, callee_ctx, callee_ret_var) -> caller frames whose call
+        # targets read that return var. A callee's return points-to set can
+        # grow after the caller's last visit (the caller re-runs only when
+        # its own facts grow), so growth must re-queue the waiting callers.
+        ret_watchers: dict[tuple[str, Ctx, str], set[tuple[Ctx, str]]] = {}
+
+        def notify(gfn: str, gctx: Ctx, var: str) -> None:
+            for wctx, wfn in ret_watchers.get((gfn, gctx, var), ()):
+                if (wctx, wfn) not in wl:
+                    wl.append((wctx, wfn))
+
         while wl:
             ctx, fn = wl.pop()
             f = self.funcs[fn]
@@ -46,12 +57,14 @@ class CtxPTA:
                 obj = f"&{o}"
                 if obj not in self.pts.get((ctx, v), set()):
                     self.pts.setdefault((ctx, v), set()).add(obj)
+                    notify(fn, ctx, v)
                     wl.append((ctx, fn))
             for d, s in f["copies"]:
                 src = self.pts.get((ctx, s), set())
                 tgt = self.pts.setdefault((ctx, d), set())
                 if not src <= tgt:
                     tgt |= src
+                    notify(fn, ctx, d)
                     wl.append((ctx, fn))
             for site, callee, args, retv in f["calls"]:
                 nctx = self._ctx(ctx, site)
@@ -62,13 +75,16 @@ class CtxPTA:
                     tgt = self.pts.setdefault((nctx, fm), set())
                     if not src <= tgt:
                         tgt |= src
+                        notify(callee, nctx, fm)
                         wl.append((nctx, callee))
                 # return
                 if cal["ret"] is not None:
+                    ret_watchers.setdefault((callee, nctx, cal["ret"]), set()).add((ctx, fn))
                     rs = self.pts.get((nctx, cal["ret"]), set())
                     tgt = self.pts.setdefault((ctx, retv), set())
                     if not rs <= tgt:
                         tgt |= rs
+                        notify(fn, ctx, retv)
                         wl.append((ctx, fn))
                 # callee body may need a re-visit under this ctx anyway
                 if (nctx, callee) not in wl:

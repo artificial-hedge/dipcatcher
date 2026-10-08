@@ -6,8 +6,15 @@ Topo = frozenset[frozenset[int]]
 
 
 def seq_converges(seq: list[int], limit: int, opens: Topo) -> bool:
-    """x_n -> L iff for every open U containing L, seq eventually in U."""
-    return all(not (limit in u and not all(x in u for x in seq)) for u in opens)
+    """x_n -> L iff for every open U containing L, seq eventually in U.
+
+    "Eventually" means a tail lies inside U; for a finite list the shortest
+    tail is the last element, so earlier terms are irrelevant — a sequence
+    that ends at x_last converges to every limit sharing x_last's opens."""
+    if not seq:
+        return True
+    last = seq[-1]
+    return all(last in u for u in opens if limit in u)
 
 
 def all_limits(seq: list[int], univ: frozenset[int], opens: Topo) -> frozenset[int]:

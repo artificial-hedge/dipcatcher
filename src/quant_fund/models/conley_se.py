@@ -59,7 +59,7 @@ def conley_vcov(
         raise ValueError("coord (n,) or (n,2) required")
     if cutoff <= 0:
         raise ValueError("positive cutoff required")
-    if not np.all(np.isfinite(xx)) or not np.all(np.isfinite(e)):
+    if not np.all(np.isfinite(xx)) or not np.all(np.isfinite(e)) or not np.all(np.isfinite(c)):
         raise ValueError("finite inputs required")
     d = np.sqrt(np.sum((c[:, None, :] - c[None, :, :]) ** 2, axis=2))
     w = _bartlett(d / cutoff)

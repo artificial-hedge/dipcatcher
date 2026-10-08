@@ -5687,13 +5687,25 @@
   "models/conformal_pid.py": {
    "status": "audited"
   },
+  "models/conformal_rank.py": {
+   "status": "audited"
+  },
   "models/conformal_transfer.py": {
    "status": "audited"
   },
   "models/conger_qa_studies.py": {
    "status": "audited"
   },
+  "models/congruence_closure.py": {
+   "status": "audited"
+  },
+  "models/congruence_lattice.py": {
+   "status": "audited"
+  },
   "models/coniveau_fil.py": {
+   "status": "audited"
+  },
+  "models/conjugacy_classes.py": {
    "status": "audited"
   },
   "models/conjugate_fil.py": {
@@ -5705,7 +5717,22 @@
   "models/conjugate_grad_ls.py": {
    "status": "audited"
   },
+  "models/conjugate_gradient.py": {
+   "status": "audited"
+  },
   "models/conjugate_opt.py": {
+   "status": "audited"
+  },
+  "models/conley_se.py": {
+   "status": "audited"
+  },
+  "models/connected_space.py": {
+   "status": "audited"
+  },
+  "models/connectedness.py": {
+   "status": "audited"
+  },
+  "models/connection_form.py": {
    "status": "audited"
   },
   "models/connective_e_ring.py": {
@@ -5730,6 +5757,18 @@
    "status": "audited"
   },
   "models/conservation_biology.py": {
+   "status": "audited"
+  },
+  "models/consistency_ts.py": {
+   "status": "audited"
+  },
+  "models/consistency_vote.py": {
+   "status": "audited"
+  },
+  "models/consistent_hash.py": {
+   "status": "audited"
+  },
+  "models/const_fold.py": {
    "status": "audited"
   },
   "models/constitutional_ai_studies.py": {
@@ -5786,13 +5825,28 @@
   "models/context_compression_studies.py": {
    "status": "audited"
   },
+  "models/context_pta.py": {
+   "status": "audited"
+  },
+  "models/contextual_bandits.py": {
+   "status": "audited"
+  },
   "models/continental_philosophy.py": {
+   "status": "audited"
+  },
+  "models/contingency.py": {
+   "status": "audited"
+  },
+  "models/continual_learning.py": {
    "status": "audited"
   },
   "models/continuation_bvp.py": {
    "status": "audited"
   },
   "models/continued_frac2.py": {
+   "status": "audited"
+  },
+  "models/continued_fraction.py": {
    "status": "audited"
   },
   "models/continuous_batching_studies.py": {
@@ -5807,6 +5861,9 @@
   "models/contraception_studies.py": {
    "status": "audited"
   },
+  "models/contract_check.py": {
+   "status": "audited"
+  },
   "models/contract_law.py": {
    "status": "audited"
   },
@@ -5816,7 +5873,16 @@
   "models/contraction_op.py": {
    "status": "audited"
   },
+  "models/contrastive_divergence.py": {
+   "status": "audited"
+  },
+  "models/contrastive_repr.py": {
+   "status": "audited"
+  },
   "models/control_eval_studies.py": {
+   "status": "audited"
+  },
+  "models/control_function.py": {
    "status": "audited"
   },
   "models/control_systems.py": {
@@ -5837,10 +5903,25 @@
   "models/conv_finqa_studies.py": {
    "status": "audited"
   },
+  "models/conv_interleaver.py": {
+   "status": "audited"
+  },
+  "models/conv_prob.py": {
+   "status": "audited"
+  },
+  "models/conv_sum.py": {
+   "status": "audited"
+  },
+  "models/convergence_space.py": {
+   "status": "audited"
+  },
   "models/convergence_theory.py": {
    "status": "audited"
   },
   "models/converse_thm.py": {
+   "status": "audited"
+  },
+  "models/convex_hull.py": {
    "status": "audited"
   },
   "models/convex_hull_3d.py": {
@@ -5855,7 +5936,22 @@
   "models/convex_surface.py": {
    "status": "audited"
   },
+  "models/convexity_adj.py": {
+   "status": "audited"
+  },
+  "models/convnet_baseline.py": {
+   "status": "audited"
+  },
+  "models/convnp.py": {
+   "status": "audited"
+  },
   "models/convoy_net.py": {
+   "status": "audited"
+  },
+  "models/coord_descent.py": {
+   "status": "audited"
+  },
+  "models/coordinate_descent_enet.py": {
    "status": "audited"
   },
   "models/coot_qa_studies.py": {
@@ -5877,6 +5973,9 @@
    "status": "audited"
   },
   "models/copula_gauss.py": {
+   "status": "audited"
+  },
+  "models/copula_mi.py": {
    "status": "audited"
   },
   "models/copula_t.py": {
@@ -5906,6 +6005,12 @@
   "models/core_model.py": {
    "status": "audited"
   },
+  "models/coreset_herding.py": {
+   "status": "audited"
+  },
+  "models/coreset_kcenter.py": {
+   "status": "audited"
+  },
   "models/coriander_qa_studies.py": {
    "status": "audited"
   },
@@ -5931,6 +6036,15 @@
    "status": "audited"
   },
   "models/corpus_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/corradi_swanson.py": {
+   "status": "audited"
+  },
+  "models/correspondence_analysis.py": {
+   "status": "audited"
+  },
+  "models/corrupt_bandit.py": {
    "status": "audited"
   },
   "models/corruption_studies.py": {
