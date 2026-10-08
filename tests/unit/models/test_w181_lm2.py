@@ -12,7 +12,7 @@ from quant_fund.models.xlstm_mlstm import bench_xlstm_mlstm
 
 class TestMamba2:
     def test_bench(self) -> None:
-        out = bench_mamba2_ssd(seed=3, iters=60)
+        out = bench_mamba2_ssd(seed=3, iters=400)
         assert 0.0 <= out["synthetic_mamba2_recall"] <= 1.0
 
 

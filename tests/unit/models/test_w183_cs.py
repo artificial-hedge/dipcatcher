@@ -35,7 +35,7 @@ class TestDagma:
 
 class TestGolem:
     def test_bench(self) -> None:
-        out = bench_golem_ev(seed=7, steps=120)
+        out = bench_golem_ev(seed=7, steps=500)
         assert out["synthetic_golem_shd"] >= 0
 
 
