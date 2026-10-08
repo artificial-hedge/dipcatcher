@@ -124,9 +124,7 @@ def bench_gf2_factor(seed: int = 20261231 + 233) -> dict[str, float]:
     # irreducible x^3+x+1 = 0b1011 should return itself
     irred = 0b1011
     facs2 = berlekamp(irred)
-    ok2 = (
-        facs2 == [irred] or gf2_mul(1, 1) == 1 and all(gf2_mod(irred, t) != 0 for t in (0b10, 0b11))
-    )
+    ok2 = facs2 == [irred]
     # square: (x+1)^2 = x²+1 over GF(2) → repeated factor handling
     sq = gf2_mul(0b11, 0b11)
     d = gf2_gcd(sq, 0b10)  # derivative of x²+1 is 0 → inseparable; use trial
@@ -146,9 +144,15 @@ def bench_gf2_factor(seed: int = 20261231 + 233) -> dict[str, float]:
         for g in got:
             back = gf2_mul(back, g)
         agree += int(back == fp)
-    return {
+    out = {
         "synthetic_factors": float(len(facs)),
         "synthetic_product_ok": float(ok1),
         "synthetic_irred_ok": float(ok2),
         "synthetic_agree": float(agree / trials),
     }
+    # Berlekamp is exact on squarefree GF(2) inputs: the (x+1)(x^2+x+1)
+    # split, irreducible self-return, and factor-product reconstruction
+    # must all hold
+    if not ok1 or not ok2 or out["synthetic_agree"] < 1.0:
+        raise ValueError(f"berlekamp broken: {out}")
+    return out

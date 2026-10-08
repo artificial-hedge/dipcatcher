@@ -121,9 +121,15 @@ def bench_gen_gc(seed: int = _SEED) -> dict[str, float]:
     expected = gc2._mark_from(set(gc2.roots), 1)
     gc2.major_collect()
     major_ok = int(set(gc2.objs) == expected)
-    return {
+    out = {
         "synthetic_preserved": float(preserved),
         "synthetic_promoted": float(promoted_ok),
         "synthetic_garbage_collected": float(collected == 60),
         "synthetic_major_preserves_reachable": float(major_ok),
     }
+    # collector invariants: the write barrier must preserve every
+    # old→young reachable object, survivors promote, only true garbage
+    # is freed, and the major collection matches full reachability
+    if min(out.values()) < 1.0:
+        raise ValueError(f"gen-gc invariant broken: {out}")
+    return out

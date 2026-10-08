@@ -165,4 +165,9 @@ def bench_gjk_epa(seed: int = 20261231 + 862) -> dict[str, float]:
             checks += float(epa_depth(p1, p2) == 0.0)
         else:
             checks += float(epa_depth(p1, p2) >= 0.0)
-    return {"synthetic_gjk_epa": checks / total}
+    frac = checks / total
+    # exact polygon distance must agree with the dense-sampling oracle
+    # on every pair — distance queries have no slack
+    if frac < 1.0:
+        raise ValueError(f"gjk/epa off: {checks}/{total}")
+    return {"synthetic_gjk_epa": frac}

@@ -84,4 +84,13 @@ def bench_gardner(seed: int = 20261231) -> dict[str, float]:
         np.mean(dec0[st : len(dec0)] != bits[st : len(dec0)])
     )
     out["synthetic_gardner_mu_std"] = float(np.std(mu[st:]))
+    # the TED loop exists to close the ISI BER vs the pinned-offset
+    # baseline: recovered stream must beat the unsynchronized decoder
+    # and approach the aligned control at this SNR
+    if out["synthetic_gardner_ber"] > 0.05:
+        raise ValueError(f"gardner ber high: {out['synthetic_gardner_ber']}")
+    if out["synthetic_gardner_gain"] <= 0:
+        raise ValueError("gardner not better than unsynchronized")
+    if out["synthetic_gardner_aligned_ber"] > 0.05:
+        raise ValueError(f"aligned ber high: {out['synthetic_gardner_aligned_ber']}")
     return out

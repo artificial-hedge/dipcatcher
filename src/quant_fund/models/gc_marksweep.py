@@ -59,8 +59,14 @@ def bench_gc_marksweep(seed: int = 20261231 + 414) -> dict[str, float]:
         # second collection on compacted graph is stable
         cp2 = copy_gc(cp, [0])
         stable += int(len(mark(cp, [0])) == len(live) and set(cp2) == set(cp))
-    return {
+    out = {
         "synthetic_frees_unreachable": float(free_exact / trials),
         "synthetic_copy_compacts": float(compact / trials),
         "synthetic_double_gc_stable": float(stable / trials),
     }
+    # these are collector invariants, not noisy estimates — freeing
+    # exactly the unreachable set, contiguous compaction, and
+    # idempotent re-collection must all hold on every trial
+    if min(out.values()) < 1.0:
+        raise ValueError(f"gc invariant broken: {out}")
+    return out

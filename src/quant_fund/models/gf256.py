@@ -107,4 +107,10 @@ def bench_gf256(seed: int = 20261231) -> dict[str, float]:
     # evaluate generator at roots → all zero
     root_err = sum(abs(gf_poly_eval(g, _EXP[i])) for i in range(16))
     out["synthetic_gf_genpoly_roots"] = float(root_err)
+    # these are field axioms and exact constructions — every check is
+    # an invariant, not an estimate
+    if viol > 0 or bad > 0 or bad2 > 0:
+        raise ValueError(f"gf256 axiom failure: viol={viol} logexp={bad} fermat={bad2}")
+    if len(g) != 17 or root_err != 0:
+        raise ValueError(f"rs generator wrong: len={len(g)} root_err={root_err}")
     return out

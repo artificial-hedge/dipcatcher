@@ -57,9 +57,14 @@ def bench_gated_deltanet(seed: int = 2269, iters: int = 800, D: int = 16) -> dic
     with torch.no_grad():
         acc = (head(scan(emb(X))).argmax(-1) == Y).float().mean().item()
     base = attn_baseline(seed)
-    return {
+    out = {
         "synthetic_gdn_recall": float(acc),
         "synthetic_attn_recall": base,
         "synthetic_gdn_gain": float(acc) - base,
         "synthetic_torch_available": 1.0,
     }
+    # the delta-rule memory must learn the induction-recall task near
+    # perfectly and not lose to the attention baseline
+    if acc < 0.85 or out["synthetic_gdn_gain"] < -0.05:
+        raise ValueError(f"gated deltanet off: acc={acc:.3f} gain={out['synthetic_gdn_gain']:.3f}")
+    return out

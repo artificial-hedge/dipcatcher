@@ -220,7 +220,7 @@ def bench_gaussian_process(seed: int = 20261231 + 183) -> dict[str, float]:
     model2 = fit2["model"]
     if not (isinstance(model2, GPModel)):
         raise ValueError("isinstance(model2, GPModel)")
-    return {
+    out = {
         "synthetic_train_rmse": float(math.sqrt(float(np.mean((mu - f) ** 2)))),
         "synthetic_grid_rmse": float(math.sqrt(float(np.mean((np.asarray(pg["mean"]) - fg) ** 2)))),
         "synthetic_coverage_95": cover,
@@ -230,3 +230,15 @@ def bench_gaussian_process(seed: int = 20261231 + 183) -> dict[str, float]:
         "synthetic_lml": model.log_marginal,
         "synthetic_determinism": float(model.log_marginal == model2.log_marginal),
     }
+    # GP on a smooth signal at sigma_n=0.15 must recover the function
+    # well under the noise floor, produce calibrated-ish intervals, and
+    # recover the noise level; determinism is exact
+    if out["synthetic_grid_rmse"] > 0.2:
+        raise ValueError(f"gp fit off: {out['synthetic_grid_rmse']:.3f}")
+    if cover < 0.8 or out["synthetic_sigma_n_err"] > 0.08:
+        raise ValueError(
+            f"gp calibration off: cov={cover:.3f} sn_err={out['synthetic_sigma_n_err']:.3f}"
+        )
+    if out["synthetic_determinism"] != 1.0:
+        raise ValueError("gp fit not deterministic")
+    return out

@@ -86,10 +86,15 @@ def bench_gin_gnn(
     with torch.no_grad():
         acc_gin = float((gin_forward(xt).argmax(-1)[te_m] == yt[te_m]).float().mean())
         acc_mlp = float((mlp(xt).argmax(-1)[te_m] == yt[te_m]).float().mean())
-    return {
+    out = {
         "synthetic_gin_acc": acc_gin,
         "synthetic_gin_mlp_acc": acc_mlp,
         "synthetic_gin_acc_gain": acc_gin - acc_mlp,
         "synthetic_gin_eps1": float(eps1.detach().abs()),
         "synthetic_torch_available": 1.0,
     }
+    # GIN must learn the SBM communities and match-or-beat the
+    # graph-blind MLP it is benchmarked against
+    if acc_gin < 0.7 or out["synthetic_gin_acc_gain"] < -0.02:
+        raise ValueError(f"gin off: acc={acc_gin:.3f} gain={out['synthetic_gin_acc_gain']:.3f}")
+    return out

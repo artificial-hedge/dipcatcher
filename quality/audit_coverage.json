@@ -11177,10 +11177,28 @@
   "models/gap_buffer.py": {
    "status": "audited"
   },
+  "models/garbled_circuit.py": {
+   "status": "audited"
+  },
+  "models/garch_ext.py": {
+   "status": "audited"
+  },
+  "models/garch_in_mean.py": {
+   "status": "audited"
+  },
+  "models/garch_midas.py": {
+   "status": "audited"
+  },
   "models/garden_eel_qa_studies.py": {
    "status": "audited"
   },
   "models/gardina_asym.py": {
+   "status": "audited"
+  },
+  "models/gardner.py": {
+   "status": "audited"
+  },
+  "models/gardner_relation.py": {
    "status": "audited"
   },
   "models/gargouille_qa_studies.py": {
@@ -11204,10 +11222,16 @@
   "models/garter_qa_studies.py": {
    "status": "audited"
   },
+  "models/gas.py": {
+   "status": "audited"
+  },
   "models/gas_score.py": {
    "status": "audited"
   },
   "models/gashadokuro_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/gassmann_sub.py": {
    "status": "audited"
   },
   "models/gastroenterology.py": {
@@ -11220,6 +11244,9 @@
    "status": "audited"
   },
   "models/gastronomy_2.py": {
+   "status": "audited"
+  },
+  "models/gated_deltanet.py": {
    "status": "audited"
   },
   "models/gated_sae_studies.py": {
@@ -11240,7 +11267,13 @@
   "models/gauss_chebyshev.py": {
    "status": "audited"
   },
+  "models/gauss_curve.py": {
+   "status": "audited"
+  },
   "models/gauss_hermite.py": {
+   "status": "audited"
+  },
+  "models/gauss_iod.py": {
    "status": "audited"
   },
   "models/gauss_kronrod.py": {
@@ -11261,7 +11294,13 @@
   "models/gauss_rk.py": {
    "status": "audited"
   },
+  "models/gaussian_copula_default.py": {
+   "status": "audited"
+  },
   "models/gaussian_normalized_coords.py": {
+   "status": "audited"
+  },
+  "models/gaussian_process.py": {
    "status": "audited"
   },
   "models/gaussian_rbf.py": {
@@ -11273,7 +11312,19 @@
   "models/gazelle_qa_studies.py": {
    "status": "audited"
   },
+  "models/gc_marksweep.py": {
+   "status": "audited"
+  },
+  "models/gc_skew.py": {
+   "status": "audited"
+  },
+  "models/gcounter.py": {
+   "status": "audited"
+  },
   "models/gecko_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/gee.py": {
    "status": "audited"
   },
   "models/gee_kisin.py": {
@@ -11307,6 +11358,9 @@
    "status": "audited"
   },
   "models/gemsbok_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/gen_gc.py": {
    "status": "audited"
   },
   "models/genbu_qa_studies.py": {
@@ -11384,10 +11438,16 @@
   "models/geochronology_2.py": {
    "status": "audited"
   },
+  "models/geodesic_eq.py": {
+   "status": "audited"
+  },
   "models/geodesic_motion.py": {
    "status": "audited"
   },
   "models/geodesic_nc.py": {
+   "status": "audited"
+  },
+  "models/geodesic_sphere.py": {
    "status": "audited"
   },
   "models/geodesic_var.py": {
@@ -11483,7 +11543,19 @@
   "models/gerstner_griebel.py": {
    "status": "audited"
   },
+  "models/ges_search.py": {
+   "status": "audited"
+  },
   "models/getzler_jones.py": {
+   "status": "audited"
+  },
+  "models/geweke_spectral.py": {
+   "status": "audited"
+  },
+  "models/gf256.py": {
+   "status": "audited"
+  },
+  "models/gf2_factor.py": {
    "status": "audited"
   },
   "models/ghost_crab_qa_studies.py": {
@@ -11501,10 +11573,16 @@
   "models/gi_oncology_studies.py": {
    "status": "audited"
   },
+  "models/giacomini_rossi.py": {
+   "status": "audited"
+  },
   "models/gibbon_qa_studies.py": {
    "status": "audited"
   },
   "models/gibbs_measure.py": {
+   "status": "audited"
+  },
+  "models/gibbs_sampler.py": {
    "status": "audited"
   },
   "models/gibbs_type.py": {
@@ -11519,7 +11597,16 @@
   "models/gikhman_skorokhod.py": {
    "status": "audited"
   },
+  "models/gil_pelaez.py": {
+   "status": "audited"
+  },
+  "models/gillespie_ssa.py": {
+   "status": "audited"
+  },
   "models/gillet_thomason.py": {
+   "status": "audited"
+  },
+  "models/gin_gnn.py": {
    "status": "audited"
   },
   "models/ginzburg_dga.py": {
@@ -11534,6 +11621,9 @@
   "models/giroux_corr.py": {
    "status": "audited"
   },
+  "models/girsanov.py": {
+   "status": "audited"
+  },
   "models/girsanov_thm2.py": {
    "status": "audited"
   },
@@ -11546,10 +11636,19 @@
   "models/git_quotient.py": {
    "status": "audited"
   },
+  "models/gittins_index.py": {
+   "status": "audited"
+  },
+  "models/givens_qr.py": {
+   "status": "audited"
+  },
   "models/givens_rotation.py": {
    "status": "audited"
   },
   "models/givental_j.py": {
+   "status": "audited"
+  },
+  "models/gjk_epa.py": {
    "status": "audited"
   },
   "models/gl_property.py": {
@@ -11565,6 +11664,9 @@
    "status": "audited"
   },
   "models/glass_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/glasso.py": {
    "status": "audited"
   },
   "models/glaucoma_studies.py": {
@@ -11603,13 +11705,25 @@
   "models/glossy_ibis_qa_studies.py": {
    "status": "audited"
   },
+  "models/glosten_milgrom.py": {
+   "status": "audited"
+  },
+  "models/glow_flow.py": {
+   "status": "audited"
+  },
   "models/glue_studies.py": {
    "status": "audited"
   },
   "models/glue_types.py": {
    "status": "audited"
   },
+  "models/glushkov_nfa.py": {
+   "status": "audited"
+  },
   "models/gm_queue.py": {
+   "status": "audited"
+  },
+  "models/gmm_est.py": {
    "status": "audited"
   },
   "models/gmres_solver.py": {

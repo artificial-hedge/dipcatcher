@@ -84,9 +84,18 @@ def bench_ges_search(seed: int = 2819, trials: int = 4, d: int = 6) -> dict[str,
         shds.append(shd(B, B_hat))
         shds_b.append(shd(B, corr_baseline(X, 7)))
         f1s.append(skeleton_f1(B, B_hat))
-    return {
+    out = {
         "synthetic_ges_shd": float(np.mean(shds)),
         "synthetic_corr_shd": float(np.mean(shds_b)),
         "synthetic_ges_skel_f1": float(np.mean(f1s)),
         "synthetic_torch_available": 0.0,
     }
+    # GES's honest claim is skeleton recovery — the BIC hill-climb must
+    # reconstruct most of the true edge skeleton; SHD vs the corr
+    # baseline is reported but not gated (orientations are
+    # equivalence-class ambiguous at this scale)
+    if out["synthetic_ges_skel_f1"] < 0.8 or out["synthetic_ges_shd"] > 20:
+        raise ValueError(
+            f"ges off: f1={out['synthetic_ges_skel_f1']:.3f} shd={out['synthetic_ges_shd']}"
+        )
+    return out

@@ -48,4 +48,9 @@ def bench_gauss_iod(seed: int = 20261231 + 859) -> dict[str, float]:
         # recovered elements match truth
         a2, e2, i2, _, _, _ = state_to_elements(rs[1], v2_hat, mu)
         checks += float(abs(a2 - a) / a < 1e-6 and abs(e2 - e) < 1e-6 and abs(i2 - inc) < 1e-6)
-    return {"synthetic_gauss_iod": checks / total}
+    frac = checks / total
+    # the Gibbs method is exact on noiseless observations — every draw
+    # must recover the true velocity and elements
+    if frac < 1.0:
+        raise ValueError(f"gibbs iod off: {checks}/{total}")
+    return {"synthetic_gauss_iod": frac}

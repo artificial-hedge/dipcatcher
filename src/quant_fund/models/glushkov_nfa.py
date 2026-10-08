@@ -165,4 +165,9 @@ def bench_glushkov_nfa(seed: int = _SEED) -> dict[str, float]:
             break
     score += 1.0 if ok else 0.0
     score += 1.0 if glushkov_match("a?a?a?bbb", "bbb") else 0.0
-    return {"synthetic_glushkov_nfa": score / 4.0}
+    frac = score / 4.0
+    # every check is an exact agreement vs `re` or a structural
+    # invariant — a broken automaton must not score partial credit
+    if frac < 1.0:
+        raise ValueError(f"glushkov nfa off: score={score}")
+    return {"synthetic_glushkov_nfa": frac}

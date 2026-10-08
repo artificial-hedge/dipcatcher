@@ -64,9 +64,14 @@ def bench_glow_flow(seed: int = 2287, iters: int = 600) -> dict[str, float]:
         z, ld = fwd(torch.tensor(Xte).float())
         nll_te = float((0.5 * (z**2).sum(-1) + np.log(2 * np.pi) - ld).mean())
     base = gauss_nll(Xtr, Xte)
-    return {
+    out = {
         "synthetic_glow_nll": nll_te,
         "synthetic_gauss_nll": base,
         "synthetic_glow_gain": base - nll_te,
         "synthetic_torch_available": 1.0,
     }
+    # a trained invertible flow must beat the single-Gaussian NLL on
+    # held-out pinwheel data — that is the whole point of the model
+    if out["synthetic_glow_gain"] <= 0:
+        raise ValueError(f"glow not better than gaussian: {nll_te:.3f} vs {base:.3f}")
+    return out

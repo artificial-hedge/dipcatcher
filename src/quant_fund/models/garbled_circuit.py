@@ -42,13 +42,12 @@ def evaluate(
     seed: int,
 ) -> int:
     """Try all 4 rows; the row decryptable with our two input keys yields the output label."""
-    for a, b, ct in zip((0, 0, 1, 1), (0, 1, 0, 1), cts, strict=True):
-        msg = _k(seed, in_keys[0] * 2 + in_keys[1])
-        if a * 0 + b * 0 == 0:
-            dec = bytes(x ^ y for x, y in zip(msg[:2], ct, strict=True))
-            v = int.from_bytes(dec, "big")
-            if v in out_keymap.values():
-                return v
+    msg = _k(seed, in_keys[0] * 2 + in_keys[1])
+    for ct in cts:
+        dec = bytes(x ^ y for x, y in zip(msg[:2], ct, strict=True))
+        v = int.from_bytes(dec, "big")
+        if v in out_keymap.values():
+            return v
     raise ValueError("no row decrypted")
 
 

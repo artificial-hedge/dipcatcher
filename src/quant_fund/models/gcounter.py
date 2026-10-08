@@ -48,10 +48,15 @@ def bench_gcounter(seed: int = 20261231 + 300) -> dict[str, float]:
         reps[j] = merge(reps[j], reps[k])
     final = merge(merge(reps[0], reps[1]), reps[2])
     converge = all(merge(r, final) == final for r in reps)
-    return {
+    out = {
         "synthetic_commutative": float(comm / trials),
         "synthetic_associative": float(assoc / trials),
         "synthetic_idempotent": float(idem / trials),
         "synthetic_monotone": float(mon / trials),
         "synthetic_converges": float(converge),
     }
+    # CRDT laws are algebraic invariants — any failed merge axiom means
+    # replicas can diverge permanently
+    if min(out.values()) < 1.0:
+        raise ValueError(f"gcounter law broken: {out}")
+    return out

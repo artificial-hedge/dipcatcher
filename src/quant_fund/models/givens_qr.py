@@ -46,8 +46,13 @@ def bench_givens_qr(seed: int = 20261231 + 531) -> dict[str, float]:
         fac += int(np.allclose(Q @ R, A, atol=1e-8))
         orth += int(np.allclose(Q.T @ Q, np.eye(m), atol=1e-8))
         tri += int(np.allclose(np.tril(R, -1), 0, atol=1e-8))
-    return {
+    out = {
         "synthetic_factor_exact": fac / n_trials,
         "synthetic_orthonormal": orth / n_trials,
         "synthetic_upper_tri": tri / n_trials,
     }
+    # QR identities are algebraic invariants — factorization,
+    # orthonormality, and triangularity must hold on every draw
+    if min(out.values()) < 1.0:
+        raise ValueError(f"givens qr broken: {out}")
+    return out

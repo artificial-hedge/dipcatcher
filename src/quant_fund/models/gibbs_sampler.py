@@ -103,10 +103,19 @@ def bench_gibbs_sampler(seed: int = 20261231) -> dict[str, float]:
     g2 = gibbs_lm(x, yr, it=3000, burn=500, seed=seed + 1)
     bh = g2["beta"].mean(axis=0)
     s2h = float(np.sqrt(g2["sigma2"].mean()))
-    return {
+    out = {
         "synthetic_gibbs_mu_err": float(abs(mu_s.mean() - 1.5)),
         "synthetic_gibbs_mu_ci_cover": float(lo <= 1.5 <= hi),
         "synthetic_gibbs_mu_ci_width": float(hi - lo),
         "synthetic_gibbs_beta_err": float(np.linalg.norm(bh - b_true)),
         "synthetic_gibbs_sigma_err": float(abs(s2h - 0.4)),
     }
+    # conjugate Gibbs targets the exact posterior — posterior means
+    # must land near the planted truth and the 90% interval must cover
+    if out["synthetic_gibbs_mu_err"] > 0.15 or out["synthetic_gibbs_mu_ci_cover"] < 1.0:
+        raise ValueError(f"gibbs mean off: {out['synthetic_gibbs_mu_err']:.3f}")
+    if out["synthetic_gibbs_beta_err"] > 0.2 or out["synthetic_gibbs_sigma_err"] > 0.1:
+        raise ValueError(
+            f"gibbs lm off: beta={out['synthetic_gibbs_beta_err']:.3f} sigma={out['synthetic_gibbs_sigma_err']:.3f}"
+        )
+    return out
