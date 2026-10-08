@@ -18524,120 +18524,6 @@
   "models/model_stealing_studies.py": {
    "status": "audited"
   },
-  "models/models/reg_coalesce.py.py": {
-   "status": "audited"
-  },
-  "models/models/regex_engine.py.py": {
-   "status": "audited"
-  },
-  "models/models/regex_simplify.py.py": {
-   "status": "audited"
-  },
-  "models/models/regime.py.py": {
-   "status": "audited"
-  },
-  "models/models/register_automata.py.py": {
-   "status": "audited"
-  },
-  "models/models/regression_kink.py.py": {
-   "status": "audited"
-  },
-  "models/models/regular_value.py.py": {
-   "status": "audited"
-  },
-  "models/models/remez.py.py": {
-   "status": "audited"
-  },
-  "models/models/renewal_reward.py.py": {
-   "status": "audited"
-  },
-  "models/models/rep_theory.py.py": {
-   "status": "audited"
-  },
-  "models/models/repetition_qec.py.py": {
-   "status": "audited"
-  },
-  "models/models/repetitive_ctrl.py.py": {
-   "status": "audited"
-  },
-  "models/models/replicator.py.py": {
-   "status": "audited"
-  },
-  "models/models/represented_matroid.py.py": {
-   "status": "audited"
-  },
-  "models/models/reptile.py.py": {
-   "status": "audited"
-  },
-  "models/models/reranker_crossenc.py.py": {
-   "status": "audited"
-  },
-  "models/models/resample_poly.py.py": {
-   "status": "audited"
-  },
-  "models/models/residue_calc.py.py": {
-   "status": "audited"
-  },
-  "models/models/resolution_fol.py.py": {
-   "status": "audited"
-  },
-  "models/models/resultant.py.py": {
-   "status": "audited"
-  },
-  "models/models/retnet_decay.py.py": {
-   "status": "audited"
-  },
-  "models/models/retrograde_wdl.py.py": {
-   "status": "audited"
-  },
-  "models/models/reward_model.py.py": {
-   "status": "audited"
-  },
-  "models/models/rga_sequence.py.py": {
-   "status": "audited"
-  },
-  "models/models/riccati_care.py.py": {
-   "status": "audited"
-  },
-  "models/models/rice_theorem.py.py": {
-   "status": "audited"
-  },
-  "models/models/ride_explore.py.py": {
-   "status": "audited"
-  },
-  "models/models/riemannian_mala.py.py": {
-   "status": "audited"
-  },
-  "models/models/riesz_repr.py.py": {
-   "status": "audited"
-  },
-  "models/models/rif_regression.py.py": {
-   "status": "audited"
-  },
-  "models/models/rigid_collision.py.py": {
-   "status": "audited"
-  },
-  "models/models/ring_allreduce.py.py": {
-   "status": "audited"
-  },
-  "models/models/ring_attn.py.py": {
-   "status": "audited"
-  },
-  "models/models/ring_buffer.py.py": {
-   "status": "audited"
-  },
-  "models/models/ring_detect.py.py": {
-   "status": "audited"
-  },
-  "models/models/ring_ideals.py.py": {
-   "status": "audited"
-  },
-  "models/models/ring_normalize.py.py": {
-   "status": "audited"
-  },
-  "models/models/ripley_k.py.py": {
-   "status": "audited"
-  },
   "models/modern_history.py": {
    "status": "audited"
   },
@@ -24302,6 +24188,9 @@
   "models/refusal_vector_studies.py": {
    "status": "audited"
   },
+  "models/reg_coalesce.py": {
+   "status": "audited"
+  },
   "models/regard_eval_studies.py": {
    "status": "audited"
   },
@@ -24315,6 +24204,15 @@
    "status": "audited"
   },
   "models/regenerative_medicine.py": {
+   "status": "audited"
+  },
+  "models/regex_engine.py": {
+   "status": "audited"
+  },
+  "models/regex_simplify.py": {
+   "status": "audited"
+  },
+  "models/regime.py": {
    "status": "audited"
   },
   "models/regime_conformal_var.py": {
@@ -24336,6 +24234,12 @@
    "status": "audited"
   },
   "models/regional_science.py": {
+   "status": "audited"
+  },
+  "models/register_automata.py": {
+   "status": "audited"
+  },
+  "models/regression_kink.py": {
    "status": "audited"
   },
   "models/regula_falsi.py": {
@@ -24360,6 +24264,9 @@
    "status": "audited"
   },
   "models/regular_seq.py": {
+   "status": "audited"
+  },
+  "models/regular_value.py": {
    "status": "audited"
   },
   "models/regularity_critical.py": {
@@ -24413,6 +24320,9 @@
   "models/religious_studies_3.py": {
    "status": "audited"
   },
+  "models/remez.py": {
+   "status": "audited"
+  },
   "models/remote_sensing.py": {
    "status": "audited"
   },
@@ -24428,6 +24338,9 @@
   "models/renewal_measure.py": {
    "status": "audited"
   },
+  "models/renewal_reward.py": {
+   "status": "audited"
+  },
   "models/renewal_reward2.py": {
    "status": "audited"
   },
@@ -24440,13 +24353,37 @@
   "models/rep_finite.py": {
    "status": "audited"
   },
+  "models/rep_theory.py": {
+   "status": "audited"
+  },
+  "models/repetition_qec.py": {
+   "status": "audited"
+  },
+  "models/repetitive_ctrl.py": {
+   "status": "audited"
+  },
   "models/replicable_conformal.py": {
+   "status": "audited"
+  },
+  "models/replicator.py": {
    "status": "audited"
   },
   "models/repobench_studies.py": {
    "status": "audited"
   },
+  "models/represented_matroid.py": {
+   "status": "audited"
+  },
   "models/reproductive_endocrinology.py": {
+   "status": "audited"
+  },
+  "models/reptile.py": {
+   "status": "audited"
+  },
+  "models/reranker_crossenc.py": {
+   "status": "audited"
+  },
+  "models/resample_poly.py": {
    "status": "audited"
   },
   "models/reservoir_engineering.py": {
@@ -24467,10 +24404,16 @@
   "models/residual_marking.py": {
    "status": "audited"
   },
+  "models/residue_calc.py": {
+   "status": "audited"
+  },
   "models/residue_k.py": {
    "status": "audited"
   },
   "models/residue_thm.py": {
+   "status": "audited"
+  },
+  "models/resolution_fol.py": {
    "status": "audited"
   },
   "models/resolvent_markov.py": {
@@ -24497,16 +24440,25 @@
   "models/restrictive_dd.py": {
    "status": "audited"
   },
+  "models/resultant.py": {
+   "status": "audited"
+  },
   "models/resuscitation_medicine.py": {
    "status": "audited"
   },
   "models/retinal_studies.py": {
    "status": "audited"
   },
+  "models/retnet_decay.py": {
+   "status": "audited"
+  },
   "models/retrial_queue.py": {
    "status": "audited"
   },
   "models/retrieval_memory_studies.py": {
+   "status": "audited"
+  },
+  "models/retrograde_wdl.py": {
    "status": "audited"
   },
   "models/reverse_holder.py": {
@@ -24521,10 +24473,16 @@
   "models/reward_hacking_studies.py": {
    "status": "audited"
   },
+  "models/reward_model.py": {
+   "status": "audited"
+  },
   "models/reward_uncertainty_studies.py": {
    "status": "audited"
   },
   "models/reynolds_decomp.py": {
+   "status": "audited"
+  },
+  "models/rga_sequence.py": {
    "status": "audited"
   },
   "models/rgb_eval_studies.py": {
@@ -24578,6 +24536,9 @@
   "models/riccati_bvp.py": {
    "status": "audited"
   },
+  "models/riccati_care.py": {
+   "status": "audited"
+  },
   "models/ricci_flow.py": {
    "status": "audited"
   },
@@ -24587,7 +24548,13 @@
   "models/ricci_soliton.py": {
    "status": "audited"
   },
+  "models/rice_theorem.py": {
+   "status": "audited"
+  },
   "models/richardson_limit.py": {
+   "status": "audited"
+  },
+  "models/ride_explore.py": {
    "status": "audited"
   },
   "models/riemann_curvature.py": {
@@ -24614,7 +24581,16 @@
   "models/riemann_zeta.py": {
    "status": "audited"
   },
+  "models/riemannian_mala.py": {
+   "status": "audited"
+  },
+  "models/riesz_repr.py": {
+   "status": "audited"
+  },
   "models/riesz_schauder.py": {
+   "status": "audited"
+  },
+  "models/rif_regression.py": {
    "status": "audited"
   },
   "models/right_continuous_f.py": {
@@ -24629,6 +24605,9 @@
   "models/rigid_cat.py": {
    "status": "audited"
   },
+  "models/rigid_collision.py": {
+   "status": "audited"
+  },
   "models/rigid_dm.py": {
    "status": "audited"
   },
@@ -24636,6 +24615,24 @@
    "status": "audited"
   },
   "models/rim_deform.py": {
+   "status": "audited"
+  },
+  "models/ring_allreduce.py": {
+   "status": "audited"
+  },
+  "models/ring_attn.py": {
+   "status": "audited"
+  },
+  "models/ring_buffer.py": {
+   "status": "audited"
+  },
+  "models/ring_detect.py": {
+   "status": "audited"
+  },
+  "models/ring_ideals.py": {
+   "status": "audited"
+  },
+  "models/ring_normalize.py": {
    "status": "audited"
   },
   "models/ring_tailed_qa_studies.py": {
@@ -24648,6 +24645,9 @@
    "status": "audited"
   },
   "models/ringtail_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/ripley_k.py": {
    "status": "audited"
   },
   "models/rissos_qa_studies.py": {
