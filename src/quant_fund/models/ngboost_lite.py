@@ -175,6 +175,15 @@ class NGBoostGaussian:
             raise ValueError("y must be finite")
         return X, y
 
+    def _prepared_val(self, X_val: Array, y_val: Array, n_features: int) -> tuple[Array, Array]:
+        """Validation split: checked, flattened, and feature-count aligned with X."""
+        Xv, yv = self._check_xy(X_val, y_val)
+        if not (yv is not None):
+            raise ValueError("yv is not None")
+        if Xv.shape[1] != n_features:
+            raise ValueError("X_val feature count mismatch")
+        return Xv, yv
+
     def _tree(self) -> DecisionTreeRegressor:
         return DecisionTreeRegressor(
             max_depth=self.max_depth,
@@ -208,12 +217,7 @@ class NGBoostGaussian:
             raise ValueError("early stopping needs a validation set")
         val: tuple[Array, Array] | None = None
         if X_val is not None and y_val is not None:
-            Xv, yv = self._check_xy(X_val, y_val)
-            if not (yv is not None):
-                raise ValueError("yv is not None")
-            if Xv.shape[1] != X.shape[1]:
-                raise ValueError("X_val feature count mismatch")
-            val = (Xv, yv)
+            val = self._prepared_val(X_val, y_val, X.shape[1])
 
         sd0 = float(np.std(y))
         if sd0 <= 0.0:

@@ -60,6 +60,14 @@ def _q_path(y: Array, beta: Array, spec: str, tau: float) -> Array | None:
     return q
 
 
+def _fitted_q_path(y: Array, beta: Array, spec: str, tau: float) -> Array:
+    """Quantile path at the fitted beta; contract-checked fail-closed."""
+    q = _q_path(y, beta, spec, tau)
+    if not (q is not None):
+        raise ValueError("q is not None")
+    return q
+
+
 def caviar_fit(
     returns: Array,
     tau: float = 0.05,
@@ -112,9 +120,7 @@ def caviar_fit(
             best_beta = np.asarray(res.x, dtype=float)
     if not np.isfinite(best_val):
         raise ValueError("caviar fit failed")
-    q = _q_path(y, best_beta, spec, tau)
-    if not (q is not None):
-        raise ValueError("q is not None")
+    q = _fitted_q_path(y, best_beta, spec, tau)
     hits = (y < q).mean() if tau < 0.5 else (y > q).mean()
     return {
         "beta": best_beta,

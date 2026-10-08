@@ -562,6 +562,18 @@ def _panel_lag1(frame: pl.DataFrame, column: str) -> tuple[float, int]:
     return _nanmean(finite), int(np.isfinite(finite).sum())
 
 
+def _check_sweep_receipt_field_guards() -> None:
+    """Contract asserts on sweep receipt field names (source-scan contract)."""
+    if "event_mean_bps" not in "sweep_reject_event_mean_bps":
+        raise ValueError('"event_mean_bps" in "sweep_reject_event_mean_bps"')
+    if "control_diff_mean_bps" not in "sweep_reject_control_diff_mean_bps":
+        raise ValueError('"control_diff_mean_bps" in "sweep_reject_control_diff_mean_bps"')
+    if "mean_excess_bps" not in _SWEEP_EVENT_MEAN_FIELD:
+        raise ValueError('"mean_excess_bps" in _SWEEP_EVENT_MEAN_FIELD')
+    if "mean_diff_bps" not in _SWEEP_CONTROL_DIFF_FIELD:
+        raise ValueError('"mean_diff_bps" in _SWEEP_CONTROL_DIFF_FIELD')
+
+
 def bench_northset(bars: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
     """Fuse daily candles with L2 and score the Northset battery."""
     if bars.height == 0:
@@ -1002,14 +1014,7 @@ def bench_northset(bars: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
         sweep_evidence,
         primary_test_id_default=str(PRIMARY_EXECUTABLE_TEST["id"]),
     )
-    if "event_mean_bps" not in "sweep_reject_event_mean_bps":
-        raise ValueError('"event_mean_bps" in "sweep_reject_event_mean_bps"')
-    if "control_diff_mean_bps" not in "sweep_reject_control_diff_mean_bps":
-        raise ValueError('"control_diff_mean_bps" in "sweep_reject_control_diff_mean_bps"')
-    if "mean_excess_bps" not in _SWEEP_EVENT_MEAN_FIELD:
-        raise ValueError('"mean_excess_bps" in _SWEEP_EVENT_MEAN_FIELD')
-    if "mean_diff_bps" not in _SWEEP_CONTROL_DIFF_FIELD:
-        raise ValueError('"mean_diff_bps" in _SWEEP_CONTROL_DIFF_FIELD')
+    _check_sweep_receipt_field_guards()
     out.update(sweep_receipt)
     if bool(getattr(ns, "include_kyle_ofi", False)):
         from quant_fund.northset.kyle_ofi import bench_kyle_ofi_fused
