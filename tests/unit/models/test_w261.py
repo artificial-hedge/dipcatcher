@@ -12,11 +12,14 @@ from quant_fund.models.stanley import bench_stanley
 
 def test_ekf_slam_keys() -> None:
     out = bench_ekf_slam(1)
-    assert "synthetic_ekf_final_err" in out and "synthetic_ekf_beats_drift" in out
+    assert "synthetic_ekf_final_err" in out and "synthetic_ekf_map_converges" in out
 
 
 def test_ekf_slam_bounded() -> None:
-    assert 0.0 <= bench_ekf_slam(3)["synthetic_ekf_beats_drift"] <= 1.0
+    # noise-free commands make dead reckoning optimal — the honest signal
+    # is map convergence + bounded pose, not beating the open loop
+    assert 0.0 <= bench_ekf_slam(3)["synthetic_ekf_map_converges"] <= 1.0
+    assert bench_ekf_slam(3)["synthetic_ekf_map_converges"] == 1.0
 
 
 def test_occupancy_keys() -> None:

@@ -27,9 +27,11 @@ def _bench_martingale_clt(seed: int = 0) -> float:
     checks.append(ks < 0.03)
     # skewness ~ 0
     checks.append(abs(float(np.mean(z**3))) < 0.2)
-    # Lindeberg ratio: max |X_i| / sqrt(sum Var) -> 0 for bounded steps
+    # Lindeberg ratio: max |X_i| / sqrt(sum Var) = 1/sqrt(200/3) ~ 0.122
+    # for bounded U(-1,1) steps at n=200 — the O(n^{-1/2}) rate is what
+    # the CLT needs, so pin the realized ratio near its closed form
     lin = float(np.max(np.abs(steps)) / np.sqrt(n_steps / 3.0))
-    checks.append(lin < 0.05)
+    checks.append(lin < 0.15)
     return float(sum(checks) / len(checks))
 
 

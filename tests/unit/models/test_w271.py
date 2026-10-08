@@ -36,8 +36,8 @@ def test_vlan_isolation() -> None:
 
 def test_csma_bounds() -> None:
     rng = np.random.RandomState(0)
-    d, a = csma_run(4, 16, rng)
-    assert 0 <= d <= a
+    d, a, c = csma_run(4, 16, rng)
+    assert 0 <= d <= a and c >= 0
 
 
 def test_traceroute_exact() -> None:
