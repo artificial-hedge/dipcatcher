@@ -72,3 +72,25 @@ def test_bench_vix_replication_score() -> None:
     out = bench_vix_replication()
     assert out["synthetic_score"] == pytest.approx(1.0)
     assert out["synthetic_vix_sig_err"] < 0.02
+
+
+def test_corridor_below_forward_uses_all_puts() -> None:
+    """A corridor entirely below the forward is all-OTM-puts. Flipping
+    the leg at the corridor midpoint previously substituted ITM calls
+    for the upper half."""
+    strikes, calls, puts, fwd, r, t = _bs_surface()
+    f_hat, k0 = implied_forward(strikes, calls, puts, r, t)
+    assert k0 > 90.0  # corridor [70,85] lies entirely below the forward
+    got = corridor_strike(strikes, calls, puts, 70.0, 85.0, r, t, k0=k0)
+    # Reference: same integral with q = puts over the whole corridor.
+    m = (strikes >= 70.0) & (strikes <= 85.0)
+    kc = strikes[m]
+    dk = np.empty(kc.size)
+    dk[1:-1] = 0.5 * (kc[2:] - kc[:-2])
+    dk[0] = kc[1] - kc[0]
+    dk[-1] = kc[-1] - kc[-2]
+    ref = float((2.0 / t) * np.exp(r * t) * np.sum(dk * puts[m] / (kc * kc)))
+    assert got == pytest.approx(ref, rel=1e-12)
+    # And it differs from the midpoint-flip convention on this surface.
+    calls_hi = corridor_strike(strikes, calls, puts, 70.0, 85.0, r, t)
+    assert calls_hi != pytest.approx(got, rel=1e-6)

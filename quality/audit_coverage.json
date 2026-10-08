@@ -24134,6 +24134,9 @@
   "models/transfer.py": {
    "status": "audited"
   },
+  "models/transfer_entropy.py": {
+   "status": "audited"
+  },
   "models/transfer_matrix.py": {
    "status": "audited"
   },
@@ -24384,6 +24387,9 @@
    "status": "audited"
   },
   "models/tufted_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/tukey_gh.py": {
    "status": "audited"
   },
   "models/tuna_qa_studies.py": {
@@ -24764,6 +24770,9 @@
   "models/vargr_qa_studies.py": {
    "status": "audited"
   },
+  "models/variance_swap.py": {
+   "status": "audited"
+  },
   "models/varifold_theory.py": {
    "status": "audited"
   },
@@ -24944,6 +24953,9 @@
   "models/vila_qa_studies.py": {
    "status": "audited"
   },
+  "models/vine_copula.py": {
+   "status": "audited"
+  },
   "models/vine_qa_studies.py": {
    "status": "audited"
   },
@@ -25038,6 +25050,9 @@
    "status": "audited"
   },
   "models/vitiligo_studies.py": {
+   "status": "audited"
+  },
+  "models/vix_replication.py": {
    "status": "audited"
   },
   "models/viy_qa_studies.py": {
@@ -25145,7 +25160,13 @@
   "models/vp_tree.py": {
    "status": "audited"
   },
+  "models/vpin.py": {
+   "status": "audited"
+  },
   "models/vsi_bench_studies.py": {
+   "status": "audited"
+  },
+  "models/vtrace.py": {
    "status": "audited"
   },
   "models/vu_condat.py": {
@@ -25154,10 +25175,16 @@
   "models/vulture_qa_studies.py": {
    "status": "audited"
   },
+  "models/vuong_test.py": {
+   "status": "audited"
+  },
   "models/wagner_platen.py": {
    "status": "audited"
   },
   "models/wakwak_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/wald_sprt.py": {
    "status": "audited"
   },
   "models/waldhausen_k.py": {
@@ -25185,6 +25212,9 @@
    "status": "audited"
   },
   "models/wan_sss.py": {
+   "status": "audited"
+  },
+  "models/wang_landau.py": {
    "status": "audited"
   },
   "models/wapiti_qa_studies.py": {

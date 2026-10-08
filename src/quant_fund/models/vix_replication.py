@@ -95,6 +95,7 @@ def corridor_strike(
     k_hi: float,
     r: float,
     t: float,
+    k0: float | None = None,
 ) -> float:
     """Corridor variance swap strike on [K_lo, K_hi] (options outside the
     corridor enter at zero — the corridor contracts are worthless there).
@@ -103,6 +104,10 @@ def corridor_strike(
 
     which does not subtract the forward-term adjustment (the corridor
     swap's payoff is capped at the corridor edges instead).
+
+    The OTM legs follow the strip's K0 (Andersen-Bondarenko): puts below
+    K0, calls at/above it. ``k0=None`` falls back to the corridor
+    midpoint — correct only when the corridor contains the forward.
     """
     k = np.asarray(strikes, dtype=float).ravel()
     c = np.asarray(calls, dtype=float).ravel()
@@ -117,10 +122,12 @@ def corridor_strike(
     if m.sum() < 3:
         raise ValueError("corridor covers fewer than 3 strikes")
     kc = k[m]
-    # inside the corridor, the OTM convention flips at the corridor's
-    # forward crossing; use puts below the strip median, calls above.
-    k_med = 0.5 * (k_lo + k_hi)
-    q = np.where(kc < k_med, p[m], c[m])
+    # OTM convention flips at the forward crossing (K0), not the
+    # corridor midpoint: in a corridor entirely below the forward every
+    # strike is an OTM put, and flipping at the midpoint previously
+    # substituted ITM-ish calls for the upper half of the corridor.
+    pivot = float(k0) if k0 is not None else 0.5 * (k_lo + k_hi)
+    q = np.where(kc < pivot, p[m], c[m])
     dk = np.empty(kc.size)
     dk[1:-1] = 0.5 * (kc[2:] - kc[:-2])
     dk[0] = kc[1] - kc[0]
@@ -154,7 +161,7 @@ def bench_vix_replication(seed: int = 20261231 + 396) -> dict[str, float]:
     sig_err = abs(sig_rep - sig)
     if sig_err > 0.02:
         raise ValueError(f"replicated vol {sig_rep} vs planted {sig}")
-    cor = corridor_strike(strikes, calls, puts, 85.0, 115.0, r, t)
+    cor = corridor_strike(strikes, calls, puts, 85.0, 115.0, r, t, k0=k0)
     if not (0.0 < cor < var_rep * 1.3):
         raise ValueError("corridor strike implausible")
     return {
