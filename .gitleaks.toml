@@ -74,3 +74,16 @@ condition = "AND"
 paths = ['''(?:^|/)quality/crown_jewels\.json$''']
 regexTarget = "line"
 regexes = ['''^\s*"[^"]{1,300}\.[a-z0-9]{1,8}":\s*"[0-9a-f]{64}",?\s*$''']
+
+# The checkpoint-verifier operation case embeds a deterministic Ed25519
+# public key in a JSON string.  Gitleaks' generic-api-key rule treats the
+# 64-hex public-key bytes as a credential even though they are intentionally
+# public verification material.  Keep this exception bound to that fixture,
+# that rule, and the explicit public_key JSON field.
+[[allowlists]]
+description = "Deterministic checkpoint fixture Ed25519 public key"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/fx1/operation_cases_chunk2\.py$''']
+regexTarget = "line"
+regexes = ['''"public_key":"[0-9a-f]{64}"''']
