@@ -60,4 +60,6 @@ def bench_perm_group(seed: int = _SEED) -> dict[str, float]:
         # sign vs inversion-parity oracle
         inv = sum(1 for i in range(7) for j in range(i + 1, 7) if p[i] > p[j])
         ok += int(sign(p) == (-1 if inv % 2 else 1))
+    if ok != 12:
+        raise ValueError("permutation arithmetic off oracle")
     return {"synthetic_perm_arith": float(ok == 12)}

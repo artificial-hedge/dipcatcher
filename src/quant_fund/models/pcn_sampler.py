@@ -35,6 +35,8 @@ def bench_pcn_sampler(
     samp_a = np.asarray(samp[200:])
     # posterior at obs points should track sin
     fit_err = float(np.sqrt(((samp_a[:, ::10].mean(0) - np.sin(2 * np.pi * xs[::10])) ** 2).mean()))
+    if fit_err > 0.4:
+        raise ValueError("pCN posterior fit off oracle")
     return {
         "synthetic_pcn_accept": float(acc / steps),
         "synthetic_pcn_fit_err": fit_err,

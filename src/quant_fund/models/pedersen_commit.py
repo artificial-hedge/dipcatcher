@@ -28,6 +28,8 @@ def bench_pedersen_commit(seed: int = 4707) -> dict[str, float]:
     c = _commit(v1, r1, h)
     opens_ok = c == _commit(v1, r1, h)
     opens_bad = c == _commit(v1 + 1, r1, h)
+    if not (hom and opens_ok and not opens_bad and c1 != c2):
+        raise ValueError("Pedersen commitment oracle failed")
     return {
         "synthetic_ped_homomorphic": float(hom),
         "synthetic_ped_open_ok": float(opens_ok),

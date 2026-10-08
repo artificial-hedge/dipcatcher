@@ -102,4 +102,6 @@ def bench_parity_game(seed: int = _SEED) -> dict[str, float]:
     succ2 = {0: [1], 1: [0]}
     a2 = attractor({0}, 0, owner2, succ2, {})
     checks.append(a2 == {0, 1})
+    if not all(checks):
+        raise ValueError("parity-game solver oracle failed")
     return {"synthetic_parity_game": float(sum(checks)) / len(checks)}

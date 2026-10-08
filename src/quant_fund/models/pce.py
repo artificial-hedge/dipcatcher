@@ -101,6 +101,8 @@ def bench_pce(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_pce_sobol_s3_zero"] = float(sob[2] < 0.02)
     out["synthetic_pce_ranking_ok"] = float(sob[1] > sob[0] > sob[2])
     del rng
+    if np.linalg.norm(sob - np.array([0.314, 0.442, 0.0])) > 0.05 or not (sob[1] > sob[0] > sob[2]):
+        raise ValueError("PCE Sobol off Ishigami oracle")
     return out
 
 

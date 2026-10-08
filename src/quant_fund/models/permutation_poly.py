@@ -56,6 +56,8 @@ def _bench_permutation_poly(seed: int = 0) -> float:
     checks.append(sign_parity((1, 2, 3, 0)) == -1)
     # sanity: itertools permutations count 3! = 6
     checks.append(len(list(itertools.permutations(range(3)))) == 6)
+    if not all(checks):
+        raise ValueError("permutation-poly oracle failed")
     return float(sum(checks) / len(checks))
 
 

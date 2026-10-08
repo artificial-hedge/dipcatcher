@@ -97,4 +97,6 @@ def bench_path_types(seed: int = _SEED) -> dict[str, float]:
         checks.append(False)
     except ValueError:
         checks.append(True)
+    if not all(checks):
+        raise ValueError("path-types oracle checks failed")
     return {"synthetic_path_types": float(sum(checks)) / len(checks)}

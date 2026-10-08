@@ -21272,6 +21272,15 @@
   "models/pandharipande_thomas.py": {
    "status": "audited"
   },
+  "models/panel_coint.py": {
+   "status": "audited"
+  },
+  "models/panel_quantile_fe.py": {
+   "status": "audited"
+  },
+  "models/panel_unitroot.py": {
+   "status": "audited"
+  },
   "models/pangolin_2_qa_studies.py": {
    "status": "audited"
   },
@@ -21317,6 +21326,15 @@
   "models/parallel_prox.py": {
    "status": "audited"
   },
+  "models/parallel_tempering.py": {
+   "status": "audited"
+  },
+  "models/parallel_transport.py": {
+   "status": "audited"
+  },
+  "models/param_fpt.py": {
+   "status": "audited"
+  },
   "models/paramedic_studies.py": {
    "status": "audited"
   },
@@ -21347,6 +21365,9 @@
   "models/pareto_nbd.py": {
    "status": "audited"
   },
+  "models/parity_game.py": {
+   "status": "audited"
+  },
   "models/parker_solar_wind.py": {
    "status": "audited"
   },
@@ -21359,13 +21380,25 @@
   "models/parsley_qa_studies.py": {
    "status": "audited"
   },
+  "models/partial_eval.py": {
+   "status": "audited"
+  },
   "models/partial_linear.py": {
    "status": "audited"
   },
   "models/particle_filter2.py": {
    "status": "audited"
   },
+  "models/particle_gibbs.py": {
+   "status": "audited"
+  },
   "models/particle_physics.py": {
+   "status": "audited"
+  },
+  "models/particle_slam.py": {
+   "status": "audited"
+  },
+  "models/particle_smoother.py": {
    "status": "audited"
   },
   "models/partition_calc.py": {
@@ -21383,6 +21416,9 @@
   "models/parton_model.py": {
    "status": "audited"
   },
+  "models/passing_bablok.py": {
+   "status": "audited"
+  },
   "models/passkey_retrieval_studies.py": {
    "status": "audited"
   },
@@ -21395,7 +21431,16 @@
   "models/pastry_arts.py": {
    "status": "audited"
   },
+  "models/patch_activation.py": {
+   "status": "audited"
+  },
   "models/patching_arg.py": {
+   "status": "audited"
+  },
+  "models/patchtst.py": {
+   "status": "audited"
+  },
+  "models/pate_teacher.py": {
    "status": "audited"
   },
   "models/patent_sum_studies.py": {
@@ -21422,6 +21467,9 @@
   "models/path_sobolev.py": {
    "status": "audited"
   },
+  "models/path_types.py": {
+   "status": "audited"
+  },
   "models/pathology.py": {
    "status": "audited"
   },
@@ -21440,19 +21488,49 @@
   "models/paws_lite_studies.py": {
    "status": "audited"
   },
+  "models/paxos.py": {
+   "status": "audited"
+  },
+  "models/pbft_lite.py": {
+   "status": "audited"
+  },
+  "models/pbkdf2_kdf.py": {
+   "status": "audited"
+  },
+  "models/pbvi.py": {
+   "status": "audited"
+  },
   "models/pcdt.py": {
+   "status": "audited"
+  },
+  "models/pce.py": {
    "status": "audited"
   },
   "models/pcf_theory.py": {
    "status": "audited"
   },
+  "models/pcgrad.py": {
+   "status": "audited"
+  },
+  "models/pchazard.py": {
+   "status": "audited"
+  },
   "models/pchip_interp.py": {
+   "status": "audited"
+  },
+  "models/pcn_sampler.py": {
+   "status": "audited"
+  },
+  "models/pcp_verify.py": {
    "status": "audited"
   },
   "models/pcr_studies.py": {
    "status": "audited"
   },
   "models/pd_envelope.py": {
+   "status": "audited"
+  },
+  "models/pda_sim.py": {
    "status": "audited"
   },
   "models/pde_signature.py": {
@@ -21477,6 +21555,9 @@
    "status": "audited"
   },
   "models/pedagogy.py": {
+   "status": "audited"
+  },
+  "models/pedersen_commit.py": {
    "status": "audited"
   },
   "models/pedersen_weibel.py": {
@@ -21512,7 +21593,13 @@
   "models/pedigree_studies.py": {
    "status": "audited"
   },
+  "models/peephole_opt.py": {
+   "status": "audited"
+  },
   "models/peetre_kfunctor.py": {
+   "status": "audited"
+  },
+  "models/peg_packrat.py": {
    "status": "audited"
   },
   "models/pegasus_2_qa_studies.py": {
@@ -21528,6 +21615,9 @@
    "status": "audited"
   },
   "models/pelissetto_vicari.py": {
+   "status": "audited"
+  },
+  "models/pelt_wbs.py": {
    "status": "audited"
   },
   "models/peluda_qa_studies.py": {
@@ -21560,6 +21650,9 @@
   "models/penrose_diagrams.py": {
    "status": "audited"
   },
+  "models/perceiver_ts.py": {
+   "status": "audited"
+  },
   "models/perch_qa_studies.py": {
    "status": "audited"
   },
@@ -21581,6 +21674,9 @@
   "models/perfect_obstruction.py": {
    "status": "audited"
   },
+  "models/perfect_set_prop.py": {
+   "status": "audited"
+  },
   "models/perfect_witt.py": {
    "status": "audited"
   },
@@ -21597,6 +21693,9 @@
    "status": "audited"
   },
   "models/performance_theory.py": {
+   "status": "audited"
+  },
+  "models/performer_attn.py": {
    "status": "audited"
   },
   "models/performing_arts_2.py": {
@@ -21662,10 +21761,22 @@
   "models/periwinkle_qa_studies.py": {
    "status": "audited"
   },
+  "models/perm_group.py": {
+   "status": "audited"
+  },
   "models/perm_rep.py": {
    "status": "audited"
   },
   "models/permanent_matrix.py": {
+   "status": "audited"
+  },
+  "models/permutation_entropy.py": {
+   "status": "audited"
+  },
+  "models/permutation_inference.py": {
+   "status": "audited"
+  },
+  "models/permutation_poly.py": {
    "status": "audited"
   },
   "models/perplexity_filter_studies.py": {
@@ -21675,6 +21786,9 @@
    "status": "audited"
   },
   "models/perron_frobenius.py": {
+   "status": "audited"
+  },
+  "models/perseus.py": {
    "status": "audited"
   },
   "models/persistent_array.py": {

@@ -79,4 +79,6 @@ def bench_peephole_opt(seed: int = _SEED) -> dict[str, float]:
         prog += [("push", int(rng.randint(1, 5))), "add"]
         opt = peephole(prog)
         ok += float(run_prog(opt, {"x": 7}) == run_prog(prog, {"x": 7}))
+    if ok != trials:
+        raise ValueError("peephole opt broke program semantics")
     return {"synthetic_peephole_preserves": ok / trials}

@@ -72,6 +72,8 @@ def bench_pbft_lite(seed: int = 20261231 + 255) -> dict[str, float]:
     for _ in range(30):
         res = run_pbft(n, f, False, 42, rng)
         det += int(res["decided"] == {42})
+    if saf != trials or det != 30:
+        raise ValueError("PBFT safety/determinism violated")
     return {
         "synthetic_agreement": float(agr / trials),
         "synthetic_liveness": float(liv / trials),

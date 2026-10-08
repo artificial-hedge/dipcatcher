@@ -68,6 +68,9 @@ def bench_pate_teacher(
         opt.step()
     acc_stu = acc_of(torch, stu, x_te_t[m:], y_te_t[m:])
     acc_teacher = float(np.mean([acc_of(torch, t, x_te_t, y_te_t) for t in teachers]))
+    # noisy-label student underperforms clean teachers but must still learn
+    if acc_stu < 0.35 or acc_teacher < 0.5:
+        raise ValueError("PATE teacher/student accuracy off oracle")
     return {
         "synthetic_pate_noisy_agree": agree,
         "synthetic_pate_student_acc": acc_stu,

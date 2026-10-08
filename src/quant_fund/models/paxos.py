@@ -95,6 +95,8 @@ def bench_paxos(seed: int = 20261231 + 250) -> dict[str, float]:
     for _ in range(20):
         res = run_paxos(3, [1, 2, 3], rng, drop=0.0)
         det += int(res["chosen"] == 1)
+    if agree != terminated or valid != terminated or det != 20:
+        raise ValueError("Paxos agreement/validity violated")
     return {
         "synthetic_terminated": float(terminated / trials),
         "synthetic_agree": float(agree / trials),

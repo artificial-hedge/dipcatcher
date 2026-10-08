@@ -40,6 +40,8 @@ def _bench_parallel_transport(seed: int = 0) -> float:
     ang2 = float(np.arctan2(v2[1], v2[0]))
     exp2 = -float(np.cos(np.pi / 3)) * np.pi
     checks.append(abs(ang2 - exp2) < 1e-4)
+    if not all(checks):
+        raise ValueError("parallel-transport oracle failed")
     return float(sum(checks) / len(checks))
 
 

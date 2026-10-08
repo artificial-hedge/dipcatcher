@@ -22,6 +22,8 @@ def _combine(g1, g2):
 def bench_pcgrad(seed: int = 2001, iters: int = 600) -> dict[str, float]:
     mn, mean = train_mtl(_combine, seed, iters)
     mn0, mean0 = train_mtl(lambda a, b: a + b, seed + 1, iters, naive=True)
+    if mn <= mn0:
+        raise ValueError("PCGrad min-acc no better than naive combine")
     return {
         "synthetic_pcgrad_min_acc": mn,
         "synthetic_pcgrad_mean_acc": mean,

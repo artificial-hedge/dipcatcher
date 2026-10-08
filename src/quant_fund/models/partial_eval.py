@@ -72,4 +72,6 @@ def bench_partial_eval(seed: int = _SEED) -> dict[str, float]:
             return 1 if t[0] in ("const", "var") else 1 + size(t[1]) + size(t[2])
 
         ok += float(good and size(resid) <= size(e))
+    if ok != trials:
+        raise ValueError("partial-eval preservation failed")
     return {"synthetic_peval_preserves": ok / trials}

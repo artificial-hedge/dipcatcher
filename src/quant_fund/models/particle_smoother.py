@@ -57,6 +57,8 @@ def bench_particle_smoother(seed: int = 5711) -> dict[str, float]:
     filt, smooth = _ffbs(x, y, 400, seed)
     f_rmse = float(np.sqrt(np.mean((filt - x) ** 2)))
     s_rmse = float(np.sqrt(np.mean((smooth - x) ** 2)))
+    if s_rmse >= f_rmse:
+        raise ValueError("smoother no better than filter")
     return {
         "synthetic_ps_filt_rmse": f_rmse,
         "synthetic_ps_smooth_rmse": s_rmse,

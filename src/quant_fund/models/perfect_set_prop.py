@@ -38,6 +38,8 @@ def _bench_perfect_set_prop(seed: int = 0) -> float:
     checks.append(cantor_bendixson_deriv(pts, 0.07) == pts)
     # perfect set property dichotomy holds on these toys: empty or "fat"
     checks.append(len(cantor_bendixson_deriv(full, 0.07)) == 16)
+    if not all(checks):
+        raise ValueError("Cantor-Bendixson oracle failed")
     return float(sum(checks) / len(checks))
 
 

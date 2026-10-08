@@ -92,6 +92,9 @@ def bench_performer_attn(
         acc_pf = float((out(favor_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
         acc_full = float((out_o(full_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
     cost = attn_dot_cost(t, "performer", _R_FEAT)
+    # linear attention is parity-quality here; the real win is dot cost
+    if cost >= 1.0:
+        raise ValueError("performer attention not cheaper than full attention")
     return {
         "synthetic_performer_acc": acc_pf,
         "synthetic_performer_full_acc": acc_full,

@@ -92,6 +92,8 @@ def bench_perseus(seed: int = 20261231) -> dict[str, float]:
     ret = pomdp_rollout(p, lambda b: pbvi_policy(p, b, alphas), 150, 15, rng)
     out["synthetic_perseus_return"] = ret
     out["synthetic_perseus_positive"] = float(ret > 0)
+    if not (0 in acts[3:6] and ret > 0):
+        raise ValueError("Perseus policy off Tiger oracle")
     return out
 
 

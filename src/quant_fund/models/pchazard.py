@@ -48,6 +48,8 @@ def bench_pchazard(seed: int = 2133, iters: int = 500, K: int = 10) -> dict[str,
     c_pc = cindex(tt, risk, et)
     b = cox_ph(X, t, e)
     c_cox = cindex(tt, Xt @ b, et)
+    if c_pc <= c_cox:
+        raise ValueError("piecewise-constant hazard no better than Cox PH")
     return {
         "synthetic_pchazard_cindex": c_pc,
         "synthetic_cox_cindex": c_cox,

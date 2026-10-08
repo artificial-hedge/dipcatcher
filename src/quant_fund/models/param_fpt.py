@@ -73,6 +73,8 @@ def _bench_param_fpt(seed: int = 0) -> float:
     checks.append(cov == {0} and rem == [] and k2 == 2)
     both = vc_fpt(path, 4, 2)
     checks.append(both is not None and len(both) <= 2)
+    if not all(checks):
+        raise ValueError("FPT vertex-cover oracle failed")
     return sum(checks) / len(checks)
 
 

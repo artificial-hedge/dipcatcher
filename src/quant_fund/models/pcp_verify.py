@@ -65,6 +65,8 @@ def _bench_pcp_verify(seed: int = 0) -> float:
     # a fully corrupted/random table fails BLR w.h.p.
     rnd_tbl = {x: rng.randrange(2) for x in range(1 << 3)}
     checks.append(blr_test(rnd_tbl, 3, 30, rng) > 0)
+    if not all(checks):
+        raise ValueError("PCP/BLR oracle failed")
     return sum(checks) / len(checks)
 
 

@@ -112,6 +112,8 @@ def bench_perceiver_ts(
         mp_mae = float(
             torch.mean(torch.abs(pool(xb[te].squeeze(-1)).squeeze(1) - yb[te].squeeze(1)))
         )
+    if perc_mae >= mp_mae:
+        raise ValueError("Perceiver no better than pooled-MLP baseline")
     return {
         "synthetic_perceiver_mae": perc_mae,
         "synthetic_perceiver_fullattn_mae": fa_mae,

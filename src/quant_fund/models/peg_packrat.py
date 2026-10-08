@@ -108,6 +108,8 @@ def bench_peg_packrat(seed: int = 20261231 + 394) -> dict[str, float]:
         before = p3.calls
         p3.sum(0)  # second full parse → all memo hits
         memo += int(p3.calls == before)
+    if val != trials * 2 or bias != trials * 2 or memo != trials:
+        raise ValueError("PEG/packrat oracle failed")
     return {
         "synthetic_parse_value": float(val / (trials * 2)),
         "synthetic_ordered_choice": float(bias / (trials * 2)),

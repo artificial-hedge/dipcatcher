@@ -35,6 +35,8 @@ def bench_pbkdf2_kdf(seed: int = _SEED) -> dict[str, float]:
         match += int(mine == ref)
         salt2 = bytes([salt[0] ^ 1]) + salt[1:]
         diff += int(pbkdf2(pw, salt2, it) != mine)
+    if match != n or diff != n:
+        raise ValueError("PBKDF2 off hashlib oracle")
     return {
         "synthetic_matches_stdlib": float(match / n),
         "synthetic_salt_domain_sep": float(diff / n),

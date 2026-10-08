@@ -93,6 +93,8 @@ def bench_pda_sim(seed: int = 20261231 + 501) -> dict[str, float]:
             else "".join(rng.choice("ab") for _ in range(rng.randrange(0, 9)))
         )
         ok_pal += int(run_pda(_pal_pda(), s, cap=40000) == (s == s[::-1] and len(s) % 2 == 0))
+    if ok_ab != n_ab or ok_pal != n_pal:
+        raise ValueError("PDA simulator off oracle")
     return {
         "synthetic_anbn_exact": ok_ab / n_ab,
         "synthetic_palindrome_exact": ok_pal / n_pal,

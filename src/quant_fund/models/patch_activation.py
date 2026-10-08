@@ -35,6 +35,8 @@ def bench_patch_activation(
     w = w / np.linalg.norm(w)
     a_ctrl = a[te] + (1.5 - (a[te] @ w[:, None])) * w[None, :] * (~on)[:, None]
     ctrl_flips = float((probe.predict(a_ctrl)[~on] == 1).mean())
+    if patched_flips <= ctrl_flips:
+        raise ValueError("activation patch no better than random-dir control")
     return {
         "synthetic_patch_flip": patched_flips,
         "synthetic_patch_control_flip": ctrl_flips,

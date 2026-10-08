@@ -136,6 +136,8 @@ def bench_patchtst(seed: int = 51) -> dict[str, float]:
     tr_t = int(T * 0.85)
     ar = _ar_ridge(x, tr_t)
     mlp = _flat_mlp_mae(x, lag, tr_t - lag, seed + 1)
+    if mae >= ar or mae >= mlp:
+        raise ValueError("PatchTST no better than AR/flat-MLP baselines")
     return {
         "synthetic_patchtst_mae": mae,
         "synthetic_patchtst_ar_mae": ar,

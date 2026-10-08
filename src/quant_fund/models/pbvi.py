@@ -108,6 +108,8 @@ def bench_pbvi(seed: int = 20261231) -> dict[str, float]:
     ret = pomdp_rollout(p, lambda b: pbvi_policy(p, b, alphas), 150, 15, rng)
     out["synthetic_pbvi_return"] = ret
     out["synthetic_pbvi_positive"] = float(ret > 0)
+    if not (0 in acts[3:6] and ret > 0):
+        raise ValueError("PBVI policy off Tiger oracle")
     return out
 
 

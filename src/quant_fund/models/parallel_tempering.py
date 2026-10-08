@@ -56,6 +56,9 @@ def bench_parallel_tempering(seed: int = 5601) -> dict[str, float]:
     mass_true = 0.3  # left-mode probability mass
     pt_mass = float(np.mean(pt < -1.0))
     sc_mass = float(np.mean(sc < -1.0))
+    # PT recovers the 0.3 left-mode mass the single chain misses
+    if abs(pt_mass - mass_true) > abs(sc_mass - mass_true):
+        raise ValueError("parallel tempering no better than single chain")
     return {
         "synthetic_pt_mass": pt_mass,
         "synthetic_pt_sc_mass": sc_mass,

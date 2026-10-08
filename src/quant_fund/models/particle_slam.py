@@ -49,4 +49,6 @@ def bench_particle_slam(seed: int = _SEED) -> dict[str, float]:
     for _ in range(6):
         lm = rng.uniform(0, 10, (5, 2))
         errs.append(_fast_slam(lm, rng))
+    if np.mean(errs) >= 2.5:
+        raise ValueError("FastSLAM error off oracle")
     return {"synthetic_slam_err": float(np.mean(errs) < 2.5)}
