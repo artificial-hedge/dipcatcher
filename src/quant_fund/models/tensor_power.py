@@ -113,6 +113,8 @@ def bench_tensor_power(seed: int = 20261231) -> dict[str, float]:
     true_w = true_w / np.linalg.norm(true_w, axis=1, keepdims=True)
     sim = np.abs(vecs @ true_w.T)
     best = sim.max(axis=1)
+    if float(best.min()) <= 0.9:
+        raise ValueError("tensor-power deflation oracle failed")
     return {
         "synthetic_tp_cos_min": float(best.min()),
         "synthetic_tp_cos_mean": float(best.mean()),

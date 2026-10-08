@@ -104,6 +104,10 @@ def bench_tcn_forecaster(
     X4 = np.stack([xs[tr, -1 - k] for k in range(4)], 1)
     beta = np.asarray(np.linalg.solve(X4.T @ X4 + 1e-3 * np.eye(4), X4.T @ y[tr]))
     ar_mae = float(np.mean(np.abs(np.stack([xs[te, -1 - k] for k in range(4)], 1) @ beta - y[te])))
+    # honest floor: TCN beats the short-MLP baseline; the AR(4)
+    # baseline wins on this fixture — not gated
+    if not (tcn_mae < mlp_mae and np.isfinite(tcn_mae)):
+        raise ValueError("TCN forecaster oracle failed")
     return {
         "synthetic_tcn_mae": tcn_mae,
         "synthetic_tcn_shortmlp_mae": mlp_mae,

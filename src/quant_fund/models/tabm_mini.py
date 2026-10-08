@@ -58,6 +58,9 @@ def bench_tabm_mini(
         loss.backward()
         opt.step()
     acc_m = acc_of(torch, mlp, x_te_t, y_te_t)
+    # honest floor: TabM parity with the MLP baseline within tolerance
+    if not (acc_tabm > 0.8 and acc_tabm >= acc_m - 0.05):
+        raise ValueError("TabM-mini accuracy oracle failed")
     return {
         "synthetic_tabm_acc": acc_tabm,
         "synthetic_tabm_best_head": acc_best_head,

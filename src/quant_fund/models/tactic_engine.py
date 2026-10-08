@@ -179,4 +179,6 @@ def bench_tactic_engine(seed: int = _SEED) -> dict[str, float]:
         checks.append(False)
     except TacticError:
         checks.append(True)
+    if not all(checks):
+        raise ValueError("tactic-engine oracle failed")
     return {"synthetic_tactic_engine": float(sum(checks) / len(checks))}

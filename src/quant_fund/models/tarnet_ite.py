@@ -65,6 +65,8 @@ def bench_tarnet_ite(
     with torch.no_grad():
         ite_n = (nv(xt_te1) - nv(xt_te0)).squeeze(-1).numpy()
     pehe_n = float(np.sqrt(np.mean((ite_n - tau_te) ** 2)))
+    if not (pehe_n > pehe_t and pehe_t < 0.5):
+        raise ValueError("TARNet ITE oracle failed")
     return {
         "synthetic_tarnet_pehe": pehe_t,
         "synthetic_tarnet_naive_pehe": pehe_n,

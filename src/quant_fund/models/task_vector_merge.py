@@ -79,6 +79,10 @@ def bench_task_vector_merge(
         acc_1_t2 = float((m1(x2_t).argmax(-1) == y2_t).float().mean())
         acc_2_t2 = float((m2(x2_t).argmax(-1) == y2_t).float().mean())
         acc_base_t1 = float((base(x1_t).argmax(-1) == y1_t).float().mean())
+    # honest floor: merged model keeps both tasks above chance;
+    # ft-parity is not claimed (merged < specialists)
+    if not ((acc_m_t1 + acc_m_t2) / 2 > 0.6 and acc_m_t1 > 0.5 and acc_m_t2 > 0.5):
+        raise ValueError("task-vector merge oracle failed")
     return {
         "synthetic_merge_t1_acc": acc_m_t1,
         "synthetic_merge_t2_acc": acc_m_t2,

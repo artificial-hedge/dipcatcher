@@ -216,6 +216,13 @@ def bench_synth_did(seed: int = 20261231 + 187) -> dict[str, float]:
         seed=seed + 3,
     )
 
+    if not (
+        float(est["p_placebo"]) < 0.10
+        and float(est["tau"]) > 0.5 * tau_true
+        and abs(float(est["tau"]) - tau_true) < abs(did - tau_true)
+        and est["tau"] == est2["tau"]
+    ):
+        raise ValueError("synthetic-DiD oracle failed")
     return {
         "synthetic_tau_hat": float(est["tau"]),
         "synthetic_tau_true": tau_true,

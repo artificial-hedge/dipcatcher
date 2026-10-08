@@ -349,6 +349,8 @@ def bench_tensor_decomp(seed: int = 20261231 + 166) -> dict[str, float]:
     em = cp_missing_em(x, mask, rank=3, n_iter=50, seed=seed + 2)
     d1 = float(cast(np.float64, cp["rel_err"]))
     d2 = float(cast(np.float64, cp_als(x, rank=3, n_iter=150, seed=seed)["rel_err"]))
+    if not (d1 < 0.1 and float(cc) > 50 and float(cc_over) < float(cc) and d1 == d2):
+        raise ValueError("tensor-decomposition oracle failed")
     return {
         "synthetic_cp_relerr": d1,
         "synthetic_tucker_relerr": float(cast(np.float64, tk["rel_err"])),

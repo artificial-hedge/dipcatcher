@@ -41,6 +41,8 @@ def bench_tcp_aimd(seed: int = 20261231 + 400) -> dict[str, float]:
         h2 = simulate({8})
         halves += int(h2[9] == max(h2[8] / 2, 2.0))
         _ = rng.random()
+    if not (exp_growth == trials and additive == trials and halves == trials):
+        raise ValueError("TCP AIMD oracle failed")
     return {
         "synthetic_slow_start_doubles": float(exp_growth / trials),
         "synthetic_additive_increase": float(additive / trials),

@@ -51,6 +51,8 @@ def bench_tebd_quench(
     for _ in range(steps):
         psi = U1 @ (U2 @ (U3 @ (U2 @ (U1 @ psi))))
     fid = float(abs(np.vdot(psi_exact, psi)) ** 2)
+    if fid <= 0.99:
+        raise ValueError("TEBD quench fidelity oracle failed")
     return {
         "synthetic_tebd_fid": fid,
         "synthetic_tebd_err": float(1 - fid),

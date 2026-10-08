@@ -24,6 +24,8 @@ def bench_tensor_cross(seed: int = 3097, d: int = 3, n: int = 12, chi: int = 4) 
     for k in range(d):
         rec2 = np.tensordot(Us[k], rec2, axes=(1, k))
     err_cross = float(np.linalg.norm(rec2 - T) / np.linalg.norm(T))
+    if err_cross >= 0.15:
+        raise ValueError("tensor-cross approximation oracle failed")
     return {
         "synthetic_tcross_err": err_cross,
         "synthetic_tcross_entries": float(chi * d * n),

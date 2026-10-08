@@ -102,6 +102,8 @@ def bench_td3(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_td3_policy_slope"] = float(-agent.theta[1])
     out["synthetic_td3_critic_gap"] = float(np.abs(agent.w1 - agent.w2).max())
     out["synthetic_td3_learns"] = float(abs(s) < 0.2)
+    if not (abs(s) < 0.2 and out["synthetic_td3_policy_slope"] > 0.5):
+        raise ValueError("TD3 learning oracle failed")
     return out
 
 

@@ -86,6 +86,8 @@ def bench_td7_lite(seed: int = 913, steps: int = 2500) -> dict[str, float]:
         st, r = _env_step(st, a, rng)
         tot += r
         n += 1
+    if tot / n <= -0.15:
+        raise ValueError("TD7-lite does not beat random policy")
     return {
         "synthetic_td7_mean_reward": tot / n,
         "synthetic_td7_random_reward": -0.2,

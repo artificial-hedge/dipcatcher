@@ -26,4 +26,6 @@ def bench_tanimoto(seed: int = _SEED) -> dict[str, float]:
     fb = morgan(*parse("CO"))
     fc = morgan(*parse("C1CC1"))
     ok += int(tanimoto(fa, fb) > tanimoto(fa, fc))
+    if ok != 4:
+        raise ValueError("tanimoto oracle failed")
     return {"synthetic_tanimoto": float(ok == 4)}

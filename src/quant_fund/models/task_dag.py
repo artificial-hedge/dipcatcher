@@ -36,4 +36,6 @@ def bench_task_dag(seed: int = _SEED) -> dict[str, float]:
     for _ in range(trials):
         _, good = dag_exec(rng.randint(5, 15), 0.15, rng)
         ok += good
+    if ok != trials:
+        raise ValueError("DAG scheduling oracle failed")
     return {"synthetic_dag_scheduled": ok / trials}

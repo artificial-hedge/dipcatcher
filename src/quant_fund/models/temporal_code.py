@@ -44,6 +44,10 @@ def bench_temporal_code(seed: int = 1933, T: int = 30) -> dict[str, float]:
     )
     spikes_r = float(poisson_encode(X, seed=seed)[:, :, :T].mean() * T)
     spikes_l = 1.0  # exactly one spike per input
+    # latency code uses exactly 1 spike per input — its efficiency win
+    # is the gated claim, not accuracy parity at this noise level
+    if not (spikes_l < spikes_r and acc_l >= acc_r - 0.1):
+        raise ValueError("temporal-coding oracle failed")
     return {
         "synthetic_rate_acc": acc_r,
         "synthetic_latency_acc": acc_l,

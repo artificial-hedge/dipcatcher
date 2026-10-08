@@ -70,4 +70,6 @@ def bench_taup_transform(seed: int = _SEED) -> dict[str, float]:
     # directivity: coherent stacking yields strong peak vs median panel level
     env = np.abs(panel)
     score += 1.0 if float(np.max(env) / (np.median(env) + 1e-12)) > 30.0 else 0.0
+    if score != 3.0:
+        raise ValueError("tau-p transform oracle failed")
     return {"synthetic_taup_transform": score / 3.0}

@@ -104,4 +104,6 @@ def bench_tablebase_dtm(seed: int = _SEED) -> dict[str, float]:
             mismatches += 1
         if tv == 1:
             n_win += 1
+    if mismatches != 0:
+        raise ValueError("tablebase DTM disagrees with minimax oracle")
     return {"synthetic_tablebase_dtm": 1.0 if mismatches == 0 else 1.0 - mismatches / 20}

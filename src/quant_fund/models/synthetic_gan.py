@@ -153,6 +153,14 @@ def bench_synthetic_gan(seed: int = 7) -> dict[str, float]:
     auc = float((ranks[y == 1].sum() - 200 * 201 / 2) / (200 * 200))
     gen = np.concatenate([G.forward(rng.standard_normal(8)) for _ in range(30)]) * scale
     real = wins.reshape(-1)
+    # honest gates: stylized-fact matching, not the (chance-level)
+    # post-convergence discriminator AUC
+    if not (
+        abs(vol_cluster(gen) - vol_cluster(real)) < 0.15
+        and abs(kurt(gen) - kurt(real)) < 0.5
+        and float(np.isfinite(d_loss) and np.isfinite(g_loss))
+    ):
+        raise ValueError("synthetic-GAN stylized-fact oracle failed")
     return {
         "synthetic_gan_d_loss": float(d_loss),
         "synthetic_gan_g_loss": float(g_loss),

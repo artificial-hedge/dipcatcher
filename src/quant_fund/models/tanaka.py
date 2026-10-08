@@ -30,6 +30,8 @@ def _bench_tanaka(seed: int = 0) -> float:
     checks.append(abs(stoch_int) < 10.0)
     # occupation fraction in |B| < eps is small but positive
     checks.append(0.0 < occupation < 0.2)
+    if not all(checks):
+        raise ValueError("Tanaka oracle failed")
     return float(sum(checks) / len(checks))
 
 

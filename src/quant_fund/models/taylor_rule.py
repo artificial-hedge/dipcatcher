@@ -25,4 +25,6 @@ def bench_taylor_rule(seed: int = _SEED) -> dict[str, float]:
     det = taylor_sim(1.5, 0.5, 200, 0.02)
     indet = taylor_sim(0.5, 0.1, 200, 0.02)
     ok = float(abs(det[-1]) < 0.005 and np.isfinite(indet).all())
+    if not ok:
+        raise ValueError("Taylor-rule determinacy oracle failed")
     return {"synthetic_taylor_determinate": ok}

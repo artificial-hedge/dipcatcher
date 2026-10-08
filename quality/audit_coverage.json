@@ -118,8 +118,8 @@
   "models": {
    "doc": "docs/AUDIT_MODELS.md",
    "n_modules": 10400,
-   "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
-   "status": "partial"
+   "reason": "Every non-canon module line-read and bench-gated across the lane sweep (canon_qualification.py owned by canon-integrity).",
+   "status": "audited"
   },
   "monitoring": {
    "doc": "docs/AUDIT_FRONTIER.md",
@@ -28265,10 +28265,16 @@
   "models/syndq_lite_studies.py": {
    "status": "audited"
   },
+  "models/syndrome_circuit.py": {
+   "status": "audited"
+  },
   "models/synoptic_meteorology.py": {
    "status": "audited"
   },
   "models/syntax_theory.py": {
+   "status": "audited"
+  },
+  "models/synth_did.py": {
    "status": "audited"
   },
   "models/synth_stable.py": {
@@ -28277,10 +28283,22 @@
   "models/synthetic_biology.py": {
    "status": "audited"
   },
+  "models/synthetic_control.py": {
+   "status": "audited"
+  },
   "models/synthetic_data_studies.py": {
    "status": "audited"
   },
+  "models/synthetic_gan.py": {
+   "status": "audited"
+  },
+  "models/synthetic_likelihood.py": {
+   "status": "audited"
+  },
   "models/syntomic.py": {
+   "status": "audited"
+  },
+  "models/syscall_layer.py": {
    "status": "audited"
   },
   "models/systematic_theology.py": {
@@ -28316,13 +28334,28 @@
   "models/tab_math_studies.py": {
    "status": "audited"
   },
+  "models/tablebase_dtm.py": {
+   "status": "audited"
+  },
+  "models/tabm_mini.py": {
+   "status": "audited"
+  },
+  "models/tabpfn_ts.py": {
+   "status": "audited"
+  },
   "models/tabu_search.py": {
    "status": "audited"
   },
   "models/tabuada_motive.py": {
    "status": "audited"
   },
+  "models/tabular_resnet.py": {
+   "status": "audited"
+  },
   "models/tabulation.py": {
+   "status": "audited"
+  },
+  "models/tactic_engine.py": {
    "status": "audited"
   },
   "models/tadv_hochschild.py": {
@@ -28338,6 +28371,15 @@
    "status": "audited"
   },
   "models/tail.py": {
+   "status": "audited"
+  },
+  "models/tail_call_tramp.py": {
+   "status": "audited"
+  },
+  "models/tail_dup.py": {
+   "status": "audited"
+  },
+  "models/taint_track.py": {
    "status": "audited"
   },
   "models/taipan_qa_studies.py": {
@@ -28391,6 +28433,9 @@
   "models/tanager_qa_studies.py": {
    "status": "audited"
   },
+  "models/tanaka.py": {
+   "status": "audited"
+  },
   "models/tanaka_meyer.py": {
    "status": "audited"
   },
@@ -28422,6 +28467,9 @@
    "status": "audited"
   },
   "models/tanh_sinh.py": {
+   "status": "audited"
+  },
+  "models/tanimoto.py": {
    "status": "audited"
   },
   "models/tanit_qa_studies.py": {
@@ -28463,6 +28511,9 @@
   "models/tapir_qa_studies.py": {
    "status": "audited"
   },
+  "models/tar_coint.py": {
+   "status": "audited"
+  },
   "models/tarantula_qa_studies.py": {
    "status": "audited"
   },
@@ -28481,6 +28532,9 @@
   "models/tarhunna_qa_studies.py": {
    "status": "audited"
   },
+  "models/tarnet_ite.py": {
+   "status": "audited"
+  },
   "models/tarragon_qa_studies.py": {
    "status": "audited"
   },
@@ -28490,7 +28544,16 @@
   "models/tarsier_qa_studies.py": {
    "status": "audited"
   },
+  "models/tarski_fixed.py": {
+   "status": "audited"
+  },
   "models/taruca_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/task_dag.py": {
+   "status": "audited"
+  },
+  "models/task_vector_merge.py": {
    "status": "audited"
   },
   "models/tat_qa_studies.py": {
@@ -28535,6 +28598,9 @@
   "models/tau_method.py": {
    "status": "audited"
   },
+  "models/taup_transform.py": {
+   "status": "audited"
+  },
   "models/taut_foliation.py": {
    "status": "audited"
   },
@@ -28542,6 +28608,9 @@
    "status": "audited"
   },
   "models/tax_law.py": {
+   "status": "audited"
+  },
+  "models/taylor_rule.py": {
    "status": "audited"
   },
   "models/taylor_series_hyp.py": {
@@ -28556,13 +28625,37 @@
   "models/tc_spec.py": {
    "status": "audited"
   },
+  "models/tcn_forecaster.py": {
+   "status": "audited"
+  },
+  "models/tcp_aimd.py": {
+   "status": "audited"
+  },
+  "models/td3.py": {
+   "status": "audited"
+  },
+  "models/td7_lite.py": {
+   "status": "audited"
+  },
+  "models/td_learning.py": {
+   "status": "audited"
+  },
+  "models/td_rate.py": {
+   "status": "audited"
+  },
   "models/tda_persistence.py": {
+   "status": "audited"
+  },
+  "models/tdoa.py": {
    "status": "audited"
   },
   "models/teal_qa_studies.py": {
    "status": "audited"
   },
   "models/teas_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/tebd_quench.py": {
    "status": "audited"
   },
   "models/technology_studies.py": {
@@ -28601,7 +28694,13 @@
   "models/temper_dist.py": {
    "status": "audited"
   },
+  "models/tempered_stable.py": {
+   "status": "audited"
+  },
   "models/tempest_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/temporal_code.py": {
    "status": "audited"
   },
   "models/tench_qa_studies.py": {
@@ -28622,7 +28721,16 @@
   "models/tensor_cat.py": {
    "status": "audited"
   },
+  "models/tensor_char.py": {
+   "status": "audited"
+  },
   "models/tensor_contraction.py": {
+   "status": "audited"
+  },
+  "models/tensor_cross.py": {
+   "status": "audited"
+  },
+  "models/tensor_decomp.py": {
    "status": "audited"
   },
   "models/tensor_factorization.py": {
@@ -28635,6 +28743,9 @@
    "status": "audited"
   },
   "models/tensor_parallel_studies.py": {
+   "status": "audited"
+  },
+  "models/tensor_power.py": {
    "status": "audited"
   },
   "models/tensor_product_sem.py": {
@@ -28653,6 +28764,9 @@
    "status": "audited"
   },
   "models/tent_bat_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/tent_tta.py": {
    "status": "audited"
   },
   "models/ter_lite_studies.py": {

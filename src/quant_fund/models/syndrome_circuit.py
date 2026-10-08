@@ -119,4 +119,6 @@ def bench_syndrome_circuit(seed: int = _SEED) -> dict[str, float]:
     o2, psi = measure_qubit(psi, n, 2, rng)
     o3, psi = measure_qubit(psi, n, 3, rng)
     checks.append(o2 == 0 and o3 == 1)
+    if not all(checks):
+        raise ValueError("syndrome-circuit extraction oracle failed")
     return {"synthetic_syndrome_circuit": float(np.mean(checks))}

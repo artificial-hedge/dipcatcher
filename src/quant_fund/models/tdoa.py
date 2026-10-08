@@ -68,6 +68,8 @@ def bench_tdoa(seed: int = 20261231) -> dict[str, float]:
         xn = chan_tdoa(R, tn)
         noisy_errs.append(float(np.linalg.norm(xn - tru)))
     res = tdoa_residual(R, tdoa, x0)
+    if not (clean_err < 1e-6 and float(np.abs(res).max()) < 1e-6):
+        raise ValueError("Chan TDOA oracle failed")
     return {
         "synthetic_tdoa_clean_err": clean_err,
         "synthetic_tdoa_noisy_rms": float(np.sqrt(np.mean(np.square(noisy_errs)))),

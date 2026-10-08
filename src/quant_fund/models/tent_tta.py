@@ -72,6 +72,8 @@ def bench_tent_tta(
     with torch.no_grad():
         h = backbone(xte_t) * affine[0][None, :] + affine[1][None, :]
         acc_after = float((head(h).argmax(-1) == yte_t).float().mean())
+    if acc_after <= acc_before:
+        raise ValueError("tent TTA entropy adaptation gained nothing")
     return {
         "synthetic_tent_acc_before": acc_before,
         "synthetic_tent_acc_after": acc_after,

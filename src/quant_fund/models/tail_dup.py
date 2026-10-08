@@ -55,4 +55,6 @@ def bench_tail_dup(seed: int = _SEED) -> dict[str, float]:
     ok = int(t1 == t2 == ["b1", "b2", "b4", "b5"])
     ok += int("b4__dup_b2" in new_cfg)
     ok += int(trace(new_cfg, "b1", {"c1": False, "c2": False})[-1] == "b6")
+    if ok != 3:
+        raise ValueError("tail-duplication oracle failed")
     return {"synthetic_tail_dup": float(ok == 3)}

@@ -78,6 +78,9 @@ def bench_tabular_resnet(
         loss.backward()
         opt.step()
     acc_m = acc_of(torch, mlp, x_te_t, y_te_t)
+    # honest floor: tabular resnet parity with the MLP within tolerance
+    if not (acc_r > 0.9 and acc_r >= acc_m - 0.05):
+        raise ValueError("tabular-resnet accuracy oracle failed")
     return {
         "synthetic_tres_acc": acc_r,
         "synthetic_tres_mlp_acc": acc_m,

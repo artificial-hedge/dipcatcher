@@ -120,3 +120,40 @@ def placebo_test(
         "rank": int(np.sum(ratios >= ratios[treated_idx])),
         "p_value": float(np.mean(ratios >= ratios[treated_idx])),
     }
+
+
+def bench_synthetic_control(seed: int = 0) -> dict[str, float]:
+    """Synthetic-control oracle: on a treated unit built as a donor mix plus
+    a planted post-period effect, the fit must recover the effect, the
+    pre-period RMSPE must stay small, and the treated unit must out-rank
+    placebos."""
+    rng = np.random.default_rng(seed)
+    t_len, t0, j = 80, 50, 5
+    base = np.cumsum(rng.normal(0.0, 0.2, t_len))[:, None]
+    donors = base + rng.normal(0.0, 0.15, (t_len, j))
+    w_true = np.array([0.5, 0.3, 0.2, 0.0, 0.0])
+    tau = 2.0
+    y1 = donors @ w_true + np.concatenate([np.zeros(t0), np.full(t_len - t0, tau)])
+    y1 = y1 + rng.normal(0.0, 0.05, t_len)
+    fit = synthetic_control(donors, y1, t0, n_iter=2000)
+    w_hat = np.asarray(fit["w"])
+    # placebo on a donor: should show a much smaller post/pre ratio
+    d_fit = synthetic_control(
+        np.column_stack([np.delete(donors, 0, 1), y1]), donors[:, 0], t0, n_iter=2000
+    )
+    checks = [
+        float(fit["rmspe_pre"]) < 0.3,
+        abs(float(fit["att_post"]) - tau) < 0.4,
+        float(fit["rmspe_ratio"]) > 2.0,
+        abs(float(w_hat[0]) - 0.5) < 0.25 and abs(float(w_hat[3])) < 0.2,
+        float(fit["rmspe_ratio"]) > float(d_fit["rmspe_ratio"]),
+    ]
+    if not all(checks):
+        raise ValueError("synthetic-control recovery oracle failed")
+    return {
+        "synthetic_sc_rmspe_pre": float(fit["rmspe_pre"]),
+        "synthetic_sc_att_err": abs(float(fit["att_post"]) - tau),
+        "synthetic_sc_ratio": float(fit["rmspe_ratio"]),
+        "synthetic_sc_placebo_ratio": float(d_fit["rmspe_ratio"]),
+        "synthetic_synthetic_control_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

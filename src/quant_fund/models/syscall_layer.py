@@ -83,6 +83,8 @@ def bench_syscall_layer(seed: int = 20261231 + 475) -> dict[str, float]:
         r2 = syscall(k2, 0, "b")
         r3 = syscall(k2, 0, "c")
         limit += int(r1 >= 0 and r2 >= 0 and r3 == -1 and k2.errno == 24)
+    if not (route == trials and nosys == trials and limit == trials):
+        raise ValueError("syscall-dispatch oracle failed")
     return {
         "synthetic_dispatch_routes": float(route / trials),
         "synthetic_enosys": float(nosys / trials),

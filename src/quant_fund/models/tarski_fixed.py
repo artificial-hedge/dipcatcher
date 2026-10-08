@@ -45,6 +45,8 @@ def _bench_tarski_fixed(seed: int = 0) -> float:
     # gfp example: greatest invariant = nodes that don't reach a dead state? use
     # even-iteration parity set
     checks.append(gfp(frozenset({0, 1, 2}), lambda s: s | frozenset({0})) == frozenset({0, 1, 2}))
+    if not all(checks):
+        raise ValueError("Tarski fixed-point oracle failed")
     return float(sum(checks) / len(checks))
 
 

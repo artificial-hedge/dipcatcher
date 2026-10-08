@@ -129,6 +129,13 @@ def bench_td_learning(seed: int = 20261231) -> dict[str, float]:
     v_pi = policy_eval(p, r, pi_star, gamma)
     agree_ql = np.mean(q_ql.argmax(1) == pi_star.argmax(1))
     agree_sa = np.mean(q_sa.argmax(1) == pi_star.argmax(1))
+    if not (
+        agree_ql > 0.6
+        and agree_sa > 0.6
+        and float(np.max(np.abs(v_td - v_pi))) < 0.3
+        and float(np.max(np.abs(q_ql.max(axis=1) - v_star))) < 0.3
+    ):
+        raise ValueError("TD-learning oracle failed")
     return {
         "synthetic_ql_policy_agree": float(agree_ql),
         "synthetic_sarsa_policy_agree": float(agree_sa),

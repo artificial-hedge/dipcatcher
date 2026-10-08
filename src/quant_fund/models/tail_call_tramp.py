@@ -54,6 +54,8 @@ def bench_tail_call_tramp(seed: int = 20261231 + 483) -> dict[str, float]:
         except RecursionError:
             ok = False
         beyond += int(ok)
+    if not (deep == trials and correct == trials and beyond == trials):
+        raise ValueError("tail-call trampoline oracle failed")
     return {
         "synthetic_deep_recursion": float(deep / trials),
         "synthetic_matches_reference": float(correct / trials),

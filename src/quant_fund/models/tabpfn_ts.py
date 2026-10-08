@@ -203,3 +203,47 @@ class TabpfnTsDistribution(JoblibMixin):
                 "standardize": True,
             },
         )
+
+
+class _TabpfnStub:
+    """Deterministic predictor stand-in: returns a fixed raw quantile row."""
+
+    def __init__(self, row: Array) -> None:
+        self._row = np.asarray(row, dtype=np.float64)
+
+    def predict(self, window: Array) -> Array:
+        del window
+        return self._row
+
+
+def bench_tabpfn_ts(seed: int = 0) -> dict[str, float]:
+    """TabPFN-TS quantile plumbing oracle: with a deterministic injected
+    predictor the emitted quantiles must equal the de-standardized stub
+    row (sorted, tiled), and the unfitted object must fail closed."""
+    rng = np.random.default_rng(seed)
+    row = np.array([0.9, -0.4, 0.1])  # deliberately unsorted
+    taus = np.array([0.1, 0.5, 0.9])
+    mdl = TabpfnTsDistribution(taus=[float(t) for t in taus], seed=seed, lookback=120)
+    mdl._predictor = _TabpfnStub(row)
+    try:
+        TabpfnTsDistribution(taus=(0.5,)).predict(np.zeros((1, 2)))
+        unfitted_fail = False
+    except RuntimeError:
+        unfitted_fail = True
+    y = rng.standard_normal(400) * 3.0 - 2.0
+    mdl.fit(np.zeros((1, 1)), y)
+    q = mdl.predict(np.zeros((3, 1)))
+    mu, sig = float(mdl._mu), float(mdl._sig)
+    want = np.sort(row * sig + mu)
+    q_err = float(np.abs(q[0] - want).max())
+    tiled = bool(np.all(q == q[0]))
+    hist = mdl.predict_from_history(y[:200])
+    hist_ok = bool(np.isfinite(hist).all() and hist.shape == (81, 3))
+    checks = [unfitted_fail, q_err < 1e-9, tiled, hist_ok]
+    if not all(checks):
+        raise ValueError("tabpfn_ts quantile plumbing oracle failed")
+    return {
+        "synthetic_tabpfn_ts_q_err": q_err,
+        "synthetic_tabpfn_ts_unfitted_fails": float(unfitted_fail),
+        "synthetic_tabpfn_ts_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

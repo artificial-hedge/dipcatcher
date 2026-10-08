@@ -41,6 +41,8 @@ def _bench_tensor_char(seed: int = 0) -> float:
     checks.append(d3[0] == 1 and d3[1] == 0 and d3[2] == 0)
     # degree checks: 2*2 = 4 = 1+1+2
     checks.append(sum(d.values()) == 0 or prod[0] == 4)
+    if not all(checks):
+        raise ValueError("tensor-char oracle failed")
     return float(sum(checks) / len(checks))
 
 

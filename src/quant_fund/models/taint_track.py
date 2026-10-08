@@ -35,4 +35,6 @@ def bench_taint_track(seed: int = _SEED) -> dict[str, float]:
         ops2 = [("src", 1, -1), ("kill", 1, -1), ("add", 1, 2)]
         t2 = taint_prop(ops2)
         ok += float(1000 not in t2)
+    if ok != 2 * trials:
+        raise ValueError("taint-propagation oracle failed")
     return {"synthetic_taint_correct": ok / (2 * trials)}

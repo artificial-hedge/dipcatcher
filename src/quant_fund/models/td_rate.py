@@ -38,6 +38,10 @@ def bench_td_rate(seed: int = 4609) -> dict[str, float]:
     steps = 8000
     e_decay = np.mean([_td(seed + i, steps, True) for i in range(4)], axis=0)
     e_const = np.mean([_td(seed + 10 + i, steps, False) for i in range(4)], axis=0)
+    # honest floor: error decreased over training; the decay-vs-const
+    # comparison is disproven on this fixture — not gated
+    if not (e_decay[-1] < e_decay[steps // 8 - 1]):
+        raise ValueError("TD-rate learning-progress oracle failed")
     return {
         "synthetic_td_err_early": float(e_decay[steps // 8 - 1]),
         "synthetic_td_err_late": float(e_decay[-1]),

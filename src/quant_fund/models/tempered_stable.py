@@ -73,3 +73,39 @@ def cgmy_pdf(x: Array, c: float, g: float, m: float, y: float) -> Array:
         val, _ = quad(integrand, 0.0, 200.0, limit=200)
         out[i] = max(val / np.pi, 0.0)
     return out
+
+
+def bench_tempered_stable(seed: int = 0) -> dict[str, float]:
+    """CGMY oracle: psi(0)=0, finite-difference derivatives of the
+    characteristic exponent reproduce the first two cumulants, and the
+    inverted density is nonnegative and integrates to ~1."""
+    del seed
+    c, g, m, y = 1.0, 8.0, 10.0, 0.5
+    psi0 = cgmy_char_exponent(np.array([0.0]), c, g, m, y)[0]
+    h = 1e-4
+    u = np.array([-h, 0.0, h])
+    pv = cgmy_char_exponent(u, c, g, m, y)
+    d1 = (pv[2] - pv[0]) / (2 * h)
+    d2 = (pv[2] - 2 * pv[1] + pv[0]) / (h * h)
+    k = cgmy_cumulants(c, g, m, y)
+    # symmetric limit: G=M gives zero first cumulant and zero skew
+    k_sym = cgmy_cumulants(1.0, 5.0, 5.0, 0.5)
+    xs = np.linspace(-3.0, 3.0, 61)
+    pdf = cgmy_pdf(xs, c, g, m, y)
+    mass = float(np.trapezoid(pdf, xs))
+    checks = [
+        abs(complex(psi0)) < 1e-12,
+        abs(float((d1 / 1j).real) - k["c1"]) < 0.05,
+        abs(float((-d2).real) - k["c2"]) < 0.05,
+        abs(k_sym["c1"]) < 1e-12 and abs(k_sym["skew"]) < 1e-12,
+        float(pdf.min()) >= 0.0,
+        abs(mass - 1.0) < 0.02,
+    ]
+    if not all(checks):
+        raise ValueError("CGMY cumulant/density oracle failed")
+    return {
+        "synthetic_cgmy_c1_fd_err": abs(float((d1 / 1j).real) - k["c1"]),
+        "synthetic_cgmy_c2_fd_err": abs(float((-d2).real) - k["c2"]),
+        "synthetic_cgmy_pdf_mass_err": abs(mass - 1.0),
+        "synthetic_tempered_stable_score": float(sum(bool(x) for x in checks) / len(checks)),
+    }
