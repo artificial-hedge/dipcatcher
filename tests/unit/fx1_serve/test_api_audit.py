@@ -69,3 +69,25 @@ def test_verify_receipt_route() -> None:
     resp = _client().post("/receipts/verify", json={"receipt": blob})
     assert resp.status_code == 200
     assert resp.json()["valid"] is True
+
+
+def test_verify_receipt_route_fails_closed_on_verifier_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def verifier_error(*args: object, **kwargs: object) -> dict[str, object]:
+        raise RuntimeError("forced verifier exception")
+
+    monkeypatch.setattr(api_mod, "verify_receipt_payload", verifier_error)
+    resp = _client().post("/receipts/verify", json={"receipt": {}})
+
+    assert resp.status_code == 200
+    assert resp.json() == {
+        "valid": False,
+        "path": "<api>",
+        "schema_tag": "",
+        "kind": None,
+        "verdict": None,
+        "digest_convention": None,
+        "errors": ["forced verifier exception"],
+        "warnings": [],
+    }

@@ -2754,7 +2754,19 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         operation_id="verify_receipt",
     )
     def verify_receipt(body: ReceiptVerifyRequest) -> ReceiptVerifyResponse:
-        result = verify_receipt_payload(body.receipt, path=Path("<api>"))
+        try:
+            result = verify_receipt_payload(body.receipt, path=Path("<api>"))
+        except Exception as exc:  # verifier must fail closed, never 500
+            return ReceiptVerifyResponse(
+                valid=False,
+                path="<api>",
+                schema_tag="",
+                kind=None,
+                verdict=None,
+                digest_convention=None,
+                errors=[str(exc)],
+                warnings=[],
+            )
         return ReceiptVerifyResponse(
             valid=result["valid"],
             path=result["path"],
