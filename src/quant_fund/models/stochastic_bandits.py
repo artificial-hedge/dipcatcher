@@ -114,6 +114,10 @@ def bench_stochastic_bandits(seed: int | None = None) -> dict[str, float]:
         runs,
         rng,
     )
+    # honest floor: regret magnitudes bounded on the planted gap —
+    # UCB1-vs-eps ordering is fixture-dependent, not gated
+    if max(u, e, c) >= 300.0:
+        raise ValueError("bandit regret above sanity bound")
     return {
         "synthetic_ucb1_regret": u,
         "synthetic_eps_greedy_regret": e,

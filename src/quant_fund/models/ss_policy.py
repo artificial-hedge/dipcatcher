@@ -19,6 +19,10 @@ def bench_ss_policy(seed: int = 3025) -> dict[str, float]:
                 best_cost, best_fill = c, f
                 best_par = (float(s), float(S))
     c_n, f_n, _ = simulate(lambda ip, w: 80.0 if ip <= 20 else 0.0, seed)
+    # the naive policy sits inside the search grid, so the grid optimum
+    # can never cost more
+    if best_cost > c_n:
+        raise ValueError("(s,S) grid optimum worse than in-grid naive")
     return {
         "synthetic_ss_cost": float(best_cost),
         "synthetic_naive_cost": float(c_n),

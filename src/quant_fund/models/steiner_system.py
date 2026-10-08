@@ -33,6 +33,8 @@ def _bench_steiner_system(seed: int = 0) -> float:
     checks.append(not is_admissible(8, 3, 1))
     # Fisher: b >= v for nontrivial BIBD — check Fano satisfies
     checks.append(bibd_b(7, 3, 1) >= 7)
+    if not all(checks):
+        raise ValueError("Steiner-system oracle failed")
     return float(sum(checks) / len(checks))
 
 

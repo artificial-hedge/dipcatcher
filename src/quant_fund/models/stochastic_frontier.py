@@ -174,6 +174,15 @@ def bench_stochastic_frontier(seed: int = 20261231 + 207) -> dict[str, float]:
     eff_corr = float(np.corrcoef(np.asarray(out["efficiency"]), -np.asarray(d["u_true"]))[0, 1])
     out_b = sfa_fit(np.asarray(d["y"]), np.asarray(d["x"]))
 
+    if not (
+        abs(beta_hat - 0.7) < 0.15
+        and su_hat > 0.2
+        and su0 < su_hat * 0.6
+        and skew_ols < -0.3
+        and eff_corr > 0.5
+        and float(np.asarray(out["beta"])[1]) == float(np.asarray(out_b["beta"])[1])
+    ):
+        raise ValueError("SFA frontier oracle failed")
     return {
         "synthetic_beta": beta_hat,
         "synthetic_beta_err": float(abs(beta_hat - 0.7)),

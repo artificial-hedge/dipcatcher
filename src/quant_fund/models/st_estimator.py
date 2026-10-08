@@ -36,6 +36,8 @@ def bench_st_estimator(seed: int = 2389, trials: int = 20) -> dict[str, float]:
         g_ste = s.grad.numpy()
         g_fd = finite_diff_grad(s0)
         corrs.append(grad_corr(g_ste, g_fd))
+    if float(np.mean(corrs)) < 0.7:
+        raise ValueError("STE gradient correlation oracle failed")
     return {
         "synthetic_ste_grad_corr": float(np.mean(corrs)),
         "synthetic_fd_norm": float(np.linalg.norm(finite_diff_grad(sel_data(seed)[0]))),

@@ -34,4 +34,6 @@ def bench_stereo_disparity(seed: int = _SEED) -> dict[str, float]:
         d = disparity(il, ir, max_d=8)
         center = d[8:16, 14:22]
         ok += float(np.abs(np.median(center) - true_d) <= 1)
+    if ok != trials:
+        raise ValueError("stereo-disparity recovery oracle failed")
     return {"synthetic_disparity_recovers": ok / trials}

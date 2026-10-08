@@ -131,6 +131,8 @@ def bench_ssa_construct(seed: int = 20261231 + 350) -> dict[str, float]:
         # join block must have a phi for x (two defs reaching)
         phis = [s for s in ssa["join"] if s[1] == "phi"]
         phi_ok += int(any(s[2] == "x" for s in phis))
+    if once_ok != trials or phi_ok != trials:
+        raise ValueError("SSA single-def/phi-placement oracle failed")
     return {
         "synthetic_single_def": float(once_ok / trials),
         "synthetic_phi_at_merge": float(phi_ok / trials),

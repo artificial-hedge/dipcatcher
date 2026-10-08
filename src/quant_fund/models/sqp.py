@@ -80,6 +80,8 @@ def _bench_sqp(seed: int = 0) -> float:
     x3 = sqp_solve(f3, g3, h3, j3, np.array([-0.5, -0.8]))
     opt = -np.array([2.0, 3.0]) / np.sqrt(13.0)
     checks.append(np.allclose(x3, opt, atol=1e-3))
+    if not all(checks):
+        raise ValueError("SQP oracle failed")
     return float(sum(checks) / len(checks))
 
 

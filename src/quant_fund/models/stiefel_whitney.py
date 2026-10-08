@@ -33,6 +33,8 @@ def _bench_stiefel_whitney(seed: int = 0) -> float:
     checks.append(sw_rpn(0, 0) == 1)
     # beyond dimension
     checks.append(sw_rpn(2, 3) == 0)
+    if not all(checks):
+        raise ValueError("Stiefel-Whitney oracle failed")
     return float(sum(checks) / len(checks))
 
 

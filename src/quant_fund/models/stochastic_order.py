@@ -39,6 +39,8 @@ def _bench_stochastic_order(seed: int = 0) -> float:
     checks.append(ssd_check(x, y, grid))
     # degenerate: constant 5 dominates everything
     checks.append(fosd([5.0] * 100, x, grid))
+    if not all(checks):
+        raise ValueError("stochastic-order oracle failed")
     return float(sum(checks) / len(checks))
 
 

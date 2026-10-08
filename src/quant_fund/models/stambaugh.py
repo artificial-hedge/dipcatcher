@@ -161,6 +161,13 @@ def bench_stambaugh(seed: int = 20261231 + 242) -> dict[str, float]:
 
     err_ols = abs(float(out["beta_ols"]) - 0.05)
     err_cor = abs(float(out["beta_corrected"]) - 0.05)
+    if not (
+        err_cor < err_ols
+        and float(out["rho_hat"]) > 0.85
+        and abs(float(outn["bias"])) < abs(float(out["bias"]))
+        and float(out["beta_corrected"]) == float(out_b["beta_corrected"])
+    ):
+        raise ValueError("Stambaugh bias-correction oracle failed")
     return {
         "synthetic_beta_ols": float(out["beta_ols"]),
         "synthetic_beta_corrected": float(out["beta_corrected"]),

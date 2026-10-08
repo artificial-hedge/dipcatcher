@@ -41,6 +41,8 @@ def _bench_stone_duality(seed: int = 0) -> float:
     for a in alg:
         ins = sum(a in u for u in ufs) + sum(frozenset(set(range(3)) - a) in u for u in ufs)
         checks.append(ins == 3)
+    if not all(checks):
+        raise ValueError("Stone-duality oracle failed")
     return float(sum(checks) / len(checks))
 
 

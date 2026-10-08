@@ -56,6 +56,8 @@ def bench_stencil_halo(seed: int = _SEED) -> dict[str, float]:
                 + np.hstack([ref[:, 1:], ref[:, -1:]])
             )
         errs.append(float(np.abs(par - ref).max()))
+    if float(np.mean(errs)) >= 1e-10:
+        raise ValueError("halo-decomposed stencil disagrees with serial oracle")
     return {
         "synthetic_halo_max_err": float(np.mean(errs)),
         "synthetic_halo_correct": float(np.mean(errs) < 1e-10),

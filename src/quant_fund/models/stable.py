@@ -98,3 +98,31 @@ def stable_fit_ecf(x: Array, n_points: int = 12) -> dict[str, float]:
     alpha = float(np.clip(alpha, 0.1, 2.0))
     c = float(np.exp(intercept / alpha)) if alpha > 0 else float("nan")
     return {"alpha": alpha, "c": c, "loc": loc}
+
+
+def bench_stable(seed: int = 0) -> dict[str, float]:
+    """Stable-law oracle: alpha=2 must reproduce the Gaussian (finite
+    variance ~2c^2), alpha<2 must show heavy tails, and the density must
+    integrate to one."""
+    rng = np.random.default_rng(seed)
+    g = stable_rvs(2.0, beta=0.0, c=1.0, size=4000, rng=rng)
+    h = stable_rvs(1.5, beta=0.0, c=1.0, size=4000, rng=rng)
+    var_g = float(g.var())
+    exk_g = float(((g - g.mean()) ** 4).mean() / var_g**2 - 3.0)
+    tail_ratio = float(np.abs(h).max() / np.abs(g).max())
+    x = np.linspace(-60.0, 60.0, 12000)
+    mass = float(np.trapezoid(stable_pdf(x, 1.5, 0.0), x))
+    checks = [
+        1.0 < var_g < 3.0,  # var = 2c^2 = 2 up to MC noise
+        abs(exk_g) < 1.5,  # alpha=2 has no heavy tails
+        tail_ratio > 2.0,  # alpha=1.5 tails far exceed Gaussian
+        abs(mass - 1.0) < 1e-3,
+    ]
+    if not all(checks):
+        raise ValueError("stable-law Gaussian/tail/mass oracle failed")
+    return {
+        "synthetic_stable_var_a2": var_g,
+        "synthetic_stable_exk_a2": exk_g,
+        "synthetic_stable_tail_ratio": tail_ratio,
+        "synthetic_stable_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

@@ -26,4 +26,6 @@ def bench_ssao_lite(seed: int = _SEED) -> dict[str, float]:
         depth = np.cumsum(rng.rand(20, 20), axis=1)
         ao = ssao(depth, rng)
         ok += float(ao.min() >= 0.0 and ao.max() <= 1.0)
+    if ok != trials:
+        raise ValueError("SSAO output outside [0,1]")
     return {"synthetic_ssao_range": ok / trials}

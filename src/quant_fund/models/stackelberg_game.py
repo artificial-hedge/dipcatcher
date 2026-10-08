@@ -39,6 +39,10 @@ def bench_stackelberg_game(seed: int = 4207) -> dict[str, float]:
         (COU_A - COU_B * (q_l + eps + q_f_br(q_l + eps)) - c_l) * (q_l + eps)
         - (COU_A - COU_B * (q_l + q_f) - c_l) * q_l
     ) / eps
+    # FOC residual near zero at the optimum and the Stackelberg leader
+    # must earn at least its Cournot profit
+    if not (abs(float(d)) < 0.5 and float(pi_l) >= pi_l_cournot):
+        raise ValueError("Stackelberg FOC/leader-gain oracle failed")
     return {
         "synthetic_stack_foc_resid": abs(float(d)),
         "synthetic_stack_ql": float(q_l),

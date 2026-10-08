@@ -57,6 +57,8 @@ def _bench_state_tomo(seed: int = 0) -> float:
     checks.append(np.allclose(rec2, rb, atol=1e-9))
     checks.append(abs(expect_2q(rb, 1, 1) - 1.0) < 1e-9)  # <XX>=1 on Phi+
     checks.append(abs(expect_2q(rb, 3, 3) - 1.0) < 1e-9)  # <ZZ>=1
+    if not all(checks):
+        raise ValueError("state-tomography oracle failed")
     return sum(checks) / len(checks)
 
 

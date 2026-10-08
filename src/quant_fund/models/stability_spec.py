@@ -36,6 +36,8 @@ def _bench_stability_spec(seed: int = 0) -> float:
     # both are "stable" by the growth criterion (linear, not exponential)
     checks.append(is_stable_growth(dlo_type_count, [1, 2, 5, 10]))
     checks.append(is_stable_growth(acf_type_count, [1, 2, 5, 10]))
+    if not all(checks):
+        raise ValueError("stability-spectrum oracle failed")
     return float(sum(checks) / len(checks))
 
 

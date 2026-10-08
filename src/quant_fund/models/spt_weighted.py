@@ -27,6 +27,9 @@ def bench_spt_weighted(seed: int = 3061) -> dict[str, float]:
     c_opt = _wcj(wspt, p, w)
     c_fifo = _wcj(fifo, p, w)
     c_rnd = _wcj(rnd, p, w)
+    # WSPT is optimal for weighted completion time
+    if not (c_opt <= c_fifo and c_opt <= c_rnd):
+        raise ValueError("WSPT fails optimality oracle")
     return {
         "synthetic_wspt_cost": float(c_opt),
         "synthetic_fifo_cost": float(c_fifo),

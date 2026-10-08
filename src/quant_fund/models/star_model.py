@@ -200,6 +200,8 @@ def bench_star(seed: int = 20261231 + 350) -> dict[str, float]:
         and abs(fit["c"]) < 0.35
         and fit["phi1_sum"] > fit["phi2_sum"]
     )
+    if not ok:
+        raise ValueError("STAR LM-test/fit oracle failed")
     out: dict[str, float] = {
         "synthetic_star_lm3": lm_star["lm3"],
         "synthetic_star_pvalue": lm_star["pvalue"],

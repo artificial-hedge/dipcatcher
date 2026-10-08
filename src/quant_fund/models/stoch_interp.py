@@ -48,6 +48,8 @@ def bench_stoch_interp(
     gen = xs.numpy().astype(np.float64)
     m = _mmd(gen, Xte, bw=1.0)
     g = gauss_mmd(np.random.default_rng(seed + 1), Xte)
+    if not (np.isfinite(m) and m < g):
+        raise ValueError("stochastic-interp MMD oracle failed")
     return {
         "synthetic_si_mmd": m,
         "synthetic_si_gauss_mmd": g,

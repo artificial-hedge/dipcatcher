@@ -39,4 +39,6 @@ def bench_star_msa(seed: int = _SEED) -> dict[str, float]:
     unrelated = star_consensus_score(
         [ref] + ["".join("ACGT"[rng.randint(4)] for _ in range(12)) for _ in range(5)]
     )
+    if related <= unrelated:
+        raise ValueError("star-consensus does not separate related sets")
     return {"synthetic_star_sep": float(related > unrelated)}

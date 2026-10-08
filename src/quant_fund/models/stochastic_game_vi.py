@@ -41,6 +41,8 @@ def bench_stochastic_game_vi(seed: int = 4209) -> dict[str, float]:
     v = _vi()
     resid = max(abs(_matrix_value(SG_M[s] + SG_GAMMA * _cont(s, v)) - v[s]) for s in range(2))
     naive = float(min(float(SG_M[s].min()) for s in range(2)))
+    if not (float(resid) < 1e-6 and float(v[0]) > naive):
+        raise ValueError("stochastic-game VI oracle failed")
     return {
         "synthetic_sg_resid": float(resid),
         "synthetic_sg_v0": float(v[0]),

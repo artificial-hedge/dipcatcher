@@ -136,6 +136,8 @@ def bench_srisk(seed: int = 20261231 + 344) -> dict[str, float]:
         and s_hi["srisk"] > s_lo["srisk"]
         and s_hi["lrmes"] > s_lo["lrmes"]
     )
+    if not ok:
+        raise ValueError("srisk beta-ordering oracle failed")
     out: dict[str, float] = {
         "synthetic_mes_high_beta": m_hi["mes"],
         "synthetic_mes_low_beta": m_lo["mes"],

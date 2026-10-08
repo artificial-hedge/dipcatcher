@@ -167,4 +167,6 @@ def bench_steane_code(seed: int = _SEED) -> dict[str, float]:
     fid = float(np.real(np.vdot(target, rho @ target)))
     ok += fid > 0.999
     trials += 1
+    if ok != trials:
+        raise ValueError("Steane-code correction fidelity oracle failed")
     return {"synthetic_steane_code": ok / trials}

@@ -44,6 +44,8 @@ def _bench_stirling_cycle(seed: int = 0) -> float:
     checks.append(stirling1(5, 2) == 4 * stirling1(4, 2) + stirling1(4, 1))
     # brute-force agreement at n=4
     checks.append(all(count_by_cycles(4, k) == stirling1(4, k) for k in range(1, 5)))
+    if not all(checks):
+        raise ValueError("Stirling-cycle oracle failed")
     return float(sum(checks) / len(checks))
 
 

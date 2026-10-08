@@ -35,4 +35,6 @@ def bench_stanley(seed: int = _SEED) -> dict[str, float]:
         t = np.linspace(0, 2 * np.pi, 100)
         path = np.stack([5 * np.cos(t), 5 * np.sin(t) + 0.5 * np.sin(3 * t)], axis=1)
         errs.append(_stanley_run(path, 2.5, rng))
+    if float(np.mean(errs)) >= 0.5:
+        raise ValueError("Stanley cross-track error oracle failed")
     return {"synthetic_stanley_cte": float(np.mean(errs) < 0.5)}

@@ -43,4 +43,6 @@ def bench_sta_timing(seed: int = _SEED) -> dict[str, float]:
     ok += int(abs(at[3] - 3.5) < 1e-9)
     # required-time slack: sink must arrive by 4.0
     ok += int(abs(4.0 - at[3] - 0.5) < 1e-9)
+    if ok != 3:
+        raise ValueError("STA longest-path/slack oracle failed")
     return {"synthetic_sta": float(ok == 3)}

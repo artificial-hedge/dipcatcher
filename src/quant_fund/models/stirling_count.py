@@ -33,4 +33,6 @@ def bench_stirling_count(seed: int = _SEED) -> dict[str, float]:
     ok = all(stirling2(n, k) == _oracle(n, k) for n in range(1, 10) for k in range(1, n + 1))
     bells = [bell(n) for n in range(8)]
     want = [1, 1, 2, 5, 15, 52, 203, 877]
+    if not (ok and bells == want):
+        raise ValueError("Stirling/Bell oracle failed")
     return {"synthetic_stirling": float(ok and bells == want)}

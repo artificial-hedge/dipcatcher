@@ -53,6 +53,10 @@ def bench_stgcn_lite(seed: int = 1607, iters: int = 800) -> dict[str, float]:
             preds[t - 10] = head(encode(Xt[max(0, t - 10) : t])).squeeze(-1).numpy()
     mse = float(np.mean((preds - X[10:]) ** 2))
     base = ar2_baseline(X)
+    # honest floor: STGCN does not beat the AR(2) baseline on this
+    # fixture — gate nondegeneracy, not the claimed win
+    if not (np.isfinite(mse) and mse < base + 0.1):
+        raise ValueError("STGCN MSE degenerate")
     return {
         "synthetic_stgcn_mse": mse,
         "synthetic_stgcn_ar2_mse": base,

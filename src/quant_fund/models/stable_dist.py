@@ -198,6 +198,8 @@ def bench_stable(seed: int = 20261231 + 363) -> dict[str, float]:
         and abs(r["alpha_init"] - 1.6) < 0.55
         and r["cf_err"] < 0.5
     )
+    if not ok:
+        raise ValueError("stable-fit alpha-recovery oracle failed")
     out: dict[str, float] = {
         "synthetic_st_alpha_hat": r["alpha"],
         "synthetic_st_alpha_init": r["alpha_init"],

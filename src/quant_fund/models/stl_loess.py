@@ -184,6 +184,8 @@ def bench_stl(seed: int = 20261231 + 339) -> dict[str, float]:
         and seas_corr > 0.9
         and strength["seasonal_strength"] > 0.8
     )
+    if not ok:
+        raise ValueError("STL decomposition oracle failed")
     out: dict[str, float] = {
         "synthetic_stl_resid_var_ratio": var_resid / var_total,
         "synthetic_stl_trend_corr": trend_corr,

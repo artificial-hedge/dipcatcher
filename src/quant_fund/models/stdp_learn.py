@@ -37,6 +37,8 @@ def bench_stdp_learn(seed: int = 1907, n_inputs: int = 8, T: int = 400) -> dict[
             post_tr += 1.0
         W = np.clip(W, 0.0, 1.0)
     sel = float(W[:4].mean() - W[4:].mean())
+    if sel <= 0.0:
+        raise ValueError("STDP fails causal-vs-noise selectivity")
     return {
         "synthetic_stdp_selectivity": sel,
         "synthetic_stdp_w_causal": float(W[:4].mean()),

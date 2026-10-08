@@ -34,4 +34,6 @@ def bench_stft_istft(seed: int = _SEED) -> dict[str, float]:
     # compare on interior (windowed edges have near-zero norm)
     mid = slice(win, n - win)
     err = float(np.abs(rec[mid] - x[mid]).max())
+    if err >= 1e-8:
+        raise ValueError("STFT/iSTFT perfect-reconstruction oracle failed")
     return {"synthetic_stft_pr": float(err < 1e-8)}

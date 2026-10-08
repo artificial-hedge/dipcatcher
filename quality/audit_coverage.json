@@ -27269,10 +27269,16 @@
   "models/spruce_qa_studies.py": {
    "status": "audited"
   },
+  "models/spt_weighted.py": {
+   "status": "audited"
+  },
   "models/sqa_lite_studies.py": {
    "status": "audited"
   },
   "models/sqcs_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/sqp.py": {
    "status": "audited"
   },
   "models/sqrt_decomp.py": {
@@ -27305,6 +27311,21 @@
   "models/srb_measure.py": {
    "status": "audited"
   },
+  "models/srisk.py": {
+   "status": "audited"
+  },
+  "models/ss_policy.py": {
+   "status": "audited"
+  },
+  "models/ssa_construct.py": {
+   "status": "audited"
+  },
+  "models/ssa_repair.py": {
+   "status": "audited"
+  },
+  "models/ssao_lite.py": {
+   "status": "audited"
+  },
   "models/ssor_precond.py": {
    "status": "audited"
   },
@@ -27317,7 +27338,19 @@
   "models/sst2_studies.py": {
    "status": "audited"
   },
+  "models/st_estimator.py": {
+   "status": "audited"
+  },
+  "models/sta_timing.py": {
+   "status": "audited"
+  },
   "models/stability_sheaf.py": {
+   "status": "audited"
+  },
+  "models/stability_spec.py": {
+   "status": "audited"
+  },
+  "models/stable.py": {
    "status": "audited"
   },
   "models/stable_algebra.py": {
@@ -27345,6 +27378,9 @@
    "status": "audited"
   },
   "models/stable_derivator.py": {
+   "status": "audited"
+  },
+  "models/stable_dist.py": {
    "status": "audited"
   },
   "models/stable_dual.py": {
@@ -27431,6 +27467,9 @@
   "models/stack_morph.py": {
    "status": "audited"
   },
+  "models/stackelberg_game.py": {
+   "status": "audited"
+  },
   "models/stacking.py": {
    "status": "audited"
   },
@@ -27455,6 +27494,9 @@
   "models/staghorn_qa_studies.py": {
    "status": "audited"
   },
+  "models/stambaugh.py": {
+   "status": "audited"
+  },
   "models/stance_detect_studies.py": {
    "status": "audited"
   },
@@ -27464,7 +27506,16 @@
   "models/standard_invariant.py": {
    "status": "audited"
   },
+  "models/stanley.py": {
+   "status": "audited"
+  },
   "models/star_autonomous.py": {
+   "status": "audited"
+  },
+  "models/star_model.py": {
+   "status": "audited"
+  },
+  "models/star_msa.py": {
    "status": "audited"
   },
   "models/star_qa_lite_studies.py": {
@@ -27473,7 +27524,13 @@
   "models/star_qa_studies.py": {
    "status": "audited"
   },
+  "models/state_dependent_lp.py": {
+   "status": "audited"
+  },
   "models/state_space.py": {
+   "status": "audited"
+  },
+  "models/state_tomo.py": {
    "status": "audited"
   },
   "models/stationary_phase.py": {
@@ -27492,6 +27549,12 @@
    "status": "audited"
   },
   "models/statute_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/stdp_learn.py": {
+   "status": "audited"
+  },
+  "models/steane_code.py": {
    "status": "audited"
   },
   "models/steel_qa_studies.py": {
@@ -27527,6 +27590,9 @@
   "models/steiner_formula.py": {
    "status": "audited"
   },
+  "models/steiner_system.py": {
+   "status": "audited"
+  },
   "models/stellar_evolution.py": {
    "status": "audited"
   },
@@ -27534,6 +27600,9 @@
    "status": "audited"
   },
   "models/stem_cell_therapy.py": {
+   "status": "audited"
+  },
+  "models/stencil_halo.py": {
    "status": "audited"
   },
   "models/step_back_studies.py": {
@@ -27554,6 +27623,9 @@
   "models/stepwise_verify_studies.py": {
    "status": "audited"
   },
+  "models/stereo_disparity.py": {
+   "status": "audited"
+  },
   "models/stereo_lite_studies.py": {
    "status": "audited"
   },
@@ -27566,7 +27638,16 @@
   "models/sterile_processing.py": {
    "status": "audited"
   },
+  "models/stft_istft.py": {
+   "status": "audited"
+  },
+  "models/stgcn_lite.py": {
+   "status": "audited"
+  },
   "models/stick_breaking.py": {
+   "status": "audited"
+  },
+  "models/stiefel_whitney.py": {
    "status": "audited"
   },
   "models/stieltjes_fraction.py": {
@@ -27578,10 +27659,28 @@
   "models/stingray_qa_studies.py": {
    "status": "audited"
   },
+  "models/stirling_count.py": {
+   "status": "audited"
+  },
+  "models/stirling_cycle.py": {
+   "status": "audited"
+  },
+  "models/stl_loess.py": {
+   "status": "audited"
+  },
   "models/stoat_qa_studies.py": {
    "status": "audited"
   },
+  "models/stoch_interp.py": {
+   "status": "audited"
+  },
   "models/stoch_open.py": {
+   "status": "audited"
+  },
+  "models/stoch_vol.py": {
+   "status": "audited"
+  },
+  "models/stochastic_bandits.py": {
    "status": "audited"
   },
   "models/stochastic_burgers.py": {
@@ -27599,16 +27698,31 @@
   "models/stochastic_flow.py": {
    "status": "audited"
   },
+  "models/stochastic_frontier.py": {
+   "status": "audited"
+  },
   "models/stochastic_galerkin.py": {
    "status": "audited"
   },
   "models/stochastic_game2.py": {
    "status": "audited"
   },
+  "models/stochastic_game_vi.py": {
+   "status": "audited"
+  },
   "models/stochastic_int2.py": {
    "status": "audited"
   },
+  "models/stochastic_order.py": {
+   "status": "audited"
+  },
   "models/stochastic_taylor.py": {
+   "status": "audited"
+  },
+  "models/stockwell.py": {
+   "status": "audited"
+  },
+  "models/stone_duality.py": {
    "status": "audited"
   },
   "models/stonefly_qa_studies.py": {

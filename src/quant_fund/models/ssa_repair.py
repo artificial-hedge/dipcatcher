@@ -67,4 +67,6 @@ def bench_ssa_repair(seed: int = _SEED) -> dict[str, float]:
     score += 1.0 if all(env3[k] == ref[k] for k in "abc") else 0.0
     # scratch actually used for cycles
     score += 1.0 if any(m[2] == "_scratch" or m[1] == "_scratch" for m in seq2) else 0.0
+    if score != 4.0:
+        raise ValueError("SSA-repair copy-scheduling oracle failed")
     return {"synthetic_ssa_repair": score / 4.0}

@@ -75,8 +75,19 @@ def stoch_vol_fit(y: Array) -> dict[str, Array | float]:
         return float(-ll) if np.isfinite(ll) else 1e12
 
     phi0 = np.arctanh(min(0.9, max(-0.9, float(np.corrcoef(z[:-1], z[1:])[0, 1]))))
-    th0 = np.array([float(z.mean()), phi0, 0.3])
-    res = optimize.minimize(nll, th0, method="Nelder-Mead", options={"maxiter": 4000})
+    # multi-start: the QMLE surface has a degenerate s_eta -> 0 corner that
+    # traps single-start Nelder-Mead; high-persistence starts escape it
+    starts = [
+        np.array([float(z.mean()), phi0, 0.3]),
+        np.array([float(z.mean()), np.arctanh(0.7), 0.3]),
+        np.array([float(z.mean()), np.arctanh(0.9), 0.2]),
+        np.array([float(z.mean()), np.arctanh(0.95), 0.15]),
+    ]
+    res = optimize.minimize(nll, starts[0], method="Nelder-Mead", options={"maxiter": 4000})
+    for th0 in starts[1:]:
+        cand = optimize.minimize(nll, th0, method="Nelder-Mead", options={"maxiter": 4000})
+        if np.isfinite(cand.fun) and cand.fun < res.fun:
+            res = cand
     if not np.isfinite(res.fun) or res.fun >= 1e11:
         raise ValueError("stochastic-volatility QMLE failed to converge")
     mu = float(res.x[0])
@@ -91,4 +102,33 @@ def stoch_vol_fit(y: Array) -> dict[str, Array | float]:
         "h_var": p_filt,
         "vol": np.exp(0.5 * h_filt),
         "loglik": float(ll),
+    }
+
+
+def bench_stoch_vol(seed: int = 0) -> dict[str, float]:
+    """Stochastic-volatility oracle: on a planted SV path the QMLE must
+    recover the persistence and the filtered vol must track the truth."""
+    rng = np.random.default_rng(seed)
+    n = 400
+    mu_t, phi_t, s_eta_t = -9.0, 0.95, 0.25
+    h = np.zeros(n)
+    h[0] = mu_t
+    for t in range(1, n):
+        h[t] = mu_t + phi_t * (h[t - 1] - mu_t) + s_eta_t * rng.standard_normal()
+    y = rng.standard_normal(n) * np.exp(0.5 * h)
+    out = stoch_vol_fit(y)
+    phi_hat = float(out["phi"])
+    vol = np.asarray(out["vol"])
+    corr = float(np.corrcoef(np.log(vol), h)[0, 1])
+    checks = [
+        abs(phi_hat - phi_t) < 0.2,
+        corr > 0.5,
+    ]
+    if not all(checks):
+        raise ValueError("SV QMLE phi/vol oracle failed")
+    return {
+        "synthetic_sv_phi_hat": phi_hat,
+        "synthetic_sv_phi_err": abs(phi_hat - phi_t),
+        "synthetic_sv_logvol_corr": corr,
+        "synthetic_sv_score": float(sum(bool(c) for c in checks) / len(checks)),
     }
