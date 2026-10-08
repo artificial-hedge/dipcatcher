@@ -18,14 +18,13 @@ def unions_all(family: frozenset[frozenset[int]]) -> frozenset[frozenset[int]]:
 
 
 def intersections_all(family: frozenset[frozenset[int]]) -> frozenset[frozenset[int]]:
+    """All intersections of nonempty subfamilies (powerset meets — exhaustive on finite)."""
     fs = list(family)
     if not fs:
         return frozenset()
     acc = {fs[0]}
     for s in fs:
-        acc = {a & s for a in acc} | {s}
-    for s in fs:
-        acc |= {s}
+        acc = acc | {a & s for a in acc} | {s}
     return frozenset(acc)
 
 

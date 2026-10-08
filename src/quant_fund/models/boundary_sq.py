@@ -29,14 +29,11 @@ def bench_boundary_sq(seed: int = _SEED) -> dict[str, float]:
     ]
     verts: list[tuple[int, ...]] = [(i,) for i in range(n)]
     ok = 0
-    for faces, codom in [(edges, verts), (tris, edges)]:
-        if not faces:
-            continue
-        d1 = _boundary(faces, codom)
-        ok += int(((d1.sum(axis=0) % 2) == 0).all())
-    # compose both levels when a triangle exists
+    # the real chain-complex property: ∂_1 ∘ ∂_2 = 0 over GF(2) —
+    # only verifiable on a sample that actually has triangles
     if tris:
         d2 = _boundary(tris, edges)
         d1 = _boundary(edges, verts)
         ok += int(((d1 @ d2) % 2 == 0).all())
+        ok += int(d2.shape[1] > 0 and d1.shape[1] > 0)
     return {"synthetic_boundary_sq": float(ok >= 2)}

@@ -3191,6 +3191,9 @@
   "models/blood_qa_studies.py": {
    "status": "audited"
   },
+  "models/bloom_filter.py": {
+   "status": "audited"
+  },
   "models/blossom_bat_qa_studies.py": {
    "status": "audited"
   },
@@ -3201,6 +3204,9 @@
    "status": "audited"
   },
   "models/blow_up.py": {
+   "status": "audited"
+  },
+  "models/blowup.py": {
    "status": "audited"
   },
   "models/blp_demand.py": {
@@ -3233,10 +3239,19 @@
   "models/bluff_qa_studies.py": {
    "status": "audited"
   },
+  "models/bm25_retriever.py": {
+   "status": "audited"
+  },
+  "models/bmc_unroll.py": {
+   "status": "audited"
+  },
   "models/bmo_space.py": {
    "status": "audited"
   },
   "models/bn_pair.py": {
+   "status": "audited"
+  },
+  "models/bnn_ensemble.py": {
    "status": "audited"
   },
   "models/bo_htpy.py": {
@@ -3308,6 +3323,9 @@
   "models/boltzmann_eq.py": {
    "status": "audited"
   },
+  "models/bond_analytics.py": {
+   "status": "audited"
+  },
   "models/bondal_kapranov.py": {
    "status": "audited"
   },
@@ -3356,7 +3374,13 @@
   "models/booksum_lite_studies.py": {
    "status": "audited"
   },
+  "models/boolean_algebra.py": {
+   "status": "audited"
+  },
   "models/boolean_model.py": {
+   "status": "audited"
+  },
+  "models/boolean_prime.py": {
    "status": "audited"
   },
   "models/boolq_lite_studies.py": {
@@ -3368,7 +3392,16 @@
   "models/boolq_studies.py": {
    "status": "audited"
   },
+  "models/boomerang_sampler.py": {
+   "status": "audited"
+  },
   "models/boomslang_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/booth_rotation.py": {
+   "status": "audited"
+  },
+  "models/bootstrapped_dqn.py": {
    "status": "audited"
   },
   "models/bord_cat.py": {
@@ -3378,6 +3411,9 @@
    "status": "audited"
   },
   "models/borel_functions.py": {
+   "status": "audited"
+  },
+  "models/borel_hierarchy.py": {
    "status": "audited"
   },
   "models/borel_motivic.py": {
@@ -3419,6 +3455,9 @@
   "models/borodin_wheeler.py": {
    "status": "audited"
   },
+  "models/borrow_check.py": {
+   "status": "audited"
+  },
   "models/bose_einstein.py": {
    "status": "audited"
   },
@@ -3434,6 +3473,9 @@
   "models/bottlenose_qa_studies.py": {
    "status": "audited"
   },
+  "models/bouncy_particle.py": {
+   "status": "audited"
+  },
   "models/boundary_element.py": {
    "status": "audited"
   },
@@ -3444,6 +3486,9 @@
    "status": "audited"
   },
   "models/boundary_regular.py": {
+   "status": "audited"
+  },
+  "models/boundary_sq.py": {
    "status": "audited"
   },
   "models/bounded_complex.py": {
@@ -3530,6 +3575,9 @@
   "models/braces_higher.py": {
    "status": "audited"
   },
+  "models/bracha_bcast.py": {
+   "status": "audited"
+  },
   "models/bracken_qa_studies.py": {
    "status": "audited"
   },
@@ -3558,6 +3606,12 @@
    "status": "audited"
   },
   "models/brakke_varifolds.py": {
+   "status": "audited"
+  },
+  "models/branch_and_cut.py": {
+   "status": "audited"
+  },
+  "models/branch_predictor.py": {
    "status": "audited"
   },
   "models/branched_cover.py": {
@@ -3596,7 +3650,16 @@
   "models/breeden_litzenberger.py": {
    "status": "audited"
   },
+  "models/bregman_nmf.py": {
+   "status": "audited"
+  },
   "models/bregman_proj.py": {
+   "status": "audited"
+  },
+  "models/brent_root.py": {
+   "status": "audited"
+  },
+  "models/bresenham_line.py": {
    "status": "audited"
   },
   "models/breuil_kisin.py": {
@@ -3623,6 +3686,9 @@
   "models/brilliant_qa_studies.py": {
    "status": "audited"
   },
+  "models/brinson_attribution.py": {
+   "status": "audited"
+  },
   "models/bristlemouth_qa_studies.py": {
    "status": "audited"
   },
@@ -3639,6 +3705,9 @@
    "status": "audited"
   },
   "models/broker_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/bron_kerbosch.py": {
    "status": "audited"
   },
   "models/bronchiectasis_studies.py": {
@@ -3662,10 +3731,16 @@
   "models/brownian_approx.py": {
    "status": "audited"
   },
+  "models/brownian_bridge.py": {
+   "status": "audited"
+  },
   "models/browse_eval_studies.py": {
    "status": "audited"
   },
   "models/browsergym_studies.py": {
+   "status": "audited"
+  },
+  "models/broyden.py": {
    "status": "audited"
   },
   "models/brunn_minkowski.py": {
@@ -3677,13 +3752,28 @@
   "models/brylinski_kato.py": {
    "status": "audited"
   },
+  "models/brzozowski_deriv.py": {
+   "status": "audited"
+  },
   "models/bsd_toy.py": {
    "status": "audited"
   },
   "models/bsde_solver.py": {
    "status": "audited"
   },
+  "models/bsp_tree.py": {
+   "status": "audited"
+  },
+  "models/btree_index.py": {
+   "status": "audited"
+  },
   "models/bubbling_hm.py": {
+   "status": "audited"
+  },
+  "models/buchberger.py": {
+   "status": "audited"
+  },
+  "models/buchi_automata.py": {
    "status": "audited"
   },
   "models/bucket_sort.py": {
@@ -3699,6 +3789,9 @@
    "status": "audited"
   },
   "models/buffalo_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/buffer_pool.py": {
    "status": "audited"
   },
   "models/bufflehead_qa_studies.py": {
@@ -3722,16 +3815,31 @@
   "models/bulldog_bat_qa_studies.py": {
    "status": "audited"
   },
+  "models/bulletproof_ip.py": {
+   "status": "audited"
+  },
   "models/bullfrog_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/bully_elect.py": {
    "status": "audited"
   },
   "models/bulrush_qa_studies.py": {
    "status": "audited"
   },
+  "models/bump_map.py": {
+   "status": "audited"
+  },
   "models/bun_g.py": {
    "status": "audited"
   },
+  "models/bunching.py": {
+   "status": "audited"
+  },
   "models/bundle_level.py": {
+   "status": "audited"
+  },
+  "models/bundle_method.py": {
    "status": "audited"
   },
   "models/bundle_section.py": {
@@ -3755,6 +3863,9 @@
   "models/burn_surgery_studies.py": {
    "status": "audited"
   },
+  "models/burnside_lemma.py": {
+   "status": "audited"
+  },
   "models/bus_qa_studies.py": {
    "status": "audited"
   },
@@ -3768,6 +3879,9 @@
    "status": "audited"
   },
   "models/business_administration.py": {
+   "status": "audited"
+  },
+  "models/busy_beaver.py": {
    "status": "audited"
   },
   "models/butte_qa_studies.py": {

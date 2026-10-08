@@ -44,7 +44,10 @@ def check(ops: list[Op]) -> list[str]:
                 if p == x:
                     errors.append(f"mutation of {x} at {i} while {k2} loan {lid2} live")
         elif tag == "use":
-            pass
+            _, x = op
+            for p, k2, lid2 in live:
+                if p == x and k2 == "mut":
+                    errors.append(f"use of {x} at {i} while mut loan {lid2} live")
         elif tag == "die":
             _, x = op
             live = [(p, k, lid) for p, k, lid in live if p != x]

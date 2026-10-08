@@ -49,6 +49,27 @@ class BSP:
         return far.traverse_back_to_front(eye) + near.traverse_back_to_front(eye)
 
 
+def _order_ok(tree: BSP, eye: tuple[float, float], seq: list[tuple[float, float]]) -> bool:
+    """Painter's property: at every internal node, all far-side members
+    (opposite side of the split from `eye`) precede every near-side
+    member in the emitted sequence."""
+    pos = {p: i for i, p in enumerate(seq)}
+
+    def ok(node: BSP, members: list[tuple[float, float]]) -> bool:
+        if node.leaf is not None or len(members) <= 1:
+            return True
+        eye_lo = eye[node.axis] < node.val
+        far = [p for p in members if (p[node.axis] < node.val) != eye_lo]
+        near = [p for p in members if (p[node.axis] < node.val) == eye_lo]
+        if far and near and max(pos[p] for p in far) > min(pos[p] for p in near):
+            return False
+        return ok(node.lo, [p for p in members if p[node.axis] < node.val]) and ok(
+            node.hi, [p for p in members if p[node.axis] >= node.val]
+        )
+
+    return ok(tree, list(seq))
+
+
 def bench_bsp_tree(seed: int = 20261231 + 385) -> dict[str, float]:
     rng = random.Random(seed)
     region = order = cover = 0
@@ -72,8 +93,8 @@ def bench_bsp_tree(seed: int = 20261231 + 385) -> dict[str, float]:
         eye = (rng.uniform(0, 100), rng.uniform(0, 100))
         seq = tree.traverse_back_to_front(eye)
         cover += int(sorted(seq) == sorted(pts) and len(seq) == len(pts))
-        # order: for axis split, all far-side points precede near-side
-        order += 1 if len(seq) == len(pts) else 0
+        # painter's order: far side precedes near side at every split
+        order += int(_order_ok(tree, eye, seq))
     return {
         "synthetic_region_correct": float(region / trials),
         "synthetic_full_coverage": float(cover / trials),

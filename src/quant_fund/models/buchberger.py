@@ -9,7 +9,6 @@ division and cross-checks dimension/solvability claims.
 from __future__ import annotations
 
 from fractions import Fraction
-from math import gcd
 
 Poly = dict[tuple[int, int], Fraction]
 
@@ -114,5 +113,5 @@ def bench_buchberger(seed: int = 20261231 + 230) -> dict[str, float]:
         "synthetic_max_resid": float(resid),
         "synthetic_member_reduces": float(len(rem) == 0),
         "synthetic_nonmember_stays": float(len(nonmem) > 0),
-        "synthetic_gcd_check": float(gcd(12, 8) == 4),
+        "synthetic_gens_reduce": float(len(_reduce(f1, g)) == 0 and len(_reduce(f2, g)) == 0),
     }

@@ -53,11 +53,11 @@ def _bench_boolean_algebra(seed: int = 0) -> float:
     checks.append(ba_laws(u))
     checks.append(atoms(u) == frozenset({frozenset({0}), frozenset({1}), frozenset({2})}))
     checks.append(atomic(u))
-    # non-atomic would fail: singletons only -> atomic check against empty base
+    # empty algebra: laws hold vacuously; atoms set is empty
     checks.append(ba_laws(frozenset()))
-    checks.append(
-        not atomic(frozenset({0})) and not atoms(frozenset({0}))
-    ) if False else checks.append(True)
+    checks.append(atoms(frozenset()) == frozenset())
+    # atoms are exactly the singletons — non-singletons are not atoms
+    checks.append(frozenset({0, 1}) not in atoms(u))
     return float(sum(checks) / len(checks))
 
 

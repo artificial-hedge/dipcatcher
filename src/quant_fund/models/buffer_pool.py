@@ -64,12 +64,15 @@ def bench_buffer_pool(seed: int = 20261231 + 434) -> dict[str, float]:
         cap = 4
         m_fifo, m_clock = fifo_run(trace, cap), clock_run(trace, cap)
         ratio_sum += m_clock / max(1, m_fifo)
-        # dirty-page flush semantics
+        # dirty-page flush semantics: every write must reach disk —
+        # after the final flush, disk[p] equals p's total access count
         disk = {p: 0 for p in range(12)}
         buf: dict[int, int] = {}
         dirty: set[int] = set()
+        hot_hit = hot_acc = 0
         for p in trace[:60]:
-            if p not in buf:
+            resident = p in buf
+            if not resident:
                 if len(buf) >= cap:
                     victim = min(buf)
                     if victim in dirty:
@@ -79,12 +82,14 @@ def bench_buffer_pool(seed: int = 20261231 + 434) -> dict[str, float]:
                 buf[p] = disk[p]
             buf[p] += 1
             dirty.add(p)
+            if p in hot_pages:
+                hot_acc += 1
+                hot_hit += int(resident)
         for p in dirty:
             disk[p] = buf[p]
-        flush_ok += int(all(disk[p] == buf.get(p, disk[p]) or disk[p] > 0 for p in buf))
-        # hot pages hit rate ≥ 0.8 in steady state (LRU-ish behavior)
-        hit = sum(1 for p in trace[20:] if p in hot_pages) / 100
-        hot += int(hit >= 0.7)
+        flush_ok += int(all(disk[p] == trace[:60].count(p) for p in range(12)))
+        # real hit rate on hot-page accesses inside the pool sim
+        hot += int(hot_acc > 0 and hot_hit / hot_acc >= 0.5)
     return {
         "synthetic_flush_preserves_writes": float(flush_ok / trials),
         "synthetic_hot_pages_hit": float(hot / trials),

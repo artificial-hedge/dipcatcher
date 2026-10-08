@@ -6,6 +6,8 @@ globally-correlated patterns.
 
 from __future__ import annotations
 
+import numpy as np
+
 
 def bimodal(trace: list[int], bits: int = 2) -> float:
     tab = [1] * 64  # 2-bit counters init weakly-not-taken
@@ -32,18 +34,23 @@ def gshare(trace: list[int]) -> float:
 
 
 def bench_branch_predictor(seed: int = 20261231 + 332) -> dict[str, float]:
-    _ = seed
+    rng = np.random.default_rng(seed)
     beats_at = gshare_wins = 0
     trials = 30
     for _ in range(trials):
-        # biased loop trace: 7 taken / 1 not
-        pat = [1] * 7 + [0]
-        trace = (pat * 60)[:480]
+        # biased loop trace: period divides 64 so i%64 identifies the
+        # phase slot — periods coprime to 64 collapse bimodal to the
+        # marginal and there is nothing to learn
+        period = int(rng.choice([4, 8, 16]))
+        ph = int(rng.integers(0, period))
+        trace = [1 if (i + ph) % period < period - 1 else 0 for i in range(480)]
         acc_b = bimodal(trace)
         acc_at = sum(1 for t in trace if t == 1) / len(trace)
         beats_at += int(acc_b >= acc_at)
-        # correlated pattern: outcome alternates every 3 — needs history
-        trace2 = [(1 if (i // 3) % 2 == 0 else 0) for i in range(480)]
+        # correlated pattern: outcome alternates in blocks of blk — needs history
+        blk = int(rng.integers(2, 7))
+        ph2 = int(rng.integers(0, 2))
+        trace2 = [(1 if (i // blk + ph2) % 2 == 0 else 0) for i in range(480)]
         gshare_wins += int(gshare(trace2) >= bimodal(trace2) - 0.05)
     return {
         "synthetic_beats_always_taken": float(beats_at / trials),

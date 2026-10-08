@@ -104,9 +104,14 @@ def bench_buchi_automata(seed: int = _SEED) -> dict[str, float]:
     hits2 = 0
     for _ in range(n):
         cyc = [rng.choice(["a", "b"]) for _ in range(rng.randint(1, 4))]
-        pref = [rng.choice(["a", "b"]) for _ in range(rng.randint(0, 2))]
-        w = [str(x) for x in pref + cyc + cyc]
-        truth = any(a == "a" and b == "b" for a, b in zip(w, w[1:], strict=False))
+        pref = [rng.choice(["a", "b"]) for _ in range(rng.randint(0, 3))]
+        # state 2 recurs iff (a) some 'ab' occurs anywhere in the word —
+        # prefix-internal, the prefix->cycle boundary, inside the cycle,
+        # or the cycle-end -> cycle-start wrap — reaching 2 at least
+        # once, AND (b) 'b' is in the cycle, so 2 is re-entered
+        # infinitely (2 is absorbing under 'b')
+        w = pref + cyc + cyc
+        truth = ("b" in cyc) and any(a == "a" and b == "b" for a, b in zip(w, w[1:], strict=False))
         hits2 += int(accepts_up(a2, pref, cyc) == truth)
     return {
         "synthetic_inf_a": float(hits / n),
