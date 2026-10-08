@@ -18,6 +18,8 @@ def bench_jackson_network(seed: int = 4401) -> dict[str, float]:
     # discrete-event check on node 0 alone (it sees Poisson gamma by Burke)
     n0_sim = mm1_sim(seed, GAMMA[0], MU[0])
     n0_theory = float(rho[0] / (1.0 - rho[0]))
+    if abs(n0_sim - n0_theory) > 0.15 or np.max(rho) >= 1.0:
+        raise ValueError("Jackson product-form vs M/M/1 sim diverged")
     return {
         "synthetic_jn_n_theory": n_theory,
         "synthetic_jn_node0_theory": n0_theory,

@@ -66,6 +66,9 @@ def bench_iwae_bound(seed: int = 709, iters: int = 1500, K: int = 16) -> dict[st
             + (torch.log(sig).sum() + 0.5 * d * (1 + float(np.log(2 * np.pi))))
         ).mean()
     )
+    bound_k = float(final_bound)
+    if bound_k <= elbo1:
+        raise ValueError("K-sample IWAE bound not tighter than 1-sample ELBO")
     return {
         "synthetic_iwae_test_logloss": test_logloss(w_hat, Xt, yt),
         "synthetic_iwae_elbo1": elbo1,

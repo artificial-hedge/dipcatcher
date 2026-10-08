@@ -43,6 +43,8 @@ def bench_karatsuba(seed: int = 20261231 + 452) -> dict[str, float]:
         _ = karatsuba(x, y)
         nd = max(x.bit_length(), y.bit_length())
         fewer += int(nd >= CALLS)
+    if exact != trials or assoc != trials or fewer != trials:
+        raise ValueError("Karatsuba diverged from builtin multiply")
     return {
         "synthetic_exact_vs_builtin": float(exact / trials),
         "synthetic_associative": float(assoc / trials),

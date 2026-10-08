@@ -36,6 +36,8 @@ def bench_johnson_flowshop(seed: int = 3041) -> dict[str, float]:
     spt = makespan(sorted(range(9), key=lambda j: p[j].sum()), p)
     # exhaustive optimum on 9! = 362880 perms
     best = min(makespan(list(o), p) for o in permutations(range(9)))
+    if ms_j != best:
+        raise ValueError("Johnson's rule missed the exhaustive optimum")
     return {
         "synthetic_johnson_ms": ms_j,
         "synthetic_optimal_ms": best,

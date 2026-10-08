@@ -124,6 +124,8 @@ def bench_k_induction(seed: int = 20261231 + 221) -> dict[str, float]:
         )
         rr = _k_induction(sys2, k=2)
         agree += int((rr["base_ok"] and rr["ind_ok"]) == rr["safe"])
+    if agree != trials:
+        raise ValueError("k-induction verdict disagreed with BFS oracle")
     return {
         "synthetic_base_ok_k1": float(r1["base_ok"]),
         "synthetic_ind_ok_k1": float(r1["ind_ok"]),

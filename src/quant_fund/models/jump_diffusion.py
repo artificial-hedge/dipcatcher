@@ -242,15 +242,31 @@ def jump_diffusion_aux(aux: bool) -> bool:
     return aux
 
 
-def _bench_jump_diffusion(seed: int = 0) -> float:
-    checks = []
-    checks.append(jump_diffusion_ok(True, True))
-    checks.append(not jump_diffusion_ok(False, True))
-    checks.append(jump_diffusion_aux(True))
-    checks.append(not jump_diffusion_aux(False))
-    checks.append(True)  # jump-process canon
-    return float(sum(checks) / len(checks))
-
-
 def bench_jump_diffusion(seed: int = 0) -> dict[str, float]:
-    return {"synthetic_jump_diffusion": _bench_jump_diffusion(seed)}
+    """Verify Merton pricing/simulation against exact oracles."""
+    rng = np.random.default_rng(seed)
+    s, k, t, r, sig = 100.0, 105.0, 0.75, 0.02, 0.25
+    mu_j, s_j = -0.05, 0.15
+    # oracle 1: lam -> 0 collapses the series to BSM
+    c_jd = merton_jump_call(s, k, t, r, sig, 0.0, mu_j, s_j)
+    c_bs = _bsm_call(s, k, t, r, sig)
+    if abs(c_jd - c_bs) > 1e-9:
+        raise ValueError("Merton lam=0 did not collapse to BSM")
+    # oracle 2: simulated mean log-return matches analytic moments
+    paths = merton_jump_simulate(s, t, r, sig, 3.0, mu_j, s_j, 200, 4000, rng)
+    m = merton_log_moments(t, r, sig, 3.0, mu_j, s_j)
+    emp = float(np.mean(np.log(paths[:, -1] / s)))
+    if abs(emp - m["mean"]) > 0.05:
+        raise ValueError("simulated log-drift off analytic moments")
+    # oracle 3: put-call parity internal consistency (model put == parity)
+    p_par = merton_jump_put(s, k, t, r, sig, 1.5, mu_j, s_j)
+    c_par = merton_jump_call(s, k, t, r, sig, 1.5, mu_j, s_j)
+    if abs(p_par - (c_par - s + k * math.exp(-r * t))) > 1e-9:
+        raise ValueError("put-call parity violated")
+    return {
+        "synthetic_jd_call": c_par,
+        "synthetic_jd_put": p_par,
+        "synthetic_jd_sim_mean": emp,
+        "synthetic_jd_analytic_mean": float(m["mean"]),
+        "synthetic_jd_bsm_collapse_err": abs(c_jd - c_bs),
+    }

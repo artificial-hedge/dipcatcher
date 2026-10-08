@@ -109,9 +109,13 @@ def bench_jpda(seed: int = 20261231) -> dict[str, float]:
         best = min(zs, key=lambda z: abs(z[0] - x_nn[0]))
         x_nn = x_nn + (K @ (best - H @ x_nn)).ravel() * 0.9
         errs_nn.append(abs(x_nn[0] - tru[0]))
+    rms_j = float(np.sqrt(np.mean(np.square(errs_j[50:]))))
+    rms_nn = float(np.sqrt(np.mean(np.square(errs_nn[50:]))))
+    if not (rms_j < rms_nn):
+        raise ValueError("JPDA did not beat nearest-neighbor in clutter")
     return {
-        "synthetic_jpda_rmse": float(np.sqrt(np.mean(np.square(errs_j[50:])))),
-        "synthetic_jpda_nn_rmse": float(np.sqrt(np.mean(np.square(errs_nn[50:])))),
+        "synthetic_jpda_rmse": rms_j,
+        "synthetic_jpda_nn_rmse": rms_nn,
         "synthetic_jpda_better": float(
             np.sqrt(np.mean(np.square(errs_j[50:]))) < np.sqrt(np.mean(np.square(errs_nn[50:])))
         ),

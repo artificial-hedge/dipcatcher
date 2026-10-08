@@ -27,6 +27,8 @@ def _bench_ito_lemma(seed: int = 0) -> float:
     # empirical W_T = (log S_T - (mu - sig^2/2))/sig is ~N(0,T)
     w_emp = (np.log(s[:, -1]) - (mu - 0.5 * sig**2)) / sig
     checks.append(abs(np.mean(w_emp)) < 0.02 and abs(np.var(w_emp) - 1.0) < 0.05)
+    if sum(checks) != len(checks):
+        raise ValueError("Ito GBM moment oracle mismatch")
     return float(sum(checks) / len(checks))
 
 

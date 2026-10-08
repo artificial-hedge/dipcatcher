@@ -61,6 +61,8 @@ def bench_jacobi_svd(seed: int = 20261231 + 532) -> dict[str, float]:
         sv_ok += int(np.allclose(s, ref[: len(s)], atol=1e-6))
         rec_ok += int(np.allclose(U @ np.diag(s) @ Vt, A, atol=1e-6))
         orth_ok += int(np.allclose(Vt @ Vt.T, np.eye(n), atol=1e-8))
+    if sv_ok != n_trials or rec_ok != n_trials or orth_ok != n_trials:
+        raise ValueError("one-sided Jacobi SVD off-oracle")
     return {
         "synthetic_singular_values": sv_ok / n_trials,
         "synthetic_reconstruction": rec_ok / n_trials,

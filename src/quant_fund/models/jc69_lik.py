@@ -49,4 +49,6 @@ def bench_jc69_lik(seed: int = _SEED) -> dict[str, float]:
     # sanity: as t->inf, lik -> 1/16 for any pair
     v = lik_closed("A", "C", 50.0, 50.0)
     ok += int(abs(v - 1 / 16) < 1e-6)
+    if ok != 9:
+        raise ValueError("JC69 pruning != closed-form likelihood")
     return {"synthetic_jc69": float(ok == 9)}

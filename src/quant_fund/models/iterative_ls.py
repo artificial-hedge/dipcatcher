@@ -117,6 +117,8 @@ def bench_iterative_ls(seed: int = 0) -> dict[str, float]:
     x_dense = np.linalg.lstsq(a, b, rcond=None)[0]
     xc, it_c = cgls(mv, rv, b)
     xl, it_l = lsqr(mv, rv, b)
+    if np.linalg.norm(xc - x_dense) > 0.1 or np.linalg.norm(xl - x_dense) > 0.1:
+        raise ValueError("matrix-free solver diverged from dense reference")
     return {
         "synthetic_cgls_err": float(np.linalg.norm(xc - x_dense)),
         "synthetic_lsqr_err": float(np.linalg.norm(xl - x_dense)),

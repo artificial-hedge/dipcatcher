@@ -55,4 +55,6 @@ def bench_join_algos(seed: int = 20261231 + 362) -> dict[str, float]:
         b = hash_join(r, s)
         c = sort_merge(r, s)
         agree += int(a == b == c)
+    if agree != trials:
+        raise ValueError("join algorithms disagreed")
     return {"synthetic_three_way_agree": float(agree / trials)}

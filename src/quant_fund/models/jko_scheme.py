@@ -32,6 +32,8 @@ def bench_jko_scheme(seed: int = 4311, steps: int = 50, tau: float = 0.05) -> di
     t_total = steps * tau
     s_jko = _jko_variance_flow(s0, tau, steps)
     s_exact = _exact_ou(s0, t_total)
+    if abs(s_jko - s_exact) > 0.05 or abs(s_jko - s_exact) >= abs(s0 - s_exact):
+        raise ValueError("JKO recursion diverged from exact OU variance")
     return {
         "synthetic_jko_sigma": s_jko,
         "synthetic_jko_exact_sigma": s_exact,

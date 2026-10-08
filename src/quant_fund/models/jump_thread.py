@@ -49,4 +49,6 @@ def bench_jump_thread(seed: int = _SEED) -> dict[str, float]:
     ok += int(thread(cfg, {"x>0": False})[-1] == "cold")
     # threaded path length: x>0 true, y>0 true visits entry,A,T = 3 hops
     ok += int(len(thread(cfg, {"x>0": True, "y>0": True})) == 4)
+    if ok != 4:
+        raise ValueError("jump threading off trace oracle")
     return {"synthetic_jump_thread": float(ok == 4)}

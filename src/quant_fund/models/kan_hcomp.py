@@ -78,4 +78,6 @@ def bench_kan_hcomp(seed: int = _SEED) -> dict[str, float]:
     checks.append(connected(e, 0, 3) and not connected({frozenset({0, 1})}, 0, 3))
     # is_walk validates
     checks.append(is_walk(e, (0, 1, 2)) and not is_walk(e, (0, 2)))
+    if sum(checks) != len(checks):
+        raise ValueError("Kan hcomp fill off-oracle")
     return {"synthetic_kan_hcomp": float(sum(checks)) / len(checks)}

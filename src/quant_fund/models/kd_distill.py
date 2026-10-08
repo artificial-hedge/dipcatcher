@@ -69,6 +69,10 @@ def bench_kd_distill(
 
     acc_hard = student_train(False)
     acc_kd = student_train(True)
+    if acc_kd < acc_hard - 0.005:
+        raise ValueError("KD student underperformed hard-label training")
+    if acc_kd < 0.8:
+        raise ValueError("KD student accuracy below floor")
     return {
         "synthetic_kd_acc": acc_kd,
         "synthetic_kd_hard_acc": acc_hard,

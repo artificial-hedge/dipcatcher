@@ -37,6 +37,8 @@ def bench_jacobi_eig(seed: int = 3001) -> dict[str, float]:
     est = _jacobi(A)
     err = float(np.abs(est - np.sort(lam)).mean())
     offdiag = float(np.abs(A - np.diag(np.diag(A))).max())
+    if err > 1e-6:
+        raise ValueError("Jacobi sweeps missed the planted spectrum")
     return {
         "synthetic_jacobi_spec_err": err,
         "synthetic_jacobi_offdiag": offdiag,

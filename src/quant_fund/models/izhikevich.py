@@ -36,6 +36,8 @@ def bench_izhikevich(seed: int = 1919) -> dict[str, float]:
     sep = float(r1[y == 1].mean() - r1[y == 0].mean())
     r0 = float(_izh_rate(5.0))
     r10 = float(_izh_rate(15.0))
+    if acc < 0.6 or sep <= 0.0 or r10 <= r0:
+        raise ValueError("Izhikevich firing-rate response off-oracle")
     return {
         "synthetic_izh_acc": acc,
         "synthetic_izh_rate_sep": sep,

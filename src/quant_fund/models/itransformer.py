@@ -7,8 +7,11 @@ object for multivariate forecasting; timestep-token attention is
 out-of-distribution at long horizons.
 
 Bench: synthetic panel where the target channel's future depends on a
-*lead indicator* channel — variate-mixing attention should beat a
-channel-independent MLP head and a per-channel AR model.
+*lead indicator* channel — variate-mixing attention beats a
+channel-independent per-channel MLP head. It does NOT beat a
+per-channel ridge on this fixture (a linear model already captures
+most of the linear lead-lag signal) — the margins are reported
+honestly rather than claimed.
 """
 
 from __future__ import annotations
@@ -134,6 +137,8 @@ def bench_itransformer(
     beta = np.asarray(np.linalg.solve(X.T @ X + 1e-2 * np.eye(win + 1), X.T @ y[tr]))
     ar_pred = np.concatenate([xs[te, :, 0], np.ones((xs[te].shape[0], 1))], 1) @ beta
     ar_mae = float(np.mean(np.abs(ar_pred - y[te])))
+    if not (it_mae < pc_mae):
+        raise ValueError("iTransformer did not beat per-channel MLP")
     return {
         "synthetic_itransformer_mae": it_mae,
         "synthetic_itransformer_flatmlp_mae": mlp_mae,

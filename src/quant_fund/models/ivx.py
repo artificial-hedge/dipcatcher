@@ -143,6 +143,8 @@ def bench_ivx(seed: int = 20261231 + 332) -> dict[str, float]:
     r_t = ivx_wald(y[1:], x[1:])
     r_n = ivx_wald(y_null[1:], x[1:])
     ok = r_t["reject5"] == 1.0 and r_n["reject5"] == 0.0
+    if not ok:
+        raise ValueError("IVX-Wald failed: coupled not rejected or null rejected")
     return {
         "synthetic_wald_true": r_t["wald"],
         "synthetic_pval_true": r_t["pval"],

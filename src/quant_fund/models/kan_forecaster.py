@@ -110,6 +110,8 @@ def bench_kan_forecaster(seed: int = 89) -> dict[str, float]:
         np.linalg.solve(xr[:tr].T @ xr[:tr] + 1e-3 * np.eye(xr.shape[1]), xr[:tr].T @ y[:tr])
     )
     mae_r = float(np.mean(np.abs(xr[tr:] @ wr - y[tr:])))
+    if not (mae_kan < mae_mlp and mae_kan < mae_r):
+        raise ValueError("KAN edge functions did not beat baselines")
     return {
         "synthetic_kan_mae": mae_kan,
         "synthetic_kan_mlp_mae": mae_mlp,

@@ -42,6 +42,8 @@ def _bench_jump_operator(seed: int = 0) -> float:
     checks.append(frozenset({0, 2}) == K)
     # K is undecidable bounded-toy: complement membership can't be verified by bounded run
     checks.append(1 not in K)
+    if sum(checks) != len(checks):
+        raise ValueError("TM/jump diagonal oracle mismatch")
     return float(sum(checks) / len(checks))
 
 

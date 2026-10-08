@@ -44,6 +44,10 @@ def bench_judge_pairwise(
             np.argsort(np.argsort(order_true)),
         )[0, 1]
     )
+    # win-rate ordering stays noisy at this noise level — agreement is the
+    # strict oracle, rho only needs to be meaningfully positive
+    if agree / total <= 0.7 or rho < 0.2:
+        raise ValueError("judge agreement/rank recovery below oracle")
     return {
         "synthetic_judge_agreement": agree / total,
         "synthetic_judge_rank_rho": rho,

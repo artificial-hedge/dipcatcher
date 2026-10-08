@@ -94,6 +94,10 @@ def bench_jk_net(
         for lin in layers:
             h = torch.nn.functional.relu(lin(at @ h))
         row_var = float(h.var(0).mean())
+    if acc_jk < acc_deep - 0.02:
+        raise ValueError("JK concat-jump underperformed the plain deep GCN")
+    if acc_jk < 0.8:
+        raise ValueError("JK net accuracy below oracle floor")
     return {
         "synthetic_jk_acc": acc_jk,
         "synthetic_jk_deep_acc": acc_deep,

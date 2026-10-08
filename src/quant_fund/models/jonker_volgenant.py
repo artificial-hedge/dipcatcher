@@ -120,6 +120,8 @@ def bench_jonker_volgenant(seed: int = 20261231) -> dict[str, float]:
     C_id = np.eye(6) * 0.0 + (1 - np.eye(6)) * 9.0
     a, cost = jv_assign(C_id)
     ident = float((a == np.arange(6)).all())
+    if agree != 12 or ident != 1.0:
+        raise ValueError("JV assignment off scipy oracle / identity")
     return {
         "synthetic_jv_agree": float(agree),
         "synthetic_jv_worst_gap": worst_gap,
