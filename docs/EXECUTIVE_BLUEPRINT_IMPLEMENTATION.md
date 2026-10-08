@@ -315,24 +315,22 @@ one-way import boundary.
 
 ### Q02 / F26 — QuantCode benchmark importer
 
-This workstream has **no CLI entry point**. It is a library module consumed by
-tests and the fx-1 eval battery.
+This workstream has **no CLI entry point**. The implementation is a small,
+deterministic SYNTHETIC style adapter; it is not an import of the upstream
+QuantCode-Bench corpus and does not claim equivalence with its grader.
 
 | Item | Value |
 |---|---|
-| Module | `src/fx1/eval/quantcode_bench.py` |
-| Upstream repo | `https://github.com/LimexAILab/QuantCode-Bench` |
-| Pinned revision | `f8bda951addb409a81aa316c00401dbde60774ae` |
-| Task count | 400 |
-| License | MIT |
-| Task data SHA-256 | `b197e0271779f332c6808ea40167615e3b90061563544b8bdf3c48237a9f17d3` |
-| Requirements SHA-256 | `7bc4039cfe971ec04de3618c652eca268c95ce07030c5f597c594209344f38b9` |
-| Tests | 31 focused adapter tests + actual complete import verified |
+| Module | `src/quant_fund/models/quantcode_bench.py` |
+| Evidence class | SYNTHETIC generated strategy specifications and price bars |
+| Task count | 10 in-repository deterministic specifications |
+| Upstream corpus | Not vendored or executed |
+| Tests | `tests/unit/models/test_w123_nlpgen.py` |
 
-The `BenchmarkPin` dataclass enforces HTTPS URL, full Git revision, exact task
-count and both content hashes at construction time. Any deviation fails closed.
-Official grading equivalence, OS sandboxing and model scoring remain unverified
-(Q16/Q17).
+The adapter statically restricts imports/calls before running generated signal
+functions with limited builtins. This is a diagnostic test surface only;
+official grading equivalence, OS-level sandboxing, and hosted-model scoring
+remain unverified (Q16/Q17).
 
 ### Q03 / F07 — asset GNN pilot
 

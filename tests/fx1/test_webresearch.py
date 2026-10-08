@@ -324,6 +324,20 @@ def test_searcher_uses_injected_opener() -> None:
     assert len(result.hits) >= 2
 
 
+def test_searcher_get_rejects_unapproved_endpoint() -> None:
+    opened = False
+
+    def open_fn(request, timeout_s):  # noqa: ANN001
+        nonlocal opened
+        opened = True
+        return FakeResponse(b"")
+
+    searcher = DuckDuckGoLiteSearcher(open_fn=open_fn)
+    with pytest.raises(ValueError, match="approved DuckDuckGo HTTPS host"):
+        searcher._get("file:///etc/passwd", 1.0)
+    assert opened is False
+
+
 def test_searcher_transport_fault_reports_error_no_hits() -> None:
     def open_fn(request, timeout_s):  # noqa: ANN001
         raise urllib.error.URLError("offline")
@@ -432,6 +446,61 @@ def test_group_claims_detects_polarity_conflict() -> None:
     groups = group_claims(claims)
     contested = [g for g in groups if g.status == "contested"]
     assert contested, f"expected a contested group, got {[g.status for g in groups]}"
+
+
+def test_group_claims_detects_quantitative_conflict() -> None:
+    claims = [
+        Claim(
+            text="US inflation was 3.4% in August 2026",
+            source_url="https://a",
+            tokens=frozenset(tokenize("US inflation was 3.4% in August 2026")),
+        ),
+        Claim(
+            text="US inflation was 8.9% in August 2026",
+            source_url="https://b",
+            tokens=frozenset(tokenize("US inflation was 8.9% in August 2026")),
+        ),
+    ]
+    groups = group_claims(claims)
+    assert len(groups) == 1
+    assert groups[0].status == "contested"
+    assert groups[0].contradictions
+
+
+def test_group_claims_normalizes_equivalent_numeric_facts() -> None:
+    claims = [
+        Claim(
+            text="US inflation was 3.40 percent in August 2026",
+            source_url="https://a",
+            tokens=frozenset(tokenize("US inflation was 3.40 percent in August 2026")),
+        ),
+        Claim(
+            text="US inflation was 3.4% in August 2026 per CPI",
+            source_url="https://b",
+            tokens=frozenset(tokenize("US inflation was 3.4% in August 2026 per CPI")),
+        ),
+    ]
+    groups = group_claims(claims)
+    assert len(groups) == 1
+    assert groups[0].status == "corroborated"
+
+
+def test_group_claims_does_not_conflate_periods_or_units() -> None:
+    claims = [
+        Claim(
+            text="US inflation was 3.4% in August 2025",
+            source_url="https://a",
+            tokens=frozenset(tokenize("US inflation was 3.4% in August 2025")),
+        ),
+        Claim(
+            text="US inflation was 3.4 basis points in August 2026",
+            source_url="https://b",
+            tokens=frozenset(tokenize("US inflation was 3.4 basis points in August 2026")),
+        ),
+    ]
+    groups = group_claims(claims)
+    assert len(groups) == 1
+    assert groups[0].status == "contested"
 
 
 def test_group_claims_single_source_honest() -> None:

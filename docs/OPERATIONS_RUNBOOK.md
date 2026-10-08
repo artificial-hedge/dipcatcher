@@ -39,11 +39,11 @@ claim.
 
 ### Research lanes with their own command
 
-Every research lane is reachable from `dipcatcher` — two gates enforce it
-(`tests/unit/research/test_research_cli_reachability.py`): an import-closure
-ratchet over all of `research/`, and an `OPERATOR_SURFACE` registry asserting
-that every module defining `main()`/argparse/a Typer app resolves to a live
-command path. New lanes must be registered or exempted with a reason.
+Every documented research command is reachable from `dipcatcher`.
+`tests/unit/test_docs_drift.py` verifies that documented command paths stay
+registered, while focused contracts under `tests/unit/cli/` exercise the
+freeze/score/verify workflows. New operator-facing lanes must be registered
+and covered before their command is documented here.
 
 SYNTHETIC evidence lanes, each sealing a receipt under `--out-dir`:
 

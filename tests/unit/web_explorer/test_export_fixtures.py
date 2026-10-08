@@ -215,3 +215,14 @@ def test_check_mode_detects_stale_fixtures(tmp_path: Path, monkeypatch) -> None:
     module._export(extra)
     (extra / "receipts" / "ghost.json").write_text("{}")
     assert module._stale_fixtures(fresh, extra) == ["receipts/ghost.json (no longer produced)"]
+
+
+def test_stale_fixture_check_ignores_documentation(tmp_path: Path) -> None:
+    module = _exporter()
+    expected = tmp_path / "expected"
+    actual = tmp_path / "actual"
+    expected.mkdir()
+    actual.mkdir()
+    (actual / "README.md").write_text("fixture documentation\n", encoding="utf-8")
+
+    assert module._stale_fixtures(expected, actual) == []

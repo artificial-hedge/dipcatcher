@@ -112,6 +112,17 @@ paths = ['''(?:^|/)tests/fx1/operation_cases_chunk2\.py$''']
 regexTarget = "line"
 regexes = ['''^\s*"supplied_key_sha256":\s*"[0-9a-f]{64}",?\s*$''']
 
+# The checkpoint-verifier operation case also embeds a deterministic Ed25519
+# public key. This is public verification material, not a credential; keep the
+# exception restricted to the fixture, rule, and explicit public_key field.
+[[allowlists]]
+description = "Deterministic checkpoint fixture Ed25519 public key"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/fx1/operation_cases_chunk2\.py$''']
+regexTarget = "line"
+regexes = ['''"public_key":"[0-9a-f]{64}"''']
+
 # web/public/fixtures/index.json maps sha256 content digests -> fixture
 # receipt paths ("64-hex": "receipts/<name>.json"). Same content-pin class
 # as the .dsh-24x7 evidence allowlist. generic-api-key's match here spans

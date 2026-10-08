@@ -1227,6 +1227,31 @@ def test_zero_event_decisions_do_not_accumulate_penalties() -> None:
     assert env._n_decisions == decisions
 
 
+def test_recovery_time_advance_cannot_leave_next_target_behind(monkeypatch: Any) -> None:
+    """Defect 2: recovery itself may advance beyond the provisional target."""
+    env = ZILobQuoteEnv(_env_config(horizon=200.0, decision_interval=1.0))
+    env.reset(seed=1)
+    sim = env.sim
+
+    def recovering_require_mid(why: str) -> float:
+        del why
+        start = float(sim.t)
+        while float(sim.t) <= start + 2.0:
+            sim.step()
+        return env._last_mid
+
+    monkeypatch.setattr(env, "_require_mid", recovering_require_mid)
+    first = env.step(1)
+    assert not first.terminated
+    assert env._t_next > float(sim.t)
+
+    before = float(sim.t)
+    second = env.step(1)
+    assert not second.terminated
+    assert float(sim.t) > before
+    assert env._t_next > float(sim.t)
+
+
 def test_recovery_generated_fills_reach_the_accounting(monkeypatch: Any) -> None:
     """Defect 1: fills produced during mid-recovery must reach the accounting.
 

@@ -231,7 +231,7 @@ def forward_shadow_freeze_cmd(
     from quant_fund.research.forward_shadow import freeze
 
     try:
-        result = freeze(json.loads(spec.read_text()), json.loads(bootstrap.read_text()), Path(run))
+        result = freeze(_read_json(spec), _read_json(bootstrap), Path(run))
     except (ValueError, TypeError, KeyError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=False, data_source=spec.name))
@@ -243,7 +243,7 @@ def _record_event(operation: str, run: Path, payload: Path, output: Path | None)
     from quant_fund.research.forward_shadow import record
 
     try:
-        event = record(Path(run), operation, json.loads(Path(payload).read_text()))
+        event = record(Path(run), operation, _read_json(payload))
     except (ValueError, TypeError, KeyError, OSError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     _emit(
@@ -344,7 +344,7 @@ def forward_shadow_plan_cmd(
     from quant_fund.research.forward_evidence import evidence_plan
 
     try:
-        series = json.loads(Path(calibration).read_text())
+        series = _read_json(calibration)
         if not isinstance(series, list):
             raise ValueError("calibration must be a JSON array of numbers")
         result = evidence_plan(

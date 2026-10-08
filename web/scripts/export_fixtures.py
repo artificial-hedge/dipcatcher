@@ -449,11 +449,12 @@ def _index_payload(path: Path) -> dict[str, Any]:
 def _stale_fixtures(expected: Path, actual: Path) -> list[str]:
     """Fixture paths whose committed bytes differ from a fresh export."""
     stale: list[str] = []
+    documentation = {Path("README.md")}
     if actual.is_dir():
         for path in sorted(actual.rglob("*")):
             if path.is_file():
                 rel = path.relative_to(actual)
-                if not (expected / rel).is_file():
+                if rel not in documentation and not (expected / rel).is_file():
                     stale.append(f"{rel} (no longer produced)")
     for path in sorted(expected.rglob("*")):
         if not path.is_file():
