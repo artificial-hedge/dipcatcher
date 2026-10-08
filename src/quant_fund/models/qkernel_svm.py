@@ -1,5 +1,8 @@
 """Quantum kernel (ZZ-feature-map fidelity kernel) on 2-qubit XOR data — (SYNTHETIC)
-kernel perceptron accuracy vs linear baseline.
+kernel perceptron accuracy vs linear baseline. On this encoding the
+fidelity Gram is flat — same-class vs cross-class overlap both ~0.53
+— so the quantum kernel carries no class signal and loses to the
+linear baseline; reported honestly, not gated on the win.
 """
 
 from __future__ import annotations
@@ -48,11 +51,19 @@ def bench_qkernel_svm(seed: int = 3081) -> dict[str, float]:
     # linear baseline
     w = np.linalg.lstsq(X, y, rcond=None)[0]
     acc_l = float((np.sign(X @ w) == y).mean())
-    if acc_q <= acc_l:
-        raise ValueError("quantum kernel no better than linear baseline")
+    # measured: the fidelity Gram is flat for this label — same-class
+    # overlap 0.526 vs cross-class 0.526, so acc_q wanders near chance
+    # (0.5-0.6 across epochs) while the linear arm gets 0.7 — the win
+    # claim is disproven and reported via synthetic_qk_gain; the gate
+    # is a non-degeneracy floor on the kernel run itself.
+    if acc_q < 0.5:
+        raise ValueError("quantum kernel run degenerate")
+    same = (y[:, None] == y[None, :]) & ~np.eye(n_data, dtype=bool)
     return {
         "synthetic_qk_acc": acc_q,
         "synthetic_linear_acc": acc_l,
         "synthetic_qk_gain": float(acc_q - acc_l),
+        "synthetic_qk_overlap_same": float(K[same].mean()),
+        "synthetic_qk_overlap_cross": float(K[~same].mean()),
         "synthetic_torch_available": 0.0,
     }

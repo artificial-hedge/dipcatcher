@@ -38,15 +38,20 @@ def bench_judge_pairwise(
                 wins[j] += 1
     order_judge = wins.argsort()
     order_true = quality.argsort()
+    # Spearman rho = corr of per-item RANKS: argsort(order) maps each item
+    # to its rank. argsort(argsort(order)) is the identity on a
+    # permutation — the old code correlated raw item-id sequences (pure
+    # noise, ~0.14 at the pinned seed); the fixed measure is 0.96.
     rho = float(
         np.corrcoef(
-            np.argsort(np.argsort(order_judge)),
-            np.argsort(np.argsort(order_true)),
+            np.argsort(order_judge),
+            np.argsort(order_true),
         )[0, 1]
     )
-    # win-rate ordering stays noisy at this noise level — agreement is the
-    # strict oracle, rho only needs to be meaningfully positive
-    if agree / total <= 0.7 or rho < 0.2:
+    # agreement is the strict oracle (measured 0.84); rank recovery is
+    # genuinely strong once measured correctly (0.96) — a judge with
+    # scrambled wins still fails the rho arm honestly.
+    if agree / total <= 0.7 or rho < 0.5:
         raise ValueError("judge agreement/rank recovery below oracle")
     return {
         "synthetic_judge_agreement": agree / total,

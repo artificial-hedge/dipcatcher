@@ -37,6 +37,8 @@ def bench_protonet(seed: int = 857, n_tasks: int = 30, K: int = 5) -> dict[str, 
         loss.backward()
         opt.step()
     mses = []
+    mse0s = []
+    zp = torch.zeros(16)
     for i in range(8):
         xs, ys, xq, yq = sine_task(np.random.default_rng(seed + 2000 + i), K=K)
         with torch.no_grad():
@@ -44,13 +46,16 @@ def bench_protonet(seed: int = 857, n_tasks: int = 30, K: int = 5) -> dict[str, 
             z = emb(S).mean(0)
             inp = torch.cat([torch.tensor(xq).float()[:, None], z.expand(len(xq), 16)], 1)
             pred = head(inp).squeeze(-1).numpy()
+            # pooled baseline on the SAME task: zero-proto input
+            inp0 = torch.cat([torch.tensor(xq).float()[:, None], zp.expand(len(xq), 16)], 1)
+            pred0 = head(inp0).squeeze(-1).numpy()
         mses.append(float(((pred - yq) ** 2).mean()))
-    # pooled baseline: fit head on (x, zero-proto) only
-    with torch.no_grad():
-        zp = torch.zeros(16)
-        inp = torch.cat([torch.tensor(xq).float()[:, None], zp.expand(len(xq), 16)], 1)
-        pred0 = head(inp).squeeze(-1).numpy()
-    mse0 = float(((pred0 - yq) ** 2).mean())
+        mse0s.append(float(((pred0 - yq) ** 2).mean()))
+    # the old baseline scored zero-proto on only the LAST eval task
+    # (mse0 ~0.03 on a small-amplitude draw vs a 8-task mean ~1.46) —
+    # same-task means are the honest comparison: gain +0.017 at
+    # defaults, +0.084 at n_tasks=600,K=10.
+    mse0 = float(np.mean(mse0s))
     if float(np.mean(mses)) >= mse0:
         raise ValueError("protonet conditioning no better than zero-proto")
     return {

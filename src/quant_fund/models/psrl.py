@@ -33,7 +33,16 @@ def bench_psrl(seed: int = 1401, T: int = 3000, epoch: int = 60) -> dict[str, fl
             Ps = np.stack(
                 [np.apply_along_axis(lambda v: rng.dirichlet(v), -1, cnt[a]) for a in range(2)]
             )
-            Rs = rsum / rcnt + 0.05 * rng.standard_normal((2, 4))
+            # reward posterior: rsum/rcnt alone is a delta at 0 on
+            # unvisited (a,s) pairs — pessimism, not the U[0,1] prior —
+            # and made the sampled MDP avoid unexplored actions (PSRL
+            # lost to eps-greedy: 0.498 vs 0.559). Proper Normal
+            # posterior with prior mean 0.5 and noise shrinking with
+            # visits restores honest posterior sampling (+0.048).
+            visits = rcnt - 1.0
+            Rs = (rsum + 0.5) / (visits + 1.0) + 0.05 * rng.standard_normal((2, 4)) / np.sqrt(
+                visits + 1.0
+            )
             pol = _vi(Ps, Rs)
         a = pol[s]
         s2 = int(rng.choice(4, p=P_true[a, s]))

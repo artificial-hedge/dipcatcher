@@ -35,15 +35,20 @@ def _klmc(seed: int, n: int = 12000, h: float = 0.05, gamma: float = 4.0) -> Flo
     return out
 
 
-def bench_kinetic_langevin(seed: int = 2219) -> dict[str, float]:
+def bench_kinetic_langevin(
+    seed: int = 2219, n: int = 12000, h: float = 0.05, gamma: float = 4.0
+) -> dict[str, float]:
     mu, sd = ref_moments()
-    smp = _klmc(seed)
+    smp = _klmc(seed, n=n, h=h, gamma=gamma)
     base = rwm_baseline(seed + 1, n=len(smp))
     ess = mean_ess(smp)
     ess_b = mean_ess(base)
     merr = moment_err(smp, mu, sd)
     # KLMC's edge on this fixture is ESS, not moment fidelity — gate the
-    # demonstrated win and bound moments at a loose measured level.
+    # demonstrated win and bound moments at a loose measured level. At
+    # the pinned seed ess beats RWM only for h>=0.15 (h=0.05: 54.8 vs
+    # 95.8; h=0.15: 157.5 vs 95.8, merr 1.53; h=0.2: 608 vs 96, merr
+    # 2.05; h>=0.25 diverges on the banana target).
     if ess <= ess_b:
         raise ValueError("KLMC ESS did not beat RWM baseline")
     if merr > 2.2:

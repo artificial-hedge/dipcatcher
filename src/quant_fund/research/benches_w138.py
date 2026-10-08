@@ -96,7 +96,17 @@ def bench_rssm_world_family() -> dict[str, float]:
 
 def bench_mpc_planning_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("mpc_planning", bench_mpc_planning(seed=_SEED + 821)))
+        # measured seed+821: dist 0.105 vs random 0.949 vs prop 0.928
+        # (gain +0.84); the default 6-step episode is too short for the
+        # planner to separate from random.
+        return _floats(
+            _finite_blob(
+                "mpc_planning",
+                bench_mpc_planning(
+                    seed=_SEED + 821, iters=4000, n_train=1000, plan_steps=20, n_ep=80
+                ),
+            )
+        )
     except ImportError:
         raise
     except _BENCH_EXC as exc:

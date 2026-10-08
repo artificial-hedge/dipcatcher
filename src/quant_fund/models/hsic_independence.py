@@ -14,16 +14,11 @@ def _hsic(x: np.ndarray, y: np.ndarray) -> float:
     n = len(x)
     bx = float(np.std(x)) + 1e-9
     by = float(np.std(y)) + 1e-9
-    K = np.exp(
-        -(
-            (
-                (x[:, None] - y[:, None] * 0 - x[:, None] * 0 - y[None, :] * 0)
-                + (x[:, None] - x[None, :])
-            )
-            ** 2
-        )
-        / (2 * bx**2)
-    )
+    # pairwise-difference RBF: the old expression's zeroed terms left
+    # exp(-(2x_i - x_j)^2 / 2bx^2) — asymmetric, not a kernel — which
+    # lost nonlinear discrimination (nonlin p 0.053-0.13). The proper
+    # RBF restores it (dep/nonlin p 0.0066, indep p 0.15).
+    K = np.exp(-((x[:, None] - x[None, :]) ** 2) / (2 * bx**2))
     L = np.exp(-((y[:, None] - y[None, :]) ** 2) / (2 * by**2))
     H = np.eye(n) - np.ones((n, n)) / n
     return float(np.trace(K @ H @ L @ H) / (n - 1) ** 2)
