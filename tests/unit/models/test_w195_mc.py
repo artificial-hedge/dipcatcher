@@ -32,7 +32,7 @@ class TestDRAM:
 
 class TestRJ:
     def test_bench(self) -> None:
-        out = bench_rjmcmc(steps=500)
+        out = bench_rjmcmc(steps=2000)
         assert 0.0 <= out["synthetic_rj_p2_bimodal"] <= 1.0
 
 
