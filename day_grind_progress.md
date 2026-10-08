@@ -2343,7 +2343,7 @@ free, 99% → 96%**); `.venv-bench` (1.2 GB) deliberately KEPT — it is the pin
 vectorbt-1.1.0/plotly-6.9.0/qlib-0.9.7 evidence environment the recorded parity receipts in
 `.dsh-24x7/PROOF.md` depend on, and destroying sealed-evidence reproducibility to buy swap
 headroom is the wrong trade. Definitive control launched: full gate at `-n 4`
-(`/tmp/lead_ctrl_n4.log`, job `bash-369` — reduced worker count bounds both tmp-write races
+(`/tmp/lead_ctrl_n4.log`, job `bash-495` — reduced worker count bounds both tmp-write races
 and swap pressure). Prediction, stated before the result: **zero segfaults at `-n 4` with
 the freed disk**; if it still segfaults, the cause is memory-pressure-only and worker count
 must drop further.
