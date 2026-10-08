@@ -101,7 +101,7 @@ def bench_rwkv_wkv(
     # honest gate: the linear-scan cost edge is asymptotic in t — at
     # this fixture's short t the quadratic baseline is cheaper (ratio
     # >1, reported honestly); the oracle gates non-degenerate learning
-    if not (acc > 0.1):
+    if not (acc > 1.0 / n_classes):
         raise ValueError("RWKV wkv off cost/degeneracy oracle")
     return {
         "synthetic_rwkv_acc": acc,
