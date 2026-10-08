@@ -61,6 +61,8 @@ def bench_monotonic_net(
         yr = mlp(xp)
     viol_m = float((ym[1:] - ym[:-1] < -1e-6).float().mean())
     viol_r = float((yr[1:] - yr[:-1] < -1e-6).float().mean())
+    if viol_m > 0.01 or viol_m >= viol_r:
+        raise ValueError("monotone net violated constraint or no gap")
     with torch.no_grad():
         mse_m = float((mono_fwd(x_t) - y_t).pow(2).mean())
         mse_r = float((mlp(x_t) - y_t).pow(2).mean())

@@ -52,6 +52,8 @@ def bench_mpc_qp(seed: int = 2925, horizon: int = 20, steps: int = 30) -> dict[s
         a = np.clip(0.6 * (0 - xpd[0]) - 1.2 * xpd[1], -2, 2)
         xpd = A @ xpd + B[:, 0] * a
         cost_pd += float(xpd @ Q @ xpd + R * a * a)
+    if tot >= cost_pd:
+        raise ValueError("MPC-QP cost not below PD oracle")
     return {
         "synthetic_mpc_cost": float(tot),
         "synthetic_pd_cost": float(cost_pd),

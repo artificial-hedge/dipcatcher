@@ -33,6 +33,8 @@ def _bench_monoidal_cat(seed: int = 0) -> float:
     checks.append(len(unit) == len(x))
     # symmetry: X x Y ~ Y x X
     checks.append(len(product_set(x, y)) == len(product_set(y, x)))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

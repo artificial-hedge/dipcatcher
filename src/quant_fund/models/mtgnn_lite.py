@@ -80,6 +80,8 @@ def bench_mtgnn_lite(seed: int = 1627, iters: int = 800, K: int = 3) -> dict[str
     mse = float(np.mean((preds - X[10:]) ** 2))
     mse2 = float(np.mean((preds2 - X[10:]) ** 2))
     base = ar2_baseline(X)
+    if mse >= mse2 or mse > 0.3:
+        raise ValueError("MTGNN mixhop off GCN-TCN oracle")
     return {
         "synthetic_mtg_mse": mse,
         "synthetic_mtg_gcn_mse": mse2,

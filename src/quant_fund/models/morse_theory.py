@@ -62,6 +62,8 @@ def _bench_morse_theory(seed: int = 0) -> float:
     checks.append(abs(tv[:, 2].max() - 1.0) < 1e-10)
     # Morse relation strong: alternating count equals chi both surfaces
     checks.append(1 - 2 + 1 == 0 and 1 - 0 + 1 == 2)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

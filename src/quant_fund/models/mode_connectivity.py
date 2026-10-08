@@ -37,6 +37,8 @@ def bench_mode_connectivity(seed: int = 2371) -> dict[str, float]:
         barriers.append(float(loss))
     endpoints = 0.5 * (barriers[0] + barriers[-1])
     barrier = max(barriers) - endpoints
+    if barrier / max(endpoints, 1e-6) > 0.3:
+        raise ValueError("modes disconnected: linear barrier too high")
     return {
         "synthetic_lmc_barrier": float(barrier),
         "synthetic_lmc_endpoint_loss": float(endpoints),

@@ -36,6 +36,8 @@ def bench_mmd_two_sample(seed: int = 2873, perms: int = 200) -> dict[str, float]
             if _mmd_u(Z[perm[:n]], Z[perm[n:]], bw) >= stat:
                 ge += 1
         pvals[tag] = (ge + 1) / (perms + 1)
+    if pvals["null"] <= pvals["alt"] or pvals["alt"] > 0.05:
+        raise ValueError("MMD two-sample failed null/alt separation")
     return {
         "synthetic_mmd_pval_null": float(pvals["null"]),
         "synthetic_mmd_pval_alt": float(pvals["alt"]),

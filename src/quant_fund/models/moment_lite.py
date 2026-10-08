@@ -78,6 +78,8 @@ def bench_moment_lite(
         qs = probe(z).reshape(horizon, n_tau).numpy()
     pb = pinball(y_true, qs, taus)
     pb_n = pinball(y_true, naive_quantiles(hist, taus, period=24), taus)
+    if pb >= pb_n:
+        raise ValueError("moment-lite not better than seasonal-naive")
     return {
         "synthetic_moment_pinball": pb,
         "synthetic_moment_naive_pinball": pb_n,

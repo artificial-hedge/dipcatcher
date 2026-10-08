@@ -157,3 +157,41 @@ def tsmom_tstat(returns: Array, lookback: int = 252) -> dict[str, float]:
         "mean_ret": mu,
         "n": float(n),
     }
+
+
+def bench_momentum(seed: int = 20261231) -> dict[str, float]:
+    """Momentum oracle: plant a 4-asset panel where asset 0 drifts +0.06%/day,
+    asset 3 drifts -0.06%/day, 1-2 flat. JT momentum must rank asset 0 first
+    and asset 3 last; 52w-high must sit near 1 for the uptrend; TS-mom sign
+    must match drift sign."""
+    rng = np.random.default_rng(seed)
+    t = 400
+    drift = np.array([0.0006, 0.0, 0.0001, -0.0006])
+    r = drift[None, :] + 0.008 * rng.standard_normal((t, 4))
+    px = 100.0 * np.exp(np.cumsum(r, axis=0))
+    checks = []
+    mom = jt_momentum(px, formation=120, skip=10)
+    last = mom[-1]
+    checks.append(int(np.argmax(last)) == 0)
+    checks.append(int(np.argmin(last)) == 3)
+    hi = high_52w(px, window=200)
+    checks.append(float(hi[-1, 0]) > float(hi[-1, 3]))
+    checks.append(float(hi[-1, 0]) > 0.9)
+    ts = tsmom_signal(r[:, 0], lookback=120, vol_window=30)
+    checks.append(float(ts["sign"][-1]) > 0)
+    ts_dn = tsmom_signal(r[:, 3], lookback=120, vol_window=30)
+    checks.append(float(ts_dn["sign"][-1]) < 0)
+    # t-stat on a strongly trending series is positive and significant
+    trend = 0.002 + 0.01 * rng.standard_normal(380)
+    st = tsmom_tstat(trend, lookback=120)
+    checks.append(st["t_stat"] > 0.0)
+    checks.append(st["mean_ret"] > 0.0)
+    if sum(checks) != len(checks):
+        raise ValueError("momentum oracle checks failed")
+    return {
+        "synthetic_mom_winner": float(np.argmax(last)),
+        "synthetic_mom_loser": float(np.argmin(last)),
+        "synthetic_hi52_up": float(hi[-1, 0]),
+        "synthetic_tsmom_tstat": float(st["t_stat"]),
+        "synthetic_score": float(sum(checks) / len(checks)),
+    }

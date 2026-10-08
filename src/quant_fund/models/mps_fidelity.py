@@ -25,6 +25,8 @@ def bench_mps_fidelity(seed: int = 3105, n: int = 6, chi: int = 4) -> dict[str, 
     rec2 = mps_contract(cores2)
     rec2 /= np.linalg.norm(rec2)
     fid_ghz = float(abs(np.vdot(rec2, ghz)) ** 2)
+    if fid_ghz < 0.99 or fid < 0.7:
+        raise ValueError("MPS round-trip fidelity off oracle")
     return {
         "synthetic_mps_fid_rand": fid,
         "synthetic_mps_fid_ghz": fid_ghz,

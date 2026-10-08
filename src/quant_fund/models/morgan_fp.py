@@ -58,4 +58,6 @@ def bench_morgan_fp(seed: int = _SEED) -> dict[str, float]:
     ok += int(env == frozenset({"C"}))
     env2 = _bfs_env(a1, b1, 0, 2)
     ok += int(env2 == frozenset({"C", "O"}))
+    if ok != 4:
+        raise ValueError("Morgan fingerprint oracle failed")
     return {"synthetic_morgan": float(ok == 4)}

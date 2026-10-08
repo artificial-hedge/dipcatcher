@@ -53,6 +53,8 @@ def _bench_moduli_stable(seed: int = 0) -> float:
     checks.append(is_stable([0], [0], [2]))  # genus 2 needs nothing
     # 3 boundary strata of M_{0,4}
     checks.append(boundary_strata_n4() == 3)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

@@ -34874,6 +34874,120 @@
   },
   "models/mlmc.py": {
    "status": "audited"
+  },
+  "models/mmap_pager.py": {
+   "status": "audited"
+  },
+  "models/mmd_two_sample.py": {
+   "status": "audited"
+  },
+  "models/mmmb_select.py": {
+   "status": "audited"
+  },
+  "models/moc_lines.py": {
+   "status": "audited"
+  },
+  "models/mode_connectivity.py": {
+   "status": "audited"
+  },
+  "models/model_averaging.py": {
+   "status": "audited"
+  },
+  "models/model_confidence_set.py": {
+   "status": "audited"
+  },
+  "models/moduli_naive.py": {
+   "status": "audited"
+  },
+  "models/moduli_stable.py": {
+   "status": "audited"
+  },
+  "models/modulo_sched.py": {
+   "status": "audited"
+  },
+  "models/moe_router.py": {
+   "status": "audited"
+  },
+  "models/moirai_lite.py": {
+   "status": "audited"
+  },
+  "models/mol_descriptors.py": {
+   "status": "audited"
+  },
+  "models/moment_generating.py": {
+   "status": "audited"
+  },
+  "models/moment_inequalities.py": {
+   "status": "audited"
+  },
+  "models/moment_lite.py": {
+   "status": "audited"
+  },
+  "models/momentum.py": {
+   "status": "audited"
+  },
+  "models/monad_laws.py": {
+   "status": "audited"
+  },
+  "models/monoidal_cat.py": {
+   "status": "audited"
+  },
+  "models/monomial_ideal.py": {
+   "status": "audited"
+  },
+  "models/monotone_conv.py": {
+   "status": "audited"
+  },
+  "models/monotonic_net.py": {
+   "status": "audited"
+  },
+  "models/moon_fl.py": {
+   "status": "audited"
+  },
+  "models/moran.py": {
+   "status": "audited"
+  },
+  "models/morgan_fp.py": {
+   "status": "audited"
+  },
+  "models/morley_rank.py": {
+   "status": "audited"
+  },
+  "models/morse_theory.py": {
+   "status": "audited"
+  },
+  "models/motif_scan.py": {
+   "status": "audited"
+  },
+  "models/mpc_planning.py": {
+   "status": "audited"
+  },
+  "models/mpc_qp.py": {
+   "status": "audited"
+  },
+  "models/mppi_control.py": {
+   "status": "audited"
+  },
+  "models/mps_fidelity.py": {
+   "status": "audited"
+  },
+  "models/mrac_adapt.py": {
+   "status": "audited"
+  },
+  "models/ms_queue.py": {
+   "status": "audited"
+  },
+  "models/ms_var.py": {
+   "status": "audited"
+  },
+  "models/mst_topology.py": {
+   "status": "audited"
+  },
+  "models/mtgnn_lite.py": {
+   "status": "audited"
+  },
+  "models/mu_recursion.py": {
+   "status": "audited"
   }
  },
  "schema_version": "audit-coverage/v1",

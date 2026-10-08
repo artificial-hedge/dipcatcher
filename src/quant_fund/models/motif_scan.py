@@ -69,6 +69,8 @@ def bench_motif_scan(seed: int = 20261231 + 515) -> dict[str, float]:
     auc = sum(1 for a in planted_scores for b in bg_scores if a > b) / max(
         1, len(planted_scores) * len(bg_scores)
     )
+    if recall < 0.5 or auc < 0.9 or not sep:
+        raise ValueError("motif scan off planted-motif oracle")
     return {
         "synthetic_topk_recall": recall,
         "synthetic_auc_vs_bg": auc,

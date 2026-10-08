@@ -41,6 +41,8 @@ def _bench_morley_rank(seed: int = 0) -> float:
     checks.append(morley_degree(parts) == 2)
     # union of finite sets stays rank 0
     checks.append(max(r[s] for s in sets[:2]) == 0)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

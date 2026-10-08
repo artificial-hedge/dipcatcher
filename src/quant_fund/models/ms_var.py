@@ -194,3 +194,39 @@ def msvar_forecast(fit: dict[str, Array], y_last: Array, steps: int = 8) -> dict
             yreg[j] = mu[j] + a[j] @ yreg[j]
         out[i] = bel @ yreg
     return {"y_forecast": out, "regime_probs_final": bel}
+
+
+def bench_ms_var(seed: int = 20261231) -> dict[str, float]:
+    """MS-VAR EM oracle: simulate a 2-regime dynamics-switching VAR(1)
+    (persistent a=0.95 vs mean-reverting a=-0.3 blocks); the fit must
+    recover separated regime coefficients, assign each block high
+    smoothed probability on its own regime label, and forecast finite."""
+    rng = np.random.default_rng(seed)
+    t = 400
+    y = np.zeros((t, 1))
+    regimes = np.array([0] * 200 + [1] * 200)
+    a_true = np.array([0.95, -0.3])
+    for i in range(1, t):
+        s = regimes[i]
+        y[i] = a_true[s] * y[i - 1] + 0.08 * rng.standard_normal()
+    fit = msvar_fit(y, k=2, max_iter=60, seed=seed)
+    a_hat = np.asarray(fit["A"]).ravel()
+    sm = np.asarray(fit["smoothed"])
+    hi = int(np.argmax(a_hat))
+    lo = 1 - hi
+    checks = []
+    checks.append(a_hat[hi] > 0.8 and a_hat[lo] < 0.2)
+    checks.append(float(sm[:199, hi].mean()) > 0.8)
+    checks.append(float(sm[201:, lo].mean()) > 0.8)
+    fc = msvar_forecast(fit, y[-1], steps=4)
+    checks.append(bool(np.all(np.isfinite(fc["y_forecast"]))))
+    checks.append(float(fit["P"][hi, hi]) > 0.7)
+    if sum(checks) != len(checks):
+        raise ValueError("ms-var oracle checks failed")
+    return {
+        "synthetic_msvar_a_persistent": float(a_hat[hi]),
+        "synthetic_msvar_a_reverting": float(a_hat[lo]),
+        "synthetic_msvar_p_stay": float(fit["P"][hi, hi]),
+        "synthetic_msvar_loglik": float(fit["loglik"][0]),
+        "synthetic_score": float(sum(checks) / len(checks)),
+    }

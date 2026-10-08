@@ -33,6 +33,8 @@ def _run(seed: int, adaptive: bool, steps: int = 800) -> float:
 def bench_mrac_adapt(seed: int = _SEED) -> dict[str, float]:
     err_frozen = _run(seed, adaptive=False)
     err_adapt = _run(seed, adaptive=True)
+    if err_adapt >= 0.6 * err_frozen or err_adapt >= 0.2:
+        raise ValueError("MRAC adaptation off oracle")
     return {
         "synthetic_mrac_better": float(err_adapt < 0.6 * err_frozen),
         "synthetic_mrac_track": float(err_adapt < 0.2),

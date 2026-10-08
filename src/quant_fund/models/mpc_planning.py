@@ -75,6 +75,8 @@ def bench_mpc_planning(
         dist_model += float(np.linalg.norm(x - target))
         dist_rand += float(np.linalg.norm(xr - target))
         dist_prop += float(np.linalg.norm(xp - target))
+    if dist_model >= dist_rand:
+        raise ValueError("MPC shooting not better than random actions")
     return {
         "synthetic_mpc_dyn_mse": dyn_err,
         "synthetic_mpc_dist": float(dist_model / n_ep),

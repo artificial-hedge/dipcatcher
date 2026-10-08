@@ -39,4 +39,6 @@ def bench_modulo_sched(seed: int = _SEED) -> dict[str, float]:
     ok += int(ii(["store"] * 5, []) == 5)
     # distance-2 recurrence halves
     ok += int(ii(["alu"], [(4, 2)]) == 2)
+    if ok != 4:
+        raise ValueError("modulo scheduling II oracle failed")
     return {"synthetic_modulo": float(ok == 4)}

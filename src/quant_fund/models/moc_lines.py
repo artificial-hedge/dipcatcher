@@ -31,4 +31,6 @@ def bench_moc_lines(seed: int = 2525, nx: int = 101, nt: int = 2000) -> dict[str
     def pred(xq: np.ndarray, tq: float) -> np.ndarray:
         return np.asarray(np.interp(xq, x, u))
 
+    if eval_error(pred) > 0.15:
+        raise ValueError("method-of-lines RK4 off closed-form oracle")
     return {"synthetic_moc_rel_l2": eval_error(pred), "synthetic_torch_available": 0.0}

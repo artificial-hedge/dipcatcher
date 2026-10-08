@@ -179,6 +179,13 @@ def bench_model_averaging(seed: int = 20261231 + 238) -> dict[str, float]:
     w_top = float(out["w_top"])
     am = float(out["w_argmax_model"])
     am1 = float(out1["w_argmax_model"])
+    if not (
+        float(out["mspe_mma"]) <= float(out["mspe_single"]) * 1.05
+        and am > am1
+        and float(out["w_entropy"]) > 0.05
+        and w_top == float(out_b["w_top"])
+    ):
+        raise ValueError("model averaging off oracle")
     return {
         "synthetic_w_top": w_top,
         "synthetic_w_entropy": float(out["w_entropy"]),

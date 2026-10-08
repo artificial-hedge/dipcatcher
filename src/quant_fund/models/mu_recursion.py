@@ -23,6 +23,8 @@ def _bench_mu_recursion(seed: int = 0) -> float:
     checks.append(mu(lambda n: n * n - 9 if n * n >= 9 else 1) == 3)
     # first even n where n(n+1) == 12*13 -> n=12
     checks.append(mu(lambda n: n * (n + 1) - 156) == 12)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

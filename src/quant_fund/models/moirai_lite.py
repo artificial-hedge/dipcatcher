@@ -73,6 +73,10 @@ def bench_moirai_lite(
         qs = np.tile(qs, (horizon // p, 1))[:horizon]
     pb = pinball(y_true, qs, taus)
     pb_n = pinball(y_true, naive_quantiles(hist, taus, period=24), taus)
+    # on this fixture the masked-patch lite model loses to seasonal-naive
+    # at this budget — the margin is reported honestly; gate a floor only
+    if pb > 0.6:
+        raise ValueError("moirai-lite pinball above floor")
     return {
         "synthetic_moirai_pinball": pb,
         "synthetic_moirai_naive_pinball": pb_n,

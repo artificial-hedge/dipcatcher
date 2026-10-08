@@ -45,4 +45,6 @@ def bench_mmmb_select(seed: int = 2831, trials: int = 4, d: int = 6) -> dict[str
             for j in _mb(X, v):
                 A[v, j] = A[j, v] = 1.0
         f1s.append(skeleton_f1(B, A))
+    if np.mean(f1s) < 0.5:
+        raise ValueError("MMMB skeleton F1 below oracle")
     return {"synthetic_mmmb_skel_f1": float(np.mean(f1s)), "synthetic_torch_available": 0.0}

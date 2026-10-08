@@ -79,4 +79,6 @@ def bench_mol_descriptors(seed: int = _SEED) -> dict[str, float]:
     ok += int(rotatable(a, b) == 0 and abs(mol_weight(a) - 56.02) < 0.01)
     a, b = parse("c1ccccc1")
     ok += int(rotatable(a, b) == 0 and abs(mol_weight(a) - 72.066) < 0.01)
+    if ok != 5:
+        raise ValueError("molecular-descriptor oracle failed")
     return {"synthetic_mol_descriptors": float(ok == 5)}

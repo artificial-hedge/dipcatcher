@@ -77,4 +77,6 @@ def bench_ms_queue(seed: int = _SEED) -> dict[str, float]:
                 record.append(("deq", v if v is not None else -1))
         if _linearizability_oracle(record):
             ok += 1
+    if ok != 30:
+        raise ValueError("MSQueue linearizability oracle failed")
     return {"synthetic_msq_linearizable": ok / 30}

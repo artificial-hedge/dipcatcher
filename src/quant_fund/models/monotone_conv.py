@@ -25,8 +25,11 @@ def _bench_monotone_conv(seed: int = 0) -> float:
     checks.append(int_dom < 0.02)
     # DCT: moving to limit f_n -> f = 0 a.e. dominated by 1
     checks.append(abs(float(np.sum(np.minimum(x**50, 1.0)) * dx)) < 0.02 + 1e-9)
-    # dominated required: spike sequence NOT dominated by integrable bound fails
-    checks.append(True)
+    # spike sequence escapes any integrable bound: max grows unbounded
+    spikes = [
+        float(np.max(np.minimum(x ** (-0.5) * np.exp(-((x * n) ** 2)), n * 4.0))) for n in (8, 32)
+    ]
+    checks.append(spikes[1] > spikes[0])
     return float(sum(checks) / len(checks))
 
 

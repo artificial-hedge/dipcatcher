@@ -35,6 +35,8 @@ def bench_mppi_control(
         x = dyn(x, U[t])
         tot += stage_cost(x, U[t])
     _, cost_b = pd_baseline(x0)
+    if tot >= cost_b:
+        raise ValueError("MPPI cost not below PD oracle")
     return {
         "synthetic_mppi_cost": float(tot),
         "synthetic_pd_cost": float(cost_b),

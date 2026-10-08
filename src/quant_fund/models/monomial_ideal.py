@@ -33,6 +33,8 @@ def _bench_monomial_ideal(seed: int = 0) -> float:
     checks.append(minimal_gens(frozenset({(2, 0), (3, 0), (1, 1)})) == frozenset({(2, 0), (1, 1)}))
     checks.append(lcm_monomials((2, 1), (1, 3)) == (2, 3))
     checks.append(divides((1, 0), (2, 1)))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

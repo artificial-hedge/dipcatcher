@@ -40,6 +40,8 @@ def _bench_moment_generating(seed: int = 0) -> float:
     checks.append(abs(emp - mgf_normal(0.0, 1.0, 0.2)) / mgf_normal(0.0, 1.0, 0.2) < 0.02)
     # MGF of sum = product (independence): Bin(2) = Ber * Ber
     checks.append(abs(mgf_binomial(2, 0.3, 0.5) - mgf_bernoulli(0.3, 0.5) ** 2) < 1e-12)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

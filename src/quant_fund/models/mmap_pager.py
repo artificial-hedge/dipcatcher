@@ -68,6 +68,8 @@ def bench_mmap_pager(seed: int = 20261231 + 472) -> dict[str, float]:
         # faults ≥ cold misses (each distinct page touched once at least)
         fault_ok += int(p.faults >= len(p.touched))
         evict_ok += int(len(p.table) <= nf and len(p.frames) == nf)
+    if data_ok != trials or fault_ok != trials or evict_ok != trials:
+        raise ValueError("mmap pager oracle failed")
     return {
         "synthetic_read_write_correct": float(data_ok / trials),
         "synthetic_faults_ge_cold": float(fault_ok / trials),

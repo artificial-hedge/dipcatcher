@@ -97,6 +97,8 @@ def bench_moon_fl(
 
     a_moon = fedavg(moon=True)
     a_fa = fedavg(moon=False)
+    if a_moon < 0.7:
+        raise ValueError("MOON accuracy below floor")
     return {
         "synthetic_moon_acc": a_moon,
         "synthetic_moon_fedavg_acc": a_fa,

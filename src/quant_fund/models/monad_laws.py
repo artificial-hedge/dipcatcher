@@ -43,4 +43,6 @@ def bench_monad_laws(seed: int = _SEED) -> dict[str, float]:
     lhs = _bind(_bind(m, f), g)
     rhs = _bind(m, lambda x: _bind(f(x), g))
     ok += int(lhs == rhs)
+    if ok != 3:
+        raise ValueError("monad laws violated")
     return {"synthetic_monad": float(ok == 3)}

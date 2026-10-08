@@ -34,6 +34,8 @@ def _bench_moduli_naive(seed: int = 0) -> float:
     checks.append(j_invariant(1, 1, p) == j_invariant((u**4) % p, (u**6) % p, p))
     # j=0 curve y^2 = x^3 + 1 exists
     checks.append(j_invariant(0, 1, p) == 0)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

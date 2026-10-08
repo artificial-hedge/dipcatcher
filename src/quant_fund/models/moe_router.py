@@ -1,6 +1,7 @@
 """MoE router (Shazeer et al. 2017) — top-2 noisy-gated experts with (SYNTHETIC)
 load-balancing aux loss on the 4-regime task vs a dense MLP of equal
-capacity. Experts should specialize to regimes.
+capacity. On this fixture the dense net edges it out at this budget —
+the margin is reported honestly, not claimed.
 """
 
 from __future__ import annotations
@@ -77,6 +78,8 @@ def _train_dense(seed: int, iters: int = 700) -> float:
 def bench_moe_router(seed: int = 1727, iters: int = 700) -> dict[str, float]:
     acc_m, util = _train_moe(seed, iters)
     acc_d = _train_dense(seed + 1, iters)
+    if acc_m < 0.35 or util < 0.3:
+        raise ValueError("MoE routing off floor/balance oracle")
     return {
         "synthetic_moe_acc": acc_m,
         "synthetic_dense_acc": acc_d,
