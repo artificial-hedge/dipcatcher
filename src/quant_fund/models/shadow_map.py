@@ -36,4 +36,6 @@ def bench_shadow_map(seed: int = _SEED) -> dict[str, float]:
         view = np.eye(4)
         lit = shadow_pass(depth, frags, view)
         ok += float(len(lit) == 20)
+    if ok != trials:
+        raise ValueError("shadow-pass lit-count oracle failed")
     return {"synthetic_shadow_lits": ok / trials}

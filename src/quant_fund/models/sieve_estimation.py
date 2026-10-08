@@ -147,6 +147,8 @@ def bench_sieve_estimation(
     (out_b, _) = sieve_partial_linear(np.asarray(d["y"]), np.asarray(d["x"]), np.asarray(d["z"]))
 
     b = float(out["beta_0"])
+    if not (abs(b - 0.8) < 0.15 and g_cor > 0.9 and b == float(out_b["beta_0"])):
+        raise ValueError("sieve-estimation oracle failed")
     return {
         "synthetic_beta": b,
         "synthetic_beta_err": float(abs(b - 0.8)),

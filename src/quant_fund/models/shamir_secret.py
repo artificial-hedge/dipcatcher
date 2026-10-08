@@ -41,6 +41,8 @@ def bench_shamir_secret(seed: int = 4705) -> dict[str, float]:
         oks += int(_recon(list(combo)) == secret)
     # k-1 shares should NOT reconstruct
     bad = _recon(shares[: k - 1])
+    if oks != len(list(combinations(shares, k))) or bad == secret:
+        raise ValueError("Shamir threshold oracle failed")
     return {
         "synthetic_shamir_exact": float(oks),
         "synthetic_shamir_combos": float(len(list(combinations(shares, k)))),

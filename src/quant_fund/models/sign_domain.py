@@ -139,4 +139,6 @@ def bench_sign_domain(seed: int = _SEED) -> dict[str, float]:
     for _ in range(60):
         env_c: dict[str, float] = {k: _concretize(v, rng) for k, v in env_a.items()}
         checks.append(_covers(a, _ceval(e3, env_c)))
+    if not all(checks):
+        raise ValueError("sign-domain soundness oracle failed")
     return {"synthetic_sign_domain": float(sum(checks)) / len(checks)}

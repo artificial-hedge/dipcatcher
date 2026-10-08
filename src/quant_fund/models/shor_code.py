@@ -111,4 +111,6 @@ def bench_shor_code(seed: int = _SEED) -> dict[str, float]:
     rec2 = rec2 / np.linalg.norm(rec2)
     ok += abs(np.vdot(psi0, rec2)) ** 2 < 0.5
     trials += 1
+    if ok != trials:
+        raise ValueError("Shor-code correct/conceal oracle failed")
     return {"synthetic_shor_code": ok / trials}

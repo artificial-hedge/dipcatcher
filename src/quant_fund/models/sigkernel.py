@@ -195,3 +195,34 @@ def pde_vs_series_gap(
         k_ser = truncated_oracle(a, b, order=6, sigma=1.0)
         gaps[f"{s}"] = abs(k_pde - k_ser)
     return gaps
+
+
+def bench_sigkernel(seed: int = 20261231 + 720) -> dict[str, float]:
+    """Signature-kernel oracle: the Goursat-PDE solve must track the
+    truncated-signature series, the Gram must be PSD, and MMD between
+    structurally distorted path ensembles must exceed the same-law MMD."""
+    rng = np.random.default_rng(seed)
+    a = np.cumsum(rng.standard_normal((30, 2)), axis=0) * 0.05
+    b = np.cumsum(rng.standard_normal((30, 2)), axis=0) * 0.05
+    k_pde = sigkernel_pde(a, b)
+    k_ser = truncated_oracle(a, b, order=6, sigma=1.0)
+    rel = abs(k_pde - k_ser) / (abs(k_ser) + 1e-12)
+    x = np.cumsum(rng.standard_normal((20, 40, 2)), axis=1) * 0.15
+    gram = sigkernel_gram(x, x)
+    same = mmd2_permutation(x[:10], x[10:], n_perm=199, seed=seed + 2)
+    y = rng.standard_normal((10, 40, 2)) * 0.15  # white noise, not integrated
+    diff = mmd2_permutation(x[:10], y, n_perm=199, seed=seed + 1)
+    checks = [
+        rel < 0.02,
+        gram_is_psd(gram),
+        float(same["p_value"]) > 0.05,
+        float(diff["p_value"]) < 0.05,
+    ]
+    if not all(checks):
+        raise ValueError("signature-kernel PDE oracle failed")
+    return {
+        "synthetic_sigkernel_pde_rel": rel,
+        "synthetic_sigkernel_same_p": float(same["p_value"]),
+        "synthetic_sigkernel_diff_p": float(diff["p_value"]),
+        "synthetic_sigkernel_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

@@ -41,6 +41,8 @@ def _bench_separable_check(seed: int = 0) -> float:
     checks.append(_poly_gcd_deg([0.0, 0.0, 1.0, 1.0], _poly_deriv([0.0, 0.0, 1.0, 1.0])) == 1)
     # product rule sanity: deg gcd counts common-root multiplicity dim
     checks.append(_poly_gcd_deg([1.0, 0.0, -1.0], [1.0, -1.0]) == 1)  # x-1 shared
+    if not all(checks):
+        raise ValueError("separable-polynomial oracle failed")
     return float(sum(checks) / len(checks))
 
 

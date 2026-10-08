@@ -114,6 +114,14 @@ def bench_shortest_paths(seed: int = 0) -> dict[str, float]:
     # A* with zero heuristic = Dijkstra (consistent)
     d_a, path = a_star(n, edges, 0, n - 1, lambda u: 0.0)
     err_a = abs(d_a - float(fw[0, n - 1]))
+    if not (
+        not neg  # all-positive weights: no negative cycle
+        and err_dij < 1e-9
+        and err_bf < 1e-9
+        and err_a < 1e-9
+        and len(path) > 0
+    ):
+        raise ValueError("shortest-paths oracle failed")
     return {
         "synthetic_dijkstra_err": err_dij,
         "synthetic_bellman_err": err_bf,

@@ -25679,6 +25679,12 @@
   "models/semantics.py": {
    "status": "audited"
   },
+  "models/semaphore_monitor.py": {
+   "status": "audited"
+  },
+  "models/semblance_scan.py": {
+   "status": "audited"
+  },
   "models/semi_mart.py": {
    "status": "audited"
   },
@@ -25709,6 +25715,9 @@
   "models/semistable_reduction.py": {
    "status": "audited"
   },
+  "models/semisupervised.py": {
+   "status": "audited"
+  },
   "models/semiuniversal.py": {
    "status": "audited"
   },
@@ -25721,6 +25730,12 @@
   "models/sensory_evaluation.py": {
    "status": "audited"
   },
+  "models/separable_check.py": {
+   "status": "audited"
+  },
+  "models/separation_logic.py": {
+   "status": "audited"
+  },
   "models/separation_proc.py": {
    "status": "audited"
   },
@@ -25730,13 +25745,34 @@
   "models/sepsis_studies.py": {
    "status": "audited"
   },
+  "models/seq_logo.py": {
+   "status": "audited"
+  },
   "models/seq_spectra.py": {
+   "status": "audited"
+  },
+  "models/seqlock.py": {
+   "status": "audited"
+  },
+  "models/sequence_accel.py": {
    "status": "audited"
   },
   "models/sequence_parallel_studies.py": {
    "status": "audited"
   },
+  "models/sequent_calculus.py": {
+   "status": "audited"
+  },
+  "models/sequent_prove.py": {
+   "status": "audited"
+  },
+  "models/sequential_halving.py": {
+   "status": "audited"
+  },
   "models/sequoia_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/serial_diagnostics.py": {
    "status": "audited"
   },
   "models/seriema_qa_studies.py": {
@@ -25787,6 +25823,12 @@
   "models/service_design.py": {
    "status": "audited"
   },
+  "models/session_types.py": {
+   "status": "audited"
+  },
+  "models/set_transformer.py": {
+   "status": "audited"
+  },
   "models/sevastyanov.py": {
    "status": "audited"
   },
@@ -25802,7 +25844,22 @@
   "models/sg_calculus.py": {
    "status": "audited"
   },
+  "models/sha256_impl.py": {
+   "status": "audited"
+  },
+  "models/shadow_map.py": {
+   "status": "audited"
+  },
   "models/shadow_model_studies.py": {
+   "status": "audited"
+  },
+  "models/shadow_pcf.py": {
+   "status": "audited"
+  },
+  "models/shadow_rate.py": {
+   "status": "audited"
+  },
+  "models/shadow_tomography.py": {
    "status": "audited"
   },
   "models/shafarevich_conj.py": {
@@ -25812,6 +25869,9 @@
    "status": "audited"
   },
   "models/shamash_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/shamir_secret.py": {
    "status": "audited"
   },
   "models/shanks_trans.py": {
@@ -25826,16 +25886,34 @@
   "models/shape_context.py": {
    "status": "audited"
   },
+  "models/shape_graph.py": {
+   "status": "audited"
+  },
   "models/shape_theory.py": {
    "status": "audited"
   },
   "models/shapiro_lemma.py": {
    "status": "audited"
   },
+  "models/shared_mem_tile.py": {
+   "status": "audited"
+  },
   "models/shark_qa_studies.py": {
    "status": "audited"
   },
+  "models/sharpness_sam.py": {
+   "status": "audited"
+  },
+  "models/sheaf_check.py": {
+   "status": "audited"
+  },
+  "models/sheaf_cohomology.py": {
+   "status": "audited"
+  },
   "models/sheaf_cond.py": {
+   "status": "audited"
+  },
+  "models/sheaf_gluing.py": {
    "status": "audited"
   },
   "models/sheaf_homotopy.py": {
@@ -25874,10 +25952,19 @@
   "models/shennong_qa_studies.py": {
    "status": "audited"
   },
+  "models/sheppard_heavy.py": {
+   "status": "audited"
+  },
   "models/shield_mantis_qa_studies.py": {
    "status": "audited"
   },
   "models/shift_operator.py": {
+   "status": "audited"
+  },
+  "models/shift_reset.py": {
+   "status": "audited"
+  },
+  "models/shift_share.py": {
    "status": "audited"
   },
   "models/shifted_sympl.py": {
@@ -25904,10 +25991,19 @@
   "models/shooting_bvp.py": {
    "status": "audited"
   },
+  "models/shor_code.py": {
+   "status": "audited"
+  },
   "models/short_rate.py": {
    "status": "audited"
   },
   "models/short_time_ft.py": {
+   "status": "audited"
+  },
+  "models/shortest_paths.py": {
+   "status": "audited"
+  },
+  "models/shot_tta.py": {
    "status": "audited"
   },
   "models/shoveler_qa_studies.py": {
@@ -25925,7 +26021,13 @@
   "models/sidewinder_qa_studies.py": {
    "status": "audited"
   },
+  "models/sidh_lite.py": {
+   "status": "audited"
+  },
   "models/siegel_shidlovskii.py": {
+   "status": "audited"
+  },
+  "models/sieve_estimation.py": {
    "status": "audited"
   },
   "models/sifaka_qa_studies.py": {
@@ -25952,10 +26054,22 @@
   "models/sigillography.py": {
    "status": "audited"
   },
+  "models/sigkernel.py": {
+   "status": "audited"
+  },
+  "models/sigma_or_proof.py": {
+   "status": "audited"
+  },
   "models/sigma_stable.py": {
    "status": "audited"
   },
+  "models/sign_domain.py": {
+   "status": "audited"
+  },
   "models/sign_linguistics.py": {
+   "status": "audited"
+  },
+  "models/sign_restricted_var.py": {
    "status": "audited"
   },
   "models/signal_processing2.py": {

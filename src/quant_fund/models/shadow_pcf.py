@@ -35,7 +35,9 @@ def bench_shadow_pcf(seed: int = _SEED) -> dict[str, float]:
     ok = int(biased > no_bias)
     # pcf output is soft (between 0 and 1 on penumbra)
     soft = pcf(zmap, recv, 0.0)
-    ok += int(soft.min() >= 0 and soft.max() <= 1 and soft.mean() != no_bias or True)
+    ok += int(soft.min() >= 0.0 and soft.max() <= 1.0)
     # depth bigger than map+bias → shadowed
     ok += int(shadow_test(np.zeros((2, 2)), np.ones((2, 2)) * 5, 0.01).sum() == 0)
+    if ok != 3:
+        raise ValueError("shadow bias/PCF-range oracle failed")
     return {"synthetic_shadow": float(ok == 3)}

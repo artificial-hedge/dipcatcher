@@ -130,6 +130,8 @@ def bench_semisupervised(seed: int = 20261231) -> dict[str, float]:
     acc = lambda p: float(  # noqa: E731
         np.mean((p[unl] >= 0.5) == (y[unl] >= 0.5))
     )
+    if not (acc(f_lp) >= acc(p0) and acc(p_st) >= acc(p0)):
+        raise ValueError("label-prop/self-train below supervised base")
     return {
         "synthetic_base_acc": acc(p0),
         "synthetic_labelprop_acc": acc(f_lp),

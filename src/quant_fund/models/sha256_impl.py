@@ -156,6 +156,13 @@ def bench_sha256_impl(seed: int = 4701) -> dict[str, float]:
     flipped[0] ^= 0x01
     h2 = sha256(bytes(flipped))
     bits = sum(bin(int(a, 16) ^ int(b, 16)).count("1") for a, b in zip(mine, h2, strict=True))
+    if not (
+        mine == ref
+        and bits > 100
+        and sha256(b"") == hashlib.sha256(b"").hexdigest()
+        and sha256(b"x" * 200) == hashlib.sha256(b"x" * 200).hexdigest()
+    ):
+        raise ValueError("SHA-256 KAT/avalanche oracle failed")
     return {
         "synthetic_sha_kat_match": float(mine == ref),
         "synthetic_sha_avalanche_bits": float(bits),

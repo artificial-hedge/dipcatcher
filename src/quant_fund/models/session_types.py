@@ -127,4 +127,6 @@ def bench_session_types(seed: int = _SEED) -> dict[str, float]:
     except SessionError:
         ok3 = False
     checks.append(ok3)
+    if not all(checks):
+        raise ValueError("session-type duality/unfold oracle failed")
     return {"synthetic_session_types": float(sum(checks)) / len(checks)}

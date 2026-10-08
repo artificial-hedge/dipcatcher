@@ -82,4 +82,6 @@ def bench_shape_graph(seed: int = _SEED) -> dict[str, float]:
     heap3: Heap = {0: {"nxt": 1}, 1: {"nxt": 2}, 2: {"nxt": 1}}
     checks.append(not is_list(heap3, 0))
     checks.append(garbage(heap3, [0]) == set())
+    if not all(checks):
+        raise ValueError("shape-graph canonical-embedding oracle failed")
     return {"synthetic_shape_graph": float(sum(checks)) / len(checks)}

@@ -70,6 +70,8 @@ def bench_sharpness_sam(
 
     tr0, a0_tr, a0_te = train(False)
     tr1, a1_tr, a1_te = train(True)
+    if a1_te < a0_te:
+        raise ValueError("SAM test acc below plain baseline")
     return {
         "synthetic_sam_test_acc": a1_te,
         "synthetic_sam_plain_test_acc": a0_te,

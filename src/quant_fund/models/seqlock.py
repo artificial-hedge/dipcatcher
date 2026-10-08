@@ -52,4 +52,6 @@ def bench_seqlock(seed: int = _SEED) -> dict[str, float]:
                 torn_raw += 1
         torn_seq += _reader_seqlock(list(events), 60, rng)
     # protocol never produces torn reads under seqlock discipline
-    return {"synthetic_seqlock_consistent": 1.0 if torn_seq == 0 else 0.0}
+    if torn_seq != 0:
+        raise ValueError("seqlock reader observed a torn value")
+    return {"synthetic_seqlock_consistent": 1.0}

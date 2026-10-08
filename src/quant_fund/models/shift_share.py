@@ -204,6 +204,12 @@ def bench_shift_share(seed: int = 20261231 + 194) -> dict[str, float]:
         np.asarray(d0["shocks"]),
     )
 
+    if not (
+        abs(float(iv["beta_iv"]) - beta_true) < abs(ols - beta_true)
+        and abs(float(iv["z_iv"])) > 2.0
+        and float(iv["beta_iv"]) == float(iv2["beta_iv"])
+    ):
+        raise ValueError("shift-share IV oracle failed")
     return {
         "synthetic_beta_iv": float(iv["beta_iv"]),
         "synthetic_beta_true": beta_true,

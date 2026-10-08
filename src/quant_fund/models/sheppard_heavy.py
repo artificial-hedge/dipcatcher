@@ -169,6 +169,8 @@ def bench_sheppard_heavy(seed: int = 20261231 + 310) -> dict[str, float]:
     corr = float(np.corrcoef(s2_hat[1:], rm[:-1])[0, 1])
     pers = float(r["persistence_r"])
     ok = rel < 0.5 and corr > 0.2 and 0.3 < pers < 0.999
+    if not ok:
+        raise ValueError("HEAVY volatility-recursion oracle failed")
     return {
         "synthetic_rel_rmse": rel,
         "synthetic_innov_corr": corr,

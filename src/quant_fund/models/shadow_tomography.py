@@ -97,4 +97,6 @@ def bench_shadow_tomography(seed: int = _SEED) -> dict[str, float]:
         runs_z.append(shadow_estimate(snaps, zz))
     checks.append(abs(float(np.mean(runs_z)) - 1.0) < 0.2)
     score = float(np.mean(checks))
+    if not all(checks):
+        raise ValueError("shadow-tomography expectation oracle failed")
     return {"synthetic_shadow_tomography": score}

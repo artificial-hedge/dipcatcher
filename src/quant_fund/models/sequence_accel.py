@@ -93,6 +93,10 @@ def bench_sequence_accel(seed: int = 0) -> dict[str, float]:
         fh[i] = h * (0.5 * f(xs[0]) + f(xs[1:-1]).sum() + 0.5 * f(xs[-1]))
     err_trap = abs(fh[-1] - exact)
     err_rich = abs(richardson(fh, hs, p=2) - exact)
+    # accelerators must beat the raw partial sum; Richardson beats the
+    # finest trapezoid
+    if not (err_ait < raw_err and err_wynn < raw_err and err_rich < err_trap):
+        raise ValueError("sequence-acceleration oracle failed")
     return {
         "synthetic_leibniz_raw_err": float(raw_err),
         "synthetic_aitken_err": float(err_ait),

@@ -62,4 +62,6 @@ def bench_sigma_or_proof(seed: int = 0) -> dict[str, float]:
         wit = [x1, x2][which]
         proof = or_proof_prove(g, h, y1, y2, wit, which)
         ok += or_proof_verify(g, h, y1, y2, proof)
+    if ok != 40:
+        raise ValueError("sigma OR-proof verification failed")
     return {"synthetic_or_proof_valid": ok / 40}

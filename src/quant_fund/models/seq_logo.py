@@ -30,4 +30,6 @@ def bench_seq_logo(seed: int = _SEED) -> dict[str, float]:
         alignment.append("".join(s))
     ics = [column_ic(alignment, j) for j in range(L)]
     ok = float(ics[0] == 2.0 and max(ics[1:]) < 1.0)
+    if not ok:
+        raise ValueError("seq-logo information-content oracle failed")
     return {"synthetic_logo_ic": ok}

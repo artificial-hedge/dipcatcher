@@ -145,6 +145,8 @@ def bench_set_transformer(seed: int = 59) -> dict[str, float]:
             po = forward(xo, mi)
             errs.append(abs(float(pi - po)))
     r2_base, sign_base = _stat_pool_r2(xs, ys_np, tr)
+    if not (r2 > r2_base and float(np.max(errs)) < 1e-6):
+        raise ValueError("set-transformer pool/perm-invariance oracle failed")
     return {
         "synthetic_setformer_r2": r2,
         "synthetic_setformer_statpool_r2": r2_base,

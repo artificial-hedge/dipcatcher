@@ -100,4 +100,6 @@ def bench_separation_logic(seed: int = _SEED) -> dict[str, float]:
     )
     # disjointness: x↦y * y↦x is impossible on a 2-cell heap?  {1:2,2:1}
     checks.append(_holds(("star", ("mapsto", "x", "y"), ("mapsto", "y", "x")), env, {1: 2, 2: 1}))
+    if not all(checks):
+        raise ValueError("separation-logic entailment/frame oracle failed")
     return {"synthetic_separation_logic": float(sum(checks)) / len(checks)}

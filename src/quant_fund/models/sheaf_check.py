@@ -26,6 +26,8 @@ def _bench_sheaf_check(seed: int = 0) -> float:
     # skyscraper IS a sheaf: sections on {0},{1} that agree on empty overlap glue
     s = skyscraper_sheaf(1, opens)
     checks.append(s[frozenset({1})] == {0, 1, 2} and s[frozenset({0})] == {0})
+    if not all(checks):
+        raise ValueError("sheaf/presheaf oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -69,6 +69,10 @@ def bench_shot_tta(
         opt_t.step()
     with torch.no_grad():
         acc_after = float((head(backbone(xte_t)).argmax(-1) == yte_t).float().mean())
+    # honest gate: TTA must not collapse on the shifted inputs; the small
+    # negative gain on this fixture is measured, not claimed as a win
+    if not (np.isfinite(acc_after) and acc_after >= acc_before - 0.15):
+        raise ValueError("SHOT TTA collapsed shifted-input acc")
     return {
         "synthetic_shot_acc_before": acc_before,
         "synthetic_shot_acc_after": acc_after,

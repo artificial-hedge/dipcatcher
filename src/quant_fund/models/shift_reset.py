@@ -72,6 +72,8 @@ def bench_shift_reset(seed: int = _SEED) -> dict[str, float]:
     checks.append(
         eval_reset(("reset", ("add", ("lit", 1), ("shift", lambda k: ("lit", 99))))) == 99
     )
+    if not all(checks):
+        raise ValueError("shift/reset delimited-continuation oracle failed")
     return {"synthetic_shift_reset": float(sum(checks)) / len(checks)}
 
 

@@ -66,6 +66,8 @@ def _bench_sequent_calculus(seed: int = 0) -> float:
     checks.append(not valid_sequent([a], [b]))
     # weakening-valid: A, B |- A
     checks.append(valid_sequent([a, b], [a]))
+    if not all(checks):
+        raise ValueError("sequent-validity oracle failed")
     return float(sum(checks) / len(checks))
 
 

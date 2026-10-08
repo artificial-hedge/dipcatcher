@@ -109,4 +109,6 @@ def bench_semblance_scan(seed: int = _SEED) -> dict[str, float]:
         s_v = num / np.maximum(den, 1e-30)
         v_est = float(vel_grid[int(np.argmax(s_v))])
         hits.append(abs(v_est - v_true) / v_true < 0.05)
+    if float(np.mean(hits)) < 0.9:
+        raise ValueError("semblance velocity scan off 5% oracle")
     return {"synthetic_semblance_scan": float(np.mean(hits))}

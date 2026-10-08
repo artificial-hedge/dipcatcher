@@ -175,4 +175,6 @@ def bench_sidh_lite(seed: int = _SEED) -> dict[str, float]:
         checks.append(False)
     _, _, phi_a_pa = _chain_with_push(pa, 2, 3, pa)
     checks.append(phi_a_pa is None)  # kernel point lands at O
+    if not all(checks):
+        raise ValueError("SIDH commutative-isogeny oracle failed")
     return {"synthetic_sidh_lite": float(np.mean(checks))}

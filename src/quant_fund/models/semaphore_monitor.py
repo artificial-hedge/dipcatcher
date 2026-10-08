@@ -68,6 +68,8 @@ def bench_semaphore_monitor(seed: int = 20261231 + 474) -> dict[str, float]:
         bound += int(ok)
         conserved += int(sorted(consumed) == items)
         order += int(consumed == items)
+    if bound != trials or conserved != trials or order != trials:
+        raise ValueError("bounded-buffer semaphore oracle failed")
     return {
         "synthetic_buffer_bound_held": float(bound / trials),
         "synthetic_no_loss_no_dup": float(conserved / trials),

@@ -68,4 +68,6 @@ def bench_sequent_prove(seed: int = _SEED) -> dict[str, float]:
     checks.append(not prove(frozenset(), ("or", A, ("not", A))))
     # transitivity: {A->B, B->C} |- A->C
     checks.append(prove(frozenset({("imp", A, B), ("imp", B, C)}), ("imp", A, C)))
+    if not all(checks):
+        raise ValueError("intuitionistic prover oracle failed")
     return {"synthetic_sequent_prove": float(sum(checks)) / len(checks)}

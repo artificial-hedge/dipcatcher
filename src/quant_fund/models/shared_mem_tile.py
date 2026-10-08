@@ -29,4 +29,6 @@ def bench_shared_mem_tile(seed: int = _SEED) -> dict[str, float]:
         b = rng.normal(0, 1, (k, m))
         c = tiled_matmul(a, b, int(rng.choice([4, 8])))
         ok += float(np.allclose(c, a @ b, atol=1e-9))
+    if ok != trials:
+        raise ValueError("tiled matmul disagrees with dense oracle")
     return {"synthetic_tiled_exact": ok / trials}

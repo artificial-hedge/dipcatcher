@@ -51,6 +51,8 @@ def _bench_sheaf_gluing(seed: int = 0) -> float:
     checks.append(agree_on_overlap(restriction(g, u1), restriction(g, u2), {1}))
     # restriction is transitive
     checks.append(restriction(restriction(g, {0, 1, 2}), {0}) == restriction(g, {0}))
+    if not all(checks):
+        raise ValueError("sheaf-gluing oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -227,6 +227,13 @@ def bench_sign_restricted_var(seed: int = 20261231 + 201) -> dict[str, float]:
     irf_true = np.asarray([1.2 * true_persist**h for h in range(9)])
     err = float(np.abs(med - irf_true).mean())
 
+    if not (
+        float(pos["accept_share"]) > 0.05
+        and float(med[1]) > 0.0
+        and err < 1.0
+        and float(pos["accept_share"]) == float(pos_b["accept_share"])
+    ):
+        raise ValueError("sign-restricted VAR oracle failed")
     return {
         "synthetic_accept_share_pos": float(pos["accept_share"]),
         "synthetic_accept_share_neg": float(neg["accept_share"]),

@@ -77,6 +77,8 @@ def _bench_sheaf_cohomology(seed: int = 0) -> float:
     # -> d1 kills the cocycle -> H^1 = 0
     w0, w1, w2 = {0, 1, 3}, {1, 2, 3}, {0, 2, 3}
     checks.append(cech_h1_dim([w0, w1, w2], [(0, 1, 2)]) == 0)
+    if not all(checks):
+        raise ValueError("Čech-H1 dimension oracle failed")
     return float(sum(checks) / len(checks))
 
 
