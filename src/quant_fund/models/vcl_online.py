@@ -18,17 +18,19 @@ def bench_vcl_online(seed: int = 811, T: int = 200) -> dict[str, float]:
     var = np.ones(4)  # prior N(0,1)
     lam = 1.0  # noise precision proxy
     for x, y in tasks:
+        # snapshot the task's prior: posterior of task t-1 — the KL
+        # pull must reference THIS prior, not the drifting current q.
+        mu_pr, var_pr = mu.copy(), var.copy()
         for _ in range(200):
             w = mu + np.sqrt(var) * rng.standard_normal(4)
             e = x @ w - y
-            g_mu = (
-                lam * x.T @ e / len(y) + (mu - 0) / var - (mu - 0) / var * 0
-            )  # prior pull via KL grad
-            # KL(q||prior_old): dKL/dmu = (mu - mu_prev)/var_prev → folded into var below
-            g_mu = lam * x.T @ e / len(y)
-            mu -= 0.02 * np.clip(g_mu * var, -50, 50)
-            # variational variance update: fixed-point var ← 1/(lam*mean x² + 1/var_prior)
-            post_prec = lam * np.mean(x**2, axis=0) + 1.0 / var
+            # KL(q||prior): d/dmu = (mu - mu_pr)/var_pr — the prior pull
+            # was previously computed and then overwritten, leaving
+            # plain preconditioned SGD instead of the VCL update.
+            g_mu = lam * x.T @ e / len(y) + (mu - mu_pr) / var_pr
+            mu -= 0.02 * np.clip(g_mu * var_pr, -50, 50)
+            # variational variance update: var ← 1/(lam*mean x² + 1/var_pr)
+            post_prec = lam * np.mean(x**2, axis=0) + 1.0 / var_pr
             var = 1.0 / post_prec
         # posterior becomes next prior (already reflected via mu/var)
     retain = float(np.mean((tasks[0][0] @ mu - tasks[0][1]) ** 2))
