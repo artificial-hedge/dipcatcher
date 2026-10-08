@@ -27,6 +27,7 @@ from fx1.webresearch.fetch import DEFAULT_USER_AGENT
 
 DDG_LITE_URL = "https://lite.duckduckgo.com/lite/"
 DDG_HTML_URL = "https://html.duckduckgo.com/html/"
+_DDG_SEARCH_HOSTS = frozenset({"lite.duckduckgo.com", "html.duckduckgo.com"})
 DEFAULT_TIMEOUT_S = 10.0
 DEFAULT_MAX_RESULTS = 8
 
@@ -176,11 +177,15 @@ class DuckDuckGoLiteSearcher(Searcher):
         self._last_search_at = 0.0
 
     def _get(self, url: str, timeout_s: float) -> bytes:
+        parsed = urllib.parse.urlsplit(url)
+        if parsed.scheme != "https" or parsed.hostname not in _DDG_SEARCH_HOSTS:
+            raise ValueError("search endpoint must be an approved DuckDuckGo HTTPS host")
         request = urllib.request.Request(url, headers={"User-Agent": self._user_agent})
         if self._open_fn is not None:
             with self._open_fn(request, timeout_s) as response:
                 return bytes(response.read())
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310
+        # Scheme and host are allowlisted immediately above.
+        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # nosec B310
             return bytes(response.read())
 
     def search(

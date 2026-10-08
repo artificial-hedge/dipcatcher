@@ -324,6 +324,20 @@ def test_searcher_uses_injected_opener() -> None:
     assert len(result.hits) >= 2
 
 
+def test_searcher_get_rejects_unapproved_endpoint() -> None:
+    opened = False
+
+    def open_fn(request, timeout_s):  # noqa: ANN001
+        nonlocal opened
+        opened = True
+        return FakeResponse(b"")
+
+    searcher = DuckDuckGoLiteSearcher(open_fn=open_fn)
+    with pytest.raises(ValueError, match="approved DuckDuckGo HTTPS host"):
+        searcher._get("file:///etc/passwd", 1.0)
+    assert opened is False
+
+
 def test_searcher_transport_fault_reports_error_no_hits() -> None:
     def open_fn(request, timeout_s):  # noqa: ANN001
         raise urllib.error.URLError("offline")
