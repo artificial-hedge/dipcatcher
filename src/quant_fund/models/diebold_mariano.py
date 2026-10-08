@@ -102,7 +102,7 @@ def synth_dm(
     z = np.zeros(n)
     for t in range(1, n):
         z[t] = rho * z[t - 1] + rng.normal()
-    eps = np.diff(z)  # innovations of the AR (model-2 residual)
+    eps = z[1:] - rho * z[:-1]  # innovations of the AR (model-2 residual)
     e_good = eps.copy()
     e_bad = eps + rng.normal(0.0, 0.6, eps.size)
     # reversed copy: identical loss distribution, E[d]=0

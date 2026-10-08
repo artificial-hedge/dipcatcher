@@ -69,3 +69,13 @@ def test_d_optimal_beats_random():
     s = rng.choice(150, 10, replace=False)
     _, ld_rand = np.linalg.slogdet(cand[s].T @ cand[s] + 1e-12 * np.eye(6))
     assert ld_opt > ld_rand
+
+
+def test_d_optimal_all_candidates():
+    """n_runs >= n_cand: the full candidate set is trivially D-optimal —
+    must not crash on the empty exchange pool."""
+    rng = np.random.default_rng(2)
+    cand = np.c_[np.ones(6), rng.uniform(-1, 1, (6, 3))]
+    out = d_optimal(cand, 6, seed=0)
+    assert np.asarray(out["sel"]).tolist() == list(range(6))
+    assert np.asarray(out["design"]).shape == (6, 4)

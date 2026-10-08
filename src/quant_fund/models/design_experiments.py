@@ -115,6 +115,10 @@ def d_optimal(
     n_cand, p = cand.shape
     if n_runs < p:
         raise ValueError("n_runs < p")
+    if n_runs >= n_cand:
+        # every candidate selected is trivially D-optimal
+        sel = np.arange(n_cand)
+        return {"sel": sel, "design": cand[sel]}
     sel = rng.choice(n_cand, n_runs, replace=False)
     for _ in range(it):
         improved = False

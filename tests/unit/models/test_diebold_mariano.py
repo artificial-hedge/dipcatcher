@@ -52,6 +52,17 @@ def test_determinism() -> None:
     assert dm_test(e_bad, e_good) == dm_test(e_bad, e_good)
 
 
+def test_synth_dm_residual_is_innovation() -> None:
+    """model-2 residual is the AR innovation z_t - rho*z_{t-1} (white
+    noise), not the first difference — the difference inherits strong
+    autocorrelation from the AR level."""
+    from quant_fund.models.diebold_mariano import synth_dm
+
+    _, e_good, _ = synth_dm(seed=7)
+    ac1 = float(np.corrcoef(e_good[:-1], e_good[1:])[0, 1])
+    assert abs(ac1) < 0.08
+
+
 def test_bench_schema_and_score() -> None:
     r = bench_diebold_mariano()
     for k in (

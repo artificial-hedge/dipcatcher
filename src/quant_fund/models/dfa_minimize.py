@@ -54,6 +54,22 @@ def distinguishable_pairs(
         for t in range(s + 1, states):
             if (s in accept) != (t in accept):
                 marked.add(frozenset({s, t}))
+    # live = states that can reach an accept state via declared
+    # transitions; a missing transition is a rejecting dead end
+    pred: dict[int, list[int]] = {}
+    for s in range(states):
+        for c in alpha:
+            u0 = trans[s].get(c)
+            if u0 is not None:
+                pred.setdefault(u0, []).append(s)
+    live: set[int] = set(accept)
+    dq_live: deque[int] = deque(accept)
+    while dq_live:
+        u0 = dq_live.popleft()
+        for s in pred.get(u0, []):
+            if s not in live:
+                live.add(s)
+                dq_live.append(s)
     changed = True
     while changed:
         changed = False
@@ -62,9 +78,17 @@ def distinguishable_pairs(
                 if frozenset({s, t}) in marked:
                     continue
                 for c in alpha:
-                    u = trans[s].get(c, 0)
-                    v = trans[t].get(c, 0)
-                    if u != v and frozenset({u, v}) in marked:
+                    u = trans[s].get(c)
+                    v = trans[t].get(c)
+                    if u is None and v is None:
+                        continue
+                    if u is None or v is None:
+                        # dead end rejects all continuations; the other
+                        # successor must accept some string to distinguish
+                        hit = (v if u is None else u) in live
+                    else:
+                        hit = u != v and frozenset({u, v}) in marked
+                    if hit:
                         marked.add(frozenset({s, t}))
                         changed = True
                         break

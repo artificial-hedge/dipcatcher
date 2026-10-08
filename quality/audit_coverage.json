@@ -6809,6 +6809,9 @@
   "models/decomp_thm.py": {
    "status": "audited"
   },
+  "models/decomposition_group.py": {
+   "status": "audited"
+  },
   "models/decontaminate_studies.py": {
    "status": "audited"
   },
@@ -6848,7 +6851,22 @@
   "models/deep_bsde.py": {
    "status": "audited"
   },
+  "models/deep_cfr.py": {
+   "status": "audited"
+  },
+  "models/deep_declarative.py": {
+   "status": "audited"
+  },
+  "models/deep_hedge.py": {
+   "status": "audited"
+  },
   "models/deep_hedging.py": {
+   "status": "audited"
+  },
+  "models/deep_iv.py": {
+   "status": "audited"
+  },
+  "models/deep_kernel_gp.py": {
    "status": "audited"
   },
   "models/deep_kernel_hedging.py": {
@@ -6863,10 +6881,28 @@
   "models/deep_rl.py": {
    "status": "audited"
   },
+  "models/deep_svdd.py": {
+   "status": "audited"
+  },
+  "models/deephit.py": {
+   "status": "audited"
+  },
+  "models/deeponet.py": {
+   "status": "audited"
+  },
+  "models/deepritz_pinn.py": {
+   "status": "audited"
+  },
+  "models/deepsurv.py": {
+   "status": "audited"
+  },
   "models/default_risk.py": {
    "status": "audited"
   },
   "models/defense_studies.py": {
+   "status": "audited"
+  },
+  "models/deferred_shade.py": {
    "status": "audited"
   },
   "models/definable_cat.py": {
@@ -6888,6 +6924,9 @@
    "status": "audited"
   },
   "models/degiorgi_nash.py": {
+   "status": "audited"
+  },
+  "models/degree_map.py": {
    "status": "audited"
   },
   "models/degree_mod2.py": {
@@ -6912,6 +6951,9 @@
    "status": "audited"
   },
   "models/deity_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/delaunay.py": {
    "status": "audited"
   },
   "models/delaunay_flip.py": {
@@ -6950,6 +6992,9 @@
   "models/dellacherie_section.py": {
    "status": "audited"
   },
+  "models/delong_auc.py": {
+   "status": "audited"
+  },
   "models/delooping.py": {
    "status": "audited"
   },
@@ -6959,16 +7004,31 @@
   "models/delooping3.py": {
    "status": "audited"
   },
+  "models/delta_covar.py": {
+   "status": "audited"
+  },
+  "models/delta_crdt.py": {
+   "status": "audited"
+  },
   "models/delta_matroid.py": {
    "status": "audited"
   },
   "models/delta_method.py": {
    "status": "audited"
   },
+  "models/delta_net.py": {
+   "status": "audited"
+  },
   "models/delta_qa_studies.py": {
    "status": "audited"
   },
   "models/delta_ring.py": {
+   "status": "audited"
+  },
+  "models/delta_t.py": {
+   "status": "audited"
+  },
+  "models/demand_paging.py": {
    "status": "audited"
   },
   "models/dementia_studies.py": {
@@ -6998,10 +7058,19 @@
   "models/dendrology.py": {
    "status": "audited"
   },
+  "models/denoising_sm.py": {
+   "status": "audited"
+  },
   "models/denotational.py": {
    "status": "audited"
   },
+  "models/dense_filter.py": {
+   "status": "audited"
+  },
   "models/density_bound.py": {
+   "status": "audited"
+  },
+  "models/density_matrix.py": {
    "status": "audited"
   },
   "models/density_thm.py": {
@@ -7019,6 +7088,9 @@
   "models/dentistry_3.py": {
    "status": "audited"
   },
+  "models/dep_types.py": {
+   "status": "audited"
+  },
   "models/depth_ring.py": {
    "status": "audited"
   },
@@ -7026,6 +7098,9 @@
    "status": "audited"
   },
   "models/der_bimodule.py": {
+   "status": "audited"
+  },
+  "models/der_cl.py": {
    "status": "audited"
   },
   "models/derham_coh.py": {
@@ -7089,6 +7164,9 @@
    "status": "audited"
   },
   "models/derived_flat.py": {
+   "status": "audited"
+  },
+  "models/derived_functor.py": {
    "status": "audited"
   },
   "models/derived_functor2.py": {
@@ -7205,6 +7283,12 @@
   "models/desert_qa_studies.py": {
    "status": "audited"
   },
+  "models/design_effects.py": {
+   "status": "audited"
+  },
+  "models/design_experiments.py": {
+   "status": "audited"
+  },
   "models/design_qa_studies.py": {
    "status": "audited"
   },
@@ -7212,6 +7296,9 @@
    "status": "audited"
   },
   "models/dessert_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/determinacy_toy.py": {
    "status": "audited"
   },
   "models/determinant_cofactor.py": {
@@ -7238,6 +7325,21 @@
   "models/devissage_ss.py": {
    "status": "audited"
   },
+  "models/dfa_equiv.py": {
+   "status": "audited"
+  },
+  "models/dfa_minimize.py": {
+   "status": "audited"
+  },
+  "models/dfl_decomp.py": {
+   "status": "audited"
+  },
+  "models/dfm.py": {
+   "status": "audited"
+  },
+  "models/dfpn.py": {
+   "status": "audited"
+  },
   "models/dg_algebra.py": {
    "status": "audited"
   },
@@ -7257,6 +7359,12 @@
    "status": "audited"
   },
   "models/dg_quotient.py": {
+   "status": "audited"
+  },
+  "models/dgn_directional.py": {
+   "status": "audited"
+  },
+  "models/dhcp_lease.py": {
    "status": "audited"
   },
   "models/dhms_lqg.py": {
@@ -7337,6 +7445,9 @@
   "models/did_diagnostics.py": {
    "status": "audited"
   },
+  "models/diebold_mariano.py": {
+   "status": "audited"
+  },
   "models/dietary_assessment.py": {
    "status": "audited"
   },
@@ -7344,6 +7455,9 @@
    "status": "audited"
   },
   "models/dieudonne_module.py": {
+   "status": "audited"
+  },
+  "models/dif.py": {
    "status": "audited"
   },
   "models/diff_cohom.py": {

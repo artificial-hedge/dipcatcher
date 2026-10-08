@@ -7,6 +7,9 @@ import math
 
 def mult_order(p: int, n: int) -> int:
     """ord of p mod n in (Z/n)*; 0 if not coprime."""
+    if n <= 1:
+        # (Z/1Z)* is the trivial group (order 1); n <= 0 has no unit group
+        return int(n == 1)
     if math.gcd(p, n) != 1:
         return 0
     k, cur = 1, p % n
