@@ -5,6 +5,8 @@ learned p and NLL + OOD gap from MC samples at inference.
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from quant_fund.models._bdl_synth import bdl_data, coverage, nll_gauss
@@ -16,6 +18,18 @@ def _torch():
     except ImportError as exc:
         raise ImportError("concrete_dropout requires torch (pip install -e .[nn])") from exc
     return torch
+
+
+def _concrete_keep(u: Any, p: Any, temp: float) -> Any:
+    """Binary-concrete keep mask. z = sigmoid((logit u + logit(1-p))/temp)
+    keeps with probability ~= 1 - p, so keep = z/(1-p) is an unbiased
+    multiplier (E[keep] ~= 1). Using ``log(p)`` for the offset keeps with
+    probability ~= p instead — the drop probability inverted — and makes
+    the mask biased by p/(1-p)."""
+    torch = _torch()
+    logit_keep = torch.log1p(-p) - torch.log(p)  # logit(1 - p)
+    conc = torch.sigmoid((torch.log(u) - torch.log(1 - u) + logit_keep) / temp)
+    return conc / (1 - p).clamp_min(1e-6)
 
 
 def bench_concrete_dropout(seed: int = 809, iters: int = 300, T: int = 30) -> dict[str, float]:
@@ -37,8 +51,7 @@ def bench_concrete_dropout(seed: int = 809, iters: int = 300, T: int = 30) -> di
     def forward(xx):
         p = torch.sigmoid(logit_p)
         u = torch.rand(xx.shape[0], 32)
-        conc = torch.sigmoid((torch.log(u) - torch.log(1 - u) + torch.log(p)) / temp)
-        keep = conc / (1 - p).clamp_min(1e-6)
+        keep = _concrete_keep(u, p, temp)
         h = torch.relu(lin1(xx)) * keep
         return lin2(h).squeeze(-1)
 

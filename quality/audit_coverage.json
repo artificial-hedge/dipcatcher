@@ -5003,6 +5003,9 @@
   "models/clark_scarf.py": {
    "status": "audited"
   },
+  "models/clark_west.py": {
+   "status": "audited"
+  },
   "models/clarke_subdiff.py": {
    "status": "audited"
   },
@@ -5069,6 +5072,9 @@
   "models/cliff_qa_studies.py": {
    "status": "audited"
   },
+  "models/clifford_toy.py": {
+   "status": "audited"
+  },
   "models/climate_dynamics.py": {
    "status": "audited"
   },
@@ -5108,13 +5114,28 @@
   "models/clinical_trial_studies.py": {
    "status": "audited"
   },
+  "models/clip_align.py": {
+   "status": "audited"
+  },
+  "models/clock_tree.py": {
+   "status": "audited"
+  },
   "models/closed_cat.py": {
+   "status": "audited"
+  },
+  "models/closed_graph.py": {
    "status": "audited"
   },
   "models/closed_operator.py": {
    "status": "audited"
   },
   "models/closed_unbounded.py": {
+   "status": "audited"
+  },
+  "models/closest_pair.py": {
+   "status": "audited"
+  },
+  "models/closure_conv.py": {
    "status": "audited"
   },
   "models/clotho_qa_studies.py": {
@@ -5135,6 +5156,9 @@
   "models/clownfish_qa_studies.py": {
    "status": "audited"
   },
+  "models/clt_classic.py": {
+   "status": "audited"
+  },
   "models/club_set.py": {
    "status": "audited"
   },
@@ -5153,7 +5177,13 @@
   "models/cluster_robust.py": {
    "status": "audited"
   },
+  "models/cluster_sampling.py": {
+   "status": "audited"
+  },
   "models/cluster_tilting.py": {
+   "status": "audited"
+  },
+  "models/clustering_methods.py": {
    "status": "audited"
   },
   "models/cm_points.py": {
@@ -5165,7 +5195,13 @@
   "models/cmb_anisotropy.py": {
    "status": "audited"
   },
+  "models/cnn_alpha.py": {
+   "status": "audited"
+  },
   "models/cnn_dailymail_studies.py": {
+   "status": "audited"
+  },
+  "models/cno_lite.py": {
    "status": "audited"
   },
   "models/cnv_studies.py": {
@@ -5213,6 +5249,9 @@
   "models/cobra_qa_studies.py": {
    "status": "audited"
   },
+  "models/cobweb_model.py": {
+   "status": "audited"
+  },
   "models/cocartesian.py": {
    "status": "audited"
   },
@@ -5226,6 +5265,9 @@
    "status": "audited"
   },
   "models/cochran_q.py": {
+   "status": "audited"
+  },
+  "models/cochrane_piazzesi.py": {
    "status": "audited"
   },
   "models/cockatoo_qa_studies.py": {
@@ -5267,6 +5309,9 @@
   "models/codicology.py": {
    "status": "audited"
   },
+  "models/codon_usage.py": {
+   "status": "audited"
+  },
   "models/cofiber.py": {
    "status": "audited"
   },
@@ -5286,6 +5331,9 @@
    "status": "audited"
   },
   "models/cognitive_science_2.py": {
+   "status": "audited"
+  },
+  "models/cohen_adds.py": {
    "status": "audited"
   },
   "models/cohen_lenstra.py": {
@@ -5333,10 +5381,22 @@
   "models/cola_studies.py": {
    "status": "audited"
   },
+  "models/colbert_late.py": {
+   "status": "audited"
+  },
+  "models/cold_diffusion.py": {
+   "status": "audited"
+  },
+  "models/collaborative_filtering.py": {
+   "status": "audited"
+  },
   "models/collared_dove_qa_studies.py": {
    "status": "audited"
   },
   "models/collocation_bvp.py": {
+   "status": "audited"
+  },
+  "models/collocation_ode.py": {
    "status": "audited"
   },
   "models/colobus_qa_studies.py": {
@@ -5358,6 +5418,12 @@
    "status": "audited"
   },
   "models/column_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/columnar_scan.py": {
+   "status": "audited"
+  },
+  "models/coma.py": {
    "status": "audited"
   },
   "models/coma_qa_studies.py": {
@@ -5382,6 +5448,9 @@
    "status": "audited"
   },
   "models/comma_cat.py": {
+   "status": "audited"
+  },
+  "models/commit_reveal.py": {
    "status": "audited"
   },
   "models/common_law.py": {
@@ -5420,10 +5489,25 @@
   "models/compact_obj.py": {
    "status": "audited"
   },
+  "models/compact_operator.py": {
+   "status": "audited"
+  },
+  "models/compact_resolvent.py": {
+   "status": "audited"
+  },
   "models/compact_scheme.py": {
    "status": "audited"
   },
+  "models/compact_space.py": {
+   "status": "audited"
+  },
+  "models/compacting_gc.py": {
+   "status": "audited"
+  },
   "models/compactly_generated.py": {
+   "status": "audited"
+  },
+  "models/compactness_lite.py": {
    "status": "audited"
   },
   "models/companion_conj.py": {
@@ -5465,6 +5549,9 @@
   "models/compensator_rm.py": {
    "status": "audited"
   },
+  "models/competing_risks.py": {
+   "status": "audited"
+  },
   "models/complement_studies.py": {
    "status": "audited"
   },
@@ -5475,6 +5562,9 @@
    "status": "audited"
   },
   "models/completion_htpy.py": {
+   "status": "audited"
+  },
+  "models/completion_ring.py": {
    "status": "audited"
   },
   "models/complex_cob.py": {
@@ -5504,6 +5594,9 @@
   "models/composition_studies.py": {
    "status": "audited"
   },
+  "models/compositional.py": {
+   "status": "audited"
+  },
   "models/compound_poisson.py": {
    "status": "audited"
   },
@@ -5525,6 +5618,9 @@
   "models/computer_use_studies.py": {
    "status": "audited"
   },
+  "models/concentration_ineq.py": {
+   "status": "audited"
+  },
   "models/concept_vector_studies.py": {
    "status": "audited"
   },
@@ -5535,6 +5631,9 @@
    "status": "audited"
   },
   "models/concode_eval_studies.py": {
+   "status": "audited"
+  },
+  "models/concrete_dropout.py": {
    "status": "audited"
   },
   "models/condensed_coh.py": {
@@ -5580,6 +5679,12 @@
    "status": "audited"
   },
   "models/conformal_field_theory.py": {
+   "status": "audited"
+  },
+  "models/conformal_map.py": {
+   "status": "audited"
+  },
+  "models/conformal_pid.py": {
    "status": "audited"
   },
   "models/conformal_transfer.py": {

@@ -90,14 +90,23 @@ def clark_west(
     }
 
 
+def _expanding_coef(x: FloatArray, y: FloatArray) -> FloatArray:
+    """Expanding-window OLS slope at time t using only observations
+    strictly before t — a forecast for t may not see (x_t, y_t)."""
+    cs_yx = np.concatenate([[0.0], np.cumsum(y * x)])
+    cs_xx = np.concatenate([[0.0], np.cumsum(x * x)])
+    return np.asarray(cs_yx[:-1] / np.maximum(cs_xx[:-1], 1e-12), dtype=np.float64)
+
+
 def synth_forecasts(
     t: int = 400,
     effect: float = 0.4,
     noise_x: float = 1.0,
     seed: int = 0,
 ) -> dict[str, FloatArray]:
-    """y_t = effect·x_{t-1} + ε_t; pred1 = AR(1)-free benchmark
-    (rolling mean), pred2 = OLS on x. noise_x inflates the
+    """y_t = effect·x_t + ε_t; pred1 = AR(1)-free benchmark
+    (rolling mean of past y), pred2 = OLS on x with the slope
+    estimated on data strictly before t. noise_x inflates the
     estimation noise inside the larger model."""
     rng = np.random.default_rng(seed)
     x = rng.normal(0.0, 1.0, t)
@@ -106,8 +115,10 @@ def synth_forecasts(
     cs = np.concatenate([[0.0], np.cumsum(y)])
     idx = np.arange(t)
     pred1 = cs[idx] / np.maximum(idx, 1)
-    # larger model: y ~ x fitted on expanding window via corr
-    beta_hat = np.cumsum(y * x) / np.maximum(np.cumsum(x * x), 1e-12)
+    # larger model: y ~ x fitted on the expanding window — but the
+    # coefficient used at t must come from data strictly before t,
+    # else the "forecast" peeks at the current outcome (look-ahead).
+    beta_hat = _expanding_coef(x, y)
     pred2 = np.clip(beta_hat, -2, 2) * x * noise_x + 0.0 * pred1
     return {"y": y, "pred1": pred1, "pred2": pred2, "x": x}
 

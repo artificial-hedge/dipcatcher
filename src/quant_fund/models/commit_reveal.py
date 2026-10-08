@@ -18,7 +18,9 @@ def _h(x: int) -> int:
 
 
 def commit(m: int, r: int) -> int:
-    return _h((m << 64) | r)
+    # bind m into the 64-bit state BEFORE mixing: (m<<64)|r loses m entirely
+    # under the mod-2^64 multiply inside _h, leaving the commitment unbound.
+    return _h(((m * 0xBF58476D1CE4E5B9) ^ r) & ((1 << 64) - 1))
 
 
 def open_ok(c: int, m: int, r: int) -> bool:
@@ -34,9 +36,10 @@ def bench_commit_reveal(seed: int = 20261231 + 425) -> dict[str, float]:
         r1 = rng.getrandbits(64)
         c = commit(m1, r1)
         honest += int(open_ok(c, m1, r1))
-        # binding: try another opening
+        # binding: another opening must fail both with the SAME nonce (the
+        # case a weak commitment breaks) and with a fresh random nonce
         m2_alt = m1 ^ (1 << rng.randrange(32))
-        bind += int(not open_ok(c, m2_alt, rng.getrandbits(64)))
+        bind += int(not open_ok(c, m2_alt, r1) and not open_ok(c, m2_alt, rng.getrandbits(64)))
         # hiding-ish: commits to m1 and m2 differ, and commits to same m differ across r
         c1 = commit(m1, rng.getrandbits(64))
         c2 = commit(m1, rng.getrandbits(64))

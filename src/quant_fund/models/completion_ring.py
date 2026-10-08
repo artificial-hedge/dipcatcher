@@ -22,6 +22,18 @@ def filtr_mult(a_pow: int, b_pow: int) -> int:
     return a_pow + b_pow
 
 
+def _in_m_pow(order: int | None, n: int) -> bool:
+    """x^v lies in m^n = (x^n) iff v >= n; the zero element (order=None,
+    infinite order) lies in every m^n."""
+    return order is None or order >= n
+
+
+def _in_cap_intersect(order: int | None, upto: int = 60) -> bool:
+    """Membership in the m-adic intersection ∩_{n=1..upto} m^n — only the
+    zero element has infinite order (Krull intersection in a domain)."""
+    return all(_in_m_pow(order, n) for n in range(1, upto + 1))
+
+
 def _bench_completion_ring(seed: int = 0) -> float:
     checks = []
     # k[[x]] ideals index
@@ -33,8 +45,9 @@ def _bench_completion_ring(seed: int = 0) -> float:
     checks.append(gr_piece(3, 1) == 3)
     # filtration multiplicative
     checks.append(filtr_mult(2, 3) == 5)
-    # Krull intersection: cap m^n = 0 in a domain model -> True
-    checks.append(True)
+    # Krull intersection: ∩ m^n = {0} — every finite order drops out,
+    # only the zero element survives all powers
+    checks.append(_in_cap_intersect(None) and not any(_in_cap_intersect(v) for v in range(1, 50)))
     return float(sum(checks) / len(checks))
 
 

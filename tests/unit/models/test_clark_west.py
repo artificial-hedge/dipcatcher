@@ -51,3 +51,28 @@ def test_bench_clark_west() -> None:
     assert out["synthetic_detects"] == 1.0
     assert out["synthetic_determinism"] == 1.0
     assert all(np.isfinite(v) for v in out.values())
+
+
+def test_pred2_strictly_causal() -> None:
+    # the forecast at t must not see (x_t, y_t): perturbing y_k may only
+    # affect coefficients at times > k. The old cumsum slope peeked at the
+    # current outcome (look-ahead bias in the larger model's favor).
+    from quant_fund.models.clark_west import _expanding_coef
+
+    rng = np.random.default_rng(7)
+    x = rng.normal(size=60)
+    y = rng.normal(size=60)
+    coef = _expanding_coef(x, y)
+    y2 = y.copy()
+    y2[30] += 1e6
+    coef2 = _expanding_coef(x, y2)
+    assert np.array_equal(coef[:31], coef2[:31])
+    assert coef[31] != coef2[31]  # contamination lands only after k
+
+
+def test_synth_pred2_uses_causal_coef() -> None:
+    from quant_fund.models.clark_west import _expanding_coef
+
+    d = synth_forecasts(seed=9)
+    expect = np.clip(_expanding_coef(d["x"], d["y"]), -2, 2) * d["x"]
+    assert np.allclose(d["pred2"], expect)
