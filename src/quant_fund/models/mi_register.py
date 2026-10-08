@@ -57,4 +57,6 @@ def bench_mi_register(seed: int = _SEED) -> dict[str, float]:
     ry, rx, mi = register(fixed, moving, radius=8)
     mi0 = mutual_information(fixed, moving)
     ok = (ry, rx) == (dy, dx) and mi > mi0
+    if not ok:
+        raise ValueError("MI registration off planted shift")
     return {"synthetic_mi_register": 1.0 if ok else 0.0}

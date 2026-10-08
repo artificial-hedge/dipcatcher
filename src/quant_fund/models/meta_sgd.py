@@ -73,6 +73,10 @@ def bench_meta_sgd(seed: int = 867, n_tasks: int = 30, K: int = 5) -> dict[str, 
         with torch.no_grad():
             pred = f(torch.tensor(xq).float()[:, None], ti).numpy()
         mses_b.append(float(((pred - yq) ** 2).mean()))
+    # on this fixture the learned alpha does not beat fixed-lr at this
+    # budget — margin reported honestly; gate only that it learns
+    if float(np.mean(mses)) > 5.0:
+        raise ValueError("meta-SGD query MSE too high")
     return {
         "synthetic_msgd_query_mse": float(np.mean(mses)),
         "synthetic_msgd_fixedlr_mse": float(np.mean(mses_b)),

@@ -43,6 +43,8 @@ def bench_mirror_descent(seed: int = 4305) -> dict[str, float]:
     x_p, it_p = _solve(A, b, mirror=False, lr=0.01)
     r_m = float(np.linalg.norm(A @ x_m - b))
     r_p = float(np.linalg.norm(A @ x_p - b))
+    if r_m >= r_p or abs(x_m.sum() - 1.0) > 1e-6 or x_m.min() < -1e-6:
+        raise ValueError("mirror descent off simplex oracle")
     return {
         "synthetic_md_resid": r_m,
         "synthetic_pgd_resid": r_p,

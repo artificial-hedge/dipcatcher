@@ -40,6 +40,8 @@ def _bench_minimal_poly(seed: int = 0) -> float:
     checks.append(minimal_poly_degree([0, 1], [1, 0, 1], 3) == 2)
     # arbitrary element has degree dividing the extension degree
     checks.append(minimal_poly_degree([1, 1], [1, 0, 1], 3) in (1, 2))
+    if sum(checks) != len(checks):
+        raise ValueError("minimal-polynomial oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

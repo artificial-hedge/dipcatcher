@@ -101,4 +101,6 @@ def bench_mesi_cache(seed: int = _SEED) -> dict[str, float]:
                 good = False
                 break
         ok += good
+    if ok != trials:
+        raise ValueError("MESI invariant violated")
     return {"synthetic_mesi_invariant": ok / trials}

@@ -43,4 +43,6 @@ def bench_mipmap_sample(seed: int = _SEED) -> dict[str, float]:
         tex = rng.rand(16, 16)
         v = trilinear(tex, rng.rand(), rng.rand(), rng.rand() * 3)
         ok += float(0.0 <= v <= 1.0)
+    if ok != trials:
+        raise ValueError("trilinear sample out of texel range")
     return {"synthetic_trilinear_range": ok / trials}

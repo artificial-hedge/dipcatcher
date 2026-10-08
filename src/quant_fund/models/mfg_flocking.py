@@ -29,6 +29,8 @@ def _simulate(
 def bench_mfg_flocking(seed: int = 4203) -> dict[str, float]:
     var_coupled = _simulate(seed)
     var_free = _simulate(seed, couple=False)
+    if var_coupled >= var_free:
+        raise ValueError("MFG flocking did not reduce velocity variance")
     return {
         "synthetic_flock_var": var_coupled,
         "synthetic_flock_free_var": var_free,

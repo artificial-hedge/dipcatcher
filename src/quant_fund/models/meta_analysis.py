@@ -132,6 +132,8 @@ def bench_meta_analysis(seed: int = 20261231 + 286) -> dict[str, float]:
         and a["i2"] > 0.0
         and abs(b["egger_t"]) > abs(a["egger_t"]) + 0.5
     )
+    if not (detects == 1.0 and a == a2):
+        raise ValueError("meta-analysis off oracle")
     return {
         "synthetic_detects": detects,
         "synthetic_determinism": float(a == a2),

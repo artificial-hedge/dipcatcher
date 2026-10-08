@@ -74,4 +74,6 @@ def bench_minres(seed: int = _SEED) -> dict[str, float]:
         # MINRES residual is monotone non-increasing (true norm)
         bool(np.all(np.diff(np.asarray(hist)) <= 1e-10)),
     ]
+    if sum(checks) != len(checks):
+        raise ValueError("MINRES oracle checks failed")
     return {"synthetic_minres": float(np.mean(checks))}

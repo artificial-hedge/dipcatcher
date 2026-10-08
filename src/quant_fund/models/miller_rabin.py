@@ -68,6 +68,8 @@ def bench_miller_rabin(seed: int = 20261231 + 240) -> dict[str, float]:
     # semiprime detection rate for factor base
     semiprimes = [p * q for p, q in ((101, 103), (997, 991), (89, 97))]
     semi_ok = all(not is_prime(s) for s in semiprimes)
+    if agree != trials or not (carmichael_caught and m61 and semi_ok):
+        raise ValueError("Miller-Rabin primality oracle failed")
     return {
         "synthetic_agree": float(agree / trials),
         "synthetic_carmichael_caught": float(carmichael_caught),

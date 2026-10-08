@@ -2,8 +2,9 @@
 
 A learned router scores each token; only the top-k tokens take the
 attention branch, the rest pass through identity — compute scales with
-the routed fraction. On the recall fixture the query token is routed,
-so accuracy survives at ~half the attention cost.
+the routed fraction. On the recall fixture the routed model keeps some
+accuracy but well below full attention — the honest win is ~half the
+attention cost, reported not claimed.
 """
 
 from __future__ import annotations
@@ -82,6 +83,8 @@ def bench_mixture_of_depths(
         acc_full = float(
             (out_o(full_attn(xe)[:, -1]).argmax(-1) == torch.tensor(yte)).float().mean()
         )
+    if acc < 0.15 or attn_dot_cost(t, "linformer", k) >= 1.0:
+        raise ValueError("mixture-of-depths off floor/cost oracle")
     return {
         "synthetic_mod_acc": acc,
         "synthetic_mod_full_acc": acc_full,

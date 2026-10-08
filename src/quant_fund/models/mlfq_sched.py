@@ -60,6 +60,8 @@ def bench_mlfq_sched(seed: int = 20261231 + 473) -> dict[str, float]:
         )
         total = sum(b for _, b in jobs) + max(a for a, _ in jobs)
         bounded += int(len(order) <= len(jobs) and total > 0)
+    if complete != trials or uniq != trials or bounded != trials:
+        raise ValueError("MLFQ scheduling oracle failed")
     return {
         "synthetic_all_jobs_complete": float(complete / trials),
         "synthetic_completion_order_valid": float(uniq / trials),

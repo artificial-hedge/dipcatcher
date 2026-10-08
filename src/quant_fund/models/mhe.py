@@ -57,6 +57,8 @@ def bench_mhe(seed: int = 5705) -> dict[str, float]:
     e = _ekf(y)
     m_rmse = float(np.sqrt(np.mean((m - x) ** 2)))
     e_rmse = float(np.sqrt(np.mean((e - x) ** 2)))
+    if m_rmse >= e_rmse:
+        raise ValueError("MHE did not beat EKF on the horizon oracle")
     return {
         "synthetic_mhe_rmse": m_rmse,
         "synthetic_mhe_ekf_rmse": e_rmse,

@@ -57,6 +57,8 @@ def bench_mfg_lq(seed: int = 4201, nt: int = 400, iters: int = 200) -> dict[str,
     for _ in range(2000):
         s0 += (2 * LQ_A * s0 + LQ_Q - (LQ_B**2 / LQ_R) * s0**2) * dt * 0.05
     k_lqr = float(-(LQ_B / LQ_R) * s0)
+    if resid > 1e-6 or abs(k_mfg - k_lqr) > 0.2:
+        raise ValueError("MFG-LQ fixed point off oracle")
     return {
         "synthetic_mfg_resid": resid,
         "synthetic_mfg_gain": k_mfg,

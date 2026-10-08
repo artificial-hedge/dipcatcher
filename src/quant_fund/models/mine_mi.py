@@ -55,6 +55,8 @@ def bench_mine_mi(seed: int = 2887) -> dict[str, float]:
     x0, y0 = dep_data(seed + 1, kind="indep")
     mi_ind = _mine(x0, y0, seed + 1)
     true_dep = true_mi_gauss(0.9701)
+    if abs(mi_dep - true_dep) > 0.34 or mi_ind > 0.5:
+        raise ValueError("MINE estimate off true-MI oracle")
     return {
         "synthetic_mine_mi_dep": float(mi_dep),
         "synthetic_mine_mi_indep": float(mi_ind),

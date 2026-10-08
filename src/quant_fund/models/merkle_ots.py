@@ -68,6 +68,8 @@ def bench_merkle_ots(seed: int = 20261231 + 422) -> dict[str, float]:
         path2 = list(path)
         path2[0] ^= 1
         wrong += int(_root_from(leaf, idx, path2) != root)
+    if ok != trials or path_ok != trials or wrong != trials:
+        raise ValueError("Merkle-OTS sig/path oracle failed")
     return {
         "synthetic_sig_and_path_valid": float(ok / trials),
         "synthetic_wrong_index_fails": float(path_ok / trials),

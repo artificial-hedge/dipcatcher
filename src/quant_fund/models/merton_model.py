@@ -153,6 +153,13 @@ def bench_merton_model(seed: int = 20261231 + 249) -> dict[str, float]:
 
     v_hat = float(out["asset_value"])
     v_true = float(d["v_true"])
+    if not (
+        abs(v_hat / v_true - 1) < 0.15
+        and abs(float(out["asset_vol"]) / 0.25 - 1) < 0.6
+        and float(out["dd"]) > float(outl["dd"])
+        and v_hat == float(out_b["asset_value"])
+    ):
+        raise ValueError("Merton inversion off oracle")
     return {
         "synthetic_asset_value": v_hat,
         "synthetic_v_true": v_true,

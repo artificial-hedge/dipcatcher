@@ -101,6 +101,8 @@ def bench_meta_uq(
         mu_b = out_b[..., 0].numpy()
     mse_pool = float(np.mean((np.asarray(mu_b) - te[3][..., 0]) ** 2))
     cov90 = float(np.mean(np.abs(te[3][..., 0] - mu_arr) <= 1.645 * sig_arr))
+    if mse_meta >= mse_pool or cov90 < 0.7:
+        raise ValueError("meta-UQ off adaptation/coverage oracle")
     return {
         "synthetic_meta_mse": mse_meta,
         "synthetic_meta_pooled_mse": mse_pool,

@@ -49,6 +49,8 @@ def _run(seed: int, n: int, meta: bool) -> tuple[float, int]:
 def bench_metadynamics(seed: int = 5607) -> dict[str, float]:
     frac_meta, crosses_meta = _run(seed, 30000, True)
     frac_base, crosses_base = _run(seed + 1, 30000, False)
+    if frac_meta <= frac_base:
+        raise ValueError("metadynamics bias did not widen exploration")
     return {
         "synthetic_md_visit_frac": frac_meta,
         "synthetic_md_base_frac": frac_base,

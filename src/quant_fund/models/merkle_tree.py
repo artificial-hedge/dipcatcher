@@ -67,6 +67,8 @@ def bench_merkle_tree(seed: int = 20261231 + 340) -> dict[str, float]:
             proof_ok += int(not verify(leaves[0], prove(leaves, 1), rt))
         else:
             proof_ok += 1
+    if proof_hits != total_leaves or proof_ok != trials or tamper_ok != trials:
+        raise ValueError("Merkle proof/tamper oracle failed")
     return {
         "synthetic_proof_valid": float(proof_hits / max(1, total_leaves)),
         "synthetic_wrong_proof_rejected": float(proof_ok / trials),

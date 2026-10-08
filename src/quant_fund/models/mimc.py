@@ -108,6 +108,8 @@ def bench_mimc(seed: int = 20261231) -> dict[str, float]:
     est1d, _ = mimc_estimate(level_fn, levels_1d, 400, rng)
     out["synthetic_mimc_1d_err"] = abs(est1d - fine)
     out["synthetic_mimc_better"] = float(out["synthetic_mimc_err"] < out["synthetic_mimc_1d_err"])
+    if out["synthetic_mimc_err"] >= out["synthetic_mimc_1d_err"]:
+        raise ValueError("MIMC not better than single-index MLMC")
     return out
 
 

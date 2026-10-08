@@ -34760,6 +34760,120 @@
   },
   "models/merkle_damgard.py": {
    "status": "audited"
+  },
+  "models/merkle_ots.py": {
+   "status": "audited"
+  },
+  "models/merkle_tree.py": {
+   "status": "audited"
+  },
+  "models/merton_model.py": {
+   "status": "audited"
+  },
+  "models/mesi_cache.py": {
+   "status": "audited"
+  },
+  "models/meta_analysis.py": {
+   "status": "audited"
+  },
+  "models/meta_sgd.py": {
+   "status": "audited"
+  },
+  "models/meta_uq.py": {
+   "status": "audited"
+  },
+  "models/metadynamics.py": {
+   "status": "audited"
+  },
+  "models/metaheuristic_optimizers.py": {
+   "status": "audited"
+  },
+  "models/metric_learning.py": {
+   "status": "audited"
+  },
+  "models/mf_q.py": {
+   "status": "audited"
+  },
+  "models/mfdfa.py": {
+   "status": "audited"
+  },
+  "models/mfg_flocking.py": {
+   "status": "audited"
+  },
+  "models/mfg_lq.py": {
+   "status": "audited"
+  },
+  "models/mgda_mtl.py": {
+   "status": "audited"
+  },
+  "models/mhe.py": {
+   "status": "audited"
+  },
+  "models/mht.py": {
+   "status": "audited"
+  },
+  "models/mi_register.py": {
+   "status": "audited"
+  },
+  "models/mice.py": {
+   "status": "audited"
+  },
+  "models/midas_regression.py": {
+   "status": "audited"
+  },
+  "models/miller_madow.py": {
+   "status": "audited"
+  },
+  "models/miller_rabin.py": {
+   "status": "audited"
+  },
+  "models/mimc.py": {
+   "status": "audited"
+  },
+  "models/mime_lite.py": {
+   "status": "audited"
+  },
+  "models/min_snap.py": {
+   "status": "audited"
+  },
+  "models/mincost_flow.py": {
+   "status": "audited"
+  },
+  "models/mine_mi.py": {
+   "status": "audited"
+  },
+  "models/minhash_lsh.py": {
+   "status": "audited"
+  },
+  "models/minimal_poly.py": {
+   "status": "audited"
+  },
+  "models/minkowski_bound.py": {
+   "status": "audited"
+  },
+  "models/minres.py": {
+   "status": "audited"
+  },
+  "models/mipmap_sample.py": {
+   "status": "audited"
+  },
+  "models/mirror_descent.py": {
+   "status": "audited"
+  },
+  "models/mixed_logit.py": {
+   "status": "audited"
+  },
+  "models/mixture_of_depths.py": {
+   "status": "audited"
+  },
+  "models/mixup_cutmix.py": {
+   "status": "audited"
+  },
+  "models/mlfq_sched.py": {
+   "status": "audited"
+  },
+  "models/mlmc.py": {
+   "status": "audited"
   }
  },
  "schema_version": "audit-coverage/v1",

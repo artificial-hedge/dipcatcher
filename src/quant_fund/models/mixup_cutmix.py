@@ -2,7 +2,8 @@
 
 Interpolated (λx + (1−λ)x', λy + (1−λ)y') samples regularize the
 decision boundary; on held-out inputs with amplified distractor noise
-(shifted test set), mixup-trained model keeps higher accuracy.
+(shifted test set), mixup is evaluated against plain training — on this
+fixture it does not beat plain training; the margin is reported honestly.
 """
 
 from __future__ import annotations
@@ -64,6 +65,8 @@ def bench_mixup_cutmix(
 
     acc_plain = train(False)
     acc_mix = train(True)
+    if acc_mix < 0.1:
+        raise ValueError("mixup-trained accuracy below floor")
     return {
         "synthetic_mixup_acc": acc_mix,
         "synthetic_mixup_plain_acc": acc_plain,

@@ -173,6 +173,8 @@ def bench_mincost_flow(seed: int = 20261231 + 521) -> dict[str, float]:
         ]
         f, _ = mincost_flow(n, edges, 0, n - 1, 10)
         cons += int(f <= 10)
+    if exact != n_exact or cons != 30:
+        raise ValueError("min-cost flow off brute-force oracle")
     return {
         "synthetic_cost_exact": exact / n_exact,
         "synthetic_flow_conserved": cons / 30,

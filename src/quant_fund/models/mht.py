@@ -161,6 +161,8 @@ def bench_mht(seed: int = 20261231) -> dict[str, float]:
             if x0 > x1 and a[0] < b[0]:
                 swaps += 1
             cross_err += min(abs(x0 - a[0]) + abs(x1 - b[0]), abs(x0 - b[0]) + abs(x1 - a[0]))
+    if len(mht.hyps[0][1]) != 2 or cross_err / steps > 0.5 or swaps != 0:
+        raise ValueError("MHT tracking off oracle")
     return {
         "synthetic_mht_tracks_kept": float(len(mht.hyps[0][1])),
         "synthetic_mht_mean_err": float(cross_err / steps),

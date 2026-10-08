@@ -29,4 +29,6 @@ def bench_miller_madow(seed: int = _SEED) -> dict[str, float]:
         cnt = np.bincount(rng.randint(0, k, 30), minlength=k)
         errs_plug.append(abs(_plug(cnt) - truth))
         errs_mm.append(abs(miller_madow(cnt, k) - truth))
+    if np.mean(errs_mm) >= 0.8 * np.mean(errs_plug):
+        raise ValueError("Miller-Madow bias correction did not beat plug-in")
     return {"synthetic_miller_madow": float(np.mean(errs_mm) < 0.8 * np.mean(errs_plug))}

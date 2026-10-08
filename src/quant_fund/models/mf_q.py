@@ -104,6 +104,8 @@ def bench_mf_q(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_mf_q_learns"] = float(ret > 0)
     # mean-field value table finite and shaped
     out["synthetic_mf_q_finite"] = float(np.isfinite(agent.q).all())
+    if ret <= 0 or not np.isfinite(agent.q).all():
+        raise ValueError("mean-field Q failed to learn")
     return out
 
 

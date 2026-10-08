@@ -67,6 +67,8 @@ def bench_minhash_lsh(seed: int = 20261231 + 314) -> dict[str, float]:
             high_pairs += 1
             hits += int((0, 1) in cands)
     # error bound: est within ~0.2 on average
+    if any(e >= 0.2 for e in errs) or hits != high_pairs:
+        raise ValueError("MinHash/LSH estimate or recall off oracle")
     return {
         "synthetic_mean_jaccard_err": float(sum(errs) / len(errs)),
         "synthetic_err_ok": float(sum(1 for e in errs if e < 0.2) / len(errs)),

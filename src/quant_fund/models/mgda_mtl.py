@@ -18,6 +18,8 @@ def _combine(g1, g2):
 def bench_mgda_mtl(seed: int = 2007, iters: int = 600) -> dict[str, float]:
     mn, mean = train_mtl(_combine, seed, iters)
     mn0, mean0 = train_mtl(lambda a, b: a + b, seed + 1, iters, naive=True)
+    if mn <= mn0 or mn < 0.4:
+        raise ValueError("MGDA min-task accuracy off oracle")
     return {
         "synthetic_mgda_min_acc": mn,
         "synthetic_mgda_mean_acc": mean,
