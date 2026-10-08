@@ -53,6 +53,4 @@ def bench_sequential_halving(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_sh_sparse_correct"] = float(best2 == 6)
     if not (out["synthetic_sh_budget_ok"] == 1.0 and out["synthetic_sh_sparse_correct"] == 1.0):
         raise ValueError("sequential-halving oracle failed")
-    if not (out["synthetic_sh_budget_ok"] == 1.0 and out["synthetic_sh_sparse_correct"] == 1.0):
-        raise ValueError("sequential-halving oracle failed")
     return out

@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-08T00:56:55.834655+00:00",
+ "generated_at": "2026-10-08T12:00:06.634375+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
   "01268826f737dc0fc1fc7e28555ce3aeb54760c7d759a29bf6ad7c8be3c59e64": "configs/corpus_epoch_3c319fb43ab0351e.json",
@@ -38,6 +38,7 @@
   "14dae359e3ff7ade2ce711fc84a17db17973bfd850211f08c8d9cc0f1497328d": "configs/corpus_epoch_898438ded615da96.json",
   "1556d7498e4618e386f891777e820fd3b2f08b4bde0ff7a9ad6e3d4689ef60d1": "receipts/fx1_sdk_audit.json",
   "16b8a95f44d73964a6578cee9c7cc4aeae2d74770d1b2891422b859feb01d597": "receipts/cli_audit.json",
+  "16c6e3969091a825443712614b1dd31b0c1224c8196d1fa35596f6fafb4872dd": "receipts/fx1_eval_lifecycle_audit.json",
   "16cac426d34c9af016963a251e9fef5422babd2ced8be9795a7413e9c6b84e40": "receipts/cxl_shield_amzn.json",
   "1795b05b30ff6a637b6f764af2e8d96db26a3aa37c3329e368cfb8d1583b6cad": "configs/corpus_epoch_67509d68b8abd10c.json",
   "1819d4b627eb9bc9589978a0c16b7b38452bf72747f81641478bd4b64bc2af03": "receipts/sources_audit.json",
@@ -174,6 +175,7 @@
   "61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f": "receipts/legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json",
   "628431d7b7099ac23e9e0c40a0b99de811952a701333949202e2ea0696256362": "receipts/event_granger_amzn.json",
   "632d421666dcd4ea2e7d4acd798ef82cab735054aeaa7d719eaacda91fea35f3": "receipts/floor_rate.json",
+  "6362b090bd931070e3f1a12caec01d2dc0df14db98c71658c29b58bf10fb8d08": "receipts/fx1_ops_audit.json",
   "63d79882e619905c0d45fc094d08c67cce9be60c98e43ca846b677c3337370de": "receipts/honesty_audit.json",
   "63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7": "receipts/verdict_real_drill.json",
   "6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9": "receipts/serial_watch_4f4a495b59d022fb.json",
@@ -185,6 +187,7 @@
   "6754767a42cdff244d3ff4d59b2366ff8655990087cf42957147e0890fbdc5ad": "receipts/native_conformance.json",
   "67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98": "receipts/fleet_eval_5ddf15b0dc7d3ca1.json",
   "67a0e581ad6876ffca1e43b82b9bfd9dc7f91531e6b926af1751eaec4d727a8d": "receipts/ds_audit.json",
+  "67bb35e85a4c083d35023936032dbcc790a58f81166195d19f669fd007d8c4a7": "receipts/corpus_epoch_2bd794275af2b3d8.json",
   "67f57afee23c89322c27d64070da7731ba292703388bb68768afc34019f69431": "receipts/sweep_width_bench.json",
   "684c6584fc9d7d18d8e6801934e63a1ced7249321e13bc8f06f7868e60a2b86f": "receipts/streak_calibrate_bench.json",
   "6952a3f11642bddec43c83e9026bcd2b9699e69f59fe760ba60552e85eb20518": "configs/corpus_epoch_bb88b9759b4e232b.json",
@@ -202,6 +205,7 @@
   "732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b": "receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json",
   "739cdc3d79a415c89a28a696e7e98fd5aaea52a774ac0c621f2c721342999bc8": "receipts/schema_drift.json",
   "743ba4eb58ce5575b1334ea8a1731ae39ebeab7789ea43733256e1458c8f5c49": "receipts/maker_age_bench.json",
+  "7480b2af38274f5d6e6c4a107e01890a3d49f0524b5920a5b3b946a9f8a5a571": "receipts/calib_real_drill.json",
   "74fbc282a7a1d5eb53bcfa17e44a460f8235f5950c463233abf70099e1a5c91a": "receipts/replay_proof_73137fe1a97c3538.json",
   "751a7c4351d1639d547330d7b8f8251fb6341f500f099304a13945810a560fe0": "receipts/crown_size.json",
   "751e3497d28c9a1f6e50d5040ec6b80a416194b0ea1b0ab2b05462c897b219d3": "receipts/zone_card.json",
@@ -254,6 +258,7 @@
   "98635a72af8ee0b3f395cefb81bc3be5018d39b7f9cdd8a359007c50780e70da": "receipts/band_occupancy.json",
   "9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d": "receipts/corpus_epoch_a83ba798e9abd892.json",
   "994f8f2cf89faaace83e6e3f7441d3361e111c0d2b9e05cf123c2c602c2389cd": "receipts/closure_stack_amzn.json",
+  "99737d09622533bad5f5793cd7fef198e211b235251bb79455c9a5e8643547b3": "receipts/fx1_cap_audit.json",
   "9b06d26cc1c30cd3cfdd70f3dad1b058aedd98268b9069fde4d2093b8fa1b40f": "configs/corpus_epoch_0c3fab9ae380cd1a.json",
   "9b2b2433e4106a88b1f2583bca0816a738370635046254267a50f83e50b3ac5c": "receipts/backend_parity.json",
   "9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4": "receipts/tail_real_drill.json",
@@ -290,6 +295,7 @@
   "adfab5e558bdaa8b54abb8376b1d4f33c11f605d9215146ccea3b82d163b0c7f": "receipts/price_clustering_synth.json",
   "aea10d964151ed5af028e1f308b42c23378dfe6da86bcb5d6392174bb21d4bc7": "receipts/sbom_audit.json",
   "af272bd9ef0a1845d901080caa9c3a27257a3ae341848cdffadd8f03475c0427": "receipts/trade_decomp_amzn.json",
+  "afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc": "receipts/forward_record_preregistration_v1.json.seal.json",
   "afe622b75c555ba7c810a074205287ba12588cdba90388876d9aea438fad95c5": "receipts/timepart_audit.json",
   "b0be60f820caea3783400f5f7eaff399c68d243ee11508a95212d64907789642": "receipts/ice_budget.json",
   "b140be66a1d4467c73f104a992ab9f692ed83b959a7918461b3951fd091bff04": "receipts/cancel_gradient_amzn.json",
@@ -308,6 +314,7 @@
   "b947be50a8b9288521a245481f4e6a93d8e40c49433d28347ab039c252483d05": "configs/corpus_epoch_dcf0d8e9d5337c24.json",
   "b9a8d0e5e42087e034ca2551afedaadd6f82eeee74666794dff88fdbaeb00b4c": "receipts/attribution.json",
   "b9b70f7186d75054e91ee734b87b8aeeba22d66af713806a8d5410a9bc603ee3": "receipts/vol_bench_f3bf2afc2f159ace.json",
+  "bc79a4e09195983847b3274b903844372a3043e9dfedefcf35602245b53936b9": "receipts/fx1_vs_audit.json",
   "bce466d9ffb4b6144cf78590caa1bb1c48f59ac06ad94a7141d1796013ab53fe": "receipts/contamination_audit.json",
   "bd65b431cfc36ce9ec54bd7262002eeb735025e2dc71995e983df73924bceb4b": "receipts/hypotheses_audit.json",
   "bd65e84d2037d452282b5fba052b6be102fef2e50995a14cb2a381405d8d2565": "receipts/kill_audit.json",
@@ -345,6 +352,7 @@
   "d2b4dce996ab14b7e2e16112862b073e87294c06fe07b755942230c65ed65438": "receipts/sign_autocorr_real_amzn.json",
   "d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c": "receipts/concordance_df424fa2f6b1c4e9.json",
   "d3941977a98261a06825573ad173a9b5d21e1515ea7a3dd48430e61779dc341d": "receipts/queue_class_bench.json",
+  "d3cbeaa2e484021f6a1524df38d01c42cf19db7ad0de0aa78b4a44e750dcbacf": "receipts/fx1_replay_audit.json",
   "d42626eead90475119af14f9c8d60d0ca5b94f62ad14c24ff157b4505f264b13": "receipts/sweep_crown.json",
   "d467e13e158dddf59e0ec2dd6b0941aeae37237f491757705418f7420c789655": "receipts/imbalance_predict_amzn.json",
   "d51d2a74e86e484183fa2af0405ad38af8273f38fb3621f2bcd39e6029556129": "receipts/streak_stats_amzn.json",
@@ -389,7 +397,6 @@
   "ea042e48135698a878772ae2388c88d86ac11c666d385fe91e9f7ae52ddf84d2": "receipts/modelcard_audit.json",
   "ec0836e7b4d24834d0b68a43c5676ea213049fce8200966dc15d98d30a0a4488": "receipts/improve_flow_bench.json",
   "ed310e546e4b4f2c2544f99c24cf010197ae78d3fa753bede0af328dde59ccdd": "receipts/sweep_width_amzn.json",
-  "ee0a91338bcd0ae61416ccea0c83165548f67a39df58b05c981216afde8f6102": "receipts/fx1_vs_audit.json",
   "ee556605f12d88c494b6ead3a02099f569dfef7875cc21ca7ea5657983aea180": "receipts/zone_embargo.json",
   "f02529f36e47efbd95c9d9c328517ec18cf1660ef6c3f14f33254af94898975b": "receipts/schema_fingerprint.json",
   "f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e": "receipts/lane_power_drill.json",
@@ -938,7 +945,7 @@
    "file": "receipts/corpus_epoch_2bd794275af2b3d8.json",
    "id": "corpus_epoch_2bd794275af2b3d8",
    "live_pnl_claim": false,
-   "n_hash_matches": 387,
+   "n_hash_matches": 386,
    "n_hashes": 393,
    "research_only": true,
    "schema": "corpus_epoch.v1"
@@ -1281,6 +1288,17 @@
    "live_pnl_claim": false,
    "n_hash_matches": 103,
    "n_hashes": 109,
+   "research_only": true,
+   "schema": "corpus_epoch.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/corpus_epoch_babc8d62f8faa9fe.json",
+   "id": "corpus_epoch_babc8d62f8faa9fe",
+   "live_pnl_claim": false,
+   "n_hash_matches": 395,
+   "n_hashes": 399,
    "research_only": true,
    "schema": "corpus_epoch.v1"
   },
@@ -4695,7 +4713,7 @@
    "schema": "zone_ttl.v1"
   }
  ],
- "repo_revision": "73acc9d982915e557afd44357de87c34aacbcaad",
+ "repo_revision": "6d2721950115e0ae67ab991ecc915188a6ea526e",
  "strategies": [
   {
    "data_source": "UNVERIFIED",
