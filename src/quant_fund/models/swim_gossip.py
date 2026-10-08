@@ -51,6 +51,8 @@ def bench_swim_gossip(seed: int = 20261231 + 444) -> dict[str, float]:
                 for k, inc in views[u].items():
                     views[v][k] = max(views[v].get(k, 0), inc)
         detect += int(all(views[u][dead] == 0 for u in range(n) if u != dead))
+    if not (conv == trials and fast == trials and detect == trials):
+        raise ValueError("SWIM gossip oracle failed")
     return {
         "synthetic_converges": float(conv / trials),
         "synthetic_log_rounds": float(fast / trials),

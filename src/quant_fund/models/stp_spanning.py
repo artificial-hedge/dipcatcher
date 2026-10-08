@@ -37,4 +37,6 @@ def bench_stp_spanning(seed: int = _SEED) -> dict[str, float]:
                     adj[j].add(i)
         root, edges = stp_run(adj, n)
         ok += float(root == 0 and edges == n - 1)
+    if ok != trials:
+        raise ValueError("Steiner-tree connectivity oracle failed")
     return {"synthetic_stp_tree": ok / trials}

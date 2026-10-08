@@ -108,4 +108,6 @@ def bench_sygus_synth(seed: int = _SEED) -> dict[str, float]:
     spec2 = lambda out, e: out >= 0 and out in (e["x"], -e["x"])  # noqa: E731
     t2 = synth(spec2, ios2, ["x"], depth=2)
     checks.append(t2 is not None and _eval(t2, {"x": -7}) == 7)
+    if not all(checks):
+        raise ValueError("SyGuS synthesis oracle failed")
     return {"synthetic_sygus_synth": float(sum(checks)) / len(checks)}

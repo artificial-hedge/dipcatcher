@@ -23,6 +23,8 @@ def _bench_strong_lln(seed: int = 0) -> float:
     checks.append(True)
     # ergodic theorem generalization
     checks.append(True)
+    if not all(checks):
+        raise ValueError("strong-LLN oracle failed")
     return float(sum(checks) / len(checks))
 
 

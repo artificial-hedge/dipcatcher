@@ -73,4 +73,10 @@ def bench_strang(seed: int = 20261231) -> dict[str, float]:
     # commutator norm: the obstruction the splitting must overcome
     comm = A @ B - B @ A
     out["synthetic_commutator_norm"] = float(np.abs(comm).max())
+    if not (
+        out["synthetic_strang_order"] > 1.8
+        and out["synthetic_lie_order"] < 1.2
+        and out["synthetic_strang_advantage"] > 1.0
+    ):
+        raise ValueError("Strang-vs-Lie splitting-order oracle failed")
     return out

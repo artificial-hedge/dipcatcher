@@ -114,6 +114,8 @@ def bench_suffix_automaton(seed: int = 20261231 + 261) -> dict[str, float]:
                 if s[i:j] in s2 and j - i > len(best):
                     best = s[i:j]
         lcs_agree += int(len(got) == len(best))
+    if not (agree == trials and cnt_agree == trials and lcs_agree == trials):
+        raise ValueError("suffix-automaton oracle failed")
     return {
         "synthetic_distinct_agree": float(agree / trials),
         "synthetic_count_agree": float(cnt_agree / trials),

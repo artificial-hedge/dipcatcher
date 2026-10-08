@@ -183,3 +183,50 @@ def fit_cox_ph(X: Array, durations: Array, events: Array) -> dict[str, Array]:
         "concordance": np.array([cidx]),
         "converged": np.array([float(res.success)]),
     }
+
+
+def bench_survival(seed: int = 0) -> dict[str, float]:
+    """Survival oracle: log-rank must separate planted hazard groups and
+    not fire on a null pair; Cox must recover the planted coefficient."""
+    rng = np.random.default_rng(seed)
+    n = 300
+    x = rng.standard_normal(n)
+    grp = rng.integers(0, 2, n)
+    lam = np.exp(-(0.8 * x + 1.2 * grp))
+    t = rng.exponential(1.0 / lam)
+    censor = rng.uniform(0.2, 3.0, n)
+    dur = np.minimum(t, censor)
+    ev = (t <= censor).astype(float)
+    # log-rank: planted group difference vs null
+    p_diff = float(
+        log_rank_test(dur[grp == 0], ev[grp == 0], dur[grp == 1], ev[grp == 1])["pvalue"]
+    )
+    n0 = grp == 0
+    half = np.zeros(n0.sum(), dtype=bool)
+    half[: n0.sum() // 2] = True
+    rng.shuffle(half)
+    p_null = float(
+        log_rank_test(dur[n0][half], ev[n0][half], dur[n0][~half], ev[n0][~half])["pvalue"]
+    )
+    cox = fit_cox_ph(np.column_stack([x, grp]), dur, ev)
+    beta = np.asarray(cox["beta"])
+    cidx = float(np.asarray(cox["concordance"]).ravel()[0])
+    km = kaplan_meier(dur, ev)
+    surv_last = float(np.asarray(km["survival"])[-1])
+    checks = [
+        p_diff < 0.01,
+        p_null > 0.05,
+        abs(float(beta[0]) + 0.8) < 0.3,
+        abs(float(beta[1]) + 1.2) < 0.5,
+        cidx > 0.6,
+        0.0 <= surv_last <= 1.0,
+    ]
+    if not all(checks):
+        raise ValueError("survival logrank/Cox oracle failed")
+    return {
+        "synthetic_surv_p_diff": p_diff,
+        "synthetic_surv_p_null": p_null,
+        "synthetic_surv_beta_err": float(np.abs(beta - np.array([-0.8, -1.2])).max()),
+        "synthetic_surv_cindex": cidx,
+        "synthetic_survival_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

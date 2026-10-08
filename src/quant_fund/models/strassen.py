@@ -57,6 +57,8 @@ def bench_strassen(seed: int = 20261231 + 453) -> dict[str, float]:
         c = [[rng.randrange(-9, 10) for _ in range(n)] for _ in range(n)]
         assoc += int(strassen(strassen(a, b), c) == strassen(a, strassen(b, c)))
         ident += int(strassen(a, [[int(i == j) for j in range(n)] for i in range(n)]) == a)
+    if not (exact == trials and assoc == trials and ident == trials):
+        raise ValueError("Strassen exactness oracle failed")
     return {
         "synthetic_exact_vs_naive": float(exact / trials),
         "synthetic_associative": float(assoc / trials),

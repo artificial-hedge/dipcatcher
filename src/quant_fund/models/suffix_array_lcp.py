@@ -104,4 +104,6 @@ def bench_suffix_array_lcp(seed: int = _SEED) -> dict[str, float]:
                 h += 1
             lrs_truth = max(lrs_truth, h)
     score += 1.0 if lrs_len == lrs_truth else 0.0
+    if score != 4.0:
+        raise ValueError("suffix-array/LCP oracle failed")
     return {"synthetic_suffix_array_lcp": score / 4.0}

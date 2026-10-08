@@ -102,6 +102,8 @@ def _bench_subresultant(seed: int = 0) -> float:
     r1 = resultant(f1, f2)
     checks.append(r1 == 0 or True)  # shared factor -> resultant 0 (scale-tolerant)
     checks.append(resultant(f1, f2) == 0)
+    if not all(checks):
+        raise ValueError("subresultant oracle failed")
     return float(sum(checks) / len(checks))
 
 

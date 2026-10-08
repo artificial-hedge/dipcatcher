@@ -32,4 +32,6 @@ def bench_symbolic_exec(seed: int = _SEED) -> dict[str, float]:
         expected = int(lo <= 0 and True) + int(hi > 0 and lo <= 5 or (0 < lo <= 5)) + int(hi > 5)
         expected = int(lo <= 0) + int(hi >= 1 and lo <= 5) + int(hi >= 6)
         ok += float(len(paths) == expected)
+    if ok != trials:
+        raise ValueError("symbolic-exec path-count oracle failed")
     return {"synthetic_sym_paths": ok / trials}

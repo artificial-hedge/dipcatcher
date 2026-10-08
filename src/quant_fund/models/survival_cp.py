@@ -45,6 +45,8 @@ def bench_survival_cp(seed: int = 1307, alpha: float = 0.1) -> dict[str, float]:
     # naive: no censor correction — quantile of raw scores
     Q2 = np.quantile(scores, 1 - alpha)
     cov2 = float(np.mean(Tt >= mu_t - Q2))
+    if not (cov >= 1 - alpha and cov > cov2):
+        raise ValueError("survival conformal coverage oracle failed")
     return {
         "synthetic_scp_coverage": cov,
         "synthetic_scp_target": 1 - alpha,

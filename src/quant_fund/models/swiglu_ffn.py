@@ -51,6 +51,8 @@ def _train(seed: int, swiglu: bool, iters: int = 600) -> float:
 def bench_swiglu_ffn(seed: int = 1713, iters: int = 600) -> dict[str, float]:
     acc_s = _train(seed, True, iters)
     acc_r = _train(seed + 1, False, iters)
+    if not (acc_s > acc_r and acc_s > 0.5):
+        raise ValueError("SwiGLU-vs-ReLU oracle failed")
     return {
         "synthetic_swiglu_acc": acc_s,
         "synthetic_relu_acc": acc_r,

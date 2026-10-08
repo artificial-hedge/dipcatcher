@@ -45,6 +45,8 @@ def _bench_sturm_liouville(seed: int = 0) -> float:
     checks.append(abs(rayleigh(2) - 4.0) < 0.05)
     # boundary conditions y(0)=y(pi)=0
     checks.append(eigenfunction(5, 0.0) == 0.0 and abs(eigenfunction(5, math.pi)) < 1e-12)
+    if not all(checks):
+        raise ValueError("Sturm-Liouville oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -213,3 +213,57 @@ class SundialDistribution(JoblibMixin):
                 "standardize": True,
             },
         )
+
+
+class _StubPredictor:
+    """Deterministic Sundial stand-in: emits a fixed sample grid whose
+    empirical quantiles are known, ignoring the window content."""
+
+    def __init__(self, grid: Array) -> None:
+        self._grid = np.asarray(grid, dtype=np.float64)
+
+    def generate(self, window: Array, *, max_new_tokens: int, num_samples: int) -> Array:
+        del window, max_new_tokens
+        g = self._grid
+        reps = int(np.ceil(num_samples / g.size))
+        return np.tile(g, reps)[:num_samples, None]
+
+
+def bench_sundial(seed: int = 0) -> dict[str, float]:
+    """Sundial quantile plumbing oracle: with a deterministic injected
+    predictor the emitted quantiles must equal the de-standardized
+    empirical quantiles of the stub grid, sorted, tiled per row, and the
+    unfitted object must fail closed."""
+    rng = np.random.default_rng(seed)
+    grid = np.linspace(-2.0, 2.0, 41)
+    taus = np.array([0.1, 0.5, 0.9])
+    y = rng.standard_normal(600) * 2.0 + 5.0
+    mdl = SundialDistribution(
+        taus=(0.1, 0.5, 0.9),
+        seed=seed,
+        lookback=300,
+        num_samples=32,
+        predictor=_StubPredictor(grid),
+    )
+    try:
+        SundialDistribution(taus=(0.5,), predictor=_StubPredictor(grid)).predict(np.zeros((1, 2)))
+        unfitted_fail = False
+    except RuntimeError:
+        unfitted_fail = True
+    mdl.fit(np.zeros((1, 1)), y)
+    q = mdl.predict(np.zeros((4, 1)))
+    mu, sig = float(y.mean()), float(y.std(ddof=1))
+    emitted = np.tile(grid, int(np.ceil(32 / grid.size)))[:32]
+    want = np.sort(np.quantile(emitted, taus) * sig + mu)
+    q_err = float(np.abs(q[0] - want).max())
+    tiled = bool(np.all(q == q[0]))
+    hist = mdl.predict_from_history(y[:400])
+    hist_ok = bool(np.isfinite(hist).all() and hist.shape == (101, 3))
+    checks = [unfitted_fail, q_err < 1e-9, tiled, hist_ok]
+    if not all(checks):
+        raise ValueError("sundial quantile plumbing oracle failed")
+    return {
+        "synthetic_sundial_q_err": q_err,
+        "synthetic_sundial_unfitted_fails": float(unfitted_fail),
+        "synthetic_sundial_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

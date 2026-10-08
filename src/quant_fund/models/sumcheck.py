@@ -112,6 +112,8 @@ def _bench_sumcheck(seed: int = 0) -> float:
         return (xs[0] + 2 * xs[1] * xs[1]) % P
 
     checks.append(run_sumcheck(g2, 2, total_sum(g2, 2), rng))
+    if not all(checks):
+        raise ValueError("sumcheck oracle failed")
     return sum(checks) / len(checks)
 
 

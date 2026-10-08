@@ -176,6 +176,14 @@ def bench_sur_model(seed: int = 20261231 + 229) -> dict[str, float]:
     out_b = sur_fit(d["y"], d["x"])  # type: ignore[arg-type]
 
     c = float(out["resid_corr"])
+    if not (
+        abs(c - 0.7) < 0.2
+        and abs(float(out["beta10"]) - 0.8) < 0.15
+        and abs(float(out0["resid_corr"])) < 0.2
+        and c == float(out_b["resid_corr"])
+        and float(out["beta10"]) == float(out_b["beta10"])
+    ):
+        raise ValueError("SUR fit/detection oracle failed")
     return {
         "synthetic_beta1": float(out["beta10"]),
         "synthetic_beta1_err": float(abs(float(out["beta10"]) - 0.8)),

@@ -69,4 +69,6 @@ def bench_substruct(seed: int = _SEED) -> dict[str, float]:
     ok += int(match(*parse("CO"), *eth))
     # ring of 5 not in benzene
     ok += int(not match(*parse("c1cccc1"), *tol))
+    if ok != 4:
+        raise ValueError("substructure-match oracle failed")
     return {"synthetic_substruct": float(ok == 4)}

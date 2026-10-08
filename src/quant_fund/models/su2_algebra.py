@@ -33,6 +33,8 @@ def _bench_su2_algebra(seed: int = 0) -> float:
     u = np.asarray(_expm(x))
     checks.append(np.allclose(u @ u.conj().T, np.eye(2), atol=1e-8))
     checks.append(np.isclose(np.linalg.det(u), 1.0, atol=1e-8))
+    if not all(checks):
+        raise ValueError("su(2)-algebra oracle failed")
     return float(sum(checks) / len(checks))
 
 

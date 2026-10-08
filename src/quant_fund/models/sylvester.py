@@ -73,4 +73,6 @@ def bench_sylvester(seed: int = 20261231) -> dict[str, float]:
     # analytic: for this A (normal-ish), P ≈ (1/1.0)·I since
     # A + Aᵀ = −I → P = I solves: check
     out["synthetic_lyap_sol_err"] = float(np.linalg.norm(P - np.eye(2), "fro"))
+    if not (out["synthetic_lyap_residual"] < 1e-8 and out["synthetic_lyap_sol_err"] < 0.1):
+        raise ValueError("Sylvester/Lyapunov solver oracle failed")
     return out

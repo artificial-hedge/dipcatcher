@@ -116,6 +116,11 @@ def bench_strapdown(seed: int = 20261231) -> dict[str, float]:
     yaw = float(np.arctan2(2 * (q[0] * q[3] + q[1] * q[2]), 1 - 2 * (q[2] ** 2 + q[3] ** 2)))
     out["synthetic_strapdown_yaw_err"] = abs(abs(yaw) - 1.0)
     out["synthetic_strapdown_quat_norm_err"] = float(abs(np.linalg.norm(q) - 1))
+    if not (
+        out["synthetic_strapdown_yaw_err"] < 0.05
+        and out["synthetic_strapdown_quat_norm_err"] < 1e-6
+    ):
+        raise ValueError("strapdown mechanization oracle failed")
     return out
 
 

@@ -81,6 +81,8 @@ def bench_sturm_eig(seed: int = 20261231 + 535) -> dict[str, float]:
         d, e = _tridiag(A)
         x = (ref[0] + ref[-1]) / 2
         cnt_ok += int(_sturm_count(d, e, x) == int(np.sum(ref < x)))
+    if not (eig_ok == n_trials and cnt_ok == n_trials):
+        raise ValueError("Sturm-sequence eigenvalue oracle failed")
     return {
         "synthetic_eigs_exact": eig_ok / n_trials,
         "synthetic_sturm_count": cnt_ok / n_trials,

@@ -144,6 +144,9 @@ def bench_symplectic(seed: int = 0) -> dict[str, float]:
     drift_rk = float(
         max(abs(hamiltonian_energy(yrk[i, :1], yrk[i, 1:], T, V) - e0) for i in range(0, n + 1, 50))
     )
+    # bounded energy drift is the symplectic guarantee
+    if not (drift_v < 0.01 and drift_y < 0.01):
+        raise ValueError("symplectic energy-drift oracle failed")
     return {
         "synthetic_verlet_drift": drift_v,
         "synthetic_yoshida_drift": drift_y,

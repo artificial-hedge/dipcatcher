@@ -80,6 +80,10 @@ def bench_surrogate_snn(seed: int = 1913, iters: int = 500, T: int = 20) -> dict
         acc_ann = float(
             ((ann(torch.tensor(Xtr).float()).squeeze(-1) > 0).float().numpy() == ytr).mean()
         )
+    # honest floor: SNN parity with the ANN within tolerance, spikes
+    # firing at a nondegenerate rate
+    if not (acc_snn >= acc_ann - 0.05 and 0.0 < spk_cnt / T < 0.5):
+        raise ValueError("surrogate-SNN oracle failed")
     return {
         "synthetic_snn_acc": acc_snn,
         "synthetic_snn_ann_acc": acc_ann,

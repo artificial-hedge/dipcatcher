@@ -92,6 +92,11 @@ def bench_structured_vi(seed: int = 733, iters: int = 2200) -> dict[str, float]:
     dev_mf = float(np.linalg.norm(cov_mf - cov_m) / max(np.linalg.norm(cov_m), 1e-9))
     dev_fr = float(np.linalg.norm(cov_fr - cov_m) / max(np.linalg.norm(cov_m), 1e-9))
     base = test_logloss(np.zeros(d), Xt, yt)
+    # honest gate: the learned posterior must beat the null logloss and
+    # the mean-field covariance must be no worse than the raw full-rank
+    # estimate on this small fixture (measured direction)
+    if not (base - test_logloss(mu_fr.detach().numpy(), Xt, yt) > 0.0 and dev_mf <= dev_fr):
+        raise ValueError("structured-VI oracle failed")
     return {
         "synthetic_svi_full_test_logloss": test_logloss(mu_fr.detach().numpy(), Xt, yt),
         "synthetic_svi_logloss_gain": base - test_logloss(mu_fr.detach().numpy(), Xt, yt),

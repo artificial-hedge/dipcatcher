@@ -27734,6 +27734,9 @@
   "models/stopping_sigma.py": {
    "status": "audited"
   },
+  "models/stopping_time.py": {
+   "status": "audited"
+  },
   "models/stork_qa_studies.py": {
    "status": "audited"
   },
@@ -27749,7 +27752,19 @@
   "models/story_cloze_studies.py": {
    "status": "audited"
   },
+  "models/stp_spanning.py": {
+   "status": "audited"
+  },
   "models/straightening.py": {
+   "status": "audited"
+  },
+  "models/strang.py": {
+   "status": "audited"
+  },
+  "models/strapdown.py": {
+   "status": "audited"
+  },
+  "models/strassen.py": {
    "status": "audited"
   },
   "models/strassen_flln.py": {
@@ -27782,6 +27797,9 @@
   "models/stratonovich_conv.py": {
    "status": "audited"
   },
+  "models/strength_red.py": {
+   "status": "audited"
+  },
   "models/stress_tensor.py": {
    "status": "audited"
   },
@@ -27801,6 +27819,9 @@
    "status": "audited"
   },
   "models/strip_defense_studies.py": {
+   "status": "audited"
+  },
+  "models/strong_lln.py": {
    "status": "audited"
   },
   "models/strong_reject_studies.py": {
@@ -27830,6 +27851,9 @@
   "models/structured_spec.py": {
    "status": "audited"
   },
+  "models/structured_vi.py": {
+   "status": "audited"
+  },
   "models/sts_studies.py": {
    "status": "audited"
   },
@@ -27842,6 +27866,12 @@
   "models/sturgeon_qa_studies.py": {
    "status": "audited"
   },
+  "models/sturm_eig.py": {
+   "status": "audited"
+  },
+  "models/sturm_liouville.py": {
+   "status": "audited"
+  },
   "models/sturm_sequence.py": {
    "status": "audited"
   },
@@ -27852,6 +27882,9 @@
    "status": "audited"
   },
   "models/stylized_studies.py": {
+   "status": "audited"
+  },
+  "models/su2_algebra.py": {
    "status": "audited"
   },
   "models/subdiff_compute.py": {
@@ -27884,7 +27917,13 @@
   "models/subordinator.py": {
    "status": "audited"
   },
+  "models/subresultant.py": {
+   "status": "audited"
+  },
   "models/subset_sim.py": {
+   "status": "audited"
+  },
+  "models/subset_sum_dp.py": {
    "status": "audited"
   },
   "models/subspace_dd.py": {
@@ -27893,10 +27932,22 @@
   "models/subspace_thm.py": {
    "status": "audited"
   },
+  "models/substruct.py": {
+   "status": "audited"
+  },
   "models/successor_feature_studies.py": {
    "status": "audited"
   },
   "models/sudakov_min.py": {
+   "status": "audited"
+  },
+  "models/suffix_array_lcp.py": {
+   "status": "audited"
+  },
+  "models/suffix_automaton.py": {
+   "status": "audited"
+  },
+  "models/suffix_tree_lex.py": {
    "status": "audited"
   },
   "models/suffix_trie.py": {
@@ -27906,6 +27957,9 @@
    "status": "audited"
   },
   "models/sullivan_no_wander.py": {
+   "status": "audited"
+  },
+  "models/sumcheck.py": {
    "status": "audited"
   },
   "models/summa_eval_studies.py": {
@@ -27921,6 +27975,9 @@
    "status": "audited"
   },
   "models/sun_cle.py": {
+   "status": "audited"
+  },
+  "models/sundial.py": {
    "status": "audited"
   },
   "models/sungrebe_qa_studies.py": {
@@ -27986,6 +28043,18 @@
   "models/supramolecular_chemistry.py": {
    "status": "audited"
   },
+  "models/sur_model.py": {
+   "status": "audited"
+  },
+  "models/sure_screening.py": {
+   "status": "audited"
+  },
+  "models/surf_area.py": {
+   "status": "audited"
+  },
+  "models/surface_code.py": {
+   "status": "audited"
+  },
   "models/surfaces_operad.py": {
    "status": "audited"
   },
@@ -28007,10 +28076,19 @@
   "models/suricate_qa_studies.py": {
    "status": "audited"
   },
+  "models/surrogate_snn.py": {
+   "status": "audited"
+  },
   "models/surveillance_studies.py": {
    "status": "audited"
   },
   "models/surveying.py": {
+   "status": "audited"
+  },
+  "models/survival.py": {
+   "status": "audited"
+  },
+  "models/survival_cp.py": {
    "status": "audited"
   },
   "models/survival_trial_studies.py": {
@@ -28031,6 +28109,9 @@
   "models/suspension.py": {
    "status": "audited"
   },
+  "models/sutherland_hodgman.py": {
+   "status": "audited"
+  },
   "models/sutured_mfd.py": {
    "status": "audited"
   },
@@ -28043,7 +28124,16 @@
   "models/svartalf_qa_studies.py": {
    "status": "audited"
   },
+  "models/svgd.py": {
+   "status": "audited"
+  },
   "models/svi_surface.py": {
+   "status": "audited"
+  },
+  "models/svm_classifiers.py": {
+   "status": "audited"
+  },
+  "models/swag_diag.py": {
    "status": "audited"
   },
   "models/swag_lite_studies.py": {
@@ -28088,6 +28178,12 @@
   "models/swiftlet_qa_studies.py": {
    "status": "audited"
   },
+  "models/swiglu_ffn.py": {
+   "status": "audited"
+  },
+  "models/swim_gossip.py": {
+   "status": "audited"
+  },
   "models/swiss_cheese.py": {
    "status": "audited"
   },
@@ -28109,13 +28205,22 @@
   "models/sycamore_qa_studies.py": {
    "status": "audited"
   },
+  "models/sygus_synth.py": {
+   "status": "audited"
+  },
   "models/sylleptic.py": {
+   "status": "audited"
+  },
+  "models/sylow_theorems.py": {
    "status": "audited"
   },
   "models/sylph_2_qa_studies.py": {
    "status": "audited"
   },
   "models/sylph_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/sylvester.py": {
    "status": "audited"
   },
   "models/sylvester_law.py": {
@@ -28125,6 +28230,9 @@
    "status": "audited"
   },
   "models/symbol_calc.py": {
+   "status": "audited"
+  },
+  "models/symbolic_exec.py": {
    "status": "audited"
   },
   "models/symbolic_regression_dl_studies.py": {
@@ -28142,10 +28250,16 @@
   "models/symplectic_form.py": {
    "status": "audited"
   },
+  "models/symplectic_ode.py": {
+   "status": "audited"
+  },
   "models/symplectic_packing.py": {
    "status": "audited"
   },
   "models/symplectic_quot.py": {
+   "status": "audited"
+  },
+  "models/synchrosqueezing.py": {
    "status": "audited"
   },
   "models/syndq_lite_studies.py": {

@@ -89,6 +89,8 @@ def bench_sutherland_hodgman(seed: int = 20261231 + 321) -> dict[str, float]:
                 conserve_ok += 1  # n/a
         else:
             conserve_ok += 1
+    if not (inside_ok == trials and area_ok == trials and conserve_ok == trials):
+        raise ValueError("Sutherland-Hodgman clip oracle failed")
     return {
         "synthetic_inside_window": float(inside_ok / trials),
         "synthetic_area_nonincrease": float(area_ok / trials),

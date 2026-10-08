@@ -40,6 +40,8 @@ def _bench_stopping_time(seed: int = 0) -> float:
     checks.append(float(np.var(payoffs)) > 0.5)
     # stopping at unbounded level on finite cap: payoff within bounds
     checks.append(all(abs(p) <= 3.0001 for p in payoffs[:1000]))
+    if not all(checks):
+        raise ValueError("stopping-time oracle failed")
     return float(sum(checks) / len(checks))
 
 

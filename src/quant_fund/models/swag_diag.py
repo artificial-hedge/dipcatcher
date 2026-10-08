@@ -58,6 +58,10 @@ def bench_swag_diag(
     var = var_raw + 0.09  # + aleatoric noise floor
     Po = np.asarray(preds_ood)
     var_ood = Po.var(0).mean()
+    if not (
+        coverage(y_te, mu, np.sqrt(var)) > 0.8 and float(var_ood / (var_raw.mean() + 1e-9)) > 2.0
+    ):
+        raise ValueError("SWAG-diag coverage/OOD oracle failed")
     return {
         "synthetic_swag_nll": nll_gauss(y_te, mu, var),
         "synthetic_swag_cov95": coverage(y_te, mu, np.sqrt(var)),

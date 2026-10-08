@@ -127,4 +127,6 @@ def bench_surface_code(seed: int = _SEED) -> dict[str, float]:
     checks.append(r04 < 0.04)
     checks.append(r02 < r04)
     del zrow
+    if not all(checks):
+        raise ValueError("surface-code logical-rate oracle failed")
     return {"synthetic_surface_code": float(np.mean(checks))}

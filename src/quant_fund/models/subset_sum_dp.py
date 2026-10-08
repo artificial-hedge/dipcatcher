@@ -44,4 +44,6 @@ def bench_subset_sum_dp(seed: int = _SEED) -> dict[str, float]:
         t = int(rng.randint(1, 40))
         ok += int(reachable(nums, t) == (_brute(nums, t) > 0))
         ok += int(count_ways(nums, t) == _brute(nums, t))
+    if ok != 16:
+        raise ValueError("subset-sum DP vs brute-force oracle failed")
     return {"synthetic_subset_sum": float(ok == 16)}

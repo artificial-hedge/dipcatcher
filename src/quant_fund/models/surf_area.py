@@ -30,6 +30,8 @@ def bench_surf_area(seed: int = _SEED) -> dict[str, float]:
     a_tor = _quad_area(_torus_met, u_max=2 * np.pi)
     want_sph = 4 * np.pi * 4.0
     want_tor = 4 * np.pi**2 * 3.0
+    if not (abs(a_sph - want_sph) / want_sph < 5e-3 and abs(a_tor - want_tor) / want_tor < 5e-3):
+        raise ValueError("parametric-surface area oracle failed")
     return {
         "synthetic_surf_area": float(
             abs(a_sph - want_sph) / want_sph < 5e-3 and abs(a_tor - want_tor) / want_tor < 5e-3

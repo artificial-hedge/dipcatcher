@@ -44,4 +44,6 @@ def bench_strength_red(seed: int = _SEED) -> dict[str, float]:
         k = int(rng.randint(-63, 63))
         x = int(rng.randint(-100, 100))
         ok += float(eval_ops(reduce_mul(k), x) == x * k)
+    if ok != trials:
+        raise ValueError("strength-reduction exactness oracle failed")
     return {"synthetic_strength_exact": ok / trials}

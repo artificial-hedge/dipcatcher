@@ -70,6 +70,8 @@ def _bench_sylow_theorems(seed: int = 0) -> float:
     syl2z = sylow_p_subgroups(z6, mul6, 0, 2)
     syl3z = sylow_p_subgroups(z6, mul6, 0, 3)
     checks.append(len(syl2z) == 1 and len(syl3z) == 1)
+    if not all(checks):
+        raise ValueError("Sylow-theorems oracle failed")
     return float(sum(checks) / len(checks))
 
 

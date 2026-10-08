@@ -78,4 +78,6 @@ def bench_suffix_tree_lex(seed: int = _SEED) -> dict[str, float]:
         return sum(leaves(c) for c in nd.children.values())
 
     score += 1.0 if leaves(root) == len(s) + 1 else 0.0
+    if score != 4.0:
+        raise ValueError("suffix-tree oracle failed")
     return {"synthetic_suffix_tree_lex": score / 4.0}
