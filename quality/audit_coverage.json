@@ -8669,6 +8669,9 @@
   "models/ekeland_var.py": {
    "status": "audited"
   },
+  "models/ekf_slam.py": {
+   "status": "audited"
+  },
   "models/el2n_scoring.py": {
    "status": "audited"
   },
@@ -8756,10 +8759,16 @@
   "models/elliptic_cohor.py": {
    "status": "audited"
   },
+  "models/elliptic_curve.py": {
+   "status": "audited"
+  },
   "models/elliptic_est.py": {
    "status": "audited"
   },
   "models/elliptic_fn.py": {
+   "status": "audited"
+  },
+  "models/elliptic_group.py": {
    "status": "audited"
   },
   "models/elliptic_height.py": {
@@ -8780,6 +8789,12 @@
   "models/elliptic_surface.py": {
    "status": "audited"
   },
+  "models/elliptical.py": {
+   "status": "audited"
+  },
+  "models/elliptical_slice.py": {
+   "status": "audited"
+  },
   "models/elm_lite_studies.py": {
    "status": "audited"
   },
@@ -8793,6 +8808,15 @@
    "status": "audited"
   },
   "models/embodied_agent_studies.py": {
+   "status": "audited"
+  },
+  "models/emcee_stretch.py": {
+   "status": "audited"
+  },
+  "models/emd_hht.py": {
+   "status": "audited"
+  },
+  "models/emd_lp.py": {
    "status": "audited"
   },
   "models/emerald_dove_qa_studies.py": {
@@ -8825,13 +8849,22 @@
   "models/empathy_qa_studies.py": {
    "status": "audited"
   },
+  "models/empirical_bayes.py": {
+   "status": "audited"
+  },
   "models/empirical_bridge.py": {
+   "status": "audited"
+  },
+  "models/empirical_copula.py": {
    "status": "audited"
   },
   "models/empirical_interp.py": {
    "status": "audited"
   },
   "models/empirical_process.py": {
+   "status": "audited"
+  },
+  "models/empirical_wavelets.py": {
    "status": "audited"
   },
   "models/empusa_qa_studies.py": {
@@ -8844,6 +8877,9 @@
    "status": "audited"
   },
   "models/en_algebra2.py": {
+   "status": "audited"
+  },
+  "models/enas_controller.py": {
    "status": "audited"
   },
   "models/enbpi.py": {
@@ -8876,7 +8912,16 @@
   "models/endodontics.py": {
    "status": "audited"
   },
+  "models/endomorphism_op.py": {
+   "status": "audited"
+  },
   "models/energy_economics.py": {
+   "status": "audited"
+  },
+  "models/energy_method.py": {
+   "status": "audited"
+  },
+  "models/energy_ood.py": {
    "status": "audited"
   },
   "models/energy_principle.py": {
@@ -8885,10 +8930,25 @@
   "models/energy_spectrum.py": {
    "status": "audited"
   },
+  "models/energy_test.py": {
+   "status": "audited"
+  },
+  "models/energy_ts.py": {
+   "status": "audited"
+  },
   "models/engine_qa_studies.py": {
    "status": "audited"
   },
   "models/engkanto_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/engle_granger.py": {
+   "status": "audited"
+  },
+  "models/engle_kroner_bekk.py": {
+   "status": "audited"
+  },
+  "models/engle_ng.py": {
    "status": "audited"
   },
   "models/engset.py": {
@@ -8927,6 +8987,12 @@
   "models/ensem_qa_studies.py": {
    "status": "audited"
   },
+  "models/ensemble.py": {
+   "status": "audited"
+  },
+  "models/ensemble_kalman_inversion.py": {
+   "status": "audited"
+  },
   "models/ensemble_rm_studies.py": {
    "status": "audited"
   },
@@ -8940,6 +9006,9 @@
    "status": "audited"
   },
   "models/entailment_studies.py": {
+   "status": "audited"
+  },
+  "models/entanglement.py": {
    "status": "audited"
   },
   "models/entity_qa_studies.py": {
@@ -8960,7 +9029,13 @@
   "models/entrepreneurship_3.py": {
    "status": "audited"
   },
+  "models/entropy_balancing.py": {
+   "status": "audited"
+  },
   "models/entropy_code_quant_studies.py": {
+   "status": "audited"
+  },
+  "models/entropy_dns.py": {
    "status": "audited"
   },
   "models/entropy_integral.py": {

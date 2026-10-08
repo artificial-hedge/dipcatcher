@@ -45,7 +45,9 @@ def bench_enas_controller(
         d = int(rng.choice(3, p=pd))
         a = int(rng.choice(2, p=pa))
         arch = (int([4, 8, 16, 24, 48][w]), int(d + 1), a)
-        r = eval_arch(arch, x_tr_t, y_tr_t, x_te_t, y_te_t, iters, seed=hash(arch) % 1000)
+        # deterministic per-arch seed — hash() is randomized per process
+        arch_seed = (w * 173 + d * 37 + a * 11) % 1000
+        r = eval_arch(arch, x_tr_t, y_tr_t, x_te_t, y_te_t, iters, seed=arch_seed)
         adv = r - baseline
         baseline = 0.9 * baseline + 0.1 * r
         # REINFORCE on each gene

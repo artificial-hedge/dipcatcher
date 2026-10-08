@@ -85,10 +85,22 @@ def bench_emd_lp(seed: int | None = None) -> dict[str, float]:
     bw = bures_wasserstein(m0, s0, m1, s1)
     # closed-form check: mean diff^2 + trace(1+4-2*sqrt(4)) + trace(1+1-2) + trace(1+0.25-1)
     bw_ref = np.sqrt(1.0 + (1 + 4 - 2 * 2.0) + (1 + 1 - 2 * 1.0) + (1 + 0.25 - 2 * 0.5))
+    e1_err = abs(e1 - e_ref)
+    bw_err = abs(bw - float(bw_ref))
+    # n-D transport LP has no closed form — check the 1-Lipschitz dual
+    # lower bound (EMD >= |mean shift|) plus finiteness
+    lb = float(np.linalg.norm(xs2.mean(axis=0) - xt2.mean(axis=0)))
+    if e1_err > 1e-8:
+        raise ValueError(f"emd_1d diverges from scipy: {e1_err:.2e}")
+    if bw_err > 1e-8:
+        raise ValueError(f"bures_wasserstein off closed form: {bw_err:.2e}")
+    if not np.isfinite(e2) or e2 < lb - 1e-9:
+        raise ValueError(f"emd_lp violates the mean-shift lower bound: {e2} < {lb}")
     return {
         "synthetic_emd1d": e1,
-        "synthetic_emd1d_err": abs(e1 - e_ref),
+        "synthetic_emd1d_err": e1_err,
         "synthetic_emd_lp": e2,
+        "synthetic_emd_lp_lower_bound": lb,
         "synthetic_bures": bw,
-        "synthetic_bures_err": abs(bw - float(bw_ref)),
+        "synthetic_bures_err": bw_err,
     }
