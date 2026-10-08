@@ -8,6 +8,13 @@ name: atlas
 on:
   push:
     branches: [main]
+    # Deliberately NOT filtered with paths-ignore. The diagram half
+    # (gen_arch_diagrams.py --check) is source-derived, so a doc-only push
+    # cannot change it — but this lane also runs `pytest tests/unit/docs`,
+    # which does assert things about the docs. This is a single cheap job;
+    # reclaiming CI budget belongs in matrix.yml (36 jobs), not here, and
+    # skipping a docs-consistency test is the wrong trade while verification
+    # is already dark.
   pull_request:
     branches: [main]
 

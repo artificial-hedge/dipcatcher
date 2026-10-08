@@ -6,6 +6,14 @@ on:
   pull_request:
     branches: [main]
 
+# NOTE: deliberately NOT filtered with paths-ignore. This workflow runs
+# `mkdocs build --strict`, whose whole job is to catch a broken nav reference,
+# bad link, or malformed page — so a Markdown change is exactly the change that
+# can break it. An earlier revision added `paths-ignore: ['**/*.md','docs/**']`
+# here on the theory that doc churn is harmless; that is inverted and would have
+# meant this workflow never ran for the files it exists to validate. Budget is
+# reclaimed in matrix.yml (36 jobs), not here.
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

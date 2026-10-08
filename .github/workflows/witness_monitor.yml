@@ -21,6 +21,16 @@ on:
 permissions:
   contents: read
 
+# Added in Phase 0: this workflow was the only one with no concurrency block at
+# all, so overlapping pushes could stack identical witness-verification runs and
+# starve the queue. Modelled on the other lanes. cancel-in-progress is false
+# because this is an integrity/monitoring lane: a superseded run yields no
+# verdict about whether the committed proofs are still intact, and the public
+# log cannot be re-checked later — the observation is only valid when made.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   witness-online:
     runs-on: ubuntu-latest

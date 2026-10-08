@@ -20,11 +20,22 @@ on:
     branches: [main]
   push:
     branches: [main]
+    # This workflow stays on push — it is the Tier-A cross-platform
+    # compatibility proof, so a code push must exercise it. Doc-only churn
+    # must not: 36 jobs (3 OS x 3 Python x 4 shards) is the single largest
+    # queue contributor, and a Markdown edit cannot change wheel availability.
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
   workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Do NOT cancel in-flight runs — this is the Tier-A cross-platform proof
+  # (36 jobs). With 36 jobs per push, cancel-in-progress cancelled the previous
+  # push before it could finish and neither push ever produced a verdict. The
+  # group key still serialises; runs drain instead of superseding each other.
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -38,6 +49,18 @@ env:
   PYTHONUTF8: "1"
   PYTHONIOENCODING: "utf-8"
   NUM_SHARDS: "4"
+  # Makefile TEST_ENV block, mirrored (keep both sides identical) — OpenMP
+  # thread pinning plus fork/fault hardening for the suite runs below
+  # (.dsh-24x7/lane_reports/l3-segfault.md 7.1). VECLIB_MAXIMUM_THREADS matters
+  # on the macOS leg (Accelerate), KMP_INIT_AT_FORK=FALSE closes the fork()
+  # route taken by joblib/loky in the model tests.
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  VECLIB_MAXIMUM_THREADS: "1"
+  KMP_INIT_AT_FORK: "FALSE"
+  PYTHONFAULTHANDLER: "1"
+  TOKENIZERS_PARALLELISM: "false"
   HYPOTHESIS_PROFILE: ci
 
 jobs:

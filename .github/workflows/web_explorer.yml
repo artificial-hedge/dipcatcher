@@ -1,12 +1,15 @@
 name: Web Explorer
 
 on:
+  # Doc-only pushes must not run this non-doc lane. GitHub forbids `paths` and
+  # `paths-ignore` on the same event (the workflow would never run at all), so
+  # the equivalent filter is applied by dropping docs/WEB_EXPLORER.md from
+  # `paths` below: a push touching only docs/** or *.md no longer matches.
   push:
     branches: [main]
     paths:
       - "web/**"
       - "tests/unit/web_explorer/**"
-      - "docs/WEB_EXPLORER.md"
       - ".github/workflows/web_explorer.yml"
       - "receipts/**"
       - "artifacts/*.json"
@@ -15,7 +18,6 @@ on:
     paths:
       - "web/**"
       - "tests/unit/web_explorer/**"
-      - "docs/WEB_EXPLORER.md"
       - ".github/workflows/web_explorer.yml"
       - "receipts/**"
       - "artifacts/*.json"

@@ -25,6 +25,18 @@ concurrency:
 permissions:
   contents: read
 
+# Makefile TEST_ENV block, mirrored (keep both sides identical) — the same
+# OpenMP/fork/fault hardening as the lab test lanes
+# (.dsh-24x7/lane_reports/l3-segfault.md 7.1).
+env:
+  OMP_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  NUMEXPR_NUM_THREADS: "1"
+  VECLIB_MAXIMUM_THREADS: "1"
+  KMP_INIT_AT_FORK: "FALSE"
+  PYTHONFAULTHANDLER: "1"
+  TOKENIZERS_PARALLELISM: "false"
+
 jobs:
   simtest-pr:
     if: github.event_name == 'pull_request'
