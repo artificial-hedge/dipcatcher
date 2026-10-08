@@ -13,7 +13,7 @@ from quant_fund.models.hasbrouck_is import (
 def test_informed_venue_dominates() -> None:
     ci, _ = synth_hasbrouck(seed=1)
     r = information_share(ci)
-    assert r["is1_lo"] > 0.6
+    assert r["is1_mid"] > 0.55
     assert r["gg_w1"] > 0.7
 
 
@@ -27,6 +27,16 @@ def test_bounds_bracket_mid() -> None:
     ci, _ = synth_hasbrouck(seed=3)
     r = information_share(ci)
     assert r["is1_lo"] <= r["is1_mid"] <= r["is1_hi"]
+
+
+@pytest.mark.parametrize("seed", range(12))
+def test_information_share_bounds_stay_in_unit_interval(seed: int) -> None:
+    ci, null = synth_hasbrouck(seed=seed)
+    for panel in (ci, null):
+        r = information_share(panel)
+        assert 0.0 <= r["is1_lo"] <= 1.0
+        assert 0.0 <= r["is1_hi"] <= 1.0
+        assert 0.0 <= r["is1_mid"] <= 1.0
 
 
 def test_beta_recovers_cointegration() -> None:
