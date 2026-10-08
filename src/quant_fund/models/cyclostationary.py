@@ -39,10 +39,14 @@ FloatArray = NDArray[np.float64]
 def cyclic_autocorrelation(x: FloatArray, alpha: float, max_lag: int | None = None) -> FloatArray:
     """Cyclic autocorrelation R_x^alpha(tau) over tau = -max_lag..max_lag.
 
-    Implemented by mixing: y(t) = x(t) e^{-i pi alpha t}, then
-    correlating y(t+tau) conj(y(t)) — the e^{-i 2 pi alpha t} kernel
-    appears through the product of the two mixes. Returns the
-    magnitude (phase alignment is sample-dependent).
+    Implemented by mixing at the two half-rate shifts: the lead factor
+    uses y_-(t) = x(t) e^{-i pi alpha t} and the lag factor uses
+    y_+(t) = x(t) e^{+i pi alpha t}, so the product carries the
+    e^{-i 2 pi alpha t} kernel — the e^{-i pi alpha tau} residue is a
+    lag-only phase dropped by the magnitude. Mixing with the SAME
+    exponential on both legs cancels alpha entirely and collapses to
+    the ordinary autocorrelation. Returns the magnitude (phase
+    alignment is sample-dependent).
     """
     v = np.asarray(x, dtype=float).ravel()
     n = v.size
@@ -50,12 +54,13 @@ def cyclic_autocorrelation(x: FloatArray, alpha: float, max_lag: int | None = No
         raise ValueError("series too short or non-finite")
     m = n // 4 if max_lag is None else min(max_lag, n // 4)
     t = np.arange(n)
-    mix = v * np.exp(-1j * np.pi * alpha * t)
+    mix_lo = v * np.exp(-1j * np.pi * alpha * t)
+    mix_hi = v * np.exp(1j * np.pi * alpha * t)
     taus = np.arange(-m, m + 1)
     out = np.empty(taus.size, dtype=complex)
     for i, tau in enumerate(taus):
-        a = mix[m + tau : n - m]
-        b = np.conj(mix[m : n - m - tau])
+        a = mix_lo[m + tau : n - m]
+        b = np.conj(mix_hi[m : n - m - tau])
         out[i] = np.mean(a * b)
     return np.asarray(np.abs(out), dtype=np.float64)
 

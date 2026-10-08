@@ -27,7 +27,10 @@ def assemble(kmers: list[str], k: int) -> str | None:
         nodes.update([u, v])
         indeg.setdefault(u, 0)
     starts = [nd for nd in nodes if indeg[nd] < len(edges[nd])]
-    start = starts[0] if starts else next(iter(nodes))
+    # deterministic: set iteration order is PYTHONHASHSEED-dependent —
+    # pick the lexicographically smallest candidate so the same k-mer
+    # multiset always assembles to the same string
+    start = min(starts) if starts else min(nodes)
     # Hierholzer
     stack = [start]
     path: list[str] = []

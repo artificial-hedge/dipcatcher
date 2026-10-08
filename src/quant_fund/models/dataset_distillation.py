@@ -40,12 +40,23 @@ def bench_dataset_distillation(
     y_s = torch.tensor(np.tile([0, 1], k // 2))
     opt = torch.optim.Adam([x_s], lr=5e-2)
     for _i in range(iters):
-        # inner model on synthetic
+        # inner model adapts to the synthetic set for inner_steps
+        # differentiable SGD steps before gradients are matched — the
+        # trajectory keeps x_s in the graph (fresh random init each
+        # outer iter, per Zhao et al.)
         w_lin = torch.nn.Linear(8, 2, bias=True)
-        l_s = torch.nn.functional.cross_entropy(w_lin(x_s), y_s)
-        g_s = torch.autograd.grad(l_s, list(w_lin.parameters()), create_graph=True)
-        l_r = torch.nn.functional.cross_entropy(w_lin(x_t), y_t)
-        g_r = torch.autograd.grad(l_r, list(w_lin.parameters()), create_graph=False)
+        w, b = w_lin.weight, w_lin.bias
+        for _ in range(inner_steps):
+            l_in = torch.nn.functional.cross_entropy(x_s @ w.T + b, y_s)
+            gw, gb = torch.autograd.grad(l_in, [w, b], create_graph=True)
+            w = w - 0.1 * gw
+            b = b - 0.1 * gb
+        l_s = torch.nn.functional.cross_entropy(x_s @ w.T + b, y_s)
+        g_s = torch.autograd.grad(l_s, [w, b], create_graph=True)
+        wd = w.detach().requires_grad_(True)
+        bd = b.detach().requires_grad_(True)
+        l_r = torch.nn.functional.cross_entropy(x_t @ wd.T + bd, y_t)
+        g_r = torch.autograd.grad(l_r, [wd, bd], create_graph=False)
         loss = sum(((g1 - g2.detach()) ** 2).sum() for g1, g2 in zip(g_s, g_r, strict=True))
         opt.zero_grad()
         loss.backward()

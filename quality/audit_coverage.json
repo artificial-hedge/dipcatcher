@@ -6461,6 +6461,9 @@
   "models/cuckoo_dove_qa_studies.py": {
    "status": "audited"
   },
+  "models/cuckoo_filter.py": {
+   "status": "audited"
+  },
   "models/cuckoo_hash.py": {
    "status": "audited"
   },
@@ -6503,6 +6506,9 @@
   "models/cuntz_picture.py": {
    "status": "audited"
   },
+  "models/cur_decomp.py": {
+   "status": "audited"
+  },
   "models/curation_practice.py": {
    "status": "audited"
   },
@@ -6524,6 +6530,9 @@
   "models/curriculum_design.py": {
    "status": "audited"
   },
+  "models/curriculum_magnitude.py": {
+   "status": "audited"
+  },
   "models/curry_qa_studies.py": {
    "status": "audited"
   },
@@ -6542,7 +6551,16 @@
   "models/custom_qa_studies.py": {
    "status": "audited"
   },
+  "models/cusum_monitor.py": {
+   "status": "audited"
+  },
   "models/cut_cell.py": {
+   "status": "audited"
+  },
+  "models/cut_elim.py": {
+   "status": "audited"
+  },
+  "models/cut_elim_seq.py": {
    "status": "audited"
   },
   "models/cutoff_phenomenon.py": {
@@ -6560,6 +6578,9 @@
   "models/cvx_reform.py": {
    "status": "audited"
   },
+  "models/cvxpy_layer.py": {
+   "status": "audited"
+  },
   "models/cw_complex.py": {
    "status": "audited"
   },
@@ -6570,6 +6591,9 @@
    "status": "audited"
   },
   "models/cwq_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/cwt_ridge.py": {
    "status": "audited"
   },
   "models/cyber_sec_eval_studies.py": {
@@ -6593,13 +6617,25 @@
   "models/cyclops_qa_studies.py": {
    "status": "audited"
   },
+  "models/cyclostationary.py": {
+   "status": "audited"
+  },
   "models/cyclotomic2.py": {
    "status": "audited"
   },
   "models/cyclotomic_e_n.py": {
    "status": "audited"
   },
+  "models/cyclotomic_field.py": {
+   "status": "audited"
+  },
+  "models/cyclotomic_poly.py": {
+   "status": "audited"
+  },
   "models/cyclotomic_spec.py": {
+   "status": "audited"
+  },
+  "models/cyk_parser.py": {
    "status": "audited"
   },
   "models/cylindrical_law.py": {
@@ -6647,6 +6683,9 @@
   "models/daffodil_qa_studies.py": {
    "status": "audited"
   },
+  "models/dag_gnn.py": {
+   "status": "audited"
+  },
   "models/dag_representation.py": {
    "status": "audited"
   },
@@ -6663,6 +6702,12 @@
    "status": "audited"
   },
   "models/dagger_studies.py": {
+   "status": "audited"
+  },
+  "models/dagma_lin.py": {
+   "status": "audited"
+  },
+  "models/dagmm.py": {
    "status": "audited"
   },
   "models/dagon_qa_studies.py": {
@@ -6713,6 +6758,9 @@
   "models/dance_studies.py": {
    "status": "audited"
   },
+  "models/danielsson_devries.py": {
+   "status": "audited"
+  },
   "models/danu_qa_studies.py": {
    "status": "audited"
   },
@@ -6720,6 +6768,9 @@
    "status": "audited"
   },
   "models/dark_matter.py": {
+   "status": "audited"
+  },
+  "models/dark_pool.py": {
    "status": "audited"
   },
   "models/darmon_point.py": {
@@ -6734,7 +6785,13 @@
   "models/darter_qa_studies.py": {
    "status": "audited"
   },
+  "models/darts_nas.py": {
+   "status": "audited"
+  },
   "models/dassie_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/data_cartography.py": {
    "status": "audited"
   },
   "models/data_engineering.py": {
@@ -6755,10 +6812,16 @@
   "models/data_science.py": {
    "status": "audited"
   },
+  "models/dataset_distillation.py": {
+   "status": "audited"
+  },
   "models/date_qa_studies.py": {
    "status": "audited"
   },
   "models/daubechies_basis.py": {
+   "status": "audited"
+  },
+  "models/davenport_q.py": {
    "status": "audited"
   },
   "models/davidenko_ode.py": {
@@ -6770,13 +6833,31 @@
   "models/davis_yin.py": {
    "status": "audited"
   },
+  "models/dawid_skene.py": {
+   "status": "audited"
+  },
   "models/day_conv.py": {
    "status": "audited"
   },
   "models/dbar_method.py": {
    "status": "audited"
   },
+  "models/dcc.py": {
+   "status": "audited"
+  },
+  "models/dcrnn_lite.py": {
+   "status": "audited"
+  },
   "models/dd_partition.py": {
+   "status": "audited"
+  },
+  "models/ddim_ode.py": {
+   "status": "audited"
+  },
+  "models/ddp_solve.py": {
+   "status": "audited"
+  },
+  "models/ddpg.py": {
    "status": "audited"
   },
   "models/de_boor.py": {
@@ -6785,7 +6866,19 @@
   "models/de_boor_stable.py": {
    "status": "audited"
   },
+  "models/de_bruijn.py": {
+   "status": "audited"
+  },
+  "models/de_mcmc.py": {
+   "status": "audited"
+  },
   "models/de_novo_design_studies.py": {
+   "status": "audited"
+  },
+  "models/dea.py": {
+   "status": "audited"
+  },
+  "models/deadlock_detect.py": {
    "status": "audited"
   },
   "models/dealiasing.py": {
@@ -6797,7 +6890,19 @@
   "models/debate_alignment_studies.py": {
    "status": "audited"
   },
+  "models/debate_multiagent.py": {
+   "status": "audited"
+  },
   "models/debate_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/debounce_fsm.py": {
+   "status": "audited"
+  },
+  "models/debruijn_assemble.py": {
+   "status": "audited"
+  },
+  "models/debtrank.py": {
    "status": "audited"
   },
   "models/debuts_theorem.py": {
@@ -6812,10 +6917,19 @@
   "models/decidable_theory.py": {
    "status": "audited"
   },
+  "models/decimate_int.py": {
+   "status": "audited"
+  },
+  "models/decision_transformer.py": {
+   "status": "audited"
+  },
   "models/decomp_mart.py": {
    "status": "audited"
   },
   "models/decomp_thm.py": {
+   "status": "audited"
+  },
+  "models/decomposition.py": {
    "status": "audited"
   },
   "models/decomposition_group.py": {

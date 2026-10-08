@@ -17,6 +17,11 @@ def _h_logdet(W: FloatArray, s: float = 1.0) -> tuple[float, FloatArray]:
     d = len(W)
     M = s * np.eye(d) - W * W
     sign, logdet = np.linalg.slogdet(M)
+    if sign <= 0:
+        # h is a log-barrier: undefined outside the cone sI - W∘W ≻ 0.
+        # Using log|det| would return a finite-but-meaningless h (it
+        # can even go negative) — fail into the caller's fallback.
+        raise np.linalg.LinAlgError("sI - W∘W not positive definite")
     h = -logdet + d * np.log(s)
     Minv = np.linalg.inv(M)
     return float(h), 2 * W * Minv.T
@@ -39,7 +44,10 @@ def bench_dagma_lin(seed: int = 2323, edges: int = 7, steps: int = 400) -> dict[
         W = W - lr * grad
         W = np.nan_to_num(W, nan=0.0)
         if it % 100 == 99:
-            h, _ = _h_logdet(W)
+            try:
+                h, _ = _h_logdet(W)
+            except np.linalg.LinAlgError:
+                h = 1.0
             lam += rho * h
             rho = min(rho * 1.5, 1e4)
     W[np.abs(W) < 0.3] = 0

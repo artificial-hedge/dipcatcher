@@ -117,7 +117,7 @@ def synth_dea(
     """Mostly-frontier DMUs + a few at fixed inefficiency.
 
     Frontier technology y = sum(a x); the inefficient units produce
-    ``1/eff`` times the frontier output.
+    ``eff`` times the frontier output (scaled down below it).
     """
     rng = np.random.default_rng(seed)
     if n < 4:

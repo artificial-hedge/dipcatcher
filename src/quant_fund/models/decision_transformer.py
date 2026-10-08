@@ -62,6 +62,39 @@ def synth_trajectories(
     return states, acts, rews
 
 
+def _policy_logits(
+    emb_r: Any,
+    emb_s: Any,
+    emb_a: Any,
+    trf: Any,
+    head: Any,
+    pos_emb: Any,
+    mask: Any,
+    rt_seq: list[float],
+    s_seq: list[FloatArray],
+    a_seq: list[int],
+    d: int,
+    torch: Any,
+) -> Any:
+    """Action logits at the last state token of the (R,S,A) stream.
+
+    The context carries the actions actually taken so far — only the
+    undecided slot is zero-padded — and attention is causally masked
+    exactly as in training, so the state token never sees its own
+    fabricated future action slot.
+    """
+    rt_t = torch.tensor(rt_seq, dtype=torch.float32)[None, :, None]
+    s_t = torch.tensor(np.asarray(s_seq), dtype=torch.float32)[None]
+    a_t = torch.tensor(a_seq + [0], dtype=torch.long)[None]
+    toks = (
+        torch.stack([emb_r(rt_t), emb_s(s_t), emb_a(a_t)], 2).reshape(1, -1, d)
+        + pos_emb[:, : 3 * len(s_seq)]
+    )
+    m = 3 * len(s_seq)
+    h = trf(toks, mask=mask[:m, :m])
+    return head(h[:, -2])
+
+
 def bench_decision_transformer(
     seed: int = 20261231,
     n_ep: int = 200,
@@ -110,20 +143,26 @@ def bench_decision_transformer(
         tot = 0.0
         for _e in range(episodes):
             s = np.array([0.0, 0.0, 0.0, rng.standard_normal()])
-            rt_seq, s_seq, a_seq = [], [], []
+            rt_seq, s_seq = [], []
+            a_seq: list[int] = []
             cum = 0.0
             for _t in range(horizon):
                 rt_seq.append(target - cum)
                 s_seq.append(s.copy())
-                rt_t = torch.tensor(rt_seq, dtype=torch.float32)[None, :, None]
-                s_t = torch.tensor(np.array(s_seq), dtype=torch.float32)[None]
-                a_pad = torch.zeros(1, len(s_seq), dtype=torch.long)
-                toks = (
-                    torch.stack([emb_r(rt_t), emb_s(s_t), emb_a(a_pad)], 2).reshape(1, -1, d)
-                    + pos_emb[:, : 3 * len(s_seq)]
+                logits = _policy_logits(
+                    emb_r,
+                    emb_s,
+                    emb_a,
+                    trf,
+                    head,
+                    pos_emb,
+                    mask,
+                    rt_seq,
+                    s_seq,
+                    a_seq,
+                    d,
+                    torch,
                 )
-                h = trf(toks)
-                logits = head(h[:, -2])
                 a = int(logits.argmax(-1).item())
                 a_seq.append(a)
                 s, r, _ = _env_step(s, a, rng)

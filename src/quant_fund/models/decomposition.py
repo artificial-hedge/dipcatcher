@@ -91,7 +91,9 @@ def ssa_forecast(y: Array, window: int = 40, groups: int = 4, steps: int = 5) ->
         raise ValueError("vertical eigenvectors degenerate")
     a = (U[:-1, :] @ U[-1, :]) / denom  # (L-1,)
     mean = float(v.mean())
-    tail = (comp[-(L - 1) :] - mean).tolist()
+    # comp is already built from the centered series — subtracting
+    # mean again would double-center the LRF recurrence tail
+    tail = comp[-(L - 1) :].tolist()
     fc = []
     for _ in range(steps):
         nxt = float(np.dot(a, tail[-(L - 1) :]))

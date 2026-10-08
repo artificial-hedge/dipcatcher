@@ -97,3 +97,13 @@ class TestEMD:
             robust_trend(np.ones(30), window=10)
         with pytest.raises(ValueError):
             hilbert_spectrum(np.linspace(0, 1, 50))
+
+    def test_ssa_forecast_not_double_centered(self):
+        """The recurrence tail subtracted the mean a second time —
+        comp is built from the centered series — sending forecasts
+        toward ~0 for series far from zero."""
+        rng = np.random.default_rng(5)
+        t = np.arange(160)
+        v = 50.0 + 1.5 * np.sin(2 * np.pi * t / 20) + 0.1 * rng.standard_normal(160)
+        out = ssa_forecast(v, window=20, groups=3, steps=5)
+        assert np.all(np.abs(out["forecast"] - 50.0) < 10.0)

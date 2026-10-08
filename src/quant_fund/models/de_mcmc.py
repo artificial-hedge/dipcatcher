@@ -10,10 +10,17 @@ import numpy as np
 from quant_fund.models._mc2_synth import errors, logp
 
 
+def _de_gamma(d: int) -> float:
+    """ter Braak (2006) proposal scale: gamma = 2.38 / sqrt(2 d)."""
+    return float(2.38 / np.sqrt(2 * d))
+
+
 def bench_de_mcmc(seed: int = 2967, k: int = 8, steps: int = 500) -> dict[str, float]:
     rng = np.random.default_rng(seed)
     X = rng.standard_normal((k, 2)) * 0.5
-    gamma = 2.38 / np.sqrt(2)
+    # for d = 2 the scale is 2.38/2 = 1.19, not 2.38/sqrt(2) = 1.68
+    # (over-sized jumps depress the acceptance rate)
+    gamma = _de_gamma(X.shape[1])
     traj: list[np.ndarray] = []
     for _ in range(steps):
         for i in range(k):

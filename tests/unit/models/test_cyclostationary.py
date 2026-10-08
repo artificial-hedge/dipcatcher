@@ -58,3 +58,23 @@ def test_bench_cyclostationary():
     out = bench_cyclostationary()
     assert out["synthetic_score"] == 1.0
     assert out["synthetic_cyclostat_alpha_err"] < 0.01
+
+
+def test_cyclic_autocorr_depends_on_alpha() -> None:
+    """The same mix exponential was used on both legs so alpha
+    cancelled out — R^alpha collapsed to the ordinary
+    autocorrelation regardless of alpha. Two different alphas must
+    now give different cyclic spectra."""
+    rng = np.random.default_rng(3)
+    x = _am(rng, n=1024, alpha=0.05)
+    r1 = cyclic_autocorrelation(x, alpha=0.05)
+    r2 = cyclic_autocorrelation(x, alpha=0.30)
+    assert not np.allclose(r1, r2)
+
+
+def test_matched_cycle_beats_unmatched() -> None:
+    rng = np.random.default_rng(4)
+    x = _am(rng, n=2048, alpha=0.05)
+    r_match = cyclic_autocorrelation(x, alpha=0.05).max()
+    r_off = cyclic_autocorrelation(x, alpha=0.31).max()
+    assert r_match > r_off

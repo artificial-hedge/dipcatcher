@@ -11,6 +11,15 @@ import numpy as np
 from quant_fund.models._dc_synth import dc_data, fit_eval
 
 
+def region_accuracy(prob_pos: np.ndarray, y: np.ndarray, mask: np.ndarray) -> float:
+    """Accuracy of the final model restricted to a cartography
+    region: fraction of masked examples whose p(y=1)>0.5 verdict is
+    correct."""
+    if not np.asarray(mask).any():
+        return 0.0
+    return float(((prob_pos[mask] > 0.5) == (y[mask] == 1)).mean())
+
+
 def bench_data_cartography(seed: int = 1807, epochs: int = 60) -> dict[str, float]:
     X, y, Xt, yt = dc_data(seed)
     Xb = np.concatenate([X, np.ones((len(X), 1))], 1)
@@ -27,7 +36,7 @@ def bench_data_cartography(seed: int = 1807, epochs: int = 60) -> dict[str, floa
     var = confs.std(0)
     amb = (conf > 0.4) & (conf < 0.6) & (var > np.median(var))
     easy = conf >= 0.6
-    acc_amb = float((np.where(y[amb] == 1, 0.5, 0.5)).mean()) if amb.any() else 0.0
+    acc_amb = region_accuracy(p_all, y, amb)
     # retrain excluding easy examples
     keep = ~easy
     acc_hard = fit_eval(X[keep], y[keep], Xt, yt) if keep.sum() > 20 else 0.0

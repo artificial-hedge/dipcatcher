@@ -5,10 +5,10 @@ The on-line detector watches standardized fluctuations of a
 recursive OLS residual stream: under parameter stability the
 cumulative sum
 
-  Q_t = (1/σ̂√m) Σ_{s=m+1}^{m+t} û_s,   û_s = y_s − x_s'β̂_{s−1}
+  Q_k = (1/σ̂√m) Σ_{s=m+1}^{k} û_s,   û_s = y_s − x_s'β̂_{s−1}
 
-behaves like a Brownian bridge, and a break triggers when |Q_t|
-crosses the CSW boundary c_t = √((t/m)(m/(m+t))·(a²+ln(t/m)))
+behaves like a Brownian bridge, and a break triggers when |Q_k|
+crosses the CSW boundary c_k = √((k/m)(m/(m+k))·(a²+ln(k/m)))
 with a = −ln(ln(1/√(1−α))) ≈ 3.30 for α=.05 (the finite-window
 boundary). The retrospective moving-estimates variant reports
 the max |Q| for comparison with the classical CUSUM band.
@@ -90,16 +90,16 @@ def cusum_monitor(
     if sig <= 0:
         raise ValueError("degenerate residuals")
     idx = np.arange(mm + 1, n + 1)
-    # CSW boundary for |Q_t|/sqrt(t/m) with Q the scaled
-    # recursive cumsum — crosses under a break
+    # CSW boundary |Q_k| > c_k with Q the scaled recursive
+    # cumsum — no extra 1/sqrt(k/m) normalization (that variant
+    # inflates the boundary by sqrt(k/m) and under-fires)
     bound = np.sqrt((idx / mm) * (mm / (mm + idx))) * np.sqrt(a * a + np.log(idx / mm))
     q = np.cumsum(u[mm:]) / (sig * np.sqrt(mm))
-    qn = q / np.sqrt(idx / mm)
-    cross = np.nonzero(np.abs(qn) > bound)[0]
+    cross = np.nonzero(np.abs(q) > bound)[0]
     first = int(idx[cross[0]]) if cross.size else n + 1
     return {
         "first_cross": float(first),
-        "max_abs_q": float(np.max(np.abs(qn))),
+        "max_abs_q": float(np.max(np.abs(q))),
         "bound_a": a,
         "n": float(n),
         "m": float(mm),

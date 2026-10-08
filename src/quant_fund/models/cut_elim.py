@@ -24,7 +24,7 @@ def cut_measure(proof: Any) -> int:
     """Sum of formula sizes at every cut node."""
     if not isinstance(proof, tuple):
         return 0
-    if proof[0] == "cut":
+    if proof[0] in ("cut", "cutfree_stuck"):
         return fsize(proof[1]) + cut_measure(proof[2]) + cut_measure(proof[3])
     return sum(cut_measure(p) for p in proof[1:])
 
@@ -32,7 +32,17 @@ def cut_measure(proof: Any) -> int:
 def has_cut(proof: Any) -> bool:
     if not isinstance(proof, tuple):
         return False
-    return proof[0] == "cut" or any(has_cut(p) for p in proof[1:])
+    return proof[0] in ("cut", "cutfree_stuck") or any(has_cut(p) for p in proof[1:])
+
+
+_PROOF_TAGS = frozenset(
+    {"ax", "hyp", "cut", "cutfree_stuck", "and_i", "and_e", "imp_i", "imp_e", "or_i", "or_e"}
+)
+
+
+def _is_proof(p: Any) -> bool:
+    """A tuple child that is itself a derivation node (not a formula/tag)."""
+    return isinstance(p, tuple) and len(p) > 0 and p[0] in _PROOF_TAGS
 
 
 def eliminate(proof: Any, fuel: int = 1000) -> Any:
@@ -68,19 +78,26 @@ def eliminate(proof: Any, fuel: int = 1000) -> Any:
         if left[0] == "or_i" and right[0] == "or_e":
             branch = right[2] if left[1] == "l" else right[3]
             return eliminate(_subst(branch, ("open",), left[2]), fuel - 1)
-    # commuting: push cut inside the right derivation's subproofs
-    return (
-        eliminate(
-            ("cut", f, left, ("cut_inner", right)),
-            fuel - 1,
-        )
-        if False
-        else ("cutfree_stuck", f, left, right)
-    )
+    # commuting conversion: the right premise's last rule does not
+    # consume the cut formula — push the cut up through it, into
+    # each sub-derivation, then keep reducing (standard Gentzen
+    # permutation; a proof is honestly marked cutfree_stuck only
+    # when the right premise has no sub-derivation to enter)
+    if isinstance(right, tuple):
+        pushed = [_is_proof(p) for p in right[1:]]
+        if any(pushed):
+            subs = tuple(
+                eliminate(("cut", f, left, p), fuel - 1) if ok else p
+                for p, ok in zip(right[1:], pushed, strict=True)
+            )
+            return (right[0],) + subs
+    return ("cutfree_stuck", f, left, right)
 
 
 def _subst(proof: Any, hyp: Any, sub: Any) -> Any:
     """Replace hypotheses `hyp` in proof with derivation sub."""
+    if not isinstance(proof, tuple):
+        return proof
     if proof[0] == "hyp" or proof[0] == "ax":
         return sub if proof[1] == hyp else proof
     return (proof[0],) + tuple(

@@ -79,13 +79,23 @@ def dix_index(
 
 
 def detect_hidden(px: FloatArray, sz: FloatArray, window: int = 40) -> FloatArray:
-    """Flag windows with heavy volume + abnormally static price."""
+    """Flag windows with heavy volume + abnormally static price.
+
+    Baselines are trailing-only: the size z-score and the realized-
+    move reference quantile are computed on prints strictly BEFORE
+    the scored window — a causal detector cannot use whole-series
+    statistics (that leaks future prints into the flag).
+    """
     n = len(px)
     flag = np.zeros(n)
     rv = np.abs(np.diff(px, prepend=px[0]))
     for t in range(window, n):
-        z_sz = (sz[t - window : t].mean() - sz.mean()) / (sz.std() + 1e-9)
-        static = np.quantile(rv[t - window : t], 0.9) < np.quantile(rv, 0.4)
+        base_sz = sz[: t - window]
+        base_rv = rv[: t - window]
+        if base_sz.size < 8:
+            continue
+        z_sz = (sz[t - window : t].mean() - base_sz.mean()) / (base_sz.std() + 1e-9)
+        static = np.quantile(rv[t - window : t], 0.9) < np.quantile(base_rv, 0.4)
         flag[t] = float(z_sz > 0.8 and static)
     return flag
 
@@ -114,7 +124,8 @@ def bench_dark_pool(seed: int = 7) -> dict[str, float]:
     in_epi = hidden[mid] == 1
     acc = float(np.mean(phase[mid][in_epi] == 1.0)) if in_epi.any() else 0.0
     dix_epi = float(dix[mid][in_epi].mean()) if in_epi.any() else 0.0
-    dix_off = float(dix[mid][hidden[mid] == 0].mean())
+    off = dix[mid][hidden[mid] == 0]
+    dix_off = float(off.mean()) if off.size else 0.0
     return {
         "synthetic_dark_pool_detect_precision": prec,
         "synthetic_dark_pool_detect_recall": rec,

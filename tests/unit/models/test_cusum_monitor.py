@@ -65,3 +65,16 @@ def test_bench() -> None:
     assert out["synthetic_detects"] == 1.0
     assert out["synthetic_determinism"] == 1.0
     assert all(np.isfinite(v) for v in out.values())
+
+
+def test_csw_boundary_not_inflated() -> None:
+    """The removed extra 1/sqrt(k/m) normalization inflated the CSW
+    boundary ~sqrt(k/m)x — moderate breaks crossed far later or not
+    at all (old code: delta=0.8/seed=0 -> 301, delta=1.0/seed=0 ->
+    260; corrected: 234 and 224)."""
+    n = 300
+    for delta, seed in ((0.8, 0), (1.0, 0)):
+        d = synth_break(n=n, delta=delta, seed=seed)
+        out = cusum_monitor(np.asarray(d["y"]), np.asarray(d["x"]))
+        break_at = 0.6 * n
+        assert break_at < out["first_cross"] < break_at + 0.2 * n

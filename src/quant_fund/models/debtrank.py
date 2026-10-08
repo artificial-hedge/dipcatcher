@@ -78,14 +78,19 @@ def debtrank(
         raise ValueError("psi must be in (0,1]")
     v = sizes / sizes.sum()
     h = shock.copy()
-    h_prev = np.zeros(n)  # increments at t=0 are the shock itself
+    transmitted = np.zeros(n, dtype=bool)
     for _ in range(max_iter):
-        delta = np.maximum(h - h_prev, 0.0)
-        if np.all(delta < 1e-12):
+        # R1: a node goes inactive once its distress reaches psi —
+        # it pushes its distress to creditors exactly once, on the
+        # first sweep after crossing, then can never transmit again.
+        # Without this, increments re-transmit every iteration and a
+        # cycle can re-amplify the same shock indefinitely.
+        senders = (h >= psi) & ~transmitted
+        if not senders.any():
             break
-        h_next = np.minimum(1.0, h + delta @ w.T)
-        h_prev = h.copy()
-        h = h_next
+        push = np.where(senders, h, 0.0)
+        transmitted |= senders
+        h = np.minimum(1.0, h + push @ w.T)
     r = float(np.dot(h, v) - np.dot(shock, v))
     return r, h
 

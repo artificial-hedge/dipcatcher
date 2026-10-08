@@ -21,9 +21,11 @@ def _hs(x: int, salt: int = 0) -> int:
 
 
 class Cuckoo:
-    def __init__(self, n: int) -> None:
+    def __init__(self, n: int, rng: random.Random | None = None) -> None:
         self.m = max(4, 1 << (n * 2 - 1).bit_length())
         self.tab = [0] * self.m
+        # kick-path eviction order must not leak global RNG state
+        self._rng = rng if rng is not None else random.Random(0)
 
     def _cands(self, x: int) -> tuple[int, int, int]:
         fp = (_hs(x, 1) & ((1 << F) - 1)) | 1
@@ -39,7 +41,7 @@ class Cuckoo:
         if self.tab[b2] == 0:
             self.tab[b2] = fp
             return True
-        b = b1 if random.random() < 0.5 else b2
+        b = b1 if self._rng.random() < 0.5 else b2
         for _ in range(MAX_KICK):
             fp, self.tab[b] = self.tab[b], fp
             b = (b ^ _hs(fp, 2)) % self.m
@@ -70,7 +72,7 @@ def bench_cuckoo_filter(seed: int = 20261231 + 311) -> dict[str, float]:
     fprs: list[float] = []
     for _ in range(trials):
         n = 200
-        cf = Cuckoo(n)
+        cf = Cuckoo(n, rng=random.Random(seed))
         items = [rng.randrange(10**9) for _ in range(n)]
         ins = sum(cf.add(x) for x in items)
         fn += int(all(cf.contains(x) for x in items[:ins]))
