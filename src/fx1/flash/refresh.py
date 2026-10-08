@@ -2,10 +2,12 @@
 
 Refreshing never rewrites the finding itself — it re-fetches each recorded
 source and records what happened (reachable / unreachable / changed status),
-stamping ``refreshed_at`` and a plain-language ``refresh_note``. When a source
-is gone, the entry is marked stale so retrieval demotes it; the finding text
-keeps its provenance history. A ``fetch_fn`` injection point keeps this
-testable offline (the default lazily imports the web-research fetcher).
+stamping ``refresh_attempted_at`` and a plain-language ``refresh_note``.
+``refreshed_at`` advances only when every recorded source is reachable. When
+a source is gone, the existing evidence clock is preserved so retrieval
+demotes stale findings; the text keeps its provenance history. A ``fetch_fn``
+injection point keeps this testable offline (the default lazily imports the
+web-research fetcher).
 """
 
 from __future__ import annotations
@@ -87,13 +89,14 @@ def refresh_entry(
             f"{len(report.reachable)}/{len(report.checked)} sources reachable; "
             f"unreachable: {', '.join(report.unreachable)}"
         )
-    store.update(
-        entry.id,
-        {
-            "refreshed_at": _now_iso(),
-            "refresh_note": report.note,
-        },
-    )
+    attempted_at = _now_iso()
+    patch = {
+        "refresh_attempted_at": attempted_at,
+        "refresh_note": report.note,
+    }
+    if report.all_reachable:
+        patch["refreshed_at"] = attempted_at
+    store.update(entry.id, patch)
     return report
 
 

@@ -4,7 +4,7 @@ Storage layout: one JSONL file at ``<flash dir>/entries.jsonl`` where
 ``<flash dir>`` defaults to ``$FX1_CONFIG_DIR/flash`` (so tests isolate it
 the same way the endpoint store is isolated — see ``fx1.interactive.profiles``).
 Every write appends one line and never rewrites history: corrections are new
-facts (``updated_at`` advances), and removal writes a tombstone line, so the
+revisions (``updated_at`` advances), and removal writes a tombstone line, so the
 store is trivially auditable and a torn last line can never corrupt earlier
 entries.
 
@@ -68,7 +68,9 @@ class FlashEntry(BaseModel):
     verified: bool = False
     private: bool = False
     stale_after_s: int | None = None
+    evidence_at: str = ""
     refreshed_at: str = ""
+    refresh_attempted_at: str = ""
     refresh_note: str = ""
 
     @field_validator("text")
@@ -224,6 +226,7 @@ class FlashStore:
                 "private",
                 "stale_after_s",
                 "refreshed_at",
+                "refresh_attempted_at",
                 "refresh_note",
                 # usage bookkeeping (written by mark_used); identity fields
                 # (id / schema_version / created_at / updated_at) stay managed.
@@ -236,7 +239,14 @@ class FlashStore:
             merged = current.model_dump()
             for key, value in patch.items():
                 merged[key] = value
-            merged["updated_at"] = _now_iso()
+            revision_at = _now_iso()
+            merged["updated_at"] = revision_at
+            # Only changes to the finding itself establish a new evidence
+            # freshness anchor. Usage and refresh-attempt bookkeeping must not
+            # make stale evidence appear current.
+            evidence_fields = {"text", "sources", "uncertainty", "conflicts", "verified"}
+            if evidence_fields & patch.keys():
+                merged["evidence_at"] = revision_at
             revised = FlashEntry.model_validate(merged)
             self._append_line({"__tombstone__": True, "id": entry_id, "at": _now_iso()})
             self._append_line(revised.model_dump())

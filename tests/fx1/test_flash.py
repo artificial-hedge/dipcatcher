@@ -2,13 +2,14 @@
 
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from fx1.flash.refresh import refresh
-from fx1.flash.retrieve import context_block, retrieve
-from fx1.flash.store import FlashStore
+from fx1.flash.retrieve import context_block, retrieve, score_entry
+from fx1.flash.store import FlashEntry, FlashStore
 
 
 @pytest.fixture()
@@ -138,12 +139,10 @@ def test_stale_entries_demoted_and_flagged(store: FlashStore) -> None:
         tags=["macro"],
         stale_after_s=60,
     )
-    from datetime import UTC, datetime
-
-    updated_at = datetime.fromisoformat(entry.updated_at)
-    if updated_at.tzinfo is None:
-        updated_at = updated_at.replace(tzinfo=UTC)
-    future = updated_at.timestamp() + 3600  # 1h later > 60s staleness window
+    created_at = datetime.fromisoformat(entry.created_at)
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=UTC)
+    future = created_at.timestamp() + 3600  # 1h later > 60s staleness window
     hits = retrieve(store, "US inflation rate", k=3, now=future)
     assert hits and hits[0].entry.id == entry.id
     assert hits[0].stale
@@ -203,7 +202,74 @@ def test_refresh_marks_unreachable_honestly(store: FlashStore) -> None:
     assert report.all_reachable is False
     entry = store.get(entry_id)
     assert entry is not None
+    assert entry.refresh_attempted_at
+    assert entry.refreshed_at == ""
     assert "unreachable" in entry.refresh_note
+
+
+def test_usage_bookkeeping_does_not_make_stale_evidence_fresh(store: FlashStore) -> None:
+    entry = store.add(text="time-sensitive inflation finding", stale_after_s=60)
+    created_at = datetime.fromisoformat(entry.created_at)
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=UTC)
+    future = created_at.timestamp() + 3600
+    before = retrieve(store, "inflation", now=future)
+    assert before and before[0].stale
+
+    assert store.mark_used(entry.id) is not None
+    after = retrieve(store, "inflation", now=future)
+    assert after and after[0].stale
+
+
+def test_failed_refresh_does_not_make_stale_evidence_fresh(store: FlashStore) -> None:
+    entry = store.add(
+        text="time-sensitive inflation finding",
+        stale_after_s=60,
+        sources=[{"url": "https://example.test/source"}],
+    )
+
+    class FakeResult:
+        status = 503
+        error = "unavailable"
+
+    created_at = datetime.fromisoformat(entry.created_at)
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=UTC)
+    future = created_at.timestamp() + 3600
+    report = refresh(store, entry.id, fetch_fn=lambda url: FakeResult())
+    assert report is not None and not report.all_reachable
+    refreshed = store.get(entry.id)
+    assert refreshed is not None
+    assert refreshed.refresh_attempted_at
+    assert refreshed.refreshed_at == ""
+    hits = retrieve(store, "inflation", now=future)
+    assert hits and hits[0].stale
+
+
+def test_successful_refresh_is_a_new_evidence_anchor() -> None:
+    entry = FlashEntry(
+        text="time-sensitive inflation finding",
+        stale_after_s=60,
+        created_at="2020-01-01T00:00:00+00:00",
+        updated_at="2030-01-01T00:00:00+00:00",  # bookkeeping is ignored
+        refreshed_at="2026-10-09T00:00:00+00:00",
+    )
+    now = datetime.fromisoformat("2026-10-09T00:00:30+00:00").timestamp()
+    _, reasons = score_entry(entry, "inflation", now=now)
+    assert "stale" not in reasons
+
+
+def test_malformed_evidence_timestamps_fail_stale() -> None:
+    entry = FlashEntry(
+        text="time-sensitive inflation finding",
+        stale_after_s=60,
+        created_at="not-a-timestamp",
+        updated_at="2030-01-01T00:00:00+00:00",
+        evidence_at="also-invalid",
+        refreshed_at="still-invalid",
+    )
+    _, reasons = score_entry(entry, "inflation", now=0)
+    assert "stale" in reasons
 
 
 def test_refresh_missing_id(store: FlashStore) -> None:

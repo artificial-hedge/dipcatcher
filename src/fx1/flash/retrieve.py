@@ -100,13 +100,28 @@ def _entry_vec(entry: FlashEntry) -> dict[int, float]:
 
 
 def _age_s(entry: FlashEntry, now: float) -> float:
-    try:
-        created = datetime.fromisoformat(entry.updated_at)
-        if created.tzinfo is None:
-            created = created.replace(tzinfo=UTC)
-        return max(0.0, now - created.timestamp())
-    except ValueError:
-        return 0.0
+    """Age of the underlying evidence, independent of usage bookkeeping.
+
+    Legacy v1 rows lack ``evidence_at``. Their creation time is the
+    conservative fallback: ``updated_at`` may have been advanced merely by a
+    failed refresh or by ``mark_used`` and therefore cannot prove freshness.
+    A successful source refresh is evidence-bearing and takes precedence.
+    Malformed timestamps fail stale rather than silently appearing current.
+    """
+    evidence_times: list[float] = []
+    for value in (entry.refreshed_at, entry.evidence_at, entry.created_at):
+        if not value:
+            continue
+        try:
+            evidence_at = datetime.fromisoformat(value)
+        except ValueError:
+            continue
+        if evidence_at.tzinfo is None:
+            evidence_at = evidence_at.replace(tzinfo=UTC)
+        evidence_times.append(evidence_at.timestamp())
+    if not evidence_times:
+        return math.inf
+    return max(0.0, now - max(evidence_times))
 
 
 @dataclass
