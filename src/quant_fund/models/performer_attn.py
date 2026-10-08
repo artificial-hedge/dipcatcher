@@ -45,6 +45,7 @@ def bench_performer_attn(
 ) -> dict[str, float]:
     torch = _torch()
     torch.manual_seed(int(seed))  # audit sweep: seeded determinism
+    torch.set_num_threads(1)
     rng = np.random.default_rng(seed + _SEED)
     xtr, ytr = synth_retrieval(n_train, m_pairs, n_classes, rng)
     xte, yte = synth_retrieval(n_test, m_pairs, n_classes, rng)

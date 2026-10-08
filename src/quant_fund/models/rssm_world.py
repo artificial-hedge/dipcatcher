@@ -36,6 +36,7 @@ def bench_rssm_world(
     torch = _torch()
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     xtr, utr, ytr = synth_dynamics(n_train, horizon, rng)
     xte, ute, yte = synth_dynamics(n_test, horizon, np.random.default_rng(seed + 1))
     d_h, d_z = 24, 8

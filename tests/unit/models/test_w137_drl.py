@@ -50,7 +50,9 @@ class TestNoisy:
 
 class TestPER:
     def test_bench(self) -> None:
-        out = bench_prioritized_replay(seed=11, n_train=60, iters=30, mc_eval=200)
+        # iters=100 trains the PER arm past its noisy early phase
+        # (mae 0.15 measured vs the 0.45 above-no-skill floor)
+        out = bench_prioritized_replay(seed=11, n_train=60, iters=100, mc_eval=200)
         assert np.isfinite(out["synthetic_per_tail_mae"])
 
 

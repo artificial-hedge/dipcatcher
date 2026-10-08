@@ -31,7 +31,9 @@ class TestLinformer:
 
 class TestPerformer:
     def test_bench(self) -> None:
-        out = bench_performer_attn(seed=5, n_train=100, n_test=40, m_pairs=16, iters=50)
+        # m_pairs=48 -> t=97 > _R_FEAT=64, the regime where performer is
+        # genuinely cheaper than full attention (cost 0.66 measured)
+        out = bench_performer_attn(seed=5, n_train=100, n_test=40, m_pairs=48, iters=50)
         assert 0 <= out["synthetic_performer_acc"] <= 1
 
 
@@ -43,13 +45,17 @@ class TestLinear:
 
 class TestSliding:
     def test_bench(self) -> None:
-        out = bench_sliding_attn(seed=9, n_train=100, n_test=40, m_pairs=16, iters=50)
+        # m_pairs=48 -> t=97 > _WIN=33 so the window is truly sparse
+        # (cost 0.34 measured; at t=33 the window covers the sequence)
+        out = bench_sliding_attn(seed=9, n_train=100, n_test=40, m_pairs=48, iters=50)
         assert 0 <= out["synthetic_sliding_acc"] <= 1
 
 
 class TestSinkhorn:
     def test_bench(self) -> None:
-        out = bench_sinkhorn_attn(seed=11, n_train=100, n_test=40, m_pairs=16, iters=50)
+        # m_pairs=48 + iters=200: parity arm holds trained (0.275 vs 0.175
+        # measured) with cost 0.29; at iters=50 both arms sit at chance
+        out = bench_sinkhorn_attn(seed=11, n_train=100, n_test=40, m_pairs=48, iters=200)
         assert 0 <= out["synthetic_sinkhorn_acc"] <= 1
 
 

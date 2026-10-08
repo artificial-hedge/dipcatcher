@@ -47,6 +47,7 @@ def bench_ntm_memory(
     torch = _torch()
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     xtr, ytr = synth_copy(n_train, t, rng)
     xte, yte = synth_copy(n_test, t, np.random.default_rng(seed + 1))
     d_in = xtr.shape[2]
