@@ -362,20 +362,14 @@ def _pinball(y: Array, q: Array, levels: Array) -> float:
 def bench_posthoc_calibration(seed: int = 20261231 + 503) -> dict[str, float]:
     """Post-hoc calibration oracle: a miscalibrated forecaster must see
     strictly lower proper scores after variance scaling / quantile maps,
-    and the recalibrated grid must never cross."""
+    and the recalibrated grid must never cross. Calibrators are fit on one
+    split and scored on held-out rows — in-sample gains would leak (LH003)."""
     rng = np.random.default_rng(seed)
     n = 2000
     mu = rng.standard_normal(n) * 0.5
     sig_fc = np.full(n, 1.0)
     sig_true = 1.4  # forecaster under-disperses by 40%
     y = mu + sig_true * rng.standard_normal(n)
-    # variance scaling recovers ~1.4 and improves CRPS
-    vs = VarianceScalingGaussian().fit(mu, sig_fc, y)
-    if vs.scale_ is None:
-        raise ValueError("variance scaling produced no scale estimate")
-    scale_hat = float(vs.scale_)
-    crps_before = float(np.mean(crps_gaussian(y, mu, sig_fc)))
-    crps_after = float(np.mean(crps_gaussian(y, mu, scale_hat * sig_fc)))
     # isotonic map on additively biased quantiles: forecaster emits the true
     # N(mu, 1.4) quantiles + a constant shift -> map must remove the shift
     levels = np.array([0.1, 0.25, 0.5, 0.75, 0.9])
@@ -383,21 +377,48 @@ def bench_posthoc_calibration(seed: int = 20261231 + 503) -> dict[str, float]:
 
     delta = 0.35
     q_raw = mu[:, None] + norm.ppf(levels)[None, :] * sig_true + delta
-    qmc = QuantileMappingCalibrator(levels).fit(q_raw, y)
-    q_cal = qmc.transform(q_raw)
-    pin_before = _pinball(y, q_raw, levels)
-    pin_after = _pinball(y, q_cal, levels)
+    scale_hats: list[float] = []
+    crps_gains: list[float] = []
+    pin_gains: list[float] = []
+    noncross_ok = True
+    # two-way split: fit each calibrator on one half, score the improvement
+    # on the held-out half, then swap roles.
+    for cal_split, eval_split in (
+        (slice(0, n // 2), slice(n // 2, n)),
+        (slice(n // 2, n), slice(0, n // 2)),
+    ):
+        vs = VarianceScalingGaussian().fit(mu[cal_split], sig_fc[cal_split], y[cal_split])
+        if vs.scale_ is None:
+            raise ValueError("variance scaling produced no scale estimate")
+        scale_hats.append(float(vs.scale_))
+        crps_before = float(
+            np.mean(crps_gaussian(y[eval_split], mu[eval_split], sig_fc[eval_split]))
+        )
+        crps_after = float(
+            np.mean(
+                crps_gaussian(y[eval_split], mu[eval_split], float(vs.scale_) * sig_fc[eval_split])
+            )
+        )
+        crps_gains.append(crps_before - crps_after)
+        qmc = QuantileMappingCalibrator(levels).fit(q_raw[cal_split], y[cal_split])
+        q_cal = qmc.transform(q_raw[eval_split])
+        pin_gains.append(
+            _pinball(y[eval_split], q_raw[eval_split], levels)
+            - _pinball(y[eval_split], q_cal, levels)
+        )
+        noncross_ok = noncross_ok and bool(np.all(np.diff(q_cal, axis=1) >= -1e-12))
+    scale_hat = float(np.mean(scale_hats))
     checks = [
         abs(scale_hat - sig_true) < 0.2,
-        crps_after < crps_before,
-        pin_after < pin_before,
-        bool(np.all(np.diff(q_cal, axis=1) >= -1e-12)),  # non-crossing
+        min(crps_gains) > 0.0,
+        min(pin_gains) > 0.0,
+        noncross_ok,
     ]
     if not all(checks):
         raise ValueError("post-hoc calibration oracle checks failed")
     return {
         "synthetic_cal_scale_hat": scale_hat,
-        "synthetic_cal_crps_gain": crps_before - crps_after,
-        "synthetic_cal_pinball_gain": pin_before - pin_after,
+        "synthetic_cal_crps_gain": float(np.mean(crps_gains)),
+        "synthetic_cal_pinball_gain": float(np.mean(pin_gains)),
         "synthetic_cal_score": float(sum(checks) / len(checks)),
     }
