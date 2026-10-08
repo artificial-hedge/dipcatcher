@@ -24140,6 +24140,9 @@
   "models/trimmed_cad.py": {
    "status": "audited"
   },
+  "models/triple_difference.py": {
+   "status": "audited"
+  },
   "models/triplet_char.py": {
    "status": "audited"
   },
@@ -24300,6 +24303,9 @@
    "status": "audited"
   },
   "models/tverberg_thm.py": {
+   "status": "audited"
+  },
+  "models/tvp_var.py": {
    "status": "audited"
   },
   "models/twist_map.py": {
@@ -24617,6 +24623,12 @@
   "models/vaquita_qa_studies.py": {
    "status": "audited"
   },
+  "models/var_coint.py": {
+   "status": "audited"
+  },
+  "models/var_lingam.py": {
+   "status": "audited"
+  },
   "models/varadarajan_thm.py": {
    "status": "audited"
   },
@@ -24639,6 +24651,9 @@
    "status": "audited"
   },
   "models/vascular_surgery.py": {
+   "status": "audited"
+  },
+  "models/vasicek_credit.py": {
    "status": "audited"
   },
   "models/vassiliev_inv.py": {

@@ -14,6 +14,10 @@ from quant_fund.models._rel_synth import WB_BETA, WB_CENSOR, WB_ETA, weibull_lif
 def _weibull_fit(t: np.ndarray, failed: np.ndarray) -> tuple[float, float]:
     beta = 1.0
     nf = float(np.sum(failed))
+    if nf < 1.0:
+        # With zero observed failures the censored likelihood has no
+        # interior maximum — beta walks off to 0 rather than converge.
+        raise ValueError("weibull fit needs >= 1 observed failure")
     for _ in range(60):
         tb = t**beta
         s0 = tb.sum()
