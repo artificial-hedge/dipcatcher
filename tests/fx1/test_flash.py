@@ -1,6 +1,7 @@
 """Flash context — store, retrieval, refresh. Offline; no network, no model."""
 
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -240,3 +241,19 @@ def test_threaded_appends_all_survive(store: FlashStore) -> None:
     assert not errors
     assert len(store.all()) == 40
     assert store.read_errors() == []
+
+
+def test_concurrent_mark_used_is_atomic_across_store_instances(store: FlashStore) -> None:
+    entry_id = _add_inflation(store)
+    stores = [FlashStore(store.path) for _ in range(8)]
+
+    def mark_many(worker_store: FlashStore) -> None:
+        for _ in range(25):
+            assert worker_store.mark_used(entry_id) is not None
+
+    with ThreadPoolExecutor(max_workers=len(stores)) as pool:
+        list(pool.map(mark_many, stores))
+
+    marked = FlashStore(store.path).get(entry_id)
+    assert marked is not None
+    assert marked.uses == 200
