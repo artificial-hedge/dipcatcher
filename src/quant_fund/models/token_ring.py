@@ -21,7 +21,21 @@ def ring_run(n_nodes: int, n_msgs: int, rng: np.random.RandomState) -> list[int]
 
 def bench_token_ring(seed: int = _SEED) -> dict[str, float]:
     rng = np.random.RandomState(seed)
-    senders = ring_run(6, 12, rng)
-    # safety: sender order must be a rotation-consistent subsequence
-    ok = all(0 <= s < 6 for s in senders) and len(senders) == 12
+    n_nodes = 6
+    n_msgs = 12
+    senders = ring_run(n_nodes, n_msgs, rng)
+    # Reference oracle: replay the same seeded wants stream through an
+    # independent simulation — catches out-of-turn sends that a pure
+    # range/consistency check cannot (any sender sequence is cyclically
+    # consistent).
+    rng2 = np.random.RandomState(seed)
+    wants = rng2.randint(0, n_nodes, n_msgs * 3)
+    ref: list[int] = []
+    holder, i = 0, 0
+    while len(ref) < n_msgs:
+        if wants[i % len(wants)] == holder:
+            ref.append(holder)
+        holder = (holder + 1) % n_nodes
+        i += 1
+    ok = senders == ref and all(0 <= s < n_nodes for s in senders)
     return {"synthetic_ring_safety": float(ok)}

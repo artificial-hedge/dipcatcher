@@ -18,6 +18,7 @@ class Handshake:
         self.transcript = b""
         self.secret = secret
         self.traffic_key = b""
+        self.pending_mac = b""
 
     def client_hello(self, ciphers: list[str]) -> bytes:
         if not (self.state == _START):
@@ -46,12 +47,14 @@ class Handshake:
     def finished(self, peer: "Handshake") -> bytes:
         if peer.state not in (_EE_RECV, _CH_SENT):
             raise ValueError("peer.state in (_EE_RECV, _CH_SENT)")
-        mac = _hmac.new(self.secret, self.transcript, hashlib.sha256).digest()[:16]
+        # MAC over the PEER's transcript — the shared CH|SH|EE record it
+        # accumulated (self.transcript is empty on this one-side-records
+        # wire model; previously the MAC signed the empty transcript and
+        # recv_finished could never validate it).
+        mac = _hmac.new(self.secret, peer.transcript, hashlib.sha256).digest()[:16]
         peer.transcript += b"FIN|" + mac
-        peer.state = _FIN_RECV
-        # traffic key = HMAC(secret, transcript)
-        peer.traffic_key = _hmac.new(self.secret, self.transcript, hashlib.sha256).digest()
-        peer.state = _ESTABLISHED
+        peer.pending_mac = mac
+        peer.state = _FIN_RECV  # NOT established: verify first
         return mac
 
     def recv_finished(self, mac: bytes) -> bool:
@@ -64,6 +67,9 @@ class Handshake:
         if not _hmac.compare_digest(mac, exp):
             self.state = _ALERT
             return False
+        # traffic key = HMAC(secret, transcript) bound only after verify
+        self.traffic_key = _hmac.new(self.secret, self.transcript, hashlib.sha256).digest()
+        self.state = _ESTABLISHED
         return True
 
 
@@ -81,9 +87,12 @@ def bench_tls_handshake(seed: int = _SEED) -> dict[str, float]:
         c.client_hello(["aes", "chacha"])
         s.server_hello(c)
         s.encrypted_extensions(c)
-        s.finished(c)
-        ok += int(c.state == _ESTABLISHED and len(c.traffic_key) == 32)
-    # tamper: wrong secret must fail verify
+        mac = s.finished(c)
+        # verify must complete the handshake: FIN → ESTABLISHED
+        accepted = c.recv_finished(mac)
+        ok += int(accepted and c.state == _ESTABLISHED and len(c.traffic_key) == 32)
+    # tamper: wrong secret must fail verify — real MAC check, not just
+    # "secrets differ" (which held vacuously before recv_finished ran).
     for _ in range(n):
         sec_c = bytes(rng.randint(0, 256) for _ in range(32))
         sec_s = bytes(rng.randint(0, 256) for _ in range(32))
@@ -91,9 +100,9 @@ def bench_tls_handshake(seed: int = _SEED) -> dict[str, float]:
         c.client_hello(["aes"])
         s.server_hello(c)
         s.encrypted_extensions(c)
-        s.finished(c)
-        # secrets differ → FIN MAC mismatch on any real verify
-        rej += int(sec_c != sec_s)
+        mac = s.finished(c)
+        rejected = not c.recv_finished(mac) and c.state == _ALERT
+        rej += int(rejected)
     return {
         "synthetic_establish": float(ok / n),
         "synthetic_tamper_rejected": float(rej / n),

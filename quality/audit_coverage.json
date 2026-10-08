@@ -4550,6 +4550,9 @@
   "models/ccm.py": {
    "status": "audited"
   },
+  "models/cdcl_solver.py": {
+   "status": "audited"
+  },
   "models/cdpo_studies.py": {
    "status": "audited"
   },
@@ -4557,6 +4560,12 @@
    "status": "audited"
   },
   "models/cedar_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/cegar_loop.py": {
+   "status": "audited"
+  },
+  "models/cegis_loop.py": {
    "status": "audited"
   },
   "models/celiac_studies.py": {
@@ -23876,6 +23885,12 @@
   "models/ter_lite_studies.py": {
    "status": "audited"
   },
+  "models/term_algebra.py": {
+   "status": "audited"
+  },
+  "models/term_rewrite.py": {
+   "status": "audited"
+  },
   "models/term_structure.py": {
    "status": "audited"
   },
@@ -23927,6 +23942,9 @@
   "models/tfqmr.py": {
    "status": "audited"
   },
+  "models/tft_forecaster.py": {
+   "status": "audited"
+  },
   "models/theater_2.py": {
    "status": "audited"
   },
@@ -23954,6 +23972,9 @@
   "models/thermo_formal.py": {
    "status": "audited"
   },
+  "models/thermo_integration.py": {
+   "status": "audited"
+  },
   "models/thermo_props.py": {
    "status": "audited"
   },
@@ -23961,6 +23982,9 @@
    "status": "audited"
   },
   "models/thermodynamics_3.py": {
+   "status": "audited"
+  },
+  "models/theta.py": {
    "status": "audited"
   },
   "models/theta_func.py": {
@@ -23985,6 +24009,9 @@
    "status": "audited"
   },
   "models/thin_films.py": {
+   "status": "audited"
+  },
+  "models/thin_plate.py": {
    "status": "audited"
   },
   "models/thin_plate_spline.py": {
@@ -24038,6 +24065,9 @@
   "models/thornback_qa_studies.py": {
    "status": "audited"
   },
+  "models/threaded_interp.py": {
+   "status": "audited"
+  },
   "models/three_opt_move.py": {
    "status": "audited"
   },
@@ -24045,6 +24075,15 @@
    "status": "audited"
   },
   "models/three_two_vol.py": {
+   "status": "audited"
+  },
+  "models/three_valued_logic.py": {
+   "status": "audited"
+  },
+  "models/threshold.py": {
+   "status": "audited"
+  },
+  "models/threshold_ar.py": {
    "status": "audited"
   },
   "models/thrombosis_medicine.py": {
@@ -24080,6 +24119,9 @@
   "models/tick_qa_studies.py": {
    "status": "audited"
   },
+  "models/tietze_urysohn.py": {
+   "status": "audited"
+  },
   "models/tiger_beetle_qa_studies.py": {
    "status": "audited"
   },
@@ -24113,6 +24155,9 @@
   "models/tiktik_qa_studies.py": {
    "status": "audited"
   },
+  "models/tiling_legality.py": {
+   "status": "audited"
+  },
   "models/tilting_equiv.py": {
    "status": "audited"
   },
@@ -24131,7 +24176,13 @@
   "models/time_qa_studies.py": {
    "status": "audited"
   },
+  "models/timed_automata.py": {
+   "status": "audited"
+  },
   "models/timedial_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/timer_lite.py": {
    "status": "audited"
   },
   "models/timetravel_lite_studies.py": {
@@ -24155,6 +24206,9 @@
   "models/titan_qa_studies.py": {
    "status": "audited"
   },
+  "models/titans_memory.py": {
+   "status": "audited"
+  },
   "models/titi_qa_studies.py": {
    "status": "audited"
   },
@@ -24173,10 +24227,19 @@
   "models/tlalocan_qa_studies.py": {
    "status": "audited"
   },
+  "models/tle_propagate.py": {
+   "status": "audited"
+  },
+  "models/tls_handshake.py": {
+   "status": "audited"
+  },
   "models/tmf_spectrum.py": {
    "status": "audited"
   },
   "models/tmf_stack.py": {
+   "status": "audited"
+  },
+  "models/tmle.py": {
    "status": "audited"
   },
   "models/toad_qa_studies.py": {
@@ -24194,6 +24257,9 @@
   "models/toda_smith.py": {
    "status": "audited"
   },
+  "models/toda_yamamoto.py": {
+   "status": "audited"
+  },
   "models/todd_genus.py": {
    "status": "audited"
   },
@@ -24206,13 +24272,28 @@
   "models/toeplitz_op.py": {
    "status": "audited"
   },
+  "models/toeplitz_solve.py": {
+   "status": "audited"
+  },
+  "models/token_bucket.py": {
+   "status": "audited"
+  },
   "models/token_budget_studies.py": {
+   "status": "audited"
+  },
+  "models/token_ring.py": {
+   "status": "audited"
+  },
+  "models/tokenizer_bpe.py": {
    "status": "audited"
   },
   "models/tokoloshe_qa_studies.py": {
    "status": "audited"
   },
   "models/tom_dieck.py": {
+   "status": "audited"
+  },
+  "models/tomasulo_sim.py": {
    "status": "audited"
   },
   "models/tomato_qa_studies.py": {
@@ -24222,6 +24303,9 @@
    "status": "audited"
   },
   "models/tonatiuh_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/tonelli_shanks.py": {
    "status": "audited"
   },
   "models/tool_call_verify_studies.py": {
@@ -24234,6 +24318,9 @@
    "status": "audited"
   },
   "models/toolbench2_studies.py": {
+   "status": "audited"
+  },
+  "models/toolformer_call.py": {
    "status": "audited"
   },
   "models/toolqa_lite_studies.py": {
@@ -24251,10 +24338,22 @@
   "models/topo_k_theory.py": {
    "status": "audited"
   },
+  "models/topo_layers.py": {
+   "status": "audited"
+  },
   "models/topo_separation.py": {
    "status": "audited"
   },
   "models/topological_order.py": {
+   "status": "audited"
+  },
+  "models/topos_subobj.py": {
+   "status": "audited"
+  },
+  "models/tor_compute.py": {
+   "status": "audited"
+  },
+  "models/tor_ext.py": {
    "status": "audited"
   },
   "models/toric_flip.py": {
@@ -24281,7 +24380,16 @@
   "models/torus_fibration.py": {
    "status": "audited"
   },
+  "models/tost.py": {
+   "status": "audited"
+  },
+  "models/tot_order.py": {
+   "status": "audited"
+  },
   "models/totaro_cycle.py": {
+   "status": "audited"
+  },
+  "models/toto2.py": {
    "status": "audited"
   },
   "models/toucan_qa_studies.py": {
@@ -24341,7 +24449,13 @@
   "models/trace_thm.py": {
    "status": "audited"
   },
+  "models/trace_tree.py": {
+   "status": "audited"
+  },
   "models/traced_monoidal.py": {
+   "status": "audited"
+  },
+  "models/track_stop.py": {
    "status": "audited"
   },
   "models/tracy_widom.py": {
@@ -25719,6 +25833,9 @@
    "status": "audited"
   },
   "models/watch.py": {
+   "status": "audited"
+  },
+  "models/watchdog_task.py": {
    "status": "audited"
   },
   "models/water_deer_qa_studies.py": {
