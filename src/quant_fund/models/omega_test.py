@@ -74,4 +74,6 @@ def bench_omega_test(seed: int = _SEED) -> dict[str, float]:
     checks.append(satisfiable([_mk([3, 6], 9), _mk([-3, -6], -9)]))
     # 2x+4y=7 -> gcd 2 does not divide 7 -> UNSAT
     checks.append(not satisfiable([_mk([2, 4], 7), _mk([-2, -4], -7)]))
+    if not all(checks):
+        raise ValueError("omega-test oracle checks failed")
     return {"synthetic_omega_test": float(sum(checks)) / len(checks)}

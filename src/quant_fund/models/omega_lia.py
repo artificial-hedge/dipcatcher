@@ -125,4 +125,6 @@ def bench_omega_lia(seed: int = _SEED) -> dict[str, float]:
     checks.append(m is not None and 3 * m[0] - m[1] == 1 and m[1] >= 0)
     # all-negative constraint impossible: -x - y >= 1 with x,y >= 0
     checks.append(not lia_feasible([(">=", (-1, -1), 1), (">=", (1, 0), 0), (">=", (0, 1), 0)], 2))
+    if not all(checks):
+        raise ValueError("omega-LIA oracle checks failed")
     return {"synthetic_omega_lia": float(sum(checks)) / len(checks)}

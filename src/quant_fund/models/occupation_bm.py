@@ -21,6 +21,8 @@ def _bench_occupation_bm(seed: int = 0) -> float:
     checks.append(abs((1 - arcsine_cdf(0.9)) - 0.2048) < 0.01)
     # monotone
     checks.append(arcsine_cdf(0.7) > arcsine_cdf(0.3))
+    if not all(checks):
+        raise ValueError("arcsine occupation oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

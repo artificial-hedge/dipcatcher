@@ -112,6 +112,13 @@ def bench_oaxaca_blinder(seed: int = 20261231 + 266) -> dict[str, float]:
     g = np.asarray(d["group"])
     gap_true = float(np.asarray(d["y"])[g == 1].mean() - np.asarray(d["y"])[g == 0].mean())
     recon = out["composition"] + out["structure"]
+    if not (
+        abs(out["gap"] - gap_true) < 0.2
+        and abs(recon - out["gap"]) < 1e-9
+        and out["composition"] > 0
+        and out2["gap"] == out["gap"]
+    ):
+        raise ValueError("Oaxaca-Blinder off oracle")
     return {
         "synthetic_gap": out["gap"],
         "synthetic_gap_empirical": gap_true,

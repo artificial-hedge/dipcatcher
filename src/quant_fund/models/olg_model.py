@@ -22,4 +22,6 @@ def bench_olg_model(seed: int = _SEED) -> dict[str, float]:
     # steady state solves k = s(1-α)k^α → k* = (s(1-α))^(1/(1-α))
     k_star = (0.3 * 0.67) ** (1.0 / 0.67)
     ok = float(abs(path[-1] - k_star) / k_star < 0.02)
+    if abs(path[-1] - k_star) / k_star >= 0.02:
+        raise ValueError("OLG path off steady state")
     return {"synthetic_olg_steady": ok}

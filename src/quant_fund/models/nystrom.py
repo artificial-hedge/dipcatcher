@@ -38,6 +38,8 @@ def bench_nystrom(seed: int | None = None) -> dict[str, float]:
     ev_true = np.linalg.eigvalsh(k_mat)[-10:]
     ev_ny = np.linalg.eigvalsh(approx)[-10:]
     eig_err = float(np.max(np.abs(ev_true - ev_ny) / np.maximum(ev_true, 1e-9)))
+    if err > 0.35 or eig_err > 0.5:
+        raise ValueError("Nystrom approximation off oracle bounds")
     return {
         "synthetic_nystrom_err": err,
         "synthetic_eig_err": eig_err,

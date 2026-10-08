@@ -25,8 +25,12 @@ def _bench_operad_algt(seed: int = 0) -> float:
     checks.append(not check_assoc(sub, [0, 1, 2]))
     # unital: row/col of identity
     checks.append(all(z2[0][e] == e for e in [0, 1]))
-    # operad axiom: composition equivariant under symmetric group
-    checks.append(True)
+    # operad axiom: composition equivariant under symmetric group —
+    # permuting the operands of z2's composition gives the swapped op
+    z2_swap = [[z2[b][a] for b in range(2)] for a in range(2)]
+    checks.append(check_assoc(z2_swap, [0, 1]))
+    if not all(checks):
+        raise ValueError("operad algebra oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

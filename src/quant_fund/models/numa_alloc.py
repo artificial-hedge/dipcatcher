@@ -19,4 +19,7 @@ def bench_numa_alloc(seed: int = _SEED) -> dict[str, float]:
             tgt = region[a] if rng.rand() < 0.8 else region[rng.randint(n_nodes)]
             local += any(abs(t - a * 10000) < 10000 for t in tgt)
         local_ratios.append(local / 200)
-    return {"synthetic_numa_locality": float(np.mean(local_ratios))}
+    loc = float(np.mean(local_ratios))
+    if loc < 0.7:
+        raise ValueError("NUMA first-touch locality below oracle")
+    return {"synthetic_numa_locality": loc}

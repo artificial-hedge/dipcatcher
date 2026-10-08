@@ -93,4 +93,6 @@ def bench_ntt_ring(seed: int = _SEED) -> dict[str, float]:
         b = rng.integers(0, Q, N)
         ok &= bool(np.array_equal(ntt_mul(a, b) % Q, _schoolbook(a, b) % Q))
         ok &= bool(np.array_equal(intt(ntt(a % Q)), a % Q))
+    if not ok:
+        raise ValueError("NTT-ring off schoolbook oracle")
     return {"synthetic_ntt_ring": 1.0 if ok else 0.0}

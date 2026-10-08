@@ -66,4 +66,6 @@ def bench_nutation_lite(seed: int = _SEED) -> dict[str, float]:
         )
         if abs(dp_oracle - d0) > 0.003:
             ok = False
+    if not ok:
+        raise ValueError("nutation off oracle re-sum")
     return {"synthetic_nutation_lite": 1.0 if ok else 0.0}

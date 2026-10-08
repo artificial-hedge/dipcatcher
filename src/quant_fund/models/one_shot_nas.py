@@ -70,6 +70,8 @@ def bench_one_shot_nas(
             np.argsort(np.argsort(true_rank)),
         )[0, 1]
     )
+    if rho < 0.5:
+        raise ValueError("one-shot NAS rank correlation off oracle")
     return {
         "synthetic_os_rank_rho": rho,
         "synthetic_os_best_super_h": float(hidds[int(np.argmax(super_rank))]),

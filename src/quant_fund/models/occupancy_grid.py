@@ -37,4 +37,6 @@ def bench_occupancy_grid(seed: int = _SEED) -> dict[str, float]:
         for px, py in poses:
             seen[max(0, px - 6) : px + 7, max(0, py - 6) : py + 7] = True
         accs.append(float(np.mean(est[seen] == truth[seen])))
+    if float(np.mean(accs)) < 0.6:
+        raise ValueError("occupancy grid accuracy below oracle")
     return {"synthetic_map_accuracy": float(np.mean(accs))}

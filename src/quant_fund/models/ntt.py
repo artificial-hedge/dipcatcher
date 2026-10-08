@@ -81,6 +81,8 @@ def bench_ntt(seed: int = 20261231 + 451) -> dict[str, float]:
         # linearity: NTT(a+b) = NTT(a)+NTT(b) (cheap structural check via mul)
         c1 = ntt_mul([1], a)
         linear += int(c1 == a)
+    if exact != trials or inv != trials or linear != trials:
+        raise ValueError("NTT off naive-multiply oracle")
     return {
         "synthetic_ntt_mul_exact": float(exact / trials),
         "synthetic_ntt_inverse": float(inv / trials),

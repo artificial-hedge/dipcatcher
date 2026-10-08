@@ -81,4 +81,6 @@ def bench_nurbs_eval(seed: int = _SEED) -> dict[str, float]:
         hull_ok,
         bw < 1e-10,
     ]
+    if not all(checks):
+        raise ValueError("NURBS oracle checks failed")
     return {"synthetic_nurbs_eval": float(np.mean(checks))}

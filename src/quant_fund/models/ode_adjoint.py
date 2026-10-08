@@ -56,6 +56,8 @@ def bench_ode_adjoint(seed: int = 2411) -> dict[str, float]:
         g_adj = g_adj + dt * torch.outer(a * sech2, zi)
     corr = grad_corr(g_adj.numpy().ravel(), g_auto.numpy().ravel())
     err = float(np.abs(g_adj.numpy() - g_auto.numpy()).max())
+    if corr < 0.95:
+        raise ValueError("adjoint gradient correlation off autodiff oracle")
     return {
         "synthetic_adjoint_corr": corr,
         "synthetic_adjoint_max_err": err,

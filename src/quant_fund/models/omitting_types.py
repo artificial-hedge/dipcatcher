@@ -39,7 +39,12 @@ def _bench_omitting_types(seed: int = 0) -> float:
     checks.append(not is_isolated_type("free", dom))
     # a countable model CAN omit a non-isolated type: the params-exhausted
     # model above is exactly such a model
-    checks.append(True)
+    # a different parameter set realizes a different element of the type
+    checks.append(
+        realize_or_omit("all_distinct", dom, {Fraction(1, 2), Fraction(3, 2)}) == Fraction(0)
+    )
+    if not all(checks):
+        raise ValueError("omitting-types oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

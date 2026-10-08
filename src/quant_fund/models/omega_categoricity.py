@@ -57,6 +57,8 @@ def _bench_omega_categoricity(seed: int = 0) -> float:
     autos2 = automorphisms(4, p4)
     checks.append(len(autos2) == 2)
     checks.append(orbits_of_tuples(autos2, 4, 1) == 2)
+    if not all(checks):
+        raise ValueError("omega-categoricity oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

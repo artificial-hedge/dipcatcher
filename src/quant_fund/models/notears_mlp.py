@@ -55,6 +55,8 @@ def bench_notears_mlp(seed: int = 2335, edges: int = 7, steps: int = 350) -> dic
     shd_m = shd(B, Bhat)
     Bb = corr_baseline(X, edges)
     shd_cb = shd(B, Bb)
+    if shd_m >= shd_cb:
+        raise ValueError("NOTEARS-MLP SHD not below correlation baseline")
     return {
         "synthetic_ntmlp_shd": float(shd_m),
         "synthetic_corr_shd": float(shd_cb),

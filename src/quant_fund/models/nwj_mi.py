@@ -54,6 +54,10 @@ def bench_nwj_mi(seed: int = 2893) -> dict[str, float]:
     x0, y0 = dep_data(seed + 1, kind="indep")
     mi_ind = _nwj(x0, y0, seed + 1)
     true_dep = true_mi_gauss(0.9701)
+    # NWJ is biased upward here (dep 2.5 vs true 1.4) but the dependent/
+    # independent separation is the real signal — gate that ordering
+    if mi_dep <= mi_ind:
+        raise ValueError("NWJ fails dependent/independent separation")
     return {
         "synthetic_nwj_mi_dep": float(mi_dep),
         "synthetic_nwj_mi_indep": float(mi_ind),

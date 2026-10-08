@@ -92,6 +92,8 @@ def _bench_np_reduce(seed: int = 0) -> float:
     # use (x1∨x1∨x1),(¬x1∨¬x1∨¬x1): unsat -> no VC of size k
     edges2, k2, nn2 = three_sat_to_vc([(1, 1, 1), (-1, -1, -1)], 1)
     checks.append(not brute_vc(edges2, nn2, k2))
+    if not all(checks):
+        raise ValueError("NP-reduction oracle checks failed")
     return sum(checks) / len(checks)
 
 

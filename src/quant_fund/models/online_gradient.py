@@ -22,6 +22,10 @@ def bench_online_gradient(seed: int = 5411) -> dict[str, float]:
     xs = np.linspace(0, 6, 121)
     hind = min(float(((xs_i - a) ** 2).sum()) for xs_i in xs)
     regret = tot - hind
+    # on a wandering comparator hindsight can be beaten (negative regret
+    # is honest); OGD regret must stay sublinear — bound regret/sqrt(T)
+    if regret > 100.0 * float(np.sqrt(T)):
+        raise ValueError("OGD regret above sublinear bound")
     return {
         "synthetic_ogd_regret": regret,
         "synthetic_ogd_sqrt_T": float(np.sqrt(T)),

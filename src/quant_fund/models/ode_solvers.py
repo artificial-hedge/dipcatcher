@@ -179,4 +179,11 @@ def bench_ode_solvers(seed: int = 20261231) -> dict[str, float]:
         r = np.random.default_rng(seed + i + 7000)
         ends[i] = milstein(dr, di, ddi, 0.0, 1.0, np.array([1.0]), 400, r)[0]
     out["synthetic_mil_gbm_mean_err"] = float(abs(np.log(ends.mean()) - mu))
+    if not (
+        out["synthetic_rk45_logistic_err"] < 1e-5
+        and out["synthetic_midpoint_err"] < 0.01
+        and out["synthetic_em_gbm_mean_err"] < 0.08
+        and out["synthetic_mil_gbm_mean_err"] < 0.08
+    ):
+        raise ValueError("ODE solver errors above oracle bounds")
     return out

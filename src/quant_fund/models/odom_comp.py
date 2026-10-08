@@ -33,6 +33,8 @@ def _run(seed: int, w: float | None, steps: int = 800) -> float:
 def bench_odom_comp(seed: int = _SEED) -> dict[str, float]:
     rmse_drift = _run(seed, w=None)
     rmse_fuse = _run(seed, w=0.98)
+    if not (rmse_fuse < 0.7 * rmse_drift and rmse_fuse < 0.5):
+        raise ValueError("odometry fusion off oracle")
     return {
         "synthetic_odom_fuse": float(rmse_fuse < 0.7 * rmse_drift),
         "synthetic_odom_bound": float(rmse_fuse < 0.5),

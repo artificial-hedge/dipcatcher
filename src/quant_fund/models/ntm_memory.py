@@ -133,6 +133,8 @@ def bench_ntm_memory(
         h_f = flat(xin)
         logits_f = flat_out(h_f)[:, None, :].expand(-1, t, -1)
         acc_f = (logits_f.argmax(-1) == torch.tensor(yte)).float().mean()
+    if acc <= acc_f:
+        raise ValueError("NTM copy accuracy not above flat baseline")
     return {
         "synthetic_ntm_copy_acc": float(acc),
         "synthetic_ntm_flat_acc": float(acc_f),

@@ -164,6 +164,12 @@ def bench_nucleolus(seed: int = 20261231) -> dict[str, float]:
         and x[2] > 0.5
         and out["synthetic_nucleolus_symmetric_err"] < 0.05
     )
+    if not (
+        out["synthetic_nucleolus_efficient"] > 0.5
+        and x[2] > 0.5
+        and out["synthetic_nucleolus_symmetric_err"] < 0.05
+    ):
+        raise ValueError("nucleolus off analytic oracle")
     return out
 
 

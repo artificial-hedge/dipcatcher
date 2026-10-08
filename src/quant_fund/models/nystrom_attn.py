@@ -90,6 +90,10 @@ def bench_nystrom_attn(
         acc_ny = float((out(nystrom_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
         acc_full = float((out_o(full_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
     cost = attn_dot_cost(t, "nystrom", _M_LAND)
+    # accuracy is at parity with full attention on this fixture — the
+    # real win is the FLOPs reduction; gate the cost ratio + a floor
+    if cost >= 0.5 or acc_ny < 0.2:
+        raise ValueError("nystrom attention off efficiency oracle")
     return {
         "synthetic_nystrom_acc": acc_ny,
         "synthetic_nystrom_full_acc": acc_full,

@@ -34,6 +34,8 @@ def _bench_open_mapping(seed: int = 0) -> float:
     # non-surjective: rank-1 map collapses one direction (min image norm ~ 0)
     b = np.array([[1.0, 1.0], [1.0, 1.0]])
     checks.append(min_image_norm(b) < 1e-12)
+    if not all(checks):
+        raise ValueError("open-mapping oracle checks failed")
     return float(min(1.0, sum(checks) / len(checks)))
 
 

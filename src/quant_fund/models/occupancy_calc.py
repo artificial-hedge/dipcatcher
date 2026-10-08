@@ -35,4 +35,6 @@ def bench_occupancy_calc(seed: int = _SEED) -> dict[str, float]:
         ok += float(0.0 <= o <= 1.0)
     # known answer: 256 threads, 32 regs, 8K smem -> limited by threads: 8 blocks -> 1.0
     ok += float(occupancy(256, 32, 8192) == 1.0)
+    if ok != trials + 1:
+        raise ValueError("occupancy bounds/known-answer off")
     return {"synthetic_occupancy_bounded": ok / (trials + 1)}

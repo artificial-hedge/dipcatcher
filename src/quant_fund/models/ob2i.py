@@ -79,6 +79,8 @@ def bench_ob2i(
         st, r = _env_step(st, a, rng)
         tot += r
         n += 1
+    if tot / n <= -0.2:
+        raise ValueError("offline actor-critic at/below random reward")
     return {
         "synthetic_ob2i_mean_reward": tot / n,
         "synthetic_ob2i_random_reward": -0.2,

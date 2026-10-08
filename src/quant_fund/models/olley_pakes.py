@@ -170,6 +170,13 @@ def bench_olley_pakes(seed: int = 20261231 + 264) -> dict[str, float]:
         np.asarray(d["firm"]),
         np.asarray(d["period"]),
     )
+    if not (
+        abs(out["beta_k"] - 0.6) < 0.2
+        and abs(out["beta_l"] - 0.4) < 0.15
+        and abs(ols_l - 0.4) > abs(out["beta_l"] - 0.4)
+        and out2["beta_k"] == out["beta_k"]
+    ):
+        raise ValueError("Olley-Pakes off oracle")
     return {
         "synthetic_beta_k": out["beta_k"],
         "synthetic_beta_l": out["beta_l"],
