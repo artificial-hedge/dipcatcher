@@ -132,4 +132,6 @@ def bench_loop_subdiv(seed: int = _SEED) -> dict[str, float]:
         prev, ff = vv2, ff2
         vv = vv2
     decay = all(disps[i + 1] < disps[i] * 0.9 for i in range(2))
+    if not (counts_ok and manifold_ok and decay):
+        raise ValueError("Loop subdivision off topology/smoothness oracle")
     return {"synthetic_loop_subdiv": float(np.mean([counts_ok, manifold_ok, decay]))}

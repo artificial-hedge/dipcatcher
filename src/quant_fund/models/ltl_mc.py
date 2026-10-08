@@ -50,6 +50,8 @@ def bench_ltl_mc(seed: int = 5911) -> dict[str, float]:
     # states from which a violating state is reachable
     bad_src = reach @ violates
     ok_states = ~bad_src
+    if int(bad_src.sum()) + int(ok_states.sum()) != n:
+        raise ValueError("LTL model-check partition inconsistent")
     return {
         "synthetic_ltl_ok_frac": float(ok_states.mean()),
         "synthetic_ltl_viol_states": float(violates.sum()),

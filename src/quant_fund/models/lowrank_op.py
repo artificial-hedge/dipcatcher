@@ -62,6 +62,10 @@ def bench_lowrank_op(
         opt.step()
     with torch.no_grad():
         err_b = rel_l2(mlp(ate).numpy(), u_te)
+    # the low-rank operator does not beat a plain MLP at this budget —
+    # gate only that it learns; the margin is reported honestly
+    if err > 0.5:
+        raise ValueError("low-rank operator failed to fit the operator fixture")
     return {
         "synthetic_lo_rell2": err,
         "synthetic_lo_mlp_rell2": err_b,

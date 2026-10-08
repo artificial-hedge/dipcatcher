@@ -22,6 +22,8 @@ def bench_lp_rounding_sc(seed: int = 5205) -> dict[str, float]:
     cost = float(SC_C[pick].sum())
     truth = brute_set_cover(SC_C, SC_A)
     feasible = bool((SC_A[:, pick].sum(axis=1) >= 1 - 1e-9).all()) if pick.any() else False
+    if not feasible or cost > f * truth + 1e-6 or cost < truth:
+        raise ValueError("LP rounding off set-cover oracle")
     return {
         "synthetic_lpr_lp": lp,
         "synthetic_lpr_cost": cost,

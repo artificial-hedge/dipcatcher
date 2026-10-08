@@ -34418,6 +34418,120 @@
   },
   "models/local_time.py": {
    "status": "audited"
+  },
+  "models/localized_conformal.py": {
+   "status": "audited"
+  },
+  "models/log_acd.py": {
+   "status": "audited"
+  },
+  "models/log_concave.py": {
+   "status": "audited"
+  },
+  "models/logic_topos.py": {
+   "status": "audited"
+  },
+  "models/logit_lens.py": {
+   "status": "audited"
+  },
+  "models/lomb_scargle.py": {
+   "status": "audited"
+  },
+  "models/long_memory.py": {
+   "status": "audited"
+  },
+  "models/longhorn_ssm.py": {
+   "status": "audited"
+  },
+  "models/lookahead_opt.py": {
+   "status": "audited"
+  },
+  "models/loop_subdiv.py": {
+   "status": "audited"
+  },
+  "models/loop_unroll.py": {
+   "status": "audited"
+  },
+  "models/lora_ft.py": {
+   "status": "audited"
+  },
+  "models/los_theorem.py": {
+   "status": "audited"
+  },
+  "models/lottery_ticket.py": {
+   "status": "audited"
+  },
+  "models/lowess.py": {
+   "status": "audited"
+  },
+  "models/lowrank_factor.py": {
+   "status": "audited"
+  },
+  "models/lowrank_op.py": {
+   "status": "audited"
+  },
+  "models/lp_did.py": {
+   "status": "audited"
+  },
+  "models/lp_duality.py": {
+   "status": "audited"
+  },
+  "models/lp_iv.py": {
+   "status": "audited"
+  },
+  "models/lp_rounding_sc.py": {
+   "status": "audited"
+  },
+  "models/lpc_analysis.py": {
+   "status": "audited"
+  },
+  "models/lpc_formant.py": {
+   "status": "audited"
+  },
+  "models/lpt_schedule.py": {
+   "status": "audited"
+  },
+  "models/lqg_control.py": {
+   "status": "audited"
+  },
+  "models/lqr_control.py": {
+   "status": "audited"
+  },
+  "models/lqr_funnel.py": {
+   "status": "audited"
+  },
+  "models/lsd_deptest.py": {
+   "status": "audited"
+  },
+  "models/lsh_dedup.py": {
+   "status": "audited"
+  },
+  "models/lsm_reservoir.py": {
+   "status": "audited"
+  },
+  "models/lsm_tree.py": {
+   "status": "audited"
+  },
+  "models/ltl_mc.py": {
+   "status": "audited"
+  },
+  "models/ltt_cp.py": {
+   "status": "audited"
+  },
+  "models/lu_pivots.py": {
+   "status": "audited"
+  },
+  "models/luen_obsv.py": {
+   "status": "audited"
+  },
+  "models/lwe_kex.py": {
+   "status": "audited"
+  },
+  "models/lwf_cl.py": {
+   "status": "audited"
+  },
+  "models/lww_map.py": {
+   "status": "audited"
   }
  },
  "schema_version": "audit-coverage/v1",

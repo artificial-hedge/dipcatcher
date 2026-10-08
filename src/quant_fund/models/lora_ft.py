@@ -91,6 +91,8 @@ def bench_lora_ft(
         acc_full_t0 = float((base(x_t).argmax(-1) == y_t).float().mean())
     n_full = sum(p.numel() for p in base.parameters())
     n_lora = a1.numel() + b1.numel() + a2.numel() + b2.numel()
+    if acc_lora < acc_full - 0.15 or (n_lora / n_full) >= 0.5:
+        raise ValueError("LoRA adapt off accuracy/param oracle")
     return {
         "synthetic_lora_acc_shift": acc_lora,
         "synthetic_lora_full_acc_shift": acc_full,

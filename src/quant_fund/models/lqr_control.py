@@ -37,6 +37,8 @@ def bench_lqr_control(seed: int = 2909) -> dict[str, float]:
         x = A @ x + B[:, 0] * u
         tot += float(x @ Q @ x + R[0, 0] * u**2)
     _, cost_b = pd_baseline(x0, target)
+    if tot >= cost_b:
+        raise ValueError("LQR cost not below PD baseline")
     return {
         "synthetic_lqr_cost": float(tot),
         "synthetic_pd_cost": float(cost_b),

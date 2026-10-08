@@ -33,6 +33,8 @@ def bench_lwf_cl(seed: int = 763, T: int = 200, lam: float = 2.0) -> dict[str, f
         for _ in range(300):
             w_sgd -= 0.05 * np.clip(x.T @ (x @ w_sgd - y) / len(y), -50, 50)
     retain_sgd = float(np.mean((tasks[0][0] @ w_sgd - tasks[0][1]) ** 2))
+    if retain >= retain_sgd:
+        raise ValueError("LwF retention no better than plain SGD")
     return {
         "synthetic_lwf_task1_mse": retain,
         "synthetic_lwf_sgd_task1_mse": retain_sgd,

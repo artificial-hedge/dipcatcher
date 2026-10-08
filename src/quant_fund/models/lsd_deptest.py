@@ -32,6 +32,8 @@ def bench_lsd_deptest(seed: int = 2903, perms: int = 120) -> dict[str, float]:
             if _lsd(x, rng.permutation(y)) >= stat:
                 ge += 1
         outs[kind] = (ge + 1) / (perms + 1)
+    if not (outs["dep"] < 0.1 and outs["nonlin"] < 0.1 and outs["indep"] > 0.2):
+        raise ValueError("LSD dependence test miscalibrated")
     return {
         "synthetic_lsd_pval_dep": float(outs["dep"]),
         "synthetic_lsd_pval_indep": float(outs["indep"]),

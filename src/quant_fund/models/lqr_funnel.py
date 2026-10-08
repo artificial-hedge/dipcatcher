@@ -77,4 +77,6 @@ def bench_lqr_funnel(seed: int = 20261231 + 860) -> dict[str, float]:
             if V0 < 1e-4:
                 break
         checks += float(ok and V0 < 1e-4)
+    if checks != total:
+        raise ValueError("LQR funnel certificate failed")
     return {"synthetic_lqr_funnel": checks / total}

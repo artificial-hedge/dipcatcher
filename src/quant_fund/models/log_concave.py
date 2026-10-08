@@ -155,6 +155,8 @@ def bench_log_concave(seed: int = 20261231 + 354) -> dict[str, float]:
     i_mode = int(np.argmax(phi))
     peak_z = float(knots[i_mode])
     ok = concave and abs(mass - 1.0) < 1e-6 and abs(peak_z) < 0.6
+    if not ok:
+        raise ValueError("log-concave MLE off oracle")
     out: dict[str, float] = {
         "synthetic_lc_mass": mass,
         "synthetic_lc_concave": float(concave),

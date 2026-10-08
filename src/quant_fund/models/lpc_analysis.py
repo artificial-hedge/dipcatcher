@@ -78,4 +78,6 @@ def bench_lpc_analysis(seed: int = _SEED) -> dict[str, float]:
         _, ep = levinson(r2, p)
         errs.append(ep)
     score += 1.0 if errs[0] > errs[1] > errs[2] > 0 else 0.0
+    if score != 4.0:
+        raise ValueError("LPC analysis off oracle")
     return {"synthetic_lpc_analysis": score / 4.0}

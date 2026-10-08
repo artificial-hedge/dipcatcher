@@ -39,6 +39,8 @@ def bench_lowrank_factor(
     train_model(torch, net, x_tr_t, y_tr_t, ft_iters)
     acc_lr = acc_of(torch, net, x_te_t, y_te_t)
     frac = (8 * rank + rank * 24) / (8 * 24)
+    if acc_lr / max(acc_full, 1e-9) <= 0.85 or frac >= 1.0:
+        raise ValueError("low-rank factorization off retention/params oracle")
     return {
         "synthetic_lr_acc": acc_lr,
         "synthetic_lr_full_acc": acc_full,

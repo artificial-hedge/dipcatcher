@@ -76,6 +76,8 @@ def bench_lsm_tree(seed: int = 20261231 + 365) -> dict[str, float]:
             all(run == sorted(run) for run in lsm.levels) and lsm.mem == sorted(lsm.mem)
         )
         cover_ok += int(all(lsm.get(k) is not None for k in ref))
+    if latest_ok != trials or sorted_ok != trials or cover_ok != trials:
+        raise ValueError("LSM-tree off reference-oracle")
     return {
         "synthetic_latest_wins": float(latest_ok / trials),
         "synthetic_runs_sorted": float(sorted_ok / trials),

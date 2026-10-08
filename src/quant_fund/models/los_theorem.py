@@ -22,10 +22,13 @@ def _bench_los_theorem(seed: int = 0) -> float:
     # (majority on cofinite->all; on principal -> factor j)
     exists_p = {"a>0": [True, False], "b>0": [True, True]}
     checks.append(any(exists_p["a>0"]) == any(f["a>0"] for f in factors))
-    # function symbols: ultraproduct of successors = successor at index j
-    checks.append(True)
+    # majority semantics over the factor family: a>0 holds in 2 of 3
+    # factors, so a non-principal (majority) ultraproduct satisfies it
+    checks.append(sum(f["a>0"] for f in factors) > len(factors) // 2)
     # negation: product |= not phi iff factor j not|= phi
     checks.append(not prod_truth("a>0"))
+    if sum(checks) != len(checks):
+        raise ValueError("Los-theorem oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -59,6 +59,8 @@ def bench_lsh_dedup(seed: int = 20261231 + 463) -> dict[str, float]:
             rec_total += len(found & truth) / len(truth)
             prec_total += len(found & truth) / max(1, len(cands))
     n = sum(1 for _ in range(trials))
+    if rec_total / n <= 0.5:
+        raise ValueError("LSH dedup recall below oracle")
     return {
         "synthetic_duplicate_recall": float(rec_total / n),
         "synthetic_candidate_precision": float(prec_total / n),

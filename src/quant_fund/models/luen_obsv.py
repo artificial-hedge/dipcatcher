@@ -37,6 +37,8 @@ def bench_luen_obsv(seed: int = _SEED) -> dict[str, float]:
     xs, xhs, drifts = _simulate(seed)
     err_o = float(np.abs(xs[-50:] - xhs[-50:]).mean())
     err_d = float(np.abs(xs[-50:] - drifts[-50:]).mean())
+    if not (err_o < 0.05 and err_o < 0.2 * err_d):
+        raise ValueError("Luenberger observer off oracle")
     return {
         "synthetic_luen_converge": float(err_o < 0.05),
         "synthetic_luen_better": float(err_o < 0.2 * err_d),

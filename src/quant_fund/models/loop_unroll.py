@@ -27,4 +27,6 @@ def bench_loop_unroll(seed: int = _SEED) -> dict[str, float]:
         arr = rng.normal(size=int(rng.randint(1, 100)))
         u = int(rng.randint(2, 9))
         ok += float(abs(unrolled_sum(arr, u) - arr.sum()) < 1e-8 * max(1.0, abs(arr.sum())))
+    if ok != trials:
+        raise ValueError("unrolled sum diverged from direct sum")
     return {"synthetic_unroll_exact": ok / trials}

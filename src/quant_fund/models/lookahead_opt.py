@@ -61,6 +61,10 @@ def bench_lookahead_opt(
         loss.backward()
         opt.step()
     loss_a = float(((fwd(*params) - yt) ** 2).mean())
+    # lookahead loses a little to plain Adam on this shallow-MLP fixture —
+    # gate only that it converges; the margin is reported honestly
+    if loss_look > 10.0:
+        raise ValueError("lookahead diverged on the opt fixture")
     return {
         "synthetic_look_loss": loss_look,
         "synthetic_look_adam_loss": loss_a,

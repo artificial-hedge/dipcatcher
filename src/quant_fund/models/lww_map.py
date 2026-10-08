@@ -64,6 +64,8 @@ def bench_lww_map(seed: int = 20261231 + 303) -> dict[str, float]:
             win = max(ea, eb, key=lambda e: (e[0], e[1], e[2]))
             ok = ok and merge(a, b)[k] == win
         lww += int(ok)
+    if comm != trials or assoc != trials or idem != trials or lww != trials:
+        raise ValueError("LWW-map off CRDT oracle")
     return {
         "synthetic_commutative": float(comm / trials),
         "synthetic_associative": float(assoc / trials),

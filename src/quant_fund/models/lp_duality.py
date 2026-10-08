@@ -41,6 +41,8 @@ def _bench_lp_duality(seed: int = 0) -> float:
     checks.append(abs(mp - 5.0) / 5.0 < 0.1)
     # q for p=3 is 1.5: dual_norm(y,3) = (27+64)^(2/3)^(1/1.5)... just compare to direct l^1.5
     checks.append(abs(dual_norm(y, 3.0) - lp_norm(y, 1.5)) < 1e-9)
+    if sum(checks) != len(checks):
+        raise ValueError("lp duality oracle failed")
     return float(sum(checks) / len(checks))
 
 

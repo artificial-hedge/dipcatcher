@@ -54,6 +54,8 @@ def bench_lqg_control(
         cost_r += float(x_true2 @ Q @ x_true2 + R[0, 0] * u_r**2)
         x_meas = x_true2.copy()
         x_meas[0] = z - target
+    if cost_f >= cost_r:
+        raise ValueError("LQG filtered control not below raw-LQR cost")
     return {
         "synthetic_lqg_cost": float(cost_f),
         "synthetic_raw_lqr_cost": float(cost_r),

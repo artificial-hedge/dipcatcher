@@ -33,6 +33,10 @@ def bench_logit_lens(
     W = np.linalg.lstsq(np.concatenate([a0[:cut], np.ones((cut, 1))], -1), a1[:cut], rcond=None)[0]
     a0_t = np.concatenate([a0, np.ones((n, 1))], -1) @ W
     acc_tuned = LogisticRegression(max_iter=300).fit(a0_t[:cut], y[:cut]).score(a0_t[cut:], y[cut:])
+    # tuned lens adds nothing on this fixture (affine probe ≈ raw probe);
+    # the real claim is depth gain — a feature only present in layer1
+    if acc_late <= acc_early + 0.1:
+        raise ValueError("logit lens shows no depth gain for late feature")
     return {
         "synthetic_lens_early_acc": float(acc_early),
         "synthetic_lens_late_acc": float(acc_late),

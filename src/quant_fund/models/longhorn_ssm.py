@@ -51,6 +51,10 @@ def bench_longhorn_ssm(seed: int = 2275, iters: int = 800, D: int = 16) -> dict[
     with torch.no_grad():
         acc = (head(scan(emb(X))).argmax(-1) == Y).float().mean().item()
     base = attn_baseline(seed)
+    # the SSM matches (not beats) attention on induction recall —
+    # the win is no random init needed; gate solve-level accuracy
+    if float(acc) < 0.9:
+        raise ValueError("longhorn SSM did not solve induction recall")
     return {
         "synthetic_longhorn_recall": float(acc),
         "synthetic_attn_recall": base,

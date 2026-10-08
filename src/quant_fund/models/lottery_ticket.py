@@ -64,6 +64,10 @@ def bench_lottery_ticket(
             p *= m
     train_model(torch, net3, x_tr_t, y_tr_t, iters, mask=full_masks)
     acc_rand = acc_of(torch, net3, x_te_t, y_te_t)
+    # the docstring claim is only that the ticket matches dense accuracy;
+    # a random-init control can match too on this fixture (both reported)
+    if acc_ticket < acc_dense - 0.05:
+        raise ValueError("winning ticket below dense accuracy")
     return {
         "synthetic_lth_ticket_acc": acc_ticket,
         "synthetic_lth_dense_acc": acc_dense,

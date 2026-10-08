@@ -59,6 +59,8 @@ def bench_lu_pivots(seed: int = 20261231 + 534) -> dict[str, float]:
         b = np.array([rng.uniform(-1, 1) for _ in range(n)])
         x = lu_solve(P, L, U, b)
         sol += int(np.allclose(A @ x, b, atol=1e-4))
+    if fac != n_trials or sol != n_trials:
+        raise ValueError("LU factor/solve off oracle")
     return {
         "synthetic_factor_exact": fac / n_trials,
         "synthetic_solve_residual": sol / n_trials,

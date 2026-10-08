@@ -32,6 +32,8 @@ def bench_ltt_cp(seed: int = 1313, alpha: float = 0.1) -> dict[str, float]:
     # naive: alpha quantile radius (no conservativeness)
     lam_naive = float(np.quantile(r, 1 - alpha))
     cov2 = float(np.mean((yt >= mu_t - lam_naive) & (yt <= mu_t + lam_naive)))
+    if cov < cov2 - 1e-9 or cov < 0.8:
+        raise ValueError("LTT coverage below naive oracle")
     return {
         "synthetic_ltt_coverage": cov,
         "synthetic_ltt_target": 1 - alpha,

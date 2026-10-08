@@ -27,6 +27,8 @@ def bench_lpt_schedule(seed: int = 3049, n: int = 60, m: int = 4) -> dict[str, f
     lb = max(p.sum() / m, p.max())
     ms_lpt = _lpt(p, m)
     ms_rnd = _list(p, m, rng.permutation(n))
+    if ms_lpt > ms_rnd + 1e-9 or ms_lpt > (4.0 / 3.0) * lb + 1e-9:
+        raise ValueError("LPT schedule off bound/baseline oracle")
     return {
         "synthetic_lpt_ms": ms_lpt,
         "synthetic_random_ms": float(ms_rnd),

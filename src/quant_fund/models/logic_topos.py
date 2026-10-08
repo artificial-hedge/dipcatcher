@@ -25,6 +25,8 @@ def _bench_logic_topos(seed: int = 0) -> float:
     checks.append(excl_mid(True) and excl_mid(False))
     # subobject negation: chi of complement = not chi
     checks.append((not True) is False)
+    if sum(checks) != len(checks):
+        raise ValueError("topos logic oracle failed")
     return float(sum(checks) / len(checks))
 
 

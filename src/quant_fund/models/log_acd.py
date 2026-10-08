@@ -178,6 +178,8 @@ def bench_log_acd(seed: int = 20261231 + 352) -> dict[str, float]:
         and abs(r["resid_acf1"]) < 0.3
         and r["ll_gain_vs_iid"] > 10.0
     )
+    if not ok:
+        raise ValueError("log-ACD fit off oracle")
     out: dict[str, float] = {
         "synthetic_lacd_a_hat": r["a"],
         "synthetic_lacd_b_hat": r["b"],

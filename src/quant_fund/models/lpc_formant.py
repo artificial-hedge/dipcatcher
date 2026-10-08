@@ -47,6 +47,8 @@ def bench_lpc_formant(seed: int = 4809) -> dict[str, float]:
     peaks.sort(key=lambda i: -resp[i])
     fpk = sorted(w[peaks[:2]] * FS / (2 * np.pi)) if len(peaks) >= 2 else [0.0, 0.0]
     f1, f2 = float(fpk[0]), float(fpk[1])
+    if abs(f1 - 500.0) > 60.0 or abs(f2 - 1500.0) > 60.0:
+        raise ValueError("LPC formants off oracle")
     return {
         "synthetic_lpc_f1": f1,
         "synthetic_lpc_f2": f2,
