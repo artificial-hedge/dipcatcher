@@ -2312,6 +2312,48 @@ operations-floor item, not a test-suite bug per se, until proven otherwise. Next
 step is recorded in OPEN/NEXT: bisect by directory with `-n1` + faulthandler so the last
 printed dot identifies the crashing file, after the disk has real headroom.
 
+**MECHANISM IDENTIFIED — the ENOSPC theory is now evidence-backed.** The clean control run
+completed (`CLEAN_EXIT=3`, 2:03:57): **5 segfaults, 0 `gc_callback`, 331 failed / 39,761
+passed / 556 errors / INTERNALERROR `KeyError: <WorkerController gw12>`**. Those counts are
+*inflated artifacts*: every dead worker's in-flight and completed tests resurface as
+errors/failures, so the run still does not give a trustworthy failure list — but it did give
+the crash mechanism. Post-mortem of the xdist tmp tree
+(`/private/var/folders/.../pytest-of-vaithianathan/pytest-49`, 1.4 GB total, worker gw5
+alone holding 1.1 GB):
+
+```
+339M  test_real_tree_export_verifies…   ×2 parametrized copies
+339M  test_manifest_git_blob_ids_mat…   ×2
+339M  test_corrupted_bundle_member_f…   ×2
+108M  test_bundle_differential_verdi…   ×2
+```
+
+`tests/unit/research/test_evidence_export.py:118,140,168` each call
+`export_evidence_bundle(REPO_ROOT, tmp)` — **a full copy of the live evidence store**
+(`data/metadata` 177 MB + `quality` 31 MB + `receipts` 4 MB + … ≈ 339 MB per copy), and
+`test_bundle_differential.py:179` adds two more 108 MB bundles. Six-plus GB-scale copies
+racing 10 workers against a disk with 2.3–3.3 GB free is a deterministic ENOSPC recipe:
+whichever worker's native allocation (duckdb/mmap/parquet) hits the wall first segfaults —
+explaining every observed property: a *different* worker each run, crashes clustered at
+27–30% (where the bundle tests sit in collection order), `<no Python frame>` on the
+crashing thread, and no crash in small serial runs.
+
+Actions taken: freed the stale 1.4 GB pytest tmp plus repo caches (**disk 2.3 → 8.2 GiB
+free, 99% → 96%**); `.venv-bench` (1.2 GB) deliberately KEPT — it is the pinned
+vectorbt-1.1.0/plotly-6.9.0/qlib-0.9.7 evidence environment the recorded parity receipts in
+`.dsh-24x7/PROOF.md` depend on, and destroying sealed-evidence reproducibility to buy swap
+headroom is the wrong trade. Definitive control launched: full gate at `-n 4`
+(`/tmp/lead_ctrl_n4.log`, job `bash-369` — reduced worker count bounds both tmp-write races
+and swap pressure). Prediction, stated before the result: **zero segfaults at `-n 4` with
+the freed disk**; if it still segfaults, the cause is memory-pressure-only and worker count
+must drop further.
+
+Design finding for the evidence-export owner (external wave commits `c181233880` /
+`29a1b9eefc` / `54c2524d96`): three tests in one file each re-export the live tree
+independently. A session-scoped fixture sharing ONE export would cut ~700 MB of peak tmp
+and most of the runtime, with identical coverage; alternatively mark them `slow`. Reported,
+not patched — not our file, and the current shape passes whenever disk allows.
+
 ### Finding 2 — `n_boot: 1000`, not the mandated 2000 (P0.3 honestly downgraded)
 
 `evidence-debt` probed all five merged receipts (`merge_d1_v2aug`, `merge_h4f_v2aug`,
