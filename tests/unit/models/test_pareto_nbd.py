@@ -92,3 +92,25 @@ def test_fit_skips_nan_restarts(monkeypatch):
 def test_bench_smoke():
     out = pn.bench_pnbd()
     assert out["synthetic_mse_model"] < out["synthetic_mse_naive"] * 1.15
+
+
+def test_expected_purchases_fails_closed_a_le_1():
+    """a <= 1 makes the FHL eq.10 expectation diverge — previously the
+    divergent numerator was silently zero-filled into "no future purchases"."""
+    x = np.array([3.0, 0.0, 5.0])
+    tx = np.array([10.0, 0.0, 20.0])
+    T = np.array([30.0, 30.0, 30.0])
+    with pytest.raises(ValueError, match="a <= 1"):
+        pn.bgnbd_expected_purchases(1.0, 4.0, 0.5, 8.0, x, tx, T, 10.0)
+    with pytest.raises(ValueError, match="a <= 1"):
+        pn.bgnbd_expected_purchases(1.0, 4.0, 1.0, 8.0, x, tx, T, 10.0)
+
+
+def test_expected_purchases_fails_closed_on_blowup(monkeypatch):
+    """A non-finite 2F1 must raise rather than be zero-filled."""
+    monkeypatch.setattr(pn, "hyp2f1", lambda *a: np.array([np.inf, np.inf, np.inf]))
+    x = np.array([3.0, 1.0, 5.0])
+    tx = np.array([10.0, 5.0, 20.0])
+    T = np.array([30.0, 30.0, 30.0])
+    with pytest.raises(ValueError, match="2F1 evaluation blew up"):
+        pn.bgnbd_expected_purchases(1.0, 4.0, 2.0, 8.0, x, tx, T, 10.0)

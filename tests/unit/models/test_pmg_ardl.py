@@ -56,3 +56,29 @@ def test_bench_smoke():
     out = pa.bench_pmg_ardl()
     assert out["synthetic_score"] == 1.0
     assert out["synthetic_err_pmg"] < 0.15
+
+
+def test_mean_group_excludes_unidentified_theta():
+    """A group with phi_i ~ 0 has no identified long-run theta; the old
+    code divided by -1e-8 and averaged a ~1e8 garbage value in."""
+    d = pa.synth_pmg(seed=20261231 + 295, n=8, t=160, k=1)
+    yy = np.asarray(d["y_groups"]).copy()
+    xx = np.asarray(d["x_groups"])
+    # constant y -> dep = 0 -> every coefficient incl. phi_i is exactly
+    # 0, so this group's theta_i is unidentified and must be excluded.
+    yy[0] = 3.0
+    out = pa.mean_group(yy, xx)
+    ti = np.asarray(out["theta_i"])
+    assert not np.isfinite(ti[0]).all()
+    assert np.isfinite(out["theta_mg"]).all()
+    # the surviving average must sit near the planted theta, not ~1e8
+    assert np.abs(out["theta_mg"]).max() < 100.0
+
+
+def test_mean_group_raises_when_no_group_identified():
+    rng = np.random.default_rng(5)
+    n, t, k = 4, 60, 1
+    yy = np.full((n, t), 2.0)  # every group constant -> phi_i = 0
+    xx = np.cumsum(rng.normal(0, 1, (n, t, k)), axis=1)
+    with pytest.raises(ValueError, match="no long-run theta identified"):
+        pa.mean_group(yy, xx)

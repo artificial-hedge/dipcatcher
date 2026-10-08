@@ -179,12 +179,19 @@ def mean_group(
         xd = np.hstack(cols)
         beta, *_ = np.linalg.lstsq(xd, dep, rcond=None)
         phi_i = float(beta[0])
-        if abs(phi_i) < 1e-8:
-            phi_i = -1e-8
         phis[i] = phi_i
-        thetas[i] = -beta[1 : 1 + k] / phi_i
-    theta_mg = np.mean(thetas, axis=0)
-    theta_se = np.std(thetas, axis=0, ddof=1) / np.sqrt(n)
+        # phi_i ~ 0 means no error-correction in that group, so its
+        # long-run theta_i = -b_x/phi_i is unidentified (the old code
+        # substituted -1e-8, producing theta_i ~ 1e8 that silently
+        # poisoned the cross-group average). Exclude it; if every group
+        # is unidentified there is nothing to report.
+        thetas[i] = -beta[1 : 1 + k] / phi_i if abs(phi_i) >= 1e-6 else np.full(k, np.nan)
+    identified = np.isfinite(thetas).all(axis=1)
+    if not identified.any():
+        raise ValueError("mean_group: every group's phi_i ~ 0; no long-run theta identified")
+    n_id = int(identified.sum())
+    theta_mg = np.nanmean(thetas, axis=0)
+    theta_se = np.nanstd(thetas, axis=0, ddof=1) / np.sqrt(n_id) if n_id > 1 else np.full(k, np.nan)
     return {
         "theta_mg": theta_mg,
         "theta_se": theta_se,

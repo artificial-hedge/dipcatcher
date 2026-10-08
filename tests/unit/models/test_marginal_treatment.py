@@ -62,3 +62,40 @@ def test_bench_smoke():
     out = mt.bench_marginal_treatment()
     assert out["synthetic_determinism"] == 1.0
     assert out["synthetic_detects"] == 1.0
+
+
+def test_att_weight_is_treated_survival_not_density(monkeypatch):
+    """omega_ATT(u) must be P(p >= u | D=1) (survival), not a kernel
+    density of treated propensities. Verified end-to-end by injecting a
+    known propensity law and MTE curve."""
+    rng = np.random.default_rng(0)
+    n = 400
+    z = rng.standard_normal(n)
+    x = rng.standard_normal(n)
+    # treated = low-z half -> treated propensities sit in the lower tail
+    treat = (z < np.median(z)).astype(float)
+    y = rng.standard_normal(n)
+
+    # force propensity p_i = sigmoid(z_i): beta = [0, 0(x), 1(z)]
+    monkeypatch.setattr(mt, "_irls_logit", lambda t, px: np.array([0.0, 0.0, 1.0]))
+
+    captured = {}
+
+    def fake_slope(y_, p_, grid, bw):
+        captured["grid"] = grid
+        return grid.copy()  # MTE(u) = u, known
+
+    monkeypatch.setattr(mt, "_local_linear_slope", fake_slope)
+    out = mt.marginal_te(y, treat, z, x, bw=0.15, n_grid=15)
+
+    p = 1.0 / (1.0 + np.exp(-z))
+    p_t = p[treat == 1.0]
+    gr = captured["grid"]
+    w = (p_t[:, None] >= gr[None, :]).mean(axis=0)
+    w = w / w.sum()
+    expected = float(gr @ w)
+    assert abs(out["att_mte"] - expected) < 1e-9
+    # density-weighted alternative must NOT coincide (guards regression)
+    k = np.exp(-0.5 * ((gr[None, :] - p_t[:, None]) / 0.15) ** 2).mean(axis=0)
+    k = k / k.sum()
+    assert abs(out["att_mte"] - float(gr @ k)) > 1e-4

@@ -84,7 +84,9 @@ def bgnbd_loglik(
     # be a/(b+x-1) alone — consistent with the eq. 11 P(alive) denominator.
     A4 = np.where(
         xa > 0,
-        np.log(a) - np.log(b + xa - 1) - (r + xa) * np.log(alpha + ta),
+        np.log(a)
+        - np.log(np.maximum(b + xa - 1, np.finfo(np.float64).tiny))
+        - (r + xa) * np.log(alpha + ta),
         -np.inf,
     )
     ll_vec = A1 + A2 + np.logaddexp(A3, A4)
@@ -151,6 +153,13 @@ def bgnbd_expected_purchases(
         raise ValueError("horizon positive")
     if min(r, alpha, a, b) <= 0:
         raise ValueError("hyperparameters must be positive")
+    if a <= 1.0:
+        # FHL eq. 10 carries (a+b+x-1)/(a-1): for a <= 1 the expected
+        # purchase count diverges (the Beta(a,b) dropout mixture has no
+        # finite mean). The previous zero-fill silently reported "no
+        # future purchases" for a parameter region where the answer is
+        # unbounded — fail closed instead.
+        raise ValueError("a <= 1: BG/NBD expected purchases diverges")
     hyp = hyp2f1(
         r + xa,
         b + xa,
@@ -162,12 +171,14 @@ def bgnbd_expected_purchases(
     #   [1 + delta_{x>0} (a/(b+x-1)) ((a+T)/(a+tx))^{r+x}]
     with np.errstate(all="ignore"):
         num = (a + b + xa - 1) / (a - 1) * (1 - ((alpha + Ta) / (alpha + Ta + t)) ** (r + xa) * hyp)
+    if not np.all(np.isfinite(num)):
+        raise ValueError("bgnbd_expected_purchases: 2F1 evaluation blew up")
     denom = 1 + np.where(
         xa > 0,
         (a / (b + xa - 1)) * ((alpha + Ta) / (alpha + ta)) ** (r + xa),
         0.0,
     )
-    pred = np.where(np.isfinite(num) & (num > 0), num, 0.0) / denom
+    pred = np.where(num > 0, num, 0.0) / denom
     return np.asarray(np.clip(pred, 0.0, None))
 
 
@@ -199,11 +210,16 @@ def bench_pnbd(seed: int = 515) -> dict[str, float]:
     fitted BG/NBD E[purchases] must beat a recency-only
     heuristic against realized future counts."""
     rng = np.random.default_rng(seed)
-    n_cust = 400
+    n_cust = 800
     T_cal = 52.0
     horizon = 13.0
-    lam = rng.gamma(1.2, 4.0, n_cust)  # rates per year-ish
-    drop = rng.beta(0.7, 8.0, n_cust)
+    # The DGP must keep the fitted `a` above 1: E[Y(t)] diverges for
+    # a <= 1 (see bgnbd_expected_purchases) and the previous weak-dropout
+    # regime fitted a ~= 0.35, which the old zero-fill masked into an
+    # all-zero (vacuous) prediction that still "beat" the naive baseline.
+    # lam ~ Gamma(4, 3) + drop ~ Beta(2, 8) gives a_hat ~ 2 across seeds.
+    lam = rng.gamma(4.0, 3.0, n_cust)  # rates per year-ish
+    drop = rng.beta(2.0, 8.0, n_cust)
     # simulate calibration window
     x = np.zeros(n_cust)
     tx = np.zeros(n_cust)

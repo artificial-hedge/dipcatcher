@@ -180,13 +180,18 @@ def marginal_te(
     if span <= 0.0:
         raise ValueError("propensity support degenerate (constant propensity)")
     ate = float(np.trapezoid(mte_g, gr) / span)
-    # ATT weight: density of p among treated at u (selection >= u).
+    # ATT weight: the survival function of the propensity among the
+    # treated, omega_ATT(u) ∝ P(p >= u | D=1) (Heckman-Vytlacil 2005
+    # eq. 25). The previous code used a kernel *density* of treated
+    # propensities — weighting MTE by where treated units cluster
+    # rather than by the share of treated eligible at resistance u.
     p_t = p[tt == 1]
     if p_t.shape[0] < 10:
         raise ValueError("too few treated")
-    k_att = np.exp(-0.5 * ((gr[None, :] - p_t[:, None]) / bw) ** 2).mean(axis=0)
-    w_att = k_att * (gr > 0)
-    w_att = w_att / w_att.sum() if w_att.sum() > 0 else np.ones_like(gr) / gr.shape[0]
+    w_att = (p_t[:, None] >= gr[None, :]).mean(axis=0)
+    if w_att.sum() <= 0.0:
+        raise ValueError("ATT weights degenerate")
+    w_att = w_att / w_att.sum()
     att = float(mte_g @ w_att)
 
     return {
