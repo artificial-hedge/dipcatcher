@@ -7586,7 +7586,19 @@
   "models/diff_cohom.py": {
    "status": "audited"
   },
+  "models/diff_distill.py": {
+   "status": "audited"
+  },
   "models/diff_evolution.py": {
+   "status": "audited"
+  },
+  "models/diff_logic.py": {
+   "status": "audited"
+  },
+  "models/diff_mpc.py": {
+   "status": "audited"
+  },
+  "models/diff_policy.py": {
    "status": "audited"
   },
   "models/differentiable_sat_studies.py": {
@@ -7604,10 +7616,16 @@
   "models/difficulty_retarget.py": {
    "status": "audited"
   },
+  "models/diffie_hellman.py": {
+   "status": "audited"
+  },
   "models/diffpts.py": {
    "status": "audited"
   },
   "models/diffraction_grating.py": {
+   "status": "audited"
+  },
+  "models/diffserv_qos.py": {
    "status": "audited"
   },
   "models/diffuse_element.py": {
@@ -7619,10 +7637,19 @@
   "models/diffusion_approx_sp.py": {
    "status": "audited"
   },
+  "models/diffusion_ddim.py": {
+   "status": "audited"
+  },
   "models/diffusion_forecaster.py": {
    "status": "audited"
   },
+  "models/diffusion_index.py": {
+   "status": "audited"
+  },
   "models/diffusion_lm_studies.py": {
+   "status": "audited"
+  },
+  "models/diffusion_regressor.py": {
    "status": "audited"
   },
   "models/diffusion_semigroup.py": {
@@ -7754,6 +7781,9 @@
   "models/discourse_qa_studies.py": {
    "status": "audited"
   },
+  "models/discrete.py": {
+   "status": "audited"
+  },
   "models/discrete_liquid.py": {
    "status": "audited"
   },
@@ -7799,6 +7829,9 @@
   "models/distance_learning.py": {
    "status": "audited"
   },
+  "models/distance_transform.py": {
+   "status": "audited"
+  },
   "models/distress_qa_studies.py": {
    "status": "audited"
   },
@@ -7812,6 +7845,9 @@
    "status": "audited"
   },
   "models/distributor.py": {
+   "status": "audited"
+  },
+  "models/ditto_fl.py": {
    "status": "audited"
   },
   "models/divergence_op.py": {
@@ -7859,7 +7895,19 @@
   "models/dml.py": {
    "status": "audited"
   },
+  "models/dmp_control.py": {
+   "status": "audited"
+  },
+  "models/dmrg_tfim.py": {
+   "status": "audited"
+  },
   "models/dna_sequencing.py": {
+   "status": "audited"
+  },
+  "models/dnc_memory.py": {
+   "status": "audited"
+  },
+  "models/dns_resolver.py": {
    "status": "audited"
   },
   "models/do_anything_studies.py": {
@@ -7896,6 +7944,9 @@
    "status": "audited"
   },
   "models/dof_management.py": {
+   "status": "audited"
+  },
+  "models/doh_wire.py": {
    "status": "audited"
   },
   "models/dold_kan.py": {
