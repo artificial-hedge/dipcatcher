@@ -2288,6 +2288,30 @@ earlier crashes were self-inflicted and Finding 1 closes as **Lead process-manag
 error, not a repo defect**. If it reproduces, the repo has a genuine crash and hypothesis's
 GC-callback timing is the first place to look.
 
+**CONTROL RESULT — the caveat above is REFUTED and is hereby corrected.** The clean run
+(no `pkill`, no signals of any kind from the Lead) reproduced **3 `Fatal Python error:
+Segmentation fault`** events and **zero** `gc_callback` occurrences. Both halves of the
+hypothesis are now settled by evidence:
+
+1. **The segfault is a genuine repo defect, not Lead-inflicted.** It reproduces without any
+   external signal, on a different worker each run (gw3 in `lead_test2.log`, gw9 in
+   `lead_fault2.log`, gw2 in the clean run), always around 27–30% of collection order. The
+   faulthandler thread dump for the crashing thread shows `<no Python frame>` — the crash is
+   inside native code, on a thread with no Python frame at all, which is consistent with a
+   native extension (BLAS/torch/duckdb-class) faulting, not with Python-level test logic.
+2. **The `gc_callback`/`KeyboardInterrupt` warning WAS a signal-contamination artifact** —
+   it appears only in the runs where the Lead's `pkill` fired, and never in the clean run.
+   It is noise from the harness's own process management, unrelated to the segfault. The
+   earlier paragraph linking the two is superseded by this one.
+
+Standing aggravator to rule in or out: **disk at 99% (2.3–3.3 GiB free) all session.**
+Native allocations that fail under ENOSPC/pressure can segfault exactly like this, and the
+clean run's crash-free sibling runs don't exist yet to compare against. The Lead freed
+~500 MiB (`__pycache__`, pytest/mypy/ruff caches) mid-round; the disk situation is an
+operations-floor item, not a test-suite bug per se, until proven otherwise. Next isolation
+step is recorded in OPEN/NEXT: bisect by directory with `-n1` + faulthandler so the last
+printed dot identifies the crashing file, after the disk has real headroom.
+
 ### Finding 2 — `n_boot: 1000`, not the mandated 2000 (P0.3 honestly downgraded)
 
 `evidence-debt` probed all five merged receipts (`merge_d1_v2aug`, `merge_h4f_v2aug`,
