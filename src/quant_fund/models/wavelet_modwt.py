@@ -175,6 +175,12 @@ def wavelet_correlation(
     lj = (2**j - 1) * (h.size - 1)
     dx = cx[f"W{j}"][lj:]
     dy = cy[f"W{j}"][lj:]
+    if dx.size == 0 or dy.size == 0:
+        # Boundary-affected region L_j-1 swallows the whole series at
+        # this level — no interior coefficients left to correlate. The
+        # previous code let np.std emit a RuntimeWarning and returned
+        # nan, which reads as "correlation undefined" silently.
+        raise ValueError("level too deep: boundary trim empties the series")
     sx, sy = float(np.std(dx)), float(np.std(dy))
     if sx < 1e-12 or sy < 1e-12:
         raise ValueError("degenerate detail")

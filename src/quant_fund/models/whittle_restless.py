@@ -17,14 +17,18 @@ def _whittle(Pa: np.ndarray, Pp: np.ndarray, R: np.ndarray, grid: int = 41) -> n
         prev_diff = None
         for m in ms:
             V = np.zeros(2)
-            Ra = R.copy()
-            Ra[s] = max(R[s], m) if s == s else R[s]
             for _ in range(60):
                 Va = R + 0.95 * Pa @ V
-                Vp = np.minimum.accumulate(np.array([m, m])) + 0.95 * Pp @ V
+                Vp = np.array([m, m]) + 0.95 * Pp @ V
                 V = np.maximum(Va, Vp)
             diff = (R[s] + 0.95 * Pa[s] @ V) - (m + 0.95 * Pp[s] @ V)
-            if prev_diff is not None and prev_diff < 0 <= diff:
+            # diff(m) is decreasing in the subsidy: the Whittle index is
+            # the m where the passive action overtakes — a + to - crossing.
+            # The previous detector watched for the - to + direction, which
+            # a decreasing diff can never satisfy, so every index was 0
+            # and the "play top index" schedule silently degenerated to a
+            # fixed arm order.
+            if prev_diff is not None and prev_diff > 0.0 >= diff:
                 out[s] = m
                 break
             prev_diff = diff

@@ -47,3 +47,20 @@ def test_bench_schema_and_score() -> None:
     for k, v in r.items():
         assert np.isfinite(v), k
     assert r["synthetic_score"] == 1.0
+
+
+def test_correlation_fails_closed_when_trim_empties_series() -> None:
+    """Scale j whose boundary-affected region exceeds n must raise,
+    not return nan from a RuntimeWarning on empty slices."""
+    rng = np.random.default_rng(0)
+    x = rng.standard_normal(64)
+    y = rng.standard_normal(64)
+    # n=64 -> j_max=5, and L_5-1 = (2^5-1)*3 = 93 > 64: no interior.
+    with pytest.raises(ValueError, match="boundary trim empties"):
+        wavelet_correlation(x, y, j=5)
+
+
+def test_correlation_still_works_at_valid_depth() -> None:
+    x, y, _ = synth_wavelet(seed=11)
+    rho = wavelet_correlation(x, y, j=4)
+    assert rho == pytest.approx(1.0, abs=0.15)

@@ -23534,6 +23534,9 @@
   "models/ter_lite_studies.py": {
    "status": "audited"
   },
+  "models/term_structure.py": {
+   "status": "audited"
+  },
   "models/terminal_bench_studies.py": {
    "status": "audited"
   },
@@ -24323,7 +24326,13 @@
   "models/two_scale_conv.py": {
    "status": "audited"
   },
+  "models/two_stage_lshaped.py": {
+   "status": "audited"
+  },
   "models/two_transform.py": {
+   "status": "audited"
+  },
+  "models/two_way_dfa.py": {
    "status": "audited"
   },
   "models/tydiqa_lite_studies.py": {
@@ -25371,6 +25380,9 @@
    "status": "audited"
   },
   "models/whittaker_model.py": {
+   "status": "audited"
+  },
+  "models/whittle_restless.py": {
    "status": "audited"
   },
   "models/whooping_qa_studies.py": {
