@@ -78,3 +78,41 @@ def test_bench_passes():
     out = bench_chain_ladder()
     assert out["synthetic_reserve_total"] > 0
     assert out["synthetic_mack_cv"] > 0
+
+
+def test_mack_includes_cross_year_covariance():
+    """Aggregate MSE must exceed the sum of per-year proc+param terms —
+    reserves share fitted factors so their estimation errors correlate
+    (the docstring claims Mack's covariance cross-terms; they were
+    silently missing from the total)."""
+    from quant_fund.models.chain_ladder import _check_triangle
+
+    tri = _synthetic_triangle(17)
+    ca = _check_triangle(tri)
+    n = ca.shape[0]
+    f = ata_factors(ca)
+    sig2 = np.empty(n - 1)
+    for j in range(n - 1):
+        col, nxt = ca[:, j], ca[:, j + 1]
+        m = np.isfinite(col) & np.isfinite(nxt) & (col > 0)
+        w = col[m]
+        dev = nxt[m] / col[m] - f[j]
+        if m.sum() < 2:
+            sig2[j] = min(sig2[:j]) if j else 1.0
+        else:
+            sig2[j] = float((w * dev * dev).sum() / (m.sum() - 1))
+    s_cols = np.array(
+        [
+            sum(ca[k, j] for k in range(n - j - 1) if np.isfinite(ca[k, j]) and ca[k, j] > 0)
+            for j in range(n - 1)
+        ]
+    )
+    diag = np.diag(np.fliplr(ca))
+    no_cross = 0.0
+    for i in range(1, n):
+        c_k = diag[i]
+        for j in range(n - 1 - i, n - 1):
+            no_cross += c_k * sig2[j] / f[j] + c_k * c_k * (sig2[j] / (f[j] * f[j])) / s_cols[j]
+            c_k = c_k * f[j]
+    mk = mack_variance(tri)
+    assert mk["mse_total"] > no_cross * 1.001

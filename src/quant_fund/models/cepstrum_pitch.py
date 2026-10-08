@@ -17,7 +17,7 @@ def bench_cepstrum_pitch(seed: int = 4803, f0: float = 120.0) -> dict[str, float
     q = np.arange(len(cep)) / FS  # quefrency axis
     lo, hi = int(FS / 300.0), int(FS / 60.0)  # 60..300 Hz range
     peak = lo + int(np.argmax(cep[lo:hi]))
-    f0_hat = FS * 0 + 1.0 / q[peak]
+    f0_hat = 1.0 / q[peak]
     # second-order comb: cepstrum at 2*quefrency should also be elevated
     comb2 = cep[min(2 * peak, len(cep) - 1)]
     return {

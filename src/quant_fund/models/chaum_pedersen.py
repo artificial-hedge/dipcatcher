@@ -2,6 +2,7 @@
 
 import hashlib
 import secrets
+from collections.abc import Callable
 
 _SEED = 20261231 + 594
 
@@ -15,9 +16,17 @@ def _H(*xs: int) -> int:
     return int.from_bytes(d[:8], "big") % (_p() - 1)
 
 
-def cp_prove(g: int, h: int, y: int, z: int, x: int) -> tuple[int, int, int]:
+def cp_prove(
+    g: int,
+    h: int,
+    y: int,
+    z: int,
+    x: int,
+    randbelow: Callable[[int], int] = secrets.randbelow,
+) -> tuple[int, int, int]:
+    """Nonce defaults to ``secrets.randbelow``; tests inject a seeded draw."""
     p = _p()
-    w = secrets.randbelow(p - 2)
+    w = randbelow(p - 2)
     a1, a2 = pow(g, w, p), pow(h, w, p)
     c = _H(g, h, y, z, a1, a2)
     r = (w + c * x) % (p - 1)
@@ -34,13 +43,13 @@ def cp_verify(g: int, h: int, y: int, z: int, proof: tuple[int, int, int]) -> bo
 def bench_chaum_pedersen(seed: int = _SEED) -> dict[str, float]:
     import random
 
-    random.seed(seed)
+    rng = random.Random(seed)
     p = _p()
     g, h = 5, 7
     ok = 0
     for _ in range(40):
-        x = secrets.randbelow(p - 2)
+        x = rng.randrange(p - 2)
         y, z = pow(g, x, p), pow(h, x, p)
-        proof = cp_prove(g, h, y, z, x)
+        proof = cp_prove(g, h, y, z, x, randbelow=rng.randrange)
         ok += cp_verify(g, h, y, z, proof)
     return {"synthetic_cp_valid": ok / 40}

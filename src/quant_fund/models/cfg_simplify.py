@@ -39,7 +39,9 @@ def simplify(cfg: CFG, entry: str) -> CFG:
         changed = False
         for b in list(cfg):
             n = cfg[b]
-            if n[0] == "jmp" and n[1] in cfg and n[1] != b:
+            # tgt != entry: merging a jmp back to the entry block would
+            # delete the CFG's entry point
+            if n[0] == "jmp" and n[1] in cfg and n[1] not in (b, entry):
                 tgt = n[1]
                 if preds.get(tgt, 0) <= 1:
                     cfg[b] = cfg[tgt]

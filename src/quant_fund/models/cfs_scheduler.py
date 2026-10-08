@@ -13,23 +13,29 @@ NICE_0 = 1024.0
 
 
 def run_cfs(tasks: list[tuple[float, int]], horizon: int, tick: int = 4) -> dict[int, float]:
-    """tasks: [(weight, total_exec)]; returns pid -> cpu time granted."""
+    """tasks: [(weight, total_exec)]; returns pid -> cpu time granted.
+
+    Raises if the runnable-set vruntime spread ever exceeds one
+    tick-quantum of virtual time for the lightest-runnable entity —
+    the real min-vruntime invariant CFS maintains (a non-tautological
+    check: it bounds scheduler state, not the argmin choice itself).
+    """
     vrt = [0.0] * len(tasks)
     rem = [b for _w, b in tasks]
     granted = [0.0] * len(tasks)
-    picks_min = True
     t = 0
     while t < horizon and any(r > 0 for r in rem):
         run = [i for i in range(len(tasks)) if rem[i] > 0]
         pid = min(run, key=lambda i: vrt[i])
-        picks_min &= vrt[pid] == min(vrt[i] for i in run)
         step = min(tick, rem[pid])
         rem[pid] -= step
         granted[pid] += step
         vrt[pid] += step * NICE_0 / tasks[pid][0]
+        bound = tick * NICE_0 / min(tasks[i][0] for i in run)
+        spread = max(vrt[i] for i in run) - min(vrt[i] for i in run)
+        if spread > bound + 1e-9:
+            raise ValueError(f"vruntime spread {spread} > bound {bound}")
         t += step
-    if not (picks_min):
-        raise ValueError("picks_min")
     return dict(enumerate(granted))
 
 
@@ -48,11 +54,11 @@ def bench_cfs_scheduler(seed: int = 20261231 + 371) -> dict[str, float]:
         g2 = run_cfs(tasks2, 1200)
         ratio = g2[0] / max(g2[1], 1e-9)
         prop += int(1.5 < ratio < 2.5)
-        # explicit min-vruntime check via instrumented run
-        pick_ok += 1  # asserted inside run_cfs
+        # spread invariant is enforced (and would raise) inside run_cfs
+        pick_ok += 1
         _ = rng.random()
     return {
         "synthetic_fair_share": float(fair / trials),
         "synthetic_proportional_weight": float(prop / trials),
-        "synthetic_min_vruntime_picks": float(pick_ok / trials),
+        "synthetic_vruntime_spread_ok": float(pick_ok / trials),
     }

@@ -67,3 +67,25 @@ def test_bench_schema_and_score() -> None:
     ):
         assert np.isfinite(r[k])
     assert r["synthetic_score"] == 1.0
+
+
+def test_terminal_violation_does_not_crash():
+    """A hit on the final index yields a zero right-censored duration;
+    it contributes log S(0)=0, not a hard error (old code raised)."""
+    hits = np.zeros(200)
+    hits[[10, 40, 90, 140, 180, 199]] = 1.0
+    d = violation_durations(hits)
+    assert d[-1] == 0.0
+    r = cp_backtest(hits)
+    assert np.isfinite(r["b_hat"])
+
+
+def test_clustered_synth_both_regimes_persist():
+    """The two-state chain must persist in BOTH states (p_stay each);
+    the old asymmetric version made state-0 transient (2% persistence),
+    collapsing the stream to ~25% iid hits."""
+    hits = synth_cp(seed=7, clustered=True, alpha=0.05)
+    rate = float(hits.mean())
+    # symmetric persistence gives roughly half low-rate (1.5%) and
+    # half high-rate (25%) -> ~13%; the broken chain sat near 25%.
+    assert 0.05 < rate < 0.20

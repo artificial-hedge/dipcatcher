@@ -4619,6 +4619,9 @@
   "models/century_qa_studies.py": {
    "status": "audited"
   },
+  "models/cepstrum_pitch.py": {
+   "status": "audited"
+  },
   "models/ceramic_analysis.py": {
    "status": "audited"
   },
@@ -4637,6 +4640,21 @@
   "models/cerberus_qa_studies.py": {
    "status": "audited"
   },
+  "models/cevae_latent.py": {
+   "status": "audited"
+  },
+  "models/cfg_pda_equiv.py": {
+   "status": "audited"
+  },
+  "models/cfg_simplify.py": {
+   "status": "audited"
+  },
+  "models/cfr.py": {
+   "status": "audited"
+  },
+  "models/cfs_scheduler.py": {
+   "status": "audited"
+  },
   "models/cg_solver.py": {
    "status": "audited"
   },
@@ -4646,6 +4664,9 @@
   "models/chac_qa_studies.py": {
    "status": "audited"
   },
+  "models/chacha_stream.py": {
+   "status": "audited"
+  },
   "models/chafai_rmt.py": {
    "status": "audited"
   },
@@ -4653,6 +4674,12 @@
    "status": "audited"
   },
   "models/chain_cond.py": {
+   "status": "audited"
+  },
+  "models/chain_homotopy.py": {
+   "status": "audited"
+  },
+  "models/chain_ladder.py": {
    "status": "audited"
   },
   "models/chained_hash.py": {
@@ -4673,13 +4700,25 @@
   "models/chan_hull.py": {
    "status": "audited"
   },
+  "models/chan_vese.py": {
+   "status": "audited"
+  },
+  "models/chance_scenario.py": {
+   "status": "audited"
+  },
   "models/chaneque_qa_studies.py": {
    "status": "audited"
   },
   "models/changepoint.py": {
    "status": "audited"
   },
+  "models/channel_select.py": {
+   "status": "audited"
+  },
   "models/chanterelle_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/chaotic_widen.py": {
    "status": "audited"
   },
   "models/chapman_enskog.py": {
@@ -4724,6 +4763,15 @@
   "models/chatterjee_gff.py": {
    "status": "audited"
   },
+  "models/chaum_pedersen.py": {
+   "status": "audited"
+  },
+  "models/cheb_approx.py": {
+   "status": "audited"
+  },
+  "models/chebnet.py": {
+   "status": "audited"
+  },
   "models/chebyshev_alternation.py": {
    "status": "audited"
   },
@@ -4737,6 +4785,9 @@
    "status": "audited"
   },
   "models/chebyshev_interp.py": {
+   "status": "audited"
+  },
+  "models/chebyshev_iter.py": {
    "status": "audited"
   },
   "models/chebyshev_t.py": {
@@ -4776,6 +4827,9 @@
    "status": "audited"
   },
   "models/chen_stein.py": {
+   "status": "audited"
+  },
+  "models/chen_tiao_outliers.py": {
    "status": "audited"
   },
   "models/chern_character.py": {
@@ -4823,6 +4877,9 @@
   "models/chiropractic_studies.py": {
    "status": "audited"
   },
+  "models/chirp_z.py": {
+   "status": "audited"
+  },
   "models/chital_qa_studies.py": {
    "status": "audited"
   },
@@ -4830,6 +4887,12 @@
    "status": "audited"
   },
   "models/cholesky_piv.py": {
+   "status": "audited"
+  },
+  "models/chomp.py": {
+   "status": "audited"
+  },
+  "models/chord_look.py": {
    "status": "audited"
   },
   "models/choreography.py": {
@@ -4844,6 +4907,9 @@
   "models/chow_group.py": {
    "status": "audited"
   },
+  "models/chow_lin.py": {
+   "status": "audited"
+  },
   "models/chow_motive.py": {
    "status": "audited"
   },
@@ -4854,6 +4920,18 @@
    "status": "audited"
   },
   "models/chr_f_studies.py": {
+   "status": "audited"
+  },
+  "models/christensen_diebold_rudebusch.py": {
+   "status": "audited"
+  },
+  "models/christoffel.py": {
+   "status": "audited"
+  },
+  "models/christoffersen_pelletier.py": {
+   "status": "audited"
+  },
+  "models/christofides_tsp.py": {
    "status": "audited"
   },
   "models/chromatic_base.py": {
@@ -4898,6 +4976,9 @@
   "models/chronicle_qa_studies.py": {
    "status": "audited"
   },
+  "models/chronos_lite.py": {
+   "status": "audited"
+  },
   "models/chuckwalla_qa_studies.py": {
    "status": "audited"
   },
@@ -4914,6 +4995,9 @@
    "status": "audited"
   },
   "models/chupacabra_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/church_encoding.py": {
    "status": "audited"
   },
   "models/church_grim_qa_studies.py": {
@@ -4952,10 +5036,19 @@
   "models/cipolloni_erdos.py": {
    "status": "audited"
   },
+  "models/cir_sim.py": {
+   "status": "audited"
+  },
+  "models/circuit_ablation.py": {
+   "status": "audited"
+  },
   "models/circuit_analysis.py": {
    "status": "audited"
   },
   "models/circuit_discovery_studies.py": {
+   "status": "audited"
+  },
+  "models/circuit_lb.py": {
    "status": "audited"
   },
   "models/circuit_tracer_studies.py": {
@@ -4964,7 +5057,13 @@
   "models/circulant_matrix.py": {
    "status": "audited"
   },
+  "models/circular_correlation.py": {
+   "status": "audited"
+  },
   "models/circular_law.py": {
+   "status": "audited"
+  },
+  "models/circular_tests.py": {
    "status": "audited"
   },
   "models/citadel_qa_studies.py": {

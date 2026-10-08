@@ -127,6 +127,13 @@ def mack_variance(c: FloatArray) -> dict[str, float]:
         ult[i] = diag[i] * prods
         c_hat[i] = ult[i]
     res = ult - diag
+    # observed column sums S_j (over rows with data in column j)
+    s_cols = np.array(
+        [
+            sum(ca[k, j] for k in range(n - j - 1) if np.isfinite(ca[k, j]) and ca[k, j] > 0)
+            for j in range(n - 1)
+        ]
+    )
     mse = 0.0
     # process + parameter variance per accident year (Mack recursion)
     for i in range(1, n):
@@ -136,11 +143,21 @@ def mack_variance(c: FloatArray) -> dict[str, float]:
         for j in range(n - 1 - i, n - 1):
             # develop one step
             c_k_next = c_k * f[j]
-            s_j = sum(ca[k, j] for k in range(n - j - 1) if np.isfinite(ca[k, j]) and ca[k, j] > 0)
+            s_j = s_cols[j]
             proc += c_k * sig2[j] / f[j]  # process var
             param += c_k * c_k * (sig2[j] / (f[j] * f[j])) / s_j
             c_k = c_k_next
         mse += proc + param
+    # Mack (1993) estimation-error covariance cross-terms: reserves of
+    # different accident years share the same fitted factors, so their
+    # parameter errors are correlated — the aggregate MSE carries
+    # 2 * sum_{i<k} U_i U_k * sum_{j=n-1-k}^{n-2} sig2_j/(f_j^2 S_j).
+    cross = 0.0
+    for k in range(1, n):
+        tail = sum(sig2[j] / (f[j] * f[j]) / s_cols[j] for j in range(n - 1 - k, n - 1))
+        for i in range(k):
+            cross += 2.0 * ult[i] * ult[k] * tail
+    mse += cross
     return {
         "mse_total": float(mse),
         "se_reserve": float(np.sqrt(mse)),

@@ -14,7 +14,7 @@ def eval_gate(op: str, a: int, b: int, n: int) -> int:
     if op == "xor":
         return a ^ b
     if op == "nand":
-        return (~a & full) if True else 0
+        return ~(a & b) & full
     raise ValueError(op)
 
 
@@ -33,31 +33,60 @@ def input_tables(n: int) -> list[int]:
 def circuit_size(target: int, n: int, max_size: int = 5) -> int | None:
     """Minimum number of binary gates computing `target` on n vars.
 
-    BFS over sets of computable tables: level k = functions computable with
-    k gates (NOT folded as 1-input gate).
+    Circuits are DAGs: a size-k circuit's last gate reads two earlier
+    gate outputs of that SAME circuit. Tracking only "each function
+    computable in <= k gates" and combining any two such parents
+    undercounts — the parents may need disjoint (k-1)-gate circuits.
+    We therefore carry the actual gate multiset: each table maps to the
+    frozenset of gates producing it, and combining a, b costs
+    ``|C_a union C_b| + 1`` (shared subcircuits merge for free).
+    Gates are (op, in1, in2); inputs are tables, so two gates emitting
+    the same table unify — sound at this scale.
     """
     full = (1 << (1 << n)) - 1
-    known = set(input_tables(n))
-    known |= {0, full}
+    ops = ["and", "or", "xor", "nand"]
+    # table -> Pareto-minimal gate sets (frozensets) computing it.
+    # Inclusion dominates: S ⊆ T implies |S ∪ B| ≤ |T ∪ B| for any B,
+    # so a superset is never worth keeping; equal-size incomparable
+    # sets are kept (different sharing ⇒ different unions downstream).
+    # Frontier is capped — smallest sets survive pruning.
+    known: dict[int, list[frozenset[tuple[object, ...]]]] = {
+        t: [frozenset()] for t in input_tables(n)
+    }
+    known[0] = [frozenset()]
+    known[full] = [frozenset()]
+
+    def offers(t: int, cand: frozenset[tuple[object, ...]]) -> bool:
+        cur = known.setdefault(t, [])
+        if any(s <= cand for s in cur):
+            return False
+        cur[:] = [s for s in cur if not cand < s]
+        cur.append(cand)
+        if len(cur) > 16:
+            cur.sort(key=len)
+            del cur[16:]
+        return True
+
     if target in known:
         return 0
-    ops = ["and", "or", "xor", "nand"]
-    for size in range(1, max_size + 1):
-        new: set[int] = set()
-        prev = list(known)
-        for a in prev:
-            na = ~a & full
-            if na not in known and na not in new:
-                new.add(na)
-        for i, a in enumerate(prev):
-            for b in prev[i:]:
+    for _ in range(4 * max_size):  # rounds until fixpoint
+        grew = False
+        snap = [(t, s) for t, sets in known.items() for s in sets]
+        for i, (t_a, s_a) in enumerate(snap):
+            if len(s_a) + 1 > max_size:
+                continue
+            grew |= offers(~t_a & full, s_a | {("not", t_a)})
+            for t_b, s_b in snap[i:]:
+                uni = s_a | s_b
+                if len(uni) + 1 > max_size:
+                    continue
                 for op in ops:
-                    t = eval_gate(op, a, b, n)
-                    if t not in known and t not in new:
-                        new.add(t)
-        if target in new:
-            return size
-        known |= new
+                    t = eval_gate(op, t_a, t_b, n)
+                    grew |= offers(t, uni | {(op, t_a, t_b)})
+        if target in known:
+            return min(len(s) for s in known[target])
+        if not grew:
+            break
     return None
 
 

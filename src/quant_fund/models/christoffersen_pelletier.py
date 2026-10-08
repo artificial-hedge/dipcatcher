@@ -87,7 +87,10 @@ def cp_backtest(hits: FloatArray) -> dict[str, float]:
     violation rate.
     """
     d = violation_durations(hits)
-    if np.any(d <= 0):
+    # interior durations are gap diffs (>=1 by construction); the two
+    # censored end durations may legitimately be 0 (a violation at the
+    # sample edge) — they contribute log S(0) = 0, not an error.
+    if np.any(d[1:-1] <= 0):
         raise ValueError("zero durations")
     a = float(np.mean(d))
     res = _opt.minimize_scalar(lambda b: _weibull_nll(b, d), bounds=(0.05, 5.0), method="bounded")
@@ -121,7 +124,8 @@ def synth_cp(
     state = 0
     p_stay = 0.98
     for i in range(t):
-        if rng.uniform() < (p_stay if state else 1.0 - p_stay):
+        # symmetric two-state persistence: both regimes stay with p_stay
+        if rng.uniform() < p_stay:
             pass
         else:
             state = 1 - state
