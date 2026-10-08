@@ -30,12 +30,17 @@ def run(ops: list[Op]) -> dict[str, str]:
             if st.get(x) != "U":
                 raise PermError(f"split needs unique {x}")
             del st[x]
-            st[a] = "U_split"
-            st[b] = "U_split"
+            st[a] = f"U_split:{x}"
+            st[b] = f"U_split:{x}"
         elif tag == "join":
             _, a, b, x = op
-            if st.get(a) != "U_split" or st.get(b) != "U_split":
+            pa, pb = st.get(a), st.get(b)
+            if not (isinstance(pa, str) and pa.startswith("U_split:")) or not (
+                isinstance(pb, str) and pb.startswith("U_split:")
+            ):
                 raise PermError("join needs both split halves")
+            if pa != pb:
+                raise PermError(f"join halves come from different splits: {pa} vs {pb}")
             del st[a]
             del st[b]
             st[x] = "U"
@@ -45,13 +50,15 @@ def run(ops: list[Op]) -> dict[str, str]:
                 raise PermError(f"alias_ro needs live owner {x}")
             st[y] = "R"
         elif tag == "drop_ro":
+            if st.get(op[1]) != "R":
+                raise PermError(f"drop_ro needs a readonly view, got {st.get(op[1])}")
             del st[op[1]]
         elif tag == "write":
             x = op[1]
             if st.get(x) != "U":
                 raise PermError(f"write needs unique, got {st.get(x)}")
-            if any(p == "R" for k, p in st.items() if k != x):
-                pass  # readonly views on OTHER places are fine
+            # readonly views on other places are fine; an R view of x
+            # itself does not block the owner's write (non-lexical rules)
         elif tag == "read":
             if st.get(op[1]) is None:
                 raise PermError(f"read dead {op[1]}")

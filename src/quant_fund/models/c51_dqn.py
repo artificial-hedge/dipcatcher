@@ -92,7 +92,7 @@ def bench_c51_dqn(
         gauss_cdf = np.array([0.5 * (1 + erf((z - mu) / (sd * 2**0.5))) for z in zt])
         w1_gauss += float(np.trapezoid(np.abs(gauss_cdf - truth_cdf), zt))
         tail_pred[a] = pred_p[zt < -1.0].sum()
-        tail_gauss[a] = float(1 - gauss_cdf[np.searchsorted(zt, -1.0)])
+        tail_gauss[a] = float(gauss_cdf[np.searchsorted(zt, -1.0)])
     for st in range(4):
         mask = s == st
         tail_state = (

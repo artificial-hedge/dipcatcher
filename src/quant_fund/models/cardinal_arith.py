@@ -21,9 +21,8 @@ def card_prod(a: frozenset, b: frozenset) -> frozenset:
 
 
 def bijection(a: frozenset, b: frozenset) -> bool:
-    if len(a) != len(b):
-        return False
-    return bool(next(iter(a), None) is not None or True)
+    """Whether a bijection exists between two finite sets — equal cardinality."""
+    return len(a) == len(b)
 
 
 def embeds(a: frozenset, b: frozenset) -> bool:

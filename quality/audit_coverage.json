@@ -3785,13 +3785,28 @@
   "models/buzzard_qa_studies.py": {
    "status": "audited"
   },
+  "models/bv_ops.py": {
+   "status": "audited"
+  },
+  "models/bvar.py": {
+   "status": "audited"
+  },
   "models/bvar_minnesota.py": {
    "status": "audited"
   },
   "models/bvp_eigen.py": {
    "status": "audited"
   },
+  "models/bwt_transform.py": {
+   "status": "audited"
+  },
   "models/byakko_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/byol.py": {
+   "status": "audited"
+  },
+  "models/bytecode_vm.py": {
    "status": "audited"
   },
   "models/byzantine_studies.py": {
@@ -3801,6 +3816,9 @@
    "status": "audited"
   },
   "models/c0_semigroup.py": {
+   "status": "audited"
+  },
+  "models/c51_dqn.py": {
    "status": "audited"
   },
   "models/c51_rl.py": {
@@ -3816,6 +3834,9 @@
    "status": "audited"
   },
   "models/cabinet_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/cache_sim.py": {
    "status": "audited"
   },
   "models/cactus_qa_studies.py": {
@@ -3834,6 +3855,9 @@
    "status": "audited"
   },
   "models/cadlag_space.py": {
+   "status": "audited"
+  },
+  "models/cagrad_mtl.py": {
    "status": "audited"
   },
   "models/cai_critique_studies.py": {
@@ -3875,10 +3899,16 @@
   "models/calibration.py": {
    "status": "audited"
   },
+  "models/calibration_survey.py": {
+   "status": "audited"
+  },
   "models/calogero_moser.py": {
    "status": "audited"
   },
   "models/calygreyhound_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/cam_prune.py": {
    "status": "audited"
   },
   "models/cambrian_pp.py": {
@@ -3899,16 +3929,25 @@
   "models/camia_newman.py": {
    "status": "audited"
   },
+  "models/campbell_shiller.py": {
+   "status": "audited"
+  },
   "models/campbell_thm.py": {
    "status": "audited"
   },
   "models/canard_lite_studies.py": {
    "status": "audited"
   },
+  "models/canary_exposure.py": {
+   "status": "audited"
+  },
   "models/canary_infer_studies.py": {
    "status": "audited"
   },
   "models/canary_memorization_studies.py": {
+   "status": "audited"
+  },
+  "models/canny_edge.py": {
    "status": "audited"
   },
   "models/canon_law.py": {
@@ -3956,6 +3995,9 @@
   "models/capability_eval_studies.py": {
    "status": "audited"
   },
+  "models/capability_perm.py": {
+   "status": "audited"
+  },
   "models/capacitary_pot.py": {
    "status": "audited"
   },
@@ -3963,6 +4005,9 @@
    "status": "audited"
   },
   "models/capm_model.py": {
+   "status": "audited"
+  },
+  "models/capsule_dynamic.py": {
    "status": "audited"
   },
   "models/capuchin_qa_studies.py": {
@@ -3995,6 +4040,9 @@
   "models/carbon_cycle.py": {
    "status": "audited"
   },
+  "models/card_table_gc.py": {
+   "status": "audited"
+  },
   "models/cardamom_qa_studies.py": {
    "status": "audited"
   },
@@ -4002,6 +4050,9 @@
    "status": "audited"
   },
   "models/cardiac_surgery.py": {
+   "status": "audited"
+  },
+  "models/cardinal_arith.py": {
    "status": "audited"
   },
   "models/cardinal_interp.py": {
@@ -4055,10 +4106,16 @@
   "models/carpentry_trades.py": {
    "status": "audited"
   },
+  "models/carr_madan.py": {
+   "status": "audited"
+  },
   "models/carrot_qa_studies.py": {
    "status": "audited"
   },
   "models/cartan_eilenberg.py": {
+   "status": "audited"
+  },
+  "models/cartan_matrix.py": {
    "status": "audited"
   },
   "models/cartan_ss.py": {
@@ -4091,6 +4148,9 @@
   "models/caruso_lebaron.py": {
    "status": "audited"
   },
+  "models/cascades_opt.py": {
+   "status": "audited"
+  },
   "models/case_qa_studies.py": {
    "status": "audited"
   },
@@ -4119,6 +4179,9 @@
    "status": "audited"
   },
   "models/cat_cofibrant.py": {
+   "status": "audited"
+  },
+  "models/cat_colimit.py": {
    "status": "audited"
   },
   "models/cat_descent.py": {
@@ -4229,7 +4292,16 @@
   "models/cat_weak_eq.py": {
    "status": "audited"
   },
+  "models/catalan_dp.py": {
+   "status": "audited"
+  },
+  "models/catapult_phase.py": {
+   "status": "audited"
+  },
   "models/cataract_studies.py": {
+   "status": "audited"
+  },
+  "models/cate_distill.py": {
    "status": "audited"
   },
   "models/categorical_entropy.py": {
@@ -4242,6 +4314,9 @@
    "status": "audited"
   },
   "models/cathedral_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/catmull_clark.py": {
    "status": "audited"
   },
   "models/catoblepas_qa_studies.py": {
@@ -4259,7 +4334,13 @@
   "models/cauchy_binet.py": {
    "status": "audited"
   },
+  "models/cauchy_integral.py": {
+   "status": "audited"
+  },
   "models/cauchy_interlace.py": {
+   "status": "audited"
+  },
+  "models/causal_bcast.py": {
    "status": "audited"
   },
   "models/causal_forest.py": {
@@ -4268,10 +4349,19 @@
   "models/causal_impact.py": {
    "status": "audited"
   },
+  "models/causal_miner.py": {
+   "status": "audited"
+  },
   "models/causal_panel.py": {
    "status": "audited"
   },
   "models/causal_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/causal_rep.py": {
+   "status": "audited"
+  },
+  "models/causal_rep_bal.py": {
    "status": "audited"
   },
   "models/causal_scrubbing_studies.py": {
@@ -4313,10 +4403,16 @@
   "models/cave_worm_qa_studies.py": {
    "status": "audited"
   },
+  "models/cavi_gmm.py": {
+   "status": "audited"
+  },
   "models/caviar.py": {
    "status": "audited"
   },
   "models/cavy_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/cayley_graph.py": {
    "status": "audited"
   },
   "models/cayley_moser.py": {
@@ -4329,6 +4425,12 @@
    "status": "audited"
   },
   "models/cbc_bcast.py": {
+   "status": "audited"
+  },
+  "models/cbc_padding.py": {
+   "status": "audited"
+  },
+  "models/cca.py": {
    "status": "audited"
   },
   "models/ccm.py": {

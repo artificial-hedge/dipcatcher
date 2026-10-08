@@ -33,7 +33,9 @@ def bench_cbc_padding(seed: int = _SEED) -> dict[str, float]:
         i = rng.randint(0, len(p))
         bad_b = p[:i] + bytes([p[i] ^ 0xFF]) + p[i + 1 :]
         out = unpad(bad_b)
-        bad += int(out is None or out != m[:-1] and True or True)
+        # oracle safety: a corrupted ciphertext must never silently
+        # round-trip back to the original plaintext
+        bad += int(out is None or out != m)
     # proper oracle test: flip last byte → must fail unless collides
     strict = 0
     for _ in range(n):
@@ -45,4 +47,5 @@ def bench_cbc_padding(seed: int = _SEED) -> dict[str, float]:
     return {
         "synthetic_roundtrip": float(rt / n),
         "synthetic_bad_pad_reject": float(strict / n),
+        "synthetic_corrupt_no_roundtrip": float(bad / n),
     }

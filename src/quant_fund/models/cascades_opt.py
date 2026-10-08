@@ -37,7 +37,10 @@ def optimize(tables: list[str], cards: dict[str, float], join_sel: float = 0.1) 
             return memo[ts]
         best, best_plan = np.inf, None
         for k in range(1, len(ts)):
-            for sub in itertools.combinations(ts, k):
+            # canonical order: frozenset iteration is hash-dependent, which
+            # would make equal-cost plan choice nondeterministic across
+            # processes (PYTHONHASHSEED) — sort for a stable tiebreak.
+            for sub in itertools.combinations(sorted(ts), k):
                 L, R = frozenset(sub), ts - frozenset(sub)
                 for a, b in [(rec(L), rec(R))]:
                     for op in ("nlj", "hj"):
@@ -45,8 +48,8 @@ def optimize(tables: list[str], cards: dict[str, float], join_sel: float = 0.1) 
                         c = _cost(pl, cards, join_sel)
                         if c < best:
                             best, best_plan = c, pl
-        if not (best_plan is not None):
-            raise ValueError("best_plan is not None")
+        if best_plan is None:
+            raise ValueError("no candidate plan enumerated")
         memo[ts] = best_plan
         return memo[ts]
 

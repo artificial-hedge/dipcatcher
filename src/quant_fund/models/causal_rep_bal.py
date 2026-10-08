@@ -45,7 +45,9 @@ def bench_causal_rep_bal(seed: int = 1219, iters: int = 1000, lam: float = 0.1) 
             h(torch.cat([rep, torch.ones(len(X), 1)], 1)).squeeze(-1).numpy()
             - h(torch.cat([rep, torch.zeros(len(X), 1)], 1)).squeeze(-1).numpy()
         )
-    # unbalanced ablation refit
+    # unbalanced ablation refit — re-seed so the ablation shares the
+    # penalized arm's initialization (controlled comparison)
+    torch.manual_seed(seed)
     phi2 = torch.nn.Sequential(
         torch.nn.Linear(X.shape[1], 24), torch.nn.ReLU(), torch.nn.Linear(24, 16), torch.nn.ReLU()
     )

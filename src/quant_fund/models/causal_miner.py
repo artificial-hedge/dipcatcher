@@ -29,11 +29,7 @@ def synth_zoo(T: int, rng: np.random.Generator) -> tuple[FloatArray, FloatArray,
     f[:, 4] = 0.8 * f[:, 1] + 0.4 * f[:, 4]
     y = np.zeros(T)
     for t in range(1, T):
-        y[t] = (
-            sum(b * f[t - 1, k] for k, b in _TRUE.items())
-            + 0.5 * y[t - 1] * 0
-            + 0.4 * rng.standard_normal()
-        )
+        y[t] = sum(b * f[t - 1, k] for k, b in _TRUE.items()) + 0.4 * rng.standard_normal()
     return f, y, dict(_TRUE)
 
 
