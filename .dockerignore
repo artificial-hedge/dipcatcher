@@ -1,15 +1,50 @@
+# Build context rules for the root image (`docker build .`). Only these paths
+# are ever COPY'd by Dockerfile: pyproject.toml, uv.lock, README.md, LICENSE,
+# src/ (incl. src/quant_fund/py.typed and
+# src/quant_fund/stress/public_domain/fred_h10_h15.json — the wheel
+# force-includes) and configs/. Everything below is context-transfer overhead
+# (measured 936MB / 22,950 files before this list; see
+# .dsh-24x7/lane_reports/l5-packaging.md for the after number).
+#
+# NOTE (Lead decision 2026-10-08): receipts/, verifier/ and artifacts/ stay IN
+# context — docker/research-api.Dockerfile COPYs them (the read-only evidence
+# it serves) and a single fail-safe ignore file beats relying on the
+# unverified per-Dockerfile ignore-file convention. ~5.4MB total. Image
+# content is decided by COPY lines, so the root image still carries none of
+# them (root Dockerfile COPYs: pyproject.toml, uv.lock, README.md, LICENSE,
+# src/, configs/ only).
+
+# --- VCS / CI / agent state ---
 .git
 .github
-.venv
-__pycache__
-*.pyc
-*.egg-info
-.pytest_cache
-.mypy_cache
-.ruff_cache
-.hypothesis
+.dsh-24x7
+.pre-commit-config.yaml
 .serena
 .freebuff
+.DS_Store
+**/.DS_Store
+
+# --- virtualenvs (2.3GB + 1.2GB) and Python caches ---
+# Both bare and ** forms are listed on purpose: plain Go filepath.Match globs
+# do not cross "/".
+.venv
+.venv*
+__pycache__
+**/__pycache__
+*.pyc
+**/*.pyc
+*.egg-info
+**/*.egg-info
+.pytest_cache
+**/.pytest_cache
+.mypy_cache
+**/.mypy_cache
+.ruff_cache
+**/.ruff_cache
+.hypothesis
+**/.hypothesis
+
+# --- coverage / local secrets / local DBs / logs ---
 .coverage
 coverage.xml
 htmlcov
@@ -19,21 +54,31 @@ htmlcov
 mlruns
 .mlflow
 *.db
+**/*.db
 *.log
-.DS_Store
-data/raw
-data/bronze
-data/silver
-data/gold
-data/metadata
+**/*.log
+
+# --- data + heavy trees: never COPY'd (461M / 168M / 97M / 45M / 38M / 31M /
+# 25M / 5.6M / 129M) ---
+data
+rust
+web
+clients
+site
+quality
+third_party
+research
 notebooks
+
+# --- build output ---
+dist
+
+# --- docs / tests / scripts / work-tracking: not part of the image ---
 docs
 tests
 scripts
-.pre-commit-config.yaml
 Makefile
 docker-compose.yml
 Dockerfile
 INFLIGHT
 day_grind_progress.md
-data/fx1

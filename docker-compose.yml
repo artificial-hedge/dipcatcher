@@ -3,7 +3,11 @@ services:
     # NOTE: the Python client is pinned by uv.lock (mlflow 3.x) while this
     # server image is 2.17.2 — align them before relying on newer registry
     # features. Host binding stays loopback; the server is unauthenticated.
-    image: ghcr.io/mlflow/mlflow:v2.17.2
+    #
+    # Pinned by digest (multi-arch index for v2.17.2, resolved from GHCR
+    # 2026-10-08); the tag stays for readability only. Bump the tag AND the
+    # digest together.
+    image: ghcr.io/mlflow/mlflow:v2.17.2@sha256:30ae1090a3404f3914d7c21f63a949433b07b8b102f9dc9eb9bf59b8ce5c710b
     profiles: ["optional"]
     restart: unless-stopped
     ports:

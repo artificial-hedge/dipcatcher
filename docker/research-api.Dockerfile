@@ -12,6 +12,12 @@
 # Export RESEARCH_API_KEY before launching; the container requires it.
 # The published host port is loopback-only in the example. The service has no
 # trading, order, broker, or execution endpoints.
+#
+# Context: receipts/, verifier/ and artifacts/ (COPY below) stay in the shared
+# build context on purpose — the root .dockerignore deliberately does not
+# exclude them, so this build works with any builder and any daemon version
+# (Lead decision 2026-10-08: one fail-safe ignore file, no per-Dockerfile
+# ignore-file convention).
 
 # --- Builder: resolve/sync the locked venv, then install the project ---
 FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea AS builder
@@ -20,7 +26,11 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_PYTHON_DOWNLOADS=never
 WORKDIR /app
 RUN pip install --no-cache-dir uv==0.11.23
-COPY pyproject.toml uv.lock README.md ./
+# LICENSE is mandatory here: pyproject has `license = { file = "LICENSE" }` and
+# hatchling aborts the in-image wheel build (`uv sync --no-editable`) with
+# "OSError: License file does not exist: LICENSE" when it is absent — proven
+# locally before this line was fixed (2026-10-08, lane L5).
+COPY pyproject.toml uv.lock README.md LICENSE ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project
 COPY src ./src
@@ -44,7 +54,7 @@ COPY --chown=dipcatcher:dipcatcher src ./src
 COPY --chown=dipcatcher:dipcatcher receipts ./receipts
 COPY --chown=dipcatcher:dipcatcher verifier ./verifier
 COPY --chown=dipcatcher:dipcatcher artifacts ./artifacts
-# data/metadata is dockerignored — mount it read-only at runtime (see header).
+# data/ is dockerignored — mount it read-only at runtime (see header).
 RUN mkdir -p /app/data && chown dipcatcher:dipcatcher /app/data
 USER dipcatcher
 EXPOSE 8010
