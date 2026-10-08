@@ -25,4 +25,6 @@ def bench_solow_model(seed: int = _SEED) -> dict[str, float]:
     k_star = solow_steady(s, alpha, be)
     path = solow_sim(0.5 * k_star, s, alpha, be, 500)
     conv = float(abs(path[-1] - k_star) / k_star < 0.01)
+    if not conv:
+        raise ValueError("solow simulation does not converge to k*")
     return {"synthetic_solow_converges": conv}

@@ -25,6 +25,8 @@ def _bench_sperner_bound(seed: int = 0) -> float:
         checks.append(math.comb(n, n // 2) == want)
     # every level is an antichain
     checks.append(max_antichain(4) == 6)
+    if not all(checks):
+        raise ValueError("Sperner-bound oracle failed")
     return float(sum(checks) / len(checks))
 
 

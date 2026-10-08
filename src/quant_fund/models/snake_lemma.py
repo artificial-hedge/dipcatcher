@@ -32,6 +32,8 @@ def _bench_snake_lemma(seed: int = 0) -> float:
     # snake: ker seq 0->ker a->ker b->ker c -d-> coker a->...
     # verify connecting homomorphism exists on toy: maps already exact
     checks.append(exact_at(np.array([[2.0]]), np.array([[0.0]])))
+    if not all(checks):
+        raise ValueError("snake-lemma oracle failed")
     return float(sum(checks) / len(checks))
 
 

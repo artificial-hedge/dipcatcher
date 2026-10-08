@@ -65,4 +65,6 @@ def bench_spectral_decomp(seed: int = _SEED) -> dict[str, float]:
         errs.append(abs(tau_est / dt - float(tau)))
     errs_a = np.asarray(errs)
     within = float(np.mean(errs_a <= 1.5))
+    if within < 0.9:
+        raise ValueError("tuning-thickness estimates off planted taus")
     return {"synthetic_spectral_decomp": within}

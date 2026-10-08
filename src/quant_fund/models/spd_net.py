@@ -106,6 +106,8 @@ def bench_spd_net(
         h = _reeig(_bimap(h, w2), eps, torch)
         acc_spd = float((clf(h.reshape(n_test, -1)).argmax(-1) == ye).float().mean())
         acc_mlp = float((mlp(se.reshape(n_test, -1)).argmax(-1) == ye).float().mean())
+    if not (acc_spd > 0.8 and acc_spd >= acc_mlp - 0.05):
+        raise ValueError("SPDNet accuracy oracle failed")
     return {
         "synthetic_spd_acc": acc_spd,
         "synthetic_spd_mlp_acc": acc_mlp,

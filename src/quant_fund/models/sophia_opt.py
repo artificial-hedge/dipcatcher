@@ -73,6 +73,8 @@ def bench_sophia_opt(
         loss.backward()
         opt.step()
     loss_a = float(((fwd(w1a, b1a, w2a) - yt) ** 2).mean())
+    if not (loss_s == loss_s and abs(loss_s) != float("inf") and loss_s < loss_a + 0.05):
+        raise ValueError("sophia loss far above Adam baseline")
     return {
         "synthetic_sophia_loss": loss_s,
         "synthetic_sophia_adam_loss": loss_a,

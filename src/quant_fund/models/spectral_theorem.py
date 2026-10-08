@@ -36,6 +36,8 @@ def _bench_spectral_theorem(seed: int = 0) -> float:
     checks.append(np.allclose(sorted(wp), [0.0, 0.0, 0.0, 1.0]))
     # functional calculus: A^2 via spectral
     checks.append(np.allclose(a @ a, q @ np.diag(w**2) @ q.T))
+    if not all(checks):
+        raise ValueError("spectral-theorem oracle failed")
     return float(sum(checks) / len(checks))
 
 

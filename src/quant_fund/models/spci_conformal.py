@@ -278,4 +278,6 @@ def bench_spci_conformal(seed: int = 20260131) -> dict[str, float]:
     out["synthetic_determinism"] = float(
         np.allclose(np.nan_to_num(path.qhat), np.nan_to_num(p2.qhat))
     )
+    if not (out["synthetic_spci_coverage_err_post"] < 0.1 and out["synthetic_determinism"] == 1.0):
+        raise ValueError("SPCI post-shift coverage/determinism oracle failed")
     return out

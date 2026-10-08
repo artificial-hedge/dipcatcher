@@ -37,6 +37,8 @@ def bench_spectral_bisection(seed: int = 5309) -> dict[str, float]:
     side[order[: G_N // 2]] = True
     cut = int(sum(side[u] != side[v] for u, v in G_EDGES))
     truth = _brute_bisect()
+    if cut > truth + 2:
+        raise ValueError("spectral bisection far above brute-force optimum")
     return {
         "synthetic_sb_cut": float(cut),
         "synthetic_sb_truth": float(truth),

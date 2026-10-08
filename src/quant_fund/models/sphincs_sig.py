@@ -99,4 +99,6 @@ def bench_sphincs_sig(seed: int = _SEED) -> dict[str, float]:
         sig = sphincs_sign(msg, s, i)
         good += int(sphincs_verify(msg, sig, pk, s))
         bad += int(not sphincs_verify(rng.bytes(12), sig, pk, s))
-    return {"synthetic_sphincs_sig": 1.0 if (good == 4 and bad == 4) else good / 4.0}
+    if good != 4 or bad != 4:
+        raise ValueError("SPHINCS sign/verify/forgery oracle failed")
+    return {"synthetic_sphincs_sig": 1.0}

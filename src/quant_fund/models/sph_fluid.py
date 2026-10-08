@@ -78,6 +78,8 @@ def bench_sph_fluid(seed: int = 20261231 + 272) -> dict[str, float]:
     ci = min(inner, key=lambda i: abs(pos[i][0] - 0.9) + abs(pos[i][1] - 0.9))
     gx, gy = pressure_grad(ci, pos, mass, rho, p)
     grad_small = math.hypot(gx, gy) < 0.5
+    if not (unity and uniform_ok and grad_small):
+        raise ValueError("SPH kernel-unity/uniform-state oracle failed")
     return {
         "synthetic_kernel_unity": float(unity),
         "synthetic_unity_err": float(abs(w_sum - 1.0)),

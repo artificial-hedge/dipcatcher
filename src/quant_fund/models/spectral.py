@@ -150,3 +150,37 @@ def dominant_frequency(freqs: Array, density: Array, lo: float = 0.0) -> float:
         raise ValueError("no frequencies above lo")
     idx = np.argmax(d[mask])
     return float(f[mask][idx])
+
+
+def bench_spectral(seed: int = 0) -> dict[str, float]:
+    """Spectral oracle: a planted sinusoid must peak at its frequency, and
+    coherence must separate a shared-tone pair from an independent pair."""
+    rng = np.random.default_rng(seed)
+    n = 512
+    t = np.arange(n)
+    f0 = 0.09
+    tone = np.sin(2 * np.pi * f0 * t)
+    x = tone + 0.4 * rng.standard_normal(n)
+    pg = periodogram_welch(x, seg_len=128)
+    freqs = np.asarray(pg["freqs"])
+    dens = np.asarray(pg["density"])
+    peak = dominant_frequency(freqs, dens)
+    y_dep = 0.9 * tone + 0.4 * rng.standard_normal(n)
+    y_ind = rng.standard_normal(n)
+    c_dep = np.asarray(coherence(x, y_dep, seg_len=128)["coherence"])
+    c_ind = np.asarray(coherence(x, y_ind, seg_len=128)["coherence"])
+    i0 = int(np.argmin(np.abs(np.asarray(coherence(x, y_dep, seg_len=128)["freqs"]) - f0)))
+    checks = [
+        abs(peak - f0) < 1.5 / 128,
+        float(c_dep[i0]) > 0.5,
+        float(c_ind[i0]) < float(c_dep[i0]),
+        band_power(freqs, dens, f0 - 0.02, f0 + 0.02) > 0.0,
+    ]
+    if not all(checks):
+        raise ValueError("spectral peak/coherence oracle failed")
+    return {
+        "synthetic_spectral_peak_err": abs(peak - f0),
+        "synthetic_spectral_coh_dep": float(c_dep[i0]),
+        "synthetic_spectral_coh_ind": float(c_ind[i0]),
+        "synthetic_spectral_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

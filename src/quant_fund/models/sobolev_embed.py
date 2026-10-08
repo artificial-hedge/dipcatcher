@@ -33,6 +33,8 @@ def _bench_sobolev_embed(seed: int = 0) -> float:
         db = np.gradient(b, x)
         ratio = h1_norm(b, db, x[1] - x[0]) / sup_norm(b)
         checks.append(ratio > 1.0)
+    if not all(checks):
+        raise ValueError("sobolev-embedding oracle failed")
     return float(min(1.0, sum(checks) / len(checks)))
 
 

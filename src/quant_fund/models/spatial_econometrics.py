@@ -183,6 +183,13 @@ def bench_spatial_econometrics(
     rho = float(out["rho"])
     b1 = float(out["beta_1"])
     b1_ols = float(out["beta_ols_1"])
+    if not (
+        abs(b1 - 1.0) < abs(b1_ols - 1.0)
+        and abs(rho - 0.6) < 0.2
+        and abs(float(out0["rho"])) < 0.2
+        and rho == float(out_b["rho"])
+    ):
+        raise ValueError("SAR rho/beta oracle failed")
     return {
         "synthetic_rho_hat": rho,
         "synthetic_rho_err": float(abs(rho - 0.6)),

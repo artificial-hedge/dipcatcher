@@ -190,4 +190,6 @@ def bench_snark_circuit(seed: int = _SEED) -> dict[str, float]:
     # modular wraparound: x=50,y=60 -> 50*60+50 mod 97 = (3000%97)+50 = 90+50=140%97=43
     pf4 = prove(expr, {"x": 50, "y": 60})
     checks.append(verify(pf4) and pf4["w"][-1] == (50 * 60 + 50) % P)
+    if not all(checks):
+        raise ValueError("snark-circuit prove/verify oracle failed")
     return {"synthetic_snark_circuit": float(sum(checks)) / len(checks)}

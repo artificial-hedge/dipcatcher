@@ -126,3 +126,39 @@ def gcv_score(x: Array, y: Array, lam: float) -> float:
     rss = float(np.sum((ys - f) ** 2)) / n
     denom = (1.0 - edf / n) ** 2
     return float(rss / max(denom, 1e-12))
+
+
+def bench_smoothers(seed: int = 0) -> dict[str, float]:
+    """Smoother oracle: NW and local-linear must track a smooth curve, and
+    local-linear must beat NW at the boundary (classic edge bias)."""
+    rng = np.random.default_rng(seed)
+    x = np.sort(rng.uniform(0.0, 1.0, 200))
+    y = np.sin(4.0 * x) + 0.1 * rng.standard_normal(x.size)
+    g = np.linspace(0.0, 1.0, 120)
+    nw = nadaraya_watson(x, y, h=0.08, grid=g)
+    ll = local_linear(x, y, h=0.08, grid=g)["fit"]
+    truth = np.sin(4.0 * g)
+    mse_nw = float(((nw - truth) ** 2).mean())
+    mse_ll = float(((ll - truth) ** 2).mean())
+    edge = g < 0.15
+    edge_nw = float(np.abs(nw[edge] - truth[edge]).mean())
+    edge_ll = float(np.abs(ll[edge] - truth[edge]).mean())
+    sp = smoothing_spline(x, y, lam=0.01)
+    sp_fit = np.asarray(sp["fit_sorted"])  # x already sorted
+    mse_sp = float(((sp_fit - np.sin(4.0 * x)) ** 2).mean())
+    checks = [
+        mse_ll < 0.08,
+        mse_nw < 0.12,
+        edge_ll < edge_nw,
+        mse_sp < 0.08,
+        gcv_score(x, y, 0.05) < gcv_score(x, y, 1e6),
+    ]
+    if not all(checks):
+        raise ValueError("smoother tracking/boundary oracle failed")
+    return {
+        "synthetic_smooth_nw_mse": mse_nw,
+        "synthetic_smooth_ll_mse": mse_ll,
+        "synthetic_smooth_edge_gain": edge_nw - edge_ll,
+        "synthetic_smooth_spline_mse": mse_sp,
+        "synthetic_smoothers_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

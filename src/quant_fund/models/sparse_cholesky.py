@@ -26,4 +26,6 @@ def bench_sparse_cholesky(seed: int = _SEED) -> dict[str, float]:
         A = M @ M.T + n * np.eye(n)
         L = sparse_chol(A)
         ok += float(np.allclose(L @ L.T, A))
+    if ok != trials:
+        raise ValueError("sparse Cholesky disagrees with dense oracle")
     return {"synthetic_sparse_chol": ok / trials}

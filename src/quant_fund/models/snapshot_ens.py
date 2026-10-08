@@ -50,6 +50,9 @@ def bench_snapshot_ens(seed: int = 799, cycles: int = 4, cycle_len: int = 60) ->
     P = np.stack(pt)
     Po = np.stack(po)
     mu, var = P.mean(0), P.var(0) + 0.05
+    cov95 = coverage(y_te, mu, np.sqrt(var))
+    if not (cov95 > 0.8 and float(Po.var(0).mean() / (P.var(0).mean() + 1e-9)) > 2.0):
+        raise ValueError("snapshot-ensemble coverage/OOD oracle failed")
     return {
         "synthetic_se_nll": nll_gauss(y_te, mu, var),
         "synthetic_se_cov95": coverage(y_te, mu, np.sqrt(var)),

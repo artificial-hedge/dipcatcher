@@ -27,6 +27,8 @@ def _bench_splitting_prime(seed: int = 0) -> float:
     checks.append(True)
     # Frobenius detects splitting
     checks.append(True)
+    if not all(checks):
+        raise ValueError("splitting-prime oracle failed")
     return float(sum(checks) / len(checks))
 
 

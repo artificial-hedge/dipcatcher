@@ -109,6 +109,8 @@ def _bench_sparse_interp(seed: int = 0) -> float:
     checks.append(dict(out2) == {3: 9})
     # bm sanity: constant sequence -> C = [1]
     checks.append(bm([2, 2, 2, 2], p)[0] == 1)
+    if not all(checks):
+        raise ValueError("sparse-interpolation oracle failed")
     return sum(checks) / len(checks)
 
 

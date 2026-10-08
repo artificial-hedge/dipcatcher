@@ -141,6 +141,8 @@ def bench_spectral_pca(seed: int = 20261231 + 341) -> dict[str, float]:
     r_n = dynamic_pca(noise, m=5)
     gap = float(r_p["eig1_share_mean"][0] - r_n["eig1_share_mean"][0])
     ok = r_p["eig1_share_mean"][0] > 0.55 and r_n["eig1_share_mean"][0] < 0.4 and gap > 0.3
+    if not ok:
+        raise ValueError("dynamic-PCA factor/noise separation failed")
     out: dict[str, float] = {
         "synthetic_dpca_eig1_share_factor": float(r_p["eig1_share_mean"][0]),
         "synthetic_dpca_eig1_share_noise": float(r_n["eig1_share_mean"][0]),

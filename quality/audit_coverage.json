@@ -26480,6 +26480,12 @@
   "models/smooth_argmax.py": {
    "status": "audited"
   },
+  "models/smooth_transition.py": {
+   "status": "audited"
+  },
+  "models/smoothers.py": {
+   "status": "audited"
+  },
   "models/smoothness_h.py": {
    "status": "audited"
   },
@@ -26492,10 +26498,19 @@
   "models/snake_constr.py": {
    "status": "audited"
   },
+  "models/snake_lemma.py": {
+   "status": "audited"
+  },
   "models/snapper_qa_studies.py": {
    "status": "audited"
   },
   "models/snapping_turtle_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/snapshot_ens.py": {
+   "status": "audited"
+  },
+  "models/snark_circuit.py": {
    "status": "audited"
   },
   "models/snell_envelope.py": {
@@ -26549,7 +26564,13 @@
   "models/sobek_qa_studies.py": {
    "status": "audited"
   },
+  "models/sobol_sensitivity.py": {
+   "status": "audited"
+  },
   "models/sobol_seq.py": {
+   "status": "audited"
+  },
+  "models/sobolev_embed.py": {
    "status": "audited"
   },
   "models/sobolev_space.py": {
@@ -26657,6 +26678,9 @@
   "models/soft_heap.py": {
    "status": "audited"
   },
+  "models/soft_tree.py": {
+   "status": "audited"
+  },
   "models/software_engineering.py": {
    "status": "audited"
   },
@@ -26702,7 +26726,13 @@
   "models/solifuge_qa_studies.py": {
    "status": "audited"
   },
+  "models/solow_model.py": {
+   "status": "audited"
+  },
   "models/somatic_practices.py": {
+   "status": "audited"
+  },
+  "models/sophia_opt.py": {
    "status": "audited"
   },
   "models/sora_qa_studies.py": {
@@ -26714,7 +26744,13 @@
   "models/sorry_bench_studies.py": {
    "status": "audited"
   },
+  "models/sort_net.py": {
+   "status": "audited"
+  },
   "models/sos_bench_studies.py": {
+   "status": "audited"
+  },
+  "models/sos_certificate.py": {
    "status": "audited"
   },
   "models/soshnikov_rmt.py": {
@@ -26727,6 +26763,9 @@
    "status": "audited"
   },
   "models/sound_design.py": {
+   "status": "audited"
+  },
+  "models/souslin_op.py": {
    "status": "audited"
   },
   "models/southern_qa_studies.py": {
@@ -26771,6 +26810,21 @@
   "models/sparse_attention_studies.py": {
    "status": "audited"
   },
+  "models/sparse_cholesky.py": {
+   "status": "audited"
+  },
+  "models/sparse_coding.py": {
+   "status": "audited"
+  },
+  "models/sparse_gp_sv.py": {
+   "status": "audited"
+  },
+  "models/sparse_interp.py": {
+   "status": "audited"
+  },
+  "models/sparse_pca.py": {
+   "status": "audited"
+  },
   "models/sparse_table.py": {
    "status": "audited"
   },
@@ -26780,13 +26834,31 @@
   "models/spatial_diamond.py": {
    "status": "audited"
   },
+  "models/spatial_econometrics.py": {
+   "status": "audited"
+  },
   "models/spatial_qa_studies.py": {
    "status": "audited"
   },
   "models/spatial_reasoning_studies.py": {
    "status": "audited"
   },
+  "models/spc.py": {
+   "status": "audited"
+  },
+  "models/spci_conformal.py": {
+   "status": "audited"
+  },
+  "models/spd_net.py": {
+   "status": "audited"
+  },
   "models/spde_heat.py": {
+   "status": "audited"
+  },
+  "models/spdz_mac.py": {
+   "status": "audited"
+  },
+  "models/spec_ring.py": {
    "status": "audited"
   },
   "models/special_cat.py": {
@@ -26813,6 +26885,9 @@
   "models/spectra_cat.py": {
    "status": "audited"
   },
+  "models/spectral.py": {
+   "status": "audited"
+  },
   "models/spectral_abelian.py": {
    "status": "audited"
   },
@@ -26828,10 +26903,16 @@
   "models/spectral_atiyah.py": {
    "status": "audited"
   },
+  "models/spectral_bisection.py": {
+   "status": "audited"
+  },
   "models/spectral_bung.py": {
    "status": "audited"
   },
   "models/spectral_cellular.py": {
+   "status": "audited"
+  },
+  "models/spectral_clustering.py": {
    "status": "audited"
   },
   "models/spectral_cohomological.py": {
@@ -26844,6 +26925,9 @@
    "status": "audited"
   },
   "models/spectral_curve.py": {
+   "status": "audited"
+  },
+  "models/spectral_decomp.py": {
    "status": "audited"
   },
   "models/spectral_dedekind.py": {
@@ -26921,6 +27005,12 @@
   "models/spectral_noether.py": {
    "status": "audited"
   },
+  "models/spectral_pca.py": {
+   "status": "audited"
+  },
+  "models/spectral_pde.py": {
+   "status": "audited"
+  },
   "models/spectral_perfect.py": {
    "status": "audited"
   },
@@ -26978,6 +27068,9 @@
   "models/spectral_stack.py": {
    "status": "audited"
   },
+  "models/spectral_theorem.py": {
+   "status": "audited"
+  },
   "models/spectral_theory_numerics.py": {
    "status": "audited"
   },
@@ -26999,6 +27092,9 @@
   "models/spectrum_type.py": {
    "status": "audited"
   },
+  "models/speculative_decoding.py": {
+   "status": "audited"
+  },
   "models/speech_pathology.py": {
    "status": "audited"
   },
@@ -27009,6 +27105,12 @@
    "status": "audited"
   },
   "models/sperm_whale_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/sperner_bound.py": {
+   "status": "audited"
+  },
+  "models/sph_fluid.py": {
    "status": "audited"
   },
   "models/sphagnum_qa_studies.py": {
@@ -27024,6 +27126,9 @@
    "status": "audited"
   },
   "models/spherical_harmonics.py": {
+   "status": "audited"
+  },
+  "models/sphincs_sig.py": {
    "status": "audited"
   },
   "models/sphinx_2_qa_studies.py": {
@@ -27086,6 +27191,12 @@
   "models/split_feasibility.py": {
    "status": "audited"
   },
+  "models/splitting_field.py": {
+   "status": "audited"
+  },
+  "models/splitting_prime.py": {
+   "status": "audited"
+  },
   "models/spn_equations.py": {
    "status": "audited"
   },
@@ -27132,6 +27243,9 @@
    "status": "audited"
   },
   "models/sppo_studies.py": {
+   "status": "audited"
+  },
+  "models/spread_options.py": {
    "status": "audited"
   },
   "models/spreadwing_qa_studies.py": {

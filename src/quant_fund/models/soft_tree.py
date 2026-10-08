@@ -67,6 +67,8 @@ def bench_soft_tree(
         loss.backward()
         opt.step()
     acc_m = acc_of(torch, mlp, x_te_t, y_te_t)
+    if acc_s < 0.8:
+        raise ValueError("soft-tree accuracy below floor")
     return {
         "synthetic_st_acc": acc_s,
         "synthetic_st_mlp_acc": acc_m,

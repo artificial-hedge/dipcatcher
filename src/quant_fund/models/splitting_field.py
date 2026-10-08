@@ -56,6 +56,8 @@ def _bench_splitting_field(seed: int = 0) -> float:
     checks.append(len(roots) == 2)  # g splits in GF(25) (every quadratic splits in GF(p^2))
     # x^2+x+1 itself splits over GF(25)? degree 2 poly over GF(25): its roots live in GF(5^2)/GF(5) iff discr square... it's irreducible over GF5 so roots are in GF25
     checks.append(len(roots_in(mod, 5, mod)) == 2)
+    if not all(checks):
+        raise ValueError("splitting-field oracle failed")
     return float(sum(checks) / len(checks))
 
 

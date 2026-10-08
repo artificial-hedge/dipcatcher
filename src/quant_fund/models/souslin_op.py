@@ -58,6 +58,8 @@ def _bench_souslin_op(seed: int = 0) -> float:
     }
     checks.append(3 in souslin(sets3, max_len=2))
     checks.append(souslin(sets3, max_len=2) == {3})
+    if not all(checks):
+        raise ValueError("souslin-operation oracle failed")
     return float(sum(checks) / len(checks))
 
 

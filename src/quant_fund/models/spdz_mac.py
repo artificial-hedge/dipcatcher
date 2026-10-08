@@ -52,6 +52,8 @@ def _bench_spdz_mac(seed: int = 0) -> float:
     xs_bad[0] = (xs_bad[0] + 1) % p
     ok_bad, _ = open_check(xs_bad, ms, alpha, p)
     checks.append(not ok_bad)
+    if not all(checks):
+        raise ValueError("SPDZ MAC-check oracle failed")
     return sum(checks) / len(checks)
 
 

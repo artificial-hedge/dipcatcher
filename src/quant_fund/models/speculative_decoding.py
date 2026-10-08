@@ -59,6 +59,8 @@ def bench_speculative_decoding(
         np.abs(sampled / np.maximum(sampled.sum(-1, keepdims=True), 1) - p_target).mean()
     )
     speedup_naive = (accepted + target_calls) / target_calls
+    if not (acc_rate > 0.5 and speedup_naive > 1.0 and tv_err < 0.05):
+        raise ValueError("speculative-decoding accept/speedup/TV oracle failed")
     return {
         "synthetic_spec_accept_rate": float(acc_rate),
         "synthetic_spec_speedup": float(speedup_naive),

@@ -68,6 +68,8 @@ def bench_sort_net(
         np.mean([np.corrcoef(np.argsort(u_te[i]), base_rank[i]) for i in range(xte.shape[0])])
     )
     w_grad = float(w.grad.abs().max().item()) if w.grad is not None else 0.0
+    if not (spear > 0.3 and w_grad > 0.0):
+        raise ValueError("sort-net spearman/grad-flow oracle failed")
     return {
         "synthetic_sortnet_spearman": spear,
         "synthetic_sortnet_identity_spearman": spear_id,

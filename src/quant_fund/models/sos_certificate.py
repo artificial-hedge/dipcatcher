@@ -49,6 +49,8 @@ def bench_sos_certificate(seed: int = 5305) -> dict[str, float]:
     xs = np.linspace(-2, 2, 41)
     pmin = float(np.min(np.polyval(p, xs)))
     sos_min = float(np.min(np.polyval(u, xs) ** 2 + np.polyval(v, xs) ** 2))
+    if not (resid < 1e-6 and abs(sos_min - pmin) < 1e-6):
+        raise ValueError("SOS certificate reconstruction oracle failed")
     return {
         "synthetic_sos_residual": resid,
         "synthetic_sos_p_min": pmin,

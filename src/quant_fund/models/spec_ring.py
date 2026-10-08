@@ -50,6 +50,8 @@ def _bench_spec_ring(seed: int = 0) -> float:
     checks.append(is_maximal_zn(6, frozenset({0, 2, 4})))
     # Spec(Z/4) = { (2) } single point
     checks.append(len(spec_zn(4)) == 1)
+    if not all(checks):
+        raise ValueError("spec-ring oracle failed")
     return float(sum(checks) / len(checks))
 
 

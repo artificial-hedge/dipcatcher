@@ -52,3 +52,34 @@ def spectral_clustering(
     embed = embed / np.where(norms > 0, norms, 1.0)
     labels = KMeans(n_clusters=n_clusters, n_init=10, random_state=seed).fit_predict(embed)
     return {"labels": labels.astype(int), "eigenvalues": eigvals[:n_clusters]}
+
+
+def bench_spectral_clustering(seed: int = 0) -> dict[str, float]:
+    """Spectral-clustering oracle: well-separated blobs must be recovered
+    almost perfectly; the labels must be deterministic."""
+    rng = np.random.default_rng(seed)
+    c1 = rng.standard_normal((40, 2)) * 0.4 + np.array([0.0, 0.0])
+    c2 = rng.standard_normal((40, 2)) * 0.4 + np.array([4.0, 4.0])
+    c3 = rng.standard_normal((40, 2)) * 0.4 + np.array([0.0, 4.5])
+    x = np.vstack([c1, c2, c3])
+    truth = np.repeat([0, 1, 2], 40)
+    out = spectral_clustering(x, 3, seed=seed)
+    lab = np.asarray(out["labels"])
+    # purity: majority-vote agreement up to label permutation
+    best = 0.0
+    from itertools import permutations
+
+    for perm in permutations(range(3)):
+        best = max(
+            best, float((lab == np.vectorize({i: p for i, p in enumerate(perm)}.get)(truth)).mean())
+        )
+    out_b = spectral_clustering(x, 3, seed=seed)
+    same = float((np.asarray(out_b["labels"]) == lab).mean())
+    checks = [best > 0.95, same == 1.0]
+    if not all(checks):
+        raise ValueError("spectral-clustering purity/determinism oracle failed")
+    return {
+        "synthetic_sclust_purity": best,
+        "synthetic_sclust_determinism": same,
+        "synthetic_spectral_clustering_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

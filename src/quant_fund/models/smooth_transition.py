@@ -159,3 +159,38 @@ def star_linearity(y: Array, p: int = 2, d: int = 1) -> dict[str, float]:
     f_stat = ((rss_r - rss_u) / n_rest) / (rss_u / dof2)
     p_val = float(stats.f.sf(f_stat, n_rest, dof2))
     return {"f": float(f_stat), "p": p_val, "dof1": float(n_rest), "dof2": float(dof2)}
+
+
+def bench_smooth_transition(seed: int = 0) -> dict[str, float]:
+    """STAR oracle: a planted LSTAR series must reject linearity while a
+    pure AR accepts it, and the fitted STR must beat the linear AR."""
+    rng = np.random.default_rng(seed)
+    n = 300
+    e = rng.standard_normal(n) * 0.25
+    s = np.zeros(n)
+    for t in range(2, n):
+        g = 1.0 / (1.0 + np.exp(-10.0 * (s[t - 1] - 0.3)))
+        s[t] = 0.35 * s[t - 1] + (0.5 * s[t - 1]) * g + e[t]
+    lin = np.zeros(n)
+    for t in range(2, n):
+        lin[t] = 0.5 * lin[t - 1] + 0.2 * lin[t - 2] + e[t]
+    p_star = float(star_linearity(s, p=2, d=1)["p"])
+    p_lin = float(star_linearity(lin, p=2, d=1)["p"])
+    fit = star_fit(s, p=2, d=1, kind="lstar")
+    sse_star = float(fit["sse"])
+    # linear AR(2) benchmark SSE on the same series
+    z, dep = _zmat(np.asarray(s, dtype=float), 2)
+    sse_ar = float(((dep - z @ np.linalg.lstsq(z, dep, rcond=None)[0]) ** 2).sum())
+    checks = [
+        p_star < 0.05,
+        p_lin > 0.05,
+        sse_star < sse_ar,
+    ]
+    if not all(checks):
+        raise ValueError("STAR linearity/fit oracle failed")
+    return {
+        "synthetic_star_lin_p": p_star,
+        "synthetic_star_ar_p": p_lin,
+        "synthetic_star_sse_gain": sse_ar - sse_star,
+        "synthetic_star_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }
