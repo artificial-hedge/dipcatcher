@@ -83,9 +83,6 @@ packages = [
 name = "research"
 packages = [
     "research",    # catalog/benches/agent/verify — consumes pipeline+analytics
-    "combination", # ensemble forecast combination (research subdomain)
-    "decay",       # signal decay analytics (research subdomain)
-    "flowbars",    # information-driven bars (research subdomain)
     "robustness",  # adversarial certification (paired with research)
     "leakage",     # leakage scanner/guardrails over proofcore
     "audit",       # hash-chained audit ledger over research receipts
@@ -93,7 +90,6 @@ packages = [
     "stress",      # stress harness over research+data
     "proof",       # proof bundles over proofcore
     "reality",     # reality checks (SPA/CSCV/DSR) over proofcore+metrics
-    "parity_leak_audit",  # adversarial contract audit over parity+leakage (research-layer tool)
 ]
 
 [[layers]]
