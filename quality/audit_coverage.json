@@ -23978,6 +23978,9 @@
   "models/tydiqa_lite_studies.py": {
    "status": "audited"
   },
+  "models/type_class.py": {
+   "status": "audited"
+  },
   "models/type_cotype.py": {
    "status": "audited"
   },
@@ -23997,6 +24000,15 @@
    "status": "audited"
   },
   "models/ubume_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/ucb_bound.py": {
+   "status": "audited"
+  },
+  "models/ucm.py": {
+   "status": "audited"
+  },
+  "models/ugape.py": {
    "status": "audited"
   },
   "models/ukko_qa_studies.py": {
@@ -24020,7 +24032,16 @@
   "models/umbrella_review_studies.py": {
    "status": "audited"
   },
+  "models/umbrella_sampling.py": {
+   "status": "audited"
+  },
+  "models/unbalanced_ot.py": {
+   "status": "audited"
+  },
   "models/unbounded_operator.py": {
+   "status": "audited"
+  },
+  "models/uncertainty.py": {
    "status": "audited"
   },
   "models/uncertainty_quantification_2.py": {
@@ -24044,6 +24065,9 @@
   "models/unified_tokenizer_studies.py": {
    "status": "audited"
   },
+  "models/uniform_bounded.py": {
+   "status": "audited"
+  },
   "models/uniform_clt.py": {
    "status": "audited"
   },
@@ -24053,6 +24077,9 @@
   "models/uniform_integrability.py": {
    "status": "audited"
   },
+  "models/uniform_lln.py": {
+   "status": "audited"
+  },
   "models/uniform_section.py": {
    "status": "audited"
   },
@@ -24060,6 +24087,9 @@
    "status": "audited"
   },
   "models/unipotent_ergodic.py": {
+   "status": "audited"
+  },
+  "models/unit_propagation.py": {
    "status": "audited"
   },
   "models/unitary_operator.py": {
@@ -24075,6 +24105,9 @@
    "status": "audited"
   },
   "models/universal_coeff.py": {
+   "status": "audited"
+  },
+  "models/unlearn_ga.py": {
    "status": "audited"
   },
   "models/unoriented_cob.py": {
@@ -24111,6 +24144,12 @@
    "status": "audited"
   },
   "models/untilt2.py": {
+   "status": "audited"
+  },
+  "models/uov_sig.py": {
+   "status": "audited"
+  },
+  "models/upgma_tree.py": {
    "status": "audited"
   },
   "models/upwind_scheme.py": {
@@ -24165,6 +24204,9 @@
    "status": "audited"
   },
   "models/uromastyx_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/usad.py": {
    "status": "audited"
   },
   "models/usnea_qa_studies.py": {
