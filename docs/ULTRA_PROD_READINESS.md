@@ -696,10 +696,17 @@ The 13 remaining failures are **two further latent defects**, both pre-existing 
 
 | Cause | Error | Count |
 |---|---|---|
-| Manifest writers do not **emit** the identity block | `ArtifactManifestError: artifact manifest carries no dataset identity block` (`artifact_manifest.py:284`) | most of the `*_auto_selects_*` family |
+| Test stubs bypass the identity-binding writer | `ArtifactManifestError: artifact manifest carries no dataset identity block` (`artifact_manifest.py:284`) | most of the `*_auto_selects_*` family |
 | Test-local classes are not joblib-serializable | `_pickle.PicklingError: Can't pickle <class '...<locals>.FakeHMM'>` | includes `test_train_garch_persisted_fit_uses_latest_return_history` |
 
-Neither is caused by the fixture change. The first is the **mirror image of the bug just fixed**: `da5c3e78c` added *verification* of a dataset-identity block without updating every manifest *writer* to produce one. Consumers now demand a block that some producers never emit. The second is a test-harness issue — a class defined inside a test function cannot be pickled.
+Neither is caused by the fixture change. The first is **not a production bug**, and the distinction matters. `save_training_artifact(payload, path, *, identity)` is the correct writer: identity is keyword-only and required, and on any binding failure it unlinks the payload so it can never leave an artifact behind unbound. Every `train/*.py` module uses it. The 14 call sites that bypass it are **test stubs** (`save_joblib_artifact` in `test_train_cov.py` ×6 and `test_pipeline_training.py` ×8) which write a bare artifact; the real auto-selector then calls `identity_from_artifact(...)` on it, which correctly refuses.
+
+So the chain is working as designed — a stub that skips identity binding is *supposed* to fail. Two defensible fixes, and this is an owner call rather than an obvious cleanup:
+
+- update each stub to go through `save_training_artifact(..., identity=identity_for_training(frame, config=cfg, label=..., features=[...], label_horizon_bars=...))`, which needs a real frame and label per stub (14 sites, and the stubs do not all carry one); or
+- have the stubs bind a deliberately minimal identity, keeping the test focused on the auto-selection logic rather than identity construction.
+
+The first is more faithful; the second is less churn. **Neither was applied here** — rewriting 14 test stubs to route around a deliberate fail-closed writer is a semantic decision for the owner, not a mechanical fix. The second is a test-harness issue — a class defined inside a test function cannot be pickled.
 
 **Systematic follow-up: the dropped-wiring class is now mechanically checkable, and the CLI surface is clean.**
 
