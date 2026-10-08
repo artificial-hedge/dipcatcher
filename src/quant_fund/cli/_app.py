@@ -17,15 +17,13 @@ from quant_fund.cli.benchmark_cmds import (
     real_benchmark_app,
 )
 
-# SOTA / forward-evidence operator surface. These three groups were defined in
-# ``quant_fund.cli.sota_cmds`` but their mount was dropped from this list, which
-# made ``dipcatcher forward-shadow freeze`` -- the command
-# ``docs/INSTITUTIONAL_READINESS.md`` names as the mechanism for closing
-# institutional condition 3 -- inexecutable, and left
-# ``tests/unit/cli/test_sota_cmds.py`` (37 cases) red. ``sota_cmds`` imports only
-# stdlib + typer at module level (its shared helpers are lazy), so importing it
-# here cannot reintroduce the ``cli.support -> cli._app`` cycle its own
-# docstring warns about.
+# SOTA / forward-evidence operator surface. Restored on this branch after the
+# mount was found missing; independently re-added upstream by 8eb627ff2. Kept
+# here because ``dipcatcher forward-shadow freeze`` -- the command
+# ``docs/INSTITUTIONAL_READINESS.md`` names for closing institutional
+# condition 3 -- is unreachable without it. ``sota_cmds`` imports only stdlib +
+# typer at module level (shared helpers are lazy), so this cannot reintroduce the
+# ``cli.support -> cli._app`` cycle its docstring warns about.
 from quant_fund.cli.sota_cmds import (
     forward_shadow_app,
     prospective_sota_app,
@@ -116,12 +114,12 @@ app.add_typer(proofcore_app, name="proofcore")
 app.add_typer(stress_app, name="stress")
 app.add_typer(allocation_app, name="allocation")
 app.add_typer(explainability_app, name="explain")
-app.add_typer(real_benchmark_app, name="real-benchmark")
-app.add_typer(net_tournament_app, name="net-tournament")
-app.add_typer(ranker_probability_app, name="ranker-probability")
 app.add_typer(prospective_sota_app, name="prospective-sota")
 app.add_typer(forward_shadow_app, name="forward-shadow")
 app.add_typer(sota_app, name="sota")
+app.add_typer(real_benchmark_app, name="real-benchmark")
+app.add_typer(net_tournament_app, name="net-tournament")
+app.add_typer(ranker_probability_app, name="ranker-probability")
 
 
 def _cfg(config: Path) -> AppConfig:

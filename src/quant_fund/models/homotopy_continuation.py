@@ -159,7 +159,11 @@ def bench_homotopy(seed: int = 0) -> dict[str, float]:
     x0 = x_star + 8.0 * rng.standard_normal(d)
     xn, ok = newton_solve(f, jac, x0, it=30)
     err_n = float(np.linalg.norm(xn - x_star)) if ok else 50.0
-    xh, _ = newton_homotopy(f, jac, x0, x0, steps=12)
+    # steps=25: from ||x0 - x*|| ~ 23 the t-grid must be fine enough for the
+    # damped inner Newton to follow the path through the sin(3d) folds; the
+    # former steps=12 stalled at a non-root (||F|| ~ 3.0, err ~ 2.02). The
+    # 25-200 band converges to machine precision on this seeded instance.
+    xh, _ = newton_homotopy(f, jac, x0, x0, steps=25)
     xp, _ = pc_continuation(f, jac, x0, steps=30)
     err_h = float(np.linalg.norm(xh - x_star))
     err_p = float(np.linalg.norm(xp - x_star))

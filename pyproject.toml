@@ -80,6 +80,11 @@ Issues = "https://github.com/artificial-hedge/dipcatcher/issues"
 fx1 = "fx1.cli:app"
 # The outer dipcatcher launcher opens chat in a terminal and preserves explicit
 # lab commands. quant stays the independent harness; fxi remains compatible.
+# NOTE: origin/main instead maps `dipcatcher` at quant_fund.cli.main and treats
+# `fxi` as the chat front door. Resolved toward this branch because
+# src/dipcatcher_cli/, tests/unit/cli/test_dipcatcher_launcher.py,
+# AGENTS.md and docs/DIP_CONCIERGE.md all describe the launcher. Product
+# direction needs an owner ruling — see docs/ULTRA_PROD_READINESS.md.
 quant = "quant_fund.cli.main:app"
 dipcatcher = "dipcatcher_cli.app:main"
 fxi = "fx1.interactive.app:main"

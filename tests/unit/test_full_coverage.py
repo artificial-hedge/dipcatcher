@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -462,3 +464,126 @@ def test_reporter_initialization_failure_restores_cwd(
         gate.combine(project, parts, output)
     assert Path.cwd() == before
     assert json.loads((output / "summary.json").read_text())["passed"] is False
+
+
+def _junit_node_ids(junit_path: Path) -> set[str]:
+    """Return the set of canonical test node IDs recorded in a JUnit XML."""
+    from xml.etree import ElementTree as ET
+
+    ids: set[str] = set()
+    for _, element in ET.iterparse(junit_path, events=("end",)):
+        if element.tag != "testcase":
+            continue
+        classname = element.get("classname") or ""
+        name = element.get("name") or ""
+        if classname and name:
+            ids.add(f"{classname}::{name}")
+        element.clear()
+    return ids
+
+
+def test_lane_collected_node_ids_are_pairwise_disjoint_and_exhaustive(
+    project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#2851 invariant: lane runs must not repeat node IDs and their union must
+    cover every test that ``pytest --collect-only`` discovered against the
+    same roots. Without this, a node ID could be double-counted across lanes
+    (inflating the pass rate) or skipped entirely (a silent coverage hole).
+
+    Uses a SYNTHETIC project with several test files so xdist's
+    --splits/--group splitting algorithm has something to distribute. The
+    canonical inventory is gathered by collecting per-file and stitching the
+    node IDs back together (pytest's ``-q`` mode summarises large
+    collections as ``path: count`` lines, so we collect per-file instead).
+    """
+    monkeypatch.delenv("PYTEST_DISABLE_PLUGIN_AUTOLOAD", raising=False)
+    test_root = project / "tests" / "unit"
+    test_root.mkdir(parents=True, exist_ok=True)
+    (test_root / "conftest.py").write_text("")
+    file_count = 12
+    test_files: list[Path] = []
+    for i in range(file_count):
+        path = test_root / f"test_split_{i:02d}.py"
+        path.write_text(
+            "def test_a():\n    assert 1 + 1 == 2\ndef test_b():\n    assert 1 + 1 == 2\n"
+        )
+        test_files.append(path)
+    # No ``addopts`` here: ``-q --collect-only`` summarises large collections
+    # to ``path: count`` lines, which would lose the per-node IDs we want.
+    (project / "pyproject.toml").write_text(
+        "[tool.pytest.ini_options]\n"
+        'testpaths = ["tests/unit"]\n'
+        'markers = ["network: net", "slow: slow", "perf_full: perf"]\n'
+        "[tool.coverage.run]\nbranch = true\n"
+        'source = ["src"]\n'
+        "[tool.coverage.report]\nfail_under = 1\n"
+    )
+
+    # Canonical: collect per-file (without ``-q`` so node IDs are printed
+    # as ``<Module test_xxx.py>`` / ``<Function test_yyy>`` tree lines).
+    # The pytest tree format prints just the file name in ``<Module>``,
+    # so we convert it to dotted Python module notation to match what
+    # JUnit XML records as ``classname`` (e.g. ``tests.unit.test_split_00``).
+    import re
+
+    def _to_dotted(path: str) -> str:
+        return path.removesuffix(".py").replace("/", ".")
+
+    # Build dotted module path: tests/unit/test_x.py -> tests.unit.test_x
+    canonical: set[str] = set()
+    for path in test_files:
+        rel = path.relative_to(project).as_posix()  # tests/unit/test_split_xx.py
+        dotted = _to_dotted(rel)
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", str(path), "--collect-only"],
+            cwd=project,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        for line in result.stdout.splitlines():
+            stripped = line.strip()
+            function_match = re.search(r"<Function\s+([^>]+)>", stripped)
+            if function_match:
+                canonical.add(f"{dotted}::{function_match.group(1)}")
+    assert canonical, "canonical collection was empty"
+    assert len(canonical) == file_count * 2  # 2 tests per file
+
+    # Per-lane: run the actual lane command and read node IDs from JUnit.
+    per_lane: dict[str, set[str]] = {}
+    for lane in gate.LAB_LANES:  # xdist --splits=4 covers the four sharded lanes
+        output = project / f"output_{lane}"
+        config = output / "coverage.ini"
+        output.mkdir(parents=True, exist_ok=True)
+        config.write_text(gate.coverage_config(project), encoding="utf-8")
+        junit = output / "junit.xml"
+        cmd = gate.test_arguments(project, lane, config, junit)
+        env = os.environ.copy()
+        env["COVERAGE_FILE"] = str(output / ".coverage")
+        env["PYTHONPATH"] = os.pathsep.join(
+            filter(None, [str(project / "src"), env.get("PYTHONPATH")])
+        )
+        result = subprocess.run(
+            cmd, cwd=project, env=env, capture_output=True, text=True, check=False
+        )
+        assert result.returncode == 0, f"lane {lane} failed: {result.stdout}\n{result.stderr}"
+        per_lane[lane] = _junit_node_ids(junit)
+
+    # Pairwise disjoint.
+    lanes = list(per_lane)
+    for i, a in enumerate(lanes):
+        for b in lanes[i + 1 :]:
+            overlap = per_lane[a] & per_lane[b]
+            assert not overlap, (
+                f"lanes {a!r} and {b!r} share {len(overlap)} node IDs; "
+                f"first few: {sorted(overlap)[:3]}"
+            )
+
+    # Union equals canonical (every collected test ran in exactly one lane).
+    union: set[str] = set()
+    for ids in per_lane.values():
+        union |= ids
+    missing = canonical - union
+    extra = union - canonical
+    assert not missing, f"canonical tests not covered by any lane: {sorted(missing)[:3]}"
+    assert not extra, f"lane-only tests not in canonical: {sorted(extra)[:3]}"

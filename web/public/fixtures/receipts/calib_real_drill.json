@@ -54,7 +54,7 @@
       0.95
     ]
   },
-  "receipt_sha256": "0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370",
+  "receipt_sha256": "c5888e19ae1ec764933abfaef8fb65b600e89b24ed06d753faa2d53f3a21200e",
   "research_only": true,
   "schema": "calibration_audit.drill.v1"
 }

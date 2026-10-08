@@ -115,3 +115,42 @@ cd /workspace/dipcatcher
 
 (use the uv-installed 3.12 — the system `python3` is 3.11 and can't parse
 the project's PEP-695 type-alias syntax in `src/fx1/cli.py`).
+
+
+## Resolution (2026-10-07, post-#2970-merge)
+
+Status: **closed** (cosmic-hydra, 2026-10-07T11:12Z, `state_reason=completed`).
+The 19 active violations were addressed in #2970 (`fix(arch): close 19
+import-boundary violations`). The 1 remaining `unclassified-package` violation
+(`decay/ic_curve.py`, surfaced later) was closed in `f76bcce7` (`fix(arch):
+classify decay package as analytics`). The current gate stack on
+`c712ce124` reports 0 active violations, 19 baselined edges, 0 stale entries.
+
+What landed in the fix:
+
+- **Tier 1 (unclassified-package, 3 → 0)**: `parity_leak_audit` added to the
+  `research` layer; `decay` added to the `analytics` layer; one
+  unclassified-package entry was found to have been a duplicate of another
+  entry and was dropped.
+- **Tier 2 (facade, 7 → 0)**: new `src/quant_fund/schemas/receipt.py` with
+  `__getattr__` lazy proxy re-exports the public surface of
+  `quant_fund.research.receipt_v2` for fx1 + market_data callers. fx1's
+  8 harness-surface violations all moved through the facade.
+- **Tier 3 (case-by-case, 9 → 0)**: 3 layer-order imports moved to
+  function-scope (`fusion/stack_watch.evalues`,
+  `microstructure/event_time_flow.changepoint`,
+  `microstructure/sigkernel_mmd.sigkernel`) per the arch-guard's
+  sanctioned deferral mechanism (function-level imports are exempt
+  from layer-order). The other 6 map-module imports were rerouted through
+  the same `schemas.receipt` facade.
+
+Baselined (still baselined on main): 1 `metrics.signature_features` →
+`models.path_signatures` (facade-extract deferred per the triage's
+honest path of moving the upstream kernel next to metrics). 8 of the
+original 10 baselined entries were cleaned up when their underlying
+violations were resolved.
+
+The five-tier follow-up never materialised: the user's separate kimi-lane
+sweep (`d1082fd9`) reclassified `parity_leak_audit`, allowlisted
+`receipt_v2` for fx1, and baselined 9 layer-order edges ahead of the
+facade refactor — that was the path the fix took.

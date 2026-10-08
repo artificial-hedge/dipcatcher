@@ -239,7 +239,7 @@ nav:
       - Overview: FX1.md
       - Interactive CLI (fxi): FXI.md
       - fxi interactive CLI design: superpowers/specs/2026-10-04-fxi-interactive-cli-design.md
-      - dipcatcher CLI (chat-first): DIP_CONCIERGE.md
+      - Concierge orchestration (chat-first dipcatcher CLI): DIP_CONCIERGE.md
       - Production product contract: DIPCATCHER_PRODUCT_CONTRACT.md
       - Claude product handoff: CLAUDE_DIPCATCHER_HANDOFF.md
       - Forecast harness: fx1_harness.md

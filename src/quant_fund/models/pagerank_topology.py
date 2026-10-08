@@ -77,13 +77,51 @@ def conductance(adj: FloatArray, s: BoolArray) -> float:
     return float(cut / denom) if denom > 0 else 0.0
 
 
+def _components(sym: FloatArray) -> tuple[np.ndarray, int]:
+    """Deterministic connected-component labels over an undirected 0/1 view."""
+    n = len(sym)
+    labels = -np.ones(n, dtype=np.int64)
+    comp = 0
+    for start in range(n):
+        if labels[start] >= 0:
+            continue
+        stack = [start]
+        labels[start] = comp
+        while stack:
+            v = stack.pop()
+            for w_raw in np.flatnonzero(sym[v]):
+                w = int(w_raw)
+                if labels[w] < 0:
+                    labels[w] = comp
+                    stack.append(w)
+        comp += 1
+    return labels, comp
+
+
 def spectral_bisect(adj: FloatArray) -> FloatArray:
     """Fiedler-vector sign bipartition of the normalized
-    Laplacian."""
+    Laplacian.
+
+    Disconnected inputs are split by connected components instead of the
+    Fiedler vector: with k components the zero eigenvalue has multiplicity
+    k, so ``argsort(vals)[1]`` selects an arbitrary null-space basis
+    vector whose sign pattern need not separate components (LAPACK
+    build-dependent). Component labels are deterministic by construction;
+    for more than two components the largest one gets label 0.
+    """
     adj = _check_adj(adj)
+    n = len(adj)
+    sym = (np.maximum(adj, adj.T) > 0).astype(np.float64)
+    labels, comp = _components(sym)
+    if comp > 1:
+        if comp == 2:
+            return labels
+        sizes = np.bincount(labels)
+        biggest = int(np.argmax(sizes))
+        return np.asarray((labels != biggest).astype(np.int64))
     d = adj.sum(axis=1)
     dinv = 1.0 / np.sqrt(np.maximum(d, 1e-12))
-    l_sym = np.eye(len(d)) - dinv[:, None] * adj * dinv[None, :]
+    l_sym = np.eye(n) - dinv[:, None] * adj * dinv[None, :]
     vals, vecs = np.linalg.eigh(l_sym)
     fiedler = vecs[:, int(np.argsort(vals)[1])]
     return np.asarray((fiedler > 0).astype(np.int64))
