@@ -264,6 +264,7 @@ def bench_jump_diffusion(seed: int = 0) -> dict[str, float]:
     if abs(p_par - (c_par - s + k * math.exp(-r * t))) > 1e-9:
         raise ValueError("put-call parity violated")
     return {
+        "synthetic_jump_diffusion": 1.0,
         "synthetic_jd_call": c_par,
         "synthetic_jd_put": p_par,
         "synthetic_jd_sim_mean": emp,
