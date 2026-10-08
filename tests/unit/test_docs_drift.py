@@ -34,7 +34,7 @@ import importlib
 import importlib.util
 import re
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 REPO = Path(__file__).resolve().parents[2]
 DOC_FILES = sorted(REPO.glob("docs/**/*.md")) + [REPO / "README.md", REPO / "AGENTS.md"]
@@ -166,6 +166,12 @@ KNOWN_MISSES: dict[str, str] = {
     # AUDIT_LEDGER.md, not Python module paths.
     "fx1.backend": "API body-block name in AUDIT_LEDGER.md, not a module.",
     "fx1.byok": "API body-block / header name in AUDIT_LEDGER.md, not a module.",
+    # Isolated-branch lanes referenced by planning docs on main (three-branch
+    # retention policy); entries shrink away when the lanes land.
+    "dipcatcher blueprint": "blueprint lane lives on isolated branch; EXECUTIVE_BLUEPRINT_IMPLEMENTATION.md documents the planned landing.",
+    "src/quant_fund/schemas/receipt.py": "receipt facade planned by ARCH_BOUNDARY_TRIAGE.md (#2844); lives on isolated branch pending migration.",
+    # Generated bench-output dir (research lane runs); no tracked files.
+    "research/benches": "generated bench output dir, populated by research lane runs.",
 }
 
 
@@ -173,7 +179,10 @@ def _tracked_index() -> tuple[frozenset[str], frozenset[str]]:
     out = subprocess.run(
         ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, check=True
     ).stdout.split()
-    dirs = {str(p) for f in out for p in Path(f).parents if str(p) != "."}
+    # git ls-files always emits forward slashes; PurePosixPath keeps the
+    # parent strings slash-separated on Windows too (Path would emit
+    # backslashes there and every directory ref would miss).
+    dirs = {str(p) for f in out for p in PurePosixPath(f).parents if str(p) != "."}
     return frozenset(out), frozenset(dirs)
 
 
@@ -207,7 +216,7 @@ def _code_regions(text: str) -> list[tuple[int, str, str | None]]:
 def _iter_refs():
     for doc in DOC_FILES:
         rel = doc.relative_to(REPO).as_posix()
-        for lineno, region, cwd in _code_regions(doc.read_text()):
+        for lineno, region, cwd in _code_regions(doc.read_text(encoding="utf-8")):
             yield rel, lineno, region, cwd
 
 
@@ -244,7 +253,7 @@ def _root_commands() -> tuple[frozenset[str], dict[str, frozenset[str]]]:
 
 def _ast_names(module_file: Path) -> frozenset[str]:
     try:
-        tree = ast.parse(module_file.read_text())
+        tree = ast.parse(module_file.read_text(encoding="utf-8"))
     except (OSError, SyntaxError):
         return frozenset()
     names: set[str] = set()
@@ -367,7 +376,7 @@ def _path_resolves(ref: str, cwd: str | None) -> bool:
 
 
 def _make_targets() -> frozenset[str]:
-    text = (REPO / "Makefile").read_text()
+    text = (REPO / "Makefile").read_text(encoding="utf-8")
     return frozenset(re.findall(r"^([a-zA-Z][a-zA-Z0-9_-]*)\s*:", text, re.M))
 
 

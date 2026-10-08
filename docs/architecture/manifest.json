@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13356,
+  "module_count": 13367,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -1591,6 +1591,38 @@
       "src": "fx1.extensions.skills.verify_research"
     },
     {
+      "dst": "fx1.flash.refresh",
+      "src": "fx1.flash"
+    },
+    {
+      "dst": "fx1.flash.retrieve",
+      "src": "fx1.flash"
+    },
+    {
+      "dst": "fx1.flash.store",
+      "src": "fx1.flash"
+    },
+    {
+      "dst": "fx1.flash.store",
+      "src": "fx1.flash.refresh"
+    },
+    {
+      "dst": "fx1.webresearch.fetch",
+      "src": "fx1.flash.refresh"
+    },
+    {
+      "dst": "fx1.flash.store",
+      "src": "fx1.flash.retrieve"
+    },
+    {
+      "dst": "fx1.flash.retrieve",
+      "src": "fx1.flash.store"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.flash.store"
+    },
+    {
       "dst": "fx1.forecast.artifacts",
       "src": "fx1.forecast"
     },
@@ -1899,6 +1931,14 @@
       "src": "fx1.interactive"
     },
     {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.interactive.concierge",
+      "src": "fx1.interactive"
+    },
+    {
       "dst": "fx1.interactive.orb",
       "src": "fx1.interactive"
     },
@@ -1908,6 +1948,10 @@
     },
     {
       "dst": "fx1.interactive.shell",
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.interactive.superpower",
       "src": "fx1.interactive"
     },
     {
@@ -1939,7 +1983,23 @@
       "src": "fx1.interactive.app"
     },
     {
+      "dst": "fx1.flash.refresh",
+      "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.flash.retrieve",
+      "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.flash.store",
+      "src": "fx1.interactive.app"
+    },
+    {
       "dst": "fx1.interactive.actions",
+      "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.interactive.concierge",
       "src": "fx1.interactive.app"
     },
     {
@@ -1951,8 +2011,56 @@
       "src": "fx1.interactive.app"
     },
     {
+      "dst": "fx1.interactive.superpower",
+      "src": "fx1.interactive.app"
+    },
+    {
       "dst": "fx1.interactive.wizard",
       "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.flash.refresh",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.flash.retrieve",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.flash.store",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.actions",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.orb",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.superpower",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.serve.backends",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.webresearch.engine",
+      "src": "fx1.interactive.concierge"
     },
     {
       "dst": "fx1.serve.backends",
@@ -1971,7 +2079,27 @@
       "src": "fx1.interactive.shell"
     },
     {
+      "dst": "fx1.flash.retrieve",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.superpower"
+    },
+    {
       "dst": "fx1.interactive.actions",
+      "src": "fx1.interactive.wizard"
+    },
+    {
+      "dst": "fx1.interactive.concierge",
       "src": "fx1.interactive.wizard"
     },
     {
@@ -1980,10 +2108,6 @@
     },
     {
       "dst": "fx1.interactive.profiles",
-      "src": "fx1.interactive.wizard"
-    },
-    {
-      "dst": "fx1.interactive.shell",
       "src": "fx1.interactive.wizard"
     },
     {
@@ -3911,6 +4035,30 @@
       "src": "fx1.train.tiny_lm"
     },
     {
+      "dst": "fx1.webresearch.engine",
+      "src": "fx1.webresearch"
+    },
+    {
+      "dst": "fx1.webresearch.fetch",
+      "src": "fx1.webresearch"
+    },
+    {
+      "dst": "fx1.webresearch.search",
+      "src": "fx1.webresearch"
+    },
+    {
+      "dst": "fx1.webresearch.fetch",
+      "src": "fx1.webresearch.engine"
+    },
+    {
+      "dst": "fx1.webresearch.search",
+      "src": "fx1.webresearch.engine"
+    },
+    {
+      "dst": "fx1.webresearch.fetch",
+      "src": "fx1.webresearch.search"
+    },
+    {
       "dst": "fx1",
       "src": "quant_fund"
     },
@@ -4504,6 +4652,10 @@
     },
     {
       "dst": "quant_fund.cli.benchmark_cmds",
+      "src": "quant_fund.cli._app"
+    },
+    {
+      "dst": "quant_fund.cli.sota_cmds",
       "src": "quant_fund.cli._app"
     },
     {
@@ -61242,6 +61394,10 @@
     "fx1.extensions.skills.validate",
     "fx1.extensions.skills.vendor_book_map",
     "fx1.extensions.skills.verify_research",
+    "fx1.flash",
+    "fx1.flash.refresh",
+    "fx1.flash.retrieve",
+    "fx1.flash.store",
     "fx1.forecast",
     "fx1.forecast.artifacts",
     "fx1.forecast.config",
@@ -61266,9 +61422,12 @@
     "fx1.interactive",
     "fx1.interactive.actions",
     "fx1.interactive.app",
+    "fx1.interactive.approvals",
+    "fx1.interactive.concierge",
     "fx1.interactive.orb",
     "fx1.interactive.profiles",
     "fx1.interactive.shell",
+    "fx1.interactive.superpower",
     "fx1.interactive.wizard",
     "fx1.modelcard",
     "fx1.modelcard_audit",
@@ -61400,6 +61559,10 @@
     "fx1.train.run_audit",
     "fx1.train.tiny_lm",
     "fx1.train.tracking",
+    "fx1.webresearch",
+    "fx1.webresearch.engine",
+    "fx1.webresearch.fetch",
+    "fx1.webresearch.search",
     "quant_fund",
     "quant_fund.api",
     "quant_fund.api.app",
@@ -74677,6 +74840,21 @@
       "src": "fx1.extensions"
     },
     {
+      "dst": "fx1.flash",
+      "imports": 6,
+      "src": "fx1.flash"
+    },
+    {
+      "dst": "fx1.interactive",
+      "imports": 1,
+      "src": "fx1.flash"
+    },
+    {
+      "dst": "fx1.webresearch",
+      "imports": 1,
+      "src": "fx1.flash"
+    },
+    {
       "dst": "fx1.forecast",
       "imports": 40,
       "src": "fx1.forecast"
@@ -74762,18 +74940,33 @@
       "src": "fx1.interactive"
     },
     {
+      "dst": "fx1.flash",
+      "imports": 7,
+      "src": "fx1.interactive"
+    },
+    {
       "dst": "fx1.harness",
+      "imports": 3,
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.honesty",
       "imports": 1,
       "src": "fx1.interactive"
     },
     {
       "dst": "fx1.interactive",
-      "imports": 19,
+      "imports": 30,
       "src": "fx1.interactive"
     },
     {
       "dst": "fx1.serve",
-      "imports": 2,
+      "imports": 3,
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.webresearch",
+      "imports": 1,
       "src": "fx1.interactive"
     },
     {
@@ -75062,6 +75255,11 @@
       "src": "fx1.train"
     },
     {
+      "dst": "fx1.webresearch",
+      "imports": 6,
+      "src": "fx1.webresearch"
+    },
+    {
       "dst": "fx1",
       "imports": 1,
       "src": "quant_fund"
@@ -75228,7 +75426,7 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 37,
+      "imports": 38,
       "src": "quant_fund.cli"
     },
     {

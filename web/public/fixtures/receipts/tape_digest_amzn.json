@@ -1,0 +1,424 @@
+{
+  "kind": "tape_digest",
+  "schema": "tape_digest.v1",
+  "n_lanes_present": 38,
+  "n_lanes_scored": 28,
+  "lanes": {
+    "abc_calibrate": {
+      "present": true,
+      "receipt_sha256": "2e2cde9318817595810462f0edb2082cc8843a96fb388a4877bc2fc817a46341",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      }
+    },
+    "cancel_cluster": {
+      "present": true,
+      "receipt_sha256": "be7a95df9f31b2ee1fbf316e727812797c04f0c1f418cc1da3777737d1a76ee0",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      }
+    },
+    "deep_microprice": {
+      "present": true,
+      "receipt_sha256": "ea0693386f4fff5467d03e69ee7d07daf13928e1c0c94819c2315da9c1affb03",
+      "n_divergences": 2,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "covered"
+      }
+    },
+    "depth_consumption": {
+      "present": true,
+      "receipt_sha256": "99492b84e9d16c3f07fc3913aacef3bec03c0475fa49b38aa6c4ffca5122d6f7",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "covered",
+        "regime": "covered",
+        "split": "covered"
+      }
+    },
+    "event_burst": {
+      "present": true,
+      "receipt_sha256": "69e37402f62a0796d71a0d9964e2cbe3bd1e9c373a5a520f427c94c20c2aabd2",
+      "n_divergences": 3,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "event_granger": {
+      "present": true,
+      "receipt_sha256": "1d86287d7e6373f3a8b3625c788511c58efd198a0f39df5355e16e7b3c9f9858",
+      "n_divergences": 30,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "event_matrix": {
+      "present": true,
+      "receipt_sha256": "6a5f2b8d9b839f2668ac9d06d99c1581a7ac0c7c0c5b7b35e58829272adde588",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "covered",
+        "regime": "covered",
+        "split": "covered"
+      }
+    },
+    "exec_cost": {
+      "present": true,
+      "receipt_sha256": "9d3f1266772640aed1d1d4976f057e2933a0ee3fb3b3c6076ef4b140fd628497",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      }
+    },
+    "hawkes": {
+      "present": true,
+      "receipt_sha256": "fe7a75a8f2e78ebaa84b49d520cc017b2892cf0e1f364e4bd99bd5feb865c2f7",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      }
+    },
+    "hawkes_mv": {
+      "present": true,
+      "receipt_sha256": "ceb134a37064c26b89a454b3d3615fe987755114b96d36222bff2e02167ff6ed",
+      "n_divergences": 1,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "covered",
+        "split": "covered"
+      }
+    },
+    "hidden_depth": {
+      "present": true,
+      "receipt_sha256": "ea597d6f8c8128ddff388ab0b6de37307e4e353b066a5cb5f8f1258d6f671e55",
+      "n_divergences": 1,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "impact_instant": {
+      "present": true,
+      "receipt_sha256": "c84a1d4d6a85c978feca58b9659d9d290e00d66a95210cb5730f9e79bef98258",
+      "n_divergences": 6,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "intraday_shape": {
+      "present": true,
+      "receipt_sha256": "d343852f17997a1327850c071d00ed98c343a00c74d570c6fb6b8a027c1aa55d",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      }
+    },
+    "lob_exec": {
+      "present": true,
+      "receipt_sha256": "a36c444f6fe20c0ffa1610dd6eebd321b5c2a2598c3e4d1a7410fe0cbb3b5c36",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      }
+    },
+    "lob_resilience": {
+      "present": true,
+      "receipt_sha256": "6ce00f56a2c85e7526236824185b1f70cf195bbdb3c9f3cc979187f774f6b80d",
+      "n_divergences": 3,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "marketable_limit": {
+      "present": true,
+      "receipt_sha256": "d8d1bed2b6478b072a17d31c59c33ebd4b4828c4c42193a48e970ec2932984c0",
+      "n_divergences": 3,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "markout": {
+      "present": true,
+      "receipt_sha256": "a21b2306c78b157e4fad493a7fd3d2b744a20d918d65ec12e26a0270ee1833c9",
+      "n_divergences": 3,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "metaorder_detect": {
+      "present": true,
+      "receipt_sha256": "8f4d36abc31dc0e5448e730f37f5ca5d0969281e3e0ff1d34e84bdc8e3e197f3",
+      "n_divergences": 1,
+      "arm_status": {
+        "iid": "covered",
+        "regime": "covered",
+        "split": "covered"
+      }
+    },
+    "mid_jump": {
+      "present": true,
+      "receipt_sha256": "9fb46405f3c80561438e94e14e7f489897c183cfcc1b82de79126476f05847cd",
+      "n_divergences": 1,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "covered",
+        "split": "covered"
+      }
+    },
+    "order_lifetime": {
+      "present": true,
+      "receipt_sha256": "760858e20cc94d120844f481a80789aa54467865cc4a70afcd88c2926fb1077f",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      }
+    },
+    "order_revision": {
+      "present": true,
+      "receipt_sha256": "5086046d9d07c6714af5683404879f1b2148ac787cf3fd1fd21b727ce6755d36",
+      "n_divergences": 3,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "post_trade_drift": {
+      "present": true,
+      "receipt_sha256": "93b465201973c97a0316be2eb21f84ca638fa4a0bcf4543fbe6e65a1872984ed",
+      "n_divergences": 12,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "price_improvement": {
+      "present": true,
+      "receipt_sha256": "566e4dbccbf136950e650255c59d7b917dd11475f58425a63b241ceda533022e",
+      "n_divergences": 1,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "propagator": {
+      "present": true,
+      "receipt_sha256": "17a49ca16655f30787e47400a77a6d09b09cbb12857d3cd756f2b3a65497bb98",
+      "n_divergences": 3,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "queue_jump": {
+      "present": true,
+      "receipt_sha256": "27a57dfa74999a9fa1fde47451f79db1699c5d6d308703a5843a3a1c0f4a9001",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "covered",
+        "regime": "covered",
+        "split": "covered"
+      }
+    },
+    "queue_occupancy": {
+      "present": true,
+      "receipt_sha256": "96406986c8cf16bc543e597d9a7995621576fdc5eb9bb9b57aca126b965b2d1b",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "covered",
+        "regime": "covered",
+        "split": "covered"
+      }
+    },
+    "quote_place": {
+      "present": true,
+      "receipt_sha256": "dac1c8c76b0111c53e8f706620af665933db8abfacab84b212a1f704324f254f",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      }
+    },
+    "round_lot": {
+      "present": true,
+      "receipt_sha256": "86a822594a3e07b62a370a550784abb3b8deebf49476879c6f9edbac837f756b",
+      "n_divergences": 3,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "side_imbalance": {
+      "present": true,
+      "receipt_sha256": "f30d71bc0947dec9b421e7657312bfd7fe28e81eefc060f9b7de3212e03223f7",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "covered",
+        "regime": "covered",
+        "split": "covered"
+      }
+    },
+    "sign_autocorr": {
+      "present": true,
+      "receipt_sha256": "2f8af3a9183602565838580c444635cca457b23795483509b783cc87e2b11cc9",
+      "n_divergences": 3,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "sign_predict": {
+      "present": true,
+      "receipt_sha256": "c679c7e3a66d122e8dfb422f6dc21f682e00d96e0ee34c06fb9ff73629de1930",
+      "n_divergences": 2,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "covered"
+      }
+    },
+    "spread_dynamics": {
+      "present": true,
+      "receipt_sha256": "f69e67a4a30362cf19c2b67b685a216ca848af31c1d3bd7834aa61b2e7a1e400",
+      "n_divergences": 1,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "spread_response": {
+      "present": true,
+      "receipt_sha256": "8f491ea43b843d681928d489ecae215da9a5a54e962c5c8fed987673a95a10ca",
+      "n_divergences": 18,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "stale_quote": {
+      "present": true,
+      "receipt_sha256": "01d0b903cdfe3ba892e2303d594abc944cbbdf4338d8865644008ff97c309c95",
+      "n_divergences": 3,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "streak_stats": {
+      "present": true,
+      "receipt_sha256": "9ce5f51523c39e49457969c9ea62ee5a107640973ba914d27097a65ffdf8d5fc",
+      "n_divergences": 3,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "diverged"
+      }
+    },
+    "tick_rule": {
+      "present": true,
+      "receipt_sha256": "4231bf0e2878bebadb85669c24dae8ce1836a9821bb1448721ab15953a6694a7",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      }
+    },
+    "vol_signature": {
+      "present": true,
+      "receipt_sha256": "51399220b3452398eaf874c6174afc7ef74bef36aa43d9a98b90b47908da69d2",
+      "n_divergences": 2,
+      "arm_status": {
+        "iid": "diverged",
+        "regime": "diverged",
+        "split": "covered"
+      }
+    },
+    "vpin": {
+      "present": true,
+      "receipt_sha256": "710f032cb569df5fa2684e5656f99669b66233db555035ac25285c88f2a98acd",
+      "n_divergences": 0,
+      "arm_status": {
+        "iid": "unscored",
+        "regime": "unscored",
+        "split": "unscored"
+      }
+    }
+  },
+  "arm_universe": [
+    "iid",
+    "regime",
+    "split"
+  ],
+  "arm_coverage_score": {
+    "iid": 6,
+    "regime": 8,
+    "split": 11
+  },
+  "best_arm": "split",
+  "uncovered_lanes": [
+    "event_burst",
+    "event_granger",
+    "hidden_depth",
+    "impact_instant",
+    "lob_resilience",
+    "marketable_limit",
+    "markout",
+    "order_revision",
+    "post_trade_drift",
+    "price_improvement",
+    "propagator",
+    "round_lot",
+    "sign_autocorr",
+    "spread_dynamics",
+    "spread_response",
+    "stale_quote",
+    "streak_stats"
+  ],
+  "claim": "sim_realism_coverage_matrix",
+  "interpretation": "arm_status: covered = lane flagged no divergence for that arm; diverged = flagged; unscored = lane measured but has no per-arm divergence list. The arm axis is discovered per lane from its sim_arms table (markov_regime aliases to regime), so mechanism arms beyond iid/regime/split score where they run. uncovered_lanes flag facts no arm reproduces \u2014 the sim's priority list.",
+  "git_revision": "3ca1ab6d7f493a839774676de13c60dcc333ed54",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "351c9fe298e90ac7e91339cfadd61a79d1d11fac9c1f68741b0663c07ed02bb0"
+}

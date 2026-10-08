@@ -41,6 +41,7 @@ packages = [
     "microstructure", # LOB/OFI estimators (coupled with northset below)
     "northset",       # northstar estimators/identities over microstructure+metrics
     "metrics",        # shared scoring vocabulary; imported by nearly every layer
+    "flowbars",       # information-driven bar construction (dollar/volume/tick) over data
 ]
 
 [[layers]]
@@ -59,6 +60,7 @@ packages = [
     "validation",   # walk-forward/purging/CPCV splitters used by pipeline.train
     "decay",        # horizon-IC/half-life diagnostics over model scores
     "realized",     # realized-variance estimators and jump analytics
+    "combination",  # proper-score ensemble forecast combination (BMA, vincentization, conformal)
 ]
 
 [[layers]]
@@ -84,7 +86,6 @@ packages = [
     "robustness",  # adversarial certification (paired with research)
     "leakage",     # leakage scanner/guardrails over proofcore
     "audit",       # hash-chained audit ledger over research receipts
-    "parity_leak_audit", # parity-leak scanner over research-adjacent invariants
     "stress",      # stress harness over research+data
     "proof",       # proof bundles over proofcore
     "reality",     # reality checks (SPA/CSCV/DSR) over proofcore+metrics

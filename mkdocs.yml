@@ -233,6 +233,8 @@ nav:
       - Pre-trade risk: PRETRADE_RISK.md
   - fx-1:
       - Overview: FX1.md
+      - Interactive CLI (fxi): FXI.md
+      - Concierge orchestration: DIP_CONCIERGE.md
       - Forecast harness: fx1_harness.md
       - Architecture: FX1_ARCHITECTURE.md
       - Training: FX1_TRAINING.md

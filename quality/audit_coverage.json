@@ -20,8 +20,12 @@
       "status": "audited"
     },
     "cli": {
-      "n_modules": 16,
+      "n_modules": 17,
       "status": "audited"
+    },
+    "combination": {
+      "n_modules": 8,
+      "status": "pending"
     },
     "compute": {
       "n_modules": 7,
@@ -37,6 +41,10 @@
       "n_modules": 42,
       "status": "audited"
     },
+    "decay": {
+      "n_modules": 7,
+      "status": "pending"
+    },
     "diffbacktest": {
       "n_modules": 8,
       "status": "audited"
@@ -49,6 +57,10 @@
     "features": {
       "n_modules": 9,
       "status": "audited"
+    },
+    "flowbars": {
+      "n_modules": 9,
+      "status": "pending"
     },
     "formal": {
       "n_modules": 8,

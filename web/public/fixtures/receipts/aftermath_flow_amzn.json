@@ -1,0 +1,748 @@
+{
+  "schema": "aftermath_flow.v1",
+  "kind": "aftermath_flow_bench",
+  "ticker": "AMZN",
+  "horizon": 20000,
+  "seed": 7,
+  "real": {
+    "ok": true,
+    "n_events": 269748,
+    "windows": {
+      "1_10": {
+        "n_anchor_fills": 8974,
+        "hit": {
+          "add": {
+            "inside": 2275,
+            "touch": 2684,
+            "near": 1971,
+            "deep": 7443
+          },
+          "cxl": {
+            "inside": 0,
+            "touch": 2750,
+            "near": 2166,
+            "deep": 8875
+          },
+          "fill": {
+            "inside": 0,
+            "touch": 12900,
+            "near": 0,
+            "deep": 0
+          }
+        },
+        "unhit": {
+          "add": {
+            "inside": 2436,
+            "touch": 2739,
+            "near": 3425,
+            "deep": 14830
+          },
+          "cxl": {
+            "inside": 0,
+            "touch": 1553,
+            "near": 1942,
+            "deep": 10802
+          },
+          "fill": {
+            "inside": 0,
+            "touch": 513,
+            "near": 0,
+            "deep": 0
+          }
+        },
+        "hit_net_per_fill": -1.3726320481390684,
+        "unhit_net_per_fill": 0.9605527078225986,
+        "hit_channel_rates": {
+          "add": 1.601626922219746,
+          "cxl": 1.5367728994874081,
+          "fill": 1.4374860708714063
+        },
+        "unhit_channel_rates": {
+          "add": 2.610875863605973,
+          "cxl": 1.593158012034767,
+          "fill": 0.05716514374860709
+        }
+      },
+      "10_50": {
+        "n_anchor_fills": 8972,
+        "hit": {
+          "add": {
+            "inside": 6960,
+            "touch": 9885,
+            "near": 9710,
+            "deep": 47449
+          },
+          "cxl": {
+            "inside": 0,
+            "touch": 10785,
+            "near": 10824,
+            "deep": 51042
+          },
+          "fill": {
+            "inside": 0,
+            "touch": 22411,
+            "near": 0,
+            "deep": 0
+          }
+        },
+        "unhit": {
+          "add": {
+            "inside": 9930,
+            "touch": 12253,
+            "near": 14678,
+            "deep": 58094
+          },
+          "cxl": {
+            "inside": 0,
+            "touch": 10106,
+            "near": 12750,
+            "deep": 62889
+          },
+          "fill": {
+            "inside": 0,
+            "touch": 4125,
+            "near": 0,
+            "deep": 0
+          }
+        },
+        "hit_net_per_fill": -2.3470798038341507,
+        "unhit_net_per_fill": 0.5667632634864022,
+        "hit_channel_rates": {
+          "add": 8.248328131966117,
+          "cxl": 8.097525635309854,
+          "fill": 2.4978823004904145
+        },
+        "unhit_channel_rates": {
+          "add": 10.583481943825234,
+          "cxl": 9.556954971020954,
+          "fill": 0.45976370931787786
+        }
+      },
+      "50_200": {
+        "n_anchor_fills": 8968,
+        "hit": {
+          "add": {
+            "inside": 28932,
+            "touch": 38712,
+            "near": 44547,
+            "deep": 192103
+          },
+          "cxl": {
+            "inside": 0,
+            "touch": 42614,
+            "near": 42838,
+            "deep": 198026
+          },
+          "fill": {
+            "inside": 0,
+            "touch": 48251,
+            "near": 0,
+            "deep": 0
+          }
+        },
+        "unhit": {
+          "add": {
+            "inside": 38262,
+            "touch": 40978,
+            "near": 48284,
+            "deep": 217303
+          },
+          "cxl": {
+            "inside": 0,
+            "touch": 41525,
+            "near": 47083,
+            "deep": 233116
+          },
+          "fill": {
+            "inside": 0,
+            "touch": 23250,
+            "near": 0,
+            "deep": 0
+          }
+        },
+        "hit_net_per_fill": -3.0592105263157894,
+        "unhit_net_per_fill": -0.016391614629794826,
+        "hit_channel_rates": {
+          "add": 33.93108831400535,
+          "cxl": 31.609946476360392,
+          "fill": 5.380352363960749
+        },
+        "unhit_channel_rates": {
+          "add": 38.45082515611062,
+          "cxl": 35.87466547725246,
+          "fill": 2.5925512934879573
+        }
+      }
+    }
+  },
+  "sim_arms": {
+    "iid": {
+      "ok": true,
+      "n_events": 20000,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 3319,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 3272,
+              "near": 3752,
+              "deep": 518
+            },
+            "cxl": {
+              "inside": 279,
+              "touch": 762,
+              "near": 2638,
+              "deep": 780
+            },
+            "fill": {
+              "inside": 1293,
+              "touch": 1243,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 3291,
+              "near": 3862,
+              "deep": 536
+            },
+            "cxl": {
+              "inside": 261,
+              "touch": 656,
+              "near": 2844,
+              "deep": 1261
+            },
+            "fill": {
+              "inside": 1397,
+              "touch": 1163,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": 0.1648086773124435,
+          "unhit_net_per_fill": 0.032238626092196444,
+          "hit_channel_rates": {
+            "add": 2.2723711961434168,
+            "cxl": 1.343476950888822,
+            "fill": 0.7640855679421512
+          },
+          "unhit_channel_rates": {
+            "add": 2.3166616450738173,
+            "cxl": 1.513106357336547,
+            "fill": 0.7713166616450738
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 3319,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 12640,
+              "near": 17864,
+              "deep": 3156
+            },
+            "cxl": {
+              "inside": 1162,
+              "touch": 3070,
+              "near": 11974,
+              "deep": 4251
+            },
+            "fill": {
+              "inside": 5779,
+              "touch": 5544,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 12641,
+              "near": 17954,
+              "deep": 3039
+            },
+            "cxl": {
+              "inside": 1128,
+              "touch": 3061,
+              "near": 12298,
+              "deep": 5587
+            },
+            "fill": {
+              "inside": 5725,
+              "touch": 5514,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": 0.5664356733956011,
+          "unhit_net_per_fill": 0.09671587827658934,
+          "hit_channel_rates": {
+            "add": 10.1416089183489,
+            "cxl": 6.163603495028623,
+            "fill": 3.411569749924676
+          },
+          "unhit_channel_rates": {
+            "add": 10.133775233504068,
+            "cxl": 6.650798433263031,
+            "fill": 3.386260921964447
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 3314,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 45471,
+              "near": 66415,
+              "deep": 11763
+            },
+            "cxl": {
+              "inside": 4286,
+              "touch": 11927,
+              "near": 46564,
+              "deep": 17555
+            },
+            "fill": {
+              "inside": 20308,
+              "touch": 21174,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 45701,
+              "near": 67202,
+              "deep": 11835
+            },
+            "cxl": {
+              "inside": 4289,
+              "touch": 11800,
+              "near": 47612,
+              "deep": 19002
+            },
+            "fill": {
+              "inside": 20139,
+              "touch": 20776,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": 0.5537115268557634,
+          "unhit_net_per_fill": 0.33796016898008446,
+          "hit_channel_rates": {
+            "add": 37.3111044055522,
+            "cxl": 24.24019312009656,
+            "fill": 12.51719975859988
+          },
+          "unhit_channel_rates": {
+            "add": 37.63971031985516,
+            "cxl": 24.955642727821363,
+            "fill": 12.346107423053711
+          }
+        }
+      }
+    },
+    "lv_cd300_tilt": {
+      "ok": true,
+      "n_events": 20000,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 963,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 111,
+              "near": 102,
+              "deep": 1354
+            },
+            "cxl": {
+              "inside": 9,
+              "touch": 34,
+              "near": 98,
+              "deep": 1293
+            },
+            "fill": {
+              "inside": 200,
+              "touch": 295,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 120,
+              "near": 70,
+              "deep": 2276
+            },
+            "cxl": {
+              "inside": 11,
+              "touch": 16,
+              "near": 30,
+              "deep": 1991
+            },
+            "fill": {
+              "inside": 24,
+              "touch": 9,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -0.37590861889927313,
+          "unhit_net_per_fill": 0.39979231568016615,
+          "hit_channel_rates": {
+            "add": 1.6272066458982346,
+            "cxl": 1.4890965732087227,
+            "fill": 0.514018691588785
+          },
+          "unhit_channel_rates": {
+            "add": 2.560747663551402,
+            "cxl": 2.12668743509865,
+            "fill": 0.03426791277258567
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 962,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 460,
+              "near": 411,
+              "deep": 6136
+            },
+            "cxl": {
+              "inside": 37,
+              "touch": 186,
+              "near": 437,
+              "deep": 5776
+            },
+            "fill": {
+              "inside": 939,
+              "touch": 1162,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 402,
+              "near": 402,
+              "deep": 9964
+            },
+            "cxl": {
+              "inside": 45,
+              "touch": 67,
+              "near": 152,
+              "deep": 8851
+            },
+            "fill": {
+              "inside": 123,
+              "touch": 69,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -1.5904365904365905,
+          "unhit_net_per_fill": 1.5187110187110187,
+          "hit_channel_rates": {
+            "add": 7.283783783783784,
+            "cxl": 6.6902286902286905,
+            "fill": 2.183991683991684
+          },
+          "unhit_channel_rates": {
+            "add": 11.193347193347194,
+            "cxl": 9.475051975051976,
+            "fill": 0.1995841995841996
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 962,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 1794,
+              "near": 1613,
+              "deep": 24210
+            },
+            "cxl": {
+              "inside": 162,
+              "touch": 514,
+              "near": 1582,
+              "deep": 21102
+            },
+            "fill": {
+              "inside": 2886,
+              "touch": 3664,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 1441,
+              "near": 1513,
+              "deep": 35800
+            },
+            "cxl": {
+              "inside": 193,
+              "touch": 197,
+              "near": 581,
+              "deep": 34862
+            },
+            "fill": {
+              "inside": 896,
+              "touch": 415,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -2.3835758835758836,
+          "unhit_net_per_fill": 1.6735966735966736,
+          "hit_channel_rates": {
+            "add": 28.70790020790021,
+            "cxl": 24.282744282744282,
+            "fill": 6.8087318087318085
+          },
+          "unhit_channel_rates": {
+            "add": 40.28482328482328,
+            "cxl": 37.24844074844075,
+            "fill": 1.362785862785863
+          }
+        }
+      }
+    },
+    "lv_cd300_tilt_relief": {
+      "ok": true,
+      "n_events": 20000,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 738,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 114,
+              "near": 47,
+              "deep": 1015
+            },
+            "cxl": {
+              "inside": 24,
+              "touch": 46,
+              "near": 85,
+              "deep": 1324
+            },
+            "fill": {
+              "inside": 140,
+              "touch": 137,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 86,
+              "near": 51,
+              "deep": 1762
+            },
+            "cxl": {
+              "inside": 4,
+              "touch": 3,
+              "near": 34,
+              "deep": 1115
+            },
+            "fill": {
+              "inside": 13,
+              "touch": 4,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -0.7859078590785907,
+          "unhit_net_per_fill": 0.983739837398374,
+          "hit_channel_rates": {
+            "add": 1.5934959349593496,
+            "cxl": 2.0040650406504064,
+            "fill": 0.37533875338753386
+          },
+          "unhit_channel_rates": {
+            "add": 2.573170731707317,
+            "cxl": 1.5663956639566397,
+            "fill": 0.023035230352303523
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 738,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 533,
+              "near": 223,
+              "deep": 4301
+            },
+            "cxl": {
+              "inside": 111,
+              "touch": 136,
+              "near": 375,
+              "deep": 5507
+            },
+            "fill": {
+              "inside": 618,
+              "touch": 543,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 353,
+              "near": 216,
+              "deep": 7569
+            },
+            "cxl": {
+              "inside": 32,
+              "touch": 32,
+              "near": 119,
+              "deep": 5602
+            },
+            "fill": {
+              "inside": 132,
+              "touch": 54,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -3.0257452574525745,
+          "unhit_net_per_fill": 2.9363143631436315,
+          "hit_channel_rates": {
+            "add": 6.85230352303523,
+            "cxl": 8.304878048780488,
+            "fill": 1.5731707317073171
+          },
+          "unhit_channel_rates": {
+            "add": 11.02710027100271,
+            "cxl": 7.838753387533876,
+            "fill": 0.25203252032520324
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 737,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 1983,
+              "near": 779,
+              "deep": 16629
+            },
+            "cxl": {
+              "inside": 298,
+              "touch": 453,
+              "near": 1097,
+              "deep": 17675
+            },
+            "fill": {
+              "inside": 1930,
+              "touch": 1563,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 1232,
+              "near": 900,
+              "deep": 27504
+            },
+            "cxl": {
+              "inside": 198,
+              "touch": 118,
+              "near": 505,
+              "deep": 24031
+            },
+            "fill": {
+              "inside": 702,
+              "touch": 312,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -4.918588873812754,
+          "unhit_net_per_fill": 5.115332428765265,
+          "hit_channel_rates": {
+            "add": 26.310719131614654,
+            "cxl": 26.489823609226594,
+            "fill": 4.739484396200814
+          },
+          "unhit_channel_rates": {
+            "add": 40.21166892808684,
+            "cxl": 33.720488466757125,
+            "fill": 1.3758480325644504
+          }
+        }
+      }
+    }
+  },
+  "deltas": {
+    "iid": {
+      "hit_net_1_10": 1.537440725451512,
+      "unhit_net_1_10": -0.9283140817304022,
+      "hit_net_10_50": 2.913515477229752,
+      "unhit_net_10_50": -0.4700473852098128,
+      "hit_net_50_200": 3.6129220531715527,
+      "unhit_net_50_200": 0.3543517836098793
+    },
+    "lv_cd300_tilt": {
+      "hit_net_1_10": 0.9967234292397953,
+      "unhit_net_1_10": -0.5607603921424325,
+      "hit_net_10_50": 0.7566432133975602,
+      "unhit_net_10_50": 0.9519477552246165,
+      "hit_net_50_200": 0.6756346427399058,
+      "unhit_net_50_200": 1.6899882882264685
+    },
+    "lv_cd300_tilt_relief": {
+      "hit_net_1_10": 0.5867241890604776,
+      "unhit_net_1_10": 0.0231871295757754,
+      "hit_net_10_50": -0.6786654536184238,
+      "unhit_net_10_50": 2.3695510996572295,
+      "hit_net_50_200": -1.859378347496965,
+      "unhit_net_50_200": 5.131724043395059
+    }
+  },
+  "divergences": [
+    "iid:hit_net_1_10=+1.54",
+    "iid:unhit_net_1_10=-0.93",
+    "iid:hit_net_10_50=+2.91",
+    "iid:hit_net_50_200=+3.61",
+    "lv_cd300_tilt:hit_net_1_10=+1.00",
+    "lv_cd300_tilt:unhit_net_1_10=-0.56",
+    "lv_cd300_tilt:hit_net_10_50=+0.76",
+    "lv_cd300_tilt:unhit_net_10_50=+0.95",
+    "lv_cd300_tilt:hit_net_50_200=+0.68",
+    "lv_cd300_tilt:unhit_net_50_200=+1.69",
+    "lv_cd300_tilt_relief:hit_net_1_10=+0.59",
+    "lv_cd300_tilt_relief:hit_net_10_50=-0.68",
+    "lv_cd300_tilt_relief:unhit_net_10_50=+2.37",
+    "lv_cd300_tilt_relief:hit_net_50_200=-1.86",
+    "lv_cd300_tilt_relief:unhit_net_50_200=+5.13"
+  ],
+  "claims": {
+    "tape_accommodation_is_add_driven": true,
+    "sim_rate_channel_achieved": true,
+    "sim_cancel_leakage": true,
+    "relief_narrows_cancel_gap": true,
+    "iid_add_channel_flat": true
+  },
+  "interpretation": "The post-fill decomposition resolves the accommodation: the tape's unhit side receives ~1.6x the hit side's LO adds in the first 10 events (the lo_tilt rate channel \u2014 the calibrated sim already matches it at ~1.57x) while cancel flow is ~symmetric. The residual is cancel LEAKAGE: the sim's depth-proportional cancel kernel keeps cancelling the fresh unhit depth (cxl/add 0.83 vs tape 0.61). cxl_unhit_relief=0.3/window=100 reroutes unhit-side cancels to the hit side post-fill and lands the unhit cxl/add ratio at 0.61 \u2014 matching the tape \u2014 though hit-side cancel mass overshoots (2.0 vs 1.54 per fill), so the leakage is redirected rather than eliminated.",
+  "git_revision": "bbd6913b5d327be6237af7afeac0b64be3b470e3",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "5b61add2741ead447c9e9d14f2551833f213a8adf9ef37d8196193107efbde83"
+}

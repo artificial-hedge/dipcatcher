@@ -1,0 +1,143 @@
+{
+ "schema": "wave24_map.v1",
+ "kind": "wave24_map",
+ "asset": "AMZN",
+ "n_lanes": 10,
+ "lanes": [
+  {
+   "receipt": "spread_reopen.json",
+   "mechanism": "anchor depth (lo_offset \u00d7 flow) on all-pins cell",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "spread_reopens_under_iid": false,
+    "emptied_touch_survives": false,
+    "spread_bounded_above": true
+   }
+  },
+  {
+   "receipt": "band_shape.json",
+   "mechanism": "deposit-density family (density_exponent \u03b2)",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "shape_opens_spread": false,
+    "spread_monotone_in_beta": true,
+    "emptied_touch_survives": false
+   }
+  },
+  {
+   "receipt": "quote_floor.json",
+   "mechanism": "maker min-depth floor (min_quote_dist)",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "floor_opens_spread": true,
+    "spread_scales_with_floor": false,
+    "floor_composes": false
+   }
+  },
+  {
+   "receipt": "floor_compose.json",
+   "mechanism": "floor \u00d7 emptied-touch stack composition",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "spread_survives_scan": true,
+    "floor_composes": true,
+    "near_closure": true
+   }
+  },
+  {
+   "receipt": "floor_reseed.json",
+   "mechanism": "vacancy-repost channel under the floor",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "reseed_recovered": true,
+    "full_closure": false,
+    "spread_survives_reseed": true
+   }
+  },
+  {
+   "receipt": "floor_stability.json",
+   "mechanism": "per-pin hold rates under the floor",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "spread_stable": false,
+    "reseed_stable": true,
+    "stable_closure": false
+   }
+  },
+  {
+   "receipt": "floor_rate.json",
+   "mechanism": "band-open rate over floor \u00d7 flow \u00d7 seed",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "floor_structural": false,
+    "opens_under_iid": true,
+    "rate_reaches_half": true
+   }
+  },
+  {
+   "receipt": "floor_pins.json",
+   "mechanism": "full 7-pin contract at the structural corner",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "all_pins_at_corner": false,
+    "composes_under_both_flows": false,
+    "empty_survives_dose": true
+   }
+  },
+  {
+   "receipt": "gap_close.json",
+   "mechanism": "repost-geometry repost_band/pp_band scan",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "gap_closes": false,
+    "full_closure": false,
+    "geometry_moves_gap": true
+   }
+  },
+  {
+   "receipt": "iid_floor.json",
+   "mechanism": "floor under pure iid flow",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "iid_structural": false,
+    "iid_seven_pin_draw": true,
+    "iid_dose_response": true
+   }
+  }
+ ],
+ "mechanism_map": {
+  "spread_band": "min_quote_dist \u2014 maker min-depth floor",
+  "reseed": "fill-triggered reposts + vacancy reposts",
+  "empty_persistence": "split-flow metaorder sweeps",
+  "joint": "6/7 at g10+d280+rp60 under split; iid stays a rate"
+ },
+ "falsified_channels": [
+  "anchor depth (spread_reopen \u2014 non-monotone)",
+  "deposit density family (band_shape \u2014 equilibrium, not grammar)",
+  "repost geometry (gap_close \u2014 reveal bound to floor height)",
+  "pure iid flow (iid_floor \u2014 band rate capped ~1/3)"
+ ],
+ "claims": {
+  "all_member_receipts_sealed": true,
+  "all_lanes_present": true,
+  "band_opened": true,
+  "floor_composes": true,
+  "seven_pin_reachable": true,
+  "stable_closure": false
+ },
+ "interpretation": "Wave-24 verdict: the tape's standing spread is reachable \u2014 the maker min-depth floor (min_quote_dist) is the first placement class that lands sim draws inside the tape's 9-63-tick band, and its dose-response is monotone (g12 opens every split draw). It composes with the emptied-touch stack at 6/7 pins (the reveal gap misses by 0.29 ticks, bound geometrically to the floor height), and a 7/7 draw exists under both split and iid flow \u2014 but no cell is stable: closure is a rate phenomenon. The residual is pinned to two honest facts: under iid, lone fills reseed the vacancy before it persists; and the reveal gap equals the floor height by construction.",
+ "git_revision": "df430519fbdecede2bfd6a11acd430530bfd3b6a",
+ "data_label": "MIXED",
+ "research_only": true,
+ "receipt_sha256": "1c06c769d7a76aa3e89baed576c4cddbea492020e5d79c29a01a9fd02ddc0114"
+}

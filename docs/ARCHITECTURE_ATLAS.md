@@ -136,6 +136,7 @@ flowchart LR
     fx1_eval["fx1.eval"]
     fx1_ext_bench_audit["fx1.ext_bench_audit"]
     fx1_extensions["fx1.extensions"]
+    fx1_flash["fx1.flash"]
     fx1_forecast["fx1.forecast"]
     fx1_harness["fx1.harness"]
     fx1_harness_audit["fx1.harness_audit"]
@@ -162,6 +163,7 @@ flowchart LR
     fx1_serve["fx1.serve"]
     fx1_tail_audit["fx1.tail_audit"]
     fx1_train["fx1.train"]
+    fx1_webresearch["fx1.webresearch"]
   end
   fx1_bench -->|1| fx1_honesty
   fx1_bench -->|5| quant_fund_utils
@@ -205,6 +207,8 @@ flowchart LR
   fx1_extensions -->|87| fx1_capabilities
   fx1_extensions -->|2| fx1_data
   fx1_extensions -->|2| fx1_harness
+  fx1_flash -->|1| fx1_interactive
+  fx1_flash -->|1| fx1_webresearch
   fx1_forecast -->|1| fx1_honesty
   fx1_forecast -->|1| quant_fund_config
   fx1_forecast -->|4| quant_fund_data
@@ -221,8 +225,11 @@ flowchart LR
   fx1_hypotheses_audit -->|2| quant_fund_utils
   fx1_interactive -->|1| fx1
   fx1_interactive -->|1| fx1_doctor
-  fx1_interactive -->|1| fx1_harness
-  fx1_interactive -->|2| fx1_serve
+  fx1_interactive -->|7| fx1_flash
+  fx1_interactive -->|3| fx1_harness
+  fx1_interactive -->|1| fx1_honesty
+  fx1_interactive -->|3| fx1_serve
+  fx1_interactive -->|1| fx1_webresearch
   fx1_modelcard_audit -->|1| fx1_modelcard
   fx1_modelcard_audit -->|2| quant_fund_utils
   fx1_mrm -->|1| fx1_modelcard
@@ -738,6 +745,7 @@ sequenceDiagram
 | `fx1.eval` | 28 |
 | `fx1.ext_bench_audit` | 1 |
 | `fx1.extensions` | 94 |
+| `fx1.flash` | 4 |
 | `fx1.forecast` | 14 |
 | `fx1.harness` | 1 |
 | `fx1.harness_audit` | 1 |
@@ -746,7 +754,7 @@ sequenceDiagram
 | `fx1.honesty_audit` | 1 |
 | `fx1.hypotheses` | 1 |
 | `fx1.hypotheses_audit` | 1 |
-| `fx1.interactive` | 7 |
+| `fx1.interactive` | 10 |
 | `fx1.modelcard` | 1 |
 | `fx1.modelcard_audit` | 1 |
 | `fx1.mrm` | 1 |
@@ -764,6 +772,7 @@ sequenceDiagram
 | `fx1.serve` | 59 |
 | `fx1.tail_audit` | 1 |
 | `fx1.train` | 14 |
+| `fx1.webresearch` | 4 |
 | `quant_fund` | 1 |
 | `quant_fund.api` | 7 |
 | `quant_fund.audit` | 11 |
@@ -819,9 +828,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13356**
-- Packages: **91**
-- Cross-package import edges: **379**
+- Modules scanned: **13367**
+- Packages: **93**
+- Cross-package import edges: **384**
 
 <!-- END GENERATED: coverage -->
 

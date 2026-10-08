@@ -1,0 +1,88 @@
+{
+ "schema": "pin_stability.v1",
+ "kind": "sim_vs_real",
+ "git_revision": "f96b65f4b4eaaacdf1e475d651f589c463a7a307",
+ "research_only": true,
+ "data_label": "MIXED",
+ "horizon": 15000,
+ "seed": 7,
+ "n_seeds": 6,
+ "lags": [
+  1,
+  5,
+  20,
+  50,
+  200
+ ],
+ "tape_targets": {
+  "instant_signed_ticks": 0.887,
+  "kernel": {
+   "1": 0.2645,
+   "5": 0.6792,
+   "20": 1.5127,
+   "50": 2.5696,
+   "200": 4.6447
+  }
+ },
+ "rows": [
+  {
+   "flow_intensity": null,
+   "n_seeds": 6,
+   "pin_hold_rate": {
+    "crown": 1.0,
+    "empty": 0.6667,
+    "spread": 0.0,
+    "hidden": 1.0,
+    "reseed_rate": 0.6667,
+    "reseed_touch": 0.8333,
+    "reveal_gap": 0.5
+   },
+   "mean_pins_ok": 4.667,
+   "n_all_pins": 0,
+   "instant_mean": 0.4212,
+   "instant_sd": 0.2726,
+   "k200_mean": 2.438,
+   "k200_sd": 1.0164
+  },
+  {
+   "flow_intensity": 2.0,
+   "n_seeds": 6,
+   "pin_hold_rate": {
+    "crown": 1.0,
+    "empty": 0.0,
+    "spread": 0.3333,
+    "hidden": 1.0,
+    "reseed_rate": 0.3333,
+    "reseed_touch": 0.5,
+    "reveal_gap": 0.8333
+   },
+   "mean_pins_ok": 4.0,
+   "n_all_pins": 0,
+   "instant_mean": 0.521,
+   "instant_sd": 0.4486,
+   "k200_mean": 5.7838,
+   "k200_sd": 3.9295
+  }
+ ],
+ "divergences": [
+  "None:empty_hold_0.67",
+  "None:spread_hold_0.00",
+  "None:reseed_rate_hold_0.67",
+  "None:reseed_touch_hold_0.83",
+  "None:reveal_gap_hold_0.50",
+  "2.0:empty_hold_0.00",
+  "2.0:spread_hold_0.33",
+  "2.0:reseed_rate_hold_0.33",
+  "2.0:reseed_touch_hold_0.50",
+  "2.0:reveal_gap_hold_0.83"
+ ],
+ "claims": {
+  "panel_measured": true,
+  "closure_is_knife_edge": true,
+  "fragility_quantified": true,
+  "iid_spread_fails": true,
+  "split_instant_holds_k200_overshoots": false
+ },
+ "notes": "Per-pin hold RATES over a seed panel (seeds spaced 13 apart per flow class), not a single verdict. The single-seed 7/7 event recorded in full_stack.v1 stands; this receipt quantifies how often each pin lands inside its band under a uniform flow, and reports the drift kernel's mean+sd on the same seeds. A pin holding <100% of seeds inside a band the tape sits inside permanently is the honest fragility statement for that mechanism. Measured: crown/hidden robust under both flows; spread holds 0/6 under iid; empty holds 0/6 under split@2; the instant channel is itself seed-fragile (0.45 vs 0.887); all-seven-pins lands 0/6 under either flow.",
+ "receipt_sha256": "3ca898535f4507989577c36e8ad4a10e361bce77b4ca3799727dc7af57a26eeb"
+}

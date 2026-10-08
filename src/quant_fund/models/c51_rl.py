@@ -227,6 +227,24 @@ def _seed_int(x: int) -> int:
     return int(x)
 
 
+def _action_index(action: int, n_actions: int) -> int:
+    """Validate an environment/agent action *without* coercing it.
+
+    ``int(action)`` used to accept ``1.9`` as action 1 and ``True`` as
+    action 1, silently turning a malformed policy output into a real
+    decision. Accept exactly ``int`` (numpy integer scalars included, so
+    ``np.argmax(...)`` output still works) inside ``[0, n_actions)``.
+    """
+    # bool is an int subclass, so it must be rejected before the isinstance
+    # check; numpy integer scalars are not ``int`` but are genuine integers.
+    if isinstance(action, bool) or not isinstance(action, (int, np.integer)):
+        raise ValueError(f"action must be an int in [0, {n_actions}), got {action!r}")
+    a = int(action)
+    if not 0 <= a < n_actions:
+        raise ValueError(f"action must be an int in [0, {n_actions}), got {action!r}")
+    return a
+
+
 def _synthetic_envelope(seed: int) -> dict[str, Any]:
     """The lane honesty header every returned mapping carries."""
     return {
@@ -559,6 +577,10 @@ class ZILobQuoteEnv:
         self._reward_sum = 0.0
         self._fill_gain_sum = 0.0
         self._step_fills: list[tuple[float, int]] = []
+        # Effective episode seed; set by reset(). The honesty envelope stamps
+        # this, not config.lob.seed, so a run with reset(seed=k) is labelled
+        # with the book that actually produced it.
+        self._episode_seed = int(config.lob.seed)
         self.reset(seed=config.lob.seed)
 
     # -- introspection -------------------------------------------------------
@@ -652,6 +674,12 @@ class ZILobQuoteEnv:
         can empty one side, leaving the mid undefined until limit flow
         re-seeds it. Mirrors the lane module's private recovery helper using
         only the public ``step()``/``mid`` surface.
+
+        Recovery steps are real simulator events: they can fill the resting
+        orders this environment posted. Callers must therefore drain trades
+        *after* every call to this helper, never before, or those fills are
+        silently dropped from inventory, cash, MTM, fill counts, and reward
+        (see :meth:`step`).
         """
         sim = self.sim
         mid = sim.mid
@@ -801,6 +829,11 @@ class ZILobQuoteEnv:
         """Rebuild the simulator (and flow) and return the first observation."""
         cfg = self._cfg
         s = int(cfg.lob.seed) if seed is None else _seed_int(seed)
+        # Record the *effective* episode seed. ``episode_summary`` used to stamp
+        # ``config.lob.seed`` unconditionally, so a run with ``reset(seed=k)``
+        # reported the config default and the evidence envelope mislabelled
+        # which book produced the numbers.
+        self._episode_seed = s
         flow: MOFlow | None = None if self._flow_factory is None else self._flow_factory(s + 1)
         self._sim = ZILobSimulator(replace(cfg.lob, seed=s), flow=flow)
         self._inventory = 0
@@ -828,9 +861,7 @@ class ZILobQuoteEnv:
         """Apply one quoting action, advance one decision interval, reward."""
         if self._terminated:
             raise RuntimeError("episode is terminated; call reset() before step()")
-        a = int(action)
-        if isinstance(action, bool) or not 0 <= a < self.n_actions:
-            raise ValueError(f"action must be an int in [0, {self.n_actions}), got {action!r}")
+        a = _action_index(action, self.n_actions)
         sim = self.sim
         cfg = self._cfg
         suppress_bid, suppress_ask, held_bid, held_ask = self._requote(self._actions[a])
@@ -846,9 +877,22 @@ class ZILobQuoteEnv:
                     f"decision interval exceeded {budget} events; raise "
                     f"max_events_per_interval or shorten decision_interval"
                 )
-        self._t_next += float(cfg.decision_interval)
+        # Event time is stochastic, so the loop above can overshoot several
+        # decision boundaries at once. Advancing by a single interval would
+        # leave ``_t_next`` behind the live clock, and the *next* step would
+        # run zero simulator events while still charging an inventory penalty
+        # against the same market state. Advance strictly past the clock.
+        interval = float(cfg.decision_interval)
+        self._t_next = float(sim.t) + interval
         self._drain_trades()
         mid_next = self._require_mid("decision end")
+        # ``_require_mid`` steps the simulator again when the book thins. Those
+        # are real events that can fill this environment's resting orders, so
+        # the drain must happen *after* recovery — otherwise the fills never
+        # reach inventory/cash/MTM/fill counts/reward/evidence. _require_mid
+        # is guaranteed to have terminated before this returns, so
+        # ``_step_fills`` and the counters are final by the time they are read.
+        self._drain_trades()
         self._last_mid = mid_next
         mtm_next = float(self._cash + self._inventory * mid_next)
         fill_gain = (
@@ -893,7 +937,7 @@ class ZILobQuoteEnv:
     def episode_summary(self) -> dict[str, Any]:
         """Aggregate ``sim_internal_*`` accounting for the current episode."""
         n = max(1, self._n_decisions)
-        out = _synthetic_envelope(self._cfg.lob.seed)
+        out = _synthetic_envelope(self._episode_seed)
         out.update(
             {
                 "horizon": float(self._cfg.horizon),
@@ -1150,9 +1194,7 @@ class C51Agent:
         """Push one transition into the uniform replay buffer (fixed gamma)."""
         s = self._check_obs(obs)
         n = self._check_obs(next_obs)
-        a = int(action)
-        if isinstance(action, bool) or not 0 <= a < self._n_actions:
-            raise ValueError(f"action must be an int in [0, {self._n_actions}), got {action!r}")
+        a = _action_index(action, self._n_actions)
         r = float(reward)
         if not math.isfinite(r):
             raise ValueError(f"reward must be finite, got {reward!r}")
@@ -1409,7 +1451,7 @@ def run_env_episode(
     steps = 0
     terminated = False
     while steps < budget:
-        action = int(policy(obs, env))
+        action = _action_index(policy(obs, env), env.n_actions)
         out = env.step(action)
         obs = out.obs
         steps += 1
