@@ -102,8 +102,8 @@ def fit_student_t(losses: Array) -> dict[str, float]:
 
     Vectorized negative log-likelihood with analytic gradients solved by
     L-BFGS-B from a method-of-moments start (``nu_mm = 4 + 6/K`` on excess
-    kurtosis — the classical Student-t moment identity). ~20x faster than
-    Nelder-Mead on per-observation ``t.logpdf`` and reaches the same MLE.
+    kurtosis — the classical Student-t moment identity). This avoids the
+    per-observation ``t.logpdf`` loop while optimizing the same likelihood.
     """
     v = _as_losses(losses)
     n = v.size
@@ -146,9 +146,20 @@ def fit_student_t(losses: Array) -> dict[str, float]:
         bounds=[(2.01, None), (None, None), (-20.0, 5.0)],
         options={"maxiter": 500, "ftol": 1e-15, "gtol": 1e-10},
     )
-    nu, mu, log_s = res.x
-    if not np.all(np.isfinite(res.x)) or nu <= 2.01:
-        raise ValueError("Student-t fit produced invalid parameters")
+    params = np.asarray(getattr(res, "x", ()), dtype=float)
+    gradient = np.asarray(getattr(res, "jac", ()), dtype=float)
+    objective = float(getattr(res, "fun", math.nan))
+    if (
+        not bool(res.success)
+        or params.shape != (3,)
+        or gradient.shape != (3,)
+        or not np.all(np.isfinite(params))
+        or not np.all(np.isfinite(gradient))
+        or not math.isfinite(objective)
+        or params[0] < 2.01
+    ):
+        raise ValueError("Student-t fit did not converge to valid parameters")
+    nu, mu, log_s = params
     return {"nu": float(nu), "mu": float(mu), "sigma": float(math.exp(log_s))}
 
 
