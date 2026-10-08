@@ -149,6 +149,8 @@ def bench_lambda_method(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_lambda_plain_round"] = float(wrong_round)
     out["synthetic_lambda_rate"] = ok / trials
     out["synthetic_lambda_better"] = float(ok >= wrong_round)
+    if ok < wrong_round or ok == 0:
+        raise ValueError("LAMBDA fix rate below plain rounding")
     return out
 
 

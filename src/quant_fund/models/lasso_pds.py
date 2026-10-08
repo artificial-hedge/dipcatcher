@@ -165,6 +165,8 @@ def bench_lasso_pds(seed: int = 20261231 + 335) -> dict[str, float]:
     bd = _lasso_cd(d, x, _bcch_lam(d, x))
     found = int(((np.abs(by) > 1e-8) | (np.abs(bd) > 1e-8))[:5].sum())
     ok = covers == 1.0 and bias < 0.35 and found >= 4
+    if not ok:
+        raise ValueError("PDS interval/support recovery failed")
     return {
         "synthetic_d_hat": r["d_hat"],
         "synthetic_ci_lo": r["ci_lo"],

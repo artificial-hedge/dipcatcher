@@ -32,6 +32,8 @@ def _bench_laurent_series(seed: int = 0) -> float:
     # polynomial f = z^2 + 3z: c_2 = 1, c_1 = 3, others 0
     cp = laurent_coeffs(lambda z: z**2 + 3 * z, radius=1.0)
     checks.append(abs(cp[2] - 1.0) < 1e-9 and abs(cp[1] - 3.0) < 1e-9 and abs(cp[0]) < 1e-9)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

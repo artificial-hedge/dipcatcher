@@ -41,4 +41,6 @@ def bench_levelize(seed: int = _SEED) -> dict[str, float]:
     g2 = {f"g{k}": ("AND", ["i0" if k == 0 else f"n{k}", "i1", f"n{k + 1}"]) for k in range(4)}
     lvl2 = levelize(["i0", "i1"], g2)
     ok += int(lvl2["n4"] == 4)
+    if ok != 2:
+        raise ValueError("levelize depth off oracle")
     return {"synthetic_levelize": float(ok == 2)}

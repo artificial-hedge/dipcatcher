@@ -47,6 +47,10 @@ def bench_lagrangian_relax(seed: int = 5107) -> dict[str, float]:
     lb0, _ = _lower_bound(np.zeros(SC_A.shape[0]))
     lb, it_best = _subgradient()
     truth = _brute()
+    if lb > truth + 1e-9:
+        raise ValueError("Lagrangian bound above true optimum")
+    if lb < lb0 - 1e-9:
+        raise ValueError("subgradient loop worsened the bound")
     return {
         "synthetic_lag_lb0": lb0,
         "synthetic_lag_lb": lb,

@@ -51,6 +51,10 @@ def bench_ldpc_decoder(seed: int = 5001) -> dict[str, float]:
     syn[: LDPC_P.shape[1]] = dec[: LDPC_P.shape[1]]
     syn[LDPC_P.shape[1] :] = dec[LDPC_P.shape[1] :]
     check = (LDPC_P @ dec[:8] + dec[8:]) % 2
+    ber_bp = float(np.mean(dec != c))
+    ber_hard = float(np.mean(hard != c))
+    if ber_bp > ber_hard or ber_bp > 0.05 or float(np.sum(check)) != 0.0:
+        raise ValueError("BP decode failed BER/syndrome oracle")
     return {
         "synthetic_ldpc_bp_ber": float(np.mean(dec != c)),
         "synthetic_ldpc_hard_ber": float(np.mean(hard != c)),

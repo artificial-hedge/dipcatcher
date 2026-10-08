@@ -61,6 +61,8 @@ def _bench_large_cardinal(seed: int = 0) -> float:
 
     inter = functools.reduce(lambda a, b: a & b, u)
     checks.append(0 in inter)  # the point witnesses completeness
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

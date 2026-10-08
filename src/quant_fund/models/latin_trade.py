@@ -30,6 +30,8 @@ def _bench_latin_trade(seed: int = 0) -> float:
     checks.append(latin_count(2) == 2)
     # latin_count(n) = reduced * n! (n-1)!
     checks.append(latin_count(5) == reduced_count(5) * math.factorial(5) * math.factorial(4))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

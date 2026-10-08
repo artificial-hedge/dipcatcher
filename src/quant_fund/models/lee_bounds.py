@@ -135,6 +135,10 @@ def bench_lee_bounds(seed: int = 20261231 + 261) -> dict[str, float]:
         np.asarray(d["selected"]),
     )
     brackets = out["bound_lo"] <= 1.0 <= out["bound_hi"]
+    if not (brackets and abs(naive - 1.0) > 0.15):
+        raise ValueError("Lee bounds fail to bracket effect / naive not biased")
+    if out2["bound_lo"] != out["bound_lo"]:
+        raise ValueError("Lee bounds not deterministic")
     return {
         "synthetic_bound_lo": out["bound_lo"],
         "synthetic_bound_hi": out["bound_hi"],

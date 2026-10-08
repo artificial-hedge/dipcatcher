@@ -15872,6 +15872,9 @@
   "models/lab_bench_studies.py": {
    "status": "audited"
   },
+  "models/label_smoothing.py": {
+   "status": "audited"
+  },
   "models/labor_economics.py": {
    "status": "audited"
   },
@@ -15902,6 +15905,9 @@
   "models/ladyzhenskaya_weak.py": {
    "status": "audited"
   },
+  "models/lagllama_lite.py": {
+   "status": "audited"
+  },
   "models/lagrange_interp.py": {
    "status": "audited"
   },
@@ -15917,6 +15923,9 @@
   "models/lagrangian_mfd.py": {
    "status": "audited"
   },
+  "models/lagrangian_relax.py": {
+   "status": "audited"
+  },
   "models/laguerre_poly.py": {
    "status": "audited"
   },
@@ -15924,6 +15933,9 @@
    "status": "audited"
   },
   "models/lamassu_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/lamb_opt.py": {
    "status": "audited"
   },
   "models/lambada_studies.py": {
@@ -15935,6 +15947,18 @@
   "models/lambda_algebra.py": {
    "status": "audited"
   },
+  "models/lambda_method.py": {
+   "status": "audited"
+  },
+  "models/lambda_typing.py": {
+   "status": "audited"
+  },
+  "models/lambdarank_ltr.py": {
+   "status": "audited"
+  },
+  "models/lambert_problem.py": {
+   "status": "audited"
+  },
   "models/lammergeier_qa_studies.py": {
    "status": "audited"
   },
@@ -15942,6 +15966,9 @@
    "status": "audited"
   },
   "models/lancebill_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/lanczos.py": {
    "status": "audited"
   },
   "models/lanczos_eig.py": {
@@ -16004,10 +16031,19 @@
   "models/lanternfish_qa_studies.py": {
    "status": "audited"
   },
+  "models/laplace_approx.py": {
+   "status": "audited"
+  },
+  "models/laplace_iod.py": {
+   "status": "audited"
+  },
   "models/laplace_method.py": {
    "status": "audited"
   },
   "models/laplace_transform.py": {
+   "status": "audited"
+  },
+  "models/laplacian_smooth.py": {
    "status": "audited"
   },
   "models/lapwing_qa_studies.py": {
@@ -16022,6 +16058,9 @@
   "models/large_card.py": {
    "status": "audited"
   },
+  "models/large_cardinal.py": {
+   "status": "audited"
+  },
   "models/large_neighborhood.py": {
    "status": "audited"
   },
@@ -16034,7 +16073,16 @@
   "models/lasota_yorke.py": {
    "status": "audited"
   },
+  "models/lasso_pds.py": {
+   "status": "audited"
+  },
   "models/last_exit.py": {
+   "status": "audited"
+  },
+  "models/late_materialize.py": {
+   "status": "audited"
+  },
+  "models/latent_class.py": {
    "status": "audited"
   },
   "models/latent_reasoning_studies.py": {
@@ -16052,6 +16100,18 @@
   "models/latin_language.py": {
    "status": "audited"
   },
+  "models/latin_square.py": {
+   "status": "audited"
+  },
+  "models/latin_trade.py": {
+   "status": "audited"
+  },
+  "models/lattice_boltzmann.py": {
+   "status": "audited"
+  },
+  "models/lattice_check.py": {
+   "status": "audited"
+  },
   "models/lattice_field_theory.py": {
    "status": "audited"
   },
@@ -16059,6 +16119,9 @@
    "status": "audited"
   },
   "models/laurel_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/laurent_series.py": {
    "status": "audited"
   },
   "models/lavellan_qa_studies.py": {
@@ -16088,10 +16151,16 @@
   "models/lax_functor.py": {
    "status": "audited"
   },
+  "models/lax_wendroff.py": {
+   "status": "audited"
+  },
   "models/layout_qa_studies.py": {
    "status": "audited"
   },
   "models/lazard_ring.py": {
+   "status": "audited"
+  },
+  "models/lazy_dfa.py": {
    "status": "audited"
   },
   "models/lc_quad_studies.py": {
@@ -16103,13 +16172,28 @@
   "models/lcmc_lite_studies.py": {
    "status": "audited"
   },
+  "models/lda_topics.py": {
+   "status": "audited"
+  },
   "models/ldg_flux.py": {
+   "status": "audited"
+  },
+  "models/ldlt_solve.py": {
+   "status": "audited"
+  },
+  "models/ldp_theory.py": {
+   "status": "audited"
+  },
+  "models/ldpc_decoder.py": {
    "status": "audited"
   },
   "models/le_gall_miermont.py": {
    "status": "audited"
   },
   "models/lead_optimization_studies.py": {
+   "status": "audited"
+  },
+  "models/leadlag.py": {
    "status": "audited"
   },
   "models/leaf_nosed_qa_studies.py": {
@@ -16124,6 +16208,12 @@
   "models/least_to_most_studies.py": {
    "status": "audited"
   },
+  "models/leb_integral.py": {
+   "status": "audited"
+  },
+  "models/leb_measure.py": {
+   "status": "audited"
+  },
   "models/lebesgue_const.py": {
    "status": "audited"
   },
@@ -16131,6 +16221,18 @@
    "status": "audited"
   },
   "models/lecture_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/lee_bounds.py": {
+   "status": "audited"
+  },
+  "models/lee_carter.py": {
+   "status": "audited"
+  },
+  "models/lee_router.py": {
+   "status": "audited"
+  },
+  "models/lee_strazicich.py": {
    "status": "audited"
   },
   "models/leech_qa_studies.py": {
@@ -16160,6 +16262,9 @@
   "models/legendrian_knot.py": {
    "status": "audited"
   },
+  "models/leisen_reimer.py": {
+   "status": "audited"
+  },
   "models/leisure_qa_studies.py": {
    "status": "audited"
   },
@@ -16173,6 +16278,9 @@
    "status": "audited"
   },
   "models/lejan_loop.py": {
+   "status": "audited"
+  },
+  "models/lemke_howson.py": {
    "status": "audited"
   },
   "models/lemming_qa_studies.py": {
@@ -16221,6 +16329,12 @@
    "status": "audited"
   },
   "models/leucrotta_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/level_set.py": {
+   "status": "audited"
+  },
+  "models/levelize.py": {
    "status": "audited"
   },
   "models/levenberg_marq.py": {

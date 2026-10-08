@@ -46,4 +46,6 @@ def bench_latin_square(seed: int = _SEED) -> dict[str, float]:
     bad = [row[:] for row in cyc]
     bad[0][0], bad[0][1] = bad[0][1], bad[0][0]
     ok += int(not is_latin(bad, n))
+    if ok != 3:
+        raise ValueError("latin square check/complete off oracle")
     return {"synthetic_latin": float(ok == 3)}

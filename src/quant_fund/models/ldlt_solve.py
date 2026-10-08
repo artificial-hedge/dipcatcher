@@ -79,6 +79,8 @@ def bench_ldlt_solve(seed: int = 20261231 + 530) -> dict[str, float]:
         sig = rng.uniform(0.1, 2)
         L2, d2 = rank1_update(L, d, u, sig)
         upd_ok += int(np.allclose(L2 @ np.diag(d2) @ L2.T, A + sig * np.outer(u, u), atol=1e-6))
+    if fac_ok != n_trials or solve_ok != n_trials or upd_ok != n_trials:
+        raise ValueError("LDLt factor/solve/rank1 off oracle")
     return {
         "synthetic_factor_exact": fac_ok / n_trials,
         "synthetic_solve_exact": solve_ok / n_trials,

@@ -113,4 +113,6 @@ def bench_lazy_dfa(seed: int = _SEED) -> dict[str, float]:
     n0 = d2.n_states()
     d2.fullmatch("bbabax")
     score += 1.0 if d2.n_states() <= n0 + 4 else 0.0
+    if score < 4.0:
+        raise ValueError("lazy DFA off re oracle / laziness bound")
     return {"synthetic_lazy_dfa": score / 4.0}

@@ -32,4 +32,6 @@ def bench_leb_measure(seed: int = _SEED) -> dict[str, float]:
     # union [0,0.5] u [0.5,1] has measure 1; overlapping union covered once
     cover = np.array([[0.0, 0.5], [0.5, 1.0]])
     ok += int(abs(outer_measure(cover) - 1.0) < 1e-12)
+    if ok != 4:
+        raise ValueError("outer measure off Cantor/union oracle")
     return {"synthetic_leb_measure": float(ok == 4)}

@@ -63,3 +63,39 @@ def leisen_reimer(
             intrinsic = np.maximum(spot_i - k, 0.0) if call else np.maximum(k - spot_i, 0.0)
             value = np.maximum(value, intrinsic)
     return float(value[0])
+
+
+def bench_leisen_reimer(seed: int = 20261231 + 972) -> dict[str, float]:
+    """Leisen-Reimer vs BSM oracle for Europeans, plus American floor
+    and put-call parity."""
+    from scipy.stats import norm
+
+    rng = np.random.default_rng(seed)
+    err = parity = amer_gap = 0.0
+    for _ in range(12):
+        s = float(rng.uniform(60, 140))
+        k = float(s * rng.uniform(0.85, 1.15))
+        t = float(rng.uniform(0.2, 1.5))
+        r = float(rng.uniform(0.0, 0.05))
+        sig = float(rng.uniform(0.1, 0.5))
+        c_lr = leisen_reimer(s, k, t, r, 0.0, sig, n=201, option="call")
+        p_lr = leisen_reimer(s, k, t, r, 0.0, sig, n=201, option="put")
+        d1 = (np.log(s / k) + (r + 0.5 * sig * sig) * t) / (sig * np.sqrt(t))
+        d2 = d1 - sig * np.sqrt(t)
+        c_bs = s * norm.cdf(d1) - k * np.exp(-r * t) * norm.cdf(d2)
+        p_bs = c_bs - s + k * np.exp(-r * t)
+        err = max(err, abs(c_lr - c_bs), abs(p_lr - p_bs))
+        parity = max(parity, abs(c_lr - p_lr - (s - k * np.exp(-r * t))))
+        a_lr = leisen_reimer(s, k, t, r, 0.0, sig, n=101, option="put", american=True)
+        amer_gap = max(amer_gap, p_lr - a_lr)  # American < European would be a defect
+    if err > 0.02:
+        raise ValueError(f"Leisen-Reimer off BSM oracle: {err}")
+    if parity > 1e-8:
+        raise ValueError(f"put-call parity violated: {parity}")
+    if amer_gap > 1e-9:
+        raise ValueError(f"American put priced below European: {amer_gap}")
+    return {
+        "synthetic_lr_bsm_err": err,
+        "synthetic_lr_parity_err": parity,
+        "synthetic_lr_amer_below_eur": amer_gap,
+    }

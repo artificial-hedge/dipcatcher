@@ -74,6 +74,10 @@ def bench_lanczos(seed: int | None = None) -> dict[str, float]:
     al2, be2 = lanczos(mv, n, steps, rng, reorth=False)
     ritz2 = ritz_values(al2, be2, 6)
     err2 = float(np.max(np.abs(ritz2 - lam_true) / np.maximum(np.abs(lam_true), 1e-9)))
+    if err > 1e-8:
+        raise ValueError(f"Lanczos Ritz values off oracle: {err}")
+    if err >= err2:
+        raise ValueError("reorthogonalized Lanczos not better than plain")
     return {
         "synthetic_ritz_err_reorth": err,
         "synthetic_ritz_err_plain": err2,

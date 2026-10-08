@@ -131,4 +131,10 @@ def bench_level_set(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_curv_area_ratio"] = out["synthetic_curv_area_end"] / max(
         out["synthetic_curv_area_start"], 1e-30
     )
+    if not (gm_after < gm_before):
+        raise ValueError("reinitialization did not restore |grad phi| ~ 1")
+    if sign_drift > 0.15:
+        raise ValueError(f"zero contour drifted: {sign_drift}")
+    if not (out["synthetic_curv_area_end"] < out["synthetic_curv_area_start"]):
+        raise ValueError("curvature flow did not shrink the contour")
     return out

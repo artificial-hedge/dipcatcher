@@ -71,6 +71,8 @@ def _bench_lattice_check(seed: int = 0) -> float:
     le5[(2, 3)] = True  # chain a=2 < b=3
     checks.append(is_lattice(le5, elems5))
     checks.append(not distributive(le5, elems5))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

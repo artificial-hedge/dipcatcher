@@ -98,4 +98,6 @@ def bench_laplacian_smooth(seed: int = _SEED) -> dict[str, float]:
         span3 < span0,  # shrinkage pathology documented
         flat_ok,
     ]
+    if not all(checks):
+        raise ValueError("umbrella/cotangent Laplacian checks failed")
     return {"synthetic_laplacian_smooth": float(np.mean(checks))}

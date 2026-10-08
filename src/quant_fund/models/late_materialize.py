@@ -25,4 +25,6 @@ def bench_late_materialize(seed: int = _SEED) -> dict[str, float]:
     # materialize lazily
     vals = cols["c"][np.array(ids)].sum() if ids else 0.0
     expect_v = sum(cols["c"][i] for i in expect)
+    if not ok or abs(vals - expect_v) >= 1e-9:
+        raise ValueError("late materialization off row-scan oracle")
     return {"synthetic_late_ids": ok, "synthetic_late_sum": float(abs(vals - expect_v) < 1e-9)}

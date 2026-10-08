@@ -117,4 +117,6 @@ def bench_lambert_problem(seed: int = 20261231 + 856) -> dict[str, float]:
         checks += float(np.linalg.norm(r_arr - r2) / np.linalg.norm(r2) < 1e-4)
         energy = np.dot(v1, v1) / 2.0 - mu / np.linalg.norm(r1)
         checks += float(energy < 0.0)
+    if total == 0 or checks != total:
+        raise ValueError("Lambert solution off RK4 oracle")
     return {"synthetic_lambert": checks / total}

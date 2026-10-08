@@ -37,6 +37,8 @@ def _bench_ldp_theory(seed: int = 0) -> float:
     checks.append(
         contraction(lambda t: cramer_bernoulli(t, 0.5), 0.8) == cramer_bernoulli(0.8, 0.5)
     )
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

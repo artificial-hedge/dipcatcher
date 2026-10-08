@@ -94,6 +94,8 @@ def bench_lemke_howson(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_lh_ok"] = float(
         out["synthetic_lh_coord_br"] == 1 and out["synthetic_lh_random_br"] == 1
     )
+    if out["synthetic_lh_ok"] != 1.0:
+        raise ValueError("Lemke-Howson profile not mutual best response")
     return out
 
 

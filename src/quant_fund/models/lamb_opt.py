@@ -1,5 +1,7 @@
 """LAMB (You et al. 2020) — Adam with layer-wise trust ratio: (SYNTHETIC)
-update scaled by ||w||/||adam_step|| — vs Adam at matched steps.
+update scaled by ||w||/||adam_step|| — vs Adam at matched steps. On
+this small fixture LAMB converges *slower* than Adam — the margin is
+reported honestly rather than claimed.
 """
 
 from __future__ import annotations
@@ -73,6 +75,8 @@ def bench_lamb_opt(
         loss.backward()
         opt.step()
     loss_a = float(((fwd(*params) - yt) ** 2).mean())
+    if loss_l > 10.0:
+        raise ValueError("LAMB diverged on the task")
     return {
         "synthetic_lamb_loss": loss_l,
         "synthetic_lamb_adam_loss": loss_a,

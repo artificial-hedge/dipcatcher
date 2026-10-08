@@ -200,4 +200,6 @@ def bench_laplace_iod(seed: int = _SEED) -> dict[str, float]:
     a, e, *_ = state_to_elements(r2e, v2e, _MU)
     score += 1.0 if abs(a - 7000.0) < 700.0 and e < 0.2 else 0.0
     rng.random()
+    if score < 4.0:
+        raise ValueError("Laplace IOD state recovery off oracle")
     return {"synthetic_laplace_iod": score / 4.0}

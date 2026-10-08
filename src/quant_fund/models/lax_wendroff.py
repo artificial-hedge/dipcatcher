@@ -67,4 +67,10 @@ def bench_lax_wendroff(seed: int = 20261231) -> dict[str, float]:
     # CFL violation → LW unstable
     u_bad = advect(u0, 1.5, 40, "lw")
     out["synthetic_cfl_violation_max"] = float(np.abs(u_bad).max())
+    if not (out["synthetic_lw_err"] < out["synthetic_upwind_err"]):
+        raise ValueError("Lax-Wendroff not more accurate than upwind")
+    if out["synthetic_lw_mass_err"] > 1e-10:
+        raise ValueError("Lax-Wendroff lost mass")
+    if out["synthetic_cfl_violation_max"] < 10.0:
+        raise ValueError("CFL violation did not destabilize LW")
     return out

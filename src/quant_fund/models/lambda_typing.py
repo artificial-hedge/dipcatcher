@@ -58,6 +58,8 @@ def _bench_lambda_typing(seed: int = 0) -> float:
     checks.append(not well_typed(("lam", "x", "int", ("app", ("var", "x"), ("var", "x")))))
     checks.append(not well_typed(("app", ("lit", 1), ("lit", 2))))
     checks.append(well_typed(("app", ("app", const, ("lit", 1)), ("lit", 2))))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

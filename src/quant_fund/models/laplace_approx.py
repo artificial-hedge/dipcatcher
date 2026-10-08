@@ -137,6 +137,12 @@ def bench_laplace_approx(seed: int = 20261231) -> dict[str, float]:
     pp = laplace_posterior_predictive(fit, x)
     brier = float(np.mean((pp - y) ** 2))
     acc_mh = acc / 12000.0
+    if np.linalg.norm(lap_mean - ref_mean) > 0.15:
+        raise ValueError("Laplace mode off MH reference posterior")
+    if cov_cover < 0.75:
+        raise ValueError("Laplace mean outside MH 90% bands")
+    if brier > 0.25:
+        raise ValueError("posterior predictive Brier above floor")
     return {
         "synthetic_laplace_mode_err": float(np.linalg.norm(lap_mean - w_true)),
         "synthetic_laplace_vs_mh_err": float(np.linalg.norm(lap_mean - ref_mean)),

@@ -31,5 +31,5 @@ def bench_leb_integral(seed: int = _SEED) -> dict[str, float]:
     ]:
         val = _lebesgue(f)
         if abs(val - want) / want > 2e-2 or abs(val - _riemann(f)) / want > 2e-2:
-            return {"synthetic_leb_integral": 0.0}
+            raise ValueError(f"Lebesgue quadrature off oracle: {val} vs {want}")
     return {"synthetic_leb_integral": 1.0}

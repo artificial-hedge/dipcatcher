@@ -140,6 +140,8 @@ def bench_lee_strazicich(
         and r_rw["reject_unit_root"] == 0.0
         and abs(r_st["break_idx"] - b) < 60
     )
+    if not ok:
+        raise ValueError("Lee-Strazicich verdict/break off oracle")
     return {
         "synthetic_tau_st": r_st["tau_min"],
         "synthetic_tau_rw": r_rw["tau_min"],

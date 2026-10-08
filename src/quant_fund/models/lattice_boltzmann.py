@@ -36,4 +36,6 @@ def bench_lattice_boltzmann(seed: int = _SEED) -> dict[str, float]:
     mass0 = 24 * 12
     mass1 = float(rho.sum())
     ok = float(abs(mass1 - mass0) / mass0 < 1e-6 and np.isfinite(rho).all())
+    if not ok:
+        raise ValueError("LBM mass conservation violated")
     return {"synthetic_lbm_mass": ok}

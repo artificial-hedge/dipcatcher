@@ -1,8 +1,10 @@
 """Label smoothing (Szegedy et al. 2016) (SYNTHETIC).
 
-CE with soft targets y*(1−ε)+ε/K improves calibration: lower ECE on
-held-out vs hard-label training, trading a little accuracy — the
-canonical regularization result.
+CE with soft targets y*(1−ε)+ε/K is the canonical calibration
+regularizer. On this fixture the smoothed model's ECE comes out
+*higher* than hard-label training (the network is small and already
+under-confident) — the margins are reported honestly rather than
+claimed.
 """
 
 from __future__ import annotations
@@ -62,6 +64,9 @@ def bench_label_smoothing(
 
     p_hard = train(0.0)
     p_soft = train(eps)
+    # honest floor: both models must produce calibrated-ish probabilities
+    if _ece(p_soft, y_te) > 0.2 or _ece(p_hard, y_te) > 0.2:
+        raise ValueError("ECE above sanity floor")
     return {
         "synthetic_ls_ece": _ece(p_soft, y_te),
         "synthetic_ls_hard_ece": _ece(p_hard, y_te),
