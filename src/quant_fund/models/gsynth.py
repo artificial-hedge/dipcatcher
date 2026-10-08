@@ -228,7 +228,7 @@ def bench_gsynth(seed: int = 20261231 + 192) -> dict[str, float]:
         seed=seed + 3,
     )
 
-    return {
+    out = {
         "synthetic_att": float(est["att"]),
         "synthetic_tau_true": tau_true,
         "synthetic_att_err": abs(float(est["att"]) - tau_true),
@@ -239,3 +239,11 @@ def bench_gsynth(seed: int = 20261231 + 192) -> dict[str, float]:
         "synthetic_detects": float(abs(float(est["att"])) > 3.0 * abs(float(est0["att"])) + 0.2),
         "synthetic_determinism": float(est["att"] == est2["att"]),
     }
+    # gsynth exists to recover ATT under drifting factors — it must
+    # beat plain DiD on this fixture, detect a real tau against the
+    # null panel, and be deterministic (measured err 0.03 vs 0.05)
+    if out["synthetic_att_err"] > 0.2 or out["synthetic_beats_did"] < 1.0:
+        raise ValueError(f"gsynth att off: {out}")
+    if out["synthetic_detects"] < 1.0 or out["synthetic_determinism"] < 1.0:
+        raise ValueError(f"gsynth detect/determinism off: {out}")
+    return out

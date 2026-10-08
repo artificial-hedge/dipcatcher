@@ -24,10 +24,15 @@ def bench_grover_search(seed: int = 3073, n: int = 4, marked: int = 5) -> dict[s
         p_series.append(float(measure_probs(psi)[marked]))
     p_final = float(measure_probs(psi)[marked])
     classical = float(N) / 2  # expected queries for classical search
-    return {
+    out = {
         "synthetic_grover_iters": float(k_opt),
         "synthetic_grover_p_marked": p_final,
         "synthetic_grover_classical_queries": classical,
         "synthetic_grover_speedup": float(classical / k_opt),
         "synthetic_torch_available": 0.0,
     }
+    # after the optimal pi/4*sqrt(N) iterations the marked state must
+    # hold nearly all amplitude: sin^2((2k+1)asin(1/4)) ~ 0.96 at N=16
+    if p_final < 0.85:
+        raise ValueError(f"grover amplification off: p={p_final:.3f}")
+    return out

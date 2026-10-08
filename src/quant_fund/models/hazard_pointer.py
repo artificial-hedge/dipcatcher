@@ -55,4 +55,9 @@ def _oracle_trace(rng: np.random.RandomState) -> bool:
 def bench_hazard_pointer(seed: int = _SEED) -> dict[str, float]:
     rng = np.random.RandomState(seed)
     ok = sum(_oracle_trace(np.random.RandomState(rng.randint(2**31))) for _ in range(30))
-    return {"synthetic_hazard_safety": ok / 30}
+    out = {"synthetic_hazard_safety": ok / 30}
+    # the oracle replays every trace: nothing protected may ever be
+    # freed and exactly the unprotected retiree set is freed
+    if ok != 30:
+        raise ValueError("hazard safety violated")
+    return out

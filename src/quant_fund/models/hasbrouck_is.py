@@ -134,7 +134,7 @@ def bench_hasbrouck(
     r = information_share(ci)
     rn = information_share(null)
     ok = r["is1_lo"] > 0.6 and rn["is1_mid"] > 0.3 and rn["is1_mid"] < 0.7 and r["gg_w1"] > 0.7
-    return {
+    out = {
         "synthetic_is1_mid": r["is1_mid"],
         "synthetic_is1_lo": r["is1_lo"],
         "synthetic_is1_null_mid": rn["is1_mid"],
@@ -142,3 +142,8 @@ def bench_hasbrouck(
         "synthetic_beta": r["beta"],
         "synthetic_score": float(ok),
     }
+    # the planted low-noise venue must dominate information share while
+    # the symmetric-noise null splits near 0.5
+    if not ok:
+        raise ValueError(f"hasbrouck attribution off: {out}")
+    return out

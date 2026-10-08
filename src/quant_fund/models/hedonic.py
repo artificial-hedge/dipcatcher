@@ -190,7 +190,7 @@ def bench_hedonic(seed: int = 20261231 + 291) -> dict[str, float]:
     true_growth = float(np.asarray(d["true_index"])[-1])
     est_growth = float(a["index_last"])
     detects = float(abs(est_growth - true_growth) / true_growth < 0.15)
-    return {
+    out = {
         "synthetic_detects": detects,
         "synthetic_determinism": float(
             np.array_equal(np.asarray(a["_index"]), np.asarray(a2["_index"]))
@@ -201,3 +201,6 @@ def bench_hedonic(seed: int = 20261231 + 291) -> dict[str, float]:
         "synthetic_r2": float(a["r2"]),
         "synthetic_n_pairs": float(a["n_pairs"]),
     }
+    if out["synthetic_detects"] < 1.0 or out["synthetic_determinism"] < 1.0:
+        raise ValueError(f"repeat-sales index off: {out}")
+    return out

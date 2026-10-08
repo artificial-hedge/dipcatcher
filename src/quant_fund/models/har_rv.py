@@ -148,7 +148,7 @@ def bench_har_rv(seed: int = 20261231 + 240) -> dict[str, float]:
     out_h5 = har_rv_fit(rv, h=5)
 
     bd = float(out["beta_day"])
-    return {
+    res = {
         "synthetic_beta_day": bd,
         "synthetic_beta_week": float(out["beta_week"]),
         "synthetic_beta_month": float(out["beta_month"]),
@@ -166,3 +166,6 @@ def bench_har_rv(seed: int = 20261231 + 240) -> dict[str, float]:
         ),
         "synthetic_determinism": float(bd == float(out_b["beta_day"])),
     }
+    if res["synthetic_detects"] < 1.0 or res["synthetic_determinism"] < 1.0:
+        raise ValueError(f"har cascade recovery off: {res}")
+    return res

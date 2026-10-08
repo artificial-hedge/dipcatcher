@@ -78,7 +78,12 @@ def bench_groves(seed: int = 20261231) -> dict[str, float]:
             if u_l > u_t + 1e-6:
                 dsic0 = False
     out["synthetic_groves_h0_dsic"] = float(dsic0)
-    out["synthetic_groves_pivot_reduces"] = float(np.abs(pay - pay3 + pay).max() >= 0)
+    out["synthetic_groves_pivot_reduces"] = float(np.abs(pay - pay3).max() > 1e-9)
+    # the Groves guarantees are exact on this fixture: welfare
+    # maximization, DSIC under the pivot AND under an arbitrary h, and
+    # the two h choices yielding different transfers
+    if min(out.values()) < 1.0:
+        raise ValueError(f"groves off: {out}")
     return out
 
 

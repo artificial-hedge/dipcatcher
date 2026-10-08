@@ -39,7 +39,7 @@ def bench_hawkes_thinning(seed: int = 2947, T: float = 100.0, trials: int = 30) 
     hp = rng.poisson(mean_n / T * 10, 10000)
     var_hom = hp.var() / hp.mean()  # ~1
     var_haw = np.var(counts) / (mean_n + 1e-9)
-    return {
+    out = {
         "synthetic_hawkes_fano": float(var_haw),
         "synthetic_poisson_fano": float(var_hom),
         "synthetic_hawkes_burstiness": float(np.mean(burt)),
@@ -48,3 +48,11 @@ def bench_hawkes_thinning(seed: int = 2947, T: float = 100.0, trials: int = 30) 
         ),
         "synthetic_torch_available": 0.0,
     }
+    # clustering signature: count Fano far above the homogeneous
+    # Poisson ~1 (measured 7.6 vs 0.99), positive burstiness, and the
+    # mean rate near the branching-ratio mean μ/(1−α/β)
+    if var_haw < 2.0 * var_hom:
+        raise ValueError(f"hawkes not clustered: {out}")
+    if out["synthetic_hawkes_mean_rate_err"] > 0.1 or out["synthetic_hawkes_burstiness"] <= 0.0:
+        raise ValueError(f"hawkes rate/burstiness off: {out}")
+    return out

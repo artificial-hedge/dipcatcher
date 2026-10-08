@@ -112,6 +112,13 @@ def bench_grid(seed: int = 20261231) -> dict[str, float]:
 
     v_ub = float(mdp_value_iteration(p) @ p.s0_dist)
     out["synthetic_grid_below_qmdp"] = float(v0 <= v_ub + 1e-6)
+    # the point of POMDP value iteration on Tiger: a listening policy
+    # in the uncertain band, positive rolled return, and a value that
+    # stays under the QMDP upper bound — all invariants
+    if out["synthetic_grid_listens_mid"] < 1.0:
+        raise ValueError("grid policy not listening mid-belief")
+    if out["synthetic_grid_beats_qmdp"] < 1.0 or out["synthetic_grid_below_qmdp"] < 1.0:
+        raise ValueError(f"grid vi off: {out}")
     return out
 
 

@@ -77,7 +77,7 @@ def bench_gromov_wasserstein(seed: int | None = None) -> dict[str, float]:
     y = rng.random((n, 3)) * 3.0
     c3 = np.sqrt(((y[:, None] - y[None, :]) ** 2).sum(-1))
     _, gw_diff = gromov_wasserstein(c1, c3, p, q, eps=0.005, max_iter=40)
-    return {
+    out = {
         "synthetic_gw_iso": gw_iso,
         "synthetic_gw_diff": gw_diff,
         "synthetic_iso_marginal": float(
@@ -87,3 +87,11 @@ def bench_gromov_wasserstein(seed: int | None = None) -> dict[str, float]:
             )
         ),
     }
+    # GW on an isomorphic pair must sit far below the mismatched pair
+    # (entropic bias keeps it > 0 — measured 0.26 vs 1.29) and the
+    # transport plan must satisfy its marginals
+    if gw_iso > 0.5 or gw_diff < 2 * gw_iso:
+        raise ValueError(f"gw separation off: {out}")
+    if out["synthetic_iso_marginal"] > 1e-6:
+        raise ValueError(f"plan marginals off: {out['synthetic_iso_marginal']}")
+    return out

@@ -172,7 +172,7 @@ def bench_growth_at_risk(seed: int = 20261231 + 300) -> dict[str, float]:
     gar_drop = g_lo["gar"] - g_hi["gar"]
     spread_widen = g_hi["iqr_width"] - g_lo["iqr_width"]
     ok = gar_drop > 1.0 and spread_widen > 0.5
-    return {
+    out = {
         "synthetic_gar_lo": g_lo["gar"],
         "synthetic_gar_hi": g_hi["gar"],
         "synthetic_gar_drop": gar_drop,
@@ -181,3 +181,8 @@ def bench_growth_at_risk(seed: int = 20261231 + 300) -> dict[str, float]:
         "synthetic_med_hi": g_hi["median"],
         "synthetic_score": float(ok),
     }
+    # the planted DGP has loc_slope=-0.8 and widening downside scale:
+    # GaR must fall and the interquantile spread must widen in x
+    if not ok:
+        raise ValueError(f"growth-at-risk off: {out}")
+    return out

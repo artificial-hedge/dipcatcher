@@ -33506,6 +33506,120 @@
   },
   "research/xwatch.py": {
    "status": "audited"
+  },
+  "quant_fund/models/grid_pomdp.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gromov_wasserstein.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gronwall_lemma.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/group_presentation.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/group_sequential.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/group_table.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/grover_search.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/groves.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/grownet_boost.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/growth_at_risk.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/grpo_train.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gsp_auction.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gsynth.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gumbel_relax.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gumbel_topk.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gvn_elim.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gvn_pre.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gwnet_lite.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gwr_spatial.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hahn_banach.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/half_edge.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hall_subgroup.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hamilton_filter.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/har.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/har_rv.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/harris_corner.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hasbrouck_is.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hat_cl.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hausdorff.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hausman_tests.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hawkes_thinning.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hazard_pointer.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/heat_kernel.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hecke_eig.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hedging.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hedonic.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hegy.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/held_karp.py": {
+   "status": "audited"
   }
  },
  "schema_version": "audit-coverage/v1",

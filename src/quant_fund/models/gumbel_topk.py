@@ -2,8 +2,9 @@
 
 Sequential Gumbel-without-replacement: at each pick, add Gumbel noise to
 log-probs and take a soft argmax with temperature τ — a k-hot stochastic
-relaxation. On the masked-feature fixture the learned selector recovers
-the true signal dims vs a logistic-regression |w| baseline.
+relaxation. On the masked-feature fixture the learned selector's
+precision is reported vs a logistic-regression |w| baseline (the
+baseline wins on this fixture at the pinned budget).
 """
 
 from __future__ import annotations
@@ -72,9 +73,15 @@ def bench_gumbel_topk(
     with torch.no_grad():
         w_sel = w_lr.weight.norm(dim=0).argsort(descending=True)[:k].numpy()
     prec_lr = float(np.isin(w_sel, np.where(mask)[0]).mean())
-    return {
+    out = {
         "synthetic_gtopk_precision": prec,
         "synthetic_gtopk_lr_precision": prec_lr,
         "synthetic_gtopk_gain": prec - prec_lr,
         "synthetic_torch_available": 1.0,
     }
+    # the selector must at least hit the 1/3 chance floor on this
+    # fixture — the LR-baseline comparison is reported, not gated
+    # (baseline wins at the pinned budget)
+    if prec < 1.0 / 3.0 - 1e-9:
+        raise ValueError(f"gtopk below chance: {prec}")
+    return out

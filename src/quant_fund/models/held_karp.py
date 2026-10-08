@@ -95,7 +95,7 @@ def bench_held_karp(seed: int = 5111) -> dict[str, float]:
     bound, it_best = _held_karp()
     truth = _tour_brute()
     ub = _two_opt()
-    return {
+    out = {
         "synthetic_hk_bound": bound,
         "synthetic_hk_truth": truth,
         "synthetic_hk_gap": float(truth - bound),
@@ -104,3 +104,10 @@ def bench_held_karp(seed: int = 5111) -> dict[str, float]:
         "synthetic_hk_ub_gap": float(ub - truth),
         "synthetic_hk_best_iter": float(it_best),
     }
+    # the 1-tree bound must never exceed the brute-force optimum and
+    # 2-opt must never undercut it; on this fixture both are tight
+    if bound > truth + 1e-6 or out["synthetic_hk_gap_frac"] > 0.05:
+        raise ValueError(f"held-karp bound off: {out}")
+    if out["synthetic_hk_ub_gap"] < -1e-6 or out["synthetic_hk_ub_gap"] > 0.15 * truth:
+        raise ValueError(f"2-opt bound off: {out}")
+    return out

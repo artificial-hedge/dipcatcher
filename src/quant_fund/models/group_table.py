@@ -66,4 +66,9 @@ def bench_group_table(seed: int = _SEED) -> dict[str, float]:
     bad = _z(4).copy()
     bad[0, 0] = 3  # break identity row
     ok += int(not is_group(bad)[0])
-    return {"synthetic_group_axioms": float(ok == 4)}
+    out = {"synthetic_group_axioms": float(ok == 4)}
+    # axiom verdicts must be exact: Z4/Klein/S3 pass and the
+    # identity-broken table fails
+    if ok != 4:
+        raise ValueError("group axiom check wrong")
+    return out

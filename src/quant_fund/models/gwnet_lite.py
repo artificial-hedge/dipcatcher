@@ -77,7 +77,7 @@ def bench_gwnet_lite(seed: int = 1613, iters: int = 800) -> dict[str, float]:
     mse = float(np.mean((preds - X[10:]) ** 2))
     mse2 = float(np.mean((preds2 - X[10:]) ** 2))
     base = ar2_baseline(X)
-    return {
+    out = {
         "synthetic_gwn_mse": mse,
         "synthetic_gwn_fixed_mse": mse2,
         "synthetic_gwn_ar2_mse": base,
@@ -85,3 +85,10 @@ def bench_gwnet_lite(seed: int = 1613, iters: int = 800) -> dict[str, float]:
         "synthetic_gwn_adapt_gain": mse2 - mse,
         "synthetic_torch_available": 1.0,
     }
+    # the Graph WaveNet claim under test: learned softmax(E1 E2^T)
+    # adjacency must beat the fixed-ring ablation on the same trunk
+    # (measured +0.026); the AR2 comparison is reported, not gated —
+    # AR2 wins on this fixture
+    if out["synthetic_gwn_adapt_gain"] <= 0.0 or mse > 0.2:
+        raise ValueError(f"gwnet off: {out}")
+    return out

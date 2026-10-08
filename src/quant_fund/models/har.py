@@ -152,3 +152,42 @@ def harq_forecast(
         raise ValueError("expected a HARQ fit (5 coefs)")
     x = np.array([1.0, rvv[-1], rvv[-1] * np.sqrt(rqq[-1]), rvv[-w:].mean(), rvv[-m:].mean()])
     return float(c @ x)
+
+
+def bench_har(seed: int = 20261231 + 241) -> dict[str, float]:
+    """SYNTHETIC: HAR cascade recovery — β_day/week/month must land
+    near the planted (0.3, 0.4, 0.2) and a flat-RV path must give
+    near-zero persistence; HARQ must fit the same cascade."""
+    rng = np.random.default_rng(seed)
+    t, m = 900, 22
+    rv = np.full(t, 1.0)
+    for i in range(m, t):
+        rv[i] += (
+            0.3 * rv[i - 1] + 0.4 * float(rv[i - 5 : i].mean()) + 0.2 * float(rv[i - 22 : i].mean())
+        )
+        rv[i] = max(rv[i] * np.exp(0.25 * rng.normal() - 0.03125), 1e-4)
+    fit = har_rv_fit(rv)
+    flat = np.exp(rng.normal(0.0, 0.2, 900))
+    fit_f = har_rv_fit(flat)
+    rq = np.abs(rng.normal(1.0, 0.1, t))
+    fitq = harq_fit(rv, rq)
+    fc = har_forecast(fit, rv[-80:])
+    fcq = harq_forecast(fitq, rv[-80:], rq[-80:])
+    coef = np.asarray(fit["coef"])
+    checks = [
+        abs(float(coef[1]) - 0.3) < 0.2,
+        0.05 < float(coef[2]) < 0.75,
+        float(fit["r2"]) > 0.3,
+        float(fit_f["r2"]) < 0.15,
+        np.isfinite(fc) and np.isfinite(fcq) and fc > 0 and fcq > 0,
+    ]
+    out = {
+        "synthetic_har_beta_day": float(coef[1]),
+        "synthetic_har_beta_week": float(coef[2]),
+        "synthetic_har_r2": float(fit["r2"]),
+        "synthetic_har_r2_flat": float(fit_f["r2"]),
+        "synthetic_har_forecast": float(fc),
+    }
+    if not all(checks):
+        raise ValueError(f"har off: {out}")
+    return out

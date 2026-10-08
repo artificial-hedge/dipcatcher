@@ -89,7 +89,12 @@ def bench_gvn_elim(seed: int = 20261231 + 352) -> dict[str, float]:
             env2[o] = av + bv if op == "+" else av * bv
         same += int(all(env2.get(canon.get(k, k)) == v for k, v in r1.items() if k not in env0))
         fewer += int(len(opt) <= len(stmts))
-    return {
+    out = {
         "synthetic_results_identical": float(same / trials),
         "synthetic_never_grows": float(fewer / trials),
     }
+    # GVN elimination must preserve program semantics on every random
+    # program and never grow the statement count
+    if min(out.values()) < 1.0:
+        raise ValueError(f"gvn off: {out}")
+    return out

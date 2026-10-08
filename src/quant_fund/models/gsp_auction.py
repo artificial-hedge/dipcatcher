@@ -54,10 +54,18 @@ def bench_gsp_auction(seed: int = 4511) -> dict[str, float]:
     rev_gsp = _gsp_revenue(bids)
     rev_vcg = _vcg_revenue(bids)
     viol = _envy_free_viol(bids)
-    return {
+    out = {
         "synthetic_gsp_rev": rev_gsp,
         "synthetic_gsp_vcg_rev": rev_vcg,
         "synthetic_gsp_premium": rev_gsp - rev_vcg,
         "synthetic_gsp_envy_viol": viol,
         "synthetic_gsp_n_slots": float(min(len(GSP_CTR), len(bids) - 1)),
     }
+    # GSP revenue weakly exceeds VCG on the same fixture (each winner
+    # pays the full next bid rather than only the displaced externality)
+    # and truthful bids satisfy the locally envy-free equilibrium
+    if out["synthetic_gsp_premium"] < -1e-9:
+        raise ValueError(f"gsp revenue below vcg: {out}")
+    if viol > 1e-9:
+        raise ValueError(f"envy-free violated: {viol}")
+    return out

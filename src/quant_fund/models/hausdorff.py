@@ -63,4 +63,18 @@ def bench_hausdorff(seed: int = 20261231) -> dict[str, float]:
     X3 = np.vstack([X, [[10.0, 10.0]]])
     out["synthetic_hausdorff_outlier"] = hausdorff(X, X3)
     out["synthetic_hausdorff_robust"] = modified_hausdorff(X3, X, 0.95)
+    # exact small-example distances (sqrt(1.25) / 0.5), the identity
+    # and unit-shift invariants, and the robust variant ignoring the
+    # planted outlier (measured 0 vs symmetric 10.2)
+    if abs(out["synthetic_hausdorff_sym"] - np.sqrt(1.25)) > 1e-9:
+        raise ValueError(f"hausdorff sym off: {out}")
+    if out["synthetic_hausdorff_self"] != 0.0:
+        raise ValueError("hausdorff(X,X) != 0")
+    if abs(out["synthetic_hausdorff_shift"] - 1.0) > 1e-6:
+        raise ValueError(f"hausdorff shift off: {out}")
+    if (
+        abs(d_sub - 0.5) > 1e-9
+        or out["synthetic_hausdorff_robust"] > 0.5 * out["synthetic_hausdorff_outlier"]
+    ):
+        raise ValueError(f"hausdorff subset/robust off: {out}")
     return out

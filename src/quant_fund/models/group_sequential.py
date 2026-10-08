@@ -234,7 +234,7 @@ def bench_group_sequential(seed: int = 488) -> dict[str, float]:
     err_poc = float(np.abs(exits_poc - spend_poc).max())
     tot = float(exits_obf.sum())
     cp = conditional_power(1.0, 2, ob, t, drift=3.0)
-    return {
+    out = {
         "synthetic_pocock_max_err": poc_err,
         "synthetic_obf_exit_err": err_obf,
         "synthetic_poc_exit_err": err_poc,
@@ -243,3 +243,13 @@ def bench_group_sequential(seed: int = 488) -> dict[str, float]:
         "synthetic_cond_power": cp,
         "synthetic_score": 1.0,
     }
+    # the AMR recursion must hit the published Pocock constant, and
+    # Monte-Carlo exit mass must track the spending increments for
+    # both spending functions (40k-path tolerance ~0.005)
+    if poc_err > 0.08:
+        raise ValueError(f"pocock boundary off published 2.413: {poc_err:.3f}")
+    if err_obf > 0.01 or err_poc > 0.01:
+        raise ValueError(f"exit mass off spending: obf={err_obf:.4f} poc={err_poc:.4f}")
+    if not 0.03 < tot < 0.07 or out["synthetic_obf_gt_poc_first"] < 1.0:
+        raise ValueError(f"group-seq off: {out}")
+    return out

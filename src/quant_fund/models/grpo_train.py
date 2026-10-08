@@ -65,7 +65,7 @@ def bench_grpo_train(
         r_final = r.gather(1, a_best[:, None]).mean().item()
         r_ref = r.gather(1, (x_t @ W_ref / 0.3).argmax(-1)[:, None]).mean().item()
         r_max = r.max(-1).values.mean().item()
-    return {
+    out = {
         "synthetic_grpo_reward": float(r_final),
         "synthetic_grpo_ref_reward": float(r_ref),
         "synthetic_grpo_random_reward": r0,
@@ -73,3 +73,9 @@ def bench_grpo_train(
         "synthetic_grpo_gain": float(r_final - r0),
         "synthetic_torch_available": 1.0,
     }
+    # group-relative advantages must move the policy's argmax reward
+    # far above the frozen reference — toward the oracle ceiling
+    # (measured 0.80 vs ref -0.02 / oracle 0.82)
+    if out["synthetic_grpo_gain"] < 0.3 or r_final < r_ref:
+        raise ValueError(f"grpo off: {out}")
+    return out

@@ -226,7 +226,7 @@ def bench_hausman_tests(seed: int = 20261231 + 273) -> dict[str, float]:
     fe_bad2 = hausman_fe_re(
         *[np.asarray(synth_fe_panel(corr_alpha_x=0.8, seed=seed)[k]) for k in ("y", "x", "firm")]
     )
-    return {
+    res = {
         "synthetic_h_reject": fe_bad["h"],
         "synthetic_p_reject": fe_bad["p"],
         "synthetic_h_null": fe_ok["h"],
@@ -241,3 +241,8 @@ def bench_hausman_tests(seed: int = 20261231 + 273) -> dict[str, float]:
         ),
         "synthetic_determinism": float(fe_bad2["h"] == fe_bad["h"]),
     }
+    # both spec tests must reject under the planted violation and stay
+    # quiet under the null, and the estimator must be deterministic
+    if res["synthetic_detects"] < 1.0 or res["synthetic_determinism"] < 1.0:
+        raise ValueError(f"hausman/dwh off: {res}")
+    return res

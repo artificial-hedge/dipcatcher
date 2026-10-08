@@ -36,8 +36,14 @@ def bench_gumbel_relax(seed: int = 2393, trials: int = 20, tau: float = 0.4) -> 
         g_gs = s.grad.numpy()
         g_fd = finite_diff_grad(s0)
         corrs.append(grad_corr(g_gs, g_fd))
-    return {
+    out = {
         "synthetic_gumbel_grad_corr": float(np.mean(corrs)),
         "synthetic_gumbel_tau": float(tau),
         "synthetic_torch_available": 1.0,
     }
+    # the relaxed-mask gradient must correlate positively with the
+    # finite-difference oracle — it is noisy by construction (measured
+    # ~0.44 at tau=0.4), so the gate is a positive-correlation floor
+    if out["synthetic_gumbel_grad_corr"] < 0.2:
+        raise ValueError(f"gumbel grad uncorrelated: {out}")
+    return out

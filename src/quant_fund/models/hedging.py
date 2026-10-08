@@ -115,3 +115,39 @@ def basis_statistics(spot: Array, hedge: Array) -> dict[str, float]:
         "half_life": float(half),
         "level_corr": float(np.corrcoef(s, h)[0, 1]),
     }
+
+
+def bench_hedging(seed: int = 20261231 + 291) -> dict[str, float]:
+    """SYNTHETIC: correlated legs — the MV hedge ratio must match the
+    planted slope and hedge effectiveness must approach rho^2; a
+    mean-reverting basis must report a finite half-life."""
+    rng = np.random.default_rng(seed)
+    n = 600
+    h_ret = rng.normal(0.0, 0.01, n)
+    s_ret = 1.2 * h_ret + rng.normal(0.0, 0.004, n)
+    fit = mv_hedge_ratio(s_ret, h_ret)
+    eff = hedge_effectiveness(s_ret, h_ret, float(fit["h_star"]))
+    roll = rolling_hedge_ratio(s_ret, h_ret, window=120)
+    # mean-reverting basis: hedge = spot + AR(1) noise
+    spot = np.cumsum(rng.normal(0.0, 1.0, n))
+    basis = np.zeros(n)
+    for t in range(1, n):
+        basis[t] = 0.8 * basis[t - 1] + rng.normal(0.0, 0.5)
+    bs = basis_statistics(spot + basis, spot)
+    valid_roll = np.asarray(roll["ratio"])[np.isfinite(np.asarray(roll["ratio"]))]
+    checks = [
+        abs(float(fit["h_star"]) - 1.2) < 0.1,
+        float(eff["effectiveness"]) > 0.85,
+        abs(float(np.mean(valid_roll)) - 1.2) < 0.15,
+        0.0 < float(bs["half_life"]) < 50.0,
+        float(bs["level_corr"]) > 0.9,
+    ]
+    out = {
+        "synthetic_h_star": float(fit["h_star"]),
+        "synthetic_hedge_effectiveness": float(eff["effectiveness"]),
+        "synthetic_roll_mean": float(np.mean(valid_roll)),
+        "synthetic_basis_half_life": float(bs["half_life"]),
+    }
+    if not all(checks):
+        raise ValueError(f"hedging off: {out}")
+    return out
