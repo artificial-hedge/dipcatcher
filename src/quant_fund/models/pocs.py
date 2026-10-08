@@ -209,9 +209,15 @@ def bench_pocs(seed: int = 478) -> dict[str, float]:
     dres = dykstra(x0, projs)
     ares = alternating_projections(x0, projs)
     dres_r = douglas_rachford(x0, projs[0], projs[1])
+    if np.linalg.norm(np.asarray(dres["x"]) - true_proj) >= 0.05:
+        raise ValueError("Dykstra off closed-form projection oracle")
     return {
         "synthetic_dykstra_err": float(np.linalg.norm(np.asarray(dres["x"]) - true_proj)),
         "synthetic_ap_resid": float(ares["feas_resid"]),
         "synthetic_dr_resid": float(dres_r["feas_resid"]),
-        "synthetic_score": 1.0,
+        "synthetic_score": float(
+            np.linalg.norm(np.asarray(dres["x"]) - true_proj) < 0.05
+            and ares["feas_resid"] < 0.05
+            and dres_r["feas_resid"] < 0.1
+        ),
     }

@@ -1,6 +1,7 @@
 """PINO-lite (Li et al. 2021) — FNO trained with a physics residual: (SYNTHETIC)
 data loss + λ‖-∂²û − a‖ where ∂² uses central differences — the
-physics penalty should cut error at small data budgets vs data-only.
+physics penalty does NOT beat data-only training on this fixture —
+the realized gap is reported honestly in the bench.
 """
 
 from __future__ import annotations
@@ -75,6 +76,10 @@ def bench_pino_residual(
     pred_d = train(False)
     err_p = rel_l2(pred_p, u_te)
     err_d = rel_l2(pred_d, u_te)
+    # physics-residual loss does NOT beat data-only on this fixture —
+    # reported honestly; gate only that both fits converge
+    if err_p > 0.6 or err_d > 0.6:
+        raise ValueError("PINO residual fit failed to converge")
     return {
         "synthetic_pino_rell2": err_p,
         "synthetic_pino_data_rell2": err_d,

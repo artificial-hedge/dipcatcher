@@ -79,4 +79,6 @@ def bench_plonkish_gate(seed: int = _SEED) -> dict[str, float]:
     checks.append(copy_consistent([7, 7, 3], [1, 0, 2]))
     # value mismatch inside a cycle fails copy-consistency (and usually grand product)
     checks.append(not copy_consistent([7, 8, 3], [1, 0, 2]))
+    if not all(checks):
+        raise ValueError("plonkish gate/copy oracle failed")
     return {"synthetic_plonkish_gate": float(sum(checks)) / len(checks)}

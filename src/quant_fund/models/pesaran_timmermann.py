@@ -140,6 +140,8 @@ def bench_pesaran_timmermann(
     r_alt = pt_test(y1, f1)
     r_hm = hm_test(y1, f1)
     ok = r_null["p_value"] > 0.05 and r_alt["p_value"] < 0.01 and r_hm["hm_p"] < 0.01
+    if not ok:
+        raise ValueError("PT predictability test off oracle")
     return {
         "synthetic_p_null": r_null["p_value"],
         "synthetic_p_alt": r_alt["p_value"],

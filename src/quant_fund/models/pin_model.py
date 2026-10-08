@@ -123,6 +123,12 @@ def bench_pin_model(seed: int = 20261231 + 252) -> dict[str, float]:
     out0 = pin_estimate(d0["buys"], d0["sells"])
     out_b = pin_estimate(d["buys"], d["sells"])
     a_hat = float(out["alpha"])
+    if not (
+        abs(a_hat / 0.3 - 1) < 0.4
+        and float(out["pin"]) > float(out0["pin"])
+        and a_hat == float(out_b["alpha"])
+    ):
+        raise ValueError("PIN estimation off oracle")
     return {
         "synthetic_alpha": a_hat,
         "synthetic_mu": float(out["mu"]),

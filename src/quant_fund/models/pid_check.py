@@ -35,6 +35,8 @@ def _bench_pid_check(seed: int = 0) -> float:
     checks.append(ideal_gen(frozenset({4, 6, 10})) == 2)
     checks.append(ideal_gen(frozenset({7})) == 7)
     checks.append(ideal_gen(frozenset({0})) == 0)
+    if not all(checks):
+        raise ValueError("PID/Bezout oracle failed")
     return float(sum(checks) / len(checks))
 
 

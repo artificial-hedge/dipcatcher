@@ -21794,6 +21794,9 @@
   "models/persistent_array.py": {
    "status": "audited"
   },
+  "models/persistent_cd.py": {
+   "status": "audited"
+  },
   "models/persona_chat_studies.py": {
    "status": "audited"
   },
@@ -21804,6 +21807,9 @@
    "status": "audited"
   },
   "models/perspective_fn.py": {
+   "status": "audited"
+  },
+  "models/perturb_map.py": {
    "status": "audited"
   },
   "models/perverse_2.py": {
@@ -21821,6 +21827,15 @@
   "models/perysh_qa_studies.py": {
    "status": "audited"
   },
+  "models/pesaran_cce.py": {
+   "status": "audited"
+  },
+  "models/pesaran_cd.py": {
+   "status": "audited"
+  },
+  "models/pesaran_timmermann.py": {
+   "status": "audited"
+  },
   "models/pesin_theory.py": {
    "status": "audited"
   },
@@ -21828,6 +21843,9 @@
    "status": "audited"
   },
   "models/pet_imaging_studies.py": {
+   "status": "audited"
+  },
+  "models/peterson_lock.py": {
    "status": "audited"
   },
   "models/peterson_stein.py": {
@@ -21855,6 +21873,9 @@
    "status": "audited"
   },
   "models/pfaffian_poly.py": {
+   "status": "audited"
+  },
+  "models/pg_mm.py": {
    "status": "audited"
   },
   "models/phalaenopsis_qa_studies.py": {
@@ -21890,10 +21911,19 @@
   "models/phase_diagrams.py": {
    "status": "audited"
   },
+  "models/phase_plane.py": {
+   "status": "audited"
+  },
+  "models/phase_retrieval.py": {
+   "status": "audited"
+  },
   "models/phase_transitions.py": {
    "status": "audited"
   },
   "models/phase_type.py": {
+   "status": "audited"
+  },
+  "models/phd_filter.py": {
    "status": "audited"
   },
   "models/phenomenology.py": {
@@ -21906,6 +21936,9 @@
    "status": "audited"
   },
   "models/phi_mod.py": {
+   "status": "audited"
+  },
+  "models/phillips_perron.py": {
    "status": "audited"
   },
   "models/philological_studies.py": {
@@ -21965,6 +21998,9 @@
   "models/phonetics.py": {
    "status": "audited"
   },
+  "models/phong_shade.py": {
+   "status": "audited"
+  },
   "models/phonology.py": {
    "status": "audited"
   },
@@ -22013,6 +22049,9 @@
   "models/physiotherapy.py": {
    "status": "audited"
   },
+  "models/pi_contraction.py": {
+   "status": "audited"
+  },
   "models/pi_infty.py": {
    "status": "audited"
   },
@@ -22022,10 +22061,16 @@
   "models/piano_qa_studies.py": {
    "status": "audited"
   },
+  "models/pic_plasma.py": {
+   "status": "audited"
+  },
   "models/picard_group.py": {
    "status": "audited"
   },
   "models/picard_grp.py": {
+   "status": "audited"
+  },
+  "models/picard_lindelof.py": {
    "status": "audited"
   },
   "models/picard_spec.py": {
@@ -22043,6 +22088,12 @@
   "models/pickands_est.py": {
    "status": "audited"
   },
+  "models/pid_antiwindup.py": {
+   "status": "audited"
+  },
+  "models/pid_check.py": {
+   "status": "audited"
+  },
   "models/piece_table.py": {
    "status": "audited"
   },
@@ -22050,6 +22101,9 @@
    "status": "audited"
   },
   "models/pigeon_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/piggyback_cl.py": {
    "status": "audited"
   },
   "models/pika_qa_studies.py": {
@@ -22073,10 +22127,19 @@
   "models/pimsner_voicul.py": {
    "status": "audited"
   },
+  "models/pin_model.py": {
+   "status": "audited"
+  },
   "models/pinching_ineq.py": {
    "status": "audited"
   },
   "models/pine_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/pinn_pricing.py": {
+   "status": "audited"
+  },
+  "models/pino_residual.py": {
    "status": "audited"
   },
   "models/pinsky_proc.py": {
@@ -22121,16 +22184,37 @@
   "models/pituitary_studies.py": {
    "status": "audited"
   },
+  "models/place_quadratic.py": {
+   "status": "audited"
+  },
   "models/plan_and_solve_studies.py": {
    "status": "audited"
   },
+  "models/plan_search.py": {
+   "status": "audited"
+  },
   "models/planar_algebra.py": {
+   "status": "audited"
+  },
+  "models/planar_check.py": {
+   "status": "audited"
+  },
+  "models/planar_five.py": {
+   "status": "audited"
+  },
+  "models/planar_flow.py": {
+   "status": "audited"
+  },
+  "models/plancherel.py": {
    "status": "audited"
   },
   "models/plane_qa_studies.py": {
    "status": "audited"
   },
   "models/planet_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/planet_vsop.py": {
    "status": "audited"
   },
   "models/planetology.py": {
@@ -22169,6 +22253,9 @@
   "models/pleiotropy_robust_studies.py": {
    "status": "audited"
   },
+  "models/plonkish_gate.py": {
+   "status": "audited"
+  },
   "models/plover_qa_studies.py": {
    "status": "audited"
   },
@@ -22184,16 +22271,31 @@
   "models/plus_k.py": {
    "status": "audited"
   },
+  "models/pluto_schedule.py": {
+   "status": "audited"
+  },
   "models/pmcmc_sv.py": {
    "status": "audited"
   },
   "models/pmg_ardl.py": {
    "status": "audited"
   },
+  "models/pmp_bangbang.py": {
+   "status": "audited"
+  },
   "models/pn_closure.py": {
    "status": "audited"
   },
+  "models/pna_agg.py": {
+   "status": "audited"
+  },
+  "models/pncounter.py": {
+   "status": "audited"
+  },
   "models/pochard_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/pocs.py": {
    "status": "audited"
   },
   "models/pod_deim.py": {
@@ -22208,10 +22310,19 @@
   "models/podiatry.py": {
    "status": "audited"
   },
+  "models/poet.py": {
+   "status": "audited"
+  },
+  "models/poincare_dual.py": {
+   "status": "audited"
+  },
   "models/poincare_duality2.py": {
    "status": "audited"
   },
   "models/poincare_expansion.py": {
+   "status": "audited"
+  },
+  "models/poincare_hopf.py": {
    "status": "audited"
   },
   "models/poincare_ineq.py": {
@@ -22221,6 +22332,9 @@
    "status": "audited"
   },
   "models/point_cloud_interp.py": {
+   "status": "audited"
+  },
+  "models/point_in_polygon.py": {
    "status": "audited"
   },
   "models/point_process.py": {

@@ -61,6 +61,8 @@ def bench_pi_contraction(seed: int = 4607) -> dict[str, float]:
     n = len(S_R)
     p_pi = np.array([[1.0 if _trans(s, pol[s]) == t else 0.0 for t in range(n)] for s in range(n)])
     v_pi = np.linalg.solve(np.eye(n) - MDP_GAMMA * p_pi, S_R)
+    if max(ratios) > MDP_GAMMA + 1e-9 or float(np.max(np.abs(v_pi - _vi()))) > 1e-6:
+        raise ValueError("PI contraction/VI-agreement oracle failed")
     return {
         "synthetic_pi_max_ratio": float(max(ratios)),
         "synthetic_pi_gamma": MDP_GAMMA,

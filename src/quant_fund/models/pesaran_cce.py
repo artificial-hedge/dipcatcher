@@ -117,6 +117,8 @@ def bench_pesaran_cce(seed: int = 20261231 + 259) -> dict[str, float]:
     y = np.asarray(d["y"])
     b_ols = float(np.polyfit(x, y, 1)[0])
     b2 = cce_mean_group(np.asarray(d["y"]), np.asarray(d["x"]), np.asarray(d["i_idx"]))
+    if not (abs(beta_mg - 1.0) < 0.15 and abs(b_ols - 1.0) > 0.3 and b2 == beta_mg):
+        raise ValueError("CCE-MG recovery off oracle")
     return {
         "synthetic_beta_ccemg": beta_mg,
         "synthetic_beta_ols": b_ols,

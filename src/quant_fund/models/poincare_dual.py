@@ -27,6 +27,8 @@ def _bench_poincare_dual(seed: int = 0) -> float:
     # non-closed counterexample: disc b=(1,0,0) not symmetric -> excluded by
     # hypothesis; verify asymmetry
     checks.append([1, 0, 0][::-1] != [1, 0, 0])
+    if not all(checks):
+        raise ValueError("Poincare-duality oracle failed")
     return float(sum(checks) / len(checks))
 
 

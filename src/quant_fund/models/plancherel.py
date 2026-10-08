@@ -42,6 +42,8 @@ def _bench_plancherel(seed: int = 0) -> float:
     checks.append(np.allclose(np.abs(dft(e)), 1.0))
     # delta_train -> delta_train
     checks.append(np.allclose(np.abs(dft(np.ones(8))), [8, 0, 0, 0, 0, 0, 0, 0], atol=1e-9))
+    if not all(checks):
+        raise ValueError("Plancherel/DFT oracle failed")
     return float(sum(checks) / len(checks))
 
 

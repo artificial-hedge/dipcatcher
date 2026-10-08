@@ -148,6 +148,8 @@ def bench_pinn_pricing(seed: int = 23) -> dict[str, float]:
         for sv in s
         for tv in tau
     ]
+    if float(np.mean(errs0)) <= float(np.mean(errs)):
+        raise ValueError("PINN did not improve on untrained baseline")
     return {
         "synthetic_pinn_rel_mae": float(np.mean(errs)),
         "synthetic_pinn_delta_mae": float(np.mean(derrs)),

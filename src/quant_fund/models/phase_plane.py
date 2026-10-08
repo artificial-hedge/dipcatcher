@@ -53,6 +53,8 @@ def _bench_phase_plane(seed: int = 0) -> float:
     for _ in range(50):
         a = np.random.default_rng(_).standard_normal((2, 2))
         checks.append(classify(a) == trace_det_classify(a))
+    if not all(checks):
+        raise ValueError("phase-plane classifier oracle failed")
     return float(sum(checks) / len(checks))
 
 

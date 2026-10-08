@@ -69,6 +69,8 @@ def bench_plan_search(
         return False
 
     oracle = float(np.mean([_bfs_target(int(s)) for s in starts]))
+    if b <= g:
+        raise ValueError("beam search no better than greedy")
     return {
         "synthetic_plan_beam_solve": b,
         "synthetic_plan_greedy_solve": g,

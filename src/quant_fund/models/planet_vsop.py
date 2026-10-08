@@ -175,4 +175,6 @@ def bench_planet_vsop(seed: int = _SEED) -> dict[str, float]:
     rr = 1.00000261 * (1 - 0.01671123 * np.cos(E))
     if abs(rr - earth_j2000) > 1e-9:
         ok = False
+    if not ok:
+        raise ValueError("VSOP planet positions off oracle")
     return {"synthetic_planet_vsop": 1.0 if ok else 0.0}

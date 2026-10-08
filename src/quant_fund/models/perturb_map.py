@@ -24,6 +24,8 @@ def bench_perturb_map(
         g_pm = ((zs / sig) * (vals - vals.mean())[:, None]).mean(0) / sig
         g_fd = finite_diff_grad(s0)
         corrs.append(grad_corr(g_pm, g_fd))
+    if float(np.mean(corrs)) < 0.5:
+        raise ValueError("perturbation-map gradient correlation off oracle")
     return {
         "synthetic_pmap_grad_corr": float(np.mean(corrs)),
         "synthetic_pmap_mc_std": float(np.std(corrs)),

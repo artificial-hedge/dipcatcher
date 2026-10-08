@@ -134,6 +134,8 @@ def bench_pg_mm(seed: int = 7) -> dict[str, float]:
         lv.append(r1["inv_var"])
         nv.append(r2["inv_var"])
     lw_a, nw_a = np.array(lw), np.array(nw)
+    if float(lw_a.mean()) <= float(nw_a.mean()):
+        raise ValueError("PG-MM learned wealth no better than naive")
     return {
         "synthetic_pg_mm_learned_wealth": float(lw_a.mean()),
         "synthetic_pg_mm_naive_wealth": float(nw_a.mean()),

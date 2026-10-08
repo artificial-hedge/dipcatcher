@@ -157,6 +157,8 @@ def bench_phd(seed: int = 20261231) -> dict[str, float]:
             )
         else:
             loc_err += 2.0
+    if float(len(flt.extract())) != 2 or card_err / steps >= 2.0:
+        raise ValueError("PHD filter missed both targets")
     return {
         "synthetic_phd_card_mean": float(card_err / steps),
         "synthetic_phd_loc_err": float(loc_err / steps),

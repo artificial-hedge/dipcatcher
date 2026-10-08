@@ -40,4 +40,6 @@ def bench_pic_plasma(seed: int = _SEED) -> dict[str, float]:
         for _ in range(10):
             x, v = pic_step(x, v, e, 0.5, 0.05)
         ok += float(np.isfinite(v).all() and np.abs(v).max() < 100)
+    if ok != trials:
+        raise ValueError("PIC plasma step produced unbounded/NaN velocities")
     return {"synthetic_pic_bounded": ok / trials}

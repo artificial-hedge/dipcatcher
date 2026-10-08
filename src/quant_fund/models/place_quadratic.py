@@ -45,4 +45,6 @@ def bench_place_quadratic(seed: int = _SEED) -> dict[str, float]:
     # chain of 2 free cells between two pads: equal spacing at 1/3, 2/3
     pos = place(2, {2: (0.0, 0.0), 3: (3.0, 0.0)}, [[2, 0], [0, 1], [1, 3]])
     ok += int(abs(pos[0][0] - 1.0) < 1e-6 and abs(pos[1][0] - 2.0) < 1e-6)
+    if ok != 2:
+        raise ValueError("quadratic placement off centroid oracle")
     return {"synthetic_place": float(ok == 2)}

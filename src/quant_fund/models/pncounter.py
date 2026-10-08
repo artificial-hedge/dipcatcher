@@ -67,6 +67,8 @@ def bench_pncounter(seed: int = 20261231 + 301) -> dict[str, float]:
         reps[0] = merge(reps[0], reps[1])
         reps[1] = merge(reps[1], reps[0])
     sem_ok = value(merge(reps[0], reps[1])) == ops
+    if comm != trials or assoc != trials or idem != trials or not sem_ok:
+        raise ValueError("PN-counter CRDT laws failed")
     return {
         "synthetic_commutative": float(comm / trials),
         "synthetic_associative": float(assoc / trials),

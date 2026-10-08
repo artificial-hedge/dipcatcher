@@ -37,6 +37,8 @@ def bench_persistent_cd(seed: int = 2447, iters: int = 500, k: int = 8) -> dict[
     S = langevin(torch, net, 500, steps=60, step=0.05, seed=seed, x0=x0).numpy()
     m = mmd(S, Xte)
     mb = gauss_baseline_mmd(Xtr, Xte)
+    if m >= mb:
+        raise ValueError("persistent-CD sampler no better than Gaussian baseline")
     return {
         "synthetic_pcd_mmd": m,
         "synthetic_gauss_mmd": mb,

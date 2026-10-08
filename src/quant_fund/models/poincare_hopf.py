@@ -26,13 +26,15 @@ def _bench_poincare_hopf(seed: int = 0) -> float:
     checks.append(sink == 1)
     saddle = _winding(lambda p: np.array([p[0], -p[1]]), np.array([0.0, 0.0]))
     checks.append(saddle == -1)
-    # dipole on sphere: two index +1 zeros -> sum 2 = chi(S^2)
-    checks.append(1 + 1 == 2)
-    # torus nonvanishing field exists -> index sum 0 = chi(T^2)
-    checks.append(0 == 0)
-    # field with source + 2 saddles: index sum -1 -> not allowed on S^2 alone;
-    # on genus-2 surface chi = -2: source + sink - 2 saddles? verify sum
-    checks.append(1 + 1 - 4 == -2)  # 2 extrema? genus2: m pattern
+    # dipole on sphere: source(+1) + sink(+1) index sum = 2 = chi(S^2)
+    src_i = _winding(lambda p: p, np.array([0.0, 0.0]))
+    checks.append(src_i + sink == 2)
+    # torus nonvanishing field: constant field has winding 0 = chi(T^2)
+    checks.append(_winding(lambda p: np.array([1.0, 0.5]), np.array([0.0, 0.0])) == 0)
+    # genus-2: source + sink + 4 saddles = 1 + 1 - 4 = -2 = chi
+    checks.append(src_i + sink + 4 * saddle == -2)
+    if not all(checks):
+        raise ValueError("Poincare-Hopf index-sum oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -94,6 +94,8 @@ def bench_pesaran_cd(seed: int = 20261231 + 272) -> dict[str, float]:
     dep = pesaran_cd(np.asarray(synth_cd_panel(lam=0.7, seed=seed)["resid"]))
     indep = pesaran_cd(np.asarray(synth_cd_panel(lam=0.0, seed=seed)["resid"]))
     out2 = pesaran_cd(np.asarray(synth_cd_panel(lam=0.7, seed=seed)["resid"]))
+    if not (dep["p"] < 0.001 and indep["p"] > 0.05 and out2["cd"] == dep["cd"]):
+        raise ValueError("Pesaran CD test off oracle")
     return {
         "synthetic_cd_dep": dep["cd"],
         "synthetic_cd_indep": indep["cd"],

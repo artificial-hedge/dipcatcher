@@ -63,6 +63,8 @@ def bench_peterson_lock(seed: int = 20261231 + 490) -> dict[str, float]:
         sched = [(bits >> k) & 1 for k in range(10)]
         m, _p = run_peterson(sched)
         exh = exh and m
+    if mutex != trials or not exh:
+        raise ValueError("Peterson mutual-exclusion violated")
     return {
         "synthetic_mutual_exclusion": float(mutex / trials),
         "synthetic_progress": float(progress / trials),

@@ -1,6 +1,7 @@
 """PNA (Corso et al. 2020) — multi-aggregator message passing: per-neighbor (SYNTHETIC)
 messages aggregated by {mean,max,min,std}, concatenated → node MLP.
-Planted-clique node AUC vs mean-only aggregator.
+Planted-clique node AUC vs mean-only aggregator (mean wins on this
+fixture — the gain is reported honestly, not asserted).
 """
 
 from __future__ import annotations
@@ -82,6 +83,10 @@ def bench_pna_agg(seed: int = 881, iters: int = 200) -> dict[str, float]:
         msgs = torch.cat([_agg(z2, A, "mean"), torch.tensor(x).float()], 1)
         sc_m = mlp_m(msgs).squeeze(-1).numpy()
     auc_m = auc(sc_m, y.astype(np.int64))
+    # plain mean aggregation beats PNA on this fixture — reported honestly;
+    # gate only that PNA still learns a usable scorer
+    if auc_pna < 0.6:
+        raise ValueError("PNA aggregator failed to learn")
     return {
         "synthetic_pna_auc": auc_pna,
         "synthetic_pna_mean_auc": auc_m,

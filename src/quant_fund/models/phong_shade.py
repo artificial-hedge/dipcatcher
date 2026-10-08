@@ -28,7 +28,11 @@ def bench_phong_shade(seed: int = _SEED) -> dict[str, float]:
         v = rng.normal(0, 1, 3)
         i = phong(n, light, v)
         ok += float(0.0 <= i <= 1.0)
-        # max when n aligned with l and v
-        i_max = phong(n, n, np.array([0, 0, 1.0]))
-        ok += float(i <= i_max + 1e-9 or True)
+        # aligned normal+light outshines a 60%-tilted light (real check:
+        # the previous `or True` made this arm vacuous)
+        axis = np.array([1.0, 0.0, 0.0]) if abs(n[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+        tilt = n + 0.6 * np.cross(n, axis)
+        ok += float(phong(n, n, v) >= phong(n, tilt, v) - 1e-9)
+    if ok != 2 * trials:
+        raise ValueError("phong shading oracle failed")
     return {"synthetic_phong_range": ok / (2 * trials)}

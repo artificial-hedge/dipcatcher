@@ -42,10 +42,12 @@ def _bench_picard_lindelof(seed: int = 0) -> float:
     # iterates stabilize (Cauchy): last two within tol
     p8 = sum(iters[7][k] * t**k for k in range(len(iters[7])))
     checks.append(abs(approx - p8) < 1e-4)
-    # y' = 0 -> constant
-    checks.append(all(it == [1.0] for it in [[1.0]]))
+    # y(0)=0 -> all iterates stay zero
+    checks.append(all(all(c == 0.0 for c in it) for it in picard_iters(lambda y: 0.0, 0.0, 4)))
     # fixed point of Picard op is the solution
     checks.append(abs(approx - math.exp(t)) / math.exp(t) < 1e-4)
+    if not all(checks):
+        raise ValueError("Picard-iteration oracle failed")
     return float(sum(checks) / len(checks))
 
 

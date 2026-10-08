@@ -40,4 +40,6 @@ def bench_pid_antiwindup(seed: int = _SEED) -> dict[str, float]:
     over_a = aw.max() - 1.0
     # antiwindup overshoots less (or equal); both eventually track
     ok = float(over_a <= over_n + 1e-9 and abs(aw[-1] - 1.0) < 0.1)
+    if not ok:
+        raise ValueError("anti-windup PID off oracle")
     return {"synthetic_aw_less_overshoot": ok}

@@ -63,6 +63,8 @@ def bench_point_in_polygon(seed: int = 20261231 + 323) -> dict[str, float]:
     sq = [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)]
     inside = sum(inside_ray((rng.uniform(-2, 2), rng.uniform(-2, 2)), sq) for _ in range(4000))
     est = 16.0 * inside / 4000
+    if agree != total_pts or abs(est - 4.0) >= 0.4:
+        raise ValueError("point-in-polygon oracle failed")
     return {
         "synthetic_ray_vs_winding": float(agree / total_pts),
         "synthetic_mc_area_err": float(abs(est - 4.0)),

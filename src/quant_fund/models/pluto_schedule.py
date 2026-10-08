@@ -69,4 +69,6 @@ def bench_pluto_schedule(seed: int = _SEED) -> dict[str, float]:
     checks.append(schedule([(-1,)], 1, max_coeff=2) is None)
     # 1D dep (1,): any positive schedule works; picks smallest coeff
     checks.append(schedule([(1,)], 1) == (1,))
+    if not all(checks):
+        raise ValueError("PLuTo schedule oracle failed")
     return {"synthetic_pluto_schedule": float(sum(checks)) / len(checks)}

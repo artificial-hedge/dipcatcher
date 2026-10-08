@@ -129,6 +129,8 @@ def bench_phillips_perron(
     r_rw = pp_test(rw)
     r_st = pp_test(st)
     ok = r_rw["reject_unit_root"] == 0.0 and r_st["reject_unit_root"] == 1.0
+    if not ok:
+        raise ValueError("Phillips-Perron test off oracle")
     return {
         "synthetic_z_pi_rw": r_rw["z_pi"],
         "synthetic_z_t_rw": r_rw["z_t"],

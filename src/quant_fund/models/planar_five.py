@@ -77,6 +77,8 @@ def _bench_planar_five(seed: int = 0) -> float:
     k4 = _mk([(a, b) for a in range(4) for b in range(a + 1, 4)], 4)
     ck = degeneracy_color(k4)
     checks.append(ck is not None and valid_coloring(k4, ck) and max(ck) + 1 == 4)
+    if not all(checks):
+        raise ValueError("degeneracy-coloring oracle failed")
     return float(sum(checks) / len(checks))
 
 

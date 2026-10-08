@@ -33,6 +33,8 @@ def bench_pmp_bangbang(seed: int = 2921) -> dict[str, float]:
         return np.clip(0.6 * (target - x[0]) - 1.2 * x[1], -1, 1)
 
     t_pd = _reach_time(np.array([0.0, 0.0]), pd)
+    if t_bb >= t_pd:
+        raise ValueError("bang-bang control not faster than PD")
     return {
         "synthetic_bangbang_time": float(t_bb),
         "synthetic_pd_time": float(t_pd),

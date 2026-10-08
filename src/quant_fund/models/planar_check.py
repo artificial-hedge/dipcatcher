@@ -57,6 +57,8 @@ def _bench_planar_check(seed: int = 0) -> float:
     tri = {0: frozenset({1, 2}), 1: frozenset({0, 2}), 2: frozenset({0, 1})}
     checks.append(euler_bound_ok(tri))
     checks.append(not has_k5_subgraph(tri))
+    if not all(checks):
+        raise ValueError("planarity oracle failed")
     return float(sum(checks) / len(checks))
 
 
