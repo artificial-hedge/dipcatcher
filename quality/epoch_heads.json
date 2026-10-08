@@ -163,11 +163,11 @@
       "tree_root": "b26bba38b40cc8112e9977d465f67ccd39fe455d151db5ab4530e34abc8baec8"
     },
     "tests/*": {
-      "chain_root": "026e44d0c90c716b9b2646f77c4ddfbbbb1832627ee12ae59507ff95de845fdc",
-      "n_epochs": 25,
-      "receipt": "corpus_epoch_c1e40fc07311c434.json",
-      "sha256": "2a0b7c41b900dbfb73b759223d78d8b441875f10ef702f207e54335a2453d4d3",
-      "tree_root": "443e2b27b28724b803539db795cf1e60f218c3e63805abd05b3012368220c038"
+      "chain_root": "0389f6b236e3b50e21b6aea32f8d9c01b27b5f7957a8706132d980a69d6aa1cf",
+      "n_epochs": 26,
+      "receipt": "corpus_epoch_4d1b773e7de614e9.json",
+      "sha256": "482c2f15cf902b4bb116809b9c1665c0f5ec5a278a8796c993aeffe3c71ac8e0",
+      "tree_root": "3e22673d6d02378c6c9b64b0e7ebc99008b5f16b18d0d71bf265ddb41e0d946e"
     },
     "third_party/*": {
       "chain_root": "b6c1b788cdd9b795d1271d350d3f17e44e5cbda2e525344f3971c14b89a2cccd",
