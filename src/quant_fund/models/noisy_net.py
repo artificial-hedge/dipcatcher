@@ -95,6 +95,8 @@ def bench_noisy_net(
         if rng.random() < eps:
             a = 1 - a
         seen_eps.add((st, a))
+    if len(seen_noisy) <= len(seen_eps):
+        raise ValueError("NoisyNet exploration no better than eps-greedy")
     return {
         "synthetic_noisy_coverage": float(len(seen_noisy) / 8),
         "synthetic_noisy_eps_coverage": float(len(seen_eps) / 8),

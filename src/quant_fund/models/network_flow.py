@@ -101,6 +101,8 @@ def bench_network_flow(seed: int = 0) -> dict[str, float]:
     bal = flow.sum(axis=1) - flow.sum(axis=0)
     intern = [i for i in range(n) if i not in (src, dst)]
     conserve_err = float(np.max(np.abs(bal[intern])))
+    if abs(val - cut) > 1e-6 or conserve_err > 1e-6:
+        raise ValueError("maxflow/mincut duality off oracle")
     return {
         "synthetic_maxflow": val,
         "synthetic_mincut": cut,

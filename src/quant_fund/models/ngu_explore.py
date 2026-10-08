@@ -41,6 +41,10 @@ def bench_ngu_explore(seed: int = 2857, n_ep_knn: int = 5) -> dict[str, float]:
     bonus.end_episode = end_ep  # type: ignore[attr-defined]
     _, cov, succ = q_learn(bonus, seed=seed)
     _, cov_b, succ_b = q_learn(lambda s, sp, st, ep, rng: 0.0, seed=seed)
+    # at this density the novelty bonus does not widen coverage vs the
+    # baseline — gate only that exploration does not hurt success
+    if succ < succ_b - 1e-9 or cov < 0.4:
+        raise ValueError("NGU exploration below floor")
     return {
         "synthetic_ngu_coverage": float(cov),
         "synthetic_baseline_coverage": float(cov_b),

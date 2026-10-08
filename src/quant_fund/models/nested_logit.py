@@ -177,6 +177,14 @@ def bench_nested_logit(
 
     b = float(out["beta_0"])
     lam = float(out["lambda"])
+    if not (
+        abs(b - 1.2) < 0.4
+        and lam < 0.98
+        and out["ll_nested"] > out["ll_mnl"]
+        and b == float(out_b["beta_0"])
+        and lam == float(out_b["lambda"])
+    ):
+        raise ValueError("nested-logit recovery off oracle")
     return {
         "synthetic_beta": b,
         "synthetic_beta_err": float(abs(b - 1.2)),

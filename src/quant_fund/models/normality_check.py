@@ -27,6 +27,8 @@ def _bench_normality_check(seed: int = 0) -> float:
     # Frobenius on GF(4): w -> w^2 swaps the two non-rational elements
     mul = {(2, 2): 3, (3, 3): 2}  # w^2 = w+1 (elem 3), (w+1)^2 = w (elem 2)
     checks.append(mul[(2, 2)] == 3 and mul[(3, 3)] == 2)
+    if not all(checks):
+        raise ValueError("normality oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

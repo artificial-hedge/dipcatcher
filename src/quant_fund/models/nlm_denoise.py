@@ -45,4 +45,6 @@ def bench_nlm_denoise(seed: int = _SEED) -> dict[str, float]:
     flat = np.clip(0.5 + 0.15 * rng.standard_normal((n, n)), 0, 1)
     den2 = nlm(flat, h=0.12, patch=1, search=3)
     checks.append(float(np.std(den2 - 0.5)) < 0.6 * float(np.std(flat - 0.5)))
+    if not all(checks):
+        raise ValueError("NLM denoise off oracle")
     return {"synthetic_nlm_denoise": float(np.mean(checks))}

@@ -68,4 +68,6 @@ def bench_netlist_parse(seed: int = _SEED) -> dict[str, float]:
             for c in range(2):
                 r = simulate(inputs, gates, outs, {"a0": a, "b0": b, "cin": c})
                 good += int(r["s"] == (a ^ b ^ c) and r["cout"] == int(a + b + c >= 2))
+    if not (ok == 1 and good == 8):
+        raise ValueError("netlist parse/sim off truth table")
     return {"synthetic_netlist": float(ok == 1 and good == 8)}

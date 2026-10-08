@@ -68,6 +68,9 @@ def bench_nf_vi(seed: int = 719, iters: int = 2000, Kflow: int = 3) -> dict[str,
         sd_hat = z.std(0).numpy()
     w_m, s_m = mcmc_oracle(X, y, int(rng.integers(1 << 30)))
     base = test_logloss(np.zeros(d), Xt, yt)
+    ll_hat = test_logloss(w_hat, Xt, yt)
+    if ll_hat >= base or np.linalg.norm(w_hat - w_m) / max(np.linalg.norm(w_m), 1e-9) > 0.5:
+        raise ValueError("normalizing-flow VI off oracle")
     return {
         "synthetic_nfv_test_logloss": test_logloss(w_hat, Xt, yt),
         "synthetic_nfv_logloss_gain": base - test_logloss(w_hat, Xt, yt),

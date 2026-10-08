@@ -47,6 +47,8 @@ def bench_notears(seed: int = 2317, edges: int = 7, steps: int = 400) -> dict[st
     shd_nt = shd(B, W)
     Bb = corr_baseline(X, edges)
     shd_cb = shd(B, Bb)
+    if shd_nt >= shd_cb:
+        raise ValueError("NOTEARS SHD not below correlation baseline")
     return {
         "synthetic_notears_shd": float(shd_nt),
         "synthetic_corr_shd": float(shd_cb),

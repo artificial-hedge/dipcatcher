@@ -94,6 +94,8 @@ def bench_negascout(seed: int = 20261231) -> dict[str, float]:
         nodes_ns += n_ns
         nodes_ab += n_ab
         correct += int(v_ns == v_ab)
+    if correct != 4 or nodes_ns > nodes_ab:
+        raise ValueError("negascout values/nodes off alpha-beta oracle")
     out["synthetic_positions"] = 4.0
     out["synthetic_values_match"] = float(correct)
     out["synthetic_nodes_ab"] = float(nodes_ab)

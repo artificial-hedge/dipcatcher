@@ -105,6 +105,8 @@ def bench_nfsp(
 
     expl = kuhn_exploit(strat)
     ref = kuhn_exploit(lambda p, c, h: np.array([0.5, 0.5]))
+    if expl >= ref:
+        raise ValueError("NFSP exploitability not below random")
     return {
         "synthetic_nfsp_expl": expl,
         "synthetic_random_expl": ref,

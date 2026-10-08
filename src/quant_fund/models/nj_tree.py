@@ -83,4 +83,6 @@ def bench_nj_tree(seed: int = _SEED) -> dict[str, float]:
         got = nj(d, ["a", "b", "c", "d"])
         want = {frozenset(["a", "b"]), frozenset(["c", "d"])}
         ok += int(got == want)
+    if ok != 4:
+        raise ValueError("NJ topology off planted tree")
     return {"synthetic_nj_topo": float(ok == 4)}

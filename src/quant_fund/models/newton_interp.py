@@ -61,6 +61,8 @@ def bench_newton_interp(seed: int = 20261231 + 235) -> dict[str, float]:
     ys = [x * x + 2 * x + 1 for x in xs]
     coef = divided_diffs(xs, ys)
     deg2 = all(c == 0 for c in coef[3:])
+    if agree != trials or max_err_resid > 0 or not deg2:
+        raise ValueError("Newton interpolation off Lagrange oracle")
     return {
         "synthetic_agree": float(agree / trials),
         "synthetic_max_resid": float(max_err_resid),

@@ -56,6 +56,10 @@ def bench_net_drlearner(seed: int = 1229, iters: int = 800) -> dict[str, float]:
         opt2.step()
     with torch.no_grad():
         cate = tau_net(Xt).squeeze(-1).numpy()
+    # at this budget the DR-learner overshoots the plain plugin PEHE —
+    # gain reported honestly; gate a sanity floor on the DR estimate
+    if pehe(cate, tau) > 1.0:
+        raise ValueError("DR-learner PEHE above floor")
     return {
         "synthetic_ndr_pehe": pehe(cate, tau),
         "synthetic_ndr_plugin_pehe": pehe(m1 - m0, tau),

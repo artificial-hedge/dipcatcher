@@ -48,6 +48,8 @@ def bench_neural_sort_ltr(
         sc = net(torch.tensor(x_te).float()).squeeze(-1).numpy()
     nd = ndcg_at(y_te, sc)
     nd_base = ndcg_at(y_te, x_te.mean(-1))
+    if nd <= nd_base:
+        raise ValueError("neural sort NDCG not above baseline")
     return {
         "synthetic_nsort_ndcg10": nd,
         "synthetic_nsort_base_ndcg10": nd_base,

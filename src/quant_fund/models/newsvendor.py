@@ -22,6 +22,8 @@ def bench_newsvendor(seed: int = 3021, trials: int = 2000) -> dict[str, float]:
     qs = np.arange(5, 45)
     cs = [cost(float(q)) for q in qs]
     q_emp = float(qs[int(np.argmin(cs))])
+    if c_star > c_mean or abs(q_emp - q_star) > 2:
+        raise ValueError("newsvendor optimum off oracle")
     return {
         "synthetic_nv_qstar": q_star,
         "synthetic_nv_q_emp": q_emp,

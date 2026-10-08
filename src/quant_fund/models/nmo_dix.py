@@ -86,4 +86,6 @@ def bench_nmo_dix(seed: int = _SEED) -> dict[str, float]:
     # sanity: monotonic RMS with depth
     score += 1.0 if bool(np.all(np.diff(vrms) > 0)) else 0.0
     _ = t_int
+    if score != 4.0:
+        raise ValueError("NMO/Dix oracle checks failed")
     return {"synthetic_nmo_dix": score / 4.0}

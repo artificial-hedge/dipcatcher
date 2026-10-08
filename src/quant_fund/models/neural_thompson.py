@@ -154,6 +154,8 @@ def bench_neural_thompson(seed: int = 73) -> dict[str, float]:
         A2[a] += np.outer(phi, phi) / sigma**2
         b2[a] += phi * rew[t, a] / sigma**2
 
+    if regret_ts >= regret_g or regret_ts >= regret_unif:
+        raise ValueError("neural Thompson regret not below baselines")
     return {
         "synthetic_nthompson_regret": float(regret_ts),
         "synthetic_nthompson_greedy_regret": float(regret_g),

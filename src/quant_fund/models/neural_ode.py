@@ -90,6 +90,10 @@ def bench_neural_ode(seed: int = 61) -> dict[str, float]:
     ar_1step = np.abs(
         np.array([[y[t], y[t - 1], 1.0] for t in range(tr, tr + 40)]) @ w1 - y[tr + 1 : tr + 41]
     )
+    # on this fixture the ODE rollout drifts vs the AR baseline — margins
+    # reported honestly; gate only that the latent model learns
+    if np.mean(errs_ode[:n]) > 1.0:
+        raise ValueError("neural ODE rollout error above floor")
     return {
         "synthetic_node_rollout_mae": float(np.mean(errs_ode[:n])),
         "synthetic_node_ar_mae": float(np.mean(errs_ar[:n])),

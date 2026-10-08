@@ -42,6 +42,8 @@ def bench_neural_grok(seed: int = 2383, iters: int = 600) -> dict[str, float]:
             if a_tr - a_te > 0.15:
                 lag_iters += 1
     a_tr, a_te = acc(net, torch, X, y), acc(net, torch, Xt, yt)
+    if a_tr < 0.9 or a_tr - a_te < 0.15 or lag_iters == 0:
+        raise ValueError("grokking lag not observed")
     return {
         "synthetic_grok_train_acc": float(a_tr),
         "synthetic_grok_test_acc": float(a_te),

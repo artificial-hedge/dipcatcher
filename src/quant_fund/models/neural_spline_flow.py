@@ -89,6 +89,8 @@ def bench_neural_spline_flow(seed: int = 2293, iters: int = 600, K: int = 8) -> 
         z, ld = fwd(torch.tensor(Xte).float())
         nll_te = float((0.5 * (z**2).sum(-1) + np.log(2 * np.pi) - ld).mean())
     base = gauss_nll(Xtr, Xte)
+    if nll_te >= base:
+        raise ValueError("spline flow NLL not below Gaussian")
     return {
         "synthetic_nsf_nll": nll_te,
         "synthetic_gauss_nll": base,

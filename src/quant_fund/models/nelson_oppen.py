@@ -166,4 +166,6 @@ def bench_nelson_oppen(seed: int = _SEED) -> dict[str, float]:
     s5 = CombinedSolver()
     s5.assume_eq(v("p"), c(1))
     checks.append(not s5.equal(v("p"), c(2)))
+    if sum(checks) != len(checks):
+        raise ValueError("Nelson-Oppen oracle checks failed")
     return {"synthetic_nelson_oppen": float(sum(checks)) / len(checks)}

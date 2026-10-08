@@ -90,6 +90,8 @@ def bench_ngram_spell(seed: int = 20261231 + 464) -> dict[str, float]:
         s = suggest(miss, words, grams)
         has_cand += int(s is not None)
         hit += int(s == w)
+    if hit != trials or has_cand != trials:
+        raise ValueError("ngram spell suggester off oracle")
     return {
         "synthetic_top1_accuracy": float(hit / trials),
         "synthetic_candidate_coverage": float(has_cand / trials),

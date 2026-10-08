@@ -19706,16 +19706,25 @@
   "models/needletail_qa_studies.py": {
    "status": "audited"
   },
+  "models/negascout.py": {
+   "status": "audited"
+  },
   "models/negative_control_studies.py": {
    "status": "audited"
   },
   "models/negative_cyclic.py": {
    "status": "audited"
   },
+  "models/neh_heuristic.py": {
+   "status": "audited"
+  },
   "models/neimark_sacker.py": {
    "status": "audited"
   },
   "models/neisendorfer_htpy.py": {
+   "status": "audited"
+  },
+  "models/nelson_oppen.py": {
    "status": "audited"
   },
   "models/nemean_qa_studies.py": {
@@ -19766,7 +19775,22 @@
   "models/nest_tools_studies.py": {
    "status": "audited"
   },
+  "models/nested_logit.py": {
+   "status": "audited"
+  },
+  "models/nested_sampling.py": {
+   "status": "audited"
+  },
+  "models/net_drlearner.py": {
+   "status": "audited"
+  },
   "models/net_hack_studies.py": {
+   "status": "audited"
+  },
+  "models/netlist_parse.py": {
+   "status": "audited"
+  },
+  "models/network_flow.py": {
    "status": "audited"
   },
   "models/network_meta_studies.py": {
@@ -19781,16 +19805,37 @@
   "models/neural_cleanse_studies.py": {
    "status": "audited"
   },
+  "models/neural_grok.py": {
+   "status": "audited"
+  },
+  "models/neural_ode.py": {
+   "status": "audited"
+  },
+  "models/neural_process.py": {
+   "status": "audited"
+  },
   "models/neural_rde.py": {
    "status": "audited"
   },
   "models/neural_sde.py": {
    "status": "audited"
   },
+  "models/neural_sort_ltr.py": {
+   "status": "audited"
+  },
+  "models/neural_spline_flow.py": {
+   "status": "audited"
+  },
   "models/neural_theorem_studies.py": {
    "status": "audited"
   },
+  "models/neural_thompson.py": {
+   "status": "audited"
+  },
   "models/neural_tpp.py": {
+   "status": "audited"
+  },
+  "models/neural_ucb.py": {
    "status": "audited"
   },
   "models/neuro_ophthalmology.py": {
@@ -19895,6 +19940,9 @@
   "models/news_qa_studies.py": {
    "status": "audited"
   },
+  "models/newsvendor.py": {
+   "status": "audited"
+  },
   "models/newt_qa_studies.py": {
    "status": "audited"
   },
@@ -19902,6 +19950,9 @@
    "status": "audited"
   },
   "models/newton_cotes.py": {
+   "status": "audited"
+  },
+  "models/newton_interp.py": {
    "status": "audited"
   },
   "models/newton_method.py": {
@@ -19913,6 +19964,15 @@
   "models/nextqa_lite_studies.py": {
    "status": "audited"
   },
+  "models/nf_vi.py": {
+   "status": "audited"
+  },
+  "models/nfsp.py": {
+   "status": "audited"
+  },
+  "models/ng_perron.py": {
+   "status": "audited"
+  },
   "models/ngboost_lite.py": {
    "status": "audited"
   },
@@ -19920,6 +19980,12 @@
    "status": "audited"
   },
   "models/ngram_overlap_studies.py": {
+   "status": "audited"
+  },
+  "models/ngram_spell.py": {
+   "status": "audited"
+  },
+  "models/ngu_explore.py": {
    "status": "audited"
   },
   "models/niah_v2_studies.py": {
@@ -19994,7 +20060,16 @@
   "models/nist_metric_studies.py": {
    "status": "audited"
   },
+  "models/nj_tree.py": {
+   "status": "audited"
+  },
+  "models/nk_phillips.py": {
+   "status": "audited"
+  },
   "models/nk_theory.py": {
+   "status": "audited"
+  },
+  "models/nlm_denoise.py": {
    "status": "audited"
   },
   "models/nlp_bias_studies.py": {
@@ -20004,6 +20079,15 @@
    "status": "audited"
   },
   "models/nls_soliton.py": {
+   "status": "audited"
+  },
+  "models/nmf.py": {
+   "status": "audited"
+  },
+  "models/nmo_dix.py": {
+   "status": "audited"
+  },
+  "models/nnet_surv.py": {
    "status": "audited"
   },
   "models/noctule_qa_studies.py": {
@@ -20018,10 +20102,19 @@
   "models/noddie_qa_studies.py": {
    "status": "audited"
   },
+  "models/node_net.py": {
+   "status": "audited"
+  },
   "models/noether_normal.py": {
    "status": "audited"
   },
+  "models/noise_contrastive.py": {
+   "status": "audited"
+  },
   "models/noise_control.py": {
+   "status": "audited"
+  },
+  "models/noisy_net.py": {
    "status": "audited"
   },
   "models/nokken_qa_studies.py": {
@@ -20051,6 +20144,15 @@
   "models/nonoverlap_dd.py": {
    "status": "audited"
   },
+  "models/nonparametric_iv.py": {
+   "status": "audited"
+  },
+  "models/nonparametric_tests.py": {
+   "status": "audited"
+  },
+  "models/nonstationary_bandits.py": {
+   "status": "audited"
+  },
   "models/nonuniform_hyp.py": {
    "status": "audited"
   },
@@ -20075,6 +20177,9 @@
   "models/norm_subring.py": {
    "status": "audited"
   },
+  "models/norm_trace.py": {
+   "status": "audited"
+  },
   "models/normal_basis.py": {
    "status": "audited"
   },
@@ -20093,6 +20198,12 @@
   "models/normal_surface.py": {
    "status": "audited"
   },
+  "models/normality_check.py": {
+   "status": "audited"
+  },
+  "models/normality_tests.py": {
+   "status": "audited"
+  },
   "models/normalization.py": {
    "status": "audited"
   },
@@ -20100,6 +20211,9 @@
    "status": "audited"
   },
   "models/northern_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/notears.py": {
    "status": "audited"
   },
   "models/nourdin_peccati.py": {

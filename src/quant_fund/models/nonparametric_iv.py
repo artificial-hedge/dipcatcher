@@ -162,6 +162,14 @@ def bench_nonparametric_iv(
     out0 = npiv_fit(np.asarray(d0["y"]), np.asarray(d0["x"]), np.asarray(d0["z"]))
     out_b = npiv_fit(y, x, z)
 
+    if not (
+        err_iv < err_ols
+        and abs(float(out["dwh_t"])) > 2.0
+        and abs(float(out0["dwh_t"])) < abs(float(out["dwh_t"]))
+        and float(out["first_stage_r2"]) > 0.3
+        and float(out["iv_ols_gap"]) == float(out_b["iv_ols_gap"])
+    ):
+        raise ValueError("nonparametric IV off oracle")
     return {
         "synthetic_err_iv": err_iv,
         "synthetic_err_ols": err_ols,

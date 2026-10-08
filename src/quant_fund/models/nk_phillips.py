@@ -23,4 +23,6 @@ def bench_nk_phillips(seed: int = _SEED) -> dict[str, float]:
     ok = float(pi[0] > 0 and pi[0] < 0.2 and abs(pi[-1]) < 1e-9)
     # closed form check: pi[0] = kappa*sum beta^t x_t
     expect = 0.1 * sum(0.99**t * x[t] for t in range(len(x)))
+    if ok != 1.0 or abs(pi[0] - expect) > 1e-12:
+        raise ValueError("NKPC IRF off closed form")
     return {"synthetic_nkpc_sign": ok, "synthetic_nkpc_exact": float(abs(pi[0] - expect) < 1e-12)}

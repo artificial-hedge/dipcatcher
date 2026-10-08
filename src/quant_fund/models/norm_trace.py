@@ -47,6 +47,8 @@ def _bench_norm_trace(seed: int = 0) -> float:
     checks.append(norm_elem([0, 1], [1, 0, 1], 3, 2) == [1])
     # T(x) = x + x^3 = x(1 + x^2) = x(1-1) = 0
     checks.append(trace_elem([0, 1], [1, 0, 1], 3, 2) == [0])
+    if not all(checks):
+        raise ValueError("norm/trace oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

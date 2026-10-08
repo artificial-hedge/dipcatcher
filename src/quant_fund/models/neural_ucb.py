@@ -66,6 +66,8 @@ def bench_neural_ucb(seed: int = 1429, T: int = 1800, K: int = 4, d: int = 6) ->
         A_lin += np.outer(x, x)
         b_lin += true_r[a2] * x
         tot2 += true_r[a2]
+    if tot <= tot2:
+        raise ValueError("NeuralUCB reward not above LinUCB")
     return {
         "synthetic_nucb_reward_sum": tot / T,
         "synthetic_nucb_linucb_sum": tot2 / T,
