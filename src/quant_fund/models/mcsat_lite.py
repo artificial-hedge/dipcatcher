@@ -88,6 +88,8 @@ def _bench_mcsat_lite(seed: int = 0) -> float:
     # disjunction escape
     sol4 = mcsat_solve([[("x", 0, 1), ("x", 4, 5)], [("x", 1, 4)]], ["x"])
     checks.append(sol4 is not None and sol4["x"] in (1, 4))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return sum(checks) / len(checks)
 
 

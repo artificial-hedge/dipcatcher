@@ -32,6 +32,8 @@ def _bench_may_recognition(seed: int = 0) -> float:
     # Omega S^3 -> E_2
     e_dim_of_loop = {1: 0, 2: 1, 3: 2, 4: 3}
     checks.append(e_dim_of_loop[3] == 2)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

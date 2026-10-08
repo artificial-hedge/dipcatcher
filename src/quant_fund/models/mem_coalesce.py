@@ -22,4 +22,6 @@ def bench_mem_coalesce(seed: int = _SEED) -> dict[str, float]:
         t_c = transactions(contiguous)
         t_s = transactions(scattered)
         ok += float(t_c <= 2 and t_s >= t_c)
+    if ok != trials:
+        raise ValueError("coalesced-access transaction oracle failed")
     return {"synthetic_coalesce_better": ok / trials}

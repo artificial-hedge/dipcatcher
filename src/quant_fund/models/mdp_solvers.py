@@ -109,6 +109,8 @@ def bench_mdp_solvers(seed: int = 20261231) -> dict[str, float]:
     v_vi, pi_vi = value_iteration(p, r, gamma)
     v_pi, pi_pi = policy_iteration(p, r, gamma)
     agree = float(np.mean(pi_vi.argmax(1) == pi_pi.argmax(1)))
+    if agree < 1.0 or float(np.max(np.abs(v_vi - v_pi))) > 1e-6:
+        raise ValueError("VI/PI disagree or value gap")
     return {
         "synthetic_vi_pi_gap": float(np.max(np.abs(v_vi - v_pi))),
         "synthetic_policy_agree": agree,

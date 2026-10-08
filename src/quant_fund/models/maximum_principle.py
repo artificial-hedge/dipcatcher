@@ -33,6 +33,8 @@ def _bench_maximum_principle(seed: int = 0) -> float:
     checks.append(np.allclose(c, 1.7))
     # subsolution check: u_t - u_xx <= 0 keeps max principle direction
     checks.append(mx0 - float(np.max(u)) > 0.1)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

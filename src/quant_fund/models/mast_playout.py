@@ -59,4 +59,6 @@ def bench_mast_playout(seed: int = _SEED) -> dict[str, float]:
     q = mast_train(seed=seed)
     r_mast = np.mean([_rollout(rng, q)[0] for _ in range(300)])
     r_rand = np.mean([_rollout(rng)[0] for _ in range(300)])
+    if r_mast <= r_rand + 0.05:
+        raise ValueError("MAST playouts not better than uniform")
     return {"synthetic_mast_playout": 1.0 if r_mast > r_rand + 0.05 else 0.0}

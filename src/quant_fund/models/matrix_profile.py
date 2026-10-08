@@ -123,6 +123,8 @@ def bench_matrix_profile(seed: int = 496) -> dict[str, float]:
     motif_found = float(d < 0.4 and p[60] < 1.0)
     discord_found = abs(di - 340) <= 40
     w = sax(x[:120], n_segments=12, alphabet=5)
+    if not (motif_found and discord_found):
+        raise ValueError("matrix profile missed planted motif/discord")
     return {
         "synthetic_motif_dist": d,
         "synthetic_motif_found": float(motif_found),

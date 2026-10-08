@@ -129,4 +129,6 @@ def bench_mcts(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_best_take"] = float(s0 - bm)
     out["synthetic_optimal_take"] = float(optimal_move(s0))
     out["synthetic_move_correct"] = float(bm == s0 - optimal_move(s0))
+    if bm != s0 - optimal_move(s0):
+        raise ValueError("MCTS best move off exact optimum")
     return out

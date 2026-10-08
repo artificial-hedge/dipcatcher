@@ -86,4 +86,6 @@ def bench_meanshift_track(seed: int = _SEED) -> dict[str, float]:
     prob2 = back_project(img2, hist, lo, hi)
     c2 = track_step(prob2, (14.0, 14.0), 16)
     score += 1.0 if abs(c2[0] - 28.5) < 4 and abs(c2[1] - 28.5) < 4 else 0.0
+    if score != 4.0:
+        raise ValueError("mean-shift tracker off oracle")
     return {"synthetic_meanshift_track": score / 4.0}

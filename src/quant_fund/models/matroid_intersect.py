@@ -69,6 +69,8 @@ def _bench_matroid_intersect(seed: int = 0) -> float:
     colors2 = [0, 0, 0, 0, 1, 1]
     partition2 = {i for i in all_sets if len({colors2[e] for e in i}) == len(i)}
     checks.append(max_common(graphic, partition2) == 2)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

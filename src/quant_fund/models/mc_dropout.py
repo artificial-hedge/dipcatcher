@@ -42,9 +42,13 @@ def bench_mc_dropout(
         P = np.stack([net(Xt).squeeze(-1).numpy() for _ in range(T)])
         Po = np.stack([net(Xo).squeeze(-1).numpy() for _ in range(T)])
     mu, var = P.mean(0), P.var(0)
+    nll_t = nll_gauss(y_te, mu, var)
+    cov95 = coverage(y_te, mu, np.sqrt(var))
+    if cov95 < 0.7 or Po.var(0).mean() / (var.mean() + 1e-9) <= 1.5:
+        raise ValueError("MC-dropout coverage/OOD-gap off oracle")
     return {
-        "synthetic_mcdo_nll": nll_gauss(y_te, mu, var),
-        "synthetic_mcdo_cov95": coverage(y_te, mu, np.sqrt(var)),
+        "synthetic_mcdo_nll": nll_t,
+        "synthetic_mcdo_cov95": cov95,
         "synthetic_mcdo_ood_gap": float(Po.var(0).mean() / (var.mean() + 1e-9)),
         "synthetic_torch_available": 1.0,
     }

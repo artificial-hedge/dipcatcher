@@ -187,6 +187,12 @@ def bench_maximum_score(seed: int = 20261231 + 221) -> dict[str, float]:
     out0 = maximum_score(np.asarray(d0["y"]), np.asarray(d0["x"]), seed=seed)
     out_b = maximum_score(np.asarray(d["y"]), np.asarray(d["x"]), seed=seed)
 
+    if not (
+        corr > 0.9
+        and float(out["score_rate"]) > 0.62
+        and float(out["beta_1"]) == float(out_b["beta_1"])
+    ):
+        raise ValueError("maximum-score estimator off oracle")
     return {
         "synthetic_direction_cos": corr,
         "synthetic_score_rate": float(out["score_rate"]),

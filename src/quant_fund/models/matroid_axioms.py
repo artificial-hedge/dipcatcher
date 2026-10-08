@@ -65,6 +65,8 @@ def _bench_matroid_axioms(seed: int = 0) -> float:
     # the triangle {0,1,3} = edges (0,1),(0,2),(1,2) is a circuit
     checks.append(frozenset({0, 1, 3}) not in indep)
     checks.append(frozenset({0, 1}) in indep)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

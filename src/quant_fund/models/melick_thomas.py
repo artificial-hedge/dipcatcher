@@ -213,6 +213,8 @@ def bench_melick_thomas(seed: int = 20261231 + 301) -> dict[str, float]:
     tail_err = abs(float(r["tail_mass"]) - float(d["tail_true"]))
     var_err = abs(float(r["var_ln"]) - float(d["var_true"])) / float(d["var_true"])
     ok = tail_err < 0.06 and var_err < 0.25 and float(r["rmse_rel"]) < 0.01
+    if not ok:
+        raise ValueError("Malick-Thomas implied-pdf off oracle")
     return {
         "synthetic_tail_hat": float(r["tail_mass"]),
         "synthetic_tail_true": float(d["tail_true"]),

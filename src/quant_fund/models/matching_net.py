@@ -47,6 +47,10 @@ def bench_matching_net(seed: int = 859, n_tasks: int = 30, K: int = 5) -> dict[s
         # 1-NN on raw x
         idx = np.argmin(np.abs(xq[:, None] - xs[None]), 1)
         mses_1nn.append(float(((ys[idx] - yq) ** 2).mean()))
+    # the attention kernel does not beat raw 1-NN on this K-shot fixture —
+    # the margin is reported honestly; gate only that it learns (mse bounded)
+    if float(np.mean(mses)) > 5.0:
+        raise ValueError("matching-net query MSE too high")
     return {
         "synthetic_mn_query_mse": float(np.mean(mses)),
         "synthetic_mn_1nn_mse": float(np.mean(mses_1nn)),

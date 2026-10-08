@@ -39,6 +39,8 @@ def _bench_mayer_vietoris(seed: int = 0) -> float:
     arc2 = {(0,), (1,), (0, 1)}  # topologically the other arc (same verts)
     checks.append(euler_char(arc1 | arc2) == 1)  # same complex -> union = arc
     checks.append(euler_char(arc1 & arc2) == 1)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

@@ -53,6 +53,8 @@ def bench_median_elim(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_me_eps_best"] = float(mu[best] >= 0.3 - 0.15)
     out["synthetic_me_pulls"] = float(pulls)
     out["synthetic_me_exact"] = float(best == 2)
+    if mu[best] < 0.3 - 0.15:
+        raise ValueError("median elimination missed eps-best arm")
     return out
 
 

@@ -84,4 +84,6 @@ def bench_mel_cepstrum(seed: int = _SEED) -> dict[str, float]:
     c_b = mfcc(0.01 * x1, fs)[1:]
     na, nb = c_a / np.linalg.norm(c_a), c_b / np.linalg.norm(c_b)
     score += 1.0 if float(np.linalg.norm(na - nb)) < 0.15 else 0.0
+    if score != 4.0:
+        raise ValueError("MFCC cepstrum oracle failed")
     return {"synthetic_mel_cepstrum": score / 4.0}

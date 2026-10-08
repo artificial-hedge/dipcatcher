@@ -50,6 +50,8 @@ def bench_mdn_cond(seed: int = 823, iters: int = 400, K: int = 3) -> dict[str, f
         )
         ll_te = torch.logsumexp(torch.log(pi) + comp, 1).numpy()
     ll_gauss = gauss_logpdf(y_te, float(y.mean()), float(y.std()))
+    if float(ll_te.mean()) <= float(ll_gauss.mean()):
+        raise ValueError("MDN test ll not above Gaussian oracle")
     return {
         "synthetic_mdn_test_ll": float(ll_te.mean()),
         "synthetic_mdn_gauss_ll": float(ll_gauss.mean()),

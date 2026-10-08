@@ -18,9 +18,9 @@ def _bench_mate_calc(seed: int = 0) -> float:
     # mates respect horizontal composition
     checks.append(mate_of(mate_of(7)) == 7)
     # Beck-Chevalley: mate is iso iff original square commutes up to iso
-    checks.append(True)
-    # conjugate pairs: f |- g swaps mates
-    checks.append(True)
+    checks.append(mate_of(4) != mate_of(3))
+    # conjugate pairs: mate is involutive on every element, hence bijective
+    checks.append(len({mate_of(k) for k in range(8)}) == 8)
     return float(sum(checks) / len(checks))
 
 

@@ -66,6 +66,8 @@ def _bench_matroid_union(seed: int = 0) -> float:
     uu = union_independent([u14, u14], 4)
     checks.append(all(frozenset(s) in uu for s in combinations(range(4), 2)))
     checks.append(frozenset({0, 1, 2}) not in uu)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

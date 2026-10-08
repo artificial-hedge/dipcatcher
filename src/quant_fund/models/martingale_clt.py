@@ -27,8 +27,9 @@ def _bench_martingale_clt(seed: int = 0) -> float:
     checks.append(ks < 0.03)
     # skewness ~ 0
     checks.append(abs(float(np.mean(z**3))) < 0.2)
-    # bounded increments condition (Lindeberg) satisfied trivially
-    checks.append(True)
+    # Lindeberg ratio: max |X_i| / sqrt(sum Var) -> 0 for bounded steps
+    lin = float(np.max(np.abs(steps)) / np.sqrt(n_steps / 3.0))
+    checks.append(lin < 0.05)
     return float(sum(checks) / len(checks))
 
 

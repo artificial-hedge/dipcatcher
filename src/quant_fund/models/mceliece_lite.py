@@ -115,4 +115,6 @@ def bench_mceliece_lite(seed: int = _SEED) -> dict[str, float]:
         e[int(rng.integers(0, 15))] = 1
         if np.array_equal(decrypt(kp, encrypt(kp["G"], m, e)), m):
             ok += 1
+    if ok != trials or not code_ok:
+        raise ValueError("McEliece-lite decrypt/parity oracle failed")
     return {"synthetic_mceliece_lite": 0.8 * (ok / trials) + 0.2 * code_ok}

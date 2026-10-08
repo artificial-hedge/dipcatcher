@@ -82,6 +82,8 @@ def bench_mealy_moore(seed: int = 20261231 + 504) -> dict[str, float]:
         manual.append(m[2][(q, c)])
         q = m[1][(q, c)]
     direct = manual == run_mealy(m, seq)
+    if eq != n or not direct:
+        raise ValueError("Mealy→Moore conversion not equivalent")
     return {
         "synthetic_conversion_equivalent": eq / n,
         "synthetic_run_correct": float(direct),

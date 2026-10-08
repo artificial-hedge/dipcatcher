@@ -51,4 +51,6 @@ def bench_matrix_grp(seed: int = _SEED) -> dict[str, float]:
     ok = int(gl == want_gl)
     ok += int(sl == want_gl // (p - 1))
     ok += int(_sl_closed(p))
+    if ok != 3:
+        raise ValueError("GL/SL(F3) order oracle failed")
     return {"synthetic_matrix_grp": float(ok == 3)}

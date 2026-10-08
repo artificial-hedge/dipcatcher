@@ -34646,6 +34646,120 @@
   },
   "models/martingale_check.py": {
    "status": "audited"
+  },
+  "models/martingale_clt.py": {
+   "status": "audited"
+  },
+  "models/mask_autoencoder.py": {
+   "status": "audited"
+  },
+  "models/mast_playout.py": {
+   "status": "audited"
+  },
+  "models/matching_net.py": {
+   "status": "audited"
+  },
+  "models/mate_calc.py": {
+   "status": "audited"
+  },
+  "models/matrix_completion.py": {
+   "status": "audited"
+  },
+  "models/matrix_grp.py": {
+   "status": "audited"
+  },
+  "models/matrix_profile.py": {
+   "status": "audited"
+  },
+  "models/matrix_sign.py": {
+   "status": "audited"
+  },
+  "models/matrix_sqrt.py": {
+   "status": "audited"
+  },
+  "models/matroid_axioms.py": {
+   "status": "audited"
+  },
+  "models/matroid_greedy.py": {
+   "status": "audited"
+  },
+  "models/matroid_intersect.py": {
+   "status": "audited"
+  },
+  "models/matroid_union.py": {
+   "status": "audited"
+  },
+  "models/max_softmax_ood.py": {
+   "status": "audited"
+  },
+  "models/maximum_principle.py": {
+   "status": "audited"
+  },
+  "models/maximum_score.py": {
+   "status": "audited"
+  },
+  "models/may_recognition.py": {
+   "status": "audited"
+  },
+  "models/mayer_vietoris.py": {
+   "status": "audited"
+  },
+  "models/mc_dropout.py": {
+   "status": "audited"
+  },
+  "models/mccfr_outcome.py": {
+   "status": "audited"
+  },
+  "models/mceliece_lite.py": {
+   "status": "audited"
+  },
+  "models/mcsat_lite.py": {
+   "status": "audited"
+  },
+  "models/mcts.py": {
+   "status": "audited"
+  },
+  "models/mcts_reason.py": {
+   "status": "audited"
+  },
+  "models/mdn_cond.py": {
+   "status": "audited"
+  },
+  "models/mdp_solvers.py": {
+   "status": "audited"
+  },
+  "models/mds.py": {
+   "status": "audited"
+  },
+  "models/mealy_moore.py": {
+   "status": "audited"
+  },
+  "models/meanshift_track.py": {
+   "status": "audited"
+  },
+  "models/median_elim.py": {
+   "status": "audited"
+  },
+  "models/median_tests.py": {
+   "status": "audited"
+  },
+  "models/mediation_analysis.py": {
+   "status": "audited"
+  },
+  "models/mel_cepstrum.py": {
+   "status": "audited"
+  },
+  "models/melick_thomas.py": {
+   "status": "audited"
+  },
+  "models/mem_coalesce.py": {
+   "status": "audited"
+  },
+  "models/memorizing_transformer.py": {
+   "status": "audited"
+  },
+  "models/merkle_damgard.py": {
+   "status": "audited"
   }
  },
  "schema_version": "audit-coverage/v1",

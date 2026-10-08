@@ -76,6 +76,8 @@ def bench_mccfr_outcome(seed: int = 2701, iters: int = 4000) -> dict[str, float]
 
     expl = kuhn_exploit(avg_strat)
     ref = kuhn_exploit(lambda p, c, h: np.array([0.5, 0.5]))
+    if expl >= ref:
+        raise ValueError("MCCFR strategy not less exploitable than random")
     return {
         "synthetic_mccfr_expl": expl,
         "synthetic_random_expl": ref,

@@ -204,6 +204,14 @@ def bench_mediation_analysis(seed: int = 20261231 + 205) -> dict[str, float]:
         seed=seed + 1,
     )
 
+    if not (
+        covers == 1.0
+        and float(out["acme"]) > 0.2
+        and null_acme < float(out["acme"]) * 0.35
+        and abs(float(out["ade"]) - 0.2) < 0.3
+        and float(out["acme"]) == float(out_b["acme"])
+    ):
+        raise ValueError("mediation analysis off oracle")
     return {
         "synthetic_acme": float(out["acme"]),
         "synthetic_acme_err": float(abs(float(out["acme"]) - acme_true)),

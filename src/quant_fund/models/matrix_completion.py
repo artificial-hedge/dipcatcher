@@ -219,6 +219,12 @@ def bench_matrix_completion(seed: int = 20261231 + 191) -> dict[str, float]:
         int(np.asarray(d0["t0"]).item()),
     )
 
+    if not (
+        abs(float(est["att"])) > 2.0 * float(est["impute_rmse_control"])
+        and float(est["att"]) == est2["att"]
+        and abs(float(est["att"]) - tau_true) < 0.5
+    ):
+        raise ValueError("MC-panel ATT off oracle")
     return {
         "synthetic_att": float(est["att"]),
         "synthetic_tau_true": tau_true,

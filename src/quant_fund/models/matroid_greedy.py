@@ -84,6 +84,8 @@ def _bench_matroid_greedy(seed: int = 0) -> float:
     # acyclic predicate
     checks.append(acyclic([(0, 1, 1.0)], (1, 2, 1.0)))
     checks.append(not acyclic([(0, 1, 1.0), (1, 2, 1.0)], (0, 2, 1.0)))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

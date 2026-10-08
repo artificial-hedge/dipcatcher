@@ -90,4 +90,12 @@ def bench_matrix_sign(seed: int = 20261231) -> dict[str, float]:
         np.linalg.norm(Xs - Xh, "fro") / np.linalg.norm(Xh, "fro")
     )
     out["synthetic_sign_care_residual"] = care_residual(Xs, A2, B2, Q2, R2)
+    if (
+        out["synthetic_sign_diag_err"] > 1e-6
+        or out["synthetic_sign_idem_err"] > 1e-6
+        or out["synthetic_sign_rot_err"] > 1e-4
+        or out["synthetic_sign_care_gap"] > 1e-4
+        or out["synthetic_sign_care_residual"] > 1e-6
+    ):
+        raise ValueError("matrix sign off oracle")
     return out

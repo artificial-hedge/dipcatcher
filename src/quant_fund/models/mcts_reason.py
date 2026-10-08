@@ -128,6 +128,8 @@ def bench_mcts_reason(
         if eval_chain(a_te[i : i + 1], ops_pred)[0] == y_te[i]:
             correct += 1
     acc_mcts = correct / n_test
+    if acc_mcts <= acc_greedy:
+        raise ValueError("MCTS-reason below greedy rollout oracle")
     return {
         "synthetic_mcts_acc": float(acc_mcts),
         "synthetic_mcts_greedy_acc": acc_greedy,

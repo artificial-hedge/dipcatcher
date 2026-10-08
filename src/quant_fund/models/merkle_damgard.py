@@ -58,6 +58,8 @@ def bench_merkle_damgard(seed: int = _SEED) -> dict[str, float]:
         forged = extend(d, suffix, len(m))
         real = md_hash(m + len(m).to_bytes(8, "big") + b"\x00" * glue + suffix)
         ext_ok += int(forged == real)
+    if det != n or ext_ok != n:
+        raise ValueError("MD hash determinism/length-extension oracle failed")
     return {
         "synthetic_deterministic": float(det / n),
         "synthetic_length_ext_demo": float(ext_ok / n),

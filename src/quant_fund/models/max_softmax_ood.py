@@ -104,6 +104,8 @@ def bench_max_softmax_ood(
         np.concatenate([s_id, np.asarray(s_ood)]),
         np.concatenate([np.zeros(n_id), np.ones(n_ood)]),
     )
+    if auc_odin < 0.9:
+        raise ValueError("ODIN AUC below oracle")
     return {
         "synthetic_msp_auc": auc_msp,
         "synthetic_odin_auc": float(auc_odin),

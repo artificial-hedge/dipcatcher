@@ -66,4 +66,12 @@ def bench_matrix_sqrt(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_sqrt_prod_err"] = float(
         np.linalg.norm(Sp @ Sp - A, "fro") / np.linalg.norm(A, "fro")
     )
+    if (
+        out["synthetic_sqrt_residual"] > 1e-8
+        or out["synthetic_sqrt_sym_err"] > 1e-8
+        or out["synthetic_sqrt_comm_err"] > 1e-8
+        or out["synthetic_sqrt_diag_err"] > 1e-10
+        or out["synthetic_sqrt_prod_err"] > 1e-6
+    ):
+        raise ValueError("matrix sqrt off oracle")
     return out
