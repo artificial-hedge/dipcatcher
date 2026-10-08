@@ -98,11 +98,15 @@ class FlashStore:
     it; corrupt interior lines are skipped and surfaced via :meth:`read_errors`.
     """
 
-    _append_lock = threading.Lock()
+    # A revision spans a read and two append operations (tombstone + value),
+    # so append-only locking is not sufficient: another instance can read the
+    # tombstone between those writes or calculate a revision from stale state.
+    # Keep the complete replay/mutation transaction process-wide and reentrant
+    # because public helpers call one another while holding the lock.
+    _transaction_lock = threading.RLock()
 
     def __init__(self, path: Path | None = None) -> None:
         self._path = (path or default_store_path()).resolve()
-        self._lock = threading.Lock()
 
     @property
     def path(self) -> Path:
@@ -114,36 +118,37 @@ class FlashStore:
         """Replay the append log in order: tombstones suppress the matching
         id, revisions replace earlier lines for the same id. Returns
         (current entries, parse-error descriptions)."""
-        if not self._path.is_file():
-            return [], []
-        by_id: dict[str, dict[str, Any]] = {}
-        errors: list[str] = []
-        with self._path.open(encoding="utf-8") as fh:
-            for lineno, line in enumerate(fh, start=1):
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    raw = json.loads(line)
-                except json.JSONDecodeError:
-                    errors.append(f"line {lineno}: not JSON")
-                    continue
-                if not isinstance(raw, dict):
-                    errors.append(f"line {lineno}: not an object")
-                    continue
-                if raw.get("__tombstone__") is True:
-                    dead = raw.get("id")
-                    if isinstance(dead, str):
-                        by_id.pop(dead, None)
-                    continue
-                entry_id = raw.get("id")
-                if isinstance(entry_id, str) and entry_id:
-                    by_id[entry_id] = raw
-        return list(by_id.values()), errors
+        with FlashStore._transaction_lock:
+            if not self._path.is_file():
+                return [], []
+            by_id: dict[str, dict[str, Any]] = {}
+            errors: list[str] = []
+            with self._path.open(encoding="utf-8") as fh:
+                for lineno, line in enumerate(fh, start=1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        raw = json.loads(line)
+                    except json.JSONDecodeError:
+                        errors.append(f"line {lineno}: not JSON")
+                        continue
+                    if not isinstance(raw, dict):
+                        errors.append(f"line {lineno}: not an object")
+                        continue
+                    if raw.get("__tombstone__") is True:
+                        dead = raw.get("id")
+                        if isinstance(dead, str):
+                            by_id.pop(dead, None)
+                        continue
+                    entry_id = raw.get("id")
+                    if isinstance(entry_id, str) and entry_id:
+                        by_id[entry_id] = raw
+            return list(by_id.values()), errors
 
     def _append_line(self, raw: dict[str, Any]) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        with FlashStore._append_lock, self._path.open("a", encoding="utf-8") as fh:
+        with FlashStore._transaction_lock, self._path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(raw, sort_keys=True) + "\n")
             fh.flush()
             os.fsync(fh.fileno())
@@ -194,8 +199,7 @@ class FlashStore:
             private=private,
             stale_after_s=stale_after_s,
         )
-        with self._lock:
-            self._append_line(entry.model_dump())
+        self._append_line(entry.model_dump())
         return entry
 
     def update(self, entry_id: str, patch: dict[str, Any]) -> FlashEntry | None:
@@ -205,51 +209,55 @@ class FlashStore:
         by the store. Returns the revised entry or ``None`` when *entry_id*
         does not exist.
         """
-        current = self.get(entry_id)
-        if current is None:
-            return None
-        allowed = {
-            "text",
-            "task",
-            "tags",
-            "sources",
-            "uncertainty",
-            "conflicts",
-            "verified",
-            "private",
-            "stale_after_s",
-            "refreshed_at",
-            "refresh_note",
-            # usage bookkeeping (written by mark_used); identity fields
-            # (id / schema_version / created_at / updated_at) stay managed.
-            "last_used_at",
-            "uses",
-        }
-        unknown = set(patch) - allowed
-        if unknown:
-            raise ValueError(f"cannot correct fields: {sorted(unknown)}")
-        merged = current.model_dump()
-        for key, value in patch.items():
-            merged[key] = value
-        merged["updated_at"] = _now_iso()
-        revised = FlashEntry.model_validate(merged)
-        with self._lock:
+        with FlashStore._transaction_lock:
+            current = self.get(entry_id)
+            if current is None:
+                return None
+            allowed = {
+                "text",
+                "task",
+                "tags",
+                "sources",
+                "uncertainty",
+                "conflicts",
+                "verified",
+                "private",
+                "stale_after_s",
+                "refreshed_at",
+                "refresh_note",
+                # usage bookkeeping (written by mark_used); identity fields
+                # (id / schema_version / created_at / updated_at) stay managed.
+                "last_used_at",
+                "uses",
+            }
+            unknown = set(patch) - allowed
+            if unknown:
+                raise ValueError(f"cannot correct fields: {sorted(unknown)}")
+            merged = current.model_dump()
+            for key, value in patch.items():
+                merged[key] = value
+            merged["updated_at"] = _now_iso()
+            revised = FlashEntry.model_validate(merged)
             self._append_line({"__tombstone__": True, "id": entry_id, "at": _now_iso()})
             self._append_line(revised.model_dump())
         return revised
 
     def remove(self, entry_id: str) -> bool:
-        if self.get(entry_id) is None:
-            return False
-        with self._lock:
+        with FlashStore._transaction_lock:
+            if self.get(entry_id) is None:
+                return False
             self._append_line({"__tombstone__": True, "id": entry_id, "at": _now_iso()})
         return True
 
     def mark_used(self, entry_id: str) -> FlashEntry | None:
-        current = self.get(entry_id)
-        if current is None:
-            return None
-        return self.update(entry_id, {"last_used_at": _now_iso(), "uses": current.uses + 1})
+        with FlashStore._transaction_lock:
+            current = self.get(entry_id)
+            if current is None:
+                return None
+            return self.update(
+                entry_id,
+                {"last_used_at": _now_iso(), "uses": current.uses + 1},
+            )
 
     def list(
         self,
