@@ -1,0 +1,190 @@
+{
+  "schema": "depth_tilt.v1",
+  "kind": "depth_tilt_bench",
+  "ticker": "AMZN",
+  "horizon": 30000,
+  "seed": 0,
+  "real": {
+    "ok": true,
+    "n_fills": 8974,
+    "horizons": [
+      1,
+      2,
+      5,
+      10,
+      20,
+      50,
+      100
+    ],
+    "tilt_path": {
+      "1": 0.16341924656873602,
+      "2": 0.1506292589467525,
+      "5": 0.12689484150252683,
+      "10": 0.12436160081195098,
+      "20": 0.1066309409605273,
+      "50": 0.0893641224460979,
+      "100": 0.06935729601854108
+    },
+    "tilt_base": 0.10299666361019369
+  },
+  "sim_arms": {
+    "iid": {
+      "ok": true,
+      "n_fills": 5147,
+      "horizons": [
+        1,
+        2,
+        5,
+        10,
+        20,
+        50,
+        100
+      ],
+      "tilt_path": {
+        "1": -0.02376055400060084,
+        "2": -0.023769801503108805,
+        "5": -0.01849317251929847,
+        "10": -0.006022298145519046,
+        "20": -0.005807721677329329,
+        "50": -0.0013513082892473995,
+        "100": 0.00606307465795447
+      },
+      "tilt_base": -0.009538270544685942
+    },
+    "split": {
+      "ok": true,
+      "n_fills": 6412,
+      "horizons": [
+        1,
+        2,
+        5,
+        10,
+        20,
+        50,
+        100
+      ],
+      "tilt_path": {
+        "1": 0.0013349095075920344,
+        "2": 0.0028318343726823564,
+        "5": 0.014705092158700405,
+        "10": 0.019829249843845338,
+        "20": 0.023906012931945882,
+        "50": 0.03402432855040471,
+        "100": 0.01892333587771319
+      },
+      "tilt_base": -0.004247077101299053
+    },
+    "lv_cd300": {
+      "ok": true,
+      "n_fills": 1411,
+      "horizons": [
+        1,
+        2,
+        5,
+        10,
+        20,
+        50,
+        100
+      ],
+      "tilt_path": {
+        "1": -0.20570236126579144,
+        "2": -0.20291361524529491,
+        "5": -0.1984470336597996,
+        "10": -0.1889952718676123,
+        "20": -0.16761567038162783,
+        "50": -0.18115361201298702,
+        "100": -0.18615401115401115
+      },
+      "tilt_base": 0.007446904761904761
+    },
+    "lv_cd300_narrow": {
+      "ok": true,
+      "n_fills": 1404,
+      "horizons": [
+        1,
+        2,
+        5,
+        10,
+        20,
+        50,
+        100
+      ],
+      "tilt_path": {
+        "1": 0.11840872026943439,
+        "2": 0.08889900124464038,
+        "5": 0.07012783664618334,
+        "10": 0.07814613603999565,
+        "20": 0.14038211025675865,
+        "50": 0.2454102939096885,
+        "100": 0.2677778771976944
+      },
+      "tilt_base": -0.020412670249028868
+    }
+  },
+  "compose_cells": [
+    {
+      "refill_cooldown": 200,
+      "ref_fill_gain": 0.5,
+      "intensity_mult": 3.0,
+      "hit_narrow": false,
+      "n_fills": 1322,
+      "instant_signed_ticks": 0.5102118003025718,
+      "k200_ticks": 4.239179954441913,
+      "g1_mean": 2.3541666666666665,
+      "spread_mean": 16.0642,
+      "n_lo_suppressed": 1346
+    },
+    {
+      "refill_cooldown": 200,
+      "ref_fill_gain": 0.5,
+      "intensity_mult": 3.0,
+      "hit_narrow": true,
+      "n_fills": 1337,
+      "instant_signed_ticks": 0.20082273747195215,
+      "k200_ticks": 3.8634644478063542,
+      "g1_mean": 1.55095,
+      "spread_mean": 5.090466666666667,
+      "n_lo_suppressed": 1158
+    },
+    {
+      "refill_cooldown": 400,
+      "ref_fill_gain": 0.3,
+      "intensity_mult": 3.0,
+      "hit_narrow": false,
+      "n_fills": 1383,
+      "instant_signed_ticks": 0.7975415762834418,
+      "k200_ticks": 2.895365677045619,
+      "g1_mean": 2.908533333333333,
+      "spread_mean": 19.712933333333332,
+      "n_lo_suppressed": 2195
+    },
+    {
+      "refill_cooldown": 400,
+      "ref_fill_gain": 0.3,
+      "intensity_mult": 3.0,
+      "hit_narrow": true,
+      "n_fills": 1356,
+      "instant_signed_ticks": 0.28502949852507375,
+      "k200_ticks": 2.900820283370619,
+      "g1_mean": 1.6664166666666667,
+      "spread_mean": 7.5048,
+      "n_lo_suppressed": 2502
+    }
+  ],
+  "divergences": [
+    "iid:tilt20_-0.005807721677329329_vs_0.1066309409605273",
+    "split:tilt20_0.023906012931945882_vs_0.1066309409605273",
+    "lv_cd300:tilt20_-0.16761567038162783_vs_0.1066309409605273"
+  ],
+  "claims": {
+    "tape_accommodates": true,
+    "cooldown_digs_hole": true,
+    "narrow_reproduces_tilt": true,
+    "narrow_trades_instant": true
+  },
+  "interpretation": "Post-fill touch-depth tilt is the placement-side channel of continuation. The tape accommodates: after a buy fill the bid side stays heavier than the ask for ~100 events. iid flow is flat, metaorder splitting tilts weakly positive, and the vacancy-cooldown arm tilts strongly negative \u2014 suppressing refill on emptied levels deepens the hole instead of leaning into it. The hit_narrow arm \u2014 clamping unhit-side placements to near-touch distance for a short post-fill window \u2014 reproduces the tilt at +20 within tolerance: the accommodation is a near-touch placement-class response on the unhit side, not a rate shift (global side bias lands deep under the band law and barely registers at the touch). The compose probe is the honest catch: on the closure frontier cells narrow lifts k200 but collapses instant (near-touch bids fill the vacancy holes the instant term feeds on) \u2014 the accommodation and vacancy channels antagonize, so the mechanism gap survives.",
+  "git_revision": "ff74c6cb65ac141cdce1a5052a3ca56683efd2ec",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "3e9f87323a3de8164f91eacd2ca6341d4a76c1ea8bf6d789435aaa9b0a9069df"
+}

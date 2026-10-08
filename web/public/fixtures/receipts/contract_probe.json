@@ -1,0 +1,660 @@
+{
+  "claim": {
+    "envelope_only_files": [
+      "abc_calibrate_amzn.json",
+      "alert_budget.json",
+      "api_fuzz.json",
+      "asof_audit.json",
+      "attribution.json",
+      "cache_audit.json",
+      "calib_real_drill.json",
+      "cancel_cluster_amzn.json",
+      "cancel_gradient_amzn.json",
+      "cancel_lead_amzn.json",
+      "causality_scan.json",
+      "corpus_real_drill.json",
+      "coverage_cs_real_drill.json",
+      "coverage_real_drill.json",
+      "decay_watch_synth.json",
+      "deep_microprice_amzn.json",
+      "depth_consumption_amzn.json",
+      "diversity_bench.json",
+      "duration_check.json",
+      "emerge_real_drill.json",
+      "error_shape.json",
+      "event_burst_amzn.json",
+      "event_granger_amzn.json",
+      "event_matrix_amzn.json",
+      "exec_cost_real_amzn.json",
+      "exec_cost_split.json",
+      "fast_replay_p42_conformance_20260928.json",
+      "fifo_priority_amzn.json",
+      "fleet_race_real_drill.json",
+      "glft_bench_synth.json",
+      "grad_fidelity.json",
+      "hawkes_real_amzn.json",
+      "hidden_depth_amzn.json",
+      "hmm_verify.json",
+      "impact_instant_amzn.json",
+      "intraday_exec_amzn.json",
+      "intraday_shape_amzn.json",
+      "kill_audit.json",
+      "label_horizon_map.json",
+      "lattice_drill_verdict.json",
+      "lattice_drill_vol_bench_a.json",
+      "lattice_drill_vol_bench_b.json",
+      "lineage_dag.json",
+      "lob_exec_amzn.json",
+      "lob_invariants_amzn.json",
+      "lob_resilience_amzn.json",
+      "map_parity.json",
+      "marketable_limit_amzn.json",
+      "mcs_real_drill.json",
+      "mcs_vol_drill.json",
+      "meta_model_synth.json",
+      "metaorder_detect_amzn.json",
+      "mid_jump_amzn.json",
+      "multih_fleet_eval_5db1cab214e291d7.json",
+      "native_conformance.json",
+      "nautilus_conformance_7bf19a08c147547b.json",
+      "order_lifetime_amzn.json",
+      "order_revision_amzn.json",
+      "post_trade_drift_amzn.json",
+      "price_improvement_amzn.json",
+      "promotion_gate_conf_t.json",
+      "propagator_real_amzn.json",
+      "queue_fate_amzn.json",
+      "quote_place_amzn.json",
+      "real_benchmark_us_wide_manifest.json",
+      "real_benchmark_us_wide_test.json",
+      "real_benchmark_us_wide_validation.json",
+      "round_lot_amzn.json",
+      "schema_fingerprint.json",
+      "seed_sweep_demo_amzn.json",
+      "serial_watch_140b073ea589b0c7.json",
+      "serial_watch_1e8e1446e506fce1.json",
+      "serial_watch_2c14615c26efd19b.json",
+      "serial_watch_46445c3b227aa15e.json",
+      "serial_watch_47297eff3cb55178.json",
+      "serial_watch_4f4a495b59d022fb.json",
+      "serial_watch_771602cd1580476c.json",
+      "serial_watch_85db152db863d25d.json",
+      "serial_watch_8977244ef78bfd2f.json",
+      "serial_watch_a6fd40311ce0fa04.json",
+      "serial_watch_d311f5ea367a66a9.json",
+      "serial_watch_dbd21a6c99c81e00.json",
+      "side_imbalance_amzn.json",
+      "sign_autocorr_real_amzn.json",
+      "sign_predict_amzn.json",
+      "sim_real_ledger_amzn.json",
+      "split_flow_bench.json",
+      "spread_dynamics_amzn.json",
+      "spread_response_amzn.json",
+      "stack_watch_synth.json",
+      "stale_quote_amzn.json",
+      "streak_stats_amzn.json",
+      "sweep_bound.json",
+      "sweep_width_amzn.json",
+      "tail_quota.json",
+      "tail_real_drill.json",
+      "tape_digest_amzn.json",
+      "tape_surgery_amzn.json",
+      "tick_rule_amzn.json",
+      "trade_decomp_amzn.json",
+      "trust_step.json",
+      "validator_fuzz.json",
+      "vol_signature_amzn.json",
+      "vpin_amzn.json",
+      "warmup_spec.json"
+    ],
+    "invariant": "deep-verification coverage measured empirically via forge-and-reseal probes",
+    "n_contracted": 25,
+    "n_envelope_only": 105,
+    "n_receipts": 130,
+    "per_kind": {
+      "1": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "?": {
+        "contracted": 0,
+        "envelope_only": 3,
+        "other": 0
+      },
+      "abc_calibrate": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "alert_budget": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "api_fuzz": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "asof_audit": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "attribution": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "cache_audit": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "calibration_audit.v1": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "cancel_cluster": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "cancel_gradient": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "cancel_lead": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "capacity_overlay_eval": {
+        "contracted": 1,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "causality_scan": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "changepoint_localize.v1": {
+        "contracted": 2,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "coherence_eval": {
+        "contracted": 1,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "conformal_monitor.v1": {
+        "contracted": 2,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "corpus_inference.v1": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "cost_calibration_eval": {
+        "contracted": 1,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "coverage_audit": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "coverage_cs": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "cross_sectional_rankic_eval": {
+        "contracted": 1,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "decay_watch": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "deep_microprice": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "deps_hygiene.v1": {
+        "contracted": 1,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "depth_consumption": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "distribution_fleet_eval": {
+        "contracted": 1,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "diversity": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "drift_alarm.v1": {
+        "contracted": 2,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "duration_check": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "emerge_drill.v1": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "error_shape": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "event_burst": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "event_granger": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "event_matrix": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "evidence_audit": {
+        "contracted": 2,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "exec_cost_real": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "exec_cost_split": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "fifo_priority.v1": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "fleet_race.v1": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "glft_bench": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "grad_fidelity": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "hawkes_real": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "hidden_depth": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "hmm_verify": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "honest_verdict.v1": {
+        "contracted": 2,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "impact_instant": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "intraday_exec": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "intraday_shape": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "kill_audit": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "label_horizon_map": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "lane_power": {
+        "contracted": 1,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "lineage_dag": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "lob_exec": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "lob_invariants": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "lob_resilience": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "loss_cs.v1": {
+        "contracted": 2,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "map_parity": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "marketable_limit": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "mcs_seq.v1": {
+        "contracted": 0,
+        "envelope_only": 2,
+        "other": 0
+      },
+      "meta_model": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "metaorder_detect": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "mid_jump": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "monitor_run": {
+        "contracted": 3,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "multih_fleet_eval": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "native_conformance": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "nautilus_conformance": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "order_lifetime": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "order_revision": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "panel_audit.v1": {
+        "contracted": 1,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "post_trade_drift": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "price_improvement": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "promotion_gate": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "propagator_real": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "queue_fate": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "quote_place": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "receipt_lattice.v1": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "round_lot": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "schema_fingerprint": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "seed_sweep_demo.v1": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "selection_concordance": {
+        "contracted": 1,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "serial_watch.v1": {
+        "contracted": 0,
+        "envelope_only": 12,
+        "other": 0
+      },
+      "side_imbalance": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "sign_autocorr_real": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "sign_predict": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "sim_real_ledger": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "split_flow_bench": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "spread_dynamics": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "spread_response": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "stack_watch": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "stale_quote": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "streak_stats": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "suite_health": {
+        "contracted": 1,
+        "envelope_only": 0,
+        "other": 0
+      },
+      "sweep_bound": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "sweep_width.v1": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "tail_audit": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "tail_quota": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "tape_digest": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "tape_surgery": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "tick_rule": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "trade_decomp": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "trust_step": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "validator_fuzz": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "vol_bench": {
+        "contracted": 0,
+        "envelope_only": 2,
+        "other": 0
+      },
+      "vol_signature": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "vpin": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      },
+      "warmup_spec": {
+        "contracted": 0,
+        "envelope_only": 1,
+        "other": 0
+      }
+    }
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "4077648e711ae96dc2dbef02d88089c67895f4be",
+  "interpretation": "25/130 committed receipts reject at least one fabricated-claim probe (deep contract present); 105 verify clean under every probe \u2014 their claims are self-attested under the seal alone. Coverage is probe-relative: envelope_only bounds, not measures, the gap.",
+  "kind": "contract_probe",
+  "live_pnl_claim": false,
+  "receipt_sha256": "f802567f89f06447244587bee80233e4841abbf307678e19fc65126ff6a46cd9",
+  "research_only": true,
+  "schema": "contract_probe.v1"
+}

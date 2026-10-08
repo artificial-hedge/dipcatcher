@@ -1,0 +1,86 @@
+{
+  "claim": "fifo_queue_rank_at_fill_real_vs_sim",
+  "data_label": "MIXED",
+  "divergences": [
+    "real_tape_fifo_violations_5"
+  ],
+  "git_revision": "29ee0b85e4c08d389fdc3133fb0053067be31089",
+  "interpretation": "rank = number of still-alive same-(side,price) orders that arrived before the filled order; strict FIFO => rank 0. LOBSTER omits events outside the recorded depth band, so the replayed per-order queue retains ghosts \u2014 ranks are measured only where the queue total exactly equals the official level size in the pre-event row (66% of fills were unverifiable; 6.2% hit shadow-book ids never emitted as submits). Of the 2,491 verified fills: 99.8% rank 0, 5 rank-1 violations \u2014 the tape is FIFO-faithful where verifiable. On the sim, order identity is fully observable and rank>0 must be 0 \u2014 a self-audit of ZI-LOB's matching loop (all arms clean).",
+  "kind": "fifo_priority.v1",
+  "real": {
+    "max_rank_verified": 1,
+    "median_rank_verified": 0.0,
+    "n_fills": 8974,
+    "n_shadow_fills": 557,
+    "n_unclean_fills": 5926,
+    "n_verified_fills": 2491,
+    "ok": true,
+    "rank0_share_verified": 0.9979927739863509,
+    "rank_hist_verified": {
+      "0": 2486,
+      "1": 5
+    },
+    "rank_violation_share": 0.002007226013649137,
+    "shadow_share": 0.06206819701359483,
+    "unclean_share": 0.6603521283708491
+  },
+  "receipt_sha256": "76025ec9345d42fd63c08d837bd03a1f4cbc11f1219feb59ca63e5624bb6a28b",
+  "research_only": true,
+  "schema": 1,
+  "sim_arms": {
+    "iid": {
+      "max_rank_verified": 0,
+      "median_rank_verified": 0.0,
+      "n_fills": 5147,
+      "n_shadow_fills": 0,
+      "n_unclean_fills": 0,
+      "n_verified_fills": 5147,
+      "ok": true,
+      "rank0_share_verified": 1.0,
+      "rank_hist_verified": {
+        "0": 5147
+      },
+      "rank_violation_share": 0.0,
+      "shadow_share": 0.0,
+      "unclean_share": 0.0
+    },
+    "regime": {
+      "max_rank_verified": 0,
+      "median_rank_verified": 0.0,
+      "n_fills": 5748,
+      "n_shadow_fills": 0,
+      "n_unclean_fills": 0,
+      "n_verified_fills": 5748,
+      "ok": true,
+      "rank0_share_verified": 1.0,
+      "rank_hist_verified": {
+        "0": 5748
+      },
+      "rank_violation_share": 0.0,
+      "shadow_share": 0.0,
+      "unclean_share": 0.0
+    },
+    "split": {
+      "max_rank_verified": 0,
+      "median_rank_verified": 0.0,
+      "n_fills": 5139,
+      "n_shadow_fills": 0,
+      "n_unclean_fills": 0,
+      "n_verified_fills": 5139,
+      "ok": true,
+      "rank0_share_verified": 1.0,
+      "rank_hist_verified": {
+        "0": 5139
+      },
+      "rank_violation_share": 0.0,
+      "shadow_share": 0.0,
+      "unclean_share": 0.0
+    }
+  },
+  "tape": {
+    "date": "2012-06-21",
+    "msg": "AMZN_2012-06-21_34200000_57600000_message_10.csv",
+    "ob": "AMZN_2012-06-21_34200000_57600000_orderbook_10.csv",
+    "symbol": "AMZN"
+  }
+}

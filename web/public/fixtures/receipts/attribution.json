@@ -1,0 +1,51 @@
+{
+ "claim": {
+  "invariant": "phantom members get flagged; signal members earn positive LOO delta",
+  "verdict": "ok"
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "7d210763ad771463f402f8f2eae81c9470f0303d",
+ "interpretation": {
+  "confusion": {
+   "fn": 0,
+   "fp": 0,
+   "tp": 2
+  },
+  "full_pinball": 0.20320766123905448,
+  "loo_deltas": [
+   0.016927447454773897,
+   0.016448674997613377,
+   0.01652055312736672,
+   0.017054894476755095,
+   -0.0001680848773712995,
+   0.00016842262208871528
+  ],
+  "m_noise": 2,
+  "m_signal": 4,
+  "n": 200,
+  "noise_delta_mean": 1.688723587078833e-07,
+  "noise_floor": 0.0014937775754978427,
+  "phantom_detected": [
+   4,
+   5
+  ],
+  "phantom_truth": [
+   4,
+   5
+  ],
+  "shapley": [
+   0.03388933868162017,
+   0.03315042781944692,
+   0.03321664565342028,
+   0.033738327817253715,
+   -0.005479364188968196,
+   -0.005264515605268079
+  ],
+  "signal_delta_mean": 0.016737892514127273
+ },
+ "kind": "attribution",
+ "live_pnl_claim": false,
+ "receipt_sha256": "7962a910a9371509cce07a4155dc17bf8b2c254cc3c9031cf06d8673a61f6eec",
+ "research_only": true,
+ "schema": "attribution.v1"
+}
