@@ -39,17 +39,17 @@ def corrado_miller_iv(call_price: float, s: float, k: float, t: float, r: float 
     return float(np.sqrt(2.0 * np.pi / t) / (s + k * np.exp(-r * t)) * (diff + np.sqrt(radicand)))
 
 
-def _bsm_call(s, k, t, r, sigma):
+def _bsm_call(s: float, k: float, t: float, r: float, sigma: float) -> float:
     from scipy.stats import norm
 
     d1 = (np.log(s / k) + (r + 0.5 * sigma * sigma) * t) / (sigma * np.sqrt(t))
-    return s * norm.cdf(d1) - k * np.exp(-r * t) * norm.cdf(d1 - sigma * np.sqrt(t))
+    return float(s * norm.cdf(d1) - k * np.exp(-r * t) * norm.cdf(d1 - sigma * np.sqrt(t)))
 
 
-def _exact_iv(price, s, k, t, r):
+def _exact_iv(price: float, s: float, k: float, t: float, r: float) -> float:
     from scipy.optimize import brentq
 
-    return brentq(lambda v: _bsm_call(s, k, t, r, v) - price, 1e-6, 5.0, xtol=1e-10)
+    return float(brentq(lambda v: _bsm_call(s, k, t, r, v) - price, 1e-6, 5.0, xtol=1e-10))
 
 
 def bench_iv_approx(seed: int = 20261231 + 551) -> dict[str, float]:
