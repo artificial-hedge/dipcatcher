@@ -31,6 +31,7 @@ def bench_tabm_mini(
     x_te_t = torch.tensor(x_te).float()
     y_te_t = torch.tensor(y_te)
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     trunk = torch.nn.Sequential(torch.nn.Linear(8, h), torch.nn.ReLU())
     heads = torch.nn.Parameter(torch.randn(k, h, 2) * 0.1)
     bhead = torch.nn.Parameter(torch.zeros(k, 2))

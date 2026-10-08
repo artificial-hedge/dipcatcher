@@ -60,7 +60,7 @@ class TestCapsule:
 
 class TestSiren:
     def test_bench(self) -> None:
-        out = bench_siren_inr(seed=7, n_train=100, iters=60)
+        out = bench_siren_inr(seed=7, n_train=100, iters=300)
         assert out["synthetic_siren_mse"] >= 0
 
 

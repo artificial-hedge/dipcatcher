@@ -42,6 +42,7 @@ def bench_muon_opt(
     # Muon on a 16×16 weight reshaped from the linear map (d×1→4×4 impossible
     # for d=16 → use a two-layer net: 16→8→1, Muon on the 16×8 matrix)
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     w1 = torch.randn(16, 8, requires_grad=True)
     b1 = torch.zeros(8, requires_grad=True)
     w2 = torch.randn(8, 1, requires_grad=True)

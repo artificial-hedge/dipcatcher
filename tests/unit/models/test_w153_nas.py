@@ -49,7 +49,7 @@ class TestEC:
 
 class TestOS:
     def test_bench(self) -> None:
-        out = bench_one_shot_nas(seed=11, n=120, iters=20, hidds=(4, 16))
+        out = bench_one_shot_nas(seed=11, n=120, iters=40, hidds=(4, 8, 16, 32))
         assert -1 <= out["synthetic_os_rank_rho"] <= 1
 
 

@@ -32,6 +32,7 @@ def bench_soft_tree(
     n_int = 2**depth - 1
     n_leaf = 2**depth
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     gates = [torch.nn.Linear(8, 1) for _ in range(n_int)]
     leaves = torch.nn.Parameter(torch.randn(n_leaf, 2) * 0.1)
     opt = torch.optim.Adam([p for g in gates for p in g.parameters()] + [leaves], lr=0.02)

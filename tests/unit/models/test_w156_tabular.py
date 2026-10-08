@@ -43,11 +43,11 @@ class TestGN:
 
 class TestST:
     def test_bench(self) -> None:
-        out = bench_soft_tree(seed=11, n=120, iters=15, depth=2)
+        out = bench_soft_tree(seed=11, n=120, iters=40, depth=2)
         assert 0 <= out["synthetic_st_acc"] <= 1
 
 
 class TestTabM:
     def test_bench(self) -> None:
-        out = bench_tabm_mini(seed=13, n=120, iters=15, k=4)
+        out = bench_tabm_mini(seed=13, n=120, iters=40, k=4)
         assert 0 <= out["synthetic_tabm_acc"] <= 1

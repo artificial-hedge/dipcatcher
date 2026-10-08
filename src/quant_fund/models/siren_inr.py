@@ -32,6 +32,7 @@ def bench_siren_inr(
     torch = _torch()
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     pts, f, grad = synth_field(n_train, rng)
     p_t = torch.tensor(pts).float()
     f_t = torch.tensor(f).float()

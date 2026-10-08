@@ -25,7 +25,7 @@ class TestFixture:
 
 class TestTarnet:
     def test_bench(self) -> None:
-        out = bench_tarnet_ite(seed=3, n=160, iters=20)
+        out = bench_tarnet_ite(seed=3, n=160, iters=80)
         assert out["synthetic_tarnet_pehe"] >= 0
 
 

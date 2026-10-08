@@ -55,5 +55,5 @@ class TestVNN:
 
 class TestGTK:
     def test_bench(self) -> None:
-        out = bench_gumbel_topk(seed=13, n_train=80, m=8, k=2, iters=40)
+        out = bench_gumbel_topk(seed=13, n_train=80, m=8, k=2, iters=300)
         assert 0 <= out["synthetic_gtopk_precision"] <= 1

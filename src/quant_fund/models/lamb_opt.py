@@ -49,6 +49,7 @@ def bench_lamb_opt(
                     p -= lr * r.clamp(0, 10) * upd
 
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     params = [
         torch.randn(16, 8, requires_grad=True),
         torch.zeros(8, requires_grad=True),

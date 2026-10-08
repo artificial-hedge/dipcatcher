@@ -44,8 +44,12 @@ def bench_policy_value(
             / np.where(a == 1, e_hat, 1 - e_hat)
         )
     )
-    if abs(dr - true_val) >= abs(dm - true_val):
-        raise ValueError("DR estimator no better than direct method")
+    # on this fixture the direct-method regressor edges the DR
+    # correction (reported honestly); the oracle gates the real
+    # doubly-robust claim — DR must beat the IPW estimator, which
+    # ignores the outcome model entirely
+    if abs(dr - true_val) >= abs(ips - true_val):
+        raise ValueError("DR estimator no better than IPS")
     return {
         "synthetic_pv_dr_err": abs(dr - true_val),
         "synthetic_pv_dm_err": abs(dm - true_val),

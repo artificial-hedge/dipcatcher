@@ -36,6 +36,7 @@ def bench_gumbel_topk(
     torch = _torch()
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     x, _y, mask = synth_subset(n_train, m, k, rng)
     y = (np.prod(np.sign(x[:, :k]) + 1e-9, axis=1) > 0).astype(np.int64)
     x_t = torch.tensor(x).float()
