@@ -170,8 +170,6 @@ KNOWN_MISSES: dict[str, str] = {
     # retention policy); entries shrink away when the lanes land.
     "dipcatcher blueprint": "blueprint lane lives on isolated branch; EXECUTIVE_BLUEPRINT_IMPLEMENTATION.md documents the planned landing.",
     "src/quant_fund/schemas/receipt.py": "receipt facade planned by ARCH_BOUNDARY_TRIAGE.md (#2844); lives on isolated branch pending migration.",
-    # Generated bench-output dir (research lane runs); no tracked files.
-    "research/benches": "generated bench output dir, populated by research lane runs.",
 }
 
 

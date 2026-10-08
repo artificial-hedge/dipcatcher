@@ -258,6 +258,70 @@ def test_forward_shadow_freeze_dump_reconcile(
     assert "events" not in report and "state" not in report
 
 
+def test_forward_shadow_freeze_rejects_duplicate_json_keys(
+    tmp_path: Path, shadow_spec: tuple[Path, dict, Path]
+) -> None:
+    spec_path, _spec, bootstrap_path = shadow_spec
+    duplicated = spec_path.read_text().replace(
+        '"lead_seconds": 60',
+        '"lead_seconds": 60, "lead_seconds": 120',
+    )
+    spec_path.write_text(duplicated)
+    run = tmp_path / "ambiguous.sqlite"
+
+    result = runner.invoke(
+        app,
+        [
+            "forward-shadow",
+            "freeze",
+            "--spec",
+            str(spec_path),
+            "--bootstrap",
+            str(bootstrap_path),
+            "--run",
+            str(run),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "duplicate JSON key" in result.output
+    assert not run.exists()
+
+
+def test_forward_shadow_event_rejects_duplicate_json_keys(
+    tmp_path: Path, shadow_spec: tuple[Path, dict, Path]
+) -> None:
+    spec_path, _spec, bootstrap_path = shadow_spec
+    run = tmp_path / "forward.sqlite"
+    frozen = runner.invoke(
+        app,
+        [
+            "forward-shadow",
+            "freeze",
+            "--spec",
+            str(spec_path),
+            "--bootstrap",
+            str(bootstrap_path),
+            "--run",
+            str(run),
+        ],
+    )
+    assert frozen.exit_code == 0, frozen.output
+    packet = tmp_path / "decision.json"
+    packet.write_text('{"session": 0, "session": 1, "bar": {}}')
+
+    result = runner.invoke(
+        app,
+        ["forward-shadow", "decide", "--run", str(run), "--input", str(packet)],
+    )
+
+    assert result.exit_code != 0
+    assert "duplicate JSON key" in result.output
+    dumped = runner.invoke(app, ["forward-shadow", "dump", str(run)])
+    assert dumped.exit_code == 0
+    assert len(json.loads(dumped.output)) == 1
+
+
 def test_forward_shadow_reconcile_detects_a_forged_head(
     tmp_path: Path, shadow_spec: tuple[Path, dict, Path]
 ) -> None:
