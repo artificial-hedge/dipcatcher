@@ -43,6 +43,8 @@ def bench_ou_bridge(seed: int = 2939, trials: int = 300) -> dict[str, float]:
     # bridge variance at midpoint should be < unconditional variance
     sig_u = sig**2 / (2 * k) * (1 - np.exp(-k * 1.0))
     var_mid = float(np.var(mid_vars))
+    if float(np.mean(end_err)) > 1e-9 or var_mid >= sig_u:
+        raise ValueError("OU bridge endpoint/variance off oracle")
     return {
         "synthetic_oub_endpoint_err": float(np.mean(end_err)),
         "synthetic_oub_mid_var": var_mid,

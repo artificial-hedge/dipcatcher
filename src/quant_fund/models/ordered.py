@@ -109,3 +109,42 @@ def ordered_predict(fit: dict[str, Array | float], x: Array) -> Array:
     for j in range(j_n):
         probs[:, j] = _cdf(edges[j + 1] - xb, link) - _cdf(edges[j] - xb, link)
     return probs
+
+
+def bench_ordered(seed: int = 20261231 + 310) -> dict[str, float]:
+    """Ordered-probit/logit self-check: coefficient recovery on a latent-
+    threshold DGP, null-model separation, and determinism. All ``synthetic_*``."""
+    rng = np.random.default_rng(seed)
+    n = 1500
+    x = rng.standard_normal((n, 2))
+    b_true = np.array([1.0, -0.6])
+    cuts_true = np.array([-1.0, 0.0, 1.0])
+    lat = x @ b_true + rng.standard_normal(n)
+    y = np.digitize(lat, cuts_true).astype(float)
+    fit = ordered_fit(y, x, link="probit")
+    b = np.asarray(fit["coef"])
+    cuts = np.asarray(fit["cutpoints"])
+    y0 = np.digitize(rng.standard_normal(n), cuts_true).astype(float)
+    fit0 = ordered_fit(y0, x, link="probit")
+    fit_b = ordered_fit(y, x, link="probit")
+    fit_l = ordered_fit(y, x, link="logit")
+    pred = ordered_predict(fit, x)
+    acc = float((np.argmax(pred, axis=1) == y).mean())
+    checks = [
+        float(np.linalg.norm(b - b_true)) < 0.3,
+        cuts.size == 3 and float(np.linalg.norm(cuts - cuts_true)) < 0.4,
+        float(np.linalg.norm(np.asarray(fit0["coef"]))) < 0.2,
+        acc > 0.45,
+        b[0] == float(np.asarray(fit_b["coef"])[0]),
+        np.isfinite(fit_l["loglik"]),
+        abs(pred.sum(axis=1) - 1.0).max() < 1e-9,
+    ]
+    if not all(checks):
+        raise ValueError("ordered-probit oracle checks failed")
+    return {
+        "synthetic_ordered_beta_err": float(np.linalg.norm(b - b_true)),
+        "synthetic_ordered_cut_err": float(np.linalg.norm(cuts - cuts_true)),
+        "synthetic_ordered_acc": acc,
+        "synthetic_ordered_null_beta": float(np.linalg.norm(np.asarray(fit0["coef"]))),
+        "synthetic_ordered_score": float(sum(checks) / len(checks)),
+    }

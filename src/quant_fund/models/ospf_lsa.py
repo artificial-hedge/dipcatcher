@@ -45,4 +45,6 @@ def bench_ospf_lsa(seed: int = _SEED) -> dict[str, float]:
                     if exp[u] + w < exp[v]:
                         exp[v] = exp[u] + w
         ok += float(all(got.get(i, 1 << 30) == exp[i] for i in range(n)))
+    if ok != trials:
+        raise ValueError("SPF off Bellman-Ford oracle")
     return {"synthetic_spf_correct": ok / trials}

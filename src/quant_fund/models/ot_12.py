@@ -35,4 +35,6 @@ def bench_ot_12(seed: int = _SEED) -> dict[str, float]:
         b = int(rng.randint(0, 2))
         got, leaked = ot_12(m0, m1, b, rng)
         ok += float(got == (m0 if b == 0 else m1) and not leaked)
+    if ok != trials:
+        raise ValueError("1-of-2 OT failed")
     return {"synthetic_ot_correct": ok / trials}

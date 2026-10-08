@@ -46,4 +46,6 @@ def bench_orb_feature(seed: int = _SEED) -> dict[str, float]:
         d1 = brief(img, 10, 10, pairs)
         d2 = brief(img, 10, 10, pairs)
         ok += float(d1 == d2)
+    if ok != 2 * trials:
+        raise ValueError("ORB feature determinism failed")
     return {"synthetic_orb_deterministic": ok / (2 * trials)}

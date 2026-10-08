@@ -53,6 +53,8 @@ def bench_paging_sim(seed: int = 20261231 + 334) -> dict[str, float]:
         h2, _f2, _u2 = run_trace(rtrace, page, 4, 256)
         h3, _f3, _u3 = run_trace(rtrace, page, 128, 256)
         tlb_helps += int(h3 >= h2)
+    if locality_ok != trials or faults_ok != trials or tlb_helps != trials:
+        raise ValueError("paging-sim oracle checks failed")
     return {
         "synthetic_tlb_locality": float(locality_ok / trials),
         "synthetic_fault_count_ok": float(faults_ok / trials),

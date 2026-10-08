@@ -92,4 +92,6 @@ def bench_palindromic_tree(seed: int = _SEED) -> dict[str, float]:
     nodes3, _ = build_eertree("aaa")
     cnt = sorted(nd.occ for nd in nodes3[2:])
     score += 1.0 if cnt == sorted([3, 2, 1]) else 0.0
+    if score != 4.0:
+        raise ValueError("eertree oracle checks failed")
     return {"synthetic_palindromic_tree": score / 4.0}

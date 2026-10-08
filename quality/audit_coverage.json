@@ -20696,6 +20696,9 @@
   "models/operad_algt.py": {
    "status": "audited"
   },
+  "models/operad_assoc.py": {
+   "status": "audited"
+  },
   "models/operad_cat2.py": {
    "status": "audited"
   },
@@ -20733,6 +20736,9 @@
    "status": "audited"
   },
   "models/operad_swiss4.py": {
+   "status": "audited"
+  },
+  "models/operad_tree.py": {
    "status": "audited"
   },
   "models/operad_twisted.py": {
@@ -20798,7 +20804,25 @@
   "models/optics_4.py": {
    "status": "audited"
   },
+  "models/optimal_transport.py": {
+   "status": "audited"
+  },
   "models/option_discovery_studies.py": {
+   "status": "audited"
+  },
+  "models/option_vae.py": {
+   "status": "audited"
+  },
+  "models/optional_stopping.py": {
+   "status": "audited"
+  },
+  "models/options.py": {
+   "status": "audited"
+  },
+  "models/options_flow.py": {
+   "status": "audited"
+  },
+  "models/optnet_qp.py": {
    "status": "audited"
   },
   "models/optometry.py": {
@@ -20819,6 +20843,9 @@
   "models/orangutan_qa_studies.py": {
    "status": "audited"
   },
+  "models/orb_feature.py": {
+   "status": "audited"
+  },
   "models/orb_weaver_qa_studies.py": {
    "status": "audited"
   },
@@ -20826,6 +20853,12 @@
    "status": "audited"
   },
   "models/orbit_category.py": {
+   "status": "audited"
+  },
+  "models/orbit_maneuver.py": {
+   "status": "audited"
+  },
+  "models/orbital_elements.py": {
    "status": "audited"
   },
   "models/orbital_mechanics2.py": {
@@ -20843,6 +20876,18 @@
   "models/order_barrier.py": {
    "status": "audited"
   },
+  "models/order_flow_imbalance.py": {
+   "status": "audited"
+  },
+  "models/ordered.py": {
+   "status": "audited"
+  },
+  "models/ordered_choice.py": {
+   "status": "audited"
+  },
+  "models/ordinal_arith.py": {
+   "status": "audited"
+  },
   "models/ordinal_notation.py": {
    "status": "audited"
   },
@@ -20853,6 +20898,9 @@
    "status": "audited"
   },
   "models/oregano_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/orf_find.py": {
    "status": "audited"
   },
   "models/organ_donation.py": {
@@ -20897,16 +20945,25 @@
   "models/orpo_studies.py": {
    "status": "audited"
   },
+  "models/orset.py": {
+   "status": "audited"
+  },
   "models/ortega_series.py": {
    "status": "audited"
   },
   "models/orth_calc.py": {
    "status": "audited"
   },
+  "models/orth_iter.py": {
+   "status": "audited"
+  },
   "models/orthodontic_studies.py": {
    "status": "audited"
   },
   "models/orthodontics.py": {
+   "status": "audited"
+  },
+  "models/orthogonal_array.py": {
    "status": "audited"
   },
   "models/orthogonal_poly_rh.py": {
@@ -20957,7 +21014,16 @@
   "models/osj_metric.py": {
    "status": "audited"
   },
+  "models/ospf_lsa.py": {
+   "status": "audited"
+  },
   "models/osprey_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/osr_deopt.py": {
+   "status": "audited"
+  },
+  "models/ost_calcul.py": {
    "status": "audited"
   },
   "models/osteoarthritis_studies.py": {
@@ -20969,6 +21035,9 @@
   "models/osteoporosis_studies.py": {
    "status": "audited"
   },
+  "models/oster_bounds.py": {
+   "status": "audited"
+  },
   "models/ostrich_qa_studies.py": {
    "status": "audited"
   },
@@ -20976,6 +21045,12 @@
    "status": "audited"
   },
   "models/osworld_studies.py": {
+   "status": "audited"
+  },
+  "models/ot_12.py": {
+   "status": "audited"
+  },
+  "models/ot_extension.py": {
    "status": "audited"
   },
   "models/otolaryngology.py": {
@@ -20987,6 +21062,9 @@
   "models/otology_studies.py": {
    "status": "audited"
   },
+  "models/otsu_threshold.py": {
+   "status": "audited"
+  },
   "models/otter_qa_studies.py": {
    "status": "audited"
   },
@@ -20994,6 +21072,9 @@
    "status": "audited"
   },
   "models/ottqa_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/ou_bridge.py": {
    "status": "audited"
   },
   "models/outbreak_studies.py": {
@@ -21023,10 +21104,16 @@
   "models/overshoot_levy.py": {
    "status": "audited"
   },
+  "models/oversmooth_metric.py": {
+   "status": "audited"
+  },
   "models/overtwisted.py": {
    "status": "audited"
   },
   "models/ovinnik_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/owen.py": {
    "status": "audited"
   },
   "models/owl_monkey_qa_studies.py": {
@@ -21047,16 +21134,25 @@
   "models/oystercatcher_qa_studies.py": {
    "status": "audited"
   },
+  "models/p_adic_val.py": {
+   "status": "audited"
+  },
   "models/p_group_iwasawa.py": {
    "status": "audited"
   },
   "models/p_local_htpy.py": {
    "status": "audited"
   },
+  "models/p_spline.py": {
+   "status": "audited"
+  },
   "models/paca_qa_studies.py": {
    "status": "audited"
   },
   "models/pachamama_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/packnet_cl.py": {
    "status": "audited"
   },
   "models/pacu_qa_studies.py": {
@@ -21072,6 +21168,18 @@
    "status": "audited"
   },
   "models/padic_integral.py": {
+   "status": "audited"
+  },
+  "models/paged_kv_cache.py": {
+   "status": "audited"
+  },
+  "models/pagerank_topology.py": {
+   "status": "audited"
+  },
+  "models/paging_sim.py": {
+   "status": "audited"
+  },
+  "models/paillier_he.py": {
    "status": "audited"
   },
   "models/pain_management.py": {
@@ -21098,6 +21206,9 @@
   "models/pairing_heap.py": {
    "status": "audited"
   },
+  "models/pairs.py": {
+   "status": "audited"
+  },
   "models/pale_titi_qa_studies.py": {
    "status": "audited"
   },
@@ -21117,6 +21228,9 @@
    "status": "audited"
   },
   "models/paley_wiener.py": {
+   "status": "audited"
+  },
+  "models/palindromic_tree.py": {
    "status": "audited"
   },
   "models/pallas_manul_qa_studies.py": {

@@ -59,6 +59,8 @@ def _bench_ot_extension(seed: int = 0) -> float:
     checks.append(all(gots[i] == rows[i][bits[i]] for i in range(16)))
     # receiver learns nothing about the other message (can't derive x_{1-c} from got)
     checks.append(len(set(gots)) > 1)
+    if not all(checks):
+        raise ValueError("OT-extension oracle checks failed")
     return sum(checks) / len(checks)
 
 

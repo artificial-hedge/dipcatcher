@@ -40,4 +40,6 @@ def bench_paillier_he(seed: int = _SEED) -> dict[str, float]:
         c2 = paillier_enc(m2, r2)
         ok += float(paillier_dec(c1, lam) == m1 % _N)
         ok += float(paillier_dec(c1 * c2 % _NN, lam) == (m1 + m2) % _N)
+    if ok != 2 * trials:
+        raise ValueError("Paillier HE roundtrip failed")
     return {"synthetic_paillier_roundtrip": ok / (2 * trials)}

@@ -41,6 +41,8 @@ def bench_orth_iter(seed: int = 20261231 + 533) -> dict[str, float]:
         eig_ok += int(np.allclose(np.sort(np.abs(ritz)), ref, atol=1e-3))
         V = V[:, idx]
         sub_ok += int(np.allclose(Q @ Q.T, V @ V.T, atol=1e-3))
+    if eig_ok != n_trials or sub_ok != n_trials:
+        raise ValueError("orth-iteration off eig oracle")
     return {
         "synthetic_ritz_exact": eig_ok / n_trials,
         "synthetic_subspace_exact": sub_ok / n_trials,

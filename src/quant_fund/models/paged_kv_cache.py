@@ -38,6 +38,8 @@ def bench_paged_kv_cache(
     n_shared = n_seq // 2
     cow_blocks = int(np.ceil(shared / block))
     shared_saved = cow_blocks * block * n_heads * d_head * n_layers * elem_bytes * (n_shared - 1)
+    if paged >= contig_reserve or not (0.0 <= waste <= 0.5):
+        raise ValueError("paged-KV accounting off oracle")
     return {
         "synthetic_paged_bytes": float(paged),
         "synthetic_paged_contig_reserve": float(contig_reserve),

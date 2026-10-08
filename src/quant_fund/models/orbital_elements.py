@@ -80,4 +80,6 @@ def bench_orbital_elements(seed: int = 20261231 + 854) -> dict[str, float]:
         for got, want in ((o2, raan), (w2, argp), (n2, nu)):
             d = abs((got - want + np.pi) % _TWO_PI - np.pi)
             checks += float(d < 1e-9)
+    if checks != total:
+        raise ValueError("orbital-elements roundtrip failed")
     return {"synthetic_orbital_elements": checks / total}

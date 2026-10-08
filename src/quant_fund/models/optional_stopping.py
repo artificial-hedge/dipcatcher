@@ -54,6 +54,8 @@ def _bench_optional_stopping(seed: int = 0) -> float:
     checks.append(abs(v200) < 0.2 and abs(v2000) < 0.2)
     # E[S_T^2] = E[T] for the bounded +-3 stopping time (S^2 - n martingale)
     checks.append(abs(float(np.var(draws)) - 9.0) < 9.0 * 0.2)
+    if not all(checks):
+        raise ValueError("optional-stopping oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

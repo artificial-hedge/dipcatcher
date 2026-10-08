@@ -48,6 +48,8 @@ def _bench_p_adic_val(seed: int = 0) -> float:
     # x^2 = 2 mod 7: x0=3 root (9=2 mod7); lift to mod 49: 10^2=100=2 mod49? 100-98=2 yes
     root = hensel_lift(lambda x: x * x - 2, lambda x: 2 * x, 7, 3, iters=1)
     checks.append((root * root - 2) % 49 == 0)
+    if not all(checks):
+        raise ValueError("p-adic oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

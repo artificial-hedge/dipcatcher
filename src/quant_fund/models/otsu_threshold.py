@@ -50,4 +50,6 @@ def bench_otsu_threshold(seed: int = _SEED) -> dict[str, float]:
     uni = np.full((n, n), 0.5) + 1e-4 * rng.standard_normal((n, n))
     t3 = otsu(np.clip(uni, 0, 1))
     checks.append(0.2 < t3 < 0.8)
+    if not all(checks):
+        raise ValueError("Otsu threshold off oracle")
     return {"synthetic_otsu_threshold": float(np.mean(checks))}

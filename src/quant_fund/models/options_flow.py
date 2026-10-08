@@ -105,6 +105,8 @@ def bench_options_flow(seed: int = 7) -> dict[str, float]:
     prec = float(yh[alert].mean()) if alert.any() else 0.0
     rec = float(alert[yh == 1].mean())
     brier = float(np.mean((p - yh) ** 2))
+    if auc_score(yh, p) < 0.9 or brier > 0.1:
+        raise ValueError("options-flow classifier off oracle")
     return {
         "synthetic_options_flow_auc": auc_score(yh, p),
         "synthetic_options_flow_brier": brier,

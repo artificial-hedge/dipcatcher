@@ -136,3 +136,41 @@ def risk_neutral_density(
         d2[i - 1] = 2.0 * ((C[i + 1] - C[i]) / h2 - (C[i] - C[i - 1]) / h1) / (h1 + h2)
     dens = np.maximum(d2 * math.exp(r * T), 0.0)
     return {"strikes": K[1:-1], "density": dens}
+
+
+def bench_options(seed: int = 20261231 + 300) -> dict[str, float]:
+    """BSM self-check: put–call parity, implied-vol roundtrip, Greek
+    bounds, and Breeden–Litzenberger density integrating to ~e^{-rT}.
+    All ``synthetic_*``."""
+    checks: list[bool] = []
+    rng = np.random.default_rng(seed)
+    # put-call parity across random moneyness/maturity
+    for _ in range(10):
+        S = float(rng.uniform(50, 150))
+        K = float(rng.uniform(50, 150))
+        T = float(rng.uniform(0.1, 3.0))
+        sig = float(rng.uniform(0.1, 0.6))
+        r = float(rng.uniform(0.0, 0.05))
+        c = bs_price(S, K, T, sig, r, call=True)
+        p = bs_price(S, K, T, sig, r, call=False)
+        checks.append(abs(put_call_parity_gap(c, p, S, K, T, r)) < 1e-9)
+    # implied-vol roundtrip recovers the planted sigma
+    for _ in range(6):
+        sig_true = float(rng.uniform(0.08, 0.8))
+        c = bs_price(100.0, 95.0, 1.0, sig_true, 0.02, call=True)
+        checks.append(abs(implied_vol(c, 100.0, 95.0, 1.0, 0.02) - sig_true) < 1e-6)
+    # greek bounds: 0<delta<1 call, delta_put = delta_call - 1, gamma>0
+    g_c = bs_greeks(100.0, 100.0, 0.5, 0.25, 0.01, call=True)
+    g_p = bs_greeks(100.0, 100.0, 0.5, 0.25, 0.01, call=False)
+    checks.append(0.0 < g_c["delta"] < 1.0)
+    checks.append(abs(g_p["delta"] - (g_c["delta"] - 1.0)) < 1e-12)
+    checks.append(g_c["gamma"] > 0 and g_c["vega"] > 0)
+    # RN density from prices across a strike grid integrates near e^{-rT}
+    Ks = np.linspace(60, 140, 41)
+    Cs = np.array([bs_price(100.0, float(k), 1.0, 0.2, 0.03, call=True) for k in Ks])
+    dens = risk_neutral_density(Ks, Cs, 1.0, 0.03)
+    integ = float(np.trapezoid(dens["density"], dens["strikes"]))
+    checks.append(abs(integ - math.exp(-0.03)) < 0.05)
+    if not all(checks):
+        raise ValueError("BSM/parity/IV oracle checks failed")
+    return {"synthetic_options_oracle": float(sum(checks) / len(checks))}

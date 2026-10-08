@@ -3,9 +3,9 @@
 Amos & Kolter 2017: y* = argmin 0.5 y^T Q y + p^T y s.t. Ay=b, Gy<=h enters the
 network as a layer; gradients flow through the optimality conditions. Here the
 forward pass is an in-graph projected-gradient solve (unrolled iterations are
-exactly differentiable) over the simplex + box — the canonical "decision-
-focused learning" setting where end-to-end training beats predict-then-
-optimize on realized objective. SYNTHETIC bench.
+exactly differentiable) over the simplex + box. On this fixture the
+predict-then-optimize two-stage baseline edges end-to-end — the
+realized gap is reported honestly. SYNTHETIC bench.
 """
 
 from __future__ import annotations
@@ -108,6 +108,11 @@ def bench_optnet_qp(
         ret_e2e = float((w_e2e * rt_te).sum(-1).mean())
         pred_te = ts_net(xt_te).numpy()
         mu_mse = float(np.mean((np.asarray(pred_te) - _mute) ** 2))
+    # realized magnitudes scale with train size (≈0.008 at defaults);
+    # gate positivity + finiteness only — the two-stage gap is reported,
+    # not asserted (predict-then-optimize wins here)
+    if not (np.isfinite(ret_e2e) and ret_e2e > 0 and np.isfinite(ret_ts)):
+        raise ValueError("optnet realized-return oracle failed")
     return {
         "synthetic_optnet_ret_e2e": ret_e2e,
         "synthetic_optnet_ret_two_stage": ret_ts,

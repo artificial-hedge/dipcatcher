@@ -44,6 +44,8 @@ def _bench_ost_calcul(seed: int = 0) -> float:
     checks.append(ruin_prob(0.4, 10, 10) == 0.0)
     # symmetric duration i(n-i)
     checks.append(abs(exp_duration(0.5, 3, 10) - 21.0) < 1e-9)
+    if not all(checks):
+        raise ValueError("ruin-probability oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

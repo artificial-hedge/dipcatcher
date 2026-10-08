@@ -31,4 +31,6 @@ def bench_orf_find(seed: int = _SEED) -> dict[str, float]:
     flank = "".join("ACGT"[rng.randint(4)] for _ in range(60))
     seq = flank[:20] + planted + flank[20:]
     found = longest_orf(seq)
+    if found < len(planted):
+        raise ValueError("ORF finder missed planted ORF")
     return {"synthetic_orf_exact": float(found >= len(planted))}

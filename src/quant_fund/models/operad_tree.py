@@ -53,6 +53,8 @@ def _bench_operad_tree(seed: int = 0) -> float:
     checks.append(b == c)
     # grafting at slot 0 vs slot 2 give different trees (planarity matters)
     checks.append(graft(((), ()), 0, ((), ())) != graft(((), ()), 1, ((), ())))
+    if not all(checks):
+        raise ValueError("operad-tree oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

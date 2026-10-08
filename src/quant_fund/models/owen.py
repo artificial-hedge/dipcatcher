@@ -60,6 +60,12 @@ def bench_owen(seed: int = 20261231) -> dict[str, float]:
         abs(phi[0] - phi[1]) < 1e-9 and abs(phi[2] - phi[3]) < 1e-9
     )
     out["synthetic_owen_finite"] = float(np.isfinite(phi).all())
+    if not (
+        out["synthetic_owen_efficient"] == 1.0
+        and out["synthetic_owen_symmetric_union"] == 1.0
+        and out["synthetic_owen_finite"] == 1.0
+    ):
+        raise ValueError("Owen value off oracle")
     return out
 
 

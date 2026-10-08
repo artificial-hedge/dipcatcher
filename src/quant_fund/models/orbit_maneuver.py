@@ -63,4 +63,6 @@ def bench_orbit_maneuver(seed: int = 20261231 + 858) -> dict[str, float]:
         a1, a2 = 0.5 * (r1 + rb), 0.5 * (rb + r2)
         checks += float(abs(t - np.pi * (np.sqrt(a1**3 / mu) + np.sqrt(a2**3 / mu))) / t < 1e-12)
         checks += float(np.isfinite(d1 + d2 + d3))
+    if checks != total:
+        raise ValueError("orbit-maneuver oracle checks failed")
     return {"synthetic_maneuver": checks / total}

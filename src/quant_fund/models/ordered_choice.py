@@ -154,6 +154,10 @@ def bench_ordered_choice(seed: int = 20261231 + 210) -> dict[str, float]:
 
     b0 = float(out["beta_0"])
     b1 = float(out["beta_1"])
+    if not (
+        abs(b0 - 1.0) < 0.2 and abs(float(out0["beta_0"])) < 0.3 and b0 == float(out_b["beta_0"])
+    ):
+        raise ValueError("ordered-choice recovery off oracle")
     return {
         "synthetic_beta0": b0,
         "synthetic_beta0_err": float(abs(b0 - 1.0)),

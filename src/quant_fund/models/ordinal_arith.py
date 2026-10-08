@@ -66,6 +66,8 @@ def _bench_ordinal_arith(seed: int = 0) -> float:
     checks.append(mul(w, nat(3)) == [(nat(1), 3)])  # w * 3
     # (w+1)*2 = w*2 + 1
     checks.append(cmp(mul(add(w, one), nat(2)), add(mul(w, nat(2)), one)) == 0)
+    if not all(checks):
+        raise ValueError("ordinal-arithmetic oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

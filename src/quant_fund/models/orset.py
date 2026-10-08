@@ -64,6 +64,8 @@ def bench_orset(seed: int = 20261231 + 302) -> dict[str, float]:
     aw_flag = contains(m, "e")
     # non-observed remove: removing e from empty knowledge is no-op
     noop = remove({}, "e") == {}
+    if comm != trials or assoc != trials or idem != trials or not aw_flag or not noop:
+        raise ValueError("OR-set CRDT laws failed")
     return {
         "synthetic_commutative": float(comm / trials),
         "synthetic_associative": float(assoc / trials),

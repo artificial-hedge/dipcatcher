@@ -77,4 +77,6 @@ def bench_osr_deopt(seed: int = _SEED) -> dict[str, float]:
     score += 1.0 if bad_caught else 0.0
     # materialized local set matches oracle coverage
     score += 1.0 if set(env) == set(oracle) else 0.0
+    if score != 4.0:
+        raise ValueError("OSR deopt oracle checks failed")
     return {"synthetic_osr_deopt": score / 4.0}

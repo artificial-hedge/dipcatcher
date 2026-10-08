@@ -45,6 +45,8 @@ def bench_oversmooth_metric(seed: int = 889, k: int = 8) -> dict[str, float]:
     # node separability: mean |z_clique - z_other| under each scheme
     gap_deep = float(np.abs(z_deep[y == 1].mean() - z_deep[y == 0].mean()))
     gap_res = float(np.abs(z_res[y == 1].mean() - z_res[y == 0].mean()))
+    if not (e_deep < e0 and gap_res > gap_deep):
+        raise ValueError("oversmoothing collapse/residual oracle failed")
     return {
         "synthetic_os_energy0": float(e0),
         "synthetic_os_energy_deep": float(e_deep),

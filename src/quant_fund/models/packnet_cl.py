@@ -43,6 +43,8 @@ def bench_packnet_cl(seed: int = 761, T: int = 200) -> dict[str, float]:
             g = x.T @ (x @ w_sgd - y) / len(y)
             w_sgd -= 0.05 * np.clip(g, -50, 50)
     retain_sgd = float(np.mean((tasks[0][0] @ w_sgd - tasks[0][1]) ** 2))
+    if retain >= retain_sgd:
+        raise ValueError("PackNet retention not better than plain SGD")
     return {
         "synthetic_pn_task1_mse": retain,
         "synthetic_pn_sgd_task1_mse": retain_sgd,

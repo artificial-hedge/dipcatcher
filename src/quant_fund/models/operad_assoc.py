@@ -46,6 +46,8 @@ def _bench_operad_assoc(seed: int = 0) -> float:
     checks.append(lhs == rhs)
     # symmetric group action: relabeling commutes with composition sanity
     checks.append(sorted(assoc_compose((0, 1, 2), [(0, 1), (0, 1), (0, 1)])) == [0, 1, 2, 3, 4, 5])
+    if not all(checks):
+        raise ValueError("operad-assoc oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

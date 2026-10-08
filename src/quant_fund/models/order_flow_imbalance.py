@@ -120,6 +120,8 @@ def bench_order_flow_imbalance(seed: int = 7) -> dict[str, float]:
     r2_kal = 1.0 - ss_res / np.sum((dmid - dmid.mean()) ** 2)
     imb = (bd - ad) / (bd + ad)
     imb_hit = np.mean(np.sign(imb[1:]) == np.sign(dmid))
+    if sign_hit < 0.6 or imb_hit < 0.8:
+        raise ValueError("OFI sign accuracy off oracle")
     return {
         "synthetic_ofi_sign_accuracy": float(sign_hit),
         "synthetic_ofi_lin_r2": float(r2_lin),
