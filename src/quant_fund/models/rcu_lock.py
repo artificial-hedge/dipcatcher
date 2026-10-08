@@ -57,4 +57,6 @@ def bench_rcu_lock(seed: int = _SEED) -> dict[str, float]:
                     safe = False
         if safe:
             ok += 1
+    if ok != 30:
+        raise ValueError("RCU grace-period safety violated")
     return {"synthetic_rcu_grace": ok / 30}

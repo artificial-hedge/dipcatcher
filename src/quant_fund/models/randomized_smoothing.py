@@ -76,6 +76,8 @@ def bench_randomized_smoothing(
     acc_base_clean = float((base_pred == yte).mean())
     base_noisy_pred = base_noisy.argmax(1)
     acc_base_noise = float((base_noisy_pred == yte).mean())
+    if not (acc_smooth >= acc_base_noise - 0.05 and float((radius > 0).mean()) > 0.5):
+        raise ValueError("randomized smoothing off certification oracle")
     return {
         "synthetic_smooth_acc": acc_smooth,
         "synthetic_smooth_base_clean": acc_base_clean,

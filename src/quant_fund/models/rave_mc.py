@@ -129,4 +129,6 @@ def bench_rave_mc(seed: int = _SEED) -> dict[str, float]:
     # O threatens an immediate win at cell 5 (row 3-4-5); X must block.
     board = (1, 0, 0, 2, 2, 0, 0, 0, 1)
     m_rave = rave_mcts(board, 1, sims=500, rave=True, seed=seed)
-    return {"synthetic_rave_mc": 1.0 if m_rave == 5 else 0.0}
+    if m_rave != 5:
+        raise ValueError("RAVE MCTS missed the forced block")
+    return {"synthetic_rave_mc": 1.0}

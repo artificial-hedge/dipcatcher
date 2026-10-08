@@ -34,6 +34,8 @@ def _bench_ramification(seed: int = 0) -> float:
     # legendre values
     checks.append(legendre(3, 7) == -1)
     checks.append(legendre(2, 7) == 1)
+    if not all(checks):
+        raise ValueError("ramification/split-type oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -47,6 +47,8 @@ def _ranking(seed: int, trials: int = 2000) -> float:
 def bench_ranking_matching(seed: int = 5407) -> dict[str, float]:
     avg = _ranking(seed)
     truth = _max_matching()
+    if avg / truth < 1.0 - 1.0 / np.e or avg > truth + 1e-9:
+        raise ValueError("RANKING violated the 1-1/e competitive bound")
     return {
         "synthetic_rk_avg": avg,
         "synthetic_rk_truth": float(truth),

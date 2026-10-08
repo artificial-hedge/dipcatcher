@@ -100,4 +100,6 @@ def bench_refinement_liquid(seed: int = _SEED) -> dict[str, float]:
             d,
         )
     )
+    if not all(checks):
+        raise ValueError("liquid-refinement VC oracle failed")
     return {"synthetic_refinement_liquid": float(sum(checks)) / len(checks)}

@@ -56,6 +56,8 @@ def bench_raycaster(seed: int = 20261231 + 380) -> dict[str, float]:
             mono += int(d0 < dl)
         else:
             mono += 1
+    if hit != trials or exact != trials or mono != trials:
+        raise ValueError("raycaster wall-distance oracle failed")
     return {
         "synthetic_hit_bounded": float(hit / trials),
         "synthetic_dist_exact": float(exact / trials),

@@ -55,6 +55,8 @@ def bench_react_loop(
                     done = True
                     break
             solved_blind += int(done or is_goal(s))
+    if solved_react <= solved_blind:
+        raise ValueError("ReAct loop no better than blind plan")
     return {
         "synthetic_react_solve": solved_react / n_tasks,
         "synthetic_react_blind_solve": solved_blind / n_tasks,

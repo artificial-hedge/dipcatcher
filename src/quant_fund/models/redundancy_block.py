@@ -54,6 +54,14 @@ def bench_redundancy_block(seed: int = 4911) -> dict[str, float]:
     k2 = _k_out_of_n(r, 2)
     standby = _standby(float(RBD_LAM[0]), RBD_T)
     mc = _mc(RBD_LAM, RBD_T, seed=seed)
+    if not (
+        abs(series - mc["series"]) < 0.02
+        and abs(parallel - mc["parallel"]) < 0.02
+        and abs(k2 - mc["k2"]) < 0.02
+        and abs(standby - mc["standby"]) < 0.02
+        and parallel > series
+    ):
+        raise ValueError("redundancy-block availability off MC oracle")
     return {
         "synthetic_rbd_series": series,
         "synthetic_rbd_series_mc_err": abs(series - mc["series"]),

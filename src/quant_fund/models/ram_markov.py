@@ -51,6 +51,8 @@ def bench_ram_markov(seed: int = 4905) -> dict[str, float]:
     avail = float(pi[1] + pi[2])  # system up iff >=1 unit up
     mc = _simulate(RAM_LAM, RAM_MU, horizon=30000.0, seed=seed)
     down = float(pi[0])
+    if abs(avail - mc) > 0.01 or avail <= pi[2]:
+        raise ValueError("RAM Markov availability off CTMC oracle")
     return {
         "synthetic_ram_avail": avail,
         "synthetic_ram_avail_mc_err": abs(avail - mc),

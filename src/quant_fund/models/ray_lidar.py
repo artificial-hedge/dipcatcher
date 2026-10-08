@@ -29,4 +29,6 @@ def bench_ray_lidar(seed: int = _SEED) -> dict[str, float]:
         ok += int(abs(r - want) < 0.25)
     grid2 = np.zeros((40, 40), dtype=int)
     ok += int(cast(grid2, 5.0, 5.0, 0.0) == 20.0)  # no walls -> max range
+    if ok != 4:
+        raise ValueError("lidar ray-cast off wall oracle")
     return {"synthetic_ray_lidar": float(ok == 4)}

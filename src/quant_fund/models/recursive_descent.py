@@ -118,6 +118,8 @@ def bench_recursive_descent(seed: int = 20261231 + 390) -> dict[str, float]:
             rej += 1
         # precedence: 2+3*4 = 14 not 20
         assoc += int(RDParser("2 + 3 * 4").parse() == 14.0)
+    if match != trials or rej != trials or assoc != trials:
+        raise ValueError("recursive-descent parser oracle failed")
     return {
         "synthetic_matches_oracle": float(match / trials),
         "synthetic_rejects_bad": float(rej / trials),

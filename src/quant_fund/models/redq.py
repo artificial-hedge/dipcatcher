@@ -87,6 +87,8 @@ def bench_redq(seed: int = 911, steps: int = 2500, N: int = 6, M: int = 2) -> di
         st, r = _env_step(st, a, rng)
         tot += r
         n += 1
+    if tot / n <= -0.2:
+        raise ValueError("REDQ agent no better than random policy")
     return {
         "synthetic_redq_mean_reward": tot / n,
         "synthetic_redq_random_reward": -0.2,

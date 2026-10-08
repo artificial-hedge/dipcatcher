@@ -87,6 +87,8 @@ def bench_reformer_lsh(
         h_o = proj_o(torch.tensor(xte).float())
         att_o = torch.softmax(h_o @ h_o.transpose(1, 2) / (d_h**0.5), -1)
         acc_o = (out_o((att_o @ h_o)[:, -1]).argmax(-1) == torch.tensor(yte)).float().mean()
+    if float(attn_dot_cost(t_len, "lsh", _BUCKETS)) >= 1.0:
+        raise ValueError("LSH attention cost ratio >= 1 defeats its purpose")
     return {
         "synthetic_lsh_acc": float(acc),
         "synthetic_lsh_full_acc": float(acc_o),

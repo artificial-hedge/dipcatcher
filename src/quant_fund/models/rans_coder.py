@@ -93,6 +93,8 @@ def bench_rans_coder(seed: int = 20261231 + 294) -> dict[str, float]:
         gap = bits / n - h
         gaps.append(gap)
         near += int(gap < 1.5)
+    if rt != trials or near != trials:
+        raise ValueError("rANS roundtrip/entropy-gap oracle failed")
     return {
         "synthetic_roundtrip": float(rt / trials),
         "synthetic_near_entropy": float(near / trials),

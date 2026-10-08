@@ -42,6 +42,8 @@ def bench_random_search_nas(
         best_r = max(best_r, accs[a])
     # grid (lexicographic order, same budget)
     best_g = max(accs[a] for a in space[:budget])
+    if best_r < oracle - 0.1:
+        raise ValueError("random-search NAS found nothing near oracle")
     return {
         "synthetic_rnas_best": best_r,
         "synthetic_rnas_grid_best": best_g,

@@ -70,6 +70,13 @@ def bench_reflectivity_synth(seed: int = _SEED) -> dict[str, float]:
         ],
         dtype=np.float64,
     )
+    if not (
+        float(signs.mean()) == 1.0
+        and float(located.mean()) == 1.0
+        and bool(recon < 1e-10)
+        and bool(np.max(np.abs(refl)) < 1.0)
+    ):
+        raise ValueError("reflectivity synthesis oracle failed")
     return {
         "synthetic_reflectivity_synth": float(
             0.4 * signs.mean()

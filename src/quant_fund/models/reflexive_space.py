@@ -33,8 +33,10 @@ def _bench_reflexive_space(seed: int = 0) -> float:
     xb = rng.normal(size=(2000, 3))
     xb = xb / np.linalg.norm(xb, axis=1, keepdims=True)
     checks.append(abs(float(np.max(np.abs(xb @ fv))) - np.linalg.norm(fv)) < 0.05)
-    # reflexive: every element of X** is an eval (dim X** = dim X)
-    checks.append(3 == 3)
+    # reflexive: evals separate points — x != 0 => some f has f(x) != 0
+    checks.append(abs(eval_functional(x, fv)) > 1e-9)
+    if not all(checks):
+        raise ValueError("reflexive-space oracle failed")
     return float(min(1.0, sum(checks) / len(checks)))
 
 

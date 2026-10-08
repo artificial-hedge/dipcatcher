@@ -51,6 +51,8 @@ def _bench_ramsey_theory(seed: int = 0) -> float:
     # W(2,3)=9: [8] 2-colorable without mono 3-AP; [9] not
     checks.append(not vd_waerden(3, 8))
     checks.append(vd_waerden(3, 9))
+    if not all(checks):
+        raise ValueError("Ramsey/vdW oracle failed")
     return sum(checks) / len(checks)
 
 

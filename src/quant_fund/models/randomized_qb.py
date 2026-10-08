@@ -26,4 +26,6 @@ def bench_randomized_qb(seed: int = _SEED) -> dict[str, float]:
         Q, B = rand_qb(A, 14, rng)
         err = np.linalg.norm(A - Q @ B) / np.linalg.norm(A)
         ok += float(err < 0.08)
+    if ok != trials:
+        raise ValueError("randomized QB off low-rank oracle")
     return {"synthetic_qb_lowrank": ok / trials}

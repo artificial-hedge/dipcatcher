@@ -49,6 +49,8 @@ def _bench_ramsey_r33(seed: int = 0) -> float:
     color4 = {(0, 1): 0, (0, 2): 0, (1, 2): 1, (0, 3): 1, (1, 3): 1, (2, 3): 0}
     checks.append(not mono_triangle(4, color4))
     checks.append(every_coloring_bad(6))
+    if not all(checks):
+        raise ValueError("R(3,3) oracle failed")
     return float(sum(checks) / len(checks))
 
 

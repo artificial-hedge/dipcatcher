@@ -115,5 +115,5 @@ def bench_rasch_fit(seed: int = 20261231 + 443) -> dict[str, float]:
         "synthetic_outfit_noisy": noisy,
         "synthetic_outfit_clean_mean": float(clean),
         "synthetic_infit_clean_mean": float(np.asarray(out["infit"])[1:].mean()),
-        "synthetic_score": 1.0,
+        "synthetic_score": float(noisy > clean and clean <= 1.4 and noisy >= 1.15),
     }

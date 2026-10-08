@@ -91,6 +91,8 @@ def bench_ranking_function(seed: int = 20261231 + 226) -> dict[str, float]:
         seen.add(s)
         s = cyc_nxt(s)[0]
     agree += int((not bool(r3["terminates"])) == nonterm)
+    if agree != 3 or not all(details) or bool(r3["terminates"]):
+        raise ValueError("ranking-function termination oracle failed")
     return {
         "synthetic_agree": float(agree / 3),
         "synthetic_countdown_term": details[0],

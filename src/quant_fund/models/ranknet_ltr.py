@@ -51,6 +51,8 @@ def bench_ranknet_ltr(
         sc = net(torch.tensor(x_te).float()).squeeze(-1).numpy()
     nd = ndcg_at(y_te, sc)
     nd_base = ndcg_at(y_te, x_te.mean(-1))
+    if nd <= nd_base:
+        raise ValueError("RankNet no better than feature-mean baseline")
     return {
         "synthetic_ranknet_ndcg10": nd,
         "synthetic_ranknet_base_ndcg10": nd_base,

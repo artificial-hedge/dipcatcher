@@ -34,6 +34,8 @@ def _bench_real_closed(seed: int = 0) -> float:
     checks.append(all(x * x >= 0 for x in [-3.0, -0.5, 0.0, 2.0]))
     # every positive element is a square (in R): sqrt exists
     checks.append(abs(4.0**0.5 - 2.0) < 1e-9)
+    if not all(checks):
+        raise ValueError("real-closed-field oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -43,6 +43,8 @@ def bench_rectified_flow(seed: int = 1507, iters: int = 900, steps: int = 24) ->
     gen = xs.numpy().astype(np.float64)
     m = _mmd(gen, Xte, bw=1.0)
     g = gauss_mmd(np.random.default_rng(seed + 1), Xte)
+    if m >= g:
+        raise ValueError("rectified flow no better than Gaussian MMD")
     return {
         "synthetic_rf_mmd": m,
         "synthetic_rf_gauss_mmd": g,

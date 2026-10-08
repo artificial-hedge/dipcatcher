@@ -71,4 +71,6 @@ def bench_recency_abstraction(seed: int = _SEED) -> dict[str, float]:
     h2.set_field("val", 10)
     h2.alloc()
     checks.append(h2.old_val_bounds() == (0, 10))
+    if not all(checks):
+        raise ValueError("recency-abstraction oracle failed")
     return {"synthetic_recency_abstraction": float(sum(checks)) / len(checks)}

@@ -148,4 +148,10 @@ def bench_reed_solomon(seed: int = 20261231) -> dict[str, float]:
         bad3[int(pos)] ^= int(rng.integers(1, 256))
     dec3, _ = rs_decode(bad3, nsym)
     out["synthetic_rs_t4_fixed"] = float(dec3 == msg)
+    if not (
+        out["synthetic_rs_t5_fixed"] == 1.0
+        and out["synthetic_rs_over_capacity_bad"] == 1.0
+        and out["synthetic_rs_t4_fixed"] == 1.0
+    ):
+        raise ValueError("Reed-Solomon correction-capacity oracle failed")
     return out

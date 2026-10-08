@@ -46,6 +46,8 @@ def bench_randomized_svd(seed: int | None = None) -> dict[str, float]:
     opt_err = float(np.linalg.norm(a - u_ex[:, :k] @ np.diag(s_ex[:k]) @ vt_ex[:k]))
     err = float(np.linalg.norm(a - approx))
     sv_err = float(np.max(np.abs(s - s_ex[:k]) / np.maximum(s_ex[:k], 1e-9)))
+    if err - opt_err > 0.1 * opt_err or sv_err > 0.05:
+        raise ValueError("randomized SVD off truncated-SVD oracle")
     return {
         "synthetic_rsvd_err": err,
         "synthetic_opt_err": opt_err,

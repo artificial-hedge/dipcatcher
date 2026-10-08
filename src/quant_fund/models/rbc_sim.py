@@ -24,4 +24,6 @@ def bench_rbc_sim(seed: int = _SEED) -> dict[str, float]:
         float(np.corrcoef(k[100 + lag :], a[100 : len(a) - lag])[0, 1]) for lag in range(1, 12)
     )
     stat = float(np.abs(k[-100:]).max() < 1.0)
+    if not (best > 0.8 and stat == 1.0):
+        raise ValueError("RBC comovement/stability oracle failed")
     return {"synthetic_rbc_comove": float(best > 0.8), "synthetic_rbc_stable": stat}

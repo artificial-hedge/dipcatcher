@@ -74,6 +74,8 @@ def _bench_realize_types(seed: int = 0) -> float:
     checks.append(len(ts) == 1)
     # realize partial type {gt 0, lt 2, gt ... } consistent -> 1
     checks.append(realize(frozenset({("gt", 0), ("lt", 2)}), chain, lt) == 1)
+    if not all(checks):
+        raise ValueError("type-realization oracle failed")
     return float(sum(checks) / len(checks))
 
 

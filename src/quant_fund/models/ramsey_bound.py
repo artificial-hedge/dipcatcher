@@ -34,4 +34,6 @@ def bench_ramsey_bound(seed: int = _SEED) -> dict[str, float]:
         if not _has_mono(6, c6):
             all_mono = False
             break
+    if not (witness_ok and all_mono):
+        raise ValueError("Ramsey witness/exhaustion oracle failed")
     return {"synthetic_ramsey": float(witness_ok and all_mono)}

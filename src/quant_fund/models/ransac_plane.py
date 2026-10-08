@@ -45,4 +45,6 @@ def bench_ransac_plane(seed: int = _SEED) -> dict[str, float]:
             continue
         err = np.abs(pts @ est[:3] + est[3])
         ok += float(err[:n_in].mean() < 0.15)
+    if ok != trials:
+        raise ValueError("RANSAC plane inlier recovery failed")
     return {"synthetic_ransac_inlier_acc": ok / trials}

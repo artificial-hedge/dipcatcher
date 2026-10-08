@@ -60,6 +60,8 @@ def bench_real_nvp(seed: int = 2281, iters: int = 600) -> dict[str, float]:
         z, ld = fwd(torch.tensor(Xte).float(), st_nets)
         nll_te = float((0.5 * (z**2).sum(-1) + np.log(2 * np.pi) - ld).mean())
     base = gauss_nll(Xtr, Xte)
+    if nll_te >= base:
+        raise ValueError("RealNVP no better than Gaussian baseline NLL")
     return {
         "synthetic_realnvp_nll": nll_te,
         "synthetic_gauss_nll": base,

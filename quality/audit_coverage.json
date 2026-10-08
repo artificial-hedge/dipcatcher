@@ -23816,10 +23816,28 @@
   "models/ralston_second.py": {
    "status": "audited"
   },
+  "models/ram_markov.py": {
+   "status": "audited"
+  },
   "models/ramaswami.py": {
    "status": "audited"
   },
+  "models/ramification.py": {
+   "status": "audited"
+  },
   "models/ramified_l.py": {
+   "status": "audited"
+  },
+  "models/ramsey_bound.py": {
+   "status": "audited"
+  },
+  "models/ramsey_num.py": {
+   "status": "audited"
+  },
+  "models/ramsey_r33.py": {
+   "status": "audited"
+  },
+  "models/ramsey_theory.py": {
    "status": "audited"
   },
   "models/rand_access_list.py": {
@@ -23837,7 +23855,19 @@
   "models/random_sde.py": {
    "status": "audited"
   },
+  "models/random_search_nas.py": {
+   "status": "audited"
+  },
   "models/randomized_nystrom.py": {
+   "status": "audited"
+  },
+  "models/randomized_qb.py": {
+   "status": "audited"
+  },
+  "models/randomized_smoothing.py": {
+   "status": "audited"
+  },
+  "models/randomized_svd.py": {
    "status": "audited"
   },
   "models/range_min_query.py": {
@@ -23847,6 +23877,9 @@
    "status": "audited"
   },
   "models/rangi_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/rank_aggregation.py": {
    "status": "audited"
   },
   "models/rank_estimate.py": {
@@ -23859,6 +23892,24 @@
    "status": "audited"
   },
   "models/ranking.py": {
+   "status": "audited"
+  },
+  "models/ranking_function.py": {
+   "status": "audited"
+  },
+  "models/ranking_matching.py": {
+   "status": "audited"
+  },
+  "models/ranknet_ltr.py": {
+   "status": "audited"
+  },
+  "models/rans_coder.py": {
+   "status": "audited"
+  },
+  "models/ransac_plane.py": {
+   "status": "audited"
+  },
+  "models/rasch_fit.py": {
    "status": "audited"
   },
   "models/rasmussen_inv.py": {
@@ -23894,6 +23945,9 @@
   "models/rattlesnake_qa_studies.py": {
    "status": "audited"
   },
+  "models/rave_mc.py": {
+   "status": "audited"
+  },
   "models/raven_qa_studies.py": {
    "status": "audited"
   },
@@ -23904,6 +23958,12 @@
    "status": "audited"
   },
   "models/ray_knight.py": {
+   "status": "audited"
+  },
+  "models/ray_lidar.py": {
+   "status": "audited"
+  },
+  "models/raycaster.py": {
    "status": "audited"
   },
   "models/rayleigh_scattering.py": {
@@ -23924,6 +23984,9 @@
   "models/razorbill_qa_studies.py": {
    "status": "audited"
   },
+  "models/rbc_sim.py": {
+   "status": "audited"
+  },
   "models/rbergomi.py": {
    "status": "audited"
   },
@@ -23933,7 +23996,13 @@
   "models/rbf_interp.py": {
    "status": "audited"
   },
+  "models/rcu_lock.py": {
+   "status": "audited"
+  },
   "models/rd.py": {
+   "status": "audited"
+  },
+  "models/react_loop.py": {
    "status": "audited"
   },
   "models/reaction_kinetics.py": {
@@ -23948,10 +24017,19 @@
   "models/real_business.py": {
    "status": "audited"
   },
+  "models/real_closed.py": {
+   "status": "audited"
+  },
   "models/real_interp_k.py": {
    "status": "audited"
   },
+  "models/real_nvp.py": {
+   "status": "audited"
+  },
   "models/real_toxicity_studies.py": {
+   "status": "audited"
+  },
+  "models/realize_types.py": {
    "status": "audited"
   },
   "models/realized.py": {
@@ -23967,6 +24045,9 @@
    "status": "audited"
   },
   "models/recast_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/recency_abstraction.py": {
    "status": "audited"
   },
   "models/recli_log_studies.py": {
@@ -23999,10 +24080,16 @@
   "models/rectifiable_measures.py": {
    "status": "audited"
   },
+  "models/rectified_flow.py": {
+   "status": "audited"
+  },
   "models/recurrent_events.py": {
    "status": "audited"
   },
   "models/recursion3.py": {
+   "status": "audited"
+  },
+  "models/recursive_descent.py": {
    "status": "audited"
   },
   "models/recursive_reward_studies.py": {
@@ -24026,10 +24113,16 @@
   "models/red_team_studies.py": {
    "status": "audited"
   },
+  "models/redq.py": {
+   "status": "audited"
+  },
   "models/reduced_basis.py": {
    "status": "audited"
   },
   "models/reduced_order_modeling.py": {
+   "status": "audited"
+  },
+  "models/redundancy_block.py": {
    "status": "audited"
   },
   "models/redwood_qa_studies.py": {
@@ -24041,6 +24134,9 @@
   "models/reed_qa_studies.py": {
    "status": "audited"
   },
+  "models/reed_solomon.py": {
+   "status": "audited"
+  },
   "models/reedbuck_qa_studies.py": {
    "status": "audited"
   },
@@ -24048,6 +24144,12 @@
    "status": "audited"
   },
   "models/reef_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/refinement_liquid.py": {
+   "status": "audited"
+  },
+  "models/reflect_bm.py": {
    "status": "audited"
   },
   "models/reflected_bsde.py": {
@@ -24059,10 +24161,22 @@
   "models/reflected_golden.py": {
    "status": "audited"
   },
+  "models/reflectivity_synth.py": {
+   "status": "audited"
+  },
+  "models/reflexion_retry.py": {
+   "status": "audited"
+  },
   "models/reflexion_studies.py": {
    "status": "audited"
   },
+  "models/reflexive_space.py": {
+   "status": "audited"
+  },
   "models/reformation_studies.py": {
+   "status": "audited"
+  },
+  "models/reformer_lsh.py": {
    "status": "audited"
   },
   "models/refractive_studies.py": {

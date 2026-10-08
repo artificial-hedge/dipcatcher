@@ -41,6 +41,8 @@ def _bench_reflect_bm(seed: int = 0) -> float:
     # reflected BM equals x - L where L = -min(0, min x)
     lev = -np.minimum(0.0, np.minimum.accumulate(b))
     checks.append(bool(np.allclose(refl, b + lev)))
+    if not all(checks):
+        raise ValueError("reflected-BM oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -59,6 +59,8 @@ def _bench_ramsey_num(seed: int = 0) -> float:
             bits8 |= 1 << (a * n8 - a * (a + 1) // 2 + (b - a - 1))
     checks.append(not _has_mono(bits8, 8, 4, 1))
     checks.append(not _has_mono(bits8, 8, 4, 0))
+    if not all(checks):
+        raise ValueError("Ramsey-number oracle failed")
     return float(sum(checks) / len(checks))
 
 

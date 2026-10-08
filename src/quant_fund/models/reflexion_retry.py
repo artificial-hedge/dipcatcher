@@ -59,6 +59,8 @@ def bench_reflexion_retry(
             done = s == TARGET
             tries += 1
         after += int(done)
+    if after < first:
+        raise ValueError("reflexion retry made solving strictly worse")
     return {
         "synthetic_refl_first_solve": first / n_tasks,
         "synthetic_refl_retry_solve": after / n_tasks,
