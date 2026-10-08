@@ -605,51 +605,110 @@ def test_xvenue_basis_cli_rejects_single_leg(tmp_path: Path) -> None:
 
 @pytest.mark.network
 def test_xvenue_live_drill(tmp_path: Path) -> None:
-    """Real pull: Kraken + OKX BTC legs produce a sealed receipt.
+    """Real pull: Kraken + OKX BTC legs produce a sealed, verifying receipt.
 
     Drill evidence only — asserts the adapters fetch real frames and the
     bench computes its contract; it makes no market claim about the values.
+    The tape-binding ratchet fails non-synthetic receipts closed unless the
+    pull's dataset_sha256 resolves through a committed tape_manifest.v1 —
+    so the drill performs the full operator ceremony: pin each collected
+    tape into its own data/manifests entry, register the lane's dataset
+    digest as an eval_stream, verify, then remove what it created.
     """
+    import shutil
+
     from quant_fund.data.collector import collect_source
     from quant_fund.research.crossvenue_basis import crossvenue_basis_verdict
+    from quant_fund.research.tape_registry import pin_tape
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
-    legs = [
-        VenueLeg(
-            venue="kraken",
-            spot=collect_source(
-                "kraken_spot", tmp_path, fetch_kwargs={"pair": "XBTUSD", "interval": 1440}
-            ).frame,
-            mark=collect_source(
-                "kraken_futures_mark", tmp_path, fetch_kwargs={"symbol": "PF_XBTUSD"}
-            ).frame,
-            funding=collect_source(
-                "kraken_funding", tmp_path, fetch_kwargs={"symbol": "PF_XBTUSD"}
-            ).frame,
-            data_label="kraken",
-        ),
-        VenueLeg(
-            venue="okx",
-            spot=collect_source(
-                "okx_spot", tmp_path, fetch_kwargs={"inst_id": "BTC-USDT", "bar": "1Dutc"}
-            ).frame,
-            mark=collect_source(
-                "okx_mark", tmp_path, fetch_kwargs={"inst_id": "BTC-USDT-SWAP", "bar": "1Dutc"}
-            ).frame,
-            funding=collect_source(
-                "okx_funding", tmp_path, fetch_kwargs={"inst_id": "BTC-USDT-SWAP"}
-            ).frame,
-            data_label="okx",
-        ),
-    ]
-    frame, receipt = run_crossvenue_basis(legs=legs, asset="BTC")
-    assert receipt["data_label"] == "kraken+okx"
-    assert crossvenue_basis_contract_errors(receipt) == []
-    assert crossvenue_basis_verdict(receipt) == "pass"
-    pair = receipt["results"][0]
-    assert pair["basis_diff"]["n_dates"] >= 30
-    assert pair["funding_diff"]["status"] == "ok"
-    assert frame.height == 1
-    path = write_crossvenue_basis_receipt(receipt, tmp_path / "receipts")
-    from quant_fund.research.receipt_v2 import verify_receipt_file
+    repo_root = Path(__file__).resolve().parents[3]
+    tape_root = repo_root / "data" / "tapes" / "xvenue_live_drill"
+    manifest_path = repo_root / "data" / "manifests" / "xvenue_live_drill.json"
 
-    assert verify_receipt_file(path)["valid"]
+    collected = {
+        "kraken_spot": collect_source(
+            "kraken_spot", tape_root, fetch_kwargs={"pair": "XBTUSD", "interval": 1440}
+        ),
+        "kraken_mark": collect_source(
+            "kraken_futures_mark", tape_root, fetch_kwargs={"symbol": "PF_XBTUSD"}
+        ),
+        "kraken_funding": collect_source(
+            "kraken_funding", tape_root, fetch_kwargs={"symbol": "PF_XBTUSD"}
+        ),
+        "okx_spot": collect_source(
+            "okx_spot", tape_root, fetch_kwargs={"inst_id": "BTC-USDT", "bar": "1Dutc"}
+        ),
+        "okx_mark": collect_source(
+            "okx_mark", tape_root, fetch_kwargs={"inst_id": "BTC-USDT-SWAP", "bar": "1Dutc"}
+        ),
+        "okx_funding": collect_source(
+            "okx_funding", tape_root, fetch_kwargs={"inst_id": "BTC-USDT-SWAP"}
+        ),
+    }
+    try:
+        legs = [
+            VenueLeg(
+                venue="kraken",
+                spot=collected["kraken_spot"].frame,
+                mark=collected["kraken_mark"].frame,
+                funding=collected["kraken_funding"].frame,
+                data_label="kraken",
+            ),
+            VenueLeg(
+                venue="okx",
+                spot=collected["okx_spot"].frame,
+                mark=collected["okx_mark"].frame,
+                funding=collected["okx_funding"].frame,
+                data_label="okx",
+            ),
+        ]
+        frame, receipt = run_crossvenue_basis(legs=legs, asset="BTC")
+        assert receipt["data_label"] == "kraken+okx"
+        assert crossvenue_basis_contract_errors(receipt) == []
+        assert crossvenue_basis_verdict(receipt) == "pass"
+        pair = receipt["results"][0]
+        assert pair["basis_diff"]["n_dates"] >= 30
+        assert pair["funding_diff"]["status"] == "ok"
+        assert frame.height == 1
+        path = write_crossvenue_basis_receipt(receipt, tmp_path / "receipts")
+
+        # spot/mark/funding tapes have heterogeneous frame widths, so each
+        # gets its own manifest; the lane's dataset digest registers on the
+        # first manifest's eval_streams (the registry resolves a digest to
+        # any manifest attesting it).
+        manifests_dir = repo_root / "data" / "manifests"
+        manifest_paths: list[Path] = []
+        for name, result in collected.items():
+            pinned = pin_tape(
+                f"xvenue_drill_{name}",
+                result.data,
+                out_dir=manifests_dir,
+                root=repo_root,
+            )
+            manifest_paths.append(Path(pinned["path"]))
+        manifest = json.loads(manifest_paths[0].read_text(encoding="utf-8"))
+        body = {key: value for key, value in manifest.items() if key != "receipt_sha256"}
+        body["eval_streams"] = [
+            *(body.get("eval_streams") or []),
+            {
+                "dataset_sha256": receipt["dataset_sha256"],
+                "frame": "kraken+okx BTC spot/mark/funding legs (live pull)",
+                "name": "xvenue_live_drill_basis_stream",
+                "producer": "tests/unit/research/test_crossvenue_basis.py::test_xvenue_live_drill",
+            },
+        ]
+        sealed = {**body, "receipt_sha256": hash_bytes(canonical_json_bytes(body))}
+        manifest_paths[0].write_text(
+            json.dumps(sealed, indent=2, sort_keys=True, allow_nan=False) + "\n",
+            encoding="utf-8",
+        )
+
+        from quant_fund.research.receipt_v2 import verify_receipt_file
+
+        assert verify_receipt_file(path)["valid"]
+    finally:
+        for manifest in (repo_root / "data" / "manifests").glob("xvenue_drill_*.json"):
+            manifest.unlink(missing_ok=True)
+        manifest_path.unlink(missing_ok=True)
+        shutil.rmtree(tape_root, ignore_errors=True)
