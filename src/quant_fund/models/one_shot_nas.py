@@ -78,7 +78,6 @@ def bench_one_shot_nas(
     # and flips on platform numerics (measured -1 while the argmax is
     # still right); the oracle gates the real claim — the supernet's
     # argmax recovers the true best width
-    print("DBG", super_rank, true_rank)
     if np.argmax(super_rank) != np.argmax(true_rank):
         raise ValueError("one-shot NAS picked wrong architecture")
     return {
