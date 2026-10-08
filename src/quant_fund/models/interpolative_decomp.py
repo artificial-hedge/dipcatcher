@@ -68,6 +68,10 @@ def bench_interpolative_decomp(seed: int | None = None) -> dict[str, float]:
     opt_err = float(np.linalg.norm(a - opt) / np.linalg.norm(a))
     # P embeds a k×k identity on the skeleton columns
     ident_err = float(np.max(np.abs(p[:, skel] - np.eye(k))))
+    if err < opt_err - 1e-12 or ident_err > 1e-9:
+        raise ValueError("ID beats the SVD optimum or lacks skeleton identity")
+    if err > opt_err * 2.0:
+        raise ValueError("ID error far above the optimal rank-k bound")
     return {
         "synthetic_id_err": err,
         "synthetic_opt_err": opt_err,

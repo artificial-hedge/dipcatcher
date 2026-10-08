@@ -3,8 +3,10 @@
 Amos et al. 2017: z_{k+1} = act(Wz_k z_k + Wx_k x + b_k) with Wz_k >= 0 and
 convex monotone activation => f(x, y) convex in y by construction. Used as a
 learned convex potential/value for downstream argmin decisions. Bench checks
-both approximation quality AND the structural guarantee (Jensen violations
-on random midpoints) vs an unconstrained MLP. SYNTHETIC.
+the structural guarantee (Jensen violations on random midpoints must stay
+below the unconstrained MLP's); approximation quality is reported
+honestly (constrained ICNNs underfit more easily than MLPs — no parity
+claim is made). SYNTHETIC.
 """
 
 from __future__ import annotations
@@ -119,6 +121,10 @@ def bench_input_convex(
         )
         viol_icnn = float((mid_icnn > 1e-4).float().mean())
         viol_mlp = float((mid_mlp > 1e-4).float().mean())
+    if not (viol_icnn <= viol_mlp + 1e-6):
+        raise ValueError("ICNN violated convexity more than the MLP")
+    if viol_icnn > 0.05:
+        raise ValueError("ICNN Jensen violations exceed bound")
     return {
         "synthetic_icnn_mse": mse_icnn,
         "synthetic_icnn_mlp_mse": mse_mlp,

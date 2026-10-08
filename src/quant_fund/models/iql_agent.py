@@ -126,6 +126,8 @@ def bench_iql_agent(
         optb.step()
     rew_bc = _eval_pi(bc, rng)
     rew_dataset = float(r.sum() / n_ep)
+    if not (rew_iql > rew_bc and rew_iql > rew_dataset):
+        raise ValueError("IQL extraction did not beat behavior cloning")
     return {
         "synthetic_iql_reward": rew_iql,
         "synthetic_iql_bc_reward": rew_bc,

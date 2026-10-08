@@ -84,6 +84,8 @@ def bench_insider_anomaly(seed: int = 19) -> dict[str, float]:
     rec = float(np.mean(flagged[y > 0.5])) if (y > 0.5).any() else 0.0
     # volume-only baseline
     s_bl = robust_z(x[:, 1])
+    if auc < 0.9 or auc <= auc_score(y, s_bl):
+        raise ValueError("insider anomaly detector off-oracle")
     return {
         "synthetic_insider_auc": auc,
         "synthetic_insider_precision_at10": prec,

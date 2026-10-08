@@ -35,6 +35,8 @@ def _bench_induced_char(seed: int = 0) -> float:
     # Frobenius reciprocity: <Ind 1_H, 1_G>_G = <1_H, Res 1_G>_H = 1
     inner = sum(ind[x] * 1.0 for x in g) / len(g)
     checks.append(abs(inner - 1.0) < 1e-9)
+    if sum(checks) != len(checks):
+        raise ValueError("induced-character oracle mismatch")
     return float(sum(checks) / len(checks))
 
 

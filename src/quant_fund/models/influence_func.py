@@ -1,7 +1,7 @@
 """Influence functions (Koh & Liang 2017) — first-order logistic (SYNTHETIC)
 influence approx via HVP-less diagonal-Hessian estimate; flag most
-harmful points (highest negative influence on test loss) and measure
-mislabel-detection AUC.
+harmful points (highest positive influence on test loss — upweighting
+them increases test loss) and measure mislabel-detection AUC.
 """
 
 from __future__ import annotations
@@ -48,9 +48,13 @@ def bench_influence_func(seed: int = 1827) -> dict[str, float]:
     gi = Xb * (p - y)[:, None]
     infl = -(gi @ (gt / h.mean(0)))
     auc = _auc(infl, mislabeled)  # high self-influence ≈ mislabeled
-    drop = infl < np.quantile(infl, 0.2)
+    drop = infl > np.quantile(infl, 0.8)  # drop most-harmful points
     acc_clean = fit_eval(X[~drop], y[~drop], Xt, yt)
     acc_full = fit_eval(X, y, Xt, yt)
+    if auc < 0.7:
+        raise ValueError("influence ranking failed to surface mislabels")
+    if acc_clean < acc_full - 0.05:
+        raise ValueError("dropping harmful points degraded accuracy")
     return {
         "synthetic_infl_mislabel_auc": auc,
         "synthetic_infl_pruned_acc": acc_clean,

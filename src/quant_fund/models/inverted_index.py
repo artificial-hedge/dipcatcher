@@ -90,6 +90,8 @@ def bench_inverted_index(seed: int = 20261231 + 460) -> dict[str, float]:
         )
         match += int(query(idx, q, len(docs)) == _brute(docs, q))
         cover += int(len(set().union(*(set(idx.get(t, [])) for t in vocab))) == len(docs))
+    if match != trials or cover != trials:
+        raise ValueError("inverted-index query diverged from brute force")
     return {
         "synthetic_query_matches_brute": float(match / trials),
         "synthetic_postings_cover_corpus": float(cover / trials),

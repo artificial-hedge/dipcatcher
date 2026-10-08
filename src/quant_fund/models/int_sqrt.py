@@ -46,6 +46,8 @@ def bench_int_sqrt(seed: int = 20261231 + 454) -> dict[str, float]:
         k = rng.randrange(2, 8)
         rk = kth_root(n, k)
         kth += int(rk**k <= n < (rk + 1) ** k)
+    if exact != trials or floor != trials or kth != trials:
+        raise ValueError("integer-root floor property violated")
     return {
         "synthetic_isqrt_exact": float(exact / trials),
         "synthetic_floor_property": float(floor / trials),

@@ -26,6 +26,8 @@ def bench_inverse_iter(seed: int = 2997, iters: int = 60) -> dict[str, float]:
     lam_hat = float(v @ A @ v)
     # Jacobi-Davidson-ish check: distance to nearest true eigenvalue
     err = float(np.min(np.abs(lam_sorted - lam_hat)))
+    if err > 1e-6:
+        raise ValueError("inverse iteration missed the shifted eigenpair")
     return {
         "synthetic_inviter_eig_err": err,
         "synthetic_inviter_eig_hat": lam_hat,

@@ -49,6 +49,8 @@ def _bench_interp_proof(seed: int = 0) -> float:
     checks.append(it3 == a or it3 == ("const", True))
     # no shared vars and neither side trivial -> A -> B has no interpolant
     checks.append(interpolant(a, b) is None)
+    if sum(checks) != len(checks):
+        raise ValueError("Craig interpolant oracle mismatch")
     return float(sum(checks) / len(checks))
 
 

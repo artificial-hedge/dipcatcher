@@ -97,4 +97,6 @@ def bench_intuit_class(seed: int = _SEED) -> dict[str, float]:
     checks.append(
         not intuit(frozenset(), ("imp", ("not", ("and", A, "B")), ("or", ("not", A), ("not", "B"))))
     )
+    if sum(checks) != len(checks):
+        raise ValueError("intuitionistic/classical prover gap off-oracle")
     return {"synthetic_intuit_class": float(sum(checks)) / len(checks)}

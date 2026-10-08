@@ -70,4 +70,6 @@ def bench_integral_image(seed: int = _SEED) -> dict[str, float]:
     score += 1.0 if f_edge > 80 and abs(f_flat) < 1e-9 else 0.0
     # full-image sum = last cell
     score += 1.0 if abs(ii[-1, -1] - img.sum()) < 1e-9 else 0.0
+    if score != 4.0:
+        raise ValueError("integral-image identity violated")
     return {"synthetic_integral_image": score / 4.0}

@@ -178,7 +178,10 @@ def bench_interval_censoring(
     true_s = np.exp(-0.5 * hi)
     ise = float(np.mean((surv - true_s) ** 2))
     out_b = turnbull_fit(np.asarray(d["left"]), np.asarray(d["right"]))
-
+    if not (abs(med - med_true) < 0.45 and ise < 0.03):
+        raise ValueError("Turnbull curve off-oracle")
+    if med != float(out_b["median"][0]):
+        raise ValueError("non-deterministic Turnbull fit")
     return {
         "synthetic_median": med,
         "synthetic_median_err": float(abs(med - med_true)),

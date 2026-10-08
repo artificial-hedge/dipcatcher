@@ -86,4 +86,6 @@ def bench_interproc_summary(seed: int = _SEED) -> dict[str, float]:
     summ_w = _summary(prog, "wrap", ["a"], ["w"])
     checks.append(apply_summary(summ_w, (1,)) == apply_summary(summ, (1,)))
     checks.append(len(summ) == 3)  # 3^1 domain tabulated
+    if sum(checks) != len(checks):
+        raise ValueError("functional summary != expanded interpretation")
     return {"synthetic_interproc_summary": float(sum(checks)) / len(checks)}

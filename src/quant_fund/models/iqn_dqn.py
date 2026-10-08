@@ -90,6 +90,8 @@ def bench_iqn_dqn(
     cvar_mean = np.mean(
         [cvar(mc_return_dist(st, int(a_mean[st]), eval_rng, mc_eval)) for st in range(4)]
     )
+    if not (cvar_risk > cvar_mean):
+        raise ValueError("CVaR-weighted policy did not beat mean-Q policy")
     return {
         "synthetic_iqn_cvar": float(cvar_risk),
         "synthetic_iqn_mean_cvar": float(cvar_mean),

@@ -150,6 +150,8 @@ def bench_influence(seed: int = 487) -> dict[str, float]:
     )
     inf = ols_influence(X_bad, y_bad)
     max_cook_idx = int(np.argmax(np.asarray(inf["cook"])))
+    if hit == 0.0 or max_cook_idx != 0 or clean_fp > 2.0:
+        raise ValueError("influence diagnostics failed to isolate the planted outlier")
     return {
         "synthetic_flags_planted": hit,
         "synthetic_clean_flag_sum": clean_fp,

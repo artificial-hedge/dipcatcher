@@ -54,6 +54,8 @@ def bench_inline_cache(seed: int = 20261231 + 484) -> dict[str, float]:
         s2 = Site()
         ok2 = all(s2.call(ks[i % 4], "m") == ks[i % 4].methods["m"] for i in range(16))
         poly += int(ok2 and s2.hits == 0)
+    if correct != trials or hitrate != trials or poly != trials:
+        raise ValueError("inline-cache behavior off-oracle")
     return {
         "synthetic_result_correct": float(correct / trials),
         "synthetic_monomorphic_hitrate": float(hitrate / trials),

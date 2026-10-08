@@ -139,6 +139,8 @@ def bench_ingarch(seed: int = 20261231 + 359) -> dict[str, float]:
         and abs(r["uncond_mean"] - float(np.mean(y))) / float(np.mean(y)) < 0.5
         and r["rmse_os"] < rmse_marg
     )
+    if not ok:
+        raise ValueError("INGARCH persistence/intensity off-oracle")
     out: dict[str, float] = {
         "synthetic_ingarch_persist": r["persistence"],
         "synthetic_ingarch_uncond": r["uncond_mean"],

@@ -26,4 +26,6 @@ def bench_ising_metro(seed: int = _SEED) -> dict[str, float]:
             s = ising_sweep(s, 0.8, rng)
         m = abs(float(s.mean()))
         ok += float(m > 0.5)  # low-T ferromagnetic ordering
+    if ok < trials * 0.6:
+        raise ValueError("Ising sweep did not order the lattice")
     return {"synthetic_ising_orders": ok / trials}

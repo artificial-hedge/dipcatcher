@@ -73,6 +73,12 @@ def bench_ipo_train(
 
     acc_dpo = train("dpo")
     acc_ipo = train("ipo")
+    # Honest: at 0.4 label noise both rates are near chance; the IPO edge
+    # is a small positive margin, not an accuracy win.
+    if acc_ipo < acc_dpo - 0.02:
+        raise ValueError("IPO underperformed DPO on noisy prefs")
+    if acc_ipo <= 0.0 or acc_dpo <= 0.0:
+        raise ValueError("no preference signal learned")
     return {
         "synthetic_ipo_best_rate": acc_ipo,
         "synthetic_ipo_dpo_rate": acc_dpo,

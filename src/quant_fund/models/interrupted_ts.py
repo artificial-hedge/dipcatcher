@@ -154,7 +154,15 @@ def bench_interrupted_ts(seed: int = 20261231 + 234) -> dict[str, float]:
     y0 = synth_its(level_shift=0.0, slope_shift=0.0, seed=seed + 1)
     out0 = interrupted_ts(y0, tau=120)
     out_b = interrupted_ts(y, tau=120)
-
+    if not (
+        float(out["p_level"]) < 0.05
+        and float(out["p_slope"]) < 0.05
+        and float(out0["p_level"]) > 0.05
+        and abs(float(out["beta_level"]) - 0.8) < 0.5
+    ):
+        raise ValueError("ITS failed to detect the planted break")
+    if float(out["beta_level"]) != float(out_b["beta_level"]):
+        raise ValueError("non-deterministic ITS fit")
     return {
         "synthetic_beta_level": float(out["beta_level"]),
         "synthetic_level_err": float(abs(float(out["beta_level"]) - 0.8)),

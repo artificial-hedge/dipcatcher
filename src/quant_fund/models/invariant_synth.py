@@ -63,6 +63,8 @@ def bench_invariant_synth(seed: int = 20261231 + 224) -> dict[str, float]:
         bad_inv["c"] = float(inv["c"]) + 1.0
         bad_ok = check_invariant(bad_inv, x0, y0, a, b, guard)
         agree += int(ok and not bad_ok)
+    if agree != trials:
+        raise ValueError("synthesized invariant failed or check not discriminative")
     return {
         "synthetic_agree": float(agree / trials),
         "synthetic_trials": float(trials),

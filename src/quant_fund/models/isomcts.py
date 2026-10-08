@@ -66,4 +66,6 @@ def bench_isomcts(seed: int = _SEED) -> dict[str, float]:
     """SYNTHETIC bench: bet on nuts, check otherwise, aggregated over determinizations."""
     nuts = isomcts_policy(K - 1, sims=60, seed=seed)
     weak = isomcts_policy(0, sims=60, seed=seed)
+    if not (nuts == 1 and weak == 0):
+        raise ValueError("ISMCTS policy did not match the nuts/weak oracle")
     return {"synthetic_isomcts": 1.0 if (nuts == 1 and weak == 0) else 0.0}

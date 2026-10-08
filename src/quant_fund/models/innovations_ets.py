@@ -196,6 +196,8 @@ def bench_innovations_ets(seed: int = 20261231 + 407) -> dict[str, float]:
     realized = float(z.mean())
     bias_c = abs(out["croston_rate"] - realized)
     bias_s = abs(out["sba_rate"] - realized)
+    if not (out["sba_rate"] < out["croston_rate"]):
+        raise ValueError("SBA did not shrink the Croston rate")
     return {
         "synthetic_ets_mase_ratio": mase_ratio,
         "synthetic_croston_rate": float(out["croston_rate"]),

@@ -6,8 +6,10 @@ long-sequence forecasting at a fraction of the quadratic cost, with a
 conv-halving distilling stack. Requires the ``nn`` extra; SYNTHETIC only.
 
 Bench: long-window forecast where a few key timesteps carry the signal —
-ProbSparse attention matches full attention accuracy on a query budget,
-and both beat an AR ridge.
+ProbSparse attention stays within a small factor of full-attention MAE
+on a 25% query budget, and both beat an AR ridge. The bench does NOT
+claim parity: the measured MAE gap vs full attention is reported
+honestly.
 """
 
 from __future__ import annotations
@@ -122,6 +124,10 @@ def bench_informer_attn(seed: int = 97) -> dict[str, float]:
         np.linalg.solve(xr[:tr].T @ xr[:tr] + 1e-3 * np.eye(xr.shape[1]), xr[:tr].T @ y[:tr])
     )
     mae_r = float(np.mean(np.abs(xr[tr:] @ wr - y[tr:])))
+    if not (mae_ps < mae_r):
+        raise ValueError("ProbSparse attention did not beat AR ridge")
+    if mae_ps - mae_full > 0.15:
+        raise ValueError("ProbSparse degraded far below full attention")
     return {
         "synthetic_informer_mae": mae_ps,
         "synthetic_informer_fullattn_mae": mae_full,

@@ -43,4 +43,6 @@ def bench_inline_expand(seed: int = _SEED) -> dict[str, float]:
         x = int(rng.randint(-5, 5))
         expect = run_expr(arg, {"x": x}) * (run_expr(arg, {"x": x}) + 1)
         ok += float(run_expr(body, {"x": x}) == expect)
+    if ok != trials:
+        raise ValueError("inlined call disagrees with evaluated original")
     return {"synthetic_inline_exact": ok / trials}

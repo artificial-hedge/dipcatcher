@@ -77,6 +77,8 @@ def bench_instr_sched(seed: int = 20261231 + 354) -> dict[str, float]:
             beats_serial += int(m <= n)
         else:
             beats_serial += 1
+    if bounds_ok != trials or beats_serial != trials:
+        raise ValueError("schedule violated critical-path/serial bounds")
     return {
         "synthetic_within_bounds": float(bounds_ok / trials),
         "synthetic_le_serial": float(beats_serial / trials),

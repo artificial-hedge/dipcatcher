@@ -74,6 +74,8 @@ def _bench_ip_qp(seed: int = 0) -> float:
     b4 = -np.ones(3) + 0.0  # x_i >= 1 -> -x_i <= -1
     x4 = qp_solve(q4, c4, a4, b4)
     checks.append(np.allclose(x4, np.ones(3), atol=1e-2))
+    if sum(checks) != len(checks):
+        raise ValueError("primal-dual QP solver off-oracle")
     return float(sum(checks) / len(checks))
 
 

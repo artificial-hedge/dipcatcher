@@ -53,4 +53,6 @@ def bench_interpolant_mc(seed: int = _SEED) -> dict[str, float]:
     checks.append(safe4 and k4 == 1)
     # widening: clamped system converges faster than unbounded
     checks.append(k <= 5)
+    if sum(checks) != len(checks):
+        raise ValueError("interpolant BMC off-oracle")
     return {"synthetic_interpolant_mc": float(sum(checks)) / len(checks)}

@@ -237,4 +237,6 @@ def bench_interval_analysis(seed: int = _SEED) -> dict[str, float]:
     )
     s4 = transfer(prog4, {"x": (-INF, INF)})
     checks.append(s4["x"][0] >= 4.0 and s4["x"][1] <= 5.0)
+    if sum(checks) != len(checks):
+        raise ValueError("interval abstract transfer off-oracle")
     return {"synthetic_interval_analysis": float(sum(checks)) / len(checks)}

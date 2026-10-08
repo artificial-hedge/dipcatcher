@@ -33848,6 +33848,120 @@
   },
   "research/xwatch.py": {
    "status": "audited"
+  },
+  "models/induced_char.py": {
+   "status": "audited"
+  },
+  "models/inequality_indices.py": {
+   "status": "audited"
+  },
+  "models/influence_diagnostics.py": {
+   "status": "audited"
+  },
+  "models/influence_func.py": {
+   "status": "audited"
+  },
+  "models/information_filter.py": {
+   "status": "audited"
+  },
+  "models/information_share.py": {
+   "status": "audited"
+  },
+  "models/informer_attn.py": {
+   "status": "audited"
+  },
+  "models/ingarch.py": {
+   "status": "audited"
+  },
+  "models/inline_cache.py": {
+   "status": "audited"
+  },
+  "models/inline_expand.py": {
+   "status": "audited"
+  },
+  "models/innovations_ets.py": {
+   "status": "audited"
+  },
+  "models/input_convex.py": {
+   "status": "audited"
+  },
+  "models/insider_anomaly.py": {
+   "status": "audited"
+  },
+  "models/instr_sched.py": {
+   "status": "audited"
+  },
+  "models/int_sqrt.py": {
+   "status": "audited"
+  },
+  "models/integral_image.py": {
+   "status": "audited"
+  },
+  "models/interp_proof.py": {
+   "status": "audited"
+  },
+  "models/interpolant_mc.py": {
+   "status": "audited"
+  },
+  "models/interpolative_decomp.py": {
+   "status": "audited"
+  },
+  "models/interproc_summary.py": {
+   "status": "audited"
+  },
+  "models/interrater.py": {
+   "status": "audited"
+  },
+  "models/interrupted_ts.py": {
+   "status": "audited"
+  },
+  "models/interval_analysis.py": {
+   "status": "audited"
+  },
+  "models/interval_censoring.py": {
+   "status": "audited"
+  },
+  "models/intuit_class.py": {
+   "status": "audited"
+  },
+  "models/invariant_synth.py": {
+   "status": "audited"
+  },
+  "models/inverse_iter.py": {
+   "status": "audited"
+  },
+  "models/inversion_count.py": {
+   "status": "audited"
+  },
+  "models/inverted_index.py": {
+   "status": "audited"
+  },
+  "models/io_hmm.py": {
+   "status": "audited"
+  },
+  "models/ip_qp.py": {
+   "status": "audited"
+  },
+  "models/ipo_train.py": {
+   "status": "audited"
+  },
+  "models/iql_agent.py": {
+   "status": "audited"
+  },
+  "models/iqn_dqn.py": {
+   "status": "audited"
+  },
+  "models/ising_metro.py": {
+   "status": "audited"
+  },
+  "models/isolation_forest.py": {
+   "status": "audited"
+  },
+  "models/isomap.py": {
+   "status": "audited"
+  },
+  "models/isomcts.py": {
+   "status": "audited"
   }
  },
  "schema_version": "audit-coverage/v1",

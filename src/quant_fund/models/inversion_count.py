@@ -39,4 +39,6 @@ def bench_inversion_count(seed: int = _SEED) -> dict[str, float]:
     # sanity: sorted has 0, reversed has n*(n-1)/2
     ok += int(inversions(list(range(10))) == 0)
     ok += int(inversions(list(range(10, 0, -1))) == 45)
+    if ok != 10:
+        raise ValueError("merge inversion count off brute-force oracle")
     return {"synthetic_inversion": float(ok == 10)}
