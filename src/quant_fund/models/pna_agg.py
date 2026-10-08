@@ -43,6 +43,7 @@ def bench_pna_agg(seed: int = 881, iters: int = 200) -> dict[str, float]:
     torch = _torch()
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     aggs = ["mean", "max", "min", "std"]
     enc = torch.nn.Linear(4, 8)
     mlp = torch.nn.Linear(8 * len(aggs) + 4, 1)

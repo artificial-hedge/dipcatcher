@@ -28,7 +28,7 @@ class TestAlgo:
 
 class TestPNA:
     def test_bench(self) -> None:
-        out = bench_pna_agg(seed=7, iters=15)
+        out = bench_pna_agg(seed=7, iters=40)
         assert 0 <= out["synthetic_pna_auc"] <= 1
 
 
