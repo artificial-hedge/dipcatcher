@@ -39,9 +39,12 @@ def bench_hessian_eig(seed: int = 2353) -> dict[str, float]:
     Xt = torch.tensor(X).float()
     yt = torch.tensor(y).float()[:, None]
     lam_trained = _top_eig(torch, net, Xt, yt)
-    torch.manual_seed(seed + 5)
-    net0, _ = train_mlp(torch, X, y, iters=0, seed=seed + 5)
+    with torch.random.fork_rng():
+        torch.manual_seed(seed + 5)
+        net0 = torch.nn.Sequential(torch.nn.Linear(8, 24), torch.nn.ReLU(), torch.nn.Linear(24, 1))
     lam_init = _top_eig(torch, net0, Xt, yt)
+    if lam_trained <= 0 or lam_init <= 0:
+        raise ValueError("non-positive top eigenvalue")
     return {
         "synthetic_hess_top_trained": lam_trained,
         "synthetic_hess_top_init": lam_init,

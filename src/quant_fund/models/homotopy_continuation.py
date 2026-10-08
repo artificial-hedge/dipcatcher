@@ -163,6 +163,10 @@ def bench_homotopy(seed: int = 0) -> dict[str, float]:
     xp, _ = pc_continuation(f, jac, x0, steps=30)
     err_h = float(np.linalg.norm(xh - x_star))
     err_p = float(np.linalg.norm(xp - x_star))
+    if err_h > 1e-6 or err_p > 1e-6:
+        raise ValueError("continuation missed the planted root")
+    if not (err_n > err_h):
+        raise ValueError("homotopy did not rescue the bad start")
     return {
         "synthetic_newton_err": err_n,
         "synthetic_homotopy_err": err_h,

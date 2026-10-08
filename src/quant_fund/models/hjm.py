@@ -126,6 +126,10 @@ def bench_hjm(seed: int = 20261231 + 288) -> dict[str, float]:
     p0 = float(a["bond_price_init"])
     pm = float(a["bond_price_mean"])
     detects = float(p5 < p0 < p95 and abs(pm - p0) < 0.15)
+    if detects < 1.0:
+        raise ValueError("simulated bond price off analytic band")
+    if not np.array_equal(np.asarray(a["_f_path"]), np.asarray(a2["_f_path"])):
+        raise ValueError("non-deterministic HJM paths")
     return {
         "synthetic_detects": detects,
         "synthetic_determinism": float(

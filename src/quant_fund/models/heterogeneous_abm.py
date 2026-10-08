@@ -225,4 +225,12 @@ def bench_heterogeneous_abm(seed: int = 20260201) -> dict[str, float]:
     )
     sim2 = simulate_brock_hommes(4000, beta=120.0, sigma_eps=0.01, seed=seed)
     out["synthetic_determinism"] = float(np.allclose(sim.prices, sim2.prices))
+    if not (dom[-1] > dom[0]):
+        raise ValueError("intensity of choice did not sharpen sorting")
+    if float(np.std(sk0.prices[-200:])) > 0.05:
+        raise ValueError("skeleton failed to converge")
+    if not (np.all(sim.fractions >= 0) and np.all(sim.fractions <= 1)):
+        raise ValueError("fractions out of bounds")
+    if not np.allclose(sim.prices, sim2.prices):
+        raise ValueError("non-deterministic simulator")
     return out

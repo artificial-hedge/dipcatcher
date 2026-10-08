@@ -34,6 +34,8 @@ def bench_hmac_construct(seed: int = _SEED) -> dict[str, float]:
         forged = hashlib.sha256(naive_mac).digest()  # pretend extension
         real_hmac = toy_hmac(key, msg + ext)
         le_ok += int(forged != real_hmac)
+    if match != n or le_ok != n:
+        raise ValueError("HMAC diverged from stdlib oracle")
     return {
         "synthetic_hmac_matches_stdlib": float(match / n),
         "synthetic_length_ext_resist": float(le_ok / n),

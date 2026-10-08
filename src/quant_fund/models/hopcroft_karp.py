@@ -71,4 +71,6 @@ def bench_hopcroft_karp(seed: int = _SEED) -> dict[str, float]:
         pair_r = [-1] * n_r
         want = sum(_aug(adj, pair_r, u, set()) for u in range(n_l))
         ok += got == want
+    if ok != 30:
+        raise ValueError("Hopcroft-Karp diverged from augmenting-path oracle")
     return {"synthetic_hk_maximal": ok / 30}

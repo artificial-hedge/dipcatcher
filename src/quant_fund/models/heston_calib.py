@@ -60,6 +60,14 @@ def bench_heston_calib(seed: int = 5807) -> dict[str, float]:
     pp = _map(res.x)
     est = np.array([pp[0], pp[2], pp[3], pp[4]])
     err = np.abs(est - true)
+    if (
+        err[0] > 0.01
+        or err[1] > 0.3
+        or err[2] > 0.05
+        or err[3] > 0.1
+        or np.sqrt(np.mean(resid(res.x) ** 2)) > 0.01
+    ):
+        raise ValueError("Heston calibration off-oracle")
     return {
         "synthetic_heston_v0_err": float(err[0]),
         "synthetic_heston_kappa_err": float(err[1]),

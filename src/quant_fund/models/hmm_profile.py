@@ -37,4 +37,6 @@ def bench_hmm_profile(seed: int = _SEED) -> dict[str, float]:
     )
     sep = float(inlike.mean() - outs.mean())
     auc = float((inlike[:, None] > outs[None, :]).mean())
+    if sep <= 0 or auc < 0.9:
+        raise ValueError("profile failed to separate consensus")
     return {"synthetic_profile_sep": float(sep > 0), "synthetic_profile_auc": auc}

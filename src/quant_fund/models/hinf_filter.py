@@ -64,6 +64,8 @@ def bench_hinf_filter(seed: int = 5701) -> dict[str, float]:
     h_err = float(np.max(np.abs(h_est[seg] - x[seg])))
     k_rmse = float(np.sqrt(np.mean((k_est - x) ** 2)))
     h_rmse = float(np.sqrt(np.mean((h_est - x) ** 2)))
+    if not (h_err < k_err):
+        raise ValueError("H-infinity worst-case did not beat misspecified Kalman")
     return {
         "synthetic_hinf_worst": h_err,
         "synthetic_hinf_k_worst": k_err,

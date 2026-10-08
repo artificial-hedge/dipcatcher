@@ -109,6 +109,8 @@ def bench_hoare_logic(seed: int = 20261231 + 225) -> dict[str, float]:
     bad_rejected = not all(
         wlp_bad({"x": 0, "y": y}) for y in range(bounds["y"][0], bounds["y"][1] + 1)
     )
+    if not (valid and concrete_ok and valid == concrete_ok and bad_rejected):
+        raise ValueError("Hoare verifier off-oracle")
     return {
         "synthetic_wlp_valid": float(valid),
         "synthetic_concrete_ok": float(concrete_ok),

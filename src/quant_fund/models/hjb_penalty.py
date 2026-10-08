@@ -57,6 +57,10 @@ def bench_hjb_penalty(seed: int = 4107) -> dict[str, float]:
     ref, _ = crr_price(2000)
     price = _penalty_put()
     eur = european_put()
+    if abs(price - ref) > 0.15 or abs(eur - ref) > 0.5:
+        raise ValueError("penalty HJB off-CRR-oracle")
+    if eur > ref + 1e-6:
+        raise ValueError("American put priced below European")
     return {
         "synthetic_hjb_price": price,
         "synthetic_hjb_err": abs(price - ref),

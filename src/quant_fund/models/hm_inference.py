@@ -151,6 +151,8 @@ def bench_hm_inference(seed: int = 20261231 + 410) -> dict[str, float]:
         e = ("let", "id", ("lam", "x", ("var", "x")), ("app", ("var", "id"), ("int",)))
         gen += int(show(infer(e, {}, s4), s4) == "Int")
     tot = trials * 2
+    if ok != tot or occ != trials or gen != trials:
+        raise ValueError("Algorithm W failed an oracle probe")
     return {
         "synthetic_infers_principal": float(ok / tot),
         "synthetic_occurs_rejects": float(occ / trials),

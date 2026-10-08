@@ -35,6 +35,8 @@ def bench_hoffman_bound(seed: int = 5311) -> dict[str, float]:
     deg = float(adj.sum(1)[0])
     bound = n * (-lam_min) / (deg - lam_min)
     alpha = _brute_alpha(adj)
+    if not (alpha <= np.floor(bound + 1e-9) or alpha <= bound + 1e-9):
+        raise ValueError("Hoffman bound violated by brute-force alpha")
     return {
         "synthetic_hb_bound": bound,
         "synthetic_hb_alpha": float(alpha),

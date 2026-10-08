@@ -39,6 +39,8 @@ def bench_hessenberg_red(seed: int = 3009) -> dict[str, float]:
     H2, Q2 = _hess(A2)
     resid2 = float(np.linalg.norm(A2 - Q2 @ H2 @ Q2.T) / np.linalg.norm(A2))
     off2 = float(np.abs(np.tril(H2, -2)).max())
+    if resid > 1e-12 or resid2 > 1e-12 or off > 1e-12 or off2 > 1e-12:
+        raise ValueError("Hessenberg reduction off-oracle")
     return {
         "synthetic_hess_resid_sym": resid,
         "synthetic_hess_resid_nonsym": resid2,

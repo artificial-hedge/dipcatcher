@@ -152,6 +152,8 @@ def bench_heston_qe(seed: int = 20261231 + 307) -> dict[str, float]:
         and s_err < 0.15
         and abs(var_v - stat_var) / stat_var < 0.6
     )
+    if not ok:
+        raise ValueError("QE moments off stationary law")
     return {
         "synthetic_mean_v": mean_v,
         "synthetic_stat_var": stat_var,

@@ -32,4 +32,6 @@ def bench_homography_4pt(seed: int = _SEED) -> dict[str, float]:
         reproj = (ph2[:2] / ph2[2]).T
         err = np.linalg.norm(reproj - pts2[4:])
         ok += float(err < 0.5)
+    if ok != trials:
+        raise ValueError("DLT homography off held-out oracle")
     return {"synthetic_homography_reproj": ok / trials}

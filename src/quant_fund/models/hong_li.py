@@ -147,6 +147,8 @@ def bench_hong_li(seed: int = 20261231 + 303) -> dict[str, float]:
     r_ok = hl_m_statistic(np.asarray(d["z_right"]))
     r_bad = hl_m_statistic(np.asarray(d["z_wrong"]))
     ok = abs(r_ok["m_stat"]) < 3.0 and abs(r_ok["rho1"]) < 0.12 and r_bad["m_stat"] > 8.0
+    if not ok:
+        raise ValueError("Hong-Li statistic off band")
     return {
         "synthetic_m_right": r_ok["m_stat"],
         "synthetic_rho1_right": r_ok["rho1"],

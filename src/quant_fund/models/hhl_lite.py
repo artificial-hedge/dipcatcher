@@ -70,4 +70,6 @@ def bench_hhl_lite(seed: int = _SEED) -> dict[str, float]:
     except ValueError:
         checks.append(True)
     score = float(np.mean(checks))
+    if score < 1.0:
+        raise ValueError("HHL direction off-oracle")
     return {"synthetic_hhl_lite": score}

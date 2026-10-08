@@ -33,6 +33,9 @@ def bench_hilbert_instant(seed: int = 4807) -> dict[str, float]:
     sl = slice(edge, m - edge)
     rel = np.abs(inst[sl] - true_f[1:][sl]) / true_f[1:][sl]
     env_cv = float(np.std(env[edge:-edge]) / np.mean(env[edge:-edge]))
+    med = float(np.median(rel))
+    if med > 0.5 or env_cv > 0.3 or abs(float(np.mean(env[edge:-edge])) - 1.0) > 0.3:
+        raise ValueError("Hilbert envelope/IF off-oracle")
     return {
         "synthetic_hil_med_err": float(np.median(rel)),
         "synthetic_hil_env_cv": env_cv,

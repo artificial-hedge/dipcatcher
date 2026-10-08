@@ -142,6 +142,8 @@ def bench_reconciliation(seed: int = 497) -> dict[str, float]:
         yr = reconcile(s, yhat, resid, method)
         inco_post = incoherence(s, yr)
         err = float(np.abs(yr - y[-1]).sum())
+        if inco_post > 1e-8:
+            raise ValueError(f"{method} reconciliation not coherent")
         if method == "shrink":
             return {
                 "synthetic_incoherence_pre": inco_pre,

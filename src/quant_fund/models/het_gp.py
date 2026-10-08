@@ -39,6 +39,10 @@ def bench_het_gp(seed: int = 833) -> dict[str, float]:
     var = np.maximum(1.0 + sd_te**2 - (k_te * cho_solve(c2, k_te.T).T).sum(-1), 1e-4)
     ll = -0.5 * np.log(2 * np.pi * var) - (y_te - mu) ** 2 / (2 * var)
     ll_gauss = gauss_logpdf(y_te, float(y.mean()), float(y.std()))
+    if float(ll.mean()) <= float(ll_gauss.mean()):
+        raise ValueError("heteroscedastic GP did not beat Gaussian")
+    if not (np.isfinite(ll.mean()) and np.isfinite(sd_te.max())):
+        raise ValueError("degenerate predictive density")
     return {
         "synthetic_hetgp_test_ll": float(ll.mean()),
         "synthetic_hetgp_gauss_ll": float(ll_gauss.mean()),
