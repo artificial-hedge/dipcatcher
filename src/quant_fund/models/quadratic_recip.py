@@ -52,6 +52,8 @@ def _bench_quadratic_recip(seed: int = 0) -> float:
     rhs = (-1) ** (((3 - 1) // 2) * ((5 - 1) // 2))
     checks.append(lhs == rhs)
     checks.append(jacobi(2, 15) == legendre(2, 3) * legendre(2, 5))
+    if not all(checks):
+        raise ValueError("quadratic-reciprocity oracle failed")
     return float(sum(checks) / len(checks))
 
 

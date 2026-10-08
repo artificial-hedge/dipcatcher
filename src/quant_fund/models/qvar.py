@@ -134,3 +134,38 @@ def qvar_irf(
     base = qvar_forecast(bmat, hist, p, n_steps)
     up = qvar_forecast(bmat, hist_up, p, n_steps)
     return (up - base) / max(sd, 1e-12)
+
+
+def bench_qvar(seed: int = 20261231 + 571) -> dict[str, float]:
+    """QVAR oracle: on a stable bivariate VAR(1) the tau-forecast must
+    cover the realized next step at ~tau and the IRF must decay."""
+    rng = np.random.default_rng(seed)
+    n, t = 2, 4000
+    a = np.array([[0.6, 0.1], [0.0, 0.5]])
+    y = np.zeros((t, n))
+    for i in range(1, t):
+        y[i] = a @ y[i - 1] + rng.standard_normal(n)
+    p, tau = 1, 0.5
+    fit = qvar_fit(y, p, tau)
+    b = np.asarray(fit["B"], dtype=float)
+    # per-coordinate coverage: P(y_{t+1} <= median forecast) ≈ tau
+    origins = 300
+    cov = np.zeros(n)
+    for i in range(t - origins - 1, t - 1):
+        f = qvar_forecast(b, y[i - 1 : i + p - 1], p, 1)[0]
+        cov += (y[i + 1] <= f).astype(float)
+    cov /= origins
+    irf = np.asarray(qvar_irf(y, p, 0.5, shock=0, n_steps=8))
+    checks = [
+        bool(np.all(np.abs(cov - tau) < 0.12)),
+        bool(np.abs(irf[0, 0]) > 0.5),  # unit shock registers at h=0..1
+        bool(np.abs(irf[-1, 0]) < np.abs(irf[0, 0])),  # stable VAR decays
+    ]
+    if not all(checks):
+        raise ValueError("QVAR forecast/IRF oracle failed")
+    return {
+        "synthetic_qvar_coverage_dev": float(np.abs(cov - tau).max()),
+        "synthetic_qvar_irf0": float(irf[0, 0]),
+        "synthetic_qvar_irf_end": float(irf[-1, 0]),
+        "synthetic_qvar_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

@@ -50,4 +50,6 @@ def bench_qpack_pack(seed: int = _SEED) -> dict[str, float]:
     block2 = encode(h2, dyn2)
     ok += int(block2[0] == 0xC0 and block2[1] == 0x80)
     ok += int(len(encode([(":status", "200")], {})) == 1)
+    if ok != 3:
+        raise ValueError("QPACK encoder/decoder off oracle")
     return {"synthetic_qpack": float(ok == 3)}

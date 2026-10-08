@@ -91,6 +91,8 @@ def bench_qr_dqn(
             truth = np.quantile(mc_return_dist(st, a, eval_rng, 800), taus.numpy())
             pred = q_all[mask, a].mean(0)
             pb += np.abs(truth - pred).mean()
+    if cvar_risk <= cvar_mean or pb / 8 > 0.2:
+        raise ValueError("QR-DQN risk-aware policy off MC-return oracle")
     return {
         "synthetic_qr_cvar": float(cvar_risk),
         "synthetic_qr_mean_cvar": float(cvar_mean),

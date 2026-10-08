@@ -42,6 +42,8 @@ def bench_qr_eig(seed: int = 3005) -> dict[str, float]:
     est = _qr_eigs(H)
     est_sorted = np.sort(np.real(est))[::-1]
     err = float(np.abs(est_sorted[: len(lam)] - np.sort(lam)[::-1]).mean())
+    if err > 0.1 or float(np.abs(np.tril(H, -2)).max()) > 1e-9:
+        raise ValueError("QR eigen iteration off oracle")
     return {
         "synthetic_qr_spec_err": err,
         "synthetic_hess_offdiag": float(np.abs(np.tril(H, -2)).max()),

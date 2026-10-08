@@ -31,6 +31,8 @@ def _bench_quadratic_var(seed: int = 0) -> float:
     rv = np.sum(np.array(log_inc) ** 2, axis=0)  # hmm sig^2 s^2 dw^2? keep proxy
     # simpler: QV of the martingale increments sig*S*dW ~ sig^2 E[S^2] dt
     checks.append(abs(np.mean(rv) - sig**2 * np.exp(sig**2)) < 0.1)
+    if not all(checks):
+        raise ValueError("quadratic-variation oracle failed")
     return float(sum(checks) / len(checks))
 
 

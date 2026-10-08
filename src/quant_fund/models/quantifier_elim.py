@@ -87,6 +87,8 @@ def _bench_quantifier_elim(seed: int = 0) -> float:
             for y2 in [Fraction(-1), Fraction(3)]:
                 y = [y0, y1, y2]
                 checks.append(eval_qf(comps3, y) == brute_exists(atoms3, y, grid))
+    if not all(checks):
+        raise ValueError("quantifier-elimination oracle failed")
     return float(sum(checks) / len(checks))
 
 

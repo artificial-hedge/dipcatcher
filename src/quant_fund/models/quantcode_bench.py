@@ -188,6 +188,8 @@ def bench_quantcode_bench(seed: int = 7) -> dict[str, float]:
         bad_compiles = 1
     except ValueError:
         bad_compiles = 0
+    if bad_compiles > 0 or passes == 0:
+        raise ValueError("quantcode judge/compile oracle failed")
     return {
         "synthetic_quantcode_judge_pass_rate": passes / len(_TASKS),
         "synthetic_quantcode_backtest_success_rate": backtests / len(_TASKS),

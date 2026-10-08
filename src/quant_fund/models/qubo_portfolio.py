@@ -91,6 +91,8 @@ def bench_qubo_portfolio(seed: int = 27) -> dict[str, float]:
     xg = np.zeros(n)
     xg[np.argsort(-score)[:card]] = 1
     e_greedy = energy(q, xg)
+    if not (es <= e_opt + 0.51 and es <= e_greedy and int(xs.sum()) == card):
+        raise ValueError("QUBO annealer off brute-force/greedy oracle")
     return {
         "synthetic_qubo_sa_energy": float(es),
         "synthetic_qubo_optimal_energy": e_opt,

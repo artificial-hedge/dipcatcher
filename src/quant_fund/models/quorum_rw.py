@@ -28,4 +28,6 @@ def bench_quorum_rw(seed: int = _SEED) -> dict[str, float]:
         reps = quorum_write(v, n, w)
         got = quorum_read(reps, n, r, v)
         ok += float(got == v)
+    if ok != trials:
+        raise ValueError("quorum read/write intersection violated")
     return {"synthetic_quorum_reads": ok / trials}

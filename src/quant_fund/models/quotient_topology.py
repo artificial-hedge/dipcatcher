@@ -47,6 +47,8 @@ def _bench_quotient_topology(seed: int = 0) -> float:
     ind = frozenset({frozenset(), u})
     qo2 = quotient_opens(ind, q)
     checks.append(qo2 == frozenset({frozenset(), frozenset({0, 1})}))
+    if not all(checks):
+        raise ValueError("quotient-topology oracle failed")
     return float(sum(checks) / len(checks))
 
 

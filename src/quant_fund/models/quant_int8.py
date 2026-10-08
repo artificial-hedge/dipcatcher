@@ -39,6 +39,8 @@ def bench_quant_int8(
                 q = torch.round(p / s).clamp(-127, 127)
                 p.copy_(q * s)
     acc_q = acc_of(torch, net, x_te_t, y_te_t)
+    if acc_fp - acc_q > 0.05:
+        raise ValueError("int8 quantization accuracy drop too large")
     return {
         "synthetic_quant_acc": acc_q,
         "synthetic_quant_fp_acc": acc_fp,

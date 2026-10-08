@@ -224,3 +224,31 @@ class QuantileRegressionForest:
             cols.append(y_sorted[np.minimum(idx, n - 1)])
         grid = np.stack(cols, axis=1)
         return rearrange_quantiles(grid)
+
+
+def bench_quantile_forest(seed: int = 20261231 + 561) -> dict[str, float]:
+    """QRF oracle: on heteroskedastic sin data the predicted tau-quantile
+    surface must cover the truth at ~tau and never cross."""
+    rng = np.random.default_rng(seed)
+    n = 3000
+    x = rng.uniform(0, 2 * np.pi, (n, 1))
+    y = np.sin(x[:, 0]) + (0.2 + 0.5 * np.abs(np.sin(x[:, 0]))) * rng.standard_normal(n)
+    qrf = QuantileRegressionForest(n_estimators=60, random_state=seed).fit(x, y)
+    levels = np.array([0.1, 0.5, 0.9])
+    xte = rng.uniform(0, 2 * np.pi, (1500, 1))
+    yte = np.sin(xte[:, 0]) + (0.2 + 0.5 * np.abs(np.sin(xte[:, 0]))) * rng.standard_normal(1500)
+    qs = qrf.predict_quantiles(xte, levels)
+    cover = (yte[:, None] <= qs).mean(axis=0)
+    checks = [
+        bool(np.all(np.abs(cover - levels) < 0.12)),
+        bool(np.all(np.diff(qs, axis=1) >= -1e-9)),
+        # heteroskedastic: 90-10 spread must vary with x (not constant)
+        float(np.std(qs[:, 2] - qs[:, 0])) > 0.05,
+    ]
+    if not all(checks):
+        raise ValueError("quantile-forest coverage/crossing oracle failed")
+    return {
+        "synthetic_qf_coverage_dev": float(np.abs(cover - levels).max()),
+        "synthetic_qf_spread_var": float(np.std(qs[:, 2] - qs[:, 0])),
+        "synthetic_qf_score": float(sum(checks) / len(checks)),
+    }

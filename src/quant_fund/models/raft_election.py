@@ -90,6 +90,8 @@ def bench_raft_election(seed: int = 20261231 + 251) -> dict[str, float]:
         safety += int(not res["safety_violation"])
         live += int(res["leader"] != -1)
         repl += int(bool(res["replicated"]))
+    if safety != trials or live != trials or repl != trials:
+        raise ValueError("raft election safety/liveness/replication failed")
     return {
         "synthetic_safety": float(safety / trials),
         "synthetic_liveness": float(live / trials),

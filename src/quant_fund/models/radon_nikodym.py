@@ -35,4 +35,6 @@ def bench_radon_nikodym(seed: int = _SEED) -> dict[str, float]:
     want = _beta_pdf(mid)  # nu is uniform density 1 on [0,1]
     mask = (mid > 0.05) & (mid < 0.9)
     rel = np.abs(ratio[mask] - want[mask]) / want[mask]
+    if float(rel.mean()) >= 0.05:
+        raise ValueError("Radon-Nikodym density-ratio off oracle")
     return {"synthetic_rn_deriv": float(rel.mean() < 0.05)}

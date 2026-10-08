@@ -136,6 +136,10 @@ def bench_qmdp(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_qmdp_value"] = v_est
     # value bound: V_MDP ≥ realized POMDP return (strict overestimate)
     out["synthetic_qmdp_upper_bound"] = float(v_est > ret + 1e-9)
+    if not (
+        out["synthetic_qmdp_listens_uncertain"] == 1.0 and out["synthetic_qmdp_upper_bound"] == 1.0
+    ):
+        raise ValueError("QMDP belief policy off Tiger oracle")
     return out
 
 

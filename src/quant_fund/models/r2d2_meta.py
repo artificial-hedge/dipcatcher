@@ -50,6 +50,8 @@ def bench_r2d2_meta(seed: int = 871, n_tasks: int = 30, K: int = 5) -> dict[str,
         Xs = np.stack([xs, np.ones(len(xs))], 1)
         w0 = np.linalg.solve(Xs.T @ Xs + lam * np.eye(2), Xs.T @ ys)
         mses_raw.append(float(((np.stack([xq, np.ones(len(xq))], 1) @ w0 - yq) ** 2).mean()))
+    if float(np.mean(mses)) >= float(np.mean(mses_raw)):
+        raise ValueError("R2D2 features no better than raw-x ridge")
     return {
         "synthetic_r2d2_query_mse": float(np.mean(mses)),
         "synthetic_r2d2_raw_mse": float(np.mean(mses_raw)),

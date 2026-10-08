@@ -88,6 +88,8 @@ def bench_quaternion_slerp(seed: int = 20261231 + 384) -> dict[str, float]:
         nm = sum(c * c for c in rm)
         n1 = sum(c * c for c in r1)
         rot += int(abs(n0 - nm) < 1e-6 and abs(n0 - n1) < 1e-6)
+    if ends != trials or mid != trials or rot != trials:
+        raise ValueError("slerp endpoint/bisector/norm oracle failed")
     return {
         "synthetic_endpoints": float(ends / trials),
         "synthetic_bisects_angle": float(mid / trials),

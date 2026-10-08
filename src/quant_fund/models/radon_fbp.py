@@ -65,4 +65,6 @@ def bench_radon_fbp(seed: int = _SEED) -> dict[str, float]:
     corr = float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
     # Line-integral consistency: sinogram mass == image mass per angle (approx).
     mass_err = abs(sino[0].sum() - img.sum()) / img.sum()
-    return {"synthetic_radon_fbp": 1.0 if (corr > 0.85 and mass_err < 0.05) else corr}
+    if not (corr > 0.85 and mass_err < 0.05):
+        raise ValueError("FBP reconstruction off phantom oracle")
+    return {"synthetic_radon_fbp": corr}

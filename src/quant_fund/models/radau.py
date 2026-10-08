@@ -123,4 +123,11 @@ def bench_radau(seed: int = 20261231) -> dict[str, float]:
     y = radau(fs, np.array([1.0]), t, stages=3)
     out["synthetic_radau3_stiff_err"] = float(abs(y[-1, 0] - np.cos(1.0)))
     out["synthetic_radau3_stiff_finite"] = float(np.isfinite(y).all())
+    if not (
+        out["synthetic_radau3_order"] > 4.0
+        and out["synthetic_radau2_order"] > 2.0
+        and out["synthetic_radau3_stiff_err"] < 0.02
+        and out["synthetic_radau3_stiff_finite"] == 1.0
+    ):
+        raise ValueError("Radau collocation order/stiff-stability off oracle")
     return out

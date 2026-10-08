@@ -142,5 +142,5 @@ def bench_procrustes(seed: int = 20261231 + 417) -> dict[str, float]:
         "synthetic_procrustes_rot_err": r_err,
         "synthetic_procrustes_disp": disp,
         "synthetic_procrustes_gpa_md": md,
-        "synthetic_score": 1.0,
+        "synthetic_score": float(r_err <= 0.05 and disp <= 0.05 and md <= 0.02),
     }

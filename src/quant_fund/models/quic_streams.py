@@ -38,4 +38,6 @@ def bench_quic_streams(seed: int = _SEED) -> dict[str, float]:
         ok += 0
     except ValueError:
         ok += 1
+    if ok != 3:
+        raise ValueError("QUIC stream reassembly off oracle")
     return {"synthetic_quic": float(ok == 3)}

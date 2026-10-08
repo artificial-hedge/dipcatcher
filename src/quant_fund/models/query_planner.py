@@ -51,6 +51,8 @@ def bench_query_planner(seed: int = 20261231 + 363) -> dict[str, float]:
         c_opt = min(_plan_cost(sizes, sels, list(p)) for p in itertools.permutations(range(3)))
         gaps.append(c_greedy / c_opt - 1.0)
         opt_gap_ok += int(abs(c_greedy - c_opt) < 1e-6 * max(1.0, c_opt))
+    if idx_ok != trials or opt_gap_ok != trials:
+        raise ValueError("query-planner selectivity/greedy-optimality failed")
     return {
         "synthetic_index_when_selective": float(idx_ok / trials),
         "synthetic_greedy_is_optimal": float(opt_gap_ok / trials),

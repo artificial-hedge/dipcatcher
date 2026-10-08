@@ -33,6 +33,8 @@ def bench_quantum_walk(seed: int = 3085, n: int = 20) -> dict[str, float]:
     for tt in np.linspace(1, n, 50):
         ps = expm(-1j * A * tt) @ psi0
         probs_t.append(float(np.abs(ps[n // 2]) ** 2))
+    if float(np.max(probs_t)) <= p_antipode_c:
+        raise ValueError("quantum walk no faster than classical walk")
     return {
         "synthetic_qwalk_p_antipode": p_antipode_q,
         "synthetic_qwalk_p_peak": float(np.max(probs_t)),

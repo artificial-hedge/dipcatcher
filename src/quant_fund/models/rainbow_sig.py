@@ -112,4 +112,6 @@ def bench_rainbow_sig(seed: int = _SEED) -> dict[str, float]:
         if np.array_equal(public_eval(kp["P"], sf, n), y):
             forged += 1
     forge_rate = forged / trials
+    if ok != trials or forge_rate > 0.1:
+        raise ValueError("rainbow sign/verify or forgery-resistance failed")
     return {"synthetic_rainbow_sig": 0.8 * (ok / trials) + 0.2 * float(forge_rate <= 0.1)}

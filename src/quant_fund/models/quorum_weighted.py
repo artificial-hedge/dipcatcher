@@ -60,4 +60,6 @@ def bench_quorum_weighted(seed: int = _SEED) -> dict[str, float]:
         aw > 0.9,
         aw >= am - 0.02,  # weighted quorum >= naive majority availability
     ]
+    if not all(checks):
+        raise ValueError("weighted-quorum oracle failed")
     return {"synthetic_quorum_weighted": float(np.mean(checks))}

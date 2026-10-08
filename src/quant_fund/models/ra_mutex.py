@@ -23,4 +23,6 @@ def bench_ra_mutex(seed: int = _SEED) -> dict[str, float]:
     reqs = [(t, t % 8) for t in range(40)]
     grants = ra_run(reqs)
     expect = [n for _, n in sorted(reqs)]
+    if grants != expect:
+        raise ValueError("Ricart-Agrawala grant order violated")
     return {"synthetic_ra_order": float(grants == expect)}

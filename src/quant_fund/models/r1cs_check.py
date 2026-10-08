@@ -66,4 +66,6 @@ def bench_r1cs_check(seed: int = _SEED) -> dict[str, float]:
     c5 = [[0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1]]
     w5 = [1, 3, 4, 12, 5, 6, 30]
     checks.append(satisfies(a5, b5, c5, w5))
+    if not all(checks):
+        raise ValueError("R1CS satisfaction oracle failed")
     return {"synthetic_r1cs_check": float(sum(checks)) / len(checks)}

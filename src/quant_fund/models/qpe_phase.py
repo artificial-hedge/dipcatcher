@@ -25,6 +25,8 @@ def bench_qpe_phase(seed: int = 3077, prec: int = 3) -> dict[str, float]:
     # randomized baseline: sample uniform
     rng = np.random.default_rng(seed)
     base_err = float(np.abs(rng.integers(0, N) / N - theta_true))
+    if abs(est - theta_true) > 1.0 / N or probs.max() < 0.5:
+        raise ValueError("QPE phase estimate off oracle")
     return {
         "synthetic_qpe_est": est,
         "synthetic_qpe_true": theta_true,

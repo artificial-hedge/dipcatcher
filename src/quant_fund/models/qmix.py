@@ -109,6 +109,8 @@ def bench_qmix(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_qmix_return"] = ret
     out["synthetic_qmix_learns"] = float(ret > 0)
     out["synthetic_qmix_nonneg_w"] = float(min(abs(float(u.min())) for u in agent.u) >= 0)
+    if not (out["synthetic_qmix_learns"] == 1.0 and out["synthetic_qmix_nonneg_w"] == 1.0):
+        raise ValueError("QMIX failed to learn rendezvous")
     return out
 
 

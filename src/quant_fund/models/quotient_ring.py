@@ -29,6 +29,8 @@ def _bench_quotient_ring(seed: int = 0) -> float:
     checks.append(not is_field_zn(6))
     checks.append(crt_pair(3, 4, 2, 3) == 11)
     checks.append(crt_pair(3, 5, 1, 2) == 7)
+    if not all(checks):
+        raise ValueError("quotient-ring oracle failed")
     return float(sum(checks) / len(checks))
 
 

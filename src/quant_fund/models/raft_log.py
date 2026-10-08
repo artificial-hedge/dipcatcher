@@ -91,6 +91,8 @@ def bench_raft_log(seed: int = _SEED) -> dict[str, float]:
     ld2 = Leader(term=3, n=n)
     ld2.log = list(f[0].log[: f[0].commit]) + [3]
     completeness = all(ld2.log[k - 1] == t for k, t in enumerate(f[0].log, 1) if k <= f[0].commit)
+    if not all([all_replicated, committed, matching, commit_prop, completeness]):
+        raise ValueError("raft log replication/commit oracle failed")
     return {
         "synthetic_raft_log": float(
             np.mean([all_replicated, committed, matching, commit_prop, completeness])

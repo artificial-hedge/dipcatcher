@@ -23342,6 +23342,15 @@
   "models/qlora_nf4.py": {
    "status": "audited"
   },
+  "models/qmc_sequences.py": {
+   "status": "audited"
+  },
+  "models/qmdp.py": {
+   "status": "audited"
+  },
+  "models/qmix.py": {
+   "status": "audited"
+  },
   "models/qmr_solver.py": {
    "status": "audited"
   },
@@ -23357,10 +23366,22 @@
   "models/qnli_studies.py": {
    "status": "audited"
   },
+  "models/qpack_pack.py": {
+   "status": "audited"
+  },
+  "models/qpe_phase.py": {
+   "status": "audited"
+  },
   "models/qqp_lite_studies.py": {
    "status": "audited"
   },
   "models/qqp_studies.py": {
+   "status": "audited"
+  },
+  "models/qr_dqn.py": {
+   "status": "audited"
+  },
+  "models/qr_eig.py": {
    "status": "audited"
   },
   "models/qr_iteration.py": {
@@ -23387,6 +23408,9 @@
   "models/quad_tree.py": {
    "status": "audited"
   },
+  "models/quade.py": {
+   "status": "audited"
+  },
   "models/quadratic_bsde.py": {
    "status": "audited"
   },
@@ -23394,6 +23418,15 @@
    "status": "audited"
   },
   "models/quadratic_k.py": {
+   "status": "audited"
+  },
+  "models/quadratic_recip.py": {
+   "status": "audited"
+  },
+  "models/quadratic_var.py": {
+   "status": "audited"
+  },
+  "models/quadrature.py": {
    "status": "audited"
   },
   "models/quadrature_rules.py": {
@@ -23414,10 +23447,25 @@
   "models/quality_filter_studies.py": {
    "status": "audited"
   },
+  "models/quandt_andrews.py": {
+   "status": "audited"
+  },
   "models/quant_dag.py": {
    "status": "audited"
   },
+  "models/quant_int8.py": {
+   "status": "audited"
+  },
+  "models/quantcode_bench.py": {
+   "status": "audited"
+  },
+  "models/quantifier_elim.py": {
+   "status": "audited"
+  },
   "models/quantile_bandit.py": {
+   "status": "audited"
+  },
+  "models/quantile_forest.py": {
    "status": "audited"
   },
   "models/quantum_chemistry.py": {
@@ -23460,6 +23508,9 @@
    "status": "audited"
   },
   "models/quantum_sensing.py": {
+   "status": "audited"
+  },
+  "models/quantum_walk.py": {
    "status": "audited"
   },
   "models/quark_model.py": {
@@ -23513,6 +23564,15 @@
   "models/quastel_valko.py": {
    "status": "audited"
   },
+  "models/quaternion_slerp.py": {
+   "status": "audited"
+  },
+  "models/qubo_portfolio.py": {
+   "status": "audited"
+  },
+  "models/query_planner.py": {
+   "status": "audited"
+  },
   "models/quest.py": {
    "status": "audited"
   },
@@ -23532,6 +23592,9 @@
    "status": "audited"
   },
   "models/quetzalli_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/quic_streams.py": {
    "status": "audited"
   },
   "models/quicksort.py": {
@@ -23585,13 +23648,25 @@
   "models/quoref_qa_studies.py": {
    "status": "audited"
   },
+  "models/quorum_rw.py": {
+   "status": "audited"
+  },
+  "models/quorum_weighted.py": {
+   "status": "audited"
+  },
   "models/quot_scheme.py": {
    "status": "audited"
   },
   "models/quote_sum_studies.py": {
    "status": "audited"
   },
+  "models/quotient_filter.py": {
+   "status": "audited"
+  },
   "models/quotient_map.py": {
+   "status": "audited"
+  },
+  "models/quotient_ring.py": {
    "status": "audited"
   },
   "models/quotient_stack.py": {
@@ -23600,13 +23675,28 @@
   "models/quotient_stack2.py": {
    "status": "audited"
   },
+  "models/quotient_topology.py": {
+   "status": "audited"
+  },
+  "models/qvar.py": {
+   "status": "audited"
+  },
   "models/r0_estimation.py": {
+   "status": "audited"
+  },
+  "models/r1cs_check.py": {
+   "status": "audited"
+  },
+  "models/r2d2_meta.py": {
    "status": "audited"
   },
   "models/r_transform.py": {
    "status": "audited"
   },
   "models/r_tree.py": {
+   "status": "audited"
+  },
+  "models/ra_mutex.py": {
    "status": "audited"
   },
   "models/rabbinics.py": {
@@ -23628,6 +23718,9 @@
    "status": "audited"
   },
   "models/radar_meteorology.py": {
+   "status": "audited"
+  },
+  "models/radau.py": {
    "status": "audited"
   },
   "models/rademacher_cplx.py": {
@@ -23657,6 +23750,9 @@
   "models/radiopharmacy.py": {
    "status": "audited"
   },
+  "models/radix_join.py": {
+   "status": "audited"
+  },
   "models/radix_sort.py": {
    "status": "audited"
   },
@@ -23666,6 +23762,12 @@
   "models/rado_thm.py": {
    "status": "audited"
   },
+  "models/radon_fbp.py": {
+   "status": "audited"
+  },
+  "models/radon_nikodym.py": {
+   "status": "audited"
+  },
   "models/radon_nikodym_prop.py": {
    "status": "audited"
   },
@@ -23673,6 +23775,12 @@
    "status": "audited"
   },
   "models/radon_transform.py": {
+   "status": "audited"
+  },
+  "models/raft_election.py": {
+   "status": "audited"
+  },
+  "models/raft_log.py": {
    "status": "audited"
   },
   "models/ragas_lite_studies.py": {
@@ -23691,6 +23799,12 @@
    "status": "audited"
   },
   "models/rain_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/rainbow_sig.py": {
+   "status": "audited"
+  },
+  "models/rainflow_fatigue.py": {
    "status": "audited"
   },
   "models/rakshasa_qa_studies.py": {

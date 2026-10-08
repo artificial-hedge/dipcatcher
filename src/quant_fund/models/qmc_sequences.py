@@ -129,6 +129,8 @@ def bench_qmc(seed: int = 0) -> dict[str, float]:
     err_f = abs(f(pts_f))
     err_k = abs(f(pts_k))
     err_mc = abs(f(pts_mc))
+    if not (disc_h < disc_mc and disc_hm < disc_mc and disc_f < disc_mc):
+        raise ValueError("QMC sequences lost the discrepancy oracle to MC")
     return {
         "synthetic_disc_halton": disc_h,
         "synthetic_disc_hammersley": disc_hm,

@@ -24,4 +24,6 @@ def bench_radix_join(seed: int = _SEED) -> dict[str, float]:
     right = rng.randint(0, 100, 80)
     got = {t[0] for t in radix_join(left, right)}
     expect = set(int(x) for x in left) & set(int(x) for x in right)
+    if got != expect:
+        raise ValueError("radix join off set-intersect oracle")
     return {"synthetic_radix_exact": float(got == expect)}
