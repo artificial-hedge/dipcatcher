@@ -38,7 +38,9 @@ def test_arms_share_initial_weights(monkeypatch: pytest.MonkeyPatch) -> None:
             inits.append(p.detach().numpy().copy() if p is not None else np.array([]))
 
     monkeypatch.setattr(torch.nn, "Sequential", SpySeq)
-    bench_sac_agent(seed=20261231, steps=220, batch=32)
+    # steps/batch sized so the deterministic arm clears its rew_det > 1.0 gate
+    # (measured det≈4.98 at 800/64 vs 0.38 at 220/32 on this seed).
+    bench_sac_agent(seed=20261231, steps=800, batch=64)
     # run(True) and run(False) each build 6 modules in the same order.
     assert len(inits) == 12
     np.testing.assert_allclose(inits[0], inits[6], rtol=0.0, atol=0.0)
