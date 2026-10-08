@@ -25,8 +25,8 @@
   },
   "combination": {
    "n_modules": 8,
-   "reason": "New proper-score ensemble-combination package; line-level audit not yet performed.",
-   "status": "partial"
+   "reason": "Line-level audit complete: intercept restored in rolling_combination; all files line-read.",
+   "status": "audited"
   },
   "compute": {
    "n_modules": 7,
@@ -44,8 +44,8 @@
   },
   "decay": {
    "n_modules": 7,
-   "reason": "New IC-decay package; line-level audit not yet performed.",
-   "status": "partial"
+   "reason": "Line-level audit complete: breakeven_cost joint-mask fix; all files line-read.",
+   "status": "audited"
   },
   "diffbacktest": {
    "n_modules": 8,
@@ -62,8 +62,8 @@
   },
   "flowbars": {
    "n_modules": 9,
-   "reason": "New information-driven bars package; line-level audit not yet performed.",
-   "status": "partial"
+   "reason": "Line-level audit complete: all files line-read; deterministic bar construction verified.",
+   "status": "audited"
   },
   "formal": {
    "n_modules": 8,
@@ -184,8 +184,8 @@
   },
   "realized": {
    "n_modules": 2,
-   "reason": "New HF-RV package; line-level audit not yet performed.",
-   "status": "partial"
+   "reason": "Line-level audit complete: hf_rv line-read: PIT gate, fail-closed holes/drift paths verified.",
+   "status": "audited"
   },
   "registry": {
    "n_modules": 7,
@@ -258,6 +258,78 @@
    "status": "audited"
   },
   "backtest/event_sim/simulator.py": {
+   "status": "audited"
+  },
+  "combination/__init__.py": {
+   "status": "audited"
+  },
+  "combination/bma.py": {
+   "status": "audited"
+  },
+  "combination/conformal_combo.py": {
+   "status": "audited"
+  },
+  "combination/granger_ramanathan.py": {
+   "status": "audited"
+  },
+  "combination/online.py": {
+   "status": "audited"
+  },
+  "combination/qlike_optimal.py": {
+   "status": "audited"
+  },
+  "combination/quantile_average.py": {
+   "status": "audited"
+  },
+  "combination/trimming.py": {
+   "status": "audited"
+  },
+  "decay/__init__.py": {
+   "status": "audited"
+  },
+  "decay/ensemble_weights.py": {
+   "status": "audited"
+  },
+  "decay/half_life.py": {
+   "status": "audited"
+  },
+  "decay/ic_curve.py": {
+   "status": "audited"
+  },
+  "decay/ic_series.py": {
+   "status": "audited"
+  },
+  "decay/significance.py": {
+   "status": "audited"
+  },
+  "decay/turnover.py": {
+   "status": "audited"
+  },
+  "flowbars/__init__.py": {
+   "status": "audited"
+  },
+  "flowbars/bars.py": {
+   "status": "audited"
+  },
+  "flowbars/entropy.py": {
+   "status": "audited"
+  },
+  "flowbars/fracdiff.py": {
+   "status": "audited"
+  },
+  "flowbars/imbalance.py": {
+   "status": "audited"
+  },
+  "flowbars/information.py": {
+   "status": "audited"
+  },
+  "flowbars/runs.py": {
+   "status": "audited"
+  },
+  "flowbars/sample_weights.py": {
+   "status": "audited"
+  },
+  "flowbars/stats.py": {
    "status": "audited"
   },
   "microstructure/aftermath_flow_bench.py": {
@@ -31577,6 +31649,12 @@
   "public.py": {
    "reason": "package surface only",
    "status": "waived"
+  },
+  "realized/__init__.py": {
+   "status": "audited"
+  },
+  "realized/hf_rv.py": {
+   "status": "audited"
   },
   "research/__init__.py": {
    "status": "audited"

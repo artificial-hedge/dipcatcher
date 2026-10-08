@@ -102,5 +102,5 @@ def rolling_combination(
         fit = granger_ramanathan(y[t - window : t], preds[t - window : t], constrain=constrain)
         w = fit["weights"]
         weights_path[i] = w
-        combined[i] = float(preds[t] @ w)
+        combined[i] = float(preds[t] @ w + fit["intercept"])
     return {"combined": combined, "weights": weights_path}

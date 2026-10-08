@@ -82,9 +82,9 @@ def breakeven_cost(ic: FloatArray, turnover: FloatArray) -> float:
     turnover = np.asarray(turnover, dtype=np.float64)
     if ic.shape != turnover.shape:
         raise ValueError("ic and turnover must have equal shapes")
-    ic_valid = ic[np.isfinite(ic)]
-    to_valid = turnover[np.isfinite(turnover)]
-    denom = float(np.sum(np.abs(to_valid)))
+    # joint mask — summing over different cells would misalign the ratio
+    ok = np.isfinite(ic) & np.isfinite(turnover)
+    denom = float(np.sum(np.abs(turnover[ok])))
     if denom <= 0:
         return float("inf")
-    return float(np.sum(ic_valid) / denom)
+    return float(np.sum(ic[ok]) / denom)
