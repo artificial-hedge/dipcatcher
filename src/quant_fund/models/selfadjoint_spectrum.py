@@ -24,6 +24,8 @@ def _bench_selfadjoint_spectrum(seed: int = 0) -> float:
     xs = rng.normal(size=(10, 6))
     rq = np.array([xi @ a @ xi / (xi @ xi) for xi in xs])
     checks.append(bool(np.all(rq >= w[0] - 1e-9) and np.all(rq <= w[-1] + 1e-9)))
+    if not all(checks):
+        raise ValueError("self-adjoint spectral oracle failed")
     return float(sum(checks) / len(checks))
 
 

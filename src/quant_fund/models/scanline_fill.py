@@ -72,6 +72,8 @@ def bench_scanline_fill(seed: int = 20261231 + 382) -> dict[str, float]:
         sq = [(5.0, 5.0), (15.0, 5.0), (15.0, 15.0), (5.0, 15.0)]
         cells_sq = fill(sq, 20, 20)
         sym_ok += int(len(cells_sq) == 100)
+    if area_ok != trials or center_ok != trials or sym_ok != trials:
+        raise ValueError("scanline fill area/center oracle failed")
     return {
         "synthetic_area_match": float(area_ok / trials),
         "synthetic_centers_inside": float(center_ok / trials),

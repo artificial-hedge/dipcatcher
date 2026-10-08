@@ -167,6 +167,9 @@ def bench_sac_agent(
 
     rew_sac, alpha = run(True)
     rew_det, _ = run(False)
+    # docstring only promises the comparison; the det baseline must learn
+    if not (rew_det > 1.0 and float(np.isfinite(rew_sac))):
+        raise ValueError("deterministic baseline failed to learn")
     return {
         "synthetic_sac_reward": rew_sac,
         "synthetic_sac_det_reward": rew_det,

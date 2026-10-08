@@ -38,6 +38,8 @@ def _gw(seed: int = 7, iters: int = 300) -> tuple[int, np.ndarray]:
 def bench_sdp_maxcut(seed: int = 5301) -> dict[str, float]:
     cut, _ = _gw(seed)
     truth = brute_maxcut(G_EDGES, G_N)
+    if cut / truth < 0.878:
+        raise ValueError("Goemans-Williamson below 0.878 guarantee")
     return {
         "synthetic_gw_cut": float(cut),
         "synthetic_gw_truth": float(truth),

@@ -108,6 +108,8 @@ def bench_score_sde_ts(
         xs[: 3 * n // 4].mean(0), xs[: 3 * n // 4].std(0), (m, win)
     )
     mmd_gauss = _mmd(gauss.astype(np.float64), te, bw=1.0)
+    if mmd_sde >= mmd_gauss:
+        raise ValueError("score-SDE samples no better than Gaussian baseline")
     return {
         "synthetic_scoresde_mmd": mmd_sde,
         "synthetic_scoresde_gauss_mmd": mmd_gauss,

@@ -55,6 +55,8 @@ def bench_scaffold_fl(
     err_sc = float(np.linalg.norm(w - beta))
     w_fa = _fedavg_rounds(shards, rounds, epochs, lr)
     err_fa = float(np.linalg.norm(w_fa - beta))
+    if err_sc >= err_fa:
+        raise ValueError("SCAFFOLD no better than FedAvg under heterogeneity")
     return {
         "synthetic_scaffold_err": err_sc,
         "synthetic_scaffold_fedavg_err": err_fa,

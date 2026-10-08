@@ -37,4 +37,7 @@ def bench_saa_consistency(seed: int = 5505) -> dict[str, float]:
             oos = _saa_obj(x_hat, rng.gamma(3.0, 2.0, 20000), c)
             gaps.append(truth - oos)
         out[f"synthetic_saa_gap_{n}"] = float(np.mean(gaps))
+    # SAA consistency: the larger-sample gap must be the smaller one
+    if out["synthetic_saa_gap_400"] >= out["synthetic_saa_gap_50"]:
+        raise ValueError("SAA solution gap did not shrink with sample size")
     return out

@@ -68,6 +68,8 @@ def bench_selinger_join(seed: int = 20261231 + 432) -> dict[str, float]:
         rev = list(reversed(range(n)))
         c_rev, _ = dp_best([sizes[i] for i in rev], [sel[i] for i in rev])
         symm += int(abs(c_dp - c_rev) < 1e-6 * max(1.0, c_dp))
+    if opt != trials or cheap != trials or symm != trials:
+        raise ValueError("Selinger DP join-order oracle failed")
     return {
         "synthetic_dp_is_optimal": float(opt / trials),
         "synthetic_dp_le_random": float(cheap / trials),

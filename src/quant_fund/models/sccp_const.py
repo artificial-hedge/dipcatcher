@@ -66,6 +66,8 @@ def bench_sccp_const(seed: int = 20261231 + 351) -> dict[str, float]:
                 env[s[0]] = env[str(s[2])] * int(s[3])
         const_ok += int(all(val[k] == v for k, v in env.items() if val.get(k) is not None))
         cover += int(len(val) == len(env))
+    if const_ok != trials or cover != trials:
+        raise ValueError("SCCP constant-propagation oracle failed")
     return {
         "synthetic_consts_match_oracle": float(const_ok / trials),
         "synthetic_full_coverage": float(cover / trials),

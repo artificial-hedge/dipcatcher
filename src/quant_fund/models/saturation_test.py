@@ -43,6 +43,8 @@ def _bench_saturation_test(seed: int = 0) -> float:
     dom_ext = dom + [Fraction(21, 2)]
     checks.append(realize_type_over_dlo(Fraction(10), "gt", dom_ext) is not None)
     checks.append(realize_type_over_dlo(Fraction(-9, 2), "lt", dom) is not None)
+    if not all(checks):
+        raise ValueError("saturation/type-realization oracle failed")
     return float(sum(checks) / len(checks))
 
 

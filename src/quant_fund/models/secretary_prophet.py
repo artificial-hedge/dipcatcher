@@ -29,6 +29,10 @@ def bench_secretary_prophet(seed: int = 5409) -> dict[str, float]:
         t = 0.5 * np.mean([_seq(rng, n).max() for _ in range(64)])
         got = next((v for v in x if v >= t), x[-1])
         proph_ratio += got / h
+    # hit rate should be near/above the 1/e secretary bound and the
+    # prophet ratio near/above the 1/2 competitive bound
+    if not (sec_ok / trials > 0.25 and proph_ratio / trials > 0.45):
+        raise ValueError("secretary/prophet competitive oracle failed")
     return {
         "synthetic_sec_hit": sec_ok / trials,
         "synthetic_sec_bound": 1.0 / np.e,

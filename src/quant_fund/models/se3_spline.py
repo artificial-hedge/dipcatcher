@@ -74,4 +74,6 @@ def bench_se3_spline(seed: int = 20261231 + 865) -> dict[str, float]:
         d1 = _geodesic_dist(T1, Tm)
         d2 = _geodesic_dist(Tm, T2)
         checks += float(abs(d1 - d2) < 1e-8 * max(1.0, d1))
+    if checks != total:
+        raise ValueError("SE(3) spline exp/log/midpoint oracle failed")
     return {"synthetic_se3": checks / total}

@@ -106,3 +106,39 @@ def trend_strength(y: Array, period: int, model: str = "additive") -> float:
     v_resid = float(np.var(resid[valid]))
     v_ds = float(np.var(deseas))
     return float(max(0.0, 1.0 - v_resid / max(v_ds, 1e-14)))
+
+
+def bench_seasonal(seed: int = 20261231 + 810) -> dict[str, float]:
+    """Classical decomposition oracle: planted sinusoid + linear trend +
+    noise must decompose cleanly; strength measures must rank the
+    seasonal series far above a noise-only series."""
+    rng = np.random.default_rng(seed)
+    n, period = 240, 12
+    t = np.arange(n)
+    seasonal_true = 3.0 * np.sin(2.0 * np.pi * t / period)
+    trend_true = 0.02 * t
+    y = trend_true + seasonal_true + 0.3 * rng.standard_normal(n)
+    y_noise = 0.3 * rng.standard_normal(n)
+    dec = seasonal_decompose(y, period)
+    s_hat = np.asarray(dec["seasonal"])
+    corr_s = float(np.corrcoef(s_hat[period:-period], seasonal_true[period:-period])[0, 1])
+    resid = np.asarray(dec["resid"])
+    recon = np.asarray(dec["trend"]) + s_hat + resid
+    ss = seasonal_strength(y, period)
+    ss_noise = seasonal_strength(y_noise, period)
+    ts = trend_strength(y, period)
+    checks = [
+        corr_s > 0.9,
+        float(np.nanmax(np.abs(recon - y))) < 1e-8,
+        ss > 0.8,
+        ss_noise < ss - 0.5,
+        0.0 <= ts <= 1.0,
+    ]
+    if not all(checks):
+        raise ValueError("seasonal decomposition oracle failed")
+    return {
+        "synthetic_seasonal_corr": corr_s,
+        "synthetic_seasonal_strength": ss,
+        "synthetic_seasonal_noise_strength": ss_noise,
+        "synthetic_seasonal_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

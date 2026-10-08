@@ -68,6 +68,9 @@ def _expected_opt() -> tuple[float, float, float]:
 
 def bench_scenario_tree(seed: int = 5503) -> dict[str, float]:
     stoch, pf, det = _expected_opt()
+    # EVPI and VSS are non-negative by construction
+    if not (pf >= stoch - 1e-9 and stoch >= det - 1e-9):
+        raise ValueError("scenario-tree EVPI/VSS ordering violated")
     return {
         "synthetic_tree_obj": stoch,
         "synthetic_tree_pf": pf,

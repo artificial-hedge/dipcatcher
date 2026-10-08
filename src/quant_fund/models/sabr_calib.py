@@ -72,6 +72,8 @@ def bench_sabr_calib(seed: int = 5803) -> dict[str, float]:
     a, b, r, v = res.x[0], np.clip(res.x[1], 0, 1), np.clip(res.x[2], -0.99, 0.99), np.exp(res.x[3])
     est = np.array([a, b, r, v])
     err = np.abs(est - true)
+    if not (err[0] < 0.2 and err[2] < 0.5 and err[3] < 0.5):
+        raise ValueError("SABR calibration off parameter oracle")
     return {
         "synthetic_sabr_alpha_err": float(err[0]),
         "synthetic_sabr_rho_err": float(err[2]),

@@ -39,6 +39,8 @@ def _bench_schur_ortho(seed: int = 0) -> float:
     checks.append(np.isclose(np.trace(m_e), 2.0))
     checks.append(np.isclose(np.trace(m_t), 0.0))
     checks.append(np.isclose(np.trace(m_c), -1.0))
+    if not all(checks):
+        raise ValueError("Schur-orthogonality oracle failed")
     return float(sum(checks) / len(checks))
 
 

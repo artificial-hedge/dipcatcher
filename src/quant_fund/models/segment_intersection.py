@@ -36,6 +36,12 @@ def seg_isect(s1: Seg, s2: Seg) -> Pt | None:
     return None
 
 
+def _close(p: Pt | None, q: Pt | None, tol: float = 1e-9) -> bool:
+    if p is None or q is None:
+        return False
+    return abs(p[0] - q[0]) <= tol and abs(p[1] - q[1]) <= tol
+
+
 def intersections(segs: list[Seg]) -> list[tuple[int, int, Pt]]:
     out = []
     for i in range(len(segs)):
@@ -72,11 +78,14 @@ def bench_segment_intersection(seed: int = 20261231 + 322) -> dict[str, float]:
         # symmetry: isect point lies on both segments in swapped order
         sym_ok += int(
             all(
-                seg_isect(segs[i], segs[j]) == seg_isect(segs[j], segs[i]) or True
+                (seg_isect(segs[i], segs[j]) is None and seg_isect(segs[j], segs[i]) is None)
+                or _close(seg_isect(segs[i], segs[j]), seg_isect(segs[j], segs[i]))
                 for i in range(len(segs))
                 for j in range(i + 1, len(segs))
             )
         )
+    if count_ok != trials or pt_ok != trials or sym_ok != trials:
+        raise ValueError("segment-intersection oracle failed")
     return {
         "synthetic_count_ok": float(count_ok / trials),
         "synthetic_point_on_both": float(pt_ok / trials),

@@ -179,3 +179,52 @@ def sign_conditioned_interval(
     a = -ee[None, :]
     b = np.zeros(1)
     return polyhedral_interval(y, a, b, ee, sigma, alpha)
+
+
+def bench_selective_inference(seed: int = 20261231 + 811) -> dict[str, float]:
+    """Winner's-curse oracle: conditioning on argmax-|y| selection, the
+    truncated-Gaussian interval covers the true mean at the nominal rate
+    while the naive unconditioned z-interval undercovers badly."""
+    rng = np.random.default_rng(seed)
+    n, sigma, mu, alpha = 8, 1.0, 0.0, 0.10
+    z = 1.6448536269514722  # z_{1-alpha/2}
+    cov_sel, cov_naive, kept = 0, 0, 0
+    while kept < 150:
+        y = mu + sigma * rng.standard_normal(n)
+        i_star = int(np.argmax(np.abs(y)))
+        if y[i_star] <= 0:
+            continue
+        kept += 1
+        # polyhedron for {y_i* > 0, y_i* >= |y_j| for all j}
+        rows = []
+        for j in range(n):
+            if j == i_star:
+                continue
+            r1 = np.zeros(n)
+            r1[j], r1[i_star] = 1.0, -1.0
+            rows.append(r1)  # y_j - y_i* <= 0
+            r2 = np.zeros(n)
+            r2[j], r2[i_star] = -1.0, -1.0
+            rows.append(r2)  # -y_j - y_i* <= 0
+        r3 = np.zeros(n)
+        r3[i_star] = -1.0
+        rows.append(r3)  # -y_i* <= 0
+        a = np.asarray(rows)
+        b = np.zeros(a.shape[0])
+        ee = np.zeros(n)
+        ee[i_star] = 1.0
+        r = polyhedral_interval(y, a, b, ee, sigma, alpha)
+        cov_sel += int(r["ci_lo"] <= mu <= r["ci_hi"])
+        est = float(y[i_star])
+        cov_naive += int(est - z * sigma <= mu <= est + z * sigma)
+    checks = [
+        0.72 <= cov_sel / kept <= 1.0,
+        cov_naive / kept < 0.6,
+    ]
+    if not all(checks):
+        raise ValueError("selective-inference coverage oracle failed")
+    return {
+        "synthetic_tg_coverage": float(cov_sel / kept),
+        "synthetic_naive_coverage": float(cov_naive / kept),
+        "synthetic_selective_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

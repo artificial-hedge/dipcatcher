@@ -25,6 +25,8 @@ def bench_secure_agg(seed: int = 421, n_clients: int = 6, dim: int = 20) -> dict
     err = float(np.abs(plain - secure).max())
     # each masked update reveals nothing (correlation with true update ≈ 0)
     leak = float(np.corrcoef(masked[0], updates[0])[0, 1])
+    if not (err < 1e-8 and abs(leak) < 0.3):
+        raise ValueError("secure-aggregation cancellation/leak oracle failed")
     return {
         "synthetic_sagg_sum_err": err,
         "synthetic_sagg_masked_true_corr": leak,

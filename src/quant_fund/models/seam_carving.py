@@ -77,4 +77,6 @@ def bench_seam_carving(seed: int = _SEED) -> dict[str, float]:
     # straight cut through middle of band
     straight = float(e2[np.arange(n), np.full(n, 20)].sum())
     score += 1.0 if cost2 < straight and not all(p == 20 for p in path2) else 0.0
+    if score < 4.0:
+        raise ValueError("seam-carving optimal-path oracle failed")
     return {"synthetic_seam_carving": score / 4.0}

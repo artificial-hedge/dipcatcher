@@ -59,4 +59,6 @@ def bench_sdf_raymarch(seed: int = _SEED) -> dict[str, float]:
         lambda p: min(sphere_sdf(c1, 1.0, p), sphere_sdf(np.array([0, 0, 3.0]), 0.5, p)), ro, rd
     )
     ok += int(abs(hit4 - 2.5) < 1e-3)
+    if ok != 4:
+        raise ValueError("raymarch hit-depth off analytic oracle")
     return {"synthetic_raymarch": float(ok == 4)}

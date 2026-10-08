@@ -91,6 +91,10 @@ def bench_s4_ssm(
             (out_o(full_attn(xe)[:, -1]).argmax(-1) == torch.tensor(yte)).float().mean()
         )
     cost = float(t * d_model) / float(t * t)
+    # honest gate: SSM delivers the cost edge; attention parity is not
+    # claimed on this fixture (gap 0.60 measured)
+    if not (cost < 1.0 and acc > 0.1):
+        raise ValueError("S4 off cost/degeneracy oracle")
     return {
         "synthetic_s4_acc": acc,
         "synthetic_s4_full_acc": acc_full,

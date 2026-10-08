@@ -38,6 +38,8 @@ def _bench_sde_strong(seed: int = 0) -> float:
     # log-space Euler IS exact for GBM (equivalent to Milstein in log coords)
     log_euler = np.exp((mu - 0.5 * sig**2) + sig * wt[:, -1])
     checks.append(bool(np.allclose(log_euler, exact)))
+    if not all(checks):
+        raise ValueError("Milstein/strong-order oracle failed")
     return float(sum(checks) / len(checks))
 
 

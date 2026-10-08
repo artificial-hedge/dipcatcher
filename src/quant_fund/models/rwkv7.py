@@ -65,6 +65,8 @@ def bench_rwkv7(seed: int = 2257, iters: int = 800, D: int = 16) -> dict[str, fl
     with torch.no_grad():
         acc = (head(scan(emb(X))).argmax(-1) == Y).float().mean().item()
     base = attn_baseline(seed)
+    if float(acc) < base - 0.15:
+        raise ValueError("RWKV-7 recall far below attention baseline")
     return {
         "synthetic_rwkv7_recall": float(acc),
         "synthetic_attn_recall": base,

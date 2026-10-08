@@ -67,7 +67,7 @@ def sim_rwlock(ops: list[tuple[str, int]]) -> tuple[bool, int]:
 
 def bench_rw_lock(seed: int = 20261231 + 492) -> dict[str, float]:
     rng = random.Random(seed)
-    legal = served = no_overlap = 0
+    legal = served = 0
     trials = 60
     for _ in range(trials):
         ops = [(rng.choice(["r", "r", "r", "w"]), i) for i in range(rng.randrange(4, 20))]
@@ -75,10 +75,9 @@ def bench_rw_lock(seed: int = 20261231 + 492) -> dict[str, float]:
         legal += int(ok)
         ok2, n = sim_rwlock(ops)
         served += int(n == len(ops) and ok2)
-        # invariant check inside sim already enforced
-        no_overlap += 1
+    if legal != trials or served != trials:
+        raise ValueError("rwlock legality/serve-all oracle failed")
     return {
         "synthetic_access_legal": float(legal / trials),
         "synthetic_all_served": float(served / trials),
-        "synthetic_no_overlap": float(no_overlap / trials),
     }

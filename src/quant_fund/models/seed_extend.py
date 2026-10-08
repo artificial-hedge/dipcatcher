@@ -43,4 +43,6 @@ def bench_seed_extend(seed: int = _SEED) -> dict[str, float]:
     query = query[:10] + frag + query[40:]
     score, qs, ss = seed_extend(query, subject)
     ok = int(score >= 30 and qs <= 10 and qs + score >= 40 and ss <= 50 and ss + score >= 80)
+    if not ok:
+        raise ValueError("seed-and-extend failed to recover planted fragment")
     return {"synthetic_seed_extend": float(ok)}

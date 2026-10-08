@@ -47,4 +47,6 @@ def bench_sctp_tsn(seed: int = _SEED) -> dict[str, float]:
     ok += int(cum_ack(chunks) == 14)
     # gap at TSN 12: cum ack stops at 11
     ok += int(cum_ack([c for c in chunks if c[0] != 12]) == 11)
+    if ok != 3:
+        raise ValueError("SCTP stream/cumulative-ack oracle failed")
     return {"synthetic_sctp": float(ok == 3)}

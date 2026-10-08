@@ -25052,10 +25052,22 @@
   "models/rvine.py": {
    "status": "audited"
   },
+  "models/rw_lock.py": {
+   "status": "audited"
+  },
   "models/rwe_studies.py": {
    "status": "audited"
   },
+  "models/rwkv7.py": {
+   "status": "audited"
+  },
+  "models/rwkv_wkv.py": {
+   "status": "audited"
+  },
   "models/ryegrass_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/s4_ssm.py": {
    "status": "audited"
   },
   "models/s_multicat.py": {
@@ -25064,16 +25076,25 @@
   "models/s_transform.py": {
    "status": "audited"
   },
+  "models/saa_consistency.py": {
+   "status": "audited"
+  },
   "models/sable_qa_studies.py": {
    "status": "audited"
   },
   "models/sabr.py": {
    "status": "audited"
   },
+  "models/sabr_calib.py": {
+   "status": "audited"
+  },
   "models/sabr_model.py": {
    "status": "audited"
   },
   "models/sabrewing_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/sac_agent.py": {
    "status": "audited"
   },
   "models/sacks_uhlenbeck.py": {
@@ -25086,6 +25107,12 @@
    "status": "audited"
   },
   "models/saddle_node.py": {
+   "status": "audited"
+  },
+  "models/saddlepoint.py": {
+   "status": "audited"
+  },
+  "models/sae_feature.py": {
    "status": "audited"
   },
   "models/sae_linter_studies.py": {
@@ -25187,6 +25214,9 @@
   "models/saturated_model.py": {
    "status": "audited"
   },
+  "models/saturation_test.py": {
+   "status": "audited"
+  },
   "models/satyr_2_qa_studies.py": {
    "status": "audited"
   },
@@ -25199,10 +25229,22 @@
   "models/sawfish_qa_studies.py": {
    "status": "audited"
   },
+  "models/say_echo_do.py": {
+   "status": "audited"
+  },
   "models/sbi.py": {
    "status": "audited"
   },
+  "models/sbm_inference.py": {
+   "status": "audited"
+  },
+  "models/scaffold_fl.py": {
+   "status": "audited"
+  },
   "models/scalable_oversight_studies.py": {
+   "status": "audited"
+  },
+  "models/scale_homogeneity.py": {
    "status": "audited"
   },
   "models/scale_measure.py": {
@@ -25212,6 +25254,9 @@
    "status": "audited"
   },
   "models/scan_cfsp_studies.py": {
+   "status": "audited"
+  },
+  "models/scanline_fill.py": {
    "status": "audited"
   },
   "models/scapegoat_tree.py": {
@@ -25224,6 +25269,12 @@
    "status": "audited"
   },
   "models/scattering_matrix.py": {
+   "status": "audited"
+  },
+  "models/sccp_const.py": {
+   "status": "audited"
+  },
+  "models/scenario_tree.py": {
    "status": "audited"
   },
   "models/scenography.py": {
@@ -25307,10 +25358,16 @@
   "models/schur_decomp.py": {
    "status": "audited"
   },
+  "models/schur_functor.py": {
+   "status": "audited"
+  },
   "models/schur_index.py": {
    "status": "audited"
   },
   "models/schur_multiplier.py": {
+   "status": "audited"
+  },
+  "models/schur_ortho.py": {
    "status": "audited"
   },
   "models/schur_thm.py": {
@@ -25361,6 +25418,15 @@
   "models/scitldr_lite_studies.py": {
    "status": "audited"
   },
+  "models/score_matching.py": {
+   "status": "audited"
+  },
+  "models/score_scale.py": {
+   "status": "audited"
+  },
+  "models/score_sde_ts.py": {
+   "status": "audited"
+  },
   "models/scorpion_qa_studies.py": {
    "status": "audited"
   },
@@ -25397,6 +25463,9 @@
   "models/scruples_studies.py": {
    "status": "audited"
   },
+  "models/sctp_tsn.py": {
+   "status": "audited"
+  },
   "models/sculpture_methods.py": {
    "status": "audited"
   },
@@ -25407,6 +25476,18 @@
    "status": "audited"
   },
   "models/sde_matching.py": {
+   "status": "audited"
+  },
+  "models/sde_strong.py": {
+   "status": "audited"
+  },
+  "models/sdf_raymarch.py": {
+   "status": "audited"
+  },
+  "models/sdp_maxcut.py": {
+   "status": "audited"
+  },
+  "models/se3_spline.py": {
    "status": "audited"
   },
   "models/sea_krait_qa_studies.py": {
@@ -25427,7 +25508,13 @@
   "models/seal_tools_studies.py": {
    "status": "audited"
   },
+  "models/seam_carving.py": {
+   "status": "audited"
+  },
   "models/search_matching.py": {
+   "status": "audited"
+  },
+  "models/seasonal.py": {
    "status": "audited"
   },
   "models/secant_root.py": {
@@ -25454,10 +25541,19 @@
   "models/secretary_dp.py": {
    "status": "audited"
   },
+  "models/secretary_prophet.py": {
+   "status": "audited"
+  },
   "models/section_conj.py": {
    "status": "audited"
   },
+  "models/sectional_curv.py": {
+   "status": "audited"
+  },
   "models/sectorial_op.py": {
+   "status": "audited"
+  },
+  "models/secure_agg.py": {
    "status": "audited"
   },
   "models/security_studies.py": {
@@ -25475,10 +25571,16 @@
   "models/sedum_qa_studies.py": {
    "status": "audited"
   },
+  "models/seed_extend.py": {
+   "status": "audited"
+  },
   "models/seesaw_theorem.py": {
    "status": "audited"
   },
   "models/seg_street.py": {
+   "status": "audited"
+  },
+  "models/segment_intersection.py": {
    "status": "audited"
   },
   "models/segment_tree.py": {
@@ -25511,6 +25613,9 @@
   "models/selberg_trace2.py": {
    "status": "audited"
   },
+  "models/selective_inference.py": {
+   "status": "audited"
+  },
   "models/self_bleu_studies.py": {
    "status": "audited"
   },
@@ -25532,6 +25637,9 @@
   "models/self_improvement_studies.py": {
    "status": "audited"
   },
+  "models/self_organizing_maps.py": {
+   "status": "audited"
+  },
   "models/self_reflect_studies.py": {
    "status": "audited"
   },
@@ -25547,7 +25655,13 @@
   "models/selfadjoint_op.py": {
    "status": "audited"
   },
+  "models/selfadjoint_spectrum.py": {
+   "status": "audited"
+  },
   "models/selick_htpy.py": {
+   "status": "audited"
+  },
+  "models/selinger_join.py": {
    "status": "audited"
   },
   "models/selkie_qa_studies.py": {

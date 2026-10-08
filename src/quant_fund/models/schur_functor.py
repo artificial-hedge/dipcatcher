@@ -27,6 +27,8 @@ def _bench_schur_functor(seed: int = 0) -> float:
     checks.append(wedge_dim(3, 3) == 1)
     # Sym^2 + wedge^2 = V x V dims
     checks.append(sym_dim(2, 3) + wedge_dim(2, 3) == 9)
+    if not all(checks):
+        raise ValueError("Schur-functor dimension oracle failed")
     return float(sum(checks) / len(checks))
 
 

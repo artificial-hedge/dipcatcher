@@ -160,6 +160,10 @@ def bench_say_echo_do(seed: int = 7) -> dict[str, float]:
     probe_acc = float(
         np.mean(np.sign([emb.score(a) for a in m["arts"][200:]]) == np.sign(m["fwd"][200:]))
     )
+    # echo detection must work; probe just above chance (say-do corr ~ 0
+    # is the documented finding, not a defect)
+    if not (auc > 0.8 and probe_acc > 0.5):
+        raise ValueError("say-echo-do detection oracle failed")
     return {
         "synthetic_sed_echo_auc": auc,
         "synthetic_sed_mean_say_do_corr": float(np.mean(covs)),

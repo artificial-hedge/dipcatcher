@@ -36,6 +36,8 @@ def _bench_sectional_curv(seed: int = 0) -> float:
     checks.append(abs(gauss_curvature(np.eye(2), np.diag([-1.0, 0.0]))) < 1e-12)
     # hyperbolic paraboloid z = xy at origin: K = -1
     checks.append(abs(gauss_curvature(np.eye(2), np.array([[0.0, 1.0], [1.0, 0.0]])) + 1.0) < 1e-12)
+    if not all(checks):
+        raise ValueError("curvature-sign oracle failed")
     return float(sum(checks) / len(checks))
 
 
