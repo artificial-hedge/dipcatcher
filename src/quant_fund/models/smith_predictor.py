@@ -33,4 +33,6 @@ def bench_smith_predictor(seed: int = _SEED) -> dict[str, float]:
     plain = smith_run(8, 400, use_smith=False)
     comp = smith_run(8, 400, use_smith=True)
     ok = float(np.isfinite(plain).all() and np.isfinite(comp).all() and abs(comp[-1] - 1.0) < 0.2)
+    if not ok:
+        raise ValueError("smith-predictor tracking oracle failed")
     return {"synthetic_smith_tracks": ok}

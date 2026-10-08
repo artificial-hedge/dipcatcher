@@ -66,6 +66,8 @@ def bench_simple_types(seed: int = 20261231 + 415) -> dict[str, float]:
         )
         arrow += int(t2 == ("->", ("->", INT, INT), ("->", INT, INT)))
         _ = rng.random()
+    if good != trials or bad != trials or arrow != trials:
+        raise ValueError("simply-typed checker accept/reject oracle failed")
     return {
         "synthetic_typed_accept": float(good / trials),
         "synthetic_typed_reject": float(bad / trials),

@@ -74,6 +74,8 @@ def _bench_ski_combinator(seed: int = 0) -> float:
             app(("atom", "f"), app(("atom", "g"), ("atom", "x"))),
         )
     )
+    if not all(checks):
+        raise ValueError("SKI-combinator reduction oracle failed")
     return float(sum(checks) / len(checks))
 
 

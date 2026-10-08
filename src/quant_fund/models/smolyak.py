@@ -92,6 +92,12 @@ def bench_smolyak(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_smolyak_exp_err"] = abs(val2 - (np.e - 1) ** 2)
     out["synthetic_smolyak_npts_l4"] = float(npts2)
     out["synthetic_smolyak_sparse_ratio"] = float(npts2) / (17**2)
+    if not (
+        out["synthetic_smolyak_poly_err"] < 1e-12
+        and out["synthetic_smolyak_exp_err"] < 1e-6
+        and out["synthetic_smolyak_sparse_ratio"] < 1.0
+    ):
+        raise ValueError("smolyak quadrature oracle failed")
     return out
 
 

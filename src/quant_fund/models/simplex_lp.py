@@ -74,4 +74,6 @@ def bench_simplex_lp(seed: int = _SEED) -> dict[str, float]:
             ok += int(np.isclose(obj, ref, atol=1e-6))
         except ValueError:
             ok += 0
+    if ok / n < 0.9:
+        raise ValueError("simplex optimum disagrees with brute-force oracle")
     return {"synthetic_optimum_exact": float(ok / n)}

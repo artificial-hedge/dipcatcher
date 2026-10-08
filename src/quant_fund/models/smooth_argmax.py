@@ -34,6 +34,8 @@ def bench_smooth_argmax(seed: int = 2417, trials: int = 20) -> dict[str, float]:
             g_fd = finite_diff_grad(s0)
             out.append(grad_corr(g, g_fd))
             s = torch.tensor(s0).float().requires_grad_(True)
+    if not (np.mean(corrs) > 0.3 and np.mean(corrs_soft) > 0.3):
+        raise ValueError("soft-argmax gradient correlation oracle failed")
     return {
         "synthetic_smax_sharp_corr": float(np.mean(corrs)),
         "synthetic_smax_soft_corr": float(np.mean(corrs_soft)),

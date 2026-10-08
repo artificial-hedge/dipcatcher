@@ -75,6 +75,8 @@ def bench_siren_inr(
     p_r = p_t.clone().requires_grad_(True)
     gr = torch.autograd.grad(relu_fwd(p_r).sum(), p_r)[0]
     grad_err_r = float((gr - g_t).abs().mean())
+    if not (mse_s < mse_r and grad_err_s < grad_err_r):
+        raise ValueError("SIREN INR/gradient oracle failed")
     return {
         "synthetic_siren_mse": mse_s,
         "synthetic_siren_relu_mse": mse_r,

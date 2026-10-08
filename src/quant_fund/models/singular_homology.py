@@ -38,6 +38,8 @@ def _bench_singular_homology(seed: int = 0) -> float:
     )
     # theta graph: two paths in parallel -> (1, 2)
     checks.append(graph_betti(4, [(0, 1), (1, 3), (0, 2), (2, 3), (0, 3)]) == (1, 2))
+    if not all(checks):
+        raise ValueError("singular-homology oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -73,6 +73,8 @@ def _bench_simplicial_homology(seed: int = 0) -> float:
         betti([0, 1, 2, 3], [(0, 1), (1, 2), (2, 3), (0, 3), (0, 2)], [(0, 1, 2), (0, 2, 3)])
         == (1, 0, 0)
     )
+    if not all(checks):
+        raise ValueError("simplicial-homology oracle failed")
     return float(sum(checks) / len(checks))
 
 

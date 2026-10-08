@@ -33,6 +33,8 @@ def _bench_sl2_structure(seed: int = 0) -> float:
     # Casimir C = ef + fe + h^2/2 = 3/2 I on defining rep
     c = E @ F + F @ E + 0.5 * H @ H
     checks.append(np.allclose(c, 1.5 * np.eye(2)))
+    if not all(checks):
+        raise ValueError("sl2-structure oracle failed")
     return float(sum(checks) / len(checks))
 
 

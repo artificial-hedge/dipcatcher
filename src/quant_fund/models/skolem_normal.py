@@ -32,6 +32,8 @@ def _bench_skolem_normal(seed: int = 0) -> float:
     n = len(domain)
     f = [(x + 1) % n for x in domain]
     checks.append(all(domain[x] != f[x] for x in range(n)))
+    if not all(checks):
+        raise ValueError("skolem-normal-form oracle failed")
     return float(sum(checks) / len(checks))
 
 

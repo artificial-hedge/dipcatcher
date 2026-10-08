@@ -26,4 +26,6 @@ def bench_simd_lanes(seed: int = _SEED) -> dict[str, float]:
         n = rng.randint(1, 60)
         a, b = rng.rand(n), rng.rand(n)
         ok += float(abs(simd_dot(a, b) - float(a @ b)) < 1e-9)
+    if ok != trials:
+        raise ValueError("simd_dot disagrees with dense oracle")
     return {"synthetic_simd_correct": ok / trials}

@@ -33,6 +33,8 @@ def bench_ski_rental(seed: int = 5401) -> dict[str, float]:
         worst_det = max(worst_det, _det_cost(t, buy) / opt)
         rand = np.mean([_rand_cost(t, buy, rng) for _ in range(1500)])
         worst_rand = max(worst_rand, rand / opt)
+    if not (worst_det <= 2.0 - 1.0 / buy + 1e-9 and worst_rand <= np.e / (np.e - 1.0) + 0.05):
+        raise ValueError("ski-rental competitive-ratio oracle failed")
     return {
         "synthetic_ski_det_ratio": worst_det,
         "synthetic_ski_rand_ratio": worst_rand,

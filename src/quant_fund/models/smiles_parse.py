@@ -61,4 +61,6 @@ def bench_smiles_parse(seed: int = _SEED) -> dict[str, float]:
     ok += int(len(a) == 6 and len(b) == 7)
     a, b = parse("NCC(=O)O")
     ok += int(len(a) == 5 and sum(1 for t in b if t[2] == 2) == 1)
+    if ok != 5:
+        raise ValueError("SMILES parse disagrees with known molecules")
     return {"synthetic_smiles": float(ok == 5)}

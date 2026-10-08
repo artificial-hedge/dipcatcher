@@ -23,4 +23,6 @@ def bench_sis_hash(seed: int = _SEED) -> dict[str, float]:
         same = np.array_equal(h1, h2) and not np.array_equal(x1, x2)
         if not same and np.array_equal(sis_hash(A, x1, q), h1):
             ok += 1
+    if ok != trials:
+        raise ValueError("SIS hash binding/determinism oracle failed")
     return {"synthetic_sis_binding": ok / trials}

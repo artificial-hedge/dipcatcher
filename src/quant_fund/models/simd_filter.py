@@ -24,4 +24,6 @@ def bench_simd_filter(seed: int = _SEED) -> dict[str, float]:
         t = float(rng.normal())
         for w in (4, 8, 16):
             ok += float(simd_count(arr, t, w) == int((arr > t).sum()))
+    if ok != trials * 3:
+        raise ValueError("simd_count disagrees with scalar oracle")
     return {"synthetic_simd_exact": ok / (trials * 3)}

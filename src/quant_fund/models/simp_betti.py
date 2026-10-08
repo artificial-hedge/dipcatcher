@@ -100,4 +100,6 @@ def bench_simp_betti(seed: int = _SEED) -> dict[str, float]:
         ("fig8", [1, 2]),
     ]:
         ok += int(betti(_complex(kind)) == want)
+    if ok != 4:
+        raise ValueError("betti numbers disagree with known complexes")
     return {"synthetic_betti_exact": float(ok == 4), "synthetic_betti_partial": ok / 4}

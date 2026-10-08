@@ -385,6 +385,8 @@ def bench_sindy(seed: int = 20261231 + 151) -> dict[str, float]:
     sup_true = set().union(*[set(tk) for tk in truth])
     sup_found = set().union(*[set(mk) for mk in maps_n])
     jaccard = len(sup_true & sup_found) / max(len(sup_true | sup_found), 1)
+    if not (coef_relerr < 0.05 and jaccard > 0.6 and deterministic == 1.0):
+        raise ValueError("SINDy recovery/determinism oracle failed")
     return {
         "synthetic_coef_relerr": coef_relerr,
         "synthetic_vdp_coef_relerr": vdp_relerr,

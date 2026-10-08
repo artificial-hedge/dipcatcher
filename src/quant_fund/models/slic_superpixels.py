@@ -67,4 +67,6 @@ def bench_slic_superpixels(seed: int = _SEED) -> dict[str, float]:
     sizes = [int((lab == u).sum()) for u in np.unique(lab)]
     checks.append(min(sizes) > 10)
     checks.append(max(sizes) < n * n // 4)
+    if not all(checks):
+        raise ValueError("SLIC purity/size oracle failed")
     return {"synthetic_slic_superpixels": float(np.mean(checks))}

@@ -25,4 +25,6 @@ def bench_sliding_mode(seed: int = _SEED) -> dict[str, float]:
         x0 = rng.normal(0, 1, 2)
         hist = smc_run(x0, 1.0, 8.0, 600)
         ok += float(np.linalg.norm(hist[-1]) < 0.5)
+    if ok != trials:
+        raise ValueError("sliding-mode control fails to converge")
     return {"synthetic_smc_converges": ok / trials}

@@ -1,6 +1,6 @@
 """S/T-learner comparison (Künzel taxonomy) — single-net with treatment (SYNTHETIC)
 feature vs two arm-specific nets; PEHE of both vs truth. Diagnostic:
-T-learner wins with strong confounding on this fixture.
+measured on this fixture the S-learner edges the T-learner.
 """
 
 from __future__ import annotations
@@ -48,6 +48,8 @@ def bench_slearner_tlearner(seed: int = 1213, iters: int = 700) -> dict[str, flo
     with torch.no_grad():
         s_cate = s(X1).squeeze(-1).numpy() - s(X0).squeeze(-1).numpy()
         t_cate = t1(Xt).squeeze(-1).numpy() - t0(Xt).squeeze(-1).numpy()
+    if not (np.isfinite(pehe(s_cate, tau)) and np.isfinite(pehe(t_cate, tau))):
+        raise ValueError("S/T-learner PEHE degenerate")
     return {
         "synthetic_st_s_pehe": pehe(s_cate, tau),
         "synthetic_st_t_pehe": pehe(t_cate, tau),

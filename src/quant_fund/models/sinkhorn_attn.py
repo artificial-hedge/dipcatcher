@@ -101,6 +101,8 @@ def bench_sinkhorn_attn(
         acc_sk = float((out(sk_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
         acc_full = float((out_o(full_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
     cost = attn_dot_cost(t, "sinkhorn", _N_BUCKETS)
+    if not (cost < 0.5 and acc_sk > acc_full - 0.1):
+        raise ValueError("sinkhorn-attn cost/parity oracle failed")
     return {
         "synthetic_sinkhorn_acc": acc_sk,
         "synthetic_sinkhorn_full_acc": acc_full,

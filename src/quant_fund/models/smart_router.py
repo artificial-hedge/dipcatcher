@@ -165,6 +165,12 @@ def bench_smart_router(seed: int = 7) -> dict[str, float]:
     # model skill on holdout
     Xh, yfh, yth, _ = synth_fills(_VENUES, 1000, rng_eval)
     fill_mae = float(np.mean(np.abs(predict(w_fill, Xh) - yfh)))
+    if not (
+        float(np.mean(rr_cost) - np.mean(ml_cost)) > 0.0
+        and float(np.mean(np.array(ml_cost) < np.array(rr_cost))) > 0.5
+        and fill_mae < 0.1
+    ):
+        raise ValueError("smart-router cost-margin oracle failed")
     return {
         "synthetic_sor_ml_cost_bps": float(np.mean(ml_cost)),
         "synthetic_sor_rr_cost_bps": float(np.mean(rr_cost)),

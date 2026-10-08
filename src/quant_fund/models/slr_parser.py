@@ -189,6 +189,8 @@ def bench_slr_parser(seed: int = 20261231 + 393) -> dict[str, float]:
         except ValueError:
             rej += 1
     tot = trials * 2
+    if val != tot or rej != trials:
+        raise ValueError("SLR shift-reduce value/reject oracle failed")
     return {
         "synthetic_shift_reduce_value": float(val / tot),
         "synthetic_rejects_bad": float(rej / trials),

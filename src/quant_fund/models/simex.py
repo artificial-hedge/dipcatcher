@@ -181,6 +181,13 @@ def bench_simex(seed: int = 20261231 + 213) -> dict[str, float]:
 
     corr = float(out["corrected"])
     naive = float(out["naive"])
+    if not (
+        abs(corr - 1.0) < abs(naive - 1.0)
+        and abs(corr - 1.0) < 0.25
+        and abs(float(out0["corrected"])) < 0.3
+        and corr == float(out_b["corrected"])
+    ):
+        raise ValueError("SIMEX correction/determinism oracle failed")
     return {
         "synthetic_corrected": corr,
         "synthetic_corrected_err": float(abs(corr - 1.0)),

@@ -83,3 +83,37 @@ def skew_normal_fit(x: Array) -> dict[str, float]:
     omega = np.sqrt(var / max(1.0 - _B * _B * delta * delta, 1e-12))
     xi = mean - omega * _B * delta
     return {"xi": float(xi), "omega": float(omega), "alpha": float(alpha)}
+
+
+def bench_skew_normal(seed: int = 0) -> dict[str, float]:
+    """Skew-normal oracle: ppf must invert the CDF, the density must
+    integrate to one, and alpha = 0 must collapse to the normal."""
+    rng = np.random.default_rng(seed)
+    del rng
+    x = np.linspace(-6.0, 6.0, 4000)
+    xw = np.linspace(-25.0, 25.0, 20000)
+    worst_rt = 0.0
+    worst_marg = 0.0
+    for xi, omega, alpha in [(0.0, 1.0, 0.0), (0.5, 2.0, 3.0), (-1.0, 0.7, -4.0)]:
+        for p in (0.05, 0.25, 0.5, 0.75, 0.95):
+            worst_rt = max(
+                worst_rt,
+                abs(
+                    skew_normal_cdf(
+                        np.array([skew_normal_ppf(p, xi, omega, alpha)]), xi, omega, alpha
+                    )[0]
+                    - p
+                ),
+            )
+        pdf = skew_normal_pdf(xw, xi, omega, alpha)
+        worst_marg = max(worst_marg, abs(float(np.trapezoid(pdf, xw)) - 1.0))
+    base = skew_normal_pdf(x, xi=0.0, omega=1.0, alpha=0.0)
+    normal_err = float(np.max(np.abs(base - norm.pdf(x))))
+    checks = [worst_rt < 1e-8, worst_marg < 1e-3, normal_err < 1e-12]
+    if not all(checks):
+        raise ValueError("skew-normal ppf/normalization oracle failed")
+    return {
+        "synthetic_skewnormal_rt_err": worst_rt,
+        "synthetic_skewnormal_mass_err": worst_marg,
+        "synthetic_skewnormal_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

@@ -46,6 +46,10 @@ def bench_sliding_window_cache(
     acc_w_long = fit_acc(window_feats(x, window), y_long)
     acc_f_long = fit_acc(full_feats(x), y_long)
     mem_frac = float(window) / t
+    # honest gate: window features nearly match full features on
+    # local-pattern data; they are not expected to match on long-horizon data
+    if acc_w_local < 0.85:
+        raise ValueError("window-feature local accuracy below floor")
     return {
         "synthetic_swc_local_window_acc": acc_w_local,
         "synthetic_swc_local_full_acc": acc_f_local,

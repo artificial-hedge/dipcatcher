@@ -57,6 +57,8 @@ def bench_simclr_views(
         .fit(x[:half].reshape(half, -1), y[:half])
         .score(x[half:].reshape(n - half, -1), y[half:])
     )
+    if probe_ssl <= probe_raw:
+        raise ValueError("SimCLR probe does not beat raw-pixel probe")
     return {
         "synthetic_simclr_probe": probe_ssl,
         "synthetic_simclr_raw_probe": probe_raw,

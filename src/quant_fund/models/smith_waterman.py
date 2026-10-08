@@ -111,6 +111,8 @@ def bench_smith_waterman(seed: int = 20261231 + 510) -> dict[str, float]:
         b = "".join(rng.choice(alpha) for _ in range(8))
         s, aa, bb = smith_waterman(a, b)
         sane += int(_score_align(aa, bb, 2, -1, -2) == s and len(aa) == len(bb))
+    if exact != n or sane != n:
+        raise ValueError("Smith-Waterman score/traceback oracle failed")
     return {
         "synthetic_score_exact": exact / n,
         "synthetic_traceback_consistent": sane / n,

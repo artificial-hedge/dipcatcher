@@ -26,4 +26,6 @@ def bench_simt_divergence(seed: int = _SEED) -> dict[str, float]:
         pred = rng.rand(int(rng.randint(3, 8)), n) < 0.5
         counts, _ = simt_run(pred, n)
         ok += float(counts == [int(x.sum()) for x in pred])
+    if ok != trials:
+        raise ValueError("simt run counts diverge from scalar oracle")
     return {"synthetic_simt_counts": ok / trials}

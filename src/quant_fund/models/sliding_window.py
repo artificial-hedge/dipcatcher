@@ -70,6 +70,8 @@ def bench_sliding_window(seed: int = 20261231 + 401) -> dict[str, float]:
         # SR never sends more than GBN on the same loss schedule:
         # every GBN retransmission of a delivered packet is extra work
         eff += int(s_r <= s_g)
+    if complete != trials or inorder != trials or eff != trials:
+        raise ValueError("GBN/SR sliding-window oracle failed")
     return {
         "synthetic_all_delivered": float(complete / trials),
         "synthetic_in_order": float(inorder / trials),

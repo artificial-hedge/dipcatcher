@@ -90,6 +90,8 @@ def bench_sinkhorn(seed: int | None = None) -> dict[str, float]:
     _, c_coarse = sinkhorn(a, b, cost, eps=0.1)
     _, c_fine = sinkhorn(a, b, cost, eps=0.002)
     _, lp = exact_transport(a, b, cost)
+    if not (marg < 1e-6 and -1e-9 < c_fine - lp < 0.01):
+        raise ValueError("sinkhorn marginal/exact-transport oracle failed")
     return {
         "synthetic_marginal_err": marg,
         "synthetic_cost_eps_coarse": c_coarse,

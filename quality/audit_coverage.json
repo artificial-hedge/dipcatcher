@@ -26102,7 +26102,25 @@
   "models/silviculture.py": {
    "status": "audited"
   },
+  "models/simclr_views.py": {
+   "status": "audited"
+  },
+  "models/simd_filter.py": {
+   "status": "audited"
+  },
+  "models/simd_lanes.py": {
+   "status": "audited"
+  },
+  "models/simex.py": {
+   "status": "audited"
+  },
+  "models/simhash.py": {
+   "status": "audited"
+  },
   "models/simon_regularity.py": {
+   "status": "audited"
+  },
+  "models/simp_betti.py": {
    "status": "audited"
   },
   "models/simple_qa_studies.py": {
@@ -26111,10 +26129,19 @@
   "models/simple_theory.py": {
    "status": "audited"
   },
+  "models/simple_types.py": {
+   "status": "audited"
+  },
+  "models/simplex_lp.py": {
+   "status": "audited"
+  },
   "models/simplicial_cat.py": {
    "status": "audited"
   },
   "models/simplicial_comm.py": {
+   "status": "audited"
+  },
+  "models/simplicial_homology.py": {
    "status": "audited"
   },
   "models/simplicial_htpy.py": {
@@ -26132,6 +26159,9 @@
   "models/simpson_corr.py": {
    "status": "audited"
   },
+  "models/simt_divergence.py": {
+   "status": "audited"
+  },
   "models/simulated_annealing.py": {
    "status": "audited"
   },
@@ -26139,6 +26169,9 @@
    "status": "audited"
   },
   "models/sin_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/sindy.py": {
    "status": "audited"
   },
   "models/sine_gordon.py": {
@@ -26150,16 +26183,28 @@
   "models/sing_support.py": {
    "status": "audited"
   },
+  "models/singular_homology.py": {
+   "status": "audited"
+  },
   "models/singular_integrals.py": {
    "status": "audited"
   },
   "models/singular_perturbation.py": {
    "status": "audited"
   },
+  "models/singular_spectrum.py": {
+   "status": "audited"
+  },
   "models/singular_value_op.py": {
    "status": "audited"
   },
   "models/singularity_formation.py": {
+   "status": "audited"
+  },
+  "models/sinkhorn.py": {
+   "status": "audited"
+  },
+  "models/sinkhorn_attn.py": {
    "status": "audited"
   },
   "models/sinology.py": {
@@ -26180,6 +26225,9 @@
   "models/siren_2_qa_studies.py": {
    "status": "audited"
   },
+  "models/siren_inr.py": {
+   "status": "audited"
+  },
   "models/siren_qa_studies.py": {
    "status": "audited"
   },
@@ -26187,6 +26235,9 @@
    "status": "audited"
   },
   "models/sis_epidemic.py": {
+   "status": "audited"
+  },
+  "models/sis_hash.py": {
    "status": "audited"
   },
   "models/sitatunga_qa_studies.py": {
@@ -26222,6 +26273,18 @@
   "models/skew_list.py": {
    "status": "audited"
   },
+  "models/skew_normal.py": {
+   "status": "audited"
+  },
+  "models/skew_t.py": {
+   "status": "audited"
+  },
+  "models/ski_combinator.py": {
+   "status": "audited"
+  },
+  "models/ski_rental.py": {
+   "status": "audited"
+  },
   "models/skill_chain_studies.py": {
    "status": "audited"
   },
@@ -26249,6 +26312,9 @@
   "models/skohorod_metric.py": {
    "status": "audited"
   },
+  "models/skolem_normal.py": {
+   "status": "audited"
+  },
   "models/skoll_qa_studies.py": {
    "status": "audited"
   },
@@ -26264,7 +26330,13 @@
   "models/skua_qa_studies.py": {
    "status": "audited"
   },
+  "models/sl2_structure.py": {
+   "status": "audited"
+  },
   "models/slavic_studies.py": {
+   "status": "audited"
+  },
+  "models/slearner_tlearner.py": {
    "status": "audited"
   },
   "models/sleep_breathing_studies.py": {
@@ -26294,10 +26366,16 @@
   "models/slepian_lemma.py": {
    "status": "audited"
   },
+  "models/slic_superpixels.py": {
+   "status": "audited"
+  },
   "models/slice_filtration.py": {
    "status": "audited"
   },
   "models/slice_filtration2.py": {
+   "status": "audited"
+  },
+  "models/slice_sampling.py": {
    "status": "audited"
   },
   "models/slice_spec.py": {
@@ -26307,6 +26385,18 @@
    "status": "audited"
   },
   "models/slider_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/sliding_attn.py": {
+   "status": "audited"
+  },
+  "models/sliding_mode.py": {
+   "status": "audited"
+  },
+  "models/sliding_window.py": {
+   "status": "audited"
+  },
+  "models/sliding_window_cache.py": {
    "status": "audited"
   },
   "models/slivnyak.py": {
@@ -26319,6 +26409,9 @@
    "status": "audited"
   },
   "models/slow_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/slr_parser.py": {
    "status": "audited"
   },
   "models/slush_consensus.py": {
@@ -26339,6 +26432,9 @@
   "models/small_spec.py": {
    "status": "audited"
   },
+  "models/smart_router.py": {
+   "status": "audited"
+  },
   "models/smash_monoidal.py": {
    "status": "audited"
   },
@@ -26346,6 +26442,12 @@
    "status": "audited"
   },
   "models/smashing_cat.py": {
+   "status": "audited"
+  },
+  "models/smc_samplers.py": {
+   "status": "audited"
+  },
+  "models/smiles_parse.py": {
    "status": "audited"
   },
   "models/smirnov_ising.py": {
@@ -26357,13 +26459,25 @@
   "models/smirnov_percolation.py": {
    "status": "audited"
   },
+  "models/smith_predictor.py": {
+   "status": "audited"
+  },
   "models/smith_project.py": {
    "status": "audited"
   },
   "models/smith_toda.py": {
    "status": "audited"
   },
+  "models/smith_waterman.py": {
+   "status": "audited"
+  },
+  "models/smolyak.py": {
+   "status": "audited"
+  },
   "models/smolyak_grid.py": {
+   "status": "audited"
+  },
+  "models/smooth_argmax.py": {
    "status": "audited"
   },
   "models/smoothness_h.py": {

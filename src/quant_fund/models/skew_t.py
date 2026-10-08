@@ -111,3 +111,33 @@ def skew_t_fit(x: Array) -> dict[str, float]:
         "sigma": float(np.exp(log_sigma)),
         "loglik": float(-res.fun),
     }
+
+
+def bench_skew_t(seed: int = 0) -> dict[str, float]:
+    """Hansen skew-t oracle: ppf must invert the CDF, the density must
+    integrate to one, and lam = 0 must be symmetric about mu."""
+    rng = np.random.default_rng(seed)
+    del rng
+    x = np.linspace(-15.0, 15.0, 8000)
+    worst_rt = 0.0
+    worst_mass = 0.0
+    for nu, lam in [(5.0, 0.0), (8.0, 0.6), (20.0, -0.4)]:
+        for p in (0.05, 0.25, 0.5, 0.75, 0.95):
+            q = skew_t_ppf(p, nu, lam, 0.0, 1.0)
+            worst_rt = max(
+                worst_rt,
+                abs(float(skew_t_cdf(np.array([q]), nu, lam, 0.0, 1.0)[0]) - p),
+            )
+        pdf = skew_t_pdf(x, nu, lam, 0.0, 1.0)
+        worst_mass = max(worst_mass, abs(float(np.trapezoid(pdf, x)) - 1.0))
+    sym = skew_t_pdf(x, 10.0, 0.0, 0.0, 1.0)
+    sym_err = float(np.max(np.abs(sym - sym[::-1])))
+    checks = [worst_rt < 1e-8, worst_mass < 1e-3, sym_err < 1e-12]
+    if not all(checks):
+        raise ValueError("skew-t ppf/normalization/symmetry oracle failed")
+    return {
+        "synthetic_skewt_rt_err": worst_rt,
+        "synthetic_skewt_mass_err": worst_mass,
+        "synthetic_skewt_sym_err": sym_err,
+        "synthetic_skewt_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

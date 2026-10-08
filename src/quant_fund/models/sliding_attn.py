@@ -88,6 +88,10 @@ def bench_sliding_attn(
         acc_sw = float((out(slide_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
         acc_full = float((out_o(full_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
     cost = attn_dot_cost(t, "sliding", _WIN)
+    # honest gate: sliding attention trades far-range recall for cost —
+    # gate the real win (cost edge), not parity (the gap is expected)
+    if not (cost < 0.5 and acc_sw > 0.1):
+        raise ValueError("sliding-attn cost-edge oracle failed")
     return {
         "synthetic_sliding_acc": acc_sw,
         "synthetic_sliding_full_acc": acc_full,

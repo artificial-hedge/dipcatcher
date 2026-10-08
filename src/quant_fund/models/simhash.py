@@ -48,6 +48,8 @@ def bench_simhash(seed: int = 20261231 + 315) -> dict[str, float]:
         near_ok += int(hamming(h1, h2) <= 16)
         far_ok += int(hamming(h1, h3) >= 16)
         sym += int(hamming(h1, h2) == hamming(h2, h1))
+    if near_ok != trials or far_ok != trials or sym != trials:
+        raise ValueError("simhash near/far/symmetry oracle failed")
     return {
         "synthetic_near_detects": float(near_ok / trials),
         "synthetic_far_separates": float(far_ok / trials),
