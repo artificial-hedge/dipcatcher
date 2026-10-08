@@ -1104,9 +1104,13 @@ class HostedK3Backend(_UsageTracker):
             raise RuntimeError("MOONSHOT_API_KEY is not set; fx-1 never hardcodes credentials")
         if timeout_s <= 0:
             raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
+        resolved_url = api_url or os.environ.get("FX1_BASE_URL") or MOONSHOT_API_URL
+        problem = hosted_api_url_problem(resolved_url)
+        if problem is not None:
+            raise RuntimeError(f"FX1_BASE_URL {problem}")
         super().__init__()
         self._model = model
-        self._api_url = api_url or os.environ.get("FX1_BASE_URL") or MOONSHOT_API_URL
+        self._api_url = resolved_url
         self._timeout_s = timeout_s
 
     def complete(
@@ -1250,6 +1254,42 @@ class HostedK3Backend(_UsageTracker):
             api_key=self._api_key,
             label="hosted_k3",
         )
+
+
+def hosted_api_url_problem(url: str) -> str | None:
+    """Why a credentialed hosted-model URL is unsafe — ``None`` when safe.
+
+    Bearer credentials may cross ordinary HTTPS or a literal loopback HTTP
+    address used by a local development server.  Plain HTTP to any external
+    or DNS-resolved host is rejected before a request can be constructed.
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except ValueError:
+        return "must be a well-formed HTTPS URL"
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return "must be an HTTPS URL"
+    if parsed.username is not None or parsed.password is not None:
+        return "must not embed userinfo credentials"
+    if parsed.params or parsed.query or parsed.fragment:
+        return "must not carry params, query, or fragment"
+    try:
+        port = parsed.port
+    except ValueError:
+        return "port must be 1-65535"
+    if port is not None and not 0 < port < 65536:
+        return "port must be 1-65535"
+    host = parsed.hostname
+    if not host:
+        return "must name a host"
+    if parsed.scheme == "http":
+        try:
+            address = _normalized_address(host)
+        except ValueError:
+            return "must use HTTPS unless the host is a literal loopback address"
+        if not address.is_loopback:
+            return "must use HTTPS unless the host is a literal loopback address"
+    return None
 
 
 def byok_base_url_problem(url: str) -> str | None:
