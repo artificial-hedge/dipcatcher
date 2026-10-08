@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -47,6 +49,13 @@ class TestStudentT:
         assert 2.5 < fit["nu"] < 15.0
         assert abs(fit["sigma"] - 0.02 * np.sqrt(5.0 / 3.0)) < 0.01
 
+    def test_fit_accepts_valid_lower_bound_solution(self):
+        rng = np.random.default_rng(3)
+        x = np.r_[np.zeros(5), rng.normal(size=25)]
+        fit = fit_student_t(x)
+        assert fit["nu"] >= 2.01
+        assert np.isfinite(fit["sigma"])
+
     def test_var_es_t(self):
         rng = np.random.default_rng(4)
         x = rng.standard_t(4.0, 5000) * 0.015
@@ -63,6 +72,29 @@ class TestStudentT:
         t_out = parametric_var_es(x, 0.99, "student_t")
         g_out = parametric_var_es(x, 0.99, "gaussian")
         assert t_out["es"] > g_out["es"]
+
+    @pytest.mark.parametrize(
+        ("success", "fun", "jac"),
+        [
+            (False, 1.0, np.zeros(3)),
+            (True, np.nan, np.zeros(3)),
+            (True, 1.0, np.array([0.0, np.nan, 0.0])),
+        ],
+    )
+    def test_fit_rejects_failed_or_nonfinite_optimization(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        success: bool,
+        fun: float,
+        jac: np.ndarray,
+    ) -> None:
+        result = SimpleNamespace(success=success, x=np.array([8.0, 0.0, -1.0]), fun=fun, jac=jac)
+        monkeypatch.setattr(
+            "quant_fund.metrics.risk_parametric.opt.minimize",
+            lambda *args, **kwargs: result,
+        )
+        with pytest.raises(ValueError, match="did not converge"):
+            fit_student_t(np.linspace(-1.0, 1.0, 100))
 
 
 class TestDispatch:
