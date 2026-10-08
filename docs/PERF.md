@@ -579,3 +579,14 @@ degenerate-`nu`" requirement is preferred, the objective can revert to
 `scipy.stats.t.logpdf` (bit-identical) at the cost of most of the speedup (≈1.5x
 instead of ≈6-8x); flagged for the Lead to decide.
 
+**Lead ruling (2026-10-08): KEEP the optimization; do not revert.** The honesty
+contract is denominated in proper scores and identified parameters, not in
+reproducing arbitrary points on a flat likelihood ridge — matching an
+unidentified `nu` bit-for-bit would be precision theater paid for with 4-5x of
+the speedup. The evidence that nothing observable moved is the committed
+equivalence proof (loglik Δ4.8e-6; proper-score surface ≤5e-6 on every cell;
+dedicated non-identifiability test; permanent mutant harnesses). The
+degenerate-cell caveat is binding and is recorded in the `fit_student_t`
+docstring: a degenerate-cell `nu` must never be quoted as an estimate in any
+receipt, report, or headline.
+

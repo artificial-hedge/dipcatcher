@@ -119,7 +119,18 @@ def _t_neg_log_likelihood(theta: Array, v: Array) -> float:
 
 
 def fit_student_t(losses: Array) -> dict[str, float]:
-    """MLE fit of location-scale Student-t to loss observations."""
+    """MLE fit of location-scale Student-t to loss observations.
+
+    Caveat (T8 equivalence proof, Lead ruling 2026-10-08): on near-degenerate
+    inputs ``nu`` is statistically UNIDENTIFIED (flat likelihood ridge as
+    nu -> inf) — its exact value there is not a stable quantity across
+    implementations, and no receipt, report or headline may quote a
+    degenerate-cell ``nu`` as an estimate. The proper-score surface
+    (mu/sigma/loglik/CRPS/quantiles) is the quotable output. See
+    ``tests/unit/metrics/test_fit_student_t_equivalence.py`` — its
+    non-identifiability test is the authority for why ``fit_nu`` carries an
+    equivalence atol of 5e-5, tighter than the fit's own 1e-4 xatol.
+    """
     v = _as_losses(losses)
     x0 = np.array([8.0, float(v.mean()), math.log(float(v.std(ddof=1)))])
     res = opt.minimize(
