@@ -40,12 +40,20 @@ def bench_triangle_raster(seed: int = _SEED) -> dict[str, float]:
         v[:, 2] = rng.rand(3)
         img = rasterize(v[0], v[1], v[2])
         covered = img[:, :, 0].sum()
-        # oracle: coverage cannot exceed area + perimeter slack; z stays in vertex range
+        # oracle: pixel-center coverage tracks true area within a
+        # perimeter-proportional slack BOTH ways (an empty raster passes
+        # an upper-bound-only check); z stays in vertex range.
         area = 0.5 * abs(
             (v[1][0] - v[0][0]) * (v[2][1] - v[0][1]) - (v[2][0] - v[0][0]) * (v[1][1] - v[0][1])
         )
+        # |covered - area| <= perimeter + a few pixels is the standard
+        # pixel-center rasterization bound; 3*edge-pair slack made the
+        # lower bound vacuous at this vertex scale.
+        perim = (
+            np.linalg.norm(v[1] - v[0]) + np.linalg.norm(v[2] - v[1]) + np.linalg.norm(v[0] - v[2])
+        )
+        slack = perim + 4.0
         ok += float(
-            covered <= area + 3 * (np.linalg.norm(v[1] - v[0]) + np.linalg.norm(v[2] - v[0]))
-            and img[:, :, 1].max() <= v[:, 2].max() + 1e-9
+            area - slack <= covered <= area + slack and img[:, :, 1].max() <= v[:, 2].max() + 1e-9
         )
     return {"synthetic_raster_covers": ok / trials}

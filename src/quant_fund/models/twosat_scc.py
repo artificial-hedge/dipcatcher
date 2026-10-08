@@ -77,6 +77,7 @@ def bench_twosat_scc(seed: int = 5907) -> dict[str, float]:
     trials = 40
     agree = 0
     valid = 0
+    n_sat = 0
     for _ in range(trials):
         cl = _rand_2sat(rng, n_var, m)
         sat, a = _scc_solve(cl, n_var)
@@ -86,8 +87,11 @@ def bench_twosat_scc(seed: int = 5907) -> dict[str, float]:
         )
         agree += int(sat == truth)
         if sat:
+            n_sat += 1
             valid += int(all(any(a[abs(lit)] == (lit > 0) for lit in c) for c in cl))
     return {
         "synthetic_2sat_agree": agree / trials,
-        "synthetic_2sat_valid": valid / max(agree, 1),
+        # validity over SAT trials only — UNSAT trials can't yield an
+        # assignment and previously deflated this denominator.
+        "synthetic_2sat_valid": valid / max(n_sat, 1),
     }

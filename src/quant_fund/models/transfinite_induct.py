@@ -24,14 +24,17 @@ def transfinite_recurse(n: int, base, step):
     return vals
 
 
-def induction_fails_on_non_wellorder() -> bool:
-    """On Z with usual order there is no least element; transfinite induction
-    is not applicable — check a predicate that holds at all 'predecessors'
-    but fails at the 'limit'."""
-    # classic counter: P(n) = 'n is finite' fails to transfer at limit w
-    # model: naturals + point w; P(k)=True for finite k, P(w)=False
-    # forall j<w: P(j) yet not P(w) -> schema fails => not well-founded beyond w
-    return True
+def induction_fails_on_non_wellorder(n: int = 20) -> bool:
+    """Model the classic counter: ordinals below omega + the limit omega.
+    P(k) = 'k is finite' holds at every predecessor of omega but fails at
+    omega, so the induction schema witnesses a counterexample. Returns
+    True iff the counterexample structure is present."""
+    omega = n  # index n plays the role of the limit ordinal
+    P = [True] * n + [False]  # P(k) = 'k is finite'
+    # premise holds at omega: all predecessors satisfy P
+    premise_ok = all(P[j] for j in range(omega))
+    # but the conclusion fails: P(omega) is False
+    return premise_ok and not P[omega]
 
 
 def _bench_transfinite_induct(seed: int = 0) -> float:

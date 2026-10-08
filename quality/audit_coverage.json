@@ -24353,6 +24353,18 @@
   "models/tracy_widom_tasep.py": {
    "status": "audited"
   },
+  "models/trade_sign.py": {
+   "status": "audited"
+  },
+  "models/trajectory_transformer.py": {
+   "status": "audited"
+  },
+  "models/trampoline_tc.py": {
+   "status": "audited"
+  },
+  "models/tranad.py": {
+   "status": "audited"
+  },
   "models/transcoder_studies.py": {
    "status": "audited"
   },
@@ -24365,10 +24377,16 @@
   "models/transfer_entropy.py": {
    "status": "audited"
   },
+  "models/transfer_hom.py": {
+   "status": "audited"
+  },
   "models/transfer_matrix.py": {
    "status": "audited"
   },
   "models/transfer_op.py": {
+   "status": "audited"
+  },
+  "models/transfinite_induct.py": {
    "status": "audited"
   },
   "models/transfusion_medicine.py": {
@@ -24422,6 +24440,9 @@
   "models/transversal_mat.py": {
    "status": "audited"
   },
+  "models/transversality.py": {
+   "status": "audited"
+  },
   "models/trapezoid_rule.py": {
    "status": "audited"
   },
@@ -24440,6 +24461,15 @@
   "models/treap.py": {
    "status": "audited"
   },
+  "models/tree_automata.py": {
+   "status": "audited"
+  },
+  "models/tree_cover.py": {
+   "status": "audited"
+  },
+  "models/tree_ensembles.py": {
+   "status": "audited"
+  },
   "models/tree_frog_qa_studies.py": {
    "status": "audited"
   },
@@ -24447,6 +24477,9 @@
    "status": "audited"
   },
   "models/tree_thought_studies.py": {
+   "status": "audited"
+  },
+  "models/tree_walk_interp.py": {
    "status": "audited"
   },
   "models/treefern_qa_studies.py": {
@@ -24465,6 +24498,9 @@
    "status": "audited"
   },
   "models/triang_motive.py": {
+   "status": "audited"
+  },
+  "models/triangle_raster.py": {
    "status": "audited"
   },
   "models/triangular_basis.py": {
@@ -24551,6 +24587,12 @@
   "models/trotter_kato.py": {
    "status": "audited"
   },
+  "models/trotter_suzuki.py": {
+   "status": "audited"
+  },
+  "models/trpo.py": {
+   "status": "audited"
+  },
   "models/trt_functor.py": {
    "status": "audited"
   },
@@ -24569,6 +24611,9 @@
   "models/truncated_sig.py": {
    "status": "audited"
   },
+  "models/trust_region.py": {
+   "status": "audited"
+  },
   "models/trust_region_dogleg.py": {
    "status": "audited"
   },
@@ -24578,7 +24623,16 @@
   "models/truthfulqa_studies.py": {
    "status": "audited"
   },
+  "models/ts_diffusion.py": {
+   "status": "audited"
+  },
+  "models/ts_mixer.py": {
+   "status": "audited"
+  },
   "models/tsallis_entropy.py": {
+   "status": "audited"
+  },
+  "models/tseitin_cnf.py": {
    "status": "audited"
   },
   "models/tseng_fb.py": {
@@ -24588,6 +24642,9 @@
    "status": "audited"
   },
   "models/tsessebe_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/tsp_branchbound.py": {
    "status": "audited"
   },
   "models/tsuchinoko_qa_studies.py": {
@@ -24600,6 +24657,18 @@
    "status": "audited"
   },
   "models/tsukuyomi_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/tt_round.py": {
+   "status": "audited"
+  },
+  "models/tt_svd.py": {
+   "status": "audited"
+  },
+  "models/ttt_layer.py": {
+   "status": "audited"
+  },
+  "models/ttts.py": {
    "status": "audited"
   },
   "models/tuatara_qa_studies.py": {
@@ -24632,6 +24701,18 @@
   "models/turaco_qa_studies.py": {
    "status": "audited"
   },
+  "models/turan_theorem.py": {
+   "status": "audited"
+  },
+  "models/turbo_decoder.py": {
+   "status": "audited"
+  },
+  "models/turing_degrees.py": {
+   "status": "audited"
+  },
+  "models/turing_machine.py": {
+   "status": "audited"
+  },
   "models/turmeric_qa_studies.py": {
    "status": "audited"
   },
@@ -24645,6 +24726,9 @@
    "status": "audited"
   },
   "models/tussock_moth_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/tutte_berge.py": {
    "status": "audited"
   },
   "models/tutte_poly.py": {
@@ -24671,16 +24755,28 @@
   "models/two_opt_move.py": {
    "status": "audited"
   },
+  "models/two_phase_lock.py": {
+   "status": "audited"
+  },
   "models/two_scale_conv.py": {
    "status": "audited"
   },
   "models/two_stage_lshaped.py": {
    "status": "audited"
   },
+  "models/two_three_pc.py": {
+   "status": "audited"
+  },
   "models/two_transform.py": {
    "status": "audited"
   },
   "models/two_way_dfa.py": {
+   "status": "audited"
+  },
+  "models/twopset.py": {
+   "status": "audited"
+  },
+  "models/twosat_scc.py": {
    "status": "audited"
   },
   "models/tydiqa_lite_studies.py": {
