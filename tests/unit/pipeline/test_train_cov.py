@@ -27,6 +27,14 @@ from quant_fund.models.ranking import RidgeRanker
 from quant_fund.models.realized_garch import REALIZED_GARCH_MEASURE
 from quant_fund.models.rl import BanditTrace, LinUCBRanker
 from quant_fund.pipeline import train as train_module
+from quant_fund.pipeline.artifact_manifest import (
+    ArtifactIdentity,
+    DatasetIdentity,
+    FeatureIdentity,
+    HorizonIdentity,
+    LabelIdentity,
+    bind_artifact_identity,
+)
 from quant_fund.pipeline.train import (
     _aligned_label_end_times,
     _available_stamp_is_missing,
@@ -122,12 +130,54 @@ def _stub_panel(n_dates: int = 64, n_secs: int = 6) -> pl.DataFrame:
     return pl.DataFrame(rows)
 
 
+_ZERO_HASH = "0" * 64
+_TEST_IDENTITY = ArtifactIdentity(
+    dataset=DatasetIdentity(
+        materialized_panel_sha256=_ZERO_HASH,
+        source_manifest_sha256=_ZERO_HASH,
+        row_count=1,
+        column_count=1,
+        time_start="2020-01-01T00:00:00+00:00",
+        time_end="2020-01-02T00:00:00+00:00",
+        label="future_return_5",
+        label_horizon_bars=5,
+        data_source="test-fixture",
+    ),
+    features=FeatureIdentity(
+        features=["f0"], feature_set_version="test", feature_set_sha256=_ZERO_HASH
+    ),
+    label=LabelIdentity(name="future_return_5", horizon_bars=5),
+    horizon=HorizonIdentity(bars=[5], names=["5d"]),
+    config_sha256=_ZERO_HASH,
+    git_revision="test-fixture",
+    git_worktree_sha256="test-fixture",
+)
+
+
+def _bind_identity(path: Path) -> None:
+    """Fakes must emit the same manifest shape the real dispatch writes."""
+    bind_artifact_identity(path, _TEST_IDENTITY)
+
+
+def _materialize_sources(root: Path, frame: pl.DataFrame) -> None:
+    """Dataset-identity hashing reads materialized gold/silver parts on disk."""
+    (root / "gold").mkdir(parents=True, exist_ok=True)
+    (root / "silver").mkdir(parents=True, exist_ok=True)
+    frame.write_parquet(root / "gold" / "features.parquet")
+    frame.write_parquet(root / "gold" / "labels.parquet")
+    keys = [c for c in ("event_time", "security_id") if c in frame.columns]
+    frame.select(keys or frame.columns[:1]).unique().write_parquet(
+        root / "silver" / "universe.parquet"
+    )
+
+
 @pytest.fixture()
 def stub_train(monkeypatch: pytest.MonkeyPatch):
-    def _apply(frame: pl.DataFrame) -> None:
+    def _apply(frame: pl.DataFrame, root: Path) -> None:
         monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: frame)
         monkeypatch.setattr("quant_fund.pipeline.train.configure_tracking", lambda: None)
         monkeypatch.setattr("quant_fund.pipeline.train.log_run", lambda **kwargs: "run_test_0001")
+        _materialize_sources(root, frame)
 
     return _apply
 
@@ -876,7 +926,7 @@ def test_garch_origin_density_record_mu_fallback_and_quantile_crps() -> None:
 def test_train_ranking_walk_forward_persists_artifact(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     result = train_ranking(cfg, "ridge")
     assert Path(result["path"]).name == "ranker_ridge.joblib"
@@ -890,7 +940,7 @@ def test_train_ranking_walk_forward_persists_artifact(
 def test_train_ranking_skips_degenerate_fold_masks(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     _prepend_empty_fold(monkeypatch)
     result = train_ranking(_cfg(tmp_path), "ridge")
     assert Path(result["path"]).is_file()
@@ -957,7 +1007,7 @@ def test_train_calibration_skips_unfitted_fold_calibrators(
 ) -> None:
     # A fold whose train block is too small to fit leaves no OOS calibration.
     frame = _calibration_frame(20)
-    stub_train(frame)
+    stub_train(frame, tmp_path)
     train_mask = np.zeros(20, dtype=bool)
     train_mask[:4] = True
     test_mask = np.zeros(20, dtype=bool)
@@ -986,7 +1036,7 @@ def test_train_calibration_unfitted_final_artifact_fail_closed(
         def predict(self, scores):  # noqa: ANN001, ANN202
             return np.zeros(len(scores))
 
-    stub_train(_calibration_frame(20))
+    stub_train(_calibration_frame(20), tmp_path)
     monkeypatch.setattr(train_module, "ProbabilityCalibrator", NeverFits)
     with pytest.raises(ValueError, match="unfitted artifact"):
         train_calibration(_cfg(tmp_path), "isotonic")
@@ -1009,7 +1059,7 @@ def test_train_calibration_auto_rejects_all_nan_brier(
 def test_train_distribution_skips_degenerate_folds(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     _prepend_empty_fold(monkeypatch)
     result = train_distribution(_cfg(tmp_path), "empirical")
     assert np.isfinite(result["metrics"]["mean_pinball"])
@@ -1018,7 +1068,7 @@ def test_train_distribution_skips_degenerate_folds(
 def test_train_distribution_no_evaluable_fold_fail_closed(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     monkeypatch.setattr(train_module, "_walk_forward_splits", lambda *a, **k: [])
     with pytest.raises(ValueError, match="no trainable/evaluable fold"):
         train_distribution(_cfg(tmp_path), "empirical")
@@ -1030,7 +1080,7 @@ def test_train_distribution_no_evaluable_fold_fail_closed(
 def test_train_volatility_skips_degenerate_folds_and_requires_folds(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     _prepend_empty_fold(monkeypatch)
     result = train_volatility(_cfg(tmp_path), "ewma")
     assert np.isfinite(result["metrics"]["qlike"])
@@ -1043,7 +1093,7 @@ def test_train_volatility_skips_degenerate_folds_and_requires_folds(
 def test_train_volatility_garch_reports_one_step_density(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_date_level_panel())
+    stub_train(_date_level_panel(), tmp_path)
     monkeypatch.setattr(train_module, "GARCHVol", _DensityGarch)
     result = train_volatility(_cfg(tmp_path), "garch")
     metrics = result["metrics"]
@@ -1060,7 +1110,7 @@ def test_train_volatility_garch_reports_one_step_density(
 def test_train_volatility_garch_duplicate_density_origin_fail_closed(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_date_level_panel())
+    stub_train(_date_level_panel(), tmp_path)
     monkeypatch.setattr(train_module, "GARCHVol", _DensityGarch)
 
     def fake_oos(_make_model, _x, _y, _dates, test_mask, **_kwargs):  # noqa: ANN001, ANN202
@@ -1074,7 +1124,7 @@ def test_train_volatility_garch_duplicate_density_origin_fail_closed(
 def test_train_volatility_garch_without_statuses_omits_fallback_rate(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_date_level_panel())
+    stub_train(_date_level_panel(), tmp_path)
     monkeypatch.setattr(train_module, "GARCHVol", _DensityGarch)
 
     def fake_oos(_make_model, _x, _y, _dates, test_mask, **_kwargs):  # noqa: ANN001, ANN202
@@ -1089,7 +1139,7 @@ def test_train_volatility_garch_without_statuses_omits_fallback_rate(
 def test_train_volatility_realized_garch_branch(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_date_level_panel())
+    stub_train(_date_level_panel(), tmp_path)
     monkeypatch.setattr(train_module, "RealizedGARCHVol", _DensityGarch)
     result = train_volatility(_cfg(tmp_path), "realized_garch")
     metrics = result["metrics"]
@@ -1129,7 +1179,7 @@ def test_train_alpha_delegates_non_mean_to_train_ranking(
 def test_train_regime_skips_degenerate_folds(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     _prepend_empty_fold(monkeypatch)
     result = train_regime(_cfg(tmp_path), "single")
     assert Path(result["path"]).is_file()
@@ -1151,7 +1201,7 @@ def test_train_tail_missing_future_return_fail_closed(monkeypatch: pytest.Monkey
 def test_train_tail_skips_degenerate_folds_and_requires_scores(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     _prepend_empty_fold(monkeypatch)
     result = train_tail(_cfg(tmp_path), "historical")
     assert np.isfinite(result["metrics"]["oos_var_breach_rate"])
@@ -1244,9 +1294,11 @@ def test_train_reinforcement_no_evaluable_dates_fail_closed(
 def test_train_reinforcement_refit_skips_dates_without_finite_rows(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: _rl_frame())
+    rl_frame = _rl_frame()
+    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: rl_frame)
     monkeypatch.setattr("quant_fund.pipeline.train.configure_tracking", lambda: None)
     monkeypatch.setattr("quant_fund.pipeline.train.log_run", lambda **kwargs: "run-rl")
+    _materialize_sources(tmp_path, rl_frame)
     dates = np.asarray([stamp for stamp in _dates(4) for _ in range(2)], dtype=object)
     y = np.linspace(0.1, 0.8, 8)
     y[:2] = np.nan  # first decision date carries no finite reward
@@ -1286,6 +1338,7 @@ def test_train_reinforcement_auto_records_policy_gradient_unavailable(
             {"policy": LinUCBRanker(1), "policy_name": model_name, "features": ["f0"]},
             path,
         )
+        _bind_identity(path)
         return {
             "path": str(path),
             "metrics": {"mean_advantage_vs_uniform": advantages[model_name]},
@@ -1305,6 +1358,7 @@ def test_train_reinforcement_auto_propagates_non_pg_import_error(
             raise ImportError("unexpected missing dependency")
         path = Path(config.data.root) / "metadata" / f"rl_{model_name}.joblib"
         save_joblib_artifact({"policy": LinUCBRanker(1), "policy_name": model_name}, path)
+        _bind_identity(path)
         return {"path": str(path), "metrics": {"mean_advantage_vs_uniform": 0.01}}
 
     monkeypatch.setattr(train_module, "train_reinforcement", fake_train)
@@ -1383,7 +1437,11 @@ def test_train_policy_gradient_no_evaluable_dates_fail_closed(
 def test_train_robinhood_plus_persists_engine_card(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: _stub_panel())
+    panel = _stub_panel().with_columns(
+        pl.lit(0.5).alias("cs_pct_mom_20")  # engine card needs >=1 public feature
+    )
+    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: panel)
+    _materialize_sources(tmp_path, panel)
     monkeypatch.setattr(
         "quant_fund.models.robinhood_plus.bench.bench_robinhood_plus",
         lambda frame, config: {"mean_ic": 0.07, "n_ok": 3, "ic_n_dates": 2},
@@ -1791,6 +1849,7 @@ def test_train_ranking_auto_selects_best_finite_ic(
         path = Path(config.data.root) / "metadata" / f"ranker_{model_name}.joblib"
         model = RidgeRanker().fit(np.ones((4, 2)), np.arange(4, dtype=float))
         model.save(path)
+        _bind_identity(path)
         ic = {"ridge": 0.05, "elasticnet": 0.02, "neural": float("nan"), "ensemble": 0.04}[
             model_name
         ]
@@ -1822,7 +1881,7 @@ def test_train_calibration_fitted_fold_scores_oos(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stub_train
 ) -> None:
     frame = _calibration_frame(24)
-    stub_train(frame)
+    stub_train(frame, tmp_path)
     train_mask = np.zeros(24, dtype=bool)
     train_mask[:14] = True
     test_mask = np.zeros(24, dtype=bool)
@@ -1851,6 +1910,7 @@ def test_train_calibration_auto_selects_lowest_brier(
             (np.linspace(0.05, 0.95, 12) > 0.5).astype(float),
         )
         calibrator.save(path)
+        _bind_identity(path)
         brier = {"isotonic": 0.11, "platt": 0.09}[model_name]
         return {"path": str(path), "metrics": {"oos_brier": brier}}
 
@@ -1876,6 +1936,7 @@ def test_train_distribution_auto_selects_lowest_pinball(
     def fake_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"dist_{model_name}.joblib"
         save_joblib_artifact({"model": model_name}, path)
+        _bind_identity(path)
         return {
             "path": str(path),
             "metrics": {
@@ -1905,6 +1966,7 @@ def test_train_volatility_auto_selects_lowest_qlike(
     def fake_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"vol_{model_name}.joblib"
         save_joblib_artifact({"model": model_name}, path)
+        _bind_identity(path)
         return {
             "path": str(path),
             "metrics": {"qlike": qlike[model_name], "n_oos_rows": 20.0},
@@ -1923,7 +1985,7 @@ def test_train_volatility_auto_selects_lowest_qlike(
 def test_train_ranking_no_evaluable_fold_fail_closed(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     monkeypatch.setattr(train_module, "_walk_forward_splits", lambda *a, **k: [])
     with pytest.raises(ValueError, match="no trainable/evaluable fold"):
         train_ranking(_cfg(tmp_path), "ridge")
@@ -1932,7 +1994,7 @@ def test_train_ranking_no_evaluable_fold_fail_closed(
 def test_train_ranking_dated_and_id_rankers(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     fnw = train_ranking(cfg, "fnw")  # DATED_FIT + DATED_PREDICT path
     assert Path(fnw["path"]).is_file()
@@ -1941,33 +2003,32 @@ def test_train_ranking_dated_and_id_rankers(
 
 
 def test_train_alpha_mean_branch(tmp_path: Path, stub_train) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     result = train_alpha(_cfg(tmp_path), "mean")
     assert np.isfinite(result["metrics"]["mean"])
     assert Path(result["path"]).name == "alpha_mean.joblib"
 
 
+class _FakeHMM:
+    """Module-level so save_training_artifact's joblib.dump can pickle it."""
+
+    labels = {"states": 3}
+
+    def __init__(self, *_args) -> None:
+        pass
+
+    def fit(self, _x):  # noqa: ANN001, ANN202
+        return self
+
+    def aic_bic(self, _x):  # noqa: ANN001, ANN202
+        return {"avg_ll": -1.25}
+
+
 def test_train_regime_hmm_scores_heldout_likelihood(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    class FakeHMM:
-        labels = {"states": 3}
-
-        def __init__(self, *_args) -> None:
-            pass
-
-        def fit(self, _x):  # noqa: ANN001, ANN202
-            return self
-
-        def aic_bic(self, _x):  # noqa: ANN001, ANN202
-            return {"avg_ll": -1.25}
-
-        def save(self, path):  # noqa: ANN001
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-            Path(path).write_bytes(b"hmm")
-
-    stub_train(_stub_panel())
-    monkeypatch.setattr(train_module, "GaussianHMMRegime", FakeHMM)
+    stub_train(_stub_panel(), tmp_path)
+    monkeypatch.setattr(train_module, "GaussianHMMRegime", _FakeHMM)
     result = train_regime(_cfg(tmp_path), "hmm")
     assert result["metrics"]["oos_avg_ll"] == -1.25
     assert result["labels"] == {"states": 3}
@@ -1977,14 +2038,14 @@ def test_train_regime_hmm_scores_heldout_likelihood(
 def test_train_regime_hmm_no_evaluable_fold_fail_closed(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     monkeypatch.setattr(train_module, "_walk_forward_splits", lambda *a, **k: [])
     with pytest.raises(ValueError, match="no trainable/evaluable fold"):
         train_regime(_cfg(tmp_path), "hmm")
 
 
 def test_train_tail_gaussian_and_drawdown_branches(tmp_path: Path, stub_train) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     gaussian = train_tail(cfg, "gaussian")
     assert np.isfinite(gaussian["metrics"]["oos_var_breach_rate"])
@@ -1998,7 +2059,7 @@ def test_train_tail_gaussian_and_drawdown_branches(tmp_path: Path, stub_train) -
 
 
 def test_train_quantile_bandit_persists_policy(tmp_path: Path, stub_train) -> None:
-    stub_train(_rl_frame(10))
+    stub_train(_rl_frame(10), tmp_path)
     result = train_reinforcement(_cfg(tmp_path), "quantile_thompson")
     metrics = result["metrics"]
     assert metrics["n_dates"] >= 1
@@ -2012,7 +2073,7 @@ def test_train_quantile_bandit_persists_policy(tmp_path: Path, stub_train) -> No
 def test_train_policy_gradient_persists_policy(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_rl_frame(10))
+    stub_train(_rl_frame(10), tmp_path)
     trace = PolicyGradientTrace(
         dates=["d0", "d1"],
         policy_reward=np.array([0.4, 0.6]),
@@ -2077,7 +2138,7 @@ def test_train_distribution_auto_requires_min_oos_rows(
 
 
 def test_train_ranking_group_and_plain_fit_paths(tmp_path: Path, stub_train) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     lambdarank = train_ranking(cfg, "lambdarank")  # group-aware LightGBM ranker
     assert Path(lambdarank["path"]).is_file()
@@ -2086,7 +2147,7 @@ def test_train_ranking_group_and_plain_fit_paths(tmp_path: Path, stub_train) -> 
 
 
 def test_train_volatility_rolling_and_har_branches(tmp_path: Path, stub_train) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     rolling = train_volatility(cfg, "rolling")  # sigma forecast from vol_20 column
     assert np.isfinite(rolling["metrics"]["qlike"])
@@ -2098,7 +2159,7 @@ def test_train_volatility_rolling_and_har_branches(tmp_path: Path, stub_train) -
 def test_train_volatility_realized_duplicate_density_origin_fail_closed(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_date_level_panel())
+    stub_train(_date_level_panel(), tmp_path)
     monkeypatch.setattr(train_module, "RealizedGARCHVol", _DensityGarch)
 
     def fake_oos(_make_model, _x, _y, _dates, test_mask, **_kwargs):  # noqa: ANN001, ANN202
@@ -2110,7 +2171,7 @@ def test_train_volatility_realized_duplicate_density_origin_fail_closed(
 
 
 def test_train_regime_threshold_branch(tmp_path: Path, stub_train) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     result = train_regime(_cfg(tmp_path), "threshold")
     assert result["metrics"] == {}
     assert Path(result["path"]).name == "regime_threshold.joblib"

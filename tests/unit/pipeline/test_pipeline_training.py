@@ -11,6 +11,14 @@ import pytest
 
 from quant_fund.config import load_config
 from quant_fund.config.models import ValidationConfig
+from quant_fund.pipeline.artifact_manifest import (
+    ArtifactIdentity,
+    DatasetIdentity,
+    FeatureIdentity,
+    HorizonIdentity,
+    LabelIdentity,
+    bind_artifact_identity,
+)
 from quant_fund.pipeline.train import (
     _chronological_split,
     _label_horizon,
@@ -30,6 +38,46 @@ from quant_fund.pipeline.train import (
     train_volatility_auto,
 )
 
+_ZERO_HASH = "0" * 64
+_TEST_IDENTITY = ArtifactIdentity(
+    dataset=DatasetIdentity(
+        materialized_panel_sha256=_ZERO_HASH,
+        source_manifest_sha256=_ZERO_HASH,
+        row_count=1,
+        column_count=1,
+        time_start="2020-01-01T00:00:00+00:00",
+        time_end="2020-01-02T00:00:00+00:00",
+        label="future_return_5",
+        label_horizon_bars=5,
+        data_source="test-fixture",
+    ),
+    features=FeatureIdentity(
+        features=["f0"], feature_set_version="test", feature_set_sha256=_ZERO_HASH
+    ),
+    label=LabelIdentity(name="future_return_5", horizon_bars=5),
+    horizon=HorizonIdentity(bars=[5], names=["5d"]),
+    config_sha256=_ZERO_HASH,
+    git_revision="test-fixture",
+    git_worktree_sha256="test-fixture",
+)
+
+
+def _bind_identity(path: Path) -> None:
+    """Fakes must emit the same manifest shape the real dispatch writes."""
+    bind_artifact_identity(path, _TEST_IDENTITY)
+
+
+def _materialize_sources(root: Path, frame: pl.DataFrame) -> None:
+    """Dataset-identity hashing reads materialized gold/silver parts on disk."""
+    (root / "gold").mkdir(parents=True, exist_ok=True)
+    (root / "silver").mkdir(parents=True, exist_ok=True)
+    frame.write_parquet(root / "gold" / "features.parquet")
+    frame.write_parquet(root / "gold" / "labels.parquet")
+    keys = [c for c in ("event_time", "security_id") if c in frame.columns]
+    frame.select(keys or frame.columns[:1]).unique().write_parquet(
+        root / "silver" / "universe.parquet"
+    )
+
 
 def test_train_distribution_auto_selects_lowest_finite_pinball(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -48,6 +96,7 @@ def test_train_distribution_auto_selects_lowest_finite_pinball(
     def fake_train(config, model_name):
         path = Path(config.data.root) / "metadata" / f"dist_{model_name}.joblib"
         save_joblib_artifact({"features": ["f0"], "model": model_name}, path)
+        _bind_identity(path)
         return {
             "path": str(path),
             "metrics": {"mean_pinball": scores[model_name], "n_oos_rows": 20},
@@ -72,6 +121,7 @@ def test_train_volatility_auto_selects_lowest_finite_qlike(
     def fake_train(config, model_name):
         path = Path(config.data.root) / "metadata" / f"vol_{model_name}.joblib"
         save_joblib_artifact({"features": ["f0"], "model": model_name}, path)
+        _bind_identity(path)
         return {"path": str(path), "metrics": {"qlike": scores[model_name], "n_oos_rows": 20}}
 
     monkeypatch.setattr(train_module, "train_volatility", fake_train)
@@ -91,6 +141,7 @@ def test_train_distribution_auto_rejects_trivially_small_oos_sample(
     def fake_train(config, model_name):
         path = Path(config.data.root) / "metadata" / f"dist_{model_name}.joblib"
         save_joblib_artifact({"model": model_name}, path)
+        _bind_identity(path)
         return {"path": str(path), "metrics": {"mean_pinball": 0.01, "n_oos_rows": 1}}
 
     monkeypatch.setattr(train_module, "train_distribution", fake_train)
@@ -120,6 +171,7 @@ def test_train_reinforcement_auto_selects_best_finite_policy(
             {"policy": LinUCBRanker(1), "policy_name": model_name, "features": ["f0"]},
             path,
         )
+        _bind_identity(path)
         return {
             "path": str(path),
             "metrics": {"mean_advantage_vs_uniform": advantages[model_name]},
@@ -148,6 +200,7 @@ def test_train_ranking_auto_selects_best_finite_candidate(
         model = RidgeRanker().fit(np.ones((4, 2)), np.arange(4, dtype=float))
         model.features = ["f0", "f1"]
         model.save(path)
+        _bind_identity(path)
         return {"path": str(path), "metrics": {"mean_ic": scores[model_name]}}
 
     monkeypatch.setattr(train_module, "train_ranking", fake_train)
@@ -388,6 +441,7 @@ def test_train_calibration_persists_causal_artifact(
         }
     )
     monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: frame)
+    _materialize_sources(tmp_path, frame)
     train_mask = np.zeros(20, dtype=bool)
     train_mask[:10] = True
     test_mask = ~train_mask
@@ -421,6 +475,7 @@ def test_train_calibration_auto_selects_lowest_finite_brier(
             np.linspace(0.1, 0.9, 12), np.asarray([0, 1] * 6, dtype=float)
         )
         model.save(path)
+        _bind_identity(path)
         return {"path": str(path), "metrics": {"oos_brier": briers[model_name]}}
 
     monkeypatch.setattr(train_module, "train_calibration", fake_train)
@@ -501,6 +556,7 @@ def test_train_reinforcement_persists_research_only_policy(
             )
     frame = pl.DataFrame(rows)
     monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: frame)
+    _materialize_sources(tmp_path, frame)
     monkeypatch.setattr("quant_fund.pipeline.train.configure_tracking", lambda: None)
     monkeypatch.setattr("quant_fund.pipeline.train.log_run", lambda **kwargs: "run-test")
     result = train_reinforcement(cfg)
@@ -532,7 +588,9 @@ def test_train_policy_gradient_persists_research_only_policy(
                     "amihud": 1e-6,
                 }
             )
-    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: pl.DataFrame(rows))
+    frame = pl.DataFrame(rows)
+    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: frame)
+    _materialize_sources(tmp_path, frame)
     monkeypatch.setattr("quant_fund.pipeline.train.configure_tracking", lambda: None)
     monkeypatch.setattr("quant_fund.pipeline.train.log_run", lambda **kwargs: "run-pg-test")
     result = train_reinforcement(cfg, "policy_gradient")
@@ -563,7 +621,9 @@ def test_train_quantile_thompson_persists_research_only_policy(
                     "amihud": 1e-6,
                 }
             )
-    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: pl.DataFrame(rows))
+    frame = pl.DataFrame(rows)
+    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: frame)
+    _materialize_sources(tmp_path, frame)
     monkeypatch.setattr("quant_fund.pipeline.train.configure_tracking", lambda: None)
     monkeypatch.setattr("quant_fund.pipeline.train.log_run", lambda **kwargs: "run-qt-test")
     result = train_reinforcement(cfg, "quantile_thompson")

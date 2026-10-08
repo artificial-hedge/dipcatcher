@@ -76,12 +76,25 @@ def _stub_panel(n_dates: int = 64, n_secs: int = 6) -> pl.DataFrame:
     return pl.DataFrame(rows)
 
 
+def _materialize_sources(root: Path, frame: pl.DataFrame) -> None:
+    """Dataset-identity hashing reads materialized gold/silver parts on disk."""
+    (root / "gold").mkdir(parents=True, exist_ok=True)
+    (root / "silver").mkdir(parents=True, exist_ok=True)
+    frame.write_parquet(root / "gold" / "features.parquet")
+    frame.write_parquet(root / "gold" / "labels.parquet")
+    keys = [c for c in ("event_time", "security_id") if c in frame.columns]
+    frame.select(keys or frame.columns[:1]).unique().write_parquet(
+        root / "silver" / "universe.parquet"
+    )
+
+
 @pytest.fixture()
 def stub_train(monkeypatch: pytest.MonkeyPatch):
-    def _apply(frame: pl.DataFrame) -> None:
+    def _apply(frame: pl.DataFrame, root: Path) -> None:
         monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: frame)
         monkeypatch.setattr("quant_fund.pipeline.train.configure_tracking", lambda: None)
         monkeypatch.setattr("quant_fund.pipeline.train.log_run", lambda **kwargs: "run_test_0001")
+        _materialize_sources(root, frame)
 
     return _apply
 
@@ -89,7 +102,7 @@ def stub_train(monkeypatch: pytest.MonkeyPatch):
 def test_train_distribution_empirical_walk_forward(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     result = train_distribution(cfg, "empirical")
     metrics = result["metrics"]
@@ -100,7 +113,7 @@ def test_train_distribution_empirical_walk_forward(
 
 
 def test_train_volatility_ewma_walk_forward(tmp_path: Path, stub_train) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     result = train_volatility(cfg, "ewma")
     assert np.isfinite(result["metrics"]["qlike"])
@@ -109,7 +122,7 @@ def test_train_volatility_ewma_walk_forward(tmp_path: Path, stub_train) -> None:
 
 
 def test_train_volatility_har_uses_production_feature_schema(tmp_path: Path, stub_train) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
 
     result = train_volatility(cfg, "har")
@@ -132,7 +145,7 @@ def test_train_volatility_baselines_score_selected_sigma_as_variance(
         pl.lit(0.02).alias(feature),
         (pl.int_range(0, pl.len()) % 11 * 0.001 + 0.001).alias("vol_of_vol"),
     )
-    stub_train(frame)
+    stub_train(frame, tmp_path)
     observed: list[np.ndarray] = []
 
     def capture_qlike(_y, forecast, _floor):  # noqa: ANN001
@@ -293,6 +306,30 @@ def test_garch_oos_fit_ignores_late_available_restatement() -> None:
     assert fits[-1][0] == pytest.approx(0.405)
 
 
+class _FakeGarch:
+    """Module-level so save_training_artifact's joblib.dump can pickle it."""
+
+    observed: list[np.ndarray] = []
+
+    def __init__(self, **_kwargs):
+        pass
+
+    fit_status = "fitted"
+    converged = True
+    fallback_reason = None
+    n_obs = 0
+    returns_scale = 100.0
+
+    def fit(self, _x, _y, *, returns):  # noqa: ANN001
+        _FakeGarch.observed.append(np.asarray(returns, dtype=float).copy())
+        self.n_obs = len(returns)
+        self.last_return = float(returns[-1])
+        return self
+
+    def forecast(self, *, horizon):
+        return {"cumulative_variance": np.repeat(self.last_return + horizon, horizon)}
+
+
 def test_train_garch_persisted_fit_uses_latest_return_history(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -304,34 +341,11 @@ def test_train_garch_persisted_fit_uses_latest_return_history(
         .otherwise(pl.col("future_realized_var_5"))
         .alias("future_realized_var_5")
     )
-    stub_train(frame)
-    observed: list[np.ndarray] = []
+    stub_train(frame, tmp_path)
+    _FakeGarch.observed.clear()
+    observed = _FakeGarch.observed
 
-    class FakeGarch:
-        def __init__(self, **_kwargs):
-            pass
-
-        fit_status = "fitted"
-        converged = True
-        fallback_reason = None
-        n_obs = 0
-        returns_scale = 100.0
-
-        def fit(self, _x, _y, *, returns):  # noqa: ANN001
-            observed.append(np.asarray(returns, dtype=float).copy())
-            self.n_obs = len(returns)
-            self.last_return = float(returns[-1])
-            return self
-
-        def forecast(self, *, horizon):
-            return {"cumulative_variance": np.repeat(self.last_return + horizon, horizon)}
-
-        def save(self, path):  # noqa: ANN001
-            output = Path(path)
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_bytes(b"fake-garch")
-
-    monkeypatch.setattr("quant_fund.pipeline.train.GARCHVol", FakeGarch)
+    monkeypatch.setattr("quant_fund.pipeline.train.GARCHVol", _FakeGarch)
     result = train_volatility(_cfg(tmp_path), "garch")
 
     assert Path(result["path"]).is_file()
@@ -358,7 +372,7 @@ def test_train_garch_persisted_fit_uses_latest_return_history(
 
 @pytest.mark.parametrize("model_name", ["threshold", "single_state"])
 def test_train_regime_non_hmm_persists_model(tmp_path: Path, stub_train, model_name: str) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     result = train_regime(cfg, model_name)
     assert result["metrics"] == {}
@@ -367,7 +381,7 @@ def test_train_regime_non_hmm_persists_model(tmp_path: Path, stub_train, model_n
 
 
 def test_train_regime_hmm_reports_oos_likelihood(tmp_path: Path, stub_train) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     cfg.train.n_hmm_states = 2
     result = train_regime(cfg, "hmm")
@@ -376,7 +390,7 @@ def test_train_regime_hmm_reports_oos_likelihood(tmp_path: Path, stub_train) -> 
 
 
 def test_train_tail_historical_and_drawdown(tmp_path: Path, stub_train) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     historical = train_tail(cfg, "historical")
     metrics = historical["metrics"]
@@ -390,7 +404,7 @@ def test_train_tail_historical_and_drawdown(tmp_path: Path, stub_train) -> None:
 
 
 def test_train_alpha_mean_walk_forward_free(tmp_path: Path, stub_train) -> None:
-    stub_train(_stub_panel())
+    stub_train(_stub_panel(), tmp_path)
     cfg = _cfg(tmp_path)
     result = train_alpha(cfg, "mean")
     assert np.isfinite(result["metrics"]["mean"])
