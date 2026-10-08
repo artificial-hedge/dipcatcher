@@ -55,6 +55,10 @@ def bench_mamba2_ssd(seed: int = 2243, iters: int = 800, D: int = 16) -> dict[st
     with torch.no_grad():
         acc = (head(scan(emb(X))).argmax(-1) == Y).float().mean().item()
     base = attn_baseline(seed)
+    # the SSD runs slightly below attention on induction recall at this
+    # budget — the margin is reported honestly; gate solve-level accuracy
+    if float(acc) < 0.8:
+        raise ValueError("mamba2 SSD did not learn induction recall")
     return {
         "synthetic_mamba2_recall": float(acc),
         "synthetic_attn_recall": base,

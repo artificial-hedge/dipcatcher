@@ -32,6 +32,8 @@ def _bench_martingale_check(seed: int = 0) -> float:
     # non-martingale: drift walk has E[X_t] = t*p
     drift_paths = np.cumsum(rng.choice([0, 1], (n_path, n_step)), axis=1)
     checks.append(abs(float(np.mean(drift_paths[:, 9])) - 5.0) < 0.05)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

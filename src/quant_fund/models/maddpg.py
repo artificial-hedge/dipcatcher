@@ -156,6 +156,8 @@ def bench_maddpg(seed: int = 20261231) -> dict[str, float]:
         m2 += int(env._dist() < 0.03)
     out["synthetic_maddpg_greedy_meets"] = float(m2 / 30)
     out["synthetic_maddpg_learns"] = float(m2 / 30 > 0.3)
+    if m2 / 30 <= 0.3:
+        raise ValueError("MADDPG greedy policy did not learn rendezvous")
     return out
 
 

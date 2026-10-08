@@ -120,3 +120,52 @@ def as_inventory_bounds(
         "skew_per_unit": gamma * sigma * sigma * tau,
         "spread": as_optimal_spread(gamma, sigma, tau, kappa),
     }
+
+
+def bench_market_making(seed: int = 20261231 + 500) -> dict[str, float]:
+    """SYNTHETIC AS-Market-Making check: closed-form quotes, arrival
+    calibration recovery, and inventory-risk envelope. All synthetic."""
+    rng = np.random.default_rng(seed)
+    checks = []
+    gamma, sigma, tau, kappa = 0.1, 0.3, 1.0, 1.5
+    mid = 100.0
+    # reservation price shifts down for long inventory, up for short
+    r_long = float(as_reservation_price(mid, 5.0, gamma, sigma, tau))
+    r_short = float(as_reservation_price(mid, -5.0, gamma, sigma, tau))
+    checks.append(r_long < mid < r_short)
+    # closed form: skew = -q * gamma * sigma^2 * tau
+    checks.append(abs(r_long - (mid - 5.0 * gamma * sigma * sigma * tau)) < 1e-12)
+    # quotes symmetric about reservation price, bid < r < ask
+    q_out = as_optimal_quotes(mid, 2.0, gamma, sigma, tau, kappa)
+    checks.append(
+        abs(q_out["bid"] + q_out["half_spread"] - q_out["reservation_price"]) < 1e-12
+        and q_out["bid"] < q_out["reservation_price"] < q_out["ask"]
+    )
+    # spread matches closed form
+    spread_cf = gamma * sigma * sigma * tau + (2.0 / gamma) * math.log(1.0 + gamma / kappa)
+    checks.append(abs(as_optimal_spread(gamma, sigma, tau, kappa) - spread_cf) < 1e-12)
+    # arrival calibration recovers injected A, kappa
+    depths = np.linspace(0.0, 2.0, 12)
+    lam_true = 8.0 * np.exp(-1.5 * depths) * (0.9 + 0.2 * rng.random(depths.size))
+    lam_true = np.clip(lam_true, 0.05, None)
+    cal = estimate_arrival_intensity(depths, lam_true)
+    checks.append(abs(cal["kappa"] - 1.5) < 0.6 and abs(cal["A"] - 8.0) < 4.0)
+    # inventory envelope: range = 2 * q_max * skew_per_unit
+    b = as_inventory_bounds(4.0, gamma, sigma, tau, kappa)
+    checks.append(abs(b["reservation_range"] - 8.0 * gamma * sigma * sigma * tau) < 1e-12)
+    # fail-closed
+    try:
+        as_optimal_spread(-1.0, sigma, tau, kappa)
+        ok = False
+    except ValueError:
+        ok = True
+    checks.append(ok)
+    if sum(checks) != len(checks):
+        raise ValueError("market-making closed-form oracle failed")
+    return {
+        "synthetic_mm_reservation_skew": r_long - mid,
+        "synthetic_mm_spread": float(spread_cf),
+        "synthetic_mm_kappa_err": abs(cal["kappa"] - 1.5),
+        "synthetic_mm_range": float(b["reservation_range"]),
+        "synthetic_score": 1.0,
+    }

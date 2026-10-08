@@ -1,8 +1,9 @@
 """Iterative magnitude pruning (Han et al. 2015) (SYNTHETIC).
 
 Globally prune the smallest-magnitude weights to sparsity s, then
-fine-tune. Accuracy-at-sparsity vs a random-mask control shows the
-magnitude heuristic actually finds the important connections.
+fine-tune. On this fixture a random mask retains accuracy too — the
+honest gate is accuracy retention vs the dense net, reported alongside
+the random-mask control rather than claimed to beat it.
 """
 
 from __future__ import annotations
@@ -67,6 +68,8 @@ def bench_magnitude_pruning(
             p *= m
     train_model(torch, net2, x_tr_t, y_tr_t, ft_iters, mask=rmasks)
     acc_rand = acc_of(torch, net2, x_te_t, y_te_t)
+    if acc_pruned / max(acc_dense, 1e-9) <= 0.85:
+        raise ValueError("magnitude pruning lost too much accuracy")
     return {
         "synthetic_mprune_acc": acc_pruned,
         "synthetic_mprune_dense_acc": acc_dense,

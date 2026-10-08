@@ -108,6 +108,8 @@ def bench_mahalanobis_ood(
         p_ood = torch.softmax(head(torch.tensor(f_ood, dtype=torch.float32)), -1).numpy()
     msp = np.concatenate([-np.asarray(p_id).max(1), -np.asarray(p_ood).max(1)])
     auc_msp = _auc(np.asarray(msp), is_ood)
+    if auc_m < 0.9 or auc_m < auc_msp - 1e-4:
+        raise ValueError("Mahalanobis OOD below MSP oracle")
     return {
         "synthetic_maha_auc": auc_m,
         "synthetic_maha_msp_auc": auc_msp,

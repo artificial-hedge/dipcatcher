@@ -44,4 +44,6 @@ def bench_lyndon_factor(seed: int = _SEED) -> dict[str, float]:
     score += 1.0 if all(parts[i] >= parts[i + 1] for i in range(len(parts) - 1)) else 0.0
     # single Lyndon word → one factor
     score += 1.0 if duval("aab") == ["aab"] and duval("cba") == ["c", "b", "a"] else 0.0
+    if score != 4.0:
+        raise ValueError("Duval factorization off oracle")
     return {"synthetic_lyndon_factor": score / 4.0}

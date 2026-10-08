@@ -71,6 +71,8 @@ def bench_lz77(seed: int = 20261231 + 264) -> dict[str, float]:
     rnd = "".join(rng.choice(alpha) for _ in range(600))
     rep_ratio = len(compress(rep)) / len(rep)
     rnd_ratio = len(compress(rnd)) / len(rnd)
+    if roundtrip != trials or not (rep_ratio < rnd_ratio):
+        raise ValueError("LZ77 roundtrip/compression off oracle")
     return {
         "synthetic_roundtrip": float(roundtrip / trials),
         "synthetic_repetitive_ratio": float(rep_ratio),

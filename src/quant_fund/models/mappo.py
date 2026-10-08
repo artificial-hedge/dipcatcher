@@ -98,6 +98,8 @@ def bench_mappo(seed: int = 20261231) -> dict[str, float]:
     ret = agent.train(600, rng)
     out["synthetic_mappo_return"] = ret
     out["synthetic_mappo_learns"] = float(ret > 0)
+    if ret <= 0:
+        raise ValueError("MAPPO return non-positive")
     return out
 
 

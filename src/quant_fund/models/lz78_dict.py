@@ -52,6 +52,8 @@ def bench_lz78_dict(seed: int = 20261231 + 295) -> dict[str, float]:
         uniq += int(ok)
     # edge cases
     edge = lz78_decode(lz78_encode("a")) == "a" and lz78_decode(lz78_encode("")) == ""
+    if rt != trials or uniq != trials or not edge:
+        raise ValueError("LZ78 roundtrip/edge oracle failed")
     return {
         "synthetic_roundtrip": float(rt / trials),
         "synthetic_valid_indices": float(uniq / trials),

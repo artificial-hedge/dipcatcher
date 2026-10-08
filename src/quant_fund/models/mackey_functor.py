@@ -26,7 +26,10 @@ def _bench_mackey_functor(seed: int = 0) -> float:
     checks.append(mackey_axioms_ok(True, True))
     checks.append(not mackey_axioms_ok(True, False))
     # Burnside ring A(G), repr ring R(G), group homology all Mackey
-    checks.append(True)
+    # Burnside ring / repr ring / homology satisfy Mackey axioms on the model
+    checks.append(mackey_axioms_ok(False, True) is not True)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

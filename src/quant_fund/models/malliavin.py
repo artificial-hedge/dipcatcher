@@ -34,6 +34,8 @@ def _bench_malliavin(seed: int = 0) -> float:
     # E[payoff] for N(0,1): phi(0.5)*1 + ... = phi(-0.5) + 0.5? BS with S=1
     # empirical delta weight: E[1_{W>K} * W/T]? use smooth check only
     checks.append(abs(np.mean(f * wt) - np.mean(wt > 0.5)) < 0.02)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

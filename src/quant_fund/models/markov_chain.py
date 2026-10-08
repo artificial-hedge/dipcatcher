@@ -39,6 +39,8 @@ def _bench_markov_chain(seed: int = 0) -> float:
     checks.append(np.allclose(stationary(q), [0.5, 0.5], atol=1e-6))
     # n-step transition probabilities valid
     checks.append(is_stochastic(matrix_power(p, 10)))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

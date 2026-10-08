@@ -122,4 +122,6 @@ def bench_marching_cubes(seed: int = _SEED) -> dict[str, float]:
         interior_ok,
         n_segs_expected_band[0] <= len(segs) <= n_segs_expected_band[1],
     ]
+    if not all(checks):
+        raise ValueError("marching-cubes surface off oracle")
     return {"synthetic_marching_cubes": float(np.mean(checks))}

@@ -42,4 +42,6 @@ def bench_markov_entropy(seed: int = _SEED) -> dict[str, float]:
         abs(_analytic(p, q) - _simulate(p, q, 60000, seed + i))
         for i, (p, q) in enumerate([(0.9, 0.8), (0.7, 0.6), (0.95, 0.5)])
     ]
+    if max(errs) >= 0.02:
+        raise ValueError("Markov entropy rate off analytic oracle")
     return {"synthetic_entropy_rate": float(max(errs) < 0.02)}

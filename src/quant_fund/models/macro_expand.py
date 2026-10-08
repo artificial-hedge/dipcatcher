@@ -79,6 +79,8 @@ def bench_macro_expand(seed: int = 20261231 + 413) -> dict[str, float]:
             and_ok += 0
         except (ValueError, KeyError):
             and_ok += 1
+    if when_ok != trials or let_ok != trials or and_ok != trials * 2:
+        raise ValueError("macro expansion off oracle")
     return {
         "synthetic_when_correct": float(when_ok / trials),
         "synthetic_let_star_correct": float(let_ok / trials),

@@ -34532,6 +34532,120 @@
   },
   "models/lww_map.py": {
    "status": "audited"
+  },
+  "models/lyap_synth.py": {
+   "status": "audited"
+  },
+  "models/lyapunov_stability.py": {
+   "status": "audited"
+  },
+  "models/lyndon_factor.py": {
+   "status": "audited"
+  },
+  "models/lz77.py": {
+   "status": "audited"
+  },
+  "models/lz78_dict.py": {
+   "status": "audited"
+  },
+  "models/lzw_compress.py": {
+   "status": "audited"
+  },
+  "models/ma_toy.py": {
+   "status": "audited"
+  },
+  "models/mackey_functor.py": {
+   "status": "audited"
+  },
+  "models/macro_expand.py": {
+   "status": "audited"
+  },
+  "models/maddpg.py": {
+   "status": "audited"
+  },
+  "models/maf_flow.py": {
+   "status": "audited"
+  },
+  "models/magnitude_pruning.py": {
+   "status": "audited"
+  },
+  "models/mahalanobis_ood.py": {
+   "status": "audited"
+  },
+  "models/mala.py": {
+   "status": "audited"
+  },
+  "models/malliavin.py": {
+   "status": "audited"
+  },
+  "models/malloc_freelist.py": {
+   "status": "audited"
+  },
+  "models/mamba2_ssd.py": {
+   "status": "audited"
+  },
+  "models/mambats.py": {
+   "status": "audited"
+  },
+  "models/maml_portfolio.py": {
+   "status": "audited"
+  },
+  "models/manifold_learning.py": {
+   "status": "audited"
+  },
+  "models/manova.py": {
+   "status": "audited"
+  },
+  "models/mantel.py": {
+   "status": "audited"
+  },
+  "models/many_iv.py": {
+   "status": "audited"
+  },
+  "models/mappo.py": {
+   "status": "audited"
+  },
+  "models/marching_cubes.py": {
+   "status": "audited"
+  },
+  "models/mardia.py": {
+   "status": "audited"
+  },
+  "models/margin_sampling.py": {
+   "status": "audited"
+  },
+  "models/marginal_homogeneity.py": {
+   "status": "audited"
+  },
+  "models/marginal_likelihood.py": {
+   "status": "audited"
+  },
+  "models/market_making.py": {
+   "status": "audited"
+  },
+  "models/marking_paging.py": {
+   "status": "audited"
+  },
+  "models/markov_chain.py": {
+   "status": "audited"
+  },
+  "models/markov_discretization.py": {
+   "status": "audited"
+  },
+  "models/markov_entropy.py": {
+   "status": "audited"
+  },
+  "models/markov_hitting.py": {
+   "status": "audited"
+  },
+  "models/markov_ineq.py": {
+   "status": "audited"
+  },
+  "models/mars_regression.py": {
+   "status": "audited"
+  },
+  "models/martingale_check.py": {
+   "status": "audited"
   }
  },
  "schema_version": "audit-coverage/v1",

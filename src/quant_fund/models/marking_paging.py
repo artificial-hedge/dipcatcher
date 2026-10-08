@@ -63,6 +63,9 @@ def _belady(refs: list[int], k: int) -> int:
 def bench_marking_paging(seed: int = 5403) -> dict[str, float]:
     refs, k = _refs(), 3
     m, lru_f, b = _marking(refs, k), _lru(refs, k), _belady(refs, k)
+    # marking paging is k-competitive and cannot beat Belady's optimum
+    if m < b or m > k * b:
+        raise ValueError("marking paging off k-competitive oracle")
     return {
         "synthetic_page_marking": float(m),
         "synthetic_page_lru": float(lru_f),

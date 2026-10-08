@@ -103,7 +103,9 @@ def bench_maml_portfolio(seed: int = 11) -> dict[str, float]:
             _, g = task_loss(scratch, sup)
             scratch -= m.inner_lr * g
         scratch_scores.append(alloc_score(scratch, qry))
-        pooled_scores.append(alloc_score(pooled.copy(), qry))
+    pooled_scores.append(alloc_score(pooled.copy(), qry))
+    if np.mean(adapted_scores) <= np.mean(scratch_scores):
+        raise ValueError("MAML adaptation no better than scratch")
     return {
         "synthetic_maml_adapted_score": float(np.mean(adapted_scores)),
         "synthetic_maml_scratch_score": float(np.mean(scratch_scores)),

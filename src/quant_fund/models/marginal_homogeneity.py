@@ -196,6 +196,9 @@ def bench_marginal_homogeneity(seed: int = 482) -> dict[str, float]:
     tab3m = np.array([[30, 30, 5], [10, 35, 5], [5, 10, 20]])
     sm = stuart_maxwell(tab3m)
     bh = bhapkar(tab3m)
+    # shifted tables must reject; the symmetric 3x3 table must not
+    if mc["p"] > 0.1 or sm["p"] > 0.05 or bw["p"] < 0.1:
+        raise ValueError("marginal-homogeneity tests miscalibrated")
     return {
         "synthetic_mcnemar_p": mc["p"],
         "synthetic_bowker_p": bw["p"],

@@ -52,6 +52,8 @@ def _bench_ma_toy(seed: int = 0) -> float:
     # MA requires ccc: Cohen poset is ccc (antichains are countable);
     # on our finite model antichain bound = total conditions
     checks.append(len(conds) < 30)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

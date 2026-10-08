@@ -64,6 +64,8 @@ def bench_malloc_freelist(seed: int = 20261231 + 471) -> dict[str, float]:
         no_overlap += int(ok_overlap)
         invariant += int(ok_inv)
         serve += int(h.alloc(1) is not None or not h.free)
+    if no_overlap != trials or invariant != trials or serve != trials:
+        raise ValueError("freelist allocator off oracle")
     return {
         "synthetic_no_overlap": float(no_overlap / trials),
         "synthetic_freelist_invariant": float(invariant / trials),

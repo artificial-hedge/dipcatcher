@@ -42,6 +42,8 @@ def _bench_markov_ineq(seed: int = 0) -> float:
     # Chernoff tighter than Chebyshev at large delta
     checks.append(chernoff_uniform(0.5, 100, 0.3) < chebyshev_bound(1.0 / 12 / 100, 0.3))
     checks.append(markov_bound(1.0, 2.0) == 0.5)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

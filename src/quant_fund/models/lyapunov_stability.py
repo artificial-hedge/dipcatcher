@@ -39,6 +39,8 @@ def _bench_lyapunov_stability(seed: int = 0) -> float:
     # unstable system can't have this V decreasing everywhere
     au = np.array([[1.0, 0.0], [0.0, 1.0]])
     checks.append(vdot_quadratic(x, au, p) > 0)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

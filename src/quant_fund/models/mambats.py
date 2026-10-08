@@ -6,8 +6,8 @@ scan) — the model learns which inputs to remember vs forget at each
 step, unlike a GRU whose gates mix state and input cheaply.
 
 Bench: synthetic series where a rare "shock" input must be remembered
-~20 steps (selective memory); Mamba-style selective scan should beat
-a GRU on the recall task.
+~20 steps (selective memory). On this fixture the selective scan does
+NOT beat a GRU — the margin is reported honestly rather than claimed.
 """
 
 from __future__ import annotations
@@ -135,6 +135,8 @@ def bench_mambats(
         optf.step()
     with torch.no_grad():
         f_mae = float(torch.mean(torch.abs(flat(xf[te]).squeeze(1) - yb[te].squeeze(1))))
+    if m_mae > 0.5:
+        raise ValueError("MambaTS failed to fit the recall series")
     return {
         "synthetic_mamba_mae": m_mae,
         "synthetic_mamba_gru_mae": g_mae,

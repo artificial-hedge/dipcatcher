@@ -232,6 +232,12 @@ def bench_many_iv(seed: int = 20261231 + 198) -> dict[str, float]:
     l0 = liml(np.asarray(d0["y"]), np.asarray(d0["x_endog"]), np.asarray(d0["z"]))
     h0 = hful(np.asarray(d0["y"]), np.asarray(d0["x_endog"]), np.asarray(d0["z"]))
 
+    if not (
+        abs(float(l_["beta"]) - beta_true) < abs(float(b2[1]) - beta_true)
+        and abs(float(l_["beta"])) > 3.0 * abs(float(l0["beta"])) + 0.15
+        and float(l_["beta"]) == float(liml(y, x, z)["beta"])
+    ):
+        raise ValueError("LIML off 2SLS/null/determinism oracle")
     return {
         "synthetic_beta_liml": float(l_["beta"]),
         "synthetic_beta_jive": float(j_["beta"]),

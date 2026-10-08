@@ -25,6 +25,8 @@ def _run(seed: int, correct_sign: bool, steps: int = 400) -> np.ndarray:
 def bench_lyap_synth(seed: int = _SEED) -> dict[str, float]:
     v_ok = _run(seed, correct_sign=True)
     v_bad = _run(seed, correct_sign=False)
+    if not (v_ok[-1] < 0.05 * v_ok[0] and v_ok[-1] < 0.05 * v_bad[-1]):
+        raise ValueError("Lyapunov candidate does not decay / separate")
     return {
         "synthetic_lyap_decay": float(v_ok[-1] < 0.05 * v_ok[0]),
         "synthetic_lyap_order": float(v_ok[-1] < 0.05 * v_bad[-1]),

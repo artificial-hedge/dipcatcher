@@ -18,6 +18,9 @@ def _select(uP, u_idx, lP, ly, w):
 def bench_margin_sampling(seed: int = 2607, trials: int = 5) -> dict[str, float]:
     accs = [al_loop(_select, seed=seed + 2 * t) for t in range(trials)]
     bases = [random_baseline(seed=seed + 2 * t) for t in range(trials)]
+    acc_ms = float(np.mean(accs))
+    if acc_ms < float(np.mean(bases)) - 0.01 or acc_ms < 0.9:
+        raise ValueError("margin sampling below random oracle")
     return {
         "synthetic_ms_acc": float(np.mean(accs)),
         "synthetic_random_acc": float(np.mean(bases)),

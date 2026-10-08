@@ -54,6 +54,8 @@ def _bench_markov_hitting(seed: int = 0) -> float:
     # chain on triangle always reaches target w.p.1
     h2 = hitting_probs(q, 2)
     checks.append(np.allclose(h2, [1.0, 1.0, 1.0], atol=1e-4))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

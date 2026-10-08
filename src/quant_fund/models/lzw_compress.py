@@ -71,6 +71,8 @@ def bench_lzw_compress(seed: int = 20261231 + 292) -> dict[str, float]:
         ratio = len(codes) / max(1, len(data))
         gains.append(ratio)
         better += int(len(codes) <= len(data))
+    if rt != trials:
+        raise ValueError("LZW roundtrip failed")
     return {
         "synthetic_roundtrip": float(rt / trials),
         "synthetic_mean_ratio": float(sum(gains) / len(gains)),
