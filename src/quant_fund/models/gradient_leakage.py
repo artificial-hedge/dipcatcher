@@ -29,6 +29,7 @@ def _grad_of(torch, net, x, y):
 
 def _attack(torch, net, target_g, y, dim=8, steps=300, seed=0):
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     dummy = torch.randn(1, dim, requires_grad=True)
     opt = torch.optim.Adam([dummy], lr=0.1)
     for _i in range(steps):

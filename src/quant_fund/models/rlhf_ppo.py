@@ -42,6 +42,7 @@ def bench_rlhf_ppo(
     torch = _torch()
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
+    torch.set_num_threads(1)
     emb = action_embeddings(rng)
     x, a_w, a_l = pref_pairs(n_pairs, emb, rng, noise=0.2)
     x_c = contexts(n_ctx, rng)

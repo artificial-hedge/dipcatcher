@@ -36,7 +36,7 @@ class TestPATE:
 
 class TestDLG:
     def test_bench(self) -> None:
-        out = bench_gradient_leakage(seed=11, n=80, steps=20)
+        out = bench_gradient_leakage(seed=11, n=80, steps=60)
         assert out["synthetic_dlg_mse_single"] >= 0
 
 

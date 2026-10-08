@@ -67,5 +67,5 @@ class TestGRPO:
 
 class TestRLHF:
     def test_bench(self) -> None:
-        out = bench_rlhf_ppo(seed=13, n_pairs=60, n_ctx=40, iters_rm=40, iters_ppo=40)
+        out = bench_rlhf_ppo(seed=13, n_pairs=60, n_ctx=40, iters_rm=80, iters_ppo=80)
         assert np.isfinite(out["synthetic_rlhf_overopt_gap"])
