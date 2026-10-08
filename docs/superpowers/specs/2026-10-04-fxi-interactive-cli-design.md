@@ -120,7 +120,7 @@ via `completenames`.
 ### Installers
 
 - `install.sh` (POSIX sh, pipeable): resolves a wheel from
-  `$FXI_INSTALL_URL` (default: the `artificial-hedra/dipcatcher` GitHub
+  `$FXI_INSTALL_URL` (default: the `artificial-hedge/dipcatcher` GitHub
   release asset matching the version) or `--wheel <path>` for local/dev
   installs; requires Python ≥ 3.12; creates a venv in
   `${FXI_HOME:-~/.local/share/fxi}`; pip-installs the wheel; symlinks

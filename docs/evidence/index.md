@@ -23341,6 +23341,77 @@ counted. Prose that contains such a token is quoted verbatim.
     - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
     - `value`: 1.0262118132145719e-05
 
+### `receipts/cost_aware_rerun_20261007.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_aware_rerun_20261007.json | 618fadcd1cfa507b2a31f7671f55368c5e80c554647e238996af60759b020f7f | absent | no_embedded_seal | absent | absent | unspecified | false | true | false |
+
+- `claim`: simulated_allocation_solver_reliability_and_matched_validation_selection
+- `conditioning_evidence`: tests/unit/backtest/test_cost_solver_chain.py: scaled-vs-unscaled equivalence (k in 1e-2..1e2, atol 1e-6); equivalent formulations agree (atol 1e-5); status matrix fail-closed (only 'optimal' selectable); market-derived fixture momentum_factor359 flips from optimal_inaccurate(58 iters) to optimal under the conditioning fixes (objective scale 100->1 alone: 41 iters; cost epigraph alone: 118; all: 18).
+- `disclosed_disagreement`: A superseded run (run_20261007) selected momentum_20_cost_aware on validation, but forensic hashing proves it ran the PRE-rewrite 314-line allocator (byte hash 058afffc...), whose looser per-formulation acceptance certified decisions that the fail-closed chain correctly refuses (optimal_inaccurate recorded, never selected). The two runs disagree; the fail-closed chain's refusal is the binding verdict under the acceptance bar, tightened to GAP_TOL_ORIGINAL=1e-10 and never loosened. The earlier 'selected' outcome is NOT claimed as a conditioning-fix success.
+- `file`: cost_aware_rerun_20261007.json
+- `kind`: cost_aware_construction_rerun_verdict
+- `limitations`:
+<!-- verbatim-receipt-text -->
+> Research only; no live-trading, profitability or live-P&L claim (live_pnl_claim=false).
+<!-- /verbatim-receipt-text -->
+  - Simulated net price-return tournament; close-to-close forecast scores do not establish executable net returns.
+  - The 2025 holdout is SPENT and previously inspected; forward_2026H2 is not yet collected.
+  - Input universe has survivorship bias; source and availability are user declarations.
+  - Allocation return/uncertainty inputs are unvalidated proxies.
+  - Conditions 1 and 2 (live qualifying feed / forward record) remain BLOCKED.
+- `promote`: false
+- `protocol`:
+  - `acceptance`: only a genuinely optimal status plus the independent recomputation check (<=1e-7) may supply weights; optimal_inaccurate/suboptimal/feasible/numerical_error/solver_error are diagnostics, never selected
+  - `benchmark_protocol`: configs/real_benchmark_us_wide.json (frozen, unchanged)
+  - `feas_tol_original`: 1e-08
+  - `gap_tol_original`: 1e-10
+  - `solver_chain`:
+    - CLARABEL
+    - OSQP
+    - SCS
+    - HIGHS
+  - `spec`: configs/cost_aware_tournament.json (frozen slate, unchanged)
+  - `tolerance_direction`: tightened vs every historical formulation, never loosened
+- `research_only`: true
+- `runs`:
+  - `run_20261007`:
+    - `code_identity`: PRE-rewrite 314-line repair (objective x100 ladder) - NOT the fail-closed solver chain
+    - `complete`: true
+    - `cost_allocation_sha256`: 058afffc7e6943c74710fedad694db383560331bb174387b0e6e1e551aa3a186
+    - `dir`: research/cost_aware_tournament_20261007
+    - `receipt_sha256`: 7ce7ff05047f563759012b4ae0c9542fa096bc3a2c506330e3f203aa76153825
+    - `test_phase`: REFUSED by the run's own code/runtime lock after external tree wipes changed cost_allocation.py bytes; no test receipt exists
+    - `validation_selected`: momentum_20_cost_aware
+  - `run_20261007r2`:
+    - `all_terminal_liquidations_complete`: false
+    - `code_identity`: committed fail-closed multi-solver chain with conditioning fix
+    - `complete`: false
+    - `cost_allocation_sha256`: 210249552a9f8296434bcb3d394c2a71088b3d80dbaca84b023193649c2243a7
+    - `dir`: research/cost_aware_tournament_20261007r2
+    - `receipt_sha256`: 2e53d9c4abed48e66f6a3350a77a01f35bf6108c23fc143fd43322c99d0af2d4
+    - `test_phase`: REFUSED ('validation was incomplete; no candidate was selected'); fail-closed by design
+    - `validation_selected`: null
+- `schema`: lane_receipt.v1
+- `sealed_at`: 2026-10-07T22:12:00+05:30
+- `snapshot`:
+  - `bars_parquet`: data/file_us_wide/bronze/bars.parquet
+  - `names`: 424
+  - `sha256`: e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117
+- `verdict`: LOUD NEGATIVE. Under the committed fail-closed solver chain the matched validation re-run on the tracked 424-name snapshot with the frozen slate selects NOTHING: selected=null, complete=false. This is the pre-committed acceptable outcome and is recorded without softening: there is no selected candidate and no test receipt. economic_evidence_gate=false; selected_holdout_adjusted_rejection never turned true because no test phase ever ran.
+
+### `receipts/cost_aware_rerun_20261007.json.seal.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_aware_rerun_20261007.json.seal.json | 62cf7f39349bde7690af5f2c15d385a5f2aef910de152eb46bc92b63578b8df1 | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
+
+- `file`: cost_aware_rerun_20261007.json
+- `schema`: prereg_seal.v1
+- `sealed_at`: 2026-10-07T22:12:00+05:30
+- `sha256`: 618fadcd1cfa507b2a31f7671f55368c5e80c554647e238996af60759b020f7f
+
 ### `receipts/cost_calibration_eval_df9b8d7068bf709b.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |

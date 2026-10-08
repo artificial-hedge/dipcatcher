@@ -63,7 +63,7 @@ disabled for non-TTY output, when `NO_COLOR` is set, or when
 ### curl
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/artificial-hedra/dipcatcher/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/artificial-hedge/dipcatcher/main/install.sh | sh
 ```
 
 The installer needs Python ≥ 3.12 (set `FXI_PYTHON=/path/to/python` to pick
@@ -72,7 +72,10 @@ the matching GitHub release, and symlinks `fxi` (plus `fx1`, `dipcatcher`,
 `quant`, `verify-ledger`, `mc-engine`) into `~/.local/bin`. It never uses
 sudo. Overrides: `FXI_VERSION`, `FXI_INSTALL_URL` (wheel URL), `FXI_HOME`,
 `FXI_BIN_DIR`; flags `--wheel dist/....whl` (local dev install),
-`--uninstall`.
+`--uninstall`. Set `FXI_WHEEL_SHA256=<hex>` to pin the wheel checksum — the
+installer verifies it **before** pip install and warns when a download is
+unpinned. The installer refuses destructive `FXI_HOME` values (empty, `/`, or
+`$HOME`), and `sh install.sh --help` works even under `curl | sh`.
 
 ### Homebrew (tap)
 
@@ -119,7 +122,7 @@ One-shot equivalents: `fxi keys …`, `fxi doctor`, `fxi eval [--out PATH]`,
 ## Uninstall
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/artificial-hedra/dipcatcher/main/install.sh | sh -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/artificial-hedge/dipcatcher/main/install.sh | sh -s -- --uninstall
 # or, if install.sh is checked out:  ./install.sh --uninstall
 rm -rf ~/.fx1   # also delete stored endpoints
 ```

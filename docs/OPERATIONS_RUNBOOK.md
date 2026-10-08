@@ -4,6 +4,12 @@ Dipcatcher is Artificial Hedge's proprietary research lab. This runbook covers
 the supported research and simulated paper/shadow workflows. It does not
 authorize live trading.
 
+Structure: "Deployment" through "Windows remote-fleet operations" are the
+production operations procedures (deploy, rollback, incident response,
+gate-key rotation, receipt verification, checkpoint spine, remote fleet).
+From "Northset session-L2 identity floor" onward are the lab's field-record
+notes for the microstructure verification waves.
+
 ## Pre-run checks
 
 Run from the repository root with the locked environment:
@@ -106,6 +112,242 @@ publication, preserve the run directory and resume from the last valid
 5. Do not alter a receipt to make a gate pass; create a new run after the cause
    is corrected.
 
+## Deployment
+
+There is **no live-trading deployment** — no broker connectivity exists
+(see [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md)). "Deployment"
+here means three research/simulation surfaces:
+
+1. **Research harness (local or container).** `make sync` installs the locked
+   environment. `Dockerfile` builds the research API image (non-root uid
+   10001, loopback bind on :8000 by default, `/health` healthcheck, immutable
+   `uv sync --frozen`); `docker/research-api.Dockerfile` builds the research
+   API variant on :8010 (`python -m quant_fund.api.research_api`). CI builds
+   the image and waits for its healthcheck.
+2. **fx-1 harness service.** `uv run fx1 harness serve --host … --port …`;
+   launch, `--state-dir` durability, managed keys, drain, and the
+   failure-mode table live in [FX1_DEPLOY.md](FX1_DEPLOY.md). Release
+   artifacts install through the hardened `install.sh`; the **recommended
+   release practice is the `FXI_WHEEL_SHA256` checksum pin** (verified before
+   pip install, fail-closed on mismatch, warn on unpinned downloads) — see
+   [FX1_DEPLOY.md](FX1_DEPLOY.md) "Installing release artifacts".
+3. **Windows remote research/SOTA fleet** (`D:\dipcatcher`) — see
+   "Windows remote-fleet operations" below.
+
+Deploy gates: `make lint`, `make typecheck`, `make test`,
+`make evidence-audit`, plus for the fx-1 service `fx1 harness selftest` and
+`fx1 harness bench` (exit 0 required).
+
+**Known red gates (2026-10-08 — stated honestly, do not waive them):**
+
+- `fx1 harness selftest` currently exits `2`: `job_receipt_verifies` fails
+  deterministically with `harness API returned 500: Internal Server Error`
+  (15/16 checks pass). The job-receipt verification surface is defective and
+  unfixed as of this date; exit `0` remains the deploy criterion.
+- `make test` under pytest-xdist `-n auto` reproducibly segfaults in native
+  code on the memory/disk-pressured lab box (resource-pressure fault is the
+  leading theory; see `INFLIGHT` w1714). Targeted `-n0` runs are the current
+  local verification path. The gate itself is unchanged.
+
+## Rollback
+
+- **Code**: revert the offending commit on `main` (an external automation
+  owns git integration; lanes do not merge/rebase locally), then redeploy the
+  previous container image or wheel. With `--state-dir`, harness journals
+  survive restart; non-terminal jobs recover as `failed` honestly rather than
+  silently re-executing.
+- **fx-1 harness service**: `fx1 harness drain --remote $URL --wait-s 60`,
+  SIGTERM the process, start the previous release (drain-then-signal order;
+  see [FX1_DEPLOY.md](FX1_DEPLOY.md)).
+- **Credentials**: rollback of a key is revocation — `fx1 harness key-revoke`
+  (tombstone retained for audit) or `fx1 harness key-rotate --keep-old` for a
+  verify-first overlapping cutover.
+- **Research results**: receipts are **immutable** — never edit or delete one.
+  Retract a wrong receipt honestly:
+  `uv run dipcatcher tombstone receipts/<r>.json --reason "…"` (appends a
+  sealed `receipt_tombstone.v1`; `--scope` retracts named claims). Re-run the
+  lane and seal a new receipt. Pin/checkpoint state is append-only too:
+  correct it by re-stamping and re-signing (checkpoint spine below), never by
+  editing a signed file.
+- **Fleet jobs**: stop the WMI-owned process (see fleet operations); durable
+  state under `.dsh-24x7\` resumes or replays — it is not rolled back.
+- **Model checkpoints**: none live in this repository, so there is no model
+  rollback procedure.
+
+## Incident response
+
+Pick the highest applicable class and follow its first response; the paper
+shim-specific sequence is "Incident containment" above.
+
+| Class | Examples | First response |
+|---|---|---|
+| Integrity alarm | `verify-repo` / `checkpoint-chain` / `verify-rotations` failure, crown-jewels drift, receipt hash mismatch, tamper-drill regression | **STOP.** Treat as potential tampering: snapshot `quality/` + `receipts/` + the failing output, notify the Lead before any repair attempt |
+| Gate failure | `make evidence-audit`, `make receipts-reverify`, `verify-research`, honesty gate, selftest refusal | Preserve the run dir; fix the inputs, never the gate or the receipt; re-run and seal a new receipt |
+| Service incident | harness 5xx storm, `over_capacity`, wedged drain, journal corruption | Drain + restart per the [FX1_DEPLOY.md](FX1_DEPLOY.md) failure-mode table; preserve `--state-dir` and logs |
+| Fleet stall | stale `.dsh-24x7\fleet_heartbeat.json`, job died mid-run | Read the heartbeat + `<job>.stdout.log`/`.stderr.log`; respawn via `scripts/fleet_watchdog.ps1` (bounded by `-MaxRespawns`), not by hand |
+
+Required for every incident: preserve run directories and immutable receipts;
+record the run ID, configuration hash, dataset manifest, and exact failure
+output; re-run `dipcatcher doctor` and `uv run dipcatcher verify-research`
+before resuming; write a dated post-mortem note under `reports/`. A kill-switch
+halt or ledger validation error is an incident, never a result.
+
+Preparedness drills (self-attacking; they must keep failing loudly):
+`make tamper-drill`, `make fuzz-drill`, `make fuzz-receipts`.
+
+## Gate-key rotation
+
+Two distinct key systems — do not conflate them.
+
+**A. Repo gate-signing keys (Ed25519, `GATE_SIGNING_KEY`).** They sign the
+integrity pins and the checkpoint. Authorized rotation, in order:
+
+1. Export both `GATE_SIGNING_KEY` and `GATE_SIGNING_KEY_NEW` (new key handed
+   over out of band).
+2. `make rotate-key` — records the rotation as a dual-signed link
+   (predecessor + successor), then re-signs the pins and checkpoint.
+3. `make anchor-pins` — RFC 3161 timestamp-anchors `quality/epoch_heads.json`
+   and `quality/crown_jewels.json` via FreeTSA (network). Quiet points only:
+   any later `make stamp-epochs` stales the anchors.
+4. `make verify-rotations` — must pass: dual-signed links, spine-anchored
+   genesis, live key is the chain terminus.
+5. `make checkpoint-chain` — the full spine must still walk cleanly.
+
+Regenerating keys, pins, or signatures without the Lead and
+`GATE_SIGNING_KEY` is forbidden; signed state (`quality/checkpoint.json`,
+`gate_pins.sig`, `*.sig`, pin and anchor files) is immutable to ordinary
+lanes.
+
+**B. fx-1 harness managed keys (`fx1k_…`).** API credentials for the harness
+service: `fx1 harness key-rotate` (`POST /harness/keys/{id}/rotate`;
+`--keep-old` overlaps both secrets for a verify-first cutover),
+`key-patch` for in-place policy edits, `key-revoke` to tombstone. Details:
+[FX1_DEPLOY.md](FX1_DEPLOY.md) "Managed keys".
+
+## Receipt verification and evidence
+
+Receipts are immutable evidence; every research claim should reproduce from a
+receipt hash. Verification surfaces, cheapest first:
+
+```bash
+uv run dipcatcher verify-research                  # research artifacts + honesty soft-verify
+uv run dipcatcher verify-receipt receipts/<r>.json # one receipt: structure + hash consistency
+uv run dipcatcher verify-all                       # chain-of-custody over the whole receipts/
+make receipts-reverify                             # fail-closed audit over receipts/
+make evidence-audit                                # CI gate: re-verify every committed receipt
+make evidence                                      # regenerate docs/evidence/index.md from sealed receipts
+```
+
+`make evidence` rewrites **only** `docs/evidence/index.md`; the receipts it
+reads are immutable inputs and must never be regenerated to make the index
+look right.
+
+`make evidence-audit` is the full CI gate: suite health, every corpus-epoch
+chain under `quality/epoch_heads.json` (receipts, verifier, quality, configs,
+artifacts, `.dsh-24x7`, `data/metadata`, `src`, `docs`, …), `crown-jewels
+--check`, `verify-witness`, `verify-repo`, `checkpoint-chain`,
+`verify-rotations`, `tamper-drill`, and `fuzz-drill --seed 7`. Any
+unverifiable non-legacy artifact fails it.
+
+Cross-receipt and replay checks: `make lattice-check` (consistency lattice;
+`inconsistent` verdicts fail), `make replay-sweep` (replay every replayable
+carrier), `make admission-gate` (sequentially admit each diff-changed
+receipt), `make proof-integrity` / `make proof-verify` (signer/recorder
+integrity; bundle, sidecar, signature and metric verification).
+
+Third-party audit without repo access: `make witness-bundle` then
+`make verify-bundle BUNDLE=auditor_bundle.json`; `make evidence-bundle
+BUNDLE_DIR=…` then `make bundle-verify BUNDLE_DIR=…`; single-artifact chain
+of custody: `uv run dipcatcher custody --member <receipt.json> --out
+custody.json` (verify with `--check custody.json --member-file …`).
+
+## Checkpoint spine (evidence integrity)
+
+The integrity chain is append-only and ordered. Authoring sequence after
+touching any covered directory:
+
+1. `make stamp-epochs` — re-stamp every corpus-epoch chain + the head pin
+   (`quality/epoch_heads.json`).
+2. `make sign-pins` — Ed25519-sign the pins (needs `GATE_SIGNING_KEY` or
+   `--key-file`).
+3. `make anchor-pins` — RFC 3161-anchor both pin files (network; quiet
+   points).
+4. `make checkpoint` — sign the pin state into `quality/checkpoint.json`
+   (needs `GATE_SIGNING_KEY`). Run **last**: it binds the current signature.
+5. Optional: `make anchor-checkpoint` (RFC 3161 anchor of the checkpoint),
+   `make witness-checkpoint` (public Rekor witness; needs
+   `WITNESS_SIGNING_KEY`), verified offline by `make verify-witness`.
+
+Verification sequence — any failure is an integrity alarm, not a formatting
+problem:
+
+```bash
+make checkpoint-chain                 # every archived link verifies; no forks/orphans; Rekor order holds
+make verify-rotations                 # gate-key rotation chain
+make verify-witness                   # offline RFC 6962 + Rekor SET/note verification
+make tamper-drill                     # self-attack: every probe mutation must be flagged
+make fuzz-drill                       # metamorphic self-fuzz: must-fail vs must-pass
+make epoch-consistency EPOCH_BASE=<ref>   # PR gate: chains extend the base head
+```
+
+Never hand-edit receipts, pins, `quality/checkpoint.json`, signatures, or
+anchors to make a gate pass. A red gate is a finding to report and fix
+upstream, never evidence to be edited.
+
+## Windows remote-fleet operations (`D:\dipcatcher`)
+
+The SOTA/eval fleet runs on a dedicated Windows host. These conventions are
+load-bearing — jobs break silently otherwise. **PowerShell-only** (bash
+heredocs do not exist there; quote `cmd /c` inner strings with
+backtick-escaped quotes).
+
+- **Spawn via WMI, never `Start-Process`.** Jobs are created with
+  `Invoke-CimMethod -ClassName Win32_Process -MethodName Create` so they are
+  owned by WMI and survive ssh session teardown. The payload is always
+  wrapped in `cmd /c "... 1> <job>.stdout.log 2> <job>.stderr.log"` —
+  `Win32_Process` has no built-in redirection.
+- **Parametrized launcher.** New fleet work goes through
+  `scripts/fleet_spawn.ps1 -Manifest jobs.json` (one JSON job list, one spawn
+  path; `-DryRun` previews) plus `scripts/fleet_watchdog.ps1`. Manifest
+  schema: `workdir`, optional `logroot`, and `jobs[]` of
+  `{name, command, env?, out?}` — `env` carries the thread pinning, `out` is
+  the watchdog's expected-output signal. Commands containing `& | ;` are
+  rejected by the spawn guard. `scripts/fleet_manifest_sota.ps1` regenerates
+  the canonical SOTA manifest (`.dsh-24x7\fleet_sota_manifest.json`). The
+  legacy `spawn_*.ps1` one-offs stay for reference; prefer the launcher.
+- **Watchdog.** `scripts\fleet_watchdog.ps1 -Manifest jobs.json` polls every
+  `-IntervalSeconds` (default 60), writes `.dsh-24x7\fleet_heartbeat.json`
+  with per-job liveness (`alive`, `pid`, `out_exists`, `out_stale`,
+  `respawn_count`, `action`), and auto-respawns a job that is dead with no
+  output and budget left (`-MaxRespawns`, default 3; exhausted jobs report
+  `dead_exhausted_respawns`). Outputs not written for `-StaleMinutes`
+  (default 15) are flagged `out_stale`. `-Once` makes one pass (Scheduled
+  Tasks). Logs land in `.dsh-24x7\fleet-logs\<job>.stdout.log` /
+  `\<job>.stderr.log`.
+- **Durable paths.** Long-running artifacts under `.dsh-24x7\`; model weights
+  under `data\models\`; bars under `data\raw\sources\`. Never write fleet
+  state into temp dirs.
+- **Thread pinning.** Every job's `env` block sets `OMP_NUM_THREADS=1`,
+  `MKL_NUM_THREADS=1`, `TOKENIZERS_PARALLELISM=false` — the manifest schema
+  carries this; keep it when authoring new jobs.
+- **Defender exclusions.** `D:\dipcatcher` must be excluded from Windows
+  Defender real-time scanning, or parquet/bar reads get throttled mid-fleet.
+
+Operating procedure:
+
+1. Generate or author the manifest (`scripts\fleet_manifest_sota.ps1`, or a
+   custom `jobs.json`), then spawn:
+   `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\fleet_spawn.ps1 -Manifest jobs.json`.
+2. Run the watchdog in its own WMI-owned session:
+   `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\fleet_watchdog.ps1 -Manifest jobs.json`.
+3. Monitor `.dsh-24x7\fleet_heartbeat.json` and each job's logs; a stale
+   heartbeat is a fleet incident (Incident response above).
+4. Inspect processes with `Get-CimInstance Win32_Process` (jobs match their
+   `<job>.stdout.log` marker on the command line); respawn only through the
+   watchdog so `-MaxRespawns` accounting stays honest.
+5. Stop a job by terminating its WMI-owned process. A job is done when its
+   manifest `out` file exists and no process remains — the watchdog will not
+   respawn it.
 
 ## Northset session-L2 identity floor
 

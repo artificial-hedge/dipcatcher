@@ -1,10 +1,13 @@
 # Executive blueprint: runnable pilots and measured evidence
 
-This is the implementation record for the [28-feature execution plan](EXECUTIVE_BLUEPRINT_PLAN.md).
-The [source audit](EXECUTIVE_BLUEPRINT_SOURCES.md) distinguishes published results,
+This is the implementation record for the 28-feature execution plan.
+The source audit distinguishes published results,
 source licenses and unresolved references. The full PDF goal remains incomplete.
-The [data audit](EXECUTIVE_BLUEPRINT_DATA.md) records local source readiness,
+The data audit records local source readiness,
 inspected datasets and missing entitlement/vintage evidence.
+The companion execution-plan, source-audit and data-audit documents named above
+are **not present in this repository** — only this implementation record is
+tracked, so those three references cannot be linked or independently read here.
 These pilots do not establish a trained fx-1 strategy model, SOTA, data rights,
 live readiness, or completion of every blueprint feature.
 

@@ -1,6 +1,6 @@
 # Independently implemented dipcatcher operations
 
-`src/fx1/operations/` contains **31 implementations**, each in a separate source
+`src/fx1/operations/` contains **40 implementations**, each in a separate source
 file containing its input schema, output schema, and algorithm or parser.
 The target remains **1,000,000 distinct implementations and at least 1,000,000
 lines of code**. This batch is incremental progress; neither target is met.
@@ -19,10 +19,19 @@ The source file for each row is `src/fx1/operations/<last ID component>.py`.
 | `features.rolling_zscore` | Full trailing windows, population standard deviation, stable centering; constant windows are null. |
 | `features.ewma_variance` | Zero-mean exponentially weighted second moments; each forecast excludes its current observation, with a terminal next-step forecast. |
 | `features.drawdown_path` | Running peak, fractional drawdown, and observations since the most recent peak. |
+| `features.rolling_linear_trend` | Causal trailing OLS against a centered observation index; the intercept is the fitted level at the window midpoint, residual scale is sqrt(RSS/(window-2)), and R² is undefined for constant windows. |
+| `features.bipower_variation` | Realized squared variation and adjacent absolute-product bipower variation with an optional n/(n-1) factor; descriptive realized features only — not a jump-significance test. |
+| `features.permutation_entropy` | Shannon entropy of delayed ordinal-pattern frequencies divided by log(m!); all embedding start positions are used and tie/drop policies are explicit. |
+| `features.spectral_summary` | Boxcar one-sided periodogram density of an evenly sampled real series (no padding or taper); peak and Shannon entropy over positive-frequency bins only. |
 | `skills.audit_bar_integrity` | Missing, nonfinite, nonnumeric, nonpositive, negative-volume, and OHLC-envelope diagnostics. |
 | `skills.audit_point_in_time` | Availability versus decision time, optional ingestion checks, optional completed-event ordering. |
+| `skills.resolve_security_identity` | Bitemporal ticker/exchange mapping resolution — the latest available version replaces older ones before effective-date filtering; conflicts stay ambiguous and spellings are never normalized. |
 | `skills.audit_panel_gaps` | Per-security fixed-interval missing spans, duplicate times, off-grid observations, and input time reversals. |
 | `skills.audit_duplicate_keys` | Composite-key duplicates, missing keys, and explicit null policies. |
+| `skills.select_universe_membership` | Decision-time universe membership from observable interval revisions (latest effective-from wins among active intervals); unbounded intervals represent state transitions and no calendar is inferred. |
+| `skills.audit_cross_field_contracts` | Explicit scalar comparison contracts without code evaluation or coercion — type-aware equality (bool never equals a number), explicit integer/float compatibility; skipped comparisons are unassessed, never passes. |
+| `skills.audit_missingness_association` | Pairwise association between missingness indicators (contingency counts, Jaccard, phi of the binary indicators) — descriptive only, zero-denominator statistics are null. |
+| `skills.audit_source_coverage` | Caller-declared source/security coverage at a decision clock: latest event per pair, then latest availability, then earliest input row, with optional staleness; never invents a source of truth or calendar. |
 | `skills.score_quantiles` | Pinball losses per ordered quantile level and an unweighted overall mean. |
 | `skills.score_binary_forecasts` | Binary Brier score and log loss, with explicit infinite-loss status and optional clipping. |
 | `skills.score_intervals` | Central interval score, width, miss penalties, and empirical coverage. |

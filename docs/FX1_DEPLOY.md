@@ -298,7 +298,7 @@ jobs to be recovered as `failed` at next boot — correct, but noisy.
 ```bash
 # Zero-config golden path — boots a stub engine + the production app on
 # loopback and walks health/auth/commands/BYOK completion/SSE/idem/
-# jobs/receipt/drain/SDK parity (17 checks, exit 0/2):
+# jobs/receipt/drain/SDK parity (16 checks as of 2026-10-08, exit 0/2):
 fx1 harness selftest
 fx1 harness selftest --state-dir /tmp/fx1-state   # adds restart recovery
 fx1 harness selftest --remote https://fx1.internal:8011 --api-key $K  # read-only probes
@@ -314,6 +314,43 @@ fx1 harness bench --remote $URL --receipt        # prints the sealed
 `selftest` remote mode never mutates the deployment — health, version,
 capabilities, commands listing only. `bench` sends real traffic: run it
 against staging, or size `--n` to what the deployment can absorb.
+
+**Known red check (2026-10-08):** `job_receipt_verifies` fails
+deterministically in local selftest — `HarnessTransportError: harness API
+returned 500: Internal Server Error` — so `selftest` currently exits `2`
+with 15/16 checks passing. This is a defect in the job-receipt verification
+surface, not a waived gate: exit `0` remains the deploy criterion.
+
+## Installing release artifacts (fxi installer)
+
+Host provisioning goes through the hardened `install.sh` (POSIX sh, safe to
+pipe: `--help` is a self-contained heredoc because under `curl | sh` the
+script body is not re-readable from `$0`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/artificial-hedge/dipcatcher/main/install.sh | sh
+sh install.sh --help
+```
+
+Hardening properties (all present in `install.sh`):
+
+- **Checksum pin — recommended release practice.** Set
+  `FXI_WHEEL_SHA256=<hex>` to require the wheel's SHA-256 to match **before**
+  pip install runs (works for `--wheel` and remote URLs). A mismatch aborts
+  fail-closed (`sha256 mismatch …`); a download without the pin is installed
+  but warned (`fxi warn> unpinned download; set FXI_WHEEL_SHA256=<hex> to
+  verify the wheel`). Release procedure: compute the wheel digest at release
+  time and publish it beside the asset (the Homebrew formula's `url`/`sha256`
+  pair is filled the same way), then install with the pin set.
+- **Safe destinations.** `safe_home` refuses `FXI_HOME` values `""`, `/`, or
+  `$HOME` before any `rm -rf`/`mkdir`, so `--uninstall` can never delete a
+  home directory. The installer never uses sudo and writes only `FXI_HOME`,
+  `FXI_BIN_DIR`, and the pip cache.
+
+It requires Python ≥ 3.12 (`FXI_PYTHON` selects one), symlinks `fxi`, `fx1`,
+`dipcatcher`, `quant`, `verify-ledger`, `mc-engine` into `FXI_BIN_DIR`, and
+smoke-runs `fxi --version`. See `docs/FXI.md` for the operator-facing install
+and uninstall flows.
 
 ## Failure modes
 
