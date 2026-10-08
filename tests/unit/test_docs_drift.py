@@ -166,6 +166,10 @@ KNOWN_MISSES: dict[str, str] = {
     # AUDIT_LEDGER.md, not Python module paths.
     "fx1.backend": "API body-block name in AUDIT_LEDGER.md, not a module.",
     "fx1.byok": "API body-block / header name in AUDIT_LEDGER.md, not a module.",
+    # Isolated-branch lanes referenced by planning docs on main (three-branch
+    # retention policy); entries shrink away when the lanes land.
+    "dipcatcher blueprint": "blueprint lane lives on isolated branch; EXECUTIVE_BLUEPRINT_IMPLEMENTATION.md documents the planned landing.",
+    "src/quant_fund/schemas/receipt.py": "receipt facade planned by ARCH_BOUNDARY_TRIAGE.md (#2844); lives on isolated branch pending migration.",
 }
 
 
