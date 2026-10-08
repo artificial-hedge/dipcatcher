@@ -33,10 +33,18 @@ def bench_gordon_newell(seed: int = 4405) -> dict[str, float]:
         w = x_mva[n - 1] * r
     err = float(np.max(np.abs(x_gn - x_mva)))
     bound = CN_N / float(np.sum(CN_VISIT / CN_MU))
-    return {
+    out = {
         "synthetic_gn_x_err": err,
         "synthetic_gn_x_n": float(x_gn[-1]),
         "synthetic_gn_mva_x": float(x_mva[-1]),
         "synthetic_gn_bound": float(bound),
         "synthetic_gn_log_g": float(np.log(g[-1])),
     }
+    # Gordon-Newell's convolution and MVA are two exact evaluations of
+    # the same product-form network — they must agree to machine
+    # precision, and throughput stays under the balanced-flow bound
+    if err > 1e-6:
+        raise ValueError(f"gn vs mva diverge: {err}")
+    if float(x_gn[-1]) > bound + 1e-9:
+        raise ValueError("throughput exceeds bound")
+    return out

@@ -124,13 +124,18 @@ def bench_graph_traversal(seed: int = 0) -> dict[str, float]:
     odd = [(0, 1), (1, 2), (2, 0)]
     ok_bip_pos, _ = is_bipartite(5, [(0, 1), (1, 2), (2, 3), (3, 4)])
     ok_bip_neg, _ = is_bipartite(5, odd)
-    return {
+    out = {
         "synthetic_topo_valid": ok,
         "synthetic_bfs_depth": float(r_bfs["level"].max()),
         "synthetic_bip_ok": float(ok_bip_pos),
         "synthetic_bip_neg": float(not ok_bip_neg),
         "synthetic_dfs_reach": float(len(dfs_iter(n, dag_edges, 0))),
     }
+    # Kahn's order must satisfy every edge (self-check oracle), a path
+    # is bipartite and a triangle is not — all deterministic invariants
+    if ok < 1.0 or not ok_bip_pos or ok_bip_neg:
+        raise ValueError(f"traversal off: {out}")
+    return out
 
 
 __all__ = [

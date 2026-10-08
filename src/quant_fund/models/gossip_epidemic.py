@@ -71,9 +71,17 @@ def bench_gossip_epidemic(seed: int = 20261231 + 254) -> dict[str, float]:
     reach2 = _bfs(adj2, 0)
     res2 = gossip(adj2, 0, fanout=3, rng=rng)
     partial_ok = res2["covered"] == len(reach2)
-    return {
+    out = {
         "synthetic_coverage": float(coverage),
         "synthetic_rounds": float(res["rounds"]),
         "synthetic_log_bound": float(log_bound),
         "synthetic_partial_exact": float(partial_ok),
     }
+    # push gossip on a connected graph must reach every node inside
+    # the log bound, and on a disconnected one must reach exactly the
+    # BFS-reachable component — all structural invariants
+    if out["synthetic_coverage"] < 1.0 or out["synthetic_log_bound"] < 1.0:
+        raise ValueError(f"gossip coverage off: {out}")
+    if out["synthetic_partial_exact"] < 1.0:
+        raise ValueError(f"gossip reach mismatch: {out}")
+    return out

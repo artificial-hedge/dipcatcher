@@ -95,4 +95,16 @@ def bench_godunov(seed: int = 20261231) -> dict[str, float]:
     xx = x - 1.0
     fan = np.clip(xx / t_final, 0.0, 1.0)
     out["synthetic_fan_err"] = float(np.sqrt(((u_r - fan) ** 2).mean()))
+    # the conservative Godunov scheme exists to track the RH shock
+    # speed: its position error must be small and strictly better than
+    # the non-conservative slip; mass balance and the rarefaction fan
+    # shape are first-order-accurate identities
+    if out["synthetic_shock_pos_err"] > 0.02:
+        raise ValueError(f"shock position off: {out['synthetic_shock_pos_err']}")
+    if out["synthetic_conservation_bonus"] <= 0:
+        raise ValueError("conservative scheme not better than non-conservative")
+    if out["synthetic_fan_err"] > 0.1 or out["synthetic_mass_balance_err"] > 0.05:
+        raise ValueError(
+            f"fan/mass off: fan={out['synthetic_fan_err']:.3f} mass={out['synthetic_mass_balance_err']}"
+        )
     return out

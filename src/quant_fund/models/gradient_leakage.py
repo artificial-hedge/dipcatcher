@@ -63,9 +63,17 @@ def bench_gradient_leakage(
     g_b = _grad_of(torch, net, x_b, y_b)
     recon_b = _attack(torch, net, g_b, torch.tensor(y_te[:1]), steps=steps, seed=seed + 1)
     mse_batch = float(((recon_b - x_v) ** 2).mean())
-    return {
+    out = {
         "synthetic_dlg_mse_single": mse_single,
         "synthetic_dlg_mse_batch": mse_batch,
         "synthetic_dlg_log_suppression": float(np.log10(mse_batch / max(mse_single, 1e-12))),
         "synthetic_torch_available": 1.0,
     }
+    # DLG on a single sample must reconstruct it almost exactly, and
+    # the batch-of-16 gradient must suppress reconstruction — that is
+    # the leakage/defense claim being measured
+    if mse_single > 0.01:
+        raise ValueError(f"dlg attack failed: {mse_single}")
+    if out["synthetic_dlg_log_suppression"] < 1.0:
+        raise ValueError(f"batch suppression absent: {out['synthetic_dlg_log_suppression']:.2f}")
+    return out

@@ -32,10 +32,17 @@ def _greedy() -> tuple[float, int]:
 def bench_greedy_set_cover(seed: int = 5201) -> dict[str, float]:
     cost, chosen = _greedy()
     truth = brute_set_cover(SC_C, SC_A)
-    return {
+    out = {
         "synthetic_gsc_cost": cost,
         "synthetic_gsc_sets": float(chosen),
         "synthetic_gsc_truth": truth,
         "synthetic_gsc_ratio": cost / truth,
         "synthetic_gsc_lnm_bound": float(np.log(SC_A.shape[0]) + 1.0),
     }
+    # greedy cost sits in [OPT, OPT * H(m)] — it cannot beat the
+    # brute-force optimum and cannot exceed the Chvátal bound
+    if out["synthetic_gsc_ratio"] < 1.0 - 1e-9:
+        raise ValueError("greedy beat brute optimum — impossible")
+    if out["synthetic_gsc_ratio"] > out["synthetic_gsc_lnm_bound"] + 1e-9:
+        raise ValueError("greedy exceeds the ln(m) bound")
+    return out

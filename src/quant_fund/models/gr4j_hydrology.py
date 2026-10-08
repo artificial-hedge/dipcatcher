@@ -189,15 +189,18 @@ def bench_hydrology(seed: int = 508) -> dict[str, float]:
     P = np.clip(base + storms, 0, None)
     E = np.clip(3.5 + 2.5 * np.sin(2 * np.pi * np.arange(n) / 365), 0.1, None)
     q = gr4j(P, E, (350.0, 0.5, 90.0, 1.5))
-    nse_val = nse(q[60:], gr4j(P, E, (350.0, 0.5, 90.0, 1.5))[60:])
-    kge_val = kge(q[60:], gr4j(P, E, (352.0, 0.48, 92.0, 1.45))[60:])
+    # parameter robustness: a ~1% perturbation must keep NSE/KGE high
+    # (the old check re-simulated identical params — vacuously 1.0)
+    q_pert = gr4j(P, E, (352.0, 0.48, 92.0, 1.45))
+    nse_val = nse(q[60:], q_pert[60:])
+    kge_val = kge(q[60:], q_pert[60:])
     # Muskingum on the routed flow
     routed = muskingum(q, k=2.0, x=0.2)
     mass_err = abs(routed.sum() - q.sum()) / q.sum()
-    if nse_val < 0.999 or mass_err > 0.05:
+    if nse_val < 0.95 or kge_val < 0.9 or mass_err > 0.05:
         raise ValueError("hydrology self-check failed")
     return {
-        "synthetic_nse_self": nse_val,
+        "synthetic_nse_near_param": nse_val,
         "synthetic_kge_near_param": kge_val,
         "synthetic_muskingum_mass_err": mass_err,
         "synthetic_peak_q": float(q.max()),

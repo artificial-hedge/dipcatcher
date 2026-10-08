@@ -34,4 +34,9 @@ def bench_graceful_hash(seed: int = _SEED) -> dict[str, float]:
     right = rng.randint(0, 200, 150)
     got = {t[0] for t in graceful_join(left, right, budget=10)}
     expect = set(int(x) for x in left) & set(int(x) for x in right)
-    return {"synthetic_grace_exact": float(got == expect)}
+    out = {"synthetic_grace_exact": float(got == expect)}
+    # hash-spill recursion must return exactly the set-intersection
+    # join result — no partition may drop or duplicate a key
+    if got != expect:
+        raise ValueError("graceful join != set intersection")
+    return out

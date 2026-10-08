@@ -27,30 +27,28 @@ def gen(sym: str, rng: np.random.RandomState, depth: int = 0) -> list[str]:
 
 
 def _valid(expr: list[str]) -> bool:
-    """Check balanced parens + alternation (toy validator)."""
+    """Balanced parens + operand/operator alternation (toy validator)."""
     depth = 0
-    prev_op = True
+    expect_operand = True
     for t in expr:
         if t == "(":
+            if not expect_operand:
+                return False  # operand followed by '(' has no operator between
             depth += 1
         elif t == ")":
             depth -= 1
-            if depth < 0 or prev_op:
+            if depth < 0 or expect_operand:
                 return False
+            expect_operand = False
         elif t in "+*":
-            if prev_op:
+            if expect_operand:
                 return False
-            prev_op = True
-            continue
-        prev_op = t == "(" or False if t == "(" else False
-        prev_op = t in "(n" and t != "(" or t == "n"
-        if t == ")":
-            prev_op = False
-        if t == "n":
-            prev_op = False
-        if t == "(":
-            prev_op = True
-    return depth == 0
+            expect_operand = True
+        else:  # operand
+            if not expect_operand:
+                return False
+            expect_operand = False
+    return depth == 0 and not expect_operand
 
 
 def bench_grammar_fuzz(seed: int = _SEED) -> dict[str, float]:
@@ -60,4 +58,15 @@ def bench_grammar_fuzz(seed: int = _SEED) -> dict[str, float]:
     for _ in range(trials):
         expr = gen("E", rng)
         valids += float(_valid(expr))
-    return {"synthetic_grammar_valid": valids / trials}
+    out = {"synthetic_grammar_valid": valids / trials}
+    # every string a CFG generates is valid by construction — and the
+    # validator must reject hand-made invalid strings too
+    wrongly_valid = [
+        _valid(["n", "+"]),
+        _valid(["n", "+", "+", "n"]),
+        _valid(["n", ")"]),
+        _valid(["(", "n"]),
+    ]
+    if out["synthetic_grammar_valid"] < 1.0 or any(wrongly_valid) or not _valid(["(", "n", ")"]):
+        raise ValueError(f"grammar fuzz off: {out} rej={wrongly_valid}")
+    return out

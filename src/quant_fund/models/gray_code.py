@@ -26,4 +26,9 @@ def bench_gray_code(seed: int = _SEED) -> dict[str, float]:
         adj = all(_hamming(g[i], g[i + 1]) == 1 for i in range(len(g) - 1))
         cyc = _hamming(g[0], g[-1]) == 1
         ok += int(adj and cyc and len(set(g)) == 1 << n and set(g) == set(range(1 << n)))
-    return {"synthetic_gray_valid": float(ok == 4)}
+    out = {"synthetic_gray_valid": float(ok == 4)}
+    # reflected Gray code: 1-bit adjacency, cyclic wraparound, and a
+    # permutation of 0..2^n-1 — exact invariants on every n
+    if ok != 4:
+        raise ValueError("gray code invariant broke")
+    return out

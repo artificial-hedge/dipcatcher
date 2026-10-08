@@ -62,9 +62,7 @@ def bench_divide_conquer_eig(seed: int = _SEED) -> dict[str, float]:
         deflate_ok += float(np.allclose(recon, T, atol=1e-10))
         # (2) Weyl bound: merged subproblem spectrum approximates T's eigvals
         # within the rank-1 perturbation norm 2|b|
-        sub = np.sort(
-            np.concatenate([np.linalg.eigvalsh(T1), np.linalg.eigvalsh(T2)])
-        )
+        sub = np.sort(np.concatenate([np.linalg.eigvalsh(T1), np.linalg.eigvalsh(T2)]))
         exp = np.sort(np.linalg.eigvalsh(T))
         weyl_ok += float(np.max(np.abs(sub - exp)) <= 2.0 * abs(b) + 1e-9)
         # (3) dc_eig result matches the dense oracle

@@ -1,6 +1,7 @@
 """GOLEM (Ng et al. 2020) — likelihood-based DAG recovery: Gaussian (SYNTHETIC)
 equal-variance score (replaces least-squares BIC) + NOTEARS acyclicity.
-Better under unequal variances; SHD vs corr baseline.
+SHD reported vs corr baseline (the baseline wins on this fixture's
+equal-variance SEM — GOLEM's edge shows under unequal variances).
 """
 
 from __future__ import annotations
@@ -48,9 +49,15 @@ def bench_golem_ev(seed: int = 2329, edges: int = 7, steps: int = 400) -> dict[s
     shd_g = shd(B, W)
     Bb = corr_baseline(X, edges)
     shd_cb = shd(B, Bb)
-    return {
+    out = {
         "synthetic_golem_shd": float(shd_g),
         "synthetic_corr_shd": float(shd_cb),
         "synthetic_golem_gain": float(shd_cb - shd_g),
         "synthetic_torch_available": 0.0,
     }
+    # GOLEM must recover a mostly-correct graph on its own terms — the
+    # corr-baseline comparison is reported, not gated (baseline wins on
+    # this equal-variance fixture)
+    if shd_g > 8:
+        raise ValueError(f"golem off: shd={shd_g}")
+    return out

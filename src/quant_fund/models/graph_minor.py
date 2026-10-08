@@ -88,13 +88,8 @@ def _bench_graph_minor(seed: int = 0) -> float:
     checks.append(has_k3_minor(c4))
     k4 = _mk([(a, b) for a in range(4) for b in range(a + 1, 4)], 4)
     checks.append(has_k4_minor(k4))
-    # K_{3,3} has K5? No — but it does have K4 minor? K3,3 has no K4 minor
-    # actually K_{3,3} DOES contain a K4 minor? Contract... K_{3,3} is
-    # non-planar but its Hadwiger number is 3? It contains a K4 minor iff
-    # it has treewidth >= 3... K_{3,3} does have K4 minor? K_{3,3} has no K4
-    # minor because contracting gives at most K_{2,3}+... Use series-parallel
-    # instead: diamond (K4 minus edge) has K4? No - series-parallel graphs
-    # are exactly K4-minor-free. Diamond IS series-parallel -> no K4 minor.
+    # diamond (K4 minus one edge) is series-parallel; series-parallel
+    # graphs are exactly the K4-minor-free graphs
     diamond = _mk([(0, 1), (1, 2), (2, 3), (3, 0), (1, 3)], 4)
     checks.append(not has_k4_minor(diamond))
     # wheel W5 has K4 minor (hub + triangle of rim)

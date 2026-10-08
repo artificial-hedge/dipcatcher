@@ -59,8 +59,16 @@ def bench_golomb_rice(seed: int = 20261231 + 293) -> dict[str, float]:
         gap = len(bits) / n - h
         gaps.append(gap)
         near += int(gap < 1.5)
-    return {
+    out = {
         "synthetic_roundtrip": float(rt / trials),
         "synthetic_near_entropy": float(near / trials),
         "synthetic_mean_gap": float(sum(gaps) / len(gaps)),
     }
+    # Rice codes are an exact prefix code — every stream must round-
+    # trip, and k=ceil(log2(mu)) keeps the rate within ~0.5 bit of the
+    # geometric entropy (measured mean gap ~0.16)
+    if out["synthetic_roundtrip"] < 1.0:
+        raise ValueError("rice roundtrip lossy")
+    if out["synthetic_mean_gap"] > 0.6:
+        raise ValueError(f"rice rate off entropy: {out['synthetic_mean_gap']:.3f}")
+    return out

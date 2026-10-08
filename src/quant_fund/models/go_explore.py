@@ -58,10 +58,17 @@ def bench_go_explore(seed: int = 2867, rounds: int = 300, tail: int = 8) -> dict
     goal_traj = arch.get(s2i(GOAL))
     path_len = float(len(goal_traj)) if goal_traj is not None else 0.0
     optimal = float((3 - GOAL[0]) + (GOAL[1] - 0))
-    return {
+    out = {
         "synthetic_goexp_coverage": float(cover),
         "synthetic_goexp_goal_found": float(min(successes, 1)),
         "synthetic_goexp_path_len": path_len,
         "synthetic_optimal_path_len": optimal,
         "synthetic_torch_available": 0.0,
     }
+    # deterministic env + archive restore: 300 rounds of frontier
+    # exploration must find the goal and cover most of the grid
+    if out["synthetic_goexp_goal_found"] < 1.0 or cover < 0.5:
+        raise ValueError(
+            f"go-explore off: cover={cover:.2f} found={out['synthetic_goexp_goal_found']}"
+        )
+    return out

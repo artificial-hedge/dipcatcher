@@ -100,10 +100,16 @@ def bench_graph_unet(
     with torch.no_grad():
         acc_unet = float((unet_forward(xt).argmax(-1)[te_m] == yt[te_m]).float().mean())
         acc_mlp = float((mlp(xt).argmax(-1)[te_m] == yt[te_m]).float().mean())
-    return {
+    out = {
         "synthetic_gunet_acc": acc_unet,
         "synthetic_gunet_mlp_acc": acc_mlp,
         "synthetic_gunet_acc_gain": acc_unet - acc_mlp,
         "synthetic_gunet_pool_size": float(k_pool),
         "synthetic_torch_available": 1.0,
     }
+    # the U-shaped GCN must classify the SBM fixture well (measured
+    # ~0.96); the MLP comparison is reported, not gated — the two are
+    # competitive on this fixture
+    if acc_unet < 0.8:
+        raise ValueError(f"gunet acc off: {acc_unet:.3f}")
+    return out

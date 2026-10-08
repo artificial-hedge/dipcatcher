@@ -1,5 +1,7 @@
 """Graph Neural Operator (Li et al. 2020) — message-passing kernel (SYNTHETIC)
-operator on the grid graph: u(x_i) = Σ_j κ(x_i,x_j,a_i,a_j)·f_j — vs MLP.
+operator on the grid graph: u(x_i) = Σ_j κ(x_i,x_j,a_i,a_j)·f_j. Bench
+reports rel-L2 vs an MLP baseline (the MLP wins on this small 1-D
+Poisson fixture — GNO's advantage shows on larger/multi-d problems).
 """
 
 from __future__ import annotations
@@ -72,9 +74,15 @@ def bench_gno_lite(
         opt.step()
     with torch.no_grad():
         err_b = rel_l2(mlp(ate).numpy(), u_te)
-    return {
+    out = {
         "synthetic_gno_rell2": err,
         "synthetic_gno_mlp_rell2": err_b,
         "synthetic_gno_gain": err_b - err,
         "synthetic_torch_available": 1.0,
     }
+    # the kernel operator must actually learn the map — rel-L2 well
+    # under the 1.0 = no-skill level; the MLP comparison is reported,
+    # not gated (MLP wins on this small fixture)
+    if err > 0.6:
+        raise ValueError(f"gno fit off: rel_l2={err:.3f}")
+    return out

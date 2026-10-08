@@ -11846,10 +11846,16 @@
   "models/gneding_metric.py": {
    "status": "audited"
   },
+  "models/gno_lite.py": {
+   "status": "audited"
+  },
   "models/gnome_2_qa_studies.py": {
    "status": "audited"
   },
   "models/gnome_volk_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/go_explore.py": {
    "status": "audited"
   },
   "models/goal_adaptive.py": {
@@ -11867,7 +11873,13 @@
   "models/godbillon_vey.py": {
    "status": "audited"
   },
+  "models/godel_incomp.py": {
+   "status": "audited"
+  },
   "models/godement_jacq.py": {
+   "status": "audited"
+  },
+  "models/godunov.py": {
    "status": "audited"
   },
   "models/godunov_exact.py": {
@@ -11876,7 +11888,13 @@
   "models/godwit_qa_studies.py": {
    "status": "audited"
   },
+  "models/goertzel_detect.py": {
+   "status": "audited"
+  },
   "models/going_up.py": {
+   "status": "audited"
+  },
+  "models/gold_code.py": {
    "status": "audited"
   },
   "models/golden_brown_qa_studies.py": {
@@ -11885,7 +11903,16 @@
   "models/golden_mole_qa_studies.py": {
    "status": "audited"
   },
+  "models/golem_ev.py": {
+   "status": "audited"
+  },
   "models/goliath_heron_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/golomb_rice.py": {
+   "status": "audited"
+  },
+  "models/gomory_cut.py": {
    "status": "audited"
   },
   "models/good_lambda.py": {
@@ -11907,6 +11934,9 @@
    "status": "audited"
   },
   "models/goral_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/gordon_newell.py": {
    "status": "audited"
   },
   "models/gordon_thm.py": {
@@ -11933,6 +11963,12 @@
   "models/goshawk_qa_studies.py": {
    "status": "audited"
   },
+  "models/gossip_epidemic.py": {
+   "status": "audited"
+  },
+  "models/gottesman_knill.py": {
+   "status": "audited"
+  },
   "models/gov_report_studies.py": {
    "status": "audited"
   },
@@ -11948,6 +11984,12 @@
   "models/gowers_norm.py": {
    "status": "audited"
   },
+  "models/gp_bridge.py": {
+   "status": "audited"
+  },
+  "models/gp_classification.py": {
+   "status": "audited"
+  },
   "models/gpqa_diamond_studies.py": {
    "status": "audited"
   },
@@ -11955,6 +11997,9 @@
    "status": "audited"
   },
   "models/gpqa_studies.py": {
+   "status": "audited"
+  },
+  "models/gps_transformer.py": {
    "status": "audited"
   },
   "models/gpt_score_studies.py": {
@@ -11966,7 +12011,19 @@
   "models/gq_adaptive.py": {
    "status": "audited"
   },
+  "models/gqa_attn.py": {
+   "status": "audited"
+  },
+  "models/gr4j_hydrology.py": {
+   "status": "audited"
+  },
   "models/gr_birkhoff.py": {
+   "status": "audited"
+  },
+  "models/grabcut_lite.py": {
+   "status": "audited"
+  },
+  "models/graceful_hash.py": {
    "status": "audited"
   },
   "models/grad_descent_nest.py": {
@@ -11987,6 +12044,18 @@
   "models/gradient_leak_studies.py": {
    "status": "audited"
   },
+  "models/gradient_leakage.py": {
+   "status": "audited"
+  },
+  "models/gradient_norm_ood.py": {
+   "status": "audited"
+  },
+  "models/gradnorm_bal.py": {
+   "status": "audited"
+  },
+  "models/gradual_types.py": {
+   "status": "audited"
+  },
   "models/grail_qa_studies.py": {
    "status": "audited"
   },
@@ -11999,7 +12068,25 @@
   "models/gram_matrix.py": {
    "status": "audited"
   },
+  "models/gram_schmidt.py": {
+   "status": "audited"
+  },
+  "models/grammar_fuzz.py": {
+   "status": "audited"
+  },
   "models/grape_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/graph_coloring.py": {
+   "status": "audited"
+  },
+  "models/graph_components.py": {
+   "status": "audited"
+  },
+  "models/graph_h1.py": {
+   "status": "audited"
+  },
+  "models/graph_minor.py": {
    "status": "audited"
   },
   "models/graph_of_thought_studies.py": {
@@ -12008,10 +12095,28 @@
   "models/graph_questions_studies.py": {
    "status": "audited"
   },
+  "models/graph_temporal.py": {
+   "status": "audited"
+  },
+  "models/graph_traversal.py": {
+   "status": "audited"
+  },
+  "models/graph_unet.py": {
+   "status": "audited"
+  },
   "models/graphic_design.py": {
    "status": "audited"
   },
   "models/graphic_design_2.py": {
+   "status": "audited"
+  },
+  "models/graphical_models.py": {
+   "status": "audited"
+  },
+  "models/graphsage.py": {
+   "status": "audited"
+  },
+  "models/grasp_epsilon.py": {
    "status": "audited"
   },
   "models/grasp_meta.py": {
@@ -12030,6 +12135,9 @@
    "status": "audited"
   },
   "models/gravity_anomaly.py": {
+   "status": "audited"
+  },
+  "models/gray_code.py": {
    "status": "audited"
   },
   "models/gray_mouse_qa_studies.py": {
@@ -12056,7 +12164,13 @@
   "models/greedy_marking.py": {
    "status": "audited"
   },
+  "models/greedy_matroid.py": {
+   "status": "audited"
+  },
   "models/greedy_rb.py": {
+   "status": "audited"
+  },
+  "models/greedy_set_cover.py": {
    "status": "audited"
   },
   "models/greek_letter.py": {

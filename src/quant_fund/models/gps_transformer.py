@@ -60,9 +60,14 @@ def bench_gps_transformer(seed: int = 887, iters: int = 200) -> dict[str, float]
             z = ffn(z + local + glob[0])
         sc = read(z).squeeze(-1).numpy()
     auc_gps = auc(sc, y.astype(np.int64))
-    return {
+    out = {
         "synthetic_gps_auc": auc_gps,
         "synthetic_gps_random_auc": 0.5,
         "synthetic_gps_lift": auc_gps - 0.5,
         "synthetic_torch_available": 1.0,
     }
+    # MPNN+attention on the planted-clique fixture must beat random
+    # with clear margin (measured ~0.96)
+    if auc_gps < 0.7:
+        raise ValueError(f"gps auc off: {auc_gps:.3f}")
+    return out

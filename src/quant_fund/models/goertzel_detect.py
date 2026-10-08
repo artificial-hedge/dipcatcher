@@ -34,7 +34,7 @@ def bench_goertzel_detect(seed: int = 4811) -> dict[str, float]:
     dtmf = [697, 770, 852, 941, 1209, 1336, 1477, 1633]
     e = {f: _goertzel(x, float(f)) for f in dtmf}
     top2 = sorted(e, key=lambda f: e[f], reverse=True)[:2]
-    return {
+    out = {
         "synthetic_goe_941_err": abs(g941 - f941),
         "synthetic_goe_1336_err": abs(g1336 - f1336),
         "synthetic_goe_941": g941,
@@ -42,3 +42,11 @@ def bench_goertzel_detect(seed: int = 4811) -> dict[str, float]:
         "synthetic_goe_top1": float(top2[0]),
         "synthetic_goe_top2": float(top2[1]),
     }
+    # the detector must pick exactly the planted tone pair, and the
+    # single-bin recurrence must track the rfft at the DTMF bins
+    # (941 sits between rfft bins — allow bin-spacing slack)
+    if set(top2) != {941, 1336}:
+        raise ValueError(f"dtmf detect wrong: {top2}")
+    if out["synthetic_goe_941_err"] > 0.1 or out["synthetic_goe_1336_err"] > 0.1:
+        raise ValueError("goertzel diverges from rfft")
+    return out

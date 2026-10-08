@@ -65,10 +65,15 @@ def bench_gradnorm_bal(seed: int = 2019, iters: int = 600) -> dict[str, float]:
         h = trunk(torch.tensor(Xt).float())
         a1 = float(((h1(h).squeeze(-1) > 0).float().numpy() == yt1).mean())
         a2 = float(((h2(h).squeeze(-1) > 0).float().numpy() == yt2).mean())
-    return {
+    out = {
         "synthetic_gradnorm_min_acc": min(a1, a2),
         "synthetic_gradnorm_mean_acc": (a1 + a2) / 2,
         "synthetic_gradnorm_w1": float(w[0]),
         "synthetic_gradnorm_w2": float(w[1]),
         "synthetic_torch_available": 1.0,
     }
+    # the balanced two-task net must beat chance on both tasks
+    # (measured min 0.55 / mean 0.62 on the pinned seed)
+    if out["synthetic_gradnorm_min_acc"] < 0.53 or out["synthetic_gradnorm_mean_acc"] < 0.58:
+        raise ValueError(f"gradnorm off: {out}")
+    return out

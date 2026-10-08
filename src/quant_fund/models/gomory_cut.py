@@ -101,7 +101,7 @@ def bench_gomory_cut(seed: int = 5101) -> dict[str, float]:
     lp_obj = float(ILP_C @ x_lp[:2])
     x, obj, cuts = _gomory_solve(ILP_C, ILP_A, ILP_B)
     truth = brute_force_ilp(ILP_C, ILP_A, ILP_B, ILP_UB)
-    return {
+    out = {
         "synthetic_gom_lp_obj": lp_obj,
         "synthetic_gom_obj": obj,
         "synthetic_gom_truth": truth,
@@ -109,3 +109,8 @@ def bench_gomory_cut(seed: int = 5101) -> dict[str, float]:
         "synthetic_gom_cuts": float(cuts),
         "synthetic_gom_integral": float(np.allclose(x, np.round(x), atol=1e-6)),
     }
+    # Gomory cuts on this fixture must close the LP gap exactly to the
+    # brute-force optimum with an integral vertex
+    if out["synthetic_gom_gap"] > 1e-6 or out["synthetic_gom_integral"] < 1.0:
+        raise ValueError(f"gomory off: {out}")
+    return out

@@ -149,7 +149,10 @@ def articulation(n: int, edges: list[tuple[int, int]]) -> IntArray:
             if work:
                 p2 = work[-1][0]
                 low[p2] = min(low[p2], low[u])
-                if p != -1 and low[u] >= idx[p2]:
+                # non-root articulation rule: p2 is a cut vertex iff
+                # child u's subtree cannot reach above p2 — the root
+                # is judged by the children-count rule below instead
+                if p2 != s and low[u] >= idx[p2]:
                     is_ap[p2] = True
             elif children.get(s, 0) > 1:
                 is_ap[s] = True
@@ -171,12 +174,18 @@ def bench_graph_components(seed: int = 0) -> dict[str, float]:
     bedges = [(0, 1), (1, 2), (1, 3), (1, 4)]
     br = bridges(5, bedges)
     ap = articulation(5, bedges)
-    return {
+    out = {
         "synthetic_scc_count": float(ncomp),
         "synthetic_scc_big": float(big),
         "synthetic_bridge_count": float(len(br)),
         "synthetic_articulation": float(ap[1]),
     }
+    # planted structure is exact: two 5-cycle SCCs + a singleton tail;
+    # the tree's four edges are all bridges and node 1 is the only
+    # articulation point
+    if ncomp != 3 or big != 2 or len(br) != 4 or not ap[1] or ap[0] or ap[2]:
+        raise ValueError(f"graph decomp off: {out} ap={ap}")
+    return out
 
 
 __all__ = [

@@ -115,7 +115,7 @@ def bench_graph_temporal(seed: int = 107) -> dict[str, float]:
         pred = np.array([[c0[t - 1], c0[t - 2], 1.0] for t in range(win + tr, T)]) @ w
         errs.append(float(np.mean(np.abs(pred - c0[win + tr :]))))
     ar = float(np.mean(errs))
-    return {
+    out = {
         "synthetic_graphtemporal_mae": mae_joint,
         "synthetic_graphtemporal_ind_mae": mae_ind,
         "synthetic_graphtemporal_ar_mae": ar,
@@ -123,3 +123,9 @@ def bench_graph_temporal(seed: int = 107) -> dict[str, float]:
         "synthetic_graphtemporal_margin_vs_ar": ar - mae_joint,
         "synthetic_torch_available": 1.0,
     }
+    # the joint graph-GRU must forecast the coupled panel well
+    # (measured ~0.046 MAE); the margins vs independent GRUs/AR are
+    # reported, not gated — all three are close on this fixture
+    if mae_joint > 0.1:
+        raise ValueError(f"graph temporal mae off: {mae_joint:.3f}")
+    return out

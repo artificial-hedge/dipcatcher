@@ -32,10 +32,18 @@ def bench_gp_bridge(seed: int = 2955, n_pts: int = 40) -> dict[str, float]:
     L = np.linalg.cholesky(cov + 1e-9 * np.eye(n_pts))
     samp = mu + L @ rng.standard_normal(n_pts)
     end_err = float(abs(samp[0] - 1.0) + abs(samp[-1] - 0.0))
-    return {
+    out = {
         "synthetic_gp_anchor_var": anchor_var,
         "synthetic_gp_gap_var": gap_var,
         "synthetic_gp_uncond_var": uncond,
         "synthetic_gp_bridge_end_err": end_err,
         "synthetic_torch_available": 0.0,
     }
+    # the bridge's defining property: posterior variance collapses at
+    # anchors (~0) and balloons inside the unobserved gap, well under
+    # the unconditional prior variance
+    if anchor_var > 1e-3:
+        raise ValueError(f"anchor variance not collapsed: {anchor_var}")
+    if gap_var <= anchor_var or gap_var > 0.5:
+        raise ValueError(f"gap variance off: {gap_var}")
+    return out

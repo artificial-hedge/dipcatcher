@@ -99,12 +99,18 @@ def bench_gradient_norm_ood(
             ]
         )
     auc_msp = _auc(np.asarray(msp), is_ood)
-    return {
+    out = {
         "synthetic_gradnorm_auc": auc_gn,
         "synthetic_gradnorm_msp_auc": auc_msp,
         "synthetic_gradnorm_margin_vs_msp": auc_gn - auc_msp,
         "synthetic_torch_available": 1.0,
     }
+    # the grad-norm score must separate ID from OOD well (measured
+    # ~0.99); the MSP comparison is reported, not gated — the two
+    # scores are competitive on this fixture
+    if auc_gn < 0.85:
+        raise ValueError(f"gradnorm auc off: {auc_gn:.3f}")
+    return out
 
 
 if __name__ == "__main__":  # pragma: no cover

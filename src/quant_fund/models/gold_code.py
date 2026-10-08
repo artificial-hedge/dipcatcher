@@ -116,6 +116,15 @@ def bench_gold_code(seed: int = 20261231) -> dict[str, float]:
     ac = float(np.sum(code * code)) / code.size
     out["synthetic_gold_autocorr_peak"] = ac
     out["synthetic_gold_detected"] = float(out["synthetic_gold_offset_err"] == 0)
+    # acquisition must lock the exact chip offset at this SNR with a
+    # strong peak margin; the Gold family is near-orthogonal (~0.06
+    # worst cross-correlation by construction)
+    if out["synthetic_gold_offset_err"] != 0 or pmr < 2.0:
+        raise ValueError(
+            f"acquisition failed: err={out['synthetic_gold_offset_err']} pmr={pmr:.2f}"
+        )
+    if worst > 0.1 or ac != 1.0:
+        raise ValueError(f"code family off: xcorr={worst:.3f} ac={ac}")
     return out
 
 

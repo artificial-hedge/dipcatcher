@@ -40,4 +40,9 @@ def bench_graph_h1(seed: int = _SEED) -> dict[str, float]:
         comp: list[list[tuple[int, ...]]] = [[(i,) for i in range(n)], edges]
         got = betti(comp)[1]
         ok += int(got == want)
-    return {"synthetic_graph_h1": float(ok == trials)}
+    out = {"synthetic_graph_h1": float(ok == trials)}
+    # b_1 = E - V + C is an exact combinatorial identity — every trial
+    # must agree with the rank computation
+    if ok != trials:
+        raise ValueError(f"betti-1 != E-V+C on {trials - ok} trials")
+    return out
