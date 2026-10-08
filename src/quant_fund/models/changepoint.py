@@ -48,10 +48,13 @@ def bocpd_gaussian(
     predictive is Student-t.  Constant hazard ``hazard`` = 1/E[run length].
 
     Returns:
-    - ``cp_prob[t]``: posterior probability a changepoint occurred at t
-      (run length reset to 0).
+    - ``cp_prob[t]``: posterior mass on short runs, ``P(r_t < 8)`` — the
+      detector signal: it concentrates right after a boundary and decays
+      as the new run ages.  (``P(r_t = 0)`` alone is not usable: under the
+      canonical recursion it is identically the constant hazard.)
     - ``expected_run_length[t]``: posterior mean run length.
-    - ``changepoints``: indices where ``cp_prob`` exceeds 0.5.
+    - ``changepoints``: indices where the run-length MAP resets to a
+      younger run than at t-1 (the canonical detection readout).
     - ``run_length_map[t, r]``: full posterior (rows sum to 1).
     """
     v = _as_vector(x)
@@ -91,25 +94,10 @@ def bocpd_gaussian(
         )
         pred = np.exp(np.clip(pred_log, -700.0, 700.0))
         growth = run_probs[t - 1, :t] * pred * (1.0 - hazard)
-        # Changepoint mass: a new run predicts under the PRIOR predictive,
-        # marginalized over the run-length posterior (Adams–MacKay eq. 9).
-        df0 = 2.0 * alpha0
-        scale0 = math.sqrt(b0 * (kappa0 + 1.0) / (alpha0 * kappa0))
-        z0 = (obs - m0) / scale0
-        prior_pred = float(
-            np.exp(
-                np.clip(
-                    gammaln((df0 + 1.0) / 2.0)
-                    - gammaln(df0 / 2.0)
-                    - 0.5 * math.log(df0 * math.pi)
-                    - math.log(scale0)
-                    - ((df0 + 1.0) / 2.0) * math.log1p(z0 * z0 / df0),
-                    -700.0,
-                    700.0,
-                )
-            )
-        )
-        cp_mass = hazard * prior_pred * float(run_probs[t - 1, :t].sum())
+        # Changepoint mass (Adams–MacKay eq. 9): the datum is scored under
+        # EACH live run's own posterior predictive, marginalized over the
+        # run-length posterior — not under the prior.
+        cp_mass = hazard * float(np.sum(run_probs[t - 1, :t] * pred))
         new_probs = np.zeros(t + 1)
         new_probs[0] = cp_mass
         new_probs[1 : t + 1] = growth
@@ -126,7 +114,7 @@ def bocpd_gaussian(
                 new_probs /= s
         run_probs[t, : t + 1] = new_probs
         rls_map[t, : t + 1] = new_probs
-        cp_prob[t] = float(new_probs[0])
+        cp_prob[t] = float(new_probs[: min(8, t)].sum())
         expected_rl[t] = float(np.dot(np.arange(t + 1), new_probs))
         # Normal-Gamma updates, shifted by one: a run of length r that survives
         # becomes length r+1, so index r+1 receives the updated params of r and
@@ -140,11 +128,16 @@ def bocpd_gaussian(
         alpha[1 : t + 1] = alpha_new
         beta[1 : t + 1] = beta_new
         mu[0], kappa[0], alpha[0], beta[0] = m0, kappa0, alpha0, b0
+    rlm = rls_map[1:, :]
+    map_r = np.argmax(rlm, axis=1)
+    cp_flags = np.zeros(v.size, dtype=bool)
+    cp_flags[0] = map_r[0] == 0
+    cp_flags[1:] = map_r[1:] < map_r[:-1]
     return {
         "cp_prob": cp_prob[1:],
         "expected_run_length": expected_rl[1:],
-        "changepoints": np.flatnonzero(cp_prob[1:] > 0.5).astype(np.intp),
-        "run_length_map": rls_map[1:, :],
+        "changepoints": np.flatnonzero(cp_flags).astype(np.intp),
+        "run_length_map": rlm,
     }
 
 
@@ -169,6 +162,12 @@ def cusum_detect(
     sp = np.zeros(v.size)
     sn = np.zeros(v.size)
     alarms: list[int] = []
+    sp[0] = max(0.0, v[0] - ref - d)
+    sn[0] = max(0.0, -(v[0] - ref + d))
+    if sp[0] > h or sn[0] > h:
+        alarms.append(0)
+        sp[0] = 0.0
+        sn[0] = 0.0
     for t in range(1, v.size):
         sp[t] = max(0.0, sp[t - 1] + (v[t] - ref - d))
         sn[t] = max(0.0, sn[t - 1] - (v[t] - ref + d))
@@ -240,7 +239,7 @@ def binary_segmentation(
     if isinstance(min_size, bool) or not isinstance(min_size, int) or min_size < 2:
         raise ValueError("min_size must be an integer >= 2")
     var = float(v.var(ddof=1))
-    pen = 2.0 * math.log(v.size) * max(var, 1e-12) * 2 if penalty is None else float(penalty)
+    pen = 2.0 * math.log(v.size) * max(var, 1e-12) if penalty is None else float(penalty)
     if not np.isfinite(pen) or pen < 0.0:
         raise ValueError("penalty must be non-negative and finite")
     cps: list[int] = []

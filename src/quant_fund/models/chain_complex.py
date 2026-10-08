@@ -29,10 +29,8 @@ def _bench_chain_complex(seed: int = 0) -> float:
     checks.append(boundary_squared_ok(d1, d2))
     # H1 = ker d1 (no im from C2=0): rank d1 = 2 -> H1 dim 1 (cycle)
     checks.append(homology_dim(d1, d2) == 1)
-    # H0 = C0/im d1 = 3 - 2 = 1 (connected)
-    checks.append(
-        homology_dim(np.zeros((0, 3)).reshape(0, 3) if False else np.eye(0), d1) == 0 or True
-    )
+    # H0 = C0/im d1 = 3 - 2 = 1 (connected): d0: C0 -> 0 is the (0,3) map
+    checks.append(homology_dim(np.zeros((0, 3)), d1) == 1)
     # full triangle (with 2-face): boundary = e01 + e12 - e02
     d2f = np.array([[1], [1], [-1]], dtype=float)
     checks.append(boundary_squared_ok(d1, d2f))

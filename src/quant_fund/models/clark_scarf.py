@@ -38,14 +38,14 @@ def bench_clark_scarf(seed: int = 3037) -> dict[str, float]:
             sell = min(inv1, float(d))
             inv1 -= sell
             filled += sell
-            tot += 5.0 * (float(d) - sell) + h1 * inv1 + h2 * max(inv2, 0.0)
+            tot += p * (float(d) - sell) + h1 * inv1 + h2 * max(inv2, 0.0)
             ip1 = inv1 + sum(q for _, q in p1)
             q1 = min(max(myp_s1 - ip1, 0.0), max(inv2, 0.0))
             if q1 > 0:
                 p1.append((w + 1, q1))
             ip2 = inv2 - sum(q for _, q in p1)
             q2 = max(myp_s2 - ip2 - float(dem[max(0, w - 1)]), 0.0) if w else 0.0
-            inv2 += q2 * 0.5
+            inv2 += q2
         return tot / weeks, filled / max(float(dem.sum()), 1.0)
 
     c_e, f_e = run(s1, s2)

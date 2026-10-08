@@ -99,6 +99,11 @@ def cma_es(
     best_f = np.inf
     best_x = mean.copy()
     converged = 0
+    # TolFun: stop when the range of the best-per-generation objective
+    # over the last ``f_hist_len`` generations collapses below ``tolf``
+    # (Hansen tutorial, ~10 + 30 n / lambda generations).
+    f_hist_len = 10 + int(30 * n / lam_i)
+    f_hist: list[float] = []
 
     while evals < budget:
         gen += 1
@@ -119,8 +124,10 @@ def cma_es(
             converged = 0
         else:
             converged += 1
+        f_hist.append(float(fs[0]))
+        if len(f_hist) > f_hist_len:
+            f_hist.pop(0)
         y_w = np.einsum("i,ij->j", w, y[:mu])
-        mean_old = mean
         mean = mean + sigma * y_w
         # step-size evolution path
         p_s = (1 - c_s) * p_s + np.sqrt(c_s * (2 - c_s) * mu_eff) * (inv_sqrt_c @ y_w)
@@ -143,13 +150,13 @@ def cma_es(
         eig_d = np.sqrt(dd)
         eig_b = bb
         inv_sqrt_c = bb @ np.diag(1.0 / eig_d) @ bb.T
-        # convergence: tiny sigma or no f improvement
+        # convergence: tiny sigma, no f improvement, or TolFun collapse
         if sigma * eig_d.max() < tolx or (converged > 30 and sigma < 1e-8):
+            break
+        if len(f_hist) == f_hist_len and (max(f_hist) - min(f_hist) <= tolf):
             break
         if evals >= budget:
             break
-        del mean_old
-        _ = tolf
     return {
         "best_f": best_f,
         "n_evals": float(evals),

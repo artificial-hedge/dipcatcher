@@ -4571,7 +4571,16 @@
   "models/cello_qa_studies.py": {
    "status": "audited"
   },
+  "models/cellular_automata.py": {
+   "status": "audited"
+  },
   "models/cellular_motive.py": {
+   "status": "audited"
+  },
+  "models/celp_encode.py": {
+   "status": "audited"
+  },
+  "models/censored_quantile.py": {
    "status": "audited"
   },
   "models/centaur_2_qa_studies.py": {
@@ -4629,6 +4638,9 @@
    "status": "audited"
   },
   "models/chafai_rmt.py": {
+   "status": "audited"
+  },
+  "models/chain_complex.py": {
    "status": "audited"
   },
   "models/chain_cond.py": {
@@ -4988,6 +5000,9 @@
   "models/clark_ocone.py": {
    "status": "audited"
   },
+  "models/clark_scarf.py": {
+   "status": "audited"
+  },
   "models/clarke_subdiff.py": {
    "status": "audited"
   },
@@ -5144,6 +5159,9 @@
   "models/cm_points.py": {
    "status": "audited"
   },
+  "models/cma_es.py": {
+   "status": "audited"
+  },
   "models/cmb_anisotropy.py": {
    "status": "audited"
   },
@@ -5205,6 +5223,9 @@
    "status": "audited"
   },
   "models/cochlear_studies.py": {
+   "status": "audited"
+  },
+  "models/cochran_q.py": {
    "status": "audited"
   },
   "models/cockatoo_qa_studies.py": {
@@ -5331,6 +5352,9 @@
    "status": "audited"
   },
   "models/columbine_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/column_generation.py": {
    "status": "audited"
   },
   "models/column_qa_studies.py": {

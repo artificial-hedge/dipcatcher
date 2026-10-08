@@ -53,3 +53,12 @@ def test_fail_closed():
 def test_bench_passes():
     out = bench_cma_es()
     assert out["synthetic_sphere_final"] < 1e-4
+
+
+def test_tolf_collapses_flat_landscape():
+    # ``tolf`` is the advertised objective-range stopping rule: on a flat
+    # landscape the best-per-generation range is identically 0 and the run
+    # must stop after the history window instead of burning the budget.
+    r = cma_es(lambda x: 42.0, np.ones(4), sigma0=1.0, budget=5000, seed=1)
+    assert r["n_evals"] < 0.5 * 5000
+    assert r["n_generations"] <= 10 + int(30 * 4 / r["lambda"]) + 1

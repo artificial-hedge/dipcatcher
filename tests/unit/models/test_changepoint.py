@@ -120,3 +120,34 @@ class TestSegmentation:
             binary_segmentation(np.random.default_rng(0).normal(size=60), min_size=1)
         with pytest.raises(ValueError):
             optimal_partition_mean(np.random.default_rng(0).normal(size=60), penalty=-5.0)
+
+
+class TestLane8Probes:
+    def test_cusum_first_observation_can_alarm(self):
+        # Page recursion covers every index, including t=0 — the old code
+        # looped from t=1 so a spike in the first sample could never fire.
+        x = np.concatenate([[100.0], np.zeros(39)])
+        out = cusum_detect(x)
+        assert out["alarms"].tolist() == [0]
+
+    def test_binary_segmentation_documented_bic(self):
+        # docstring: default penalty = 2*log(n)*var (BIC analogue, matching
+        # optimal_partition_mean); the old code silently doubled it to
+        # 4*log(n)*var, so this moderate split is only detected with the
+        # documented penalty.
+        rng = np.random.default_rng(11)
+        x = np.concatenate([rng.normal(0.0, 1.0, 100), rng.normal(0.58, 1.0, 100)])
+        cps = binary_segmentation(x, min_size=30)
+        assert cps.size >= 1
+        assert np.any(np.abs(cps - 100) <= 30)
+
+    def test_bocpd_canonical_cp_datum_scored_under_run(self):
+        # Adams-MacKay eq. 9 scores the boundary datum under each live run's
+        # predictive, marginalized over the posterior — not under the prior.
+        # The readout P(r<8) must collapse onto the break almost surely; the
+        # prior-predictive hybrid never exceeded ~0.92 on this series.
+        x = np.concatenate([np.zeros(100), np.full(100, 5.0)])
+        out = bocpd_gaussian(x, hazard=1.0 / 200.0)
+        assert out["changepoints"].tolist() == [100]
+        assert out["cp_prob"][100] > 0.99
+        assert out["expected_run_length"][104] < 10.0

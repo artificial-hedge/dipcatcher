@@ -36,9 +36,21 @@ def _synth(exc: np.ndarray, a: np.ndarray) -> np.ndarray:
     return np.asarray(y, dtype=np.float64)
 
 
+def _pitch_vector(exc_hist: np.ndarray, lag: int, bs: int) -> np.ndarray:
+    """Adaptive-codebook vector: last ``lag`` excitation samples, periodically
+    extended when ``lag < bs`` (standard CELP long-term predictor)."""
+    base = exc_hist[-lag:]
+    reps = -(-bs // lag)
+    return np.tile(base, reps)[:bs]
+
+
 def celp_frame(x: np.ndarray, a: np.ndarray, npitch: int = 40) -> tuple[np.ndarray, float]:
-    """Closed-loop excitation: adaptive codebook (past excitation) + small stochastic codebook."""
+    """Closed-loop excitation: adaptive codebook (past excitation at lags in
+    ``[max(4, npitch//2), npitch]``) followed by fixed stochastic-codebook
+    stages. ``npitch`` bounds the pitch-search window."""
     n = x.size
+    if n % 4 != 0:
+        raise ValueError("frame length must be a multiple of 4 subframes")
     rng = np.random.default_rng(1234)
     exc = np.zeros(n)
     # block into subframes
@@ -58,7 +70,25 @@ def celp_frame(x: np.ndarray, a: np.ndarray, npitch: int = 40) -> tuple[np.ndarr
         base = _synth(np.concatenate([exc[:lo], np.zeros(bs)]), a)[lo:hi]
         residual = target - base
         sub = np.zeros(bs)
-        for _stage in range(3):  # adaptive then fixed stage
+        # stage 0: adaptive codebook over past excitation (needs history)
+        if lo >= 4:
+            best_v = np.zeros(bs)
+            best_err = float(residual @ residual)
+            best_g = 0.0
+            for lag in range(max(4, npitch // 2), min(npitch, lo) + 1):
+                v_lag = _pitch_vector(exc[:lo], lag, bs)
+                rec_i = _synth(np.concatenate([np.zeros(lo), v_lag]), a)[lo:hi]
+                g = float(np.dot(residual, rec_i) / max(np.dot(rec_i, rec_i), 1e-9))
+                err = float(np.dot(residual - g * rec_i, residual - g * rec_i))
+                if err < best_err:
+                    best_err, best_g, best_v = err, g, v_lag
+            if best_g != 0.0:
+                sub += best_g * best_v
+                gains.append(best_g)
+                residual = (
+                    residual - _synth(np.concatenate([np.zeros(lo), best_g * best_v]), a)[lo:hi]
+                )
+        for _stage in range(3):  # fixed stochastic-codebook stages
             best = (-1e18, 0.0, 0)
             for ci in range(cb.shape[0]):
                 rec_i = _synth(np.concatenate([np.zeros(lo), cb[ci]]), a)[lo:hi]
