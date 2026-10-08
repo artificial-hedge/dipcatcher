@@ -24887,6 +24887,9 @@
   "models/variance_swap.py": {
    "status": "audited"
   },
+  "models/variational_bayes.py": {
+   "status": "audited"
+  },
   "models/varifold_theory.py": {
    "status": "audited"
   },
@@ -25349,6 +25352,9 @@
   "models/wasp_qa_studies.py": {
    "status": "audited"
   },
+  "models/wasserstein_barycenter.py": {
+   "status": "audited"
+  },
   "models/wasserstein_grad.py": {
    "status": "audited"
   },
@@ -25443,6 +25449,9 @@
    "status": "audited"
   },
   "models/weak_infty.py": {
+   "status": "audited"
+  },
+  "models/weak_iv.py": {
    "status": "audited"
   },
   "models/weak_to_strong_studies.py": {
@@ -25560,6 +25569,9 @@
    "status": "audited"
   },
   "models/wendland_rbf.py": {
+   "status": "audited"
+  },
+  "models/weno.py": {
    "status": "audited"
   },
   "models/werner_wilson.py": {
@@ -25896,6 +25908,9 @@
    "status": "audited"
   },
   "models/wyvern_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/xai_shap.py": {
    "status": "audited"
   },
   "models/xanthoria_qa_studies.py": {

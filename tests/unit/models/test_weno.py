@@ -27,13 +27,30 @@ def test_weno_smooth_accuracy():
     assert np.sqrt(((u - ex) ** 2).mean()) < 0.05
 
 
-def test_linear_upwind_diffuses():
+def test_linear_baseline_is_oscillatory_lw():
+    """The linear comparison baseline must be a high-order scheme that
+    oscillates at sharp features (Lax-Wendroff) — a monotone first-order
+    upwind baseline would make the WENO contrast meaningless."""
     n = 160
     x = np.linspace(0, 1, n, endpoint=False)
-    # narrow bump: first-order upwind smears the peak fast
+    # narrow bump: LW keeps more peak than upwind but rings negatively
     u0 = np.exp(-((((x - 0.3) % 1.0) / 0.02) ** 2))
     u = linear_advect(u0, 0.5, 120)
-    assert u.max() < 0.8
+    assert u.max() > 0.4  # upwind smears this to ~0.23
+    assert u.min() < -0.05  # upwind is monotone: min ~ 0
+
+
+def test_linear_step_overshoots_weno_does_not():
+    n = 200
+    x = np.linspace(0, 1, n, endpoint=False)
+    u0 = ((x > 0.3) & (x < 0.5)).astype(np.float64)
+    steps = int(0.3 / (0.5 / n))
+    u_lin = linear_advect(u0, 0.5, steps)
+    u_w = weno_advect(u0, 0.5, steps)
+    lin_over = max(u_lin.max() - 1.0, 0.0) + max(-u_lin.min(), 0.0)
+    weno_over = max(u_w.max() - 1.0, 0.0) + max(-u_w.min(), 0.0)
+    assert lin_over > 0.1
+    assert weno_over < lin_over / 2
 
 
 def test_bench():

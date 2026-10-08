@@ -89,16 +89,30 @@ def first_stage(d: FloatArray, z: FloatArray, x: FloatArray | None = None) -> di
         raise ValueError("not enough observations for the instrument set")
     f = ((ssr_r - ssr_u) / k) / max(ssr_u / df2, 1e-300)
     r2_partial = 1.0 - ssr_u / max(ssr_r, 1e-300)
+    # Stock-Yogo critical values for 10% maximal IV size rise with the
+    # number of excluded instruments — the table previously decreased
+    # (11.04 at k=2, 22.30/k beyond), passing weak sets as "relevant".
+    _SY_10PCT = {
+        1: 16.38,
+        2: 19.93,
+        3: 22.30,
+        4: 24.58,
+        5: 26.87,
+        6: 29.18,
+        7: 31.50,
+        8: 33.84,
+        9: 36.19,
+        10: 38.54,
+    }
+    sy = _SY_10PCT.get(k, 38.54 + 2.5 * (k - 10))
     return {
         "f_stat": float(f),
         "f_pvalue": float(1.0 - stats.f.cdf(f, k, df2)),
         "partial_r2": float(r2_partial),
         "k_instruments": float(k),
         "df2": float(df2),
-        "stock_yogo_10pct_iv": 16.38
-        if k == 1
-        else (11.04 if k == 2 else 13.91 if k >= 5 else 22.30 / k),
-        "relevant_10pct": float(f > (16.38 if k == 1 else 11.04)),
+        "stock_yogo_10pct_iv": sy,
+        "relevant_10pct": float(f > sy),
     }
 
 

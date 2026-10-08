@@ -42,3 +42,15 @@ def test_rejects_bad_smooth():
     x, _, _ = synth_wvd(seed=1)
     with pytest.raises(ValueError):
         wigner_ville(x, smooth=0)
+
+
+def test_high_frequency_tone_not_aliased():
+    """A tone at 0.4 cycles/sample must ridge at 0.4, not wrap to a
+    negative frequency — the fftshift+fftfreq/2 axis silently aliased
+    every physical f > 0.25."""
+    x = np.cos(2 * np.pi * 0.4 * np.arange(256))
+    r = wigner_ville(x, smooth=1)
+    freqs = np.asarray(r["freqs"])
+    ridge = freqs[ridge_curve(np.asarray(r["wvd"])).astype(np.int64)]
+    assert abs(np.median(ridge[20:-20]) - 0.4) < 0.01
+    assert freqs.min() >= 0.0 and freqs.max() < 0.5

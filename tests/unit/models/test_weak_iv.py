@@ -99,3 +99,23 @@ def test_bench_keys():
     assert out["synthetic_ar_power"] == 1.0
     assert out["synthetic_ci_covers"] == 1.0
     assert out["synthetic_determinism"] == 1.0
+
+
+def test_stock_yogo_table_increases_with_k():
+    """10% maximal-size critical values rise with instrument count; the
+    previous table dropped to 11.04 at k=2 and 22.30/k beyond, so weak
+    multi-instrument sets were stamped 'relevant'."""
+    rng = np.random.default_rng(7)
+    n = 400
+    z = rng.normal(0.0, 1.0, (n, 2))
+    # pi chosen so the first-stage F lands near the k=2 boundary (~19.9)
+    d = z @ np.array([0.20, 0.20]) + rng.normal(0.0, 1.0, n)
+    out2 = first_stage(d, z)
+    assert out2["stock_yogo_10pct_iv"] == pytest.approx(19.93)
+    z3 = rng.normal(0.0, 1.0, (n, 3))
+    d3 = z3 @ np.array([0.2, 0.2, 0.2]) + rng.normal(0.0, 1.0, n)
+    out3 = first_stage(d3, z3)
+    assert out3["stock_yogo_10pct_iv"] == pytest.approx(22.30)
+    assert out3["stock_yogo_10pct_iv"] > out2["stock_yogo_10pct_iv"]
+    # a mid-teens F must now read as NOT relevant at k=2 (was 11.04)
+    assert out2["relevant_10pct"] == 0.0 or out2["f_stat"] > 19.93

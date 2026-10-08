@@ -88,14 +88,20 @@ def wigner_ville(
         row = np.zeros(nf, dtype=np.complex128)
         start = center - lag_max
         row[start : start + lags.size] = prod
-        wvd[t] = np.abs(np.fft.fftshift(np.fft.fft(row))) / nf
+        # lag-tau offsets put the autocorrelation at 2x physical
+        # frequency, so unshifted fft bin k is physical k/(2*nf); an
+        # fftshift+fftfreq axis silently wraps every f > 0.25 into a
+        # negative frequency.
+        wvd[t] = np.abs(np.fft.fft(row)) / nf
     if smooth > 1:
         ker = np.ones(smooth) / smooth
         for j in range(nf):
             wvd[:, j] = np.convolve(wvd[:, j], ker, "same")
     out: dict[str, FloatArray] = {
         "wvd": np.asarray(wvd, dtype=np.float64),
-        "freqs": np.fft.fftshift(np.fft.fftfreq(nf, d=1.0)) / 2.0,
+        # physical frequency of fft bin k: k/(2*nf) cycles/sample,
+        # spanning [0, 0.5) — the analytic signal's support.
+        "freqs": np.arange(nf, dtype=np.float64) / (2.0 * nf),
         "total_energy": np.array([float(np.sum(wvd))]),
     }
     return out

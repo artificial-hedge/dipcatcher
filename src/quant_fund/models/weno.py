@@ -60,18 +60,20 @@ def weno_advect(u0: FloatArray, sigma: float, steps: int) -> FloatArray:
 
 
 def linear_advect(u0: FloatArray, sigma: float, steps: int) -> FloatArray:
-    """Plain 5-point centered reconstruction (no WENO switch) —
-    oscillates at discontinuities."""
-    from quant_fund.models.lax_wendroff import upwind_step
+    """Lax-Wendroff (2nd-order linear) baseline — oscillates at
+    discontinuities, which is exactly what WENO's nonlinear switch
+    is built to suppress. (A first-order upwind comparison would be
+    monotone and show no oscillation.)"""
+    from quant_fund.models.lax_wendroff import lax_wendroff_step
 
     u = u0.copy()
     for _ in range(steps):
-        u = upwind_step(u, sigma)
+        u = lax_wendroff_step(u, sigma)
     return u
 
 
 def bench_weno(seed: int = 20261231) -> dict[str, float]:
-    """Step advection: WENO stays bounded; upwind comparison."""
+    """Step advection: WENO stays bounded; Lax-Wendroff comparison."""
     out: dict[str, float] = {}
     n = 200
     x = np.linspace(0, 1, n, endpoint=False)
@@ -85,12 +87,12 @@ def bench_weno(seed: int = 20261231) -> dict[str, float]:
     tv_w = float(np.abs(np.diff(np.roll(u_w, 1) - u_w)).sum())
     tv_u = float(np.abs(np.diff(np.roll(u_u, 1) - u_u)).sum())
     out["synthetic_weno_tv"] = tv_w
-    out["synthetic_upwind_tv"] = tv_u
+    out["synthetic_linear_tv"] = tv_u
     out["synthetic_weno_max"] = float(u_w.max())
     out["synthetic_weno_min"] = float(u_w.min())
     # WENO should not overshoot far above 1 or below 0
     out["synthetic_weno_overshoot"] = float(max(u_w.max() - 1.0, 0.0) + max(-u_w.min(), 0.0))
-    out["synthetic_upwind_overshoot"] = float(max(u_u.max() - 1.0, 0.0) + max(-u_u.min(), 0.0))
+    out["synthetic_linear_overshoot"] = float(max(u_u.max() - 1.0, 0.0) + max(-u_u.min(), 0.0))
     # smooth region accuracy: advect a sine at high order
     u_s = np.sin(2 * np.pi * x)
     u_ws = weno_advect(u_s, sigma, steps)
