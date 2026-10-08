@@ -72,6 +72,42 @@ def test_set_endpoint_validation() -> None:
         profiles.set_endpoint("fx1", "   ")
     with pytest.raises(ValueError, match="invalid base URL"):
         profiles.set_endpoint("fx1", SECRET_FX1, "not-a-url")
+    with pytest.raises(ValueError, match="must use HTTPS"):
+        profiles.set_endpoint("fx1", SECRET_FX1, "http://models.example.test/v1")
+
+
+def test_endpoint_transport_allows_only_https_or_literal_loopback_http(
+    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    loopback = "http://127.0.0.1:8000/v1/chat/completions"
+    profiles.set_endpoint("fx1", SECRET_FX1, loopback)
+    assert profiles.resolve_endpoint("fx1") == (SECRET_FX1, loopback)
+    assert HostedK3Backend(api_key=SECRET_FX1, api_url=loopback)._api_url == loopback
+
+    store = isolated_store / "credentials.json"
+    store.write_text(
+        json.dumps(
+            {
+                "profiles": {
+                    "fx1": {
+                        "api_key": SECRET_FX1,
+                        "base_url": "http://models.example.test/v1",
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="invalid stored base URL.*must use HTTPS"):
+        profiles.resolve_endpoint("fx1")
+
+    store.unlink()
+    monkeypatch.setenv("MOONSHOT_API_KEY", SECRET_FX1)
+    monkeypatch.setenv("FX1_BASE_URL", "http://models.example.test/v1")
+    with pytest.raises(ValueError, match="invalid FX1_BASE_URL.*must use HTTPS"):
+        profiles.resolve_endpoint("fx1")
+    with pytest.raises(RuntimeError, match="FX1_BASE_URL.*must use HTTPS"):
+        HostedK3Backend()
 
 
 def test_legacy_key_schema_read_compat(isolated_store: Path) -> None:

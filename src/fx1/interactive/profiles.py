@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import cast
 from urllib.parse import urlparse
 
-from fx1.serve.backends import MOONSHOT_API_URL
+from fx1.serve.backends import MOONSHOT_API_URL, hosted_api_url_problem
 
 MODELS: tuple[str, ...] = ("fx1", "fx1-lite")
 DEFAULT_MODEL = "fx1"
@@ -119,9 +119,9 @@ def set_endpoint(
     if not api_key:
         raise ValueError(f"empty API key for model {model!r}")
     base = (base_url or "").strip() or default_base_url()
-    parsed = urlparse(base)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        raise ValueError(f"invalid base URL {base!r}; expected http(s)://host/...")
+    problem = hosted_api_url_problem(base)
+    if problem is not None:
+        raise ValueError(f"invalid base URL: {problem}")
     payload = _load(path)
     payload[model] = {
         "api_key": api_key,
@@ -178,10 +178,17 @@ def resolve_endpoint(
     if entry:
         normalized = _normalize(entry)
         if normalized["api_key"]:
+            problem = hosted_api_url_problem(normalized["base_url"])
+            if problem is not None:
+                raise ValueError(f"invalid stored base URL: {problem}")
             return normalized["api_key"], normalized["base_url"]
     api_key = env.get(ENV_API_KEY)
     if api_key:
-        return api_key, env.get(ENV_BASE_URL, MOONSHOT_API_URL)
+        base_url = env.get(ENV_BASE_URL, MOONSHOT_API_URL)
+        problem = hosted_api_url_problem(base_url)
+        if problem is not None:
+            raise ValueError(f"invalid {ENV_BASE_URL}: {problem}")
+        return api_key, base_url
     return None
 
 
