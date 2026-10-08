@@ -27,11 +27,16 @@ def _vr_betti1(pts: np.ndarray, eps: float) -> int:
 
 def bench_rips_h1(seed: int = _SEED) -> dict[str, float]:
     rng = np.random.RandomState(seed)
-    th = rng.uniform(0, 2 * np.pi, 24)
+    # Evenly spaced angles + jitter: a fully uniform draw can leave an arc
+    # gap wider than eps, splitting the ring into disconnected chains whose
+    # H1 legitimately vanishes (measured b0=2 at the family seed). The
+    # planted-hole claim needs the ring connected, not uniform sampling.
+    th = np.linspace(0.0, 2 * np.pi, 24, endpoint=False) + rng.uniform(-np.pi / 48, np.pi / 48, 24)
     ring = np.stack([np.cos(th), np.sin(th)], 1)
-    disk = ring.copy()
-    disk[:, 0] *= 0.4  # squash hole -> contractible blob (still sparse center)
-    disk[:, 1] *= 3.0
+    # Contractible comparison: a filled disk — points at random interior
+    # radii fill the hole so no H1 class persists. (Squashing the loop only
+    # made a thinner closed curve: it still bounds a hole, H1 measured 3.)
+    disk = ring * np.sqrt(rng.uniform(0.0, 1.0, 24))[:, None]
     h1_ring = _vr_betti1(ring, 0.8)
     h1_disk = _vr_betti1(disk, 0.8)
     if not (h1_ring >= 1 and h1_disk == 0):

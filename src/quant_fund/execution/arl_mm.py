@@ -1530,7 +1530,7 @@ def arl_mm_bench(
         "label": "SYNTHETIC",
         "data_source": ARL_MM_REVISION,
         "research_only": 1.0,
-        "live_pnl_claim": 0.0,
+        "live_pnl_claim": False,
         "claim": "simulator_internal_diagnostic_only",
         "kind": "arl_mm_bench",
         "dgp": "hawkes_gbm_impact_zero_sum",

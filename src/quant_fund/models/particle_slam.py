@@ -27,10 +27,11 @@ def _fast_slam(lm: np.ndarray, rng: np.random.RandomState) -> float:
             for k in range(n_p):
                 pred = est_lm[k, j]
                 if np.all(pred == 0):
-                    est_lm[k, j] = poses[k, :2] + rng.normal(0, 0.4, 2)
-                innov = np.linalg.norm(z - poses[k, :2]) - np.linalg.norm(
-                    est_lm[k, j] - poses[k, :2]
-                )
+                    est_lm[k, j] = z + rng.normal(0, 0.2, 2)
+                # innovation = observed-vs-estimated landmark position; the
+                # previous ‖z−pose‖−‖est−pose‖ form was bearing-blind and
+                # starved every draw of converged particles.
+                innov = np.linalg.norm(z - est_lm[k, j])
                 w[k] *= np.exp(-(innov**2) / 0.5) + 1e-12
         wsum = w.sum()
         w = w / wsum if wsum > 0 else np.full(n_p, 1.0 / n_p)

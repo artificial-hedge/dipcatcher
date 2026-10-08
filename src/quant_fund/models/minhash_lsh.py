@@ -12,7 +12,7 @@ import hashlib
 import random
 
 P = (1 << 31) - 1
-K = 64
+K = 256
 R = 2  # rows per band → B = K/R bands (s-curve tuned for j≳0.3)
 
 

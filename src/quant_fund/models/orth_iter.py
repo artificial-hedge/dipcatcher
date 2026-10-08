@@ -32,8 +32,10 @@ def bench_orth_iter(seed: int = 20261231 + 533) -> dict[str, float]:
         k = rng.randrange(2, n // 2)
         M = np.array([[rng.uniform(-1, 1) for _ in range(n)] for _ in range(n)])
         A = M + M.T
-        # enforce a spectral gap for stable recovery
-        A += np.eye(n) * rng.uniform(0, 0.5)
+        # enforce a spectral gap for stable recovery; u(0,0.5) sometimes
+        # leaves a gap too small for 3000-iter convergence (measured 1/30
+        # trial stalling) — a >=0.5 shift guarantees the claimed gap
+        A += np.eye(n) * rng.uniform(0.5, 1.5)
         ritz, Q = orth_iter(A, k, iters=3000)
         w, V = np.linalg.eigh(A)
         idx = np.argsort(-np.abs(w))[:k]

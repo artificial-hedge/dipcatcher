@@ -37,16 +37,14 @@ def bench_lpc_formant(seed: int = 4809) -> dict[str, float]:
     src = voiced(seed)
     y = _biquad_resonator(_biquad_resonator(src, 500.0), 1500.0)
     a = _lpc(y, 12)
-    # spectral envelope |1/A(f)| — formants = distinct local peaks
-    w = np.linspace(0, np.pi, 2048)
-    resp = np.abs(1.0 / np.polyval(a[::-1], np.exp(1j * w)))
-    peaks = []
-    for i in range(1, len(resp) - 1):
-        if resp[i] > resp[i - 1] and resp[i] >= resp[i + 1]:
-            peaks.append(i)
-    peaks.sort(key=lambda i: -resp[i])
-    fpk = sorted(w[peaks[:2]] * FS / (2 * np.pi)) if len(peaks) >= 2 else [0.0, 0.0]
-    f1, f2 = float(fpk[0]), float(fpk[1])
+    # Formants = angles of the high-radius poles of A(z). The spectral-
+    # envelope peak heuristic only reports local maxima — at these fixture
+    # params the 1500 Hz resonance sits on a shoulder (envelope peaks
+    # measured 477/2722/3584), so root-based extraction is the oracle.
+    roots = np.roots(a)
+    poles = [r for r in roots if r.imag > 1e-6 and abs(r) > 0.8]
+    freqs = sorted(float(np.angle(p)) * FS / (2 * np.pi) for p in poles)
+    f1, f2 = (freqs[0], freqs[1]) if len(freqs) >= 2 else (0.0, 0.0)
     if abs(f1 - 500.0) > 60.0 or abs(f2 - 1500.0) > 60.0:
         raise ValueError("LPC formants off oracle")
     return {
@@ -54,5 +52,5 @@ def bench_lpc_formant(seed: int = 4809) -> dict[str, float]:
         "synthetic_lpc_f2": f2,
         "synthetic_lpc_f1_err": abs(f1 - 500.0),
         "synthetic_lpc_f2_err": abs(f2 - 1500.0),
-        "synthetic_lpc_n_peaks": float(len(peaks)),
+        "synthetic_lpc_n_peaks": float(len(poles)),
     }

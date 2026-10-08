@@ -59,6 +59,29 @@ def _bisect_alt(lo: float, hi: float, lat: float, lon: float) -> float | None:
     return (lo + hi) / 2
 
 
+def _scan_cross(lo: float, hi: float, lat: float, lon: float, direction: str) -> float | None:
+    """Crossing of `direction` in [lo,hi] nearest the transit side.
+
+    Endpoint brackets miss windows containing an even number of crossings
+    (e.g. a long-day set followed by today's rise). Scan a grid and bisect
+    the crossing adjacent to transit: latest up-crossing for rise, earliest
+    down-crossing for set — the same adjacency the oracle uses.
+    """
+    js = np.linspace(lo, hi, 120)
+    alts = np.array([altitude(j, lat, lon) for j in js])
+    if direction == "up":
+        idx = np.where((alts[:-1] < 0) & (alts[1:] >= 0))[0]
+        if len(idx) == 0:
+            return None
+        i = int(idx[-1])
+    else:
+        idx = np.where((alts[:-1] > 0) & (alts[1:] <= 0))[0]
+        if len(idx) == 0:
+            return None
+        i = int(idx[0])
+    return _bisect_alt(js[i], js[i + 1], lat, lon)
+
+
 def rise_transit_set(
     jd0: float, lat: float, lon: float
 ) -> tuple[float | None, float, float | None]:
@@ -66,9 +89,10 @@ def rise_transit_set(
 
     Returns (None, transit, None) for polar day/night.
     """
-    noon_jd = np.floor(jd0 - 0.5) + 0.5 - lon / 360.0  # rough transit guess
-    # transit: golden-section altitude max in a +-0.5 d window
-    tr, ts = noon_jd - 0.5, noon_jd + 0.5
+    # transit: golden-section altitude max over the civil day. A +-0.5 d
+    # window around the rough guess straddles two days' peaks when |lon|
+    # pushes the guess a full day off (measured +-1.0 d transit drift).
+    tr, ts = jd0, jd0 + 1.0
     for _ in range(50):
         a, b = tr + (ts - tr) / 3, ts - (ts - tr) / 3
         if altitude(a, lat, lon) < altitude(b, lat, lon):
@@ -76,8 +100,8 @@ def rise_transit_set(
         else:
             ts = b
     transit = (tr + ts) / 2
-    rise = _bisect_alt(transit - 0.75, transit - 0.001, lat, lon)
-    set_ = _bisect_alt(transit + 0.001, transit + 0.75, lat, lon)
+    rise = _scan_cross(transit - 0.75, transit - 0.001, lat, lon, "up")
+    set_ = _scan_cross(transit + 0.001, transit + 0.75, lat, lon, "dn")
     return rise, transit, set_
 
 

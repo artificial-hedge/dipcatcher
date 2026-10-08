@@ -11,7 +11,7 @@ def spectral_decomp(a: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return q, w
 
 
-def rayleigh_max(a: np.ndarray, iters: int = 200) -> float:
+def rayleigh_max(a: np.ndarray, iters: int = 2000) -> float:
     x = np.ones(a.shape[0])
     for _ in range(iters):
         y = a @ x
