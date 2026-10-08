@@ -841,7 +841,6 @@ class ZILobQuoteEnv:
         self._bid_oid = self._ask_oid = None
         self._bid_level = self._ask_level = None
         self._trade_cursor = 0
-        self._t_next = float(cfg.decision_interval)
         self._terminated = False
         self._n_decisions = 0
         self._n_fills = self._n_fills_bid = self._n_fills_ask = 0
@@ -853,6 +852,9 @@ class ZILobQuoteEnv:
         self._fill_gain_sum = 0.0
         self._step_fills = []
         mid0 = self._require_mid("reset")
+        # Initial recovery may execute real events. Establish the first
+        # decision target from the live clock only after recovery settles.
+        self._t_next = float(self.sim.t) + float(cfg.decision_interval)
         self._prev_mid = mid0
         self._last_mid = mid0
         return self.observation()
@@ -877,13 +879,6 @@ class ZILobQuoteEnv:
                     f"decision interval exceeded {budget} events; raise "
                     f"max_events_per_interval or shorten decision_interval"
                 )
-        # Event time is stochastic, so the loop above can overshoot several
-        # decision boundaries at once. Advancing by a single interval would
-        # leave ``_t_next`` behind the live clock, and the *next* step would
-        # run zero simulator events while still charging an inventory penalty
-        # against the same market state. Advance strictly past the clock.
-        interval = float(cfg.decision_interval)
-        self._t_next = float(sim.t) + interval
         self._drain_trades()
         mid_next = self._require_mid("decision end")
         # ``_require_mid`` steps the simulator again when the book thins. Those
@@ -893,6 +888,11 @@ class ZILobQuoteEnv:
         # is guaranteed to have terminated before this returns, so
         # ``_step_fills`` and the counters are final by the time they are read.
         self._drain_trades()
+        # Event time is stochastic, and recovery above may execute additional
+        # real events. Establish the next target only after both phases have
+        # settled so it is strictly beyond the live clock; otherwise the next
+        # action can become a zero-event, penalized decision.
+        self._t_next = float(sim.t) + float(cfg.decision_interval)
         self._last_mid = mid_next
         mtm_next = float(self._cash + self._inventory * mid_next)
         fill_gain = (
