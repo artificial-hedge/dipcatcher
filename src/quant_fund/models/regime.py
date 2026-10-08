@@ -175,3 +175,36 @@ class SingleStateRegime(JoblibMixin):
 
     def metadata(self) -> ModelMeta:
         return ModelMeta(family="regime", name="single_state", version="v1")
+
+
+def bench_regime(seed: int = 20261231 + 610) -> dict[str, float]:
+    """Regime-detection oracle: planted two-vol-regime series must separate
+    under both the threshold baseline and the Gaussian HMM."""
+    rng = np.random.default_rng(seed)
+    n = 1500
+    regime_true = np.repeat([0, 1, 0, 1], n // 4)
+    r = np.where(regime_true == 0, 0.005 * rng.standard_normal(n), 0.03 * rng.standard_normal(n))
+    vol = np.sqrt(np.convolve(r**2, np.ones(25) / 25, mode="same"))
+    x = np.column_stack([r, vol])
+    vt = VolThresholdRegime(q=0.7).fit(x)
+    pv = np.asarray(vt.predict(x), dtype=float)
+    # threshold baseline only promises a q-quantile split, not regime accuracy
+    frac_high = float((pv > 0.5).mean())
+    hmm = GaussianHMMRegime(n_states=2, seed=seed).fit(x)
+    ph = np.asarray(hmm.predict_proba(x), dtype=float)
+    lab = ph.argmax(1)
+    acc_h = max(float((lab == regime_true).mean()), float((lab != regime_true).mean()))
+    ss = SingleStateRegime().fit(x)
+    ps = np.asarray(ss.predict_proba(x), dtype=float)
+    checks = [
+        0.05 < frac_high < 0.5,
+        acc_h > 0.75,
+        ps.shape[1] == 1 and bool(np.all(ps == 1.0)),
+    ]
+    if not all(checks):
+        raise ValueError("regime separation oracle failed")
+    return {
+        "synthetic_regime_vol_frac": frac_high,
+        "synthetic_regime_hmm_acc": acc_h,
+        "synthetic_regime_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

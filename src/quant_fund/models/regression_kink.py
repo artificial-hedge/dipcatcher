@@ -185,6 +185,12 @@ def bench_regression_kink(seed: int = 20261231 + 208) -> dict[str, float]:
     )
 
     b_rk = float(out["b_rk"])
+    if not (
+        abs(b_rk - 0.5) < 0.2
+        and float(out["p_rk"]) < 0.2
+        and float(out["b_rk"]) == float(out_b["b_rk"])
+    ):
+        raise ValueError("regression-kink detection off oracle")
     return {
         "synthetic_b_rk": b_rk,
         "synthetic_b_rk_err": float(abs(b_rk - 0.5)),

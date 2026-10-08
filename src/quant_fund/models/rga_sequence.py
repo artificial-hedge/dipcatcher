@@ -59,6 +59,8 @@ def bench_rga_sequence(seed: int = 20261231 + 305) -> dict[str, float]:
     tie_ok = seq == ["c", "b", "a"]  # higher id first at head
     # different permutation orders converge
     perms_ok = all(rga_seq(list(p)) == seq for p in permutations(nodes))
+    if conv != trials or not tie_ok or not perms_ok:
+        raise ValueError("RGA sequence-order convergence failed")
     return {
         "synthetic_convergent": float(conv / trials),
         "synthetic_tiebreak": float(tie_ok),

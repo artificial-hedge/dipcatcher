@@ -60,6 +60,10 @@ def bench_riemannian_mala(seed: int = 2233) -> dict[str, float]:
     base = rwm_baseline(seed + 1, n=len(smp))
     ess = mean_ess(smp)
     ess_b = mean_ess(base)
+    # honest gate: at equal budget RMALA must beat RWM on moments and ESS
+    err_b = moment_err(base, mu, sd)
+    if not (moment_err(smp, mu, sd) < 0.6 * err_b and mean_ess(smp) > ess_b):
+        raise ValueError("Riemannian MALA no better than RWM baseline")
     return {
         "synthetic_rmala_ess": ess,
         "synthetic_rwm_ess": ess_b,

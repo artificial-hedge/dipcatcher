@@ -31,4 +31,6 @@ def bench_ring_allreduce(seed: int = _SEED) -> dict[str, float]:
         out = ring_allreduce(chunks)
         expect = np.sum(chunks, axis=0)
         ok += float(np.allclose(out, expect))
+    if ok != trials:
+        raise ValueError("ring allreduce off sum oracle")
     return {"synthetic_ring_correct": ok / trials}

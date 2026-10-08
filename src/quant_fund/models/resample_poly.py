@@ -68,6 +68,8 @@ def bench_resample_poly(seed: int = 20261231) -> dict[str, float]:
     spec = np.abs(np.fft.rfft(y32[g]))
     fr = np.fft.rfftfreq(len(y32[g]), 2.0 / 3)
     img = float(spec[fr > 0.4].max() / (spec.max() + 1e-15))
+    if not (err32 < 0.05 and img < 0.05):
+        raise ValueError("polyphase resampler off image-suppression oracle")
     return {
         "synthetic_resample_len32_err": len32_err,
         "synthetic_resample_len23_err": len23_err,

@@ -72,4 +72,6 @@ def bench_retrograde_wdl(seed: int = _SEED) -> dict[str, float]:
     wd2 = retrograde(succ2, terminal)
     mm = {s: _minimax(s, succ2, terminal, 200, {}) for s in range(n)}
     ok2 = all(wd2[s] == mm[s] for s in range(n))
-    return {"synthetic_retrograde_wdl": 1.0 if (ok1 and ok2) else 0.0}
+    if not (ok1 and ok2):
+        raise ValueError("retrograde WDL disagrees with minimax")
+    return {"synthetic_retrograde_wdl": 1.0}

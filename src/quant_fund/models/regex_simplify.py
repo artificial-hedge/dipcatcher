@@ -184,4 +184,6 @@ def bench_regex_simplify(seed: int = _SEED) -> dict[str, float]:
     a = _Parser("ab|ac|a(d|d)").parse()[0][1]
     s1, s2v = simplify(a), simplify(simplify(a))
     score += 1.0 if _serialize(s1) == _serialize(s2v) else 0.0
+    if score < 4.0:
+        raise ValueError("regex simplifier broke language/idempotence")
     return {"synthetic_regex_simplify": score / 4.0}

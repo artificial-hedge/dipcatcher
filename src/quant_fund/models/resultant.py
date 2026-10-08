@@ -85,6 +85,8 @@ def bench_resultant(seed: int = 20261231 + 231) -> dict[str, float]:
         res = resultant(p1, p2)
         expect_zero = bool({r1, r2} & {r3, r4})
         agree += int((res == 0) == expect_zero)
+    if agree != trials or not comb(4, 2) == 6:
+        raise ValueError("resultant common-root oracle failed")
     return {
         "synthetic_res_shared": float(r_shared),
         "synthetic_res_coprime": float(r_coprime),

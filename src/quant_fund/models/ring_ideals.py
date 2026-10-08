@@ -37,6 +37,8 @@ def _bench_ring_ideals(seed: int = 0) -> float:
     checks.append(is_ideal_zn(6, frozenset({0, 3})))
     checks.append(not is_ideal_zn(6, frozenset({0, 2})))
     checks.append(not is_ideal_zn(6, frozenset({0, 1})))
+    if not all(checks):
+        raise ValueError("ring-ideals oracle failed")
     return float(sum(checks) / len(checks))
 
 

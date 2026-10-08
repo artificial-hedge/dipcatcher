@@ -28,4 +28,6 @@ def bench_repetitive_ctrl(seed: int = _SEED) -> dict[str, float]:
     early = h[:40].mean()
     late = h[-40:].mean()
     ok = float(late < early)
+    if not (late < early):
+        raise ValueError("repetitive control did not reduce periodic error")
     return {"synthetic_rep_learns": ok}

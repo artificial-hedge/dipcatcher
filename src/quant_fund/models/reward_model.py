@@ -60,6 +60,8 @@ def bench_reward_model(
         auc = float((r_hat[np.arange(n_pairs), a_w] > r_hat[np.arange(n_pairs), a_l]).mean())
         re_hat = (torch.tensor(x_e).float()[:, None, :] * E_hat[None, :, :]).sum(-1).numpy()
         top1 = float((re_hat.argmax(-1) == r_e.argmax(-1)).mean())
+    if auc <= 0.5 or top1 <= 1.0 / N_ACT:
+        raise ValueError("reward model no better than chance")
     return {
         "synthetic_rm_pair_auc": auc,
         "synthetic_rm_top1_acc": top1,

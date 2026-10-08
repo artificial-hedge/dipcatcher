@@ -77,6 +77,8 @@ def bench_retnet_decay(
         acc_full = float(
             (out_o(full_attn(xe)[:, -1]).argmax(-1) == torch.tensor(yte)).float().mean()
         )
+    if acc > acc_full + 0.05:
+        raise ValueError("retention inexplicably beat full attention on oracle")
     return {
         "synthetic_retnet_acc": acc,
         "synthetic_retnet_full_acc": acc_full,

@@ -54,6 +54,8 @@ def _bench_rep_theory(seed: int = 0) -> float:
     checks.append(
         np.isclose(sum(c[s3.index(identity)] ** 2 for c in [chi_triv, chi_sign, chi_std]), 6.0)
     )
+    if not all(checks):
+        raise ValueError("rep-theory oracle failed")
     return float(sum(checks) / len(checks))
 
 

@@ -85,4 +85,6 @@ def bench_ring_normalize(seed: int = _SEED) -> dict[str, float]:
     checks.append(not ring_eq(xy, ("add", x, y)))
     # distributivity: x*(y+y) = 2xy
     checks.append(ring_eq(("mul", x, ("add", y, y)), ("mul", two, xy)))
+    if not all(checks):
+        raise ValueError("ring normalizer disagrees with algebra oracle")
     return {"synthetic_ring_normalize": float(sum(checks)) / len(checks)}

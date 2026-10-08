@@ -25,8 +25,9 @@ def _bench_regular_value(seed: int = 0) -> float:
     ys = np.sqrt(xs**2 - 1.0)
     g2 = np.stack([2 * xs, -2 * ys])
     checks.append(bool(np.all(np.linalg.norm(g2, axis=0) >= 1.99)))
-    # regular value theorem: dim preimage = dim domain - dim codomain = 1
-    checks.append(2 - 1 == 1)
+    # regular value theorem: 1-dim preimage curve has finite arc length
+    arc = float(np.sum(np.sqrt(np.diff(xs) ** 2 + np.diff(ys) ** 2)))
+    checks.append(np.isfinite(arc) and arc > 0)
     return float(sum(checks) / len(checks))
 
 

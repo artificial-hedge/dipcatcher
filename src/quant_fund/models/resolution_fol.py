@@ -133,4 +133,6 @@ def bench_resolution_fol(seed: int = _SEED) -> dict[str, float]:
     # clause with two literals: {P(x), Q(x)} + {¬P(a)} -> {Q(a)}
     res = resolve(frozenset({(P, (vx,), False), (Q, (vx,), False)}), frozenset({(P, (a,), True)}))
     checks.append(any(r == frozenset({(Q, (a,), False)}) for r in res))
+    if not all(checks):
+        raise ValueError("FOL resolution oracle failed")
     return {"synthetic_resolution_fol": float(sum(checks)) / len(checks)}

@@ -47,6 +47,8 @@ def _bench_represented_matroid(seed: int = 0) -> float:
     checks.append(len(dep3) == 7)
     # rank 3: all 4-subsets dependent
     checks.append(all(frozenset(s) not in fano for s in combinations(range(7), 4)))
+    if not all(checks):
+        raise ValueError("Fano-matroid oracle failed")
     return float(sum(checks) / len(checks))
 
 

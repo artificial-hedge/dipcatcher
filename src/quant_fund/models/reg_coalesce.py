@@ -70,6 +70,8 @@ def bench_reg_coalesce(seed: int = 20261231 + 353) -> dict[str, float]:
             ok = r2.get(last, r1[last]) == r1[last] or r1[last] in r2.values()
         sem_ok += int(ok)
         mov_gone += int(all(s[0] != "mov" for s in opt))
+    if sem_ok != trials or mov_gone != trials:
+        raise ValueError("register coalescing broke semantics or left moves")
     return {
         "synthetic_semantics_preserved": float(sem_ok / trials),
         "synthetic_no_moves_left": float(mov_gone / trials),

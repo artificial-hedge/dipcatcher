@@ -50,6 +50,8 @@ def bench_ring_attn(
         m = m_new
     got = out / ell[:, None]
     err = float(np.abs(ref - got).max())
+    if err >= 1e-10:
+        raise ValueError("ring attention off streaming-softmax oracle")
     return {
         "synthetic_ring_max_err": err,
         "synthetic_ring_equiv": float(err < 1e-10),

@@ -113,6 +113,13 @@ def bench_remez(seed: int = 20261231) -> dict[str, float]:
     # weight ratio 1:10 ⇒ stop deviation ≈ pass deviation
     stop_dev = float(freq_response(h, np.linspace(0.15, 0.5, 256)).max())
     mid = len(h) // 2
+    if not (
+        pass_dev < 0.12
+        and stop_att > 28.0
+        and float(np.abs(h - h[::-1]).max()) < 1e-12
+        and abs(freq_response(h, np.array([0.0]))[0] - 1.0) < 0.15
+    ):
+        raise ValueError("Remez design off spec oracle")
     return {
         "synthetic_remez_pass_dev": pass_dev,
         "synthetic_remez_stop_dev": stop_dev,

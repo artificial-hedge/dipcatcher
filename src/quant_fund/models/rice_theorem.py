@@ -33,6 +33,8 @@ def _bench_rice_theorem(seed: int = 0) -> float:
     ext2 = prop_of_extension([loop_tbl, loop_tbl])
     checks.append(ext2 == frozenset())
     checks.append(is_syntactic(lambda tbl: len(tbl) > 0))
+    if not all(checks):
+        raise ValueError("Rice-theorem oracle failed")
     return float(sum(checks) / len(checks))
 
 

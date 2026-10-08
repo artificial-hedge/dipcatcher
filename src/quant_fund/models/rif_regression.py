@@ -199,6 +199,8 @@ def bench_rif_regression(seed: int = 20261231 + 193) -> dict[str, float]:
 
     est2 = rif_regression(y, x, statistic="quantile", tau=0.9)
 
+    if not (beta_x > beta50_x and beta_x == float(np.asarray(est2["beta"])[1])):
+        raise ValueError("RIF quantile-gradient oracle failed")
     return {
         "synthetic_beta_x_q90": beta_x,
         "synthetic_se_q90": se_x,

@@ -114,4 +114,11 @@ def bench_riccati_care(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_kleinman_gap"] = float(
         np.linalg.norm(Xk - X2, "fro") / np.linalg.norm(X2, "fro")
     )
+    if not (
+        out["synthetic_care_stable_max_eig"] < 0.0
+        and out["synthetic_care_2d_residual"] < 1e-6
+        and out["synthetic_care_sym_err"] < 1e-9
+        and out["synthetic_kleinman_gap"] < 0.05
+    ):
+        raise ValueError("CARE solver off stabilizing-solution oracle")
     return out

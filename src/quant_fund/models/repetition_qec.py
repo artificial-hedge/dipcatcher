@@ -48,4 +48,6 @@ def bench_repetition_qec(seed: int = _SEED, shots: int = 4000) -> dict[str, floa
         checks.append(abs(fails[d] - ana) <= max(tol, 0.01))
     checks.append(fails[3] > fails[5] > fails[7])
     checks.append(fails[7] < p)
+    if not all(checks):
+        raise ValueError("repetition-code threshold oracle failed")
     return {"synthetic_repetition_qec": float(np.mean(checks))}

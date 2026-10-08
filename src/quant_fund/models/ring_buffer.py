@@ -47,4 +47,6 @@ def bench_ring_buffer(seed: int = _SEED) -> dict[str, float]:
             if len(consumed) == len(produced):
                 break
         ok += consumed == produced
+    if ok != trials:
+        raise ValueError("ring buffer FIFO order violated")
     return {"synthetic_ring_order": ok / trials}

@@ -35,6 +35,8 @@ def _bench_riesz_repr(seed: int = 0) -> float:
     ratio = np.max(np.abs(x @ y2) / np.linalg.norm(x, axis=1))
     checks.append(ratio <= np.linalg.norm(y2) + 1e-9)
     checks.append(ratio > 0.9 * np.linalg.norm(y2))
+    if not all(checks):
+        raise ValueError("Riesz-representation oracle failed")
     return float(sum(checks) / len(checks))
 
 

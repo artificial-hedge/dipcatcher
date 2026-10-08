@@ -163,6 +163,8 @@ def bench_regex_engine(seed: int = 20261231 + 280) -> dict[str, float]:
             got = match(nfa, text)
             agree += int(got == want)
             total += 1
+    if agree != total:
+        raise ValueError("NFA engine disagrees with re oracle")
     return {
         "synthetic_agree": float(agree / total),
         "synthetic_n_patterns": float(len(pats)),

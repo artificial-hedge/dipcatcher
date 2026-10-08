@@ -40,6 +40,8 @@ def _bench_residue_calc(seed: int = 0) -> float:
     checks.append(abs(contour_integral(f1, radius=2.0)) < 1e-6)
     # simple-pole limit formula matches circle method
     checks.append(abs(residue_simple(f1, 1.0) - residue_via_circle(f1, 1.0)) < 1e-3)
+    if not all(checks):
+        raise ValueError("residue-theorem oracle failed")
     return float(sum(checks) / len(checks))
 
 

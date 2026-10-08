@@ -69,6 +69,8 @@ def bench_rigid_collision(seed: int = 20261231 + 273) -> dict[str, float]:
     # Newton's cradle: equal masses, e=1, head-on → swap
     n1, n2 = collide([0.0, 0.0], [2.0, 0.0], 1.0, [1.0, 0.0], [0.0, 0.0], 1.0, 1.0)
     swap_ok = abs(n1[0]) < 1e-9 and abs(n2[0] - 2.0) < 1e-9
+    if mom_ok != trials or e_ok != trials or not swap_ok:
+        raise ValueError("rigid-collision momentum/restitution oracle failed")
     return {
         "synthetic_momentum": float(mom_ok / trials),
         "synthetic_restitution": float(e_ok / trials),

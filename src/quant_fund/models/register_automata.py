@@ -61,4 +61,6 @@ def bench_register_automata(seed: int = _SEED) -> dict[str, float]:
         # position (besides 0) equals w[0].
         truth = w[-1] == w[0] and w[0] not in w[1:-1]
         hits += int(run_ra(trans, 0, {2}, w) == truth)
+    if hits != n:
+        raise ValueError("register automaton off first=last oracle")
     return {"synthetic_first_last_eq": float(hits / n)}

@@ -90,6 +90,8 @@ def bench_reranker_crossenc(
                 .numpy()
             )
         s2[s2 == 0] = -1e9
+    if _mrr(s2, td, tq) <= _mrr(s1, td, tq):
+        raise ValueError("cross-encoder rerank no better than first stage")
     return {
         "synthetic_xenc_mrr": _mrr(s2, td, tq),
         "synthetic_xenc_first_mrr": _mrr(s1, td, tq),

@@ -27,6 +27,8 @@ def bench_renewal_reward(seed: int = 4409) -> dict[str, float]:
     rate_late = cr[-1] / ct[-1]
     # regenerative estimator: mean(R)/mean(T)
     regen = (cr[-1] / len(cr)) / (ct[-1] / len(cr))
+    if abs(rate_late - theory) > 0.05 * abs(theory) or abs(regen - theory) > 0.05 * abs(theory):
+        raise ValueError("renewal-reward rate off regenerative oracle")
     return {
         "synthetic_rr_theory": theory,
         "synthetic_rr_rate_early": rate_early,

@@ -39,4 +39,6 @@ def bench_ring_detect(seed: int = _SEED) -> dict[str, float]:
     ok += int(cyclomatic(b, len(a)) == 0)
     a, b = parse("C1CC2CC1C2")
     ok += int(cyclomatic(b, len(a)) == 2)
+    if ok != 4:
+        raise ValueError("cyclomatic ring-count off oracle")
     return {"synthetic_ring": float(ok == 4)}

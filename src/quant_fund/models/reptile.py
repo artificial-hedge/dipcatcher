@@ -85,6 +85,8 @@ def bench_reptile(seed: int = 853, n_tasks: int = 30, K: int = 5) -> dict[str, f
         w2.load_state_dict(pooled.state_dict())
         _train(w2, xs, ys, iters=25)
         mses_pooled.append(_mse(w2, xq, yq))
+    if float(np.mean(mses)) >= float(np.mean(mses_pooled)):
+        raise ValueError("Reptile init no better than pooled init")
     return {
         "synthetic_rep_query_mse": float(np.mean(mses)),
         "synthetic_rep_pooled_mse": float(np.mean(mses_pooled)),

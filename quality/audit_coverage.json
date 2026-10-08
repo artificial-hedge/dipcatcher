@@ -18524,6 +18524,120 @@
   "models/model_stealing_studies.py": {
    "status": "audited"
   },
+  "models/models/reg_coalesce.py.py": {
+   "status": "audited"
+  },
+  "models/models/regex_engine.py.py": {
+   "status": "audited"
+  },
+  "models/models/regex_simplify.py.py": {
+   "status": "audited"
+  },
+  "models/models/regime.py.py": {
+   "status": "audited"
+  },
+  "models/models/register_automata.py.py": {
+   "status": "audited"
+  },
+  "models/models/regression_kink.py.py": {
+   "status": "audited"
+  },
+  "models/models/regular_value.py.py": {
+   "status": "audited"
+  },
+  "models/models/remez.py.py": {
+   "status": "audited"
+  },
+  "models/models/renewal_reward.py.py": {
+   "status": "audited"
+  },
+  "models/models/rep_theory.py.py": {
+   "status": "audited"
+  },
+  "models/models/repetition_qec.py.py": {
+   "status": "audited"
+  },
+  "models/models/repetitive_ctrl.py.py": {
+   "status": "audited"
+  },
+  "models/models/replicator.py.py": {
+   "status": "audited"
+  },
+  "models/models/represented_matroid.py.py": {
+   "status": "audited"
+  },
+  "models/models/reptile.py.py": {
+   "status": "audited"
+  },
+  "models/models/reranker_crossenc.py.py": {
+   "status": "audited"
+  },
+  "models/models/resample_poly.py.py": {
+   "status": "audited"
+  },
+  "models/models/residue_calc.py.py": {
+   "status": "audited"
+  },
+  "models/models/resolution_fol.py.py": {
+   "status": "audited"
+  },
+  "models/models/resultant.py.py": {
+   "status": "audited"
+  },
+  "models/models/retnet_decay.py.py": {
+   "status": "audited"
+  },
+  "models/models/retrograde_wdl.py.py": {
+   "status": "audited"
+  },
+  "models/models/reward_model.py.py": {
+   "status": "audited"
+  },
+  "models/models/rga_sequence.py.py": {
+   "status": "audited"
+  },
+  "models/models/riccati_care.py.py": {
+   "status": "audited"
+  },
+  "models/models/rice_theorem.py.py": {
+   "status": "audited"
+  },
+  "models/models/ride_explore.py.py": {
+   "status": "audited"
+  },
+  "models/models/riemannian_mala.py.py": {
+   "status": "audited"
+  },
+  "models/models/riesz_repr.py.py": {
+   "status": "audited"
+  },
+  "models/models/rif_regression.py.py": {
+   "status": "audited"
+  },
+  "models/models/rigid_collision.py.py": {
+   "status": "audited"
+  },
+  "models/models/ring_allreduce.py.py": {
+   "status": "audited"
+  },
+  "models/models/ring_attn.py.py": {
+   "status": "audited"
+  },
+  "models/models/ring_buffer.py.py": {
+   "status": "audited"
+  },
+  "models/models/ring_detect.py.py": {
+   "status": "audited"
+  },
+  "models/models/ring_ideals.py.py": {
+   "status": "audited"
+  },
+  "models/models/ring_normalize.py.py": {
+   "status": "audited"
+  },
+  "models/models/ripley_k.py.py": {
+   "status": "audited"
+  },
   "models/modern_history.py": {
    "status": "audited"
   },

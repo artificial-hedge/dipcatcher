@@ -26,6 +26,8 @@ def bench_ride_explore(seed: int = 2861) -> dict[str, float]:
 
     _, cov, succ = q_learn(bonus, seed=seed)
     _, cov_b, succ_b = q_learn(lambda s, sp, st, ep, rng: 0.0, seed=seed)
+    if cov <= cov_b or succ < succ_b:
+        raise ValueError("RIDE count-bonus exploration no better than plain")
     return {
         "synthetic_ride_coverage": float(cov),
         "synthetic_baseline_coverage": float(cov_b),

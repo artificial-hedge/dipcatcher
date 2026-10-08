@@ -67,6 +67,8 @@ def bench_replicator(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_repl_dominated_dies"] = float(xT2[0] > 0.999)
     out["synthetic_repl_ok"] = float(out["synthetic_repl_ess_err"] < 0.02 and xT2[0] > 0.999)
     del rng
+    if not (out["synthetic_repl_ess_err"] < 0.02 and xT2[0] > 0.999):
+        raise ValueError("replicator dynamics off ESS/dominance oracle")
     return out
 
 
