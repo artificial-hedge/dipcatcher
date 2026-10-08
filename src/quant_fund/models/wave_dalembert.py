@@ -13,7 +13,9 @@ def dalembert(f, g, x: np.ndarray, t: float, c: float = 1.0) -> np.ndarray:
 
 def _cumtrapz(g, a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Elementwise integral of g from a_i to b_i (g sampled on a fine grid)."""
-    grid = np.linspace(-20, 20, 40001)
+    lo = min(-20.0, float(np.min(a)))
+    hi = max(20.0, float(np.max(b)))
+    grid = np.linspace(lo, hi, 40001)
     gv = np.asarray(g(grid))
     gcdf = np.concatenate([[0.0], np.cumsum(0.5 * (gv[1:] + gv[:-1])) * (grid[1] - grid[0])])
     ia = np.clip(((a - grid[0]) / (grid[1] - grid[0])).astype(int), 0, len(gcdf) - 1)

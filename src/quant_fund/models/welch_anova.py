@@ -103,7 +103,10 @@ def games_howell(*groups: FloatArray) -> dict[str, float | list[tuple[int, int, 
         num = se2 * se2
         den = (vi / ni) ** 2 / (ni - 1) + (vj / nj) ** 2 / (nj - 1)
         df = num / max(den, 1e-12)
-        p = float(_stats.studentized_range.sf(q * np.sqrt(2.0), k, df))
+        # q already carries the studentized-range scaling (q = |diff|/sqrt(se2/2)
+        # = sqrt(2)*t); scaling it again by sqrt(2) shrinks p ~ an order of
+        # magnitude and over-rejects.
+        p = float(_stats.studentized_range.sf(q, k, df))
         if p < 0.05:
             any_sig = 1.0
         out.append((i, j, float(q), p))

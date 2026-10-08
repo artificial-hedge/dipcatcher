@@ -5,8 +5,7 @@ Cramer-von Mises for data on the circle: for ordered
 transformed observations z_(1) <= ... <= z_(n) on [0,1)
 (under H0, z_j = F0(theta_j)),
 
-    U^2 = sum_j (z_j - zbar - (j-0.5)/n + 0.5)^2
-          - n (zbar - 0.5)^2 + 1/(12n)
+    U^2 = sum_j (z_j - zbar - (j-0.5)/n + 0.5)^2 + 1/(12n)
 
 with zbar the sample mean. Stephens (1970) provides the
 modified statistic U*^2 = (U^2 - 0.1/n + 0.1/n^2)(1 +

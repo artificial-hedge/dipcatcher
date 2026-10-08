@@ -24716,6 +24716,12 @@
   "models/watermark_studies.py": {
    "status": "audited"
   },
+  "models/watson.py": {
+   "status": "audited"
+  },
+  "models/wave_dalembert.py": {
+   "status": "audited"
+  },
   "models/wave_eq_group.py": {
    "status": "audited"
   },
@@ -24734,6 +24740,9 @@
   "models/wavelet_char.py": {
    "status": "audited"
   },
+  "models/wavelet_coherence.py": {
+   "status": "audited"
+  },
   "models/wavelet_collocation.py": {
    "status": "audited"
   },
@@ -24743,6 +24752,9 @@
   "models/wavelet_matrix.py": {
    "status": "audited"
   },
+  "models/wavelet_modwt.py": {
+   "status": "audited"
+  },
   "models/wavelet_tree.py": {
    "status": "audited"
   },
@@ -24750,6 +24762,9 @@
    "status": "audited"
   },
   "models/way_below.py": {
+   "status": "audited"
+  },
+  "models/wbc_qp.py": {
    "status": "audited"
   },
   "models/wcep_lite_studies.py": {
@@ -24812,6 +24827,9 @@
   "models/weibull_domain.py": {
    "status": "audited"
   },
+  "models/weibull_life.py": {
+   "status": "audited"
+  },
   "models/weierstrass_eq.py": {
    "status": "audited"
   },
@@ -24825,6 +24843,12 @@
    "status": "audited"
   },
   "models/weight_share_studies.py": {
+   "status": "audited"
+  },
+  "models/weighted_conformal.py": {
+   "status": "audited"
+  },
+  "models/weighted_fst.py": {
    "status": "audited"
   },
   "models/weil_deligne.py": {
@@ -24845,7 +24869,13 @@
   "models/weil_sheaf.py": {
    "status": "audited"
   },
+  "models/welch_anova.py": {
+   "status": "audited"
+  },
   "models/welding_technology.py": {
+   "status": "audited"
+  },
+  "models/well_founded.py": {
    "status": "audited"
   },
   "models/well_testing.py": {
