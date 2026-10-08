@@ -34,6 +34,8 @@ def bench_power_iter(seed: int = 2993, k: int = 4) -> dict[str, float]:
     err = float(np.abs(np.sort(est)[::-1] - top).mean())
     eig_true = np.linalg.eigvalsh(A)[-k:][::-1]
     err_np = float(np.abs(est - eig_true).mean())
+    if err > 0.05 or err_np > 0.05:
+        raise ValueError("power-iteration top-k off eig oracle")
     return {
         "synthetic_power_topk_err": err,
         "synthetic_power_vs_numpy": err_np,

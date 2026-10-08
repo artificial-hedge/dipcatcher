@@ -36,6 +36,8 @@ def bench_poisson_thinning(seed: int = 2943, T: float = 20.0) -> dict[str, float
     ev_b = rng.uniform(0, T, len(ev))
     hist_b = np.histogram(ev_b, bins)[0] * (80 / T)
     corr_b = float(np.corrcoef(hist_b, rate_at)[0, 1])
+    if corr < corr_b + 0.2 or abs(len(ev) - exp_n) / exp_n > 0.4:
+        raise ValueError("thinning rate-correlation off oracle")
     return {
         "synthetic_thin_count_err": float(abs(len(ev) - exp_n) / exp_n),
         "synthetic_thin_rate_corr": corr,

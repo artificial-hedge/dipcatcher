@@ -63,4 +63,6 @@ def bench_power_est(seed: int = _SEED) -> dict[str, float]:
         toggle_rates(sb).max() <= 0.55,
         power(sb, 2 * caps[: sb.shape[1]]) == 2 * pb,
     ]
+    if not all(checks):
+        raise ValueError("power-estimation oracle failed")
     return {"synthetic_power_est": float(np.mean(checks))}

@@ -76,6 +76,8 @@ def bench_prefix_tuning(
         acc_pre = float((out(attn(xs_t)).argmax(-1) == ys_t).float().mean())
         acc_pref = float((out(attn(xs_t, pk, pv)).argmax(-1) == ys_t).float().mean())
     n_full = sum(p.numel() for p in list(proj.parameters()) + list(out.parameters()))
+    if acc_pref <= acc_pre:
+        raise ValueError("prefix tuning did not improve frozen model")
     return {
         "synthetic_prefix_acc_shift": acc_pref,
         "synthetic_prefix_frozen_acc": acc_pre,

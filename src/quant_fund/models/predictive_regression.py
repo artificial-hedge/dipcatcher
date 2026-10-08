@@ -66,7 +66,7 @@ def stambaugh_correct(x: Array, y: Array) -> dict[str, float]:
         "b_ols": b,
         "rho": rho,
         "phi": phi,
-        "b_bc": b - bias,
+        "b_bc": b + bias,
         "bias": bias,
         "intercept": a,
     }
@@ -141,4 +141,58 @@ def long_horizon_predict(
         "intercept": a,
         "h": float(h),
         "n_used": float(xt.size),
+    }
+
+
+def bench_predictive_regression(seed: int = 20261231 + 370) -> dict[str, float]:
+    """Persistent-regressor oracle: on an AR(1) predictor + correlated-
+    innovation DGP, the Stambaugh-corrected slope must sit closer to the
+    true β than the raw OLS slope; a flat DGP is not 'significant'."""
+    rng = np.random.default_rng(seed)
+    n, rho, beta = 400, 0.97, 0.15
+    # x_t = rho x_{t-1} + v_t; y_{t+1} = beta x_t + u, corr(u, v) < 0
+    v = rng.standard_normal(n)
+    u = -0.7 * v + np.sqrt(1 - 0.7**2) * rng.standard_normal(n)
+    x = np.zeros(n)
+    for t in range(1, n):
+        x[t] = rho * x[t - 1] + v[t]
+    y = np.zeros(n)
+    y[1:] = beta * x[:-1] + u[1:]
+    st = stambaugh_correct(x, y)
+    bf = bonferroni_test(x, y)
+    lh = long_horizon_predict(x, y, h=4)
+    # null: independent returns → no significance
+    y0 = rng.standard_normal(n)
+    bf0 = bonferroni_test(x, y0)
+    # Stambaugh reduces *expected* bias: mean |b_bc - β| over sims beats OLS
+    errs_ols = []
+    errs_bc = []
+    for s in range(12):
+        r2 = np.random.default_rng(seed + 1 + s)
+        vv = r2.standard_normal(n)
+        uu = -0.7 * vv + np.sqrt(1 - 0.7**2) * r2.standard_normal(n)
+        xx = np.zeros(n)
+        for t in range(1, n):
+            xx[t] = rho * xx[t - 1] + vv[t]
+        yy = np.zeros(n)
+        yy[1:] = beta * xx[:-1] + uu[1:]
+        s2 = stambaugh_correct(xx, yy)
+        errs_ols.append(abs(float(s2["b_ols"]) - beta))
+        errs_bc.append(abs(float(s2["b_bc"]) - beta))
+    checks = [
+        float(np.mean(errs_bc)) < float(np.mean(errs_ols)),
+        float(st["bias"]) != 0.0,
+        bool(bf["significant"]),
+        not bool(bf0["significant"]),
+        float(lh["p_two_sided"]) < 0.05,
+    ]
+    if not all(checks):
+        raise ValueError("predictive-regression oracle checks failed")
+    return {
+        "synthetic_pr_ols_err": float(np.mean(errs_ols)),
+        "synthetic_pr_bc_err": float(np.mean(errs_bc)),
+        "synthetic_pr_bias": float(st["bias"]),
+        "synthetic_pr_lh_p": float(lh["p_two_sided"]),
+        "synthetic_pr_detects": float(bool(bf["significant"]) and not bool(bf0["significant"])),
+        "synthetic_pr_score": float(sum(checks) / len(checks)),
     }

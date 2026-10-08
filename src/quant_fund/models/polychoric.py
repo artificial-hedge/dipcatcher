@@ -167,5 +167,5 @@ def bench_polychoric(seed: int = 20261231 + 411) -> dict[str, float]:
         "synthetic_polychoric_err": float(err),
         "synthetic_polychoric_rho": float(out["rho"]),
         "synthetic_tetrachoric_err": float(err22),
-        "synthetic_score": 1.0,
+        "synthetic_score": float(err < 0.15 and err22 < 0.15),
     }

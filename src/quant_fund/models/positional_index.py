@@ -64,6 +64,8 @@ def bench_positional_index(seed: int = 20261231 + 465) -> dict[str, float]:
             idx = build_positional(docs)
             found += int(d0 in phrase_docs(idx, phrase))
         match += int(phrase_docs(idx, phrase) == _brute(docs, phrase))
+    if match != trials or found != trials:
+        raise ValueError("positional index off brute-force oracle")
     return {
         "synthetic_phrase_matches_brute": float(match / trials),
         "synthetic_planted_phrase_found": float(found / trials),

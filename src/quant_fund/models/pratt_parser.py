@@ -66,6 +66,8 @@ def bench_pratt_parser(seed: int = 20261231 + 391) -> dict[str, float]:
         right += int(Pratt("2 ^ 3 ^ 2").parse() == 512.0)
         a, b, c = rng.randrange(1, 9), rng.randrange(1, 9), rng.randrange(1, 9)
         assoc += int(Pratt(f"{a} - {b} - {c}").parse() == (a - b) - c)
+    if prec != trials or right != trials or assoc != trials:
+        raise ValueError("Pratt parser precedence/associativity failed")
     return {
         "synthetic_precedence": float(prec / trials),
         "synthetic_right_assoc_power": float(right / trials),

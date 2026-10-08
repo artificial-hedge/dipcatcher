@@ -55,6 +55,8 @@ def _bench_pr_functions(seed: int = 0) -> float:
     checks.append(ack(2, 3) == 9)
     # Ackermann grows faster than any fixed PR stack: A(3,3)=61 > exp tower of height 2
     checks.append(ack(3, 3) == 61 and ack(3, 3) > eval_prf(EXP, (2, 5)))
+    if not all(checks):
+        raise ValueError("primitive-recursive oracle failed")
     return sum(checks) / len(checks)
 
 

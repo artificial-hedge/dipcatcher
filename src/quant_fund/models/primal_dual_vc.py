@@ -52,6 +52,8 @@ def _primal_dual() -> tuple[int, float]:
 def bench_primal_dual_vc(seed: int = 5203) -> dict[str, float]:
     size, dual = _primal_dual()
     truth = brute_vc(G_EDGES, G_N)
+    if size / truth > 2.0 or size < truth:
+        raise ValueError("primal-dual VC off 2-approx guarantee")
     return {
         "synthetic_pdvc_cover": float(size),
         "synthetic_pdvc_truth": float(truth),

@@ -78,4 +78,6 @@ def bench_porkchop_grid(seed: int = _SEED) -> dict[str, float]:
     score += 1.0 if abs(c3[i, j] - c3h) / max(c3h, 1e-9) < 0.35 else 0.0
     score += 1.0 if abs(tof_days[j] - tof_h) < 40.0 else 0.0
     rng.random()
+    if score != 4.0:
+        raise ValueError("porkchop-grid oracle failed")
     return {"synthetic_porkchop_grid": score / 4.0}

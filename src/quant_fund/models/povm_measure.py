@@ -48,6 +48,8 @@ def _bench_povm_measure(seed: int = 0) -> float:
     checks.append(not is_povm([z[0]]))
     # negative eigenvalue rejection
     checks.append(not is_povm([np.eye(2), np.array([[0, 0], [0, -0.1]], complex)]))
+    if not all(checks):
+        raise ValueError("POVM oracle failed")
     return sum(checks) / len(checks)
 
 

@@ -143,6 +143,10 @@ def bench_pomcp(seed: int = 20261231) -> dict[str, float]:
     out["synthetic_pomcp_beats_random"] = float(np.mean(rets) > rand_ret + 20.0)
     agent._reset(rng)
     out["synthetic_pomcp_first_listens"] = float(agent.plan(rng, n_sims=150) == 0)
+    if not (
+        out["synthetic_pomcp_beats_random"] == 1.0 and out["synthetic_pomcp_first_listens"] == 1.0
+    ):
+        raise ValueError("POMCP policy off Tiger oracle")
     return out
 
 

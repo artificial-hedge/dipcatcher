@@ -51,6 +51,8 @@ def bench_poly_inline_cache(seed: int = _SEED) -> dict[str, float]:
     pic3 = PIC()
     seq3 = [i % 8 for i in range(200)]
     pic3_hits = sum(pic3.dispatch(f"K{k}", "m", klasses) == f"impl{k}" for k in seq3)
+    if correct != len(seq) or not mega or pic3_hits != len(seq3):
+        raise ValueError("PIC dispatch/megamorphic oracle failed")
     return {
         "synthetic_dispatch_correct": float(correct / len(seq)),
         "synthetic_mega_transition": float(mega),

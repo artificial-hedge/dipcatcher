@@ -85,13 +85,28 @@ def bench_poly_gcd(seed: int = 20261231 + 232) -> dict[str, float]:
             agree += int(len(dd) == 3 and dd[0] == one)
         else:
             agree += int(len(dd) == 2 and dd[1] == Fraction(-r1))
-    # Euclidean identity: deg(gcd) = deg(f)+deg(g) - deg(lcm)
-    _, rem = poly_divmod(f, g)
-    rem_ok = all(c == 0 for c in rem)  # f = g - 5x +5? no — just check runs
+    # division algorithm: f = q*g + r (remainder right-aligned low-degree)
+    q, rem = poly_divmod(f, g)
+    prod = [Fraction(0)] * (len(q) + len(g) - 1)
+    for i, a in enumerate(q):
+        for j, b in enumerate(g):
+            prod[i + j] = prod[i + j] + a * b
+    wide = len(f)
+    off = wide - len(rem)
+    recon = _trim(
+        [
+            (prod[k] if k < len(prod) else Fraction(0))
+            + (rem[k - off] if 0 <= k - off < len(rem) else Fraction(0))
+            for k in range(wide)
+        ]
+    )
+    rem_ok = _trim(recon) == _trim(f)
+    if not (ok1 and ok2 and agree == trials and rem_ok):
+        raise ValueError("polynomial gcd/divmod oracle failed")
     return {
         "synthetic_gcd_deg": float(len(d) - 1),
         "synthetic_gcd_correct": float(ok1),
         "synthetic_coprime": float(ok2),
         "synthetic_agree": float(agree / trials),
-        "synthetic_divmod_ran": float(rem_ok or True),
+        "synthetic_divmod_ran": float(rem_ok),
     }

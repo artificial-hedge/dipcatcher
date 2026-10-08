@@ -128,6 +128,8 @@ def _bench_poly_eval_interp(seed: int = 0) -> float:
     tree = build_prod_tree([1, 2], p)
     root = tree[-1][0]
     checks.append(_peval(root, 1, p) == 0 and _peval(root, 2, p) == 0)
+    if not all(checks):
+        raise ValueError("multipoint-eval/interp oracle failed")
     return sum(checks) / len(checks)
 
 

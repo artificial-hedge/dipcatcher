@@ -65,4 +65,6 @@ def bench_predicate_abs(seed: int = _SEED) -> dict[str, float]:
     rc = reach_abstract({0}, lambda x: min(x + 1, 6), preds_coarse, range(0, 7))
     rf = reach_abstract({0}, lambda x: min(x + 1, 6), preds_fine, range(0, 7))
     checks.append(len(rf) > len(rc))
+    if not all(checks):
+        raise ValueError("predicate-abstraction oracle failed")
     return {"synthetic_predicate_abs": float(sum(checks)) / len(checks)}

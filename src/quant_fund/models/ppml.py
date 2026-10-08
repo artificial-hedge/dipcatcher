@@ -140,6 +140,13 @@ def bench_ppml(seed: int = 20261231 + 236) -> dict[str, float]:
 
     b = float(out["beta_x"])
     b_ols = float(out["beta_x_logols"])
+    if not (
+        abs(b - 0.8) < 0.2
+        and abs(float(out0["beta_x"])) < 0.2
+        and float(out["t_x"]) > 3.0
+        and b == float(out_b["beta_x"])
+    ):
+        raise ValueError("PPML recovery off oracle")
     return {
         "synthetic_beta": b,
         "synthetic_beta_err": float(abs(b - 0.8)),

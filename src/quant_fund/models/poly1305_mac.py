@@ -32,4 +32,6 @@ def bench_poly1305_mac(seed: int = _SEED) -> dict[str, float]:
             bad[0] ^= 1
             ok += float(poly1305(bytes(bad), r, s) != t1)
     denom = trials * 2
+    if ok != denom:
+        raise ValueError("Poly1305 determinism/forgery check failed")
     return {"synthetic_poly_det_and_detect": ok / denom}

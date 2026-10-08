@@ -55,6 +55,8 @@ def _bench_poset_dimension(seed: int = 0) -> float:
     checks.append(order_dimension(crown, frozenset({0, 1, 2, 3})) == 2)
     checks.append(is_linear_extension(chain, frozenset({0, 1, 2}), [0, 1, 2]))
     checks.append(not is_linear_extension(chain, frozenset({0, 1, 2}), [1, 0, 2]))
+    if not all(checks):
+        raise ValueError("poset-dimension oracle failed")
     return float(sum(checks) / len(checks))
 
 

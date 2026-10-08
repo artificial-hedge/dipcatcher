@@ -68,6 +68,8 @@ def bench_posting_merge(seed: int = 20261231 + 461) -> dict[str, float]:
         gal += int(galloping_intersect(a, b) == _set_intersect(a, b))
         n = len(a) + len(b)
         fewer += int(n > PROBES)
+    if exact != trials or gal != trials:
+        raise ValueError("posting-merge off set-intersect oracle")
     return {
         "synthetic_skip_merge_exact": float(exact / trials),
         "synthetic_galloping_exact": float(gal / trials),

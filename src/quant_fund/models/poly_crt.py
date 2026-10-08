@@ -105,6 +105,8 @@ def _bench_poly_crt(seed: int = 0) -> float:
     # f = 2x+1 mod 7: f mod (x-0)=1, f mod (x-1)=3 -> crt combine to f mod x(x-1)
     g = poly_crt([1], [0, 1], [3], [6, 1], p)
     checks.append(poly_eval(g, 0, p) == 1 and poly_eval(g, 1, p) == 3)
+    if not all(checks):
+        raise ValueError("poly-CRT oracle failed")
     return sum(checks) / len(checks)
 
 

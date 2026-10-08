@@ -141,6 +141,8 @@ def _bench_poly_factor_fp(seed: int = 0) -> float:
     for _, g in dd:
         prod = pmul(prod, g, p)
     checks.append(pgcd(prod, f3, p) == pgcd(f3, f3, p) or prod == f3)
+    if not all(checks):
+        raise ValueError("finite-field factorization oracle failed")
     return sum(1 for c in checks if c) / len(checks)
 
 

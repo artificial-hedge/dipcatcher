@@ -57,4 +57,6 @@ def bench_poly_ring(seed: int = _SEED) -> dict[str, float]:
     ok = int(r == [0] and pmul(q, g, p) == f)
     g2 = pgcd(f, pmul([2, 1], [1, 1], p), p)
     ok += int(g2 in ([1, 1],))
+    if ok != 2:
+        raise ValueError("polynomial Euclidean oracle failed")
     return {"synthetic_poly_euclid": float(ok == 2)}

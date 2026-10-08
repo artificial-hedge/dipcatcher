@@ -35,6 +35,8 @@ def _run(seed: int, repulse: bool, steps: int = 800) -> float:
 def bench_pot_field(seed: int = _SEED) -> dict[str, float]:
     err_rep = _run(seed, repulse=True)
     err_att = _run(seed, repulse=False)
+    if not (err_rep < 0.5 and err_rep < err_att):
+        raise ValueError("potential-field navigation off oracle")
     return {
         "synthetic_pot_reach": float(err_rep < 0.5),
         "synthetic_pot_better": float(err_rep < err_att),

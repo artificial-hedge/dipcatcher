@@ -41,6 +41,8 @@ def _bench_polish_topology(seed: int = 0) -> float:
     checks.append(is_compact_closed(cyl, u))
     # isolated-point-free: every point shares a prefix with another
     checks.append(all(any(x != y and x[:3] == y[:3] for y in u) for x in u))
+    if not all(checks):
+        raise ValueError("Polish-topology oracle failed")
     return float(sum(checks) / len(checks))
 
 

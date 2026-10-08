@@ -40,6 +40,8 @@ def _bench_poisson_process(seed: int = 0) -> float:
     s0, t0 = 0.5, 1.0
     cond = float(np.mean(x[x > s0] > s0 + t0))
     checks.append(abs(cond - math.exp(-t0)) < 0.02)
+    if not all(checks):
+        raise ValueError("Poisson-process oracle failed")
     return float(sum(checks) / len(checks))
 
 

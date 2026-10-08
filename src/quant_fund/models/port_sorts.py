@@ -148,3 +148,41 @@ def bivariate_sort(
                     counts[i, j] += int(sel.sum())
     means = np.where(tcounts > 0, sums / np.maximum(tcounts, 1), np.nan)
     return {"means": means, "counts": counts, "period_counts": tcounts}
+
+
+def bench_port_sorts(seed: int = 20261231 + 360) -> dict[str, float]:
+    """Portfolio-sort oracle: planted monotone characteristic spread must
+    come out of the decile buckets; flat characteristic gives ~0 spread."""
+    rng = np.random.default_rng(seed)
+    t_len, n = 60, 400
+    # char = rank score; fwd return = 0.01 * zscore(char) + noise →
+    # top-minus-bottom decile spread must be positive and significant
+    char = rng.standard_normal((t_len, n))
+    signal = (char - char.mean(1, keepdims=True)) / char.std(1, keepdims=True)
+    fwd = 0.02 * signal + 0.05 * rng.standard_normal((t_len, n))
+    out = sort_portfolios(char, fwd, n_bins=10)
+    rets = np.asarray(out["bucket_returns"])
+    st = sort_tstat(rets[:, -1] - rets[:, 0])
+    flat_out = sort_portfolios(
+        np.zeros((t_len, n)) + rng.standard_normal((t_len, n)),
+        0.05 * rng.standard_normal((t_len, n)),
+        n_bins=10,
+    )
+    flat_rets = np.asarray(flat_out["bucket_returns"])
+    flat = sort_tstat(flat_rets[:, -1] - flat_rets[:, 0])
+    checks = [
+        np.isfinite(rets).all(),
+        int(np.asarray(out["counts"]).sum()) == t_len * n,
+        float(st["mean"]) > 0,
+        float(st["t"]) > 2.0,
+        abs(float(flat["mean"])) < abs(float(st["mean"])),
+        float(rets[:, -1].mean()) > float(rets[:, 0].mean()),
+    ]
+    if not all(checks):
+        raise ValueError("portfolio-sort oracle checks failed")
+    return {
+        "synthetic_sort_spread_mean": float(st["mean"]),
+        "synthetic_sort_spread_t": float(st["t"]),
+        "synthetic_sort_flat_spread": float(flat["mean"]),
+        "synthetic_sort_score": float(sum(bool(c) for c in checks) / len(checks)),
+    }

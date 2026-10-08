@@ -38,6 +38,8 @@ def _bench_poisson_summation(seed: int = 0) -> float:
     wide = periodize_gauss(1.0)
     checks.append(float(np.ptp(wide)) < 1e-6)
     checks.append(abs(float(np.mean(wide)) - np.sqrt(2 * np.pi)) < 1e-6)
+    if not all(checks):
+        raise ValueError("Poisson-summation oracle failed")
     return float(sum(checks) / len(checks))
 
 

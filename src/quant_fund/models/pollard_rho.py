@@ -101,6 +101,8 @@ def bench_pollard_rho(seed: int = 20261231 + 241) -> dict[str, float]:
             if d != n:
                 break
         agree += int(d in (p, q) and n % d == 0)
+    if found != len(cases) or prod_ok != len(cases) or agree != trials:
+        raise ValueError("Pollard-rho recovery oracle failed")
     return {
         "synthetic_recovered": float(found / len(cases)),
         "synthetic_full_factor": float(prod_ok / len(cases)),

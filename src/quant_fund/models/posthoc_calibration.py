@@ -352,3 +352,51 @@ class IsotonicQuantileCalibrator:
     def fit_transform(self, quantiles: Array, y_cal: Array) -> Array:
         """Fit on the calibration rows then recalibrate those same rows."""
         return self.fit(quantiles, y_cal).transform(quantiles)
+
+
+def _pinball(y: Array, q: Array, levels: Array) -> float:
+    diff = y[:, None] - q
+    return float(np.mean(np.maximum(levels * diff, (levels - 1.0) * diff)))
+
+
+def bench_posthoc_calibration(seed: int = 20261231 + 503) -> dict[str, float]:
+    """Post-hoc calibration oracle: a miscalibrated forecaster must see
+    strictly lower proper scores after variance scaling / quantile maps,
+    and the recalibrated grid must never cross."""
+    rng = np.random.default_rng(seed)
+    n = 2000
+    mu = rng.standard_normal(n) * 0.5
+    sig_fc = np.full(n, 1.0)
+    sig_true = 1.4  # forecaster under-disperses by 40%
+    y = mu + sig_true * rng.standard_normal(n)
+    # variance scaling recovers ~1.4 and improves CRPS
+    vs = VarianceScalingGaussian().fit(mu, sig_fc, y)
+    assert vs.scale_ is not None
+    scale_hat = float(vs.scale_)
+    crps_before = float(np.mean(crps_gaussian(y, mu, sig_fc)))
+    crps_after = float(np.mean(crps_gaussian(y, mu, scale_hat * sig_fc)))
+    # isotonic map on additively biased quantiles: forecaster emits the true
+    # N(mu, 1.4) quantiles + a constant shift -> map must remove the shift
+    levels = np.array([0.1, 0.25, 0.5, 0.75, 0.9])
+    from scipy.stats import norm
+
+    delta = 0.35
+    q_raw = mu[:, None] + norm.ppf(levels)[None, :] * sig_true + delta
+    qmc = QuantileMappingCalibrator(levels).fit(q_raw, y)
+    q_cal = qmc.transform(q_raw)
+    pin_before = _pinball(y, q_raw, levels)
+    pin_after = _pinball(y, q_cal, levels)
+    checks = [
+        abs(scale_hat - sig_true) < 0.2,
+        crps_after < crps_before,
+        pin_after < pin_before,
+        bool(np.all(np.diff(q_cal, axis=1) >= -1e-12)),  # non-crossing
+    ]
+    if not all(checks):
+        raise ValueError("post-hoc calibration oracle checks failed")
+    return {
+        "synthetic_cal_scale_hat": scale_hat,
+        "synthetic_cal_crps_gain": crps_before - crps_after,
+        "synthetic_cal_pinball_gain": pin_before - pin_after,
+        "synthetic_cal_score": float(sum(checks) / len(checks)),
+    }

@@ -34,6 +34,8 @@ def _bench_presheaf(seed: int = 0) -> float:
     checks.append(ya != yb)
     # Hom counts nonnegative
     checks.append(all(v >= 0 for v in ya.values()))
+    if not all(checks):
+        raise ValueError("presheaf/Yoneda oracle failed")
     return float(sum(checks) / len(checks))
 
 

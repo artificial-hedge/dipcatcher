@@ -44,6 +44,8 @@ def bench_policy_value(
             / np.where(a == 1, e_hat, 1 - e_hat)
         )
     )
+    if abs(dr - true_val) >= abs(dm - true_val):
+        raise ValueError("DR estimator no better than direct method")
     return {
         "synthetic_pv_dr_err": abs(dr - true_val),
         "synthetic_pv_dm_err": abs(dm - true_val),

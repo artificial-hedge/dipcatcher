@@ -68,6 +68,8 @@ def bench_polar_code(seed: int = 5005, p: float = 0.11) -> dict[str, float]:
     y_llr = np.where(y == 0, 4.0, -4.0)
     dec = _sc_decode(y_llr, info)
     unc = bsc(m, p, seed + 2)
+    if float(np.mean(dec[info] != m)) >= float(np.mean(unc != m)):
+        raise ValueError("polar code no better than uncoded")
     return {
         "synthetic_polar_ber": float(np.mean(dec != u)),
         "synthetic_polar_msg_ber": float(np.mean(dec[info] != m)),
