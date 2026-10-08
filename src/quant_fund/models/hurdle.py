@@ -170,6 +170,10 @@ def bench_hurdle(seed: int = 20261231 + 228) -> dict[str, float]:
 
     g = float(out["gamma_x"])
     b = float(out["beta_x"])
+    if not (abs(g - 0.8) < 0.4 and abs(b - 1.5) < 0.4 and float(out["fit_cor"]) > 0.6):
+        raise ValueError("hurdle margins off-oracle")
+    if not (g == float(out_b["gamma_x"]) and b == float(out_b["beta_x"])):
+        raise ValueError("non-deterministic hurdle fit")
     return {
         "synthetic_gamma": g,
         "synthetic_gamma_err": float(abs(g - 0.8)),

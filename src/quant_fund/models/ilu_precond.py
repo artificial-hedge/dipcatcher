@@ -108,4 +108,6 @@ def bench_ilu_precond(seed: int = _SEED) -> dict[str, float]:
         it_p <= it_c // 2,
         it_c > 20,
     ]
+    if sum(checks) != len(checks):
+        raise ValueError("ILU(0) preconditioning off-oracle")
     return {"synthetic_ilu_precond": float(np.mean(checks))}

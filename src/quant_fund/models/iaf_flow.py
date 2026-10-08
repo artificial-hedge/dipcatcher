@@ -54,6 +54,8 @@ def bench_iaf_flow(seed: int = 2311, iters: int = 600) -> dict[str, float]:
         z, ld = fwd(torch.tensor(Xte).float())
         nll_te = float((0.5 * (z**2).sum(-1) + np.log(2 * np.pi) - ld).mean())
     base = gauss_nll(Xtr, Xte)
+    if not (nll_te < base):
+        raise ValueError("IAF NLL did not beat Gaussian on pinwheel")
     return {
         "synthetic_iaf_nll": nll_te,
         "synthetic_gauss_nll": base,

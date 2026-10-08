@@ -35,6 +35,8 @@ def bench_indep_mh(seed: int = 2987, n: int = 4000) -> dict[str, float]:
     )
     q_hat = np.quantile(s, [0.01, 0.5, 0.99])
     tail_err = float(np.abs(q_hat - q_true).mean())
+    if tail_err > 0.5:
+        raise ValueError("indep-MH tail quantiles off target")
     return {
         "synthetic_imh_tail_err": tail_err,
         "synthetic_imh_accept": float(acc / n),

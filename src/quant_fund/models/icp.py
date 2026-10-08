@@ -81,4 +81,6 @@ def bench_icp(seed: int = 20261231) -> dict[str, float]:
     _, _, rms2, iters2 = icp(P, Q2, max_iter=120)
     out["synthetic_icp_hard_rms"] = rms2
     out["synthetic_icp_hard_iters"] = float(iters2)
+    if rms > 0.05 or md > 0.5 or rms2 > 0.05:
+        raise ValueError("ICP registration off-oracle")
     return out

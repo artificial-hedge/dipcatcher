@@ -71,6 +71,8 @@ def bench_hyperbolic_nn(
     with torch.no_grad():
         d_e = (emb_e[ii] - emb_e[jj]).norm(dim=-1)
         distortion_e = float(((d_e - dt).abs() / (dt + 1e-9)).mean())
+    if not (distortion_e > distortion_h):
+        raise ValueError("Poincare embedding did not beat Euclidean on hierarchy")
     return {
         "synthetic_hyp_distortion": distortion_h,
         "synthetic_hyp_euclid_distortion": distortion_e,

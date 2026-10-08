@@ -58,6 +58,8 @@ def bench_icm_explore(seed: int = 2851) -> dict[str, float]:
 
     _, cov, succ = q_learn(bonus, seed=seed)
     _, cov_b, succ_b = q_learn(lambda s, sp, st, ep, rng: 0.0, seed=seed)
+    if not (cov >= cov_b and succ > succ_b):
+        raise ValueError("ICM bonus did not improve exploration")
     return {
         "synthetic_icm_coverage": float(cov),
         "synthetic_baseline_coverage": float(cov_b),

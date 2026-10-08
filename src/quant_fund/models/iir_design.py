@@ -128,6 +128,14 @@ def bench_iir_design(seed: int = 20261231) -> dict[str, float]:
     ripple = float(np.abs(sos_response(sos_c, np.linspace(0.0, 0.18, 64)) - 1.0).max())
     # pole stability: |roots of a| < 1
     stable = all(np.abs(np.roots([1.0, sec[4], sec[5]])).max() < 1.0 + 1e-9 for sec in sos)
+    if (
+        abs(fc - 1.0 / np.sqrt(2.0)) > 0.02
+        or abs(dc - 1.0) > 1e-9
+        or sb > 0.05
+        or not stable
+        or ripple > 10 ** (-1.0 / 20.0) * 1.5
+    ):
+        raise ValueError("IIR response off-oracle")
     return {
         "synthetic_iir_cutoff_err": float(abs(fc - 1.0 / np.sqrt(2.0))),
         "synthetic_iir_dc_err": float(abs(dc - 1.0)),

@@ -26,4 +26,6 @@ def bench_index_intersect(seed: int = _SEED) -> dict[str, float]:
     posting_c = sorted(rng.choice(n, 100, replace=False).tolist())
     got = intersect_sorted([posting_a, posting_b, posting_c])
     expect = sorted(set(posting_a) & set(posting_b) & set(posting_c))
+    if got != expect:
+        raise ValueError("posting-list intersection off-oracle")
     return {"synthetic_intersect_exact": float(got == expect)}

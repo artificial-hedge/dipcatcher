@@ -49,4 +49,6 @@ def bench_ik_jac(seed: int = _SEED) -> dict[str, float]:
         not conv2
         or np.linalg.norm(fk2(l1, l2, *ik2(l1, l2, unreachable, iters=200)[0]) - unreachable) > 0.1
     )
+    if ok < 8:
+        raise ValueError("DLS Jacobian IK failed reachable target or claimed unreachable")
     return {"synthetic_ik_jac": float(ok >= 8)}

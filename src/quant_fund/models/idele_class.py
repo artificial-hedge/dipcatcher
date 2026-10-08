@@ -41,6 +41,8 @@ def _bench_idele_class(seed: int = 0) -> float:
     # product formula = 1 for any rational
     for a, b in [(3, 1), (7, 4), (12, 5), (2, 9), (1, 6)]:
         checks.append(abs(product_formula(a, b) - 1.0) < 1e-9)
+    if sum(checks) != len(checks):
+        raise ValueError("product formula off 1.0")
     return float(sum(checks) / len(checks))
 
 

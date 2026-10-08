@@ -74,4 +74,6 @@ def bench_hu_moments(seed: int = _SEED) -> dict[str, float]:
     h3 = hu_moments(other)
     diff = np.abs(np.log(np.abs(h1) + 1e-12) - np.log(np.abs(h3) + 1e-12))
     ok = rel[0] < 0.08 and diff[0] > 0.1
+    if not ok:
+        raise ValueError("Hu invariants not invariant under rigid transform")
     return {"synthetic_hu_moments": 1.0 if ok else 0.0}

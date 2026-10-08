@@ -33,6 +33,8 @@ def bench_impossible_travel(seed: int = _SEED) -> dict[str, float]:
     # london -> tokyo in 1h is impossible; london -> paris in 2h fine
     legit = [(51.5, -0.12, 0.0), (48.85, 2.35, 2.0), (48.85, 2.35, 30.0)]
     fraud = [(51.5, -0.12, 0.0), (35.68, 139.69, 1.0)]
+    if flag(fraud) != [1] or flag(legit) != []:
+        raise ValueError("impossible-travel detection off-oracle")
     return {
         "synthetic_travel_flag": float(flag(fraud) == [1]),
         "synthetic_travel_clear": float(flag(legit) == []),

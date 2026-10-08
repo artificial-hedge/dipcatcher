@@ -84,6 +84,8 @@ def bench_huffman_codes(seed: int = 20261231 + 290) -> dict[str, float]:
         exp_len = sum(probs[i] * len(codes[alpha[i]]) for i in range(n_sym))
         gaps.append(exp_len - h)
         ent_ok += int(exp_len < h + 1.0 + 1e-9)
+    if rt != trials or pf != trials or ent_ok != trials:
+        raise ValueError("Huffman code broke optimality/prefix invariants")
     return {
         "synthetic_roundtrip": float(rt / trials),
         "synthetic_prefix_free": float(pf / trials),

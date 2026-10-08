@@ -41,6 +41,8 @@ def bench_huber_filter(seed: int = 5709) -> dict[str, float]:
     h_rmse = float(np.sqrt(np.mean((h - x) ** 2)))
     g_max = float(np.max(np.abs(g - x)))
     h_max = float(np.max(np.abs(h - x)))
+    if not (h_rmse < g_rmse):
+        raise ValueError("Huber clip did not beat plain KF on heavy tails")
     return {
         "synthetic_hf_rmse": h_rmse,
         "synthetic_hf_kf_rmse": g_rmse,

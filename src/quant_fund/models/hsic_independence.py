@@ -40,6 +40,8 @@ def bench_hsic_independence(seed: int = 2879, perms: int = 150) -> dict[str, flo
             if _hsic(x, rng.permutation(y)) >= stat:
                 ge += 1
         outs[kind] = (ge + 1) / (perms + 1)
+    if outs["dep"] > 0.05 or outs["nonlin"] > 0.05 or outs["indep"] < 0.05:
+        raise ValueError("HSIC lost dependence discrimination")
     return {
         "synthetic_hsic_pval_dep": float(outs["dep"]),
         "synthetic_hsic_pval_indep": float(outs["indep"]),

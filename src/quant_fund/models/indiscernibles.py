@@ -44,6 +44,8 @@ def _bench_indiscernibles(seed: int = 0) -> float:
     # order_type of sorted tuple is identity
     checks.append(order_type((s[1], s[3], s[8])) == (0, 1, 2))
     checks.append(order_type((s[8], s[1], s[3])) == (2, 0, 1))
+    if sum(checks) != len(checks):
+        raise ValueError("order-indiscernible type oracle mismatch")
     return float(sum(checks) / len(checks))
 
 

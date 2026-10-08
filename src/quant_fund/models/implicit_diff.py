@@ -25,6 +25,8 @@ def bench_implicit_diff(seed: int = 2405) -> dict[str, float]:
     dz_ift = -np.linalg.solve(th * np.eye(6) + AtA, z)
     eps = 1e-5
     dz_fd = (z_star(th + eps) - z_star(th - eps)) / (2 * eps)
+    if grad_corr(dz_ift, dz_fd) < 0.999 or float(np.abs(dz_ift - dz_fd).max()) > 1e-4:
+        raise ValueError("IFT gradient disagrees with finite difference")
     return {
         "synthetic_ift_corr": grad_corr(dz_ift, dz_fd),
         "synthetic_ift_max_err": float(np.abs(dz_ift - dz_fd).max()),

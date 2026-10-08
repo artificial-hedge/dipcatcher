@@ -136,7 +136,13 @@ def bench_hypernetwork_alloc(seed: int = 71) -> dict[str, float]:
     h_hyper = float(np.mean(np.sum(w_hyper[hold] * rets[tr:][hold], 1)))
     h_flat = float(np.mean(np.sum(w_flat[hold] * rets[tr:][hold], 1)))
     h_ew = float(np.mean(rets[tr:][hold]))
-    # oracle regime-conditional tilt
+    # in-distribution: conditional net must beat flat + equal-weight.
+    # held-out regime 2 is a generalization bound: require no material
+    # degradation vs the flat net (neither can know the unseen map).
+    if not (r_hyper > r_flat and r_hyper > r_ew + 0.1):
+        raise ValueError("hypernetwork failed in-distribution")
+    if h_hyper < h_flat - 0.05:
+        raise ValueError("hypernetwork degraded below flat on held-out regime")
     return {
         "synthetic_hypernet_mean_ret": r_hyper,
         "synthetic_hypernet_flat_mean_ret": r_flat,

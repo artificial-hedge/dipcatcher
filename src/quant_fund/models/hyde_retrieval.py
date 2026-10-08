@@ -76,6 +76,8 @@ def bench_hyde_retrieval(
         # HyDE: encode generated hypothetical doc
         eq_h = torch.nn.functional.normalize(enc(gen(q_t)), dim=-1)
         s_h = (eq_h @ ed.T).numpy()
+    if recall_at_k(s_h, td, tq, 5) <= recall_at_k(s_raw, td, tq, 5):
+        raise ValueError("HyDE did not lift recall over raw dense")
     return {
         "synthetic_hyde_recall5": recall_at_k(s_h, td, tq, 5),
         "synthetic_hyde_raw_recall5": recall_at_k(s_raw, td, tq, 5),

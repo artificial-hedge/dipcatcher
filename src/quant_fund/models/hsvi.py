@@ -122,6 +122,10 @@ def bench_hsvi(seed: int = 20261231) -> dict[str, float]:
     acts = [hsvi_policy(p, np.array([q, 1 - q]), alphas) for q in np.linspace(0.1, 0.9, 9)]
     out["synthetic_hsvi_listens_mid"] = float(0 in acts[3:6])
     out["synthetic_hsvi_positive"] = float(ret > 0)
+    if 0 not in acts[3:6]:
+        raise ValueError("HSVI policy fails to listen mid-belief")
+    if ret <= 0:
+        raise ValueError("HSVI rollout return not positive")
     return out
 
 

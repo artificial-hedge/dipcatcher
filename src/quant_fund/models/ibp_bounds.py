@@ -68,6 +68,11 @@ def bench_ibp_bounds(
     with torch.no_grad():
         pred_adv = net(adv).argmax(-1).numpy()
     frac_bad = float(((pred_adv != yte) & (pred == yte)).mean())
+    # certified-acc must bound MC robust accuracy: certified ≤ 1 - frac_bad
+    if not (certified <= 1.0 - frac_bad + 1e-6):
+        raise ValueError("IBP certificate exceeds observed robust accuracy")
+    if not (0.0 <= certified <= acc):
+        raise ValueError("certified accuracy out of bounds")
     return {
         "synthetic_ibp_certified_acc": certified,
         "synthetic_ibp_clean_acc": acc,

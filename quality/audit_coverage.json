@@ -27930,6 +27930,348 @@
    "reason": "package surface only",
    "status": "waived"
   },
+  "quant_fund/models/grid_pomdp.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gromov_wasserstein.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gronwall_lemma.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/group_presentation.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/group_sequential.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/group_table.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/grover_search.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/groves.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/grownet_boost.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/growth_at_risk.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/grpo_train.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gsp_auction.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gsynth.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gumbel_relax.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gumbel_topk.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gvn_elim.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gvn_pre.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gwnet_lite.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/gwr_spatial.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hahn_banach.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/half_edge.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hall_subgroup.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hamilton_filter.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/har.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/har_rv.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/harris_corner.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hasbrouck_is.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hat_cl.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hausdorff.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hausman_tests.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hawkes_thinning.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hazard_pointer.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/heat_kernel.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hecke_eig.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hedging.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hedonic.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hegy.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/held_karp.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hensel_field.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hensel_lift.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/henze_zirkler.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/herbrand_model.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hessenberg_red.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hessian_eig.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/heston_calib.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/heston_qe.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/het_gp.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/het_regressions.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/heterogeneous_abm.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hhl_lite.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hierarchical_reconciliation.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/higham_corr.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hilbert_instant.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hilbert_poly.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hilbert_samuel.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hilbert_series.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hinf_filter.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hit_quotient.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hjb_penalty.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hjm.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hlc_clock.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hlevel_check.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hm_inference.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hmac_construct.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hmm_profile.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hoare_logic.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hoeffding.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hoffman_bound.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/holonomy.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/homography_4pt.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/homotopy_continuation.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/homotopy_group.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/homotopy_pi1.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hong_li.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hopcroft_karp.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/horn_clauses.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/horvitz_thompson.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hough_lines.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hqc_lite.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hrp.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hsic_independence.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hsmm.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hstep.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hsvi.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/http2_flow.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hu_moments.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/huber_filter.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/huffman_codes.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hurdle.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hyde_retrieval.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hyena_conv.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hyperband_search.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hyperbolic_nn.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/hypernetwork_alloc.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/iaf_flow.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/ibp_bounds.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/ic3_pdr.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/ica_lingam.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/icc.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/icm_explore.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/icmp_path.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/icp.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/idele_class.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/iir_design.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/ik_jac.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/ilqr.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/ilu_precond.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/implicit_diff.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/impossible_travel.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/imtl_g.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/inclusion_excl.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/indep_mh.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/index_intersect.py": {
+   "status": "audited"
+  },
+  "quant_fund/models/indiscernibles.py": {
+   "status": "audited"
+  },
   "research/__init__.py": {
    "status": "audited"
   },
@@ -33505,234 +33847,6 @@
    "status": "audited"
   },
   "research/xwatch.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/grid_pomdp.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/gromov_wasserstein.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/gronwall_lemma.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/group_presentation.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/group_sequential.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/group_table.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/grover_search.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/groves.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/grownet_boost.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/growth_at_risk.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/grpo_train.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/gsp_auction.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/gsynth.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/gumbel_relax.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/gumbel_topk.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/gvn_elim.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/gvn_pre.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/gwnet_lite.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/gwr_spatial.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hahn_banach.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/half_edge.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hall_subgroup.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hamilton_filter.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/har.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/har_rv.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/harris_corner.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hasbrouck_is.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hat_cl.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hausdorff.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hausman_tests.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hawkes_thinning.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hazard_pointer.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/heat_kernel.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hecke_eig.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hedging.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hedonic.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hegy.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/held_karp.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hensel_field.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hensel_lift.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/henze_zirkler.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/herbrand_model.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hessenberg_red.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hessian_eig.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/heston_calib.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/heston_qe.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/het_gp.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/het_regressions.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/heterogeneous_abm.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hhl_lite.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hierarchical_reconciliation.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/higham_corr.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hilbert_instant.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hilbert_poly.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hilbert_samuel.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hilbert_series.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hinf_filter.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hit_quotient.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hjb_penalty.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hjm.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hlc_clock.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hlevel_check.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hm_inference.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hmac_construct.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hmm_profile.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hoare_logic.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hoeffding.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hoffman_bound.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/holonomy.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/homography_4pt.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/homotopy_continuation.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/homotopy_group.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/homotopy_pi1.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hong_li.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/hopcroft_karp.py": {
-   "status": "audited"
-  },
-  "quant_fund/models/horn_clauses.py": {
    "status": "audited"
   }
  },

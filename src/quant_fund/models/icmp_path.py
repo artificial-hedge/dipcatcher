@@ -25,4 +25,6 @@ def bench_icmp_path(seed: int = _SEED) -> dict[str, float]:
         path = list(rng.randint(0, 1 << 16, int(rng.randint(2, 12))))
         got = traceroute(path)
         ok += float(got == path)
+    if ok != trials:
+        raise ValueError("traceroute did not reproduce the path")
     return {"synthetic_traceroute_exact": ok / trials}

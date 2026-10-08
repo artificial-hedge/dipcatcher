@@ -79,6 +79,8 @@ def bench_ic3_pdr(seed: int = 20261231 + 222) -> dict[str, float]:
     r2 = ic3(sys2)
     reach2 = _bfs_reach(sys2)
     oracle2 = not bool(reach2 & sys2.bad)
+    if bool(r["safe"]) != oracle_safe or bool(r2["safe"]) != oracle2:
+        raise ValueError("backward PDR disagrees with forward reachability")
     return {
         "synthetic_ic3_safe": float(bool(r["safe"])),
         "synthetic_oracle_safe": float(oracle_safe),

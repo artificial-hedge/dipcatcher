@@ -148,4 +148,6 @@ def bench_ilqr(seed: int = 20261231 + 863) -> dict[str, float]:
     checks += float(abs(th_err) < 0.3)
     # torque stays bounded
     checks += float(np.max(np.abs(us)) < 50.0)
+    if checks != total:
+        raise ValueError("iLQR did not swing up the pendulum")
     return {"synthetic_ilqr": checks / total}

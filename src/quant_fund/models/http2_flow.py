@@ -60,6 +60,8 @@ def bench_http2_flow(seed: int = 20261231 + 405) -> dict[str, float]:
         resume += int(s4 == 50)  # min(conn 50, stream 60)
         # conn-level bound: total in flight ≤ 100
         conn_ok += int(c.in_flight_conn <= 100)
+    if bound != trials or resume != trials * 2 or conn_ok != trials:
+        raise ValueError("flow-control bounds violated")
     return {
         "synthetic_window_bounded": float(bound / trials),
         "synthetic_update_resumes": float(resume / (trials * 2)),

@@ -29,6 +29,8 @@ def _bench_inclusion_excl(seed: int = 0) -> float:
     checks.append(surjections(4, 4) == 24)
     # surjections 4 -> 2 = 14
     checks.append(surjections(4, 2) == 14)
+    if sum(checks) != len(checks):
+        raise ValueError("inclusion-exclusion oracle mismatch")
     return float(sum(checks) / len(checks))
 
 

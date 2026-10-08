@@ -111,4 +111,6 @@ def bench_hqc_lite(seed: int = _SEED) -> dict[str, float]:
     cw = concat_encode(np.array([1, 0, 1, 1], dtype=np.uint8), n1)
     cw[3] ^= 1
     rm_ok = int(np.array_equal(concat_decode(cw, n1), [1, 0, 1, 1]))
+    if ok != trials or not s_ok or not rm_ok:
+        raise ValueError("HQC decapsulation failed below radius")
     return {"synthetic_hqc_lite": 0.7 * (ok / trials) + 0.15 * s_ok + 0.15 * rm_ok}
