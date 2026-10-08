@@ -45,7 +45,42 @@ PROPOSED -> OPTIONAL -> (REQUIRED | RETIRED)
   receipts. Old receipts containing retired families must still verify —
   the registry's accepted-set semantics are append-only over history.
 
+## Qualification gate (2026-10-07)
+
+A family may enter or remain OPTIONAL only when it is backed by a
+**qualifying implementation** under the canon qualification ruleset
+(`src/quant_fund/models/canon_qualification.py`, hash-pinned `RULESET`;
+evidence: `quality/canon_qualification_summary.json`): a real behavioral
+mechanism (a substantive bench over data), not a template copy of a shared
+AST skeleton whose bench aggregates constant checks. Template-shaped
+constant-score families are ineligible — generator correctness fixtures, not
+scorecard science.
+
+The 2026-10-07 audit classified 7,529 template-backed optional families and
+moved them OPTIONAL -> RETIRED in one recorded action. Every entry in
+`RETIRED_BENCHMARK_FAMILIES` (`quant_fund.research.catalog.registry`, generated
+`catalog/retired_families.py`) carries its retirement reason and
+`last_receipt_schema_version = 2`. Retirement never erases acceptance:
+`OPTIONAL_BENCHMARK_FAMILIES` remains the append-only accepted set, so an
+archived receipt naming a retired family still verifies (pinned by
+`tests/unit/research/test_catalog_retired_families.py`; `verify.py`
+accepted-set semantics unchanged). The live scorecard and runtime emission
+set is `LIVE_OPTIONAL_BENCHMARK_FAMILIES = OPTIONAL_BENCHMARK_FAMILIES -
+RETIRED_BENCHMARK_FAMILIES`, consumed by `research/agent.py`.
+
+Future waves pass the same gate before wiring: a family whose backing module
+classifies `NON_QUALIFYING_TEMPLATE` is rejected at registration, and the
+guard tests (`tests/unit/models/test_canon_qualification.py`,
+`tests/unit/research/test_catalog_retired_families.py`) fail if a
+template-shaped family reappears as qualifying or as a live registration.
+
 ## Standing budgets
+
+Budgets apply to the **LIVE** scorecard (`LIVE_OPTIONAL_BENCHMARK_FAMILIES`
+= `OPTIONAL_BENCHMARK_FAMILIES - RETIRED_BENCHMARK_FAMILIES`; 2,693 of
+10,222 as of 2026-10-07), never to the full accepted set — the 7,529
+retired template-backed families consume no runtime and must not be read as
+headroom.
 
 - Per-bench runtime: <= 8s typical, <= 15s with justification in the bench
   docstring (wave-14 `zi_lob`/`local_stoch_vol` precedent). Total added
@@ -67,7 +102,21 @@ total battery runtime, families whose science assertions were *relied on*
 retirement candidates. Two consecutive reviews without a family being read
 => retirement proposal in the next wave's report.
 
-## Current census (2026-09-30, post-wave-16)
+## Current census (2026-10-07, post-retirement)
+
+- REQUIRED: **23** — unchanged since wave 8 (`BENCHMARK_FAMILY_ORDER`
+  untouched since inception — the docs-consistency contract).
+- OPTIONAL: **10,222** — append-only historical ACCEPTED set; never shrinks
+  (archived receipts must keep verifying).
+- RETIRED: **7,529** — template-backed families moved OPTIONAL -> RETIRED in
+  one recorded action (2026-10-07 canon qualification audit; per-entry
+  reason + `last_receipt_schema_version = 2` in `RETIRED_BENCHMARK_FAMILIES`).
+- LIVE (scorecard + runtime emission): **2,693** = `OPTIONAL - RETIRED`.
+- Corpus evidence: 10,388 audited modules — 7,529 `NON_QUALIFYING_TEMPLATE`
+  (72.5%). See `quality/canon_qualification_summary.json` and
+  [`docs/CAPABILITY_QUALIFICATION.md`](CAPABILITY_QUALIFICATION.md).
+
+### Historical census (2026-09-30, post-wave-16)
 
 - REQUIRED: unchanged since wave 8 (`BENCHMARK_FAMILY_ORDER` untouched
   since inception — the docs-consistency contract).

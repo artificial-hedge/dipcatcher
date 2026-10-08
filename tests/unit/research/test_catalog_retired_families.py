@@ -158,7 +158,10 @@ def test_every_retired_entry_has_specific_reason_and_schema_version() -> None:
 
 def test_retired_set_matches_qualification_audit() -> None:
     # The registry derives from the audit; drift between them must fail here.
-    assert SUMMARY_PATH.is_file(), f"missing audit summary at {SUMMARY_PATH}"
+    assert SUMMARY_PATH.is_file(), (
+        "quality/canon_qualification_summary.json is not tracked — the "
+        "registry-to-audit binding is unverifiable"
+    )
     summary = json.loads(SUMMARY_PATH.read_text(encoding="utf-8"))
     audited_retired = set(summary["retired_families"])
     assert set(RETIRED_BENCHMARK_FAMILIES) == audited_retired

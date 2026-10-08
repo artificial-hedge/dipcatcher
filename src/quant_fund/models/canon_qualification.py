@@ -4,8 +4,9 @@ This module classifies every module in ``src/quant_fund/models`` as either
 ``QUALIFYING`` or ``NON_QUALIFYING_TEMPLATE`` using objective, documented and
 hash-pinned rules (``RULESET`` / :func:`ruleset_hash`). It exists so corpus
 integrity claims are reproducible and tamper-evident: two runs over the same
-tree emit byte-identical JSON (``quality/canon_qualification_audit.json``) and
-any rule change changes ``ruleset_hash``.
+tree emit byte-identical JSON (full dump in ``.dsh-24x7/``, checked-in summary
+at ``quality/canon_qualification_summary.json`` — see ``scripts/canon_qualify.py``)
+and any rule change changes ``ruleset_hash``.
 
 A ``NON_QUALIFYING_TEMPLATE`` verdict means the module is a template copy of a
 shared skeleton (near-duplicate AST shape shared with other corpus modules)
@@ -172,6 +173,7 @@ class ModuleRecord:
 
     path: str
     stem: str
+    source_sha256: str
     physical_lines: int
     nonblank_lines: int
     effective_body_lines: int
@@ -562,6 +564,7 @@ def analyze_module(path: Path, source: str, repo_root: Path) -> ModuleRecord:
     return ModuleRecord(
         path=rel,
         stem=stem,
+        source_sha256=hashlib.sha256(source.encode("utf-8")).hexdigest(),
         physical_lines=len(lines),
         nonblank_lines=sum(1 for line in lines if line.strip()),
         effective_body_lines=effective_body_lines(source, tree),
@@ -1109,9 +1112,11 @@ def _totals(rows: Iterable[dict[str, Any]]) -> dict[str, int]:
 
 
 def _record_payload(record: ModuleRecord) -> dict[str, Any]:
+    skeleton = record.docstring_skeleton
     return {
         "path": record.path,
         "stem": record.stem,
+        "source_sha256": record.source_sha256,
         "physical_lines": record.physical_lines,
         "nonblank_lines": record.nonblank_lines,
         "effective_body_lines": record.effective_body_lines,
@@ -1120,7 +1125,8 @@ def _record_payload(record: ModuleRecord) -> dict[str, Any]:
         "data_params": record.data_params,
         "bench_profile": record.bench_profile,
         "ast_shape_hash": record.ast_shape_hash,
-        "docstring_skeleton": record.docstring_skeleton,
+        "docstring_skeleton_sha256": hashlib.sha256(skeleton.encode("utf-8")).hexdigest(),
+        "docstring_skeleton_prefix": skeleton[:240],
         "docstring_mentions_stem": record.docstring_mentions_stem,
     }
 
