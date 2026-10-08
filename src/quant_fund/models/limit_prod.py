@@ -24,9 +24,11 @@ def bench_limit_prod(seed: int = _SEED) -> dict[str, float]:
             g = dict(zip(zs, gvals, strict=True))
             h = mediating(f, g)
             if not all(h[z][0] == f[z] and h[z][1] == g[z] for z in zs):
-                return {"synthetic_limit_prod": 0.0}
+                raise ValueError("mediating morphism does not factor f,g")
             # uniqueness: any h' factoring both equals h
             for z in zs:
                 cand = h[z]
                 ok += int(cand == (f[z], g[z]))
+    if ok <= 0:
+        raise ValueError("product mediating morphism missing")
     return {"synthetic_limit_prod": float(ok > 0)}

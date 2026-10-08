@@ -98,6 +98,8 @@ def bench_llaplace_gp(
         cov_edge_homo = float(
             np.mean(np.abs(te[3][..., 0][edge] - np.asarray(mu_t)[edge]) <= 1.645 * np.sqrt(sigma2))
         )
+    if abs(cov90_epi - 0.90) >= 0.1 or mse >= 1.0:
+        raise ValueError("last-layer Laplace coverage/MSE off oracle")
     return {
         "synthetic_llap_cov90": cov90_epi,
         "synthetic_llap_cov90_homoscedastic": cov90_homo,

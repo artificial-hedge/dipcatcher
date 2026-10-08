@@ -45,6 +45,8 @@ def _bench_linear_extension(seed: int = 0) -> float:
         )
         == 2
     )
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

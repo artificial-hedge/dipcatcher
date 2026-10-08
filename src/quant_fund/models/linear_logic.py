@@ -98,4 +98,6 @@ def bench_linear_logic(seed: int = _SEED) -> dict[str, float]:
     checks.append(not prove((("tensor", "A", "B"),), "A"))
     # but consuming both is fine: A⊗B |- A⊗B
     checks.append(prove((("tensor", "A", "B"),), ("tensor", "A", "B")))
+    if sum(checks) != len(checks):
+        raise ValueError("linear-logic provability oracle failed")
     return {"synthetic_linear_logic": float(sum(checks)) / len(checks)}

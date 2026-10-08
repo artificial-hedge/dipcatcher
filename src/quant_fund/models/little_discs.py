@@ -42,6 +42,8 @@ def _bench_little_discs(seed: int = 0) -> float:
     # disjointness invariant: all generated configs have distinct cells
     checks.append(all(len(set(c)) == 2 for c in configs_2d(2, 3)))
     checks.append(all(len(set(c)) == 2 for c in configs_1d(2, 8)))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

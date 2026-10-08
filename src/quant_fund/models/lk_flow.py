@@ -37,4 +37,6 @@ def bench_lk_flow(seed: int = _SEED) -> dict[str, float]:
         v = lk_step(i0, i1, 12, 12)
         # LK should point in the true shift direction (sign may vary by np.roll convention)
         ok += float(np.linalg.norm(v) <= 3.0)
+    if ok != trials:
+        raise ValueError("LK flow estimate unbounded")
     return {"synthetic_lk_bounded": ok / trials}

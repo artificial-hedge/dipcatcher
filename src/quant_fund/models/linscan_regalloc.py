@@ -74,6 +74,8 @@ def bench_linscan_regalloc(seed: int = 20261231 + 285) -> dict[str, float]:
     # dense interval graph forces spills
     forced = linscan([(0, 10, v) for v in range(5)], 2)
     forced_ok = len(forced[1]) == 3
+    if no_overlap != trials or spill_ok != trials or within != trials or not forced_ok:
+        raise ValueError("linscan regalloc off oracle")
     return {
         "synthetic_no_overlap": float(no_overlap / trials),
         "synthetic_spill_consistent": float(spill_ok / trials),

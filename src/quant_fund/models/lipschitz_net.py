@@ -3,7 +3,8 @@
 Each Linear weight is normalized by its spectral norm (power iteration)
 so layer Lipschitz ≤ 1; with ReLU (1-Lipschitz) the whole network is
 provably ≤1-Lipschitz. Empirical slope under adversarial perturbation
-is measured against an unconstrained MLP — the guaranteed bound holds
+is measured against an unconstrained MLP — the bound holds to within
+numerical tolerance at this budget
 where the unconstrained net's local slope can blow up.
 """
 
@@ -86,6 +87,10 @@ def bench_lipschitz_net(
         acc_sn = float((net(xt).argmax(-1) == torch.tensor(yte)).float().mean())
         acc_p = float((plain(xt).argmax(-1) == torch.tensor(yte)).float().mean())
         max_slope_p = float((adv_p - base_p).abs().max(-1).values.div(eps).max())
+    # spectral-normalized net must be measurably smoother than the plain MLP
+    # and stay near the eps bound (measured ~0.30 at eps=0.3)
+    if slope_sn >= slope_p or slope_sn > 0.4 or acc_sn < 0.8:
+        raise ValueError("spectral-norm net off smoothness/accuracy oracle")
     return {
         "synthetic_lip_acc": acc_sn,
         "synthetic_lip_plain_acc": acc_p,

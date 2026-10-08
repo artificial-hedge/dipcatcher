@@ -210,6 +210,8 @@ def bench_lmoments(seed: int = 492) -> dict[str, float]:
     sizes = rng.integers(40, 80, size=8)
     region = [_gev_quantile(rng.random(m), 1.0, 1.0, -0.15) for m in sizes]
     het = heterogeneity(region, n_sim=60, seed=seed)
+    if s_err > 0.1 or abs(lm["t3"] - _t3_gev(k_true)) > 0.1 or k_err > 0.5:
+        raise ValueError("L-moment GEV fit off oracle")
     return {
         "synthetic_gev_k_err": k_err,
         "synthetic_gev_sigma_err": s_err,

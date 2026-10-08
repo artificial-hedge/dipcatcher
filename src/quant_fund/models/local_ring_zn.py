@@ -35,6 +35,8 @@ def _bench_local_ring_zn(seed: int = 0) -> float:
     checks.append(maximal_ideal_member(x + z, p))
     # inverse of unit stays in ring
     checks.append(is_unit_local(1 / y, p))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

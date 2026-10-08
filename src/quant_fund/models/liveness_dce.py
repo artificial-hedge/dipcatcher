@@ -74,6 +74,8 @@ def bench_liveness_dce(seed: int = 20261231 + 284) -> dict[str, float]:
         d1 = dce(insns, out_vars)
         d2 = dce(d1, out_vars)
         idem += int(d1 == d2)
+    if agree != trials or same_out != trials or idem != trials:
+        raise ValueError("liveness/DCE off oracle")
     return {
         "synthetic_live_agree": float(agree / trials),
         "synthetic_same_output": float(same_out / trials),

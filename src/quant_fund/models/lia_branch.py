@@ -87,6 +87,8 @@ def _bench_lia_branch(seed: int = 0) -> float:
     # three vars
     xs3 = ilp_solve([([1.0, 1.0, 1.0], 4.0), ([-1.0, 0.0, 0.0], -1.0)], 3)
     checks.append(xs3 is not None and sum(xs3) <= 4 and xs3[0] >= 1)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return sum(checks) / len(checks)
 
 

@@ -165,4 +165,6 @@ def bench_literal_prefilter(seed: int = _SEED) -> dict[str, float]:
             ok = False
             break
     score += 1.0 if ok else 0.0
+    if score != 4.0:
+        raise ValueError("literal prefilter produced a false negative")
     return {"synthetic_literal_prefilter": score / 4.0}

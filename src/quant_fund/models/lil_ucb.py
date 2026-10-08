@@ -85,6 +85,8 @@ def bench_lil_ucb(seed: int = 20261231) -> dict[str, float]:
     best2, pulls2 = lil_ucb(mu2, rng, delta=0.1)
     out["synthetic_lilucb_hard_correct"] = float(best2 == 1)
     out["synthetic_lilucb_hard_pulls"] = float(pulls2)
+    if not (best == 2 and best2 == 1 and pulls < 20000):
+        raise ValueError("LUCB failed identification/budget oracle")
     return out
 
 

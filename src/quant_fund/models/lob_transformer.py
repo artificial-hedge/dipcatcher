@@ -124,6 +124,8 @@ def bench_lob_transformer(seed: int = 55) -> dict[str, float]:
         pred = forward(xs[tr:]) > 0
         acc = float((pred == ys[tr:].bool()).float().mean())
     log_acc = _logistic_acc(x, y, tr, rng)
+    if acc <= log_acc:
+        raise ValueError("LOB transformer did not beat logistic baseline")
     return {
         "synthetic_lobdl_acc": acc,
         "synthetic_lobdl_logistic_acc": log_acc,

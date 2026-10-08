@@ -49,6 +49,8 @@ def bench_listmle_ltr(
         sc = net(torch.tensor(x_te).float()).squeeze(-1).numpy()
     nd = ndcg_at(y_te, sc)
     nd_base = ndcg_at(y_te, x_te.mean(-1))
+    if nd <= nd_base:
+        raise ValueError("ListMLE NDCG did not beat feature-mean baseline")
     return {
         "synthetic_listmle_ndcg10": nd,
         "synthetic_listmle_base_ndcg10": nd_base,

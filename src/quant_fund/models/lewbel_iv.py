@@ -159,6 +159,10 @@ def bench_lewbel_iv(seed: int = 20261231 + 276) -> dict[str, float]:
     b = lewbel_iv(np.asarray(d["y"]), np.asarray(d["x_endo"]), np.asarray(d["x_exo"]))
     truth = 1.0
     detects = float(abs(a["beta_lewbel"] - truth) < abs(a["beta_ols"] - truth) * 0.4)
+    if not detects:
+        raise ValueError("Lewbel IV did not correct most of OLS bias")
+    if a != b:
+        raise ValueError("Lewbel IV not deterministic")
     return {
         "synthetic_detects": detects,
         "synthetic_determinism": float(a == b),

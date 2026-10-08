@@ -53,6 +53,8 @@ def bench_levy_jump(seed: int = 2951, paths: int = 400) -> dict[str, float]:
     k_j = float(kurtosis(np.asarray(rets_j)))
     k_g = float(kurtosis(np.asarray(rets_g)))
     s_j = float(skew(np.asarray(rets_j)))
+    if not (k_j > k_g):
+        raise ValueError("Merton jump returns not fatter-tailed than GBM")
     return {
         "synthetic_merton_kurt": k_j,
         "synthetic_gbm_kurt": k_g,

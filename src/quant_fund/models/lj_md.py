@@ -63,4 +63,6 @@ def bench_lj_md(seed: int = _SEED) -> dict[str, float]:
         e1 = _energy(pos2, vel2)
         drift = abs(e1 - e0) / (abs(e0) + 1.0)
         ok += float(drift < 0.1)
+    if ok != trials:
+        raise ValueError("LJ MD energy drifted")
     return {"synthetic_lj_energy_stable": ok / trials}

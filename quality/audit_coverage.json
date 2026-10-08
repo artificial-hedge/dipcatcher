@@ -34304,6 +34304,120 @@
   },
   "research/xwatch.py": {
    "status": "audited"
+  },
+  "models/levy_jump.py": {
+   "status": "audited"
+  },
+  "models/lewbel_iv.py": {
+   "status": "audited"
+  },
+  "models/lia_branch.py": {
+   "status": "audited"
+  },
+  "models/libor_market.py": {
+   "status": "audited"
+  },
+  "models/licm_hoist.py": {
+   "status": "audited"
+  },
+  "models/lie_bracket.py": {
+   "status": "audited"
+  },
+  "models/lif_neuron.py": {
+   "status": "audited"
+  },
+  "models/life_stress.py": {
+   "status": "audited"
+  },
+  "models/lifetime_outlives.py": {
+   "status": "audited"
+  },
+  "models/lil_ucb.py": {
+   "status": "audited"
+  },
+  "models/limit_prod.py": {
+   "status": "audited"
+  },
+  "models/lin_ccc_blandaltman.py": {
+   "status": "audited"
+  },
+  "models/linear_attn.py": {
+   "status": "audited"
+  },
+  "models/linear_extension.py": {
+   "status": "audited"
+  },
+  "models/linear_logic.py": {
+   "status": "audited"
+  },
+  "models/linear_use.py": {
+   "status": "audited"
+  },
+  "models/linformer_attn.py": {
+   "status": "audited"
+  },
+  "models/linscan_regalloc.py": {
+   "status": "audited"
+  },
+  "models/lion_opt.py": {
+   "status": "audited"
+  },
+  "models/liouville.py": {
+   "status": "audited"
+  },
+  "models/lipschitz_net.py": {
+   "status": "audited"
+  },
+  "models/listmle_ltr.py": {
+   "status": "audited"
+  },
+  "models/listnet_ltr.py": {
+   "status": "audited"
+  },
+  "models/literal_prefilter.py": {
+   "status": "audited"
+  },
+  "models/little_discs.py": {
+   "status": "audited"
+  },
+  "models/liveness_dce.py": {
+   "status": "audited"
+  },
+  "models/lj_md.py": {
+   "status": "audited"
+  },
+  "models/lk_flow.py": {
+   "status": "audited"
+  },
+  "models/ll1_table.py": {
+   "status": "audited"
+  },
+  "models/llaplace_gp.py": {
+   "status": "audited"
+  },
+  "models/lll_reduce.py": {
+   "status": "audited"
+  },
+  "models/lmm.py": {
+   "status": "audited"
+  },
+  "models/lmoments.py": {
+   "status": "audited"
+  },
+  "models/lob_transformer.py": {
+   "status": "audited"
+  },
+  "models/local_projection.py": {
+   "status": "audited"
+  },
+  "models/local_ring_zn.py": {
+   "status": "audited"
+  },
+  "models/local_search_maxcut.py": {
+   "status": "audited"
+  },
+  "models/local_time.py": {
+   "status": "audited"
   }
  },
  "schema_version": "audit-coverage/v1",

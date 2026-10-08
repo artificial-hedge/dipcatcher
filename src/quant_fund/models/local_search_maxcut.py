@@ -45,6 +45,8 @@ def bench_local_search_maxcut(seed: int = 5209) -> dict[str, float]:
         sum(1 for u, v in G_EDGES if assign[u] != assign[v])
         for assign in (rng.integers(0, 2, size=G_N).astype(bool) for _ in range(200))
     )
+    if cut > truth or cut < rand * 0.8:
+        raise ValueError("local-search cut off brute-force oracle")
     return {
         "synthetic_lsmc_cut": float(cut),
         "synthetic_lsmc_truth": float(truth),

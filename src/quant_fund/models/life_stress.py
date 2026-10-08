@@ -24,6 +24,8 @@ def bench_life_stress(seed: int = 4909) -> dict[str, float]:
     c_hat, ea_hat = _fit(temps, lives)
     use_hat = c_hat * np.exp(ea_hat / (KB * ARR_USE))
     use_true = ARR_C * np.exp(ARR_EA / (KB * ARR_USE))
+    if abs(ea_hat - ARR_EA) > 0.1 or abs(use_hat / use_true - 1.0) > 0.2:
+        raise ValueError("Arrhenius fit off oracle")
     return {
         "synthetic_arr_ea": ea_hat,
         "synthetic_arr_ea_err": abs(ea_hat - ARR_EA),

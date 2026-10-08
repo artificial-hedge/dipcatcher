@@ -36,6 +36,8 @@ def bench_lif_neuron(seed: int = 1901) -> dict[str, float]:
     )
     # membrane trace readout
     v = lif_forward(sp, np.ones(8))
+    if acc_lif < acc_ann - 0.05 or not (0.0 < float(sp.mean()) < 1.0):
+        raise ValueError("LIF spike readout far below raw-feature baseline")
     return {
         "synthetic_lif_acc": acc_lif,
         "synthetic_lif_ann_acc": acc_ann,

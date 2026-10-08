@@ -102,6 +102,8 @@ def bench_lll_reduce(seed: int = 20261231 + 234) -> dict[str, float]:
     m_basis = [[1, 0, 1000], [0, 1, 517], [0, 0, 1]]
     red2 = lll(m_basis)
     ok2 = _lovasz_ok(red2)
+    if not (ok_lovasz and ok2 and within):
+        raise ValueError("LLL reduction off Lovasz/bound oracle")
     return {
         "synthetic_lovasz": float(ok_lovasz),
         "synthetic_first_norm": float(l1),

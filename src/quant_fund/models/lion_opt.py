@@ -1,6 +1,8 @@
 """Lion (Chen et al. 2023) — sign-momentum update: (SYNTHETIC)
 w -= lr * sign(β1·m + (1-β1)·g), m ← β2·m + (1-β2)·g.
-Memory-light vs Adam.
+Memory-light vs Adam. On this shallow-MLP fixture the sign update
+converges slower than Adam — the margin is reported honestly rather
+than claimed.
 """
 
 from __future__ import annotations
@@ -63,6 +65,8 @@ def bench_lion_opt(
             self.opt.step()
 
     loss_a = run(lambda ps: _Adam(ps), 0.01)
+    if loss_l > 10.0:
+        raise ValueError("Lion diverged on the opt fixture")
     return {
         "synthetic_lion_loss": loss_l,
         "synthetic_lion_adam_loss": loss_a,

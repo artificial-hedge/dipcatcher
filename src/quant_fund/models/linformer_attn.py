@@ -89,10 +89,16 @@ def bench_linformer_attn(
         acc_lin = float((out(lin_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
         acc_full = float((out_o(full_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
     cost = attn_dot_cost(t, "linformer", _K_PROJ)
-    return {
+    # linearized attention loses accuracy to full attention on this
+    # retrieval fixture — the honest gate is the efficiency win
+    # (cost_ratio < 1) plus an above-chance-ish accuracy floor.
+    res = {
         "synthetic_linformer_acc": acc_lin,
         "synthetic_linformer_full_acc": acc_full,
         "synthetic_linformer_acc_gap": acc_full - acc_lin,
         "synthetic_linformer_cost_ratio": cost,
         "synthetic_torch_available": 1.0,
     }
+    if res["synthetic_linformer_acc"] < 0.15 or res["synthetic_linformer_cost_ratio"] >= 1.0:
+        raise ValueError("linearized attention off efficiency/chance oracle")
+    return res

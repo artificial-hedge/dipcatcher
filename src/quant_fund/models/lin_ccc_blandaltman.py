@@ -129,6 +129,8 @@ def bench_lin_ccc(seed: int = 486) -> dict[str, float]:
     ba = bland_altman(truth, m2)
     bias_err = float(abs(ba["bias"] - (truth - m2).mean()))
     loa_width = float(ba["loa_hi"] - ba["loa_lo"])
+    if not ccc_disc or bias_err > 1e-9 or loa_width <= 0.0:
+        raise ValueError("CCC/BA off oracle")
     return {
         "synthetic_ccc_good": ccc_good["rho_c"],
         "synthetic_ccc_bad": ccc_bad["rho_c"],

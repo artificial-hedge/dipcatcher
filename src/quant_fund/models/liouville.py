@@ -36,6 +36,8 @@ def _bench_liouville(seed: int = 0) -> float:
     interior = rng.uniform(-0.9, 0.9, 400) + 1j * rng.uniform(-0.9, 0.9, 400)
     interior = interior[np.abs(interior) <= 1.0]
     checks.append(bool(np.all(np.abs(f(interior)) <= m_b + 1e-12)))
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

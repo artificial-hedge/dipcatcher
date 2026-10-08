@@ -76,6 +76,8 @@ def bench_licm_hoist(seed: int = 20261231 + 355) -> dict[str, float]:
         ]
         hoisted -= 1
         hoisted += int(any(s[0] == "t1" for s in invar))
+    if same != trials or hoisted != trials:
+        raise ValueError("LICM changed semantics or missed invariant")
     return {
         "synthetic_result_identical": float(same / trials),
         "synthetic_invariant_detected": float(hoisted / trials),

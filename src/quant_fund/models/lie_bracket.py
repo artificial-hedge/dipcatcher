@@ -61,6 +61,8 @@ def _bench_lie_bracket(seed: int = 0) -> float:
         np.isclose(np.linalg.norm(killing([e, f, h])), 6.0, atol=1e-8)
         or np.linalg.det(killing([e, f, h])) != 0
     )
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

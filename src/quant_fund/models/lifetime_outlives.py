@@ -81,4 +81,6 @@ def bench_lifetime_outlives(seed: int = _SEED) -> dict[str, float]:
     checks.append(not check_outlives([("a", "b")], ("a", "c")))
     # min_region prefers smaller set
     checks.append(min_region(2, [], pts) == "b")
+    if sum(checks) != len(checks):
+        raise ValueError("lifetime-outlives constraint oracle failed")
     return {"synthetic_lifetime_outlives": float(sum(checks)) / len(checks)}

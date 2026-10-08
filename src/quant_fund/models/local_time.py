@@ -31,6 +31,8 @@ def _bench_local_time(seed: int = 0) -> float:
     p20 = np.mean(frac_pos < 0.2)
     asin = (2 / np.pi) * np.arcsin(np.sqrt(0.2))
     checks.append(abs(p20 - asin) < 0.02)
+    if sum(checks) != len(checks):
+        raise ValueError("oracle checks failed")
     return float(sum(checks) / len(checks))
 
 

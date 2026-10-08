@@ -161,6 +161,8 @@ def bench_ll1_table(seed: int = 20261231 + 395) -> dict[str, float]:
             and ("F", "n") in table
             and ("F", "(") in table
         )
+    if parse_ok != trials or rej != trials or complete != trials:
+        raise ValueError("LL(1) table parse/reject/coverage off oracle")
     return {
         "synthetic_parses_valid": float(parse_ok / trials),
         "synthetic_rejects_bad": float(rej / trials),

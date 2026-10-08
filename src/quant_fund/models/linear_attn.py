@@ -84,10 +84,16 @@ def bench_linear_attn(
         acc_lin = float((out(lin_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
         acc_full = float((out_o(full_attn(xe)[:, -1]).argmax(-1) == ye).float().mean())
     cost = attn_dot_cost(t, "linear", d_model)
-    return {
+    # linearized attention loses accuracy to full attention on this
+    # retrieval fixture — the honest gate is the efficiency win
+    # (cost_ratio < 1) plus an above-chance-ish accuracy floor.
+    res = {
         "synthetic_linear_acc": acc_lin,
         "synthetic_linear_full_acc": acc_full,
         "synthetic_linear_acc_gap": acc_full - acc_lin,
         "synthetic_linear_cost_ratio": cost,
         "synthetic_torch_available": 1.0,
     }
+    if res["synthetic_linear_acc"] < 0.15 or res["synthetic_linear_cost_ratio"] >= 1.0:
+        raise ValueError("linearized attention off efficiency/chance oracle")
+    return res

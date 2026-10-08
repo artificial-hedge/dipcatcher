@@ -105,4 +105,6 @@ def bench_linear_use(seed: int = _SEED) -> dict[str, float]:
     except LinearError:
         ok4 = True
     checks.append(ok4)
+    if sum(checks) != len(checks):
+        raise ValueError("linear-use checker oracle failed")
     return {"synthetic_linear_use": float(sum(checks)) / len(checks)}
