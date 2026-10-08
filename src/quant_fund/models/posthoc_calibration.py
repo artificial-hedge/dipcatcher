@@ -371,7 +371,8 @@ def bench_posthoc_calibration(seed: int = 20261231 + 503) -> dict[str, float]:
     y = mu + sig_true * rng.standard_normal(n)
     # variance scaling recovers ~1.4 and improves CRPS
     vs = VarianceScalingGaussian().fit(mu, sig_fc, y)
-    assert vs.scale_ is not None
+    if vs.scale_ is None:
+        raise ValueError("variance scaling produced no scale estimate")
     scale_hat = float(vs.scale_)
     crps_before = float(np.mean(crps_gaussian(y, mu, sig_fc)))
     crps_after = float(np.mean(crps_gaussian(y, mu, scale_hat * sig_fc)))
