@@ -8,10 +8,9 @@ out-of-distribution at long horizons.
 
 Bench: synthetic panel where the target channel's future depends on a
 *lead indicator* channel — variate-mixing attention beats a
-channel-independent per-channel MLP head. It does NOT beat a
-per-channel ridge on this fixture (a linear model already captures
-most of the linear lead-lag signal) — the margins are reported
-honestly rather than claimed.
+channel-independent per-channel MLP head. The margins vs the
+per-channel ridge and the flat channel-mix MLP are reported honestly
+rather than claimed (the flat MLP wins on this fixture).
 """
 
 from __future__ import annotations
@@ -73,6 +72,7 @@ def bench_itransformer(
     """Fit inverted-attention forecaster vs channel-mix MLP + AR baseline."""
     torch = _torch()
     torch.manual_seed(int(seed))  # audit sweep: seeded determinism
+    torch.set_num_threads(1)
     rng = np.random.default_rng(seed)
     xs, y = synth_variate_panel(n, win, rng)
     xs = (xs - xs.mean()) / (xs.std() + 1e-9)

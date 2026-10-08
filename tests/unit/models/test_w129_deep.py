@@ -18,7 +18,7 @@ class TestITransformer:
         assert x.shape == (40, 24, 4)
 
     def test_bench(self) -> None:
-        out = bench_itransformer(seed=3, n=120, iters=200)
+        out = bench_itransformer(seed=3, n=240, iters=800)
         assert out["synthetic_itransformer_margin_vs_perchan"] > -1
 
 
@@ -28,7 +28,7 @@ class TestTcn:
         assert x.shape == (40, 48)
 
     def test_bench(self) -> None:
-        out = bench_tcn_forecaster(seed=5, n=120, iters=200)
+        out = bench_tcn_forecaster(seed=5, n=120, iters=700)
         assert out["synthetic_tcn_margin_vs_ar"] > -1
 
 
@@ -38,7 +38,7 @@ class TestFtTransformer:
         assert x.shape == (40, 10)
 
     def test_bench(self) -> None:
-        out = bench_ft_transformer(seed=7, n=120, iters=200)
+        out = bench_ft_transformer(seed=7, n=600, iters=2200)
         assert out["synthetic_ft_margin_vs_logistic"] > -1
 
 
@@ -58,7 +58,7 @@ class TestMambats:
         assert x.shape == (40, 32, 2)
 
     def test_bench(self) -> None:
-        out = bench_mambats(seed=13, n=120, iters=200)
+        out = bench_mambats(seed=13, n=120, iters=1200)
         assert np.isfinite(out["synthetic_mamba_mae"])
 
 

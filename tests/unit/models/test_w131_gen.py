@@ -42,7 +42,7 @@ class TestScoreSde:
         assert x.shape == (40, 24)
 
     def test_bench(self) -> None:
-        out = bench_score_sde_ts(seed=7, n=120, iters=200, gen_steps=10)
+        out = bench_score_sde_ts(seed=7, n=120, iters=2000, gen_steps=60)
         assert np.isfinite(out["synthetic_scoresde_mmd"])
 
 

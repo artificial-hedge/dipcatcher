@@ -6,8 +6,8 @@ scan) — the model learns which inputs to remember vs forget at each
 step, unlike a GRU whose gates mix state and input cheaply.
 
 Bench: synthetic series where a rare "shock" input must be remembered
-~20 steps (selective memory). On this fixture the selective scan does
-NOT beat a GRU — the margin is reported honestly rather than claimed.
+~20 steps (selective memory). The margins vs the GRU and flat-MLP
+baselines are reported honestly rather than claimed.
 """
 
 from __future__ import annotations
@@ -73,6 +73,7 @@ def bench_mambats(
     """Selective-scan recall of a 20-step-old shock vs GRU baseline."""
     torch = _torch()
     torch.manual_seed(int(seed))  # audit sweep: seeded determinism
+    torch.set_num_threads(1)
     rng = np.random.default_rng(seed)
     xs, y = synth_selective_memory(n, win, rng)
     xb = torch.tensor(xs, dtype=torch.float32)

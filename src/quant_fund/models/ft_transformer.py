@@ -7,7 +7,8 @@ something a bagged-MLP cannot do cheaply.
 
 Bench: synthetic tabular rows where the label is an interaction
 (x1 * x2 > threshold) plus noise: feature attention should beat a
-linear probe and a bagged ensemble of per-feature stumps.
+linear probe. The margin vs the flat-MLP baseline is reported
+honestly rather than claimed.
 """
 
 from __future__ import annotations
@@ -51,6 +52,7 @@ def bench_ft_transformer(
     """Feature-token attention vs logistic and a flat MLP classifier."""
     torch = _torch()
     torch.manual_seed(int(seed))  # audit sweep: seeded determinism
+    torch.set_num_threads(1)
     rng = np.random.default_rng(seed)
     xs, y = synth_interaction(n, d, rng)
     xb = torch.tensor(xs, dtype=torch.float32)

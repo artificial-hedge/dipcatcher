@@ -38,7 +38,7 @@ class TestInformer:
         assert xs.shape == (50, 128)
 
     def test_bench(self) -> None:
-        out = bench_informer_attn(seed=7)
+        out = bench_informer_attn(seed=7, steps=900)
         assert np.isfinite(out["synthetic_informer_mae"])
         assert out["synthetic_informer_query_share"] < 1.0
 
