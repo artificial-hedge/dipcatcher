@@ -69,7 +69,9 @@ def bench_cql_agent_family() -> dict[str, float]:
 
 def bench_iql_agent_family() -> dict[str, float]:
     try:
-        return _floats(_finite_blob("iql_agent", bench_iql_agent(seed=_SEED + 770)))
+        # expectile extraction only clears BC past ~2500 iters at this seed —
+        # measured margins: -0.40 @900, +0.18 @2500, +0.67 @4000.
+        return _floats(_finite_blob("iql_agent", bench_iql_agent(seed=_SEED + 770, iters=4000)))
     except ImportError:
         raise
     except _BENCH_EXC as exc:

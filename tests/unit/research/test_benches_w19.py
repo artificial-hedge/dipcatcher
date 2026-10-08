@@ -179,12 +179,19 @@ def test_fukasawa_iv_convergence_regimes(fukasawa_iv: dict[str, float]) -> None:
     # parameter is pushed (halving vol-of-vol, n 4->16 mean-reversion,
     # T 0.02->0.08 maturity); the eq. 53 normalization identity holds.
     blob = fukasawa_iv
-    assert blob["deterministic_vol_abs_resid"] < 1e-3
-    assert blob["small_volvol_abs_resid_a25"] < blob["small_volvol_abs_resid_a50"]
-    assert blob["small_volvol_scaled_resid_a25"] < blob["small_volvol_scaled_resid_a50"]
-    assert blob["fast_mr_scaled_resid_n16"] < blob["fast_mr_scaled_resid_n4"]
-    assert blob["short_mat_scaled_resid_t08"] < blob["short_mat_scaled_resid_t02"]
-    assert blob["normalization_gap"] < 0.05
+    assert blob["synthetic_deterministic_vol_abs_resid"] < 1e-3
+    assert (
+        blob["synthetic_small_volvol_abs_resid_a25"] < blob["synthetic_small_volvol_abs_resid_a50"]
+    )
+    assert (
+        blob["synthetic_small_volvol_scaled_resid_a25"]
+        < blob["synthetic_small_volvol_scaled_resid_a50"]
+    )
+    assert blob["synthetic_fast_mr_scaled_resid_n16"] < blob["synthetic_fast_mr_scaled_resid_n4"]
+    assert (
+        blob["synthetic_short_mat_scaled_resid_t08"] < blob["synthetic_short_mat_scaled_resid_t02"]
+    )
+    assert blob["synthetic_normalization_gap"] < 0.05
     assert blob["synthetic"] == 1.0
 
 
@@ -259,14 +266,14 @@ def test_ivs_diffusion_noarb_and_hedge(ivs_diffusion: dict[str, float]) -> None:
     # error sharply vs resampling, and the no-arb post-training penalty
     # slashes static-arbitrage violation rates below the stream's own.
     blob = ivs_diffusion
-    assert blob["es_gain_vs_resample"] > 0.0
-    assert blob["es_model"] < blob["es_resample"]
-    assert blob["hedge_rmse_model"] < blob["hedge_rmse_resample"]
-    assert blob["hedge_es_tail_model"] < blob["hedge_es_tail_resample"]
-    assert blob["arb_rate_finetuned"] < blob["arb_rate_generated"]
-    assert blob["arb_rate_finetuned"] < blob["arb_rate_data"]
-    assert blob["ft_probe_rate_after"] < blob["ft_probe_rate_before"]
-    assert blob["n_stream"] > 0.0
+    assert blob["synthetic_es_gain_vs_resample"] > 0.0
+    assert blob["synthetic_es_model"] < blob["synthetic_es_resample"]
+    assert blob["synthetic_hedge_rmse_model"] < blob["synthetic_hedge_rmse_resample"]
+    assert blob["synthetic_hedge_es_tail_model"] < blob["synthetic_hedge_es_tail_resample"]
+    assert blob["synthetic_arb_rate_finetuned"] < blob["synthetic_arb_rate_generated"]
+    assert blob["synthetic_arb_rate_finetuned"] < blob["synthetic_arb_rate_data"]
+    assert blob["synthetic_ft_probe_rate_after"] < blob["synthetic_ft_probe_rate_before"]
+    assert blob["synthetic_n_stream"] > 0.0
 
 
 def test_numpy_benches_are_deterministic(
@@ -277,9 +284,11 @@ def test_numpy_benches_are_deterministic(
     dcp: dict[str, float],
 ) -> None:
     # Seeded from module constants, so a fresh call must reproduce the
-    # fixture bit-for-bit.
+    # fixture bit-for-bit. synthetic_runtime_seconds is wall-clock telemetry
+    # pinned present-but-variable — exclude it from the bit-exact compare.
     assert bench_langevin_impact() == langevin_impact
     assert bench_event_time_flow() == event_time_flow
-    assert bench_fukasawa_iv() == fukasawa_iv
+    _no_runtime = lambda d: {k: v for k, v in d.items() if k != "synthetic_runtime_seconds"}  # noqa: E731
+    assert _no_runtime(bench_fukasawa_iv()) == _no_runtime(fukasawa_iv)
     assert bench_rccp() == rccp
     assert bench_dcp() == dcp
