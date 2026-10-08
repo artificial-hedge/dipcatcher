@@ -25,20 +25,28 @@ it has been inspected and cannot be reused as new forward or holdout evidence.
 Any number already seen for 2025 is retrospective and carries selection and
 survivorship contamination.
 
-**Named forward window to start: `forward_2026H2`, beginning 2026-07-01**
-(the first eligible session on or after that date). This window is **NOT YET
-COLLECTED**. It must be **externally timestamped and frozen BEFORE it runs** —
-specifically, the pre-registration in
-[REALITY_PREREGISTRATION.md](REALITY_PREREGISTRATION.md) and its hash seal
-(`receipts/forward_record_preregistration_v1.json` + `.seal.json`) must be
-anchored outside the working tree before the first forward close. Editing the
-pre-registration after outcomes arrive is detectable (the seal breaks) and
-voids the record.
+**Named forward window: `forward_2026H2`** — the calendar span label for H2 2026,
+whose nominal span begins 2026-07-01. **2026-07-01 is not the eligibility boundary.**
+The operative rule is the receipt's `splits.forward`: the first accepted decision must
+occur on a market date **later than the recorded freeze (2026-10-07)**. Warmup is all
+bars on/before 2026-09-18 (already inspected, warmup only).
+
+This window is **NOT YET COLLECTED**. Its external timestamp requirement is now
+**met**: the pre-registration in [REALITY_PREREGISTRATION.md](REALITY_PREREGISTRATION.md)
+and its hash seal (`receipts/forward_record_preregistration_v1.json` + `.seal.json`)
+were RFC 3161-anchored on **2026-10-08**
+(`quality/timestamps/receipts__forward_record_preregistration_v1.json.seal.json.tsr`,
+`chain_verified` + `fresh`). The freeze instant is therefore asserted by an external
+authority, not by the repository.
+
+What remains is **collection itself**: no forward close has been recorded. Editing the
+pre-registration after outcomes arrive is detectable (the seal breaks) and voids the
+record.
 
 | Item | Status |
 |---|---|
 | 2025 holdout | **SPENT** — retrospective only, survivorship-biased |
-| Forward window `forward_2026H2` (start 2026-07-01) | **NOT YET COLLECTED** — freeze + external timestamp required first |
+| Forward window `forward_2026H2` | **NOT YET COLLECTED** — freeze externally anchored 2026-10-08 ✅; first eligible session = first market date after 2026-10-07 |
 
 ---
 

@@ -1,0 +1,459 @@
+{
+  "arms": {
+    "iid": {
+      "event_counts": {
+        "n_cancellations": 896,
+        "n_events": 2707,
+        "n_fills": 458,
+        "n_lo_arrivals": 1348,
+        "n_mo_arrivals": 463,
+        "n_mo_noop": 5,
+        "n_orders_created": 1378,
+        "n_submitted": 0,
+        "resting": 24
+      },
+      "fill_curve": {
+        "fill_wait_by_queue": {
+          "0": {
+            "mean_wait_seconds": 10.36466492492942,
+            "median_wait_seconds": 6.199392713965608,
+            "n_fills": 206
+          },
+          "1": {
+            "mean_wait_seconds": 22.273319825920478,
+            "median_wait_seconds": 15.3010319336463,
+            "n_fills": 111
+          },
+          "2": {
+            "mean_wait_seconds": 31.994870895291278,
+            "median_wait_seconds": 21.52194493679525,
+            "n_fills": 57
+          },
+          "3": {
+            "mean_wait_seconds": 50.402019255819376,
+            "median_wait_seconds": 41.949316104335594,
+            "n_fills": 27
+          },
+          "4": {
+            "mean_wait_seconds": 96.38028518680241,
+            "median_wait_seconds": 87.56904079932514,
+            "n_fills": 4
+          },
+          "5": {
+            "mean_wait_seconds": 82.54360188977518,
+            "median_wait_seconds": 82.54360188977518,
+            "n_fills": 2
+          },
+          "6": {
+            "mean_wait_seconds": 113.2222482520126,
+            "median_wait_seconds": 113.2222482520126,
+            "n_fills": 1
+          }
+        },
+        "front_dominant": true,
+        "label": "SYNTHETIC",
+        "max_fill_wait_seconds": 169.29854742844054,
+        "max_queue_ahead": 6,
+        "mean_fill_wait_seconds": 20.72512801208366,
+        "mean_queue_ahead": 0.8284313725490197,
+        "median_fill_wait_seconds": 11.515101752598838,
+        "median_queue_ahead": 0.0,
+        "mode_queue_ahead": 0,
+        "n_fills": 408,
+        "p90_fill_wait_seconds": 50.05060700809828,
+        "p90_queue_ahead": 2.0,
+        "p_queue_ahead_zero": 0.5049019607843137,
+        "queue_ahead_hist": {
+          "0": 206,
+          "1": 111,
+          "2": 57,
+          "3": 27,
+          "4": 4,
+          "5": 2,
+          "6": 1
+        },
+        "queue_ahead_pmf": {
+          "0": 0.5049019607843137,
+          "1": 0.27205882352941174,
+          "2": 0.13970588235294118,
+          "3": 0.0661764705882353,
+          "4": 0.00980392156862745,
+          "5": 0.004901960784313725,
+          "6": 0.0024509803921568627
+        }
+      },
+      "flow": "iid",
+      "horizon_seconds": 2000.0,
+      "label": "SYNTHETIC",
+      "n_tracked_submissions": 1182,
+      "n_untracked_pre_window": 196,
+      "queue_survival": {
+        "censoring_fraction": 0.02030456852791878,
+        "label": "SYNTHETIC",
+        "n_canceled": 750,
+        "n_filled": 408,
+        "n_resting_censored": 24,
+        "n_submissions": 1182,
+        "p_fill_overall": 0.34517766497461927,
+        "per_queue_position": {
+          "0": {
+            "mean_fill_wait_seconds": 10.36466492492942,
+            "n_canceled": 177,
+            "n_filled": 206,
+            "n_resting": 7,
+            "n_submitted": 390,
+            "p_cancel": 0.45384615384615384,
+            "p_censored": 0.017948717948717947,
+            "p_fill": 0.5282051282051282
+          },
+          "1": {
+            "mean_fill_wait_seconds": 22.273319825920478,
+            "n_canceled": 214,
+            "n_filled": 111,
+            "n_resting": 6,
+            "n_submitted": 331,
+            "p_cancel": 0.6465256797583081,
+            "p_censored": 0.01812688821752266,
+            "p_fill": 0.33534743202416917
+          },
+          "2": {
+            "mean_fill_wait_seconds": 31.99487089529128,
+            "n_canceled": 150,
+            "n_filled": 57,
+            "n_resting": 5,
+            "n_submitted": 212,
+            "p_cancel": 0.7075471698113207,
+            "p_censored": 0.02358490566037736,
+            "p_fill": 0.2688679245283019
+          },
+          "3": {
+            "mean_fill_wait_seconds": 50.402019255819376,
+            "n_canceled": 95,
+            "n_filled": 27,
+            "n_resting": 2,
+            "n_submitted": 124,
+            "p_cancel": 0.7661290322580645,
+            "p_censored": 0.016129032258064516,
+            "p_fill": 0.21774193548387097
+          },
+          "4": {
+            "mean_fill_wait_seconds": 96.38028518680241,
+            "n_canceled": 68,
+            "n_filled": 4,
+            "n_resting": 2,
+            "n_submitted": 74,
+            "p_cancel": 0.918918918918919,
+            "p_censored": 0.02702702702702703,
+            "p_fill": 0.05405405405405406
+          },
+          "5": {
+            "mean_fill_wait_seconds": 82.54360188977518,
+            "n_canceled": 28,
+            "n_filled": 2,
+            "n_resting": 1,
+            "n_submitted": 31,
+            "p_cancel": 0.9032258064516129,
+            "p_censored": 0.03225806451612903,
+            "p_fill": 0.06451612903225806
+          },
+          "6": {
+            "mean_fill_wait_seconds": 113.2222482520126,
+            "n_canceled": 11,
+            "n_filled": 1,
+            "n_resting": 1,
+            "n_submitted": 13,
+            "p_cancel": 0.8461538461538461,
+            "p_censored": 0.07692307692307693,
+            "p_fill": 0.07692307692307693
+          },
+          "7": {
+            "mean_fill_wait_seconds": null,
+            "n_canceled": 5,
+            "n_filled": 0,
+            "n_resting": 0,
+            "n_submitted": 5,
+            "p_cancel": 1.0,
+            "p_censored": 0.0,
+            "p_fill": 0.0
+          },
+          "8": {
+            "mean_fill_wait_seconds": null,
+            "n_canceled": 1,
+            "n_filled": 0,
+            "n_resting": 0,
+            "n_submitted": 1,
+            "p_cancel": 1.0,
+            "p_censored": 0.0,
+            "p_fill": 0.0
+          },
+          "9": {
+            "mean_fill_wait_seconds": null,
+            "n_canceled": 1,
+            "n_filled": 0,
+            "n_resting": 0,
+            "n_submitted": 1,
+            "p_cancel": 1.0,
+            "p_censored": 0.0,
+            "p_fill": 0.0
+          }
+        }
+      },
+      "seed": 7,
+      "warmup_seconds": 300.0
+    },
+    "markov_regime": {
+      "event_counts": {
+        "n_cancellations": 872,
+        "n_events": 2707,
+        "n_fills": 467,
+        "n_lo_arrivals": 1336,
+        "n_mo_arrivals": 499,
+        "n_mo_noop": 32,
+        "n_orders_created": 1366,
+        "n_submitted": 0,
+        "resting": 27
+      },
+      "fill_curve": {
+        "fill_wait_by_queue": {
+          "0": {
+            "mean_wait_seconds": 12.724980981254417,
+            "median_wait_seconds": 5.969027452177897,
+            "n_fills": 219
+          },
+          "1": {
+            "mean_wait_seconds": 28.584378316272353,
+            "median_wait_seconds": 20.590081958664456,
+            "n_fills": 92
+          },
+          "2": {
+            "mean_wait_seconds": 42.65058920712881,
+            "median_wait_seconds": 32.47971809639051,
+            "n_fills": 58
+          },
+          "3": {
+            "mean_wait_seconds": 49.46648249767646,
+            "median_wait_seconds": 41.484850396522006,
+            "n_fills": 35
+          },
+          "4": {
+            "mean_wait_seconds": 57.24926175892561,
+            "median_wait_seconds": 58.97821827663728,
+            "n_fills": 10
+          },
+          "5": {
+            "mean_wait_seconds": 31.819221865424794,
+            "median_wait_seconds": 33.15645517377311,
+            "n_fills": 4
+          },
+          "6": {
+            "mean_wait_seconds": 45.6082070920501,
+            "median_wait_seconds": 45.60939413357448,
+            "n_fills": 3
+          }
+        },
+        "front_dominant": true,
+        "label": "SYNTHETIC",
+        "max_fill_wait_seconds": 171.46733619625843,
+        "max_queue_ahead": 6,
+        "mean_fill_wait_seconds": 24.841303628862295,
+        "mean_queue_ahead": 0.9287410926365796,
+        "median_fill_wait_seconds": 14.647311372542845,
+        "median_queue_ahead": 0.0,
+        "mode_queue_ahead": 0,
+        "n_fills": 421,
+        "p90_fill_wait_seconds": 59.14675954277482,
+        "p90_queue_ahead": 3.0,
+        "p_queue_ahead_zero": 0.5201900237529691,
+        "queue_ahead_hist": {
+          "0": 219,
+          "1": 92,
+          "2": 58,
+          "3": 35,
+          "4": 10,
+          "5": 4,
+          "6": 3
+        },
+        "queue_ahead_pmf": {
+          "0": 0.5201900237529691,
+          "1": 0.21852731591448932,
+          "2": 0.1377672209026128,
+          "3": 0.0831353919239905,
+          "4": 0.023752969121140142,
+          "5": 0.009501187648456057,
+          "6": 0.007125890736342043
+        }
+      },
+      "flow": "markov_regime",
+      "horizon_seconds": 2000.0,
+      "label": "SYNTHETIC",
+      "n_tracked_submissions": 1182,
+      "n_untracked_pre_window": 184,
+      "queue_survival": {
+        "censoring_fraction": 0.02284263959390863,
+        "label": "SYNTHETIC",
+        "n_canceled": 734,
+        "n_filled": 421,
+        "n_resting_censored": 27,
+        "n_submissions": 1182,
+        "p_fill_overall": 0.35617597292724196,
+        "per_queue_position": {
+          "0": {
+            "mean_fill_wait_seconds": 12.724980981254417,
+            "n_canceled": 148,
+            "n_filled": 219,
+            "n_resting": 4,
+            "n_submitted": 371,
+            "p_cancel": 0.39892183288409705,
+            "p_censored": 0.01078167115902965,
+            "p_fill": 0.5902964959568733
+          },
+          "1": {
+            "mean_fill_wait_seconds": 28.58437831627235,
+            "n_canceled": 186,
+            "n_filled": 92,
+            "n_resting": 9,
+            "n_submitted": 287,
+            "p_cancel": 0.6480836236933798,
+            "p_censored": 0.0313588850174216,
+            "p_fill": 0.3205574912891986
+          },
+          "2": {
+            "mean_fill_wait_seconds": 42.65058920712881,
+            "n_canceled": 162,
+            "n_filled": 58,
+            "n_resting": 5,
+            "n_submitted": 225,
+            "p_cancel": 0.72,
+            "p_censored": 0.022222222222222223,
+            "p_fill": 0.2577777777777778
+          },
+          "3": {
+            "mean_fill_wait_seconds": 49.46648249767645,
+            "n_canceled": 111,
+            "n_filled": 35,
+            "n_resting": 4,
+            "n_submitted": 150,
+            "p_cancel": 0.74,
+            "p_censored": 0.02666666666666667,
+            "p_fill": 0.23333333333333334
+          },
+          "4": {
+            "mean_fill_wait_seconds": 57.24926175892561,
+            "n_canceled": 79,
+            "n_filled": 10,
+            "n_resting": 4,
+            "n_submitted": 93,
+            "p_cancel": 0.8494623655913979,
+            "p_censored": 0.043010752688172046,
+            "p_fill": 0.10752688172043011
+          },
+          "5": {
+            "mean_fill_wait_seconds": 31.819221865424794,
+            "n_canceled": 35,
+            "n_filled": 4,
+            "n_resting": 1,
+            "n_submitted": 40,
+            "p_cancel": 0.875,
+            "p_censored": 0.025,
+            "p_fill": 0.1
+          },
+          "6": {
+            "mean_fill_wait_seconds": 45.6082070920501,
+            "n_canceled": 7,
+            "n_filled": 3,
+            "n_resting": 0,
+            "n_submitted": 10,
+            "p_cancel": 0.7,
+            "p_censored": 0.0,
+            "p_fill": 0.3
+          },
+          "7": {
+            "mean_fill_wait_seconds": null,
+            "n_canceled": 3,
+            "n_filled": 0,
+            "n_resting": 0,
+            "n_submitted": 3,
+            "p_cancel": 1.0,
+            "p_censored": 0.0,
+            "p_fill": 0.0
+          },
+          "8": {
+            "mean_fill_wait_seconds": null,
+            "n_canceled": 3,
+            "n_filled": 0,
+            "n_resting": 0,
+            "n_submitted": 3,
+            "p_cancel": 1.0,
+            "p_censored": 0.0,
+            "p_fill": 0.0
+          }
+        }
+      },
+      "seed": 9,
+      "warmup_seconds": 300.0
+    }
+  },
+  "claim": "synthetic_simulator_diagnostic_only",
+  "claims": [
+    {
+      "kind": "empirical_synthetic",
+      "text": "fill probability and fill time measured as a function of queue position at submit on the seeded SYNTHETIC ZI-LOB (iid + MarkovRegimeFlow arms); submission-side join via the public order registry with right-censoring accounting"
+    }
+  ],
+  "code_revision": "17c1e4d59806b28f67f7051bd80bf47edf3bed9d",
+  "comparison": {
+    "mean_fill_wait_seconds_iid": 20.72512801208366,
+    "mean_fill_wait_seconds_markov": 24.841303628862295,
+    "p_fill_overall_iid": 0.34517766497461927,
+    "p_fill_overall_markov": 0.35617597292724196,
+    "p_queue_ahead_zero_iid": 0.5049019607843137,
+    "p_queue_ahead_zero_markov": 0.5201900237529691
+  },
+  "data_label": "SYNTHETIC",
+  "data_source": "SYNTHETIC_ZI_LOB_v1",
+  "evidence": [
+    "zi_lob_seeded_run",
+    "fill_side_queue_ahead_histogram",
+    "submission_stream_fill_probability",
+    "fill_wait_survival_proxy"
+  ],
+  "interpretation": [
+    "iid arm: 50.5% of fills rested at queue position 0 at submit; markov arm: 52.0%. A histogram heavy at 0 means price-time priority resolves at fresh queue heads more often than back-of-queue orders survive to the touch.",
+    "queue_survival joins the fill-side curve to the full resting-order submission stream (public registry: sequential order ids + queue_ahead_at_submit/order_alive), so P(fill | queue position at submit) includes submitted-but-never-filled orders; orders still resting at measurement end are reported as right-censored, not unfilled.",
+    "Fill-wait seconds (t - maker_t_submit) is the survival/fill-time proxy; per-position cancellation shares are window-resolved. All results are SYNTHETIC simulator diagnostics, not market evidence."
+  ],
+  "kind": "queue_priority",
+  "level": "research",
+  "live_pnl_claim": false,
+  "params": {
+    "arms": [
+      "iid",
+      "markov_regime"
+    ],
+    "horizon_seconds": 2000.0,
+    "markov_flow": {
+      "states": [
+        {
+          "intensity_mult": 1.0,
+          "name": "calm",
+          "p_buy": 0.5
+        },
+        {
+          "intensity_mult": 3.0,
+          "name": "bursty",
+          "p_buy": 0.62
+        }
+      ],
+      "stay_probs": [
+        0.995,
+        0.985
+      ]
+    },
+    "seed": 7,
+    "sim": "ZILobSimulator",
+    "warmup_seconds": 300.0
+  },
+  "receipt_sha256": "195788af1243a9eedbe298d70d084c2254e46a1fe91d1344a63bc5d10bb660fd",
+  "research_only": true,
+  "schema": "queue_priority.v1"
+}

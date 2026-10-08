@@ -1,5 +1,5 @@
 site_name: dipcatcher
-site_description: Research harness for fx-1. Data, evaluation, and receipt verification.
+site_description: State-of-the-art harness for orchestrating fx1 and fx1-lite. Chat-first CLI, research families via /superpower, receipt verification.
 site_url: https://artificial-hedge.github.io/dipcatcher/
 repo_url: https://github.com/artificial-hedge/dipcatcher
 repo_name: artificial-hedge/dipcatcher
@@ -239,7 +239,9 @@ nav:
       - Overview: FX1.md
       - Interactive CLI (fxi): FXI.md
       - fxi interactive CLI design: superpowers/specs/2026-10-04-fxi-interactive-cli-design.md
-      - Concierge orchestration: DIP_CONCIERGE.md
+      - dipcatcher CLI (chat-first): DIP_CONCIERGE.md
+      - Production product contract: DIPCATCHER_PRODUCT_CONTRACT.md
+      - Claude product handoff: CLAUDE_DIPCATCHER_HANDOFF.md
       - Forecast harness: fx1_harness.md
       - Architecture: FX1_ARCHITECTURE.md
       - Training: FX1_TRAINING.md

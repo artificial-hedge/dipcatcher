@@ -29,6 +29,7 @@ from quant_fund.pipeline.train import (
     train_volatility,
     train_volatility_auto,
 )
+from tests.support.panel_sources import materialize_panel_sources
 
 
 def test_train_distribution_auto_selects_lowest_finite_pinball(
@@ -55,7 +56,7 @@ def test_train_distribution_auto_selects_lowest_finite_pinball(
 
     monkeypatch.setattr(train_module, "train_distribution", fake_train)
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    cfg.data.root = materialize_panel_sources(tmp_path)
     result = train_distribution_auto(cfg)
     assert result["selected_model"] == "gaussian"
     assert Path(result["path"]).name == "dist_auto.joblib"
@@ -76,7 +77,7 @@ def test_train_volatility_auto_selects_lowest_finite_qlike(
 
     monkeypatch.setattr(train_module, "train_volatility", fake_train)
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    cfg.data.root = materialize_panel_sources(tmp_path)
     result = train_volatility_auto(cfg)
     assert result["selected_model"] == "ewma"
     assert Path(result["path"]).name == "vol_auto.joblib"
@@ -95,7 +96,7 @@ def test_train_distribution_auto_rejects_trivially_small_oos_sample(
 
     monkeypatch.setattr(train_module, "train_distribution", fake_train)
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    cfg.data.root = materialize_panel_sources(tmp_path)
     with pytest.raises(ValueError, match="no finite candidate metric"):
         train_distribution_auto(cfg)
 
@@ -127,7 +128,7 @@ def test_train_reinforcement_auto_selects_best_finite_policy(
 
     monkeypatch.setattr(train_module, "train_reinforcement", fake_train)
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    cfg.data.root = materialize_panel_sources(tmp_path)
     result = train_reinforcement_auto(cfg)
     assert result["selected_model"] == "thompson"
     assert result["selection_metric"] == "mean_advantage_vs_uniform"
@@ -152,7 +153,7 @@ def test_train_ranking_auto_selects_best_finite_candidate(
 
     monkeypatch.setattr(train_module, "train_ranking", fake_train)
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    cfg.data.root = materialize_panel_sources(tmp_path)
     result = train_ranking_auto(cfg)
     assert result["selected_model"] == "elasticnet"
     assert result["selection_metric"] == "mean_ic"
@@ -378,7 +379,7 @@ def test_train_calibration_persists_causal_artifact(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    cfg.data.root = materialize_panel_sources(tmp_path)
     label = cfg.train.ranking_target
     frame = pl.DataFrame(
         {
@@ -425,7 +426,7 @@ def test_train_calibration_auto_selects_lowest_finite_brier(
 
     monkeypatch.setattr(train_module, "train_calibration", fake_train)
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    cfg.data.root = materialize_panel_sources(tmp_path)
     result = train_calibration_auto(cfg)
     assert result["selected_model"] == "platt"
     assert result["selection_metric"] == "oos_brier"
@@ -481,7 +482,7 @@ def test_train_reinforcement_persists_research_only_policy(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    cfg.data.root = materialize_panel_sources(tmp_path)
     label = cfg.train.ranking_target
     dates = [datetime(2020, 1, 1, tzinfo=UTC) + timedelta(days=i) for i in range(8)]
     rows = []
@@ -514,7 +515,7 @@ def test_train_policy_gradient_persists_research_only_policy(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    cfg.data.root = materialize_panel_sources(tmp_path)
     label = cfg.train.ranking_target
     dates = [datetime(2020, 1, 1, tzinfo=UTC) + timedelta(days=i) for i in range(8)]
     rows = []
@@ -545,7 +546,7 @@ def test_train_quantile_thompson_persists_research_only_policy(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    cfg.data.root = materialize_panel_sources(tmp_path)
     label = cfg.train.ranking_target
     dates = [datetime(2020, 1, 1, tzinfo=UTC) + timedelta(days=i) for i in range(8)]
     rows = []

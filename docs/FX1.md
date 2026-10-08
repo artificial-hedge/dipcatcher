@@ -6,6 +6,35 @@ training plan. No trained checkpoint is in this repository. Local generation
 is unimplemented. The declared base constant is `moonshotai/Kimi-K3` (2.8T
 total / 104B active MoE, Kimi K3 License).
 
+fx-1 is addressed under two model names, **fx1** and **fx1-lite**
+([artificialhedge.co](https://artificialhedge.co)). dipcatcher orchestrates
+both from its chat-first CLI ([the dipcatcher CLI](DIP_CONCIERGE.md)); each
+name is an endpoint (API key + base URL) the operator configures. A
+configured name is not evidence that a model is released or available — see
+the shipped status below.
+
+## Shipped status (measured 2026-10-08)
+
+Three facts, because each of them is routinely misread in the other direction:
+
+- **fx-1 is a harness, an eval program, and a training pipeline. No fine-tuned
+  fx-1 weights are published.** `src/fx1` is 323 Python modules with 73
+  `test_*.py` files under `tests/fx1/`.
+- **`fx1.__version__` (`0.4.0`) tracks the harness API, not a model release.**
+  See [FX1_API_STABILITY.md](FX1_API_STABILITY.md). `git tag -l 'v*' | wc -l`
+  → **0**: no release tag has ever been cut, so the version names an API
+  contract, not a shipped artifact. (`git tag | wc -l` → `4`, all
+  `attic/receipt-provenance/*` provenance anchors, not releases.)
+- **One tracked weight file exists and it is a fixture, not a model.**
+  `artifacts/fx1_tiny_lm/weights.safetensors` (127 KB, ~31k params) exists so
+  the weights-direct path loads a real artifact; its own
+  `artifacts/fx1_tiny_lm/modelcard.json` says *"not an fx-1
+  release candidate"*, `license_tier: internal_research`, `research_only:
+  true`, with `eval_delta` values that are **synthetic ship-gate
+  placeholders, not measured evals**. Separately, the Kronos checkpoints under
+  `data/models/` are **third-party, gitignored, vendored for a research
+  bench** — not fx-1.
+
 **dipcatcher** is the harness: the data engine, evaluation bench, and
 verification layer. `src/fx1/harness.py` is the typed bridge; `fx1 harness list`
 shows the registered lab surfaces.

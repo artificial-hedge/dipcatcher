@@ -14,6 +14,30 @@ PX = "close_total_return"
 _LABEL_REQUIRED = ("security_id", "event_time", PX)
 
 
+def _attach_sector_relative(df: pl.DataFrame, config: AppConfig) -> pl.DataFrame:
+    """Sector-relative forward return at the first horizon (universe-aware)."""
+    if "sector" not in df.columns:
+        return df
+    h = config.horizons.bars[0]
+    sec_src = pl.col(f"future_return_{h}")
+    if "_in_universe" in df.columns:
+        sec_src = (
+            pl.when(pl.col("_in_universe").fill_null(False))
+            .then(pl.col(f"future_return_{h}"))
+            .otherwise(None)
+        )
+    df = df.with_columns(sec_src.alias("_sec_src"))
+    sec = df.group_by(["event_time", "sector"]).agg(
+        pl.col("_sec_src").mean().alias(f"_sec_fwd_{h}")
+    )
+    df = df.join(sec, on=["event_time", "sector"], how="left")
+    return df.with_columns(
+        (pl.col(f"future_return_{h}") - pl.col(f"_sec_fwd_{h}")).alias(
+            f"future_sector_relative_return_{h}"
+        )
+    )
+
+
 def build_labels(
     bars: pl.DataFrame,
     config: AppConfig,
@@ -124,25 +148,7 @@ def build_labels(
                 .alias(f"future_tail_event_{h}")
             )
         _ = name
-    if "sector" in df.columns:
-        h = config.horizons.bars[0]
-        sec_src = pl.col(f"future_return_{h}")
-        if "_in_universe" in df.columns:
-            sec_src = (
-                pl.when(pl.col("_in_universe").fill_null(False))
-                .then(pl.col(f"future_return_{h}"))
-                .otherwise(None)
-            )
-        df = df.with_columns(sec_src.alias("_sec_src"))
-        sec = df.group_by(["event_time", "sector"]).agg(
-            pl.col("_sec_src").mean().alias(f"_sec_fwd_{h}")
-        )
-        df = df.join(sec, on=["event_time", "sector"], how="left")
-        df = df.with_columns(
-            (pl.col(f"future_return_{h}") - pl.col(f"_sec_fwd_{h}")).alias(
-                f"future_sector_relative_return_{h}"
-            )
-        )
+    df = _attach_sector_relative(df, config)
     if membership is not None:
         df = restrict_to_membership(df, membership)
         if df.is_empty():

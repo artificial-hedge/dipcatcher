@@ -1,0 +1,751 @@
+{
+ "schema": "zone_ttl.v1",
+ "kind": "microstructure_bench",
+ "research_only": true,
+ "data_label": "MIXED",
+ "git_revision": "d8ea848adf459f1b5aab670e785755d69bdb5e5e",
+ "horizon": 15000,
+ "seed": 7,
+ "config": {
+  "seeds_per_cell": [
+   7,
+   11
+  ],
+  "cells": [
+   {
+    "label": "z0_ttl0_iid",
+    "zone_embargo": 0,
+    "maker_ttl": 0,
+    "flow_intensity": null
+   },
+   {
+    "label": "z12_ttl0_iid",
+    "zone_embargo": 12,
+    "maker_ttl": 0,
+    "flow_intensity": null
+   },
+   {
+    "label": "z12_ttl26_iid",
+    "zone_embargo": 12,
+    "maker_ttl": 26,
+    "flow_intensity": null
+   },
+   {
+    "label": "z12_ttl50_iid",
+    "zone_embargo": 12,
+    "maker_ttl": 50,
+    "flow_intensity": null
+   },
+   {
+    "label": "z12_ttl75_iid",
+    "zone_embargo": 12,
+    "maker_ttl": 75,
+    "flow_intensity": null
+   },
+   {
+    "label": "z12_ttl100_iid",
+    "zone_embargo": 12,
+    "maker_ttl": 100,
+    "flow_intensity": null
+   },
+   {
+    "label": "z12_ttl150_iid",
+    "zone_embargo": 12,
+    "maker_ttl": 150,
+    "flow_intensity": null
+   },
+   {
+    "label": "z12_ttl200_iid",
+    "zone_embargo": 12,
+    "maker_ttl": 200,
+    "flow_intensity": null
+   },
+   {
+    "label": "z12_ttl50_split",
+    "zone_embargo": 12,
+    "maker_ttl": 50,
+    "flow_intensity": 2.0
+   },
+   {
+    "label": "z12_ttl100_split",
+    "zone_embargo": 12,
+    "maker_ttl": 100,
+    "flow_intensity": 2.0
+   }
+  ]
+ },
+ "tape_reference": {
+  "mix_share": {
+   "sub": 0.4892,
+   "delete": 0.4577,
+   "exec": 0.0333
+  },
+  "events_per_s": 11.528,
+  "executed_p50_events": 25.5,
+  "sources": [
+   "event_matrix.v1",
+   "order_lifetime.v1"
+  ]
+ },
+ "cells": [
+  {
+   "regime": "z0_ttl0_iid",
+   "zone_embargo": 0,
+   "maker_ttl": 0,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.4899,
+    "delete": 0.4753,
+    "exec": 0.0349
+   },
+   "tape_mix_gap": 0.0066,
+   "life_ev_p50_mean": 250.93,
+   "n_pins_mean": 5.0,
+   "instant_mean": 1.0547362220553083,
+   "k200_mean": 4.067501464135872,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 643,
+      "mix_share": {
+       "sub": 0.4973,
+       "delete": 0.4633,
+       "exec": 0.0394
+      },
+      "life_events_p50_executed": 187.9966364133718
+     },
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": false,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 5,
+     "instant_signed_ticks": 0.8359253499222395,
+     "k200": 4.296557120500783
+    },
+    {
+     "card": {
+      "n_fills": 499,
+      "mix_share": {
+       "sub": 0.4824,
+       "delete": 0.4872,
+       "exec": 0.0305
+      },
+      "life_events_p50_executed": 313.87130960423224
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": false,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 5,
+     "instant_signed_ticks": 1.2735470941883769,
+     "k200": 3.8384458077709613
+    }
+   ]
+  },
+  {
+   "regime": "z12_ttl0_iid",
+   "zone_embargo": 12,
+   "maker_ttl": 0,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.5018,
+    "delete": 0.4656,
+    "exec": 0.0326
+   },
+   "tape_mix_gap": 0.0071,
+   "life_ev_p50_mean": 204.8,
+   "n_pins_mean": 6.0,
+   "instant_mean": 1.0161420216032293,
+   "k200_mean": 4.572618974453526,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 617,
+      "mix_share": {
+       "sub": 0.4947,
+       "delete": 0.4692,
+       "exec": 0.0361
+      },
+      "life_events_p50_executed": 195.4351303356178
+     },
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 5,
+     "instant_signed_ticks": 1.0478119935170178,
+     "k200": 5.198697068403908
+    },
+    {
+     "card": {
+      "n_fills": 483,
+      "mix_share": {
+       "sub": 0.5089,
+       "delete": 0.462,
+       "exec": 0.0291
+      },
+      "life_events_p50_executed": 214.16232955864905
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 7,
+     "instant_signed_ticks": 0.984472049689441,
+     "k200": 3.9465408805031448
+    }
+   ]
+  },
+  {
+   "regime": "z12_ttl26_iid",
+   "zone_embargo": 12,
+   "maker_ttl": 26,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.5021,
+    "delete": 0.4808,
+    "exec": 0.017
+   },
+   "tape_mix_gap": 0.0174,
+   "life_ev_p50_mean": 10.59,
+   "n_pins_mean": 4.0,
+   "instant_mean": 0.6175259101780495,
+   "k200_mean": 1.798532926181625,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 339,
+      "mix_share": {
+       "sub": 0.5035,
+       "delete": 0.4793,
+       "exec": 0.0172
+      },
+      "life_events_p50_executed": 10.910374426346806
+     },
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 4,
+     "instant_signed_ticks": 0.3160377358490566,
+     "k200": 1.7434944237918215
+    },
+    {
+     "card": {
+      "n_fills": 347,
+      "mix_share": {
+       "sub": 0.5008,
+       "delete": 0.4824,
+       "exec": 0.0168
+      },
+      "life_events_p50_executed": 10.274963453919337
+     },
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 4,
+     "instant_signed_ticks": 0.9190140845070423,
+     "k200": 1.8535714285714286
+    }
+   ]
+  },
+  {
+   "regime": "z12_ttl50_iid",
+   "zone_embargo": 12,
+   "maker_ttl": 50,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.4997,
+    "delete": 0.4797,
+    "exec": 0.0207
+   },
+   "tape_mix_gap": 0.015,
+   "life_ev_p50_mean": 22.08,
+   "n_pins_mean": 3.0,
+   "instant_mean": 0.25897413240849143,
+   "k200_mean": 2.6623708010335916,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 465,
+      "mix_share": {
+       "sub": 0.4977,
+       "delete": 0.481,
+       "exec": 0.0213
+      },
+      "life_events_p50_executed": 23.333822009544072
+     },
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": false,
+      "reveal_gap": false
+     },
+     "n_pins": 3,
+     "instant_signed_ticks": 0.19282511210762332,
+     "k200": 3.1805555555555554
+    },
+    {
+     "card": {
+      "n_fills": 436,
+      "mix_share": {
+       "sub": 0.5017,
+       "delete": 0.4783,
+       "exec": 0.0201
+      },
+      "life_events_p50_executed": 20.825899314003188
+     },
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": false,
+      "reveal_gap": false
+     },
+     "n_pins": 3,
+     "instant_signed_ticks": 0.3251231527093596,
+     "k200": 2.144186046511628
+    }
+   ]
+  },
+  {
+   "regime": "z12_ttl75_iid",
+   "zone_embargo": 12,
+   "maker_ttl": 75,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.4997,
+    "delete": 0.4735,
+    "exec": 0.0268
+   },
+   "tape_mix_gap": 0.0109,
+   "life_ev_p50_mean": 35.8,
+   "n_pins_mean": 5.0,
+   "instant_mean": 0.4635404434214853,
+   "k200_mean": 3.974884310783554,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 602,
+      "mix_share": {
+       "sub": 0.5017,
+       "delete": 0.4727,
+       "exec": 0.0256
+      },
+      "life_events_p50_executed": 38.55005363941479
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 5,
+     "instant_signed_ticks": 0.9528688524590164,
+     "k200": 3.523037542662116
+    },
+    {
+     "card": {
+      "n_fills": 665,
+      "mix_share": {
+       "sub": 0.4976,
+       "delete": 0.4743,
+       "exec": 0.0281
+      },
+      "life_events_p50_executed": 33.04720387975333
+     },
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 5,
+     "instant_signed_ticks": -0.025787965616045846,
+     "k200": 4.426731078904992
+    }
+   ]
+  },
+  {
+   "regime": "z12_ttl100_iid",
+   "zone_embargo": 12,
+   "maker_ttl": 100,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.501,
+    "delete": 0.4679,
+    "exec": 0.0311
+   },
+   "tape_mix_gap": 0.0081,
+   "life_ev_p50_mean": 40.63,
+   "n_pins_mean": 4.0,
+   "instant_mean": 0.8343720356668564,
+   "k200_mean": 5.644150948752367,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 824,
+      "mix_share": {
+       "sub": 0.5024,
+       "delete": 0.4625,
+       "exec": 0.0352
+      },
+      "life_events_p50_executed": 36.09617507756166
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": false,
+      "reveal_gap": false
+     },
+     "n_pins": 4,
+     "instant_signed_ticks": 0.8735059760956175,
+     "k200": 6.496765847347995
+    },
+    {
+     "card": {
+      "n_fills": 638,
+      "mix_share": {
+       "sub": 0.4997,
+       "delete": 0.4733,
+       "exec": 0.027
+      },
+      "life_events_p50_executed": 45.17044735295802
+     },
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": false,
+      "reveal_gap": true
+     },
+     "n_pins": 4,
+     "instant_signed_ticks": 0.7952380952380952,
+     "k200": 4.79153605015674
+    }
+   ]
+  },
+  {
+   "regime": "z12_ttl150_iid",
+   "zone_embargo": 12,
+   "maker_ttl": 150,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.4978,
+    "delete": 0.479,
+    "exec": 0.0232
+   },
+   "tape_mix_gap": 0.0133,
+   "life_ev_p50_mean": 71.98,
+   "n_pins_mean": 4.5,
+   "instant_mean": 0.1347754372549194,
+   "k200_mean": 5.140632814323342,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 678,
+      "mix_share": {
+       "sub": 0.4985,
+       "delete": 0.4734,
+       "exec": 0.0281
+      },
+      "life_events_p50_executed": 56.069792650418606
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": false,
+      "reveal_gap": false
+     },
+     "n_pins": 4,
+     "instant_signed_ticks": 0.5112570356472795,
+     "k200": 5.270029673590504
+    },
+    {
+     "card": {
+      "n_fills": 447,
+      "mix_share": {
+       "sub": 0.497,
+       "delete": 0.4846,
+       "exec": 0.0184
+      },
+      "life_events_p50_executed": 87.89087538656025
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 5,
+     "instant_signed_ticks": -0.24170616113744076,
+     "k200": 5.01123595505618
+    }
+   ]
+  },
+  {
+   "regime": "z12_ttl200_iid",
+   "zone_embargo": 12,
+   "maker_ttl": 200,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.4976,
+    "delete": 0.4728,
+    "exec": 0.0296
+   },
+   "tape_mix_gap": 0.0091,
+   "life_ev_p50_mean": 89.6,
+   "n_pins_mean": 6.0,
+   "instant_mean": 1.0990615615615615,
+   "k200_mean": 6.017512656917546,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 820,
+      "mix_share": {
+       "sub": 0.5024,
+       "delete": 0.463,
+       "exec": 0.0346
+      },
+      "life_events_p50_executed": 79.73154577295563
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 6,
+     "instant_signed_ticks": 2.1425675675675677,
+     "k200": 5.99063670411985
+    },
+    {
+     "card": {
+      "n_fills": 597,
+      "mix_share": {
+       "sub": 0.4929,
+       "delete": 0.4825,
+       "exec": 0.0246
+      },
+      "life_events_p50_executed": 99.47426689001963
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 6,
+     "instant_signed_ticks": 0.05555555555555555,
+     "k200": 6.044388609715243
+    }
+   ]
+  },
+  {
+   "regime": "z12_ttl50_split",
+   "zone_embargo": 12,
+   "maker_ttl": 50,
+   "flow": "split",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.5053,
+    "delete": 0.4699,
+    "exec": 0.0248
+   },
+   "tape_mix_gap": 0.0123,
+   "life_ev_p50_mean": 17.76,
+   "n_pins_mean": 4.0,
+   "instant_mean": 1.211625874125874,
+   "k200_mean": 4.762369543813588,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 607,
+      "mix_share": {
+       "sub": 0.5041,
+       "delete": 0.4677,
+       "exec": 0.0283
+      },
+      "life_events_p50_executed": 19.271693064207113
+     },
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 4,
+     "instant_signed_ticks": 1.8636363636363635,
+     "k200": 5.176363636363637
+    },
+    {
+     "card": {
+      "n_fills": 456,
+      "mix_share": {
+       "sub": 0.5066,
+       "delete": 0.4721,
+       "exec": 0.0213
+      },
+      "life_events_p50_executed": 16.252033464657423
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": false,
+      "reveal_gap": false
+     },
+     "n_pins": 4,
+     "instant_signed_ticks": 0.5596153846153846,
+     "k200": 4.3483754512635375
+    }
+   ]
+  },
+  {
+   "regime": "z12_ttl100_split",
+   "zone_embargo": 12,
+   "maker_ttl": 100,
+   "flow": "split",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.5119,
+    "delete": 0.4509,
+    "exec": 0.0372
+   },
+   "tape_mix_gap": 0.0111,
+   "life_ev_p50_mean": 37.03,
+   "n_pins_mean": 5.5,
+   "instant_mean": 1.1669235106183047,
+   "k200_mean": 6.726433665517405,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 1004,
+      "mix_share": {
+       "sub": 0.515,
+       "delete": 0.441,
+       "exec": 0.044
+      },
+      "life_events_p50_executed": 34.75358395753426
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": false,
+      "reveal_gap": false
+     },
+     "n_pins": 4,
+     "instant_signed_ticks": 1.963258785942492,
+     "k200": 6.268387096774194
+    },
+    {
+     "card": {
+      "n_fills": 702,
+      "mix_share": {
+       "sub": 0.5088,
+       "delete": 0.4608,
+       "exec": 0.0304
+      },
+      "life_events_p50_executed": 39.30519799610917
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 7,
+     "instant_signed_ticks": 0.37058823529411766,
+     "k200": 7.184480234260615
+    }
+   ]
+  }
+ ],
+ "claims": {
+  "cells_measured": true,
+  "ttl_reaches_life_scale": true,
+  "ttl_improves_mix": false,
+  "ttl_keeps_closure": true,
+  "kernel_carried": true
+ },
+ "notes": "Maker aging on the closed z12 cell. The tape's grammar residual is specifically the maker horizon: at 15k the baseline mix gap is only ~0.007 (the 3k preview's 0.049 was early-run noise \u2014 the mix was never far), while executed-maker p50 sits ~205 events vs the tape's 25.5. ttl sweeps across the tape value (26->10.6, 50->22.1, 75->35.8, 100->40.6, 150->72, 200->89.6 events): grammar wants ttl ~50-100, where p50 lands within 2x of the tape. But the pins/kernel want ttl ~200 (ttl200_iid: 6/7 pins, instant 1.099, k200 6.02) \u2014 the two targets bracket the mechanism without coinciding: tape-speed aging alone starves fills below the pin floor (ttl50: 3/7). Honest residual: the sim already resets age on reprice (every reprice is a fresh order), so the residual is not repricing semantics \u2014 it is the missing class of makers whose fast churn is offset by staying visible, i.e. cancel-into-repost loops that keep depth constant while aging out.",
+ "receipt_sha256": "7e8b74461301a71444578b81f92196af5f2f5d0a1d1f48ac4f7444b09fbe8aae"
+}

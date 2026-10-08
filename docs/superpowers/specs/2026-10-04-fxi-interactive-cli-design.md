@@ -209,3 +209,16 @@ Additional files: `src/fx1/interactive/orb.py`, `src/fx1/interactive/wizard.py`,
 `src/fx1/cli.py` (additive flags/env). Tests grew to ~50 cases including
 orb rendering/disable rules, wizard flows, the `dipcatcher` hook, and
 `--model` passthrough.
+
+> **[Annotation 2026-10-08] Superseded startup behavior.** Item 3's
+> bare-`dipcatcher` wizard hook is no longer in the code: it needs a
+> `quant_fund → fx1` import, which `configs/arch_boundaries.toml`
+> (`harness-no-fx1-imports`) and `tests/unit/test_fx1_dependency_edge.py` now
+> reject (see the note in `src/quant_fund/cli/_app.py`). Its replacement (working
+> tree, 2026-10-08) is the outer launcher `src/dipcatcher_cli`, outside both
+> libraries: bare `dipcatcher` in a terminal opens the concierge console
+> directly (no wizard; `/keys set` configures endpoints in chat), redirected
+> bare `dipcatcher` prints help, `quant` is the lab CLI without the launcher,
+> and `fxi` / `fxi setup` stay compatible. Current behavior is in
+> [the dipcatcher CLI](../../DIP_CONCIERGE.md); remaining release criteria are
+> in the [product contract](../../DIPCATCHER_PRODUCT_CONTRACT.md).

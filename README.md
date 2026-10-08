@@ -23,8 +23,61 @@
 
 ---
 
+## What fx-1 is today (status as of 2026-10-08)
+
+**fx-1 is a harness, an evaluation program, and a training pipeline. It is not
+a released model, and no fine-tuned fx-1 weights are published anywhere.** This
+block exists because a version string, a badge, and a `model` name are all easy
+to misread as a shipped artifact. Read it before the [fx-1](#fx-1) section.
+
+- **What exists.** `src/fx1` is **323 Python modules**, strictly typed, with
+  **73 `test_*.py` files** under `tests/fx1/` (78 `.py` files including
+  `conftest.py`). It is the corpus builder, the eval task bank, the training
+  ladder and manifest gate, the ship gate, the model-card writer, the SBOM and
+  attestation ladder, and the `fx1` CLI. It is the machinery *around* a model.
+- **What does not exist.** **No fine-tuned fx-1 checkpoint is published.** No
+  fine-tuned weights, no downloadable artifact, no HF repo, no hosted endpoint.
+  `docs/FX1_TRAINING.md` states it plainly: no training run has been launched
+  from the ladder. `LocalFx1Backend.complete()` raises `NotImplementedError`
+  (`src/fx1/serve/backends.py`), so local generation is not implemented either.
+- **`fx1.__version__ = "0.4.0"` tracks the harness API, not a model release.**
+  It is the semver of the `fx1` package surface — see
+  [`docs/FX1_API_STABILITY.md`](docs/FX1_API_STABILITY.md) — and `pyproject.toml`
+  reads it via a Hatch dynamic-version hook. **There is no `v*` release tag:
+  `git tag -l 'v*' | wc -l` → `0`.** (`git tag | wc -l` → `4`, but all four are
+  `attic/receipt-provenance/*` provenance anchors from 2026-09-27/28, not
+  releases; `release.yml` is keyed on `v*.*.*` and has never executed.)
+  `0.4.0` names an API contract that has never been cut as a tag. Do not read
+  it as "model v0.4.0".
+- **The checkpoints under `data/models/` are not fx-1.** `Kronos-base`,
+  `Kronos-mini`, `Kronos-small`, `Kronos-Tokenizer-base`, and
+  `Kronos-Tokenizer-2k` are **third-party Kronos weights, vendored (MIT) for a
+  `kronos-forecast` research bench** in the harness lane. They are untracked
+  (gitignored), they are not fine-tuned here, and they are not an fx-1 release
+  of any kind.
+- **One weight file *is* tracked, and it is a fixture.**
+  `artifacts/fx1_tiny_lm/weights.safetensors` (127 KB, ~31k parameters) is a
+  byte-level tiny transformer that exists so the weights-direct code path loads
+  a real artifact. Its own card
+  ([`artifacts/fx1_tiny_lm/modelcard.json`](artifacts/fx1_tiny_lm/modelcard.json))
+  says it is a *"fixture-scale byte-level LM (~31k params) trained for seconds
+  on CPU … not an fx-1 release candidate"*, carries
+  `license_tier: internal_research`, `research_only: true`, and states that its
+  `eval_delta` values are **synthetic ship-gate placeholders, not measured
+  evals**. It is a correctness fixture. It is not a model, and its numbers are
+  not evidence of anything.
+
+The ladder in [`docs/FX1_TRAINING.md`](docs/FX1_TRAINING.md) is a plan. The
+pipeline in `fx1.train.pipeline` is real and gated, but it has not been run
+end-to-end. Until a training run produces a sealed receipt and a measured
+proper-score eval card, fx-1 has zero committed model evidence — which is the
+position the honesty ledger already records, correctly.
+
+---
+
 ## Table of contents
 
+0. [What fx-1 is today](#what-fx-1-is-today-status-as-of-2026-10-08)
 1. [Overview](#overview)
 2. [Read this first](#read-this-first)
 3. [Why dipcatcher exists](#why-dipcatcher-exists)
@@ -76,6 +129,7 @@
     - [Failure-mode catalog](#failure-mode-catalog)
     - [The five live-evidence conditions as a gate diagram](#the-five-live-evidence-conditions-as-a-gate-diagram)
 16. [Institutional readiness](#institutional-readiness)
+    - [Readiness tiers](#readiness-tiers--which-production-ready-is-meant)
 17. [fx-1](#fx-1)
 18. [Web explorer and tooling](#web-explorer-and-tooling)
 19. [API and security](#api-and-security)
@@ -102,20 +156,31 @@
 
 ## Overview
 
-**dipcatcher** is receipt-bound quant research on US equities and crypto for a
-small Alpaca account. It is research and simulated paper trading only — there
-is no live broker connectivity anywhere in this tree, and nothing in this
-document authorizes, promises, or implies otherwise.
+**dipcatcher** is Artificial Hedge's state-of-the-art harness for orchestrating
+its **fx1** and **fx1-lite** models ([artificialhedge.co](https://artificialhedge.co))
+from the command line. The CLI is designed like Codex CLI: chat-first, with
+about 99% of the interface being a conversation with the active model. The
+`/superpower` slash command plans and runs whichever of dipcatcher's research
+families fit the goal you typed, and explains what it used and why. Type
+`dipcatcher` in a terminal to open the chat. The design and its current status
+(working tree, not yet a release) live in
+[`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md).
+
+Underneath the chat, dipcatcher is receipt-bound quant research on US equities
+and crypto for a small Alpaca account. It is research and simulated paper
+trading only — there is no live broker connectivity anywhere in this tree, and
+nothing in this document authorizes, promises, or implies otherwise.
 
 The dip question, in `fx1.bench.dip` and
 `receipts/legacy-unsealed/dip_bench_crypto_1d_20260925.json`, is the probability that a
 drawdown recovers within 1, 3, 6, or 12 months. That committed receipt scores
 an in-sample climatology baseline on 11 historical crypto series. Disclaimer
 from the file:
-The distribution name on PyPI-style metadata is `fx-1`; the two console
-entry points installed by this project are `dipcatcher` (the research
-harness, formerly and internally called "dipcatcher") and `fx1` (the
-model-facing corpus/eval/training-manifest tooling). Both live in one
+The distribution name on PyPI-style metadata is `fx-1`; the main console
+entry points installed by this project are `dipcatcher` (the chat-first CLI;
+explicit subcommands run the lab), `quant` (the lab CLI without the chat
+launcher), `fxi` (a compatible chat launcher), and `fx1` (the
+model-facing corpus/eval/training-manifest tooling). All live in one
 checkout, at version `0.4.0` (`fx1.__version__`), and both are governed by
 the same receipt-and-verification discipline described throughout this
 document.
@@ -1322,7 +1387,7 @@ For viewers without mermaid — the same architecture, in plain text:
 | `configs/research.yaml`, `configs/paper.yaml` | `data.source: synthetic`. The CLI prints `DATA_LABEL=SYNTHETIC`. These runs are labeled correctness tests, not market evidence. |
 | `receipts/` | Committed research artifacts. Each file sets `research_only: true` and carries its own disclaimer string. |
 | `src/quant_fund` | The research pipeline: point-in-time data, forecasts, fusion, a constrained optimizer, a risk gate, and simulated paper (893 files, 48 top-level subpackages). |
-| `src/fx1` | Corpus, eval, and training-manifest code at `0.4.0`. No model weights are in the tree. |
+| `src/fx1` | Corpus, eval, and training-manifest code at `0.4.0`. **No fine-tuned model weights are published** — see [What fx-1 is today](#what-fx-1-is-today-status-as-of-2026-10-08). The one tracked `weights.safetensors` (`artifacts/fx1_tiny_lm/`) is a ~31k-parameter correctness fixture whose own card calls it "not an fx-1 release candidate"; `data/models/` holds gitignored third-party Kronos checkpoints vendored for a research bench. |
 | `web/` | A read-only explorer UI over sealed receipts and evidence (102 files) — see [Web explorer and tooling](#web-explorer-and-tooling). |
 | `clients/typescript` | A generated TypeScript client (`openapi.json`, `client.ts`, `schema.d.ts`) for the FastAPI service's OpenAPI schema. |
 | `verifier/` | The repository's own acceptance-history ledger for its turnover into the fx-1 harness (`v1`…`v8`, 24 files) — see [Repository health](#repository-health). |
@@ -1413,10 +1478,26 @@ dipcatcher/
 
 ## Quick start
 
-Python 3.12 or 3.13, and [uv](https://docs.astral.sh/uv/). From a clone:
+Python 3.12 or 3.13, and [uv](https://docs.astral.sh/uv/). From a clone,
+the chat is the way in:
 
 ```bash
 make sync
+uv run dipcatcher           # opens the chat in an interactive terminal
+# inside the chat:
+#   /keys set fx1           masked API key + endpoint URL (or /keys set fx1-lite)
+#   /use fx1-lite           switch model
+#   /superpower <goal>      plan and run the research families that fit
+#   /help, /exit
+```
+
+`dipcatcher chat --model fx1-lite` picks the starting model. Without an
+endpoint the chat still runs slash commands and web research. Redirected
+(non-terminal) `dipcatcher` prints help instead of opening the chat. Details
+and current status: [`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md). The
+typed subcommands below are the non-interactive path, used by scripts and CI:
+
+```bash
 uv run dipcatcher research --config configs/research.yaml
 uv run dipcatcher verify-research
 uv run dipcatcher doctor --config configs/research.yaml
@@ -1487,10 +1568,11 @@ else. Every description is either quoted from the command's own Python
 docstring or, where a command has no docstring, written to match the
 generated diagrams in [Visual tour](#visual-tour).
 
-**The ten commands you are most likely to reach for:**
+**The eleven commands you are most likely to reach for:**
 
 | Command | What it does |
 |---|---|
+| `uv run dipcatcher` | In a terminal, opens the chat: plain text talks to `fx1`/`fx1-lite`; `/superpower <goal>` runs the research families that fit. `fxi` opens the same chat. |
 | `uv run dipcatcher research --config <cfg>` | Builds a panel, runs the research pipeline, writes a sealed notebook. |
 | `uv run dipcatcher verify-research [path]` | Recomputes a notebook or run directory's receipt hash; fails closed. |
 | `uv run dipcatcher doctor --config <cfg>` | Environment/data/receipt readiness check; exit code is the answer. |
@@ -2161,6 +2243,37 @@ README:
 > deliberately evidence-gated: a capability is not marked ready because a
 > module exists or a synthetic fixture passes.
 
+### Readiness tiers — which "production-ready" is meant
+
+"Production-ready" is not one thing, and conflating the three is how a research
+repository accidentally implies that it trades. This repository targets **Tier
+A** and is honest about the distance to the other two.
+
+| Tier | What it means | Reachable by code? | Status here |
+|---|---|---|---|
+| **A — Research platform** | Internal analysts can trust a receipt: gates return verdicts, claims reproduce from one SHA, docs match code, no live claims. | **Yes** | Where this repo is working. Not yet *verified* — see the CI status note below. |
+| **B — Distributed platform** | Tier A plus signed releases, third-party security review, a real install path, and onboarding. | **Mostly** | Not reached. `git tag -l 'v*' | wc -l` → **0**: SBOM/Sigstore/SLSA are defined but never exercised. No `pip install` route exists. |
+| **C — Live trading** | Authorized licensed PIT data, authenticated broker reconciliation, venue cost measurements, a non-synthetic forward record, a signed promotion receipt. | **No** | **Blocked, and it is not a code problem.** Conditions 1 and 2 require a purchased entitlement and a broker authorization. |
+
+Tier C is gated by the five minimum-evidence conditions in
+[`docs/INSTITUTIONAL_READINESS.md`](docs/INSTITUTIONAL_READINESS.md), reproduced
+below. Per that document's own rule, and repeated here because it is the one
+sentence that prevents most of the possible misreadings:
+
+> A working fail-closed adapter, a compiling module, or a passing SYNTHETIC
+> fixture is **not** evidence and never marks a condition ready.
+
+No amount of code closes conditions 1 and 2. `quant_fund.data.qualifying`
+enforces the condition-1 PIT rules and fails closed to `UNAVAILABLE` with **no
+synthetic substitution**; `quant_fund.execution.order_recon` and
+`quant_fund.paper.broker_adapter` are the condition-2 *reference shape* only,
+and configuring a live endpoint **raises** (`LiveEndpointRefused`). Those are
+the right controls for a Tier C that is blocked, not partial progress toward
+one.
+
+The full tier-by-tier remediation plan, with the measured findings behind it,
+is [`docs/ULTRA_PROD_READINESS.md`](docs/ULTRA_PROD_READINESS.md).
+
 | Control area | Current state | Evidence / gate |
 |---|---|---|
 | Point-in-time data contract | Implemented for file adapters; revision-aware on the evaluation side | PIT timestamp validation, duplicate-key checks, OHLCV checks, manifest hash verification, and decision-time filtering for late cross-sectional/market aggregates. Wave 15 adds `validation/vintage_eval.py` (VINTAGE-TS): validity-interval reconstruction, delayed-label filtering, and hindsight-contamination audits over SYNTHETIC revision regimes — the *evaluation* layer now detects vintage cheating even though true as-of vintages on the public tape remain a procurement gap. |
@@ -2476,7 +2589,25 @@ Total: **45** self-documented targets — run `make help` for the live list.
 
 ### Continuous integration
 
-**19** workflow files under [`.github/workflows/`](.github/workflows/).
+> **CI status — measured 2026-10-08: the pipeline is dark, not green.**
+> The badges at the top of this file are the workflow *definitions* rendering,
+> not a current verdict. As of 2026-10-08, `gh run list` shows **0 successful
+> runs in 400 consecutive attempts** (last 100: 85 `cancelled`, 15 `queued`, 0
+> success). Nothing in this repository has been verified by a returning CI
+> verdict in that window — including the 81% coverage floor, the strict-typing
+> claim, receipt verification, and the SBOM, all of which are *defined and
+> enforced in configuration* but have not been observed green.
+>
+> The cause is orchestration, not flaky tests: ~80+ jobs per push across 22
+> workflow files, burst merge cadence, and `cancel-in-progress: true` on the
+> gate workflows, so each new push cancels the run in flight. Measured
+> findings, mechanism, and the remediation plan are in
+> [`docs/ULTRA_PROD_READINESS.md`](docs/ULTRA_PROD_READINESS.md) (Phase 0).
+> Until that gate returns verdicts, treat every CI-enforced claim in this
+> README as *specified but unconfirmed*. Local `make lint` is green as of
+> 2026-10-08 (`ruff check src tests` → "All checks passed!").
+
+**22** workflow files under [`.github/workflows/`](.github/workflows/).
 CI runs the PR-gate test matrix on Python **3.12 and 3.13**; the separate
 `matrix.yml` extends that to **3.14** and to macOS/Windows runners on a
 schedule and on `workflow_dispatch`.
@@ -2503,7 +2634,14 @@ schedule and on `workflow_dispatch`.
 | `web_explorer.yml` | Web Explorer | push to main, path-filtered (web/**) | Builds and tests the static receipt-explorer app. |
 | `reproduce_sota.yml` | Reproduce SOTA | PR, path-filtered (scripts/sota_eval_*.py) | Reproduces SOTA-lane evaluation scripts on change. |
 
-**19** workflow files under [`.github/workflows/`](.github/workflows/).
+**22** workflow files under [`.github/workflows/`](.github/workflows/) —
+this table lists the 19 that gate code or documentation; the remainder are
+scheduled or auxiliary lanes (e.g. `full-coverage.yml`, `witness_monitor.yml`,
+`dependency-audit.yml`). There is **no docs-drift checker** among them: no
+workflow validates that code references, file paths, or numbers quoted in the
+docs still match the tree. Only `atlas.yml` (generated Mermaid diagrams) and
+`docs.yml` (`mkdocs --strict`) check anything, and neither checks prose claims
+against code.
 
 ### Supply chain
 

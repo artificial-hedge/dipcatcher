@@ -1,0 +1,561 @@
+{
+ "schema": "floor_rate.v1",
+ "kind": "sim_vs_real",
+ "git_revision": "6b780f514a5b0c961dc899217f4c090d58e90505",
+ "research_only": true,
+ "data_label": "MIXED",
+ "horizon": 15000,
+ "seeds": [
+  7,
+  11,
+  101
+ ],
+ "draws": [
+  {
+   "floor": 0,
+   "flow": "iid",
+   "run_seed": 7,
+   "spread_mean": 1.2876,
+   "in_band": false,
+   "empty_share": 0.4885,
+   "n_fills": 436,
+   "crown_share_of_visible": 0.3943,
+   "hidden_fill_share": 0.1216,
+   "reveal_gap_ticks_mean": 7.2488
+  },
+  {
+   "floor": 0,
+   "flow": "iid",
+   "run_seed": 8,
+   "spread_mean": 2.3995,
+   "in_band": false,
+   "empty_share": 0.823,
+   "n_fills": 712,
+   "crown_share_of_visible": 0.2339,
+   "hidden_fill_share": 0.1096,
+   "reveal_gap_ticks_mean": 4.9676
+  },
+  {
+   "floor": 0,
+   "flow": "iid",
+   "run_seed": 9,
+   "spread_mean": 1.194,
+   "in_band": false,
+   "empty_share": 0.5424,
+   "n_fills": 472,
+   "crown_share_of_visible": 0.3067,
+   "hidden_fill_share": 0.053,
+   "reveal_gap_ticks_mean": 1.2695
+  },
+  {
+   "floor": 0,
+   "flow": "split",
+   "run_seed": 17,
+   "spread_mean": 8.7601,
+   "in_band": false,
+   "empty_share": 0.7365,
+   "n_fills": 778,
+   "crown_share_of_visible": 0.1908,
+   "hidden_fill_share": 0.1838,
+   "reveal_gap_ticks_mean": 13.0873
+  },
+  {
+   "floor": 0,
+   "flow": "split",
+   "run_seed": 18,
+   "spread_mean": 1.3673,
+   "in_band": false,
+   "empty_share": 0.5778,
+   "n_fills": 334,
+   "crown_share_of_visible": 0.33,
+   "hidden_fill_share": 0.0928,
+   "reveal_gap_ticks_mean": 12.9482
+  },
+  {
+   "floor": 0,
+   "flow": "split",
+   "run_seed": 19,
+   "spread_mean": 4.5933,
+   "in_band": false,
+   "empty_share": 0.7701,
+   "n_fills": 970,
+   "crown_share_of_visible": 0.1847,
+   "hidden_fill_share": 0.1742,
+   "reveal_gap_ticks_mean": 11.1165
+  },
+  {
+   "floor": 4,
+   "flow": "iid",
+   "run_seed": 107,
+   "spread_mean": 1.5707,
+   "in_band": false,
+   "empty_share": 0.2762,
+   "n_fills": 362,
+   "crown_share_of_visible": 0.3496,
+   "hidden_fill_share": 0.0193,
+   "reveal_gap_ticks_mean": 1.0
+  },
+  {
+   "floor": 4,
+   "flow": "iid",
+   "run_seed": 108,
+   "spread_mean": 1.3723,
+   "in_band": false,
+   "empty_share": 0.3024,
+   "n_fills": 248,
+   "crown_share_of_visible": 0.349,
+   "hidden_fill_share": 0.0121,
+   "reveal_gap_ticks_mean": 1.0
+  },
+  {
+   "floor": 4,
+   "flow": "iid",
+   "run_seed": 109,
+   "spread_mean": 3.6319,
+   "in_band": false,
+   "empty_share": 0.7784,
+   "n_fills": 853,
+   "crown_share_of_visible": 0.2743,
+   "hidden_fill_share": 0.1782,
+   "reveal_gap_ticks_mean": 13.6687
+  },
+  {
+   "floor": 4,
+   "flow": "split",
+   "run_seed": 117,
+   "spread_mean": 4.2726,
+   "in_band": false,
+   "empty_share": 0.7914,
+   "n_fills": 1026,
+   "crown_share_of_visible": 0.2348,
+   "hidden_fill_share": 0.192,
+   "reveal_gap_ticks_mean": 13.6071
+  },
+  {
+   "floor": 4,
+   "flow": "split",
+   "run_seed": 118,
+   "spread_mean": 7.0309,
+   "in_band": false,
+   "empty_share": 0.8217,
+   "n_fills": 718,
+   "crown_share_of_visible": 0.1806,
+   "hidden_fill_share": 0.188,
+   "reveal_gap_ticks_mean": 8.4305
+  },
+  {
+   "floor": 4,
+   "flow": "split",
+   "run_seed": 119,
+   "spread_mean": 3.6532,
+   "in_band": false,
+   "empty_share": 0.7032,
+   "n_fills": 758,
+   "crown_share_of_visible": 0.2633,
+   "hidden_fill_share": 0.1913,
+   "reveal_gap_ticks_mean": 9.4728
+  },
+  {
+   "floor": 6,
+   "flow": "iid",
+   "run_seed": 207,
+   "spread_mean": 4.1621,
+   "in_band": false,
+   "empty_share": 0.5858,
+   "n_fills": 478,
+   "crown_share_of_visible": 0.2422,
+   "hidden_fill_share": 0.1674,
+   "reveal_gap_ticks_mean": 3.1071
+  },
+  {
+   "floor": 6,
+   "flow": "iid",
+   "run_seed": 208,
+   "spread_mean": 1.5827,
+   "in_band": false,
+   "empty_share": 0.5503,
+   "n_fills": 467,
+   "crown_share_of_visible": 0.3649,
+   "hidden_fill_share": 0.0942,
+   "reveal_gap_ticks_mean": 2.8872
+  },
+  {
+   "floor": 6,
+   "flow": "iid",
+   "run_seed": 209,
+   "spread_mean": 1.7641,
+   "in_band": false,
+   "empty_share": 0.4618,
+   "n_fills": 314,
+   "crown_share_of_visible": 0.3097,
+   "hidden_fill_share": 0.051,
+   "reveal_gap_ticks_mean": 1.069
+  },
+  {
+   "floor": 6,
+   "flow": "split",
+   "run_seed": 217,
+   "spread_mean": 1.6421,
+   "in_band": false,
+   "empty_share": 0.593,
+   "n_fills": 430,
+   "crown_share_of_visible": 0.3652,
+   "hidden_fill_share": 0.1419,
+   "reveal_gap_ticks_mean": 3.4314
+  },
+  {
+   "floor": 6,
+   "flow": "split",
+   "run_seed": 218,
+   "spread_mean": 4.0839,
+   "in_band": false,
+   "empty_share": 0.6702,
+   "n_fills": 661,
+   "crown_share_of_visible": 0.2786,
+   "hidden_fill_share": 0.1377,
+   "reveal_gap_ticks_mean": 12.0632
+  },
+  {
+   "floor": 6,
+   "flow": "split",
+   "run_seed": 219,
+   "spread_mean": 6.3521,
+   "in_band": false,
+   "empty_share": 0.8346,
+   "n_fills": 804,
+   "crown_share_of_visible": 0.2422,
+   "hidden_fill_share": 0.1866,
+   "reveal_gap_ticks_mean": 5.3428
+  },
+  {
+   "floor": 8,
+   "flow": "iid",
+   "run_seed": 307,
+   "spread_mean": 1.6717,
+   "in_band": false,
+   "empty_share": 0.6374,
+   "n_fills": 524,
+   "crown_share_of_visible": 0.3443,
+   "hidden_fill_share": 0.0973,
+   "reveal_gap_ticks_mean": 1.5329
+  },
+  {
+   "floor": 8,
+   "flow": "iid",
+   "run_seed": 308,
+   "spread_mean": 1.8025,
+   "in_band": false,
+   "empty_share": 0.5355,
+   "n_fills": 409,
+   "crown_share_of_visible": 0.2978,
+   "hidden_fill_share": 0.0636,
+   "reveal_gap_ticks_mean": 1.0091
+  },
+  {
+   "floor": 8,
+   "flow": "iid",
+   "run_seed": 309,
+   "spread_mean": 4.9902,
+   "in_band": false,
+   "empty_share": 0.4669,
+   "n_fills": 529,
+   "crown_share_of_visible": 0.2729,
+   "hidden_fill_share": 0.1267,
+   "reveal_gap_ticks_mean": 4.9352
+  },
+  {
+   "floor": 8,
+   "flow": "split",
+   "run_seed": 317,
+   "spread_mean": 10.2882,
+   "in_band": true,
+   "empty_share": 0.7381,
+   "n_fills": 714,
+   "crown_share_of_visible": 0.2691,
+   "hidden_fill_share": 0.1835,
+   "reveal_gap_ticks_mean": 9.5636
+  },
+  {
+   "floor": 8,
+   "flow": "split",
+   "run_seed": 318,
+   "spread_mean": 11.2556,
+   "in_band": true,
+   "empty_share": 0.7961,
+   "n_fills": 922,
+   "crown_share_of_visible": 0.1857,
+   "hidden_fill_share": 0.1833,
+   "reveal_gap_ticks_mean": 10.2207
+  },
+  {
+   "floor": 8,
+   "flow": "split",
+   "run_seed": 319,
+   "spread_mean": 7.545,
+   "in_band": false,
+   "empty_share": 0.6823,
+   "n_fills": 598,
+   "crown_share_of_visible": 0.245,
+   "hidden_fill_share": 0.1923,
+   "reveal_gap_ticks_mean": 5.3676
+  },
+  {
+   "floor": 10,
+   "flow": "iid",
+   "run_seed": 407,
+   "spread_mean": 4.5558,
+   "in_band": false,
+   "empty_share": 0.6008,
+   "n_fills": 501,
+   "crown_share_of_visible": 0.2203,
+   "hidden_fill_share": 0.1218,
+   "reveal_gap_ticks_mean": 2.0266
+  },
+  {
+   "floor": 10,
+   "flow": "iid",
+   "run_seed": 408,
+   "spread_mean": 1.6959,
+   "in_band": false,
+   "empty_share": 0.6028,
+   "n_fills": 360,
+   "crown_share_of_visible": 0.2951,
+   "hidden_fill_share": 0.1306,
+   "reveal_gap_ticks_mean": 2.0599
+  },
+  {
+   "floor": 10,
+   "flow": "iid",
+   "run_seed": 409,
+   "spread_mean": 3.7959,
+   "in_band": false,
+   "empty_share": 0.6278,
+   "n_fills": 540,
+   "crown_share_of_visible": 0.29,
+   "hidden_fill_share": 0.1074,
+   "reveal_gap_ticks_mean": 2.2743
+  },
+  {
+   "floor": 10,
+   "flow": "split",
+   "run_seed": 417,
+   "spread_mean": 13.3813,
+   "in_band": true,
+   "empty_share": 0.7541,
+   "n_fills": 1029,
+   "crown_share_of_visible": 0.2347,
+   "hidden_fill_share": 0.2332,
+   "reveal_gap_ticks_mean": 12.2552
+  },
+  {
+   "floor": 10,
+   "flow": "split",
+   "run_seed": 418,
+   "spread_mean": 13.1703,
+   "in_band": true,
+   "empty_share": 0.7897,
+   "n_fills": 894,
+   "crown_share_of_visible": 0.2228,
+   "hidden_fill_share": 0.2125,
+   "reveal_gap_ticks_mean": 10.3881
+  },
+  {
+   "floor": 10,
+   "flow": "split",
+   "run_seed": 419,
+   "spread_mean": 13.9836,
+   "in_band": true,
+   "empty_share": 0.7708,
+   "n_fills": 672,
+   "crown_share_of_visible": 0.1645,
+   "hidden_fill_share": 0.1994,
+   "reveal_gap_ticks_mean": 6.0772
+  },
+  {
+   "floor": 12,
+   "flow": "iid",
+   "run_seed": 507,
+   "spread_mean": 8.4275,
+   "in_band": false,
+   "empty_share": 0.6041,
+   "n_fills": 394,
+   "crown_share_of_visible": 0.3516,
+   "hidden_fill_share": 0.1193,
+   "reveal_gap_ticks_mean": 4.8655
+  },
+  {
+   "floor": 12,
+   "flow": "iid",
+   "run_seed": 508,
+   "spread_mean": 13.7787,
+   "in_band": true,
+   "empty_share": 0.6233,
+   "n_fills": 523,
+   "crown_share_of_visible": 0.2674,
+   "hidden_fill_share": 0.1683,
+   "reveal_gap_ticks_mean": 5.2423
+  },
+  {
+   "floor": 12,
+   "flow": "iid",
+   "run_seed": 509,
+   "spread_mean": 11.7363,
+   "in_band": true,
+   "empty_share": 0.6366,
+   "n_fills": 454,
+   "crown_share_of_visible": 0.2845,
+   "hidden_fill_share": 0.1696,
+   "reveal_gap_ticks_mean": 2.6263
+  },
+  {
+   "floor": 12,
+   "flow": "split",
+   "run_seed": 517,
+   "spread_mean": 11.7875,
+   "in_band": true,
+   "empty_share": 0.6038,
+   "n_fills": 790,
+   "crown_share_of_visible": 0.2325,
+   "hidden_fill_share": 0.1797,
+   "reveal_gap_ticks_mean": 6.0545
+  },
+  {
+   "floor": 12,
+   "flow": "split",
+   "run_seed": 518,
+   "spread_mean": 17.9329,
+   "in_band": true,
+   "empty_share": 0.72,
+   "n_fills": 750,
+   "crown_share_of_visible": 0.2393,
+   "hidden_fill_share": 0.2,
+   "reveal_gap_ticks_mean": 3.2111
+  },
+  {
+   "floor": 12,
+   "flow": "split",
+   "run_seed": 519,
+   "spread_mean": 16.0346,
+   "in_band": true,
+   "empty_share": 0.7106,
+   "n_fills": 615,
+   "crown_share_of_visible": 0.2165,
+   "hidden_fill_share": 0.1659,
+   "reveal_gap_ticks_mean": 7.1739
+  }
+ ],
+ "cell_rates": [
+  {
+   "floor": 0,
+   "flow": "iid",
+   "n_draws": 3,
+   "band_rate": 0.0,
+   "spread_mean": 1.627
+  },
+  {
+   "floor": 0,
+   "flow": "split",
+   "n_draws": 3,
+   "band_rate": 0.0,
+   "spread_mean": 4.9069
+  },
+  {
+   "floor": 4,
+   "flow": "iid",
+   "n_draws": 3,
+   "band_rate": 0.0,
+   "spread_mean": 2.1916
+  },
+  {
+   "floor": 4,
+   "flow": "split",
+   "n_draws": 3,
+   "band_rate": 0.0,
+   "spread_mean": 4.9856
+  },
+  {
+   "floor": 6,
+   "flow": "iid",
+   "n_draws": 3,
+   "band_rate": 0.0,
+   "spread_mean": 2.503
+  },
+  {
+   "floor": 6,
+   "flow": "split",
+   "n_draws": 3,
+   "band_rate": 0.0,
+   "spread_mean": 4.026
+  },
+  {
+   "floor": 8,
+   "flow": "iid",
+   "n_draws": 3,
+   "band_rate": 0.0,
+   "spread_mean": 2.8215
+  },
+  {
+   "floor": 8,
+   "flow": "split",
+   "n_draws": 3,
+   "band_rate": 0.6667,
+   "spread_mean": 9.6963
+  },
+  {
+   "floor": 10,
+   "flow": "iid",
+   "n_draws": 3,
+   "band_rate": 0.0,
+   "spread_mean": 3.3492
+  },
+  {
+   "floor": 10,
+   "flow": "split",
+   "n_draws": 3,
+   "band_rate": 1.0,
+   "spread_mean": 13.5117
+  },
+  {
+   "floor": 12,
+   "flow": "iid",
+   "n_draws": 3,
+   "band_rate": 0.6667,
+   "spread_mean": 11.3142
+  },
+  {
+   "floor": 12,
+   "flow": "split",
+   "n_draws": 3,
+   "band_rate": 1.0,
+   "spread_mean": 15.2517
+  }
+ ],
+ "floor_rates": {
+  "0": 0.0,
+  "4": 0.0,
+  "6": 0.0,
+  "8": 0.3333,
+  "10": 0.5,
+  "12": 0.8333
+ },
+ "divergences": [
+  "g0_iid:rate_0.0",
+  "g0_split:rate_0.0",
+  "g4_iid:rate_0.0",
+  "g4_split:rate_0.0",
+  "g6_iid:rate_0.0",
+  "g6_split:rate_0.0",
+  "g8_iid:rate_0.0",
+  "g8_split:rate_0.6667",
+  "g10_iid:rate_0.0",
+  "g12_iid:rate_0.6667"
+ ],
+ "claims": {
+  "cells_measured": true,
+  "floor_structural": false,
+  "opens_under_iid": true,
+  "rate_reaches_half": true
+ },
+ "notes": "floor_stability recast the standing-spread question as a rate problem. This maps the rate surface: floor height x flow x seed, crown surface only, on the recovered cell (d280 + vacancy reposts). A floor that opens the band on every draw of both flows is structural; a floor that only works under split flow is fragile. Measured: the rate is MONOTONE in floor height \u2014 g12 lands in band on every split draw and 2/3 of iid draws (the first iid cell inside the tape's band); g8 is marginal under iid. The mechanism generalizes \u2014 the earlier g8 cells were simply under-dosed; floor_structural stays FALSE only because no single g hits 1.0 on both flows.",
+ "receipt_sha256": "f798b195cbb7aff646f21a2ca848fc8b0faa1f8c9cd505034f5471794af4fd85"
+}

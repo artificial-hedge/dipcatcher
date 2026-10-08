@@ -1,0 +1,165 @@
+{
+ "schema": "repost_frontier.v1",
+ "kind": "sim_vs_real",
+ "git_revision": "57e4d61003e128330042e779a125df868ea73ac5",
+ "research_only": true,
+ "data_label": "MIXED",
+ "horizon": 20000,
+ "seed": 7,
+ "repost_window": 500,
+ "targets": {
+  "tape_reseed_rate": 0.5376,
+  "tape_reseed_as_touch_share": 0.7512,
+  "tape_reseed_latency_p50": 110.0,
+  "rate_band": [
+   0.37631999999999993,
+   0.69888
+  ],
+  "touch_min": 0.6
+ },
+ "tape": {
+  "n_emptied": 4239,
+  "reseed_rate_500": 0.5376,
+  "reseed_latency_p50": 110.0,
+  "reseed_latency_p90": 394.2,
+  "reseed_as_touch_share": 0.7512,
+  "regime": "tape"
+ },
+ "cells": [
+  {
+   "n_emptied": 80,
+   "reseed_rate_500": 0.3375,
+   "reseed_latency_p50": 203.0,
+   "reseed_latency_p90": 409.8,
+   "reseed_as_touch_share": 0.3704,
+   "regime": "joint",
+   "deltas": {}
+  },
+  {
+   "n_emptied": 74,
+   "reseed_rate_500": 0.3649,
+   "reseed_latency_p50": 36.0,
+   "reseed_latency_p90": 200.4,
+   "reseed_as_touch_share": 0.7778,
+   "regime": "arr_f60_b3",
+   "deltas": {
+    "repost_frac": 0.6,
+    "repost_window": 500,
+    "repost_band": 3
+   }
+  },
+  {
+   "n_emptied": 37,
+   "reseed_rate_500": 0.7027,
+   "reseed_latency_p50": 82.0,
+   "reseed_latency_p90": 368.5,
+   "reseed_as_touch_share": 0.7308,
+   "regime": "arr_f60_b0",
+   "deltas": {
+    "repost_frac": 0.6,
+    "repost_window": 500
+   }
+  },
+  {
+   "n_emptied": 13,
+   "reseed_rate_500": 0.7692,
+   "reseed_latency_p50": 19.5,
+   "reseed_latency_p90": 42.1,
+   "reseed_as_touch_share": 1.0,
+   "regime": "arr_f60_b3_fill",
+   "deltas": {
+    "repost_frac": 0.6,
+    "repost_window": 500,
+    "repost_band": 3,
+    "repost_cause": "fill"
+   }
+  },
+  {
+   "n_emptied": 6,
+   "reseed_rate_500": 0.3333,
+   "reseed_latency_p50": 103.0,
+   "reseed_latency_p90": 168.6,
+   "reseed_as_touch_share": 1.0,
+   "regime": "evt_f30_m160",
+   "deltas": {
+    "fill_repost_frac": 0.3,
+    "fill_repost_delay": 160
+   }
+  },
+  {
+   "n_emptied": 11,
+   "reseed_rate_500": 0.2727,
+   "reseed_latency_p50": 87.0,
+   "reseed_latency_p90": 107.8,
+   "reseed_as_touch_share": 1.0,
+   "regime": "evt_f55_m160",
+   "deltas": {
+    "fill_repost_frac": 0.55,
+    "fill_repost_delay": 160
+   }
+  },
+  {
+   "n_emptied": 6,
+   "reseed_rate_500": 0.6667,
+   "reseed_latency_p50": 154.0,
+   "reseed_latency_p90": 306.8,
+   "reseed_as_touch_share": 0.75,
+   "regime": "evt_f80_m160",
+   "deltas": {
+    "fill_repost_frac": 0.8,
+    "fill_repost_delay": 160
+   }
+  },
+  {
+   "n_emptied": 37,
+   "reseed_rate_500": 0.3514,
+   "reseed_latency_p50": 86.0,
+   "reseed_latency_p90": 138.6,
+   "reseed_as_touch_share": 0.6154,
+   "regime": "evt_f55_m40",
+   "deltas": {
+    "fill_repost_frac": 0.55,
+    "fill_repost_delay": 40
+   }
+  },
+  {
+   "n_emptied": 21,
+   "reseed_rate_500": 0.6667,
+   "reseed_latency_p50": 203.5,
+   "reseed_latency_p90": 439.7,
+   "reseed_as_touch_share": 0.5714,
+   "regime": "evt_f55_m320",
+   "deltas": {
+    "fill_repost_frac": 0.55,
+    "fill_repost_delay": 320
+   }
+  },
+  {
+   "n_emptied": 33,
+   "reseed_rate_500": 0.3939,
+   "reseed_latency_p50": 132.0,
+   "reseed_latency_p90": 228.6,
+   "reseed_as_touch_share": 0.5385,
+   "regime": "evt_f55_m160_d8",
+   "deltas": {
+    "fill_repost_frac": 0.55,
+    "fill_repost_delay": 160,
+    "repost_depth": 8
+   }
+  }
+ ],
+ "composable_cells": [
+  "evt_f80_m160"
+ ],
+ "claims": {
+  "frontier_cells_measured": true,
+  "composable_cell_exists": true,
+  "fill_trigger_composes_too": true,
+  "delay_sets_latency": true,
+  "joint_undeerseeds": true,
+  "tape_reseeds_majority": true,
+  "tape_reseed_returns_to_touch": true
+ },
+ "notes": "Two re-post grammars on the joint cell: arrival-driven (repost_frac over the vacancy ledger) vs fill-triggered (fill_repost_frac schedules a delayed re-post on each fill-emptied level). Delay is an exponential mean in events; a due repost fires only if the level is still absent and still legal. Question: which grammar lands inside both tape bands, and does fill_repost_delay track the tape's ~110-event latency? Result is reported, not asserted.",
+ "receipt_sha256": "c648247970c26d88756ab45f9637bd86191af5ac31736ce4f2c754903ead1e29"
+}

@@ -414,4 +414,13 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.replay_sweep import replay_coverage_contract_errors
 
         return replay_coverage_contract_errors(payload)
+    return _sigkernel_route(payload)
+
+
+def _sigkernel_route(payload: Mapping[str, Any]) -> list[str]:
+    """Deep route for ``sigkernel_mmd`` receipts; ``[]`` on unknown schemas."""
+    if payload.get("schema") == "sigkernel_mmd.v1" or payload.get("kind") == "sigkernel_mmd":
+        from quant_fund.microstructure.sigkernel_mmd import sigkernel_mmd_contract_errors
+
+        return sigkernel_mmd_contract_errors(payload)
     return []

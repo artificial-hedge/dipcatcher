@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
 
 .DEFAULT_GOAL := help
 
@@ -274,6 +274,9 @@ receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verif
 
 receipt-integrity-scan: ## Fast in-process self-seal digest scan over committed receipts (seconds, not minutes)
 	uv run python scripts/receipt_integrity_scan.py receipts
+
+audit-cli-mounts: ## Detect Typer apps defined in src/ but never mounted (dropped-wiring guard)
+	uv run python scripts/audit_cli_mounts.py
 
 evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
 	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit"

@@ -1,0 +1,270 @@
+{
+  "schema": "lo_response.v1",
+  "kind": "lo_response_bench",
+  "ticker": "AMZN",
+  "horizon": 30000,
+  "seed": 7,
+  "real": {
+    "ok": true,
+    "n_events": 269748,
+    "n_execs": 8974,
+    "post_fill": {
+      "1": {
+        "n_submissions": 3175,
+        "share_unhit": 0.6144881889763779,
+        "mean_dist_unhit": 7.266017426960533,
+        "mean_dist_hit": 6.236111111111111,
+        "submissions_per_event": 0.3537998662803655
+      },
+      "5": {
+        "n_submissions": 20645,
+        "share_unhit": 0.6229111164930976,
+        "mean_dist_unhit": 7.005054432348367,
+        "mean_dist_hit": 6.563391136801542,
+        "submissions_per_event": 2.3005348785379987
+      },
+      "20": {
+        "n_submissions": 83610,
+        "share_unhit": 0.5999401985408443,
+        "mean_dist_unhit": 6.93536811467076,
+        "mean_dist_hit": 7.233250620347395,
+        "submissions_per_event": 9.316915533764208
+      },
+      "50": {
+        "n_submissions": 210990,
+        "share_unhit": 0.5719749751173041,
+        "mean_dist_unhit": 6.905436647028115,
+        "mean_dist_hit": 7.506261834368668,
+        "submissions_per_event": 23.511254735903723
+      },
+      "100": {
+        "n_submissions": 426377,
+        "share_unhit": 0.5566130443246236,
+        "mean_dist_unhit": 7.000434000345515,
+        "mean_dist_hit": 7.3704363924887595,
+        "submissions_per_event": 47.51248049921997
+      }
+    },
+    "unconditional": {
+      "n_submissions": 41573,
+      "share_unhit": 0.4871912058307074,
+      "mean_dist_unhit": 7.05865508047793,
+      "mean_dist_hit": 6.5571086823959845,
+      "submissions_per_event": 0.49551836754153855
+    }
+  },
+  "sim_arms": {
+    "iid": {
+      "ok": true,
+      "n_fills": 5045,
+      "post_fill": {
+        "1": {
+          "n_submissions": 2528,
+          "share_unhit": 0.5102848101265823,
+          "mean_dist_unhit": 1.589922480620155,
+          "mean_dist_hit": 1.6017770597738288,
+          "submissions_per_event": 0.5010901883052528
+        },
+        "5": {
+          "n_submissions": 12692,
+          "share_unhit": 0.49968484084462655,
+          "mean_dist_unhit": 1.5835698517817722,
+          "mean_dist_hit": 1.6125984251968504,
+          "submissions_per_event": 0.5031516352824579
+        },
+        "20": {
+          "n_submissions": 50839,
+          "share_unhit": 0.5017801294281949,
+          "mean_dist_unhit": 1.6569580556644452,
+          "mean_dist_hit": 1.6498874807532868,
+          "submissions_per_event": 0.5038553022794846
+        },
+        "50": {
+          "n_submissions": 126985,
+          "share_unhit": 0.5005630586289719,
+          "mean_dist_unhit": 1.674406896985715,
+          "mean_dist_hit": 1.6793175761971586,
+          "submissions_per_event": 0.5034093161546085
+        },
+        "100": {
+          "n_submissions": 252649,
+          "share_unhit": 0.5002236304121528,
+          "mean_dist_unhit": 1.6792239339774175,
+          "mean_dist_hit": 1.6843935122121203,
+          "submissions_per_event": 0.500790882061447
+        }
+      },
+      "unconditional": {
+        "n_submissions": 2,
+        "share_unhit": 0.5,
+        "mean_dist_unhit": 1.0,
+        "mean_dist_hit": 1.0,
+        "submissions_per_event": 0.4
+      }
+    },
+    "lv_cd300": {
+      "ok": true,
+      "n_fills": 1324,
+      "post_fill": {
+        "1": {
+          "n_submissions": 635,
+          "share_unhit": 0.5181102362204725,
+          "mean_dist_unhit": 20.009118541033434,
+          "mean_dist_hit": 16.558823529411764,
+          "submissions_per_event": 0.479607250755287
+        },
+        "5": {
+          "n_submissions": 3080,
+          "share_unhit": 0.5055194805194805,
+          "mean_dist_unhit": 20.05266538214515,
+          "mean_dist_hit": 15.732107682206172,
+          "submissions_per_event": 0.4652567975830816
+        },
+        "20": {
+          "n_submissions": 12401,
+          "share_unhit": 0.5061688573502137,
+          "mean_dist_unhit": 20.22909032977537,
+          "mean_dist_hit": 16.067439581972568,
+          "submissions_per_event": 0.4683157099697885
+        },
+        "50": {
+          "n_submissions": 30959,
+          "share_unhit": 0.5069608191479053,
+          "mean_dist_unhit": 20.184326218540935,
+          "mean_dist_hit": 16.229166666666668,
+          "submissions_per_event": 0.4676586102719033
+        },
+        "100": {
+          "n_submissions": 62302,
+          "share_unhit": 0.5047992038778851,
+          "mean_dist_unhit": 20.201176470588237,
+          "mean_dist_hit": 16.43702191105925,
+          "submissions_per_event": 0.47055891238670694
+        }
+      },
+      "unconditional": {
+        "n_submissions": 790,
+        "share_unhit": 0.45949367088607596,
+        "mean_dist_unhit": 19.060606060606062,
+        "mean_dist_hit": 20.384074941451992,
+        "submissions_per_event": 0.4750450992182802
+      }
+    },
+    "lv_cd300_narrow": {
+      "ok": true,
+      "n_fills": 1346,
+      "post_fill": {
+        "1": {
+          "n_submissions": 633,
+          "share_unhit": 0.5165876777251185,
+          "mean_dist_unhit": 0.6574923547400612,
+          "mean_dist_hit": 22.973856209150327,
+          "submissions_per_event": 0.4702823179791976
+        },
+        "5": {
+          "n_submissions": 3224,
+          "share_unhit": 0.49720843672456577,
+          "mean_dist_unhit": 0.7498440424204617,
+          "mean_dist_hit": 22.392350400987045,
+          "submissions_per_event": 0.47904903417533434
+        },
+        "20": {
+          "n_submissions": 12777,
+          "share_unhit": 0.5001173984503404,
+          "mean_dist_unhit": 1.156338028169014,
+          "mean_dist_hit": 21.782057303898544,
+          "submissions_per_event": 0.47462852897473995
+        },
+        "50": {
+          "n_submissions": 31795,
+          "share_unhit": 0.5004245950621167,
+          "mean_dist_unhit": 1.9123248067374772,
+          "mean_dist_hit": 21.094119869050616,
+          "submissions_per_event": 0.4724368499257058
+        },
+        "100": {
+          "n_submissions": 63979,
+          "share_unhit": 0.5021022523015365,
+          "mean_dist_unhit": 3.40272070725937,
+          "mean_dist_hit": 20.20963741955737,
+          "submissions_per_event": 0.4753268945022288
+        }
+      },
+      "unconditional": {
+        "n_submissions": 630,
+        "share_unhit": 0.49047619047619045,
+        "mean_dist_unhit": 24.673139158576053,
+        "mean_dist_hit": 25.64797507788162,
+        "submissions_per_event": 0.48989113530326595
+      }
+    },
+    "lv_cd300_tilt": {
+      "ok": true,
+      "n_fills": 1289,
+      "post_fill": {
+        "1": {
+          "n_submissions": 598,
+          "share_unhit": 0.5852842809364549,
+          "mean_dist_unhit": 18.894285714285715,
+          "mean_dist_hit": 15.39516129032258,
+          "submissions_per_event": 0.46392552366175327
+        },
+        "5": {
+          "n_submissions": 2972,
+          "share_unhit": 0.6006056527590848,
+          "mean_dist_unhit": 19.495238095238093,
+          "mean_dist_hit": 15.984835720303286,
+          "submissions_per_event": 0.46113266097750194
+        },
+        "20": {
+          "n_submissions": 11964,
+          "share_unhit": 0.5928619190906051,
+          "mean_dist_unhit": 19.6237135203722,
+          "mean_dist_hit": 16.07554916854855,
+          "submissions_per_event": 0.46408068269976727
+        },
+        "50": {
+          "n_submissions": 29983,
+          "share_unhit": 0.5886669112497082,
+          "mean_dist_unhit": 19.727252124645894,
+          "mean_dist_hit": 16.222978999432417,
+          "submissions_per_event": 0.4652133436772692
+        },
+        "100": {
+          "n_submissions": 60102,
+          "share_unhit": 0.5846228078932482,
+          "mean_dist_unhit": 19.863932606653954,
+          "mean_dist_hit": 16.36783496895654,
+          "submissions_per_event": 0.46626842513576416
+        }
+      },
+      "unconditional": {
+        "n_submissions": 697,
+        "share_unhit": 0.4878048780487805,
+        "mean_dist_unhit": 22.55,
+        "mean_dist_hit": 20.88795518207283,
+        "submissions_per_event": 0.47158322056833557
+      }
+    }
+  },
+  "divergences": [
+    "iid:share_0.502_vs_0.600",
+    "iid:dist_1.7_vs_6.9",
+    "lv_cd300:share_0.506_vs_0.600",
+    "lv_cd300:dist_20.2_vs_6.9",
+    "lv_cd300_narrow:share_0.500_vs_0.600",
+    "lv_cd300_narrow:dist_1.2_vs_6.9",
+    "lv_cd300_tilt:dist_19.6_vs_6.9"
+  ],
+  "claims": {
+    "tape_rate_channel": true,
+    "tape_no_placement_shift": true,
+    "tilt_matches_rate": true,
+    "placement_density_gap": true
+  },
+  "interpretation": "The post-fill LO stream decomposes into a rate channel (which side submits) and a placement channel (how far from the touch). The tape's accommodation is the rate channel \u2014 post-fill submissions tilt toward the unhit side while their distances-to-touch stay at the unconditional profile \u2014 so hit_narrow reproduces the tilt *symptom* through a channel the tape does not use, and lo_tilt at calibrated gain reproduces the rate share exactly. The residual gap is the placement density itself: sim LOs land ~2.5x deeper than the tape's, so the rate tilt cannot convert into touch-depth mass at the observed scale.",
+  "git_revision": "0c843094e7c18a506c75cdf174ff7a494bb4d9b8",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "39deb9eb38b4d2110cf2dfa8c503de732be56168b5ad27d9fed3c0335a9b0ab5"
+}

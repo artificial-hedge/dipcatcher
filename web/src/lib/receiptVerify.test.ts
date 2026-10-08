@@ -9,9 +9,19 @@ import {
 } from "./receiptVerify";
 
 const FIXTURES = join(import.meta.dirname, "..", "..", "public", "fixtures");
+// The adaptive-mix receipt was quarantined into receipts/legacy-unsealed/ by
+// the pre-envelope refactor (8c2610661) and is no longer exported into the web
+// fixtures — read its committed evidence bytes from the immutable store. The
+// move was byte-preserving, so every expectation below is unchanged.
+const REPO = join(import.meta.dirname, "..", "..", "..");
 const REAL_RECEIPT = JSON.parse(
   readFileSync(
-    join(FIXTURES, "receipts", "adaptive_mix_20asset_1d_20260922.json"),
+    join(
+      REPO,
+      "receipts",
+      "legacy-unsealed",
+      "adaptive_mix_20asset_1d_20260922.json",
+    ),
     "utf8",
   ),
 ) as Record<string, unknown>;
@@ -89,9 +99,11 @@ describe("extractHashFields", () => {
   });
 
   it("resolves the real fast-replay code_sha256 match", () => {
+    // 20260927 was quarantined into receipts/legacy-unsealed/; 20260928 is the
+    // current sealed fast-replay receipt that ships in the web fixtures.
     const receipt = JSON.parse(
       readFileSync(
-        join(FIXTURES, "receipts", "fast_replay_p42_conformance_20260927.json"),
+        join(FIXTURES, "receipts", "fast_replay_p42_conformance_20260928.json"),
         "utf8",
       ),
     ) as Record<string, unknown>;

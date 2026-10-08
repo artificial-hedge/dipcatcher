@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 
-from quant_fund.config.models import AppConfig
+from quant_fund.config.models import AppConfig, RiskGateConfig
 from quant_fund.schemas.errors import RiskGateRejected
 from quant_fund.schemas.orders import Order, OrderSide
 
@@ -58,6 +58,14 @@ def _is_finite_age(age: int | float) -> bool:
         return False
 
 
+def _reject_out_of_range_model_age(model_age_hours: float, g: RiskGateConfig) -> None:
+    """Range half of the model-age staleness gate; fail-closed, same messages."""
+    if model_age_hours < 0.0:
+        raise RiskGateRejected("model age cannot be negative")
+    if model_age_hours > g.stale_model_hours:
+        raise RiskGateRejected(f"model is stale: {model_age_hours} hours")
+
+
 def check_order(
     order: Order,
     *,
@@ -109,10 +117,7 @@ def check_order(
     if model_age_hours is not None:
         if not _is_finite_age(model_age_hours):
             raise RiskGateRejected("model age must be finite")
-        if model_age_hours < 0.0:
-            raise RiskGateRejected("model age cannot be negative")
-        if model_age_hours > g.stale_model_hours:
-            raise RiskGateRejected(f"model is stale: {model_age_hours} hours")
+        _reject_out_of_range_model_age(model_age_hours, g)
     notional = abs(order.quantity) * price
     if exceeds_limit(notional, g.max_order_notional):
         raise RiskGateRejected(f"order notional {notional} > {g.max_order_notional}")

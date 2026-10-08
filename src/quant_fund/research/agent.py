@@ -4186,6 +4186,12 @@ def _retired_optional_families() -> frozenset[str]:
     present. ``OPTIONAL_BENCHMARK_FAMILIES`` stays append-only so frozen
     receipts keep verifying against old catalog state. Until the symbols
     land, nothing is retired and behavior is unchanged.
+
+    The DEFAULT research surface is ``DEFAULT_BENCHMARK_FAMILIES`` (the 23
+    REQUIRED families); this function only decides which *optional* names are
+    suppressed from emission. It deliberately enumerates the full optional set
+    — retirement cannot be computed otherwise, and narrowing it here would let
+    a retired family back into a live receipt.
     """
     from quant_fund.research.catalog import registry
 

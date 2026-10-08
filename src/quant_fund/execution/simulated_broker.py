@@ -56,6 +56,21 @@ def _validate_exec_bar(bar_open: float, bar_high: float, bar_low: float) -> None
         raise ValueError("bar ordering must satisfy bar_low <= bar_open <= bar_high")
 
 
+def _drift_slippage(decision_price: float | None, price: float, exec_qty: float) -> float:
+    """Validate decision_price fail-closed, then its adverse drift component.
+
+    Adverse component only (schema is non-negative); the signed drift is
+    recoverable from decision_price downstream.
+    """
+    if decision_price is None:
+        return 0.0
+    dec = float(decision_price)
+    if not np.isfinite(dec) or dec <= 0:
+        raise ValueError("decision_price must be finite and strictly positive")
+    signed_drift = (float(price) - dec) * exec_qty
+    return max(0.0, signed_drift)
+
+
 class RejectReason(str, Enum):
     KILL_SWITCH = "kill_switch"
     RISK_GATE = "risk_gate"
@@ -511,18 +526,7 @@ class SimulatedBroker:
 
         # Validate decision_price before any state moves: a late raise would
         # leave cash/shares mutated with no fill to account for it.
-        dec: float | None = None
-        if decision_price is not None:
-            dec = float(decision_price)
-            if not np.isfinite(dec) or dec <= 0:
-                raise ValueError("decision_price must be finite and strictly positive")
-
-        drift_slippage = 0.0
-        if dec is not None:
-            # Adverse component only (schema is non-negative); the signed
-            # drift is recoverable from decision_price downstream.
-            signed_drift = (float(price) - dec) * exec_qty
-            drift_slippage = max(0.0, signed_drift)
+        drift_slippage = _drift_slippage(decision_price, price, exec_qty)
         fill = Fill(
             fill_id=self._mint_id("fill"),
             order_id=order.order_id,

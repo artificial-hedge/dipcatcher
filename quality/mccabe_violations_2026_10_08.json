@@ -1,0 +1,31 @@
+{
+  "ceiling": 74,
+  "digest": "sha256:7b8354276ba39d16b0aad5f35a75880efbd913fe2ec39baf696146792c03ea40",
+  "generated_at": "2026-10-08T10:46:16+00:00",
+  "schema": "dipcatcher.mccabe_census/1",
+  "scope": [
+    "src"
+  ],
+  "tool": "ruff 0.16.9",
+  "violation_count": 3,
+  "violations": [
+    {
+      "complexity": 182,
+      "file": "src/fx1/cli_audit.py",
+      "function": "cli_audit",
+      "line": 52
+    },
+    {
+      "complexity": 115,
+      "file": "src/fx1/serve/api_audit.py",
+      "function": "_probe_backend_probes",
+      "line": 4140
+    },
+    {
+      "complexity": 82,
+      "file": "src/fx1/serve/parity_audit.py",
+      "function": "parity_audit",
+      "line": 396
+    }
+  ]
+}

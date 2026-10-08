@@ -29,11 +29,13 @@ from quant_fund.pipeline.train import (
 )
 from quant_fund.schemas.errors import PointInTimeError
 from quant_fund.validation.walk_forward import Fold
+from tests.support.panel_sources import materialize_panel_sources
 
 
 def _cfg(tmp_path: Path, **validation: int):
     cfg = load_config("configs/research.yaml")
-    cfg.data.root = tmp_path
+    # dataset identity is fail-closed on materialized panel sources (da5c3e78c)
+    cfg.data.root = materialize_panel_sources(tmp_path)
     cfg.validation = ValidationConfig(
         scheme="expanding",
         train_bars=16,

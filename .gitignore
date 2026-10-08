@@ -171,3 +171,6 @@ research/*/qpanel_cache/
 # Not added while tracked — that would hide a tracked file.
 # NOTE: `.test_durations` stays tracked ON PURPOSE — it is the checked-in
 # pytest-split shard-balancing input (Makefile `test-durations`, CI shards).
+
+# Vitest scratch: temporary dirs left beside a test file during a failed run.
+*.tmpdir/

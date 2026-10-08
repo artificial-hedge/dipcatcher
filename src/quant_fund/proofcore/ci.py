@@ -124,6 +124,14 @@ def receipt_paths(receipts_dir: Path) -> list[Path]:
         path
         for path in root.rglob("*.json")
         if path.is_file()
+        # ``<receipt>.json.seal.json`` sidecars are seal evidence, not receipts.
+        # They are verified by their own verifiers (``verify_payload`` /
+        # ``verify_seal`` in ``quant_fund.data.prereg_seal``, and
+        # ``verify_timestamps`` for the integrity pins). Feeding one to the
+        # research-receipt verifier reports a spurious
+        # ``receipt_sha256_missing_or_invalid`` because a sidecar carries
+        # ``{schema, file, sha256, sealed_at}`` and no receipt digest.
+        and not path.name.endswith(".seal.json")
         and not (
             len(path.relative_to(root).parts) > 1 and path.relative_to(root).parts[0] in quarantined
         )

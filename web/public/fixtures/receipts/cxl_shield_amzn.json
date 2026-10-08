@@ -1,0 +1,1122 @@
+{
+  "schema": "cxl_shield.v1",
+  "kind": "cxl_shield_bench",
+  "horizon": 20000,
+  "seed": 7,
+  "targets": {
+    "unhit_cxl_per_add": 0.61,
+    "instant_ticks": 0.887,
+    "k200_ticks": 4.6447
+  },
+  "cells": [
+    {
+      "relief": 0.0,
+      "damp": 0.0,
+      "window": 0,
+      "n_fills": 828,
+      "unhit_cxl_per_add": 0.8014739751266697,
+      "hit_cxl_per_fill": 1.5869565217391304,
+      "unhit_net_per_fill": 0.48429951690821255,
+      "instant_signed_ticks": 0.8351449275362319,
+      "k200_ticks": 3.063803680981595,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 828,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 79,
+              "near": 61,
+              "deep": 1207
+            },
+            "cxl": {
+              "inside": 5,
+              "touch": 20,
+              "near": 112,
+              "deep": 1177
+            },
+            "fill": {
+              "inside": 172,
+              "touch": 201,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 89,
+              "near": 78,
+              "deep": 2004
+            },
+            "cxl": {
+              "inside": 5,
+              "touch": 11,
+              "near": 37,
+              "deep": 1687
+            },
+            "fill": {
+              "inside": 21,
+              "touch": 9,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -0.4106280193236715,
+          "unhit_net_per_fill": 0.48429951690821255,
+          "hit_channel_rates": {
+            "add": 1.6268115942028984,
+            "cxl": 1.5869565217391304,
+            "fill": 0.4504830917874396
+          },
+          "unhit_channel_rates": {
+            "add": 2.6219806763285023,
+            "cxl": 2.101449275362319,
+            "fill": 0.036231884057971016
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 828,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 360,
+              "near": 300,
+              "deep": 5618
+            },
+            "cxl": {
+              "inside": 23,
+              "touch": 122,
+              "near": 434,
+              "deep": 5147
+            },
+            "fill": {
+              "inside": 717,
+              "touch": 873,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 411,
+              "near": 285,
+              "deep": 8662
+            },
+            "cxl": {
+              "inside": 54,
+              "touch": 32,
+              "near": 130,
+              "deep": 7649
+            },
+            "fill": {
+              "inside": 111,
+              "touch": 45,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -1.2536231884057971,
+          "unhit_net_per_fill": 1.6147342995169083,
+          "hit_channel_rates": {
+            "add": 7.582125603864735,
+            "cxl": 6.915458937198068,
+            "fill": 1.9202898550724639
+          },
+          "unhit_channel_rates": {
+            "add": 11.301932367149758,
+            "cxl": 9.498792270531402,
+            "fill": 0.18840579710144928
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 826,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 1342,
+              "near": 1117,
+              "deep": 21456
+            },
+            "cxl": {
+              "inside": 138,
+              "touch": 431,
+              "near": 1514,
+              "deep": 19006
+            },
+            "fill": {
+              "inside": 2418,
+              "touch": 2745,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 1274,
+              "near": 1080,
+              "deep": 31604
+            },
+            "cxl": {
+              "inside": 215,
+              "touch": 77,
+              "near": 535,
+              "deep": 29317
+            },
+            "fill": {
+              "inside": 572,
+              "touch": 275,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -2.8292978208232444,
+          "unhit_net_per_fill": 3.5920096852300243,
+          "hit_channel_rates": {
+            "add": 28.95278450363196,
+            "cxl": 25.531476997578693,
+            "fill": 6.250605326876514
+          },
+          "unhit_channel_rates": {
+            "add": 41.11138014527845,
+            "cxl": 36.493946731234864,
+            "fill": 1.0254237288135593
+          }
+        }
+      },
+      "channel_in_tol": false,
+      "instant_in_tol": true,
+      "k200_in_tol": false
+    },
+    {
+      "relief": 0.3,
+      "damp": 0.0,
+      "window": 100,
+      "n_fills": 818,
+      "unhit_cxl_per_add": 0.6266094420600858,
+      "hit_cxl_per_fill": 1.8484107579462103,
+      "unhit_net_per_fill": 0.9095354523227384,
+      "instant_signed_ticks": 1.278858625162127,
+      "k200_ticks": 2.1821282401091406,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 818,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 137,
+              "near": 64,
+              "deep": 1056
+            },
+            "cxl": {
+              "inside": 31,
+              "touch": 36,
+              "near": 113,
+              "deep": 1332
+            },
+            "fill": {
+              "inside": 196,
+              "touch": 181,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 77,
+              "near": 65,
+              "deep": 1955
+            },
+            "cxl": {
+              "inside": 8,
+              "touch": 9,
+              "near": 24,
+              "deep": 1273
+            },
+            "fill": {
+              "inside": 25,
+              "touch": 14,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -0.7726161369193154,
+          "unhit_net_per_fill": 0.9095354523227384,
+          "hit_channel_rates": {
+            "add": 1.5366748166259168,
+            "cxl": 1.8484107579462103,
+            "fill": 0.460880195599022
+          },
+          "unhit_channel_rates": {
+            "add": 2.563569682151589,
+            "cxl": 1.6063569682151588,
+            "fill": 0.04767726161369193
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 818,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 661,
+              "near": 259,
+              "deep": 4782
+            },
+            "cxl": {
+              "inside": 93,
+              "touch": 146,
+              "near": 452,
+              "deep": 5922
+            },
+            "fill": {
+              "inside": 759,
+              "touch": 636,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 358,
+              "near": 260,
+              "deep": 8465
+            },
+            "cxl": {
+              "inside": 44,
+              "touch": 41,
+              "near": 113,
+              "deep": 6169
+            },
+            "fill": {
+              "inside": 129,
+              "touch": 77,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -2.8190709046454767,
+          "unhit_net_per_fill": 3.0684596577017116,
+          "hit_channel_rates": {
+            "add": 6.970660146699267,
+            "cxl": 8.08435207823961,
+            "fill": 1.7053789731051345
+          },
+          "unhit_channel_rates": {
+            "add": 11.103911980440097,
+            "cxl": 7.78361858190709,
+            "fill": 0.25183374083129584
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 817,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 2412,
+              "near": 1039,
+              "deep": 18219
+            },
+            "cxl": {
+              "inside": 403,
+              "touch": 496,
+              "near": 1495,
+              "deep": 19493
+            },
+            "fill": {
+              "inside": 2270,
+              "touch": 1876,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 1213,
+              "near": 882,
+              "deep": 31475
+            },
+            "cxl": {
+              "inside": 143,
+              "touch": 135,
+              "near": 460,
+              "deep": 25930
+            },
+            "fill": {
+              "inside": 761,
+              "touch": 409,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -5.340269277845778,
+          "unhit_net_per_fill": 7.0159118727050185,
+          "hit_channel_rates": {
+            "add": 26.523867809057528,
+            "cxl": 26.789473684210527,
+            "fill": 5.074663402692779
+          },
+          "unhit_channel_rates": {
+            "add": 41.08935128518972,
+            "cxl": 32.64137086903305,
+            "fill": 1.4320685434516525
+          }
+        }
+      },
+      "channel_in_tol": true,
+      "instant_in_tol": false,
+      "k200_in_tol": false
+    },
+    {
+      "relief": 0.0,
+      "damp": 0.3,
+      "window": 100,
+      "n_fills": 650,
+      "unhit_cxl_per_add": 0.6847090663058186,
+      "hit_cxl_per_fill": 1.9615384615384615,
+      "unhit_net_per_fill": 0.6707692307692308,
+      "instant_signed_ticks": 0.7138461538461538,
+      "k200_ticks": 1.8317757009345794,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 650,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 61,
+              "near": 43,
+              "deep": 1037
+            },
+            "cxl": {
+              "inside": 6,
+              "touch": 21,
+              "near": 80,
+              "deep": 1168
+            },
+            "fill": {
+              "inside": 100,
+              "touch": 129,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 57,
+              "near": 41,
+              "deep": 1380
+            },
+            "cxl": {
+              "inside": 8,
+              "touch": 4,
+              "near": 18,
+              "deep": 982
+            },
+            "fill": {
+              "inside": 20,
+              "touch": 10,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -0.5584615384615385,
+          "unhit_net_per_fill": 0.6707692307692308,
+          "hit_channel_rates": {
+            "add": 1.7553846153846153,
+            "cxl": 1.9615384615384615,
+            "fill": 0.3523076923076923
+          },
+          "unhit_channel_rates": {
+            "add": 2.273846153846154,
+            "cxl": 1.5569230769230769,
+            "fill": 0.046153846153846156
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 650,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 255,
+              "near": 214,
+              "deep": 4639
+            },
+            "cxl": {
+              "inside": 18,
+              "touch": 73,
+              "near": 287,
+              "deep": 5033
+            },
+            "fill": {
+              "inside": 463,
+              "touch": 529,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 245,
+              "near": 173,
+              "deep": 5949
+            },
+            "cxl": {
+              "inside": 20,
+              "touch": 13,
+              "near": 91,
+              "deep": 4793
+            },
+            "fill": {
+              "inside": 105,
+              "touch": 47,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -1.9923076923076923,
+          "unhit_net_per_fill": 1.996923076923077,
+          "hit_channel_rates": {
+            "add": 7.858461538461539,
+            "cxl": 8.324615384615385,
+            "fill": 1.5261538461538462
+          },
+          "unhit_channel_rates": {
+            "add": 9.795384615384615,
+            "cxl": 7.564615384615385,
+            "fill": 0.23384615384615384
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 650,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 884,
+              "near": 758,
+              "deep": 17906
+            },
+            "cxl": {
+              "inside": 81,
+              "touch": 224,
+              "near": 890,
+              "deep": 17811
+            },
+            "fill": {
+              "inside": 1358,
+              "touch": 1590,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 782,
+              "near": 611,
+              "deep": 21650
+            },
+            "cxl": {
+              "inside": 66,
+              "touch": 72,
+              "near": 340,
+              "deep": 19826
+            },
+            "fill": {
+              "inside": 584,
+              "touch": 329,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -3.7015384615384614,
+          "unhit_net_per_fill": 2.809230769230769,
+          "hit_channel_rates": {
+            "add": 30.073846153846155,
+            "cxl": 29.24,
+            "fill": 4.535384615384616
+          },
+          "unhit_channel_rates": {
+            "add": 35.45076923076923,
+            "cxl": 31.236923076923077,
+            "fill": 1.4046153846153846
+          }
+        }
+      },
+      "channel_in_tol": true,
+      "instant_in_tol": true,
+      "k200_in_tol": false
+    },
+    {
+      "relief": 0.0,
+      "damp": 0.5,
+      "window": 100,
+      "n_fills": 842,
+      "unhit_cxl_per_add": 0.5978204462895692,
+      "hit_cxl_per_fill": 1.6793349168646081,
+      "unhit_net_per_fill": 0.8978622327790974,
+      "instant_signed_ticks": 0.6977434679334917,
+      "k200_ticks": 2.5048134777376654,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 842,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 67,
+              "near": 54,
+              "deep": 1216
+            },
+            "cxl": {
+              "inside": 11,
+              "touch": 26,
+              "near": 94,
+              "deep": 1283
+            },
+            "fill": {
+              "inside": 161,
+              "touch": 230,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 80,
+              "near": 40,
+              "deep": 1807
+            },
+            "cxl": {
+              "inside": 3,
+              "touch": 4,
+              "near": 14,
+              "deep": 1131
+            },
+            "fill": {
+              "inside": 16,
+              "touch": 3,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -0.5558194774346793,
+          "unhit_net_per_fill": 0.8978622327790974,
+          "hit_channel_rates": {
+            "add": 1.5878859857482186,
+            "cxl": 1.6793349168646081,
+            "fill": 0.4643705463182898
+          },
+          "unhit_channel_rates": {
+            "add": 2.2885985748218527,
+            "cxl": 1.368171021377672,
+            "fill": 0.022565320665083134
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 841,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 307,
+              "near": 219,
+              "deep": 5201
+            },
+            "cxl": {
+              "inside": 22,
+              "touch": 88,
+              "near": 396,
+              "deep": 5761
+            },
+            "fill": {
+              "inside": 605,
+              "touch": 956,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 292,
+              "near": 260,
+              "deep": 7629
+            },
+            "cxl": {
+              "inside": 12,
+              "touch": 23,
+              "near": 93,
+              "deep": 5305
+            },
+            "fill": {
+              "inside": 89,
+              "touch": 36,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -2.498216409036861,
+          "unhit_net_per_fill": 3.1189060642092747,
+          "hit_channel_rates": {
+            "add": 6.80975029726516,
+            "cxl": 7.451843043995244,
+            "fill": 1.8561236623067776
+          },
+          "unhit_channel_rates": {
+            "add": 9.727705112960761,
+            "cxl": 6.460166468489893,
+            "fill": 0.14863258026159334
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 841,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 1151,
+              "near": 879,
+              "deep": 20719
+            },
+            "cxl": {
+              "inside": 101,
+              "touch": 302,
+              "near": 1179,
+              "deep": 19709
+            },
+            "fill": {
+              "inside": 2062,
+              "touch": 3017,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 987,
+              "near": 885,
+              "deep": 27949
+            },
+            "cxl": {
+              "inside": 78,
+              "touch": 75,
+              "near": 347,
+              "deep": 22616
+            },
+            "fill": {
+              "inside": 447,
+              "touch": 237,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -4.305588585017836,
+          "unhit_net_per_fill": 7.159334126040428,
+          "hit_channel_rates": {
+            "add": 27.049940546967896,
+            "cxl": 25.31629013079667,
+            "fill": 6.039239001189061
+          },
+          "unhit_channel_rates": {
+            "add": 35.4589774078478,
+            "cxl": 27.486325802615934,
+            "fill": 0.8133174791914387
+          }
+        }
+      },
+      "channel_in_tol": true,
+      "instant_in_tol": true,
+      "k200_in_tol": false
+    },
+    {
+      "relief": 0.0,
+      "damp": 0.5,
+      "window": 50,
+      "n_fills": 816,
+      "unhit_cxl_per_add": 0.5866121614716403,
+      "hit_cxl_per_fill": 1.6936274509803921,
+      "unhit_net_per_fill": 0.9767156862745098,
+      "instant_signed_ticks": 0.6127450980392157,
+      "k200_ticks": 2.673006134969325,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 816,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 53,
+              "near": 58,
+              "deep": 998
+            },
+            "cxl": {
+              "inside": 2,
+              "touch": 30,
+              "near": 99,
+              "deep": 1251
+            },
+            "fill": {
+              "inside": 137,
+              "touch": 206,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 74,
+              "near": 64,
+              "deep": 1819
+            },
+            "cxl": {
+              "inside": 6,
+              "touch": 3,
+              "near": 20,
+              "deep": 1119
+            },
+            "fill": {
+              "inside": 7,
+              "touch": 5,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -0.7549019607843137,
+          "unhit_net_per_fill": 0.9767156862745098,
+          "hit_channel_rates": {
+            "add": 1.3590686274509804,
+            "cxl": 1.6936274509803921,
+            "fill": 0.42034313725490197
+          },
+          "unhit_channel_rates": {
+            "add": 2.3982843137254903,
+            "cxl": 1.4068627450980393,
+            "fill": 0.014705882352941176
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 816,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 261,
+              "near": 348,
+              "deep": 4893
+            },
+            "cxl": {
+              "inside": 22,
+              "touch": 122,
+              "near": 341,
+              "deep": 5322
+            },
+            "fill": {
+              "inside": 589,
+              "touch": 899,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 284,
+              "near": 286,
+              "deep": 7718
+            },
+            "cxl": {
+              "inside": 39,
+              "touch": 18,
+              "near": 68,
+              "deep": 5083
+            },
+            "fill": {
+              "inside": 73,
+              "touch": 33,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -2.1973039215686274,
+          "unhit_net_per_fill": 3.644607843137255,
+          "hit_channel_rates": {
+            "add": 6.742647058823529,
+            "cxl": 7.116421568627451,
+            "fill": 1.8235294117647058
+          },
+          "unhit_channel_rates": {
+            "add": 10.156862745098039,
+            "cxl": 6.382352941176471,
+            "fill": 0.12990196078431374
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 816,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 1016,
+              "near": 1199,
+              "deep": 18753
+            },
+            "cxl": {
+              "inside": 59,
+              "touch": 428,
+              "near": 1362,
+              "deep": 18363
+            },
+            "fill": {
+              "inside": 2078,
+              "touch": 2948,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 1006,
+              "near": 986,
+              "deep": 28128
+            },
+            "cxl": {
+              "inside": 149,
+              "touch": 91,
+              "near": 280,
+              "deep": 23613
+            },
+            "fill": {
+              "inside": 396,
+              "touch": 185,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -5.232843137254902,
+          "unhit_net_per_fill": 6.625,
+          "hit_channel_rates": {
+            "add": 25.69607843137255,
+            "cxl": 24.769607843137255,
+            "fill": 6.159313725490196
+          },
+          "unhit_channel_rates": {
+            "add": 36.911764705882355,
+            "cxl": 29.574754901960784,
+            "fill": 0.7120098039215687
+          }
+        }
+      },
+      "channel_in_tol": true,
+      "instant_in_tol": false,
+      "k200_in_tol": false
+    },
+    {
+      "relief": 0.15,
+      "damp": 0.3,
+      "window": 100,
+      "n_fills": 816,
+      "unhit_cxl_per_add": 0.657751362060426,
+      "hit_cxl_per_fill": 1.6237745098039216,
+      "unhit_net_per_fill": 0.8259803921568627,
+      "instant_signed_ticks": 1.2859848484848484,
+      "k200_ticks": 2.883159268929504,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 816,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 131,
+              "near": 67,
+              "deep": 1000
+            },
+            "cxl": {
+              "inside": 12,
+              "touch": 27,
+              "near": 92,
+              "deep": 1194
+            },
+            "fill": {
+              "inside": 177,
+              "touch": 141,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 89,
+              "near": 58,
+              "deep": 1872
+            },
+            "cxl": {
+              "inside": 7,
+              "touch": 10,
+              "near": 14,
+              "deep": 1297
+            },
+            "fill": {
+              "inside": 14,
+              "touch": 3,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -0.5453431372549019,
+          "unhit_net_per_fill": 0.8259803921568627,
+          "hit_channel_rates": {
+            "add": 1.4681372549019607,
+            "cxl": 1.6237745098039216,
+            "fill": 0.3897058823529412
+          },
+          "unhit_channel_rates": {
+            "add": 2.474264705882353,
+            "cxl": 1.6274509803921569,
+            "fill": 0.020833333333333332
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 816,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 592,
+              "near": 269,
+              "deep": 4531
+            },
+            "cxl": {
+              "inside": 91,
+              "touch": 101,
+              "near": 359,
+              "deep": 5136
+            },
+            "fill": {
+              "inside": 764,
+              "touch": 600,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 339,
+              "near": 250,
+              "deep": 8085
+            },
+            "cxl": {
+              "inside": 29,
+              "touch": 48,
+              "near": 85,
+              "deep": 6087
+            },
+            "fill": {
+              "inside": 77,
+              "touch": 26,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -2.0330882352941178,
+          "unhit_net_per_fill": 2.8455882352941178,
+          "hit_channel_rates": {
+            "add": 6.607843137254902,
+            "cxl": 6.9693627450980395,
+            "fill": 1.6715686274509804
+          },
+          "unhit_channel_rates": {
+            "add": 10.629901960784315,
+            "cxl": 7.658088235294118,
+            "fill": 0.12622549019607843
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 813,
+          "hit": {
+            "add": {
+              "inside": 0,
+              "touch": 2217,
+              "near": 1064,
+              "deep": 17002
+            },
+            "cxl": {
+              "inside": 298,
+              "touch": 401,
+              "near": 1227,
+              "deep": 16907
+            },
+            "fill": {
+              "inside": 2645,
+              "touch": 1962,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "unhit": {
+            "add": {
+              "inside": 0,
+              "touch": 1112,
+              "near": 955,
+              "deep": 29692
+            },
+            "cxl": {
+              "inside": 161,
+              "touch": 105,
+              "near": 365,
+              "deep": 24997
+            },
+            "fill": {
+              "inside": 431,
+              "touch": 177,
+              "near": 0,
+              "deep": 0
+            }
+          },
+          "hit_net_per_fill": -3.883148831488315,
+          "unhit_net_per_fill": 6.793357933579336,
+          "hit_channel_rates": {
+            "add": 24.948339483394832,
+            "cxl": 23.16482164821648,
+            "fill": 5.666666666666667
+          },
+          "unhit_channel_rates": {
+            "add": 39.06396063960639,
+            "cxl": 31.522755227552274,
+            "fill": 0.7478474784747847
+          }
+        }
+      },
+      "channel_in_tol": true,
+      "instant_in_tol": false,
+      "k200_in_tol": false
+    }
+  ],
+  "joint_closure_cells": [
+    {
+      "relief": 0.0,
+      "damp": 0.3,
+      "window": 100
+    },
+    {
+      "relief": 0.0,
+      "damp": 0.5,
+      "window": 100
+    }
+  ],
+  "claims": {
+    "shield_grid_evaluated": true,
+    "channel_fixable": true,
+    "joint_closure_exists": true,
+    "baseline_leakage_present": true
+  },
+  "interpretation": "Two cancel-shield mechanisms compete: relief reroutes unhit-side cancels onto the hit side (conserves mass, depletes the consumed book) while damp suppresses them outright (lowers mass, preserves the hit book). The grid's verdict: SUPPRESSION is the tape's mechanism \u2014 damp cells close the unhit cxl/add channel to 0.60-0.68 (tape 0.61) while holding instant drift inside tolerance, and every relief-bearing cell overshoots instant (rerouted mass drains the hit book). k200 remains out of tolerance on all cells \u2014 the continuation channel is still open.",
+  "git_revision": "04dfd7a1c551757ca499e4561011b7174ee31349",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "receipt_sha256": "beff208d40c2cc23b2ae4e4834a9f7efd8af15aee8493357c9bc90c35c7d419e"
+}

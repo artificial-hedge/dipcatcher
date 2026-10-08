@@ -16,9 +16,11 @@ for the 2025 holdout — that **2025 holdout is SPENT** and cannot be reused as
 new forward or holdout evidence. It can support retrospective diagnostics only.
 Stronger evidence requires verified data availability/adjustments and a fresh
 externally timestamped forward period: the named window is
-**`forward_2026H2` (start 2026-07-01)**, currently **NOT YET COLLECTED**, whose
-pre-registration is hash-sealed and must be externally timestamped and frozen
-before it runs (see [EVIDENCE_PROCUREMENT.md](EVIDENCE_PROCUREMENT.md) and
+**`forward_2026H2`**, currently **NOT YET COLLECTED**, whose pre-registration is
+hash-sealed and was externally RFC 3161 anchored on 2026-10-08. The first eligible
+forward session is the first market date **after the 2026-10-07 freeze** — the
+`window.start` value of 2026-07-01 is only the span label (see
+[EVIDENCE_PROCUREMENT.md](EVIDENCE_PROCUREMENT.md) and
 [REALITY_PREREGISTRATION.md](REALITY_PREREGISTRATION.md)). A passing forecast
 benchmark alone cannot promote a strategy or authorize live execution.
 

@@ -44,12 +44,16 @@ At the sole predeclared analysis, report the entire paired differential stream, 
 ## Frozen forward pre-registration (2026-10-07) and named window
 
 This power plan is now bound to a **hash-sealed forward pre-registration** for
-the named window **`forward_2026H2` (start 2026-07-01)** — declared in
+the named window **`forward_2026H2`** (calendar span label for H2 2026; `window.start`
+2026-07-01 is the span label, **not** the eligibility boundary — the first eligible
+session is the first market date after the 2026-10-07 freeze) — declared in
 [REALITY_PREREGISTRATION.md](REALITY_PREREGISTRATION.md) and sealed at
 `receipts/forward_record_preregistration_v1.json` (+ `.seal.json` sidecar,
 tamper-detected by `quant_fund.data.prereg_seal` / `tests/unit/data/test_prereg_seal.py`).
-The window is **NOT YET COLLECTED** and must be **externally timestamped and
-frozen before it runs**. The **2025 holdout is SPENT** (the vendor pool already
+The window is **NOT YET COLLECTED**. Its external timestamp requirement was
+**met on 2026-10-08** — the seal is RFC 3161-anchored
+(`quality/timestamps/receipts__forward_record_preregistration_v1.json.seal.json.tsr`,
+`chain_verified` + `fresh`). What remains is collection itself. The **2025 holdout is SPENT** (the vendor pool already
 has results for it and discloses survivorship bias) and cannot serve as new
 forward evidence. The admission rule is the frozen `validation/agent_referee.py`
 betting referee (anytime-valid at every stopping time); the primary test,

@@ -112,9 +112,21 @@ reused as forward evidence.
 | Element | Frozen value |
 |---|---|
 | Declaration date | 2026-10-07 (Asia/Calcutta) |
-| Forward window | **`forward_2026H2`, start 2026-07-01** (first eligible session on/after). Not yet collected. |
+| Forward window | **`forward_2026H2`** — the *calendar span label* for H2 2026, whose nominal span begins 2026-07-01. **2026-07-01 is not the eligibility boundary** — see Splits below. Not yet collected. |
 | Universe | static 424-name US universe frozen at the warmup boundary; fixed-universe, membership-selection bias recorded in `selection_basis` |
-| Splits | warmup = all bars on/before 2026-09-18 (already inspected, warmup only); forward = first accepted decision strictly after the externally recorded freeze |
+| Splits | warmup = all bars on/before 2026-09-18 (already inspected, warmup only); forward = **first accepted decision strictly after the recorded freeze (2026-10-07)** |
+
+> **Correction (2026-10-08).** Earlier revisions of this table stated the forward window
+> as "start 2026-07-01 (first eligible session on/after)", which contradicted the
+> `Splits` row beside it and the sealed receipt itself. The receipt's operative rule is
+> `splits.forward`: *"first accepted decision must occur on a LATER market date than the
+> recorded freeze."* The freeze is **2026-10-07**. So the first eligible forward session
+> is the first market date **after 2026-10-07** — **not** 2026-07-01.
+>
+> `window.start = 2026-07-01` is the span label of `forward_2026H2` (second half of
+> 2026) and nothing more. Reading it as a collection start would wrongly imply that
+> closes from July–October 2026 are eligible forward evidence; the receipt would reject
+> them, and correctly so.
 | Grid | frozen `momentum-20` vs frozen `equal-weight`; single primary comparison; no mid-collection tuning |
 | Costs | commission 1 bp, half-spread 5 bp, impact 0.1, borrow 50 bp/yr, financing 0, participation 0.1, next-open fills |
 | What gets recorded | externally timestamped inputs + decision cutoff; intended signed quantities + simulated orders; fills (incl. partials), rejects + reasons; positions, cash, costs, NAV + net-return accounting; kill-switch state; software/config/data hashes + broker-state cursor; immutable receipt chain |
@@ -137,8 +149,35 @@ tamper-detection tests in `tests/unit/data/test_prereg_seal.py` (editing the
 sealed effect size, the window start, or the file bytes makes verification fail
 closed). This is **local** tamper-evidence: it detects accidental or silent
 edits as long as the seal is not itself rewritten by whoever controls all local
-files. Independent external timestamping/anchoring of the seal is an operational
-step (see "Freeze before the first forward close" in
-[FORWARD_SHADOW_RECORD.md](FORWARD_SHADOW_RECORD.md)); the code does not assert
-it occurred. The freeze + external timestamp must happen **before** the first
-forward close in the `forward_2026H2` window.
+files.
+
+### External timestamp anchor — DONE 2026-10-08
+
+The operational step the previous revision left outstanding has now been performed.
+The seal is **independently timestamped** by an external RFC 3161 authority:
+
+```bash
+uv run dipcatcher anchor-timestamp \
+  --file receipts/forward_record_preregistration_v1.json.seal.json
+# → timestamp=quality/timestamps/receipts__forward_record_preregistration_v1.json.seal.json.tsr
+```
+
+Verified against the repo's pinned FreeTSA CA and signer certs:
+
+```json
+{ "ok": true, "anchored": true,
+  "fresh": { "receipts/forward_record_preregistration_v1.json.seal.json": true },
+  "chain": { "receipts/forward_record_preregistration_v1.json.seal.json": "chain_verified" },
+  "errors": [] }
+```
+
+`fresh=true` means the TSA token still commits to the seal's current bytes;
+`chain_verified` means the token chains to a pinned certificate. A history rewriter can
+no longer backdate this freeze, because the freeze instant is asserted by a third party
+rather than by the repository. Only the file's **SHA-256** was transmitted to the
+authority — never its contents. The anchor is recorded in
+`quality/timestamps/anchors.json` alongside the three integrity-pin anchors.
+
+**Still outstanding:** collection has not begun. `status` remains `NOT_YET_COLLECTED`,
+and no forward close has been recorded. The first eligible session is the first market
+date after the 2026-10-07 freeze.

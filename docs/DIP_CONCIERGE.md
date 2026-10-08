@@ -1,24 +1,60 @@
-# dipcatcher concierge — conversational orchestration for fx-1
+# dipcatcher CLI — chat-first orchestration for fx1 and fx1-lite
 
-The concierge is the interactive front door that turns dipcatcher's research
-lab into a conversation. You chat with the active fx-series model, ask
-follow-up questions, and delegate real work — lab benchmarks, deep web
-research, persistent memory — through slash commands. It ships as the `fxi`
-console script (`fx1.interactive.app`); bare `fxi` opens the console.
+dipcatcher is Artificial Hedge's state-of-the-art harness for orchestrating
+its **fx1** and **fx1-lite** models ([artificialhedge.co](https://artificialhedge.co))
+from the command line. The CLI is designed like Codex CLI: you open it, you
+talk to it, and it does the work. Plain text is a conversation with the
+active model; everything else is a slash command. `/superpower` is how the
+conversation reaches dipcatcher's research families — it picks the
+capabilities that fit your goal, runs them, and explains what it used and
+why.
 
-**Boundary rule.** `dipcatcher` stays the lab/harness CLI (`quant_fund`), and
-`quant_fund` never imports `fx1` (enforced by
-`tests/unit/test_fx1_dependency_edge.py`). The concierge lives on the fx1 side
-and reaches the lab exclusively through the registered harness commands in
-`fx1.harness.HARNESS_REGISTRY`, executed as subprocesses — the model can never
-touch an unregistered lab surface.
+> **Status (2026-10-08, working tree).** The packaged `dipcatcher` launcher
+> now opens chat when stdin and stdout are terminals. `dipcatcher chat
+> --model fx1-lite` chooses the starting model; `fxi` remains compatible.
+> Redirected bare invocation prints help, and explicit lab commands retain
+> their existing behavior. Ordinary chat and `/superpower` synthesis use the
+> honesty validator; refined plans enforce the same command cap as the
+> deterministic planner. Qualified family selection, durable jobs, full
+> terminal UX, and production acceptance remain open in
+> [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md). These changes are
+> not yet a published release or proof of live model availability.
+
+## Design: Codex-style, chat-first
+
+About 99% of the interface is the conversation. The rules:
+
+| Principle | What it means here |
+|---|---|
+| One command, one conversation | Bare `dipcatcher` opens the chat. There is no subcommand tree to learn first. |
+| Plain text is a turn | Ask in your own words; the active model answers and calls tools (memory, web, harness) as needed. |
+| Slash commands for control | `/superpower`, `/research`, `/use`, `/status`, `/cancel` — discoverable with `/help`, never required to get started. |
+| Approval before consequence | Consequential lab work (`train`, `optimize`, `paper`) asks first; a refusal is recorded, not retried. |
+| Long work runs in the background | Jobs stream progress while you keep typing; `/cancel` and `/redirect` take effect at the next step. |
+| Honest by default | Ordinary chat and `/superpower` synthesis pass the existing honesty validator before display. This lexical check does not establish semantic correctness or verify a cited receipt. |
+| Subcommands are the other 1% | `dipcatcher research --config …` and the rest stay for scripts, CI, and receipts — the non-interactive path. |
+
+New operator-facing features belong in the conversation (a slash command or
+a model tool in `src/fx1/interactive`), not as new top-level subcommands.
+
+**Boundary rule.** The chat lives on the fx1 side (`src/fx1/interactive`),
+and `quant_fund` never imports `fx1` (enforced by
+`tests/unit/test_fx1_dependency_edge.py` and `configs/arch_boundaries.toml`).
+The outer launcher is `src/dipcatcher_cli`, outside both libraries. The chat
+reaches the lab exclusively through the registered
+harness commands in `fx1.harness.HARNESS_REGISTRY`, executed as
+subprocesses — the model can never touch an unregistered lab surface.
 
 ## Quickstart
 
 ```sh
 uv sync --frozen --all-groups --all-extras
-fxi keys set fx1        # API key (not echoed) + base URL; stored mode 0600
-fxi                     # opens the concierge console
+dipcatcher              # opens chat in an interactive terminal
+# Inside chat: /keys set fx1 prompts for a masked API key and endpoint URL.
+# Use the completion URL supplied by your service; no endpoint is assumed live.
+# Inside chat: /help, /superpower help, /use fx1-lite, /exit
+# Or select the starting model explicitly:
+dipcatcher chat --model fx1-lite
 ```
 
 Without an endpoint the console still works: slash commands run, web research
@@ -59,10 +95,19 @@ lines, so progress renders while you keep typing, and `/cancel` /
 `/redirect` take effect at the job's next step boundary. On piped stdin the
 loop degrades to blocking reads (jobs still stream progress).
 
+On Windows the console uses blocking input because console handles are not
+supported by `select`; queued background progress appears between submitted
+lines. Full cross-platform editing and live progress remain acceptance work.
+
 ## /superpower — capability orchestration
 
 `/superpower <goal>` answers "which of dipcatcher's research capabilities
-should run for this goal, and why?" in four phases
+should run for this goal, and why?" The catalog is every registered harness
+command — `research` (the scientific benches that make up the research
+families; see [RESEARCH_CENTRE.md](RESEARCH_CENTRE.md)), plus `validate`,
+`forecast`, `backtest`, `northset`, `kyle-ofi`, and the other lab surfaces —
+together with web research, flash retrieve/save, and synthesis.
+`/superpower help` prints the live list. It runs in four phases
 (`fx1.interactive.superpower`):
 
 1. **Plan.** The deterministic planner scores every capability against the
@@ -70,8 +115,12 @@ should run for this goal, and why?" in four phases
    subset — never a blind run-everything. With a model endpoint available,
    the hosted model may refine the selection, but its reply is validated
    against the registry: unknown ids are dropped and any malformed or failed
-   model pass falls back to the deterministic plan. A broken model can only
-   *shrink* the plan.
+   model pass falls back to the deterministic plan. Both paths apply
+   `max_harness=4`; refinement deduplicates IDs and preserves retrieval first
+   and synthesis last. The model may select another registered command that
+   the keyword pass missed, within that same cap. Consequential commands
+   still stop at the approval gate. This is command-level planning; suitable
+   research-family selection remains future work.
 2. **Recall.** Flash context is retrieved first (cheap, local) so prior
    findings feed everything downstream.
 3. **Execute.** Web research (budgeted, cancellable) runs before harness

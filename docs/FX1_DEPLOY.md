@@ -315,11 +315,27 @@ fx1 harness bench --remote $URL --receipt        # prints the sealed
 capabilities, commands listing only. `bench` sends real traffic: run it
 against staging, or size `--n` to what the deployment can absorb.
 
-**Known red check (2026-10-08):** `job_receipt_verifies` fails
-deterministically in local selftest — `HarnessTransportError: harness API
-returned 500: Internal Server Error` — so `selftest` currently exits `2`
-with 15/16 checks passing. This is a defect in the job-receipt verification
-surface, not a waived gate: exit `0` remains the deploy criterion.
+**Selftest status — GREEN (2026-10-08, after the facade fix):**
+`fx1 harness selftest` exits `0` with 16/16 checks passing, including
+`job_receipt_verifies` (real output):
+
+```
+$ uv run fx1 harness selftest
+    {
+      "name": "job_receipt_verifies",
+      "ok": true,
+      "detail": ""
+    },
+… 16/16 checks ok …
+EXIT:0
+```
+
+Postmortem note: `job_receipt_verifies` previously failed deterministically
+(`harness API returned 500: Internal Server Error`) because facade stubs in
+`quant_fund.schemas.receipt` shadowed the PEP 562 lazy binding and returned
+`None` to every caller; they were replaced with call-time delegators
+(function-scope import keeps the arch boundary). Exit `0` remains the deploy
+criterion.
 
 ## Installing release artifacts (fxi installer)
 

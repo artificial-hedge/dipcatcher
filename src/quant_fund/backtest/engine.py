@@ -7,6 +7,7 @@ moves. Rejected orders are skipped (not silently unconstrained).
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -304,6 +305,43 @@ def run_backtest(
     )
 
 
+def _decision_inputs(
+    indices: Sequence[int],
+    sid_l: list[str],
+    close_v: list[float],
+    close_ok: list[bool],
+    adv_v: list[float],
+    adv_ok: list[bool],
+    vol_v: list[float],
+    vol_ok: list[bool],
+) -> tuple[dict[str, float], dict[str, float], dict[str, float]]:
+    """Signal-close decision marks, ADV and volatility for the names in ``indices``.
+
+    Decision price = the signal bar's close at ``dt``; it anchors the
+    implementation-shortfall drift of fills executing at ``exec_dt``.
+
+    Liquidity and volatility for a next-open order must be known **at the signal
+    close**: the execution day's final volume/ADV and realized volatility are
+    future data at the moment of the fill. ``vols`` therefore falls back to
+    0.02 for a name whose realized-vol flag is unset, matching the historical
+    inline form this helper was extracted from.
+
+    Returns ``(decision_marks, advs, vols)``, all fresh per call — the caller
+    reads them only after the decision, never across iterations.
+    """
+    decision_marks: dict[str, float] = {}
+    advs: dict[str, float] = {}
+    vols: dict[str, float] = {}
+    for j in indices:
+        sid = str(sid_l[j])
+        if close_ok[j]:
+            decision_marks[sid] = close_v[j]
+        if adv_ok[j]:
+            advs[sid] = adv_v[j]
+        vols[sid] = vol_v[j] if vol_ok[j] else 0.02
+    return decision_marks, advs, vols
+
+
 def _run_backtest_event_loop(
     bars: pl.DataFrame,
     weights: pl.DataFrame,
@@ -459,19 +497,26 @@ def _run_backtest_event_loop(
             raise StaleValuationError(
                 "held position valuation is stale beyond the configured limit: " + details
             )
+        # NOTE: the staleness gate is the ``stale_held`` check above. It also
+        # rejects a held name with no mark at all (``sid not in close_mark or
+        # sid not in mark_ages``), which a bare shares/ages helper would have
+        # to re-implement — so there is deliberately no separate assertion
+        # call here.
         # Decision price = the signal bar's close at ``dt``; it anchors the
         # implementation-shortfall drift of fills executing at ``exec_dt``.
-        decision_marks: dict[str, float] = {}
-        for j in day_idx_map.get(dt, ()):
-            sid = str(sid_l[j])
-            if close_ok[j]:
-                decision_marks[sid] = close_v[j]
-            # Liquidity and volatility for a next-open order must be known
-            # at the signal close. The execution day's final volume/ADV and
-            # realized volatility are future data at the moment of the fill.
-            if adv_ok[j]:
-                advs[sid] = adv_v[j]
-            vols[sid] = vol_v[j] if vol_ok[j] else 0.02
+        # Liquidity and volatility for a next-open order must be known at the
+        # signal close: the execution day's final volume/ADV and realized
+        # volatility are future data at the moment of the fill.
+        decision_marks, advs, vols = _decision_inputs(
+            day_idx_map.get(dt, ()),
+            sid_l,
+            close_v,
+            close_ok,
+            adv_v,
+            adv_ok,
+            vol_v,
+            vol_ok,
+        )
         # Value held names without an execution print at the last mark known
         # before this bar's close rather than at 0.0: a missing open must not
         # understate NAV / exposures and silently let the risk gate admit
