@@ -7655,7 +7655,13 @@
   "models/dikdik_qa_studies.py": {
    "status": "audited"
   },
+  "models/dilithium_sig.py": {
+   "status": "audited"
+  },
   "models/dill_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/dilworth_partition.py": {
    "status": "audited"
   },
   "models/dimension_adaptive.py": {
@@ -7676,6 +7682,9 @@
   "models/dingo_qa_studies.py": {
    "status": "audited"
   },
+  "models/dinic_flow.py": {
+   "status": "audited"
+  },
   "models/diplomatic_history.py": {
    "status": "audited"
   },
@@ -7691,6 +7700,12 @@
   "models/dirac_op.py": {
    "status": "audited"
   },
+  "models/dirac_ore.py": {
+   "status": "audited"
+  },
+  "models/direct_lingam.py": {
+   "status": "audited"
+  },
   "models/directing_studies.py": {
    "status": "audited"
   },
@@ -7701,6 +7716,9 @@
    "status": "audited"
   },
   "models/dirichlet_l.py": {
+   "status": "audited"
+  },
+  "models/dirichlet_multinomial.py": {
    "status": "audited"
   },
   "models/dirichlet_problem.py": {
@@ -7745,6 +7763,9 @@
   "models/discrete_valuation.py": {
    "status": "audited"
   },
+  "models/discriminant_analysis.py": {
+   "status": "audited"
+  },
   "models/discriminant_field.py": {
    "status": "audited"
   },
@@ -7754,10 +7775,25 @@
   "models/disjointness_dyn.py": {
    "status": "audited"
   },
+  "models/disk_sched.py": {
+   "status": "audited"
+  },
+  "models/dispatch_table.py": {
+   "status": "audited"
+  },
+  "models/dispersion_tests.py": {
+   "status": "audited"
+  },
   "models/dist_convolution.py": {
    "status": "audited"
   },
+  "models/dist_obsv.py": {
+   "status": "audited"
+  },
   "models/distality.py": {
+   "status": "audited"
+  },
+  "models/distance_covariance.py": {
    "status": "audited"
   },
   "models/distance_learning.py": {
@@ -7767,6 +7803,9 @@
    "status": "audited"
   },
   "models/distribution.py": {
+   "status": "audited"
+  },
+  "models/distribution_regression.py": {
    "status": "audited"
   },
   "models/distributive_law.py": {
@@ -7784,6 +7823,9 @@
   "models/divid_diff_table.py": {
    "status": "audited"
   },
+  "models/divide_conquer_eig.py": {
+   "status": "audited"
+  },
   "models/divided_power.py": {
    "status": "audited"
   },
@@ -7796,13 +7838,22 @@
   "models/divisor_class.py": {
    "status": "audited"
   },
+  "models/divisor_group.py": {
+   "status": "audited"
+  },
   "models/djt_space.py": {
    "status": "audited"
   },
   "models/dk_motive.py": {
    "status": "audited"
   },
+  "models/dlinear.py": {
+   "status": "audited"
+  },
   "models/dm_stack2.py": {
+   "status": "audited"
+  },
+  "models/dmc_solver.py": {
    "status": "audited"
   },
   "models/dml.py": {
@@ -7880,6 +7931,9 @@
   "models/domain_rag_studies.py": {
    "status": "audited"
   },
+  "models/dominance_tree.py": {
+   "status": "audited"
+  },
   "models/dominated_conv.py": {
    "status": "audited"
   },
@@ -7910,6 +7964,9 @@
   "models/doob_bm.py": {
    "status": "audited"
   },
+  "models/doob_decomp.py": {
+   "status": "audited"
+  },
   "models/doob_ineq.py": {
    "status": "audited"
   },
@@ -7923,6 +7980,9 @@
    "status": "audited"
   },
   "models/doqa_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/dora_weight.py": {
    "status": "audited"
   },
   "models/dorfler_marking.py": {
@@ -7944,6 +8004,9 @@
    "status": "audited"
   },
   "models/douady_hubbard.py": {
+   "status": "audited"
+  },
+  "models/double_auction.py": {
    "status": "audited"
   },
   "models/double_cat.py": {

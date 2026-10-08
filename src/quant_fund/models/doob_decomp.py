@@ -27,15 +27,17 @@ def _bench_doob_decomp(seed: int = 0) -> float:
     darr = np.array(diffs)
     # pooled increment mean ~ 0 (per-position se too noisy at tail positions)
     checks.append(abs(float(np.mean(darr))) < 0.02)
-    # compensator of S^3? not a (sub)martingale; skip -- verify A unique-ish:
-    # if M1 + A1 = M2 + A2 with A_i predictable, then A1 = A2
-    checks.append(True)
+    # per-position martingale property: mean of ΔM at a FIXED position
+    # k=10 must also be ~0 (se = sd/sqrt(20000) ≈ 0.014)
+    checks.append(abs(float(darr[:, 10].mean())) < 0.05)
     # empirical A estimate = cumulative predictable increment of X:
     # E[X_{k+1} - X_k | F_k] = 1 for X = S^2 -> A_n = n
     incr = np.array([np.diff(srw_path(n, rng) ** 2) for _ in range(20000)])
     checks.append(abs(float(np.mean(incr)) - 1.0) < 0.02)
-    # supermartingale X = -S^2 has compensator -n (decreasing)
-    checks.append(True)
+    # supermartingale X = -S^2 has compensator drift -1 per step:
+    # E[-(S_{k+1}^2 - S_k^2) | F_k] = -1, i.e. M' = -S^2 + n is a martingale
+    decr = np.array([-np.diff(srw_path(n, rng) ** 2) for _ in range(8000)])
+    checks.append(abs(float(np.mean(decr)) + 1.0) < 0.03)
     return float(sum(checks) / len(checks))
 
 

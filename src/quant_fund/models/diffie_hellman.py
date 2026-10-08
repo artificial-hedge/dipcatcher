@@ -29,5 +29,7 @@ def bench_diffie_hellman(seed: int = 4709) -> dict[str, float]:
         "synthetic_dh_secret": float(sa),
         "synthetic_dh_ddh": float(ddh),
         "synthetic_dh_distinct": float(s2 != sa),
-        "synthetic_dh_subgroup": float(pow(sa, P_SAFE - 1, P_SAFE) == 1),
+        # real subgroup check: sa must live in the order-q QR subgroup
+        # (s^(p-1) == 1 is Fermat — vacuous for every nonzero element)
+        "synthetic_dh_subgroup": float(pow(sa, (P_SAFE - 1) // 2, P_SAFE) == 1),
     }

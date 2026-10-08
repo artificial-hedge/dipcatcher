@@ -34,6 +34,13 @@ def bench_double_auction(seed: int = 4509) -> dict[str, float]:
     surplus = float(np.sum(bids[:vol] - p) + np.sum(p - asks[:vol]))
     bids2, asks2 = _book(seed + 1, gap=6.0)
     p2, vol2 = _clear(bids2, asks2)
+    # docstring contract: the gapped book must clear ZERO volume, and the
+    # overlapping book must clear a positive amount at a price inside the
+    # last crossing spread
+    if vol2 != 0 or p2 != 0.0:
+        raise ValueError(f"gapped book traded: vol={vol2} p={p2}")
+    if vol == 0 or not (asks[vol - 1] <= p <= bids[vol - 1]):
+        raise ValueError(f"crossing book did not clear inside spread: vol={vol} p={p}")
     return {
         "synthetic_da_price": p,
         "synthetic_da_volume": float(vol),

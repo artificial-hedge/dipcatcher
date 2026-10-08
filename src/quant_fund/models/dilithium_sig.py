@@ -115,4 +115,6 @@ def bench_dilithium_sig(seed: int = _SEED) -> dict[str, float]:
         if sig is not None:
             bad[0] = (bad[0] + 1) % Q
             forge += int(not verify(pk, msg, bad))
-    return {"synthetic_dilithium_sig": 1.0 if (good == 5 and forge == 5) else good / 5.0}
+    # accept-rate AND forge-reject both matter: average over all 10 checks
+    # (good=5, forge=0 previously still scored 1.0 — forgeries were free)
+    return {"synthetic_dilithium_sig": (good + forge) / 10.0}
