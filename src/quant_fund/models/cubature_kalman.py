@@ -24,6 +24,12 @@ def _sim(seed: int, n: int = 300) -> tuple[np.ndarray, np.ndarray]:
     return x, y
 
 
+def _cub_cov(cub: np.ndarray, xm: np.ndarray) -> np.ndarray:
+    """Cubature covariance with equal weights 1/(2n) — not np.cov's N-1."""
+    dev = cub - xm
+    return np.asarray((dev.T @ dev) / cub.shape[0])
+
+
 def _ckf(y: np.ndarray) -> np.ndarray:
     q, r = np.eye(2) * 0.01, 0.04
     x, p = np.zeros(2), np.eye(2)
@@ -33,7 +39,7 @@ def _ckf(y: np.ndarray) -> np.ndarray:
         s = np.linalg.cholesky(p + 1e-9 * np.eye(2))
         cub = np.array([_step(x + s @ pt) for pt in pts])
         xm = cub.mean(0)
-        pm = np.cov(cub.T) + q
+        pm = _cub_cov(cub, xm) + q
         s2 = np.linalg.cholesky(pm + 1e-9 * np.eye(2))
         cub2 = xm[None, :] + pts @ s2.T
         zc = np.array([_meas(c) for c in cub2])

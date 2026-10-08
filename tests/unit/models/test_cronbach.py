@@ -43,8 +43,23 @@ def test_split_half_correlated():
     rng = np.random.default_rng(4)
     theta = rng.standard_normal(300)
     x = theta[:, None] + 0.3 * rng.standard_normal((300, 10))
-    out = split_half(x, seed=4)
+    out = split_half(x)
     assert out["spearman_brown"] > 0.6
+
+
+def test_split_half_is_odd_even_not_random():
+    # docstring promises an odd/even split; the old code did a seeded random
+    # permutation instead. With signal planted only in odd items, the odd
+    # half carries it all and r_half collapses — a random split would mix
+    # signal into both halves and keep r_half high.
+    rng = np.random.default_rng(5)
+    theta = rng.standard_normal(400)
+    x = np.zeros((400, 10))
+    x[:, 0::2] = theta[:, None] + 0.2 * rng.standard_normal((400, 5))
+    x[:, 1::2] = rng.standard_normal((400, 5))
+    out = split_half(x)
+    assert abs(out["r_half"]) < 0.3
+    assert out["spearman_brown"] < 0.5
 
 
 def test_fail_closed_one_item():

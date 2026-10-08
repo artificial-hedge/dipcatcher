@@ -20,43 +20,52 @@ def _seq_exec(prog: list[Insn], regs: list[int]) -> None:
 
 
 def simulate(prog: list[Insn], forwarding: bool) -> tuple[int, list[int]]:
-    """Returns (cycles, final_regs)."""
-    regs = [0] * 8
-    # pipeline regs: stage -> (insn, computed_value_at_ex, dest)
-    cycles = 0
-    # in-flight: list indexed by stage of (dest, val_known_at_stage)
-    # simpler timing model: each insn needs 5 stages; a RAW dep on the
-    # previous insn stalls 2 cycles (or 0 with forwarding); dep on the
-    # insn two back stalls 1 cycle (0 with forwarding).
-    i = 0
+    """Returns (cycles, final_regs).
+
+    Timing model: insn i issues 1 cycle after the previous issue plus any
+    hazard stall, reaches EX at issue+2, commits at WB = EX+2. A consumer
+    with a RAW hazard (producer within the 2-insn window) sees the
+    producer's value when it is forwarded or already committed; otherwise
+    it reads the stale pre-producer register value — which is exactly what
+    exposes an insufficient stall. The register file is the pipeline's own
+    output, not a sequential replay.
+    """
     n = len(prog)
-    ex_time: list[int] = [0] * n  # cycle when insn i reaches EX
-    while i < n or cycles < (ex_time[-1] + 4 if n else 0):
-        cycles += 1
-        if i < n:
-            d, s, _x = prog[i]
-            stall = 0
-            if s != 0:  # reg 0 never written
-                # find producer
-                for j in range(i - 1, max(-1, i - 3), -1):
-                    if prog[j][0] == s:
-                        gap = i - j
-                        if not forwarding:
-                            stall = 3 - gap if gap <= 2 else 0
-                        else:
-                            stall = 1 if gap == 1 else 0
-                        break
-            ex_time[i] = cycles + 2 + stall
-            cycles += stall
-            # apply write at WB = ex_time + 2
-            _x = prog[i][2]
-            regs[d] = regs[s] + _x if not forwarding else regs[s] + _x
-            i += 1
-    # recompute regs sequentially for correctness (timing model only affects cycles)
-    regs = [0] * 8
-    _seq_exec(prog, regs)
-    total = (ex_time[-1] + 3) if n else 0
-    return total, regs
+    if n == 0:
+        return 0, [0] * 8
+    writes: list[list[tuple[int, int]]] = [[] for _ in range(8)]  # reg -> (insn, val)
+    ex_time: list[int] = [0] * n
+    ex_val: list[int] = [0] * n
+    cycles = 0
+    for i in range(n):
+        d, s, x = prog[i]
+        stall = 0
+        j = -1
+        if s != 0:  # reg 0 never written
+            for jj in range(i - 1, max(-1, i - 3), -1):
+                if prog[jj][0] == s:
+                    j = jj
+                    gap = i - jj
+                    if not forwarding:
+                        stall = 3 - gap if gap <= 2 else 0
+                    else:
+                        stall = 1 if gap == 1 else 0
+                    break
+        cycles += 1 + stall
+        ex_time[i] = cycles + 2
+        read = ex_time[i]
+        if j < 0:
+            operand = writes[s][-1][1] if writes[s] else 0
+        elif forwarding or read >= ex_time[j] + 2:
+            operand = ex_val[j]
+        else:
+            older = [v for idx, v in writes[s] if idx < j]
+            operand = older[-1] if older else 0
+        val = operand + x
+        ex_val[i] = val
+        writes[d].append((i, val))
+    regs = [w[-1][1] if w else 0 for w in writes]
+    return ex_time[-1] + 3, regs
 
 
 def bench_cpu_pipeline(seed: int = 20261231 + 330) -> dict[str, float]:

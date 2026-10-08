@@ -67,15 +67,12 @@ def kr20(x: FloatArray) -> dict[str, float]:
     return cronbach_alpha(a)
 
 
-def split_half(x: FloatArray, seed: int = 0) -> dict[str, float]:
+def split_half(x: FloatArray) -> dict[str, float]:
     """Odd/even split-half correlation with Spearman-Brown
     full-test correction."""
     a = _check_items(x)
-    k = a.shape[1]
-    rng = np.random.default_rng(seed)
-    order = rng.permutation(k)
-    half1 = a[:, order[: k // 2]].sum(axis=1)
-    half2 = a[:, order[k // 2 :]].sum(axis=1)
+    half1 = a[:, 0::2].sum(axis=1)
+    half2 = a[:, 1::2].sum(axis=1)
     if half1.std() <= 1e-12 or half2.std() <= 1e-12:
         raise ValueError("degenerate halves")
     r_half = float(np.corrcoef(half1, half2)[0, 1])
@@ -94,7 +91,7 @@ def bench_cronbach(seed: int = 20261231 + 438) -> dict[str, float]:
     alpha_noise = cronbach_alpha(rng.standard_normal((n, k)))
     x_bin = (x > np.median(x, axis=0)).astype(float)
     kr = kr20(x_bin)
-    split = split_half(x, seed=seed)
+    split = split_half(x)
     deleted = alpha_if_deleted(x)
     if alpha["alpha"] < 0.75 or abs(alpha_noise["alpha"]) > 0.2 or split["spearman_brown"] < 0.7:
         raise ValueError(

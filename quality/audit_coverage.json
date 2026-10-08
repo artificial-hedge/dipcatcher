@@ -6056,6 +6056,12 @@
   "models/corwin_petrov.py": {
    "status": "audited"
   },
+  "models/corwin_schultz.py": {
+   "status": "audited"
+  },
+  "models/cos_method.py": {
+   "status": "audited"
+  },
   "models/cosine_family.py": {
    "status": "audited"
   },
@@ -6066,6 +6072,9 @@
    "status": "audited"
   },
   "models/cosmos_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/costas.py": {
    "status": "audited"
   },
   "models/costume_design.py": {
@@ -6098,10 +6107,19 @@
   "models/cougar_qa_studies.py": {
    "status": "audited"
   },
+  "models/count.py": {
+   "status": "audited"
+  },
+  "models/count_bonus.py": {
+   "status": "audited"
+  },
   "models/count_data.py": {
    "status": "audited"
   },
   "models/counter_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/counterparty_gnn.py": {
    "status": "audited"
   },
   "models/coupled_fbsde.py": {
@@ -6110,7 +6128,13 @@
   "models/couples_therapy.py": {
    "status": "audited"
   },
+  "models/coupling_arg.py": {
+   "status": "audited"
+  },
   "models/course_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/cov_int.py": {
    "status": "audited"
   },
   "models/covariance.py": {
@@ -6128,6 +6152,12 @@
   "models/cover_tree.py": {
    "status": "audited"
   },
+  "models/cover_up.py": {
+   "status": "audited"
+  },
+  "models/covering_lift.py": {
+   "status": "audited"
+  },
   "models/covering_number.py": {
    "status": "audited"
   },
@@ -6140,10 +6170,16 @@
   "models/cow_qa_studies.py": {
    "status": "audited"
   },
+  "models/cowell_j2.py": {
+   "status": "audited"
+  },
   "models/cowrie_qa_studies.py": {
    "status": "audited"
   },
   "models/cox_process.py": {
+   "status": "audited"
+  },
+  "models/cox_time.py": {
    "status": "audited"
   },
   "models/coxeter_grp.py": {
@@ -6158,7 +6194,22 @@
   "models/cp_rank.py": {
    "status": "audited"
   },
+  "models/cps_transform.py": {
+   "status": "audited"
+  },
+  "models/cpu_pipeline.py": {
+   "status": "audited"
+  },
   "models/cq_algorithm.py": {
+   "status": "audited"
+  },
+  "models/cql_agent.py": {
+   "status": "audited"
+  },
+  "models/cqr_pred.py": {
+   "status": "audited"
+  },
+  "models/cr3bp_dynamics.py": {
    "status": "audited"
   },
   "models/crab_qa_studies.py": {
@@ -6188,16 +6239,31 @@
   "models/crank_nicholson2.py": {
    "status": "audited"
   },
+  "models/crank_nicolson.py": {
+   "status": "audited"
+  },
   "models/crappie_qa_studies.py": {
    "status": "audited"
   },
   "models/crater_qa_studies.py": {
    "status": "audited"
   },
+  "models/crc.py": {
+   "status": "audited"
+  },
+  "models/crc_check.py": {
+   "status": "audited"
+  },
   "models/creak_lite_studies.py": {
    "status": "audited"
   },
+  "models/cred_stuffing.py": {
+   "status": "audited"
+  },
   "models/credit_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/creditrisk_plus.py": {
    "status": "audited"
   },
   "models/creek_qa_studies.py": {
@@ -6230,6 +6296,9 @@
   "models/critical_care_medicine.py": {
    "status": "audited"
   },
+  "models/critical_path.py": {
+   "status": "audited"
+  },
   "models/critical_phenomena.py": {
    "status": "audited"
   },
@@ -6242,6 +6311,9 @@
   "models/crofton_formula.py": {
    "status": "audited"
   },
+  "models/cronbach.py": {
+   "status": "audited"
+  },
   "models/cronqa_lite_studies.py": {
    "status": "audited"
   },
@@ -6249,6 +6321,9 @@
    "status": "audited"
   },
   "models/cross_cultural_psychology.py": {
+   "status": "audited"
+  },
+  "models/cross_entropy_method.py": {
    "status": "audited"
   },
   "models/cross_section.py": {
@@ -6260,10 +6335,22 @@
   "models/crossed_product.py": {
    "status": "audited"
   },
+  "models/crossformer.py": {
+   "status": "audited"
+  },
+  "models/crossq.py": {
+   "status": "audited"
+  },
+  "models/croston.py": {
+   "status": "audited"
+  },
   "models/crow_qa_studies.py": {
    "status": "audited"
   },
   "models/crow_s_pairs_studies.py": {
+   "status": "audited"
+  },
+  "models/crown_bound.py": {
    "status": "audited"
   },
   "models/crowned_crane_qa_studies.py": {
@@ -6282,6 +6369,15 @@
    "status": "audited"
   },
   "models/crp_table.py": {
+   "status": "audited"
+  },
+  "models/crps_net.py": {
+   "status": "audited"
+  },
+  "models/crr_tree.py": {
+   "status": "audited"
+  },
+  "models/crt_garner.py": {
    "status": "audited"
   },
   "models/crump_mode.py": {
@@ -6308,6 +6404,9 @@
   "models/crystalline_stack.py": {
    "status": "audited"
   },
+  "models/cs_mri.py": {
+   "status": "audited"
+  },
   "models/cs_papers.py": {
    "status": "audited"
   },
@@ -6315,6 +6414,9 @@
    "status": "audited"
   },
   "models/csiszar_div.py": {
+   "status": "audited"
+  },
+  "models/csma_ca.py": {
    "status": "audited"
   },
   "models/csqa_lite_studies.py": {
@@ -6326,6 +6428,15 @@
   "models/ct_imaging_studies.py": {
    "status": "audited"
   },
+  "models/ctl_mc.py": {
+   "status": "audited"
+  },
+  "models/ctmc_availability.py": {
+   "status": "audited"
+  },
+  "models/cubature_kalman.py": {
+   "status": "audited"
+  },
   "models/cubature_rule.py": {
    "status": "audited"
   },
@@ -6333,6 +6444,9 @@
    "status": "audited"
   },
   "models/cubical_path.py": {
+   "status": "audited"
+  },
+  "models/cucb.py": {
    "status": "audited"
   },
   "models/cuckoo_dove_qa_studies.py": {

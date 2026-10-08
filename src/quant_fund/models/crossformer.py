@@ -30,6 +30,14 @@ def _torch() -> Any:
         raise ImportError("crossformer requires the `nn` extra (make sync)") from exc
 
 
+def _patch_tokens(x_in: Any, n_ch: int, n_patch: int) -> Any:
+    """(B, win, C) -> (B, C, n_patch, seg): per-channel contiguous time
+    patches. A bare reshape would interleave every channel into each
+    'time' slot — the transpose is load-bearing."""
+    B = int(x_in.shape[0])
+    return x_in.transpose(1, 2).reshape(B, n_ch, n_patch, -1)
+
+
 def synth_patch_coupled(
     n: int, win: int, n_ch: int, rng: np.random.Generator
 ) -> tuple[FloatArray, FloatArray]:
@@ -73,7 +81,7 @@ def bench_crossformer(
 
     def forward(x_in: Any) -> Any:
         B = x_in.shape[0]
-        tok = patch_emb(x_in.reshape(B, n_ch, 4, seg))  # (B, C, 4, d)
+        tok = patch_emb(_patch_tokens(x_in, n_ch, 4))  # (B, C, 4, d)
         t = tok.reshape(B * n_ch, 4, d)
         t, _ = t_attn(t, t, t)  # within-channel patch attention
         t = t.reshape(B, n_ch, 4, d).permute(0, 2, 1, 3).reshape(B * 4, n_ch, d)

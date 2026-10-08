@@ -67,9 +67,17 @@ class MessageNet:
 
 
 def auc_score(y: FloatArray, s: FloatArray) -> float:
-    o = np.argsort(s)
+    y = np.asarray(y)
+    s = np.asarray(s)
+    o = np.argsort(s, kind="stable")
     r = np.empty(len(s))
     r[o] = np.arange(1, len(s) + 1)
+    # Mann-Whitney midranks: tied scores share the mean of their ranks.
+    sv = s[o]
+    starts = np.flatnonzero(np.concatenate([[True], sv[1:] != sv[:-1]]))
+    ends = np.concatenate([starts[1:], [len(sv)]])
+    for lo, hi in zip(starts, ends, strict=True):
+        r[o[lo:hi]] = (lo + 1 + hi) / 2.0
     pos = y > 0.5
     npos = int(pos.sum())
     nneg = len(y) - npos

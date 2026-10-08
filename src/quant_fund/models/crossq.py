@@ -18,6 +18,16 @@ def _torch():
     return torch
 
 
+def _eval_random(rng: np.random.Generator, steps: int = 200) -> float:
+    """Measured baseline: mean per-step reward of a uniform-random policy."""
+    st = np.zeros(4)
+    tot = 0.0
+    for _ in range(steps):
+        st, r = _env_step(st, float(rng.uniform(-1.0, 1.0)), rng)
+        tot += r
+    return tot / steps
+
+
 def bench_crossq(seed: int = 919, steps: int = 2500) -> dict[str, float]:
     torch = _torch()
     rng = np.random.default_rng(seed)
@@ -70,6 +80,6 @@ def bench_crossq(seed: int = 919, steps: int = 2500) -> dict[str, float]:
         n += 1
     return {
         "synthetic_cq_mean_reward": tot / n,
-        "synthetic_cq_random_reward": -0.2,
+        "synthetic_cq_random_reward": _eval_random(rng),
         "synthetic_torch_available": 1.0,
     }

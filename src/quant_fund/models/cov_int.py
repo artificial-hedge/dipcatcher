@@ -49,6 +49,22 @@ def cov_int(
     return c, C, float(w)
 
 
+def _draw_ab(
+    rng: np.random.Generator,
+    tru: FloatArray,
+    La: FloatArray,
+    Lb: FloatArray,
+    rho: float,
+) -> tuple[FloatArray, FloatArray]:
+    """Draw (a, b) measurement errors with stated marginal covariances and
+    unknown cross-correlation rho * La @ Lb.T (the CI scenario)."""
+    za = rng.normal(size=tru.size)
+    zb = rng.normal(size=tru.size)
+    a = tru + La @ za
+    b = tru + Lb @ (rho * za + np.sqrt(1.0 - rho * rho) * zb)
+    return a, b
+
+
 def bench_cov_int(seed: int = 20261231) -> dict[str, float]:
     """SYNTHETIC: fused estimate Mahalanobis-consistent, bounded by
     the better input's covariance; identical inputs fuse to same mean
@@ -57,16 +73,12 @@ def bench_cov_int(seed: int = 20261231) -> dict[str, float]:
     tru = np.array([3.0, -1.0])
     A = np.array([[1.0, 0.2], [0.2, 0.5]])
     B = np.array([[0.8, -0.1], [-0.1, 0.4]])
-    corr = 0.3 * np.ones((2, 2))  # unknown cross-correlation in truth
+    rho = 0.3  # unknown cross-correlation in truth
     La = np.linalg.cholesky(A)
     Lb = np.linalg.cholesky(B)
     errs = []
     for _t in range(300):
-        z = rng.normal(size=3)
-        a = tru + La @ z[:2] + corr @ np.array([z[2], 0]) * 0
-        a = tru + La @ (z[:2] + 0.3 * z[2])
-        b = tru + Lb @ (z[:2] * 0.3 + z[2] * np.ones(2) * 0.7)
-        b = tru + Lb @ rng.normal(size=2)
+        a, b = _draw_ab(rng, tru, La, Lb, rho)
         c, C, w = cov_int(a, A, b, B)
         errs.append(float((c - tru) @ np.linalg.solve(C, c - tru)))
     maha = float(np.mean(errs))
