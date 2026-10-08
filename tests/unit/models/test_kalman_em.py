@@ -6,7 +6,7 @@ from quant_fund.models.kalman_em import bench_kalman_em, kalman_em, synth_kalman
 
 def test_bench_kalman_em_passes():
     r = bench_kalman_em()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_em_recovers_phi():

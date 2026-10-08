@@ -1,4 +1,4 @@
-"""Attention rollout interpretability (Abnar-Zuidema 2020).
+"""Attention rollout interpretability (Abnar-Zuidema 2020) (SYNTHETIC).
 
 Multi-layer attention flow (product of per-layer attention matrices
 with residual mix) vs single-layer raw attention — which better

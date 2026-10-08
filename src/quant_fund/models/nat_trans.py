@@ -1,4 +1,4 @@
-"""Naturality square checker (wave 289).
+"""Naturality square checker (wave 289) (SYNTHETIC).
 
 eta: F => G is natural iff G(f) o eta = eta o F(f) for every arrow
 f — checked pointwise on endofunctors of a finite set Z6.

@@ -1,4 +1,4 @@
-"""Prony's method: fit sum-of-exponentials to a sequence."""
+"""Prony's method: fit sum-of-exponentials to a sequence (SYNTHETIC)."""
 
 import numpy as np
 

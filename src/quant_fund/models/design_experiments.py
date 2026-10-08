@@ -1,4 +1,4 @@
-"""Experimental-design canon: 2^k full factorial,
+"""Experimental-design canon: 2^k full factorial, (SYNTHETIC)
 Plackett-Burman (Paley construction), central
 composite, Box-Behnken, Latin hypercube, and
 D-optimal Fedorov exchange.

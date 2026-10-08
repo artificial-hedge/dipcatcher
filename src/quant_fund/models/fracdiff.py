@@ -1,4 +1,4 @@
-"""Fractional differentiation (AFML ch. 5; Hosking 1981).
+"""Fractional differentiation (AFML ch. 5; Hosking 1981) (SYNTHETIC).
 
 Stationarity vs memory trade-off: integer differencing (d=1) erases memory;
 fractional ``d in (0,1)`` keeps long-memory structure while reaching

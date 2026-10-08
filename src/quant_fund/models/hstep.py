@@ -1,4 +1,4 @@
-"""Vol-scaled h-step return-distribution challenger (ULTRAPLAN P1.10)."""
+"""Vol-scaled h-step return-distribution challenger (ULTRAPLAN P1.10) (SYNTHETIC)."""
 
 from __future__ import annotations
 

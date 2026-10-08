@@ -224,12 +224,12 @@ def bench_conformal_transfer() -> dict[str, float]:
     try:
         raw = _tcc_core_bench(n_cal=800, n_pairs_fit=1000, n_pairs_eval=2000, n_test=3000, seed=11)
         mapped = {
-            "tcc_coverage_transport_only": float(raw["coverage_transport_only"]),
-            "tcc_coverage_tcc_ks": float(raw["coverage_tcc_ks"]),
-            "tcc_coverage_weighted_tcc": float(raw["coverage_weighted_tcc"]),
-            "tcc_delta_plus": float(raw["delta_plus"]),
-            "tcc_ess_percent": float(raw["ess_percent"]),
-            "tcc_alpha": float(raw["alpha"]),
+            "tcc_coverage_transport_only": float(raw["synthetic_coverage_transport_only"]),
+            "tcc_coverage_tcc_ks": float(raw["synthetic_coverage_tcc_ks"]),
+            "tcc_coverage_weighted_tcc": float(raw["synthetic_coverage_weighted_tcc"]),
+            "tcc_delta_plus": float(raw["synthetic_delta_plus"]),
+            "tcc_ess_percent": float(raw["synthetic_ess_percent"]),
+            "tcc_alpha": float(raw["synthetic_alpha"]),
         }
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
@@ -261,11 +261,11 @@ def bench_hpd_conformal() -> dict[str, float]:
     try:
         raw = _cusim_core_bench()
         mapped = {
-            "cusim_coverage": float(raw["coverage_cusim"]),
-            "cusim_absresid_coverage": float(raw["coverage_absresid"]),
-            "cusim_length_ratio": float(raw["length_ratio"]),
-            "cusim_n_components": float(raw["n_components_mean"]),
-            "cusim_alpha": float(raw["alpha"]),
+            "cusim_coverage": float(raw["synthetic_coverage_cusim"]),
+            "cusim_absresid_coverage": float(raw["synthetic_coverage_absresid"]),
+            "cusim_length_ratio": float(raw["synthetic_length_ratio"]),
+            "cusim_n_components": float(raw["synthetic_n_components_mean"]),
+            "cusim_alpha": float(raw["synthetic_alpha"]),
         }
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}

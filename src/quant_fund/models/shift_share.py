@@ -1,4 +1,4 @@
-"""Shift-share (Bartik) instrumental variables.
+"""Shift-share (Bartik) instrumental variables (SYNTHETIC).
 
 Bartik-style instrument: regional exposure s_lk to industry shocks g_k
 gives z_l = Σ_k s_lk g_k. The module computes the first stage, 2SLS

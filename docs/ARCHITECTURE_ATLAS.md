@@ -165,6 +165,8 @@ flowchart LR
     fx1_train["fx1.train"]
     fx1_webresearch["fx1.webresearch"]
   end
+  dipcatcher_cli -->|2| fx1_interactive
+  dipcatcher_cli -->|1| quant_fund_cli
   fx1_bench -->|1| fx1_honesty
   fx1_bench -->|5| quant_fund_utils
   fx1_cli -->|1| fx1
@@ -227,7 +229,7 @@ flowchart LR
   fx1_interactive -->|1| fx1_doctor
   fx1_interactive -->|7| fx1_flash
   fx1_interactive -->|3| fx1_harness
-  fx1_interactive -->|1| fx1_honesty
+  fx1_interactive -->|2| fx1_honesty
   fx1_interactive -->|3| fx1_serve
   fx1_interactive -->|1| fx1_webresearch
   fx1_modelcard_audit -->|1| fx1_modelcard
@@ -268,12 +270,12 @@ flowchart LR
   fx1_serve -->|3| fx1_eval
   fx1_serve -->|32| fx1_harness
   fx1_serve -->|3| fx1_honesty
-  fx1_serve -->|5| fx1_modelcard
+  fx1_serve -->|6| fx1_modelcard
   fx1_serve -->|1| fx1_reward
   fx1_serve -->|14| fx1_sdk
   fx1_serve -->|4| fx1_train
   fx1_serve -->|5| quant_fund_schemas
-  fx1_serve -->|74| quant_fund_utils
+  fx1_serve -->|76| quant_fund_utils
   fx1_tail_audit -->|2| fx1_data
   fx1_tail_audit -->|1| fx1_eval
   fx1_tail_audit -->|1| fx1_honesty
@@ -342,8 +344,8 @@ flowchart LR
   quant_fund_data -->|4| quant_fund_config
   quant_fund_data -->|2| quant_fund_microstructure
   quant_fund_data -->|1| quant_fund_proofcore
-  quant_fund_data -->|15| quant_fund_schemas
-  quant_fund_data -->|13| quant_fund_utils
+  quant_fund_data -->|16| quant_fund_schemas
+  quant_fund_data -->|16| quant_fund_utils
   quant_fund_diffbacktest -->|1| quant_fund_metrics
   quant_fund_diffbacktest -->|6| quant_fund_utils
   quant_fund_execution -->|2| quant_fund_config
@@ -351,7 +353,7 @@ flowchart LR
   quant_fund_execution -->|2| quant_fund_models
   quant_fund_execution -->|1| quant_fund_monitoring
   quant_fund_execution -->|1| quant_fund_portfolio
-  quant_fund_execution -->|2| quant_fund_schemas
+  quant_fund_execution -->|3| quant_fund_schemas
   quant_fund_execution -->|2| quant_fund_utils
   quant_fund_features -->|1| quant_fund_config
   quant_fund_features -->|2| quant_fund_data
@@ -411,7 +413,7 @@ flowchart LR
   quant_fund_models -->|1| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
-  quant_fund_models -->|57| quant_fund_metrics
+  quant_fund_models -->|58| quant_fund_metrics
   quant_fund_models -->|2| quant_fund_microstructure
   quant_fund_models -->|3| quant_fund_pipeline
   quant_fund_models -->|1| quant_fund_quant_models
@@ -436,7 +438,7 @@ flowchart LR
   quant_fund_paper -->|1| quant_fund_backtest
   quant_fund_paper -->|3| quant_fund_config
   quant_fund_paper -->|1| quant_fund_data
-  quant_fund_paper -->|4| quant_fund_execution
+  quant_fund_paper -->|5| quant_fund_execution
   quant_fund_paper -->|3| quant_fund_metrics
   quant_fund_paper -->|2| quant_fund_monitoring
   quant_fund_paper -->|1| quant_fund_pipeline
@@ -455,18 +457,18 @@ flowchart LR
   quant_fund_pipeline -->|1| quant_fund
   quant_fund_pipeline -->|19| quant_fund_config
   quant_fund_pipeline -->|10| quant_fund_data
-  quant_fund_pipeline -->|2| quant_fund_features
+  quant_fund_pipeline -->|3| quant_fund_features
   quant_fund_pipeline -->|2| quant_fund_fusion
   quant_fund_pipeline -->|1| quant_fund_labels
   quant_fund_pipeline -->|2| quant_fund_lightspeed
   quant_fund_pipeline -->|15| quant_fund_metrics
-  quant_fund_pipeline -->|77| quant_fund_models
+  quant_fund_pipeline -->|79| quant_fund_models
   quant_fund_pipeline -->|4| quant_fund_portfolio
   quant_fund_pipeline -->|5| quant_fund_registry
   quant_fund_pipeline -->|2| quant_fund_reporting
   quant_fund_pipeline -->|2| quant_fund_research
   quant_fund_pipeline -->|17| quant_fund_schemas
-  quant_fund_pipeline -->|21| quant_fund_utils
+  quant_fund_pipeline -->|23| quant_fund_utils
   quant_fund_pipeline -->|4| quant_fund_validation
   quant_fund_pit -->|1| quant_fund_data
   quant_fund_pit -->|6| quant_fund_proofcore
@@ -482,9 +484,12 @@ flowchart LR
   quant_fund_proof -->|1| quant_fund_config
   quant_fund_proof -->|2| quant_fund_leakage
   quant_fund_proof -->|1| quant_fund_metrics
+  quant_fund_proof -->|1| quant_fund_pipeline
   quant_fund_proof -->|1| quant_fund_pit
   quant_fund_proof -->|12| quant_fund_proofcore
-  quant_fund_proof -->|1| quant_fund_utils
+  quant_fund_proof -->|1| quant_fund_registry
+  quant_fund_proof -->|1| quant_fund_research
+  quant_fund_proof -->|2| quant_fund_utils
   quant_fund_public -->|1| quant_fund_backtest
   quant_fund_public -->|2| quant_fund_config
   quant_fund_public -->|1| quant_fund_data
@@ -511,7 +516,7 @@ flowchart LR
   quant_fund_research -->|9| quant_fund_execution
   quant_fund_research -->|1| quant_fund_hedge_lab
   quant_fund_research -->|122| quant_fund_metrics
-  quant_fund_research -->|18| quant_fund_microstructure
+  quant_fund_research -->|19| quant_fund_microstructure
   quant_fund_research -->|10226| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
   quant_fund_research -->|13| quant_fund_pipeline
@@ -734,6 +739,7 @@ sequenceDiagram
 <!-- BEGIN GENERATED: coverage -->
 | Package | Modules |
 |---|---|
+| `dipcatcher_cli` | 3 |
 | `fx1` | 1 |
 | `fx1.bench` | 5 |
 | `fx1.capabilities` | 1 |
@@ -782,10 +788,10 @@ sequenceDiagram
 | `quant_fund.combination` | 8 |
 | `quant_fund.compute` | 7 |
 | `quant_fund.config` | 7 |
-| `quant_fund.data` | 42 |
+| `quant_fund.data` | 45 |
 | `quant_fund.decay` | 7 |
 | `quant_fund.diffbacktest` | 8 |
-| `quant_fund.execution` | 14 |
+| `quant_fund.execution` | 15 |
 | `quant_fund.features` | 9 |
 | `quant_fund.flowbars` | 9 |
 | `quant_fund.formal` | 8 |
@@ -799,19 +805,19 @@ sequenceDiagram
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 107 |
 | `quant_fund.microstructure` | 182 |
-| `quant_fund.models` | 10397 |
+| `quant_fund.models` | 10400 |
 | `quant_fund.monitoring` | 7 |
 | `quant_fund.native` | 7 |
 | `quant_fund.northset` | 10 |
 | `quant_fund.observe` | 9 |
-| `quant_fund.paper` | 9 |
+| `quant_fund.paper` | 10 |
 | `quant_fund.parity` | 11 |
 | `quant_fund.parity_leak_audit` | 1 |
-| `quant_fund.pipeline` | 23 |
+| `quant_fund.pipeline` | 24 |
 | `quant_fund.pit` | 8 |
 | `quant_fund.portfolio` | 14 |
 | `quant_fund.pretrade` | 9 |
-| `quant_fund.proof` | 9 |
+| `quant_fund.proof` | 10 |
 | `quant_fund.proofcore` | 7 |
 | `quant_fund.public` | 1 |
 | `quant_fund.quant_models` | 17 |
@@ -819,7 +825,7 @@ sequenceDiagram
 | `quant_fund.realized` | 2 |
 | `quant_fund.registry` | 7 |
 | `quant_fund.reporting` | 6 |
-| `quant_fund.research` | 1859 |
+| `quant_fund.research` | 1861 |
 | `quant_fund.risk` | 7 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 9 |
@@ -828,9 +834,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13367**
-- Packages: **93**
-- Cross-package import edges: **384**
+- Modules scanned: **13382**
+- Packages: **94**
+- Cross-package import edges: **389**
 
 <!-- END GENERATED: coverage -->
 

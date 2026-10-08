@@ -1,4 +1,4 @@
-"""OR-composition of Schnorr proofs (CDS 1994): prove knowledge of one of
+"""OR-composition of Schnorr proofs (CDS 1994): prove knowledge of one of (SYNTHETIC)
 two discrete logs without revealing which."""
 
 import hashlib

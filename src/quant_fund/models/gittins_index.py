@@ -1,4 +1,4 @@
-"""Gittins index (calibration-family): compute per-arm Gittins indices
+"""Gittins index (calibration-family): compute per-arm Gittins indices (SYNTHETIC)
 for Bernoulli bandits via the calibration/binary-search formulation
 on the underlying MDP; play argmax index. Regret vs UCB1.
 """
@@ -58,5 +58,5 @@ def bench_gittins_index(seed: int = 1407, T: int = 4000) -> dict[str, float]:
         "synthetic_git_expected_reward": tot / T,
         "synthetic_git_ucb_reward": tot2 / T,
         "synthetic_git_reward_gain": (tot - tot2) / T,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

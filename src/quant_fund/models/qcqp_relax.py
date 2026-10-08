@@ -1,4 +1,4 @@
-"""QCQP -> SDP (Shor) relaxation bound for binary quadratic maximization.
+"""QCQP -> SDP (Shor) relaxation bound for binary quadratic maximization (SYNTHETIC).
 
 max x'Qx, x in {-1,+1}^n. Shor: bound = min_d 1'd s.t. diag(d) >= Q
 (psd order) — solved by subgradient on d with step direction

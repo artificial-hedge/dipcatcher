@@ -126,13 +126,13 @@ def bench_bandi_russell(seed: int = 20261231 + 302) -> dict[str, float]:
     ratio = err_naive / max(err_br, 1e-9)
     ok = err_br < 0.35 and ratio > 2.0 and 1.0 < r["m_star"] < r["t"] / 4.0
     return {
-        "rv_br": float(r["rv_br"]),
-        "iv_true": iv,
-        "err_br": err_br,
-        "err_naive": err_naive,
-        "improvement": ratio,
-        "m_star": float(r["m_star"]),
-        "eta2_hat": float(r["eta2"]),
-        "eta2_true": float(d["eta2_true"]),
-        "score": float(ok),
+        "synthetic_rv_br": float(r["rv_br"]),
+        "synthetic_iv_true": iv,
+        "synthetic_err_br": err_br,
+        "synthetic_err_naive": err_naive,
+        "synthetic_improvement": ratio,
+        "synthetic_m_star": float(r["m_star"]),
+        "synthetic_eta2_hat": float(r["eta2"]),
+        "synthetic_eta2_true": float(d["eta2_true"]),
+        "synthetic_score": float(ok),
     }

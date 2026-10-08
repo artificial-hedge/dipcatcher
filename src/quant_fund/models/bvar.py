@@ -1,4 +1,4 @@
-"""Bayesian VAR with the Minnesota (Litterman) prior.
+"""Bayesian VAR with the Minnesota (Litterman) prior (SYNTHETIC).
 
 Litterman (1986); Banbura, Giannone & Reichlin (2010) dummy-observation
 form: prior moments are imposed as pseudo-observations stacked on the data,

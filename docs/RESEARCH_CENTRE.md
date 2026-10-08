@@ -1,6 +1,8 @@
-# Dipcatcher — Artificial Hedge's proprietary research lab
+# Research centre — the research families behind dipcatcher
 
-Dipcatcher is Artificial Hedge's **proprietary research lab**. It measures forecast quality with proper scoring rules. It does not exist to manufacture Sharpe ratios.
+This is Artificial Hedge's **proprietary research lab** inside dipcatcher. It measures forecast quality with proper scoring rules. It does not exist to manufacture Sharpe ratios.
+
+These families are what `/superpower` draws on when you ask the dipcatcher chat a research question ([the dipcatcher CLI](DIP_CONCIERGE.md)). The chat reaches them through the registered `research` harness command, never by importing them.
 
 ## Families (`dipcatcher research`)
 

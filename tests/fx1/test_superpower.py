@@ -6,6 +6,7 @@ harness capability maps to a registered command, and consequential commands
 are exactly the ones gated behind approval.
 """
 
+import json
 import threading
 from pathlib import Path
 
@@ -145,6 +146,11 @@ def test_plan_caps_harness_selections() -> None:
     assert len(harness_ids) <= 3
 
 
+def test_plan_rejects_negative_harness_limit() -> None:
+    with pytest.raises(ValueError, match="max_harness must be nonnegative"):
+        plan_goal("ingest, benchmark, backtest, train and optimize", max_harness=-1)
+
+
 def test_plan_describe_explains_choices() -> None:
     plan = plan_goal("check the northset order book identities")
     text = plan.describe()
@@ -167,6 +173,72 @@ def test_model_refinement_validates_ids() -> None:
     assert "totally-made-up" not in ids  # unknown ids dropped, fail-closed
     assert ids[0] == "flash_retrieve"  # spine re-added
     assert ids[-1] == "synthesize"
+
+
+@pytest.mark.parametrize("max_harness", [0, 1, 3])
+def test_model_refinement_cannot_expand_past_harness_limit(max_harness: int) -> None:
+    response = json.dumps({"capabilities": list(CAPABILITIES)})
+    plan = plan_goal("check a benchmark", model_fn=lambda _: response, max_harness=max_harness)
+    harness_ids = [i for i in plan.ids() if CAPABILITIES[i]["kind"] == KIND_HARNESS]
+    expected = [i for i, meta in CAPABILITIES.items() if meta["kind"] == KIND_HARNESS]
+    assert plan.source == "model+validated"
+    assert harness_ids == expected[:max_harness]
+    assert len(plan.ids()) == len(set(plan.ids()))
+    assert plan.ids()[0] == "flash_retrieve"
+    assert plan.ids()[-1] == "synthesize"
+
+
+def test_model_refinement_deduplicates_before_applying_limit() -> None:
+    response = json.dumps(
+        {
+            "capabilities": [
+                "synthesize",
+                "doctor",
+                "doctor",
+                "flash_retrieve",
+                "research",
+                "totally-made-up",
+                "train",
+                "synthesize",
+                "flash_retrieve",
+            ]
+        }
+    )
+    plan = plan_goal("check a benchmark", model_fn=lambda _: response, max_harness=2)
+    assert plan.ids() == ["flash_retrieve", "doctor", "research", "synthesize"]
+
+
+def test_model_refinement_can_reselect_registered_capabilities() -> None:
+    goal = "check the order book identities"
+    assert "doctor" not in plan_goal(goal).ids()
+    plan = plan_goal(goal, model_fn=lambda _: '{"capabilities": ["doctor"]}')
+    assert plan.source == "model+validated"
+    assert plan.ids() == ["flash_retrieve", "doctor", "synthesize"]
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        "not JSON",
+        '{"rationale": "no selection supplied"}',
+        '{"capabilities": "research"}',
+        '{"capabilities": ["research", 1]}',
+        '{"capabilities": ["research"], "rationale": {"execute": "train"}}',
+    ],
+)
+def test_malformed_refinement_preserves_bounded_fallback(response: str) -> None:
+    goal = "ingest data, benchmark, backtest, then train and optimize"
+    expected = plan_goal(goal, max_harness=1)
+    actual = plan_goal(goal, model_fn=lambda _: response, max_harness=1)
+    assert actual == expected
+
+
+def test_model_unknown_selection_cannot_become_executable() -> None:
+    plan = plan_goal(
+        "check a benchmark",
+        model_fn=lambda _: '{"capabilities": ["unknown-command", "!rm -rf /"]}',
+    )
+    assert plan.ids() == ["flash_retrieve", "synthesize"]
 
 
 def test_model_garbage_falls_back_to_deterministic() -> None:
@@ -260,6 +332,30 @@ def test_run_plan_denies_consequential_without_approval(store: FlashStore) -> No
     assert by_id["paper"].status == "approval-denied"
     assert harness.calls == []  # never executed
     assert gate.denied() == 1
+
+
+def test_refined_consequential_selection_still_requires_approval(store: FlashStore) -> None:
+    harness = FakeHarness()
+    gate = ApprovalGate(ask_fn=lambda question: False)
+    plan = plan_goal(
+        "check a benchmark",
+        model_fn=lambda _: '{"capabilities": ["train", "train", "doctor", "unknown"]}',
+        max_harness=2,
+    )
+    result = run_plan(
+        plan,
+        SuperpowerContext(harness=harness, approvals=gate, flash_store=store),
+    )
+    assert harness.calls == [("doctor", None)]
+    assert {r.id: r.status for r in result.runs}["train"] == "approval-denied"
+    assert gate.denied() == 1
+
+
+def test_run_plan_does_not_repeat_duplicate_harness_steps(store: FlashStore) -> None:
+    harness = FakeHarness()
+    plan = _plan("check data", ["doctor", "doctor", "synthesize"])
+    run_plan(plan, SuperpowerContext(harness=harness, flash_store=store))
+    assert harness.calls == [("doctor", None)]
 
 
 def test_run_plan_allows_consequential_with_approval(store: FlashStore) -> None:

@@ -121,8 +121,8 @@ def bench_kpss(seed: int = 20261231 + 324) -> dict[str, float]:
     r_st = kpss_test(st)
     ok = r_rw["reject_stationarity"] == 1.0 and r_st["reject_stationarity"] == 0.0
     return {
-        "eta_rw": r_rw["eta"],
-        "eta_st": r_st["eta"],
-        "cv5": r_st["cv5"],
-        "score": float(ok),
+        "synthetic_eta_rw": r_rw["eta"],
+        "synthetic_eta_st": r_st["eta"],
+        "synthetic_cv5": r_st["cv5"],
+        "synthetic_score": float(ok),
     }

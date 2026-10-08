@@ -1,4 +1,4 @@
-"""Counterparty credit-risk graph network (Exec-Summary graph item). Nodes are
+"""Counterparty credit-risk graph network (Exec-Summary graph item). Nodes are (SYNTHETIC)
 counterparties with balance-sheet features; edges are exposure links. A message-
 passing network learns default risk propagation — a node's risk depends on its
 neighbors' health (Eisenberg-Noe-style contagion, learned).

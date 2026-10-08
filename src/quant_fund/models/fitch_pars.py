@@ -1,4 +1,4 @@
-"""Fitch small-parsimony score on a fixed tree (wave 284).
+"""Fitch small-parsimony score on a fixed tree (wave 284) (SYNTHETIC).
 
 Set-intersection/union postorder gives the minimum number of state changes;
 verified against brute-force ancestral-state search on small trees.

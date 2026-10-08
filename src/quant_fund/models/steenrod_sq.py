@@ -1,4 +1,4 @@
-"""Steenrod squares (SYNTHIC)."""
+"""Steenrod squares (SYNTHIC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

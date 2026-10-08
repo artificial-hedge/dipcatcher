@@ -1,4 +1,4 @@
-"""Affine/linear use-once checking for a mini expression language.
+"""Affine/linear use-once checking for a mini expression language (SYNTHETIC).
 
 Types carry kinds: ("lin",T) must be used exactly once, ("aff",T) at most
 once, ("un",T) unrestricted. check(expr, env) walks the syntax counting

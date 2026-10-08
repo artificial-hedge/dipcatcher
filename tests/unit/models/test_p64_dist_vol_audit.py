@@ -101,9 +101,9 @@ class TestLocalizedESSGate:
 class TestWeightedBenchLabels:
     def test_bench_weighted_cqr_labels(self) -> None:
         row = bench_weighted_cqr(n_cal=200, n_test=100, seed=11)
-        assert row["claim"] == "research_metric_only"
-        assert row["dgp"] == "fixture"
-        assert row["seed"] == 11.0
+        assert row["synthetic_claim"] == "research_metric_only"
+        assert row["synthetic_dgp"] == "fixture"
+        assert row["synthetic_seed"] == 11.0
 
 
 class TestQMLEConvergenceGuards:

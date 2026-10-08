@@ -146,12 +146,12 @@ def bench_hierarchical_conformal() -> dict[str, float]:
     try:
         raw = _ghcp_core_bench(n_reps=_GHCP_REPS, seed=_GHCP_SEED)
         mapped = {
-            "ghcp_min_coverage": float(raw["min_coverage"]),
-            "ghcp_width_shrinks": float(raw["width_shrinks"]),
-            "ghcp_coverage_m0": float(raw["coverage_m0"]),
-            "ghcp_mean_width_m0": float(raw["mean_width_m0"]),
-            "ghcp_mean_width_m10": float(raw["mean_width_m10"]),
-            "ghcp_alpha": float(raw["alpha"]),
+            "ghcp_min_coverage": float(raw["synthetic_min_coverage"]),
+            "ghcp_width_shrinks": float(raw["synthetic_width_shrinks"]),
+            "ghcp_coverage_m0": float(raw["synthetic_coverage_m0"]),
+            "ghcp_mean_width_m0": float(raw["synthetic_mean_width_m0"]),
+            "ghcp_mean_width_m10": float(raw["synthetic_mean_width_m10"]),
+            "ghcp_alpha": float(raw["synthetic_alpha"]),
         }
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
@@ -185,12 +185,14 @@ def bench_multisource_conformal() -> dict[str, float]:
     try:
         raw = _ms_rlcp_core_bench(seed=_MSRLCP_SEED)
         mapped = {
-            "msrlcp_coverage_in_source": float(raw["coverage_in_source"]),
-            "msrlcp_frac_vacuous_gap": float(raw["frac_vacuous_gap"]),
-            "msrlcp_frac_vacuous_in_source": float(raw["frac_vacuous_in_source"]),
-            "msrlcp_poorly_represented_rate_gap": float(raw["poorly_represented_rate_gap"]),
-            "msrlcp_bound_vacuous_gap": float(raw["bound_vacuous_gap"]),
-            "msrlcp_alpha": float(raw["alpha"]),
+            "msrlcp_coverage_in_source": float(raw["synthetic_coverage_in_source"]),
+            "msrlcp_frac_vacuous_gap": float(raw["synthetic_frac_vacuous_gap"]),
+            "msrlcp_frac_vacuous_in_source": float(raw["synthetic_frac_vacuous_in_source"]),
+            "msrlcp_poorly_represented_rate_gap": float(
+                raw["synthetic_poorly_represented_rate_gap"]
+            ),
+            "msrlcp_bound_vacuous_gap": float(raw["synthetic_bound_vacuous_gap"]),
+            "msrlcp_alpha": float(raw["synthetic_alpha"]),
         }
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
@@ -222,10 +224,14 @@ def bench_extra_tilt() -> dict[str, float]:
     try:
         raw = _extra_tilt_core_bench(replications=_EXTRA_REPS, seed=_EXTRA_SEED)
         mapped = {
-            "extra_paired_length_reduction_percent": float(raw["paired_length_reduction_percent"]),
-            "extra_coverage_diff_wcp_t_minus_wcp": float(raw["coverage_diff_wcp_t_minus_wcp"]),
-            "extra_mode_signal_sd": float(raw["mode_signal_sd"]),
-            "extra_weight_ess_percent": float(raw["weight_ess_percent"]),
+            "extra_paired_length_reduction_percent": float(
+                raw["synthetic_paired_length_reduction_percent"]
+            ),
+            "extra_coverage_diff_wcp_t_minus_wcp": float(
+                raw["synthetic_coverage_diff_wcp_t_minus_wcp"]
+            ),
+            "extra_mode_signal_sd": float(raw["synthetic_mode_signal_sd"]),
+            "extra_weight_ess_percent": float(raw["synthetic_weight_ess_percent"]),
         }
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}

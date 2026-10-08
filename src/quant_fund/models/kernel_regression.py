@@ -1,4 +1,4 @@
-"""Nonparametric kernel regression — Nadaraya-Watson and local linear.
+"""Nonparametric kernel regression — Nadaraya-Watson and local linear (SYNTHETIC).
 
 m(x) = E[y|x] estimated by locally-weighted averaging. Local linear
 estimates the conditional mean AND its derivative with reduced

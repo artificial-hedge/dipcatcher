@@ -497,14 +497,14 @@ class TestSyntheticAndSamplers:
 
     def test_bench_keys_and_consistency(self):
         rep = kp.bench_kit_paths(n_train_bars=192, context=16, horizon=4, n_samples=32, seed=0)
-        assert rep["SYNTHETIC_violation_rate"] == 0.0
-        assert rep["SYNTHETIC_source_violation_rate"] == 0.0
-        assert rep["SYNTHETIC_roundtrip_max_abs_err"] < 1e-6
-        assert math.isfinite(rep["SYNTHETIC_energy_score"])
-        assert math.isfinite(rep["SYNTHETIC_crps_marginal_mean"])
-        assert 0.0 <= rep["SYNTHETIC_coverage_ret"] <= 1.0
-        assert rep["claim"] == "research_metric_only"
-        assert all(k.startswith("SYNTHETIC_") or k in {"dgp", "claim", "synthetic"} for k in rep)
+        assert rep["synthetic_violation_rate"] == 0.0
+        assert rep["synthetic_source_violation_rate"] == 0.0
+        assert rep["synthetic_roundtrip_max_abs_err"] < 1e-6
+        assert math.isfinite(rep["synthetic_energy_score"])
+        assert math.isfinite(rep["synthetic_crps_marginal_mean"])
+        assert 0.0 <= rep["synthetic_coverage_ret"] <= 1.0
+        assert rep["synthetic_claim"] == "research_metric_only"
+        assert all(k.startswith("synthetic_") for k in rep)
 
 
 # ---------------------------------------------------------------------------

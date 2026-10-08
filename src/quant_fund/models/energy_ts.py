@@ -1,4 +1,4 @@
-"""Energy-based model for TS anomaly scoring.
+"""Energy-based model for TS anomaly scoring (SYNTHETIC).
 
 Trains an energy function E(x) via contrastive divergence (Langevin
 negative sampling); normal windows get low energy, corrupted/anomalous
@@ -71,6 +71,7 @@ def bench_energy_ts(
 ) -> dict[str, float]:
     """EBM energy ranking vs AE recon-error baseline (AUC, SYNTH)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_normal_anom(n, win, rng)
     xb = torch.tensor(xs, dtype=torch.float32)
@@ -124,7 +125,7 @@ def bench_energy_ts(
         "synthetic_energy_auc": auc_ebm,
         "synthetic_energy_ae_auc": auc_ae,
         "synthetic_energy_margin_vs_ae": auc_ebm - auc_ae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

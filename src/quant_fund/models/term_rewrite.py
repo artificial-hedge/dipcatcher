@@ -1,4 +1,4 @@
-"""Ordered term rewriting: rules applied leftmost-outermost to normal form,
+"""Ordered term rewriting: rules applied leftmost-outermost to normal form, (SYNTHETIC)
 plus a local-confluence checker over overlapping redexes.
 
 Terms are nested tuples ("f", a, b) or atoms; variables in patterns are

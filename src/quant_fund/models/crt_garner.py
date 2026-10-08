@@ -1,4 +1,4 @@
-"""Chinese remainder theorem + Garner's algorithm (synthetic).
+"""Chinese remainder theorem + Garner's algorithm (synthetic) (SYNTHETIC).
 
 CRT via direct constructive sum and via Garner's mixed-radix
 conversion; both verified against brute-force modular search and

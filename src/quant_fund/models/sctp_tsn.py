@@ -1,4 +1,4 @@
-"""SCTP multi-stream delivery (wave 292).
+"""SCTP multi-stream delivery (wave 292) (SYNTHETIC).
 
 Per-association TSN cumulative ack + per-stream SSN ordering:
 out-of-order delivery across streams allowed, in-order within stream;

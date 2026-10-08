@@ -1,4 +1,4 @@
-"""Survival analysis for event-duration modeling (e.g., time-to-exit,
+"""Survival analysis for event-duration modeling (e.g., time-to-exit, (SYNTHETIC)
 drawdown spells, order-fill times, position lifetimes).
 
 References:

@@ -1,4 +1,4 @@
-"""Lee (2009) bounds on treatment effects under selection.
+"""Lee (2009) bounds on treatment effects under selection (SYNTHETIC).
 
 When the outcome is observed only conditional on a selection
 variable S=1 and selection rates differ by arm, the naive

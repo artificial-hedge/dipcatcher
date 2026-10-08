@@ -1,4 +1,4 @@
-"""Planner→executor→critic decomposition (multi-agent pipeline).
+"""Planner→executor→critic decomposition (multi-agent pipeline) (SYNTHETIC).
 
 Planner proposes action sequences, executor simulates them, critic
 verifies goal-reach and returns failures for replanning. The pipeline

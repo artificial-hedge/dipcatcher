@@ -1,4 +1,4 @@
-"""H-tree clock distribution synthesis.
+"""H-tree clock distribution synthesis (SYNTHETIC).
 
 Recursively splits the sink set's bounding box, inserting an H-shaped
 symmetric branch so every sink sees the same path length. Verified:

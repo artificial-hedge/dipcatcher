@@ -1,4 +1,4 @@
-"""Scenario approach for a chance-constrained program.
+"""Scenario approach for a chance-constrained program (SYNTHETIC).
 
 min c'x s.t. P(A_omega x <= b_omega) >= 1-eps. Sample N iid
 constraints, solve the deterministic problem on them; the scenario

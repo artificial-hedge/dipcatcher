@@ -1,4 +1,4 @@
-"""Deferred shading pipeline (wave 293).
+"""Deferred shading pipeline (wave 293) (SYNTHETIC).
 
 Geometry pass writes G-buffer (albedo, normal, world pos); lighting
 pass shades each pixel once — result equals per-fragment forward

@@ -1,4 +1,4 @@
-"""iTransformer: inverted-dimension transformer forecaster.
+"""iTransformer: inverted-dimension transformer forecaster (SYNTHETIC).
 
 Liu et al. 2024 (iTransformer): embed each *variate's whole history*
 as a token (not each timestep). Self-attention then mixes variates —
@@ -69,6 +69,7 @@ def bench_itransformer(
 ) -> dict[str, float]:
     """Fit inverted-attention forecaster vs channel-mix MLP + AR baseline."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_variate_panel(n, win, rng)
     xs = (xs - xs.mean()) / (xs.std() + 1e-9)
@@ -140,7 +141,7 @@ def bench_itransformer(
         "synthetic_itransformer_perchan_mae": pc_mae,
         "synthetic_itransformer_margin_vs_perchan": pc_mae - it_mae,
         "synthetic_itransformer_ar_mae": ar_mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

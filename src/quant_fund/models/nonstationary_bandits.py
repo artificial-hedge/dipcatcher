@@ -1,4 +1,4 @@
-"""Non-stationary bandit canon: sliding-window UCB and
+"""Non-stationary bandit canon: sliding-window UCB and (SYNTHETIC)
 discounted UCB (Garivier & Moulines 2011) on a piecewise-
 stationary Bernoulli environment whose optimal arm rotates,
 against a stationary UCB1 baseline that cannot track changes.

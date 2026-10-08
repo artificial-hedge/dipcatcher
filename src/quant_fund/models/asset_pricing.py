@@ -142,17 +142,19 @@ def characteristic_managed_portfolios(
     """Date-level F_t = n_t^{-1} Z_t' r_t (KNS / IPCA managed portfolios)."""
     groups = date_groups(dates)
     n_char = x.shape[1]
-    out = np.zeros((len(groups), n_char), dtype=float)
-    for t, idx in enumerate(groups):
+    rows: list[NDArray[np.float64]] = []
+    for idx in groups:
         z_t = x[idx]
         r_t = y[idx]
         finite = np.isfinite(z_t).all(axis=1) & np.isfinite(r_t)
         if not finite.any():
+            # A date with no finite names contributes no managed portfolio;
+            # fabricating a zero row would contaminate mu/cov downstream.
             continue
         z_f = z_t[finite]
         r_f = r_t[finite]
-        out[t] = (z_f.T @ r_f) / float(z_f.shape[0])
-    return out
+        rows.append((z_f.T @ r_f) / float(z_f.shape[0]))
+    return np.asarray(rows, dtype=float).reshape(-1, n_char)
 
 
 def sdf_ridge_loadings(
@@ -371,9 +373,12 @@ class RandomFourierRanker(JoblibMixin):
     def predict(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         if self.omega is None or self.beta is None:
             raise ValueError("RandomFourierRanker is not fitted")
-        x = np.where(np.isfinite(x), x, 0.0)
+        x = np.asarray(x, dtype=float)
         if x.shape[0] == 0:
             return np.zeros(0, dtype=float)
+        # Missing features land at the training mean — neutral after
+        # standardization. A raw 0.0 fill would become -mean/std, biased.
+        x = np.where(np.isfinite(x), x, self.scaler_x.mean_)
         xs = self.scaler_x.transform(x)
         signals = random_fourier_features(xs, self.omega, self.bandwidth)
         s_std = self.scaler_s.transform(signals)
@@ -421,6 +426,8 @@ class SDFRidgeRanker(JoblibMixin):
     def predict(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         if self.b is None:
             raise ValueError("SDFRidgeRanker is not fitted")
+        # Rank-normalized characteristics are centered at 0: a raw 0.0
+        # fill IS the neutral cross-sectional mean (KNS convention).
         x = np.where(np.isfinite(x), x, 0.0)
         return x @ self.b
 
@@ -479,6 +486,8 @@ class IPCARanker(JoblibMixin):
     def predict(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         if self.gamma is None or self.mu_f is None or self.gamma_alpha is None:
             raise ValueError("IPCARanker is not fitted")
+        # Rank-normalized characteristics are centered at 0: a raw 0.0
+        # fill IS the neutral cross-sectional mean (KPS convention).
         x = np.where(np.isfinite(x), x, 0.0)
         return x @ (self.gamma_alpha + self.gamma @ self.mu_f)
 

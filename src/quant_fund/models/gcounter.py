@@ -1,4 +1,4 @@
-"""G-Counter CRDT: grow-only counter (synthetic).
+"""G-Counter CRDT: grow-only counter (synthetic) (SYNTHETIC).
 
 State: per-replica counts; merge = element-wise max; value = sum.
 Verified: merge commutative + associative + idempotent on random

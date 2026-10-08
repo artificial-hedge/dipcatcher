@@ -173,6 +173,6 @@ def bench_bates(seed: int = 20261231 + 338) -> dict[str, float]:
         "synthetic_bates_otm_put_uplift": put_skew_uplift,
         "synthetic_bates_atm_call": float(price_svj[2]),
         "synthetic_bates_monotone_strikes": float(np.all(np.diff(price_svj) < 0)),
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

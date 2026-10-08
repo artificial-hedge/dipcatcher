@@ -56,5 +56,5 @@ def test_isomap_input_validation():
 
 def test_bench_isomap():
     out = bench_isomap()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_isomap_order_rho"] > 0.8

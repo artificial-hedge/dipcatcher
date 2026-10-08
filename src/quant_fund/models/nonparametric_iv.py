@@ -1,4 +1,4 @@
-"""Nonparametric instrumental variables via series estimation.
+"""Nonparametric instrumental variables via series estimation (SYNTHETIC).
 
 y = g(x) + e with x endogenous (E[e|x] ≠ 0) but instruments z
 satisfying E[e|z] = 0. Approximate g by a basis p(x) and

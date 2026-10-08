@@ -1,4 +1,4 @@
-"""RetNet retention with exponential decay mask (Sun et al. 2023).
+"""RetNet retention with exponential decay mask (Sun et al. 2023) (SYNTHETIC).
 
 Attention scores carry a causal decay γ^{i-j} — retention keeps full
 content addressing (unlike conv scans) but discounts distant tokens.
@@ -36,6 +36,7 @@ def bench_retnet_decay(
     gamma: float = 0.92,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, ytr = synth_retrieval(n_train, m_pairs, n_classes, rng)
     xte, yte = synth_retrieval(n_test, m_pairs, n_classes, rng)
@@ -81,5 +82,5 @@ def bench_retnet_decay(
         "synthetic_retnet_full_acc": acc_full,
         "synthetic_retnet_acc_gap": acc_full - acc,
         "synthetic_retnet_cost_ratio": 1.0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

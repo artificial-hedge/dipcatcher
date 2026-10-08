@@ -1,4 +1,4 @@
-"""Simplicial homology over GF(2): Betti numbers via boundary ranks (wave 280).
+"""Simplicial homology over GF(2): Betti numbers via boundary ranks (wave 280) (SYNTHETIC).
 
 For a complex K: b_k = dim ker ∂_k - rank ∂_{k+1}, computed by GF(2) Gaussian
 elimination on incidence matrices. Oracles: sphere (1,0,1), torus (1,2,1),

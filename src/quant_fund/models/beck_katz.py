@@ -1,4 +1,4 @@
-"""Beck-Katz (1995) panel-corrected standard errors and
+"""Beck-Katz (1995) panel-corrected standard errors and (SYNTHETIC)
 Parks (1967) contemporaneous-correlation GLS.
 
 Canonical references:

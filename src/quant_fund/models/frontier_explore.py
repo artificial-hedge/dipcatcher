@@ -1,4 +1,4 @@
-"""Frontier-based exploration: BFS to nearest frontier cell over known-free map."""
+"""Frontier-based exploration: BFS to nearest frontier cell over known-free map (SYNTHETIC)."""
 
 import collections
 

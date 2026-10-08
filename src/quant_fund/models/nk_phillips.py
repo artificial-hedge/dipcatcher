@@ -1,4 +1,4 @@
-"""New-Keynesian Phillips curve: π_t = β E_t π_{t+1} + κ x_t."""
+"""New-Keynesian Phillips curve: π_t = β E_t π_{t+1} + κ x_t (SYNTHETIC)."""
 
 import numpy as np
 

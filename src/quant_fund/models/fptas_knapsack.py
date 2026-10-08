@@ -1,4 +1,4 @@
-"""FPTAS for the 0/1 knapsack.
+"""FPTAS for the 0/1 knapsack (SYNTHETIC).
 
 Values scaled down by eps * max_v / n, then exact DP on integer values
 gives a (1-eps)-approximation in poly(n/eps) — the classic Ibarra-Kim

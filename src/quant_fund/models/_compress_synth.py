@@ -1,4 +1,4 @@
-"""Synthetic compression fixture.
+"""Synthetic compression fixture (SYNTHETIC).
 
 2-class problem: MLP (8→24→2) trained on `_data_synth`-style data.
 Compression methods compare held-out accuracy vs parameter fraction

@@ -1,4 +1,4 @@
-"""Snapshot ensembles (Huang et al. 2017) — cyclic LR: restart at high LR
+"""Snapshot ensembles (Huang et al. 2017) — cyclic LR: restart at high LR (SYNTHETIC)
 every `cycle` steps, snapshot the weights at each minimum; ensemble
 prediction = mixture mean/var.
 """

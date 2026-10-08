@@ -1,4 +1,4 @@
-"""Mean-field variational inference (CAVI) for a Gaussian mixture.
+"""Mean-field variational inference (CAVI) for a Gaussian mixture (SYNTHETIC).
 
 Coordinate-ascent variational inference for a K-component
 univariate Gaussian mixture with conjugate priors: Normal-Inverse-

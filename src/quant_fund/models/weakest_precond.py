@@ -1,4 +1,4 @@
-"""Weakest-precondition calculus + VC generation over a mini while-language.
+"""Weakest-precondition calculus + VC generation over a mini while-language (SYNTHETIC).
 
 wp(assign/seq/if) are the standard syntactic rules; loops take an explicit
 invariant and emit the three VCs (init, inductiveness, exit). Validity of

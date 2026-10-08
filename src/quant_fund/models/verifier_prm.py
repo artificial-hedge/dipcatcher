@@ -1,4 +1,4 @@
-"""Process-reward verifier (Lightman et al. 2024).
+"""Process-reward verifier (Lightman et al. 2024) (SYNTHETIC).
 
 A verifier trained on labelled intermediate states re-scores K
 sampled solution candidates by step-correctness; argmax-PRM beats
@@ -130,5 +130,5 @@ def bench_verifier_prm(
         "synthetic_prm_acc": acc_prm,
         "synthetic_prm_single_acc": acc_first,
         "synthetic_prm_gain": acc_prm - acc_first,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

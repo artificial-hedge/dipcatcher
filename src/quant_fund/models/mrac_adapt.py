@@ -1,4 +1,4 @@
-"""MIT-rule model-reference adaptive control (wave 279).
+"""MIT-rule model-reference adaptive control (wave 279) (SYNTHETIC).
 
 Plant: x' = a x + b u, unknown b. Reference model: xm' = am xm + bm r.
 Adaptive law dk/dt = -gamma * e * xm with u = k r + kx x — the adaptive gain

@@ -1,4 +1,4 @@
-"""Univariate slice sampling — Neal (2003) stepping-out MCMC.
+"""Univariate slice sampling — Neal (2003) stepping-out MCMC (SYNTHETIC).
 
 Neal (2003) "Slice sampling", Ann. Stat. 31:705: auxiliary-variable
 sampling where the move set is the level set {x: f(x) > y} for
@@ -112,5 +112,5 @@ def bench_slice_sampling(seed: int = 20261231 + 421) -> dict[str, float]:
         "synthetic_slice_mean_err": mean_err,
         "synthetic_slice_acf1": acf1,
         "synthetic_slice_mode_err": mode_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

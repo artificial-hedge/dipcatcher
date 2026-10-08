@@ -562,7 +562,8 @@ def verify_epoch_proof(
     receipt, load_err = _load_epoch_receipt(root, str(payload["epoch_receipt"]))
     if load_err is not None:
         return [load_err]
-    assert receipt is not None
+    if not (receipt is not None):
+        raise ValueError("receipt is not None")
     if receipt.get("epoch_root_sha256") != payload["epoch_root_sha256"]:
         return ["epoch_root_mismatch"]
     members_list = receipt.get("members")
@@ -808,7 +809,8 @@ def verify_epoch_absence(
     receipt, load_err = _load_epoch_receipt(root, str(payload["epoch_receipt"]))
     if load_err is not None:
         return [load_err]
-    assert receipt is not None
+    if not (receipt is not None):
+        raise ValueError("receipt is not None")
     if receipt.get("epoch_root_sha256") != payload["epoch_root_sha256"]:
         return ["epoch_root_mismatch"]
     members_list = receipt.get("members")
@@ -876,7 +878,8 @@ def ordered_epoch_chain(
         if err is not None:
             errors.append(f"{err}:{path.name!a}")
             continue
-        assert payload is not None
+        if not (payload is not None):
+            raise ValueError("payload is not None")
         by_name[path.name] = (hash_bytes(path.read_bytes()), payload)
 
     child_of: dict[str, str] = {}

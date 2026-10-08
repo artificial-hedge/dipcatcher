@@ -1,4 +1,4 @@
-"""Strapdown INS mechanization — quaternion attitude, NED velocity/
+"""Strapdown INS mechanization — quaternion attitude, NED velocity/ (SYNTHETIC)
 position integration. Single-interval rotation-vector attitude update
 (sculling/coning terms omitted); Coriolis and transport-rate terms
 included for short horizons via the Earth-rate approximation.

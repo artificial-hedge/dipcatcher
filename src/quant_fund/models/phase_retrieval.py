@@ -1,4 +1,4 @@
-"""Phase retrieval: recover a signal from Fourier-magnitude
+"""Phase retrieval: recover a signal from Fourier-magnitude (SYNTHETIC)
 measurements. Gerchberg-Saxton error-reduction (GS 1972)
 with an object-support constraint on oversampled spectra,
 and Wirtinger flow (Candes, Li & Soltanolkotabi 2015) with a

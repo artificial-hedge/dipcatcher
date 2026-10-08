@@ -1,4 +1,4 @@
-"""rANS (range asymmetric numeral systems) coder (synthetic).
+"""rANS (range asymmetric numeral systems) coder (synthetic) (SYNTHETIC).
 
 Rygiewicz-style streaming ANS: state encodes the whole message in
 one integer that stays in [L, L·b). Verified: exact LIFO

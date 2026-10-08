@@ -64,6 +64,12 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_pesaran_timmermann()
-    for k in ("p_null", "p_alt", "hm_p", "p_hat_alt", "score"):
+    for k in (
+        "synthetic_p_null",
+        "synthetic_p_alt",
+        "synthetic_hm_p",
+        "synthetic_p_hat_alt",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

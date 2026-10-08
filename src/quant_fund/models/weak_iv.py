@@ -1,4 +1,4 @@
-"""Weak-instrument robust inference for IV regression.
+"""Weak-instrument robust inference for IV regression (SYNTHETIC).
 
 Standard 2SLS inference is size-distorted when first-stage correlation is
 low. This module implements the robust alternatives: the Anderson–Rubin

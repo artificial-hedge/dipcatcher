@@ -1,4 +1,4 @@
-"""Barlow Twins redundancy reduction (Zbontar et al. 2021).
+"""Barlow Twins redundancy reduction (Zbontar et al. 2021) (SYNTHETIC).
 
 Cross-correlation of two views driven to identity — invariance on the
 diagonal, decorrelation off it. No negatives, no asymmetry tricks.
@@ -59,5 +59,5 @@ def bench_barlow_twins(
         "synthetic_barlow_probe_acc": float(acc_bt),
         "synthetic_barlow_raw_acc": float(acc_raw),
         "synthetic_barlow_gain": float(acc_bt - acc_raw),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

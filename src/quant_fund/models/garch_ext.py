@@ -1,4 +1,4 @@
-"""Extended GARCH-family estimators beyond the base suite.
+"""Extended GARCH-family estimators beyond the base suite (SYNTHETIC).
 
 The repo's ``models/volatility.py`` covers EWMA, GARCH(1,1), HAR and
 tree-based vol; this module adds the asymmetric-power and fractionally

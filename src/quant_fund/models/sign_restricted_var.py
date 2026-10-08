@@ -1,4 +1,4 @@
-"""Sign-restricted structural VAR (Uhlig 2005).
+"""Sign-restricted structural VAR (Uhlig 2005) (SYNTHETIC).
 
 Estimate a reduced-form VAR, draw orthogonal rotations Q via QR of
 random Gaussian matrices, and keep draws whose impulse responses to

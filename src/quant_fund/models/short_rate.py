@@ -1,4 +1,4 @@
-"""Vasicek and Cox-Ingersoll-Ross one-factor short-rate models.
+"""Vasicek and Cox-Ingersoll-Ross one-factor short-rate models (SYNTHETIC).
 
 Both are affine term-structure models with closed-form zero-coupon bond prices
 ``P(tau) = A(tau) exp(-B(tau) r)``:

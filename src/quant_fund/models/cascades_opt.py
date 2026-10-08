@@ -1,4 +1,4 @@
-"""Cascades-style memoized optimizer: join enumeration over rule set."""
+"""Cascades-style memoized optimizer: join enumeration over rule set (SYNTHETIC)."""
 
 import itertools
 
@@ -45,7 +45,8 @@ def optimize(tables: list[str], cards: dict[str, float], join_sel: float = 0.1) 
                         c = _cost(pl, cards, join_sel)
                         if c < best:
                             best, best_plan = c, pl
-        assert best_plan is not None
+        if not (best_plan is not None):
+            raise ValueError("best_plan is not None")
         memo[ts] = best_plan
         return memo[ts]
 

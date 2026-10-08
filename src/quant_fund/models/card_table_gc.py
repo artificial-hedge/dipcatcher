@@ -1,4 +1,4 @@
-"""Generational GC card table + write barrier.
+"""Generational GC card table + write barrier (SYNTHETIC).
 
 Old generation is split into fixed-size cards; a write barrier dirties
 the card of the slot written. Minor GC scans only dirty cards to find

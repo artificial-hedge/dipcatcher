@@ -1,4 +1,4 @@
-"""Expectation propagation (Minka 2001): EP for the
+"""Expectation propagation (Minka 2001): EP for the (SYNTHETIC)
 Bayesian probit classifier — site approximations on each
 likelihood term yield a Gaussian posterior on the weights;
 updates use tilted-moment matching with cavity marginals.

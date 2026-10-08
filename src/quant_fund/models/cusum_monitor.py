@@ -1,4 +1,4 @@
-"""Chu–Stinchcombe–White fluctuation monitoring for structural
+"""Chu–Stinchcombe–White fluctuation monitoring for structural (SYNTHETIC)
 stability (recursive and moving-estimates CUSUM).
 
 The on-line detector watches standardized fluctuations of a

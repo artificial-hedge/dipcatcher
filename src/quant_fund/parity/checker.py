@@ -115,6 +115,13 @@ def _missing_cause(
     return "data", "missing_bar"
 
 
+def _shadow_present(shadow: Mapping[str, Any] | None) -> Mapping[str, Any]:
+    """Contract assert: with backtest None, shadow must carry the row."""
+    if not (shadow is not None):
+        raise ValueError("shadow is not None")
+    return shadow
+
+
 def attribute_pair(
     backtest: Mapping[str, Any] | None,
     shadow: Mapping[str, Any] | None,
@@ -129,8 +136,7 @@ def attribute_pair(
     if backtest is None and shadow is None:
         raise ValueError("at least one side of a parity row must be present")
     if backtest is None:
-        assert shadow is not None
-        return _missing_cause(shadow, other_backtest)
+        return _missing_cause(_shadow_present(shadow), other_backtest)
     if shadow is None:
         return _missing_cause(backtest, other_shadow)
 

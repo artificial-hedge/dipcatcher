@@ -1,10 +1,14 @@
 name: Adversarial properties
 
 on:
-  push:
-    branches: [main]
+  # Phase 0: this push lane is restricted. The same suite already runs daily on
+  # the nightly profile via property-nightly.yml, so re-running the bounded CI
+  # profile on every one of this repo's very frequent pushes only deepens the
+  # run queue — it adds no coverage the nightly lane lacks. PRs still gate here;
+  # manual and ad-hoc runs are available below and via the nightly schedule.
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -1,4 +1,4 @@
-"""MAF (Papamakarios et al. 2017) — masked autoregressive flow:
+"""MAF (Papamakarios et al. 2017) — masked autoregressive flow: (SYNTHETIC)
 each dim's scale/shift conditioned on previous dims (MADE-style masks).
 NLL vs Gaussian on pinwheel.
 """
@@ -58,5 +58,5 @@ def bench_maf_flow(seed: int = 2299, iters: int = 600) -> dict[str, float]:
         "synthetic_maf_nll": nll_te,
         "synthetic_gauss_nll": base,
         "synthetic_maf_gain": base - nll_te,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

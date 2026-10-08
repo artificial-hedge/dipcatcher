@@ -1,4 +1,4 @@
-"""GAIL: generative adversarial imitation learning.
+"""GAIL: generative adversarial imitation learning (SYNTHETIC).
 
 Ho & Ermon 2016: a discriminator distinguishes expert from policy
 state-action pairs; the policy is trained (via PPO-style clipped
@@ -76,6 +76,7 @@ def bench_gail_imitation(
 ) -> dict[str, float]:
     """GAIL vs behavior cloning on 90%-expert demos; SYNTHETIC."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     es, ea = synth_expert(n_ep, horizon, rng)
     ES = torch.tensor(es, dtype=torch.float32)
@@ -164,7 +165,7 @@ def bench_gail_imitation(
         "synthetic_gail_disc_expert_mean": float(ex_p),
         "synthetic_gail_disc_policy_mean": float(po_p),
         "synthetic_gail_disc_gap": float(ex_p - po_p),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

@@ -1,4 +1,4 @@
-"""FastSLAM-lite: N particles, per-particle landmark EKF mean estimate."""
+"""FastSLAM-lite: N particles, per-particle landmark EKF mean estimate (SYNTHETIC)."""
 
 import numpy as np
 

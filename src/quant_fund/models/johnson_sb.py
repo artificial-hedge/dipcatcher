@@ -1,4 +1,4 @@
-"""Johnson SB (bounded) and SL (lognormal) translation distributions.
+"""Johnson SB (bounded) and SL (lognormal) translation distributions (SYNTHETIC).
 
 Johnson (1949) proposed translating a variable to a standard normal ``z``:
 

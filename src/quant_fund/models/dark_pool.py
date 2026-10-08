@@ -1,4 +1,4 @@
-"""Dark-pool activity analyzer (Exec-Summary Feature 5). Consolidated-
+"""Dark-pool activity analyzer (Exec-Summary Feature 5). Consolidated- (SYNTHETIC)
 tape simulation with hidden prints: episodes of heavy volume at a static
 price (possible hidden offsetting), a rolling dark-imbalance index
 (DIX-style), and an accumulation/distribution phase classifier.

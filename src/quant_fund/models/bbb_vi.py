@@ -1,4 +1,4 @@
-"""Bayes-by-Backprop (Blundell et al. 2015) — diagonal Gaussian posterior
+"""Bayes-by-Backprop (Blundell et al. 2015) — diagonal Gaussian posterior (SYNTHETIC)
 over ALL weights; ELBO = E_q[NLL] - KL(q||N(0,1)); local reparam.
 Predictive var = weight-uncertainty spread. NLL + OOD gap.
 """
@@ -62,5 +62,5 @@ def bench_bbb_vi(seed: int = 797, iters: int = 200, T: int = 20) -> dict[str, fl
         "synthetic_bbb_nll": nll_gauss(y_te, mu_p, var),
         "synthetic_bbb_cov95": coverage(y_te, mu_p, np.sqrt(var)),
         "synthetic_bbb_ood_gap": float(Po.var(0).mean() / (P.var(0).mean() + 1e-9)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

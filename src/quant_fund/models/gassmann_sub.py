@@ -1,4 +1,4 @@
-"""Gassmann fluid substitution (1951): saturated bulk modulus exchange.
+"""Gassmann fluid substitution (1951): saturated bulk modulus exchange (SYNTHETIC).
 
 K_sat = K_dry + (1 - K_dry/K_m)^2 / (phi/K_fl + (1-phi)/K_m - K_dry/K_m^2);
 shear modulus is fluid-independent.

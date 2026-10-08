@@ -1,4 +1,4 @@
-"""Continuous-time quantum walk on a cycle graph vs classical random
+"""Continuous-time quantum walk on a cycle graph vs classical random (SYNTHETIC)
 walk — hitting-probability at antipode after O(N) time (quadratic
 speedup signature).
 """
@@ -38,5 +38,5 @@ def bench_quantum_walk(seed: int = 3085, n: int = 20) -> dict[str, float]:
         "synthetic_qwalk_p_peak": float(np.max(probs_t)),
         "synthetic_cwalk_p_antipode": p_antipode_c,
         "synthetic_qwalk_gain": float(np.max(probs_t) - p_antipode_c),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

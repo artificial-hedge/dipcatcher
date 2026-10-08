@@ -1,4 +1,4 @@
-"""Enumerative SyGuS for linear integer arithmetic over a stratified grammar.
+"""Enumerative SyGuS for linear integer arithmetic over a stratified grammar (SYNTHETIC).
 
 Terms: t ::= atom | t + t | t - t ; guards: g ::= t <= t ; programs:
 p ::= t | ite(g, p, p). Level-bounded enumeration with

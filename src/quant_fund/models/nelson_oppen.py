@@ -1,4 +1,4 @@
-"""Nelson-Oppen theory combination, toy-scale: EUF + integer constants.
+"""Nelson-Oppen theory combination, toy-scale: EUF + integer constants (SYNTHETIC).
 
 Two theories cooperate on shared variables: EUF (congruence closure over
 function terms) and a constant-theory assigning integer values and detecting

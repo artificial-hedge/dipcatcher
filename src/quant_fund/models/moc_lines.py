@@ -1,4 +1,4 @@
-"""Method of lines — central-difference Laplacian + RK4 time
+"""Method of lines — central-difference Laplacian + RK4 time (SYNTHETIC)
 integration of the heat equation; classical baseline for the canon.
 """
 
@@ -31,4 +31,4 @@ def bench_moc_lines(seed: int = 2525, nx: int = 101, nt: int = 2000) -> dict[str
     def pred(xq: np.ndarray, tq: float) -> np.ndarray:
         return np.asarray(np.interp(xq, x, u))
 
-    return {"synthetic_moc_rel_l2": eval_error(pred), "torch_available": 0.0}
+    return {"synthetic_moc_rel_l2": eval_error(pred), "synthetic_torch_available": 0.0}

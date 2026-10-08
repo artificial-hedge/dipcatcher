@@ -1,4 +1,4 @@
-"""Azzalini (1985) skew-normal distribution.
+"""Azzalini (1985) skew-normal distribution (SYNTHETIC).
 
 The skew-normal SN(xi, omega, alpha) has density
 

@@ -787,22 +787,22 @@ def test_n_ahead_extrapolation_beyond_horizon() -> None:
 # ---------------------------------------------------------------------------
 
 _BENCH_KEYS = {
-    "model_crps",
-    "model_mixture_crps",
-    "oracle_crps",
-    "baseline_crps",
-    "coverage_50",
-    "coverage_90",
-    "width_90",
-    "oracle_coverage_90",
-    "oracle_width_90",
-    "pit_ks",
-    "pit_ks_pvalue",
-    "elbo_gain",
-    "final_kl_path",
-    "dgp",
-    "synthetic",
-    "claim",
+    "synthetic_model_crps",
+    "synthetic_model_mixture_crps",
+    "synthetic_oracle_crps",
+    "synthetic_baseline_crps",
+    "synthetic_coverage_50",
+    "synthetic_coverage_90",
+    "synthetic_width_90",
+    "synthetic_oracle_coverage_90",
+    "synthetic_oracle_width_90",
+    "synthetic_pit_ks",
+    "synthetic_pit_ks_pvalue",
+    "synthetic_elbo_gain",
+    "synthetic_final_kl_path",
+    "synthetic_dgp",
+    "synthetic_synthetic",
+    "synthetic_claim",
 }
 
 
@@ -819,19 +819,19 @@ def test_bench_ou_labels_and_quality_bands() -> None:
         seed=0,
     )
     assert set(r) >= _BENCH_KEYS
-    assert r["dgp"] == "ou" and r["claim"] == "research_metric_only"
-    assert "synthetic" in r["synthetic"]
+    assert r["synthetic_dgp"] == "ou" and r["synthetic_claim"] == "research_metric_only"
+    assert "synthetic" in r["synthetic_synthetic"]
     # seeded SYNTHETIC bands (measured at these settings: model_crps 0.120,
     # oracle 0.104, baseline 0.111, coverage_90 0.917, pit p 0.026):
     # model within 60% of oracle, within 20% of baseline; coverage_90 within
     # ~7 binomial se of nominal; ELBO improves.
-    assert r["model_crps"] <= 1.6 * r["oracle_crps"]
-    assert r["model_crps"] <= 1.2 * r["baseline_crps"]
-    assert 0.75 <= r["coverage_90"] <= 1.0
-    assert 0.75 <= r["oracle_coverage_90"] <= 1.0
-    assert r["pit_ks_pvalue"] > 0.005
-    assert r["elbo_gain"] > 0.0
-    assert r["width_90"] > 0.0
+    assert r["synthetic_model_crps"] <= 1.6 * r["synthetic_oracle_crps"]
+    assert r["synthetic_model_crps"] <= 1.2 * r["synthetic_baseline_crps"]
+    assert 0.75 <= r["synthetic_coverage_90"] <= 1.0
+    assert 0.75 <= r["synthetic_oracle_coverage_90"] <= 1.0
+    assert r["synthetic_pit_ks_pvalue"] > 0.005
+    assert r["synthetic_elbo_gain"] > 0.0
+    assert r["synthetic_width_90"] > 0.0
 
 
 @requires_torch
@@ -849,10 +849,10 @@ def test_bench_gbm_quality_bands() -> None:
         n_samples=128,
         seed=0,
     )
-    assert r["model_crps"] <= 1.8 * r["oracle_crps"]
-    assert r["model_crps"] <= 1.8 * r["baseline_crps"]
-    assert 0.70 <= r["coverage_90"] <= 1.0
-    assert r["elbo_gain"] > 0.0
+    assert r["synthetic_model_crps"] <= 1.8 * r["synthetic_oracle_crps"]
+    assert r["synthetic_model_crps"] <= 1.8 * r["synthetic_baseline_crps"]
+    assert 0.70 <= r["synthetic_coverage_90"] <= 1.0
+    assert r["synthetic_elbo_gain"] > 0.0
 
 
 @requires_torch
@@ -871,10 +871,10 @@ def test_bench_regime_quality_bands() -> None:
         n_samples=128,
         seed=0,
     )
-    assert r["model_crps"] <= 2.2 * r["oracle_crps"]
-    assert 0.65 <= r["coverage_90"] <= 1.0
-    assert r["pit_ks_pvalue"] > 0.005
-    assert r["elbo_gain"] > 0.0
+    assert r["synthetic_model_crps"] <= 2.2 * r["synthetic_oracle_crps"]
+    assert 0.65 <= r["synthetic_coverage_90"] <= 1.0
+    assert r["synthetic_pit_ks_pvalue"] > 0.005
+    assert r["synthetic_elbo_gain"] > 0.0
 
 
 def test_bench_fail_closed_on_bad_dgp() -> None:

@@ -1,4 +1,4 @@
-"""TSP branch-and-bound with 1-tree-style held-karp-lite bound vs
+"""TSP branch-and-bound with 1-tree-style held-karp-lite bound vs (SYNTHETIC)
 nearest-neighbor + 2-opt. Small instance — certified optimal.
 """
 
@@ -50,5 +50,5 @@ def bench_tsp_branchbound(seed: int = 3057, n: int = 10) -> dict[str, float]:
         "synthetic_tsp_opt": float(opt),
         "synthetic_tsp_gap": float(c_h - opt),
         "synthetic_tsp_ratio": float(c_h / max(opt, 1e-9)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

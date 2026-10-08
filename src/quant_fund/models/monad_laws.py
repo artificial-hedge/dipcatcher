@@ -1,4 +1,4 @@
-"""List-monad laws (wave 289).
+"""List-monad laws (wave 289) (SYNTHETIC).
 
 Monad (T, eta, mu): T = List, eta x = [x], mu = flatten.
 Left unit mu . T eta = id; right unit mu . eta_T = id;

@@ -71,6 +71,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_danielsson_devries()
-    for k in ("xi_hat", "var_hat", "var_true", "var_gauss", "k_opt", "score"):
+    for k in (
+        "synthetic_xi_hat",
+        "synthetic_var_hat",
+        "synthetic_var_true",
+        "synthetic_var_gauss",
+        "synthetic_k_opt",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

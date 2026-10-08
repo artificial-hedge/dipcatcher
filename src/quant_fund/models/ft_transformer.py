@@ -1,4 +1,4 @@
-"""FT-Transformer: feature-tokenized transformer for tabular alpha.
+"""FT-Transformer: feature-tokenized transformer for tabular alpha (SYNTHETIC).
 
 Gorishniy et al. 2021 (FT-Transformer): tokenize each scalar feature
 via a per-feature learned linear+ReLU embedding plus a [CLS] token;
@@ -50,6 +50,7 @@ def bench_ft_transformer(
 ) -> dict[str, float]:
     """Feature-token attention vs logistic and a flat MLP classifier."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_interaction(n, d, rng)
     xb = torch.tensor(xs, dtype=torch.float32)
@@ -105,7 +106,7 @@ def bench_ft_transformer(
         "synthetic_ft_logistic_acc": log_acc,
         "synthetic_ft_margin_vs_logistic": ft_acc - log_acc,
         "synthetic_ft_margin_vs_mlp": ft_acc - mlp_acc,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

@@ -157,6 +157,6 @@ def bench_wavelet_coherence(seed: int = 20261231 + 345) -> dict[str, float]:
         "synthetic_wcoh_off_band": out_band,
         "synthetic_wcoh_null_band": null_band,
         "synthetic_wcoh_mean": float(r["mean_coherence"][0]),
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

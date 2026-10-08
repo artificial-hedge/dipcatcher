@@ -1,4 +1,4 @@
-"""Explicit-duration hidden semi-Markov model (Gaussian emissions).
+"""Explicit-duration hidden semi-Markov model (Gaussian emissions) (SYNTHETIC).
 
 Unlike an HMM (geometric durations by construction), an HSMM puts an
 arbitrary pmf on run lengths — appropriate for regime-like processes whose

@@ -1,4 +1,4 @@
-"""SWA-Gaussian (Maddox et al. 2019) — diagonal posterior over the last
+"""SWA-Gaussian (Maddox et al. 2019) — diagonal posterior over the last (SYNTHETIC)
 checkpoint sequence: mean + diag std over SGD iterates at high LR; sample
 weights → predictive mean/var. NLL + OOD gap vs point MLP.
 """
@@ -62,5 +62,5 @@ def bench_swag_diag(
         "synthetic_swag_nll": nll_gauss(y_te, mu, var),
         "synthetic_swag_cov95": coverage(y_te, mu, np.sqrt(var)),
         "synthetic_swag_ood_gap": float(var_ood / (var_raw.mean() + 1e-9)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -10,7 +10,7 @@ from quant_fund.models.garch_in_mean import (
 
 def test_bench_garchm_passes():
     r = bench_garch_in_mean()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_lam_positive_on_planted():

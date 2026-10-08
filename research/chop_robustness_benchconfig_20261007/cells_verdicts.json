@@ -1,0 +1,323 @@
+{
+  "cells": {
+    "W1_full": {
+      "window_id": "W1_full",
+      "symbols": [
+        "BNBUSDT",
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
+        "XRPUSDT"
+      ],
+      "eval_tail_bars": null,
+      "receipt_run_id": "chop-W1_full",
+      "book_stats": {
+        "base": {
+          "status": "ok",
+          "n_marks": 2231,
+          "nav_start": 1000000.0,
+          "nav_end": 30056494.80112032,
+          "total_return": 29.05649480112032,
+          "ann_return": 0.7461051475876603,
+          "ann_vol": 0.3065926827445243,
+          "sharpe_simulated": 1.9701600609448973,
+          "max_drawdown": -0.2711175763061122,
+          "bars_per_year": 365.25,
+          "n_fills": 1887
+        },
+        "vol_scale_002": {
+          "status": "ok",
+          "n_marks": 2231,
+          "nav_start": 1000000.0,
+          "nav_end": 11228406.53282405,
+          "total_return": 10.228406532824051,
+          "ann_return": 0.4860410469292997,
+          "ann_vol": 0.2191699949972764,
+          "sharpe_simulated": 1.9166005200618819,
+          "max_drawdown": -0.20164534639229414,
+          "bars_per_year": 365.25,
+          "n_fills": 2996
+        },
+        "breadth_gross": {
+          "status": "ok",
+          "n_marks": 2231,
+          "nav_start": 1000000.0,
+          "nav_end": 30251654.40288372,
+          "total_return": 29.25165440288372,
+          "ann_return": 0.7479571067171609,
+          "ann_vol": 0.31793213131502424,
+          "sharpe_simulated": 1.9144068690932718,
+          "max_drawdown": -0.31103405394088024,
+          "bars_per_year": 365.25,
+          "n_fills": 1907
+        },
+        "trend_gate_010": {
+          "status": "ok",
+          "n_marks": 2231,
+          "nav_start": 1000000.0,
+          "nav_end": 10214076.386191472,
+          "total_return": 9.214076386191472,
+          "ann_return": 0.46317391972508304,
+          "ann_vol": 0.24413658194222532,
+          "sharpe_simulated": 1.679605686336969,
+          "max_drawdown": -0.1703940247720912,
+          "bars_per_year": 365.25,
+          "n_fills": 1882
+        }
+      }
+    },
+    "W2_last800d": {
+      "window_id": "W2_last800d",
+      "symbols": [
+        "BNBUSDT",
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
+        "XRPUSDT"
+      ],
+      "eval_tail_bars": 800,
+      "receipt_run_id": "chop-W2_last800d",
+      "book_stats": {
+        "base": {
+          "status": "ok",
+          "n_marks": 799,
+          "nav_start": 1000000.0,
+          "nav_end": 1495631.5495160883,
+          "total_return": 0.49563154951608834,
+          "ann_return": 0.2023154020077873,
+          "ann_vol": 0.20356248983721667,
+          "sharpe_simulated": 1.0054635728381125,
+          "max_drawdown": -0.12787432532039444,
+          "bars_per_year": 365.25,
+          "n_fills": 368
+        },
+        "vol_scale_002": {
+          "status": "ok",
+          "n_marks": 799,
+          "nav_start": 1000000.0,
+          "nav_end": 1333106.1557833934,
+          "total_return": 0.3331061557833934,
+          "ann_return": 0.14064744922923422,
+          "ann_vol": 0.1909232152319039,
+          "sharpe_simulated": 0.7838411148550268,
+          "max_drawdown": -0.137725059707551,
+          "bars_per_year": 365.25,
+          "n_fills": 532
+        },
+        "breadth_gross": {
+          "status": "ok",
+          "n_marks": 799,
+          "nav_start": 1000000.0,
+          "nav_end": 1507635.9995665113,
+          "total_return": 0.5076359995665112,
+          "ann_return": 0.2067227880493301,
+          "ann_vol": 0.21125046799201525,
+          "sharpe_simulated": 0.9935125950584806,
+          "max_drawdown": -0.12787432532039444,
+          "bars_per_year": 365.25,
+          "n_fills": 374
+        },
+        "trend_gate_010": {
+          "status": "ok",
+          "n_marks": 799,
+          "nav_start": 1000000.0,
+          "nav_end": 1424954.410212615,
+          "total_return": 0.42495441021261504,
+          "ann_return": 0.17596865148518104,
+          "ann_vol": 0.16508138653590143,
+          "sharpe_simulated": 1.0637489817380597,
+          "max_drawdown": -0.14736182835536593,
+          "bars_per_year": 365.25,
+          "n_fills": 321
+        }
+      }
+    },
+    "W3_last500d": {
+      "window_id": "W3_last500d",
+      "symbols": [
+        "BNBUSDT",
+        "BTCUSDT",
+        "ETHUSDT",
+        "SOLUSDT",
+        "XRPUSDT"
+      ],
+      "eval_tail_bars": 500,
+      "receipt_run_id": "chop-W3_last500d",
+      "book_stats": {
+        "base": {
+          "status": "ok",
+          "n_marks": 499,
+          "nav_start": 1012635.8125680289,
+          "nav_end": 1074328.45344568,
+          "total_return": 0.060922831398979804,
+          "ann_return": 0.044329057897182,
+          "ann_vol": 0.16702285518760887,
+          "sharpe_simulated": 0.34144473321474733,
+          "max_drawdown": -0.12019578695361244,
+          "bars_per_year": 365.25,
+          "n_fills": 157
+        },
+        "vol_scale_002": {
+          "status": "ok",
+          "n_marks": 499,
+          "nav_start": 1008429.1578936571,
+          "nav_end": 1117330.8116154305,
+          "total_return": 0.1079913773509289,
+          "ann_return": 0.07811349932357348,
+          "ann_vol": 0.1913593250757388,
+          "sharpe_simulated": 0.48773417495848537,
+          "max_drawdown": -0.10438685542695514,
+          "bars_per_year": 365.25,
+          "n_fills": 285
+        },
+        "breadth_gross": {
+          "status": "ok",
+          "n_marks": 499,
+          "nav_start": 1012635.8125680289,
+          "nav_end": 1066070.319352604,
+          "total_return": 0.052767743468469686,
+          "ann_return": 0.03843534114063063,
+          "ann_vol": 0.177955986803223,
+          "sharpe_simulated": 0.29901031782741516,
+          "max_drawdown": -0.12019578695361244,
+          "bars_per_year": 365.25,
+          "n_fills": 162
+        },
+        "trend_gate_010": {
+          "status": "ok",
+          "n_marks": 499,
+          "nav_start": 1012635.8125680289,
+          "nav_end": 1037181.605839425,
+          "total_return": 0.024239507399159033,
+          "ann_return": 0.017721216347031277,
+          "ann_vol": 0.12226865795301937,
+          "sharpe_simulated": 0.20438709768804678,
+          "max_drawdown": -0.13683073191559358,
+          "bars_per_year": 365.25,
+          "n_fills": 150
+        }
+      }
+    },
+    "W4_2018_05_8p3y": {
+      "window_id": "W4_2018_05_8p3y",
+      "symbols": [
+        "BTCUSDT",
+        "ETHUSDT",
+        "XRPUSDT"
+      ],
+      "eval_tail_bars": null,
+      "receipt_run_id": "chop-W4_2018_05_8p3y",
+      "book_stats": {
+        "base": {
+          "status": "ok",
+          "n_marks": 3061,
+          "nav_start": 1000000.0,
+          "nav_end": 7525199.341500167,
+          "total_return": 6.525199341500167,
+          "ann_return": 0.2723998102223546,
+          "ann_vol": 0.23867979712534468,
+          "sharpe_simulated": 1.1272854112579638,
+          "max_drawdown": -0.18729429909743822,
+          "bars_per_year": 365.25,
+          "n_fills": 1078
+        },
+        "vol_scale_002": {
+          "status": "ok",
+          "n_marks": 3061,
+          "nav_start": 1000000.0,
+          "nav_end": 4707213.7845508205,
+          "total_return": 3.70721378455082,
+          "ann_return": 0.20310338479017465,
+          "ann_vol": 0.19380118007873254,
+          "sharpe_simulated": 1.0504833008978858,
+          "max_drawdown": -0.20929313773550862,
+          "bars_per_year": 365.25,
+          "n_fills": 1405
+        },
+        "breadth_gross": {
+          "status": "ok",
+          "n_marks": 3061,
+          "nav_start": 1000000.0,
+          "nav_end": 7525199.341500167,
+          "total_return": 6.525199341500167,
+          "ann_return": 0.2723998102223546,
+          "ann_vol": 0.23867979712534468,
+          "sharpe_simulated": 1.1272854112579638,
+          "max_drawdown": -0.18729429909743822,
+          "bars_per_year": 365.25,
+          "n_fills": 1078
+        },
+        "trend_gate_010": {
+          "status": "ok",
+          "n_marks": 3061,
+          "nav_start": 1000000.0,
+          "nav_end": 5075131.367874523,
+          "total_return": 4.075131367874523,
+          "ann_return": 0.21395929527890067,
+          "ann_vol": 0.22160397334611093,
+          "sharpe_simulated": 0.9842586368356153,
+          "max_drawdown": -0.2146420708148311,
+          "bars_per_year": 365.25,
+          "n_fills": 1023
+        }
+      }
+    }
+  },
+  "verdicts": [
+    {
+      "mechanism": "vol_scale_002",
+      "sharpe_deltas_vs_base": {
+        "W1_full": -0.0535595408830154,
+        "W2_last800d": -0.22162245798308566,
+        "W3_last500d": 0.14628944174373804,
+        "W4_2018_05_8p3y": -0.076802110360078
+      },
+      "helped_windows": [
+        "W3_last500d"
+      ],
+      "hurt_windows": [
+        "W1_full",
+        "W2_last800d",
+        "W4_2018_05_8p3y"
+      ],
+      "regime_fitting": true,
+      "chop_lift_success": false
+    },
+    {
+      "mechanism": "breadth_gross",
+      "sharpe_deltas_vs_base": {
+        "W1_full": -0.05575319185162542,
+        "W2_last800d": -0.011950977779631944,
+        "W3_last500d": -0.04243441538733217,
+        "W4_2018_05_8p3y": 0.0
+      },
+      "helped_windows": [],
+      "hurt_windows": [
+        "W1_full",
+        "W2_last800d",
+        "W3_last500d"
+      ],
+      "regime_fitting": false,
+      "chop_lift_success": false
+    },
+    {
+      "mechanism": "trend_gate_010",
+      "sharpe_deltas_vs_base": {
+        "W1_full": -0.2905543746079282,
+        "W2_last800d": 0.058285408899947155,
+        "W3_last500d": -0.13705763552670056,
+        "W4_2018_05_8p3y": -0.14302677442234846
+      },
+      "helped_windows": [
+        "W2_last800d"
+      ],
+      "hurt_windows": [
+        "W1_full",
+        "W3_last500d",
+        "W4_2018_05_8p3y"
+      ],
+      "regime_fitting": true,
+      "chop_lift_success": false
+    }
+  ]
+}

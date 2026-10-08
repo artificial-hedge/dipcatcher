@@ -1,4 +1,4 @@
-"""Natural gradient descent on a Gaussian likelihood problem.
+"""Natural gradient descent on a Gaussian likelihood problem (SYNTHETIC).
 
 Fit N(mu, sigma^2) to samples by descending expected negative log-likelihood
 in the Fisher metric: update (mu, nu=log sigma) with F^{-1} grad where

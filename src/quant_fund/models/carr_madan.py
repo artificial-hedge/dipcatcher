@@ -1,4 +1,4 @@
-"""Carr-Madan (1999) FFT option pricing from a characteristic function.
+"""Carr-Madan (1999) FFT option pricing from a characteristic function (SYNTHETIC).
 
 For a risk-neutral log-price characteristic function ``phi(u) = E[e^{i u ln S_T}]``
 the damped call transform is

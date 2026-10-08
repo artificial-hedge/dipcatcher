@@ -1,4 +1,4 @@
-"""Link-analysis topology: PageRank power iteration with
+"""Link-analysis topology: PageRank power iteration with (SYNTHETIC)
 dangling-node correction and teleport personalization, HITS
 hub/authority scores, and conductance of a vertex subset.
 Synthetic bench gates planted-hub ranking."""

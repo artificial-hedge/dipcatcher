@@ -1,4 +1,4 @@
-"""Synthetic multivariate series with injected anomalies for the
+"""Synthetic multivariate series with injected anomalies for the (SYNTHETIC)
 anomaly-detection canon: AR-driven normals + sparse point/contextual
 outliers with known labels.
 """

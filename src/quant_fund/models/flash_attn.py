@@ -1,4 +1,4 @@
-"""FlashAttention tiled online-softmax (Dao et al. 2022).
+"""FlashAttention tiled online-softmax (Dao et al. 2022) (SYNTHETIC).
 
 Attention computed in row blocks with running (m, l) rescaling — no
 materialized T×T score matrix. Verified numerically identical to naive

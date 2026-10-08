@@ -67,6 +67,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_beveridge_nelson()
-    for k in ("rel_err", "cyc_corr", "mu_hat", "mu_true", "max_root", "score"):
+    for k in (
+        "synthetic_rel_err",
+        "synthetic_cyc_corr",
+        "synthetic_mu_hat",
+        "synthetic_mu_true",
+        "synthetic_max_root",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

@@ -13,7 +13,10 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Do NOT cancel in-flight runs — this is a Tier-A gate. Cancelling it at this
+  # repo's push cadence meant it never reached a verdict, which is
+  # indistinguishable from passing. The group key still serialises runs.
+  cancel-in-progress: false
 
 permissions:
   contents: read

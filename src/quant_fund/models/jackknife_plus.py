@@ -1,4 +1,4 @@
-"""Jackknife+ leave-one-out conformal wrapper.
+"""Jackknife+ leave-one-out conformal wrapper (SYNTHETIC).
 
 Barber, Candès, Ramdas, Tibshirani (2021). Finite-sample coverage is ≥ 1-2α.
 That floor is **marginal under exchangeability**, not training-conditional

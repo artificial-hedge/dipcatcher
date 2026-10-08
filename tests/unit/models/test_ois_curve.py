@@ -60,4 +60,4 @@ def test_bad_inputs():
 
 
 def test_bench():
-    assert bench_ois_curve()["score"] == 1.0
+    assert bench_ois_curve()["synthetic_score"] == 1.0

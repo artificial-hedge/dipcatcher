@@ -1,4 +1,4 @@
-"""PPO-style RLHF with KL-to-reference penalty.
+"""PPO-style RLHF with KL-to-reference penalty (SYNTHETIC).
 
 Policy maximizes a learned reward model's score. Without KL control
 the policy collapses onto the RM's argmax errors (reward hacking —
@@ -103,5 +103,5 @@ def bench_rlhf_ppo(
         "synthetic_rlhf_kl_rm_score": float(rm_kl),
         "synthetic_rlhf_free_rm_score": float(rm_free),
         "synthetic_rlhf_overopt_gap": float(true_kl - true_free),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

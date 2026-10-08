@@ -1,4 +1,4 @@
-"""Molecular descriptors (wave 290).
+"""Molecular descriptors (wave 290) (SYNTHETIC).
 
 Molecular weight, hydrogen-bond donors/acceptors (N/O counts),
 rotatable bonds (non-ring single bonds with degree>1 endpoints) —

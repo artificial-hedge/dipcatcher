@@ -5,12 +5,12 @@ quant_fund modules must not import `quant_fund.research.receipt_v2`
 directly; this module is the only sanctioned path to verify sealed
 research evidence from outside the research layer.
 
-The verify_* entry points are re-exported via module-level ``__getattr__``
-so the `quant_fund.research.receipt_v2` import is lazy and stays inside
-function scope (the arch-guard's sanctioned deferral mechanism — see
-``configs/arch_boundaries.toml`` and ``scripts/check_import_boundaries.py``).
-This keeps the foundation layer (``schemas``) free of upward edges into
-the research layer.
+The verify_* entry points are module-level call-time delegators: each one
+imports `quant_fund.research.receipt_v2` inside the call and forwards to it,
+so the upstream import stays inside function scope (the arch-guard's
+sanctioned deferral mechanism — see ``configs/arch_boundaries.toml`` and
+``scripts/check_import_boundaries.py``). This keeps the foundation layer
+(``schemas``) free of upward edges into the research layer at import time.
 
 Public surface (kept narrow on purpose):
 
@@ -31,19 +31,41 @@ foundation.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 
-# Sentinel placeholders — bound to the real callables on first attribute
-# access via __getattr__ below. The arch-guard treats module-scope imports
-# of research-layer symbols as layer-order violations; routing through
-# __getattr__ defers the import to first call. Type stubs here let
-# static analyzers see the public surface without triggering a guard
-# violation (no import is performed).
-def seal_receipt(receipt: Any) -> Any: ...  # type: ignore[no-untyped-def]
-def verify_receipt_bytes(data: bytes) -> Any: ...  # type: ignore[no-untyped-def]
-def verify_receipt_file(path: Any) -> Any: ...  # type: ignore[no-untyped-def]
-def verify_receipt_payload(payload: Any) -> Any: ...  # type: ignore[no-untyped-def]
+# Call-time delegators. The arch-guard treats module-scope imports of
+# research-layer symbols as layer-order violations, so each deferrer below
+# imports `quant_fund.research.receipt_v2` inside the call — the sanctioned
+# function-scope deferral (see `configs/arch_boundaries.toml` and
+# `scripts/check_import_boundaries.py`). These must be genuine delegators,
+# NOT `...` stubs: PEP 562 module `__getattr__` only fires for *missing*
+# attributes, so a module-level stub shadows it and silently returns None
+# to every caller. Defaults mirror `research.receipt_v2` exactly so omitted
+# arguments behave identically to the in-research call path.
+def seal_receipt(receipt: Any) -> Any:  # type: ignore[no-untyped-def]
+    from quant_fund.research import receipt_v2
+
+    return receipt_v2.seal_receipt(receipt)
+
+
+def verify_receipt_bytes(data: bytes, path: Any = Path("<memory>")) -> Any:  # type: ignore[no-untyped-def]
+    from quant_fund.research import receipt_v2
+
+    return receipt_v2.verify_receipt_bytes(data, path)
+
+
+def verify_receipt_file(path: Any) -> Any:  # type: ignore[no-untyped-def]
+    from quant_fund.research import receipt_v2
+
+    return receipt_v2.verify_receipt_file(path)
+
+
+def verify_receipt_payload(payload: Any, path: Any = Path("<memory>")) -> Any:  # type: ignore[no-untyped-def]
+    from quant_fund.research import receipt_v2
+
+    return receipt_v2.verify_receipt_payload(payload, path)
 
 
 __all__ = [

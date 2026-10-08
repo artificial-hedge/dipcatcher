@@ -1,4 +1,4 @@
-"""Post-training int8 quantization.
+"""Post-training int8 quantization (SYNTHETIC).
 
 Per-channel symmetric quantization of weight matrices; activation
 scale calibrated on a small batch. Measures accuracy drop vs fp32 and
@@ -44,5 +44,5 @@ def bench_quant_int8(
         "synthetic_quant_fp_acc": acc_fp,
         "synthetic_quant_drop": acc_fp - acc_q,
         "synthetic_quant_size_ratio": 0.25,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

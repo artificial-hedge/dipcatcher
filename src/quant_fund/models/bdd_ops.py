@@ -1,4 +1,4 @@
-"""Reduced ordered BDD: build from a boolean formula on 4 vars via
+"""Reduced ordered BDD: build from a boolean formula on 4 vars via (SYNTHETIC)
 Shannon expansion with a shared unique table, then count satisfying
 assignments and compare vs truth table.
 """

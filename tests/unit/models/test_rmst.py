@@ -52,4 +52,4 @@ def test_bad_inputs():
 
 
 def test_bench():
-    assert bench_rmst()["score"] == 1.0
+    assert bench_rmst()["synthetic_score"] == 1.0

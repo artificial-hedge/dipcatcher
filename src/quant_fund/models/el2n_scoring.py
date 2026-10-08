@@ -1,4 +1,4 @@
-"""EL2N scores (Paul et al. 2021) — early-epoch L2 norm of (prob - onehot)
+"""EL2N scores (Paul et al. 2021) — early-epoch L2 norm of (prob - onehot) (SYNTHETIC)
 as difficulty score; prune top-easy EL2N examples and measure accuracy
 vs random-prune, plus Spearman with label-flip indicator.
 """
@@ -37,5 +37,5 @@ def bench_el2n_scoring(
         "synthetic_el2n_full_acc": acc_full,
         "synthetic_el2n_gain": acc_el - acc_rand,
         "synthetic_el2n_mean": float(el2n.mean()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

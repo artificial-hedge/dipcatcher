@@ -1,4 +1,4 @@
-"""Causal mediation analysis — ACME/ADE with quasi-Bayesian intervals.
+"""Causal mediation analysis — ACME/ADE with quasi-Bayesian intervals (SYNTHETIC).
 
 Fits a mediator model (M ~ T + X) and an outcome model
 (Y ~ T + M + X), then simulates counterfactual mediations to estimate

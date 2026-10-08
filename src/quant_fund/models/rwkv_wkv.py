@@ -1,4 +1,4 @@
-"""RWKV WKV recurrent attention (Peng et al. 2023).
+"""RWKV WKV recurrent attention (Peng et al. 2023) (SYNTHETIC).
 
 y_t = σ(r_t) ⊙ Σ_i e^{-(t-i)γ} k_i v_i / Σ_i e^{-(t-i)γ} k_i — a linear
 recurrence that can do content routing through learned k/r. On the
@@ -36,6 +36,7 @@ def bench_rwkv_wkv(
     d_model: int = 48,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, ytr = synth_retrieval(n_train, m_pairs, n_classes, rng)
     xte, yte = synth_retrieval(n_test, m_pairs, n_classes, rng)
@@ -101,5 +102,5 @@ def bench_rwkv_wkv(
         "synthetic_rwkv_full_acc": acc_full,
         "synthetic_rwkv_acc_gap": acc_full - acc,
         "synthetic_rwkv_cost_ratio": float(t * d_model) / float(t * t),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

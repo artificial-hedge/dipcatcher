@@ -1,4 +1,4 @@
-"""McEliece-lite: code-based PKE over a Hamming [15,11,3] code.
+"""McEliece-lite: code-based PKE over a Hamming [15,11,3] code (SYNTHETIC).
 
 Public key G = S * G0 * P (scramble + column permutation); encryption adds a
 weight-t error; decryption un-permutes, syndrome-decodes, un-scrambles.

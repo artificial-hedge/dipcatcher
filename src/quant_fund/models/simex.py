@@ -1,4 +1,4 @@
-"""SIMEX — simulation-extrapolation measurement-error correction.
+"""SIMEX — simulation-extrapolation measurement-error correction (SYNTHETIC).
 
 When a regressor is observed with additive classical measurement
 error (W = X + U, known σ_u), the naive slope attenuates toward

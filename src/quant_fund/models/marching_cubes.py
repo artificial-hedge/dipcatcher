@@ -1,4 +1,4 @@
-"""Marching-cubes-style isosurface extraction (2-D marching squares
+"""Marching-cubes-style isosurface extraction (2-D marching squares (SYNTHETIC)
 analogue + a 3-D per-edge vertex interpolant).
 
 Full marching-cubes needs a 256-case table; this module implements the

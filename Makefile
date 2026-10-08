@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
 
 .DEFAULT_GOAL := help
 
@@ -9,17 +9,28 @@ help: ## Show targets
 sync: ## Install the locked environment (all groups and extras)
 	uv sync --frozen --all-groups --all-extras
 
+# Thread pinning + fork/fault env for every test lane. Validated fix for the
+# three-OpenMP-runtime NULL-kmp_info segfault under xdist
+# (.dsh-24x7/lane_reports/l3-segfault.md 7.1): OMP_NUM_THREADS=1 keeps libomp
+# out of __kmp_suspend_* (the crashing stack); KMP_INIT_AT_FORK=FALSE closes the
+# second NULL-kmp_info route via fork(); PYTHONFAULTHANDLER=1 captures any
+# future native fault. Matches the fleet job manifests (AGENTS.md "Thread
+# pinning"). Mirrored into the CI test workflows — keep both sides identical.
+TEST_ENV := OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 NUMEXPR_NUM_THREADS=1 \
+	VECLIB_MAXIMUM_THREADS=1 KMP_INIT_AT_FORK=FALSE PYTHONFAULTHANDLER=1 \
+	TOKENIZERS_PARALLELISM=false
+
 test: ## PR-gate lab tests (not network, not slow; xdist)
-	uv run pytest -n auto --dist loadfile -m "not network and not slow"
+	$(TEST_ENV) uv run pytest -n auto --dist loadfile -m "not network and not slow"
 
 test-full: ## Full offline lab suite, including slow tests
-	uv run pytest -n auto --dist loadfile -m "not network"
+	$(TEST_ENV) uv run pytest -n auto --dist loadfile -m "not network"
 
 test-durations: ## Refresh checked-in .test_durations for pytest-split CI shards
 	# PR gate first, then slow tests so schedule/full shards stay balanced too.
-	uv run pytest -n auto --dist loadfile -m "not network and not slow" \
+	$(TEST_ENV) uv run pytest -n auto --dist loadfile -m "not network and not slow" \
 		--store-durations --durations-path .test_durations --clean-durations
-	uv run pytest -n auto --dist loadfile -m "slow and not network" \
+	$(TEST_ENV) uv run pytest -n auto --dist loadfile -m "slow and not network" \
 		--store-durations --durations-path .test_durations
 
 parity-smoke: ## SYNTHETIC backtest/shadow parity smoke (simulated broker only)
@@ -45,6 +56,10 @@ fmt: ## Auto-fix lint + format
 typecheck: ## mypy on the harness (public modules are strict; see pyproject)
 	uv run mypy src/quant_fund
 	uv run mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
+
+arch-guard: ## Import-boundary guard (same commands as arch_guards.yml; stdlib-only)
+	uv run --no-project python scripts/check_import_boundaries.py
+	uv run --no-project python -m unittest tests.unit.arch.test_import_boundaries
 
 diffbacktest: ## Differentiable backtest (optional JAX extra, CPU)
 	JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES="" uv run pytest -q tests/unit/diffbacktest
@@ -92,6 +107,13 @@ native: ## Build optional quant_core (Rust + maturin). NumPy stays the fallback.
 	uv pip install "maturin>=1.7,<2"
 	uv run maturin develop --release --manifest-path rust/quant_core/Cargo.toml
 
+native-lint: ## Rust fmt + clippy for quant_core (same commands as ci.yml rust-accel)
+	cd rust/quant_core && cargo fmt --check
+	cd rust/quant_core && cargo clippy --locked --all-targets -- -D warnings
+
+native-test: ## quant_core parity tests (ci.yml rust-accel; run `make native` first)
+	uv run pytest -q -m native tests/property tests/unit tests/native
+
 evidence: ## Regenerate docs/evidence/index.md from sealed receipts
 	uv run python scripts/build_evidence_report.py
 
@@ -106,11 +128,18 @@ formal: ## TLC order-lifecycle check + Z3/conformance/stateful tests
 
 mc-engine-smoke: ## Monte Carlo engine tests (not slow) and a tiny CLI run
 	uv run pytest tests/unit/mc_engine -q -m "not slow"
-	uv run python -m quant_fund.mc_engine run --paths 1500 --steps 8 --workers 1 \
-		--backend serial --chunk-size 500 --seed 1 --no-progress
+	# Same invocation as the mc-engine-smoke job in ci.yml (process backend +
+	# antithetic shocks; the CI job additionally asserts the JSON contract) —
+	# flags stay in lockstep so the local smoke cannot drift from the gate.
+	uv run python -m quant_fund.mc_engine run --paths 1500 --steps 8 --workers 2 \
+		--backend process --chunk-size 500 --seed 1 --shock-mode antithetic --no-progress
 
 pretrade-bench: ## Pre-trade hot-path latency gate (p50 < 5us, p99 < 20us)
 	uv run python -m quant_fund.pretrade.bench --gate
+
+robustness-smoke: ## Robustness/certifier tests and CLI smoke (same commands as ci.yml)
+	uv run pytest -q tests/unit/robustness tests/property/test_robustness_bounds.py
+	uv run python -m quant_fund.robustness
 
 stress-smoke: ## Fast stress-engine tests and the catalog report CLI
 	uv run pytest -q -m "not network and not slow" tests/unit/stress
@@ -168,9 +197,15 @@ fx1-eval: ## Run eval task bank (requires MOONSHOT_API_KEY for hosted_k3)
 
 fx1-gate: fx1-lint ## Full fx-1 CI gate locally: lint + types + tests + honesty + corpus smoke
 	uv run mypy src/fx1
+	# CI's fx1 "Types" step also runs --strict (fx1.yml); the local full gate
+	# keeps parity with the CI gate — raise code to strict, never drop this.
+	uv run mypy --strict src/fx1
 	PYTHONPATH=src uv run pytest tests/fx1 -q
 	PYTHONPATH=src uv run pytest tests/fx1 -q -k honesty
 	uv run fx1 corpus build --receipts-dir receipts --out data/fx1/corpus_ci_smoke.jsonl
+
+fx1-coverage: ## fx-1 coverage ratchet, floor 80 (same command as proofcore.yml fx1-coverage)
+	uv run pytest tests/fx1 -q --cov=fx1 --cov-fail-under=80 --cov-report=term-missing
 
 # --- PROOFCORE gates (DESIGN.md §9.3; additive — no existing target changed) -
 # Merge order: W5 lands last; the W1-W4 CLIs below exist once those waves merge.
@@ -234,8 +269,14 @@ reality-gate: ## Reality-filter gate: score trials; absent DB or empty export sk
 	uv run quant reality trial-report --ledger $(PROOFCORE_LEDGER) && \
 	uv run quant reality ledger-gate --ledger $(PROOFCORE_LEDGER)
 
-receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verifiers pending
+receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verifiers pending (~20min, one subprocess per receipt)
 	uv run python -m quant_fund.proofcore.ci receipts-reverify receipts
+
+receipt-integrity-scan: ## Fast in-process self-seal digest scan over committed receipts (seconds, not minutes)
+	uv run python scripts/receipt_integrity_scan.py receipts
+
+audit-cli-mounts: ## Detect Typer apps defined in src/ but never mounted (dropped-wiring guard)
+	uv run python scripts/audit_cli_mounts.py
 
 evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
 	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit"

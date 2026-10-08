@@ -1,4 +1,4 @@
-"""Two-step GMM estimation with HAC weighting (Hansen 1982).
+"""Two-step GMM estimation with HAC weighting (Hansen 1982) (SYNTHETIC).
 
 Given a moment function ``moments(theta) -> (T, q)`` matrix whose row
 means should be zero at the true parameter, estimate theta (p <= q) by

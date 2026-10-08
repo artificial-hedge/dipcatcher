@@ -1,4 +1,4 @@
-"""Dupire local-volatility extraction from a synthetic call surface.
+"""Dupire local-volatility extraction from a synthetic call surface (SYNTHETIC).
 
 Build C(K,T) by Crank-Nicolson on the Dupire forward equation
 C_T = 0.5 sigma_loc(K)^2 K^2 C_KK (r=0) under a known

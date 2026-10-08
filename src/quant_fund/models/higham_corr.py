@@ -195,5 +195,5 @@ def bench_higham(seed: int = 20261231 + 366) -> dict[str, float]:
         "synthetic_nc_dist_newton": d_q,
         "synthetic_nc_dist_altproj": d_n,
         "synthetic_nc_id_err": d_id,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

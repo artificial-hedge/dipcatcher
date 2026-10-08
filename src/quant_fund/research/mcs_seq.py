@@ -175,7 +175,8 @@ def mcs_report(
         elif a.size != n_obs:
             raise ValueError("all heads must observe the same number of losses")
         arrays[h] = a
-    assert n_obs is not None
+    if not (n_obs is not None):
+        raise ValueError("n_obs is not None")
 
     mcs = AnytimeMCS(tuple(heads), alpha=alpha, lam=lam, init_scale=init_scale)
     for t in range(n_obs):

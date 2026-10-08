@@ -1,4 +1,4 @@
-"""Active subspace discovery — gradient-based dimension reduction.
+"""Active subspace discovery — gradient-based dimension reduction (SYNTHETIC).
 
 Estimates C = E[∇f ∇fᵀ] from finite-difference gradients, finds the
 dominant eigenspace (the "active subspace"), and projects samples

@@ -37,6 +37,7 @@ def bench_deep_kernel_gp(
     d: int = 16,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     tr = synth_np_tasks(n_train, n_ctx, n_tgt, rng)
     te = synth_np_tasks(n_test, n_ctx, n_tgt, rng)
@@ -109,5 +110,5 @@ def bench_deep_kernel_gp(
         "synthetic_dkgp_mse_gain": mse_base - mse_dk,
         "synthetic_dkgp_cov90": cov90,
         "synthetic_dkgp_cov90_err": abs(cov90 - 0.90),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

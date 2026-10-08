@@ -1,4 +1,4 @@
-"""secp256k1 scalar multiplication — real curve, affine coordinates.
+"""secp256k1 scalar multiplication — real curve, affine coordinates (SYNTHETIC).
 
 Implements point add/double over F_p and double-and-add scalar mult.
 Bench: k*G on-curve, (k*G).x matches the published k=2 doubling vector,

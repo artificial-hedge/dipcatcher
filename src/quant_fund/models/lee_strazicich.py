@@ -141,10 +141,10 @@ def bench_lee_strazicich(
         and abs(r_st["break_idx"] - b) < 60
     )
     return {
-        "tau_st": r_st["tau_min"],
-        "tau_rw": r_rw["tau_min"],
-        "break_hat": r_st["break_idx"],
-        "break_true": float(b),
-        "crit5": r_st["crit5"],
-        "score": float(ok),
+        "synthetic_tau_st": r_st["tau_min"],
+        "synthetic_tau_rw": r_rw["tau_min"],
+        "synthetic_break_hat": r_st["break_idx"],
+        "synthetic_break_true": float(b),
+        "synthetic_crit5": r_st["crit5"],
+        "synthetic_score": float(ok),
     }

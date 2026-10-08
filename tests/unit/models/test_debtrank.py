@@ -71,7 +71,7 @@ def test_in_strength_column_sums() -> None:
 
 def test_bench_debtrank_score() -> None:
     out = bench_debtrank()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     # hub (rank 0) outranks the in-strength leader (rank 7).
     assert out["synthetic_dr_hub_rank"] == pytest.approx(0.0)
     assert out["synthetic_ist_leader_rank"] == pytest.approx(7.0)

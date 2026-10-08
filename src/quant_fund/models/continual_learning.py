@@ -1,4 +1,4 @@
-"""Continual online learner with EWC-style consolidation (Exec-Summary
+"""Continual online learner with EWC-style consolidation (Exec-Summary (SYNTHETIC)
 continual item). A linear signal model must learn a stream of regimes
 WITHOUT forgetting earlier ones: elastic weight consolidation penalizes
 drift on parameters important to past tasks (diagonal Fisher).

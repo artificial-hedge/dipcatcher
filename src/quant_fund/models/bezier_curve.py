@@ -1,4 +1,4 @@
-"""Cubic Bezier curves (wave 283).
+"""Cubic Bezier curves (wave 283) (SYNTHETIC).
 
 B(t) = (1-t)^3 P0 + 3(1-t)^2 t P1 + 3(1-t) t^2 P2 + t^3 P3. Oracles: endpoint
 interpolation, convex-hull containment, midpoint symmetry.

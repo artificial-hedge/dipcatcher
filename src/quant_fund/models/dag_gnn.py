@@ -1,4 +1,4 @@
-"""DAG-GNN (Yu et al. 2019) — graph neural net VAE for structure:
+"""DAG-GNN (Yu et al. 2019) — graph neural net VAE for structure: (SYNTHETIC)
 encoder infers adjacency logits, decoder f(X) = (I-A^T)^{-1} f0(X)X;
 acyclicity via tr((I+A)^{d-1}). SHD vs corr baseline.
 """
@@ -49,5 +49,5 @@ def bench_dag_gnn(seed: int = 2341, edges: int = 7, steps: int = 350) -> dict[st
         "synthetic_daggnn_shd": float(shd_gnn),
         "synthetic_corr_shd": float(shd_cb),
         "synthetic_daggnn_gain": float(shd_cb - shd_gnn),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

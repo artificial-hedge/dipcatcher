@@ -1,4 +1,4 @@
-"""Oster (2019) coefficient-stability bounds for omitted-variable bias.
+"""Oster (2019) coefficient-stability bounds for omitted-variable bias (SYNTHETIC).
 
 When a treatment coefficient shrinks once controls enter,
 proportionality between selection on observables and

@@ -135,10 +135,10 @@ def bench_hasbrouck(
     rn = information_share(null)
     ok = r["is1_lo"] > 0.6 and rn["is1_mid"] > 0.3 and rn["is1_mid"] < 0.7 and r["gg_w1"] > 0.7
     return {
-        "is1_mid": r["is1_mid"],
-        "is1_lo": r["is1_lo"],
-        "is1_null_mid": rn["is1_mid"],
-        "gg_w1": r["gg_w1"],
-        "beta": r["beta"],
-        "score": float(ok),
+        "synthetic_is1_mid": r["is1_mid"],
+        "synthetic_is1_lo": r["is1_lo"],
+        "synthetic_is1_null_mid": rn["is1_mid"],
+        "synthetic_gg_w1": r["gg_w1"],
+        "synthetic_beta": r["beta"],
+        "synthetic_score": float(ok),
     }

@@ -1,4 +1,4 @@
-"""Panel causal-inference primitives: diff-in-diff and interrupted series.
+"""Panel causal-inference primitives: diff-in-diff and interrupted series (SYNTHETIC).
 
 Complements ``event_study`` (market-model event studies) with the panel
 estimators standard in program evaluation:

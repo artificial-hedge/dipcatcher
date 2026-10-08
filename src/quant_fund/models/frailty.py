@@ -1,4 +1,4 @@
-"""Shared gamma frailty survival model.
+"""Shared gamma frailty survival model (SYNTHETIC).
 
 Unobserved heterogeneity across clusters: hazard h_ij(t) =
 w_i · h0(t) · exp(xβ) with w_i ~ Gamma(1/θ, θ) iid per cluster.

@@ -66,6 +66,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_hong_li()
-    for k in ("m_right", "rho1_right", "m_wrong", "rho1_wrong", "berkowitz_wrong", "score"):
+    for k in (
+        "synthetic_m_right",
+        "synthetic_rho1_right",
+        "synthetic_m_wrong",
+        "synthetic_rho1_wrong",
+        "synthetic_berkowitz_wrong",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

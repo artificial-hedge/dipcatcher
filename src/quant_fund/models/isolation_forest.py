@@ -1,4 +1,4 @@
-"""Isolation forest anomaly detection (Liu, Ting & Zhou 2008).
+"""Isolation forest anomaly detection (Liu, Ting & Zhou 2008) (SYNTHETIC).
 
 Each iTree recursively partitions the feature space on a random
 feature + random split point; anomalies isolate in few splits.
@@ -118,7 +118,8 @@ def _path_length(tree: _Node, row: FloatArray) -> float:
     else:
         side = float(row[tree.j]) <= tree.cut
     nxt = tree.left if side else tree.right
-    assert nxt is not None
+    if not (nxt is not None):
+        raise ValueError("nxt is not None")
     return _path_length(nxt, row)
 
 
@@ -181,5 +182,5 @@ def bench_isolation_forest(seed: int = 20261231 + 453) -> dict[str, float]:
     return {
         "synthetic_top_hits": float(hits),
         "synthetic_score_gap": mean_out - mean_in,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

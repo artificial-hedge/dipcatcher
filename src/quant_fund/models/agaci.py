@@ -1,4 +1,4 @@
-"""Aggregated adaptive conformal inference: AgACI-EG / FACI-EG.
+"""Aggregated adaptive conformal inference: AgACI-EG / FACI-EG (SYNTHETIC).
 
 Online expert aggregation over ACI (Gibbs & Candès, 2021, NeurIPS 34,
 pp. 1660-1672) instances run at different learning rates γ. Removes the

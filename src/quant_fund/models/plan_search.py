@@ -1,4 +1,4 @@
-"""Tree-of-thoughts / plan search (Yao et al. 2023, bis).
+"""Tree-of-thoughts / plan search (Yao et al. 2023, bis) (SYNTHETIC).
 
 Beam search over the tool-graph finds solutions where greedy ReAct
 fails — branching factor × depth beats single-path reasoning.

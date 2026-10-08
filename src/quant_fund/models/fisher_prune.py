@@ -1,4 +1,4 @@
-"""Fisher-information structured pruning (Theis et al.).
+"""Fisher-information structured pruning (Theis et al.) (SYNTHETIC).
 
 Score each hidden unit by E[(∂L/∂w)²]-weighted magnitude (Fisher);
 prune the lowest-score units. Fisher pruning retains accuracy better
@@ -61,5 +61,5 @@ def bench_fisher_prune(
         "synthetic_fisher_full_acc": acc_full,
         "synthetic_fisher_random_acc": acc_r,
         "synthetic_fisher_gain": acc_f - acc_r,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

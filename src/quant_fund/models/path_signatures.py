@@ -1,4 +1,4 @@
-"""Path signatures and rough-path features for financial time series.
+"""Path signatures and rough-path features for financial time series (SYNTHETIC).
 
 Truncated iterated-integral signatures computed in pure numpy, following
 the tensor-algebra construction of

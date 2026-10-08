@@ -1,4 +1,4 @@
-"""Information-form and numerically robust Kalman filter variants.
+"""Information-form and numerically robust Kalman filter variants (SYNTHETIC).
 
 Companion to ``nonlinear_filters`` (EKF/UKF/particle): this module supplies
 linear-Gaussian filters in numerically hardened parameterizations for

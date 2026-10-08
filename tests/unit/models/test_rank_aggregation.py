@@ -78,4 +78,4 @@ def test_fail_closed_too_few():
 
 def test_bench():
     out = bench_rank_aggregation()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

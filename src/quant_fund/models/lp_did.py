@@ -1,4 +1,4 @@
-"""LP-DiD — local-projections difference-in-differences.
+"""LP-DiD — local-projections difference-in-differences (SYNTHETIC).
 
 At each horizon h, LP-DiD regresses the h-period outcome change on
 the treatment indicator using only *clean* observations: treated

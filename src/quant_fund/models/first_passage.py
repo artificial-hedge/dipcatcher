@@ -139,5 +139,5 @@ def bench_first_passage(seed: int = 20261231 + 371) -> dict[str, float]:
         "synthetic_fp_disc": p_disc,
         "synthetic_fp_siegmund": p_corr,
         "synthetic_fp_lift": lift,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

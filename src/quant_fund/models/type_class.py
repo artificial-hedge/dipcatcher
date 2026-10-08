@@ -1,4 +1,4 @@
-"""Method of types (wave 285).
+"""Method of types (wave 285) (SYNTHETIC).
 
 For iid ternary source, empirical type T has probability
 Pr(T) = multinomial coeff * prod p^x — verified against the exact

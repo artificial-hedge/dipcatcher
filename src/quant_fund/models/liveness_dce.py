@@ -1,4 +1,4 @@
-"""Backward liveness analysis + dead-code elimination (synthetic).
+"""Backward liveness analysis + dead-code elimination (synthetic) (SYNTHETIC).
 
 Straight-line instruction list: (dst, src1, src2). live-out via
 use/def dataflow; DCE removes assignments to never-live vars.

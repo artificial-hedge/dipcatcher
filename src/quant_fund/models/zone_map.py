@@ -1,4 +1,4 @@
-"""Zone-map skip-scan pruning: per-block (min,max) enables block skipping."""
+"""Zone-map skip-scan pruning: per-block (min,max) enables block skipping (SYNTHETIC)."""
 
 import numpy as np
 

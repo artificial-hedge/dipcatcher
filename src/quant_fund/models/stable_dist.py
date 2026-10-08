@@ -146,7 +146,8 @@ def stable_fit(x: FloatArray, n_grid: int = 40) -> dict[str, float]:
             err = float(np.sum(w * np.abs(ecf - phi) ** 2))
             if best is None or err < best[4]:
                 best = (float(alpha), float(beta), g0, d0, err)
-    assert best is not None
+    if not (best is not None):
+        raise ValueError("best is not None")
     alpha_hat, beta_hat, _, _, err = best
     # refine gamma, delta on the best alpha/beta
     best2: tuple[float, float, float] | None = None
@@ -156,7 +157,8 @@ def stable_fit(x: FloatArray, n_grid: int = 40) -> dict[str, float]:
             e2 = float(np.sum(w * np.abs(ecf - phi) ** 2))
             if best2 is None or e2 < best2[2]:
                 best2 = (float(gm), float(dl), e2)
-    assert best2 is not None
+    if not (best2 is not None):
+        raise ValueError("best2 is not None")
     out: dict[str, float] = {
         "alpha_init": a0,
         "beta_init": b0,
@@ -202,6 +204,6 @@ def bench_stable(seed: int = 20261231 + 363) -> dict[str, float]:
         "synthetic_st_alpha2_hat": r2["alpha"],
         "synthetic_st_beta_hat": r["beta"],
         "synthetic_st_cf_err": r["cf_err"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

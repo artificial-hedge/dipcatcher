@@ -11,7 +11,7 @@ from quant_fund.models.wigner_ville import (
 
 def test_bench_wigner_ville_passes():
     r = bench_wigner_ville()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_ridge_tracks_chirp():

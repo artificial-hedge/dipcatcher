@@ -1,4 +1,4 @@
-"""MCTS over reasoning steps (AlphaZero-style search on op chains).
+"""MCTS over reasoning steps (AlphaZero-style search on op chains) (SYNTHETIC).
 
 Nodes are partial op sequences; expansion uses the op-policy priors;
 evaluation uses the learned step-verifier on the intermediate value.
@@ -132,5 +132,5 @@ def bench_mcts_reason(
         "synthetic_mcts_acc": float(acc_mcts),
         "synthetic_mcts_greedy_acc": acc_greedy,
         "synthetic_mcts_gain": float(acc_mcts - acc_greedy),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

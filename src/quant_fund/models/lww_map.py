@@ -1,4 +1,4 @@
-"""LWW-Register / LWW-Map CRDT (synthetic).
+"""LWW-Register / LWW-Map CRDT (synthetic) (SYNTHETIC).
 
 Each entry carries (timestamp, replica, value); merge picks the
 max (ts, replica) per key. Verified: merge laws; concurrent

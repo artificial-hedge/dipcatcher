@@ -1,4 +1,4 @@
-"""Tabular TD-learning canon: TD(0) policy evaluation on sampled
+"""Tabular TD-learning canon: TD(0) policy evaluation on sampled (SYNTHETIC)
 transitions, SARSA on-policy control, and Q-learning off-policy control —
 all with epsilon-greedy exploration and decaying step sizes.
 ``bench_td_learning`` uses a chain MDP with a known optimal policy and

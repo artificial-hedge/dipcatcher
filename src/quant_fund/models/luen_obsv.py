@@ -1,4 +1,4 @@
-"""Luenberger observer on a linear system (wave 279).
+"""Luenberger observer on a linear system (wave 279) (SYNTHETIC).
 
 Plant: x' = A x + B u, y = C x. Observer: xh' = A xh + B u + L(y - C xh).
 Error dynamics e' = (A - L C) e — placing observer poles left of plant poles

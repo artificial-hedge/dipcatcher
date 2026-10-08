@@ -1,4 +1,4 @@
-"""LOD selection (wave 293).
+"""LOD selection (wave 293) (SYNTHETIC).
 
 Screen-space-error metric: render the COARSEST level whose projected
 geometric error rho = err_world * K / dist stays below threshold.

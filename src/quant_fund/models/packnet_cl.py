@@ -1,4 +1,4 @@
-"""PackNet (Mallya & Lazebnik 2018) — each task gets a disjoint subset of
+"""PackNet (Mallya & Lazebnik 2018) — each task gets a disjoint subset of (SYNTHETIC)
 parameters; once assigned, weights are frozen — zero forgetting by
 construction. Retention + final MSE vs plain SGD on the regime stream.
 """

@@ -1,4 +1,4 @@
-"""Tree ensembles from scratch: CART with Gini/MSE splits,
+"""Tree ensembles from scratch: CART with Gini/MSE splits, (SYNTHETIC)
 bagged random forest, and gradient boosting on regression
 stumps. Synthetic bench gates nonlinear (XOR/checker)
 recovery and additive-model fit."""
@@ -155,7 +155,8 @@ def random_forest(
 def forest_predict(model: dict[str, object], x: FloatArray) -> FloatArray:
     x = np.asarray(x, dtype=np.float64)
     trees = model["trees"]
-    assert isinstance(trees, list)
+    if not (isinstance(trees, list)):
+        raise ValueError("isinstance(trees, list)")
     preds = np.array([[_predict_one(t, xi) for xi in x] for t in trees])
     classification = bool(model["classification"])
     if classification:
@@ -195,7 +196,8 @@ def gbm_predict(model: dict[str, object], x: FloatArray) -> FloatArray:
     f = np.full(x.shape[0], float(np.asarray(model["init"])))
     lr = float(np.asarray(model["lr"]))
     stumps = model["stumps"]
-    assert isinstance(stumps, list)
+    if not (isinstance(stumps, list)):
+        raise ValueError("isinstance(stumps, list)")
     for stump in stumps:
         f += lr * np.asarray([_predict_one(stump, xi) for xi in x])
     return f

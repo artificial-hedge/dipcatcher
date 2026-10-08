@@ -1,4 +1,4 @@
-"""BGP path-vector simulator: announcement propagation, loop rejection,
+"""BGP path-vector simulator: announcement propagation, loop rejection, (SYNTHETIC)
 local-pref selection, convergence to loop-free routes."""
 
 import numpy as np

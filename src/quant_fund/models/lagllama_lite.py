@@ -1,4 +1,4 @@
-"""Lag-Llama-lite (Rasul et al. 2024) — lag-vector features → transformer
+"""Lag-Llama-lite (Rasul et al. 2024) — lag-vector features → transformer (SYNTHETIC)
 encoder → Student-T head; quantiles from the analytic t-inverse — vs
 seasonal-naive pinball.
 """
@@ -70,5 +70,5 @@ def bench_lagllama_lite(
         "synthetic_ll_pinball": pb,
         "synthetic_ll_naive_pinball": pb_n,
         "synthetic_ll_gain": pb_n - pb,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

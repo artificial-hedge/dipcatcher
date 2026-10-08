@@ -1,4 +1,4 @@
-"""Synthetic data-dynamics fixture.
+"""Synthetic data-dynamics fixture (SYNTHETIC).
 
 2-class problem in R^8: class mean ±mu on first 3 dims, 5 distractor
 dims with class-conditional variance flip (easy/hard split — hard

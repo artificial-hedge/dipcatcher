@@ -1,4 +1,4 @@
-"""Doubly-robust policy value estimation (Dudík et al. 2011).
+"""Doubly-robust policy value estimation (Dudík et al. 2011) (SYNTHETIC).
 
 Contextual-bandit logging data with known propensity; a learned
 target policy's value via IPS and DR vs the naive (regression) plug-in.

@@ -1,4 +1,4 @@
-"""Pesaran (2006) Common Correlated Effects estimator.
+"""Pesaran (2006) Common Correlated Effects estimator (SYNTHETIC).
 
 When panel errors share unobserved factors, pooled/FE slopes
 are biased; CCE augments each unit's regression with the

@@ -1,4 +1,4 @@
-"""Deep hedging: learned delta-shrinkage policy vs raw Black-Scholes
+"""Deep hedging: learned delta-shrinkage policy vs raw Black-Scholes (SYNTHETIC)
 delta under proportional transaction costs on synthetic GBM paths.
 
 Policy = clip(a * bs_delta + b * tau_decay, 0, 1): a 2-parameter

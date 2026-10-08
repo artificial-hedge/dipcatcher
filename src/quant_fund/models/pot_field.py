@@ -1,4 +1,4 @@
-"""Artificial-potential-field navigation (wave 283).
+"""Artificial-potential-field navigation (wave 283) (SYNTHETIC).
 
 Attractive gradient to goal + repulsive 1/d^2 obstacles; the composite field
 reaches the goal while a purely attractive controller walks into obstacles.

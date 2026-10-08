@@ -1,4 +1,4 @@
-"""Piggyback (Mallya et al. 2018) — freeze a shared backbone; each task
+"""Piggyback (Mallya et al. 2018) — freeze a shared backbone; each task (SYNTHETIC)
 learns a binary mask over its weights (score → threshold top-k).
 Retention perfect for early tasks; capacity used per task measured.
 """

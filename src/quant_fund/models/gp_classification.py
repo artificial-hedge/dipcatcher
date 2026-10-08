@@ -1,4 +1,4 @@
-"""Binary Gaussian-process classification under the Laplace
+"""Binary Gaussian-process classification under the Laplace (SYNTHETIC)
 approximation (Rasmussen & Williams ch. 3): Newton mode-finding
 on the latent logit, Gaussian predictive via the
 (K + W⁻¹)⁻¹ form. Synthetic bench gates two-moons AUC vs a

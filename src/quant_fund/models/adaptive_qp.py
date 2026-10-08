@@ -1,4 +1,4 @@
-"""Adaptive query execution: measure join selectivity mid-plan, switch order."""
+"""Adaptive query execution: measure join selectivity mid-plan, switch order (SYNTHETIC)."""
 
 import numpy as np
 

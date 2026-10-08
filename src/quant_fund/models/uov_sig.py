@@ -1,4 +1,4 @@
-"""UOV-lite: unbalanced oil-vinegar signature over GF(2).
+"""UOV-lite: unbalanced oil-vinegar signature over GF(2) (SYNTHETIC).
 
 Central map F: n = v + o variables -> m = o quadratic equations, with no
 oil x oil terms. Public map P = F . T for invertible mixing T. Signing picks

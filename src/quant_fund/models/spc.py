@@ -1,4 +1,4 @@
-"""Statistical process control — Shewhart, EWMA, CUSUM, and
+"""Statistical process control — Shewhart, EWMA, CUSUM, and (SYNTHETIC)
 capability indices.
 
 Shewhart (1931) x-bar/R and x-bar/S charts use phase-I center
@@ -239,5 +239,5 @@ def bench_spc(seed: int = 20261231 + 458) -> dict[str, float]:
         "synthetic_ewma_first": first_e,
         "synthetic_cusum_first": first_c,
         "synthetic_xbar_ooc": float(xb["n_ooc_x"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

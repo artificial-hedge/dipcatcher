@@ -1,4 +1,4 @@
-"""Empirical NTK — Jacobian-kernel ridge regression with a trained MLP's
+"""Empirical NTK — Jacobian-kernel ridge regression with a trained MLP's (SYNTHETIC)
 features vs the raw-feature kernel ridge: generalization gain on the
 regime task.
 """
@@ -48,6 +48,7 @@ def _krr(K: FloatArray, y: FloatArray, Kt: FloatArray, lam: float = 1e-3) -> Flo
 
 def bench_ntk_kernel(seed: int = 2359) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     X, y, Xt, yt = make_data(seed)
     net, _ = train_mlp(torch, X, y, iters=400, seed=seed)
     Xs, Xts = X[:120], Xt[:120]
@@ -64,5 +65,5 @@ def bench_ntk_kernel(seed: int = 2359) -> dict[str, float]:
         "synthetic_ntk_acc": acc_ntk,
         "synthetic_lin_kernel_acc": acc_lin,
         "synthetic_ntk_gain": acc_ntk - acc_lin,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

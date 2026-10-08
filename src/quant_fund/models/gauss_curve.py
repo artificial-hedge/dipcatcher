@@ -1,4 +1,4 @@
-"""Gaussian curvature via shape operator (wave 287).
+"""Gaussian curvature via shape operator (wave 287) (SYNTHETIC).
 
 K = det(II)/det(I) at sampled points of a sphere of radius r equals
 1/r^2; torus K varies sign as predicted by the formula

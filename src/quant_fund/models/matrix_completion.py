@@ -1,4 +1,4 @@
-"""Matrix completion for causal panel estimation (MCPanel).
+"""Matrix completion for causal panel estimation (MCPanel) (SYNTHETIC).
 
 Treats the untreated outcome matrix as a low-rank object with missing
 entries at treated cells: estimate Y(0) by nuclear-norm-regularized

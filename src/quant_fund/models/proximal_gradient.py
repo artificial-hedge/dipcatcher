@@ -1,4 +1,4 @@
-"""Proximal-gradient canon: soft-threshold prox, ISTA, FISTA (Beck & Teboulle
+"""Proximal-gradient canon: soft-threshold prox, ISTA, FISTA (Beck & Teboulle (SYNTHETIC)
 2009) with restart, and accelerated proximal gradient for l1-penalized
 quadratics. ``bench_proximal_gradient`` plants a sparse signal under a
 correlated design and gates support recovery plus FISTA beating ISTA on the

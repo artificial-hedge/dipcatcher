@@ -1,4 +1,4 @@
-"""Algebraic multigrid (Ruge-Stueben) two-level solver for a sparse SPD
+"""Algebraic multigrid (Ruge-Stueben) two-level solver for a sparse SPD (SYNTHETIC)
 matrix. Coarse nodes are selected by strength of connection (|a_ij| >=
 theta * max off-diagonal magnitude), interpolation averages strong
 neighbors' corrections, and the coarse operator is the exact Galerkin

@@ -1,4 +1,4 @@
-"""Accelerated failure time — Weibull AFT with right censoring.
+"""Accelerated failure time — Weibull AFT with right censoring (SYNTHETIC).
 
 log T = xβ + σ·ε, ε standard smallest-extreme-value, gives Weibull
 lifetimes with shape κ = 1/σ. Covariates rescale time multiplicatively

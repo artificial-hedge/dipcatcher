@@ -1,4 +1,4 @@
-"""Jorda (2005) local projections for impulse-response estimation.
+"""Jorda (2005) local projections for impulse-response estimation (SYNTHETIC).
 
 Instead of iterating a fitted VAR, local projections estimate the impulse
 response at each horizon ``h`` with a separate regression

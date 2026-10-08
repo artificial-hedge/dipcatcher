@@ -1,4 +1,4 @@
-"""Dunn's post-hoc test — pairwise rank comparisons after Kruskal.
+"""Dunn's post-hoc test — pairwise rank comparisons after Kruskal (SYNTHETIC).
 
 Dunn (1964): after a significant Kruskal-Wallis omnibus, pairwise
 group comparisons on mean-rank differences:
@@ -119,5 +119,5 @@ def bench_dunn_test(seed: int = 20261231 + 437) -> dict[str, float]:
         "synthetic_dunn_p_ab": p_ab,
         "synthetic_dunn_p_ac": p_ac,
         "synthetic_dunn_p_bc": p_bc,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

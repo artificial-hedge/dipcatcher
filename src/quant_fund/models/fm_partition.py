@@ -1,4 +1,4 @@
-"""Fiduccia-Mattheyses hypergraph bipartitioning (one balanced pass).
+"""Fiduccia-Mattheyses hypergraph bipartitioning (one balanced pass) (SYNTHETIC).
 
 Cells with unit area, hyperedges; a single FM pass moves the max-gain cell
 under the balance constraint, tracks the best prefix of the move sequence,

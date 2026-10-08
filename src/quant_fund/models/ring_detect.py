@@ -1,4 +1,4 @@
-"""Ring/cycle-basis detection on molecular graphs (wave 290).
+"""Ring/cycle-basis detection on molecular graphs (wave 290) (SYNTHETIC).
 
 Cyclomatic number = E - V + C for each connected component; SSSR-size
 via BFS cycle basis on the incidence structure. Verified on benzene (1),

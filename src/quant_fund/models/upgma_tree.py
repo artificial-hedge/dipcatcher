@@ -25,7 +25,8 @@ def upgma(dist: dict[frozenset[str], float], taxa: list[str]) -> Tree:
                     d = _avg_dist(D, clusters[i][0], clusters[j][0])
                 if best is None or d < best:
                     best, pair = d, (i, j)
-        assert pair is not None
+        if not (pair is not None):
+            raise ValueError("pair is not None")
         i, j = pair
         ci, cj = clusters[i][0], clusters[j][0]
         merged: tuple[frozenset[str], Tree, int] = (

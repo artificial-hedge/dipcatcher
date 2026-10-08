@@ -66,5 +66,5 @@ def test_rejects_bad_input() -> None:
 
 def test_bench_functional_pca_score() -> None:
     out = bench_functional_pca()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     assert out["synthetic_fpca_lam_err"] < 0.25

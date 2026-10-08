@@ -1,4 +1,4 @@
-"""Trust-Region Policy Optimization (Schulman et al., 2015) — the
+"""Trust-Region Policy Optimization (Schulman et al., 2015) — the (SYNTHETIC)
 natural-gradient step constrained by a KL ball on the policy. For a
 softmax policy the Fisher matrix is Cov_π(∇logπ) = diag(π) − ππᵀ and
 the step solves F x = g conjugate-gradient-style, scaled to

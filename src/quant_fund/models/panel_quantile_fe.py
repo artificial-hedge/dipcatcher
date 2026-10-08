@@ -1,4 +1,4 @@
-"""Panel quantile regression via moments (Machado & Santos Silva 2019).
+"""Panel quantile regression via moments (Machado & Santos Silva 2019) (SYNTHETIC).
 
 Location-scale representation:
     Y_it = α_i + X_it'β + (δ_i + Z_it'γ)·U_it,  U ~ has τ-quantile 0

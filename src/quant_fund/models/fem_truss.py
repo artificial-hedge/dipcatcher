@@ -1,4 +1,4 @@
-"""Static 2D truss FEM (synthetic).
+"""Static 2D truss FEM (synthetic) (SYNTHETIC).
 
 Assembles global stiffness K from bar elements (E·A/L · n nᵀ),
 solves reduced system for free DOFs, recovers member axial forces.

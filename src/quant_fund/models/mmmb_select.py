@@ -1,4 +1,4 @@
-"""MMPC/Markov-blanket selection (Tsamardinos et al. 2003) — for each
+"""MMPC/Markov-blanket selection (Tsamardinos et al. 2003) — for each (SYNTHETIC)
 variable, grow its parent-children set by max-min dependence then add
 spouses; symmetrized union gives the skeleton. F1 vs correlation.
 """
@@ -45,4 +45,4 @@ def bench_mmmb_select(seed: int = 2831, trials: int = 4, d: int = 6) -> dict[str
             for j in _mb(X, v):
                 A[v, j] = A[j, v] = 1.0
         f1s.append(skeleton_f1(B, A))
-    return {"synthetic_mmmb_skel_f1": float(np.mean(f1s)), "torch_available": 0.0}
+    return {"synthetic_mmmb_skel_f1": float(np.mean(f1s)), "synthetic_torch_available": 0.0}

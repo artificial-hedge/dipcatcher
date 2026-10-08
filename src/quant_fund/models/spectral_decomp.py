@@ -1,4 +1,4 @@
-"""Thin-bed spectral decomposition / tuning-thickness estimation.
+"""Thin-bed spectral decomposition / tuning-thickness estimation (SYNTHETIC).
 
 An equal-and-opposite reflection doublet (+r at t0, -r at t0+tau) has
 amplitude spectrum 2|sin(pi f tau)| with notches at f = n/tau; the first

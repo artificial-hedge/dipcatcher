@@ -1,4 +1,4 @@
-"""Predicate abstraction over a Boolean-vector abstract domain.
+"""Predicate abstraction over a Boolean-vector abstract domain (SYNTHETIC).
 
 Concrete domain: bounded int state {x}. Predicates p_i(x). Abstract reach:
 bools of each predicate under the successor relation, joined over the

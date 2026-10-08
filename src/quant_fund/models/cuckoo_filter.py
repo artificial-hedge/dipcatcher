@@ -1,4 +1,4 @@
-"""Cuckoo filter: two-bucket fingerprint hash table (synthetic).
+"""Cuckoo filter: two-bucket fingerprint hash table (synthetic) (SYNTHETIC).
 
 Each item maps to b1 = h(x), b2 = b1 ⊕ h(fp); insertion kicks a
 resident fingerprint until an empty slot or MAX_KICKS (then full).

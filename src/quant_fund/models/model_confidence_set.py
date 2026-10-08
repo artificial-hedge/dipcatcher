@@ -156,13 +156,14 @@ def bench_model_confidence_set(
     r = mcs_test(losses, alpha=0.10, n_boot=250, seed=seed)
     survivors = r["survivors"]
     pvals = r["p_values"]
-    assert isinstance(survivors, list) and isinstance(pvals, list)
+    if not (isinstance(survivors, list) and isinstance(pvals, list)):
+        raise ValueError("isinstance(survivors, list) and isinstance(pvals, list)")
     ok = 0 in survivors and 2 not in survivors and float(pvals[0]) >= float(pvals[2])
     return {
-        "n_survivors": float(len(survivors)),
-        "best_survives": float(0 in survivors),
-        "worst_dropped": float(2 not in survivors),
-        "p_best": float(pvals[0]),
-        "p_worst": float(pvals[2]),
-        "score": float(ok),
+        "synthetic_n_survivors": float(len(survivors)),
+        "synthetic_best_survives": float(0 in survivors),
+        "synthetic_worst_dropped": float(2 not in survivors),
+        "synthetic_p_best": float(pvals[0]),
+        "synthetic_p_worst": float(pvals[2]),
+        "synthetic_score": float(ok),
     }

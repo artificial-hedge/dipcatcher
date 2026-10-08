@@ -1,4 +1,4 @@
-"""Loop unrolling: expand fixed-trip loop into blocks + residual."""
+"""Loop unrolling: expand fixed-trip loop into blocks + residual (SYNTHETIC)."""
 
 import numpy as np
 

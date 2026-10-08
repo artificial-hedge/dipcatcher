@@ -1,4 +1,4 @@
-"""Sequential Halving (Karnin et al. 2013) — fixed-budget BAI:
+"""Sequential Halving (Karnin et al. 2013) — fixed-budget BAI: (SYNTHETIC)
 split the budget into ⌈log₂K⌉ rounds, sample each surviving arm
 evenly, discard the worst half each round."""
 

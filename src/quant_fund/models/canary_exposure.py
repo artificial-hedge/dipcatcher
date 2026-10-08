@@ -1,4 +1,4 @@
-"""Membership/memorization audit — canary exposure (Carlini 2019).
+"""Membership/memorization audit — canary exposure (Carlini 2019) (SYNTHETIC).
 
 Inject a synthetic canary pattern (a rare token sequence) into
 training; measure how much the trained model prefers the canary vs
@@ -67,5 +67,5 @@ def bench_canary_exposure(
         "synthetic_canary_prob": p_can,
         "synthetic_canary_decoy_prob": p_dec,
         "synthetic_canary_exposure": p_can - p_dec,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

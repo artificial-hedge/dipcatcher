@@ -1,4 +1,4 @@
-"""Paged KV-cache allocator (vLLM PagedAttention).
+"""Paged KV-cache allocator (vLLM PagedAttention) (SYNTHETIC).
 
 KV tensors live in fixed-size blocks allocated on demand — no contiguous
 per-sequence reservation. Reports internal-fragmentation waste vs the

@@ -1,4 +1,4 @@
-"""HSVI (Smith & Simmons 2004) — heuristic search value iteration:
+"""HSVI (Smith & Simmons 2004) — heuristic search value iteration: (SYNTHETIC)
 interleaved upper/lower bounds with forward exploration weighted by
 excess uncertainty. Lower bound = α-vector set (PBVI backups); upper
 bound = sawtooth approximation over a point-value map.

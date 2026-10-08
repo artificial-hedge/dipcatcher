@@ -1,4 +1,4 @@
-"""Dynamic panel-data estimators for panels with lagged outcomes.
+"""Dynamic panel-data estimators for panels with lagged outcomes (SYNTHETIC).
 
 References:
 - Anderson & Hsiao (1981): IV estimation of differenced dynamic panels

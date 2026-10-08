@@ -8,9 +8,10 @@ repos:
       - id: check-merge-conflict
       - id: check-case-conflict
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    # Pinned to the uv.lock ruff version — pre-commit and `make lint` must not
-    # drift (they used to: rev v0.8.0 vs locked 0.16.x).
-    rev: v0.16.7
+    # Pinned to the uv.lock ruff version (currently 0.16.9) — pre-commit and
+    # `make lint` must not drift (they used to: rev v0.8.0 vs locked 0.16.x;
+    # then v0.16.7 vs locked 0.16.9). Re-pin here whenever uv.lock bumps ruff.
+    rev: v0.16.9
     hooks:
       - id: ruff
         args: [--fix]
@@ -24,9 +25,29 @@ repos:
     hooks:
       # Local hooks run through `uv run`/`uvx` so tool versions come from
       # uv.lock (mypy) or an explicit pin (bandit) — matching CI exactly.
+      # Hook <-> Make target parity (do not let these drift):
+      #   ruff / ruff-format      -> `make lint`   (ruff check + format --check)
+      #   mypy-strict-allowlist   -> `make lint`   (check_mypy_strict_allowlist.py)
+      #   mypy                    -> `make typecheck`
+      #   mypy-strict-public      -> `make typecheck` (strict public modules)
+      #   mypy-fx1                -> `make fx1-test` lane's type pass
+      #   bandit                  -> `make security`
+      #   uv-lock-check           -> `make sync`'s --frozen precondition
       - id: mypy
         name: mypy (uv run)
         entry: uv run mypy src/quant_fund
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: mypy-strict-public
+        name: mypy strict public modules (uv run)
+        entry: uv run mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: mypy-strict-allowlist
+        name: mypy strict allowlist ratchet (uv run)
+        entry: uv run python scripts/check_mypy_strict_allowlist.py
         language: system
         pass_filenames: false
         types: [python]

@@ -1,4 +1,4 @@
-"""Token ring: circulate token; only holder may transmit."""
+"""Token ring: circulate token; only holder may transmit (SYNTHETIC)."""
 
 import numpy as np
 

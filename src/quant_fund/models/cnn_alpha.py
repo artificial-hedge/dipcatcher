@@ -116,5 +116,5 @@ def bench_cnn_alpha(seed: int = 101) -> dict[str, float]:
         "synthetic_cnnalpha_acc": acc,
         "synthetic_cnnalpha_logistic_acc": acc_l,
         "synthetic_cnnalpha_margin": acc - acc_l,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Expected excess return / residual alpha."""
+"""Expected excess return / residual alpha (SYNTHETIC)."""
 
 from __future__ import annotations
 

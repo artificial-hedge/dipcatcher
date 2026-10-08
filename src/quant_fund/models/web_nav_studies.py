@@ -32,4 +32,4 @@ def _bench_web_nav_studies(seed: int = 0) -> float:
 
 
 def bench_web_nav_studies(seed: int = 0) -> dict[str, float]:
-    return {"synthetic_web_nav_studies": _bench_web_nav_studies(seed)}
+    return {"synthetic_web_navigation_studies": _bench_web_nav_studies(seed)}

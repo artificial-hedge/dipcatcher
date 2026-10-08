@@ -1,4 +1,4 @@
-"""Sequence logo: per-column information content of an alignment."""
+"""Sequence logo: per-column information content of an alignment (SYNTHETIC)."""
 
 import numpy as np
 

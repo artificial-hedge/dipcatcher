@@ -37,6 +37,7 @@ def bench_linear_attn(
     d_model: int = 32,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, ytr = synth_retrieval(n_train, m_pairs, n_classes, rng)
     xte, yte = synth_retrieval(n_test, m_pairs, n_classes, rng)
@@ -88,5 +89,5 @@ def bench_linear_attn(
         "synthetic_linear_full_acc": acc_full,
         "synthetic_linear_acc_gap": acc_full - acc_lin,
         "synthetic_linear_cost_ratio": cost,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

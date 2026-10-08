@@ -1,4 +1,4 @@
-"""Convergent cross-mapping — nonlinear causality via Takens embeddings.
+"""Convergent cross-mapping — nonlinear causality via Takens embeddings (SYNTHETIC).
 
 References:
 - Sugihara et al. (2012): convergent cross mapping — Y causes X iff the

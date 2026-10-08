@@ -1,4 +1,4 @@
-"""Secretary problem + prophet inequality on a fixed reward sequence.
+"""Secretary problem + prophet inequality on a fixed reward sequence (SYNTHETIC).
 
 Secretary: observe first n/e, then pick first exceeding the sample
 max. Prophet: threshold rule at the median of the max distribution.

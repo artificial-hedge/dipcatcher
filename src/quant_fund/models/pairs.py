@@ -1,4 +1,4 @@
-"""Pairs trading research layer.
+"""Pairs trading research layer (SYNTHETIC).
 
 Pair selection and spread diagnostics — research/statistics only; no
 trading logic, fills, or P&L claims.

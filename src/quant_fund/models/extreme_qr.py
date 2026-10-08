@@ -162,6 +162,6 @@ def bench_extreme_qr(seed: int = 20261231 + 347) -> dict[str, float]:
         "synthetic_eqr_extrap_factor": r["extrap_factor"],
         "synthetic_eqr_q_extreme_mean": r["q_extreme_mean"],
         "synthetic_eqr_q_empirical_1pct": q_emp,
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

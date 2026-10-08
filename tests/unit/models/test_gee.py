@@ -74,4 +74,4 @@ def test_fail_closed_single_cluster():
 
 def test_bench():
     out = bench_gee()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

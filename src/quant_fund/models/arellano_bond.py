@@ -1,4 +1,4 @@
-"""Dynamic panel GMM — Arellano-Bond first-difference estimator.
+"""Dynamic panel GMM — Arellano-Bond first-difference estimator (SYNTHETIC).
 
 Estimates y_it = ρ·y_{i,t-1} + x_it'β + α_i + u_it by first-differencing
 and instrumenting Δy_{i,t-1} with levels y_{i,t-2}, y_{i,t-3}, ...

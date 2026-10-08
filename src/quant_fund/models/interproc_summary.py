@@ -1,4 +1,4 @@
-"""Interprocedural functional summaries (Sharir-Pnueli / RHS style).
+"""Interprocedural functional summaries (Sharir-Pnueli / RHS style) (SYNTHETIC).
 
 Each procedure's summary maps input abstract facts to output facts by
 symbolic execution over its call graph; summaries compose bottom-up.

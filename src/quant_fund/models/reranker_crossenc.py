@@ -1,4 +1,4 @@
-"""Cross-encoder reranker.
+"""Cross-encoder reranker (SYNTHETIC).
 
 First stage (BM25+dense fusion) proposes top-20; a joint scorer over
 the query-doc token pair (concat BoW through an interaction MLP)
@@ -96,5 +96,5 @@ def bench_reranker_crossenc(
         "synthetic_xenc_mrr_gain": _mrr(s2, td, tq) - _mrr(s1, td, tq),
         "synthetic_xenc_recall5": recall_at_k(s2, td, tq, 5),
         "synthetic_xenc_first_recall5": recall_at_k(s1, td, tq, 5),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

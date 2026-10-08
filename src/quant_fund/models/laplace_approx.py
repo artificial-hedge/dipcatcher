@@ -1,4 +1,4 @@
-"""Laplace approximation canon: posterior mode by damped Newton on
+"""Laplace approximation canon: posterior mode by damped Newton on (SYNTHETIC)
 -log p(theta | y) + Gaussian approximation N(mode, H^-1) with the
 Hessian at the mode, plus the Laplace log-evidence estimate.
 ``bench_laplace_approx`` uses Bayesian logistic regression: gates the

@@ -1,4 +1,4 @@
-"""Burrows-Wheeler transform + inverse (synthetic).
+"""Burrows-Wheeler transform + inverse (synthetic) (SYNTHETIC).
 
 Cyclic-rotation sort with a sentinel char; inverse via LF-mapping.
 Verified: (i) exact inverse round-trip; (ii) BWT clusters equal

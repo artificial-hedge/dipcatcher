@@ -1,4 +1,4 @@
-"""Vuong likelihood-ratio test for nonnested models.
+"""Vuong likelihood-ratio test for nonnested models (SYNTHETIC).
 
 Two models that share no nesting still compete on fit: the
 per-observation log-likelihood ratio ω_t = ℓ1_t − ℓ2_t has

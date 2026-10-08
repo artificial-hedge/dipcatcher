@@ -1,4 +1,4 @@
-"""Polar code (16,8): butterfly encoding + successive-cancellation decode.
+"""Polar code (16,8): butterfly encoding + successive-cancellation decode (SYNTHETIC).
 
 Channel polarization via the BEC Bhattacharyya recursion on a design
 BSC; the 8 most reliable bit-channels carry info, the rest are frozen

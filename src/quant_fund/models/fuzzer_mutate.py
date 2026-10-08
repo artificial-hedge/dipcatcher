@@ -1,4 +1,4 @@
-"""Coverage-guided mutational fuzzer on a toy branchy target."""
+"""Coverage-guided mutational fuzzer on a toy branchy target (SYNTHETIC)."""
 
 import numpy as np
 

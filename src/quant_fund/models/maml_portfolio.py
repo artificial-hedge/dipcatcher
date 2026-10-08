@@ -1,4 +1,4 @@
-"""MAML-style meta-learning for fast portfolio adaptation (Exec-Summary
+"""MAML-style meta-learning for fast portfolio adaptation (Exec-Summary (SYNTHETIC)
 meta/continual item). A base allocator is meta-trained across synthetic
 regime tasks so that a few gradient steps on a NEW regime recover a
 near-optimal allocation — model-agnostic meta-learning (first-order).

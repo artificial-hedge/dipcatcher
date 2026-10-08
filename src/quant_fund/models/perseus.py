@@ -1,4 +1,4 @@
-"""Perseus (Spaan & Vlassis 2005) — randomized point-based VI: each
+"""Perseus (Spaan & Vlassis 2005) — randomized point-based VI: each (SYNTHETIC)
 epoch backs up a random subset of belief points, reusing each new
 α-vector wherever it already improves over the current set. Value
 converges with far fewer backups than PBVI.

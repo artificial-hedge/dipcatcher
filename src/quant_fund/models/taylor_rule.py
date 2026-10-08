@@ -1,4 +1,4 @@
-"""Taylor rule + determinacy: monetary response to inflation gap."""
+"""Taylor rule + determinacy: monetary response to inflation gap (SYNTHETIC)."""
 
 import numpy as np
 

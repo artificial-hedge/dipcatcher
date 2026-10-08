@@ -1,4 +1,4 @@
-"""Quantile Thompson sampling for cross-sectional ranking.
+"""Quantile Thompson sampling for cross-sectional ranking (SYNTHETIC).
 
 Shared linear pinball models (IRLS ridge) with posterior draws on a tau-grid.
 Reward is the scientific target (e.g. next residual), not a portfolio path.

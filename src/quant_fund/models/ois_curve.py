@@ -221,5 +221,5 @@ def bench_ois_curve(seed: int = 20261231 + 469) -> dict[str, float]:
         "synthetic_flat_ptp": float(np.ptp(fz)),
         "synthetic_flat_repricing": float(flat_repricing),
         "synthetic_fwd_5y": float(forward_rate(curve, 3.0, 5.0)),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

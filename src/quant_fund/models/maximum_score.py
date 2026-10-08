@@ -1,4 +1,4 @@
-"""Manski's maximum score estimator for binary response.
+"""Manski's maximum score estimator for binary response (SYNTHETIC).
 
 P(y=1|x) is only assumed to be non-decreasing in xβ (conditional
 median zero on the disturbance) — no logit/probit link. The

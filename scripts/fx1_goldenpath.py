@@ -85,6 +85,19 @@ _ENV_KEYS = (
 # Model-weight artifact suffixes only — `.npz` is deliberately excluded
 # (in-repo .npz files are metrics dumps like `*.losses.npz`, never weights).
 _WEIGHT_SUFFIXES = {".safetensors", ".pt", ".pth", ".ckpt", ".gguf", ".bin", ".h5"}
+# The non-measured eval_delta a job-produced modelcard.json must never
+# carry: the labeled fixture placeholder. It is also structurally
+# unreachable — the general bank has 6 tasks so a real measured general
+# pass rate is a k/6 fraction; 0.9 can never come out of the eval pair.
+# (The eval-pending sentinel is all-zeros — an honest 0/N measurement
+# legitimately lands on it, so 'measured' is provenance, not values.)
+_PLACEHOLDER_EVAL_DELTA = {
+    "domain_pass_rate_base": 0.5,
+    "domain_pass_rate_candidate": 0.51,
+    "general_pass_rate_base": 0.9,
+    "general_pass_rate_candidate": 0.9,
+    "honesty_gate_candidate": True,
+}
 
 
 @dataclass
@@ -499,7 +512,11 @@ def run_goldenpath(
     sink log and the exported receipts; ``out`` is where the sealed receipt
     lands (default ``receipts/fx1_goldenpath.json``).
     """
-    from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
+    from quant_fund.research.receipt_v2 import (
+        verify_receipt_bytes,
+        verify_receipt_file,
+        verify_receipt_payload,
+    )
     from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
     from quant_fund.utils.reproducibility import git_revision
 
@@ -819,8 +836,13 @@ def run_goldenpath(
             except Exception as exc:  # noqa: BLE001
                 legs.record("finetune_terminal", True, False, f"{type(exc).__name__}: {exc}")
 
-        # the whole point of the surface: a job that REALLY trains and the
-        # minted ft: model serving its own trained weights (post-restart)
+        # the whole point of the surface: a job that REALLY trains; the
+        # produced card's eval_delta is the MEASURED eval pair (never the
+        # fixture placeholder and never the eval-pending sentinel), the
+        # sealed eval receipt verifies from the job's result files, and
+        # the wire honors the measured card's ship-gate verdict — serving
+        # the minted ft: name only when the card is eligible, refusing
+        # with the ship-gate 503 when it honestly is not.
         try:
             fup2 = client.upload_file(
                 _ft_corpus(), filename="goldenpath-ft2.jsonl", purpose="fine-tune"
@@ -832,31 +854,69 @@ def run_goldenpath(
             fin2 = _wait_terminal(client.finetune_job, ft2_id, 120.0)
             ckpts2 = client.finetune_job_checkpoints(ft2_id).get("data", [])
             ft_model = fin2.get("fine_tuned_model")
-            ft_content = ""
-            served_as = ""
-            if fin2.get("status") == "succeeded" and ft_model:
-                ft_chat, _cid = client.chat_completion(
-                    [{"role": "user", "content": "what does a weights manifest pin?"}],
-                    model=str(ft_model),
+            card: dict[str, Any] = {}
+            receipt_verified = False
+            for rfid in fin2.get("result_files") or []:
+                meta = client.file(str(rfid))
+                fname = str(meta.get("filename") or "")
+                if fname.endswith("modelcard.json"):
+                    card = json.loads(client.file_content(str(rfid)))
+                elif fname.endswith("eval_receipt.json"):
+                    receipt_verified = bool(
+                        verify_receipt_bytes(client.file_content(str(rfid)))["valid"]
+                    )
+            delta = card.get("eval_delta") or {}
+            limits = card.get("known_limits") or []
+            measured = (
+                bool(delta)
+                and delta != _PLACEHOLDER_EVAL_DELTA
+                and all(
+                    isinstance(delta.get(k), (int, float))
+                    for k in (
+                        "domain_pass_rate_base",
+                        "domain_pass_rate_candidate",
+                        "general_pass_rate_base",
+                        "general_pass_rate_candidate",
+                    )
                 )
-                served_as = str(ft_chat.get("model") or "")
-                choices = ft_chat.get("choices") or []
-                if choices:
-                    ft_content = str((choices[0].get("message") or {}).get("content") or "")
+                and any(str(lim).startswith("eval_delta measured") for lim in limits)
+                and not any("synthetic ship-gate placeholders" in str(lim) for lim in limits)
+                and not any(str(lim).startswith("eval_delta pending") for lim in limits)
+            )
+            ship = (
+                bool(delta.get("honesty_gate_candidate"))
+                and float(delta.get("domain_pass_rate_candidate") or 0)
+                > float(delta.get("domain_pass_rate_base") or 0)
+                and float(delta.get("general_pass_rate_candidate") or 0)
+                >= float(delta.get("general_pass_rate_base") or 0)
+            )
+            served_as = ""
+            refused = ""
+            if fin2.get("status") == "succeeded" and ft_model:
+                try:
+                    ft_chat, _cid = client.chat_completion(
+                        [{"role": "user", "content": "what does a weights manifest pin?"}],
+                        model=str(ft_model),
+                    )
+                    served_as = str(ft_chat.get("model") or "")
+                except Exception as exc:  # noqa: BLE001
+                    refused = f"{type(exc).__name__}: {exc}"
             ok = (
                 fin2.get("status") == "succeeded"
                 and bool(fin2.get("trained_tokens"))
                 and any(str(c.get("id", "")).startswith("ftckpt-") for c in ckpts2)
-                and served_as == ft_model
-                and bool(ft_content.strip())
+                and measured
+                and receipt_verified
+                and (served_as == ft_model if ship else "ship gate" in refused)
             )
             legs.record(
                 "ft_lifecycle_ran",
                 True,
                 bool(ok),
                 f"status={fin2.get('status')} tokens={fin2.get('trained_tokens')} "
-                f"ckpts={len(ckpts2)} served={served_as or 'none'} "
-                f"completion_len={len(ft_content)}",
+                f"ckpts={len(ckpts2)} measured_card={measured} "
+                f"eval_receipt={receipt_verified} ship_eligible={ship} "
+                f"served={served_as or 'none'} refused={refused[:80] or 'no'}",
             )
         except Exception as exc:  # noqa: BLE001
             legs.record("ft_lifecycle_ran", True, False, f"{type(exc).__name__}: {exc}")
@@ -927,9 +987,13 @@ def run_goldenpath(
                 "fx1.serve.local_engine, with the wire completion byte-identical "
                 "to direct-weights generation. ft_lifecycle_ran is true — a "
                 "fine-tune job ran the real in-repo trainer end-to-end: quality "
-                "gate, receipted training on the job corpus, a servable "
-                "ft:<name> checkpoint under --state-dir, and a real completion "
-                "from those trained weights after restart."
+                "gate, receipted training on the job corpus, a measured eval "
+                "pair stamped onto the produced modelcard.json (never the "
+                "placeholder), a sealed eval_receipt.json in result_files, and "
+                "the wire honoring the measured card's ship-gate verdict — "
+                "serving the ft:<name> checkpoint after restart only when the "
+                "measured delta is eligible, honestly refusing with the "
+                "ship-gate verdict otherwise."
                 if runnable_ok
                 else f"GOLDENPATH DEFECT: {results}"
             ),

@@ -1,4 +1,4 @@
-"""Chronos-lite (Ansari et al. 2024) — scale-and-quantize the series into
+"""Chronos-lite (Ansari et al. 2024) — scale-and-quantize the series into (SYNTHETIC)
 bins, model token sequence with a small causal transformer, emit the
 quantile grid directly — vs seasonal-naive pinball.
 """
@@ -70,5 +70,5 @@ def bench_chronos_lite(
         "synthetic_chronos_pinball": pb,
         "synthetic_chronos_naive_pinball": pb_n,
         "synthetic_chronos_gain": pb_n - pb,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

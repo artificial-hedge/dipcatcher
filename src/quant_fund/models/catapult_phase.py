@@ -1,4 +1,4 @@
-"""Catapult dynamics (Lewkowycz et al. 2020) — at large-but-subcritical
+"""Catapult dynamics (Lewkowycz et al. 2020) — at large-but-subcritical (SYNTHETIC)
 lr the loss spikes then diverges/converges; measure the transient
 spike amplitude vs convergence of a baseline small-lr run.
 """
@@ -20,6 +20,7 @@ def _torch():
 
 def bench_catapult_phase(seed: int = 2377) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     X, y, _, _ = make_data(seed)
     _, losses_hi = train_mlp(torch, X, y, iters=300, lr=0.12, seed=seed)
     _, losses_lo = train_mlp(torch, X, y, iters=300, lr=0.005, seed=seed)
@@ -31,5 +32,5 @@ def bench_catapult_phase(seed: int = 2377) -> dict[str, float]:
         "synthetic_catapult_final_hi": final_hi,
         "synthetic_catapult_final_lo": final_lo,
         "synthetic_catapult_penalty": final_hi - final_lo,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

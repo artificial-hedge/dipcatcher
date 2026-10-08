@@ -1,4 +1,4 @@
-"""Optional, research-only adapter for the Kronos candlestick model.
+"""Optional, research-only adapter for the Kronos candlestick model (SYNTHETIC).
 
 The module intentionally has no torch or upstream-Kronos imports at module import
  time. A predictor implementing ``predict`` can be injected for deterministic

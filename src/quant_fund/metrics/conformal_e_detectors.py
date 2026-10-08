@@ -597,7 +597,8 @@ class ConformalRestartDetector:
         if self.stat == "sum":
             self._log_stat = min(log_sum_stat, _LOG_CAP)
         else:
-            assert self._log_g is not None  # guaranteed by __init__ for stat="max"
+            if not (self._log_g is not None):
+                raise ValueError("self._log_g is not None")  # guaranteed by __init__ for stat="max"
             g = self._log_g
             g[:t] += log_f  # inactive rows are -inf: -inf + finite = -inf
             g[t] = log_f  # new restart k = t+1 (their Alg. 1 line 10)

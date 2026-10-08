@@ -1,4 +1,4 @@
-"""Secure aggregation — pairwise mask cancellation (Bonawitz 2017).
+"""Secure aggregation — pairwise mask cancellation (Bonawitz 2017) (SYNTHETIC).
 
 Clients add pairwise-secret masks to their updates; the server sums
 masked updates and masks cancel — the aggregate is exact while each

@@ -1,4 +1,4 @@
-"""TLE-style mean-element propagation with J2 secular rates (SGP4-lite)."""
+"""TLE-style mean-element propagation with J2 secular rates (SGP4-lite) (SYNTHETIC)."""
 
 from __future__ import annotations
 

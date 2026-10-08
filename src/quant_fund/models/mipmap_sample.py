@@ -1,4 +1,4 @@
-"""Mip-mapped texture sampling: trilinear between two levels."""
+"""Mip-mapped texture sampling: trilinear between two levels (SYNTHETIC)."""
 
 import numpy as np
 

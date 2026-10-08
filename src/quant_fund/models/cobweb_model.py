@@ -1,4 +1,4 @@
-"""Cobweb model: supply lag → price oscillation (stable iff slope ratio < 1)."""
+"""Cobweb model: supply lag → price oscillation (stable iff slope ratio < 1) (SYNTHETIC)."""
 
 import numpy as np
 

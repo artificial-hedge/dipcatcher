@@ -1,4 +1,4 @@
-"""DiD diagnostics: Goodman-Bacon decomposition + Sun-Abraham
+"""DiD diagnostics: Goodman-Bacon decomposition + Sun-Abraham (SYNTHETIC)
 event-study aggregation.
 
 Goodman-Bacon: a two-way fixed-effects DiD coefficient is a weighted

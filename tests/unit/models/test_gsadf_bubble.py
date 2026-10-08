@@ -85,12 +85,12 @@ def test_fail_closed() -> None:
 
 def test_bench_score() -> None:
     out = bench_gsadf()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert set(out) == {
-        "gsadf",
-        "cv95",
-        "overlap",
-        "flagged",
-        "tranquil_fp",
-        "score",
+        "synthetic_gsadf",
+        "synthetic_cv95",
+        "synthetic_overlap",
+        "synthetic_flagged",
+        "synthetic_tranquil_fp",
+        "synthetic_score",
     }

@@ -1,4 +1,4 @@
-"""Functor axiom checker (wave 289).
+"""Functor axiom checker (wave 289) (SYNTHETIC).
 
 F: C -> D preserves identities F(id_A)=id_{FA} and composition
 F(g f) = Fg Ff — verified exhaustively on small homomorphisms.

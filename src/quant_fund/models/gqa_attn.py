@@ -1,4 +1,4 @@
-"""Grouped-query attention (Ainslie et al. 2023).
+"""Grouped-query attention (Ainslie et al. 2023) (SYNTHETIC).
 
 G KV heads shared across Q heads — KV cache scales with G not H. On the
 recall fixture GQA at G=2 keeps most of MHA accuracy at 1/4 the KV
@@ -37,6 +37,7 @@ def bench_gqa_attn(
     n_groups: int = 2,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, ytr = synth_retrieval(n_train, m_pairs, n_classes, rng)
     xte, yte = synth_retrieval(n_test, m_pairs, n_classes, rng)
@@ -97,5 +98,5 @@ def bench_gqa_attn(
         "synthetic_gqa_mha_acc": acc_full,
         "synthetic_gqa_gap": acc_full - acc,
         "synthetic_gqa_kv_frac": float(n_groups) / n_heads,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

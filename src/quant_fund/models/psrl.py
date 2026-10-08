@@ -1,4 +1,4 @@
-"""PSRL (Osband et al. 2013) — posterior-sampling RL: sample a full MDP
+"""PSRL (Osband et al. 2013) — posterior-sampling RL: sample a full MDP (SYNTHETIC)
 from Dirichlet/multinomial posteriors each epoch, act with its optimal
 policy. Cumulative regret vs epsilon-greedy Q-learning.
 """
@@ -57,5 +57,5 @@ def bench_psrl(seed: int = 1401, T: int = 3000, epoch: int = 60) -> dict[str, fl
         "synthetic_psrl_total_reward": tot / T,
         "synthetic_psrl_eps_reward": tot2 / T,
         "synthetic_psrl_reward_gain": (tot - tot2) / T,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

@@ -1,4 +1,4 @@
-"""Gumbel-top-k differentiable subset selection (Kool et al. 2019).
+"""Gumbel-top-k differentiable subset selection (Kool et al. 2019) (SYNTHETIC).
 
 Sequential Gumbel-without-replacement: at each pick, add Gumbel noise to
 log-probs and take a soft argmax with temperature τ — a k-hot stochastic
@@ -76,5 +76,5 @@ def bench_gumbel_topk(
         "synthetic_gtopk_precision": prec,
         "synthetic_gtopk_lr_precision": prec_lr,
         "synthetic_gtopk_gain": prec - prec_lr,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

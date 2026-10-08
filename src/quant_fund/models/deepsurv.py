@@ -1,4 +1,4 @@
-"""DeepSurv (Katzman et al. 2018) — neural Cox PH: MLP risk score
+"""DeepSurv (Katzman et al. 2018) — neural Cox PH: MLP risk score (SYNTHETIC)
 trained by negative partial log-likelihood vs linear Cox PH C-index.
 """
 
@@ -43,5 +43,5 @@ def bench_deepsurv(seed: int = 2101, iters: int = 600) -> dict[str, float]:
         "synthetic_deepsurv_cindex": c_deep,
         "synthetic_cox_cindex": c_cox,
         "synthetic_deepsurv_gain": c_deep - c_cox,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

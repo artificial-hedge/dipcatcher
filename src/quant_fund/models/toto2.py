@@ -1,4 +1,4 @@
-"""Toto-2 foundation-model quantile head (P2.4). Research-only.
+"""Toto-2 foundation-model quantile head (P2.4). Research-only (SYNTHETIC).
 
 Datadog ``Toto-2.0`` is a u-μP-scaled transformer family (4M–2.5B params)
 with *native quantile-based* probabilistic forecasting — the cleanest fit

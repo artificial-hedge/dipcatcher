@@ -1,4 +1,4 @@
-"""Path types and transport in a finite type model.
+"""Path types and transport in a finite type model (SYNTHETIC).
 
 Types are finite sets of elements; a path p : x =_A y is a walk through
 A's identity data (modeled as an equality witness with a proof tag).

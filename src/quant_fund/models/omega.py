@@ -1,4 +1,4 @@
-"""McDonald's omega — composite reliability from a one-factor
+"""McDonald's omega — composite reliability from a one-factor (SYNTHETIC)
 solution.
 
 McDonald (1999): given standardized loadings lambda_j of a single-
@@ -100,5 +100,5 @@ def bench_omega(seed: int = 20261231 + 442) -> dict[str, float]:
         "synthetic_omega_true": true_omega,
         "synthetic_omega_noise": noise["omega"],
         "synthetic_omega_resid_rms": out["resid_rms"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

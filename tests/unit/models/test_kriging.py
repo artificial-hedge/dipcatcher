@@ -65,5 +65,5 @@ def test_kriging_input_validation():
 
 def test_bench_kriging():
     out = bench_kriging()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_kriging_rmse_ratio"] < 0.8

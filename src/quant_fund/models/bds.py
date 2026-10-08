@@ -139,10 +139,10 @@ def bench_bds(seed: int = 20261231 + 321) -> dict[str, float]:
     ok = r_null["p2"] > 0.05 and r_chaos["p2"] < 1e-6
     ok = ok and r_chaos["p3"] < 1e-6
     return {
-        "w2_null": r_null["w2"],
-        "p2_null": r_null["p2"],
-        "w2_chaos": r_chaos["w2"],
-        "p2_chaos": r_chaos["p2"],
-        "p3_chaos": r_chaos["p3"],
-        "score": float(ok),
+        "synthetic_w2_null": r_null["w2"],
+        "synthetic_p2_null": r_null["p2"],
+        "synthetic_w2_chaos": r_chaos["w2"],
+        "synthetic_p2_chaos": r_chaos["p2"],
+        "synthetic_p3_chaos": r_chaos["p3"],
+        "synthetic_score": float(ok),
     }

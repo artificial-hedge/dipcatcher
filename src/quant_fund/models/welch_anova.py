@@ -125,7 +125,8 @@ def bench_welch_anova(seed: int = 485) -> dict[str, float]:
     alt = welch_anova(g1, g2, g4)
     gh = games_howell(g1, g2, g4)
     pairs = gh["pairs"]
-    assert isinstance(pairs, list)
+    if not (isinstance(pairs, list)):
+        raise ValueError("isinstance(pairs, list)")
     sig_pairs = [(i, j) for i, j, _q, p in pairs if p < 0.05]
     hit = 1.0 if all(2 in (i, j) for i, j in sig_pairs) and sig_pairs else 0.0
     return {

@@ -166,6 +166,6 @@ def bench_extremogram(seed: int = 20261231 + 336) -> dict[str, float]:
         "synthetic_extremogram_decay_ar": spread_ar,
         "synthetic_extremal_index_ar": idx_ar["theta"],
         "synthetic_extremal_index_iid": idx_iid["theta"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

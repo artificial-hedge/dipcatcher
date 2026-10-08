@@ -1,4 +1,4 @@
-"""Kohonen self-organizing maps and learning vector
+"""Kohonen self-organizing maps and learning vector (SYNTHETIC)
 quantization: incremental SOM with Gaussian neighborhood
 decay, quantization/topographic error, U-matrix, and LVQ1
 classification. Synthetic bench gates topology preservation

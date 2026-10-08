@@ -1,4 +1,4 @@
-"""Shared synthetic geometry fixtures (wave 140).
+"""Shared synthetic geometry fixtures (wave 140) (SYNTHETIC).
 
 - `synth_hierarchy`: binary-tree leaf embeddings with tree-metric
   distances — hyperbolic geometry fits them with low distortion where

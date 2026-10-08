@@ -1,4 +1,4 @@
-"""KL-UCB bandit canon (Garivier & Cappé 2011): the upper
+"""KL-UCB bandit canon (Garivier & Cappé 2011): the upper (SYNTHETIC)
 confidence index is the Bernoulli-KL solution
 q = sup{q >= mu : kl(mu, q) <= ln t / n}, found by bisection.
 Bench compares KL-UCB regret against plain UCB1 on the same

@@ -1,4 +1,4 @@
-"""Options-flow AI detector (Exec-Summary Feature 4). Streaming tape
+"""Options-flow AI detector (Exec-Summary Feature 4). Streaming tape (SYNTHETIC)
 featurizer (greeks-style aggregates, size z-scores, block flags, moneyness,
 side persistence) plus a logistic classifier separating informed flow from
 hedging flow.

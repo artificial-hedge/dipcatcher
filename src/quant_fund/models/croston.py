@@ -1,4 +1,4 @@
-"""Croston's method and variants for intermittent demand / event series.
+"""Croston's method and variants for intermittent demand / event series (SYNTHETIC).
 
 Croston (1972) forecasts sparse non-negative series (many zeros) by applying
 simple exponential smoothing separately to the *non-zero sizes* ``z`` and the

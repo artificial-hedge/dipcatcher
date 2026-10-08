@@ -1,4 +1,4 @@
-"""Ski rental — the canonical online-competitive problem.
+"""Ski rental — the canonical online-competitive problem (SYNTHETIC).
 
 Deterministic: rent until cumulative rent reaches buy price, then buy
 (2-competitive). Randomized: buy at day threshold drawn from the

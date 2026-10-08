@@ -1,4 +1,4 @@
-"""AlphaZero-lite (Silver et al. 2018) — tic-tac-toe self-play:
+"""AlphaZero-lite (Silver et al. 2018) — tic-tac-toe self-play: (SYNTHETIC)
 policy/value nets guide PUCT MCTS; visit distributions become the
 training signal; terminal outcome the value target. Non-loss rate vs
 the minimax oracle and vs random.
@@ -132,5 +132,5 @@ def bench_alphazero_lite(seed: int = 2719, episodes: int = 60, sims: int = 25) -
     return {
         "synthetic_az_nonloss_oracle": nl_or,
         "synthetic_az_nonloss_random": nl_rd,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

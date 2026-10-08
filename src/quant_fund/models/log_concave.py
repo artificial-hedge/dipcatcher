@@ -160,6 +160,6 @@ def bench_log_concave(seed: int = 20261231 + 354) -> dict[str, float]:
         "synthetic_lc_concave": float(concave),
         "synthetic_lc_mode_loc": peak_z,
         "synthetic_lc_loglik": float(r["loglik"][0]),
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

@@ -1,4 +1,4 @@
-"""Geometric multigrid V-cycle for the 1-D Poisson equation.
+"""Geometric multigrid V-cycle for the 1-D Poisson equation (SYNTHETIC).
 
 A: tridiagonal (-1,2,-1). One V-cycle: pre-smooth with weighted Jacobi,
 restrict residual by full-weighting, solve exactly at the coarsest level,

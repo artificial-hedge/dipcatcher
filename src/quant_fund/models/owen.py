@@ -1,4 +1,4 @@
-"""Owen value — Shapley value under an a priori coalition structure
+"""Owen value — Shapley value under an a priori coalition structure (SYNTHETIC)
 (unions): players' worth averaged over orderings consistent with the
 partition, computed exactly by enumerating union orders and within-
 union orders.

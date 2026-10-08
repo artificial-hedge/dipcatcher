@@ -1,4 +1,4 @@
-"""Rotated distance-3 surface code [[9,1,3]] with exact ML decoding.
+"""Rotated distance-3 surface code [[9,1,3]] with exact ML decoding (SYNTHETIC).
 
 Nine data qubits on a 3x3 grid; stabilizers are the rotated-code
 checkerboard: weight-4 interior plaquettes plus weight-2 boundary halves.

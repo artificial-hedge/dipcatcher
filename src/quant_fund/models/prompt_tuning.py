@@ -1,4 +1,4 @@
-"""Prompt tuning — learnable soft tokens (Lester et al. 2021).
+"""Prompt tuning — learnable soft tokens (Lester et al. 2021) (SYNTHETIC).
 
 Frozen attention backbone + p learned embeddings prepended to every
 sequence. On the value-remap fixture (same keys, rotated value classes)
@@ -41,6 +41,7 @@ def bench_prompt_tuning(
     n_prompt: int = 8,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, ytr = synth_retrieval(n_train, m_pairs, n_classes, rng)
     xs, ys = synth_retrieval(n_shift, m_pairs, n_classes, np.random.default_rng(seed + 1))
@@ -94,5 +95,5 @@ def bench_prompt_tuning(
         "synthetic_prompt_frozen_acc": acc_frozen,
         "synthetic_prompt_full_acc": acc_full,
         "synthetic_prompt_param_frac": float(n_prompt * d_model) / n_full,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

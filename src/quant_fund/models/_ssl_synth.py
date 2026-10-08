@@ -1,4 +1,4 @@
-"""Shared synthetic SSL / test-time-adaptation fixtures (wave 139).
+"""Shared synthetic SSL / test-time-adaptation fixtures (wave 139) (SYNTHETIC).
 
 - `synth_ssl`: 4-class Gaussian blobs; `make_views` produces two noisy
   views (random scale + translation) — view-invariant representations

@@ -1,4 +1,4 @@
-"""Stabilizer-syndrome measurement circuits on a small statevector.
+"""Stabilizer-syndrome measurement circuits on a small statevector (SYNTHETIC).
 
 Simulates ancilla-assisted stabilizer measurement at gate level: for a Z-type
 check, CNOTs from each data qubit in the check support into the ancilla then

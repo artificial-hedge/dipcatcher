@@ -1,4 +1,4 @@
-"""Polymorphic inline cache: monomorphic → polymorphic → megamorphic states."""
+"""Polymorphic inline cache: monomorphic → polymorphic → megamorphic states (SYNTHETIC)."""
 
 import numpy as np
 

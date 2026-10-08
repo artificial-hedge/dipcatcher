@@ -1,4 +1,4 @@
-"""Wang-Landau density-of-states estimation for the 1-D Ising chain.
+"""Wang-Landau density-of-states estimation for the 1-D Ising chain (SYNTHETIC).
 
 Random spin flips on a 16-spin chain; log g(E) updated by ln f until
 flatness (H within 20% of mean), then f -> sqrt(f). Recovers g(E)

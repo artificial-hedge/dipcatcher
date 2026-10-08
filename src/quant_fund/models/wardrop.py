@@ -1,4 +1,4 @@
-"""Wardrop user equilibrium — selfish routing on congested networks.
+"""Wardrop user equilibrium — selfish routing on congested networks (SYNTHETIC).
 
 Latencies t_a(x) = free_flow·(1 + b·(x/cap)^p) (BPR form). Equilibrium
 via projected flow shifts: at each step every OD commodity shifts flow

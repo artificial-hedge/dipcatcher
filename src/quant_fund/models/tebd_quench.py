@@ -1,4 +1,4 @@
-"""TEBD-style imaginary-time + real-time evolution on TFIM via
+"""TEBD-style imaginary-time + real-time evolution on TFIM via (SYNTHETIC)
 two-site gate decomposition (dense 6-qubit check vs exact expm).
 """
 
@@ -55,5 +55,5 @@ def bench_tebd_quench(
         "synthetic_tebd_fid": fid,
         "synthetic_tebd_err": float(1 - fid),
         "synthetic_tebd_dt": float(dt),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

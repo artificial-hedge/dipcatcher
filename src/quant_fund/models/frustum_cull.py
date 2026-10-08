@@ -1,4 +1,4 @@
-"""Frustum culling (wave 293).
+"""Frustum culling (wave 293) (SYNTHETIC).
 
 6-plane frustum extracted from a perspective VP matrix (Gribb-Hartmann);
 AABB plane test (positive-vertex) vs brute-force corner check on a

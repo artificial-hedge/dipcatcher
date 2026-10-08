@@ -1,4 +1,4 @@
-"""Ring attention simulation (Liu et al. 2023).
+"""Ring attention simulation (Liu et al. 2023) (SYNTHETIC).
 
 The K/V sequence is sharded across two virtual devices; each computes
 partial online softmax, then a ring merge combines them — output equals

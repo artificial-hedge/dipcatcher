@@ -1,4 +1,4 @@
-"""Multivariate polynomial division mod a generating set (wave 281).
+"""Multivariate polynomial division mod a generating set (wave 281) (SYNTHETIC).
 
 One-variable-reduction division for monomial ideals in k[x,y]: a monomial
 x^a y^b is in <x^i y^j> iff i<=a and j<=b. Division reduces f term-by-term;

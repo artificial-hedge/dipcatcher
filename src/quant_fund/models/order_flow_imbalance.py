@@ -1,4 +1,4 @@
-"""Order-flow-imbalance detector (Exec-Summary OFI item). Cont–Kukanov–
+"""Order-flow-imbalance detector (Exec-Summary OFI item). Cont–Kukanov– (SYNTHETIC)
 Stoikov event-level OFI from quote updates plus a Kalman-smoothed
 short-horizon price-move predictor.
 

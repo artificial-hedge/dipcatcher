@@ -1,4 +1,4 @@
-"""DiNardo-Fortin-Lemieux (1996) reweighting decomposition.
+"""DiNardo-Fortin-Lemieux (1996) reweighting decomposition (SYNTHETIC).
 
 Where Oaxaca-Blinder decomposes mean gaps, DFL decomposes
 the whole distribution: reweight group B by the fitted odds

@@ -1,4 +1,4 @@
-"""Edge-of-stability — Cohen et al. (2021): with step size η, sharpness
+"""Edge-of-stability — Cohen et al. (2021): with step size η, sharpness (SYNTHETIC)
 rises until ≈ 2/η then hovers. Measures sharpness trajectory vs the
 2/η threshold for GD on the regime task.
 """
@@ -57,5 +57,5 @@ def bench_edge_stability(seed: int = 2365, iters: int = 300, lr: float = 0.05) -
         "synthetic_eos_threshold": float(threshold),
         "synthetic_eos_mean_sharpness": float(np.mean(sharps)),
         "synthetic_eos_frac_above_80pct": frac,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

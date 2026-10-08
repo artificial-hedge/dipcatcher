@@ -157,7 +157,8 @@ def laplace_iod(
             c = float(residual(xf) @ residual(xf))
             if best is None or c < best[0]:
                 best = (c, xf)
-    assert best is not None
+    if not (best is not None):
+        raise ValueError("best is not None")
     rho2f = best[1][0]
     if rho2f <= 0:
         raise RuntimeError("laplace_iod: no positive-range root")

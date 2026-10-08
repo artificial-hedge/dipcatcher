@@ -1,4 +1,4 @@
-"""Vector clocks for causality tracking (synthetic).
+"""Vector clocks for causality tracking (synthetic) (SYNTHETIC).
 
 Implements increment/merge/compare on vector clocks over a random
 event graph with concurrent and causal events. Verified: (i) a

@@ -1,4 +1,4 @@
-"""Lanczos canon: tridiagonalization of a symmetric matrix
+"""Lanczos canon: tridiagonalization of a symmetric matrix (SYNTHETIC)
 via three-term Krylov recurrence, with optional selective
 reorthogonalization, recovering top Ritz eigenvalues on a
 synthetic sparse SPD operator.

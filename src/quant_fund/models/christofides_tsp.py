@@ -1,4 +1,4 @@
-"""Christofides 1.5-approximation for metric TSP.
+"""Christofides 1.5-approximation for metric TSP (SYNTHETIC).
 
 MST + min-weight perfect matching on odd-degree vertices + Eulerian
 circuit shortcut to a tour. Matching on the (<=8) odd vertices by

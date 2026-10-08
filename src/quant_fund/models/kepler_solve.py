@@ -1,4 +1,4 @@
-"""Kepler's equation solvers: elliptic Newton and bisection oracle."""
+"""Kepler's equation solvers: elliptic Newton and bisection oracle (SYNTHETIC)."""
 
 from __future__ import annotations
 

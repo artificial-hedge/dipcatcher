@@ -1,4 +1,4 @@
-"""Graph cyclomatic number equals Betti-1 (wave 280).
+"""Graph cyclomatic number equals Betti-1 (wave 280) (SYNTHETIC).
 
 For a 1-dimensional complex (a graph): b_1 = E - V + C where C is the number
 of connected components — verified against the rank computation on random

@@ -1,4 +1,4 @@
-"""Factorization machines (Rendle 2010): degree-2 feature
+"""Factorization machines (Rendle 2010): degree-2 feature (SYNTHETIC)
 interactions through k-dim latent factors, trained by SGD on
 squared or logistic loss in O(nk) per epoch via the
 (Σv·x)² − Σ(v·x)² identity. Synthetic bench gates that the

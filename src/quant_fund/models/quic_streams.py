@@ -1,4 +1,4 @@
-"""QUIC stream multiplexing (wave 292).
+"""QUIC stream multiplexing (wave 292) (SYNTHETIC).
 
 Per-stream ordered reassembly over interleaved packets carrying
 (stream_id, offset, data) frames — delivers bytes in offset order per

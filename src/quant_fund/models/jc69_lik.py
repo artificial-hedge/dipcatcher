@@ -1,4 +1,4 @@
-"""Felsenstein pruning likelihood under Jukes-Cantor 69 (wave 284).
+"""Felsenstein pruning likelihood under Jukes-Cantor 69 (wave 284) (SYNTHETIC).
 
 Two-taxon tree with root age tau and branch lengths t1,t2; JC69 transition
 probs via (1/4)(1+3e^{-4t/3}) match. The pruning recursion equals the

@@ -1,4 +1,4 @@
-"""Autoregressive parameter estimation: Yule-Walker, Levinson-Durbin, Burg.
+"""Autoregressive parameter estimation: Yule-Walker, Levinson-Durbin, Burg (SYNTHETIC).
 
 For an AR(p) process ``x_t = sum_{k=1}^p phi_k x_{t-k} + e_t`` this module
 provides three classical estimators:

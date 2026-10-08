@@ -128,5 +128,5 @@ def bench_jln(seed: int = 20261231 + 370) -> dict[str, float]:
         "synthetic_jln_corr": cor,
         "synthetic_jln_share_pc1": share,
         "synthetic_jln_mean_u": float(np.nanmean(res["series_u"])),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

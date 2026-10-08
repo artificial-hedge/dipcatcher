@@ -1,4 +1,4 @@
-"""Miller-Madow entropy estimator (wave 285).
+"""Miller-Madow entropy estimator (wave 285) (SYNTHETIC).
 
 Plug-in H is biased low on small samples; Miller-Madow adds
 (m-1)/(2n) nats correction, shrinking bias vs the true entropy.

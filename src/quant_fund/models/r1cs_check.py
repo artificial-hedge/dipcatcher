@@ -1,4 +1,4 @@
-"""Rank-1 constraint system satisfiability over a prime field.
+"""Rank-1 constraint system satisfiability over a prime field (SYNTHETIC).
 
 R1CS: matrices A,B,C over Fp; witness w satisfies iff (A w) ⊙ (B w) = C w
 rowwise. Helpers build common gadgets (mul, linear combination, boolean)

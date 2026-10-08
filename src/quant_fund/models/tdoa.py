@@ -1,4 +1,4 @@
-"""TDOA multilateration — Chan's closed-form hyperbolic solver.
+"""TDOA multilateration — Chan's closed-form hyperbolic solver (SYNTHETIC).
 
 Canonical reference: Chan & Ho (1994). Given receiver positions and
 range-difference measurements vs a reference receiver, solves the

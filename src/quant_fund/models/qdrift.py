@@ -1,4 +1,4 @@
-"""qDRIFT randomized Hamiltonian compilation.
+"""qDRIFT randomized Hamiltonian compilation (SYNTHETIC).
 
 For H = sum_j h_j H_j (h_j > 0), qDRIFT samples L terms i.i.d. proportional to
 h_j and applies prod_j exp(-i H_{s_j} tau), tau = t * lambda / L where

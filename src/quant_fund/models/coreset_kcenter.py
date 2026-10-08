@@ -1,4 +1,4 @@
-"""k-center coreset selection (Sener & Savarese 2018) — cover the
+"""k-center coreset selection (Sener & Savarese 2018) — cover the (SYNTHETIC)
 unlabeled pool greedily in feature space: pick the point farthest from
 the labeled set (maximin). Accuracy vs random baseline.
 """
@@ -23,5 +23,5 @@ def bench_coreset_kcenter(seed: int = 2619, trials: int = 5) -> dict[str, float]
         "synthetic_kc_acc": float(np.mean(accs)),
         "synthetic_random_acc": float(np.mean(bases)),
         "synthetic_kc_gain": float(np.mean(accs) - np.mean(bases)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

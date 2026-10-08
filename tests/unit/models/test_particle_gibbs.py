@@ -64,5 +64,5 @@ def test_particle_gibbs_rejects_bad_params() -> None:
 
 def test_bench_particle_gibbs_score() -> None:
     out = bench_particle_gibbs()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     assert out["synthetic_pg_phi_err"] < 0.12

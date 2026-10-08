@@ -1,4 +1,4 @@
-"""R2D2 (Bertinetto et al. 2019) — meta-learned feature body + closed-form
+"""R2D2 (Bertinetto et al. 2019) — meta-learned feature body + closed-form (SYNTHETIC)
 ridge-regression head per task (no gradient steps needed). Query MSE vs
 kernel-ridge on raw x.
 """
@@ -54,5 +54,5 @@ def bench_r2d2_meta(seed: int = 871, n_tasks: int = 30, K: int = 5) -> dict[str,
         "synthetic_r2d2_query_mse": float(np.mean(mses)),
         "synthetic_r2d2_raw_mse": float(np.mean(mses_raw)),
         "synthetic_r2d2_gain": float(np.mean(mses_raw) - np.mean(mses)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

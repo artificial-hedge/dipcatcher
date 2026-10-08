@@ -1,4 +1,4 @@
-"""LAMBDA integer least squares — carrier-phase ambiguity resolution.
+"""LAMBDA integer least squares — carrier-phase ambiguity resolution (SYNTHETIC).
 
 Decorrelates the float ambiguity covariance via a unimodular
 Z-transform (LDL-based integer Gauss reduction), then searches the

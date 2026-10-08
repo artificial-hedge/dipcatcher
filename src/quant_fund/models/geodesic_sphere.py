@@ -1,4 +1,4 @@
-"""Geodesic integration on the sphere (wave 287).
+"""Geodesic integration on the sphere (wave 287) (SYNTHETIC).
 
 RK4 on the geodesic equations in (u=theta, v=phi) traces a great circle:
 the integrated path length between two points matches the great-circle

@@ -1,4 +1,4 @@
-"""Umbrella-operator Laplacian mesh smoothing + cotangent Laplacian.
+"""Umbrella-operator Laplacian mesh smoothing + cotangent Laplacian (SYNTHETIC).
 
 Uniform smoothing v <- v + lambda*(mean(neighbors)-v) damps noise but
 shrinks volume; cotangent-weighted Laplacian is the discrete mean

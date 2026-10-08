@@ -1,4 +1,4 @@
-"""Reformer-style LSH bucketed attention (Kitaev et al. 2020).
+"""Reformer-style LSH bucketed attention (Kitaev et al. 2020) (SYNTHETIC).
 
 Angular LSH buckets queries into buckets by hash of a random rotation;
 attention only within bucket (sorted order). On the retrieval task LSH
@@ -92,5 +92,5 @@ def bench_reformer_lsh(
         "synthetic_lsh_full_acc": float(acc_o),
         "synthetic_lsh_acc_gap": float(acc - acc_o),
         "synthetic_lsh_cost_ratio": float(attn_dot_cost(t_len, "lsh", _BUCKETS)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

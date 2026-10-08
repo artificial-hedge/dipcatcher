@@ -1,4 +1,4 @@
-"""Jonker–Volgenant shortest-augmenting-path linear assignment.
+"""Jonker–Volgenant shortest-augmenting-path linear assignment (SYNTHETIC).
 
 Canonical reference: Jonker & Volgenant (1987); Crouse (2016) for the
 Dijkstra-form dual updates. Solves  min Σ c[i, π(i)]  on rectangular

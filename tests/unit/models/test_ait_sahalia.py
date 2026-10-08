@@ -84,6 +84,12 @@ def test_synth_deterministic_positive() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_ait_sahalia(seed=3)
-    for k in ("sigma", "rho", "beta_err", "ll_gap_ou", "score"):
+    for k in (
+        "synthetic_sigma",
+        "synthetic_rho",
+        "synthetic_beta_err",
+        "synthetic_ll_gap_ou",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

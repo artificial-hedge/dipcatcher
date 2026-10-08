@@ -1,4 +1,4 @@
-"""Classic multi-armed bandit algorithms (non-contextual).
+"""Classic multi-armed bandit algorithms (non-contextual) (SYNTHETIC).
 
 ``models/rl.py`` already has contextual LinUCB; this module covers the
 canonical reward-only bandits used for model/parameter selection.

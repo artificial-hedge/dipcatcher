@@ -1,4 +1,4 @@
-"""SIDH-lite: toy supersingular isogeny Diffie-Hellman over F_p.
+"""SIDH-lite: toy supersingular isogeny Diffie-Hellman over F_p (SYNTHETIC).
 
 E: y^2 = x^3 + x over F_431 has #E = 432 = 2^4 * 3^3. Alice computes a
 2-isogeny chain E -> E/<R_A>; Bob a 3-isogeny chain E -> E/<R_B>. Shared
@@ -138,7 +138,8 @@ def _chain_with_push(
     img: tuple[int, int] | None = push
     for i in range(e):
         ri = mul(deg ** (e - 1 - i), cur, cur_a, p)
-        assert ri is not None and order(ri, a=cur_a, p=p) == deg
+        if not (ri is not None and order(ri, a=cur_a, p=p) == deg):
+            raise ValueError("ri is not None and order(ri, a=cur_a, p=p) == deg")
         ker = _subgroup(ri, cur_a, p)
         next_a, next_b = velu(ker, cur_a, cur_b, p)
         cur = isogeny_eval(cur, ker, cur_a, p)
@@ -159,7 +160,8 @@ def bench_sidh_lite(seed: int = _SEED) -> dict[str, float]:
     ea_a, eb_a, phi_a_pb = _chain_with_push(pa, 2, 3, pb)
     ea_b, eb_b, phi_b_pa = _chain_with_push(pb, 3, 3, pa)
     # Alice recomputes shared curve from Bob's curve using image of PA.
-    assert phi_b_pa is not None and phi_a_pb is not None
+    if not (phi_b_pa is not None and phi_a_pb is not None):
+        raise ValueError("phi_b_pa is not None and phi_a_pb is not None")
     ea_ab, eb_ab, _ = _chain_with_push(phi_b_pa, 2, 3, phi_b_pa, ea_b, eb_b)
     ea_ba, eb_ba, _ = _chain_with_push(phi_a_pb, 3, 3, phi_a_pb, ea_a, eb_a)
     j1 = j_invariant(ea_ab, eb_ab)

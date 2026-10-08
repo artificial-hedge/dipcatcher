@@ -1,4 +1,4 @@
-"""Shared fixture for wave-182 normalizing-flow canon.
+"""Shared fixture for wave-182 normalizing-flow canon (SYNTHETIC).
 
 4-arm pinwheel in 2-D: centers on circle radius 2.5, per-arm rotation
 + tangential spread. Baseline: single Gaussian NLL on held-out set.

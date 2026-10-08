@@ -146,5 +146,5 @@ def bench_powerlaw(seed: int = 20261231 + 368) -> dict[str, float]:
         "synthetic_pl_pval_lognorm": fit_l["p_value"],
         "synthetic_pl_ks_lognorm": fit_l["ks"],
         "synthetic_pl_pval_exp": fit_e["p_value"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

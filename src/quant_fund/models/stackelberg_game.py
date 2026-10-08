@@ -1,4 +1,4 @@
-"""Stackelberg leader-follower quantity game (two firms, unit-demand).
+"""Stackelberg leader-follower quantity game (two firms, unit-demand) (SYNTHETIC).
 
 Firm L commits q_L first; firm F best-responds q_F = (a - c_F - b q_L)/(2b).
 The leader internalizes the follower's reaction: q_L* = (a - 2c_L + c_F)/(2b).

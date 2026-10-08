@@ -1,4 +1,4 @@
-"""Hilbert-transform instantaneous amplitude/frequency of the chirp.
+"""Hilbert-transform instantaneous amplitude/frequency of the chirp (SYNTHETIC).
 
 Analytic signal z = x + i H(x) via the Hilbert FIR/FFT; instantaneous
 frequency = d(phase)/dt. Bench: |z| envelope smoothness and median

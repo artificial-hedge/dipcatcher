@@ -1,4 +1,4 @@
-"""Sequence-lock simulator: torn-read detection under interleavings."""
+"""Sequence-lock simulator: torn-read detection under interleavings (SYNTHETIC)."""
 
 import numpy as np
 

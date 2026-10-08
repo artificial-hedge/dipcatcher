@@ -1,4 +1,4 @@
-"""Variational mode decomposition (Dragomiretskiy & Zosso 2014).
+"""Variational mode decomposition (Dragomiretskiy & Zosso 2014) (SYNTHETIC).
 
 VMD decomposes a signal f into K band-limited modes u_k whose spectra
 concentrate around adaptively estimated center frequencies omega_k,
@@ -137,5 +137,5 @@ def bench_vmd(seed: int = 20261231 + 402) -> dict[str, float]:
         "synthetic_vmd_recon_err": recon_err,
         "synthetic_vmd_freq_err": float(match),
         "synthetic_vmd_n_modes": 3.0,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

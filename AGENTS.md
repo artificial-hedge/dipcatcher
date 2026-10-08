@@ -3,8 +3,16 @@
 ## What this is
 
 **fx-1** is the product: a quant research LLM fine-tuned from Kimi K3 open
-weights. **dipcatcher** (`src/quant_fund`) is the harness: data engine,
-evaluation, and verification that builds and gates fx-1 (`src/fx1`).
+weights, served as two models, **fx1** and **fx1-lite**
+([artificialhedge.co](https://artificialhedge.co)). **dipcatcher** is the
+state-of-the-art harness that orchestrates them from a chat-first,
+Codex-style CLI: plain text is a conversation with the active model, and
+`/superpower` plans and runs the research families that fit the goal (design
+and current status: `docs/DIP_CONCIERGE.md`). Bare `dipcatcher` in a terminal
+opens the chat via the outer launcher `src/dipcatcher_cli`; `quant` is the lab
+CLI without it, and `fxi` stays compatible.
+Underneath, `src/quant_fund` is the data engine, evaluation, and verification
+that builds and gates fx-1 (`src/fx1`).
 
 ## Setup
 
@@ -76,9 +84,14 @@ load-bearing — jobs break silently otherwise.
   `.dsh-24x7\fleet_heartbeat.json`, auto-respawn bounded by `-MaxRespawns`).
   `scripts/fleet_manifest_sota.ps1` regenerates the canonical SOTA manifest.
   The legacy `spawn_*.ps1` one-offs stay for reference; prefer the launcher.
-- **Durable paths.** Long-running artifacts live under `.dsh-24x7\` (gitignored
-  locally, durable remotely); model weights under `data\models\`; bars under
-  `data\raw\sources\`. Do not write fleet state into temp dirs.
+- **Durable paths.** Long-running artifacts live under `.dsh-24x7\` (gitignored,
+  durable remotely); model weights under `data\models\`; bars under
+  `data\raw\sources\`. Do not write fleet state into temp dirs. **Caveat: 911
+  files under `.dsh-24x7/` were committed before the ignore rule existed and are
+  still tracked.** `.gitignore` stops *re-adding* scratch; it does not untrack
+  what is already in the index. Untracking is an explicit
+  `git rm -r --cached .dsh-24x7` bundled into the history-reconciliation commit
+  (`docs/ULTRA_PROD_READINESS.md`, Phase 2) — do not do it piecemeal.
 - **Thread pinning.** Jobs set `OMP_NUM_THREADS=1`, `MKL_NUM_THREADS=1`,
   `TOKENIZERS_PARALLELISM=false` in their `env` block — the manifest schema
   carries this; keep it when authoring new jobs.

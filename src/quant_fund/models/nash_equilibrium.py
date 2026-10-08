@@ -1,4 +1,4 @@
-"""Two-player games: fictitious play for zero-sum
+"""Two-player games: fictitious play for zero-sum (SYNTHETIC)
 matrices (Brown 1951 — converge to minimax), support
 enumeration for general bimatrix games, and regret
 matching (Hart-Mas-Colell — the CFR workhorse). Synthetic

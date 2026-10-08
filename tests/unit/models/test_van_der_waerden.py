@@ -35,4 +35,4 @@ def test_fail_closed_one_group():
 
 def test_bench():
     out = bench_van_der_waerden()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

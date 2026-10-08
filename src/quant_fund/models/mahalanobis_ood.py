@@ -1,4 +1,4 @@
-"""Mahalanobis OOD detection (Lee et al. 2018).
+"""Mahalanobis OOD detection (Lee et al. 2018) (SYNTHETIC).
 
 Per-class Gaussian on penultimate features with a shared covariance;
 score = min over classes of the Mahalanobis distance. Near-class
@@ -81,6 +81,7 @@ def bench_mahalanobis_ood(
 ) -> dict[str, float]:
     """Feature-space Mahalanobis vs max-softmax baseline (AUROC)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     (x_id, y_id), x_ood = synth_id_ood(n_id, n_ood, d, rng)
     body, head = _fit_features(x_id, y_id)
@@ -111,7 +112,7 @@ def bench_mahalanobis_ood(
         "synthetic_maha_auc": auc_m,
         "synthetic_maha_msp_auc": auc_msp,
         "synthetic_maha_margin_vs_msp": auc_m - auc_msp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

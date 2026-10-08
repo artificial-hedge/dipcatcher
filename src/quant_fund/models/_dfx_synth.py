@@ -1,4 +1,4 @@
-"""Shared helpers for wave-173 diffusion-exotics canon: reuse the
+"""Shared helpers for wave-173 diffusion-exotics canon: reuse the (SYNTHETIC)
 regime-window fixture + MMD from flow_matching_ts; tiny velocity MLP.
 """
 

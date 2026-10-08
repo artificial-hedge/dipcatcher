@@ -140,5 +140,5 @@ def bench_rmst(seed: int = 20261231 + 468) -> dict[str, float]:
     return {
         "synthetic_rmst_rel_err": float(abs(out["rmst"] - true_rmst) / true_rmst),
         "synthetic_diff_p": comp["p_diff"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -5,7 +5,7 @@ from quant_fund.models.srisk import bench_srisk, lrmes, mes, srisk, synth_srisk
 
 def test_bench_srisk_passes():
     r = bench_srisk()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_mes_high_beta_lower():

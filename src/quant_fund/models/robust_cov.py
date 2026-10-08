@@ -1,4 +1,4 @@
-"""High-breakdown covariance estimators.
+"""High-breakdown covariance estimators (SYNTHETIC).
 
 - FastMCD (Rousseeuw & Van Driessen 1999): concentration-step MCD with
   random starts + classical reweighting at the chi2 0.975 cutoff.

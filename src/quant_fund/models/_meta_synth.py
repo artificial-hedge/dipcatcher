@@ -1,4 +1,4 @@
-"""Shared few-shot fixture (Finn et al. 2017 sine regression): task =
+"""Shared few-shot fixture (Finn et al. 2017 sine regression): task = (SYNTHETIC)
 A·sin(x + φ), K support points + M query. Metric: query MSE after
 adaptation vs a non-meta (pooled) baseline.
 """

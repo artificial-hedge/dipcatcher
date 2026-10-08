@@ -1,4 +1,4 @@
-"""Maximal-munch instruction selection (wave 294).
+"""Maximal-munch instruction selection (wave 294) (SYNTHETIC).
 
 Expression DAG covered by tiles {(+,a,b):ADD, (*,a,b):MUL, (*,(+,..),..):MAC, leaf:LOAD}.
 DP optimal tiling: cost(node) = min over matching tiles of

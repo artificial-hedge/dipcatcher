@@ -1,4 +1,4 @@
-"""POMDP primitives + QMDP approximation — treats the problem as
+"""POMDP primitives + QMDP approximation — treats the problem as (SYNTHETIC)
 fully observable after the current step: value = MDP Q-function,
 policy greedy on the belief-weighted Q. Provides the shared spec,
 belief update, α-vector backup, and rollout simulator used by the
@@ -55,7 +55,15 @@ def tiger_pomdp(gamma: float = 0.9) -> POMDP:
 
 
 def belief_update(p: POMDP, b: FloatArray, a: int, ob: int) -> FloatArray:
-    """b'(s') ∝ O(a,s',o) Σ_s T(a,s,s') b(s)."""
+    """b'(s') ∝ O(a,s',o) Σ_s T(a,s,s') b(s).
+
+    When the observation is unreachable under (a, b) — ``tot <= 0`` — the
+    prior is returned unchanged. PBVI-style callers iterate every ``o``
+    (including impossible ones) when scoring transformed vectors, and rely
+    on this fallback rather than a crash; for a well-formed model a
+    zero-probability observation never arises during rollouts, so the
+    fallback cannot silently corrupt a reachable belief.
+    """
     nb = p.o[a, :, ob] * (p.t[a].T @ b)
     tot = float(nb.sum())
     if tot <= 0:

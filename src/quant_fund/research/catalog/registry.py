@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import math
 
+from .retired_families import RETIRED_BENCHMARK_FAMILIES
+
 BENCHMARK_CATALOG_VERSION = 2
 # Schema 2 stamps ``backtest_overfitting`` (PBO, DSR, PSR, MinTRL, trial counts).
 # Schema 1 receipts remain valid: they predate the block and are not rewritten.
@@ -13108,6 +13110,23 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "wand_bmw",
     }
 )
+# Optional -> RETIRED (2026-10-07 canon qualification audit). The accepted set
+# above stays append-only so archived receipts naming retired families keep
+# verifying; retired names are excluded from live scorecards and runtime
+# emission (research/agent.py). Evidence and per-family reasons live in
+# retired_families.py (generated) and quality/canon_qualification_summary.json.
+LIVE_OPTIONAL_BENCHMARK_FAMILIES: frozenset[str] = frozenset(
+    OPTIONAL_BENCHMARK_FAMILIES
+) - frozenset(RETIRED_BENCHMARK_FAMILIES)
+# The DEFAULT research surface is the REQUIRED set alone (23 canonical families).
+# OPTIONAL_BENCHMARK_FAMILIES is the append-only ACCEPTED history (10,222) and
+# exists so archived receipts naming retired families keep verifying — it is not
+# a claim that 10,222 research families exist. User-facing enumeration and
+# reporting must start from DEFAULT_BENCHMARK_FAMILIES; anything that genuinely
+# needs the whole optional set (receipt verification, allow-lists) keeps using
+# OPTIONAL_BENCHMARK_FAMILIES directly. See optional_classification.py for the
+# justified-vs-exploratory split of the live-optional bulk.
+DEFAULT_BENCHMARK_FAMILIES: frozenset[str] = REQUIRED_BENCHMARK_FAMILIES
 BENCHMARK_FAMILY_ORDER = (
     "ranking",
     "alpha",
@@ -13166,22 +13185,30 @@ def family_blob_forbidden_metrics_absent(payload: object) -> bool:
     """Return True iff *payload* has no forbidden research-headline metric keys.
 
     Fail closed: any mapping key whose underscore tokens include sharpe / sortino /
-    calmar / pnl / nav marks the blob unclean. Values are not scanned (keys only).
+    calmar / pnl / nav marks the blob unclean. Scalar metric values are not scanned.
 
     Scope: research family / scorecard blobs only. Paper ``analytics_export`` may
     contain equity ``nav_*`` / stress ``*_pnl`` diagnostics; validate those with
     ``validate_analytics_export`` (live_pnl_claim fail-closed), not this helper.
 
-    ``live_pnl_claim`` itself is exempt at any depth: it is the honesty flag,
-    not a metric — receipts that embed other receipts carry it nested (e.g. a
-    tournament manifest quoting its benchmark manifest).
+    ``live_pnl_claim`` itself is exempt at any depth only when its value is
+    literally False: it is the honesty flag, not a metric. Receipts that embed
+    other receipts carry it nested (e.g. a tournament manifest quoting its
+    benchmark manifest); a true or malformed nested flag must fail closed too.
     """
-    for key in _iter_mapping_keys(payload):
-        if key == "live_pnl_claim":
-            continue
-        parts = str(key).lower().replace("-", "_").split("_")
-        if any(tok in FORBIDDEN_RESEARCH_METRIC_KEYS for tok in parts if tok):
-            return False
+    if isinstance(payload, dict):
+        for key, value in payload.items():
+            if key == "live_pnl_claim":
+                if value is not False:
+                    return False
+                continue
+            parts = str(key).lower().replace("-", "_").split("_")
+            if any(tok in FORBIDDEN_RESEARCH_METRIC_KEYS for tok in parts if tok):
+                return False
+            if not family_blob_forbidden_metrics_absent(value):
+                return False
+    elif isinstance(payload, (list, tuple)):
+        return all(family_blob_forbidden_metrics_absent(item) for item in payload)
     return True
 
 
@@ -13239,13 +13266,16 @@ def family_blob_has_finite_observation(payload: object) -> bool:
 __all__ = [
     "BENCHMARK_CATALOG_VERSION",
     "BENCHMARK_FAMILY_ORDER",
+    "DEFAULT_BENCHMARK_FAMILIES",
     "FORBIDDEN_RESEARCH_METRIC_KEYS",
+    "LIVE_OPTIONAL_BENCHMARK_FAMILIES",
     "OPTIONAL_BENCHMARK_FAMILIES",
     "REQUIRED_BENCHMARK_FAMILIES",
     "PREFERRED_CHRISTOFFERSEN_IND_KEYS",
     "REQUIRED_CHRISTOFFERSEN_CC_KEYS",
     "RESEARCH_RECEIPT_SCHEMA_VERSION",
     "RESEARCH_RECEIPT_SCHEMA_VERSIONS_ACCEPTED",
+    "RETIRED_BENCHMARK_FAMILIES",
     "family_blob_executed",
     "family_blob_forbidden_metrics_absent",
     "family_blob_has_finite_observation",

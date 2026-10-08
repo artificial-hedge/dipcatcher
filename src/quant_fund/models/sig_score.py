@@ -1,4 +1,4 @@
-"""Multi-feature rule scoring (defensive, YARA-style) — wave 286.
+"""Multi-feature rule scoring (defensive, YARA-style) — wave 286 (SYNTHETIC).
 
 Rules = weighted feature matches; score >= threshold raises detection.
 Validated: malware-ish sample hits the rule, benign sample does not.

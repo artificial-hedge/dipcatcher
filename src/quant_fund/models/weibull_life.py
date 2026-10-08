@@ -1,4 +1,4 @@
-"""Weibull life-data MLE on right-censored lifetimes.
+"""Weibull life-data MLE on right-censored lifetimes (SYNTHETIC).
 
 Maximizes the censored log-likelihood over the shape beta via Newton
 iterations (scale eta is profiled out in closed form:

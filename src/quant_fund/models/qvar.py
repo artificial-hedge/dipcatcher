@@ -1,4 +1,4 @@
-"""Quantile VAR (QVAR): VAR estimated at a conditional quantile.
+"""Quantile VAR (QVAR): VAR estimated at a conditional quantile (SYNTHETIC).
 
 Chavleishvili & Manganelli; standard quantile-regression VAR: each equation
 is fit by minimizing the pinball loss at quantile tau over its own lag

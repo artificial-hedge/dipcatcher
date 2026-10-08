@@ -1,4 +1,4 @@
-"""Propensity-score estimation, matching, weighting, and balance.
+"""Propensity-score estimation, matching, weighting, and balance (SYNTHETIC).
 
 Classic Rosenbaum–Rubin pipeline: logistic propensity fit (IRLS),
 nearest-neighbor matching on the score with a caliper, inverse-

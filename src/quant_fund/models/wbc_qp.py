@@ -1,4 +1,4 @@
-"""Prioritized task-stack whole-body control via null-space projection.
+"""Prioritized task-stack whole-body control via null-space projection (SYNTHETIC).
 
 Task j supplies (J_j, target_j). Descending priority: qdd solves each task
 exactly in the orthogonal complement of all higher-priority task Jacobians —

@@ -1,4 +1,4 @@
-"""Huber-robust Kalman filter: clipped innovation update.
+"""Huber-robust Kalman filter: clipped innovation update (SYNTHETIC).
 
 Standard KF recursion but the innovation is Huberized at delta before
 the gain is applied — bounded influence vs Gaussian-tailed outliers.

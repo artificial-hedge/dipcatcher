@@ -1,4 +1,4 @@
-"""RMSNorm block (Zhang & Sennrich 2019) — RMS-normalized MLP vs
+"""RMSNorm block (Zhang & Sennrich 2019) — RMS-normalized MLP vs (SYNTHETIC)
 LayerNorm and unnormalized MLP on regime task; measures acc AND
 final-layer activation drift (RMS deviation from 1).
 """
@@ -74,5 +74,5 @@ def bench_rmsnorm_block(seed: int = 1719, iters: int = 600) -> dict[str, float]:
         "synthetic_rms_drift": dr_r,
         "synthetic_nonorm_drift": dr_n,
         "synthetic_rms_gain": acc_r - acc_n,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

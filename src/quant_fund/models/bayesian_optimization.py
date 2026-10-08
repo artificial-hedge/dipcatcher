@@ -1,4 +1,4 @@
-"""Bayesian optimization (Jones et al. 1998; Mockus 1978):
+"""Bayesian optimization (Jones et al. 1998; Mockus 1978): (SYNTHETIC)
 GP surrogate with expected-improvement, UCB, and
 probability-of-improvement acquisition over a bounded box,
 plus a random-search baseline. Synthetic bench gates regret
@@ -61,7 +61,8 @@ def bayes_opt(
     ys = np.array([f(x) for x in xs])
     for _ in range(n_iter):
         model = gp_fit(xs, ys, n_restarts=2, seed=seed)["model"]
-        assert isinstance(model, GPModel)
+        if not (isinstance(model, GPModel)):
+            raise ValueError("isinstance(model, GPModel)")
         cand = lo + (hi - lo) * rng.uniform(size=(grid, d))
         pred = gp_predict(model, cand, latent=True)
         mean, sd = pred["mean"], pred["sd"]

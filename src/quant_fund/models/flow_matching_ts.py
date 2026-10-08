@@ -1,4 +1,4 @@
-"""Conditional flow matching for TS generation (rectified flow).
+"""Conditional flow matching for TS generation (rectified flow) (SYNTHETIC).
 
 Lipman et al. 2023 / Liu et al. 2022: regress the straight-line vector
 field `dx/dt = x1 - x0` along the interpolation path; generate by
@@ -64,6 +64,7 @@ def bench_flow_matching_ts(
 ) -> dict[str, float]:
     """Rectified-flow sampler vs moment-matched Gaussian (MMD, SYNTH)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, reg = synth_regime_windows(n, win, rng)
     xb = torch.tensor(xs, dtype=torch.float32)
@@ -109,7 +110,7 @@ def bench_flow_matching_ts(
         "synthetic_flow_gauss_mmd": mmd_gauss,
         "synthetic_flow_margin_vs_gauss": mmd_gauss - mmd_flow,
         "synthetic_flow_steps": float(gen_steps),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

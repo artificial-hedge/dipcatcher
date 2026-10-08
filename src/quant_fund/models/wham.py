@@ -1,4 +1,4 @@
-"""WHAM free-energy reconstruction from umbrella windows (1-D textbook).
+"""WHAM free-energy reconstruction from umbrella windows (1-D textbook) (SYNTHETIC).
 
 Binned counts h_i(bin) per biased simulation i; iterate
     p(bin) = sum_i h_i(bin) / sum_i n_i exp(f_i - u_i(bin))

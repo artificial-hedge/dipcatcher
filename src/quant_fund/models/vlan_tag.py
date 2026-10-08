@@ -1,4 +1,4 @@
-"""802.1Q VLAN tagging: tag/untag + trunk-domain separation."""
+"""802.1Q VLAN tagging: tag/untag + trunk-domain separation (SYNTHETIC)."""
 
 import numpy as np
 

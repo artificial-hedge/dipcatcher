@@ -1,4 +1,4 @@
-"""Trace-tree JIT simulation: record loop iterations, guard side-exits.
+"""Trace-tree JIT simulation: record loop iterations, guard side-exits (SYNTHETIC).
 
 A trace is a linearized recording of a hot loop body. Guards check
 assumptions (types/branches); a guard failure takes a side exit back to

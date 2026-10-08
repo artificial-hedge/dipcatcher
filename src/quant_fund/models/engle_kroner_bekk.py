@@ -131,7 +131,8 @@ def fit_bekk(e: FloatArray) -> dict[str, FloatArray | float]:
     a = np.asarray(best.x[:k])
     b = np.asarray(best.x[k:])
     cc = _cc_target(a, b, s0)
-    assert cc is not None
+    if not (cc is not None):
+        raise ValueError("cc is not None")
     c = np.linalg.cholesky(cc)
     h = _h_path(ee, c, a, b)
     aa = np.diag(a)
@@ -196,10 +197,10 @@ def bench_engle_kroner_bekk(seed: int = 20261231 + 306) -> dict[str, float]:
     )
     ok = rel < 0.35 and float(r["persistence"]) < 1.0
     return {
-        "var_rel_rmse": rel,
-        "rho_err": rho_err,
-        "persistence": float(r["persistence"]),
-        "a_hat": float(np.mean(np.asarray(r["a"]))),
-        "b_hat": float(np.mean(np.asarray(r["b"]))),
-        "score": float(ok),
+        "synthetic_var_rel_rmse": rel,
+        "synthetic_rho_err": rho_err,
+        "synthetic_persistence": float(r["persistence"]),
+        "synthetic_a_hat": float(np.mean(np.asarray(r["a"]))),
+        "synthetic_b_hat": float(np.mean(np.asarray(r["b"]))),
+        "synthetic_score": float(ok),
     }

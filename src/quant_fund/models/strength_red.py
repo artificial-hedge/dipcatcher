@@ -1,4 +1,4 @@
-"""Strength reduction: multiply by constant -> shifts + adds."""
+"""Strength reduction: multiply by constant -> shifts + adds (SYNTHETIC)."""
 
 import numpy as np
 

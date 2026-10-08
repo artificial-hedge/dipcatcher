@@ -50,5 +50,5 @@ def test_input_validation() -> None:
 
 def test_bench_contract() -> None:
     out = bench_lee_carter()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_lc_rmse"] < out["synthetic_lc_rmse_naive"]

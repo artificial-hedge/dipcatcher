@@ -1,4 +1,4 @@
-"""Hard Attention to the Task (Serra et al. 2018) — each task learns
+"""Hard Attention to the Task (Serra et al. 2018) — each task learns (SYNTHETIC)
 binary feature-gates; previously used gates are locked (embedding
 accumulates max) so earlier tasks can't be overwritten.
 """

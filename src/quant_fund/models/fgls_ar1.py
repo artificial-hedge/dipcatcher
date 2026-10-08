@@ -1,4 +1,4 @@
-"""Feasible GLS for regression with AR(1) errors.
+"""Feasible GLS for regression with AR(1) errors (SYNTHETIC).
 
 When the regression errors follow ``u_t = rho u_{t-1} + e_t`` OLS remains
 unbiased but is inefficient and its standard errors are wrong.  Two classic

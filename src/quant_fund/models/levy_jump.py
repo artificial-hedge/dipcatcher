@@ -1,4 +1,4 @@
-"""Merton jump-diffusion: dS = μS dt + σS dW + S dJ, J = Σ(e^{Y_i}-1)
+"""Merton jump-diffusion: dS = μS dt + σS dW + S dJ, J = Σ(e^{Y_i}-1) (SYNTHETIC)
 with Y ~ N(μj, σj), Poisson(λ). Empirical excess kurtosis/skew vs
 pure GBM — jump signature detection.
 """
@@ -58,5 +58,5 @@ def bench_levy_jump(seed: int = 2951, paths: int = 400) -> dict[str, float]:
         "synthetic_gbm_kurt": k_g,
         "synthetic_merton_kurt_excess": k_j - k_g,
         "synthetic_merton_skew": s_j,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

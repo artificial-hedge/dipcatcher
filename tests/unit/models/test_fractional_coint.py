@@ -11,7 +11,7 @@ from quant_fund.models.fractional_coint import (
 
 def test_bench_fractional_coint_passes():
     r = bench_fractional_coint()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_gph_rw_above_stationary():

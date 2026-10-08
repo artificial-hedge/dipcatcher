@@ -195,5 +195,5 @@ def bench_jarrow_turnbull(seed: int = 20261231 + 376) -> dict[str, float]:
         "synthetic_jt_s_par_bp": s_par * 1e4,
         "synthetic_jt_s_cont_bp": s_cont * 1e4,
         "synthetic_jt_lam3_bp": float(lam_hat[-1]) * 1e4,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

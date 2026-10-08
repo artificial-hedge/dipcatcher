@@ -1,4 +1,4 @@
-"""Fractional response models for y in [0, 1] (Papke & Wooldridge 1996).
+"""Fractional response models for y in [0, 1] (Papke & Wooldridge 1996) (SYNTHETIC).
 
 Quasi-Bernoulli likelihood: E[y|x] = G(x'b) with logit or probit G;
 ll = sum [ y ln G + (1 - y) ln (1 - G) ]. The QMLE is consistent for

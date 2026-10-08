@@ -1,4 +1,4 @@
-"""Mixture-of-Depths token routing (Raposo et al. 2024).
+"""Mixture-of-Depths token routing (Raposo et al. 2024) (SYNTHETIC).
 
 A learned router scores each token; only the top-k tokens take the
 attention branch, the rest pass through identity — compute scales with
@@ -37,6 +37,7 @@ def bench_mixture_of_depths(
     top_frac: float = 0.5,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, ytr = synth_retrieval(n_train, m_pairs, n_classes, rng)
     xte, yte = synth_retrieval(n_test, m_pairs, n_classes, rng)
@@ -86,5 +87,5 @@ def bench_mixture_of_depths(
         "synthetic_mod_full_acc": acc_full,
         "synthetic_mod_acc_gap": acc_full - acc,
         "synthetic_mod_cost_ratio": attn_dot_cost(t, "linformer", k),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Moirai-2.0 quantile head (P2.1). Research-only.
+"""Moirai-2.0 quantile head (P2.1). Research-only (SYNTHETIC).
 
 Wraps Salesforce ``uni2ts`` — the Moirai-2.0 decoder-only transformer
 pretrained for universal time-series forecasting, loading the

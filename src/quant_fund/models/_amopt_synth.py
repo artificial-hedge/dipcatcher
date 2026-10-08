@@ -1,4 +1,4 @@
-"""Synthetic American-option fixture shared by the stochastic-control canon.
+"""Synthetic American-option fixture shared by the stochastic-control canon (SYNTHETIC).
 
 A Black-Scholes American put contract plus a fine-grid reference price
 computed by a converged binomial tree. Every module in the wave prices the

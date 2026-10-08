@@ -96,7 +96,10 @@ def load_tape_stats(receipts_root: str | Path, ticker: str = "amzn") -> TapeStat
     ):
         if not isinstance(sec, dict):
             raise ValueError(f"{name} receipt lacks a 'real' section")
-    assert isinstance(real_rl, dict) and isinstance(real_em, dict) and isinstance(real_sd, dict)
+    if not (isinstance(real_rl, dict) and isinstance(real_em, dict) and isinstance(real_sd, dict)):
+        raise ValueError(
+            "isinstance(real_rl, dict) and isinstance(real_em, dict) and isinstance(real_sd, dict)"
+        )
     hist = real_rl.get("size_hist")
     if not isinstance(hist, dict):
         raise ValueError("round_lot receipt lacks real.size_hist")

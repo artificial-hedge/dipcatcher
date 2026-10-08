@@ -58,4 +58,4 @@ def test_fail_closed_nonbinary_labels():
 
 def test_bench():
     out = bench_isotonic()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

@@ -1,4 +1,4 @@
-"""α-CROWN-lite linear relaxation bounds (Zhang et al. 2018).
+"""α-CROWN-lite linear relaxation bounds (Zhang et al. 2018) (SYNTHETIC).
 
 For an unstable ReLU neuron (l < 0 < u), the linear relaxation
 λ·z ≤ ReLU(z) ≤ α·(z − l) with α = u/(u−l) propagates strictly tighter
@@ -96,5 +96,5 @@ def bench_crown_bound(
         "synthetic_crown_ibp_certified_acc": ibp_cert,
         "synthetic_crown_gain": crown_cert - ibp_cert,
         "synthetic_crown_mean_lb": float(lb.mean()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""TD7-lite (Fujimoto et al. 2023) — SALE: state-action learned embedding
+"""TD7-lite (Fujimoto et al. 2023) — SALE: state-action learned embedding (SYNTHETIC)
 as critic input (encoder trained to predict reward + next-state);
 checkpoint policy averaging approximated by EMA actor. Mean reward vs
 plain critic.
@@ -89,5 +89,5 @@ def bench_td7_lite(seed: int = 913, steps: int = 2500) -> dict[str, float]:
     return {
         "synthetic_td7_mean_reward": tot / n,
         "synthetic_td7_random_reward": -0.2,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

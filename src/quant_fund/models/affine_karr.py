@@ -1,4 +1,4 @@
-"""Karr affine-equality abstract domain (affine relations a.x = b).
+"""Karr affine-equality abstract domain (affine relations a.x = b) (SYNTHETIC).
 
 Internally a state is an affine subspace {p + span(D)}: a particular point
 plus a direction basis — the representation under which Karr's join is the

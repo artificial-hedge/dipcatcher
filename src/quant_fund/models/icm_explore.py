@@ -1,4 +1,4 @@
-"""ICM (Pathak et al. 2017): inverse+forward dynamics model; intrinsic
+"""ICM (Pathak et al. 2017): inverse+forward dynamics model; intrinsic (SYNTHETIC)
 reward = forward-model prediction error on next-state features.
 Torch-gated small nets.
 """
@@ -63,5 +63,5 @@ def bench_icm_explore(seed: int = 2851) -> dict[str, float]:
         "synthetic_baseline_coverage": float(cov_b),
         "synthetic_icm_success": float(succ),
         "synthetic_baseline_success": float(succ_b),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

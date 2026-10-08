@@ -1,4 +1,4 @@
-"""Kronos fleet-protocol head (P2.6). Research-only.
+"""Kronos fleet-protocol head (P2.6). Research-only (SYNTHETIC).
 
 Wraps the existing :class:`quant_fund.models.kronos.KronosAdapter` /
 ``KronosPredictor`` protocol behind the fleet's univariate contract.

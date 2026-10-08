@@ -435,6 +435,12 @@ def basis_carry_weights(
     return _cap_and_emit(joined, "_raw", max_name=max_name, gross_scale=gross_scale)
 
 
+def _require_rebalance_band(rebalance_band: float | None) -> None:
+    """The hold band must widen the band (> 1) or disable it (None)."""
+    if rebalance_band is not None and not (np.isfinite(rebalance_band) and rebalance_band > 1.0):
+        raise ValueError("rebalance_band must be > 1 or None")
+
+
 def basis_carry_hysteresis_weights(
     bars: pl.DataFrame,
     funding: pl.DataFrame,
@@ -499,8 +505,7 @@ def basis_carry_hysteresis_weights(
         raise ValueError("funding frame must be non-empty")
     if vol_lookback is not None:
         _validate_window(vol_lookback, "vol_lookback", 5)
-    if rebalance_band is not None and not (np.isfinite(rebalance_band) and rebalance_band > 1.0):
-        raise ValueError("rebalance_band must be > 1 or None")
+    _require_rebalance_band(rebalance_band)
     grid = _join_available_funding(
         bars.select("security_id", "event_time", "close"), funding, lookback_events
     )

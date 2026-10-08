@@ -1,4 +1,4 @@
-"""MIDAS regression: mixed-frequency nowcasting with lag polynomials.
+"""MIDAS regression: mixed-frequency nowcasting with lag polynomials (SYNTHETIC).
 
 Ghysels, Sinko & Valkanov (2007): regress a low-frequency target on
 high-frequency covariates aggregated through a parsimonious lag kernel,

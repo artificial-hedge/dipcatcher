@@ -1,4 +1,4 @@
-"""Cross-sectional ranking models. Groups are dates, never mixed."""
+"""Cross-sectional ranking models. Groups are dates, never mixed (SYNTHETIC)."""
 
 from __future__ import annotations
 

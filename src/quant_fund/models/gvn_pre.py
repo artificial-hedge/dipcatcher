@@ -1,4 +1,4 @@
-"""Partial redundancy elimination on a tiny CFG (lazy-code-motion style).
+"""Partial redundancy elimination on a tiny CFG (lazy-code-motion style) (SYNTHETIC).
 
 Blocks: {"succ": [...], "exprs": [("e", "x+y"), ...], "kill": [vars]}
 An expression is redundant if already evaluated on all paths to a use.

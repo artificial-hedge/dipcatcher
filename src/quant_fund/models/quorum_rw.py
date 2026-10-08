@@ -1,4 +1,4 @@
-"""Quorum read/write: R + W > N consistency."""
+"""Quorum read/write: R + W > N consistency (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""CTL model checking over finite Kripke structures.
+"""CTL model checking over finite Kripke structures (SYNTHETIC).
 
 State space = int states; labels per state; transition relation. Fixpoint
 semantics: EX p = pre(p); EF p = μZ. p∨pre(Z); EG p = νZ. p∧pre(Z);

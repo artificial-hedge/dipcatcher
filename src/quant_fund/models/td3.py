@@ -1,4 +1,4 @@
-"""TD3 (Fujimoto et al., 2018) — twin delayed deep deterministic
+"""TD3 (Fujimoto et al., 2018) — twin delayed deep deterministic (SYNTHETIC)
 policy gradient: twin critics with min-target, delayed policy
 updates, target-policy smoothing, and soft target networks. Same
 quadratic-critic skeleton as `ddpg` to isolate the algorithmic delta.

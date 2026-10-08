@@ -1,4 +1,4 @@
-"""Empirical (Deheuvels 1979) copula and copula-based dependence.
+"""Empirical (Deheuvels 1979) copula and copula-based dependence (SYNTHETIC).
 
 Given a sample ``X`` of shape ``(n, d)`` the pseudo-observations are the scaled
 ranks ``U_{ij} = rank(X_{ij}) / (n + 1)``.  The empirical copula is

@@ -1,4 +1,4 @@
-"""SIMD-style lane-masked vector kernels vs scalar oracle."""
+"""SIMD-style lane-masked vector kernels vs scalar oracle (SYNTHETIC)."""
 
 import numpy as np
 

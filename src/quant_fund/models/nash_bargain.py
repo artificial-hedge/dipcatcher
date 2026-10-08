@@ -1,4 +1,4 @@
-"""Nash bargaining solution — maximizes the product of utility gains
+"""Nash bargaining solution — maximizes the product of utility gains (SYNTHETIC)
 over the disagreement point on the Pareto frontier of a convex
 feasible set. Includes the 2-player closed-form on a linear frontier
 and a projected-gradient solver for convex sets.

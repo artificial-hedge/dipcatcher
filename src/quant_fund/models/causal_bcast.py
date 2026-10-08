@@ -1,4 +1,4 @@
-"""Causal broadcast: deliver messages only after dependencies delivered."""
+"""Causal broadcast: deliver messages only after dependencies delivered (SYNTHETIC)."""
 
 import numpy as np
 

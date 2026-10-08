@@ -1,4 +1,4 @@
-"""Driscoll-Kraay standard errors for panels.
+"""Driscoll-Kraay standard errors for panels (SYNTHETIC).
 
 DK robustness treats each period's cross-sectional aggregate
 score h_t = Σ_i x_it e_it as a time series and applies a

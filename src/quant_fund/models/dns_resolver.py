@@ -1,4 +1,4 @@
-"""Recursive DNS resolver sim: cache + TTL expiry + delegation."""
+"""Recursive DNS resolver sim: cache + TTL expiry + delegation (SYNTHETIC)."""
 
 import numpy as np
 

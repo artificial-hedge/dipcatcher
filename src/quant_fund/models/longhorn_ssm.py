@@ -1,4 +1,4 @@
-"""Longhorn (Liu et al. 2024) — SSM designed from online regression:
+"""Longhorn (Liu et al. 2024) — SSM designed from online regression: (SYNTHETIC)
 the state update solves an online least-squares objective
 h_t = h_{t-1} + beta_t k_t (x_t - k_t^T h_{t-1}) — closed-form Kalman-like
 gain; no random SSM init needed. Induction recall bench.
@@ -55,5 +55,5 @@ def bench_longhorn_ssm(seed: int = 2275, iters: int = 800, D: int = 16) -> dict[
         "synthetic_longhorn_recall": float(acc),
         "synthetic_attn_recall": base,
         "synthetic_longhorn_gain": float(acc) - base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

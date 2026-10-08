@@ -1,4 +1,4 @@
-"""Continued fractions and Pell equations (synthetic).
+"""Continued fractions and Pell equations (synthetic) (SYNTHETIC).
 
 CF expansion of quadratic surds (exact integer arithmetic on
 (a + b·√d)/c forms), convergents, and the minimal solution to

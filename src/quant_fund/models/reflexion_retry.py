@@ -1,4 +1,4 @@
-"""Reflexion — self-critique + retry (Shinn et al. 2023).
+"""Reflexion — self-critique + retry (Shinn et al. 2023) (SYNTHETIC).
 
 A failed first attempt produces a critique signal (which step went
 wrong); the retry steers around the failing branch — raising the

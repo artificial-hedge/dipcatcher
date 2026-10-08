@@ -1,4 +1,4 @@
-"""filtfilt — zero-phase forward-backward IIR/FIR filtering.
+"""filtfilt — zero-phase forward-backward IIR/FIR filtering (SYNTHETIC).
 
 Canonical reference: Gustafsson (1996); scipy.signal.filtfilt.
 Odd edge padding (3·nf), steady-state initial conditions for the

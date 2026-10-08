@@ -1,4 +1,4 @@
-"""Quantum-inspired QUBO portfolio selection (Exec-Summary quantum item).
+"""Quantum-inspired QUBO portfolio selection (Exec-Summary quantum item) (SYNTHETIC).
 Cardinality-constrained mean-variance is encoded as a binary quadratic
 problem x_i in {0,1}; solved by simulated annealing with tabu restart —
 the same objective a quantum annealer or QAOA circuit would receive.

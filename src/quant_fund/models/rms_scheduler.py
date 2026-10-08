@@ -1,4 +1,4 @@
-"""Rate-monotonic schedulability via the Liu-Layland utilization bound."""
+"""Rate-monotonic schedulability via the Liu-Layland utilization bound (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""Phi elimination via parallel copies (out-of-SSA repair).
+"""Phi elimination via parallel copies (out-of-SSA repair) (SYNTHETIC).
 
 A phi at a block header merges values per predecessor. To lower it,
 emit a parallel copy at each predecessor edge; cycles among the copies

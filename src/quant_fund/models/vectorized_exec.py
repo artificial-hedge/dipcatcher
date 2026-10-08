@@ -1,4 +1,4 @@
-"""Vectorized vs row-at-a-time expression evaluation."""
+"""Vectorized vs row-at-a-time expression evaluation (SYNTHETIC)."""
 
 import numpy as np
 

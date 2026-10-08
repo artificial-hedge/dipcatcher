@@ -21,6 +21,62 @@ The million-LOC requirement also remains unmet. Every registered module is
 present in the working tree. The [operation guide](FX1_OPERATIONS.md) lists
 the behavior and limits of every implementation.
 
+## Qualification standard and path to the 1,000,000 target — 2026-10-07
+
+**Qualification standard.** The full, testable acceptance standard — what
+qualifies (one separate source file, independently implemented, usable by an
+AI through dipcatcher), what does not (**generated catalog records, template
+copies, aliases, parameter variants, wrappers** — each named as its own
+failure mode and zeroed), how qualification is decided mechanically
+(`quality/canon_qualification_summary.json` with `ruleset_version` /
+`ruleset_hash`), and why template volume is negative evidence — is
+[`docs/CAPABILITY_QUALIFICATION.md`](CAPABILITY_QUALIFICATION.md). In short:
+*"Generated catalog records, template copies, aliases, parameter variants, and
+wrappers do not satisfy this requirement"* — each of those counts as zero.
+
+**The wave-generated corpus fails this standard — objectively measured.** The
+2026-10-07 canon qualification audit (`uv run python scripts/canon_qualify.py`;
+checked-in summary `quality/canon_qualification_summary.json`, full derived
+dump in `.dsh-24x7/`, hash-pinned `ruleset_hash`) classified every module of
+the wave-generated research corpus in `src/quant_fund/models/`:
+
+| Class | Modules | Credit toward 1,000,000 |
+| --- | ---: | ---: |
+| `NON_QUALIFYING_TEMPLATE` — template copies (shared AST shape, constant-check bench over constant arguments, zero control flow, zero data parameters) | 7,529 | 0 |
+| `QUALIFYING` SYNTHETIC generator fixtures/helpers | 351 | 0 |
+| `QUALIFYING` research-benchmark implementations | 2,508 | 0 — benchmark code, not registered AI-usable operations |
+| Registered fx1 operations implementations (this inventory) | 31 | **31** |
+
+72.5% of the corpus is template copies of a single skeleton (`X_ok(a, b) ->
+a and b`, `X_aux(aux) -> aux`, a `_bench_X` returning `float(sum(checks) /
+len(checks))` over constant `True`/`False` checks). Template generation
+therefore cannot satisfy the requirement under its own exclusion clause at
+any volume: the generated million-record catalog and declaration shards
+continue to contribute **zero**. The same audit retired **7,529**
+template-backed optional benchmark families from the live scorecard
+(`RETIRED_BENCHMARK_FAMILIES`; `OPTIONAL_BENCHMARK_FAMILIES` remains the
+append-only accepted set so archived receipts keep verifying).
+
+**Arithmetic at the observed pace.** The two batches delivered 31
+implementations in 4,066 physical lines on 2026-10-02 — 0.003% of the
+capability target and 0.41% of the million-LOC target. Sustaining that pace,
+1,000,000 implementations take roughly 32,300 batch-days (~88 years) and
+would produce ~131M physical lines at the observed ~131 lines per
+implementation. Finishing inside one year would need ~2,740 distinct,
+independently authored, reviewed, and registered implementations every day —
+about three orders of magnitude beyond the demonstrated rate. The generation
+route cannot substitute, as measured above.
+
+**What would have to change.** (1) Sustained industrial-scale parallel
+authoring where every capability is independently implemented — no generator,
+no templates, no aliases or parameter variants — each in its own registered
+and documented file; (2) behavioral verification at the same scale (current
+batches ship with explicitly unverified runtime behavior); or (3) an explicit
+scope change from the requester. Until one of these holds, the honest
+standing answer is unchanged: **31 of 1,000,000 — 999,969 remain, and the
+overall request is unfinished.** This is source accounting only; it creates
+no market evidence, no live-trading claim, and no research receipt.
+
 ## Batch 2 — 2026-10-02
 
 Added **16 independently authored implementations** containing 2,594 physical

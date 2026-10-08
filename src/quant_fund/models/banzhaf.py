@@ -1,4 +1,4 @@
-"""Banzhaf power index — (1/2^{n−1}) Σ_S [v(S∪{i}) − v(S)]
+"""Banzhaf power index — (1/2^{n−1}) Σ_S [v(S∪{i}) − v(S)] (SYNTHETIC)
 normalized by total swings; the Penrose voting-power measure.
 """
 

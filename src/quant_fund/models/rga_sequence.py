@@ -1,4 +1,4 @@
-"""RGA sequence CRDT: collaborative ordered list (synthetic).
+"""RGA sequence CRDT: collaborative ordered list (synthetic) (SYNTHETIC).
 
 Nodes carry (sid, sseq) unique ids; each insert references its
 left neighbor; merge = causal-order weave (sort by (sid desc at

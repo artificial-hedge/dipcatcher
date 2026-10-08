@@ -818,7 +818,8 @@ def _mc_calibration_loop(
         pen = oce.rho(loss - res.t_hat)  # (A, K)
         group_actions = np.argmin(np.asarray(model_probs @ pen.T, dtype=float), axis=1)
         pop_cvar = _pop_cvar(loss, group_actions, prior, true_trial, alpha)
-        assert res.ucb is not None
+        if not (res.ucb is not None):
+            raise ValueError("res.ucb is not None")
         gap_sum += res.ucb - pop_cvar
         if pop_cvar > epsilon + 1e-9:
             violations += 1

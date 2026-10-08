@@ -485,11 +485,11 @@ def bench_xva() -> dict[str, float]:
     try:
         raw = _xva_core_bench(n_paths=4_000, n_steps=120, seed=_SEED)
         mapped = {
-            "xva_cva": float(raw["xva_cva"]),
-            "xva_fva": float(raw["xva_fva"]),
-            "xva_mva": float(raw["xva_mva"]),
-            "xva_wwr_uplift": float(raw["xva_wwr_uplift"]),
-            "xva_closed_form_abs_err": float(raw["xva_closed_form_abs_err"]),
+            "xva_cva": float(raw["synthetic_xva_cva"]),
+            "xva_fva": float(raw["synthetic_xva_fva"]),
+            "xva_mva": float(raw["synthetic_xva_mva"]),
+            "xva_wwr_uplift": float(raw["synthetic_xva_wwr_uplift"]),
+            "xva_closed_form_abs_err": float(raw["synthetic_xva_closed_form_abs_err"]),
         }
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}
@@ -788,10 +788,10 @@ def bench_odd_residual_flows() -> dict[str, float]:
             ngboost_lr=0.1,
         )
         mapped = {
-            "torf_crps": float(raw["torf_crps"]),
-            "ngboost_crps": float(raw["ngboost_crps"]),
-            "crps_gain_vs_ngboost": float(raw["crps_gain_vs_ngboost"]),
-            "mae_preservation_gap": float(raw["mae_preservation_gap"]),
+            "torf_crps": float(raw["synthetic_torf_crps"]),
+            "ngboost_crps": float(raw["synthetic_ngboost_crps"]),
+            "crps_gain_vs_ngboost": float(raw["synthetic_crps_gain_vs_ngboost"]),
+            "mae_preservation_gap": float(raw["synthetic_mae_preservation_gap"]),
         }
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}

@@ -170,10 +170,10 @@ def bench_sheppard_heavy(seed: int = 20261231 + 310) -> dict[str, float]:
     pers = float(r["persistence_r"])
     ok = rel < 0.5 and corr > 0.2 and 0.3 < pers < 0.999
     return {
-        "rel_rmse": rel,
-        "innov_corr": corr,
-        "persistence_r": pers,
-        "alpha_r": float(r["alpha_r"]),
-        "beta_r": float(r["beta_r"]),
-        "score": float(ok),
+        "synthetic_rel_rmse": rel,
+        "synthetic_innov_corr": corr,
+        "synthetic_persistence_r": pers,
+        "synthetic_alpha_r": float(r["alpha_r"]),
+        "synthetic_beta_r": float(r["beta_r"]),
+        "synthetic_score": float(ok),
     }

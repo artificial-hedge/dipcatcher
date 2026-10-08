@@ -1,4 +1,4 @@
-"""Classical shadows (Huang–Kueng–Preskill): random-Pauli measurement snapshots.
+"""Classical shadows (Huang–Kueng–Preskill): random-Pauli measurement snapshots (SYNTHETIC).
 
 Each qubit is measured in a uniformly random Pauli basis; the snapshot is
 rho_hat = tensor_j (3 |b_j><b_j| - I)  with E[rho_hat] = rho. Expectation of a

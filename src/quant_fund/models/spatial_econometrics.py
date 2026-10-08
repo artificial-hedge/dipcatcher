@@ -1,4 +1,4 @@
-"""Spatial econometrics — spatial autoregressive (SAR) regression.
+"""Spatial econometrics — spatial autoregressive (SAR) regression (SYNTHETIC).
 
 The SAR model ``y = ρ·W·y + X·β + ε`` treats each unit's outcome as
 linear in its neighbours' outcomes (spatial spillovers). OLS on y~X is

@@ -1,4 +1,4 @@
-"""Disturbance observer with composite control (wave 279).
+"""Disturbance observer with composite control (wave 279) (SYNTHETIC).
 
 Plant: x' = a x + b(u + d) with unknown constant d. Augment the state with
 the disturbance estimate; feed back -x - dh to cancel it. The composite

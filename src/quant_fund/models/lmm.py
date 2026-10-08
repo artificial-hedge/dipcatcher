@@ -1,4 +1,4 @@
-"""Laird-Ware linear mixed models via EM maximum likelihood.
+"""Laird-Ware linear mixed models via EM maximum likelihood (SYNTHETIC).
 
 Laird & Ware (1982): y_i = X_i beta + Z_i b_i + e_i with
 b_i ~ N(0, D), e_i ~ N(0, sigma^2 I). The EM iterations of
@@ -199,5 +199,5 @@ def bench_lmm(seed: int = 20261231 + 451) -> dict[str, float]:
         "synthetic_beta_err": abs(b_hat - b_true),
         "synthetic_tau2_err": err_tau,
         "synthetic_blup_corr": corr_b,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

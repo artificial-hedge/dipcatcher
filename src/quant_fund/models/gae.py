@@ -1,4 +1,4 @@
-"""Generalized Advantage Estimation (Schulman et al., 2015) — the
+"""Generalized Advantage Estimation (Schulman et al., 2015) — the (SYNTHETIC)
 (γ, λ) exponential-weighted TD residual sum interpolating between
 one-step TD (λ=0) and Monte-Carlo return (λ=1).
 """

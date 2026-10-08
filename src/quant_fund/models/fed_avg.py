@@ -1,4 +1,4 @@
-"""Federated averaging (FedAvg) across synthetic venues (Exec-Summary
+"""Federated averaging (FedAvg) across synthetic venues (Exec-Summary (SYNTHETIC)
 distributed item). K venues each hold private order-flow shards; a global
 signal model is trained by averaging local SGD updates — data never leaves
 the venue. Also ships a FedProx-style proximal term and per-client drift

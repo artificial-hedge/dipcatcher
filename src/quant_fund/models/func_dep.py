@@ -1,4 +1,4 @@
-"""Functional dependency discovery (TANE-lite): A→B iff partition by A
+"""Functional dependency discovery (TANE-lite): A→B iff partition by A (SYNTHETIC)
 refines B."""
 
 import itertools

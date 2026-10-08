@@ -1,4 +1,4 @@
-"""Conley (1999) spatial HAC standard errors.
+"""Conley (1999) spatial HAC standard errors (SYNTHETIC).
 
 OLS with spatially dependent errors needs kernel-weighted
 covariance across observations: the meat is a distance-decayed

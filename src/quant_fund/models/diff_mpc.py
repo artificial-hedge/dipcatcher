@@ -45,6 +45,7 @@ def bench_diff_mpc(
     t_final: int = 30,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     # expert: linear system x' = a x + b u, expert tracks sin target
     a = torch.tensor([[1.0, 1.0], [0.0, 1.0]])
     b = torch.tensor([[0.0], [0.3]])
@@ -151,5 +152,5 @@ def bench_diff_mpc(
         "synthetic_mpc_cl_err": err_mpc,
         "synthetic_mpc_bc_err": err_bc,
         "synthetic_mpc_err_gain": err_bc - err_mpc,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

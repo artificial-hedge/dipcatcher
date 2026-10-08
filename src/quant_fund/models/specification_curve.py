@@ -1,4 +1,4 @@
-"""Specification-curve (multiverse) analysis.
+"""Specification-curve (multiverse) analysis (SYNTHETIC).
 
 Enumerate the full grid of defensible analytic specifications —
 subsamples, control sets, functional forms — estimate the focal effect

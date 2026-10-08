@@ -1,4 +1,4 @@
-"""TLS 1.3 transcript + HKDF key schedule (wave 292).
+"""TLS 1.3 transcript + HKDF key schedule (wave 292) (SYNTHETIC).
 
 Transcript-hash driven key schedule: early → handshake → master
 secrets via toy HKDF-Extract/Expand over the transcript digest; server

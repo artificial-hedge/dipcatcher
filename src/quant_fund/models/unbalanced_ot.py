@@ -1,4 +1,4 @@
-"""Unbalanced optimal transport canon (Chizat, Peyré,
+"""Unbalanced optimal transport canon (Chizat, Peyré, (SYNTHETIC)
 Schmitzer & Vialard 2018): KL-relaxed Sinkhorn where
 marginals are penalized rather than constrained, so mass
 can be created/destroyed — validated on synthetic measures

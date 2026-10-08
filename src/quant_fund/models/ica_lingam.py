@@ -1,4 +1,4 @@
-"""ICA-LiNGAM (Shimizu et al. 2006) — linear SEM with non-Gaussian
+"""ICA-LiNGAM (Shimizu et al. 2006) — linear SEM with non-Gaussian (SYNTHETIC)
 noise: whiten, FastICA unmixing → mixing matrix → prune to DAG and
 recover a topological order. Skeleton F1 + order error vs baselines.
 """
@@ -54,5 +54,5 @@ def bench_ica_lingam(seed: int = 2801, trials: int = 4, d: int = 6) -> dict[str,
         "synthetic_ical_skel_f1": float(np.mean(f1s)),
         "synthetic_ical_order_err": float(np.mean(oes)),
         "synthetic_corr_order_err": float(np.mean(oes_b)),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

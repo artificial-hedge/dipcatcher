@@ -1,4 +1,4 @@
-"""Honest DiD sensitivity analysis (Rambachan & Roth).
+"""Honest DiD sensitivity analysis (Rambachan & Roth) (SYNTHETIC).
 
 Instead of assuming parallel trends hold exactly, bound the possible
 POST-treatment violation by the observed PRE-trend: the Δ^SD(smoothness

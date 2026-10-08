@@ -1,4 +1,4 @@
-"""Leisen-Reimer (1996) binomial option tree.
+"""Leisen-Reimer (1996) binomial option tree (SYNTHETIC).
 
 The Leisen-Reimer tree chooses up/down moves and the risk-neutral probability by
 inverting the Black-Scholes ``d1``/``d2`` through a Peizer-Pratt normal

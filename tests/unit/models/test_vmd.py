@@ -56,5 +56,5 @@ def test_vmd_input_validation():
 
 def test_bench_vmd():
     out = bench_vmd()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_vmd_freq_err"] < 0.03

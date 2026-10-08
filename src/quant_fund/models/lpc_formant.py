@@ -1,4 +1,4 @@
-"""LPC formant estimation via the autocorrelation/Levinson method.
+"""LPC formant estimation via the autocorrelation/Levinson method (SYNTHETIC).
 
 All-pole model order 12; formants = peaks of the spectral envelope
 |1/A(f)|. Bench: two lowest envelope peaks on a synthetic vowel-like

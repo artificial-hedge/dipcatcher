@@ -1,4 +1,4 @@
-"""1D FDTD wave equation with absorbing boundary; conserved-amplitude check."""
+"""1D FDTD wave equation with absorbing boundary; conserved-amplitude check (SYNTHETIC)."""
 
 import numpy as np
 

@@ -457,3 +457,136 @@ Takeaways (research-only):
 MLFLOW_DISABLE_AGENT_HINT=1 .venv/bin/python -c "..."  # clear_panel_cache + clear_forecast_caches / clear_wrappee_cache
 uv run pytest -q -m 'not network'
 ```
+
+## Wave T8 — causal-forecast conformal/Student-t latency rebenchmark (task 8)
+
+Fresh WALL-CLOCK latency rebenchmark of the causal-forecast conformal /
+Student-t path on a seeded SYNTHETIC workload (`scripts/bench_causal_latency.py`,
+`--reps 200 --n 5000`, seed 20261007). Honesty: correctness/performance
+measurement only, `live_pnl_claim=false`; no Sharpe/P&L/NAV computed. This is
+the task-8 deliverable and it **confirms the suspicion: the Student-t fit is the
+dominant cost**.
+
+| Stage | n per call | mean ms | median ms | max ms |
+|---|---:|---:|---:|---:|
+| `fit_student_t` (Student-t fit) | 5000 | 110.42 | 108.37 | 163.30 |
+| `crps_student_t` (`student_t.cdf`/`pdf`) | 5000 | 3.05 | 2.84 | 4.41 |
+| `conformal_quantile` (split conformal) | 5000 | 0.043 | 0.040 | 0.166 |
+| conformal + Student-t interval (composed) | 5000 | 114.24 | 109.56 | 219.08 |
+
+Reproduce exactly:
+
+```bash
+uv run python scripts/bench_causal_latency.py --reps 200 --n 5000
+```
+
+Findings (research-only):
+
+- `fit_student_t` ≈ **110 ms/call** is **~97%** of the composed interval cost
+  (114 ms). `crps_student_t` ≈ 3 ms and `conformal_quantile` ≈ 0.04 ms are
+  negligible. The suspected dominant cost (conformal Student-t MLE) is confirmed.
+- `fit_student_t` lives in `src/quant_fund/metrics/risk_parametric.py` and the
+  Student-t conformal fit is reached through `pipeline.forecast.conformal_sets_asof`
+  (`forecast._WRAPPEE_CACHE` already caches it — PERF.md item 5). **A latency
+  FIX requires editing `src/quant_fund/metrics/**`, which this lane does not
+  own.** Per the scope contract the change is **REPORTed to the Lead** (metrics
+  owner = `vol-scope`) rather than edited here.
+
+**Blocked note — end-to-end causal path + the MLE fix.** The table above
+measures the conformal/Student-t building blocks directly. Remeasuring the full
+`pipeline.forecast.build_causal_weight_panel` end-to-end path and shipping the
+`fit_student_t` optimization are **blocked on the metrics owner**. Exact command
+to run the building-block rebenchmark is given above; the end-to-end causal
+rebench is the existing Wave-N harness (`data/metadata/perf_bench.json`), run
+by the metrics/pipeline owner, not by this lane.
+
+---
+
+## Wave T8 (delivered) — `fit_student_t` optimization + numerical-equivalence proof (metrics owner)
+
+The optimization the previous note flagged as "blocked on the metrics owner" is
+**delivered** by `vol-scope` (metrics owner). Honesty: correctness/performance
+only on seeded SYNTHETIC inputs; PROPER SCORES only (CRPS); no Sharpe/P&L/NAV
+and no live-trading claim. `fit_student_t` underpins proper scores
+(CRPS/pinball/QLIKE/PIT), so the change is guarded by a committed golden
+equivalence proof.
+
+**Method — speed without loosening any convergence tolerance.** Nelder-Mead,
+`x0`, `maxiter=2000`, and the convergence criterion (`xatol=fatol=1e-4`) are
+kept **bit-for-bit identical**. The only change is the objective's arithmetic:
+`scipy.stats.t.logpdf`'s per-call `rv_continuous` dispatch (≈4.4 ms/call at
+n=5000) is replaced by a hand-rolled vectorized Student-t log-likelihood
+(≈0.24 ms/call, ≈19x cheaper per objective eval) that is mathematically the same
+NLL. Warm-starts / re-optimizers (bracketing `nu`, L-BFGS, method-of-moments)
+were **deliberately declined** — they change the Nelder-Mead trajectory and would
+risk `nu` fidelity on weakly-identified (flat) cells.
+
+**Controlled before/after** (same process, same input, median of 30, n=5000):
+
+| Stage | before (ms) | after (ms) | speedup |
+|---|---:|---:|---:|
+| `fit_student_t` | 306.83 | 38.99 | **7.87x** |
+| conformal + Student-t interval (composed) | 488.40 | 93.89 | **5.20x** |
+
+Fitted `nu`/`mu`/`sigma` are **bit-identical** old-vs-new (diff 0.0) on the bench
+workload.
+
+**Reproducible bench** (`uv run python scripts/bench_causal_latency.py --reps 200 --n 5000`),
+cross-run wall-clock (machine-load variance ≈3.5x between runs; `crps_student_t`
+is unchanged code yet shifted 7→15 ms between runs):
+
+| Stage | before mean/med (ms) | after mean/med (ms) | speedup |
+|---|---:|---:|---:|
+| `fit_student_t` | 383.87 / 313.24 | 60.45 / 53.40 | 6.35x / 5.87x |
+| composed interval | 278.45 / 260.45 | 159.45 / 150.24 | 1.75x / 1.73x |
+
+The composed cross-run number is load-confounded; the controlled same-process
+figure (5.20x) is the reliable one. Under the quiet baseline in the previous note
+(`fit_student_t` 110.42 ms), the optimized fit is ≈14 ms.
+
+**Numerical-equivalence proof** (`tests/unit/metrics/test_fit_student_t_equivalence.py`
++ committed golden `tests/unit/metrics/fit_student_t_golden.json`; 21-cell seeded
+grid — nu in [2.05, 2.2, 3, 5, 10, 30, 100], n in [50, 200, 5000, 20000],
+loc/scale across orders of magnitude, heavy-tail + near-degenerate). Per-field
+tolerance (every param tolerance tighter than the fit's own `xatol=1e-4`):
+
+| field | rtol | atol | observed max drift |
+|---|---:|---:|---:|
+| `fit_mu` | 1e-6 | 1e-6 | 4.7e-8 |
+| `fit_sigma` | 1e-6 | 1e-6 | 2.3e-8 |
+| `loglik` | 1e-6 | 1e-5 | 4.8e-6 |
+| `crps_mean` | 1e-6 | 1e-8 | 1.5e-10 |
+| `crps_sum` | 1e-6 | 1e-5 | 1.4e-7 |
+| `quantiles` | 1e-6 | 1e-5 | 1.0e-7 |
+| `fit_nu` (identified) | 0 | 5e-5 | 0 on 19/21; 2.8e-5 (weak-id light-tail) |
+
+Result: **19/21 cells bit-identical (0.0 drift on every field)**; the proper-score
+surface (mu/sigma/loglik/CRPS/quantiles) matches to ≤5e-6 on every cell. `fit_nu`
+is 0 on 19/21; on one weakly-identified light-tail cell (nu≈100, n=20000) it
+wobbles 2.8e-5 — **below the fit's own 1e-4 `xatol`** — with loglik/CRPS unchanged
+(≤7e-12). On near-degenerate inputs `nu` is statistically **unidentified** (flat
+likelihood ridge as nu→∞): the golden value is itself arbitrary, so the test
+asserts validity there and the matching loglik (4.8e-6) proves both fits reach
+the same likelihood — a property of the flat ridge, not lost accuracy. Permanent
+mutant harnesses prove the equivalence check FAILS on injected drift (CRPS at 10x
+tolerance; `nu` at the convergence-level 1e-4). Reproduce:
+`uv run pytest tests/unit/metrics/test_fit_student_t_equivalence.py -q`.
+
+**Honesty note.** The optimization changes no proper score and no identified
+parameter; the only numeric difference is the already-meaningless `nu` value on
+near-degenerate inputs where `nu` is unidentifiable. If a stricter "bit-identical
+degenerate-`nu`" requirement is preferred, the objective can revert to
+`scipy.stats.t.logpdf` (bit-identical) at the cost of most of the speedup (≈1.5x
+instead of ≈6-8x); flagged for the Lead to decide.
+
+**Lead ruling (2026-10-08): KEEP the optimization; do not revert.** The honesty
+contract is denominated in proper scores and identified parameters, not in
+reproducing arbitrary points on a flat likelihood ridge — matching an
+unidentified `nu` bit-for-bit would be precision theater paid for with 4-5x of
+the speedup. The evidence that nothing observable moved is the committed
+equivalence proof (loglik Δ4.8e-6; proper-score surface ≤5e-6 on every cell;
+dedicated non-identifiability test; permanent mutant harnesses). The
+degenerate-cell caveat is binding and is recorded in the `fit_student_t`
+docstring: a degenerate-cell `nu` must never be quoted as an estimate in any
+receipt, report, or headline.
+

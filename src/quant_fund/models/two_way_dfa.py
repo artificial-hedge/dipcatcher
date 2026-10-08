@@ -1,4 +1,4 @@
-"""Two-way DFA over input word with end-markers; crossing-sequence halt check."""
+"""Two-way DFA over input word with end-markers; crossing-sequence halt check (SYNTHETIC)."""
 
 import numpy as np
 

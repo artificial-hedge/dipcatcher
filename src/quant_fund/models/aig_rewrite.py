@@ -1,4 +1,4 @@
-"""AND-inverter graph (AIG) structural hashing + dead-cone elimination.
+"""AND-inverter graph (AIG) structural hashing + dead-cone elimination (SYNTHETIC).
 
 Nodes are ANDs with complemented edges (lit = 2*node + phase). Strashing
 deduplicates literal-identical fanin pairs; the sweep drops cones not

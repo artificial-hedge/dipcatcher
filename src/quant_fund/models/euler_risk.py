@@ -136,5 +136,5 @@ def bench_euler_risk(seed: int = 20261231 + 395) -> dict[str, float]:
         "synthetic_euler_analytic_rel": rel_err,
         "synthetic_euler_var_err": var_err,
         "synthetic_euler_es_total": es,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

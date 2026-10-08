@@ -1,4 +1,4 @@
-"""Sinkhorn canon (Cuturi 2013): entropic optimal transport
+"""Sinkhorn canon (Cuturi 2013): entropic optimal transport (SYNTHETIC)
 via log-domain matrix scaling, returning the optimal
 transport plan and regularized cost, checked against the
 exact transport LP optimum as epsilon shrinks.

@@ -1,4 +1,4 @@
-"""PBVI (Pineau, Gordon, Thrun 2003) — point-based value iteration:
+"""PBVI (Pineau, Gordon, Thrun 2003) — point-based value iteration: (SYNTHETIC)
 maintain a belief set B and one α-vector per point; each backup
 greedily assigns each belief its maximizing vector. Complexity is
 polynomial in |B| rather than exponential in the horizon.

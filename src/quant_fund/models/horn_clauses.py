@@ -1,4 +1,4 @@
-"""Ground Horn-clause (CHC-style) solver by forward-chaining saturation.
+"""Ground Horn-clause (CHC-style) solver by forward-chaining saturation (SYNTHETIC).
 
 Clauses: head <- body_1 ∧ ... ∧ body_n over a finite fact domain; queries
 ask whether a fact is derivable. Encodes loop-invariant CHCs over a bounded

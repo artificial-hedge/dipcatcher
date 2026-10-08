@@ -1,4 +1,4 @@
-"""Shared fixture for wave-191 exploration canon — hard-exploration
+"""Shared fixture for wave-191 exploration canon — hard-exploration (SYNTHETIC)
 gridworld: reward sits in the far corner behind a wall of distractor
 cells; uniform exploration gets stuck near the start. Shared Q-learning
 harness with an intrinsic-bonus hook.

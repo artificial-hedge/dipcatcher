@@ -1,4 +1,4 @@
-"""Shared fixture for wave-195 ensemble/adaptive-MCMC canon —
+"""Shared fixture for wave-195 ensemble/adaptive-MCMC canon — (SYNTHETIC)
 correlated 2-D Gaussian target; metrics = ESS + mean/cov error vs
 independent-MH baseline.
 """

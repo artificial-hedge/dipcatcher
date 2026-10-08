@@ -1,4 +1,4 @@
-"""TiRex-2 time-series quantile head (P2.2). Research-only.
+"""TiRex-2 time-series quantile head (P2.2). Research-only (SYNTHETIC).
 
 Wraps NX-AI ``tirex-2`` — pretrained xLSTM-stack (sLSTM/mLSTM attention
 blocks) zero-shot multivariate forecaster with a native 9-point quantile

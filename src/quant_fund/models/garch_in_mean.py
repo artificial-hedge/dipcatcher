@@ -168,6 +168,6 @@ def bench_garch_in_mean(seed: int = 20261231 + 351) -> dict[str, float]:
         "synthetic_garchm_lam_control": r0["lam"],
         "synthetic_garchm_ll_gain": r1["nll_lam0"] - r1["nll_garchm"],
         "synthetic_garchm_persistence": r1["a"] + r1["b"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

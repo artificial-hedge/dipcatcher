@@ -1,4 +1,4 @@
-"""CreditRisk+ portfolio loss distribution (CSFB 1997).
+"""CreditRisk+ portfolio loss distribution (CSFB 1997) (SYNTHETIC).
 
 CreditRisk+ approximates each obligor's default count as Poisson with mean equal
 to its default probability and aggregates integer-unit exposures.  With

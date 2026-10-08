@@ -1,4 +1,4 @@
-"""k-NN OOD detection in penultimate features (Sun et al. 2022).
+"""k-NN OOD detection in penultimate features (Sun et al. 2022) (SYNTHETIC).
 
 Score = distance to the k-th nearest training feature (after
 normalization). Non-parametric and surprisingly SOTA vs density
@@ -62,6 +62,7 @@ def bench_knn_ood(
 ) -> dict[str, float]:
     """Feature-space kNN distance vs MSP (AUROC, SYNTHETIC)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     (x_id, y_id), x_ood = synth_id_ood(n_id, n_ood, d, rng)
     X = torch.tensor(x_id, dtype=torch.float32)
@@ -114,7 +115,7 @@ def bench_knn_ood(
         "synthetic_knnood_auc": auc_knn,
         "synthetic_knnood_msp_auc": auc_msp,
         "synthetic_knnood_margin_vs_msp": auc_knn - auc_msp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

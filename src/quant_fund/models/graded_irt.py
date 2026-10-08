@@ -37,9 +37,12 @@ IntArray = NDArray[np.int64]
 
 
 def _check_resp(resp: IntArray) -> tuple[IntArray, int]:
-    r = np.asarray(resp, dtype=np.int64)
-    if r.ndim != 2 or r.shape[0] < 5 or r.shape[1] < 2:
+    raw = np.asarray(resp, dtype=np.float64)
+    if raw.ndim != 2 or raw.shape[0] < 5 or raw.shape[1] < 2:
         raise ValueError("resp must be an (n_persons, n_items) matrix")
+    if not np.all(np.isfinite(raw)) or not np.all(raw == np.floor(raw)):
+        raise ValueError("responses must be integer-valued category codes")
+    r = raw.astype(np.int64)
     if r.min() < 0:
         raise ValueError("responses must be non-negative category codes")
     return r, int(r.max()) + 1

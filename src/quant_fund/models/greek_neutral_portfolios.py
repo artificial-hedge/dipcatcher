@@ -661,7 +661,8 @@ def greek_neutrality_penalty_np(
     if v == "enp_l2":
         alloc = np.broadcast_to((w * w).reshape(shape), g.shape).sum()
         return float((contrib * contrib).sum() / (alloc + e))
-    assert den is not None  # validated above for dp_*
+    if not (den is not None):
+        raise ValueError("den is not None")  # validated above for dp_*
     den_contrib = w.reshape(shape) * den
     if v == "dp_l1":
         return float(np.abs(contrib).sum() / (np.abs(den_contrib).sum() + e))

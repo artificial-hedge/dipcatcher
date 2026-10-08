@@ -1,4 +1,4 @@
-"""Tail risk: historical / Gaussian / distribution-derived VaR-ES and drawdown probs."""
+"""Tail risk: historical / Gaussian / distribution-derived VaR-ES and drawdown probs (SYNTHETIC)."""
 
 from __future__ import annotations
 

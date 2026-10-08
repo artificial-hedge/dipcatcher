@@ -1,4 +1,4 @@
-"""Robust-regression canon: Huber IRLS, Tukey
+"""Robust-regression canon: Huber IRLS, Tukey (SYNTHETIC)
 biweight S-estimator, least trimmed squares (LTS),
 and MM regression (S-start, M-finish).
 

@@ -153,5 +153,5 @@ def bench_spread_options(seed: int = 20261231 + 381) -> dict[str, float]:
         "synthetic_spread_kirk_err": float(err_k),
         "synthetic_spread_margrabe": float(v_m),
         "synthetic_spread_quanto_bp": float((q - q0) * 1e4),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

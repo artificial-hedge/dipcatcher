@@ -204,5 +204,5 @@ def bench_esscher(seed: int = 20261231 + 382) -> dict[str, float]:
         "synthetic_es_bs_err": float(err_bs),
         "synthetic_es_theta": float(th),
         "synthetic_es_call": float(v_es),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

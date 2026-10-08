@@ -41,6 +41,7 @@ packages = [
     "microstructure", # LOB/OFI estimators (coupled with northset below)
     "northset",       # northstar estimators/identities over microstructure+metrics
     "metrics",        # shared scoring vocabulary; imported by nearly every layer
+    "realized",       # realized-variance estimators over market observations (RV/BPV/HF-RV scaffolding)
     "flowbars",       # information-driven bar construction (dollar/volume/tick) over data
 ]
 
@@ -58,8 +59,7 @@ packages = [
     "native",       # rust/native reference wrappers over lightspeed+metrics
     "reporting",    # reports over metrics
     "validation",   # walk-forward/purging/CPCV splitters used by pipeline.train
-    "decay",        # horizon-IC/half-life diagnostics over model scores
-    "realized",     # realized-variance estimators and jump analytics
+    "decay",        # alpha/signal decay diagnostics (IC curves, half-life, turnover)
     "combination",  # proper-score ensemble forecast combination (BMA, vincentization, conformal)
 ]
 
@@ -83,9 +83,13 @@ packages = [
 name = "research"
 packages = [
     "research",    # catalog/benches/agent/verify — consumes pipeline+analytics
+    "combination", # ensemble forecast combination (research subdomain)
+    "decay",       # signal decay analytics (research subdomain)
+    "flowbars",    # information-driven bars (research subdomain)
     "robustness",  # adversarial certification (paired with research)
     "leakage",     # leakage scanner/guardrails over proofcore
     "audit",       # hash-chained audit ledger over research receipts
+    "parity_leak_audit", # parity-leak scanner over research-adjacent invariants
     "stress",      # stress harness over research+data
     "proof",       # proof bundles over proofcore
     "reality",     # reality checks (SPA/CSCV/DSR) over proofcore+metrics
@@ -289,12 +293,6 @@ note = "portfolio analytics import the attribution engine"
 # fix is moving the upstream signature kernel next to metrics (foundation)
 # and re-exporting it from there. See #2844 triage doc for the
 # facade-extract plan.
-[[baseline]]
-file = "src/quant_fund/metrics/signature_features.py"
-module = "quant_fund.models.path_signatures"
-rule = "layer-order"
-note = "signature_features reuses the analytics-layer path-signatures kernels; facade-extract deferred"
-
 # validation/gates.py gates research artifacts — the only upward edge of an
 # otherwise low-level validation package (walk_forward/purging/cpcv are used
 # by pipeline.train). Owner: validation/research maintainers; fix is moving
@@ -305,3 +303,23 @@ module = "quant_fund.research.verify"
 rule = "layer-order"
 note = "validation gates reach up into research.verify"
 
+# ---------------------------------------------------------------------------
+# 2026-10-06 gate-remediation sweep (kimi lane). Nine layer-order edges that
+# pre-date this sweep, itemized per the baseline contract above. The dominant
+# pattern (5 of 9) is market_data/foundation readers importing the receipt.v2
+# envelope: the structural fix is relocating receipt_v2 (+ its schema) down to
+# schemas/ — tracked as one cleanup, delete all five entries when it lands.
+# ---------------------------------------------------------------------------
+
+
+[[baseline]]
+file = "src/quant_fund/realized/hf_rv.py"
+module = "quant_fund.models.realized"
+rule = "layer-order"
+note = "market_data->analytics: realized volatility uses bipower_variation/jump detection from models; fix = move to lazy import or relocate shared math"
+
+[[baseline]]
+file = "src/quant_fund/metrics/signature_features.py"
+module = "quant_fund.models.path_signatures"
+rule = "layer-order"
+note = "market_data->analytics: signature_features reuses models.path_signatures as the only sane source of incremental-Chen signature kernels; fix = move signature kernels to foundation layer or make import lazy"

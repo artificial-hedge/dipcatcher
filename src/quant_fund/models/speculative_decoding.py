@@ -1,4 +1,4 @@
-"""Speculative decoding (Leviathan et al. 2023).
+"""Speculative decoding (Leviathan et al. 2023) (SYNTHETIC).
 
 A cheap draft model proposes γ tokens; the target model verifies them
 in one pass with rejection sampling — accepted tokens match the target

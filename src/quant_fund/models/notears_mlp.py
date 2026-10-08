@@ -1,4 +1,4 @@
-"""NOTEARS-MLP (Zheng et al. 2020) — nonlinear SEM recovery: each
+"""NOTEARS-MLP (Zheng et al. 2020) — nonlinear SEM recovery: each (SYNTHETIC)
 variable's conditional is a small MLP; acyclicity on the weight
 product of first layers. SHD vs corr baseline.
 """
@@ -59,5 +59,5 @@ def bench_notears_mlp(seed: int = 2335, edges: int = 7, steps: int = 350) -> dic
         "synthetic_ntmlp_shd": float(shd_m),
         "synthetic_corr_shd": float(shd_cb),
         "synthetic_ntmlp_gain": float(shd_cb - shd_m),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

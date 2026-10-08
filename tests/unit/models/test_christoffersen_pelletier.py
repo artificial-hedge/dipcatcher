@@ -57,6 +57,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_christoffersen_pelletier()
-    for k in ("b_iid", "p_iid", "b_clustered", "p_clustered", "lr_gap", "score"):
+    for k in (
+        "synthetic_b_iid",
+        "synthetic_p_iid",
+        "synthetic_b_clustered",
+        "synthetic_p_clustered",
+        "synthetic_lr_gap",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

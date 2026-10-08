@@ -1,4 +1,4 @@
-"""Differentiable soft-rank / NeuralSort-style layer (Grover et al. 2019).
+"""Differentiable soft-rank / NeuralSort-style layer (Grover et al. 2019) (SYNTHETIC).
 
 Rank via Σ_j σ((s_i−s_j)/τ) — fully differentiable, so an upstream score
 model can be trained end-to-end on a ranking loss. On the fixture the
@@ -73,5 +73,5 @@ def bench_sort_net(
         "synthetic_sortnet_identity_spearman": spear_id,
         "synthetic_sortnet_gain": float(spear - spear_id),
         "synthetic_sortnet_grad_flow": w_grad,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

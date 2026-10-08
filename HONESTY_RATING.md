@@ -5,6 +5,42 @@
 
 ---
 
+## Correction notice — 2026-10-08
+
+**The report below is a snapshot of `0e05f653` (2026-09-29). It is not current
+and must not be quoted as a current assessment.** Re-measured on 2026-10-08 at
+local `HEAD 5c2805685`. No score below has been changed; the deductions are
+annotated in place and the arithmetic is deliberately left as-is. Re-scoring is
+a separate, dated act.
+
+**The H1–H5 anti-inflation rules in §0 are unchanged and are the durable asset
+of this document.** They are reproduced verbatim. Only the snapshot is stale.
+
+| # | Deduction | Snapshot claim | Position at 2026-10-08 | Status |
+|---|---|---|---|---|
+| **m6** | −10 (5/15) | "**No LICENSE file.**" | **VOID.** `LICENSE` exists: `ARTIFICIAL HEDGE PROPRIETARY LICENSE`, `Version 1.0, last updated 2026-09-30`. Verified `head -3 LICENSE`. The snapshot is dated one day before the license was written. | **Void — deduct.** The corrected position should be re-scored at the next re-baseline. |
+| **M2 / H5** | −14 | "release.yml is tag-gated and **zero tags exist**" | **Pending resolution.** No *release* tag exists: `git tag -l 'v*' | wc -l` → `0`, so `release.yml` has never fired and the deduction is *not* yet wrong. (`git tag | wc -l` → `4`, but all four are `attic/receipt-provenance/*` provenance anchors dated 2026-09-27/28, not releases — "zero tags" is imprecise wording, "zero releases" is exact.) A first `v*` tag is expected once CI returns green, at which point H5's 60% cap lifts. | **Accurate; pending** |
+| **m3** | 24/40, H5-capped | "**0 tags, 0 releases**" | **Pending resolution**, same condition as M2/H5 above. The 60% cap stands until a release actually executes. | **Accurate; pending** |
+| **M6 / H5** | −10 | "signing/SBOM/SLSA never exercised — no tags, no releases" | **Pending resolution**, same condition as M2/H5 and m3. `git tag -l 'v*' | wc -l` → `0`: the release machinery remains unexercised. | **Accurate; pending** |
+| **M7** | −18 | "**fx-1 is a plan, not a model** — no weights, `complete()` raises `NotImplementedError`, training manifest gate exists but no training run has occurred" | **Substantively still correct, with one correction of detail.** `complete()` still raises `NotImplementedError`; no training run has occurred; no fine-tuned fx-1 weights are published. The clause "**no weights**" is imprecise: `artifacts/fx1_tiny_lm/weights.safetensors` (127 KB, ~31k params) is tracked in git. It is a correctness fixture whose own card says *"not an fx-1 release candidate"*, `research_only: true`, with synthetic `eval_delta` placeholders. It does not rebut the deduction; the deduction's *reasoning* should be re-verified against the current tree before being carried forward. | **Correct in substance; re-verify before carry-forward** |
+| **M3** | −8 | "drift already acknowledged by the repo itself (open PR #367: docs drift checker … needed, not yet merged)" | **Still accurate.** Re-checked 2026-10-08: no docs-drift checker is wired into any workflow. `grep -rn "drift" .github/workflows/` matches only unrelated honesty/epoch notes, and `scripts/drift_real_drill.py` is a *market* drift detector (changepoint on real tapes), not a docs checker. Only `atlas.yml` (generated diagrams) and `docs.yml` (`mkdocs --strict`) validate documentation, and neither checks prose claims against code. | **Accurate** |
+| **M1 / H2** | −10 | "no hosted coverage publication (floor is enforced, trend is not visible)" | Unverified this pass — not re-measured on 2026-10-08. | **Not re-verified** |
+
+**One further caveat the snapshot predates, which cuts *against* the repo.**
+The scorecard below awards credit for machinery that is defined but has never
+returned a verdict: `gh run list` shows **0 successful runs in 400 consecutive
+attempts** as of 2026-10-08. H5 caps unexercised machinery at 60%; a pipeline
+that has never once been observed green is a broader instance of that than the
+release workflow the snapshot already penalizes. This does not change any
+number here, but any re-scoring should weigh it. Findings and remediation:
+[`docs/ULTRA_PROD_READINESS.md`](docs/ULTRA_PROD_READINESS.md).
+
+**Rule for the next re-baseline:** re-score at a green `PROD_BASELINE` SHA with
+its own date, keep H1–H5 fixed, and publish deductions *before* fixes. Never
+remove a deduction without the evidence that voided it.
+
+---
+
 ## 0. What makes this an *honesty* engine
 
 Most repo scoreboards reward claimed quality. This one rewards **provable** quality and penalizes inflation. Five anti-inflation rules are applied before any points are awarded:
@@ -41,12 +77,16 @@ Evidence found:
 
 Deductions: −14 H4 (red-main recurrence); −14 H5 (release.yml is tag-gated and **zero tags exist** — the pipeline has never shipped anything).
 
+> **[Annotation 2026-10-08]** Still accurate in substance — `git tag -l 'v*' | wc -l` → `0`, so the release pipeline has never shipped. (`git tag | wc -l` → `4`, all `attic/receipt-provenance/*` provenance anchors from 2026-09-27/28, not releases.) Marked *pending*: H5's cap should lift once a first `v*` tag executes a real release build. Separately, `gh run list` reports 0 successful runs in 400 attempts, so "red-main recurrence" understates the position. See the [correction notice](#correction-notice--2026-10-08).
+
 ### M3. Documentation & knowledge — 100 max → **82**
 
 Evidence found:
 - ~90 doc files: ARCHITECTURE + generated **atlas with a CI freshness gate**, ADRs, 58 KB operations runbook, 104 KB MATH_SPEC, audit ledgers (P61 money / P62 stats / P63 data / P64 dist / P65 micro / P66 infra), pre-registration doc, published deflated trial, evidence index **rendered only from committed receipts** (`make evidence`), RESEARCH100 catalog mapping 100 papers to executable components.
 
 Deductions: −10 for bloat/rot surface (DATA_CONTRACTS.md 279 KB, SOTA_GAP_ANALYSIS.md 151 KB committed monoliths); −8 for drift already acknowledged by the repo itself (open PR #367: "docs drift checker for code refs + honesty sweep of stale paths" — needed, not yet merged).
+
+> **[Annotation 2026-10-08]** Re-verified: still no docs-drift checker in CI. `grep -rn "drift" .github/workflows/` matches only unrelated honesty/epoch comments; `scripts/drift_real_drill.py` is a *market* changepoint detector, not a docs checker. Only `atlas.yml` (generated diagrams) and `docs.yml` (`mkdocs --strict`) validate docs, and neither checks prose claims against the tree. Deduction stands.
 
 ### M4. Architecture & code quality — 120 max → **95**
 
@@ -73,11 +113,15 @@ Evidence found: CodeQL + Scorecard + dependency review + full-history gitleaks, 
 
 Deductions: −10 H5 (signing/SBOM/SLSA never exercised — no tags, no releases); −6 (no external security review; 900 KB uv.lock dependency surface un-audited by third party).
 
+> **[Annotation 2026-10-08]** The H5 half is still accurate — `git tag -l 'v*' | wc -l` → `0`, so no release has run and SBOM/Sigstore/SLSA remain unexercised; mark *pending*. The −6 external-security-review half is unaffected by that and remains open.
+
 ### M7. Domain substance — 90 max → **62**
 
 Evidence found: genuine quant machinery — PIT vault with watermark policy, leakage scanner LH001–LH014 (AST-based, evasion-hardened), CPCV/DSR/PBO/SPA reality filters, e-processes/anytime-valid inference (e-LORD, e-SAFFRON), conformal + calibration batteries, proper scoring rules (pinball/CRPS/PIT/QLIKE/Brier/ECE/Kupiec), exchange calendars with verified unscheduled closures, Almgren–Chriss execution, agent-based LOB simulator, Rust kernels.
 
 Deductions (H3 applies hard): −18 (**fx-1 is a plan, not a model** — no weights, `complete()` raises NotImplementedError, training manifest gate exists but no training run has occurred; the "7T fine-tune" ambition has zero committed evidence); −10 (nearly all evidence is SYNTHETIC; the one real-data trial is deflated — honest, but alpha is unproven by design).
+
+> **[Annotation 2026-10-08]** Re-verified: `complete()` still raises `NotImplementedError`, still no training run, still no fine-tuned fx-1 weights published. The deduction stands. One detail is imprecise — "no weights" is not literally true. `artifacts/fx1_tiny_lm/weights.safetensors` (127 KB, ~31k params) is tracked in git, but its own model card says *"not an fx-1 release candidate"*, `license_tier: internal_research`, `research_only: true`, and its `eval_delta` values are synthetic ship-gate placeholders rather than measured evals. It is a correctness fixture. Correct the wording, not the score.
 
 **Major subtotal: 638 / 800**
 
@@ -99,6 +143,8 @@ CONTRIBUTING.md, CODE_OF_CONDUCT (Contributor Covenant 2.1), CITATION.cff, APPLY
 
 pyproject + uv.lock (single-numpy pin discipline), console scripts (`dipcatcher`, `fx1`), Dockerfile + compose, `.python-version`, versioned `0.4.0`. But: **0 tags, 0 releases**, PyPI trusted publishing deliberately off, CHANGELOG seeded-but-manual. H5 capped this factor: 24 = 60% of what the packaging would otherwise earn.
 
+> **[Annotation 2026-10-08]** Still accurate in substance — `git tag -l 'v*' | wc -l` → `0`, so "0 releases" is exactly right ("0 tags" is imprecise: `git tag | wc -l` → `4`, all `attic/receipt-provenance/*` provenance anchors, not releases). Marked *pending*: the H5 cap should lift once `release.yml` actually executes for a real tag. Note also that `fx1.__version__` = `0.4.0` is the **harness API** version, not a model release — see `docs/FX1_API_STABILITY.md`.
+
 ### m4. Performance engineering — 30 max → **26**
 
 Rust native kernels with enforced speedup floors, numba kernel + interpreted fallback proven byte-identical, calibration-normalized perf gate (sort-reference, median-of-7), 1s CLI startup budget, count-balanced test sharding. Docked only for perf gates being young and threshold-tuned twice already.
@@ -110,6 +156,8 @@ Rust native kernels with enforced speedup floors, numba kernel + interpreted fal
 ### m6. Licensing & legal — 15 max → **5**
 
 **No LICENSE file.** For a repo this engineered, the single cheapest legal artifact is missing. CITATION.cff and third_party/ awareness (HF license doc) keep it off zero.
+
+> **[Annotation 2026-10-08 — THIS DEDUCTION IS VOID.]** `LICENSE` exists: `ARTIFICIAL HEDGE PROPRIETARY LICENSE`, `Version 1.0, last updated 2026-09-30`. This snapshot is scoped to `0e05f653` (2026-09-29) — the license postdates it by one day. The original text is preserved above as the engine recorded it; it is not to be carried forward. This factor should be **re-scored** at the next re-baseline. See the [correction notice](#correction-notice--2026-10-08).
 
 ### m7. Project management & tracking — 15 max → **9**
 
@@ -153,6 +201,7 @@ The core 1000 measures "is this repo excellent." Overdrive measures what no rubr
 
 1. **Merge or close the ~100 open PRs** and cut tag `v0.4.0` → exercises release.yml, SBOM, Sigstore, SLSA for real. Recovers ~24 (M2) + ~12 (m3) + ~14 (m1), and clears the H5 caps. *Gets to ~800.*
 2. **Add a LICENSE** (one file). +8–10 (m6). *~810.*
+   > **[Annotation 2026-10-08]** **Done — this step is obsolete.** `LICENSE` exists (proprietary v1.0, 2026-09-30), so m6's "No LICENSE file" deduction is void. Preserved above as the snapshot recorded it; do not carry forward.
 3. **Open the issue tracker**, file known gaps as issues, invite one external contributor. +8 (m2), starts O4. *~818.*
 4. **Publish hosted coverage + run the mutation lane on main.** +10 (M1). *~828.*
 5. **Keep the forward-shadow running on real data for 90 days, sealed, pre-registered.** Up to +27 more of O2. *~855 + O2 progress.*

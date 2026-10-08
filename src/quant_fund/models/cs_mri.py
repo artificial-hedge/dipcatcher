@@ -1,4 +1,4 @@
-"""Compressed-sensing MRI — undersampled k-space + sparsity-regularized ISTA.
+"""Compressed-sensing MRI — undersampled k-space + sparsity-regularized ISTA (SYNTHETIC).
 
 Forward model: k-space samples F x on a random subset of frequencies
 (partial Fourier). Recovery: ISTA on ||A x - y||^2 + lambda ||W x||_1

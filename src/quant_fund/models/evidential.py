@@ -1,4 +1,4 @@
-"""Evidential / subjective-logic canon: Dirichlet-evidence classifier
+"""Evidential / subjective-logic canon: Dirichlet-evidence classifier (SYNTHETIC)
 (Sensoy et al.) — the network-free version learned by matching class
 evidence counts to Dirichlet parameters, plus uncertainty decomposition
 (vacuity, dissonance). ``bench_evidential`` plants overlapping class

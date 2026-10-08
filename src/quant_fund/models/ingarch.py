@@ -145,6 +145,6 @@ def bench_ingarch(seed: int = 20261231 + 359) -> dict[str, float]:
         "synthetic_ingarch_sample_mean": float(np.mean(y)),
         "synthetic_ingarch_rmse_os": r["rmse_os"],
         "synthetic_ingarch_rmse_marg": rmse_marg,
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

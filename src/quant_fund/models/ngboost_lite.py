@@ -1,4 +1,4 @@
-"""NGBoost-lite: natural-gradient boosting for a Gaussian predictive distribution.
+"""NGBoost-lite: natural-gradient boosting for a Gaussian predictive distribution (SYNTHETIC).
 
 Duan, Anand, Ding, Basu, Ng & Schuler (2020, ICML, PMLR 119, pp. 2690-2700,
 "NGBoost: Natural Gradient Boosting for Probabilistic Prediction",
@@ -175,6 +175,15 @@ class NGBoostGaussian:
             raise ValueError("y must be finite")
         return X, y
 
+    def _prepared_val(self, X_val: Array, y_val: Array, n_features: int) -> tuple[Array, Array]:
+        """Validation split: checked, flattened, and feature-count aligned with X."""
+        Xv, yv = self._check_xy(X_val, y_val)
+        if not (yv is not None):
+            raise ValueError("yv is not None")
+        if Xv.shape[1] != n_features:
+            raise ValueError("X_val feature count mismatch")
+        return Xv, yv
+
     def _tree(self) -> DecisionTreeRegressor:
         return DecisionTreeRegressor(
             max_depth=self.max_depth,
@@ -197,7 +206,8 @@ class NGBoostGaussian:
         y_val: Array | None = None,
     ) -> NGBoostGaussian:
         X, y_ = self._check_xy(X, y)
-        assert y_ is not None
+        if not (y_ is not None):
+            raise ValueError("y_ is not None")
         y = y_
         if X.shape[0] < 2 * self.min_samples_leaf:
             raise ValueError("too few samples")
@@ -207,11 +217,7 @@ class NGBoostGaussian:
             raise ValueError("early stopping needs a validation set")
         val: tuple[Array, Array] | None = None
         if X_val is not None and y_val is not None:
-            Xv, yv = self._check_xy(X_val, y_val)
-            assert yv is not None
-            if Xv.shape[1] != X.shape[1]:
-                raise ValueError("X_val feature count mismatch")
-            val = (Xv, yv)
+            val = self._prepared_val(X_val, y_val, X.shape[1])
 
         sd0 = float(np.std(y))
         if sd0 <= 0.0:
@@ -305,19 +311,22 @@ class NGBoostGaussian:
 
     def pit(self, X: Array, y: Array) -> Array:
         X, y_ = self._check_xy(X, y)
-        assert y_ is not None
+        if not (y_ is not None):
+            raise ValueError("y_ is not None")
         mu, sigma = self.predict_params(X)
         return np.asarray(norm.cdf((y_ - mu) / sigma), dtype=float)
 
     def crps(self, X: Array, y: Array) -> float:
         X, y_ = self._check_xy(X, y)
-        assert y_ is not None
+        if not (y_ is not None):
+            raise ValueError("y_ is not None")
         mu, sigma = self.predict_params(X)
         return float(np.mean(crps_gaussian(y_, mu, sigma)))
 
     def log_score(self, X: Array, y: Array) -> float:
         """Mean Gaussian log score (higher is better)."""
         X, y_ = self._check_xy(X, y)
-        assert y_ is not None
+        if not (y_ is not None):
+            raise ValueError("y_ is not None")
         mu, sigma = self.predict_params(X)
         return float(np.mean(log_score_gaussian(y_, mu, sigma)))

@@ -563,13 +563,20 @@ def test_bench_smoke_keys_labels_and_ft_direction() -> None:
         jitter=0.03,
         batch_size=64,
     )
-    assert out["claim"] == "research_metric_only"
+    assert out["synthetic_claim"] == "research_metric_only"
     assert out["synthetic"] == "seeded_ivs_stream"
-    for key in ("es_model", "es_resample", "hedge_es_tail_model", "hedge_rmse_model"):
+    for key in (
+        "synthetic_es_model",
+        "synthetic_es_resample",
+        "synthetic_hedge_es_tail_model",
+        "synthetic_hedge_rmse_model",
+    ):
         assert math.isfinite(float(out[key]))
     # FT direction at this budget: cell-level violations strictly reduced
-    assert float(out["ft_probe_cell_after"]) < float(out["ft_probe_cell_before"])
-    assert float(out["arb_cell_finetuned"]) < float(out["arb_cell_generated"])
+    assert float(out["synthetic_ft_probe_cell_after"]) < float(
+        out["synthetic_ft_probe_cell_before"]
+    )
+    assert float(out["synthetic_arb_cell_finetuned"]) < float(out["synthetic_arb_cell_generated"])
     # no forbidden headline metrics leak into the report
     banned = ("sharpe", "sortino", "calmar", "pnl", "nav")
     assert not any(any(b in k for b in banned) for k in out)

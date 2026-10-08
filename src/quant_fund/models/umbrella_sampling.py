@@ -1,4 +1,4 @@
-"""Umbrella sampling across a free-energy barrier.
+"""Umbrella sampling across a free-energy barrier (SYNTHETIC).
 
 Windows with harmonic biases (k/2)(x-c_i)^2 on a double-well target;
 biased MC per window, then naive unbiased reweighting per window to

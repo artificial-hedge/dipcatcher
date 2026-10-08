@@ -1,4 +1,4 @@
-"""Ring allreduce: P-rank scatter-reduce then allgather simulation."""
+"""Ring allreduce: P-rank scatter-reduce then allgather simulation (SYNTHETIC)."""
 
 import numpy as np
 

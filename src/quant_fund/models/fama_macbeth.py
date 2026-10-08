@@ -1,4 +1,4 @@
-"""Fama-MacBeth two-pass asset-pricing regression.
+"""Fama-MacBeth two-pass asset-pricing regression (SYNTHETIC).
 
 Pass 1: per-asset time-series betas on factor returns. Pass 2:
 cross-sectional regression of average returns on betas each period;

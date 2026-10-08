@@ -1,4 +1,4 @@
-"""Simulated-annealing floorplanning: sequence-pair lite.
+"""Simulated-annealing floorplanning: sequence-pair lite (SYNTHETIC).
 
 Blocks as rectangles; a floorplan is a permutation evaluated by packing
 blocks left-to-right along a skyline. Anneal swaps of the permutation to

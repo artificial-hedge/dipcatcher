@@ -1,4 +1,4 @@
-"""Identity Preference Optimization (IPO / ΨPO, Azar et al. 2024).
+"""Identity Preference Optimization (IPO / ΨPO, Azar et al. 2024) (SYNTHETIC).
 
 DPO's logistic objective saturates under deterministic preferences and
 overfits label noise; IPO regresses the log-ratio gap to a fixed target
@@ -77,5 +77,5 @@ def bench_ipo_train(
         "synthetic_ipo_best_rate": acc_ipo,
         "synthetic_ipo_dpo_rate": acc_dpo,
         "synthetic_ipo_gain_vs_dpo": acc_ipo - acc_dpo,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

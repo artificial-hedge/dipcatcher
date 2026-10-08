@@ -160,5 +160,5 @@ def bench_auxiliary_pf(seed: int = 20261231 + 467) -> dict[str, float]:
         "synthetic_loglik_gap": float(la - lb),
         "synthetic_apf_ess": ea,
         "synthetic_bpf_ess": eb,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

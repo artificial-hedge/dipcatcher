@@ -1,4 +1,4 @@
-"""König's theorem: min vertex cover from bipartite max matching."""
+"""König's theorem: min vertex cover from bipartite max matching (SYNTHETIC)."""
 
 import numpy as np
 

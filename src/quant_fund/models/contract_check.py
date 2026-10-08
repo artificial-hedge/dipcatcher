@@ -1,4 +1,4 @@
-"""Design-by-contract: pre/postcondition + invariant checker."""
+"""Design-by-contract: pre/postcondition + invariant checker (SYNTHETIC)."""
 
 import numpy as np
 

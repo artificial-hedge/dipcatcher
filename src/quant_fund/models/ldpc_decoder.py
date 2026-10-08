@@ -1,4 +1,4 @@
-"""LDPC sum-product decoding over AWGN.
+"""LDPC sum-product decoding over AWGN (SYNTHETIC).
 
 Systematic code: codeword c = [m | P m], check matrix H = [P | I].
 Belief propagation: check-to-var messages via the tanh product rule,

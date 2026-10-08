@@ -1,4 +1,4 @@
-"""Primal log-barrier interior point for min cᵀx s.t. Ax = b, x ≥ 0."""
+"""Primal log-barrier interior point for min cᵀx s.t. Ax = b, x ≥ 0 (SYNTHETIC)."""
 
 import numpy as np
 

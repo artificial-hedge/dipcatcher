@@ -1,4 +1,4 @@
-"""Nonlinear state-space filters: EKF, UKF, and bootstrap particle filter.
+"""Nonlinear state-space filters: EKF, UKF, and bootstrap particle filter (SYNTHETIC).
 
 ``models/state_space.py`` provides the linear Kalman filter; this module
 covers the nonlinear canon.

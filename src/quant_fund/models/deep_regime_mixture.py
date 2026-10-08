@@ -1083,7 +1083,7 @@ def fit_deregime(
     x_t = torch.as_tensor(xs, dtype=torch.float32)
     y_t = torch.as_tensor(ys, dtype=torch.float32)
     gh_x, gh_w = _gh_nodes(n_nodes)
-    nodes_t = torch.as_tensor(np.sqrt(2.0) * gh_x, dtype=torch.float32).view(1, 1, -1)
+    nodes_t = torch.as_tensor(gh_x, dtype=torch.float32).view(1, 1, -1)
     logw_t = torch.as_tensor(np.log(gh_w), dtype=torch.float32).view(1, 1, -1)
     # Constant change-of-variables term mapping standardised-space NLPD back
     # to the original target scale (mean over horizons of log y_std).

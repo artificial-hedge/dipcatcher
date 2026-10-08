@@ -1,4 +1,4 @@
-"""Endgame tablebase — retrograde distance-to-mate on a finite game.
+"""Endgame tablebase — retrograde distance-to-mate on a finite game (SYNTHETIC).
 
 Game: a linear race. Two pawns on a track of L cells; the side to move
 advances its own pawn 1 or 2 cells, or captures (lands on the enemy cell,

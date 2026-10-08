@@ -139,7 +139,8 @@ def bench_romano_wolf(
     x = synth_rw(seed=seed)
     r = rw_stepdown(x, alpha=0.10, n_boot=250, seed=seed)
     rej_raw = r["rejects"]
-    assert isinstance(rej_raw, list)
+    if not (isinstance(rej_raw, list)):
+        raise ValueError("isinstance(rej_raw, list)")
     rej = set(rej_raw)
     padj = np.asarray(r["p_adj"])
     # weak strategy 2 may or may not survive; nulls must not
@@ -152,10 +153,10 @@ def bench_romano_wolf(
     bonf_rej = int(np.sum(bonf_p < 0.10))
     ok = ok and len(rej) >= bonf_rej
     return {
-        "n_reject": float(len(rej)),
-        "n_bonf_reject": float(bonf_rej),
-        "strongest_survives": float(0 in rej),
-        "null_dropped": float(not ({3, 4, 5} & rej)),
-        "min_null_padj": float(np.min(padj[3:])),
-        "score": float(ok),
+        "synthetic_n_reject": float(len(rej)),
+        "synthetic_n_bonf_reject": float(bonf_rej),
+        "synthetic_strongest_survives": float(0 in rej),
+        "synthetic_null_dropped": float(not ({3, 4, 5} & rej)),
+        "synthetic_min_null_padj": float(np.min(padj[3:])),
+        "synthetic_score": float(ok),
     }

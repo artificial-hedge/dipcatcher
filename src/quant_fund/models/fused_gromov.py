@@ -1,4 +1,4 @@
-"""Fused Gromov-Wasserstein canon (Vayer, Chapel, Flamary,
+"""Fused Gromov-Wasserstein canon (Vayer, Chapel, Flamary, (SYNTHETIC)
 Tavenard & Fournier 2019): FGW mixes a feature-space
 Wasserstein term with the structural GW term,
 alpha*<M,P> + (1-alpha)*GW — on synthetic attributed

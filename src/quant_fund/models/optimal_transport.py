@@ -1,4 +1,4 @@
-"""Optimal-transport primitives for distributional alignment.
+"""Optimal-transport primitives for distributional alignment (SYNTHETIC).
 
 - ``sinkhorn_plan``: entropic OT between two empirical measures on a cost
   matrix, computed in the log domain for numerical stability

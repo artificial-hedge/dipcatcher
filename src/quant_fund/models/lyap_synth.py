@@ -1,4 +1,4 @@
-"""Control-Lyapunov-function synthesis (wave 279).
+"""Control-Lyapunov-function synthesis (wave 279) (SYNTHETIC).
 
 System x'' = u with V = 0.5(x1^2 + x2^2). The Sontag/CLF control
 u = -x1 - c x2 renders V-dot = -c x2^2 <= 0; driving the system with the

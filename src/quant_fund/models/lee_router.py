@@ -1,4 +1,4 @@
-"""Lee maze router: BFS wave propagation on a 2-D grid with obstacles.
+"""Lee maze router: BFS wave propagation on a 2-D grid with obstacles (SYNTHETIC).
 
 Routes multi-pin nets sequentially; each routed net becomes an obstacle.
 Verified: all nets routed (or reported unroutable), zero cell overlaps

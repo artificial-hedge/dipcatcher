@@ -1,4 +1,4 @@
-"""Persistent CD (Tieleman 2008) — negative phase continues a
+"""Persistent CD (Tieleman 2008) — negative phase continues a (SYNTHETIC)
 persistent Langevin chain across updates (fantasy particles), better
 mode coverage than CD-k; MMD vs Gaussian baseline.
 """
@@ -41,5 +41,5 @@ def bench_persistent_cd(seed: int = 2447, iters: int = 500, k: int = 8) -> dict[
         "synthetic_pcd_mmd": m,
         "synthetic_gauss_mmd": mb,
         "synthetic_pcd_gain": mb - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

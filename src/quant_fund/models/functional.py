@@ -1,4 +1,4 @@
-"""Functional data analysis: FPCA and function-on-scalar regression
+"""Functional data analysis: FPCA and function-on-scalar regression (SYNTHETIC)
 (Ramsay & Silverman).
 
 Curves are stored as an (n, G) matrix observed on a common grid.

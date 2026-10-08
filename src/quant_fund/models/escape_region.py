@@ -1,4 +1,4 @@
-"""Region inference for stack allocation (Tofte–Talpin lite).
+"""Region inference for stack allocation (Tofte–Talpin lite) (SYNTHETIC).
 
 Each expression is annotated with the region its result lives in:
 ("letregion",r,body) introduces a region, ("at",e,r) allocates e in r,

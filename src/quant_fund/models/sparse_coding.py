@@ -1,4 +1,4 @@
-"""Sparse coding: orthogonal matching pursuit (Pati 1993)
+"""Sparse coding: orthogonal matching pursuit (Pati 1993) (SYNTHETIC)
 and K-SVD dictionary learning (Aharon-Elad-Bruckstein
 2006). Synthetic bench gates OMP support recovery and
 K-SVD reconstruction of signals generated from a planted

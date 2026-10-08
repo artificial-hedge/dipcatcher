@@ -1,4 +1,4 @@
-"""Kirchhoff (diffraction-stack) poststack time migration.
+"""Kirchhoff (diffraction-stack) poststack time migration (SYNTHETIC).
 
 Exploding reflector model: image(x, z) += trace(x_r, t = 2*dist/v).
 A point diffractor appears as a hyperbola in the unmigrated section

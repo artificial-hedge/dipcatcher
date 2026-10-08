@@ -1,4 +1,4 @@
-"""GPS C/A Gold codes — 1023-chip PRN spreading sequences.
+"""GPS C/A Gold codes — 1023-chip PRN spreading sequences (SYNTHETIC).
 
 Two 10-bit maximal-length LFSRs: G1 = x^10 + x^3 + 1 and
 G2 = x^10 + x^9 + x^8 + x^6 + x^3 + x^2 + 1. A satellite's PRN code

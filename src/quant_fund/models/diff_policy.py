@@ -124,5 +124,5 @@ def bench_diff_policy(seed: int = 83) -> dict[str, float]:
         "synthetic_diffpolicy_twap_cost": eval_twap,
         "synthetic_diffpolicy_margin_vs_rand": eval_rand - eval_diff,
         "synthetic_diffpolicy_margin_vs_twap": eval_twap - eval_diff,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

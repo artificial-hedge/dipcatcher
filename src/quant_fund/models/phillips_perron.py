@@ -130,9 +130,9 @@ def bench_phillips_perron(
     r_st = pp_test(st)
     ok = r_rw["reject_unit_root"] == 0.0 and r_st["reject_unit_root"] == 1.0
     return {
-        "z_pi_rw": r_rw["z_pi"],
-        "z_t_rw": r_rw["z_t"],
-        "z_pi_st": r_st["z_pi"],
-        "z_t_st": r_st["z_t"],
-        "score": float(ok),
+        "synthetic_z_pi_rw": r_rw["z_pi"],
+        "synthetic_z_t_rw": r_rw["z_t"],
+        "synthetic_z_pi_st": r_st["z_pi"],
+        "synthetic_z_t_st": r_st["z_t"],
+        "synthetic_score": float(ok),
     }

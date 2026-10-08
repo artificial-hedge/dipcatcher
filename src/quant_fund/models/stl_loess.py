@@ -189,6 +189,6 @@ def bench_stl(seed: int = 20261231 + 339) -> dict[str, float]:
         "synthetic_stl_trend_corr": trend_corr,
         "synthetic_stl_seasonal_corr": seas_corr,
         "synthetic_stl_seasonal_strength": strength["seasonal_strength"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

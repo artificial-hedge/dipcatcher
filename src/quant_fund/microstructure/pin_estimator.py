@@ -157,7 +157,8 @@ def fit_pin(days: NDArray[np.float64]) -> PinFit:
             )
             if best is None or fit.loglik > best.loglik:
                 best = fit
-    assert best is not None  # noqa: S101 - multi-start always returns a row
+    if not (best is not None):
+        raise ValueError("best is not None")  # noqa: S101 - multi-start always returns a row
     return best
 
 

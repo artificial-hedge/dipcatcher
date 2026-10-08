@@ -1,4 +1,4 @@
-"""ARMA(p,q) estimation: conditional sum of squares + Hannan-Rissanen.
+"""ARMA(p,q) estimation: conditional sum of squares + Hannan-Rissanen (SYNTHETIC).
 
 - ``arma_css``: minimize the conditional SSR (e_t = 0 for t <= maxlag)
   over (phi, theta) by least squares on the filter recursion.

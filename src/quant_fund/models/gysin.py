@@ -1,4 +1,4 @@
-"""Gysin / pullback-pushforward intersection maps (SYNTHIC)."""
+"""Gysin / pullback-pushforward intersection maps (SYNTHIC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

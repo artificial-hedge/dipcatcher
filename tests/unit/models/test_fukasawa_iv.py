@@ -644,8 +644,11 @@ class TestDeterminismAndBench:
             for bad in ("sharpe", "sortino", "calmar", "pnl", "nav", "return"):
                 assert bad not in low, key
         assert out["synthetic"] == 1.0
-        assert out["deterministic_vol_abs_resid"] < 5e-4
-        assert out["small_volvol_scaled_resid_a25"] < out["small_volvol_scaled_resid_a50"]
-        assert out["normalization_gap"] < 5e-3
-        assert out["runtime_seconds"] > 0.0
+        assert out["synthetic_deterministic_vol_abs_resid"] < 5e-4
+        assert (
+            out["synthetic_small_volvol_scaled_resid_a25"]
+            < out["synthetic_small_volvol_scaled_resid_a50"]
+        )
+        assert out["synthetic_normalization_gap"] < 5e-3
+        assert out["synthetic_runtime_seconds"] > 0.0
         assert F.SYNTHETIC_LABEL.lower().startswith("synthetic")

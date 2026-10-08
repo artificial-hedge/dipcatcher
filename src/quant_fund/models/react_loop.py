@@ -1,4 +1,4 @@
-"""ReAct — interleaved reasoning + acting (Yao et al. 2023).
+"""ReAct — interleaved reasoning + acting (Yao et al. 2023) (SYNTHETIC).
 
 An agent that observes state each step and picks the greedy-to-goal
 action solves the tool-graph task far more often than a blind agent

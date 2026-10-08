@@ -46,5 +46,5 @@ def test_input_validation() -> None:
 
 def test_bench_contract() -> None:
     out = bench_convexity()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_cx_mc_err_bp"] < 1.0

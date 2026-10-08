@@ -1,4 +1,4 @@
-"""Olley-Pakes (1996) production function estimation.
+"""Olley-Pakes (1996) production function estimation (SYNTHETIC).
 
 Simultaneity: the firm sees productivity ω before choosing
 variable inputs, so OLS on lnk is biased. OP uses investment

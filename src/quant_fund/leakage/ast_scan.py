@@ -248,10 +248,15 @@ def _receiver_price_like(receiver: ast.AST) -> bool:
         # Chained transforms still read the underlying series:
         # `close.fill_null(0).shift(-1)` (method receiver) and
         # `np.log(close).shift(-1)` (function argument) were silent misses.
-        if isinstance(func, ast.Attribute) and _receiver_price_like(func.value):
+        if _chained_method_receiver_price_like(func):
             return True
         return any(_receiver_price_like(arg) for arg in receiver.args)
     return False
+
+
+def _chained_method_receiver_price_like(func: ast.expr) -> bool:
+    """True when a method call's own receiver chain is price-like."""
+    return isinstance(func, ast.Attribute) and _receiver_price_like(func.value)
 
 
 def _shift_call_parts(node: ast.AST) -> tuple[ast.AST, ast.AST] | None:
@@ -938,6 +943,21 @@ _SQL_ENTRY_NAMES = frozenset({"sql", "execute", "read_sql", "read_sql_query"})
 _EVAL_NAMES = frozenset({"eval", "exec", "compile"})
 
 
+def _lh009_getattr_findings(node: ast.Call, module_assigns: _ScopeAssigns) -> list[_Finding]:
+    """ADVERSARIAL §1a-E12: findings for ``getattr(pl, "read_" + "parquet")(path)``."""
+    attr = _fold_str(node.args[1], module_assigns, node.lineno)
+    if attr is not None and attr in _BLOCKED_IO_NAMES:
+        return [
+            _Finding(
+                "LH009",
+                node.lineno,
+                node.col_offset,
+                f"dynamic getattr(.., {attr!r}) parquet read bypasses the PIT choke point",
+            )
+        ]
+    return []
+
+
 def _check_lh009(tree: ast.AST, path_str: str) -> list[_Finding]:
     # tests/** is exempt EXCEPT the seeded-leak fixture suite, which must stay
     # scannable (same carve-out as LH005, DESIGN.md §6.4).
@@ -971,16 +991,7 @@ def _check_lh009(tree: ast.AST, path_str: str) -> list[_Finding]:
             )
         # ADVERSARIAL §1a-E12: getattr(pl, "read_" + "parquet")(path).
         elif name == "getattr" and len(node.args) >= 2:
-            attr = _fold_str(node.args[1], module_assigns, node.lineno)
-            if attr is not None and attr in _BLOCKED_IO_NAMES:
-                out.append(
-                    _Finding(
-                        "LH009",
-                        node.lineno,
-                        node.col_offset,
-                        f"dynamic getattr(.., {attr!r}) parquet read bypasses the PIT choke point",
-                    )
-                )
+            out.extend(_lh009_getattr_findings(node, module_assigns))
         # ADVERSARIAL §1a-E13: duckdb.sql("select * from read_parquet(...)"),
         # conn.execute(...), eval/exec of a generated call string.
         elif name in _SQL_ENTRY_NAMES or name in _EVAL_NAMES:

@@ -1,4 +1,4 @@
-"""Gottesman-Knill stabilizer-tableau simulator.
+"""Gottesman-Knill stabilizer-tableau simulator (SYNTHETIC).
 
 n-qubit state tracked as a 2n x (2n+1) binary tableau: rows 0..n-1
 destabilizers, n..2n-1 stabilizers; columns 0..n-1 X bits, n..2n-1 Z bits,

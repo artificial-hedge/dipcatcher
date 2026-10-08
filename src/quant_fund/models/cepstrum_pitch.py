@@ -1,4 +1,4 @@
-"""Real cepstrum pitch detection on a harmonic train.
+"""Real cepstrum pitch detection on a harmonic train (SYNTHETIC).
 
 cepstrum = IFFT(log |FFT(x)|^2); the pitch peak sits at quefrency
 1/f0. Bench: detected f0 vs the planted 120 Hz fundamental, and the

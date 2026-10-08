@@ -1,4 +1,4 @@
-"""Corsi HAR realized-volatility model.
+"""Corsi HAR realized-volatility model (SYNTHETIC).
 
 The heterogeneous autoregression forecasts h-step-ahead
 realized variance from daily, weekly, and monthly RV

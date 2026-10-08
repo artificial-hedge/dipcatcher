@@ -1,4 +1,4 @@
-"""Generalized second-price (GSP) position auction.
+"""Generalized second-price (GSP) position auction (SYNTHETIC).
 
 Slots with click-through rates c_1 > c_2 > ...; bidders ranked by bid,
 each pays the next bidder's bid per click. Bench: GSP revenue vs VCG

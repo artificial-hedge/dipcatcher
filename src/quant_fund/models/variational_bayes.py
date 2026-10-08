@@ -1,4 +1,4 @@
-"""Mean-field variational Bayes for a Gaussian mean + precision.
+"""Mean-field variational Bayes for a Gaussian mean + precision (SYNTHETIC).
 
 CAVI on q(mu)=N(m,s2), q(tau)=Gamma(a,b) for x ~ N(mu, 1/tau).
 Bench: posterior mean/credible width vs the closed-form Normal-Gamma

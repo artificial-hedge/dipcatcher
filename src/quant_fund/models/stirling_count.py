@@ -1,4 +1,4 @@
-"""Stirling numbers of the second kind and Bell numbers (wave 282).
+"""Stirling numbers of the second kind and Bell numbers (wave 282) (SYNTHETIC).
 
 S(n,k) = k*S(n-1,k) + S(n-1,k-1); B(n) = sum_k S(n,k). Inclusion-exclusion
 oracle: S(n,k) = (1/k!) sum_j (-1)^j C(k,j) (k-j)^n.

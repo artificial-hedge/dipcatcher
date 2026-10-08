@@ -1,4 +1,4 @@
-"""POMCP (Silver & Veness 2010) — Monte-Carlo tree search over
+"""POMCP (Silver & Veness 2010) — Monte-Carlo tree search over (SYNTHETIC)
 histories with an unweighted particle belief and UCB1 action
 selection. Each simulation draws a state from B(h), simulates via the
 generative model, and backs up returns along the history tree.

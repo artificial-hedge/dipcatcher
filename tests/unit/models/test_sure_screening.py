@@ -63,5 +63,5 @@ def test_sis_input_validation():
 
 def test_bench_sure_screening():
     out = bench_sure_screening()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_sis_strong_found"] == 1.0

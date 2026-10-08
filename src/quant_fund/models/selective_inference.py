@@ -1,4 +1,4 @@
-"""Post-selection (polyhedral) confidence intervals.
+"""Post-selection (polyhedral) confidence intervals (SYNTHETIC).
 
 Lee, Sun, Sun & Taylor (2016, "Exact post-selection inference, with
 application to the lasso"): when the model/variable report was chosen by a

@@ -1,4 +1,4 @@
-"""Liquid refinement types: {ν:T | φ} subtyping via VC checking over a
+"""Liquid refinement types: {ν:T | φ} subtyping via VC checking over a (SYNTHETIC)
 finite domain (small-model property used here as decision procedure).
 
 Refinements: ("ref",base,pred) where pred is a small expression in ν.

@@ -1,4 +1,4 @@
-"""Second-order and fourth-order blind source
+"""Second-order and fourth-order blind source (SYNTHETIC)
 separation (BSS).
 
 Canonical references:

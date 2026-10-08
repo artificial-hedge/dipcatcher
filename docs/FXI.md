@@ -1,18 +1,24 @@
 # fxi — interactive CLI for fx-1
 
-`fxi` is the interactive front door to fx-1 and the dipcatcher harness.
-Bare `fxi` opens the **concierge console** — conversational orchestration
-with `/superpower` capability planning, background deep web research, and
-persistent flash-context memory. See `docs/DIP_CONCIERGE.md` for the full
-workflow; this page covers endpoints, security, and the classic shell.
+`dipcatcher` now opens the **concierge console** in an interactive terminal;
+`fxi` remains a compatible launcher for the same conversation with **fx1** or
+**fx1-lite**. The console includes `/superpower` command planning, background
+web research, and persistent flash-context memory. Research-family suitability
+and durable session/job recovery remain open. See [the CLI guide](DIP_CONCIERGE.md)
+for the working-tree status and full workflow; this page covers endpoints,
+security, and the classic shell.
 **fx1 and fx1-lite are model names** — each has one *endpoint* here: an API
 key plus a base URL, stored locally and injected into harness commands, so
 `fx1 eval`, hosted chat, and verification runs pick up your credentials
 without exporting env vars by hand.
 
-Typing `dipcatcher` with no arguments starts the onboarding wizard: enter
-your API key (not echoed), a base URL (default: Moonshot's hosted endpoint),
-pick a model — then it drops you into the interactive harness shell.
+`fxi setup` runs the onboarding wizard: enter your API key (not echoed), a
+base URL (default: Moonshot's hosted endpoint), pick a model — then it drops
+you into the chat. Bare `dipcatcher` opens chat directly; `/keys set fx1`
+configures both the masked key and endpoint URL there. Bare redirected
+`dipcatcher` prints help without consuming stdin. `dipcatcher chat --model
+fx1-lite` requires terminal stdin/stdout; use existing explicit lab or `fxi`
+one-shot commands for scripts.
 
 ## Model endpoints
 
@@ -63,7 +69,7 @@ disabled for non-TTY output, when `NO_COLOR` is set, or when
 ### curl
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/artificial-hedra/dipcatcher/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/artificial-hedge/dipcatcher/main/install.sh | sh
 ```
 
 The installer needs Python ≥ 3.12 (set `FXI_PYTHON=/path/to/python` to pick
@@ -72,7 +78,10 @@ the matching GitHub release, and symlinks `fxi` (plus `fx1`, `dipcatcher`,
 `quant`, `verify-ledger`, `mc-engine`) into `~/.local/bin`. It never uses
 sudo. Overrides: `FXI_VERSION`, `FXI_INSTALL_URL` (wheel URL), `FXI_HOME`,
 `FXI_BIN_DIR`; flags `--wheel dist/....whl` (local dev install),
-`--uninstall`.
+`--uninstall`. Set `FXI_WHEEL_SHA256=<hex>` to pin the wheel checksum — the
+installer verifies it **before** pip install and warns when a download is
+unpinned. The installer refuses destructive `FXI_HOME` values (empty, `/`, or
+`$HOME`), and `sh install.sh --help` works even under `curl | sh`.
 
 ### Homebrew (tap)
 
@@ -90,15 +99,17 @@ release checklist below.
 ## Quickstart
 
 ```sh
-# First run launches a wizard (API key, base URL) → harness shell
-dipcatcher
+dipcatcher              # chat; /keys set fx1 configures the endpoint inside it
+dipcatcher chat --model fx1-lite  # choose the starting model
+fxi setup               # optional standalone setup wizard → the chat
+fxi                     # compatibility entry for the same chat
 fxi keys list           # presence-only endpoint table
 fxi doctor              # fx-1 state, endpoints, store, API reachability
 fxi chat                # multi-turn chat with the active model (orb while it thinks)
 fxi eval                # the fx-1 eval bank (proper scores, honesty gate)
 ```
 
-Inside the shell (prompt shows `model@host`):
+Inside the classic `fxi shell` (prompt shows `model@host`):
 
 ```
 fxi · fx1@api.moonshot.ai › keys              # endpoint table
@@ -119,7 +130,7 @@ One-shot equivalents: `fxi keys …`, `fxi doctor`, `fxi eval [--out PATH]`,
 ## Uninstall
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/artificial-hedra/dipcatcher/main/install.sh | sh -s -- --uninstall
+curl -fsSL https://raw.githubusercontent.com/artificial-hedge/dipcatcher/main/install.sh | sh -s -- --uninstall
 # or, if install.sh is checked out:  ./install.sh --uninstall
 rm -rf ~/.fx1   # also delete stored endpoints
 ```

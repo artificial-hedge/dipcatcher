@@ -1,4 +1,4 @@
-"""VRNN (Chung et al. 2015) — variational RNN: per-step latent z_t with
+"""VRNN (Chung et al. 2015) — variational RNN: per-step latent z_t with (SYNTHETIC)
 prior conditioned on h_{t-1}, posterior on (x_t, h_{t-1}); ELBO on
 synthetic Markov-switching series. Next-step NLL vs plain GRU AE.
 """
@@ -94,5 +94,5 @@ def bench_vrnn_seq(seed: int = 739, steps: int = 2200, T: int = 16) -> dict[str,
         "synthetic_vrnn_step_nll": float(nll),
         "synthetic_vrnn_baseline_nll": base,
         "synthetic_vrnn_nll_gain": base - float(nll),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

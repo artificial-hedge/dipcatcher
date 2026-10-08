@@ -61,6 +61,14 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_bandi_russell()
-    for k in ("rv_br", "iv_true", "err_br", "err_naive", "improvement", "m_star", "score"):
+    for k in (
+        "synthetic_rv_br",
+        "synthetic_iv_true",
+        "synthetic_err_br",
+        "synthetic_err_naive",
+        "synthetic_improvement",
+        "synthetic_m_star",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

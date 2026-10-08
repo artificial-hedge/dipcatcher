@@ -147,5 +147,5 @@ def bench_hypernetwork_alloc(seed: int = 71) -> dict[str, float]:
         "synthetic_hypernet_holdout_flat_ret": h_flat,
         "synthetic_hypernet_holdout_ew_ret": h_ew,
         "synthetic_hypernet_holdout_margin_vs_flat": h_hyper - h_flat,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

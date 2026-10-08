@@ -1,4 +1,4 @@
-"""Polychoric and tetrachoric correlations for ordinal indicators.
+"""Polychoric and tetrachoric correlations for ordinal indicators (SYNTHETIC).
 
 Olsson (1979) / Drasgow (1986): ordinal items x, y on {1..Kx}, {1..Ky}
 are assumed discretizations of latent bivariate normals (z1, z2) with
@@ -167,5 +167,5 @@ def bench_polychoric(seed: int = 20261231 + 411) -> dict[str, float]:
         "synthetic_polychoric_err": float(err),
         "synthetic_polychoric_rho": float(out["rho"]),
         "synthetic_tetrachoric_err": float(err22),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

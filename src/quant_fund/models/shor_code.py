@@ -1,4 +1,4 @@
-"""Shor [[9,1,3]] code: concatenated 3-qubit repetition in X and Z bases.
+"""Shor [[9,1,3]] code: concatenated 3-qubit repetition in X and Z bases (SYNTHETIC).
 
 |0_L> = ((|000>+|111>)/sqrt2)^⊗3, |1_L> = ((|000>-|111>)/sqrt2)^⊗3.
 Decode: per-block majority vote repairs bit flips coherently (amplitudes at

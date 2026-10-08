@@ -1,4 +1,4 @@
-"""Global value numbering + redundant-computation elimination.
+"""Global value numbering + redundant-computation elimination (SYNTHETIC).
 
 Verified: optimized program computes identical outputs; redundant
 binop count strictly decreases when duplicates injected.

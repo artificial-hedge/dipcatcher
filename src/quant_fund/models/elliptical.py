@@ -1,4 +1,4 @@
-"""Multivariate Student-t (elliptical) distribution fit via EM.
+"""Multivariate Student-t (elliptical) distribution fit via EM (SYNTHETIC).
 
 The multivariate t with location ``mu``, scatter ``Sigma`` and degrees of
 freedom ``nu`` is the canonical heavy-tailed elliptical model.  It is fitted by

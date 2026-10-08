@@ -1,4 +1,4 @@
-"""k-induction safety checker (synthetic).
+"""k-induction safety checker (synthetic) (SYNTHETIC).
 
 Proves a state predicate ``phi`` is an invariant of a small integer
 transition system by the classic two-obligation scheme:

@@ -1,4 +1,4 @@
-"""Outcome-sampling MCCFR (Lanctot et al. 2009) — Monte Carlo CFR
+"""Outcome-sampling MCCFR (Lanctot et al. 2009) — Monte Carlo CFR (SYNTHETIC)
 on Kuhn poker: sample one terminal history per info set per pass,
 update tabular regrets on the sampled subtree. Exploitability vs the
 tabular full-traversal CFR reference.
@@ -80,5 +80,5 @@ def bench_mccfr_outcome(seed: int = 2701, iters: int = 4000) -> dict[str, float]
         "synthetic_mccfr_expl": expl,
         "synthetic_random_expl": ref,
         "synthetic_mccfr_drop": ref - expl,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

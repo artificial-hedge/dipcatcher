@@ -79,8 +79,8 @@ def torch_available() -> bool:
 
 def _check_events(times: FloatArray, marks: IntArray, n_marks: int) -> tuple[FloatArray, IntArray]:
     t = np.asarray(times, dtype=float).ravel()
-    k = np.asarray(marks, dtype=np.int64).ravel()
-    if t.size != k.size:
+    mk = np.asarray(marks, dtype=np.float64).ravel()
+    if t.size != mk.size:
         raise ValueError("times and marks must have equal length")
     if t.size < 4:
         raise ValueError("need >= 4 events")
@@ -88,6 +88,9 @@ def _check_events(times: FloatArray, marks: IntArray, n_marks: int) -> tuple[Flo
         raise ValueError("times contain non-finite values")
     if np.any(np.diff(t) <= 0):
         raise ValueError("times must be strictly increasing")
+    if not np.all(np.isfinite(mk)) or not np.all(mk == np.floor(mk)):
+        raise ValueError("marks must be integer-valued category codes")
+    k = mk.astype(np.int64)
     if k.min() < 0 or k.max() >= n_marks:
         raise ValueError(f"marks must be in [0, {n_marks})")
     return t, k
@@ -143,7 +146,7 @@ def hawkes_mle_univariate(times: FloatArray) -> dict[str, float]:
 
     x0 = np.log(np.array([0.5 * t.size / horizon, 0.5, 1.0]))
     res = minimize(nll, x0, method="Nelder-Mead", options={"maxiter": 400})
-    if not np.isfinite(res.fun):
+    if not np.isfinite(res.fun) or float(res.fun) >= 1e11:
         raise ValueError("hawkes MLE did not converge")
     mu, alpha, beta = np.exp(res.x)
     return {

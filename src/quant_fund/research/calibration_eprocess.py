@@ -191,7 +191,8 @@ class CalibrationEProcess:
             self._wealth_path.append(self.wealth)
             self._n += 1
             return self.wealth
-        assert self.channels is not None
+        if not (self.channels is not None):
+            raise ValueError("self.channels is not None")
         for name, f in self.channels.items():
             self._wealths[name] *= f(u)
         self._n += 1

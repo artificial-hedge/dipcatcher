@@ -1,4 +1,4 @@
-"""Joint probabilistic data association (JPDA) filter for one target
+"""Joint probabilistic data association (JPDA) filter for one target (SYNTHETIC)
 in clutter.
 
 Canonical reference: Bar-Shalom & Fortmann (1988). Enumerates all

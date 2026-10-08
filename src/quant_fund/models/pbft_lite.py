@@ -1,4 +1,4 @@
-"""PBFT-lite Byzantine agreement (synthetic).
+"""PBFT-lite Byzantine agreement (synthetic) (SYNTHETIC).
 
 3f+1 replicas, one primary, f Byzantine (send arbitrary votes).
 Phases: pre-prepare → prepare → commit; a replica commits on 2f+1

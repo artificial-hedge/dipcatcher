@@ -1,4 +1,4 @@
-"""Conjugate Bayesian linear regression and Bayesian model averaging.
+"""Conjugate Bayesian linear regression and Bayesian model averaging (SYNTHETIC).
 
 Normal-Inverse-Gamma model: y = X b + eps, eps ~ N(0, s^2 I);
 b | s^2 ~ N(b0, s^2 V0); s^2 ~ IG(a0, b0_scale).

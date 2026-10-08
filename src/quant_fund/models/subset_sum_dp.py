@@ -1,4 +1,4 @@
-"""Subset-sum dynamic program vs brute-force oracle (wave 282).
+"""Subset-sum dynamic program vs brute-force oracle (wave 282) (SYNTHETIC).
 
 DP table over reachable sums; count witnesses via backtracking-equivalent
 path counts. Verified against exhaustive enumeration on random instances.

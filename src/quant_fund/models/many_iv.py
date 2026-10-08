@@ -1,4 +1,4 @@
-"""Many / weak instrument estimators: LIML, JIVE, HFUL.
+"""Many / weak instrument estimators: LIML, JIVE, HFUL (SYNTHETIC).
 
 When K instruments are each individually weak, 2SLS is biased toward
 OLS; the k-class estimators here stay median-unbiased: LIML (lowest

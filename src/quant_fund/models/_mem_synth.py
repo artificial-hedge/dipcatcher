@@ -1,4 +1,4 @@
-"""Shared synthetic fixtures for the wave-138 memory + world-model canon.
+"""Shared synthetic fixtures for the wave-138 memory + world-model canon (SYNTHETIC).
 
 - `synth_copy`: read a K-symbol one-hot sequence, then emit it — memory
   mechanisms (external store, kNN over past keys, LSH buckets) are what

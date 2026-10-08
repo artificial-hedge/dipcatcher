@@ -1,4 +1,4 @@
-"""Poisson pseudo-maximum-likelihood (PPML) gravity estimation.
+"""Poisson pseudo-maximum-likelihood (PPML) gravity estimation (SYNTHETIC).
 
 Multiplicative models y = exp(xβ)·ε estimated consistently by
 Poisson PML even under heteroskedasticity — where the log-linear

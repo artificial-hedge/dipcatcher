@@ -16,6 +16,14 @@ from quant_fund.cli.benchmark_cmds import (
     ranker_probability_app,
     real_benchmark_app,
 )
+
+# SOTA / forward-evidence operator surface. Restored on this branch after the
+# mount was found missing; independently re-added upstream by 8eb627ff2. Kept
+# here because ``dipcatcher forward-shadow freeze`` -- the command
+# ``docs/INSTITUTIONAL_READINESS.md`` names for closing institutional
+# condition 3 -- is unreachable without it. ``sota_cmds`` imports only stdlib +
+# typer at module level (shared helpers are lazy), so this cannot reintroduce the
+# ``cli.support -> cli._app`` cycle its docstring warns about.
 from quant_fund.cli.sota_cmds import (
     forward_shadow_app,
     prospective_sota_app,

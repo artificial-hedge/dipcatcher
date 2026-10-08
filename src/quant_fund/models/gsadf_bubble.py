@@ -341,10 +341,10 @@ def bench_gsadf(seed: int = 20261231 + 294) -> dict[str, float]:
     tranquil_fp = float(np.sum(flags[: int(d["start"]) - 10]))
     ok = overlap >= 15.0 and flagged > 0.0 and tranquil_fp <= 2.0
     return {
-        "gsadf": float(out["gsadf"]),
-        "cv95": cvs["gsadf_q95"],
-        "overlap": overlap,
-        "flagged": flagged,
-        "tranquil_fp": tranquil_fp,
-        "score": float(ok),
+        "synthetic_gsadf": float(out["gsadf"]),
+        "synthetic_cv95": cvs["gsadf_q95"],
+        "synthetic_overlap": overlap,
+        "synthetic_flagged": flagged,
+        "synthetic_tranquil_fp": tranquil_fp,
+        "synthetic_score": float(ok),
     }

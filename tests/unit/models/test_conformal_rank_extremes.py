@@ -117,12 +117,12 @@ def test_planted_edge_low_noise_coverage_honesty() -> None:
         seed=18,
         guarantee="set_coverage",
     )
-    assert row["guarantee"] == "set_coverage"
-    cov = float(row["coverage"])
+    assert row["synthetic_guarantee"] == "set_coverage"
+    cov = float(row["synthetic_coverage"])
     assert 0.0 <= cov <= 1.0
     # Strong planted edge → coverage near nominal (honesty: allow slack, no Sharpe)
-    assert cov >= 1.0 - float(row["alpha"]) - 0.10
-    assert float(row["set_size"]) >= 4.0
+    assert cov >= 1.0 - float(row["synthetic_alpha"]) - 0.10
+    assert float(row["synthetic_set_size"]) >= 4.0
     assert all("sharpe" not in str(k).lower() for k in row)
 
 
@@ -136,9 +136,9 @@ def test_planted_fdr_edge_finite_and_no_sharpe() -> None:
         seed=21,
         guarantee="fdr",
     )
-    assert np.isfinite(float(row["fdr"])) or np.isnan(float(row["fdr"]))
-    assert float(row["set_size"]) >= 0.0
-    assert int(row["n_dates"]) >= 10
+    assert np.isfinite(float(row["synthetic_fdr"])) or np.isnan(float(row["synthetic_fdr"]))
+    assert float(row["synthetic_set_size"]) >= 0.0
+    assert int(row["synthetic_n_dates"]) >= 10
     assert all("sharpe" not in str(k).lower() for k in row)
     # Forbidden portfolio keys must stay out of the bench dict
     forbidden = ("sharpe", "sortino", "calmar", "pnl", "nav")
@@ -156,7 +156,7 @@ def test_high_noise_does_not_claim_perfect_fdr() -> None:
         seed=99,
         guarantee="fdr",
     )
-    fdr = float(row["fdr"])
+    fdr = float(row["synthetic_fdr"])
     # Only require finite reporting — do NOT claim fdr <= alpha on this path
     assert np.isfinite(fdr)
     assert 0.0 <= fdr <= 1.0

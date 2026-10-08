@@ -1,4 +1,4 @@
-"""Shadow-map depth comparison: lit vs shadowed fragment classification."""
+"""Shadow-map depth comparison: lit vs shadowed fragment classification (SYNTHETIC)."""
 
 import numpy as np
 

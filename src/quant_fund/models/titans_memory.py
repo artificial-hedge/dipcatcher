@@ -1,4 +1,4 @@
-"""Titans neural memory (Behrouz et al. 2025) — memory is a model
+"""Titans neural memory (Behrouz et al. 2025) — memory is a model (SYNTHETIC)
 trained online by its own surprise: M_t = eta_t M_{t-1} - theta_t * grad
 on associative loss ||M^T k - v||². Momentum-style surprise writes.
 """
@@ -66,5 +66,5 @@ def bench_titans_memory(seed: int = 2263, iters: int = 800, D: int = 16) -> dict
         "synthetic_titans_recall": float(acc),
         "synthetic_attn_recall": base,
         "synthetic_titans_gain": float(acc) - base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Hazard-pointer reclamation simulator (Michael 2004): retired objects are
+"""Hazard-pointer reclamation simulator (Michael 2004): retired objects are (SYNTHETIC)
 freed only when no thread's hazard slot protects them."""
 
 import numpy as np

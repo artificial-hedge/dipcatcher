@@ -158,6 +158,6 @@ def bench_bl(seed: int = 20261231 + 365) -> dict[str, float]:
         "synthetic_bl_mu0": float(mu[0]),
         "synthetic_bl_pull0": float(pull[0]),
         "synthetic_bl_collapse_err": collapse,
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

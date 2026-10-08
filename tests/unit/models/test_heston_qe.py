@@ -59,6 +59,14 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_heston_qe()
-    for k in ("mean_v", "stat_var", "var_v", "min_v", "m_err", "s_err", "score"):
+    for k in (
+        "synthetic_mean_v",
+        "synthetic_stat_var",
+        "synthetic_var_v",
+        "synthetic_min_v",
+        "synthetic_m_err",
+        "synthetic_s_err",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

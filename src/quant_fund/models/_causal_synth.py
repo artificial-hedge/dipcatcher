@@ -1,4 +1,4 @@
-"""Causal-inference fixture: confounded treatment with known ITE.
+"""Causal-inference fixture: confounded treatment with known ITE (SYNTHETIC).
 
 x ~ N(0, I_5); propensity sigmoid(x0); t ~ Bern(e);
 y0 = x0 + 0.5*x1 + noise; tau(x) = 1 + x0 (heterogeneous);

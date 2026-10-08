@@ -1,4 +1,4 @@
-"""Large cardinal properties on finite/toy models (SYNTHIC)."""
+"""Large cardinal properties on finite/toy models (SYNTHIC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

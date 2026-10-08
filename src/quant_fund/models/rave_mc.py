@@ -1,4 +1,4 @@
-"""RAVE / AMAF MCTS — all-moves-as-first statistics accelerating UCT.
+"""RAVE / AMAF MCTS — all-moves-as-first statistics accelerating UCT (SYNTHETIC).
 
 Each node carries UCT stats plus AMAF stats updated for every move
 appearing later in the playout; terminal states are marked at node

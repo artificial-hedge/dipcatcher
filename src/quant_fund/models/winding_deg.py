@@ -1,4 +1,4 @@
-"""Degree of a circle map S^1 -> S^1 via discrete winding (wave 280).
+"""Degree of a circle map S^1 -> S^1 via discrete winding (wave 280) (SYNTHETIC).
 
 Sample the lifted map on a fine grid; the degree equals the signed
 wrap-count sum of angle increments over one period.

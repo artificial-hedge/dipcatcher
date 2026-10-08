@@ -1,4 +1,4 @@
-"""Gardner's relation rho = a * V^b: empirical density-velocity rule.
+"""Gardner's relation rho = a * V^b: empirical density-velocity rule (SYNTHETIC).
 
 Log-log least squares recovers (a, b); classic brine-saturated sediment
 values a=0.31, b=0.25 (V in m/s, rho in g/cc).

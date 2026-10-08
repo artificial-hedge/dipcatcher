@@ -1,4 +1,4 @@
-"""Cubature Kalman filter (3rd-degree spherical-radial rule) vs EKF on a
+"""Cubature Kalman filter (3rd-degree spherical-radial rule) vs EKF on a (SYNTHETIC)
 nonlinear range-bearing tracking problem; 2n cubature points.
 """
 

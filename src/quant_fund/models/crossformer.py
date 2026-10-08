@@ -1,4 +1,4 @@
-"""CrossFormer-TS: two-stage attention over time and channel.
+"""CrossFormer-TS: two-stage attention over time and channel (SYNTHETIC).
 
 Zhang & Yan 2023 (Crossformer): segment the series into patches,
 attend first *within* time segments per channel (TSW) then *across*
@@ -54,6 +54,7 @@ def bench_crossformer(
 ) -> dict[str, float]:
     """Patch-wise + cross-channel attention vs per-channel transformer."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_patch_coupled(n, win, n_ch, rng)
     xb = torch.tensor(xs, dtype=torch.float32)
@@ -111,7 +112,7 @@ def bench_crossformer(
         "synthetic_crossformer_mae": cf_mae,
         "synthetic_crossformer_perchan_mae": pc_mae,
         "synthetic_crossformer_margin_vs_perchan": pc_mae - cf_mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

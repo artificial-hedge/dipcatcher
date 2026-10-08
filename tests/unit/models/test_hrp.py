@@ -51,4 +51,4 @@ def test_fail_closed_asymmetric():
 
 def test_bench():
     out = bench_hrp()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

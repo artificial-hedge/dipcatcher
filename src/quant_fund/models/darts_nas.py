@@ -1,4 +1,4 @@
-"""DARTS — differentiable architecture search (Liu et al. 2019).
+"""DARTS — differentiable architecture search (Liu et al. 2019) (SYNTHETIC).
 
 Continuous mixing weights α over candidate widths on a single-layer
 net; bilevel alternation (weights on train, α on held-out slice);
@@ -71,5 +71,5 @@ def bench_darts_nas(
         "synthetic_darts_avg_acc": acc_rand,
         "synthetic_darts_gain": acc_pick - acc_rand,
         "synthetic_darts_pick_h": float(hidds[pick]),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Tabular MDP canon: policy evaluation (Bellman linear solve), value
+"""Tabular MDP canon: policy evaluation (Bellman linear solve), value (SYNTHETIC)
 iteration, policy iteration (Howard), and Q-value extraction.
 ``bench_mdp_solvers`` builds a stochastic grid-world-ish MDP where the
 optimal policy is known, and gates VI/PI recovering its value function

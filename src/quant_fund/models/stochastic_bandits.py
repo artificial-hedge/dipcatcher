@@ -1,4 +1,4 @@
-"""Stochastic multi-armed bandit canon: UCB1 (Auer,
+"""Stochastic multi-armed bandit canon: UCB1 (Auer, (SYNTHETIC)
 Cesa-Bianchi & Fischer 2002), constant-epsilon greedy, and
 explore-then-commit. Pseudo-regret is measured on a synthetic
 Bernoulli instance and compared across policies.

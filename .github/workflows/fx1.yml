@@ -11,12 +11,28 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Do NOT cancel in-flight runs — this is a gate, and a gate that gets
+  # cancelled before it finishes produces no verdict (see the 400-run
+  # zero-success history in ci.yml). The group key still serialises; runs are
+  # allowed to drain instead of being superseded by the next push.
+  cancel-in-progress: false
 
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Makefile TEST_ENV block, mirrored (keep both sides identical) — OpenMP
+    # thread pinning + fork/fault hardening (.dsh-24x7/lane_reports/l3-segfault.md
+    # 7.1). tests/fx1 loads torch (src/fx1/train/tiny_lm.py) via the shared
+    # tests/ conftest, so this lane gets the same pinning as the lab suite.
+    env:
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      VECLIB_MAXIMUM_THREADS: "1"
+      KMP_INIT_AT_FORK: "FALSE"
+      PYTHONFAULTHANDLER: "1"
+      TOKENIZERS_PARALLELISM: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -28,8 +44,11 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      # Gates are invoked through their Make targets so the CI gate and
+      # `make fx1-test` / `make fx1-lint` cannot drift (same commands, same
+      # flags, same testpaths).
       - name: Lint
-        run: uv run ruff check src/fx1 tests/fx1
+        run: make fx1-lint
       - name: Types
         run: |
           uv run mypy src/fx1
@@ -37,11 +56,11 @@ jobs:
           # --strict keeps new code strict at birth; no allowlist needed.
           uv run mypy --strict src/fx1
       - name: Tests
-        run: uv run pytest tests/fx1 -q
+        run: make fx1-test
       # Documented contract (docs/FX1_TRAINING.md): honesty inheritance is
       # blocking — fails if fx-1's forbidden set drifts from the lab catalog.
       - name: Honesty inheritance gate
-        run: uv run pytest tests/fx1 -q -k honesty
+        run: PYTHONPATH=src uv run pytest tests/fx1 -q -k honesty
       - name: Corpus contract smoke
         run: |
           uv run fx1 corpus build --receipts-dir receipts --out "$RUNNER_TEMP/fx1_corpus.jsonl"

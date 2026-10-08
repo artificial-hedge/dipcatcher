@@ -1,4 +1,4 @@
-"""Sparse regression: LARS path, orthogonal matching pursuit, adaptive
+"""Sparse regression: LARS path, orthogonal matching pursuit, adaptive (SYNTHETIC)
 LASSO (Zou 2006), and EBIC selection (Chen & Chen 2008).
 
 - ``lars_path``: least-angle regression with the lasso modification —

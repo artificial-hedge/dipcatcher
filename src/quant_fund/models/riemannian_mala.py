@@ -1,4 +1,4 @@
-"""Riemannian (metric-adapted) MALA — position-dependent diagonal
+"""Riemannian (metric-adapted) MALA — position-dependent diagonal (SYNTHETIC)
 metric M(x) = diag(1 + |∂²U|) preconditions proposals on the curved
 banana: proposal x + h/2 M⁻¹∇logp + √h M⁻¹ᐟ²z. ESS vs RWM.
 """
@@ -65,5 +65,5 @@ def bench_riemannian_mala(seed: int = 2233) -> dict[str, float]:
         "synthetic_rwm_ess": ess_b,
         "synthetic_rmala_ess_gain": ess - ess_b,
         "synthetic_rmala_moment_err": moment_err(smp, mu, sd),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

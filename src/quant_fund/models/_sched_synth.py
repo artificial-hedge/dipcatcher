@@ -1,4 +1,4 @@
-"""Shared fixture for wave-198 scheduling canon — flow-shop instances,
+"""Shared fixture for wave-198 scheduling canon — flow-shop instances, (SYNTHETIC)
 machine loads, knapsack items, TSP distance matrices.
 """
 

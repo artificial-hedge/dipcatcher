@@ -1,4 +1,4 @@
-"""Seed-and-extend local alignment (wave 284).
+"""Seed-and-extend local alignment (wave 284) (SYNTHETIC).
 
 Find exact k-mer seeds between query and subject, extend each seed
 ungapped in both directions while matches dominate, and report the best

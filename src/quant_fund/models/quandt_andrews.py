@@ -1,4 +1,4 @@
-"""Unknown-breakpoint stability tests.
+"""Unknown-breakpoint stability tests (SYNTHETIC).
 
 Canonical references:
 

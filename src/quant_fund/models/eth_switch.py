@@ -1,4 +1,4 @@
-"""Learning Ethernet switch: MAC table, flood-on-unknown, aging."""
+"""Learning Ethernet switch: MAC table, flood-on-unknown, aging (SYNTHETIC)."""
 
 import numpy as np
 

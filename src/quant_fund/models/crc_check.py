@@ -1,4 +1,4 @@
-"""CRC-32 (reflected Ethernet poly) and CRC-16-CCITT codecs.
+"""CRC-32 (reflected Ethernet poly) and CRC-16-CCITT codecs (SYNTHETIC).
 
 Bitwise table-free implementations; verified against the standard
 check vectors ("123456789" -> 0xCBF43926 / 0x29B1) and then exercised

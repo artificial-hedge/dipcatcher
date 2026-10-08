@@ -12,7 +12,7 @@ import numpy as np
 
 from quant_fund.config.models import AppConfig
 from quant_fund.metrics.scoring import mean_pinball, quantile_crossing_rate
-from quant_fund.models.base import load_joblib_artifact, save_joblib_artifact
+from quant_fund.models.base import load_joblib_artifact
 from quant_fund.models.conformal_dist import ConformalTDistribution
 from quant_fund.models.distribution import (
     EmpiricalDistribution,
@@ -27,6 +27,11 @@ from quant_fund.models.distribution import (
 from quant_fund.models.fhs import FhsSkewDistribution
 from quant_fund.models.lgbm_q2 import LGBMQ2Distribution
 from quant_fund.models.regime_dist import RegimeDistribution
+from quant_fund.pipeline.artifact_manifest import (
+    identity_for_training,
+    identity_from_artifact,
+    save_training_artifact,
+)
 from quant_fund.pipeline.dataset import design_matrix, panel
 from quant_fund.registry.mlflow_store import configure_tracking, log_run
 from quant_fund.utils.seeds import set_global_seed
@@ -121,7 +126,17 @@ def train_distribution(config: AppConfig, model_name: str = "gaussian") -> dict[
         tags={"data": config.data.source},
     )
     path = Path(config.data.root) / "metadata" / f"dist_{model_name}.joblib"
-    model.save(path)
+    save_training_artifact(
+        model,
+        path,
+        identity=identity_for_training(
+            df,
+            config=config,
+            label=label,
+            features=feats,
+            label_horizon_bars=_label_horizon(label),
+        ),
+    )
     return {"metrics": metrics, "run_id": run_id, "path": str(path)}
 
 
@@ -140,7 +155,11 @@ def train_distribution_auto(config: AppConfig) -> dict[str, Any]:
     selected = min(eligible, key=lambda r: float(r["metrics"]["mean_pinball"]))
     payload = load_joblib_artifact(Path(str(selected["path"])))
     auto_path = Path(config.data.root) / "metadata" / "dist_auto.joblib"
-    save_joblib_artifact(payload, auto_path)
+    save_training_artifact(
+        payload,
+        auto_path,
+        identity=identity_from_artifact(Path(str(selected["path"]))),
+    )
     selected_name = Path(str(selected["path"])).stem.removeprefix("dist_")
     return {
         "metrics": selected["metrics"],

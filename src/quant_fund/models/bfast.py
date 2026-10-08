@@ -189,6 +189,6 @@ def bench_bfast(seed: int = 20261231 + 362) -> dict[str, float]:
         "synthetic_bf_n_breaks": float(r["n_breaks"]),
         "synthetic_bf_clean_breaks": clean_breaks,
         "synthetic_bf_ssr_gain": 1.0 - float(r["ssr_final"]) / float(r["ssr0"]),
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

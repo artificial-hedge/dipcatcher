@@ -1,4 +1,4 @@
-"""SE(3) pose interpolation via Lie-group exp/log maps."""
+"""SE(3) pose interpolation via Lie-group exp/log maps (SYNTHETIC)."""
 
 from __future__ import annotations
 

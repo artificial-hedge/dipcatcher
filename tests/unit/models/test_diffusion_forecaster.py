@@ -686,43 +686,43 @@ def test_bench_keys_labels_and_claims() -> None:
         torf_epochs=200,
     )
     expected = {
-        "diffpts_crps",
-        "diffpts_endpoint_crps",
-        "ngboost_crps",
-        "torf_crps",
-        "crps_gain_vs_ngboost",
-        "crps_gain_vs_torf",
-        "diffpts_endpoint_log_score",
-        "ngboost_log_score",
-        "diffpts_mae",
-        "sample_mean_dev",
-        "coverage_90",
-        "pit_ks",
-        "pit_ks_pvalue",
-        "n_train",
-        "n_test",
-        "seed",
-        "noise",
-        "schedule",
-        "dgp",
-        "claim",
-        "synthetic",
+        "synthetic_diffpts_crps",
+        "synthetic_diffpts_endpoint_crps",
+        "synthetic_ngboost_crps",
+        "synthetic_torf_crps",
+        "synthetic_crps_gain_vs_ngboost",
+        "synthetic_crps_gain_vs_torf",
+        "synthetic_diffpts_endpoint_log_score",
+        "synthetic_ngboost_log_score",
+        "synthetic_diffpts_mae",
+        "synthetic_sample_mean_dev",
+        "synthetic_coverage_90",
+        "synthetic_pit_ks",
+        "synthetic_pit_ks_pvalue",
+        "synthetic_n_train",
+        "synthetic_n_test",
+        "synthetic_seed",
+        "synthetic_noise",
+        "synthetic_schedule",
+        "synthetic_dgp",
+        "synthetic_claim",
+        "synthetic_synthetic",
     }
     assert set(out) == expected
-    assert out["dgp"] == "fixture"
-    assert out["claim"] == "research_metric_only"
-    assert out["synthetic"] == "heteroskedastic_symmetric_seeded"
-    assert out["crps_gain_vs_ngboost"] > 0.0  # reference +0.023
-    assert float(out["diffpts_crps"]) <= float(out["ngboost_crps"]) + CRPS_TOL
+    assert out["synthetic_dgp"] == "fixture"
+    assert out["synthetic_claim"] == "research_metric_only"
+    assert out["synthetic_synthetic"] == "heteroskedastic_symmetric_seeded"
+    assert out["synthetic_crps_gain_vs_ngboost"] > 0.0  # reference +0.023
+    assert float(out["synthetic_diffpts_crps"]) <= float(out["synthetic_ngboost_crps"]) + CRPS_TOL
     assert (
         abs(
-            float(out["crps_gain_vs_ngboost"])
-            - (float(out["ngboost_crps"]) - float(out["diffpts_crps"]))
+            float(out["synthetic_crps_gain_vs_ngboost"])
+            - (float(out["synthetic_ngboost_crps"]) - float(out["synthetic_diffpts_crps"]))
         )
         < 1e-12
     )
-    assert 0.75 <= float(out["coverage_90"]) <= 0.96
-    assert abs(float(out["sample_mean_dev"])) <= 0.1  # reference 0.06
+    assert 0.75 <= float(out["synthetic_coverage_90"]) <= 0.96
+    assert abs(float(out["synthetic_sample_mean_dev"])) <= 0.1  # reference 0.06
     for key, value in out.items():
         if isinstance(value, float):
             assert math.isfinite(value), key

@@ -1,4 +1,4 @@
-"""Fast-marching eikonal traveltime solver (Godunov upwind, heap march).
+"""Fast-marching eikonal traveltime solver (Godunov upwind, heap march) (SYNTHETIC).
 
 Solves |grad T| = s(x) (slowness) on a 2-D grid via the
 Sethian fast marching method with the standard quadratic update.

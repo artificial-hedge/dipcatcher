@@ -1,4 +1,4 @@
-"""L-moments and regional frequency analysis.
+"""L-moments and regional frequency analysis (SYNTHETIC).
 
 Probability-weighted moments (Greenwood et al. 1979, Land Drainage
 Engineering) give linear order-statistic functionals with far better

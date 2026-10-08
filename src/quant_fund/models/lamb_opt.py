@@ -1,4 +1,4 @@
-"""LAMB (You et al. 2020) — Adam with layer-wise trust ratio:
+"""LAMB (You et al. 2020) — Adam with layer-wise trust ratio: (SYNTHETIC)
 update scaled by ||w||/||adam_step|| — vs Adam at matched steps.
 """
 
@@ -77,5 +77,5 @@ def bench_lamb_opt(
         "synthetic_lamb_loss": loss_l,
         "synthetic_lamb_adam_loss": loss_a,
         "synthetic_lamb_gain": loss_a - loss_l,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

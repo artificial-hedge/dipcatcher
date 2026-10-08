@@ -1,4 +1,4 @@
-"""Cyclic coordinate descent for smooth convex objectives."""
+"""Cyclic coordinate descent for smooth convex objectives (SYNTHETIC)."""
 
 import numpy as np
 

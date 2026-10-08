@@ -1,4 +1,4 @@
-"""Zone/octagon-lite abstract domain via difference-bound matrices.
+"""Zone/octagon-lite abstract domain via difference-bound matrices (SYNTHETIC).
 
 A zone over vars x1..xn is a conjunction of constraints x_i - x_j <= c,
 represented as a DBM closed under shortest paths (Floyd-Warshall). Operations:

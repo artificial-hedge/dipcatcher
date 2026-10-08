@@ -1,4 +1,4 @@
-"""Bulletproof-style inner product argument (toy additive-group version).
+"""Bulletproof-style inner product argument (toy additive-group version) (SYNTHETIC).
 
 Proves <a,b> = v given commitment P = <a,G> + <b,H> + v*U over vectors
 of length 2^k. Recursive halving: each round emits (L,R) group elems and

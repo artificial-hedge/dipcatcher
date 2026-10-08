@@ -1,4 +1,4 @@
-"""Energy-score OOD detection (Liu et al. 2020).
+"""Energy-score OOD detection (Liu et al. 2020) (SYNTHETIC).
 
 Score = -logsumexp(logits): the log-partition of the softmax acts as
 a Helmholtz free energy — OOD inputs have low energy bound (=high
@@ -60,6 +60,7 @@ def bench_energy_ood(
 ) -> dict[str, float]:
     """Free-energy OOD score vs MSP (AUROC, SYNTHETIC)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     (x_id, y_id), x_ood = synth_id_ood(n_id, n_ood, d, rng)
     X = torch.tensor(x_id, dtype=torch.float32)
@@ -91,7 +92,7 @@ def bench_energy_ood(
         "synthetic_energyood_auc": auc_e,
         "synthetic_energyood_msp_auc": auc_msp,
         "synthetic_energyood_margin_vs_msp": auc_e - auc_msp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

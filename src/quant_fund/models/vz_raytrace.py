@@ -1,4 +1,4 @@
-"""Ray tracing in a linear-gradient V(z) = v0 + k*z medium.
+"""Ray tracing in a linear-gradient V(z) = v0 + k*z medium (SYNTHETIC).
 
 With ray parameter p = sin(theta)/v constant (theta from vertical), rays are
 circular arcs of radius R = 1/(p k):

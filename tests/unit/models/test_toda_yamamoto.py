@@ -72,6 +72,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_toda_yamamoto(seed=3)
-    for k in ("p_lag", "wald_fwd", "pval_fwd", "wald_rev", "pval_rev", "score"):
+    for k in (
+        "synthetic_p_lag",
+        "synthetic_wald_fwd",
+        "synthetic_pval_fwd",
+        "synthetic_wald_rev",
+        "synthetic_pval_rev",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

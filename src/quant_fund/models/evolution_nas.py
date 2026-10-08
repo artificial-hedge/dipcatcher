@@ -1,4 +1,4 @@
-"""Regularized evolution NAS (Real et al. 2019).
+"""Regularized evolution NAS (Real et al. 2019) (SYNTHETIC).
 
 Population of archs; tournament selection; mutation on one gene;
 aging — oldest removed. Best-found vs random-search at equal budget.
@@ -20,6 +20,7 @@ def bench_evolution_nas(
     iters: int = 40,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     x_tr, y_tr, x_te, y_te = split(seed, n)
     x_tr_t = torch.tensor(x_tr).float()
     y_tr_t = torch.tensor(noisy_labels(y_tr, seed))
@@ -65,5 +66,5 @@ def bench_evolution_nas(
         "synthetic_enas_best": best_e,
         "synthetic_enas_random_best": best_r,
         "synthetic_enas_gain": best_e - best_r,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

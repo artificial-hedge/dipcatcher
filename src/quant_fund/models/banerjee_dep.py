@@ -1,4 +1,4 @@
-"""Data-dependence tests for affine array accesses (GCD + Banerjee bounds).
+"""Data-dependence tests for affine array accesses (GCD + Banerjee bounds) (SYNTHETIC).
 
 An access is (coeff, const) reading/writing a[i0 + c1*i1 + ... + ck*ik]
 inside a loop nest with per-dim bounds (lo, hi). A dependence exists iff

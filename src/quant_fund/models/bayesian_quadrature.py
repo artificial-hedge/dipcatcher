@@ -1,4 +1,4 @@
-"""Bayesian quadrature — GP probabilistic integration.
+"""Bayesian quadrature — GP probabilistic integration (SYNTHETIC).
 
 Square-exponential kernel on [0,1]^d against the uniform measure has
 closed-form kernel means: posterior mean/variance of ∫f follow from

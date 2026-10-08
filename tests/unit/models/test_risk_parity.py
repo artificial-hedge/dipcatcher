@@ -75,4 +75,4 @@ def test_fail_closed_asymmetric():
 
 def test_bench():
     out = bench_risk_parity()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

@@ -1,4 +1,4 @@
-"""R-learner (Nie & Wager 2021) — Robinson residual-on-residual:
+"""R-learner (Nie & Wager 2021) — Robinson residual-on-residual: (SYNTHETIC)
 estimate m(x)=E[Y|X], e(x)=P(T=1|X), then fit tau(x) minimizing
 ((y−m) − tau·(t−e))². PEHE vs direct diff regressor.
 """
@@ -63,5 +63,5 @@ def bench_rlearner(seed: int = 1207, iters: int = 900) -> dict[str, float]:
         "synthetic_rlearner_pehe": pehe(cate, tau),
         "synthetic_rlearner_naive_pehe": pehe(naive, tau),
         "synthetic_rlearner_pehe_gain": pehe(naive, tau) - pehe(cate, tau),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

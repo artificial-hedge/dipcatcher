@@ -21,7 +21,12 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Do NOT cancel in-flight runs. At this repo's push cadence (measured: 12
+  # merges in 68s) cancel-in-progress meant every run was superseded before it
+  # could finish — 400 consecutive attempts, zero successes. A gate that is
+  # always cancelled emits no verdict, so it cannot protect the branch. The
+  # group key still serialises runs; letting them drain is the whole point.
+  cancel-in-progress: false
 
 # Least privilege. Cache and artifact services use runner-scoped runtime
 # tokens; the workflow's GITHUB_TOKEN never needs Actions write access.
@@ -162,6 +167,20 @@ jobs:
     timeout-minutes: 75
     env:
       HYPOTHESIS_PROFILE: ci
+      # Makefile TEST_ENV block, mirrored (keep both sides identical).
+      # Validated fix for the three-OpenMP-runtime NULL-kmp_info segfault under
+      # xdist (.dsh-24x7/lane_reports/l3-segfault.md 7.1): OMP_NUM_THREADS=1
+      # keeps libomp out of __kmp_suspend_* (the crashing stack);
+      # KMP_INIT_AT_FORK=FALSE closes the fork() route; PYTHONFAULTHANDLER=1
+      # captures any future native fault. Matches the fleet job manifests
+      # (AGENTS.md "Thread pinning").
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      VECLIB_MAXIMUM_THREADS: "1"
+      KMP_INIT_AT_FORK: "FALSE"
+      PYTHONFAULTHANDLER: "1"
+      TOKENIZERS_PARALLELISM: "false"
     strategy:
       fail-fast: false
       matrix:
@@ -178,13 +197,9 @@ jobs:
           python-version: ${{ matrix.python }}
           enable-cache: true
           cache-dependency-glob: uv.lock
-      - name: Cache pip downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-py${{ matrix.python }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            pip-${{ runner.os }}-py${{ matrix.python }}-
+      # No ~/.cache/pip cache on purpose: this environment is uv-managed
+      # (setup-uv caches ~/.cache/uv via enable-cache) and nothing in this job
+      # invokes pip, so that cache could only ever save an empty directory.
       - name: Cache synthetic lakes and Northset benches
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

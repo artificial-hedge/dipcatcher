@@ -74,4 +74,4 @@ def test_fail_closed_one_cluster():
 
 def test_bench():
     out = bench_lmm()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

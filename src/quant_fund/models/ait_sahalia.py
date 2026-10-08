@@ -295,12 +295,12 @@ def bench_ait_sahalia(seed: int = 20261231 + 296) -> dict[str, float]:
         and gap < 0.01
     )
     return {
-        "alpha": fit["alpha"],
-        "beta": fit["beta"],
-        "sigma": fit["sigma"],
-        "rho": fit["rho"],
-        "beta_err": beta_err,
-        "ll_gap_ou": gap,
-        "nll": fit["nll"],
-        "score": float(ok),
+        "synthetic_alpha": fit["alpha"],
+        "synthetic_beta": fit["beta"],
+        "synthetic_sigma": fit["sigma"],
+        "synthetic_rho": fit["rho"],
+        "synthetic_beta_err": beta_err,
+        "synthetic_ll_gap_ou": gap,
+        "synthetic_nll": fit["nll"],
+        "synthetic_score": float(ok),
     }

@@ -1,4 +1,4 @@
-"""Realized volatility measures and jump detection.
+"""Realized volatility measures and jump detection (SYNTHETIC).
 
 Intraday high-frequency estimators: plain realized variance, realized
 kernels (BNHLS), two-scales subsampling (ZMA), pre-averaging, bipower/

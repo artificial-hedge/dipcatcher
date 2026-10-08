@@ -1,4 +1,4 @@
-"""RANSAC plane fit on 3D points vs least-squares-on-outliers oracle."""
+"""RANSAC plane fit on 3D points vs least-squares-on-outliers oracle (SYNTHETIC)."""
 
 import numpy as np
 

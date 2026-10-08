@@ -1,4 +1,4 @@
-"""Cucker-Smale flocking mean-field game (kinetic alignment).
+"""Cucker-Smale flocking mean-field game (kinetic alignment) (SYNTHETIC).
 
 Particles: dx_i = v_i dt, dv_i = (k/N) sum_j phi(|x_j - x_i|)(v_j - v_i) dt
 with phi(r) = 1/(1 + r^2). The mean-field interaction drives velocity

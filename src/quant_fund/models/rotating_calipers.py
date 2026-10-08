@@ -1,4 +1,4 @@
-"""Rotating calipers — convex-hull diameter vs brute-force oracle."""
+"""Rotating calipers — convex-hull diameter vs brute-force oracle (SYNTHETIC)."""
 
 from __future__ import annotations
 

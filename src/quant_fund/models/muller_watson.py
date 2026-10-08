@@ -173,10 +173,10 @@ def bench_muller_watson(
         and float(p1["p_lf"]) < 0.01
     )
     return {
-        "rho_shared": float(r1["rho_lf"]),
-        "rho_indep": float(r0["rho_lf"]),
-        "p_beta": float(p1["p_lf"]),
-        "beta_lf": float(p1["beta_lf"]),
-        "ur_stat": float(r1["ur_stat_x"]),
-        "score": float(ok),
+        "synthetic_rho_shared": float(r1["rho_lf"]),
+        "synthetic_rho_indep": float(r0["rho_lf"]),
+        "synthetic_p_beta": float(p1["p_lf"]),
+        "synthetic_beta_lf": float(p1["beta_lf"]),
+        "synthetic_ur_stat": float(r1["ur_stat_x"]),
+        "synthetic_score": float(ok),
     }

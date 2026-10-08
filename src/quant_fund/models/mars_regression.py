@@ -1,4 +1,4 @@
-"""Multivariate Adaptive Regression Splines (MARS).
+"""Multivariate Adaptive Regression Splines (MARS) (SYNTHETIC).
 
 Canonical reference:
 

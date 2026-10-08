@@ -1,4 +1,4 @@
-"""Meta-SGD (Li et al. 2017) — learn a per-parameter adaptive learning
+"""Meta-SGD (Li et al. 2017) — learn a per-parameter adaptive learning (SYNTHETIC)
 rate/direction vector α alongside the init: θ' = θ − α ⊙ ∇L. Query MSE
 vs fixed-LR MAML-style init.
 """
@@ -77,5 +77,5 @@ def bench_meta_sgd(seed: int = 867, n_tasks: int = 30, K: int = 5) -> dict[str, 
         "synthetic_msgd_query_mse": float(np.mean(mses)),
         "synthetic_msgd_fixedlr_mse": float(np.mean(mses_b)),
         "synthetic_msgd_gain": float(np.mean(mses_b) - np.mean(mses)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

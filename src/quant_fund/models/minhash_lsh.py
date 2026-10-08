@@ -1,4 +1,4 @@
-"""MinHash signatures + LSH banding (synthetic).
+"""MinHash signatures + LSH banding (synthetic) (SYNTHETIC).
 
 Signature_i(x) = min over items of (a_i·h + b_i mod p); Pr[min
 equal] = J(A,B). LSH: r rows per band → candidate iff band hash

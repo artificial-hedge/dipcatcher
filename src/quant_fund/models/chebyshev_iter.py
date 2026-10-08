@@ -1,4 +1,4 @@
-"""Chebyshev semi-iteration for SPD systems with known spectral bounds.
+"""Chebyshev semi-iteration for SPD systems with known spectral bounds (SYNTHETIC).
 
 Given [lam_min, lam_max] estimates, the Chebyshev recurrence
 x_{k+1} = x_k + omega_k r_k (2-term) converges at the optimal asymptotic

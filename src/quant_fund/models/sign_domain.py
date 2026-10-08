@@ -1,4 +1,4 @@
-"""Sign-domain abstract interpretation: {-, 0, +, ⊤} lattice over exprs.
+"""Sign-domain abstract interpretation: {-, 0, +, ⊤} lattice over exprs (SYNTHETIC).
 
 Transfer functions follow the standard sign multiplication/addition tables;
 soundness verified by concretizing against sampled concrete evaluations.

@@ -1,4 +1,4 @@
-"""Elliptic-curve scalar multiplication over GF(p) (synthetic).
+"""Elliptic-curve scalar multiplication over GF(p) (synthetic) (SYNTHETIC).
 
 Short-Weierstrass curves y² = x³ + a·x + b mod p with affine point
 add/double and double-and-add scalar mult. Verified against repeated

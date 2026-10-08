@@ -1,4 +1,4 @@
-"""Pedersen commitment: C(v, r) = g^v h^r mod p.
+"""Pedersen commitment: C(v, r) = g^v h^r mod p (SYNTHETIC).
 
 Perfectly hiding (r uniform) and computationally binding under DL.
 Bench: homomorphic property C(v1,r1)*C(v2,r2) = C(v1+v2, r1+r2) holds

@@ -1,4 +1,4 @@
-"""Pure-pursuit path tracking vs naive heading controller."""
+"""Pure-pursuit path tracking vs naive heading controller (SYNTHETIC)."""
 
 import numpy as np
 

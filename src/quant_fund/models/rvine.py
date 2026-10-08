@@ -1,4 +1,4 @@
-"""General regular-vine (R-vine) engine.
+"""General regular-vine (R-vine) engine (SYNTHETIC).
 
 Implements the four pieces the C/D-vine special cases cannot express:
 

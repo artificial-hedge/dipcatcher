@@ -1,4 +1,4 @@
-"""Discrete/limited dependent variable models: probit, logit, Tobit.
+"""Discrete/limited dependent variable models: probit, logit, Tobit (SYNTHETIC).
 
 Maximum likelihood with BFGS; standard errors from the numerical
 Hessian of the negative log-likelihood at the optimum. McFadden (1973)

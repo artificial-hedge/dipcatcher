@@ -1,4 +1,4 @@
-"""Flat combining: combiner executes published ops — sequential-equivalence
+"""Flat combining: combiner executes published ops — sequential-equivalence (SYNTHETIC)
 oracle."""
 
 import numpy as np

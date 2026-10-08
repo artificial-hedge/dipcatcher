@@ -1,4 +1,4 @@
-"""Conformalized Student-t distribution head (ULTRAPLAN P1.4, ``dip_conf_t``).
+"""Conformalized Student-t distribution head (ULTRAPLAN P1.4, ``dip_conf_t``) (SYNTHETIC).
 
 Split-conformal recalibration of a Hansen (1994) skew-t base in the style of
 Romano, Patterson & Candès (2019, CQR).  ``fit`` receives rows in panel

@@ -18,3 +18,4 @@ cross-references rather than duplicates.
 | [0006](0006-strict-config-forbid-extra.md) | `extra="forbid"` config validation rejects unknown keys at every level |
 | [0007](0007-shadow-holds-no-capital.md) | Shadow/challenger slots record intent only and can never move cash |
 | [0008](0008-forbidden-metric-key-scan.md) | Honesty is enforced by scanning artifact keys, not by convention |
+| [0009](0009-forward-record-freeze-and-eligibility.md) | The forward-record freeze is externally timestamped; `window.start` is a span label, not an eligibility boundary |

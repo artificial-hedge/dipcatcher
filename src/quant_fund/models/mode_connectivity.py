@@ -1,4 +1,4 @@
-"""Linear mode connectivity — loss barrier along the line between two
+"""Linear mode connectivity — loss barrier along the line between two (SYNTHETIC)
 independently trained minima vs same-basin endpoints; measures whether
 the regime task's loss landscape has disconnected basins.
 """
@@ -20,6 +20,7 @@ def _torch():
 
 def bench_mode_connectivity(seed: int = 2371) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     X, y, _, _ = make_data(seed)
     na, _ = train_mlp(torch, X, y, iters=400, seed=seed)
     nb, _ = train_mlp(torch, X, y, iters=400, seed=seed + 77)
@@ -40,5 +41,5 @@ def bench_mode_connectivity(seed: int = 2371) -> dict[str, float]:
         "synthetic_lmc_barrier": float(barrier),
         "synthetic_lmc_endpoint_loss": float(endpoints),
         "synthetic_lmc_barrier_rel": float(barrier / max(endpoints, 1e-6)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

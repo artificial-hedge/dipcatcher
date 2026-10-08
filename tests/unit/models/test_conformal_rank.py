@@ -24,14 +24,14 @@ def test_planted_fdr_or_oracle_coverage() -> None:
         seed=SEEDED,
         guarantee="fdr",
     )
-    alpha = float(row["alpha"])
-    fdr_ok = float(row["fdr"]) <= alpha + SLACK
-    cov_ok = float(row["coverage"]) >= 1.0 - alpha - SLACK
+    alpha = float(row["synthetic_alpha"])
+    fdr_ok = float(row["synthetic_fdr"]) <= alpha + SLACK
+    cov_ok = float(row["synthetic_coverage"]) >= 1.0 - alpha - SLACK
     assert fdr_ok or cov_ok
-    assert float(row["set_size"]) > 0.0
-    assert int(row["n_dates"]) >= 20
-    assert row["guarantee"] == "fdr"
-    assert float(row["seed"]) == float(SEEDED)
+    assert float(row["synthetic_set_size"]) > 0.0
+    assert int(row["synthetic_n_dates"]) >= 20
+    assert row["synthetic_guarantee"] == "fdr"
+    assert float(row["synthetic_seed"]) == float(SEEDED)
 
 
 def test_set_coverage_on_planted_scores() -> None:
@@ -44,10 +44,10 @@ def test_set_coverage_on_planted_scores() -> None:
         seed=SEEDED,
         guarantee="set_coverage",
     )
-    alpha = float(row["alpha"])
-    assert float(row["coverage"]) >= 1.0 - alpha - SLACK
-    assert float(row["set_size"]) >= 5.0
-    assert row["guarantee"] == "set_coverage"
+    alpha = float(row["synthetic_alpha"])
+    assert float(row["synthetic_coverage"]) >= 1.0 - alpha - SLACK
+    assert float(row["synthetic_set_size"]) >= 5.0
+    assert row["synthetic_guarantee"] == "set_coverage"
 
 
 def test_groups_by_date_never_stacks() -> None:
@@ -98,7 +98,12 @@ def test_conformal_pvalues_monotone_in_score() -> None:
 
 def test_bench_keys_no_sharpe() -> None:
     row = bench_conformal_topk(seed=SEEDED)
-    assert {"set_size", "fdr", "coverage", "n_dates"} <= set(row)
+    assert {
+        "synthetic_set_size",
+        "synthetic_fdr",
+        "synthetic_coverage",
+        "synthetic_n_dates",
+    } <= set(row)
     assert all("sharpe" not in str(key).lower() for key in row)
 
 

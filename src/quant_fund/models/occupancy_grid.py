@@ -1,4 +1,4 @@
-"""Occupancy-grid mapping via log-odds inverse sensor model."""
+"""Occupancy-grid mapping via log-odds inverse sensor model (SYNTHETIC)."""
 
 import numpy as np
 

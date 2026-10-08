@@ -111,5 +111,5 @@ def bench_bnn_ensemble(seed: int = 77) -> dict[str, float]:
         "synthetic_bnn_epistemic_ood": epi_ood,
         "synthetic_bnn_epistemic_ood_ratio": epi_ood / (epi + 1e-9),
         "synthetic_bnn_sigma_corr": sd_corr,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

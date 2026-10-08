@@ -1,4 +1,4 @@
-"""Nondeterministic Büchi automaton emptiness via nested DFS.
+"""Nondeterministic Büchi automaton emptiness via nested DFS (SYNTHETIC).
 
 NBA: states, alphabet-agnostic transitions, initial set, accepting set.
 Language nonempty iff some reachable cycle contains an accept state —

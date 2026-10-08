@@ -1,4 +1,4 @@
-"""First-price sealed-bid auction — symmetric BNE bid shading.
+"""First-price sealed-bid auction — symmetric BNE bid shading (SYNTHETIC).
 
 For n bidders with iid U[0,1] values the unique symmetric BNE is
 b(v) = (n-1)/n v. Bench: fitted shading factor from best-response

@@ -23,6 +23,22 @@ from quant_fund.lightspeed.specs import TqqqParams, TqqqSpec, tqqq_long_full_v1
 _EPS = 1e-12
 
 
+def _inverse_sleeve(
+    p: TqqqParams,
+    qqq_close: NDArray[np.float64],
+    i: int,
+) -> float:
+    """Confirmed inverse (SQQQ) size in the flatten branch; 0.0 when unconfirmed."""
+    inverse = 0.0
+    if p.sqqq_target > 0 and p.inverse_confirm > 0 and i >= p.inverse_confirm:
+        base = qqq_close[i - p.inverse_confirm]
+        if base > 0.0 and math.isfinite(base) and math.isfinite(qqq_close[i]):
+            mom = qqq_close[i] / base - 1.0
+            if mom < 0:
+                inverse = p.sqqq_target
+    return inverse
+
+
 def _raw_sleeves(
     p: TqqqParams,
     gap: float,
@@ -33,14 +49,7 @@ def _raw_sleeves(
 ) -> tuple[float, float]:
     downtrend = gap < 0.0
     if p.flatten_when_fast_below_slow and downtrend:
-        inverse = 0.0
-        if p.sqqq_target > 0 and p.inverse_confirm > 0 and i >= p.inverse_confirm:
-            base = qqq_close[i - p.inverse_confirm]
-            if base > 0.0 and math.isfinite(base) and math.isfinite(qqq_close[i]):
-                mom = qqq_close[i] / base - 1.0
-                if mom < 0:
-                    inverse = p.sqqq_target
-        return 0.0, inverse
+        return 0.0, _inverse_sleeve(p, qqq_close, i)
 
     if not (math.isfinite(qqq_vol) and math.isfinite(tqqq_vol)):
         # Volatility unmeasurable: de-risk rather than size on the cap.

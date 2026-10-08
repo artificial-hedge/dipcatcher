@@ -1,4 +1,4 @@
-"""Suzuki–Trotter product formulas of orders 1, 2, 4 for Hamiltonian simulation.
+"""Suzuki–Trotter product formulas of orders 1, 2, 4 for Hamiltonian simulation (SYNTHETIC).
 
 For H = A + B, U(t) = exp(-iHt) is approximated by alternating exponentials:
   S1(t) = e^{-iAt} e^{-iBt}

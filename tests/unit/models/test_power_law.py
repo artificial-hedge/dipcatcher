@@ -48,5 +48,5 @@ def test_determinism() -> None:
 
 def test_bench_contract() -> None:
     out = bench_powerlaw()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_pl_pval_exp"] < 0.15

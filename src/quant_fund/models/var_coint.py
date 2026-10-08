@@ -1,4 +1,4 @@
-"""Vector autoregression, cointegration, and connectedness.
+"""Vector autoregression, cointegration, and connectedness (SYNTHETIC).
 
 VAR(p) estimation with information criteria, impulse responses and FEVD,
 the Diebold–Yilmaz connectedness index, Engle–Granger/Johansen cointegration,

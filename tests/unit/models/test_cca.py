@@ -61,5 +61,5 @@ def test_cca_input_validation():
 
 def test_bench_cca():
     out = bench_cca()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_cca_align"] > 0.85

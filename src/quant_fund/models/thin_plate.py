@@ -1,4 +1,4 @@
-"""Thin-plate splines — 2D radial-basis surface smoothing.
+"""Thin-plate splines — 2D radial-basis surface smoothing (SYNTHETIC).
 
 Duchon (1977), Wahba (1990): the thin-plate spline interpolant is
 the minimizer of the bending energy int |d^2 f|^2 over surfaces
@@ -118,5 +118,5 @@ def bench_thin_plate(seed: int = 20261231 + 424) -> dict[str, float]:
     return {
         "synthetic_tps_rmse_ratio": ratio,
         "synthetic_tps_interp_err": interp_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

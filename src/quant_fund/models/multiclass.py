@@ -1,4 +1,4 @@
-"""Multiclass canon: one-vs-rest logistic reduction, softmax (multinomial)
+"""Multiclass canon: one-vs-rest logistic reduction, softmax (multinomial) (SYNTHETIC)
 regression by Newton steps, and error-correcting output codes (ECOC) with
 exhaustive binary codewords. ``bench_multiclass`` plants a 4-class mixture
 and gates all three reductions over the chance rate, plus softmax >= OvR.

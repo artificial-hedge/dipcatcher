@@ -1,4 +1,4 @@
-"""WalkSAT stochastic local search on random 3-SAT.
+"""WalkSAT stochastic local search on random 3-SAT (SYNTHETIC).
 
 Pick a random unsatisfied clause, flip a variable in it — free choice
 with prob p (random walk), min-conflict otherwise. Bench: solve rate

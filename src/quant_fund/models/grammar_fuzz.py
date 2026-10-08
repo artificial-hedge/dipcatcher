@@ -1,4 +1,4 @@
-"""Grammar-based fuzzer: generate valid expressions from a CFG."""
+"""Grammar-based fuzzer: generate valid expressions from a CFG (SYNTHETIC)."""
 
 import numpy as np
 

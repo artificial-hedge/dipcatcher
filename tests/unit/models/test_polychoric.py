@@ -67,5 +67,5 @@ def test_polychoric_input_validation():
 
 def test_bench_polychoric():
     out = bench_polychoric()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_polychoric_err"] < 0.08

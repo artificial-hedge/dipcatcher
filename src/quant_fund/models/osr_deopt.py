@@ -1,4 +1,4 @@
-"""OSR deoptimization frame reconstruction.
+"""OSR deoptimization frame reconstruction (SYNTHETIC).
 
 An optimized frame keeps a deopt map: virtual objects (allocations
 eliminated by escape analysis) and their field values, plus the

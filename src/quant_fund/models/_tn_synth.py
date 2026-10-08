@@ -1,4 +1,4 @@
-"""Shared fixture for wave-200 tensor-network canon — smooth multivariate
+"""Shared fixture for wave-200 tensor-network canon — smooth multivariate (SYNTHETIC)
 tensors + TFIM Hamiltonian + MPS helpers.
 """
 

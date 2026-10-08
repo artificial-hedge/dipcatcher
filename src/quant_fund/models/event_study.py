@@ -1,4 +1,4 @@
-"""Classical event-study methodology for abnormal returns.
+"""Classical event-study methodology for abnormal returns (SYNTHETIC).
 
 References:
 - MacKinlay (1997): event-study econometrics review.

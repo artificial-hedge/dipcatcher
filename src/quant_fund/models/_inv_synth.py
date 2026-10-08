@@ -1,4 +1,4 @@
-"""Shared fixture for wave-197 inventory canon — demand process +
+"""Shared fixture for wave-197 inventory canon — demand process + (SYNTHETIC)
 holding/shortage cost simulation harness.
 """
 

@@ -189,7 +189,8 @@ def verify_release_attestation(
     errs: list[str] = []
 
     declared = payload["artifacts"]
-    assert isinstance(declared, Mapping)
+    if not (isinstance(declared, Mapping)):
+        raise ValueError("isinstance(declared, Mapping)")
     if set(artifacts) != set(declared):
         errs.append("artifact_set_mismatch")
     for name, data in artifacts.items():
@@ -272,7 +273,8 @@ def verify_release_attestation(
 
     if root is not None:
         state = payload.get("pinned_state_sha256")
-        assert isinstance(state, Mapping)
+        if not (isinstance(state, Mapping)):
+            raise ValueError("isinstance(state, Mapping)")
         stale: list[str] = []
         for rel, digest in state.items():
             p = Path(root) / str(rel)

@@ -11,7 +11,7 @@ from quant_fund.models.star_model import (
 
 def test_bench_star_passes():
     r = bench_star()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_lm3_rejects_star():

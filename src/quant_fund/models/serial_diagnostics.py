@@ -1,4 +1,4 @@
-"""Serial-correlation diagnostics for regression
+"""Serial-correlation diagnostics for regression (SYNTHETIC)
 residuals and raw series.
 
 Canonical references:

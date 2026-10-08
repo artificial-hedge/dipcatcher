@@ -1,4 +1,4 @@
-"""Generational garbage collector (nursery + old gen, promotion, write barrier)."""
+"""Generational garbage collector (nursery + old gen, promotion, write barrier) (SYNTHETIC)."""
 
 import numpy as np
 

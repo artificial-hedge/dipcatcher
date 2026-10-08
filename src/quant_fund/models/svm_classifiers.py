@@ -1,4 +1,4 @@
-"""Support-vector machines: Pegasos primal subgradient
+"""Support-vector machines: Pegasos primal subgradient (SYNTHETIC)
 descent for linear soft-margin SVMs (Shalev-Shwartz et al.
 2011), and kernel SVM via pair-free coordinate ascent on the
 dual (kernel Pegasos, α ∈ [0, 1/λn]). Synthetic bench gates

@@ -37,6 +37,7 @@ def bench_apnp_prop(
     d_hid: int = 32,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     adj, x, y = synth_sbm_graph(seed=seed + _SEED)
     a_norm = normalize_adj(adj)
     tr, te = split_masks(x.shape[0], n_train_frac, seed + _SEED)
@@ -88,5 +89,5 @@ def bench_apnp_prop(
         "synthetic_apnp_blind_acc": acc_blind,
         "synthetic_apnp_acc_gain": acc_apnp - acc_blind,
         "synthetic_apnp_logit_spread": spread,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

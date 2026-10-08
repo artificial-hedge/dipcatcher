@@ -127,5 +127,5 @@ def bench_tft_forecaster(seed: int = 47) -> dict[str, float]:
         "synthetic_tft_coverage_80": cov,
         "synthetic_tft_mae": mae,
         "synthetic_tft_attn_entropy": attn_ent,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

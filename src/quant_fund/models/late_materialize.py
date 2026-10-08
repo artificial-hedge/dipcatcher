@@ -1,4 +1,4 @@
-"""Late materialization: carry row-ids through filter, fetch columns at end."""
+"""Late materialization: carry row-ids through filter, fetch columns at end (SYNTHETIC)."""
 
 import numpy as np
 

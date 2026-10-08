@@ -1,4 +1,4 @@
-"""Boomerang Sampler (Bierkens et al. 2020) — PDMP on elliptical
+"""Boomerang Sampler (Bierkens et al. 2020) — PDMP on elliptical (SYNTHETIC)
 (rotation) dynamics: x(t)=x0 cos t + v0 sin t, bounce rate
 max(0, <v, ∇U>) via thinning. ESS vs RWM.
 """
@@ -61,5 +61,5 @@ def bench_boomerang_sampler(seed: int = 2213) -> dict[str, float]:
         "synthetic_rwm_ess": ess_b,
         "synthetic_boom_ess_gain": ess - ess_b,
         "synthetic_boom_moment_err": moment_err(smp, mu, sd),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

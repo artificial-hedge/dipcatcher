@@ -1,4 +1,4 @@
-"""Cluster-robust inference: CRVE sandwiches and the wild cluster
+"""Cluster-robust inference: CRVE sandwiches and the wild cluster (SYNTHETIC)
 bootstrap.
 
 Clustered errors break iid covariance estimators. This module implements

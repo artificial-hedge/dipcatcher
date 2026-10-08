@@ -1,4 +1,4 @@
-"""MPPI (Williams et al. 2017): sampled-trajectory control via
+"""MPPI (Williams et al. 2017): sampled-trajectory control via (SYNTHETIC)
 exponentially-weighted noise rollouts on the double integrator.
 Cost vs PD baseline.
 """
@@ -39,5 +39,5 @@ def bench_mppi_control(
         "synthetic_mppi_cost": float(tot),
         "synthetic_pd_cost": float(cost_b),
         "synthetic_mppi_gain": float(cost_b - tot),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

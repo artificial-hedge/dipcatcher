@@ -79,4 +79,4 @@ def test_fail_closed_single_category():
 
 def test_bench():
     out = bench_interrater()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

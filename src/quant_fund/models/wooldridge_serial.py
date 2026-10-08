@@ -149,10 +149,10 @@ def bench_wooldridge(
     r0 = wooldridge_serial(e_iid, unit)
     ok = r1["reject5"] == 1.0 and r0["reject5"] == 0.0
     return {
-        "z_ar": r1["z"],
-        "pval_ar": r1["pval"],
-        "z_iid": r0["z"],
-        "pval_iid": r0["pval"],
-        "rho_ar": r1["rho_hat"],
-        "score": float(ok),
+        "synthetic_z_ar": r1["z"],
+        "synthetic_pval_ar": r1["pval"],
+        "synthetic_z_iid": r0["z"],
+        "synthetic_pval_iid": r0["pval"],
+        "synthetic_rho_ar": r1["rho_hat"],
+        "synthetic_score": float(ok),
     }

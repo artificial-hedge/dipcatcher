@@ -1,4 +1,4 @@
-"""Continuous wavelet transform with Morlet + ridge (instantaneous freq).
+"""Continuous wavelet transform with Morlet + ridge (instantaneous freq) (SYNTHETIC).
 
 CWT via FFT convolution of the Morlet family; the per-time argmax scale
 traces the chirp's instantaneous frequency. Bench: ridge f0(t) vs the

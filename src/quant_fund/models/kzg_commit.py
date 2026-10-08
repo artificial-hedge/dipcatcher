@@ -1,4 +1,4 @@
-"""KZG polynomial commitment over a toy bilinear group.
+"""KZG polynomial commitment over a toy bilinear group (SYNTHETIC).
 
 Group elements live in additive Z_n notation (scalars); the pairing is
 e(a, b) = a*b mod n — a genuine bilinear map for this cyclic toy group.

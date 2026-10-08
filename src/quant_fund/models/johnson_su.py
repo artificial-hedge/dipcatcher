@@ -1,4 +1,4 @@
-"""Johnson SU distribution (Johnson 1949) with Slifker-Shapiro quantile fit.
+"""Johnson SU distribution (Johnson 1949) with Slifker-Shapiro quantile fit (SYNTHETIC).
 
 The unbounded Johnson family maps a variable to a standard normal through
 

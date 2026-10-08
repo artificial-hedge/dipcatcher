@@ -100,7 +100,8 @@ def _common_prefix(parts: list[Ast]) -> str:
 
 
 def _strip_prefix(node: Ast, pref: str) -> Ast:
-    assert len(pref) == 1
+    if not (len(pref) == 1):
+        raise ValueError("len(pref) == 1")
     if node[0] == "lit" and node[1] == pref:
         return ("cat", [])
     if node[0] == "cat" and node[1] and node[1][0] == ("lit", pref):

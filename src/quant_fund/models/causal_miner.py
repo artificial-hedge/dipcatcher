@@ -1,4 +1,4 @@
-"""Causal signal mining over a factor zoo (Exec-Summary causal item).
+"""Causal signal mining over a factor zoo (Exec-Summary causal item) (SYNTHETIC).
 PCMCI-lite: for each target return series, candidate factor parents at
 lags 1..tau_max are tested by lagged partial correlation given the
 target's own past (momentary conditional independence, Runge-style).

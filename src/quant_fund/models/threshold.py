@@ -1,4 +1,4 @@
-"""Threshold autoregression: Tong SETAR(2;p;d) and the Hansen (1999)
+"""Threshold autoregression: Tong SETAR(2;p;d) and the Hansen (1999) (SYNTHETIC)
 sup-Wald threshold test.
 
 SETAR: y_t = phi_1' z_{t-1} if y_{t-d} <= gamma, phi_2' z_{t-1}

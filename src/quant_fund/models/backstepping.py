@@ -1,4 +1,4 @@
-"""Backstepping controller for strict-feedback chain x1' = x2, x2' = u."""
+"""Backstepping controller for strict-feedback chain x1' = x2, x2' = u (SYNTHETIC)."""
 
 import numpy as np
 

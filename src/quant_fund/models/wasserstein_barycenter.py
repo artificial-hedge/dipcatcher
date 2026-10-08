@@ -1,4 +1,4 @@
-"""Wasserstein barycenter canon (Cuturi & Doucet 2014):
+"""Wasserstein barycenter canon (Cuturi & Doucet 2014): (SYNTHETIC)
 fixed-support entropic barycenter of histograms via
 iterated kernel convolutions, on a synthetic dataset of
 perturbed Gaussian mixtures on a 1-D grid.

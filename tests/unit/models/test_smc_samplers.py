@@ -74,5 +74,5 @@ def test_smc_rejects_bad_scores() -> None:
 
 def test_bench_smc_samplers_score() -> None:
     out = bench_smc_samplers()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     assert out["synthetic_smc_mean_err"] < 0.15

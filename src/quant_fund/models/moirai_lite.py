@@ -1,4 +1,4 @@
-"""Moirai-lite (Woo et al. 2024) — any-variate masked-patch transformer:
+"""Moirai-lite (Woo et al. 2024) — any-variate masked-patch transformer: (SYNTHETIC)
 series packed as (variate, patch) tokens with random masking; output head
 per patch → quantile forecast.
 """
@@ -77,5 +77,5 @@ def bench_moirai_lite(
         "synthetic_moirai_pinball": pb,
         "synthetic_moirai_naive_pinball": pb_n,
         "synthetic_moirai_gain": pb_n - pb,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

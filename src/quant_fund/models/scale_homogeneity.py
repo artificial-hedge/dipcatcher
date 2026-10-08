@@ -1,4 +1,4 @@
-"""Scale/spread homogeneity tests across k groups.
+"""Scale/spread homogeneity tests across k groups (SYNTHETIC).
 
 Canonical references:
 

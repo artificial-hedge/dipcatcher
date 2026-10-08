@@ -1,0 +1,55 @@
+{
+  "schema": "p0_evidence_inventory.v1",
+  "generated_at": "2026-10-07T21:45:00+05:30",
+  "items": [
+    {
+      "id": "P0.1",
+      "verdict": "runbook-ready",
+      "evidence_path": "docs/P0_CLOSURE.md §P0.1",
+      "blocker": "Execution requires the Windows host D:\\dipcatcher (WMI spawn/respawn via scripts/fleet_spawn.ps1 + scripts/fleet_watchdog.ps1, stderr capture for twice-dead shards); no SSH execution path from this session. Post-run evidence that must result: updated .dsh-24x7\\fleet_heartbeat.json and spawn_receipt.json per respawn.",
+      "schema_version": "p0_evidence_inventory.v1"
+    },
+    {
+      "id": "P0.2",
+      "verdict": "runbook-ready",
+      "evidence_path": "docs/P0_CLOSURE.md §P0.2",
+      "blocker": "v4-deep and h4f cell part matrices exist only under .dsh-24x7\\eval-full\\ on D:\\dipcatcher, so contract-v2 TimesFM splice bit-identity checks for those cells cannot execute here. Local proof covers the v3 d1/h4 cells only: .dsh-24x7/eval-shards/*.tfmv2.npz (post-splice, pre-splice originals retained) + .dsh-24x7/evidence-sota-tfmfix-probe.json.",
+      "schema_version": "p0_evidence_inventory.v1"
+    },
+    {
+      "id": "P0.3",
+      "verdict": "blocked",
+      "evidence_path": ".dsh-24x7/merge_d1_v2aug.json",
+      "blocker": "All five merged receipts (merge_d1_v2aug.json, merge_h4f_v2aug.json, merge_h4fix_aug2.json, merge_s11_v2aug.json, merge_s23_v2aug.json) bind n_boot=1000 (probed 2026-10-07), NOT the mandated n_boot=2000; the contract-v2 re-merge at n_boot=2000 has not been executed. A from-scratch re-merge additionally needs .dsh-24x7/eval-full/ part matrices that exist only on D:\\dipcatcher. Runbook: docs/P0_CLOSURE.md §P0.3.",
+      "schema_version": "p0_evidence_inventory.v1"
+    },
+    {
+      "id": "P0.4",
+      "verdict": "closeable-now",
+      "evidence_path": ".dsh-24x7/native/MERGED_d1_native.json",
+      "blocker": null,
+      "schema_version": "p0_evidence_inventory.v1"
+    },
+    {
+      "id": "P0.5",
+      "verdict": "closeable-now",
+      "evidence_path": ".dsh-24x7/merge_s11_v2aug.json",
+      "blocker": null,
+      "schema_version": "p0_evidence_inventory.v1"
+    },
+    {
+      "id": "P0.6",
+      "verdict": "closeable-now",
+      "evidence_path": ".dsh-24x7/evidence-sota-eval-h4f-v2.json",
+      "blocker": null,
+      "schema_version": "p0_evidence_inventory.v1"
+    },
+    {
+      "id": "P0.7",
+      "verdict": "blocked",
+      "evidence_path": null,
+      "blocker": "PROOF.md, HANDOFF.md and PROGRESS.md live under .dsh-24x7/ outside this lane's write scope; draft text for all three is prepared in docs/P0_CLOSURE.md §P0.7 for the Lead to apply. The docs/EVAL_REPORT_SOTA.md verdict-checklist item 'status line in PROOF.md updated with final scope' cannot close until then; no DRAFT flip was performed (the report's status line was already final).",
+      "schema_version": "p0_evidence_inventory.v1"
+    }
+  ]
+}

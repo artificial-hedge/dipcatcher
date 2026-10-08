@@ -1,4 +1,4 @@
-"""RMPflow-lite: task-space Riemannian motion policies pulled into joint space.
+"""RMPflow-lite: task-space Riemannian motion policies pulled into joint space (SYNTHETIC).
 
 Leaf RMPs (goal attractor + distance-capped obstacle repulsor) are fused by
 metric-weighted average in task space and pulled back to configuration space

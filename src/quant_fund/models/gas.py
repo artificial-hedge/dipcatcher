@@ -1,4 +1,4 @@
-"""GAS / score-driven volatility (Creal, Koopman & Lucas 2013).
+"""GAS / score-driven volatility (Creal, Koopman & Lucas 2013) (SYNTHETIC).
 
 GAS(1,1): f_{t+1} = omega + A u_t + B f_t, where u_t is the scaled
 score of the observation density w.r.t. f_t. Implemented scalings:

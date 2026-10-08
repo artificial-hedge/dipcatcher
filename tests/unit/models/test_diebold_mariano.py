@@ -54,6 +54,12 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_diebold_mariano()
-    for k in ("dm_stat", "dm_hln", "p_alt", "p_null", "score"):
+    for k in (
+        "synthetic_dm_stat",
+        "synthetic_dm_hln",
+        "synthetic_p_alt",
+        "synthetic_p_null",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

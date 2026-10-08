@@ -1,4 +1,4 @@
-"""Fractional response models — outcomes bounded in [0, 1].
+"""Fractional response models — outcomes bounded in [0, 1] (SYNTHETIC).
 
 For share/fraction outcomes (fraction allocated, hit-rate, utilisation),
 the conditional mean is E[y|x] = G(xβ) with G a logit or probit CDF.

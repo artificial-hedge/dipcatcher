@@ -1,4 +1,4 @@
-"""Recurrent-event survival models in counting-process form.
+"""Recurrent-event survival models in counting-process form (SYNTHETIC).
 
 For recurrent failure-time data (multiple events per subject), the
 canonical models are:

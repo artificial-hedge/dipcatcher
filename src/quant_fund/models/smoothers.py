@@ -1,4 +1,4 @@
-"""Nonparametric regression smoothers.
+"""Nonparametric regression smoothers (SYNTHETIC).
 
 - ``nadaraya_watson``: local-constant kernel regression
 - ``local_linear``: local-polynomial (degree 1) kernel regression

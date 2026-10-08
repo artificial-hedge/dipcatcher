@@ -61,6 +61,7 @@ def bench_optnet_qp(
     lam: float = 2.0,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, mutr, rtr = synth_decision_data(n_train, d_feat, rng)
     xte, _mute, rte = synth_decision_data(n_test, d_feat, rng)
@@ -112,5 +113,5 @@ def bench_optnet_qp(
         "synthetic_optnet_ret_two_stage": ret_ts,
         "synthetic_optnet_ret_gain": ret_e2e - ret_ts,
         "synthetic_optnet_mu_mse": mu_mse,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

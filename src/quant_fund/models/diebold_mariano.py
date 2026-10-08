@@ -120,9 +120,9 @@ def bench_diebold_mariano(
     ok = r_diff["p_hln"] < 0.01 and r_same["p_hln"] > 0.9
     ok = ok and r_diff["mean_diff"] > 0
     return {
-        "dm_stat": r_diff["dm"],
-        "dm_hln": r_diff["dm_hln"],
-        "p_alt": r_diff["p_hln"],
-        "p_null": r_same["p_hln"],
-        "score": float(ok),
+        "synthetic_dm_stat": r_diff["dm"],
+        "synthetic_dm_hln": r_diff["dm_hln"],
+        "synthetic_p_alt": r_diff["p_hln"],
+        "synthetic_p_null": r_same["p_hln"],
+        "synthetic_score": float(ok),
     }

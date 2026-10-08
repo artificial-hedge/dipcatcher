@@ -11,8 +11,25 @@ harness. Security-relevant surfaces:
   config allowlisting, request-size caps.
 - **Corpus/receipt integrity** (`fx1.data`, `fx1.train.receipts`): hash-chained
   ledgers and tamper-evident receipts.
+- **Signing keys** (`GATE_SIGNING_KEY`, `GATE_QUORUM_KEYS`,
+  `WITNESS_SIGNING_KEY`, `FX1_SIGNING_KEY`): Ed25519/ECDSA key material for
+  pin signatures, rotation receipts, witness anchoring, and checkpoint
+  verification. Keys live only in the environment or in files outside the
+  repository; only public keys (`quality/gate_signing.pub`) are tracked.
+
+This is **research infrastructure only**. There is no live-trading path: no
+broker connectivity, no order placement, no account balances, no P&L
+execution. Everything downstream of a decision is simulated or SYNTHETIC
+(and labeled as such); a security report that assumes a live trading
+account is out of scope by definition.
 
 ## Supported versions
+
+| Version | Supported | Security fixes |
+|---|---|---|
+| `main` (HEAD) | yes | all fixes land here first |
+| latest `v*.*.*` tag | yes, when published | backports case-by-case |
+| older tags, forks, vendored `third_party/` | no | upgrade to `main` or the latest tag |
 
 Security fixes land on `main`. There is no published GitHub Release or PyPI
 upload yet. A tag matching `v*.*.*` runs `.github/workflows/release.yml`
@@ -25,7 +42,10 @@ Sigstore and `gh attestation verify` cover signatures and SLSA provenance.
 ## Hard rules (enforced in code, tested)
 
 - No credentials in source or tests; secrets come from environment variables
-  only (`MOONSHOT_API_KEY`, `FX1_SIGNING_KEY`, `QUANT_API_KEY`). The full
+  only (`MOONSHOT_API_KEY`, `FX1_SIGNING_KEY`, `QUANT_API_KEY`,
+  `RESEARCH_API_KEY`, `FX1_API_KEY`, and the gate/witness signing keys
+  `GATE_SIGNING_KEY`, `GATE_SIGNING_KEY_NEW`, `GATE_QUORUM_KEYS`,
+  `WITNESS_SIGNING_KEY`). The full
   env-var surface is enumerated in `.env.example`, a staged-diff
   `secret-scan` pre-commit hook and a gitleaks hook are enforced, and
   diagnostics (`fx1 doctor`, `dipcatcher doctor`) report presence flags,

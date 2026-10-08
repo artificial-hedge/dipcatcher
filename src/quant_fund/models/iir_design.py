@@ -1,4 +1,4 @@
-"""Analog-prototype IIR design + bilinear transform to digital SOS.
+"""Analog-prototype IIR design + bilinear transform to digital SOS (SYNTHETIC).
 
 Butterworth and Chebyshev-I lowpass prototypes in the s-plane, cutoff
 prewarped, mapped by s = 2fs (z−1)/(z+1), grouped into second-order

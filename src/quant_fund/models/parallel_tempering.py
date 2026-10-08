@@ -1,4 +1,4 @@
-"""Parallel tempering (replica exchange) MCMC on a bimodal 1-D target.
+"""Parallel tempering (replica exchange) MCMC on a bimodal 1-D target (SYNTHETIC).
 
 K replicas at temperatures beta_k = 2^{-k}; within-replica random-walk
 MH plus adjacent-replica swap moves with the PT acceptance ratio.

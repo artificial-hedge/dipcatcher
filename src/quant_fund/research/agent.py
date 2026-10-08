@@ -4178,6 +4178,38 @@ def _build_hypotheses(
     return hyps
 
 
+def _retired_optional_families() -> frozenset[str]:
+    """Optional benchmark families that must not be emitted at runtime.
+
+    ``LIVE_OPTIONAL_BENCHMARK_FAMILIES`` (= ``OPTIONAL_BENCHMARK_FAMILIES -
+    RETIRED_BENCHMARK_FAMILIES``, owned by catalog maintenance) wins when
+    present. ``OPTIONAL_BENCHMARK_FAMILIES`` stays append-only so frozen
+    receipts keep verifying against old catalog state. Until the symbols
+    land, nothing is retired and behavior is unchanged.
+
+    The DEFAULT research surface is ``DEFAULT_BENCHMARK_FAMILIES`` (the 23
+    REQUIRED families); this function only decides which *optional* names are
+    suppressed from emission. It deliberately enumerates the full optional set
+    — retirement cannot be computed otherwise, and narrowing it here would let
+    a retired family back into a live receipt.
+    """
+    from quant_fund.research.catalog import registry
+
+    optional = frozenset(registry.OPTIONAL_BENCHMARK_FAMILIES)
+    live = getattr(registry, "LIVE_OPTIONAL_BENCHMARK_FAMILIES", None)
+    if live is not None:
+        return optional - frozenset(live)
+    return frozenset(getattr(registry, "RETIRED_BENCHMARK_FAMILIES", frozenset())) & optional
+
+
+def _emit_live_families(families: dict[str, Any]) -> dict[str, Any]:
+    """Keep every REQUIRED family emitted; drop only retired optional ones."""
+    from quant_fund.research.catalog import registry
+
+    retired = _retired_optional_families() - frozenset(registry.REQUIRED_BENCHMARK_FAMILIES)
+    return {name: payload for name, payload in families.items() if name not in retired}
+
+
 def run_research(config: AppConfig) -> ResearchNotebook:
     set_global_seed(config.train.random_seed)
     build_gold(config, refresh=config.data.source == "synthetic")
@@ -5693,7 +5725,7 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         disclaimer=disclaimer,
         ranking_target=label,
         claim="research_only",
-        families=families,
+        families=_emit_live_families(families),
         rankers=rankers,
         hypotheses=hyps,
         scorecard=scorecard,

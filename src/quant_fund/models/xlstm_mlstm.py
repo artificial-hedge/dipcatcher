@@ -1,4 +1,4 @@
-"""xLSTM / mLSTM (Beck et al. 2024) — matrix-memory LSTM:
+"""xLSTM / mLSTM (Beck et al. 2024) — matrix-memory LSTM: (SYNTHETIC)
 M_t = f_t M_{t-1} + i_t k_t v_t^T, readout (q_t^T M)/(q_t^T Σ f k).
 Covariance-matrix memory with learned gates on induction recall.
 """
@@ -68,5 +68,5 @@ def bench_xlstm_mlstm(seed: int = 2251, iters: int = 800, D: int = 16) -> dict[s
         "synthetic_mlstm_recall": float(acc),
         "synthetic_attn_recall": base,
         "synthetic_mlstm_gain": float(acc) - base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Commutative-ring decision procedure via polynomial normal form.
+"""Commutative-ring decision procedure via polynomial normal form (SYNTHETIC).
 
 Ring expressions over vars (strings) and int literals normalize to a
 coefficient map {sorted-variable-tuple monomial: coefficient}; ring equality

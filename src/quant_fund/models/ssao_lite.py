@@ -1,4 +1,4 @@
-"""SSAO-lite: hemisphere sample occlusion ratio around a depth map."""
+"""SSAO-lite: hemisphere sample occlusion ratio around a depth map (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""Synthetic RL-theory fixtures shared by the convergence-bounds canon.
+"""Synthetic RL-theory fixtures shared by the convergence-bounds canon (SYNTHETIC).
 
 A small planted bandit (known gaps) and a tiny chain MDP (known values)
 so every module verifies a *rate* — regret bound shapes, contraction

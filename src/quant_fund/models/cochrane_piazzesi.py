@@ -142,10 +142,10 @@ def bench_cochrane_piazzesi(
     tent_shape = gamma[2] > gamma[0] and gamma[2] > gamma[4]
     ok = r["r2"] > 0.6 and restr["r2_restricted"] > 0.5 and tent_shape and r0["r2"] < 0.15
     return {
-        "r2_full": r["r2"],
-        "r2_restricted": restr["r2_restricted"],
-        "gamma3_peak": float(gamma[2]),
-        "r2_null": r0["r2"],
-        "r2_null_restr": restr0["r2_restricted"],
-        "score": float(ok),
+        "synthetic_r2_full": r["r2"],
+        "synthetic_r2_restricted": restr["r2_restricted"],
+        "synthetic_gamma3_peak": float(gamma[2]),
+        "synthetic_r2_null": r0["r2"],
+        "synthetic_r2_null_restr": restr0["r2_restricted"],
+        "synthetic_score": float(ok),
     }

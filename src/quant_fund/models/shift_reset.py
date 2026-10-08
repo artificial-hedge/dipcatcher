@@ -1,4 +1,4 @@
-"""Delimited continuations: reset / shift via CPS evaluation.
+"""Delimited continuations: reset / shift via CPS evaluation (SYNTHETIC).
 
 reset(e) evaluates e in continuation-passing style; shift(f) captures
 the current continuation up to the nearest reset and passes it to f

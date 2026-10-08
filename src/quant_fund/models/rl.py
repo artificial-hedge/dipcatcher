@@ -1,4 +1,4 @@
-"""Contextual bandit for cross-sectional ranking. Research-only reward path.
+"""Contextual bandit for cross-sectional ranking. Research-only reward path (SYNTHETIC).
 
 LinUCB (Li et al., 2010) treats each name as an arm with shared linear
 parameters. Reward is the scientific target (e.g. next-day idiosyncratic

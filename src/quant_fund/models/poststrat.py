@@ -1,4 +1,4 @@
-"""Post-stratification and raking (iterative proportional
+"""Post-stratification and raking (iterative proportional (SYNTHETIC)
 fitting) for survey weights.
 
 Deming & Stephan (1940): given a sample classified into cells
@@ -150,5 +150,5 @@ def bench_poststrat(seed: int = 20261231 + 445) -> dict[str, float]:
         "synthetic_raw_err": abs(raw_mean - true_mean),
         "synthetic_deff": deff["deff"],
         "synthetic_rake_margin_err": float(np.abs(rake_marg - shares).max()),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

@@ -1,4 +1,4 @@
-"""H-infinity filter vs Kalman on a model-misspecified tracking problem.
+"""H-infinity filter vs Kalman on a model-misspecified tracking problem (SYNTHETIC).
 
 True process has heavier drift noise than the filter assumes; the
 H∞ filter bounds the worst-case gain from disturbances to error via a

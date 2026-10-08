@@ -1,4 +1,4 @@
-"""Shared fixture for wave-190 classical causal-discovery canon.
+"""Shared fixture for wave-190 classical causal-discovery canon (SYNTHETIC).
 
 SEM generation with selectable noise family (LiNGAM methods need
 non-Gaussian noise to identify the order) + induced-skeleton and

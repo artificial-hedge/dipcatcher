@@ -1,4 +1,4 @@
-"""8-point essential/fundamental matrix; epipolar-constraint residual."""
+"""8-point essential/fundamental matrix; epipolar-constraint residual (SYNTHETIC)."""
 
 import numpy as np
 

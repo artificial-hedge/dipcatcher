@@ -1,4 +1,4 @@
-"""Matrix groups over GF(p): order formulas and subgroup checks (wave 281).
+"""Matrix groups over GF(p): order formulas and subgroup checks (wave 281) (SYNTHETIC).
 
 |GL(n,p)| = prod_{i=0}^{n-1} (p^n - p^i); |SL| = |GL| / (p-1). Verified by
 brute-force enumeration of invertible 2x2 matrices mod p for small p, plus

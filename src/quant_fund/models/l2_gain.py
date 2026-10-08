@@ -1,4 +1,4 @@
-"""Closed-loop L2-gain reduction by state feedback (wave 279).
+"""Closed-loop L2-gain reduction by state feedback (wave 279) (SYNTHETIC).
 
 x' = A x + B u + Bd w, y = C x. Feedback u = -K x attenuates the
 disturbance-to-output channel: the induced L2 gain (output energy / input

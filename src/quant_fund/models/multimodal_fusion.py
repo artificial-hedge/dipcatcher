@@ -1,4 +1,4 @@
-"""Multimodal data fusion forecaster (Exec-Summary Feature 6).
+"""Multimodal data fusion forecaster (Exec-Summary Feature 6) (SYNTHETIC).
 Modalities: price series (return stats), text (hashed-embed sentiment
 probe), visual chart snapshot (gradient/momentum image stats). Gated
 late-fusion learns per-modality weights; a fused logit predicts next-

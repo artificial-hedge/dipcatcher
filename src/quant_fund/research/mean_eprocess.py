@@ -106,7 +106,8 @@ class MeanEProcess:
 
     def update(self, x: float) -> tuple[float, float]:
         """Fold one bounded observation; return the two-sided CS."""
-        assert self._log_w_le is not None and self._log_w_ge is not None
+        if not (self._log_w_le is not None and self._log_w_ge is not None):
+            raise ValueError("self._log_w_le is not None and self._log_w_ge is not None")
         v = _strict_unit(x)
         mu0 = np.asarray(self.mu0_grid, dtype=float)
         fracs = np.asarray(self.wallet_fracs, dtype=float)
@@ -138,7 +139,8 @@ class MeanEProcess:
         so the largest rejected grid point is the bound. Nothing rejected
         reports the grid floor; everything rejected reports the grid top.
         """
-        assert self._log_w_le is not None
+        if not (self._log_w_le is not None):
+            raise ValueError("self._log_w_le is not None")
         a = self.alpha if alpha is None else float(alpha)
         if not (0.0 < a < 1.0):
             raise ValueError(f"alpha must be in (0,1), got {a}")
@@ -151,7 +153,8 @@ class MeanEProcess:
 
     def upper_bound(self, alpha: float | None = None) -> float:
         """One-sided level-``alpha`` upper bound on the running mean."""
-        assert self._log_w_ge is not None
+        if not (self._log_w_ge is not None):
+            raise ValueError("self._log_w_ge is not None")
         a = self.alpha if alpha is None else float(alpha)
         if not (0.0 < a < 1.0):
             raise ValueError(f"alpha must be in (0,1), got {a}")
@@ -173,7 +176,8 @@ class MeanEProcess:
 
     def evalue_le(self, mu0: float) -> float:
         """E-value for the composite null `mean <= mu0` (nan off-grid)."""
-        assert self._log_w_le is not None
+        if not (self._log_w_le is not None):
+            raise ValueError("self._log_w_le is not None")
         g = np.asarray(self.mu0_grid, dtype=float)
         i = int(np.argmin(np.abs(g - mu0)))
         if abs(float(g[i]) - mu0) > 1e-9:
@@ -182,7 +186,8 @@ class MeanEProcess:
 
     def evalue_ge(self, mu0: float) -> float:
         """E-value for the composite null `mean >= mu0` (nan off-grid)."""
-        assert self._log_w_ge is not None
+        if not (self._log_w_ge is not None):
+            raise ValueError("self._log_w_ge is not None")
         g = np.asarray(self.mu0_grid, dtype=float)
         i = int(np.argmin(np.abs(g - mu0)))
         if abs(float(g[i]) - mu0) > 1e-9:

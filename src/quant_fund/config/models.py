@@ -964,6 +964,12 @@ class PerpConfig(StrictConfigModel):
         return self
 
 
+def _require_at_least(value: int, name: str, minimum: int) -> None:
+    """Fail closed when a named integer setting falls below its floor."""
+    if value < minimum:
+        raise ValueError(f"{name} must be >= {minimum}")
+
+
 class NorthsetConfig(StrictConfigModel):
     """Order-book + candlestick research slice (ADR-021)."""
 
@@ -1015,18 +1021,12 @@ class NorthsetConfig(StrictConfigModel):
             raise ValueError("sweep_horizons must contain positive integers")
         if len(set(self.sweep_horizons)) != len(self.sweep_horizons):
             raise ValueError("sweep_horizons must be unique")
-        if self.sweep_vol_lookback < 3:
-            raise ValueError("sweep_vol_lookback must be >= 3")
-        if self.sweep_n_boot < 50:
-            raise ValueError("sweep_n_boot must be >= 50")
-        if self.sweep_n_permutations < 50:
-            raise ValueError("sweep_n_permutations must be >= 50")
-        if self.sweep_n_folds < 2:
-            raise ValueError("sweep_n_folds must be >= 2")
-        if self.sweep_min_events < 10:
-            raise ValueError("sweep_min_events must be >= 10")
-        if self.sweep_min_dates < 5:
-            raise ValueError("sweep_min_dates must be >= 5")
+        _require_at_least(self.sweep_vol_lookback, "sweep_vol_lookback", 3)
+        _require_at_least(self.sweep_n_boot, "sweep_n_boot", 50)
+        _require_at_least(self.sweep_n_permutations, "sweep_n_permutations", 50)
+        _require_at_least(self.sweep_n_folds, "sweep_n_folds", 2)
+        _require_at_least(self.sweep_min_events, "sweep_min_events", 10)
+        _require_at_least(self.sweep_min_dates, "sweep_min_dates", 5)
         if not np.isfinite(self.sweep_min_fold_positive_fraction) or not (
             0.0 <= self.sweep_min_fold_positive_fraction <= 1.0
         ):

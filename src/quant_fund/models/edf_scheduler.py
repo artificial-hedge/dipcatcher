@@ -1,4 +1,4 @@
-"""EDF scheduling: preemptive earliest-deadline-first, deadline-miss metric."""
+"""EDF scheduling: preemptive earliest-deadline-first, deadline-miss metric (SYNTHETIC)."""
 
 import numpy as np
 

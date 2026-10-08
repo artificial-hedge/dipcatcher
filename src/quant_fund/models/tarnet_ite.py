@@ -1,4 +1,4 @@
-"""TARNet — two-head ITE network (Shalit et al. 2017).
+"""TARNet — two-head ITE network (Shalit et al. 2017) (SYNTHETIC).
 
 Shared trunk + treatment-specific heads trained on the factual arm
 only; ITE = head1(x) − head0(x). PEHE vs naive single-regressor ITE.
@@ -70,5 +70,5 @@ def bench_tarnet_ite(
         "synthetic_tarnet_naive_pehe": pehe_n,
         "synthetic_tarnet_gain": pehe_n - pehe_t,
         "synthetic_tarnet_ate_err": float(abs(ite.mean() - tau_te.mean())),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

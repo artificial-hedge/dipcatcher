@@ -1,4 +1,4 @@
-"""robinhood+ as a Dipcatcher core forecast engine.
+"""robinhood+ as a Dipcatcher core forecast engine (SYNTHETIC).
 
 Consumes point-in-time split-adjusted K-lines, emits path-derived expected
 returns / quantiles / rank scores, and never bypasses fusion or the risk gate.

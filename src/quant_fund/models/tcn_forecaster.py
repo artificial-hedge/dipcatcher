@@ -1,4 +1,4 @@
-"""TCN forecaster: dilated causal convolutions over time.
+"""TCN forecaster: dilated causal convolutions over time (SYNTHETIC).
 
 Bai, Kolter & Koltun 2018: causal convs with exponentially dilated
 kernels give a receptive field that grows exponentially in depth while
@@ -57,6 +57,7 @@ def bench_tcn_forecaster(
 ) -> dict[str, float]:
     """Dilated-TCN next-step forecast vs short-window MLP and AR(4)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     xs, y = synth_long_lag(n, win, rng)
     xs = (xs - xs.mean()) / (xs.std() + 1e-9)
@@ -109,7 +110,7 @@ def bench_tcn_forecaster(
         "synthetic_tcn_ar_mae": ar_mae,
         "synthetic_tcn_margin_vs_ar": ar_mae - tcn_mae,
         "synthetic_tcn_margin_vs_shortmlp": mlp_mae - tcn_mae,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

@@ -1,4 +1,4 @@
-"""Interrupted time series (ITS) — segmented regression design.
+"""Interrupted time series (ITS) — segmented regression design (SYNTHETIC).
 
 Pre/post intervention levels and slopes:
     y_t = β0 + β1·t + β2·post_t + β3·(t−τ)·post_t + e_t

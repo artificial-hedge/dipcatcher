@@ -1,4 +1,4 @@
-"""Linear MPC via batch-QP: condense the finite-horizon LQR into a QP
+"""Linear MPC via batch-QP: condense the finite-horizon LQR into a QP (SYNTHETIC)
 in u_0..u_{T-1}, solve by projected gradient. Receding-horizon cost
 vs PD baseline.
 """
@@ -56,5 +56,5 @@ def bench_mpc_qp(seed: int = 2925, horizon: int = 20, steps: int = 30) -> dict[s
         "synthetic_mpc_cost": float(tot),
         "synthetic_pd_cost": float(cost_pd),
         "synthetic_mpc_gain": float(cost_pd - tot),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

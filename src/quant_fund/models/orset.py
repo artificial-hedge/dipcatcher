@@ -1,4 +1,4 @@
-"""OR-Set CRDT: add-wins observed-remove set (synthetic).
+"""OR-Set CRDT: add-wins observed-remove set (synthetic) (SYNTHETIC).
 
 Elements carry unique tags per add; remove drops only observed
 tags. Verified: merge laws (comm/assoc/idem), add-wins semantics

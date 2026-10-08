@@ -1,4 +1,4 @@
-"""Synthetic fixtures for the w143 PEFT canon."""
+"""Synthetic fixtures for the w143 PEFT canon (SYNTHETIC)."""
 
 from __future__ import annotations
 

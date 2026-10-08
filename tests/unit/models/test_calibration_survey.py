@@ -51,4 +51,4 @@ def test_fail_closed_singular():
 
 def test_bench():
     out = bench_calibration_survey()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

@@ -1,4 +1,4 @@
-"""RealNVP (Dinh et al. 2017) — affine coupling layers:
+"""RealNVP (Dinh et al. 2017) — affine coupling layers: (SYNTHETIC)
 x_a → s,t nets conditioned on x_a transform x_b; logdet = Σ s.
 Held-out NLL vs Gaussian on the pinwheel fixture.
 """
@@ -64,5 +64,5 @@ def bench_real_nvp(seed: int = 2281, iters: int = 600) -> dict[str, float]:
         "synthetic_realnvp_nll": nll_te,
         "synthetic_gauss_nll": base,
         "synthetic_realnvp_gain": base - nll_te,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Conjugacy classes + class equation on finite groups (SYNTHIC)."""
+"""Conjugacy classes + class equation on finite groups (SYNTHIC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

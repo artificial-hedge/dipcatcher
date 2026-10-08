@@ -1,4 +1,4 @@
-"""Convolution of probability measures (wave 288).
+"""Convolution of probability measures (wave 288) (SYNTHETIC).
 
 Uniform * Uniform on [0,1] is triangular: density at s is s on [0,1],
 2-s on [1,2] — verified by discretized convolution vs samples of X+Y.

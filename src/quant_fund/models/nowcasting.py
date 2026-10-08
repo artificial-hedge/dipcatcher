@@ -1,4 +1,4 @@
-"""Mixed-frequency nowcasting: MIDAS and bridge equations.
+"""Mixed-frequency nowcasting: MIDAS and bridge equations (SYNTHETIC).
 
 References:
 - Ghysels, Sinko & Valkanov (2007): MIDAS regressions with beta

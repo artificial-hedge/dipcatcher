@@ -1,4 +1,4 @@
-"""Trade signing / order-flow classification.
+"""Trade signing / order-flow classification (SYNTHETIC).
 
 - Tick rule (trade signed by last nonzero price change).
 - Lee & Ready (1991) quote rule with tick-rule fallback at the midpoint.

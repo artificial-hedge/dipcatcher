@@ -1,4 +1,4 @@
-"""Solow growth: k' = s·k^α - (n+g+δ)k → exact steady state."""
+"""Solow growth: k' = s·k^α - (n+g+δ)k → exact steady state (SYNTHETIC)."""
 
 import numpy as np
 

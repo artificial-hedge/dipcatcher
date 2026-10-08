@@ -61,4 +61,4 @@ def test_fail_closed_too_many_comp():
 
 def test_bench():
     out = bench_fastica()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

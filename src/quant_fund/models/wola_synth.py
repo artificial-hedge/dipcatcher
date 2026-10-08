@@ -1,4 +1,4 @@
-"""Weighted overlap-add synthesis: hop consistency check."""
+"""Weighted overlap-add synthesis: hop consistency check (SYNTHETIC)."""
 
 import numpy as np
 

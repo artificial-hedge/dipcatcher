@@ -775,7 +775,8 @@ def _offset_quotes(state: MMState, delta: tuple[int, int], tick: float) -> tuple
     when the mapped quotes would cross (same safety layer as the agent
     path of ``run_rl_mm_session``)."""
     bb, ba = state.best_bid, state.best_ask
-    assert bb is not None and ba is not None  # guarded by callers
+    if not (bb is not None and ba is not None):
+        raise ValueError("bb is not None and ba is not None")  # guarded by callers
     db, da = delta
     bid = bb - db * tick
     ask = ba + da * tick

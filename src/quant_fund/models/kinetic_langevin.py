@@ -1,4 +1,4 @@
-"""Kinetic (underdamped) Langevin Monte Carlo — velocity OU + position
+"""Kinetic (underdamped) Langevin Monte Carlo — velocity OU + position (SYNTHETIC)
 drift discretization (randomized-horizon KLMC/UBU): partial momentum
 refresh ρ per step. ESS vs RWM.
 """
@@ -46,5 +46,5 @@ def bench_kinetic_langevin(seed: int = 2219) -> dict[str, float]:
         "synthetic_rwm_ess": ess_b,
         "synthetic_klmc_ess_gain": ess - ess_b,
         "synthetic_klmc_moment_err": moment_err(smp, mu, sd),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

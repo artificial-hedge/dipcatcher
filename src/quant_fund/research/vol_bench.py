@@ -403,6 +403,15 @@ def _eval_shard_model(
         return str(exc)
 
 
+def _resolve_forecasters(
+    models: Mapping[str, VolForecaster] | Iterable[str] | None,
+) -> dict[str, VolForecaster]:
+    """Normalize the model selector to a ``name -> forecaster`` map."""
+    if isinstance(models, Mapping):
+        return dict(models)
+    return resolve_vol_models(models)
+
+
 def run_vol_bench(
     models: Mapping[str, VolForecaster] | Iterable[str] | None = None,
     shards: Iterable[str] | Mapping[str, VolShardGenerator] | None = None,
@@ -423,10 +432,7 @@ def run_vol_bench(
     harness itself fails closed on degenerate arguments or shard output.
     Returns the results frame plus the unsealed receipt payload.
     """
-    if isinstance(models, Mapping):
-        forecasters = dict(models)
-    else:
-        forecasters = resolve_vol_models(models)
+    forecasters = _resolve_forecasters(models)
     if not forecasters:
         raise ValueError("vol bench requires at least one model")
     for name in forecasters:

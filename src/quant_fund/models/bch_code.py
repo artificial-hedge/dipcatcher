@@ -1,4 +1,4 @@
-"""BCH(15,7,2) systematic encode + Berlekamp-Massey/Chien decode.
+"""BCH(15,7,2) systematic encode + Berlekamp-Massey/Chien decode (SYNTHETIC).
 
 GF(16) with primitive polynomial x^4+x+1. Encode: c = m*x^8 + (m*x^8 mod g)
 with generator g = x^8+x^7+x^6+x^4+1. Decode: syndromes S_j = r(alpha^j)

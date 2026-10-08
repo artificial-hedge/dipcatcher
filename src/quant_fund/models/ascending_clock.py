@@ -1,4 +1,4 @@
-"""Ascending-clock (English) auction with dropout tracking.
+"""Ascending-clock (English) auction with dropout tracking (SYNTHETIC).
 
 Price rises until one bidder remains; each bidder drops at their value.
 The clearing price equals the second-highest value — same allocation and

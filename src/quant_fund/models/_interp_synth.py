@@ -1,4 +1,4 @@
-"""Synthetic interpretability fixture.
+"""Synthetic interpretability fixture (SYNTHETIC).
 
 Hidden model: tokens embed in D=16 via ground-truth directions
 F_k (k=0..7 features); activations are superposition a = Σ s_k F_k

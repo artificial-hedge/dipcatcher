@@ -1,4 +1,4 @@
-"""ML-driven smart order router (Exec-Summary Feature 3). Fill-probability
+"""ML-driven smart order router (Exec-Summary Feature 3). Fill-probability (SYNTHETIC)
 and adverse-selection ("toxicity") models score candidate child orders on
 each venue; a greedy marginal-cost allocator splits a parent order across
 venues subject to displayed depth.

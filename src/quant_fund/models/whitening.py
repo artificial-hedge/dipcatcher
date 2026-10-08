@@ -1,4 +1,4 @@
-"""PCA and ZCA whitening transforms.
+"""PCA and ZCA whitening transforms (SYNTHETIC).
 
 Whitening linearly transforms data to have identity covariance.  Given the
 centred covariance ``Sigma = U Lambda U'``:

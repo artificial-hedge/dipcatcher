@@ -47,12 +47,12 @@ def test_likelihood_ratio_weights_positive_finite() -> None:
 
 def test_bench_coverage_width_no_sharpe() -> None:
     row = bench_weighted_cqr(seed=7)
-    assert "coverage" in row
-    assert "mean_width" in row
-    assert "median_width" in row
+    assert "synthetic_coverage" in row
+    assert "synthetic_mean_width" in row
+    assert "synthetic_median_width" in row
     assert all("sharpe" not in key.lower() for key in row)
-    assert row["n"] > 0
-    assert row["mean_width"] > row["unweighted_mean_width"]
+    assert row["synthetic_n"] > 0
+    assert row["synthetic_mean_width"] > row["synthetic_unweighted_mean_width"]
 
 
 def test_weighted_quantile_rejects_bad_alpha() -> None:

@@ -1,4 +1,4 @@
-"""ChaCha20 core function: quarter-round diffusion + keystream determinism."""
+"""ChaCha20 core function: quarter-round diffusion + keystream determinism (SYNTHETIC)."""
 
 import numpy as np
 

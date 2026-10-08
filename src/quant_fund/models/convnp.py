@@ -49,6 +49,7 @@ def bench_convnp(
     ch: int = 24,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     tr = synth_np_tasks(n_train, n_ctx, n_tgt, rng)
     te = synth_np_tasks(n_test, n_ctx, n_tgt, rng)
@@ -111,5 +112,5 @@ def bench_convnp(
         "synthetic_convnp_mse_gain": mse_base - mse_cnp,
         "synthetic_convnp_cov90": cov90,
         "synthetic_convnp_cov90_err": abs(cov90 - 0.90),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

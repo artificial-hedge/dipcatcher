@@ -1,4 +1,4 @@
-"""Jump-diffusion models: Merton (1976) option series + path simulation,
+"""Jump-diffusion models: Merton (1976) option series + path simulation, (SYNTHETIC)
 Kou (2002) double-exponential jumps.
 
 Merton JD: dS/S = (r - lam*kappa) dt + sigma dW + (J - 1) dN, with

@@ -1,4 +1,4 @@
-"""Stochastic interpolant (Albergo & Vanden-Eijnden 2023) — velocity
+"""Stochastic interpolant (Albergo & Vanden-Eijnden 2023) — velocity (SYNTHETIC)
 field on x_t = (1-t)x0 + t x1 + gamma·sqrt(t(1-t)) z; Euler sampler.
 MMD vs rectified-flow-style ODE baseline.
 """
@@ -52,5 +52,5 @@ def bench_stoch_interp(
         "synthetic_si_mmd": m,
         "synthetic_si_gauss_mmd": g,
         "synthetic_si_mmd_gain": g - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

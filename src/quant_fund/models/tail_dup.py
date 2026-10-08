@@ -1,4 +1,4 @@
-"""Tail duplication (wave 294).
+"""Tail duplication (wave 294) (SYNTHETIC).
 
 Blocks ending in a conditional with a successor having multiple
 predecessors get duplicated along the hot edge, eliminating a branch.

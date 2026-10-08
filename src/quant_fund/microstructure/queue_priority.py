@@ -182,7 +182,8 @@ def fill_probability_by_queue(
         cell[f"n_{outcome}"] += 1
         if outcome == "filled":
             waits = cell["_waits"]
-            assert isinstance(waits, list)
+            if not (isinstance(waits, list)):
+                raise ValueError("isinstance(waits, list)")
             waits.append(wait_of[sub.order_id])
     n = len(submissions)
     per_q: dict[str, Any] = {}

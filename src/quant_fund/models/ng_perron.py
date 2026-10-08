@@ -159,10 +159,10 @@ def bench_ng_perron(seed: int = 20261231 + 326) -> dict[str, float]:
     r_st = ng_perron_test(st)
     ok = r_rw["unanimous_reject"] == 0.0 and r_st["unanimous_reject"] == 1.0
     return {
-        "mza_rw": r_rw["mza"],
-        "mza_st": r_st["mza"],
-        "mzt_st": r_st["mzt"],
-        "n_reject_rw": r_rw["n_reject"],
-        "n_reject_st": r_st["n_reject"],
-        "score": float(ok),
+        "synthetic_mza_rw": r_rw["mza"],
+        "synthetic_mza_st": r_st["mza"],
+        "synthetic_mzt_st": r_st["mzt"],
+        "synthetic_n_reject_rw": r_rw["n_reject"],
+        "synthetic_n_reject_st": r_st["n_reject"],
+        "synthetic_score": float(ok),
     }

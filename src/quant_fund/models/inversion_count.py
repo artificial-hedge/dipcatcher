@@ -1,4 +1,4 @@
-"""Merge-sort inversion counting vs quadratic oracle (wave 282)."""
+"""Merge-sort inversion counting vs quadratic oracle (wave 282) (SYNTHETIC)."""
 
 import numpy as np
 

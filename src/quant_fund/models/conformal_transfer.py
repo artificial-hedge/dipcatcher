@@ -615,21 +615,21 @@ def bench_tcc(
     for tag, q in (("transport_only", q_plain), ("tcc_ks", ks.qhat), ("weighted_tcc", wtcc.qhat)):
         lo, hi = expand_interval(point, point, q)
         row = set_metrics(data.y_test, lo, hi)
-        out[f"coverage_{tag}"] = row.coverage
-        out[f"mean_width_{tag}"] = row.mean_width
-        out[f"qhat_{tag}"] = float(q)
+        out[f"synthetic_coverage_{tag}"] = row.coverage
+        out[f"synthetic_mean_width_{tag}"] = row.mean_width
+        out[f"synthetic_qhat_{tag}"] = float(q)
     out.update(
         {
-            "delta_hat": ks.delta_hat,
-            "delta_plus": ks.delta_plus,
-            "alpha_star": ks.alpha_star,
-            "ess_percent": wtcc.ess_percent,
-            "n": float(data.y_test.size),
-            "alpha": float(alpha),
-            "target_scale": float(target_scale),
-            "dgp": "fixture",
-            "claim": "research_metric_only",
-            "seed": float(seed),
+            "synthetic_delta_hat": ks.delta_hat,
+            "synthetic_delta_plus": ks.delta_plus,
+            "synthetic_alpha_star": ks.alpha_star,
+            "synthetic_ess_percent": wtcc.ess_percent,
+            "synthetic_n": float(data.y_test.size),
+            "synthetic_alpha": float(alpha),
+            "synthetic_target_scale": float(target_scale),
+            "synthetic_dgp": "fixture",
+            "synthetic_claim": "research_metric_only",
+            "synthetic_seed": float(seed),
         }
     )
     return out

@@ -5,6 +5,7 @@ The chat tool loop is driven by a scripted fake backend so tool execution,
 approval gating, and message bookkeeping are all observable.
 """
 
+import io
 import threading
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,8 @@ from typing import Any
 import pytest
 
 from fx1.flash.store import FlashStore
+from fx1.interactive import concierge as concierge_module
+from fx1.interactive import profiles
 from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.concierge import BackgroundJob, Concierge, run_console
 from fx1.serve.backends import ToolCompletion
@@ -165,6 +168,105 @@ def test_chat_offline_is_honest(env: Path, tmp_path: Path) -> None:
     text = joined(out)
     assert "no model endpoint configured" in text
     assert "/keys set" in text
+
+
+@pytest.mark.parametrize(
+    "command, model", [("/keys set", "fx1"), ("/keys set fx1-lite", "fx1-lite")]
+)
+def test_keys_set_prompts_for_masked_key_and_endpoint(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    command: str,
+    model: str,
+) -> None:
+    key_prompts: list[str] = []
+    url_prompts: list[str] = []
+
+    def password(prompt: str) -> str:
+        key_prompts.append(prompt)
+        return "test-private-api-key"
+
+    def endpoint(prompt: str) -> str:
+        url_prompts.append(prompt)
+        return "https://models.example.test/v1/chat/completions"
+
+    monkeypatch.setattr("getpass.getpass", password)
+    concierge, out = make_concierge(tmp_path)
+    concierge._input = endpoint  # noqa: SLF001
+
+    assert concierge.handle_line(command) is False
+
+    assert profiles.resolve_endpoint(model) == (
+        "test-private-api-key",
+        "https://models.example.test/v1/chat/completions",
+    )
+    assert key_prompts == [f"› {model} API key: "]
+    assert len(url_prompts) == 1 and f"{model} endpoint URL" in url_prompts[0]
+    assert "models.example.test" in joined(out)
+    assert "test-private-api-key" not in joined(out)
+
+
+def test_keys_set_blank_url_preserves_existing_endpoint(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    base_url = "https://configured.example.test/v1/chat/completions"
+    profiles.set_endpoint("fx1", "old-private-key", base_url)
+    monkeypatch.setattr("getpass.getpass", lambda prompt: "new-private-key")
+    concierge, _ = make_concierge(tmp_path)
+    concierge._input = lambda prompt: ""  # noqa: SLF001
+
+    concierge.handle_line("/keys set")
+
+    assert profiles.resolve_endpoint("fx1") == ("new-private-key", base_url)
+
+
+def test_keys_set_invalid_url_keeps_existing_profile(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path = profiles.set_endpoint("fx1", "old-private-key", "https://configured.example.test")
+    original = path.read_bytes()
+    monkeypatch.setattr("getpass.getpass", lambda prompt: "new-private-key")
+    concierge, out = make_concierge(tmp_path)
+    concierge._input = lambda prompt: "file:///invalid-endpoint"  # noqa: SLF001
+
+    assert concierge.handle_line("/keys set") is False
+
+    assert path.read_bytes() == original
+    assert "invalid base URL" in capsys.readouterr().err
+    assert "new-private-key" not in joined(out)
+
+
+@pytest.mark.parametrize(
+    "stage, error", [("key", EOFError), ("url", EOFError), ("url", KeyboardInterrupt)]
+)
+def test_keys_set_cancel_keeps_existing_profile(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    stage: str,
+    error: type[BaseException],
+) -> None:
+    path = profiles.set_endpoint("fx1", "old-private-key", "https://configured.example.test")
+    original = path.read_bytes()
+
+    def cancelled(prompt: str) -> str:
+        raise error
+
+    monkeypatch.setattr(
+        "getpass.getpass", cancelled if stage == "key" else lambda prompt: "new-private-key"
+    )
+    concierge, out = make_concierge(tmp_path)
+    concierge._input = cancelled  # noqa: SLF001
+
+    assert concierge.handle_line("/keys set") is False
+
+    assert path.read_bytes() == original
+    assert "cancelled; no changes saved" in joined(out)
+    assert "new-private-key" not in joined(out)
 
 
 # ---------------------------------------------------------------------------
@@ -334,6 +436,167 @@ def test_chat_backend_fault_rolls_back_and_survives(
     concierge._backend_factory = lambda **kwargs: DeadBackend()  # noqa: SLF001
     concierge.handle_line("hello")  # must not raise
     assert concierge._messages == []  # failed turn rolled back  # noqa: SLF001
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "The strategy achieved Sharpe: 2.35 over the panel.",
+        "The model guarantees nothing, but achieved live trading profits.",
+        "On synthetic data the model achieves 0.99 recovery accuracy.",
+    ],
+)
+def test_chat_honesty_refusal_preserves_prior_turn_and_can_continue(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    answer: str,
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    backend = FakeBackend(
+        [
+            ToolCompletion(content="Ready to help.", tool_calls=None, finish_reason="stop"),
+            ToolCompletion(content=answer, tool_calls=None, finish_reason="stop"),
+            ToolCompletion(content="Use proper scores.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend)
+    concierge.handle_line("hello")
+    prior = list(concierge._messages)  # noqa: SLF001
+
+    assert concierge.handle_line("summarize the result") is False
+    assert concierge._messages == prior  # noqa: SLF001
+    assert "withheld by the fx-1 honesty gate" in joined(out)
+    assert answer not in joined(out)
+    captured = capsys.readouterr()
+    assert answer not in captured.out + captured.err
+
+    assert concierge.handle_line("which scores should we use?") is False
+    assert backend.tool_calls_seen[-1] == [
+        *prior,
+        {"role": "user", "content": "which scores should we use?"},
+    ]
+    assert out[-1] == "Use proper scores."
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "The held-out CRPS is 0.12 and pinball loss is 0.08.",
+        "On SYNTHETIC data the model achieves 0.99 recovery accuracy.",
+    ],
+)
+def test_chat_honesty_accepts_proper_scores_and_labeled_synthetic_results(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, answer: str
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    backend = FakeBackend([ToolCompletion(content=answer, tool_calls=None, finish_reason="stop")])
+    concierge, out = make_concierge(tmp_path, backend=backend)
+
+    concierge.handle_line("summarize the result")
+
+    assert out == [answer]
+    assert concierge._messages[-1] == {"role": "assistant", "content": answer}  # noqa: SLF001
+
+
+@pytest.mark.parametrize("unsafe_tool_preamble", [False, True])
+def test_chat_honesty_gate_covers_tool_turns(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    unsafe_tool_preamble: bool,
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    forbidden = "The strategy achieved Sharpe: 2.35 over the panel."
+    script = [
+        ToolCompletion(
+            content=forbidden if unsafe_tool_preamble else None,
+            tool_calls=(_tool_call("c1", "harness_run", {"name": "doctor"}),),
+            finish_reason="tool_calls",
+        ),
+    ]
+    if not unsafe_tool_preamble:
+        script.append(ToolCompletion(content=forbidden, tool_calls=None, finish_reason="stop"))
+    script.append(ToolCompletion(content="Ready again.", tool_calls=None, finish_reason="stop"))
+    backend = FakeBackend(script)
+    harness = FakeHarness()
+    concierge, out = make_concierge(tmp_path, backend=backend, harness=harness)
+
+    concierge.handle_line("check lab health")
+
+    assert harness.calls == ([] if unsafe_tool_preamble else [("doctor", [])])
+    assert forbidden not in joined(out)
+    assert "withheld by the fx-1 honesty gate" in joined(out)
+    retained = list(concierge._messages)  # noqa: SLF001
+    if unsafe_tool_preamble:
+        assert retained == []
+    else:
+        assert [message["role"] for message in retained] == [
+            "user",
+            "assistant",
+            "tool",
+            "assistant",
+        ]
+        assert "DATA_LABEL=SYNTHETIC" in retained[2]["content"]
+        assert "withheld by the fx-1 honesty gate" in retained[3]["content"]
+    assert forbidden not in str(retained)
+    concierge.handle_line("try again")
+    assert backend.tool_calls_seen[-1] == [*retained, {"role": "user", "content": "try again"}]
+    assert out[-1] == "Ready again."
+
+
+def test_chat_honesty_refusal_preserves_completed_flash_save_for_followup(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    forbidden = "The strategy achieved Sharpe: 2.35 over the panel."
+    finding = "Use proper scores to compare the forecasts."
+    backend = FakeBackend(
+        [
+            ToolCompletion(content="Ready to help.", tool_calls=None, finish_reason="stop"),
+            ToolCompletion(
+                content="I will save the research note.",
+                tool_calls=(
+                    _tool_call(
+                        "save1", "flash_save", {"text": finding, "task": "forecast scoring"}
+                    ),
+                ),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content=forbidden, tool_calls=None, finish_reason="stop"),
+            ToolCompletion(
+                content="The note is already saved.", tool_calls=None, finish_reason="stop"
+            ),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend)
+    concierge.handle_line("hello")
+    prior = list(concierge._messages)  # noqa: SLF001
+
+    concierge.handle_line("remember the scoring guidance")
+
+    entries = concierge._store.all()  # noqa: SLF001
+    assert len(entries) == 1 and entries[0].text == finding
+    retained = list(concierge._messages)  # noqa: SLF001
+    assert retained[: len(prior)] == prior
+    assert retained[-3]["tool_calls"][0]["id"] == "save1"
+    assert retained[-2] == {
+        "role": "tool",
+        "tool_call_id": "save1",
+        "content": f"saved flash entry {entries[0].id}",
+    }
+    assert "withheld by the fx-1 honesty gate" in retained[-1]["content"]
+    assert forbidden not in str(retained) and forbidden not in joined(out)
+
+    concierge.handle_line("was the note saved?")
+
+    assert backend.tool_calls_seen[-1] == [
+        *retained,
+        {"role": "user", "content": "was the note saved?"},
+    ]
+    assert len(concierge._store.all()) == 1  # noqa: SLF001
+    assert out[-1] == "The note is already saved."
 
 
 # ---------------------------------------------------------------------------
@@ -562,6 +825,84 @@ def test_run_console_eof_exits_cleanly(env: Path, tmp_path: Path) -> None:
     concierge, _ = make_concierge(tmp_path)
     run_console(input_fn=input_fn, output_fn=out.append, concierge_factory=lambda: concierge)
     assert "dipcatcher concierge" in joined(out)
+
+
+def test_run_console_prints_one_prompt_per_line_across_idle_polls(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    class TerminalInput(io.StringIO):
+        def isatty(self) -> bool:
+            return True
+
+    stdin = TerminalInput("/model\n/exit\n")
+    readiness = iter([False, False, True, False, True])
+    monkeypatch.setattr(concierge_module.sys, "stdin", stdin)
+    monkeypatch.setattr(concierge_module.sys, "platform", "linux")
+    monkeypatch.setattr(
+        concierge_module.select,
+        "select",
+        lambda *args: ([stdin] if next(readiness) else [], [], []),
+    )
+    concierge, out = make_concierge(tmp_path)
+
+    run_console(concierge_factory=lambda: concierge, output_fn=lambda text: None)
+
+    assert capsys.readouterr().out == "dip › dip › "
+    assert "active model: fx1" in joined(out)
+
+
+def test_run_console_windows_uses_blocking_input_without_select(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(concierge_module.sys, "platform", "win32")
+    monkeypatch.setattr(concierge_module.sys.stdin, "isatty", lambda: True)
+
+    def unexpected_select(*args: Any) -> Any:
+        pytest.fail("Windows console stdin cannot be polled with select")
+
+    monkeypatch.setattr(concierge_module.select, "select", unexpected_select)
+    lines = iter(["/model", "/exit"])
+    prompts: list[str] = []
+
+    def input_fn(prompt: str) -> str:
+        prompts.append(prompt)
+        return next(lines)
+
+    concierge, out = make_concierge(tmp_path)
+    startup: list[str] = []
+
+    run_console(concierge_factory=lambda: concierge, input_fn=input_fn, output_fn=startup.append)
+
+    assert prompts == ["dip › ", "dip › "]
+    assert "active model: fx1" in joined(out)
+    assert "background progress updates after you submit a line" in joined(startup)
+
+
+@pytest.mark.parametrize("configured", [False, True])
+def test_run_console_banner_shows_actual_endpoint_and_respects_no_color(
+    env: Path, tmp_path: Path, configured: bool
+) -> None:
+    if configured:
+        profiles.set_endpoint("fx1-lite", "test-private-key", "https://lite.example.test")
+    concierge, _ = make_concierge(tmp_path)
+    concierge.model = "fx1-lite"
+    out: list[str] = []
+
+    def input_fn(prompt: str) -> str:
+        raise EOFError
+
+    run_console(input_fn=input_fn, output_fn=out.append, concierge_factory=lambda: concierge)
+
+    text = joined(out)
+    assert "model fx1-lite" in text
+    assert ("lite.example.test" if configured else "unconfigured") in text
+    assert ("/keys set fx1-lite" in text) is not configured
+    assert "api.moonshot.ai" not in text
+    assert "test-private-key" not in text
+    assert "\x1b" not in text
 
 
 def test_background_job_drain_and_cancel() -> None:

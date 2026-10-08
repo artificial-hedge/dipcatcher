@@ -1,4 +1,4 @@
-"""Portfolio sorts with NYSE breakpoints.
+"""Portfolio sorts with NYSE breakpoints (SYNTHETIC).
 
 Fama-French style characteristic sorts: sort assets on a characteristic,
 bucket into portfolios at NYSE-only breakpoints (deciles/quintiles),

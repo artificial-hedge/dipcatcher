@@ -1,4 +1,4 @@
-"""Triangle rasterizer with barycentric attribute interpolation."""
+"""Triangle rasterizer with barycentric attribute interpolation (SYNTHETIC)."""
 
 import numpy as np
 

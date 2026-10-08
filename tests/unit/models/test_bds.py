@@ -46,6 +46,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_bds()
-    for k in ("w2_null", "p2_null", "w2_chaos", "p2_chaos", "p3_chaos", "score"):
+    for k in (
+        "synthetic_w2_null",
+        "synthetic_p2_null",
+        "synthetic_w2_chaos",
+        "synthetic_p2_chaos",
+        "synthetic_p3_chaos",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

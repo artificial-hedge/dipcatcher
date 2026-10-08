@@ -1,4 +1,4 @@
-"""N-firm Cournot-Nash equilibrium with asymmetric marginal costs.
+"""N-firm Cournot-Nash equilibrium with asymmetric marginal costs (SYNTHETIC).
 
 Firm i picks q_i to maximize (a - b*Q)*q_i - c_i*q_i. The equilibrium is the
 fixed point q_i = (a - c_i - b*Q_{-i})/(2b); bench reports the best-response

@@ -83,15 +83,28 @@ rust/quant_core/target/
 
 # Derived wide-panel data — regenerate via data engine, never commit (AGENTS.md).
 data/file_us_wide/**
-# 24x7 derived eval dumps + simulated paper ledgers — evidence text stays tracked.
-.dsh-24x7/eval-full/**
-.dsh-24x7/paper_data/**
+# 24x7 remote-fleet scratch. Evidence text lives in receipts/ and quality/; this
+# tree is host-local fleet state (lane run dumps, eval shards, native scratch,
+# one-off PowerShell probes) and is durable on the remote box, not in git.
+# NOTE: files already committed under this path before 2026-10-08 are still
+# tracked — .gitignore only stops re-adding. Untracking is a separate, explicit
+# `git rm -r --cached .dsh-24x7` performed during history reconciliation so the
+# deletions land in one reviewable commit. See docs/ULTRA_PROD_READINESS.md (P2).
+.dsh-24x7/**
 # mutmut work tree (scores are written by scripts/mutation_score.py)
 mutants/
 # PROOFCORE artifacts (DESIGN.md §13): proof bundles + provenance duckdb are
 # host-local evidence — proof-run orchestration is pending.
 proofs/
 leakage-report.json
+
+# Local editor / agent tool state — never evidence, never part of a review.
+.cursor/
+.serena/
+.freebuff/
+.box-soft-verify/
+.playwright-mcp/
+.hypothesis/
 
 # Stray nested trees created by the off-machine sftp clobber (root cause in
 # tools/guard-config.ps1): the Mac-side `put -r src /D:/dipcatcher/src`
@@ -101,3 +114,63 @@ leakage-report.json
 /src/src/
 /tests/tests/
 /scripts/scripts/
+
+# ---------------------------------------------------------------------------
+# L8 hygiene (2026-10-08) — cache scratch + TRACKED-FILE CARVE-OUTS.
+# Invariant: an ignore rule must never hide tracked evidence or inputs. Two
+# documented exceptions appear in `git ls-files -i -c --exclude-standard` and
+# both are pending the single history-reconciliation untracking commit
+# (AGENTS.md caveat / docs/ULTRA_PROD_READINESS.md P2 — not piecemeal):
+# (1) .dsh-24x7 fleet scratch (~911 files, block above), and
+# (2) editor/agent tool state (.cursor/ .serena/ .freebuff/ .box-soft-verify/).
+# Everything else tracked is carved out below. KEEP THIS BLOCK LAST.
+# ---------------------------------------------------------------------------
+# pytest-benchmark scratch (durable scores go under reports/).
+.benchmarks/
+# git-worktree scratch — also in .git/info/exclude; keep the rule portable so
+# fresh clones behave identically.
+.worktrees/
+# Derived qpanel caches — regenerate via the research pipeline. Two dirs hold
+# tracked evidence panels (byte-pinned in .gitattributes): carve them out below.
+research/*/qpanel_cache/
+!research/chop_robustness_20261007b/qpanel_cache/
+!research/chop_robustness_20261007b/qpanel_cache/**
+!research/chop_robustness_benchconfig_20261007/qpanel_cache/
+!research/chop_robustness_benchconfig_20261007/qpanel_cache/**
+# Sealed Phase-1 provenance/audit metadata is tracked evidence (bytes pinned
+# by .gitattributes); only the regenerable dumps around it stay ignored. The
+# research/ carve-outs are exact-file on purpose — `research/latest.{json,md}`
+# and `research/runs/` are regenerated continuously and must stay invisible.
+!data/metadata/corpus_epoch_1833207f020fdbd6.json
+!data/metadata/corpus_epoch_c3933c09965aa008.json
+!data/metadata/cost_aware_tournament/
+!data/metadata/cost_aware_tournament/**
+!data/metadata/net_tournament/
+!data/metadata/net_tournament/**
+!data/metadata/real_benchmark/
+!data/metadata/real_benchmark/**
+!data/metadata/reports/
+!data/metadata/reports/deps_hygiene_20260928/
+!data/metadata/reports/deps_hygiene_20260928/*
+!data/metadata/research/
+!data/metadata/research/PHASE1_CODE_RESEAL.md
+!data/metadata/research/PHASE1_PROVENANCE_CORRECTION.md
+!data/metadata/research/phase1_20260925.md
+!data/metadata/research/phase1_evidence_index.json
+# Tracked stream-validation run record predates the *.log rule. Keep it
+# reviewable while tracked; if the Lead classifies it as generated, the
+# untracking commit must drop BOTH this line and the file.
+!docs/maintenance/stream-validation-2026-10-05/results/runtime.log
+# .freebuff/project-id is tracked tool state like the rest of .freebuff/ —
+# it rides along with the documented untracking commit (AGENTS.md caveat);
+# a file under an excluded directory cannot be re-ignored-in-part anyway.
+# TODO(Lead — after the untracking commit): `p` (stray 26KB path listing,
+# tracked by accident; nothing references it) should be `git rm --cached`-ed,
+# then add:
+#   /p
+# Not added while tracked — that would hide a tracked file.
+# NOTE: `.test_durations` stays tracked ON PURPOSE — it is the checked-in
+# pytest-split shard-balancing input (Makefile `test-durations`, CI shards).
+
+# Vitest scratch: temporary dirs left beside a test file during a failed run.
+*.tmpdir/

@@ -171,5 +171,5 @@ def bench_shadow_rate(seed: int = 20261231 + 383) -> dict[str, float]:
         "synthetic_sr_bound_share": bound_share,
         "synthetic_sr_truth_share": truth_share,
         "synthetic_sr_b8": float(b[8, 0]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

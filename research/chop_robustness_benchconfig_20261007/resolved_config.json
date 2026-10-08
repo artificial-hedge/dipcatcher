@@ -1,0 +1,370 @@
+{
+  "calendar": {
+    "name": "XNYS",
+    "weekend": [
+      5,
+      6
+    ]
+  },
+  "constraints": {
+    "beta_abs_max": 0.1,
+    "cash_buffer": 0.02,
+    "cvar_alpha": 0.95,
+    "cvar_limit": null,
+    "factor_abs_max": 0.1,
+    "gross_leverage": 1.5,
+    "long_max": 0.75,
+    "max_adv_participation": null,
+    "max_positions": null,
+    "name_max": 0.08,
+    "name_min": -0.08,
+    "net_exposure": 0.1,
+    "predicted_vol_max": null,
+    "sector_abs_max": 0.25,
+    "short_max": 0.75,
+    "turnover_limit": 0.8
+  },
+  "costs": {
+    "borrow_bps_per_year": 50.0,
+    "bps_per_turnover": 0.0,
+    "commission_bps": 2.0,
+    "financing_bps_per_year": 0.0,
+    "frictionless": false,
+    "half_spread_bps": 3.0,
+    "impact_y": 0.1,
+    "participation_limit": 0.1,
+    "spread_calibration_lookback": 20,
+    "spread_estimator": "flat"
+  },
+  "data": {
+    "benchmark_id": "SEC_MKT",
+    "parquet_path": null,
+    "root": "data",
+    "source": "binance_public_data",
+    "source_interval": "1d",
+    "source_limit": 1000,
+    "source_path": null,
+    "source_symbol": "BTCUSDT",
+    "synthetic_n_assets": 12,
+    "synthetic_n_days": 320,
+    "synthetic_oracle_beta": 0.015,
+    "synthetic_oracle_phi": 0.7,
+    "synthetic_seed": 7
+  },
+  "execution": {
+    "allow_close_auction": false,
+    "fill": "next_open",
+    "horizon_bars": 5,
+    "n_slices": 5,
+    "participation_rate": 0.05,
+    "permanent_impact": 1e-07,
+    "risk_aversion": 1e-06,
+    "temporary_impact": 1e-06
+  },
+  "features": {
+    "adv_lookback": 20,
+    "amihud_lookback": 20,
+    "ewma_lambda": 0.94,
+    "families": [
+      "returns",
+      "momentum",
+      "reversal",
+      "volatility",
+      "liquidity",
+      "cross_sectional",
+      "market"
+    ],
+    "winsor_p": 0.01
+  },
+  "fusion": {
+    "alpha_scale": 0.05,
+    "alpha_weight": 1.0,
+    "apply_interval_caps": false,
+    "apply_probability_calibration": false,
+    "confidence_weight": 1.0,
+    "liquidity_penalty": 1.0,
+    "min_executable_alpha": 0.0,
+    "probability_calibration_horizon": null,
+    "probability_calibration_label": null,
+    "probability_calibration_max_age_days": null,
+    "probability_calibrator": "auto",
+    "regime_weight": 1.0,
+    "risk_weight": 1.0,
+    "skip_intervals": false,
+    "tail_penalty": 1.0,
+    "use_fused_for_optimize": true
+  },
+  "horizons": {
+    "bars": [
+      1,
+      5,
+      20
+    ],
+    "names": [
+      "1d",
+      "5d",
+      "20d"
+    ]
+  },
+  "inherit": null,
+  "kill_switch": {
+    "allow_auto_flatten": false,
+    "state": "ENABLED"
+  },
+  "missing": {
+    "policy": "native"
+  },
+  "monitoring": {
+    "live_bars": 21,
+    "psi_alert": 0.25,
+    "reference_bars": 63
+  },
+  "northset": {
+    "base_spread_bps": 4.0,
+    "book_join_coverage_floor": 0.5,
+    "book_max_age_seconds": 86400,
+    "book_panel_path": null,
+    "concentration_top_finite_floor": null,
+    "depth_shape_finite_floor": null,
+    "include_kyle_ofi": false,
+    "min_names": 5,
+    "n_book_levels": 5,
+    "n_session_candles": 8,
+    "queue_priority_finite_floor": null,
+    "require_adjusted_ohlc": true,
+    "session_l2_identity_floor": 0.99,
+    "side_notional_finite_floor": null,
+    "sweep_cooldown_bars": 5,
+    "sweep_horizons": [
+      1,
+      5,
+      20
+    ],
+    "sweep_lookback": 20,
+    "sweep_min_dates": 20,
+    "sweep_min_events": 30,
+    "sweep_min_fold_positive_fraction": 0.75,
+    "sweep_n_boot": 500,
+    "sweep_n_folds": 4,
+    "sweep_n_permutations": 200,
+    "sweep_sensitivity_lookbacks": [
+      10,
+      20,
+      40
+    ],
+    "sweep_vol_lookback": 20,
+    "tob_size_share_finite_floor": null,
+    "use_session_l2": true
+  },
+  "optimizer": {
+    "covariance": "ledoit_wolf",
+    "lambda_risk": 0.5,
+    "lambda_tail": 0.0,
+    "lambda_tc": 0.05,
+    "lambda_turnover": 0.0,
+    "mode": "mean_variance",
+    "risk_aversion": 1.0,
+    "solver": "CLARABEL"
+  },
+  "paper": {
+    "challenger_scales": [
+      1.0,
+      0.5
+    ],
+    "enable_shadow": true,
+    "initial_nav": 1000000.0,
+    "ledger_subdir": "sim_live",
+    "max_steps": null,
+    "promote_max_mean_l1": 0.25,
+    "promote_min_steps": 5,
+    "resume_run_id": null,
+    "shadow_scale": 0.7,
+    "use_wall_clock": false
+  },
+  "perp": {
+    "bar_seconds_hint": null,
+    "fill_delay_bars": 0,
+    "funding_enabled": true,
+    "funding_spike_multiplier": 1.0,
+    "liquidation_fee_bps": 50.0,
+    "liquidation_on_wick": true,
+    "maint_margin_ratio": 0.05,
+    "max_leverage": 3.0,
+    "periods_per_year_override": null
+  },
+  "promotion": {
+    "max_turnover": 5.0,
+    "min_cost_adjusted_spread": 0.0,
+    "min_fold_ic_stability": 0.0,
+    "min_folds": 2,
+    "min_mean_ic": 0.0,
+    "require_leakage_pass": true
+  },
+  "quantiles": {
+    "levels": [
+      0.05,
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9,
+      0.95
+    ]
+  },
+  "risk_gate": {
+    "max_gross": 3.0,
+    "max_name": 0.5,
+    "max_net": 3.0,
+    "max_order_notional": 5000000.0,
+    "max_participation": 0.25,
+    "max_predicted_vol": 0.4,
+    "stale_model_hours": 24.0,
+    "stale_price_bars": 3
+  },
+  "robinhood_plus": {
+    "allow_network": false,
+    "backend": "numpy",
+    "blend_weight": 0.0,
+    "clip": 5.0,
+    "decoder": "hierarchical_markov",
+    "enabled": true,
+    "lookback": 64,
+    "max_context": 512,
+    "model_path": null,
+    "pred_len": 20,
+    "s1_bits": 5,
+    "s2_bits": 5,
+    "sample_count": 8,
+    "temperature": 1.0,
+    "tokenizer_path": null,
+    "top_p": 0.9,
+    "variant": "mini"
+  },
+  "runtime": {
+    "allow_live": false,
+    "experiment_id": null,
+    "mode": "paper",
+    "output_dir": "data/metadata"
+  },
+  "train": {
+    "alasso_alpha": 0.01,
+    "auto_min_oos_rows": 10,
+    "distribution_target": "future_log_return_5",
+    "ds_lasso_alpha": 0.01,
+    "elasticnet_l1": 0.5,
+    "fm_ridge_alpha": 1.0,
+    "fnw_lam": 0.05,
+    "fnw_n_intervals": 4,
+    "garch_dist": "normal",
+    "garch_p": 1,
+    "garch_q": 1,
+    "garch_vol": "garch",
+    "gbrt_learning_rate": 0.1,
+    "gbrt_max_depth": 2,
+    "gbrt_n_estimators": 40,
+    "gx_n_factors": 3,
+    "har_log": true,
+    "ipca_max_iter": 50,
+    "ipca_n_factors": 3,
+    "ipca_tol": 1e-06,
+    "kronos": {
+      "clip": 5.0,
+      "device": "cpu",
+      "enabled": false,
+      "horizon_name": "5d",
+      "lookback": 400,
+      "max_context": 512,
+      "model_path": null,
+      "model_sha256": null,
+      "pred_len": 5,
+      "sample_count": 1,
+      "temperature": 1.0,
+      "tokenizer_path": null,
+      "tokenizer_sha256": null,
+      "top_k": 0,
+      "top_p": 0.9
+    },
+    "lgbm_n_estimators": 80,
+    "lgbm_num_leaves": 15,
+    "n_hmm_states": 3,
+    "paper_rankers": [
+      "reversal",
+      "classic_st",
+      "classic",
+      "nautica",
+      "tsmom",
+      "vme",
+      "krauss",
+      "ridge_st",
+      "ridge_neut",
+      "fm_st",
+      "combo_ic_st",
+      "combo_ic",
+      "combo_msfe",
+      "combo",
+      "fm_ridge",
+      "fm",
+      "pcr",
+      "pls",
+      "ds_lasso",
+      "alasso",
+      "gx3pass",
+      "rp_pca",
+      "sdf_ridge",
+      "sdf_en",
+      "tprf",
+      "pp",
+      "rff",
+      "rff_ridgeless",
+      "ipca",
+      "ipca_alpha",
+      "gbrt",
+      "fnw"
+    ],
+    "pcr_n_factors": 3,
+    "pls_n_factors": 3,
+    "pp_n_factors": 3,
+    "psd_eigen_tol": 1e-10,
+    "qlike_floor": 1e-12,
+    "random_seed": 42,
+    "ranking_target": "future_excess_return_5",
+    "rff_gamma": 2.0,
+    "rff_n_features": 256,
+    "rff_z": 1.0,
+    "ridge_alpha": 1.0,
+    "rp_pca_gamma": 10.0,
+    "rp_pca_n_factors": 3,
+    "sdf_en_l1": 0.05,
+    "sdf_en_l2": 1.0,
+    "sdf_ridge_z": 1.0,
+    "tprf_n_factors": 3,
+    "volatility_target": "future_realized_var_5",
+    "xgb_max_depth": 3,
+    "xgb_n_estimators": 80
+  },
+  "universe": {
+    "exchanges": [
+      "XNYS",
+      "XNAS"
+    ],
+    "include_delisted": true,
+    "min_adv": 100000.0,
+    "min_history_bars": 60,
+    "min_price": 5.0,
+    "security_types": [
+      "common_stock"
+    ],
+    "top_n_adv": 50
+  },
+  "validation": {
+    "embargo_bars": null,
+    "n_groups": 6,
+    "n_optuna_trials": 8,
+    "scheme": "expanding",
+    "seed": 42,
+    "test_bars": 40,
+    "test_groups": 2,
+    "train_bars": 180,
+    "val_bars": 40
+  }
+}

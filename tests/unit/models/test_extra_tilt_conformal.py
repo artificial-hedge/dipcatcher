@@ -760,26 +760,26 @@ def test_run_rejects_bad_input() -> None:
 # ---------------------------------------------------------------------------
 
 BENCH_KEYS = (
-    "coverage_standard_cp",
-    "mean_length_standard_cp",
-    "coverage_extra_wcp",
-    "mean_length_extra_wcp",
-    "coverage_extra_wcp_t",
-    "mean_length_extra_wcp_t",
-    "paired_length_reduction_percent",
-    "coverage_diff_wcp_t_minus_wcp",
-    "a_hat_mean",
-    "b_hat_mean",
-    "b_hat_spread_mean",
-    "mode_signal_sd",
-    "weight_ess_percent",
-    "replications",
-    "n",
-    "alpha",
-    "eta",
-    "a_star",
-    "b_star",
-    "seed",
+    "synthetic_coverage_standard_cp",
+    "synthetic_mean_length_standard_cp",
+    "synthetic_coverage_extra_wcp",
+    "synthetic_mean_length_extra_wcp",
+    "synthetic_coverage_extra_wcp_t",
+    "synthetic_mean_length_extra_wcp_t",
+    "synthetic_paired_length_reduction_percent",
+    "synthetic_coverage_diff_wcp_t_minus_wcp",
+    "synthetic_a_hat_mean",
+    "synthetic_b_hat_mean",
+    "synthetic_b_hat_spread_mean",
+    "synthetic_mode_signal_sd",
+    "synthetic_weight_ess_percent",
+    "synthetic_replications",
+    "synthetic_n",
+    "synthetic_alpha",
+    "synthetic_eta",
+    "synthetic_a_star",
+    "synthetic_b_star",
+    "synthetic_seed",
 )
 
 
@@ -799,10 +799,10 @@ def test_bench_extra_tilt_keys_proper_scores_only() -> None:
     forbidden = {"sharpe", "sortino", "calmar", "pnl", "nav"}
     for key in row:
         assert not (set(key.lower().split("_")) & forbidden)
-    assert row["dgp"] == "fixture"
-    assert row["claim"] == "research_metric_only"
-    assert float(row["n"]) > 0.0
-    assert float(row["coverage_extra_wcp_t"]) > 0.0
+    assert row["synthetic_dgp"] == "fixture"
+    assert row["synthetic_claim"] == "research_metric_only"
+    assert float(row["synthetic_n"]) > 0.0
+    assert float(row["synthetic_coverage_extra_wcp_t"]) > 0.0
     with pytest.raises(ValueError):
         bench_extra_tilt(replications=0)
     with pytest.raises(ValueError):

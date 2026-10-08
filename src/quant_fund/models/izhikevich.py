@@ -1,4 +1,4 @@
-"""Izhikevich neuron (2003) — two-variable quadratic spiking model
+"""Izhikevich neuron (2003) — two-variable quadratic spiking model (SYNTHETIC)
 (tonic/phasic/bursting regimes); classify inputs by firing-rate
 response curve vs LIF; measures firing-rate separation between classes.
 """
@@ -41,5 +41,5 @@ def bench_izhikevich(seed: int = 1919) -> dict[str, float]:
         "synthetic_izh_rate_sep": sep,
         "synthetic_izh_rate_low": r0,
         "synthetic_izh_rate_high": r10,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

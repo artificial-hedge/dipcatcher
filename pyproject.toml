@@ -78,11 +78,15 @@ Issues = "https://github.com/artificial-hedge/dipcatcher/issues"
 
 [project.scripts]
 fx1 = "fx1.cli:app"
-# Harness aliases: dipcatcher remains the lab/harness CLI used to build,
-# evaluate, and verify fx-1. fxi is the interactive orchestration front door
-# (chat, /superpower, web research, flash context).
+# The outer dipcatcher launcher opens chat in a terminal and preserves explicit
+# lab commands. quant stays the independent harness; fxi remains compatible.
+# NOTE: origin/main instead maps `dipcatcher` at quant_fund.cli.main and treats
+# `fxi` as the chat front door. Resolved toward this branch because
+# src/dipcatcher_cli/, tests/unit/cli/test_dipcatcher_launcher.py,
+# AGENTS.md and docs/DIP_CONCIERGE.md all describe the launcher. Product
+# direction needs an owner ruling — see docs/ULTRA_PROD_READINESS.md.
 quant = "quant_fund.cli.main:app"
-dipcatcher = "quant_fund.cli.main:app"
+dipcatcher = "dipcatcher_cli.app:main"
 fxi = "fx1.interactive.app:main"
 verify-ledger = "quant_fund.audit.cli:main"
 mc-engine = "quant_fund.mc_engine.cli:app"
@@ -125,7 +129,7 @@ build-backend = "hatchling.build"
 constraint-dependencies = ["urllib3>=2.8.0", "virtualenv>=21.7.13"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/fx1", "src/quant_fund"]
+packages = ["src/fx1", "src/quant_fund", "src/dipcatcher_cli"]
 
 # py.typed is the PEP 561 marker (contents: "partial"). The H.15/H.10 extract
 # is data, not a Python module. Force both into the wheel.
@@ -370,7 +374,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["fx1", "quant_fund"]
+source = ["fx1", "quant_fund", "dipcatcher_cli"]
 branch = true
 omit = ["*/__main__.py"]
 

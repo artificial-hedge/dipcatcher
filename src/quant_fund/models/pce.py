@@ -1,4 +1,4 @@
-"""Polynomial chaos expansion — Legendre gPC on uniform inputs.
+"""Polynomial chaos expansion — Legendre gPC on uniform inputs (SYNTHETIC).
 
 Coefficients by Gaussian-quadrature projection; Sobol sensitivity
 indices read directly off the expansion (Sobol decomposition is the

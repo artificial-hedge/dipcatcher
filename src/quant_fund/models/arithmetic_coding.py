@@ -1,4 +1,4 @@
-"""Integer arithmetic coding (synthetic).
+"""Integer arithmetic coding (synthetic) (SYNTHETIC).
 
 64-bit range coder over an empirical symbol model; encode/decode
 verified by exact round-trip; encoded length within ~2 bits/symbol

@@ -13,11 +13,10 @@ slash commands:
 - plain text — a conversational turn with tool access to flash context,
   a bounded web lookup, and approval-gated harness commands.
 
-Responsiveness contract: background jobs run on their own thread; the
-console polls stdin with a short timeout so progress renders between typed
-lines, and commands typed while a job runs take effect immediately. On
-piped (non-TTY) stdin the loop degrades to blocking reads — background jobs
-still stream progress through ``on_event``.
+Responsiveness contract: background jobs run on their own thread. On POSIX
+terminals the console polls stdin so progress renders while waiting for a
+line. Windows terminals and piped (non-TTY) stdin use blocking reads;
+background work continues, but its queued progress renders between lines.
 
 Every seam is injectable (backend, harness, researcher, store, approvals,
 input/output) so the whole surface is testable offline; nothing here
@@ -38,9 +37,10 @@ from typing import Any
 
 import typer
 
+from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive import actions, profiles
 from fx1.interactive.approvals import ApprovalGate, console_ask_fn
-from fx1.interactive.orb import OrbAnimator, OrbState
+from fx1.interactive.orb import OrbAnimator, OrbState, orbs_enabled
 from fx1.interactive.orb import banner as orb_banner
 from fx1.interactive.profiles import DEFAULT_MODEL
 from fx1.interactive.superpower import (
@@ -281,9 +281,20 @@ class Concierge:
             profiles.check_model(model)
             import getpass
 
-            api_key = getpass.getpass(f"› {model} API key: ")
-            path = profiles.set_endpoint(model, api_key)
-            self._say(f"stored endpoint for {model!r} in {path} (mode 0600)")
+            endpoint = profiles.resolve_endpoint(model)
+            default_url = endpoint[1] if endpoint else profiles.default_base_url()
+            try:
+                api_key = getpass.getpass(f"› {model} API key: ")
+                base_url = self._input(f"› {model} endpoint URL [{default_url}]: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                self._say(f"endpoint setup for {model!r} cancelled; no changes saved")
+                return False
+            base_url = base_url or default_url
+            path = profiles.set_endpoint(model, api_key, base_url)
+            self._say(
+                f"stored endpoint for {model!r} -> {profiles.host_of(base_url)} "
+                f"in {path} (mode 0600)"
+            )
             return False
         raise ValueError("usage: /keys [list | set [model] | remove <model>]")
 
@@ -661,7 +672,7 @@ class Concierge:
         backend = self._backend()
         if backend is None:
             self._say(
-                "no model endpoint configured — set one with `/keys set`, or export "
+                f"no model endpoint configured — set one with `/keys set {self.model}`, or export "
                 "MOONSHOT_API_KEY / FX1_BASE_URL. Slash commands still work."
             )
             return
@@ -676,8 +687,8 @@ class Concierge:
                     completion = backend.complete_with_tools(
                         self._messages, tools=tools, tool_choice="auto"
                     )
+                content = validate_fx1_output(completion.content or "")
                 if not completion.tool_calls:
-                    content = completion.content or ""
                     self._messages.append({"role": "assistant", "content": content})
                     self._say(content)
                     return
@@ -698,6 +709,17 @@ class Concierge:
                         }
                     )
             self._say("(tool loop budget exhausted — ask a follow-up to continue)")
+        except Fx1HonestyError as exc:
+            refusal = (
+                f"answer withheld by the fx-1 honesty gate ({exc}). Ask a follow-up to continue."
+            )
+            if any(message.get("role") == "tool" for message in self._messages[start:]):
+                # A blocked answer cannot undo completed tool actions. Keep
+                # their validated call/result transcript for the next turn.
+                self._messages.append({"role": "assistant", "content": refusal})
+            else:
+                del self._messages[start:]
+            self._say(refusal)
         except Exception as exc:  # noqa: BLE001 — a dead network must not kill the shell
             del self._messages[start:]
             self._say_error(exc)
@@ -856,9 +878,12 @@ class _null:
 
 
 def _tty_polling_read(input_fn: Callable[[str], str], prompt: str, timeout_s: float) -> str | None:
-    """Read a line with a timeout when stdin is a TTY (POSIX select); blocking
-    ``input_fn`` otherwise. Returns None on timeout (no line ready)."""
-    if not sys.stdin.isatty():
+    """Poll a POSIX TTY; Windows and non-TTY input use blocking reads.
+
+    Returns None on timeout. The caller supplies an empty prompt while
+    waiting for a previously prompted line.
+    """
+    if sys.platform == "win32" or not sys.stdin.isatty():
         return input_fn(prompt)
     sys.stdout.write(prompt)
     sys.stdout.flush()
@@ -879,8 +904,10 @@ def run_console(
     output_fn: Callable[..., None] = typer.echo,
     poll_timeout_s: float = 0.15,
 ) -> None:
-    """The interactive loop: banner, then input with progress ticks between
-    lines so background research renders while the operator keeps typing."""
+    """Read chat input with idle progress ticks on POSIX terminals.
+
+    Windows and non-TTY input render queued progress between submitted lines.
+    """
     concierge = (
         concierge_factory()
         if concierge_factory is not None
@@ -891,20 +918,30 @@ def run_console(
             approvals=ApprovalGate(ask_fn=console_ask_fn(input_fn)),
         )
     )
-    output_fn(orb_banner(model, profiles.host_of(profiles.default_base_url())))
+    model = concierge.model
+    endpoint = profiles.resolve_endpoint(model)
+    host = profiles.host_of(endpoint[1]) if endpoint else "unconfigured"
+    output_fn(orb_banner(model, host, color=orbs_enabled()))
     output_fn(
         f"dipcatcher concierge — model {model}. Plain text chats; "
         "/superpower, /research, /flash, /help. Ctrl-D or /exit to leave."
     )
+    if endpoint is None:
+        output_fn(f"No endpoint configured. Run /keys set {model} to add your API key and URL.")
+    if sys.platform == "win32":
+        output_fn("On Windows, background progress updates after you submit a line.")
+    prompt_pending = True
     while True:
         try:
-            line = _tty_polling_read(input_fn, "dip › ", poll_timeout_s)
+            line = _tty_polling_read(input_fn, "dip › " if prompt_pending else "", poll_timeout_s)
         except (EOFError, KeyboardInterrupt):
             output_fn("")
             return
         if line is None:  # poll timeout — render background progress
+            prompt_pending = False
             concierge.tick()
             continue
+        prompt_pending = True
         try:
             if concierge.handle_line(line):
                 return

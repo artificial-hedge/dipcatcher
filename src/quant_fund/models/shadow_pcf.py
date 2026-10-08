@@ -1,4 +1,4 @@
-"""Shadow depth test with slope-scaled bias + PCF (wave 293).
+"""Shadow depth test with slope-scaled bias + PCF (wave 293) (SYNTHETIC).
 
 Receiver projects into light space; lit when receiver depth ≤ map
 depth + bias*tan(slope). 3×3 PCF averages the test. Verified: acne at

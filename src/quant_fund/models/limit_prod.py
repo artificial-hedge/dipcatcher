@@ -1,4 +1,4 @@
-"""Categorical product universal property (wave 289).
+"""Categorical product universal property (wave 289) (SYNTHETIC).
 
 In Set, product A x B with projections pi1,pi2 has the UMP: for every
 pair (f: Z->A, g: Z->B) a unique mediating map h = <f,g> factors

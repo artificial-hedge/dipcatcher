@@ -1,4 +1,4 @@
-"""Light multi-hypothesis tracking (MHT) — k-best hypothesis tree.
+"""Light multi-hypothesis tracking (MHT) — k-best hypothesis tree (SYNTHETIC).
 
 Canonical reference: Reid (1979). Each scan forms assignments of
 measurements to tracks via JV on gated likelihoods; the K best

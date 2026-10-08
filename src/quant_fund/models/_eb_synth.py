@@ -1,4 +1,4 @@
-"""Shared fixture for wave-186 energy-based-model canon.
+"""Shared fixture for wave-186 energy-based-model canon (SYNTHETIC).
 
 Two-moons data (from `_nf_synth`) + energy MLP + Langevin sampler +
 Gaussian-kernel MMD evaluation. Baseline: MMD of Gaussian-matched

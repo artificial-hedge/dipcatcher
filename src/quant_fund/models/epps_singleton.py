@@ -101,5 +101,5 @@ def bench_epps_singleton(seed: int = 20261231 + 471) -> dict[str, float]:
         "synthetic_normal_p": float(out_n["p"]),
         "synthetic_lognormal_p": float(out_ln["p"]),
         "synthetic_t3_p": float(out_t["p"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

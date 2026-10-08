@@ -1,4 +1,4 @@
-"""Occupancy-grid lidar ray casting (wave 283).
+"""Occupancy-grid lidar ray casting (wave 283) (SYNTHETIC).
 
 DDA march from the sensor pose until a hit cell or max range; verified by
 placing walls at known offsets and checking measured range.

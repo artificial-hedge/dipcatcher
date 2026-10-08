@@ -40,6 +40,7 @@ def bench_graphsage(
     d_hid: int = 32,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     adj, x, y = synth_sbm_graph(seed=seed + _SEED)
     agg = _mean_agg(adj)
     tr, te = split_masks(x.shape[0], n_train_frac, seed + _SEED)
@@ -96,5 +97,5 @@ def bench_graphsage(
         "synthetic_sage_acc": acc_sage,
         "synthetic_sage_mlp_acc": acc_mlp,
         "synthetic_sage_acc_gain": acc_sage - acc_mlp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

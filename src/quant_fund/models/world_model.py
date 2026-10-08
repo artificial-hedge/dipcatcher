@@ -1,4 +1,4 @@
-"""Latent world model for execution decisions (Exec-Summary RL item).
+"""Latent world model for execution decisions (Exec-Summary RL item) (SYNTHETIC).
 Dreamer-lite: an RSSM-style encoder + transition + reward model trained on
 execution-sim rollouts; the policy is then optimized by imagining latent
 rollouts instead of touching the simulator.
@@ -130,7 +130,7 @@ def bench_world_model(seed: int = 63) -> dict[str, float]:
         "synthetic_wm_imagined_reward": wm_r,
         "synthetic_wm_twap_reward": twap_r,
         "synthetic_wm_margin_vs_twap": wm_r - twap_r,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

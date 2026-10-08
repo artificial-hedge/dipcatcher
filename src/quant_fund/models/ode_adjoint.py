@@ -1,4 +1,4 @@
-"""Neural-ODE adjoint sensitivity (Chen et al. 2018) — terminal-loss
+"""Neural-ODE adjoint sensitivity (Chen et al. 2018) — terminal-loss (SYNTHETIC)
 gradient via backward adjoint ODE vs autograd through the unrolled
 solver; measures accuracy and memory-freeness.
 """
@@ -59,5 +59,5 @@ def bench_ode_adjoint(seed: int = 2411) -> dict[str, float]:
     return {
         "synthetic_adjoint_corr": corr,
         "synthetic_adjoint_max_err": err,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

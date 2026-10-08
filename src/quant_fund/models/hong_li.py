@@ -148,10 +148,10 @@ def bench_hong_li(seed: int = 20261231 + 303) -> dict[str, float]:
     r_bad = hl_m_statistic(np.asarray(d["z_wrong"]))
     ok = abs(r_ok["m_stat"]) < 3.0 and abs(r_ok["rho1"]) < 0.12 and r_bad["m_stat"] > 8.0
     return {
-        "m_right": r_ok["m_stat"],
-        "rho1_right": r_ok["rho1"],
-        "m_wrong": r_bad["m_stat"],
-        "rho1_wrong": r_bad["rho1"],
-        "berkowitz_wrong": r_bad["berkowitz_lr"],
-        "score": float(ok),
+        "synthetic_m_right": r_ok["m_stat"],
+        "synthetic_rho1_right": r_ok["rho1"],
+        "synthetic_m_wrong": r_bad["m_stat"],
+        "synthetic_rho1_wrong": r_bad["rho1"],
+        "synthetic_berkowitz_wrong": r_bad["berkowitz_lr"],
+        "synthetic_score": float(ok),
     }

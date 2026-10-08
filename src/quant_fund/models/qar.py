@@ -1,4 +1,4 @@
-"""Quantile autoregression (Koenker & Xiao 2006).
+"""Quantile autoregression (Koenker & Xiao 2006) (SYNTHETIC).
 
 QAR(p): Q_{y_t}(tau | F_{t-1}) = a0(tau) + sum_j a_j(tau) y_{t-j}.
 Each quantile is estimated by Koenker-Bassett quantile regression on

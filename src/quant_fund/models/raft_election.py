@@ -1,4 +1,4 @@
-"""Raft leader election (synthetic).
+"""Raft leader election (synthetic) (SYNTHETIC).
 
 Simulates N nodes with election timeouts, randomized message delay,
 request-vote RPCs and one leader per term. Verified: (i) election

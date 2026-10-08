@@ -1,4 +1,4 @@
-"""Stock–Watson diffusion-index forecasting and factor-augmented models.
+"""Stock–Watson diffusion-index forecasting and factor-augmented models (SYNTHETIC).
 
 References:
 - Stock & Watson (2002): forecasting with diffusion indexes — PCA

@@ -1,4 +1,4 @@
-"""PBKDF2-HMAC-SHA256 (toy) vs hashlib oracle + domain separation."""
+"""PBKDF2-HMAC-SHA256 (toy) vs hashlib oracle + domain separation (SYNTHETIC)."""
 
 import hashlib
 import hmac as _hmac

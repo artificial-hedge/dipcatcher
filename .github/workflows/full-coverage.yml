@@ -21,6 +21,15 @@ env:
   OMP_NUM_THREADS: '1'
   MKL_NUM_THREADS: '1'
   OPENBLAS_NUM_THREADS: '1'
+  # Remaining knobs of the Makefile TEST_ENV block (keep both sides
+  # identical): NUMEXPR/VECLIB pin the other thread pools, KMP_INIT_AT_FORK=FALSE
+  # closes the fork()-based NULL-kmp_info route, PYTHONFAULTHANDLER=1 captures
+  # any future native fault (.dsh-24x7/lane_reports/l3-segfault.md 7.1).
+  NUMEXPR_NUM_THREADS: '1'
+  VECLIB_MAXIMUM_THREADS: '1'
+  KMP_INIT_AT_FORK: 'FALSE'
+  PYTHONFAULTHANDLER: '1'
+  TOKENIZERS_PARALLELISM: 'false'
   HYPOTHESIS_PROFILE: ci
 
 jobs:

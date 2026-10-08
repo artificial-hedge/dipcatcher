@@ -1,4 +1,4 @@
-"""Covariance intersection (Julier & Uhlmann 1997) — consistent
+"""Covariance intersection (Julier & Uhlmann 1997) — consistent (SYNTHETIC)
 fusion of estimates with unknown cross-correlation.
 
 C^{-1} = ω A^{-1} + (1−ω) B^{-1};  c = C(ω A^{-1} a + (1−ω) B^{-1} b).

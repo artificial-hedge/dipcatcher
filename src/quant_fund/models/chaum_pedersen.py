@@ -1,4 +1,4 @@
-"""Chaum-Pedersen DLOG-equality proof: prove log_g(y) == log_h(z)."""
+"""Chaum-Pedersen DLOG-equality proof: prove log_g(y) == log_h(z) (SYNTHETIC)."""
 
 import hashlib
 import secrets

@@ -85,7 +85,8 @@ def hawkes_fit(times: np.ndarray, horizon_s: float) -> dict[str, Any]:
                 "eta": float(res.x[1]),
                 "beta": float(res.x[2]),
             }
-    assert best is not None
+    if not (best is not None):
+        raise ValueError("best is not None")
     poisson_ll = float(np.sum(np.log(mu0 * np.ones_like(times)))) - mu0 * horizon_s
     return {
         "ok": True,

@@ -1,4 +1,4 @@
-"""Changepoint detection: Bayesian online detection, CUSUM, segmentation.
+"""Changepoint detection: Bayesian online detection, CUSUM, segmentation (SYNTHETIC).
 
 References:
 - Adams, MacKay (2007). Bayesian online changepoint detection.

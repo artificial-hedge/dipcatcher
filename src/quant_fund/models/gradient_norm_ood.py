@@ -1,4 +1,4 @@
-"""GradNorm OOD detection (Huang et al. 2021).
+"""GradNorm OOD detection (Huang et al. 2021) (SYNTHETIC).
 
 The norm of the input-gradient of the KL divergence between softmax
 and uniform is small for in-distribution inputs and large for OOD —
@@ -60,6 +60,7 @@ def bench_gradient_norm_ood(
 ) -> dict[str, float]:
     """Input-gradient-norm OOD score vs MSP (AUROC, SYNTHETIC)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     (x_id, y_id), x_ood = synth_id_ood(n_id, n_ood, d, rng)
     X = torch.tensor(x_id, dtype=torch.float32)
@@ -102,7 +103,7 @@ def bench_gradient_norm_ood(
         "synthetic_gradnorm_auc": auc_gn,
         "synthetic_gradnorm_msp_auc": auc_msp,
         "synthetic_gradnorm_margin_vs_msp": auc_gn - auc_msp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

@@ -1,4 +1,4 @@
-"""Switching-activity power estimation: P = sum alpha * C * V^2 * f.
+"""Switching-activity power estimation: P = sum alpha * C * V^2 * f (SYNTHETIC).
 
 Given a gate-level netlist and random input vectors, estimate each node's
 toggle rate alpha from simulation, then compare the dynamic-power estimate

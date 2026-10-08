@@ -1,4 +1,4 @@
-"""Renewal-reward theorem: long-run reward rate = E[R]/E[T].
+"""Renewal-reward theorem: long-run reward rate = E[R]/E[T] (SYNTHETIC).
 
 For renewal inter-arrival times T_i ~ Exp(lam) and cycle rewards
 R_i ~ Exp(mean r), the long-run rate converges to r*lam. Bench: cumulative

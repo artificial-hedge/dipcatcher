@@ -1,4 +1,4 @@
-"""Klobuchar ionospheric delay model (GPS broadcast model).
+"""Klobuchar ionospheric delay model (GPS broadcast model) (SYNTHETIC).
 
 8-coefficient broadcast model (alpha/beta) estimating vertical TEC
 delay as a half-cosine of local time; maps slant delays via the

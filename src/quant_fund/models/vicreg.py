@@ -1,4 +1,4 @@
-"""VICReg variance-invariance-covariance regularization (Bardes et al. 2022).
+"""VICReg variance-invariance-covariance regularization (Bardes et al. 2022) (SYNTHETIC).
 
 Invariance term + per-dimension hinge variance + covariance penalty —
 explicit collapse prevention without negatives or stop-grad tricks.
@@ -62,5 +62,5 @@ def bench_vicreg(
         "synthetic_vicreg_probe_acc": float(acc_v),
         "synthetic_vicreg_raw_acc": float(acc_raw),
         "synthetic_vicreg_gain": float(acc_v - acc_raw),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

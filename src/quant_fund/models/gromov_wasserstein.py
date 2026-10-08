@@ -1,4 +1,4 @@
-"""Gromov-Wasserstein canon (Mémoli 2011, Peyré-Cuturi-
+"""Gromov-Wasserstein canon (Mémoli 2011, Peyré-Cuturi- (SYNTHETIC)
 Solomon 2016): entropic GW distance between metric-measure
 spaces via nested Sinkhorn iterations on the quadratic
 cost tensor, verified on isomorphic and perturbed

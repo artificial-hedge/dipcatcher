@@ -345,6 +345,13 @@ def latest_run_id(data_root: Path | str, subdir: str = "paper") -> str | None:
     return _safe_run_id(blob["run_id"]) if blob["run_id"] else None
 
 
+def _check_optional_numbers(*pairs: tuple[str, float | None]) -> None:
+    """Fail closed: optional numbers must be finite and non-negative when provided."""
+    for name, value in pairs:
+        if value is not None and (not math.isfinite(float(value)) or float(value) < 0.0):
+            raise ValueError(f"{name} must be finite and non-negative when provided")
+
+
 def promotion_dry_run(
     *,
     run_id: str | None = None,
@@ -397,13 +404,11 @@ def promotion_dry_run(
         or int(n_divergence_samples) < 0
     ):
         raise ValueError("n_divergence_samples must be a non-negative integer")
-    for name, value in (
+    _check_optional_numbers(
         ("champion_nav", champion_nav),
         ("shadow_gross", shadow_gross),
         ("rolling_mean_l1", rolling_mean_l1),
-    ):
-        if value is not None and (not math.isfinite(float(value)) or float(value) < 0.0):
-            raise ValueError(f"{name} must be finite and non-negative when provided")
+    )
     if rolling_window is not None and int(rolling_window) < 1:
         raise ValueError("rolling_window must be positive when provided")
     synthetic = str(data_source).upper() == "SYNTHETIC"

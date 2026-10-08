@@ -1,4 +1,4 @@
-"""Decimation + zero-stuff interpolation roundtrip."""
+"""Decimation + zero-stuff interpolation roundtrip (SYNTHETIC)."""
 
 import numpy as np
 

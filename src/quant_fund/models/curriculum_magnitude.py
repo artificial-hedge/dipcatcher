@@ -1,4 +1,4 @@
-"""Curriculum learning — easy→hard ordering (Bengio et al. 2009).
+"""Curriculum learning — easy→hard ordering (Bengio et al. 2009) (SYNTHETIC).
 
 Training sorted by difficulty score (distractor magnitude) vs
 anti-curriculum (hard→easy) vs shuffled: curriculum reaches higher
@@ -65,5 +65,5 @@ def bench_curriculum_magnitude(
         "synthetic_curr_anti_acc": float(acc_a),
         "synthetic_curr_shuffled_acc": float(acc_r),
         "synthetic_curr_gain_vs_anti": float(acc_c - acc_a),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

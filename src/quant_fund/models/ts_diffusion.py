@@ -1,4 +1,4 @@
-"""Time-series diffusion generator (Exec-Summary Feature 7). DDPM-lite on
+"""Time-series diffusion generator (Exec-Summary Feature 7). DDPM-lite on (SYNTHETIC)
 windows of returns: forward cosine-noise schedule, a 1-hidden-layer
 epsilon-predictor trained with manual gradients, reverse-chain sampling.
 

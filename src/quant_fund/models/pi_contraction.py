@@ -1,4 +1,4 @@
-"""Value/policy-iteration contraction vs the Bellman gamma bound.
+"""Value/policy-iteration contraction vs the Bellman gamma bound (SYNTHETIC).
 
 Two checks on a planted 4-state, 2-action MDP: (a) value iteration
 satisfies ||v_{k+1} - v*|| <= gamma ||v_k - v*|| at every sweep;

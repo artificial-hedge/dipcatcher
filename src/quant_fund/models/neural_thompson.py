@@ -164,5 +164,5 @@ def bench_neural_thompson(seed: int = 73) -> dict[str, float]:
         "synthetic_nthompson_arm_entropy": float(
             -np.sum((pulls / pulls.sum()) * np.log(pulls / pulls.sum() + 1e-12))
         ),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

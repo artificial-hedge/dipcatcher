@@ -1,4 +1,4 @@
-"""Engle-Russell (1998) Autoregressive Conditional Duration.
+"""Engle-Russell (1998) Autoregressive Conditional Duration (SYNTHETIC).
 
 ACD(1,1): x_i = psi_i eps_i,  psi_i = omega + alpha x_{i-1} + beta psi_{i-1},
 eps iid with E[eps]=1. EACD uses Exp(1) errors; WACD uses a mean-1

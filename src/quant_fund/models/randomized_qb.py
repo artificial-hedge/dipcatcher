@@ -1,4 +1,4 @@
-"""Randomized QB factorization: A ≈ Q B for low-rank approximation."""
+"""Randomized QB factorization: A ≈ Q B for low-rank approximation (SYNTHETIC)."""
 
 import numpy as np
 

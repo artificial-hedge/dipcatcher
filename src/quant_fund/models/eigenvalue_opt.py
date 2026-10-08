@@ -1,4 +1,4 @@
-"""Eigenvalue optimization: min_x lambda_max(A0 + sum_i x_i A_i).
+"""Eigenvalue optimization: min_x lambda_max(A0 + sum_i x_i A_i) (SYNTHETIC).
 
 Subgradient method on the convex spectral function: step direction
 uses the top-eigenvector diagonals g_i = v' A_i v. Validated on a small

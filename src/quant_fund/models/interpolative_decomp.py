@@ -1,4 +1,4 @@
-"""Interpolative decomposition canon (Cheng, Gimbutas,
+"""Interpolative decomposition canon (Cheng, Gimbutas, (SYNTHETIC)
 Martinsson & Rokhlin 2005): A ≈ B P where B is k actual
 columns of A selected by column-pivoted QR (Businger-Golub),
 and P contains a k×k identity block.

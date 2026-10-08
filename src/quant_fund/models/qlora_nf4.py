@@ -1,4 +1,4 @@
-"""QLoRA NF4 quantization (Dettmers et al. 2023).
+"""QLoRA NF4 quantization (Dettmers et al. 2023) (SYNTHETIC).
 
 Base weights quantized to 4-bit NormalFloat (15 quantile levels of
 N(0,1) plus zero) and dequantized on the fly; a bf16 LoRA adapter
@@ -104,5 +104,5 @@ def bench_qlora_nf4(
         "synthetic_qlora_t0_acc": acc_q_t0,
         "synthetic_qlora_quant_err": qerr,
         "synthetic_qlora_bits_ratio": float(bits_q) / bits_full,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

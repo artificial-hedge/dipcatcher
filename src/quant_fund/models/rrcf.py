@@ -1,4 +1,4 @@
-"""Robust Random Cut Forest (Guha et al. 2016) — pure numpy.
+"""Robust Random Cut Forest (Guha et al. 2016) — pure numpy (SYNTHETIC).
 
 Streaming anomaly scoring by expected tree displacement (CoDisp):
 how much deleting a point shrinks the tree — vs isolation-forest path

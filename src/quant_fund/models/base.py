@@ -1,4 +1,4 @@
-"""Forecast model protocol."""
+"""Forecast model protocol (SYNTHETIC)."""
 
 from __future__ import annotations
 

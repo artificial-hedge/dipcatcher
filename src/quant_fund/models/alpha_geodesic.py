@@ -1,4 +1,4 @@
-"""Alpha-connection geodesic interpolation on the multinomial manifold.
+"""Alpha-connection geodesic interpolation on the multinomial manifold (SYNTHETIC).
 
 The alpha-family geodesic between p and q at parameter t is
 g(t) propto (p^{(1-a)/2})^{1-t} (q^{(1-a)/2})^t projected back (the

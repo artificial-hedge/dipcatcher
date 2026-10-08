@@ -1,4 +1,4 @@
-"""ViM: virtual-logit matching for OOD (Wang et al. 2022).
+"""ViM: virtual-logit matching for OOD (Wang et al. 2022) (SYNTHETIC).
 
 Combines (i) the residual energy of a feature projected off the
 principal subspace of training features, with (ii) the max-logit — a
@@ -62,6 +62,7 @@ def bench_vim_ood(
 ) -> dict[str, float]:
     """Virtual-logit matching vs MSP / energy (AUROC, SYNTHETIC)."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     (x_id, y_id), x_ood = synth_id_ood(n_id, n_ood, d, rng)
     X = torch.tensor(x_id, dtype=torch.float32)
@@ -125,7 +126,7 @@ def bench_vim_ood(
         "synthetic_vim_energy_auc": auc_e,
         "synthetic_vim_margin_vs_msp": auc_vim - auc_msp,
         "synthetic_vim_margin_vs_energy": auc_vim - auc_e,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

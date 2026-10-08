@@ -1,4 +1,4 @@
-"""Sharpness-aware minimization (Foret et al. 2021).
+"""Sharpness-aware minimization (Foret et al. 2021) (SYNTHETIC).
 
 SAM's two-step (adversarial ascent then descent) finds flatter minima;
 on a shifted test set the SAM model generalizes better than plain SGD —
@@ -76,5 +76,5 @@ def bench_sharpness_sam(
         "synthetic_sam_gain": a1_te - a0_te,
         "synthetic_sam_gen_gap": a1_tr - a1_te,
         "synthetic_sam_plain_gen_gap": a0_tr - a0_te,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

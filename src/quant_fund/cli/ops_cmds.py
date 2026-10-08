@@ -27,6 +27,12 @@ def api(host: str = "127.0.0.1", port: int = 8000) -> None:
     uvicorn.run("quant_fund.api.app:app", host=host, port=port, reload=False)
 
 
+def _reject_halt_flags(halt: bool, clear_halt: bool) -> None:
+    """Reject the mutually exclusive kill-switch overrides."""
+    if halt and clear_halt:
+        raise typer.BadParameter("pass only one of --halt / --clear-halt")
+
+
 @app.command()
 def paper(
     config: Path = typer.Option(Path("configs/paper.yaml")),
@@ -180,8 +186,7 @@ def paper(
     from quant_fund.pipeline.forecast import build_causal_weight_panel, decision_dates
 
     cfg = _cfg(config)
-    if halt and clear_halt:
-        raise typer.BadParameter("pass only one of --halt / --clear-halt")
+    _reject_halt_flags(halt, clear_halt)
     if halt:
         cfg.kill_switch.state = "HALT_NEW_ORDERS"
     if clear_halt:

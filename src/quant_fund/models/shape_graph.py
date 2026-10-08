@@ -1,4 +1,4 @@
-"""Canonical shape graphs: concrete heap -> abstract shape graph.
+"""Canonical shape graphs: concrete heap -> abstract shape graph (SYNTHETIC).
 
 Concrete heap cells carry "nxt" pointer; canonical embedding merges cells
 with identical abstraction predicate vectors into summary nodes; the

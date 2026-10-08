@@ -1,4 +1,4 @@
-"""Liang-Zeger generalized estimating equations (GEE).
+"""Liang-Zeger generalized estimating equations (GEE) (SYNTHETIC).
 
 Liang & Zeger (1986): for clustered/panel responses with a
 marginal mean model g(mu_i) = x_i' beta, estimate beta by
@@ -231,5 +231,5 @@ def bench_gee(seed: int = 20261231 + 450) -> dict[str, float]:
     return {
         "synthetic_beta_err": abs(b_hat - b_true),
         "synthetic_alpha_err": abs(al - rho_true),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

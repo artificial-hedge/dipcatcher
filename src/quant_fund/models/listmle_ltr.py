@@ -1,4 +1,4 @@
-"""ListMLE (Xia et al. 2008) — Plackett-Luce likelihood of the ideal
+"""ListMLE (Xia et al. 2008) — Plackett-Luce likelihood of the ideal (SYNTHETIC)
 ordering: sum over positions of log-softmax on remaining suffix.
 """
 
@@ -53,5 +53,5 @@ def bench_listmle_ltr(
         "synthetic_listmle_ndcg10": nd,
         "synthetic_listmle_base_ndcg10": nd_base,
         "synthetic_listmle_gain": nd - nd_base,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

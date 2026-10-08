@@ -1,4 +1,4 @@
-"""Progressive distillation (Salimans & Ho 2022) — train DDPM teacher,
+"""Progressive distillation (Salimans & Ho 2022) — train DDPM teacher, (SYNTHETIC)
 then a student matching two teacher steps in one; student MMD at half
 the steps vs teacher at full steps.
 """
@@ -102,5 +102,5 @@ def bench_diff_distill(seed: int = 1529, iters: int = 900, steps: int = 16) -> d
         "synthetic_dd_student_mmd": m_s,
         "synthetic_dd_student_gap": m_s - m_t,
         "synthetic_dd_gauss_mmd": g,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

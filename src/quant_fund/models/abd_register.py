@@ -1,4 +1,4 @@
-"""ABD (Attiya-Bar-Noy-Dolev) atomic read/write register emulation.
+"""ABD (Attiya-Bar-Noy-Dolev) atomic read/write register emulation (SYNTHETIC).
 
 Writers tag values with a logical timestamp; a write completes after a
 majority of replicas stores it. A read takes a majority, picks the

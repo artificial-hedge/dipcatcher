@@ -84,6 +84,7 @@ def bench_trajectory_transformer(
 ) -> dict[str, float]:
     """Token model + beam planning vs greedy policy vs random."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     trajs = synth_offline(n_ep, horizon, rng)
     vocab = _NBIN + 3 + _NBIN + 3 + _NBIN
@@ -160,7 +161,7 @@ def bench_trajectory_transformer(
         "synthetic_tt_expert_reward": expert,
         "synthetic_tt_margin_vs_random": tt - rand,
         "synthetic_tt_expert_gap": expert - tt,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

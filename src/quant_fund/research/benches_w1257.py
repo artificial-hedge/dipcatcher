@@ -22,10 +22,14 @@ _SEED = 20261231
 def _finite_blob(blob: Mapping[str, float]) -> dict[str, float]:
     out: dict[str, float] = {}
     for k, v in blob.items():
-        assert k not in _FORBIDDEN, k
-        assert k.startswith("synthetic_"), k
-        assert isinstance(v, float) and math.isfinite(v)
-        assert 0.0 <= v <= 1.0
+        if k in _FORBIDDEN:
+            raise ValueError(f"forbidden metric key {k}")
+        if not k.startswith("synthetic_"):
+            raise ValueError(f"non-synthetic metric key {k}")
+        if not (isinstance(v, float) and math.isfinite(v)):
+            raise ValueError(f"metric {k} is not a finite float")
+        if not 0.0 <= v <= 1.0:
+            raise ValueError(f"metric {k} out of [0,1]")
         out[k] = v
     return out
 

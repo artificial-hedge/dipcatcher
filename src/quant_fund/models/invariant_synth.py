@@ -1,4 +1,4 @@
-"""Linear template invariant synthesis (synthetic).
+"""Linear template invariant synthesis (synthetic) (SYNTHETIC).
 
 For a simple integer loop ``while g: x := x + a; y := y + b`` with
 initial values, synthesizes affine invariants ``alpha*x + beta*y <= c``

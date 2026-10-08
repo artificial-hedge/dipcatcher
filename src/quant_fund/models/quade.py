@@ -1,4 +1,4 @@
-"""Quade's test — block ranks weighted by within-block range.
+"""Quade's test — block ranks weighted by within-block range (SYNTHETIC).
 
 Quade (1979): Friedman's within-block ranks are weighted by each
 block's spread (range over the k treatments), so blocks with more
@@ -72,5 +72,5 @@ def bench_quade(seed: int = 20261231 + 435) -> dict[str, float]:
         "synthetic_quade_p": out["p"],
         "synthetic_quade_p_null": out_n["p"],
         "synthetic_quade_t3": out["t3"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

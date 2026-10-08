@@ -1,4 +1,4 @@
-"""KMP linear-time string matching (synthetic).
+"""KMP linear-time string matching (synthetic) (SYNTHETIC).
 
 Prefix-function automaton; verified against str.find oracle incl.
 overlapping occurrences and pathological inputs (aaaa…ab).

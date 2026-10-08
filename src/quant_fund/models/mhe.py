@@ -1,4 +1,4 @@
-"""Moving-horizon estimation vs EKF on a linear system with a sparse
+"""Moving-horizon estimation vs EKF on a linear system with a sparse (SYNTHETIC)
 outlier measurement noise process — MHE's windowed quadratic program
 rejects the outlier through its L1-ish robust cost clamp.
 """

@@ -1,4 +1,4 @@
-"""Half-edge mesh data structure with Euler operations.
+"""Half-edge mesh data structure with Euler operations (SYNTHETIC).
 
 Built from polygon faces; supports vertex/face traversal via
 twin/next pointers. Verified: Euler characteristic V - E + F = 2 on a

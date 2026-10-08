@@ -1,4 +1,4 @@
-"""Random-search NAS baseline (Bergstra-Bengio 2012; Li-Talwalkar 2019).
+"""Random-search NAS baseline (Bergstra-Bengio 2012; Li-Talwalkar 2019) (SYNTHETIC).
 
 Uniform sampling over the arch space vs a grid that evaluates the
 same budget lexicographically — random coverage finds better archs
@@ -20,6 +20,7 @@ def bench_random_search_nas(
     iters: int = 40,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     x_tr, y_tr, x_te, y_te = split(seed, n)
     x_tr_t = torch.tensor(x_tr).float()
     y_tr_t = torch.tensor(noisy_labels(y_tr, seed))
@@ -46,5 +47,5 @@ def bench_random_search_nas(
         "synthetic_rnas_grid_best": best_g,
         "synthetic_rnas_oracle": oracle,
         "synthetic_rnas_gain": best_r - best_g,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

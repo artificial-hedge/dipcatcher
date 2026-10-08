@@ -4,8 +4,9 @@
 
 fx-1 (`src/fx1`) is an in-tree sub-project: corpus construction, an eval
 bank, training plumbing, and a training plan. No trained checkpoint is in
-this repository. dipcatcher is the harness: the data engine, evaluation
-bench, and verification layer. The package is organized so a future training
+this repository. dipcatcher is the harness: the chat-first CLI that
+orchestrates fx1 and fx1-lite ([the dipcatcher CLI](DIP_CONCIERGE.md)), over
+the data engine, evaluation bench, and verification layer. The package is organized so a future training
 run would inherit its integrity from the harness gates, then expose that
 integrity through four specified moves (masked eval, attested inference,
 corpus ledger, MRM dossier). This page describes that plan and the code

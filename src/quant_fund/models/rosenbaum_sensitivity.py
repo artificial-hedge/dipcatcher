@@ -1,4 +1,4 @@
-"""Rosenbaum sensitivity analysis for observational matched-pair studies.
+"""Rosenbaum sensitivity analysis for observational matched-pair studies (SYNTHETIC).
 
 Even when matching balances observed covariates, a hidden confounder
 can tilt the odds of treatment by a factor Γ > 1 within matched

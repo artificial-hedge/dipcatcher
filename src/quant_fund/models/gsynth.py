@@ -1,4 +1,4 @@
-"""Generalized synthetic control via interactive fixed effects (gsynth).
+"""Generalized synthetic control via interactive fixed effects (gsynth) (SYNTHETIC).
 
 Xu's IFE estimator: model the untreated outcome matrix as
 ``Y(0)_it = x_i'β + λ_i'f_t + ε_it`` where the factor structure is

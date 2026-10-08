@@ -1,4 +1,4 @@
-"""Self-exciting point processes: univariate/bivariate exponential-kernel Hawkes.
+"""Self-exciting point processes: univariate/bivariate exponential-kernel Hawkes (SYNTHETIC).
 
 References:
 - Hawkes (1971). Spectra of some self-exciting and mutually exciting point

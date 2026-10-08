@@ -1,4 +1,4 @@
-"""Affine-invariant ensemble sampler (Goodman & Weare emcee stretch
+"""Affine-invariant ensemble sampler (Goodman & Weare emcee stretch (SYNTHETIC)
 move): K walkers each proposing along the line to a randomly paired
 partner — no tuning, robust to correlation.
 """
@@ -39,5 +39,5 @@ def bench_emcee_stretch(seed: int = 2961, k: int = 10, steps: int = 400) -> dict
         "synthetic_emcee_ess_frac": float(e / len(samp)),
         "synthetic_mh_mean_err": me_b,
         "synthetic_mh_cov_err": ce_b,
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

@@ -1,4 +1,4 @@
-"""Closest pair of points — divide & conquer vs O(n^2) oracle."""
+"""Closest pair of points — divide & conquer vs O(n^2) oracle (SYNTHETIC)."""
 
 from __future__ import annotations
 

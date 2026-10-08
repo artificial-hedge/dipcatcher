@@ -1,4 +1,4 @@
-"""Rough-volatility estimators (Gatheral, Jaisson & Rosenbaum 2018).
+"""Rough-volatility estimators (Gatheral, Jaisson & Rosenbaum 2018) (SYNTHETIC).
 
 Log-volatility behaves like fractional Brownian motion with H ~ 0.05-0.15;
 this module implements the scaling diagnostics and the RFSV model.

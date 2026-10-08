@@ -1,4 +1,4 @@
-"""Rise/transit/set times for the Sun via hour-angle iteration.
+"""Rise/transit/set times for the Sun via hour-angle iteration (SYNTHETIC).
 
 Simplified solar ephemeris (Meeus low accuracy): mean longitude,
 equation of center, ecliptic-to-equatorial declination and apparent

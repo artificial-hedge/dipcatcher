@@ -28,10 +28,15 @@ posture:
   as ``paused`` recovers to ``failed`` like any other non-terminal state.
 * Eval stages produce evidence, not ship gates: the fixture-scale model's
   real bank scores are sealed into ``eval_base.json`` /
-  ``eval_candidate.json`` / ``comparison.json`` result files. Serving the
-  minted ``ft:`` name is gated the same way the base checkpoint is — the
-  card must load and pass ``ship_eligible``, and the engine verifies the
-  weights sha pin.
+  ``eval_candidate.json`` / ``comparison.json`` result files, and the
+  measured pair is stamped onto the produced ``modelcard.json`` (the
+  card's ``eval_delta`` is real measured evidence — the fixture
+  placeholder never ships on a job-produced card) plus sealed into
+  ``eval_receipt.json``. Serving the minted ``ft:`` name is gated the
+  same way the base checkpoint is — the card must load and pass
+  ``ship_eligible``, and the engine verifies the weights sha pin. A
+  candidate whose measured delta fails the gate is honestly refused at
+  serve; the gate's verdict reflects reality, not a fixture constant.
 * Result artifacts (comparison, candidate eval, training receipt, the
   checkpoint's weights/manifest/card) are registered back into the files
   store so ``GET /v1/files/{id}/content`` downloads them — real
@@ -743,6 +748,7 @@ def default_ft_runner(
     ) -> FTJobOutcome:
         from fx1.eval.bank import DEFAULT_BANK  # noqa: PLC0415
         from fx1.eval.suite import run_suite  # noqa: PLC0415
+        from fx1.modelcard import EvalDelta  # noqa: PLC0415
         from fx1.serve.local_engine import LocalWeightsEngine  # noqa: PLC0415
         from fx1.train.config import LadderStage, TrainConfig  # noqa: PLC0415
         from fx1.train.pipeline import Pipeline, Stage  # noqa: PLC0415
@@ -751,7 +757,13 @@ def default_ft_runner(
             FT_LR_BASE,
             make_tiny_lm_trainer,
             sha256_file,
+            stamp_measured_eval_delta,
         )
+        from quant_fund.utils.hashing import (  # noqa: PLC0415
+            canonical_json_bytes,
+            hash_bytes,
+        )
+        from quant_fund.utils.reproducibility import git_revision  # noqa: PLC0415
 
         class _EvidencePipeline(Pipeline):
             """Eval stages seal measured evidence instead of ship-gating.
@@ -823,6 +835,118 @@ def default_ft_runner(
                 )
                 return dict(cand_summary)
 
+            def run_card_stamp(
+                self,
+                checkpoint: Path,
+                base_summary: dict[str, Any],
+                cand_summary: dict[str, Any],
+            ) -> EvalDelta:
+                """CARD: replace the pending eval_delta with the measured pair.
+
+                The trainer writes the ``eval_pending_delta`` sentinel — a
+                card that fails the ship gate closed — so the checkpoint on
+                disk can never claim eligibility it has not earned. This is
+                the only place a produced card gains real eval numbers: the
+                measured domain/general pass rates from the sealed
+                ``comparison.json`` plus the candidate's measured honesty
+                gate. A candidate that measured worse carries an honest
+                negative delta and a ``ship_eligible=False`` card — the
+                serve-time gate reads exactly this verdict. The sealed
+                ``eval_receipt.json`` (eval name, task counts, bank sha,
+                seeds, every measured number) lands in the job's
+                ``result_files`` so the stamped card is auditable.
+                """
+                comparison = json.loads(
+                    Path(self.state.artifacts["comparison"]).read_text(encoding="utf-8")
+                )
+                general = comparison.get("general")
+                if not isinstance(general, dict):
+                    general = {}
+                measured = EvalDelta(
+                    domain_pass_rate_base=float(comparison["base_pass_rate"]),
+                    domain_pass_rate_candidate=float(comparison["candidate_pass_rate"]),
+                    general_pass_rate_base=float(general.get("base_pass_rate", 0.0)),
+                    general_pass_rate_candidate=float(general.get("candidate_pass_rate", 0.0)),
+                    honesty_gate_candidate=bool(cand_summary.get("honesty_gate_passed")),
+                )
+                bank_sha = str(cand_summary.get("eval_bank_sha256") or "")
+                by_kind = cand_summary.get("by_kind") or {}
+                n_tasks = len(cand_summary.get("results") or [])
+                n_by_kind = {
+                    str(k): int(v.get("total") or 0)
+                    for k, v in by_kind.items()
+                    if isinstance(v, dict)
+                }
+                base_results = base_summary.get("results") or []
+                cand_results = cand_summary.get("results") or []
+                receipt: dict[str, Any] = {
+                    "kind": "fx1_ft_eval",
+                    "schema": "fx1_ft_eval.v1",
+                    "git_revision": git_revision(),
+                    "data_label": "SYNTHETIC",
+                    "research_only": True,
+                    "live_pnl_claim": False,
+                    "job_id": spec.job_id,
+                    "fine_tuned_model": spec.ft_model_name,
+                    "eval": {
+                        "suite": "fx1.eval.suite.run_suite",
+                        "bank": "DEFAULT_BANK",
+                        "eval_bank_sha256": bank_sha,
+                        "n_tasks": n_tasks,
+                        "n_by_kind": n_by_kind,
+                        "max_tokens": 24,
+                        "job_seed": spec.seed,
+                        "comparison_seed": 7,
+                        "base_checkpoint": str(base_ckpt),
+                        "base_weights_sha256": base_weights_sha,
+                        "candidate_checkpoint": str(checkpoint),
+                    },
+                    "measured": {
+                        "domain_pass_rate_base": measured.domain_pass_rate_base,
+                        "domain_pass_rate_candidate": measured.domain_pass_rate_candidate,
+                        "domain_delta": float(comparison["delta"]),
+                        "domain_delta_ci_low": float(comparison["delta_ci_low"]),
+                        "domain_delta_ci_high": float(comparison["delta_ci_high"]),
+                        "domain_mcnemar_statistic": float(comparison["mcnemar_statistic"]),
+                        "general_pass_rate_base": measured.general_pass_rate_base,
+                        "general_pass_rate_candidate": (measured.general_pass_rate_candidate),
+                        "general_delta": float(general.get("delta", 0.0)),
+                        "honesty_gate_base": bool(base_summary.get("honesty_gate_passed")),
+                        "honesty_gate_candidate": measured.honesty_gate_candidate,
+                        "honesty_violations_candidate": sorted(
+                            str(t) for t in (cand_summary.get("honesty_violations") or [])
+                        ),
+                        "base_tasks_passed": sum(1 for r in base_results if r.get("passed")),
+                        "candidate_tasks_passed": sum(1 for r in cand_results if r.get("passed")),
+                        "ship_eligible": measured.ship_eligible,
+                    },
+                    "interpretation": (
+                        "the ft job's eval_delta is measured: "
+                        "fx1.eval.suite.run_suite scored base and candidate "
+                        "on the same DEFAULT_BANK, and the card carries the "
+                        f"result (ship_eligible={measured.ship_eligible})"
+                    ),
+                }
+                receipt["receipt_sha256"] = hash_bytes(canonical_json_bytes(receipt))
+                receipt_out = self._write("eval_receipt.json", receipt)
+                # the card itself ships as the ``checkpoint/modelcard.json``
+                # member below — registering it here too would duplicate the
+                # file under the same result name
+                stamp_measured_eval_delta(
+                    checkpoint,
+                    measured,
+                    evidence_note=(
+                        "eval_delta measured by fx1.eval.suite.run_suite over "
+                        f"DEFAULT_BANK ({n_tasks} seeded tasks "
+                        f"{n_by_kind}; eval_bank_sha256 {bank_sha[:16]}\u2026; "
+                        f"job seed {spec.seed}; max_tokens 24; "
+                        f"ship_eligible={measured.ship_eligible}); evidence "
+                        "sealed in the job's eval_receipt.json result file"
+                    ),
+                )
+                self._advance(Stage.CARD, eval_receipt=str(receipt_out))
+                return measured
+
         hp = spec.hyperparameters
         config = TrainConfig(
             run_name=spec.ft_model_name,
@@ -868,7 +992,10 @@ def default_ft_runner(
         if should_cancel() or pause_gate():
             return FTJobOutcome()
 
-        base_engine = LocalWeightsEngine(base_ckpt)
+        # the eval path measures weights regardless of the card's own
+        # ship-gate claim — the base card is the fixture placeholder and
+        # the candidate card is the eval-pending sentinel at this point
+        base_engine = LocalWeightsEngine(base_ckpt, enforce_ship_gate=False)
 
         def base_fn(messages: list[dict[str, str]]) -> str:
             return base_engine.complete_messages(messages, max_tokens=24).text
@@ -900,7 +1027,7 @@ def default_ft_runner(
         if should_cancel() or pause_gate():
             return FTJobOutcome()
 
-        cand_engine = LocalWeightsEngine(checkpoint)
+        cand_engine = LocalWeightsEngine(checkpoint, enforce_ship_gate=False)
 
         def cand_fn(messages: list[dict[str, str]]) -> str:
             return cand_engine.complete_messages(messages, max_tokens=24).text
@@ -913,6 +1040,27 @@ def default_ft_runner(
             "info",
             "candidate eval complete (evidence, not a ship gate)",
             _eval_event_data(cand_summary),
+        )
+        if should_cancel() or pause_gate():
+            return FTJobOutcome()
+
+        measured = pipe.run_card_stamp(checkpoint, base_summary, cand_summary)
+        emit(
+            "info" if measured.ship_eligible else "warn",
+            (
+                "eval delta measured + stamped on the model card"
+                if measured.ship_eligible
+                else "eval delta measured: card is not ship-eligible — the "
+                "gate will honestly refuse to serve this checkpoint"
+            ),
+            {
+                "domain_pass_rate_base": measured.domain_pass_rate_base,
+                "domain_pass_rate_candidate": measured.domain_pass_rate_candidate,
+                "general_pass_rate_base": measured.general_pass_rate_base,
+                "general_pass_rate_candidate": measured.general_pass_rate_candidate,
+                "honesty_gate_candidate": measured.honesty_gate_candidate,
+                "ship_eligible": measured.ship_eligible,
+            },
         )
         artifacts = {
             name: Path(path) for name, path in pipe.state.artifacts.items() if Path(path).is_file()

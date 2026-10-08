@@ -105,5 +105,5 @@ def bench_watson(seed: int = 20261231 + 472) -> dict[str, float]:
         "synthetic_uniform_p": float(out_u["p_u2"]),
         "synthetic_vm_p": float(out_v["p_u2"]),
         "synthetic_vm_rayleigh_p": float(out_v["rayleigh_p"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

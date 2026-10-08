@@ -1,4 +1,4 @@
-"""Median Elimination (Even-Dar et al. 2006) — (ε,δ)-PAC BAI:
+"""Median Elimination (Even-Dar et al. 2006) — (ε,δ)-PAC BAI: (SYNTHETIC)
 eliminate the worst half of the candidate set each epoch until one
 arm remains; sample counts grow as O((K/ε²) log(1/δ))."""
 

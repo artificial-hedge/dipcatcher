@@ -1,4 +1,4 @@
-"""Benders decomposition for uncapacitated facility location.
+"""Benders decomposition for uncapacitated facility location (SYNTHETIC).
 
 min f'y + q(y), q(y) = sum_i min_{j: y_j=1} c_ij. Combinatorial
 (L-shaped) optimality cuts: at visited y_hat the master gains
@@ -42,7 +42,8 @@ def _benders(iters: int = 40) -> tuple[float, int]:
             val = float(FL_F @ y) + z
             if val < best_master:
                 best_master, y_star = val, y
-        assert y_star is not None
+        if not (y_star is not None):
+            raise ValueError("y_star is not None")
         q_val = _q(y_star)
         obj = float(FL_F @ y_star) + q_val
         best_obj = min(best_obj, obj)

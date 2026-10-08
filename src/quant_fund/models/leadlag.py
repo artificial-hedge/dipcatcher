@@ -1,4 +1,4 @@
-"""Lead-lag structure: cross-correlation networks + Hayashi-Yoshida.
+"""Lead-lag structure: cross-correlation networks + Hayashi-Yoshida (SYNTHETIC).
 
 - ``cross_correlation``: sample cross-correlation of two series at integer
   lags -k..k on the overlapping interior.

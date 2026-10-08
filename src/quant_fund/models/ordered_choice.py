@@ -1,4 +1,4 @@
-"""Ordered choice models — ordered probit/logit via threshold MLE.
+"""Ordered choice models — ordered probit/logit via threshold MLE (SYNTHETIC).
 
 Latent y* = xβ + ε crosses ordered cutpoints to produce the observed
 category. Maximizing the category likelihood over (β, cutpoints)

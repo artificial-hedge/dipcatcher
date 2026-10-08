@@ -31,4 +31,4 @@ def test_two_sample_shifted():
 
 def test_bench():
     out = bench_kuiper()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

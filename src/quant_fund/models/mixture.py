@@ -1,4 +1,4 @@
-"""Mixture models via EM.
+"""Mixture models via EM (SYNTHETIC).
 
 Gaussian and Student-t finite mixtures with EM fitting, BIC/ICL model
 selection, filtered/smoothed component probabilities, and mixing-density

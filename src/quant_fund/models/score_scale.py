@@ -1,4 +1,4 @@
-"""Two-sample rank tests for SCALE differences.
+"""Two-sample rank tests for SCALE differences (SYNTHETIC).
 
 Canonical references:
 

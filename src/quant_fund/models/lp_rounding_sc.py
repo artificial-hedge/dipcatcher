@@ -1,4 +1,4 @@
-"""LP-rounding set cover — the f-approximation.
+"""LP-rounding set cover — the f-approximation (SYNTHETIC).
 
 Solves the LP relaxation min c'x, A x >= 1, 0<=x<=1, then rounds up
 every x_j >= 1/f where f is the max number of sets covering any

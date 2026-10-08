@@ -60,5 +60,5 @@ def test_input_validation() -> None:
 
 def test_bench_score() -> None:
     out = bench_libor_market()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_lmm_caplet_err"] < 0.05

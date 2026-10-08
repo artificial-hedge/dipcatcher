@@ -22,7 +22,7 @@ class TestTft:
     def test_bench(self) -> None:
         out = bench_tft_forecaster(seed=3)
         assert out["synthetic_tft_margin_vs_ridge"] > 0
-        assert out["torch_available"] == 1.0
+        assert out["synthetic_torch_available"] == 1.0
 
 
 class TestPatchTst:
@@ -33,7 +33,7 @@ class TestPatchTst:
     def test_bench(self) -> None:
         out = bench_patchtst(seed=5)
         assert np.isfinite(out["synthetic_patchtst_mae"])
-        assert out["torch_available"] == 1.0
+        assert out["synthetic_torch_available"] == 1.0
 
 
 class TestLobTransformer:

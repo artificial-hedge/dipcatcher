@@ -1,4 +1,4 @@
-"""Two-Phase Set CRDT (2P-Set): add + tombstone sets (synthetic).
+"""Two-Phase Set CRDT (2P-Set): add + tombstone sets (synthetic) (SYNTHETIC).
 
 Element in set iff in A and not in R; once removed, never returns.
 Verified: merge laws; remove-wins semantics; re-add after remove

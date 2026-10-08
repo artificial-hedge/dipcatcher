@@ -1,19 +1,21 @@
 name: replay-viz
 
 on:
+  # Doc-only pushes must not run this non-doc lane. GitHub forbids `paths` and
+  # `paths-ignore` on the same event (the workflow would never run at all), so
+  # the equivalent filter is applied by dropping docs/REPLAY_VIZ.md from
+  # `paths` below: a push touching only docs/** or *.md no longer matches.
   push:
     branches: [main]
     paths:
       - "replay/**"
       - "tests/unit/replay_viz/**"
-      - "docs/REPLAY_VIZ.md"
       - ".github/workflows/replay_viz.yml"
   pull_request:
     branches: [main]
     paths:
       - "replay/**"
       - "tests/unit/replay_viz/**"
-      - "docs/REPLAY_VIZ.md"
       - ".github/workflows/replay_viz.yml"
 
 concurrency:

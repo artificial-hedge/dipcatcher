@@ -1,4 +1,4 @@
-"""Entropy balancing calibration weights.
+"""Entropy balancing calibration weights (SYNTHETIC).
 
 Hainmueller's entropy balancing: find control weights w_i that match
 treatment-group moments exactly while staying as close as possible to

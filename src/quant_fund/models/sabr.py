@@ -1,4 +1,4 @@
-"""SABR stochastic-volatility smile: implied vol, calibration, shifted SABR.
+"""SABR stochastic-volatility smile: implied vol, calibration, shifted SABR (SYNTHETIC).
 
 Hagan, Kumar, Lesniewski & Woodward (2002), "Managing smile risk",
 Wilmott Magazine. Parameters: ``alpha`` (vol level), ``beta`` (CEV

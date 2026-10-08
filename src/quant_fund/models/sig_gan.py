@@ -611,7 +611,8 @@ def _torch_moment_sq(levels_fake: list[Any], ref_means: list[Any], weights: list
         mf = lf.reshape(lf.shape[0], -1).mean(dim=0)
         term = ((mf - mr) ** 2).sum() / w
         total = term if total is None else total + term
-    assert total is not None
+    if not (total is not None):
+        raise ValueError("total is not None")
     return total
 
 

@@ -97,3 +97,87 @@ number. Deflated-ratio thresholds in `quant_fund.reality.report` are not
 edited. The gate deflates by cluster count. The receipt also reports the
 same deflated-ratio function with the raw recorded trial count, labeled as
 that supplemental figure.
+
+## Forward-record pre-registration (hash-sealed) — `forward_2026H2`
+
+**Declaration date: 2026-10-07.** This block is frozen **before** the forward
+window runs. It is a research/shadow pre-registration, not a live-trading
+claim, not a promotion, and not a broker test. `live_pnl_claim=false`.
+
+**The window is NOT YET COLLECTED.** No forward decision or outcome has been
+recorded under this pre-registration. The **2025 holdout is SPENT** (the vendor
+pool already has results for it and discloses survivorship bias) and cannot be
+reused as forward evidence.
+
+| Element | Frozen value |
+|---|---|
+| Declaration date | 2026-10-07 (Asia/Calcutta) |
+| Forward window | **`forward_2026H2`** — the *calendar span label* for H2 2026, whose nominal span begins 2026-07-01. **2026-07-01 is not the eligibility boundary** — see Splits below. Not yet collected. |
+| Universe | static 424-name US universe frozen at the warmup boundary; fixed-universe, membership-selection bias recorded in `selection_basis` |
+| Splits | warmup = all bars on/before 2026-09-18 (already inspected, warmup only); forward = **first accepted decision strictly after the recorded freeze (2026-10-07)** |
+
+> **Correction (2026-10-08).** Earlier revisions of this table stated the forward window
+> as "start 2026-07-01 (first eligible session on/after)", which contradicted the
+> `Splits` row beside it and the sealed receipt itself. The receipt's operative rule is
+> `splits.forward`: *"first accepted decision must occur on a LATER market date than the
+> recorded freeze."* The freeze is **2026-10-07**. So the first eligible forward session
+> is the first market date **after 2026-10-07** — **not** 2026-07-01.
+>
+> `window.start = 2026-07-01` is the span label of `forward_2026H2` (second half of
+> 2026) and nothing more. Reading it as a collection start would wrongly imply that
+> closes from July–October 2026 are eligible forward evidence; the receipt would reject
+> them, and correctly so.
+| Grid | frozen `momentum-20` vs frozen `equal-weight`; single primary comparison; no mid-collection tuning |
+| Costs | commission 1 bp, half-spread 5 bp, impact 0.1, borrow 50 bp/yr, financing 0, participation 0.1, next-open fills |
+| What gets recorded | externally timestamped inputs + decision cutoff; intended signed quantities + simulated orders; fills (incl. partials), rejects + reasons; positions, cash, costs, NAV + net-return accounting; kill-switch state; software/config/data hashes + broker-state cursor; immutable receipt chain |
+| Admission rule | the frozen `validation/agent_referee.py` betting referee (post-submission-only): anytime-valid admission at every stopping time, no optional-stopping inflation. Primary test one-sided `H0: E[D_t] <= 0` vs `H1: E[D_t] > 0`, α=0.05, material effect +5 bps/day, ≥1,400 eligible paired sessions (see [FORWARD_SHADOW_POWER.md](FORWARD_SHADOW_POWER.md)) |
+| Status | `NOT_YET_COLLECTED`, `not_yet_collected=true`; `research_only=true`, `live_pnl_claim=false`, `live_trading_claim=false`, `broker_connectivity_claim=false`, `synthetic_substitution=false` |
+
+### Hash seal and tamper detection
+
+The machine-readable pre-registration is
+`receipts/forward_record_preregistration_v1.json`, sealed two ways so later
+**silent** edits are detectable:
+
+1. **Embedded self-seal** — a `_seal.content_sha256` over the canonical payload.
+   Editing any declared field breaks the embedded hash.
+2. **Sidecar seal** — `receipts/forward_record_preregistration_v1.json.seal.json`
+   binds the file's SHA-256. Editing the file without re-sealing breaks it.
+
+Both are implemented in `quant_fund.data.prereg_seal` and proven by the
+tamper-detection tests in `tests/unit/data/test_prereg_seal.py` (editing the
+sealed effect size, the window start, or the file bytes makes verification fail
+closed). This is **local** tamper-evidence: it detects accidental or silent
+edits as long as the seal is not itself rewritten by whoever controls all local
+files.
+
+### External timestamp anchor — DONE 2026-10-08
+
+The operational step the previous revision left outstanding has now been performed.
+The seal is **independently timestamped** by an external RFC 3161 authority:
+
+```bash
+uv run dipcatcher anchor-timestamp \
+  --file receipts/forward_record_preregistration_v1.json.seal.json
+# → timestamp=quality/timestamps/receipts__forward_record_preregistration_v1.json.seal.json.tsr
+```
+
+Verified against the repo's pinned FreeTSA CA and signer certs:
+
+```json
+{ "ok": true, "anchored": true,
+  "fresh": { "receipts/forward_record_preregistration_v1.json.seal.json": true },
+  "chain": { "receipts/forward_record_preregistration_v1.json.seal.json": "chain_verified" },
+  "errors": [] }
+```
+
+`fresh=true` means the TSA token still commits to the seal's current bytes;
+`chain_verified` means the token chains to a pinned certificate. A history rewriter can
+no longer backdate this freeze, because the freeze instant is asserted by a third party
+rather than by the repository. Only the file's **SHA-256** was transmitted to the
+authority — never its contents. The anchor is recorded in
+`quality/timestamps/anchors.json` alongside the three integrity-pin anchors.
+
+**Still outstanding:** collection has not begun. `status` remains `NOT_YET_COLLECTED`,
+and no forward close has been recorded. The first eligible session is the first market
+date after the 2026-10-07 freeze.

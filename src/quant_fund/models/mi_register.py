@@ -1,4 +1,4 @@
-"""Mattes mutual-information rigid registration.
+"""Mattes mutual-information rigid registration (SYNTHETIC).
 
 Joint histogram over intensity bins under a candidate translation; MI =
 H(A) + H(B) - H(A,B). A coarse grid search maximizes MI; bench recovers a

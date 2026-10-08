@@ -142,6 +142,6 @@ def bench_srisk(seed: int = 20261231 + 344) -> dict[str, float]:
         "synthetic_srisk_high_beta": s_hi["srisk"],
         "synthetic_srisk_low_beta": s_lo["srisk"],
         "synthetic_lrmes_gap": s_hi["lrmes"] - s_lo["lrmes"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

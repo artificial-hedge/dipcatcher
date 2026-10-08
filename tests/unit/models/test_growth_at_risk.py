@@ -73,6 +73,12 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_growth_at_risk()
-    for k in ("gar_lo", "gar_hi", "gar_drop", "spread_widen", "score"):
+    for k in (
+        "synthetic_gar_lo",
+        "synthetic_gar_hi",
+        "synthetic_gar_drop",
+        "synthetic_spread_widen",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

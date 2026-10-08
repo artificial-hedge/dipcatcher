@@ -1,4 +1,4 @@
-"""Epoch-based reclamation (EBR) simulator."""
+"""Epoch-based reclamation (EBR) simulator (SYNTHETIC)."""
 
 import numpy as np
 

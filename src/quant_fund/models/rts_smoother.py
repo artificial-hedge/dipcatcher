@@ -1,4 +1,4 @@
-"""Rauch-Tung-Striebel Kalman smoother for linear-Gaussian systems."""
+"""Rauch-Tung-Striebel Kalman smoother for linear-Gaussian systems (SYNTHETIC)."""
 
 from __future__ import annotations
 

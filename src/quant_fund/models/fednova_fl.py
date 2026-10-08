@@ -1,4 +1,4 @@
-"""FedNova (Wang et al. 2020) — normalized averaging: scale each client's
+"""FedNova (Wang et al. 2020) — normalized averaging: scale each client's (SYNTHETIC)
 update by the mean local-step count to cancel objective inconsistency —
 vs raw FedAvg under heterogeneous epoch budgets.
 """

@@ -1,4 +1,4 @@
-"""Empirical-Bayes canon: Robbins' Poisson
+"""Empirical-Bayes canon: Robbins' Poisson (SYNTHETIC)
 nonparametric EB, Tweedie's f-modeling posterior
 mean, and Kiefer-Wolfowitz NPMLE g-modeling via
 EM on a fixed grid.

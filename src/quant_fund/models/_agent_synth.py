@@ -1,4 +1,4 @@
-"""Synthetic agentic fixture: a small tool-graph.
+"""Synthetic agentic fixture: a small tool-graph (SYNTHETIC).
 
 State = int 0..99; tools = deterministic transitions
 t_a: s → (s + a) mod 100 for a in {+7, -3, *2 as +s, −17, +11, ÷2 as s//2}

@@ -1,4 +1,4 @@
-"""Complementary-filter heading fusion (wave 283).
+"""Complementary-filter heading fusion (wave 283) (SYNTHETIC).
 
 Yaw rate gyro integrates to a drifting estimate; a noisy compass reads the
 true heading. Complementary blend w*gyro_int + (1-w)*compass beats either

@@ -1,4 +1,4 @@
-"""Policy-gradient market maker (Exec-Summary PG-MM item). REINFORCE
+"""Policy-gradient market maker (Exec-Summary PG-MM item). REINFORCE (SYNTHETIC)
 agent quotes bid/ask offsets in a Poisson-fill LOB simulator
 (fill intensity A*exp(-k*offset)) with quadratic inventory penalty.
 

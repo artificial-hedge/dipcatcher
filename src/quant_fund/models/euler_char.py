@@ -1,4 +1,4 @@
-"""Euler characteristic equals alternating Betti sum (wave 280).
+"""Euler characteristic equals alternating Betti sum (wave 280) (SYNTHETIC).
 
 χ = Σ(-1)^k f_k = Σ(-1)^k b_k for any finite complex — verify on random flag
 complexes plus the named oracles.

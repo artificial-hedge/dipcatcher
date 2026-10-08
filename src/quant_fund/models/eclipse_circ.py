@@ -1,4 +1,4 @@
-"""Simplified solar-eclipse circumstances — Besselian-lite geometry.
+"""Simplified solar-eclipse circumstances — Besselian-lite geometry (SYNTHETIC).
 
 Sun from the low-accuracy solar ephemeris; Moon on a circular inclined
 orbit (i = 5.145 deg, sidereal period 27.32166 d, regression of the

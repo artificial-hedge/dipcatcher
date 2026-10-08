@@ -127,9 +127,9 @@ def bench_zivot_andrews(
         and abs(r_st["break_idx"] - b) < 60
     )
     return {
-        "t_min_st": r_st["t_min"],
-        "t_min_rw": r_rw["t_min"],
-        "break_hat": r_st["break_idx"],
-        "break_true": float(b),
-        "score": float(ok),
+        "synthetic_t_min_st": r_st["t_min"],
+        "synthetic_t_min_rw": r_rw["t_min"],
+        "synthetic_break_hat": r_st["break_idx"],
+        "synthetic_break_true": float(b),
+        "synthetic_score": float(ok),
     }

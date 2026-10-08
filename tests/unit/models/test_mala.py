@@ -71,5 +71,5 @@ def test_mala_rejects_nonfinite_density() -> None:
 
 def test_bench_mala_score() -> None:
     out = bench_mala()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     assert out["synthetic_mala_acc"] > out["synthetic_mala_rwm_acc"]

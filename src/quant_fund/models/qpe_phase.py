@@ -1,4 +1,4 @@
-"""Quantum phase estimation on a controlled-U (Z-rotation) with a
+"""Quantum phase estimation on a controlled-U (Z-rotation) with a (SYNTHETIC)
 planted phase — recovers binary digits vs uniform bit guessing.
 """
 
@@ -31,5 +31,5 @@ def bench_qpe_phase(seed: int = 3077, prec: int = 3) -> dict[str, float]:
         "synthetic_qpe_err": float(abs(est - theta_true)),
         "synthetic_qpe_random_err": base_err,
         "synthetic_qpe_peak_prob": float(probs.max()),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

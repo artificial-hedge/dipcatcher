@@ -55,6 +55,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_engle_granger()
-    for k in ("tau_ci", "crit5", "tau_nc", "alpha", "alpha_p", "score"):
+    for k in (
+        "synthetic_tau_ci",
+        "synthetic_crit5",
+        "synthetic_tau_nc",
+        "synthetic_alpha",
+        "synthetic_alpha_p",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

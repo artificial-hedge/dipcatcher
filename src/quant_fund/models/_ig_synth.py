@@ -1,4 +1,4 @@
-"""Synthetic fixtures shared by the information-geometry canon.
+"""Synthetic fixtures shared by the information-geometry canon (SYNTHETIC).
 
 Univariate-Gaussian model space (Fisher-Rao), an ill-conditioned Gaussian
 fit (natural gradient), a simplex-constrained least squares (mirror

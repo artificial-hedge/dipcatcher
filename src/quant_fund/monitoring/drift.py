@@ -1,7 +1,18 @@
-"""Feature / prediction drift. PSI is optional, not the only metric."""
+"""Feature / prediction drift. PSI is optional, not the only metric.
+
+Family-specific calibration drift is wired into :func:`model_health_report`
+so each model family gets its own Brier-calibration delta/alert rather than one
+global number. :func:`verify_evidence_report_sidecar` preserves the
+fail-closed evidence-report hash-sidecar check used by ``/monitoring/drift``:
+an evidence report whose bytes no longer match its ``.sha256`` sidecar is
+``invalid``/``hash_mismatch``, never silently trusted. ``live_pnl_claim=False``
+and ``research_only=True`` throughout.
+"""
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -98,6 +109,11 @@ def model_health_report(
         NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]
     ]
     | None = None,
+    family_calibration_windows: Mapping[
+        str,
+        tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]],
+    ]
+    | None = None,
     calibration_alert_delta: float = 0.05,
     psi_threshold: float = 0.25,
     min_features: int = 1,
@@ -132,33 +148,18 @@ def model_health_report(
         except (OSError, ValueError, TypeError) as exc:
             artifact_reports[name] = {"status": "invalid", "path": str(path)}
             errors.append(f"invalid_artifact:{name}:{type(exc).__name__}")
-    calibration: dict[str, Any] | None = None
-    if calibration_windows is not None:
-        reference_prob, reference_label, current_prob, current_label = calibration_windows
-        rp = np.asarray(reference_prob, dtype=float)
-        ry = np.asarray(reference_label, dtype=float)
-        cp = np.asarray(current_prob, dtype=float)
-        cy = np.asarray(current_label, dtype=float)
-        if rp.size != ry.size or cp.size != cy.size:
-            errors.append("calibration_window_length_mismatch")
-        else:
-            rmask = np.isfinite(rp) & np.isfinite(ry)
-            cmask = np.isfinite(cp) & np.isfinite(cy)
-            if not rmask.any() or not cmask.any():
-                errors.append("insufficient_calibration_data")
-            else:
-                reference_brier = float(np.mean((rp[rmask] - ry[rmask]) ** 2))
-                current_brier = float(np.mean((cp[cmask] - cy[cmask]) ** 2))
-                delta = current_brier - reference_brier
-                calibration = {
-                    "reference_brier": reference_brier,
-                    "current_brier": current_brier,
-                    "delta": delta,
-                    "alert": bool(delta >= calibration_alert_delta),
-                }
+    calibration, calibration_errors = _calibration_block(
+        calibration_windows, calibration_alert_delta
+    )
+    errors.extend(calibration_errors)
+    family_calibration, family_errors, family_alerts = _family_calibration(
+        family_calibration_windows, calibration_alert_delta
+    )
+    errors.extend(family_errors)
     alerts = [name for name, report in feature_reports.items() if report.get("alert")]
     if calibration is not None and calibration.get("alert"):
         alerts.append("calibration")
+    alerts.extend(family_alerts)
     if len(feature_reports) < min_features:
         errors.append("insufficient_feature_count")
     status = "invalid" if errors else ("alert" if alerts else "ok")
@@ -167,8 +168,103 @@ def model_health_report(
         "features": feature_reports,
         "artifacts": artifact_reports,
         "calibration": calibration,
+        "family_calibration": family_calibration,
         "alerts": alerts,
         "errors": errors,
         "research_only": True,
         "live_pnl_claim": False,
+    }
+
+
+def _calibration_block(
+    windows: tuple[
+        NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]
+    ]
+    | None,
+    alert_delta: float,
+) -> tuple[dict[str, Any] | None, list[str]]:
+    """Brier-calibration delta for one reference/current prob-label pair.
+
+    Returns ``(block, errors)``. ``block`` is ``None`` when no usable data is
+    present; length/sample insufficiency is reported in ``errors`` rather than
+    being treated as a clean calibration.
+    """
+    if windows is None:
+        return None, []
+    reference_prob, reference_label, current_prob, current_label = windows
+    rp = np.asarray(reference_prob, dtype=float)
+    ry = np.asarray(reference_label, dtype=float)
+    cp = np.asarray(current_prob, dtype=float)
+    cy = np.asarray(current_label, dtype=float)
+    if rp.size != ry.size or cp.size != cy.size:
+        return None, ["calibration_window_length_mismatch"]
+    rmask = np.isfinite(rp) & np.isfinite(ry)
+    cmask = np.isfinite(cp) & np.isfinite(cy)
+    if not rmask.any() or not cmask.any():
+        return None, ["insufficient_calibration_data"]
+    reference_brier = float(np.mean((rp[rmask] - ry[rmask]) ** 2))
+    current_brier = float(np.mean((cp[cmask] - cy[cmask]) ** 2))
+    delta = current_brier - reference_brier
+    return {
+        "reference_brier": reference_brier,
+        "current_brier": current_brier,
+        "delta": delta,
+        "alert": bool(delta >= alert_delta),
+    }, []
+
+
+def _family_calibration(
+    family_windows: Mapping[
+        str,
+        tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]],
+    ]
+    | None,
+    alert_delta: float,
+) -> tuple[dict[str, Any], list[str], list[str]]:
+    """Per-family Brier-calibration drift. Returns ``(blocks, errors, alerts)``."""
+    blocks: dict[str, Any] = {}
+    errors: list[str] = []
+    alerts: list[str] = []
+    for family, windows in (family_windows or {}).items():
+        block, block_errors = _calibration_block(windows, alert_delta)
+        errors.extend(f"{family}:{e}" for e in block_errors)
+        blocks[family] = block
+        if block is not None and block.get("alert"):
+            alerts.append(f"calibration:{family}")
+    return blocks, errors, alerts
+
+
+def verify_evidence_report_sidecar(path: str | Path) -> dict[str, Any]:
+    """Fail-closed evidence-report ``.sha256`` sidecar check.
+
+    Mirrors the ``/monitoring/drift`` integrity gate: the report bytes must
+    match their sidecar digest or the report is ``invalid``/``hash_mismatch``.
+    A missing/unreadable report or sidecar is ``invalid`` (never trusted).
+    """
+    report_path = Path(path)
+    sidecar = report_path.with_name(f"{report_path.name}.sha256")
+    if not report_path.is_file():
+        return {"status": "invalid", "reason": "missing", "valid": False}
+    try:
+        expected = sidecar.read_text(encoding="ascii").strip()
+        actual = hashlib.sha256(report_path.read_bytes()).hexdigest()
+        if expected != actual:
+            return {"status": "invalid", "reason": "hash_mismatch", "valid": False}
+        evidence = json.loads(report_path.read_text(encoding="utf-8"))
+    except ValueError:
+        return {"status": "invalid", "reason": "hash_mismatch", "valid": False}
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {"status": "invalid", "valid": False}
+    status = (
+        str(evidence.get("status", "insufficient_evidence"))
+        if isinstance(evidence, dict)
+        else "insufficient_evidence"
+    )
+    return {
+        "status": status,
+        "reason": "verified",
+        "valid": True,
+        "warnings": evidence.get("warnings", []) if isinstance(evidence, dict) else [],
+        "live_pnl_claim": False,
+        "research_only": True,
     }

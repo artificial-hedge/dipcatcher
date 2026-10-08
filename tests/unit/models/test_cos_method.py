@@ -62,5 +62,5 @@ def test_input_validation() -> None:
 
 def test_bench_score() -> None:
     out = bench_cos_method()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_cos_call_err"] < 0.01

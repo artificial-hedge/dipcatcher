@@ -64,4 +64,4 @@ def test_fail_closed_barrier_above_spot():
 
 def test_bench():
     out = bench_barrier_options()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

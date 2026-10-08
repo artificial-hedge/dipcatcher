@@ -1,4 +1,4 @@
-"""IAF (Kingma et al. 2016) — inverse autoregressive flow: z' = z*σ(x_<i)
+"""IAF (Kingma et al. 2016) — inverse autoregressive flow: z' = z*σ(x_<i) (SYNTHETIC)
 + μ(x_<i); sampling-parallel (vs MAF which is density-parallel). NLL vs
 Gaussian on pinwheel.
 """
@@ -58,5 +58,5 @@ def bench_iaf_flow(seed: int = 2311, iters: int = 600) -> dict[str, float]:
         "synthetic_iaf_nll": nll_te,
         "synthetic_gauss_nll": base,
         "synthetic_iaf_gain": base - nll_te,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Rank-based nonparametric location tests: Mann-Whitney U,
+"""Rank-based nonparametric location tests: Mann-Whitney U, (SYNTHETIC)
 Wilcoxon signed-rank, Kruskal-Wallis, and Jonckheere-Terpstra.
 
 Mann-Whitney (1947): U = number of (x_i, y_j) pairs with x_i < y_j;
@@ -142,5 +142,5 @@ def bench_nonparametric_tests(
         "synthetic_jt_p_alt": float(jt["p_value"]),
         "synthetic_kw_p_alt": float(kw["p_value"]),
         "synthetic_mwu_p_null": float(mw0["p_value"]),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

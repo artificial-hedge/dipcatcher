@@ -107,8 +107,7 @@ class EcologyConfig:
             raise ValueError("event counts must be positive (warmup may be zero)")
         if self.warmup_events >= self.max_events:
             raise ValueError("warmup_events must be smaller than max_events")
-        if self.bar_events < 1 or self.return_stride < 1 or self.sample_every < 1:
-            raise ValueError("sampling strides must be positive")
+        _validate_sampling_strides(self)
         for name in (
             "n_mm",
             "n_momentum",
@@ -132,6 +131,12 @@ class EcologyConfig:
             raise ValueError("execution_start_frac must be in (0, 1)")
         if self.strategy_nav <= 0.0 or self.strategy_max_weight <= 0.0:
             raise ValueError("strategy nav and max weight must be positive")
+
+
+def _validate_sampling_strides(cfg: EcologyConfig) -> None:
+    """Bar sampling strides must be positive."""
+    if cfg.bar_events < 1 or cfg.return_stride < 1 or cfg.sample_every < 1:
+        raise ValueError("sampling strides must be positive")
 
 
 def validation_config(seed: int = 7) -> EcologyConfig:

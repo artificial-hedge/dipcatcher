@@ -1,4 +1,4 @@
-"""Straight-through estimator (Bengio et al. 2013) — forward uses the
+"""Straight-through estimator (Bengio et al. 2013) — forward uses the (SYNTHETIC)
 hard top-k mask; backward substitutes the identity gradient. Gradient
 direction vs finite-diff ground truth on the selection task.
 """
@@ -20,6 +20,7 @@ def _torch():
 
 def bench_st_estimator(seed: int = 2389, trials: int = 20) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     corrs = []
     for i in range(trials):
         s0, _ = sel_data(seed + i)
@@ -38,5 +39,5 @@ def bench_st_estimator(seed: int = 2389, trials: int = 20) -> dict[str, float]:
     return {
         "synthetic_ste_grad_corr": float(np.mean(corrs)),
         "synthetic_fd_norm": float(np.linalg.norm(finite_diff_grad(sel_data(seed)[0]))),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

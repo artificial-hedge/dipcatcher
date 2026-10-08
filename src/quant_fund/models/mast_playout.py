@@ -1,4 +1,4 @@
-"""MAST — Move-Average Sampling Technique for playout policies.
+"""MAST — Move-Average Sampling Technique for playout policies (SYNTHETIC).
 
 Global per-action Q-values learned from playout rewards bias a Gibbs
 softmax rollout policy toward historically good moves. Bench: MAST

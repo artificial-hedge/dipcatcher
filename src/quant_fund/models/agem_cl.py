@@ -1,4 +1,4 @@
-"""A-GEM (Chaudhry et al. 2019) — average GEM: project each update's
+"""A-GEM (Chaudhry et al. 2019) — average GEM: project each update's (SYNTHETIC)
 gradient so it doesn't increase loss on a small episodic memory (dot-product
 projection against memory gradient).
 """

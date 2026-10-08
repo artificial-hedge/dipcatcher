@@ -1,4 +1,4 @@
-"""Marking algorithm for k-paging.
+"""Marking algorithm for k-paging (SYNTHETIC).
 
 Phases: unmark all at phase start; on fault, evict an unmarked page,
 mark the requested one. Deterministic version evicts the lowest-index

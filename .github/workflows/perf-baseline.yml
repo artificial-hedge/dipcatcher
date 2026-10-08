@@ -8,8 +8,10 @@ name: Perf baseline gate
 # job; missing benches fail closed via scripts/perf_baseline.py.
 
 on:
-  push:
-    branches: [main]
+  # Phase 0: push trigger removed. Recording a baseline is a slow, hardware-bound
+  # job (~30 min) whose output only feeds the PR comparison, so it must not
+  # occupy a runner slot on every push at this repo's cadence. The weekly
+  # schedule still refreshes the baseline and PRs still compare against it.
   schedule:
     - cron: "17 4 * * 0" # weekly refresh keeps the baseline on current CI hardware
   pull_request:

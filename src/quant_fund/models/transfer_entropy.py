@@ -84,5 +84,5 @@ def bench_transfer_entropy(seed: int = 20261231 + 374) -> dict[str, float]:
         "synthetic_te_yx": te_yx,
         "synthetic_te_ind_xy": ti,
         "synthetic_te_ind_yx": ty,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

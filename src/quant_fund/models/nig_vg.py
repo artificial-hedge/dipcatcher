@@ -1,4 +1,4 @@
-"""Normal-Inverse-Gaussian and Variance-Gamma distributions.
+"""Normal-Inverse-Gaussian and Variance-Gamma distributions (SYNTHETIC).
 
 Both are normal mean-variance mixtures widely used for asset returns:
 

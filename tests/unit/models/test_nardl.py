@@ -84,6 +84,14 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_nardl(seed=3)
-    for k in ("l_plus", "l_minus", "lp_err", "lm_err", "wald_sym", "f_bounds", "score"):
+    for k in (
+        "synthetic_l_plus",
+        "synthetic_l_minus",
+        "synthetic_lp_err",
+        "synthetic_lm_err",
+        "synthetic_wald_sym",
+        "synthetic_f_bounds",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

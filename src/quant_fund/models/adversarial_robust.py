@@ -1,4 +1,4 @@
-"""Adversarial robustness for signal models (Exec-Summary robustness item).
+"""Adversarial robustness for signal models (Exec-Summary robustness item) (SYNTHETIC).
 FGSM perturbations on the input window degrade a plain return-sign
 classifier; adversarial training (min-max on perturbed examples) restores
 accuracy on a nonlinear MLP where robustness gains are real.

@@ -407,7 +407,8 @@ def adversarial_episode(
         if not callable(defender_policy):
             raise TypeError("defender_policy must be callable")
         pol = defender_policy
-        assert pol is not None
+        if not (pol is not None):
+            raise ValueError("pol is not None")
         bundle = run_mm_session(
             config=config,
             policy=pol,
@@ -679,7 +680,8 @@ def constant_flow_sweep(
             penalty = float(bundle["sim_internal_penalty_sum"])
         else:
             pol = defender_policy
-            assert pol is not None  # narrowed by the caller validation above
+            if not (pol is not None):
+                raise ValueError("pol is not None")  # narrowed by the caller validation above
             bundle = run_mm_session(
                 config=cfg_i,
                 policy=pol,

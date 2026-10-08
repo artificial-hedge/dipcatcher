@@ -1,4 +1,4 @@
-"""Bertsimas-Sim budget-of-uncertainty robust LP.
+"""Bertsimas-Sim budget-of-uncertainty robust LP (SYNTHETIC).
 
 max c'x s.t. sum_j (a_ij x_j) + Gamma_i * max|S|<=Gamma sum_j d_ij x_j
 <= b_i: the budgeted robust counterpart. Bench compares nominal,

@@ -1,4 +1,4 @@
-"""Closed-form implied-volatility approximations.
+"""Closed-form implied-volatility approximations (SYNTHETIC).
 
 - **Brenner-Subrahmanyam** (1988): for an at-the-money option the price is nearly
   linear in volatility, giving ``sigma ~ sqrt(2 pi / T) * C / S``.

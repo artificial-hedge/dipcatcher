@@ -1,4 +1,4 @@
-"""Grokking tracker (Power et al. 2022) — delayed generalization:
+"""Grokking tracker (Power et al. 2022) — delayed generalization: (SYNTHETIC)
 train accuracy hits ceiling while test accuracy lags then catches up.
 Measures the lag (test-acc ≤ train-acc − 0.2 duration) on the regime
 task with heavy memorization capacity + small data.
@@ -47,5 +47,5 @@ def bench_neural_grok(seed: int = 2383, iters: int = 600) -> dict[str, float]:
         "synthetic_grok_test_acc": float(a_te),
         "synthetic_grok_lag_windows": float(lag_iters),
         "synthetic_grok_gap": float(a_tr - a_te),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

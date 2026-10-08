@@ -1,4 +1,4 @@
-"""Fuzzy clustering: Bezdek fuzzy c-means with validity
+"""Fuzzy clustering: Bezdek fuzzy c-means with validity (SYNTHETIC)
 indices — partition coefficient, partition entropy, and the
 Xie–Beni compactness/separation index. Synthetic bench gates
 cluster recovery and validity ordering on planted blobs."""

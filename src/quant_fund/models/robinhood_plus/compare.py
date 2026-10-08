@@ -1,4 +1,4 @@
-"""Causal champion/challenger card: ridge-only vs robinhood+.
+"""Causal champion/challenger card: ridge-only vs robinhood+ (SYNTHETIC).
 
 Same gold panel, same as-ofs. Proper scores only — date-level IC, pinball,
 CRPS on path quantiles, Diebold–Mariano. No Sharpe. An engine that cannot

@@ -63,4 +63,4 @@ def test_rejects_too_few_obs() -> None:
 
 def test_bench_moment_inequalities_score() -> None:
     out = bench_moment_inequalities()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)

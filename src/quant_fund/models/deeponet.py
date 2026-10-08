@@ -1,4 +1,4 @@
-"""DeepONet (Lu et al. 2021) — branch encodes the input function's
+"""DeepONet (Lu et al. 2021) — branch encodes the input function's (SYNTHETIC)
 values, trunk encodes query locations; u(y) = <branch(a), trunk(y)>.
 """
 
@@ -64,5 +64,5 @@ def bench_deeponet(
         "synthetic_don_rell2": err,
         "synthetic_don_mlp_rell2": err_b,
         "synthetic_don_gain": err_b - err,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

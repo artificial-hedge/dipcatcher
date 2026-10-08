@@ -66,6 +66,11 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_engle_kroner_bekk()
-    for k in ("var_rel_rmse", "rho_err", "persistence", "score"):
+    for k in (
+        "synthetic_var_rel_rmse",
+        "synthetic_rho_err",
+        "synthetic_persistence",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

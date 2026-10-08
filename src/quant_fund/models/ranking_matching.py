@@ -1,4 +1,4 @@
-"""RANKING online bipartite matching (1 - 1/e competitive).
+"""RANKING online bipartite matching (1 - 1/e competitive) (SYNTHETIC).
 
 Offline vertices get a uniform random priority; online vertex matches
 to its highest-priority free neighbor. Bench averages over priority

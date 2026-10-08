@@ -1,4 +1,4 @@
-"""Conditional normalizing-flow regression — affine-coupling flow on y
+"""Conditional normalizing-flow regression — affine-coupling flow on y (SYNTHETIC)
 conditioned on x (RealNVP-style, 1-D y): base N(0,1), condition net emits
 log-scale/shift per coupling. Test log-density vs Gaussian baseline.
 """
@@ -56,5 +56,5 @@ def bench_flow_regression(seed: int = 827, iters: int = 400, K: int = 4) -> dict
         "synthetic_cnf_test_ll": float(ll_te.mean()),
         "synthetic_cnf_gauss_ll": float(ll_gauss.mean()),
         "synthetic_cnf_ll_gain": float(ll_te.mean() - ll_gauss.mean()),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -173,7 +173,8 @@ def vine_dominance_bench(
         if name == "gaussian":
             return _gauss_logpdf(uu, fits["gaussian"])
         vm = fits[name]
-        assert isinstance(vm, VineMatrix)
+        if not (isinstance(vm, VineMatrix)):
+            raise ValueError("isinstance(vm, VineMatrix)")
         return vine_logpdf_rows(vm, uu)
 
     ll_oos = {name: _ll(name, u_te) for name in fits}
@@ -199,7 +200,8 @@ def vine_dominance_bench(
             draws = sstats.norm.cdf(sim_rng.standard_normal((n_sim, d)) @ chol.T)
         else:
             vm = fits[name]
-            assert isinstance(vm, VineMatrix)
+            if not (isinstance(vm, VineMatrix)):
+                raise ValueError("isinstance(vm, VineMatrix)")
             draws = vine_sample(vm, n_sim, seed=seed + 1000 + i)
         tail_model[name] = _tail_metrics(draws, tail_q, es_alpha)
 

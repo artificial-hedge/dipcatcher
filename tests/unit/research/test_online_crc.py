@@ -18,7 +18,7 @@ def test_miss_streak_expands_bound_and_raises_lambda() -> None:
 
 def test_long_calibrated_path_mean_risk_near_alpha() -> None:
     row = bench_online_crc(alpha=0.05, gamma=0.05, seed=12, n_cal=200, n_test=800)
-    assert abs(row["mean_risk"] - row["nominal"]) <= 0.04
+    assert abs(row["synthetic_mean_risk"] - row["synthetic_nominal"]) <= 0.04
 
 
 def test_monotone_in_alpha() -> None:
@@ -53,12 +53,12 @@ def test_run_updates_once_per_date_never_stacks_names() -> None:
 
 def test_bench_online_crc_keys_no_sharpe() -> None:
     row = bench_online_crc(seed=12)
-    assert {"mean_risk", "nominal", "n"} <= set(row)
-    assert row.get("dgp") == "fixture"
+    assert {"synthetic_mean_risk", "synthetic_nominal", "synthetic_n"} <= set(row)
+    assert row.get("synthetic_dgp") == "fixture"
     assert "sharpe" not in {k.lower() for k in row}
-    assert row["nominal"] == 0.05
-    assert row["n"] == 800.0
-    assert np.isfinite(row["mean_risk"])
+    assert row["synthetic_nominal"] == 0.05
+    assert row["synthetic_n"] == 800.0
+    assert np.isfinite(row["synthetic_mean_risk"])
 
 
 def test_online_crc_length_mismatch_raises() -> None:

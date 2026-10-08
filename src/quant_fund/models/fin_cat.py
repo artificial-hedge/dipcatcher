@@ -1,4 +1,4 @@
-"""Finite-category axiom checker (wave 289).
+"""Finite-category axiom checker (wave 289) (SYNTHETIC).
 
 A category = objects, hom-sets, composition table, identities.
 Verify associativity + identity laws exhaustively on small examples:

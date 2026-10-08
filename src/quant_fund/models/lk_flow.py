@@ -1,4 +1,4 @@
-"""Lucas-Kanade sparse optical flow: solve (A^T A) v = A^T b per patch."""
+"""Lucas-Kanade sparse optical flow: solve (A^T A) v = A^T b per patch (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""Quantile regression forests (QRF): conditional distributions from random forests.
+"""Quantile regression forests (QRF): conditional distributions from random forests (SYNTHETIC).
 
 Meinshausen, N. (2006), "Quantile Regression Forests", *Journal of Machine
 Learning Research* 7:983–999, https://jmlr.org/papers/v7/meinshausen06a.html.

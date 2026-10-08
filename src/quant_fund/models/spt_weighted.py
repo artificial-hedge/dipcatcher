@@ -1,4 +1,4 @@
-"""WSPT (weighted shortest processing time, Smith 1956): optimal
+"""WSPT (weighted shortest processing time, Smith 1956): optimal (SYNTHETIC)
 single-machine Σw_jC_j sequencing by p_j/w_j order vs FIFO/random.
 """
 
@@ -32,5 +32,5 @@ def bench_spt_weighted(seed: int = 3061) -> dict[str, float]:
         "synthetic_fifo_cost": float(c_fifo),
         "synthetic_random_cost": float(c_rnd),
         "synthetic_wspt_gain": float(c_fifo - c_opt),
-        "torch_available": 0.0,
+        "synthetic_torch_available": 0.0,
     }

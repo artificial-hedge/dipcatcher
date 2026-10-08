@@ -49,4 +49,4 @@ def test_fail_closed_shape():
 
 def test_bench():
     out = bench_g_theory()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0

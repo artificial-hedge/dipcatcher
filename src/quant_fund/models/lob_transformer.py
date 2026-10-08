@@ -128,5 +128,5 @@ def bench_lob_transformer(seed: int = 55) -> dict[str, float]:
         "synthetic_lobdl_acc": acc,
         "synthetic_lobdl_logistic_acc": log_acc,
         "synthetic_lobdl_margin": acc - log_acc,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

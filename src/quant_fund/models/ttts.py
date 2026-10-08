@@ -1,4 +1,4 @@
-"""Top-Two Thompson Sampling (Russo 2016) — fixed-confidence BAI:
+"""Top-Two Thompson Sampling (Russo 2016) — fixed-confidence BAI: (SYNTHETIC)
 draw posterior means, take the leader with prob β else resample
 until a distinct leader appears and pull it; stop on the Chernoff
 generalized-likelihood threshold."""

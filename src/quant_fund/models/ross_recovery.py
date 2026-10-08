@@ -127,9 +127,9 @@ def bench_ross_recovery(seed: int = 20261231 + 297) -> dict[str, float]:
     g_err = abs(float(r["gamma"]) - float(d["gamma_true"]))
     ok = err < 1e-6 and g_err < 1e-8 and float(r["row_sum_err"]) < 1e-8
     return {
-        "p_err": err,
-        "gamma_err": g_err,
-        "row_sum_err": float(r["row_sum_err"]),
-        "gamma": float(r["gamma"]),
-        "score": float(ok),
+        "synthetic_p_err": err,
+        "synthetic_gamma_err": g_err,
+        "synthetic_row_sum_err": float(r["row_sum_err"]),
+        "synthetic_gamma": float(r["gamma"]),
+        "synthetic_score": float(ok),
     }

@@ -1,4 +1,4 @@
-"""Projected gradient descent for box/simplex-constrained convex objectives."""
+"""Projected gradient descent for box/simplex-constrained convex objectives (SYNTHETIC)."""
 
 import numpy as np
 

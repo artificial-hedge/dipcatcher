@@ -1,4 +1,4 @@
-"""Toy SNARK pipeline: arithmetic circuit -> R1CS -> QAP -> prove/verify.
+"""Toy SNARK pipeline: arithmetic circuit -> R1CS -> QAP -> prove/verify (SYNTHETIC).
 
 Circuit builder emits mul/add/const gates; flattens to R1CS rows;
 satisfiability via the R1CS relation; "proof" = (commitment to witness

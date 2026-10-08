@@ -171,6 +171,6 @@ def bench_dtw(seed: int = 20261231 + 355) -> dict[str, float]:
         "synthetic_dtw_cost_indep": float(r_i["cost_per_step"]),
         "synthetic_dtw_shift_hat": reg["shift"],
         "synthetic_dtw_scale_hat": reg["scale"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

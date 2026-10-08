@@ -1,4 +1,4 @@
-"""Bai-Perron multiple structural-break detection in regression.
+"""Bai-Perron multiple structural-break detection in regression (SYNTHETIC).
 
 Exact optimal m-partitions by one-pass dynamic programming (Bai & Perron
 1998, section 4) and sequential ``sup-Wald`` break tests against the

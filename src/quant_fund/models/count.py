@@ -1,4 +1,4 @@
-"""Count data models: Poisson, negative binomial (NB2), zero-inflated
+"""Count data models: Poisson, negative binomial (NB2), zero-inflated (SYNTHETIC)
 Poisson -- all MLE with log links and covariates.
 
 - Poisson:  y ~ Pois(exp(x'b));  ll = y x'b - exp(x'b) - ln y!

@@ -1,4 +1,4 @@
-"""DDPG (Lillicrap et al., 2015) — deterministic actor-critic with a
+"""DDPG (Lillicrap et al., 2015) — deterministic actor-critic with a (SYNTHETIC)
 quadratic-feature critic. Target networks + experience replay on a
 1-D regulation task; policy gradient ∂Q/∂a·∂a/∂θ through the critic.
 """

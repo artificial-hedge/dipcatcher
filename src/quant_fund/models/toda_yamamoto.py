@@ -152,10 +152,10 @@ def bench_toda_yamamoto(seed: int = 20261231 + 298) -> dict[str, float]:
     rev = granger_mwald(y, cause=1, target=0, p=p, d=1)
     ok = fwd["p_value"] < 0.01 and rev["p_value"] > 0.01
     return {
-        "p_lag": float(p),
-        "wald_fwd": fwd["wald"],
-        "pval_fwd": fwd["p_value"],
-        "wald_rev": rev["wald"],
-        "pval_rev": rev["p_value"],
-        "score": float(ok),
+        "synthetic_p_lag": float(p),
+        "synthetic_wald_fwd": fwd["wald"],
+        "synthetic_pval_fwd": fwd["p_value"],
+        "synthetic_wald_rev": rev["wald"],
+        "synthetic_pval_rev": rev["p_value"],
+        "synthetic_score": float(ok),
     }

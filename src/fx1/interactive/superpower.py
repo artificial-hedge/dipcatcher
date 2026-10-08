@@ -220,11 +220,13 @@ def plan_goal(
 
     Deterministic pass: score every harness capability by trigger terms and
     web/flash by their own triggers. Optional model pass: a hosted turn is
-    asked for a JSON selection; its ids are validated against the registry
-    (unknown ids are dropped) and any failure falls back to the
-    deterministic plan — a broken or dishonest model can only shrink the
-    plan, never reach an unregistered surface.
+    asked for a JSON selection from the registry, including capabilities the
+    keyword pass did not select. Unknown ids are dropped, duplicates are
+    removed, and the same harness limit applies after refinement. Malformed
+    or failed model replies fall back to the bounded deterministic plan.
     """
+    if max_harness < 0:
+        raise ValueError("max_harness must be nonnegative")
     registry = capabilities or CAPABILITIES
     scored: list[tuple[int, str]] = []
     for cap_id, meta in registry.items():
@@ -273,7 +275,7 @@ def plan_goal(
 
     plan = SuperpowerPlan(goal=goal, capabilities=selected, source="deterministic")
     if model_fn is not None:
-        plan = _model_refine(plan, goal, registry, model_fn)
+        plan = _model_refine(plan, goal, registry, model_fn, max_harness=max_harness)
     return plan
 
 
@@ -282,15 +284,18 @@ def _model_refine(
     goal: str,
     registry: dict[str, dict[str, Any]],
     model_fn: ModelFn,
+    *,
+    max_harness: int,
 ) -> SuperpowerPlan:
-    """Ask the hosted model for a JSON selection; validate, else keep fallback."""
+    """Validate and bound registered model selections, else keep fallback."""
     listing = "\n".join(
         f"- {cap_id}: {meta.get('description', '')}" for cap_id, meta in sorted(registry.items())
     )
     prompt = (
         "You select dipcatcher research capabilities for a goal. Reply with "
         'JSON only: {"capabilities": ["<id>"...], "rationale": "one '
-        f'sentence per id"}}. Available: {listing}\n\nGoal: {goal}'
+        f'sentence per id"}}. Select at most {max_harness} harness capabilities; '
+        f"do not repeat ids. Available: {listing}\n\nGoal: {goal}"
     )
     try:
         raw = model_fn(prompt)
@@ -298,17 +303,24 @@ def _model_refine(
         if not match:
             raise ValueError("no JSON object in model reply")
         payload = json.loads(match.group(0))
-        ids = payload.get("capabilities", [])
+        ids = payload.get("capabilities")
         if not isinstance(ids, list) or not all(isinstance(i, str) for i in ids):
             raise ValueError("capabilities must be a list of strings")
         rationale = payload.get("rationale", "")
-        valid = [cap_id for cap_id in ids if cap_id in registry]
-        if "synthesize" not in valid:
-            valid.append("synthesize")
-        if "flash_retrieve" not in valid:
-            valid.insert(0, "flash_retrieve")
-        if not valid:
-            raise ValueError("no valid capability ids survived validation")
+        if not isinstance(rationale, str):
+            raise ValueError("rationale must be a string")
+        valid: list[str] = []
+        harness_count = 0
+        for cap_id in dict.fromkeys(ids):
+            if cap_id not in registry or cap_id in {"flash_retrieve", "synthesize"}:
+                continue
+            if registry[cap_id].get("kind") == KIND_HARNESS:
+                if harness_count >= max_harness:
+                    continue
+                harness_count += 1
+            valid.append(cap_id)
+        # Model ordering cannot remove or relocate the mandatory spine.
+        valid = ["flash_retrieve", *valid, "synthesize"]
         capabilities = [
             PlannedCapability(
                 cap_id,
@@ -317,7 +329,7 @@ def _model_refine(
             for cap_id in valid
         ]
         return SuperpowerPlan(goal=goal, capabilities=capabilities, source="model+validated")
-    except Exception:  # noqa: BLE001 — a dead/dishonest model only shrinks the plan
+    except Exception:  # noqa: BLE001 — model failure preserves the bounded fallback
         return fallback
 
 
@@ -398,7 +410,7 @@ def _data_label_of(stdout: str) -> str:
 
 def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
     result = SuperpowerResult(goal=plan.goal, plan=plan)
-    selected = plan.ids()
+    selected = list(dict.fromkeys(plan.ids()))
     context_parts: list[str] = []
 
     # 1 — flash retrieval (cheap, first, feeds everything else)

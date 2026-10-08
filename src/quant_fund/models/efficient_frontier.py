@@ -1,4 +1,4 @@
-"""Markowitz (1952) mean-variance efficient frontier (analytic).
+"""Markowitz (1952) mean-variance efficient frontier (analytic) (SYNTHETIC).
 
 With expected returns ``mu`` and covariance ``Sigma`` define the efficient-set
 constants ``A = 1'Sigma^{-1}1``, ``B = 1'Sigma^{-1}mu``, ``C = mu'Sigma^{-1}mu``

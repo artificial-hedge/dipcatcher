@@ -1,4 +1,4 @@
-"""Block interleaver for burst-error correction.
+"""Block interleaver for burst-error correction (SYNTHETIC).
 
 K Hamming(7,4) codewords are written row-wise and transmitted
 column-wise, so a contiguous channel burst is spread across all

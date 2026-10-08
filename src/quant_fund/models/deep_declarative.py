@@ -60,6 +60,7 @@ def bench_deep_declarative(
     iters: int = 600,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     xtr, ytr = synth_expert_positions(n_train, d_feat, rng)
     xte, yte = synth_expert_positions(n_test, d_feat, rng)
@@ -110,5 +111,5 @@ def bench_deep_declarative(
         "synthetic_decl_mse_gain": mse_reg - mse_decl,
         "synthetic_decl_bound_viol": bound_viol,
         "synthetic_decl_reg_bound_viol": reg_bound_viol,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

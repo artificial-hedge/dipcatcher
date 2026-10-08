@@ -1,4 +1,4 @@
-"""Semblance velocity analysis on a CMP gather.
+"""Semblance velocity analysis on a CMP gather (SYNTHETIC).
 
 NMO trajectory t^2 = t0^2 + x^2/v^2; semblance S(v) = sum over a window of
 (sum over traces)^2 normalized by trace energy. Velocity pick = argmax S(v).

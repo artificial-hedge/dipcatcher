@@ -1,4 +1,4 @@
-"""Bully election: highest-id live node wins."""
+"""Bully election: highest-id live node wins (SYNTHETIC)."""
 
 import numpy as np
 

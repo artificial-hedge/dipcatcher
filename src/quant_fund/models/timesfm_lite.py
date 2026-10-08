@@ -1,4 +1,4 @@
-"""TimesFM-lite (Das et al. 2024) — patchify the context into patches of
+"""TimesFM-lite (Das et al. 2024) — patchify the context into patches of (SYNTHETIC)
 p, decoder over patches predicts next patch; quantile head.
 """
 
@@ -65,5 +65,5 @@ def bench_timesfm_lite(
         "synthetic_tfm_pinball": pb,
         "synthetic_tfm_naive_pinball": pb_n,
         "synthetic_tfm_gain": pb_n - pb,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

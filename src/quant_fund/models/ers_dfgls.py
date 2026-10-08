@@ -150,9 +150,9 @@ def bench_dfgls(seed: int = 20261231 + 325) -> dict[str, float]:
     r_st = dfgls_test(st)
     ok = r_rw["reject_unit_root"] == 0.0 and r_st["reject_unit_root"] == 1.0
     return {
-        "t_rw": r_rw["t"],
-        "t_st": r_st["t"],
-        "crit5": r_st["crit5"],
-        "lag_st": r_st["lag"],
-        "score": float(ok),
+        "synthetic_t_rw": r_rw["t"],
+        "synthetic_t_st": r_st["t"],
+        "synthetic_crit5": r_st["crit5"],
+        "synthetic_lag_st": r_st["lag"],
+        "synthetic_score": float(ok),
     }

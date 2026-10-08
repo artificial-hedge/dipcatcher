@@ -1,4 +1,4 @@
-"""AddressSanitizer-style shadow memory: poisoned redzone detection."""
+"""AddressSanitizer-style shadow memory: poisoned redzone detection (SYNTHETIC)."""
 
 import numpy as np
 

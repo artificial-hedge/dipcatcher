@@ -51,6 +51,19 @@ def momentum_scores(
     return out
 
 
+def _check_traded_alignment(
+    closes: dict[str, NDArray[np.float64]],
+    book: MomentumSpec,
+    n: int,
+) -> None:
+    """Fail closed when a traded symbol lacks an aligned close series."""
+    for symbol in book.universe.traded:
+        if symbol not in closes:
+            raise ValueError(f"missing close series for {symbol}")
+        if len(np.asarray(closes[symbol])) != n:
+            raise ValueError("all universe series must be aligned")
+
+
 def momentum_target_weights(
     closes: dict[str, NDArray[np.float64]],
     spec: MomentumSpec | None = None,
@@ -64,11 +77,7 @@ def momentum_target_weights(
     symbols = book.universe.risk
     position_cap = min(p.max_position_weight, book.max_single_name_weight)
     n = len(np.asarray(closes[symbols[0]], dtype=float))
-    for symbol in book.universe.traded:
-        if symbol not in closes:
-            raise ValueError(f"missing close series for {symbol}")
-        if len(np.asarray(closes[symbol])) != n:
-            raise ValueError("all universe series must be aligned")
+    _check_traded_alignment(closes, book, n)
     if risk_multiplier is not None:
         for path in risk_multiplier.values():
             if len(path) != n:

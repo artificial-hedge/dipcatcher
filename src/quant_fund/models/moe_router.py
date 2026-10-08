@@ -1,4 +1,4 @@
-"""MoE router (Shazeer et al. 2017) — top-2 noisy-gated experts with
+"""MoE router (Shazeer et al. 2017) — top-2 noisy-gated experts with (SYNTHETIC)
 load-balancing aux loss on the 4-regime task vs a dense MLP of equal
 capacity. Experts should specialize to regimes.
 """
@@ -82,5 +82,5 @@ def bench_moe_router(seed: int = 1727, iters: int = 700) -> dict[str, float]:
         "synthetic_dense_acc": acc_d,
         "synthetic_moe_gain": acc_m - acc_d,
         "synthetic_moe_expert_balance": util,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

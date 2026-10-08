@@ -1,4 +1,4 @@
-"""Function inlining: expand calls with argument substitution."""
+"""Function inlining: expand calls with argument substitution (SYNTHETIC)."""
 
 import numpy as np
 

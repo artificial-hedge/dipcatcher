@@ -1,4 +1,4 @@
-"""NTRU encrypt/decrypt in Z_q[x]/(x^N - 1), toy parameters."""
+"""NTRU encrypt/decrypt in Z_q[x]/(x^N - 1), toy parameters (SYNTHETIC)."""
 
 import contextlib
 

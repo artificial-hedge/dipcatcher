@@ -1,4 +1,4 @@
-"""NexCP — nonexchangeable conformal prediction with coverage bounds.
+"""NexCP — nonexchangeable conformal prediction with coverage bounds (SYNTHETIC).
 
 Barber, Candès, Ramdas & Tibshirani (2023, Ann. Statist. 51(2),
 doi:10.1214/23-AOS2276, "Conformal prediction beyond exchangeability",

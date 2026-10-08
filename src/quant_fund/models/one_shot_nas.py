@@ -1,4 +1,4 @@
-"""One-shot / weight-sharing NAS (Bender et al. 2018).
+"""One-shot / weight-sharing NAS (Bender et al. 2018) (SYNTHETIC).
 
 Train a single supernet whose width is masked per-sample; rank
 subnets by inherited-weight accuracy. Rank correlation between
@@ -75,5 +75,5 @@ def bench_one_shot_nas(
         "synthetic_os_best_super_h": float(hidds[int(np.argmax(super_rank))]),
         "synthetic_os_best_true_h": float(hidds[int(np.argmax(true_rank))]),
         "synthetic_os_match": float(np.argmax(super_rank) == np.argmax(true_rank)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

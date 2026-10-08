@@ -266,13 +266,13 @@ def bench_rwcv() -> dict[str, float]:
     try:
         raw = bench_regime_weighted_conformal_var()
         mapped = {
-            "rwcv_unconditional_coverage": float(raw["coverage"]),
-            "rwcv_highvol_coverage": float(raw["highvol_coverage"]),
-            "rwcv_highvol_coverage_gain": float(raw["highvol_coverage_gain"]),
-            "rwcv_unweighted_highvol_coverage": float(raw["unweighted_highvol_coverage"]),
-            "rwcv_mean_width": float(raw["mean_width"]),
-            "rwcv_alpha": float(raw["alpha"]),
-            "rwcv_n": float(raw["n"]),
+            "rwcv_unconditional_coverage": float(raw["synthetic_coverage"]),
+            "rwcv_highvol_coverage": float(raw["synthetic_highvol_coverage"]),
+            "rwcv_highvol_coverage_gain": float(raw["synthetic_highvol_coverage_gain"]),
+            "rwcv_unweighted_highvol_coverage": float(raw["synthetic_unweighted_highvol_coverage"]),
+            "rwcv_mean_width": float(raw["synthetic_mean_width"]),
+            "rwcv_alpha": float(raw["synthetic_alpha"]),
+            "rwcv_n": float(raw["synthetic_n"]),
         }
         if not all(np.isfinite(v) for v in mapped.values()):
             return {}

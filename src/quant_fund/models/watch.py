@@ -1,4 +1,4 @@
-"""WATCH: weighted-conformal test martingales for sequential monitoring.
+"""WATCH: weighted-conformal test martingales for sequential monitoring (SYNTHETIC).
 
 Per-step weighted conformal p-values on a stream of nonconformity scores are
 combined with a betting scheme into a test martingale M_t (M_0 = 1); an alarm

@@ -1,4 +1,4 @@
-"""SIMD vectorization legality from dependence distance vectors.
+"""SIMD vectorization legality from dependence distance vectors (SYNTHETIC).
 
 For each statement-level dependence we take the distance vector d over
 the loop nest. A loop at depth k vectorizes legally iff no dependence

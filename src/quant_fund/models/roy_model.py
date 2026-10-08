@@ -1,4 +1,4 @@
-"""Roy model of self-selection across two sectors.
+"""Roy model of self-selection across two sectors (SYNTHETIC).
 
 Agents choose the sector paying them more; observed wages are
 then truncated mixtures of sector-specific skill distributions.

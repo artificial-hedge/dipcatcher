@@ -23,7 +23,7 @@ from quant_fund.metrics.scoring import (
     overlap_aware_qlike,
     qlike,
 )
-from quant_fund.models.base import load_joblib_artifact, save_joblib_artifact
+from quant_fund.models.base import load_joblib_artifact
 from quant_fund.models.realized_garch import REALIZED_GARCH_MEASURE, RealizedGARCHVol
 from quant_fund.models.volatility import (
     GARCH_DATE_LEVEL_SCOPE,
@@ -33,6 +33,11 @@ from quant_fund.models.volatility import (
     HARVol,
     RollingVol,
     TreeVol,
+)
+from quant_fund.pipeline.artifact_manifest import (
+    identity_for_training,
+    identity_from_artifact,
+    save_training_artifact,
 )
 from quant_fund.pipeline.dataset import design_matrix, panel
 from quant_fund.registry.mlflow_store import configure_tracking, log_run
@@ -697,7 +702,17 @@ def train_volatility(config: AppConfig, model_name: str = "ewma") -> dict[str, A
         tags={"data": config.data.source},
     )
     path = Path(config.data.root) / "metadata" / f"vol_{model_name}.joblib"
-    model.save(path)
+    save_training_artifact(
+        model,
+        path,
+        identity=identity_for_training(
+            df,
+            config=config,
+            label=label,
+            features=feats,
+            label_horizon_bars=label_horizon,
+        ),
+    )
     result = {"metrics": metrics, "run_id": run_id, "path": str(path)}
     if model_name in {"garch", "realized_garch"}:
         diagnostics: dict[str, Any] = {
@@ -737,7 +752,11 @@ def train_volatility_auto(config: AppConfig) -> dict[str, Any]:
     selected = min(eligible, key=lambda r: float(r["metrics"]["qlike"]))
     payload = load_joblib_artifact(Path(str(selected["path"])))
     auto_path = Path(config.data.root) / "metadata" / "vol_auto.joblib"
-    save_joblib_artifact(payload, auto_path)
+    save_training_artifact(
+        payload,
+        auto_path,
+        identity=identity_from_artifact(Path(str(selected["path"]))),
+    )
     selected_name = Path(str(selected["path"])).stem.removeprefix("vol_")
     return {
         "metrics": selected["metrics"],

@@ -1,4 +1,4 @@
-"""Isotonic / Platt calibration fitted on train/validation only."""
+"""Isotonic / Platt calibration fitted on train/validation only (SYNTHETIC)."""
 
 from __future__ import annotations
 

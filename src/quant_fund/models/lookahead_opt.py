@@ -1,4 +1,4 @@
-"""Lookahead (Zhang et al. 2019) — k fast steps then interpolate toward
+"""Lookahead (Zhang et al. 2019) — k fast steps then interpolate toward (SYNTHETIC)
 the slow weights: φ ← φ + α(θ_k − φ) — vs plain Adam/SGD inner loop.
 """
 
@@ -65,5 +65,5 @@ def bench_lookahead_opt(
         "synthetic_look_loss": loss_look,
         "synthetic_look_adam_loss": loss_a,
         "synthetic_look_gain": loss_a - loss_look,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

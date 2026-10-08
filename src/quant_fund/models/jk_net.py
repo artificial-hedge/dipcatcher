@@ -35,6 +35,7 @@ def bench_jk_net(
     d_hid: int = 32,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     adj, x, y = synth_sbm_graph(seed=seed + _SEED)
     a_norm = normalize_adj(adj)
     tr, te = split_masks(x.shape[0], n_train_frac, seed + _SEED)
@@ -98,5 +99,5 @@ def bench_jk_net(
         "synthetic_jk_deep_acc": acc_deep,
         "synthetic_jk_acc_gain": acc_jk - acc_deep,
         "synthetic_jk_emb_rowvar": row_var,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

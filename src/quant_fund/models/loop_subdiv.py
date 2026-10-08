@@ -1,4 +1,4 @@
-"""Loop subdivision on a triangular mesh.
+"""Loop subdivision on a triangular mesh (SYNTHETIC).
 
 One Loop step: new edge vertices at 3/8(endpoints) + 1/8(opposite
 vertices); updated vertices at (1-n*u)v + u*sum(neighbors) with

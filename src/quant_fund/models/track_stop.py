@@ -1,4 +1,4 @@
-"""Track-and-Stop (Garivier & Kaufmann 2016) — asymptotically
+"""Track-and-Stop (Garivier & Kaufmann 2016) — asymptotically (SYNTHETIC)
 optimal fixed-confidence BAI: forced exploration toward the
 Chernoff-oracle weights ω_i ∝ 1/Δ_i² (Gaussian relaxation), GLR
 stopping at β(t) = log((log t + 1)/δ)."""

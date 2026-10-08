@@ -1,4 +1,4 @@
-"""Multi-stage scenario tree for a capacity/demand problem.
+"""Multi-stage scenario tree for a capacity/demand problem (SYNTHETIC).
 
 Binary demand tree (high/low) over 3 stages; backward induction
 computes optimal expected profit and the stage-1 decision under

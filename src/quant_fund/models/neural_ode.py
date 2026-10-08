@@ -1,4 +1,4 @@
-"""Neural ODE factor dynamics (Exec-Summary continuous-time item). Latent
+"""Neural ODE factor dynamics (Exec-Summary continuous-time item). Latent (SYNTHETIC)
 drift f_theta(z) learned from return windows; integrate with RK4 and train
 end-to-end on next-step prediction. Compared with an AR baseline on a
 synthetic nonlinear oscillator + trend factor process.
@@ -97,7 +97,7 @@ def bench_neural_ode(seed: int = 61) -> dict[str, float]:
         "synthetic_node_1step_mae": float(np.mean(one_step)),
         "synthetic_node_1step_ar_mae": float(np.mean(ar_1step)),
         "synthetic_node_1step_margin": float(np.mean(ar_1step) - np.mean(one_step)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

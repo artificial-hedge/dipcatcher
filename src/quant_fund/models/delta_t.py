@@ -1,4 +1,4 @@
-"""Delta-T (TT - UT) via the Espenak/Meeus piecewise polynomials.
+"""Delta-T (TT - UT) via the Espenak/Meeus piecewise polynomials (SYNTHETIC).
 
 Covers 1900-2150 with the published polynomial segments. Oracle check:
 piecewise-linear interpolation over the annual anchor table stays

@@ -1,4 +1,4 @@
-"""Surface area element integration (wave 287).
+"""Surface area element integration (wave 287) (SYNTHETIC).
 
 Area = integral sqrt(det I) dudv over the domain: sphere (4*pi*r^2) and
 torus (4*pi^2*R*r) recovered by quadrature.

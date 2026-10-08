@@ -1,4 +1,4 @@
-"""A-normal form conversion: name every intermediate computation in let-bindings."""
+"""A-normal form conversion: name every intermediate computation in let-bindings (SYNTHETIC)."""
 
 import numpy as np
 

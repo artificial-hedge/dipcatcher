@@ -1,4 +1,4 @@
-"""SDF sphere-tracing raymarcher (wave 293).
+"""SDF sphere-tracing raymarcher (wave 293) (SYNTHETIC).
 
 March p += d*sdf(p) until |sdf|<eps; hit distance vs analytic
 ray-sphere quadratic solution on two spheres + one miss.

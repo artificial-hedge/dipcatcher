@@ -1,4 +1,4 @@
-"""Kernel density canon: Gaussian KDE with Silverman/normal-reference
+"""Kernel density canon: Gaussian KDE with Silverman/normal-reference (SYNTHETIC)
 and leave-one-out cross-validated bandwidth selection, plus density
 evaluation, CDF via the normal-kernel mixture, and integrated squared
 error against a truth. ``bench_kde`` samples a known mixture and gates

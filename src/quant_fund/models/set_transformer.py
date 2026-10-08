@@ -152,5 +152,5 @@ def bench_set_transformer(seed: int = 59) -> dict[str, float]:
         "synthetic_setformer_sign_acc": sign_acc,
         "synthetic_setformer_statpool_sign_acc": sign_base,
         "synthetic_setformer_perm_invariance_err": float(np.max(errs)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

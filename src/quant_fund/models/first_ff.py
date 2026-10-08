@@ -1,4 +1,4 @@
-"""First fundamental form of parameterized surfaces (wave 287).
+"""First fundamental form of parameterized surfaces (wave 287) (SYNTHETIC).
 
 E,F,G from partial derivatives of sphere and torus parameterizations
 match the closed-form metric coefficients.

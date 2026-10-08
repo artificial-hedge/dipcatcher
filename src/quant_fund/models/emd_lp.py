@@ -1,4 +1,4 @@
-"""Earthmover canon: 1-D EMD via the CDF closed form,
+"""Earthmover canon: 1-D EMD via the CDF closed form, (SYNTHETIC)
 exact n-D EMD via the transport LP (HiGHS), and the
 Bures-Wasserstein closed form between Gaussians — cross-
 checked on a synthetic two-sample fixture.

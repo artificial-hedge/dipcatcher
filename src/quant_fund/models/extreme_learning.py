@@ -1,4 +1,4 @@
-"""Extreme learning machine canon: random-feature single-hidden-layer
+"""Extreme learning machine canon: random-feature single-hidden-layer (SYNTHETIC)
 networks — fixed random input weights + analytic ridge output layer
 (Huang et al.). ``bench_extreme_learning`` fits a nonlinear regression
 target and a classification task, gating ELM over the linear ridge

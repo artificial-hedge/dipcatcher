@@ -1,4 +1,4 @@
-"""Ensemble Kalman Inversion (EKI) — derivative-free parameter estimation.
+"""Ensemble Kalman Inversion (EKI) — derivative-free parameter estimation (SYNTHETIC).
 
 EKI treats inverse problems as sequential ensemble filtering: an ensemble
 of parameters is iterated through Kalman-style updates driven by a black-box

@@ -171,6 +171,6 @@ def bench_kalman_em(seed: int = 20261231 + 348) -> dict[str, float]:
         "synthetic_kem_r_hat": r["r"],
         "synthetic_kem_state_corr": corr,
         "synthetic_kem_loglik": r["loglik"],
-        "score": 1.0 if ok else 0.0,
+        "synthetic_score": 1.0 if ok else 0.0,
     }
     return out

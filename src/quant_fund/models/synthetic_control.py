@@ -1,4 +1,4 @@
-"""Synthetic control method (Abadie & Gardeazabal 2003; Abadie, Diamond &
+"""Synthetic control method (Abadie & Gardeazabal 2003; Abadie, Diamond & (SYNTHETIC)
 Hainmueller 2010).
 
 ``synthetic_control`` fits simplex weights w >= 0, sum w = 1 minimizing the

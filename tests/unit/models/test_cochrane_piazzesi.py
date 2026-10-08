@@ -56,12 +56,12 @@ def test_determinism() -> None:
 def test_bench_schema_and_score() -> None:
     r = bench_cochrane_piazzesi()
     for k in (
-        "r2_full",
-        "r2_restricted",
-        "gamma3_peak",
-        "r2_null",
-        "r2_null_restr",
-        "score",
+        "synthetic_r2_full",
+        "synthetic_r2_restricted",
+        "synthetic_gamma3_peak",
+        "synthetic_r2_null",
+        "synthetic_r2_null_restr",
+        "synthetic_score",
     ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

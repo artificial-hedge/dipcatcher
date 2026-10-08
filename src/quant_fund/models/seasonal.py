@@ -1,4 +1,4 @@
-"""Classical seasonal decomposition and seasonal strength measures.
+"""Classical seasonal decomposition and seasonal strength measures (SYNTHETIC).
 
 - ``seasonal_decompose``: classical (centered-MA) additive or
   multiplicative decomposition into trend / seasonal / residual.

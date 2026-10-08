@@ -1,4 +1,4 @@
-"""Thermodynamic integration: free energy along a lambda path.
+"""Thermodynamic integration: free energy along a lambda path (SYNTHETIC).
 
 F(1)-F(0) = ∫_0^1 <dU/dλ>_λ dλ interpolating a flat base U0=x^4 and
 double well U1 = x^4 - 4x²; MC at each λ on a grid, trapezoid

@@ -1,4 +1,4 @@
-"""Miniature LTL-style model checking on a finite Kripke structure:
+"""Miniature LTL-style model checking on a finite Kripke structure: (SYNTHETIC)
 check 'G (p -> F q)' (every p-state is eventually followed by a
 q-state) via CTL-style fixpoint EG/EF evaluation on a synthetic
 transition system.

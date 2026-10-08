@@ -1,4 +1,4 @@
-"""Goemans-Williamson max-cut via Burer-Monteiro SDP factorization.
+"""Goemans-Williamson max-cut via Burer-Monteiro SDP factorization (SYNTHETIC).
 
 X = YY^T with unit-norm rows replaces the SDP; projected gradient
 ascent on sum_{(i,j) in E} (1 - <y_i, y_j>)/2, then random-hyperplane

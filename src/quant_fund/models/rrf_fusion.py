@@ -1,4 +1,4 @@
-"""Reciprocal rank fusion (Cormack et al. 2009).
+"""Reciprocal rank fusion (Cormack et al. 2009) (SYNTHETIC).
 
 score(d) = Σ_l 1/(k + rank_l(d)) — fuses BM25 and dense rankings with no
 tuned weights. On the synonym corpus fusion beats either single list.
@@ -83,5 +83,5 @@ def bench_rrf_fusion(
         "synthetic_rrf_bm25_recall5": r_bm,
         "synthetic_rrf_dense_recall5": r_dn,
         "synthetic_rrf_gain_vs_best": r_f - max(r_bm, r_dn),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

@@ -1,4 +1,4 @@
-"""Expectimax — max/chance-node game-tree search for stochastic games.
+"""Expectimax — max/chance-node game-tree search for stochastic games (SYNTHETIC).
 
 Dice game: from a position, a d6 roll (chance) then the mover picks one
 of the legal advances; reaching the goal pays +1. Expectimax values are

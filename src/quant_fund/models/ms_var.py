@@ -1,4 +1,4 @@
-"""Markov-switching VAR(1) — Hamilton (1989) regime dynamics with EM.
+"""Markov-switching VAR(1) — Hamilton (1989) regime dynamics with EM (SYNTHETIC).
 
 ``y_t = mu_{s_t} + A_{s_t} y_{t-1} + e_t``, ``e_t ~ N(0, Sigma)`` (common
 covariance), ``s_t`` first-order Markov with transition matrix ``P``.

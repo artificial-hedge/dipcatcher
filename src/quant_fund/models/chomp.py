@@ -1,4 +1,4 @@
-"""CHOMP: covariant gradient descent on smoothness + obstacle cost."""
+"""CHOMP: covariant gradient descent on smoothness + obstacle cost (SYNTHETIC)."""
 
 from __future__ import annotations
 

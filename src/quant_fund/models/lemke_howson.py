@@ -1,4 +1,4 @@
-"""Lemke–Howson — complementary pivoting for one Nash equilibrium of
+"""Lemke–Howson — complementary pivoting for one Nash equilibrium of (SYNTHETIC)
 a bimatrix game. Labels each pure strategy of both players; pivots
 through best-response polytopes until every label appears.
 """

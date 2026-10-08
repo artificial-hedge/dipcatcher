@@ -1,4 +1,4 @@
-"""Free-forgetful adjunction F -| U (wave 289).
+"""Free-forgetful adjunction F -| U (wave 289) (SYNTHETIC).
 
 F: Set -> Mon (free monoid = lists) is left adjoint to forgetful U.
 The adjunction bijection Hom_Mon(FX, M) ≅ Hom_Set(X, UM) is verified:

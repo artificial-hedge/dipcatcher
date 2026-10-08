@@ -1,4 +1,4 @@
-"""Kuiper test — rotation-invariant uniform/CDF deviation statistic.
+"""Kuiper test — rotation-invariant uniform/CDF deviation statistic (SYNTHETIC).
 
 Kuiper (1960): for an empirical CDF F_n against a reference F, the
 two-sided Kolmogorov statistic D = max|F_n - F| is not invariant
@@ -122,5 +122,5 @@ def bench_kuiper(seed: int = 20261231 + 422) -> dict[str, float]:
         "synthetic_kuiper_p_bump": p_bump,
         "synthetic_kuiper_p_null": p_null,
         "synthetic_kuiper_p_two": p_two,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

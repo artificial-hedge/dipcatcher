@@ -155,11 +155,11 @@ def bench_glosten_milgrom(
         and abs(r_gm) < abs(r_naive)
     )
     return {
-        "posterior_acc": acc,
-        "theory_spread": th_spread,
-        "first_spread": first_spread,
-        "late_spread": late_spread,
-        "gm_lag1_acf": r_gm,
-        "naive_lag1_acf": r_naive,
-        "score": float(ok),
+        "synthetic_posterior_acc": acc,
+        "synthetic_theory_spread": th_spread,
+        "synthetic_first_spread": first_spread,
+        "synthetic_late_spread": late_spread,
+        "synthetic_gm_lag1_acf": r_gm,
+        "synthetic_naive_lag1_acf": r_naive,
+        "synthetic_score": float(ok),
     }

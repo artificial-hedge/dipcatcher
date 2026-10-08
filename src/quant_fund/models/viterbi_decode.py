@@ -21,9 +21,12 @@ _NSTATES = 1 << (_K - 1)
 def conv_encode(bits: FloatArray) -> FloatArray:
     """Rate-1/2 systematic-free encode: 2 output bits per input
     bit, generator polynomials (171, 133) octal."""
-    out = np.zeros(2 * len(bits), dtype=np.float64)
+    b_in = np.asarray(bits, dtype=np.float64).ravel()
+    if not np.all(np.isfinite(b_in)) or not np.all((b_in == 0.0) | (b_in == 1.0)):
+        raise ValueError("conv_encode expects a finite 0/1 bit stream")
+    out = np.zeros(2 * b_in.size, dtype=np.float64)
     state = 0
-    for i, b in enumerate(bits):
+    for i, b in enumerate(b_in):
         state = ((state << 1) | int(b)) & ((1 << _K) - 1)
         for j, g in enumerate(_GENS):
             out[2 * i + j] = bin(state & g).count("1") % 2
@@ -43,14 +46,19 @@ def _next_output(state: int, b: int) -> tuple[int, int]:
 def viterbi_hard(recv: FloatArray) -> FloatArray:
     """Hard-decision Viterbi on a received bit stream (2 per
     input)."""
-    n = len(recv) // 2
+    r_in = np.asarray(recv, dtype=np.float64).ravel()
+    if r_in.size == 0 or r_in.size % 2 != 0:
+        raise ValueError("received stream must contain an even number of bits")
+    if not np.all(np.isfinite(r_in)) or not np.all((r_in == 0.0) | (r_in == 1.0)):
+        raise ValueError("received stream must be finite 0/1 bits")
+    n = r_in.size // 2
     INF = 1e18
     metric = np.full(_NSTATES, INF)
     metric[0] = 0.0
     parents = np.full((n, _NSTATES), -1, dtype=np.int64)
     bits_in = np.zeros((n, _NSTATES), dtype=np.int64)
     for i in range(n):
-        r = int(recv[2 * i]) << 1 | int(recv[2 * i + 1])
+        r = int(r_in[2 * i]) << 1 | int(r_in[2 * i + 1])
         new = np.full(_NSTATES, INF)
         for s in range(_NSTATES):
             if metric[s] >= INF:
@@ -74,14 +82,19 @@ def viterbi_hard(recv: FloatArray) -> FloatArray:
 def viterbi_soft(recv: FloatArray) -> FloatArray:
     """Soft-decision Viterbi on ±1 BPSK symbols (2 per input
     bit): Euclidean branch metric."""
-    n = len(recv) // 2
+    s_in = np.asarray(recv, dtype=np.float64).ravel()
+    if s_in.size == 0 or s_in.size % 2 != 0:
+        raise ValueError("received stream must contain an even number of symbols")
+    if not np.all(np.isfinite(s_in)):
+        raise ValueError("received stream contains non-finite symbols")
+    n = s_in.size // 2
     INF = 1e18
     metric = np.full(_NSTATES, INF)
     metric[0] = 0.0
     parents = np.full((n, _NSTATES), -1, dtype=np.int64)
     bits_in = np.zeros((n, _NSTATES), dtype=np.int64)
     for i in range(n):
-        r0, r1 = recv[2 * i], recv[2 * i + 1]
+        r0, r1 = s_in[2 * i], s_in[2 * i + 1]
         new = np.full(_NSTATES, INF)
         for s in range(_NSTATES):
             if metric[s] >= INF:

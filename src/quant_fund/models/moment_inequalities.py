@@ -121,5 +121,5 @@ def bench_moment_inequalities(seed: int = 20261231 + 394) -> dict[str, float]:
         "synthetic_mi_bad_p": out_bad["p_value"],
         "synthetic_mi_deep_stat": out_deep["stat"],
         "synthetic_mi_deep_crit": out_deep["crit"],
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

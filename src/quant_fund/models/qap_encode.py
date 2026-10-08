@@ -1,4 +1,4 @@
-"""Quadratic arithmetic program: R1CS -> polynomial divisibility.
+"""Quadratic arithmetic program: R1CS -> polynomial divisibility (SYNTHETIC).
 
 Lagrange-interpolate each column of A,B,C over the row domain
 {1,...,m}; QAP says exists h s.t. (A·w)·(B·w) - (C·w) = h·t where

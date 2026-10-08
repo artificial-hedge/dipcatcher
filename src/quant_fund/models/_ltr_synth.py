@@ -1,4 +1,4 @@
-"""Synthetic learning-to-rank fixture: queries → candidate docs with
+"""Synthetic learning-to-rank fixture: queries → candidate docs with (SYNTHETIC)
 graded relevance driven by a true linear model + feature noise.
 """
 

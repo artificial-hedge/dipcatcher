@@ -1,4 +1,4 @@
-"""ART / SIRT iterative tomographic reconstruction.
+"""ART / SIRT iterative tomographic reconstruction (SYNTHETIC).
 
 The forward projector is a sparse ray-sum matrix A (each row sums the
 pixels along one line through the image). ART (Kaczmarz) updates one row

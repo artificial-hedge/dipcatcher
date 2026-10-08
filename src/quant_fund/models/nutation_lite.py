@@ -1,4 +1,4 @@
-"""Low-accuracy nutation (Meeus truncated series) in longitude/obliquity.
+"""Low-accuracy nutation (Meeus truncated series) in longitude/obliquity (SYNTHETIC).
 
 Dominant terms of the IAU-1980 series: node Omega plus the 2*L_sun,
 2*L_moon and 2*Omega harmonics. Arguments are linear in T (Julian

@@ -62,7 +62,8 @@ def _insert(root: Node, k: int, cap: int = 4) -> Node:
             if kd is child or _post(kd, child, sep):
                 node.keys.insert(min(i, len(node.keys)), sep) if kd is child else None
                 if kd is child:
-                    assert n.right is not None
+                    if not (n.right is not None):
+                        raise ValueError("n.right is not None")
                     node.kids.insert(i + 1, n.right)
                 return True
         return False

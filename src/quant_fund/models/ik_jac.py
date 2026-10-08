@@ -1,4 +1,4 @@
-"""Jacobian damped-least-squares inverse kinematics (wave 283).
+"""Jacobian damped-least-squares inverse kinematics (wave 283) (SYNTHETIC).
 
 Iterate theta += J^T (J J^T + lam^2 I)^{-1} * err for the planar 2R arm;
 converges to reachable targets and reports failure on unreachable ones.

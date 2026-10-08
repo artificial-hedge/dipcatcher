@@ -63,5 +63,5 @@ def test_input_validation() -> None:
 
 def test_bench_score() -> None:
     out = bench_shadow_rate()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert out["synthetic_sr_state_corr"] > 0.9

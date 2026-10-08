@@ -1,4 +1,4 @@
-"""Bottom-up tree automaton over ranked trees; acceptance + counting."""
+"""Bottom-up tree automaton over ranked trees; acceptance + counting (SYNTHETIC)."""
 
 import numpy as np
 

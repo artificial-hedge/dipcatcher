@@ -1,4 +1,4 @@
-"""MC-dropout (Gal & Ghahramani 2016) — dropout active at inference;
+"""MC-dropout (Gal & Ghahramani 2016) — dropout active at inference; (SYNTHETIC)
 predictive mean/var over T stochastic forward passes. NLL + OOD gap.
 """
 
@@ -46,5 +46,5 @@ def bench_mc_dropout(
         "synthetic_mcdo_nll": nll_gauss(y_te, mu, var),
         "synthetic_mcdo_cov95": coverage(y_te, mu, np.sqrt(var)),
         "synthetic_mcdo_ood_gap": float(Po.var(0).mean() / (var.mean() + 1e-9)),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

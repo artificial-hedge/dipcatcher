@@ -1,4 +1,4 @@
-"""Epidemic/gossip broadcast on a random graph (synthetic).
+"""Epidemic/gossip broadcast on a random graph (synthetic) (SYNTHETIC).
 
 Push-style rumor spreading: each round every informed node picks f
 random peers and pushes. Verified: (i) full coverage on connected

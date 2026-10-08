@@ -1,4 +1,4 @@
-"""Smooth transition autoregression (LSTAR / ESTAR).
+"""Smooth transition autoregression (LSTAR / ESTAR) (SYNTHETIC).
 
 Terasvirta (1994) STR(p) with logistic or exponential transition:
 
@@ -84,7 +84,8 @@ def star_fit(
             res = minimize(_sse, theta0, method="BFGS", options={"maxiter": 400})
             if best is None or res.fun < best.fun:
                 best = res
-    assert best is not None  # grid always runs at least one fit
+    if not (best is not None):
+        raise ValueError("best is not None")  # grid always runs at least one fit
     th = best.x
     gamma = float(np.exp(th[0]))
     c = float(th[1])

@@ -1,4 +1,4 @@
-"""Tabular ResNet (Gorishniy et al. 2021, "Revisiting Deep Learning
+"""Tabular ResNet (Gorishniy et al. 2021, "Revisiting Deep Learning (SYNTHETIC)
 Models for Tabular Data").
 
 Residual block MLP (skip connections) vs plain MLP on the synth
@@ -82,5 +82,5 @@ def bench_tabular_resnet(
         "synthetic_tres_acc": acc_r,
         "synthetic_tres_mlp_acc": acc_m,
         "synthetic_tres_gain": acc_r - acc_m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

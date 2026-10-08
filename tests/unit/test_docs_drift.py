@@ -228,16 +228,26 @@ def _cli_tokens(region: str) -> list[str] | None:
     toks = s.split()
     if not toks or toks[0] != "dipcatcher":
         return None
-    return [t for t in toks[1:] if CODEWORD.fullmatch(t) or t.startswith("-")]
+    # Stop at the first token that is not a command word or flag: a trailing
+    # `# comment`, a path, or prose such as `dipcatcher · fx1` is not argv.
+    out: list[str] = []
+    for t in toks[1:]:
+        if not (CODEWORD.fullmatch(t) or t.startswith("-")):
+            break
+        out.append(t)
+    return out
 
 
 def _root_commands() -> tuple[frozenset[str], dict[str, frozenset[str]]]:
+    from dipcatcher_cli.app import LAUNCHER_COMMANDS
     from quant_fund.cli.main import app
 
     def name(c) -> str:
         return c.name or c.callback.__name__.replace("_", "-")
 
-    roots = frozenset(name(c) for c in app.registered_commands)
+    # `dipcatcher` is the outer launcher: its own commands (e.g. `chat`) sit
+    # beside the lab app's registered commands.
+    roots = frozenset(name(c) for c in app.registered_commands) | LAUNCHER_COMMANDS
     groups: dict[str, frozenset[str]] = {}
     stack = list(app.registered_groups)
     while stack:

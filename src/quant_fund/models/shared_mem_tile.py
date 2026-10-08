@@ -1,4 +1,4 @@
-"""Tiled shared-memory matmul vs numpy oracle (computes, not perf-claims)."""
+"""Tiled shared-memory matmul vs numpy oracle (computes, not perf-claims) (SYNTHETIC)."""
 
 import numpy as np
 

@@ -1,4 +1,4 @@
-"""HAR realized-volatility models (Corsi 2009) and HARQ extension
+"""HAR realized-volatility models (Corsi 2009) and HARQ extension (SYNTHETIC)
 (Bollerslev, Patton & Quaedvlieg 2016).
 
 HAR-RV: RV_{t+1} = b0 + b_d RV_t + b_w mean(RV_{t-4..t})
@@ -94,7 +94,8 @@ def harq_fit(
 ) -> dict[str, Array | float]:
     """HARQ: daily term = (b_d + b_q sqrt(RQ_t)) * RV_t."""
     rvv, rqq = _check(rv, rq)
-    assert rqq is not None
+    if not (rqq is not None):
+        raise ValueError("rqq is not None")
     d, w, m = lags
     if rvv.size < m + 30:
         raise ValueError("insufficient history")
@@ -143,7 +144,8 @@ def harq_forecast(
     lags: tuple[int, int, int] = (1, 5, 22),
 ) -> float:
     rvv, rqq = _check(rv_history, rq_history)
-    assert rqq is not None
+    if not (rqq is not None):
+        raise ValueError("rqq is not None")
     d, w, m = lags
     c = np.asarray(fit["coef"], dtype=float)
     if c.size != 5:

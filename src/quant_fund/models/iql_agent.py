@@ -83,6 +83,7 @@ def bench_iql_agent(
 ) -> dict[str, float]:
     """Expectile IQL extraction vs unweighted behavior cloning."""
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed)
     s, a, r, sn = synth_offline(n_ep, horizon, rng, expert_frac=0.3)
     S = torch.tensor(s, dtype=torch.float32)
@@ -131,7 +132,7 @@ def bench_iql_agent(
         "synthetic_iql_dataset_reward": rew_dataset,
         "synthetic_iql_margin_vs_bc": rew_iql - rew_bc,
         "synthetic_iql_margin_vs_dataset": rew_iql - rew_dataset,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }
 
 

@@ -1,4 +1,4 @@
-"""RBJ audio-cookbook biquads + DF2T cascade (second-order sections).
+"""RBJ audio-cookbook biquads + DF2T cascade (second-order sections) (SYNTHETIC).
 
 Canonical reference: Robert Bristow-Johnson's Audio EQ Cookbook.
 Provides design helpers (lowpass/highpass/bandpass/notch/peaking) and

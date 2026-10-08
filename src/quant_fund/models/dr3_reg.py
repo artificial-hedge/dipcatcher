@@ -1,4 +1,4 @@
-"""DR3 (Kumar et al. 2023) — dormancy-ratio regularizer: encourages
+"""DR3 (Kumar et al. 2023) — dormancy-ratio regularizer: encourages (SYNTHETIC)
 feature diversity by penalizing dominant-feature concentration in critic
 activations; fights dormant neurons in online RL. Mean reward vs plain.
 """
@@ -74,5 +74,5 @@ def bench_dr3_reg(seed: int = 923, steps: int = 2500, lam: float = 0.1) -> dict[
     return {
         "synthetic_dr3_mean_reward": tot / n,
         "synthetic_dr3_random_reward": -0.2,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

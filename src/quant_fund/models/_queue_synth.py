@@ -1,4 +1,4 @@
-"""Synthetic queueing-network fixtures shared by the reliability canon.
+"""Synthetic queueing-network fixtures shared by the reliability canon (SYNTHETIC).
 
 A tiny event-driven queue simulator plus deterministic network parameters
 (routing matrix, service rates, visit ratios) so the product-form and MVA

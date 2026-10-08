@@ -1,4 +1,4 @@
-"""Bootstrapped DQN posterior (Osband et al. 2016).
+"""Bootstrapped DQN posterior (Osband et al. 2016) (SYNTHETIC).
 
 K=8 Q-heads trained on resampled data give an epistemic posterior over
 Q; disagreement is exploitable for pessimistic risk-aware action choice.
@@ -89,5 +89,5 @@ def bench_bootstrapped_dqn(
         "synthetic_boot_mean_cvar": float(cvar_mean),
         "synthetic_boot_cvar_gain": float(cvar_pess - cvar_mean),
         "synthetic_boot_spread_err_corr": corr if np.isfinite(corr) else 0.0,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

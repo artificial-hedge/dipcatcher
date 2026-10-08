@@ -1,4 +1,4 @@
-"""Item response theory — Rasch and 2PL joint maximum likelihood.
+"""Item response theory — Rasch and 2PL joint maximum likelihood (SYNTHETIC).
 
 Birnbaum (1968), Lord (1980): a binary response matrix X_ji
 (subjects j, items i) is modeled as P(X=1) = sigma(a_i (theta_j -
@@ -190,5 +190,5 @@ def bench_item_response(seed: int = 20261231 + 414) -> dict[str, float]:
         "synthetic_irt_mae": mae,
         "synthetic_irt_theta_rho": rho,
         "synthetic_irt_disc_corr": ord_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

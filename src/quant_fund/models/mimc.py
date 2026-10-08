@@ -1,4 +1,4 @@
-"""Multi-index / multilevel Monte Carlo (MIMC) — telescoping
+"""Multi-index / multilevel Monte Carlo (MIMC) — telescoping (SYNTHETIC)
 estimators over a 2-D refinement lattice.
 
 Generalizes MLMC: levels are multi-indices (l1, l2), the estimator is

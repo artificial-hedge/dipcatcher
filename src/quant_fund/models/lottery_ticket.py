@@ -1,4 +1,4 @@
-"""Lottery ticket hypothesis (Frankle & Carbin 2019).
+"""Lottery ticket hypothesis (Frankle & Carbin 2019) (SYNTHETIC).
 
 Rewind the surviving weights to init inside the magnitude mask and
 retrain — the "winning ticket" matches dense accuracy while a mask on
@@ -69,5 +69,5 @@ def bench_lottery_ticket(
         "synthetic_lth_dense_acc": acc_dense,
         "synthetic_lth_random_acc": acc_rand,
         "synthetic_lth_gain": acc_ticket - acc_rand,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

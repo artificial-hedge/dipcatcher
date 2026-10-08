@@ -1,4 +1,4 @@
-"""Calibration estimation — GREG weights on auxiliary totals.
+"""Calibration estimation — GREG weights on auxiliary totals (SYNTHETIC).
 
 Deville & Särndal (1992): given sample d_i = 1/pi_i base weights
 and auxiliary variables x_i with known population totals X, the
@@ -136,5 +136,5 @@ def bench_calibration_survey(seed: int = 20261231 + 446) -> dict[str, float]:
         "synthetic_greg_rmse": rmse_g,
         "synthetic_base_rmse": rmse_b,
         "synthetic_margin_err": marg_err,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

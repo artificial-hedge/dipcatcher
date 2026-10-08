@@ -100,7 +100,7 @@ export function StrategyPage({ entry, index }: StrategyPageProps) {
           model quality, fresh out-of-sample performance, or live trading results.</p>
       {entry.has_equity && (
         <section className="panel">
-          <h3>Simulated equity (NAV)</h3>
+          <h3>Simulated equity path</h3>
           {equity.loading && <p className="muted">loading…</p>}
           {equity.error && <p className="error">equity: {equity.error}</p>}
           {derived && (
@@ -111,7 +111,7 @@ export function StrategyPage({ entry, index }: StrategyPageProps) {
                   {derived.first.date} → {derived.last.date}
                 </span>
                 <span className="chip">
-                  final NAV {fmtUSD(derived.last.nav)}
+                  terminal equity {fmtUSD(derived.last.nav)}
                 </span>
                 <span className="chip">
                   max drawdown {fmtPct(-derived.ddSummary.maxDrawdown)}
@@ -126,7 +126,7 @@ export function StrategyPage({ entry, index }: StrategyPageProps) {
                 yFormat={(v) => fmtUSD(v)}
                 color="#2563eb"
                 anchorZero={false}
-                ariaLabel={`Simulated NAV for ${entry.name}`}
+                ariaLabel={`Simulated equity path for ${entry.name}`}
               />
               <h3>Drawdown</h3>
               <LineChart

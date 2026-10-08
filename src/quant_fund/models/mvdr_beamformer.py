@@ -1,4 +1,4 @@
-"""MVDR (Capon) beamformer on a ULA snapshot matrix.
+"""MVDR (Capon) beamformer on a ULA snapshot matrix (SYNTHETIC).
 
 w = R^{-1} a / (a^H R^{-1} a) minimizes output power subject to unit gain
 in the look direction. Bench: beampattern peak at the planted DOA and

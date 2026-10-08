@@ -44,4 +44,4 @@ def test_bad_inputs():
 
 
 def test_bench():
-    assert bench_henze_zirkler()["score"] == 1.0
+    assert bench_henze_zirkler()["synthetic_score"] == 1.0

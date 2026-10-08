@@ -1,4 +1,4 @@
-"""Shared fixture for wave-199 quantum canon — statevector helpers +
+"""Shared fixture for wave-199 quantum canon — statevector helpers + (SYNTHETIC)
 small planted-problem instances (all n<=4 qubits, classical sim).
 """
 

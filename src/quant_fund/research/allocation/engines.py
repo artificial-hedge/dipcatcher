@@ -290,6 +290,7 @@ def fit_weights(
         raw = kelly_weights(mu, cov, fraction=kelly_fraction)
 
     if engine == "vol_target":
-        assert target_vol is not None  # validated above
+        if not (target_vol is not None):
+            raise ValueError("target_vol is not None")  # validated above
         raw, _ = volatility_target_scale(raw, cov, target_vol)
     return apply_constraints(raw, cons)

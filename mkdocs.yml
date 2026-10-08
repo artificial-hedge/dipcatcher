@@ -1,5 +1,5 @@
 site_name: dipcatcher
-site_description: Research harness for fx-1. Data, evaluation, and receipt verification.
+site_description: State-of-the-art harness for orchestrating fx1 and fx1-lite. Chat-first CLI, research families via /superpower, receipt verification.
 site_url: https://artificial-hedge.github.io/dipcatcher/
 repo_url: https://github.com/artificial-hedge/dipcatcher
 repo_name: artificial-hedge/dipcatcher
@@ -147,6 +147,7 @@ nav:
       - Mathematical specification: MATH_SPEC.md
       - Research references: RESEARCH_REFERENCES.md
       - Institutional readiness: INSTITUTIONAL_READINESS.md
+      - Evidence procurement: EVIDENCE_PROCUREMENT.md
   - Data sources:
       - Trading calendars: CALENDARS.md
       - Labels: DATA_SOURCE_LABELS.md
@@ -164,6 +165,8 @@ nav:
       - Market simulator: MARKET_SIM.md
       - Sequential inference: SEQUENTIAL_INFERENCE.md
       - Candle and order book: CANDLE_ORDER_BOOK.md
+      - HF-RV design: HF_RV_DESIGN.md
+      - Volatility scope contract: VOL_SCOPE_CONTRACT.md
       - Real-data benchmark: REAL_DATA_BENCHMARK.md
       - Net-return tournament: NET_RETURN_TOURNAMENT.md
       - Cost-aware construction: COST_AWARE_CONSTRUCTION.md
@@ -172,8 +175,6 @@ nav:
       - Evaluation report: EVAL_REPORT_SOTA.md
       - Prospective journal: PROSPECTIVE_SOTA.md
       - SOTA canon roadmap: SOTA_CANON_ROADMAP_2026_09.md
-      - SOTA wave-13 backlog: SOTA_WAVE13_BACKLOG.md
-      - Benchmark family lifecycle: BENCHMARK_FAMILY_LIFECYCLE.md
       - Statistical-core audit: AUDIT_P62_STATS.md
       - Validation-layer audit: AUDIT_P62B_VALIDATION.md
       - P6.1 money audit: AUDIT_P61_MONEY.md
@@ -198,8 +199,10 @@ nav:
       - ML and RL capabilities: ML_RL_CAPABILITIES.md
       - Frontier audit: AUDIT_FRONTIER.md
       - Code quality inventory: CODE_QUALITY_INVENTORY.md
+      - Import-boundary triage: ARCH_BOUNDARY_TRIAGE.md
       - Audit ledger: AUDIT_LEDGER.md
       - Evidence integrity: EVIDENCE_INTEGRITY.md
+      - P0 closure — open evidence debt: P0_CLOSURE.md
       - fx1 audit: AUDIT_FX1.md
       - fx1 eval-harness audit: AUDIT_FX1_EVALHARNESS.md
       - fx1 wave-3 audit: AUDIT_FX1_WAVE3.md
@@ -226,6 +229,7 @@ nav:
   - Operations:
       - Platform matrix: PLATFORM_MATRIX.md
       - Runbook: OPERATIONS_RUNBOOK.md
+      - Ultra plan — production readiness: ULTRA_PROD_READINESS.md
       - Audit ledger and observability: AUDIT_OBSERVABILITY.md
       - Paper and shadow: PAPER_SHADOW.md
       - Backtest-to-live parity: BACKTEST_LIVE_PARITY.md
@@ -234,7 +238,10 @@ nav:
   - fx-1:
       - Overview: FX1.md
       - Interactive CLI (fxi): FXI.md
-      - Concierge orchestration: DIP_CONCIERGE.md
+      - fxi interactive CLI design: superpowers/specs/2026-10-04-fxi-interactive-cli-design.md
+      - Concierge orchestration (chat-first dipcatcher CLI): DIP_CONCIERGE.md
+      - Production product contract: DIPCATCHER_PRODUCT_CONTRACT.md
+      - Claude product handoff: CLAUDE_DIPCATCHER_HANDOFF.md
       - Forecast harness: fx1_harness.md
       - Architecture: FX1_ARCHITECTURE.md
       - Training: FX1_TRAINING.md
@@ -246,6 +253,7 @@ nav:
       - Harness client legs: FX1_CLIENTS.md
       - BYOK runbook: FX1_BYOK_RUNBOOK.md
       - Capability progress: FX1_CAPABILITY_PROGRESS.md
+      - Capability qualification standard: CAPABILITY_QUALIFICATION.md
       - fx-1 operations: FX1_OPERATIONS.md
   - Decisions:
       - decisions/index.md
@@ -298,6 +306,7 @@ nav:
       - "0006: Strict config": adr/0006-strict-config-forbid-extra.md
       - "0007: Shadow holds no capital": adr/0007-shadow-holds-no-capital.md
       - "0008: Forbidden metric keys": adr/0008-forbidden-metric-key-scan.md
+      - "0009: Forward freeze anchoring": adr/0009-forward-record-freeze-and-eligibility.md
   - Market replay viewer: REPLAY_VIZ.md
   - Research explorer: WEB_EXPLORER.md
   - API reference:
@@ -317,4 +326,9 @@ nav:
       - Implementation plan: IMPLEMENTATION_PLAN.md
       - Repository improvement plan: REPO_IMPROVEMENT_PLAN.md
       - Top-10 execution plan: TOP10_EXECUTION_PLAN.md
+      - CI fan-out Tier 1 spec: CI_2853_TIER1.md
+      - Executive blueprint implementation: EXECUTIVE_BLUEPRINT_IMPLEMENTATION.md
+      - Maintenance 2026-10-05: maintenance/maintenance-2026-10-05.md
+      - Dependency audit 2026-10-05: maintenance/dependency-audit-2026-10-05.md
+      - Dependency audit PR-2767: maintenance/dependency-audit-pr2767-2026-10-05.md
       - MEGAPLAN forecasting lane: MEGAPLAN_SOTA.md

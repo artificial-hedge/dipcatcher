@@ -1,4 +1,4 @@
-"""STFT + perfect-reconstruction iSTFT via overlap-add."""
+"""STFT + perfect-reconstruction iSTFT via overlap-add (SYNTHETIC)."""
 
 import numpy as np
 

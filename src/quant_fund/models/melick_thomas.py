@@ -138,7 +138,8 @@ def implied_pdf(
         res = _opt.least_squares(resid, p_init, method="lm", max_nfev=4000)
         if best is None or float(res.cost) < float(best.cost):
             best = res
-    assert best is not None
+    if not (best is not None):
+        raise ValueError("best is not None")
     w, m, s = unpack(np.asarray(best.x))
     comp_mean = np.exp(m + 0.5 * s * s)
     mix_mean = float(w @ comp_mean)
@@ -213,10 +214,10 @@ def bench_melick_thomas(seed: int = 20261231 + 301) -> dict[str, float]:
     var_err = abs(float(r["var_ln"]) - float(d["var_true"])) / float(d["var_true"])
     ok = tail_err < 0.06 and var_err < 0.25 and float(r["rmse_rel"]) < 0.01
     return {
-        "tail_hat": float(r["tail_mass"]),
-        "tail_true": float(d["tail_true"]),
-        "tail_err": tail_err,
-        "var_err_rel": var_err,
-        "rmse_rel": float(r["rmse_rel"]),
-        "score": float(ok),
+        "synthetic_tail_hat": float(r["tail_mass"]),
+        "synthetic_tail_true": float(d["tail_true"]),
+        "synthetic_tail_err": tail_err,
+        "synthetic_var_err_rel": var_err,
+        "synthetic_rmse_rel": float(r["rmse_rel"]),
+        "synthetic_score": float(ok),
     }

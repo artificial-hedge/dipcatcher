@@ -28,6 +28,15 @@ independently as `fx-1.vX.Y` with a model card. No trained checkpoint is in
 this repository. Every receipt, ledger entry, and dossier embeds the
 producing package version implicitly through its hashes.
 
+**`fx1.__version__` is the version of the harness API surface described in
+this document. It is not a model release number.** As of 2026-10-08
+`fx1.__version__` is `0.4.0` and `git tag -l 'v*' | wc -l` returns **0** — no
+release tag has ever been cut, so no release of this API has been published.
+(`git tag | wc -l` returns `4`, but all four are
+`attic/receipt-provenance/*` provenance anchors from 2026-09-27/28, not
+releases.) A model version would be `fx-1.vX.Y` on a model card, per the
+paragraph above, and no such version exists.
+
 ## Deprecation
 
 No silent removals: any breaking change ships behind a new function/flag with

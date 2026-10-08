@@ -1,4 +1,4 @@
-"""Shared synthetic optimization task for the optimizer canon:
+"""Shared synthetic optimization task for the optimizer canon: (SYNTHETIC)
 ill-conditioned quadratic regression via an MLP — optimizer quality =
 loss after K steps (and steps to threshold) vs Adam at matched lr grid.
 """

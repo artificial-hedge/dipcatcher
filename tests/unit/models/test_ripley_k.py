@@ -68,5 +68,5 @@ def test_rejects_bad_inputs() -> None:
 
 def test_bench_ripley_k_score() -> None:
     out = bench_ripley_k()
-    assert out["score"] == pytest.approx(1.0)
+    assert out["synthetic_score"] == pytest.approx(1.0)
     assert out["synthetic_rk_csr_dev"] < 0.05

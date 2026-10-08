@@ -1019,7 +1019,8 @@ def train_gslice(
             if context is None:
                 x0 = _draw_prior(torch, cfg, g, b, d_x, gen)
             else:
-                assert post_mean is not None  # set when context is given
+                if not (post_mean is not None):
+                    raise ValueError("post_mean is not None")  # set when context is given
                 x0 = _draw_posterior(torch, post_mean, post_chol, idx, gen)
             if cfg.ot_couple and b >= 2:
                 perm_ot = ot_coupling(x0.numpy(), x1.numpy())
@@ -1232,10 +1233,10 @@ def bench_gslice(
     ev_gen = evaluate_samples(gen, held)
     ev_prior = evaluate_samples(prior, held)
     out: dict[str, float] = {"gslice_synth_" + k[len("gslice_") :]: v for k, v in ev_gen.items()}
-    out["gslice_synth_energy_score_prior"] = ev_prior["gslice_energy_score_mean"]
-    out["gslice_synth_energy_score_gain"] = (
+    out["synthetic_gslice_synth_energy_score_prior"] = ev_prior["gslice_energy_score_mean"]
+    out["synthetic_gslice_synth_energy_score_gain"] = (
         ev_prior["gslice_energy_score_mean"] - ev_gen["gslice_energy_score_mean"]
     )
-    out["gslice_synth_final_loss"] = float(model.loss_curve[-1])
-    out["gslice_synth_loss_drop"] = float(model.loss_curve[0] - model.loss_curve[-1])
+    out["synthetic_gslice_synth_final_loss"] = float(model.loss_curve[-1])
+    out["synthetic_gslice_synth_loss_drop"] = float(model.loss_curve[0] - model.loss_curve[-1])
     return out

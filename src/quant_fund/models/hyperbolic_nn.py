@@ -1,4 +1,4 @@
-"""Poincaré-ball embedding layer (Nickel & Kiela 2017).
+"""Poincaré-ball embedding layer (Nickel & Kiela 2017) (SYNTHETIC).
 
 Distances via the Poincaré metric; the same leaves embed a random binary
 tree at far lower distortion than a Euclidean embedding of the same
@@ -75,5 +75,5 @@ def bench_hyperbolic_nn(
         "synthetic_hyp_distortion": distortion_h,
         "synthetic_hyp_euclid_distortion": distortion_e,
         "synthetic_hyp_gain": float(distortion_e - distortion_h),
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

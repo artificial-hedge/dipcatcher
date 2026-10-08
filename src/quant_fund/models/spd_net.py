@@ -62,6 +62,7 @@ def bench_spd_net(
     eps: float = 1e-3,
 ) -> dict[str, float]:
     torch = _torch()
+    torch.manual_seed(int(seed))  # audit sweep: seeded determinism
     rng = np.random.default_rng(seed + _SEED)
     ctr, ytr = synth_spd_data(n_train, rng)
     cte, yte = synth_spd_data(n_test, rng)
@@ -109,5 +110,5 @@ def bench_spd_net(
         "synthetic_spd_acc": acc_spd,
         "synthetic_spd_mlp_acc": acc_mlp,
         "synthetic_spd_acc_gain": acc_spd - acc_mlp,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

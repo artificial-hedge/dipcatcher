@@ -165,9 +165,11 @@ def _model_logpdf_rows(fit: PanelFit, u: Array) -> Array:
     if fit.name == "independent":
         return np.zeros(u.shape[0], dtype=np.float64)
     if fit.name == "gaussian":
-        assert fit.corr is not None
+        if not (fit.corr is not None):
+            raise ValueError("fit.corr is not None")
         return _gauss_logpdf_rows(u, fit.corr)
-    assert fit.vine is not None
+    if not (fit.vine is not None):
+        raise ValueError("fit.vine is not None")
     return np.asarray(vine_logpdf_rows(fit.vine, u), dtype=np.float64)
 
 
@@ -179,14 +181,16 @@ def _model_joint_crash(fit: PanelFit, q: float, k: int, n_sim: int, seed: int, d
         # independent copula => per-margin breach iid Bernoulli(q)
         return float(sstats.binom.sf(k - 1, d, q))
     if fit.name == "gaussian":
-        assert fit.corr is not None
+        if not (fit.corr is not None):
+            raise ValueError("fit.corr is not None")
         rng = np.random.default_rng(seed)
         z = rng.multivariate_normal(np.zeros(fit.corr.shape[0]), fit.corr, size=n_sim)
         from scipy import stats as sstats
 
         u = sstats.norm.cdf(z)
     else:
-        assert fit.vine is not None
+        if not (fit.vine is not None):
+            raise ValueError("fit.vine is not None")
         u = vine_sample(fit.vine, n_sim, seed=seed)
     breaches = (u < q).sum(axis=1) >= k
     return float(breaches.mean())

@@ -1,4 +1,4 @@
-"""Work-function algorithm for k-server on a line metric.
+"""Work-function algorithm for k-server on a line metric (SYNTHETIC).
 
 w_t(S) = min over configs reachable... standard DP over request
 sequence on a 5-point line with k=2 servers. Bench compares the online

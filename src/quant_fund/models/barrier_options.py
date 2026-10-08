@@ -1,4 +1,4 @@
-"""Reiner-Rubinstein (1991) closed-form barrier options.
+"""Reiner-Rubinstein (1991) closed-form barrier options (SYNTHETIC).
 
 All eight single-barrier European types under Black-Scholes
 via the standard six-term decomposition (a,b,c,d,e,f) with
@@ -254,5 +254,5 @@ def bench_barrier_options(seed: int = 20261231 + 463) -> dict[str, float]:
     return {
         "synthetic_parity_max_rel_err": float(max_rel),
         "synthetic_tight_ko_ratio": float(tight / van2),
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

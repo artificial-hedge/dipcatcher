@@ -1,4 +1,4 @@
-"""HMAC construction + verification vs hashlib oracle and length-extension resistance."""
+"""HMAC construction + verification vs hashlib oracle and length-extension resistance (SYNTHETIC)."""
 
 import hashlib
 import hmac as _hmac

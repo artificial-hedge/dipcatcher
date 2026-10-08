@@ -1,4 +1,4 @@
-"""Ditto (Li et al. 2021) — per-client personalized model trained with a
+"""Ditto (Li et al. 2021) — per-client personalized model trained with a (SYNTHETIC)
 proximal pull toward the global FedAvg model: local accuracy vs shared
 and purely-local baselines on hetero shards.
 """

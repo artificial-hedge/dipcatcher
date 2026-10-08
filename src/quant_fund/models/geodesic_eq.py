@@ -1,4 +1,4 @@
-"""Geodesic equation verification on the sphere (SYNTHIC)."""
+"""Geodesic equation verification on the sphere (SYNTHIC) (SYNTHETIC)."""
 
 from __future__ import annotations
 

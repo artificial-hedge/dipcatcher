@@ -1,4 +1,4 @@
-"""One-factor Gaussian-copula portfolio default distribution.
+"""One-factor Gaussian-copula portfolio default distribution (SYNTHETIC).
 
 Li (2000) modelled joint defaults with a Gaussian copula.  In the one-factor
 version each name's latent variable is ``sqrt(rho) M + sqrt(1-rho) Z_i`` and it

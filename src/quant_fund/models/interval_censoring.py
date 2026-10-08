@@ -1,4 +1,4 @@
-"""Interval-censored survival: Turnbull's nonparametric MLE.
+"""Interval-censored survival: Turnbull's nonparametric MLE (SYNTHETIC).
 
 When an event time is only known to lie in an interval (L, R] —
 detection happens at inspection times — Kaplan-Meier is

@@ -1,4 +1,4 @@
-"""Synthetic difference-in-differences (SDID).
+"""Synthetic difference-in-differences (SDID) (SYNTHETIC).
 
 Arkhangelsky et al.'s estimator interpolates between synthetic control
 and DiD: unit weights reproduce the treated unit's pre-period path from

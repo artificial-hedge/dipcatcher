@@ -1,4 +1,4 @@
-"""Elias gamma/delta universal integer coding (wave 285).
+"""Elias gamma/delta universal integer coding (wave 285) (SYNTHETIC).
 
 gamma(n) = floor(log2 n) zeros + binary n. Prefix-free: decode roundtrips
 and codeword length is monotone-ish (nondecreasing on powers of two gaps).

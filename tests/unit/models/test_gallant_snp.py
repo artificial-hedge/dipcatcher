@@ -6,7 +6,7 @@ from quant_fund.models.gallant_snp import bench_gallant_snp, snp_density, snp_fi
 
 def test_bench_gallant_snp_passes():
     r = bench_gallant_snp()
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0
 
 
 def test_snp_t_gains_over_gauss():

@@ -1,4 +1,4 @@
-"""EDM (Karras et al. 2022) — elucidated diffusion: sigma-conditional
+"""EDM (Karras et al. 2022) — elucidated diffusion: sigma-conditional (SYNTHETIC)
 denoiser with Karras preconditioning (c_skip/c_out/c_noise) and
 Heun 2nd-order sampler. MMD vs Gauss baseline on regime windows.
 """
@@ -70,5 +70,5 @@ def bench_edm_karras(seed: int = 1501, iters: int = 900, steps: int = 18) -> dic
         "synthetic_edm_mmd": m,
         "synthetic_edm_gauss_mmd": g,
         "synthetic_edm_mmd_gain": g - m,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

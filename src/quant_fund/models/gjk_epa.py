@@ -1,4 +1,4 @@
-"""Exact convex-polygon distance (edge-feature scan) + EPA penetration depth."""
+"""Exact convex-polygon distance (edge-feature scan) + EPA penetration depth (SYNTHETIC)."""
 
 from __future__ import annotations
 

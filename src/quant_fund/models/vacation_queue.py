@@ -1,4 +1,4 @@
-"""M/G/1 queue with server vacations (Fuhrmann-Cooper decomposition).
+"""M/G/1 queue with server vacations (Fuhrmann-Cooper decomposition) (SYNTHETIC).
 
 With exhaustive service and vacations V, mean waiting time decomposes as
 E[W] = E[W_MG1] + E[V_e] where E[W_MG1] is the Pollaczek-Khinchine value

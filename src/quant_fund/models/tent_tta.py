@@ -1,4 +1,4 @@
-"""Tent test-time entropy minimization (Wang et al. 2021).
+"""Tent test-time entropy minimization (Wang et al. 2021) (SYNTHETIC).
 
 At test time only affine scale/shift parameters update by minimizing
 prediction entropy on unlabeled shifted data — recovers accuracy lost to
@@ -76,5 +76,5 @@ def bench_tent_tta(
         "synthetic_tent_acc_before": acc_before,
         "synthetic_tent_acc_after": acc_after,
         "synthetic_tent_gain": acc_after - acc_before,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

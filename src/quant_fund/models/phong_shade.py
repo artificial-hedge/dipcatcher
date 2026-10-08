@@ -1,4 +1,4 @@
-"""Phong illumination: ambient + diffuse + specular terms."""
+"""Phong illumination: ambient + diffuse + specular terms (SYNTHETIC)."""
 
 import numpy as np
 

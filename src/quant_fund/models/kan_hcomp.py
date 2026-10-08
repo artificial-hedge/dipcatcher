@@ -1,4 +1,4 @@
-"""Kan composition (hcomp) on a finite graph model of paths.
+"""Kan composition (hcomp) on a finite graph model of paths (SYNTHETIC).
 
 Elements are vertices; a path x ~ y is an edge-walk in the graph.
 hcomp fills an open box: given a base vertex and side paths leaving it,

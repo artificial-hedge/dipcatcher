@@ -68,13 +68,13 @@ def test_fail_closed() -> None:
 
 def test_bench_score() -> None:
     out = bench_pmg_ardl()
-    assert out["score"] == 1.0
+    assert out["synthetic_score"] == 1.0
     assert set(out) == {
-        "theta_hat",
-        "theta_true",
-        "theta_mg",
-        "err_pmg",
-        "err_mg",
-        "phi_mean",
-        "score",
+        "synthetic_theta_hat",
+        "synthetic_theta_true",
+        "synthetic_theta_mg",
+        "synthetic_err_pmg",
+        "synthetic_err_mg",
+        "synthetic_phi_mean",
+        "synthetic_score",
     }

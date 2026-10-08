@@ -1,4 +1,4 @@
-"""SimCLR — augmentation-invariance pretraining (Chen 2020).
+"""SimCLR — augmentation-invariance pretraining (Chen 2020) (SYNTHETIC).
 
 Two noised views per image → NT-Xent; linear probe on frozen
 representation vs probe on raw pixels — the augmentation gain.
@@ -61,5 +61,5 @@ def bench_simclr_views(
         "synthetic_simclr_probe": probe_ssl,
         "synthetic_simclr_raw_probe": probe_raw,
         "synthetic_simclr_gain": probe_ssl - probe_raw,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

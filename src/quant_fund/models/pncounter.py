@@ -1,4 +1,4 @@
-"""PN-Counter CRDT: increment/decrement counter (synthetic).
+"""PN-Counter CRDT: increment/decrement counter (synthetic) (SYNTHETIC).
 
 Two G-Counters (P and N); value = P.sum − N.sum; merge = pairwise
 max per counter. Verified: merge laws hold; dec-applied value

@@ -1,4 +1,4 @@
-"""A* maze routing (wave 291).
+"""A* maze routing (wave 291) (SYNTHETIC).
 
 Lee/A* grid router with Manhattan heuristic and blocked cells; wire
 cost vs BFS flood-fill oracle — must find the same minimum length.

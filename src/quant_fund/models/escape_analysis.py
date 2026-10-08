@@ -1,4 +1,4 @@
-"""Flow-insensitive escape analysis + scalar replacement on a tiny IR.
+"""Flow-insensitive escape analysis + scalar replacement on a tiny IR (SYNTHETIC).
 
 Program = list of ops:
   ("alloc", name, [field_vals])      allocate object `name` w/ fields

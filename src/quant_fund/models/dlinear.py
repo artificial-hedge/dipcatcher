@@ -1,4 +1,4 @@
-"""Causal DLinear path baseline (Zeng et al., 2023). Research-only.
+"""Causal DLinear path baseline (Zeng et al., 2023). Research-only (SYNTHETIC).
 
 A moving-average trend plus a linear residual, fit only on history strictly
 at or before as-of. This is the Kronos paper's non-pretrained TSFM baseline

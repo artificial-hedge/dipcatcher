@@ -1,4 +1,4 @@
-"""Suffix automaton (SAM) for substring counting (synthetic).
+"""Suffix automaton (SAM) for substring counting (synthetic) (SYNTHETIC).
 
 Online construction with suffix links. Verified: (i) number of
 distinct substrings equals naive set oracle; (ii) every substring

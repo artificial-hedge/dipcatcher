@@ -1,4 +1,4 @@
-"""Windowed-sinc FIR design + frequency response check."""
+"""Windowed-sinc FIR design + frequency response check (SYNTHETIC)."""
 
 import numpy as np
 

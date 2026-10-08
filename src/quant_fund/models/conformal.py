@@ -1,4 +1,4 @@
-"""Split CQR and adaptive conformal inference wrappers.
+"""Split CQR and adaptive conformal inference wrappers (SYNTHETIC).
 
 Wraps existing quantile / point predictors. Does not reimplement QR.
 Romano, Patterson, Candès (2019); Gibbs & Candès (2021).

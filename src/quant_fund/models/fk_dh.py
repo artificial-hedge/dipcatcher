@@ -1,4 +1,4 @@
-"""Denavit-Hartenberg forward kinematics vs geometric oracle (wave 283).
+"""Denavit-Hartenberg forward kinematics vs geometric oracle (wave 283) (SYNTHETIC).
 
 Standard DH transform composition for a 2R planar arm, verified against the
 closed-form elbow position formulas.

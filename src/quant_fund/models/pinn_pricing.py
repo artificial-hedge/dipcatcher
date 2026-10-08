@@ -1,4 +1,4 @@
-"""Physics-informed neural network option pricing (Exec-Summary pricing
+"""Physics-informed neural network option pricing (Exec-Summary pricing (SYNTHETIC)
 item). A small MLP learns C(S, tau) by penalizing the Black-Scholes PDE
 residual + boundary conditions — no labels beyond PDE/boundary loss.
 Automatic differentiation is hand-coded via complex-step on the network.

@@ -1,4 +1,4 @@
-"""Polyphase rational resampling (up P / down Q).
+"""Polyphase rational resampling (up P / down Q) (SYNTHETIC).
 
 Canonical reference: Crochiere & Rabiner (1983). A windowed-sinc
 anti-(image|alias) lowpass at min(1/P, 1/Q) is commuted through the

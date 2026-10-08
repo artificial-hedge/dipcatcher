@@ -1,4 +1,4 @@
-"""Differential-flatness feedforward + feedback tracking (wave 279).
+"""Differential-flatness feedforward + feedback tracking (wave 279) (SYNTHETIC).
 
 Double integrator x'' = u is flat with output y = x. A quintic flat-output
 trajectory gives the feedforward u_ff = y''''''; adding light feedback tracks

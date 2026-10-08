@@ -1,4 +1,4 @@
-"""Quadrature canon: Gauss-Legendre nodes/weights (Newton on P_n),
+"""Quadrature canon: Gauss-Legendre nodes/weights (Newton on P_n), (SYNTHETIC)
 Gauss-Hermite, Clenshaw-Curtis (DCT-weight form), and adaptive Simpson.
 ``bench_quadrature`` gates exactness on known integrals — polynomials
 through degree 2n-1, exp, and a smooth bump — versus the analytic answers.

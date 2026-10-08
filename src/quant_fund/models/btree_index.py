@@ -29,7 +29,8 @@ def _find_leaf(root: object, k: int) -> Leaf:
     while isinstance(root, Inner):
         i = bisect.bisect_right(root.keys, k)
         root = root.kids[i]
-    assert isinstance(root, Leaf)
+    if not (isinstance(root, Leaf)):
+        raise ValueError("isinstance(root, Leaf)")
     return root
 
 
@@ -105,7 +106,8 @@ class BPTree:
         lf: object = self.root
         while isinstance(lf, Inner):
             lf = lf.kids[0]
-        assert isinstance(lf, Leaf)
+        if not (isinstance(lf, Leaf)):
+            raise ValueError("isinstance(lf, Leaf)")
         while lf is not None:
             out.extend(zip(lf.keys, lf.vals, strict=True))
             lf = lf.next
@@ -132,7 +134,8 @@ def bench_btree_index(seed: int = 20261231 + 360) -> dict[str, float]:
             if isinstance(n, Leaf):
                 acc.append(d)
                 return
-            assert isinstance(n, Inner)
+            if not (isinstance(n, Inner)):
+                raise ValueError("isinstance(n, Inner)")
             for kk in n.kids:
                 dep(kk, d + 1, acc)
 

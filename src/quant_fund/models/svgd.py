@@ -124,5 +124,5 @@ def bench_svgd(seed: int = 20261231 + 389) -> dict[str, float]:
         "synthetic_svgd_var_err": var_err,
         "synthetic_svgd_right_frac": frac_right,
         "synthetic_svgd_comp_sd": spread,
-        "score": 1.0,
+        "synthetic_score": 1.0,
     }

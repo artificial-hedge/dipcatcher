@@ -1,4 +1,4 @@
-"""Loop-nest tiling legality via dependence polyhedron.
+"""Loop-nest tiling legality via dependence polyhedron (SYNTHETIC).
 
 A rectangular tiling of a nest is legal iff every dependence vector is
 componentwise >= 0 (fully permutable nest) — then tile sizes may be

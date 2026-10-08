@@ -64,6 +64,13 @@ def test_determinism() -> None:
 
 def test_bench_schema_and_score() -> None:
     r = bench_sheppard_heavy()
-    for k in ("rel_rmse", "innov_corr", "persistence_r", "alpha_r", "beta_r", "score"):
+    for k in (
+        "synthetic_rel_rmse",
+        "synthetic_innov_corr",
+        "synthetic_persistence_r",
+        "synthetic_alpha_r",
+        "synthetic_beta_r",
+        "synthetic_score",
+    ):
         assert np.isfinite(r[k])
-    assert r["score"] == 1.0
+    assert r["synthetic_score"] == 1.0

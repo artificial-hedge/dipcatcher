@@ -1,4 +1,4 @@
-"""XMSS — extended Merkle signature scheme over WOTS+.
+"""XMSS — extended Merkle signature scheme over WOTS+ (SYNTHETIC).
 
 WOTS+ (w=16, n=8-byte digests) one-time signatures plus an h-level Merkle
 tree of WOTS+ public keys. Signing reveals one leaf's WOTS+ sig + auth

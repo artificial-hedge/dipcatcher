@@ -1,4 +1,4 @@
-"""Dynamic taint tracking: mark source-derived values through ops."""
+"""Dynamic taint tracking: mark source-derived values through ops (SYNTHETIC)."""
 
 _SEED = 20261231 + 671
 

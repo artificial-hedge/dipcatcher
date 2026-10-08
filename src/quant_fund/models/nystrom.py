@@ -1,4 +1,4 @@
-"""Nyström PSD-approximation canon (Williams & Seeger 2001):
+"""Nyström PSD-approximation canon (Williams & Seeger 2001): (SYNTHETIC)
 approximate a kernel matrix via landmark columns,
 K ≈ C W^+ C^T, evaluated against the exact eigendecomposition
 on a synthetic RBF kernel matrix.

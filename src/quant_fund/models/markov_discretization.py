@@ -1,4 +1,4 @@
-"""Markov-chain discretization of AR(1) processes.
+"""Markov-chain discretization of AR(1) processes (SYNTHETIC).
 
 Canonical methods for turning a continuous AR(1)
 ``x' = (1-rho)mu + rho x + sigma eps`` into a finite-state

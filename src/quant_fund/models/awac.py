@@ -1,4 +1,4 @@
-"""AWAC (Nair et al. 2020) — advantage-weighted actor-critic: critic =
+"""AWAC (Nair et al. 2020) — advantage-weighted actor-critic: critic = (SYNTHETIC)
 SARSA-style single Q, actor updated by exp(A/λ)-weighted log-probs on
 the replay buffer (implicit advantage weighting). Mean reward vs
 unweighted BC actor.
@@ -76,5 +76,5 @@ def bench_awac(seed: int = 907, steps: int = 2500, lam: float = 1.0) -> dict[str
     return {
         "synthetic_awac_mean_reward": tot / n,
         "synthetic_awac_random_reward": -0.2,
-        "torch_available": 1.0,
+        "synthetic_torch_available": 1.0,
     }

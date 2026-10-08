@@ -1,4 +1,4 @@
-"""SCAFFOLD (Karimireddy et al. 2020) — client + server control variates
+"""SCAFFOLD (Karimireddy et al. 2020) — client + server control variates (SYNTHETIC)
 correct local-drift in FedAvg on heterogeneous shards.
 """
 
