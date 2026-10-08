@@ -24920,6 +24920,9 @@
   "models/whale_qa_studies.py": {
    "status": "audited"
   },
+  "models/wham.py": {
+   "status": "audited"
+  },
   "models/wheeler_zinn.py": {
    "status": "audited"
   },
@@ -24954,6 +24957,9 @@
    "status": "audited"
   },
   "models/whitehead_twr.py": {
+   "status": "audited"
+  },
+  "models/whitening.py": {
    "status": "audited"
   },
   "models/whitney_ext.py": {
@@ -24998,6 +25004,9 @@
   "models/wigner_dist.py": {
    "status": "audited"
   },
+  "models/wigner_ville.py": {
+   "status": "audited"
+  },
   "models/wigner_wick.py": {
    "status": "audited"
   },
@@ -25040,6 +25049,9 @@
   "models/wind_qa_studies.py": {
    "status": "audited"
   },
+  "models/winding_deg.py": {
+   "status": "audited"
+  },
   "models/wino_bias_studies.py": {
    "status": "audited"
   },
@@ -25053,6 +25065,9 @@
    "status": "audited"
   },
   "models/winogrande_studies.py": {
+   "status": "audited"
+  },
+  "models/winternitz_ots.py": {
    "status": "audited"
   },
   "models/wirthmuller.py": {
@@ -25097,6 +25112,9 @@
   "models/wobbegong_qa_studies.py": {
    "status": "audited"
   },
+  "models/wola_synth.py": {
+   "status": "audited"
+  },
   "models/wold_proc.py": {
    "status": "audited"
   },
@@ -25139,6 +25157,9 @@
   "models/woodward_op.py": {
    "status": "audited"
   },
+  "models/wooldridge_serial.py": {
+   "status": "audited"
+  },
   "models/woolly_lemur_qa_studies.py": {
    "status": "audited"
   },
@@ -25148,7 +25169,13 @@
   "models/word_problem.py": {
    "status": "audited"
   },
+  "models/work_function_kserver.py": {
+   "status": "audited"
+  },
   "models/work_plus_studies.py": {
+   "status": "audited"
+  },
+  "models/work_stealing.py": {
    "status": "audited"
   },
   "models/workarena_studies.py": {
@@ -25190,6 +25217,9 @@
   "models/wsc_studies.py": {
    "status": "audited"
   },
+  "models/wsts_cover.py": {
+   "status": "audited"
+  },
   "models/wyvern_2_qa_studies.py": {
    "status": "audited"
   },
@@ -25212,6 +25242,9 @@
    "status": "audited"
   },
   "models/xiwangmu_qa_studies.py": {
+   "status": "audited"
+  },
+  "models/xlearner.py": {
    "status": "audited"
   },
   "models/xlstm_mlstm.py": {

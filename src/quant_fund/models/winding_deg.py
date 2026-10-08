@@ -12,9 +12,12 @@ _SEED = 20261231 + 769
 
 
 def degree(f: Callable[[float], float], n: int = 2000) -> int:
+    """Lift degree = signed wrap-count of angle increments over one period."""
     th = np.linspace(0, 2 * np.pi, n, endpoint=False)
-    vals = np.unwrap(np.array([f(t) for t in th]))
-    return int(round(float(vals[-1] - vals[0] + (f(2 * np.pi) - f(0)) / (2 * np.pi)) / (2 * np.pi)))
+    vals = np.array([f(t) for t in th])
+    inc = np.concatenate([np.diff(vals), [f(2 * np.pi) - f(0.0)]])
+    inc = (inc + np.pi) % (2 * np.pi) - np.pi
+    return int(round(float(inc.sum()) / (2 * np.pi)))
 
 
 def _wrap_deg(f: Callable[[float], float], n: int = 512) -> int:
