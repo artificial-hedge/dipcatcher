@@ -8588,7 +8588,22 @@
   "models/effect_qa_studies.py": {
    "status": "audited"
   },
+  "models/efficient_frontier.py": {
+   "status": "audited"
+  },
   "models/efron_stein.py": {
+   "status": "audited"
+  },
+  "models/egarch.py": {
+   "status": "audited"
+  },
+  "models/egl_change.py": {
+   "status": "audited"
+  },
+  "models/egorov_thm.py": {
+   "status": "audited"
+  },
+  "models/egreedy_decay.py": {
    "status": "audited"
   },
   "models/egret_qa_studies.py": {
@@ -8603,10 +8618,16 @@
   "models/eider_qa_studies.py": {
    "status": "audited"
   },
+  "models/eigenvalue_opt.py": {
+   "status": "audited"
+  },
   "models/eight_geometries.py": {
    "status": "audited"
   },
   "models/eigval_bounds.py": {
+   "status": "audited"
+  },
+  "models/eikonal_fmm.py": {
    "status": "audited"
   },
   "models/eilenberg_moore.py": {
@@ -8627,6 +8648,9 @@
   "models/einstein_equations.py": {
    "status": "audited"
   },
+  "models/eisenberg_noe.py": {
+   "status": "audited"
+  },
   "models/eisenstein_srs.py": {
    "status": "audited"
   },
@@ -8643,6 +8667,9 @@
    "status": "audited"
   },
   "models/ekeland_var.py": {
+   "status": "audited"
+  },
+  "models/el2n_scoring.py": {
    "status": "audited"
   },
   "models/eland_qa_studies.py": {
@@ -8699,7 +8726,16 @@
   "models/elephant_shrew_qa_studies.py": {
    "status": "audited"
   },
+  "models/elf_loader.py": {
+   "status": "audited"
+  },
+  "models/elgamal_enc.py": {
+   "status": "audited"
+  },
   "models/eli5_lite_studies.py": {
+   "status": "audited"
+  },
+  "models/elias_gamma.py": {
    "status": "audited"
   },
   "models/eliashberg_givental.py": {
@@ -8709,6 +8745,9 @@
    "status": "audited"
   },
   "models/elliott_invariant.py": {
+   "status": "audited"
+  },
+  "models/ellipsoid_method.py": {
    "status": "audited"
   },
   "models/elliptic_cohom2.py": {

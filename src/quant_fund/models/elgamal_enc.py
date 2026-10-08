@@ -1,4 +1,4 @@
-"""Toy ElGamal encryption over a safe-prime group; roundtrip + homomorphic check (SYNTHETIC)."""
+"""Toy ElGamal encryption over a prime field; roundtrip + homomorphic check (SYNTHETIC)."""
 
 import numpy as np
 
