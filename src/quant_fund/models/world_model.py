@@ -46,6 +46,27 @@ def exec_sim_step(
     return new, float(rew)
 
 
+def _transition_pairs(eps: list[dict[str, FloatArray]], torch: Any):
+    """(s_t, a_t, r_t) -> s_{t+1} pairs built strictly within episodes —
+    a flat shift of the concatenated buffers would pair each episode's
+    terminal state with the next episode's opening state, teaching the
+    transition net ~10% cross-episode hallucinations."""
+    ns, na, nr, targ = [], [], [], []
+    for e in eps:
+        s, a, r = e["s"], e["a"], e["r"]
+        for t in range(s.shape[0] - 1):
+            ns.append(s[t])
+            na.append(a[t])
+            nr.append(r[t])
+            targ.append(s[t + 1])
+    return (
+        torch.tensor(np.asarray(ns), dtype=torch.float32),
+        torch.tensor(np.asarray(na), dtype=torch.float32),
+        torch.tensor(np.asarray(nr), dtype=torch.float32),
+        torch.tensor(np.asarray(targ), dtype=torch.float32),
+    )
+
+
 def collect(n_ep: int, rng: np.random.Generator) -> list[dict[str, FloatArray]]:
     eps = []
     for _ in range(n_ep):
@@ -66,9 +87,6 @@ def bench_world_model(seed: int = 63) -> dict[str, float]:
     torch = _torch()
     torch.manual_seed(seed)
     eps = collect(150, rng)
-    s_all = torch.tensor(np.concatenate([e["s"] for e in eps]), dtype=torch.float32)
-    a_all = torch.tensor(np.concatenate([e["a"] for e in eps]), dtype=torch.float32)
-    r_all = torch.tensor(np.concatenate([e["r"] for e in eps]), dtype=torch.float32)
 
     trans = torch.nn.Sequential(torch.nn.Linear(4, 32), torch.nn.ReLU(), torch.nn.Linear(32, 3))
     rew = torch.nn.Sequential(torch.nn.Linear(4, 32), torch.nn.ReLU(), torch.nn.Linear(32, 1))
@@ -79,9 +97,10 @@ def bench_world_model(seed: int = 63) -> dict[str, float]:
         return s + trans(x), rew(x).squeeze(-1)
 
     opt = torch.optim.Adam(mods.parameters(), lr=3e-3)
-    # train on consecutive (s,a)->s',r
-    ns, na, nr = s_all[:-1], a_all[:-1], r_all[:-1]
-    targ = s_all[1:]
+    # train on consecutive (s,a)->s',r pairs; consecutive rows of the
+    # concatenated buffer span episode boundaries, so build the pairs
+    # per-episode instead of shifting the flat arrays.
+    ns, na, nr, targ = _transition_pairs(eps, torch)
     for _ in range(1200):
         idx = torch.randint(0, len(ns), (256,))
         sp, rp = wm_step(ns[idx], na[idx][:, None])

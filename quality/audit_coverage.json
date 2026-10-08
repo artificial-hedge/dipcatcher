@@ -25454,6 +25454,9 @@
   "models/weak_iv.py": {
    "status": "audited"
   },
+  "models/weak_law.py": {
+   "status": "audited"
+  },
   "models/weak_to_strong_studies.py": {
    "status": "audited"
   },
@@ -25869,6 +25872,9 @@
    "status": "audited"
   },
   "models/world_literature.py": {
+   "status": "audited"
+  },
+  "models/world_model.py": {
    "status": "audited"
   },
   "models/world_sim_studies.py": {
