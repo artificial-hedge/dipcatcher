@@ -285,7 +285,7 @@ def run_nautilus_conformance_eval(*, seed: int = 0) -> dict[str, Any]:
     verdict = {"matched": "pass", "diverged": "fail"}.get(result.outcome, "blocked")
     # Lazy: the receipt builder lives in the research layer — a deferred import
     # is the sanctioned layer-order cycle-breaker (docs/ARCHITECTURE_GUARDS.md).
-    from quant_fund.research.receipt_v2 import build_receipt_v2
+    from quant_fund.schemas.receipt_v2_leaf import build_receipt_v2
 
     return build_receipt_v2(
         kind=NAUTILUS_CONFORMANCE_KIND,
@@ -358,7 +358,7 @@ def nautilus_conformance_consistency_errors(body: Mapping[str, Any]) -> list[str
 def write_nautilus_conformance_receipt(receipt: Mapping[str, Any], out_dir: Path) -> Path:
     """Persist as ``nautilus_conformance_<sha16>.json``."""
     # Lazy: sealing lives in the research layer (see run_nautilus_conformance_eval).
-    from quant_fund.research.receipt_v2 import seal_receipt
+    from quant_fund.schemas.receipt_v2_leaf import seal_receipt
 
     sealed = seal_receipt(receipt)
     digest = str(sealed["receipt_sha256"])

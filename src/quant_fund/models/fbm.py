@@ -272,7 +272,7 @@ def write_fbm_receipt(
     import json
     from pathlib import Path
 
-    from quant_fund.research.receipt_v2 import verify_receipt_payload
+    from quant_fund.schemas.receipt_v2_leaf import verify_receipt_payload
     from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
     if receipt.get("kind") != "fbm_circulant" or receipt.get("schema") != FBM_SCHEMA:

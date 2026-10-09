@@ -367,7 +367,7 @@ def write_rough_vol_receipt(
     import json
     from pathlib import Path
 
-    from quant_fund.research.receipt_v2 import verify_receipt_payload
+    from quant_fund.schemas.receipt_v2_leaf import verify_receipt_payload
     from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
     if receipt.get("kind") != "rough_vol" or receipt.get("schema") != RBERGOMI_SCHEMA:

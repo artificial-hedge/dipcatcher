@@ -1,0 +1,33 @@
+# Immutable high-water mark for the oversized-module line budget.
+#
+# A budget in quality/module_line_budgets.txt may never exceed the ceiling
+# recorded here. Shrinking a budget is always allowed; raising one past its
+# ceiling is not, because the ceiling itself can only move through a recorded,
+# reviewed migration in quality/ratchet_migrations.json.
+#
+# Rationale (issue #2991): before this file existed, a pin could be raised in
+# the same commit that grew the module, which made "the pin may only shrink"
+# unenforced in practice. Six pins were raised that way (c8bff364d) and the
+# green gate was reported as remediation. This ledger closes that hole: the
+# approved debt is frozen, and new debt cannot be authorised by editing a
+# number.
+#
+# Format: PATH CEILING   (one per line, sorted, no duplicates, comments allowed)
+# The ceiling is the largest line count this module has ever been *approved* to
+# have. It is a debt ceiling, not a target.
+fx1/cli.py 5597
+fx1/cli_audit.py 4942
+fx1/sdk.py 4532
+fx1/serve/api.py 11333
+fx1/serve/api_audit.py 11073
+fx1/serve/client.py 3544
+fx1/serve/openai_compat.py 3315
+fx1/serve/parity_audit.py 4513
+fx1/serve/vs_audit.py 2291
+quant_fund/cli/research_cmds.py 4472
+quant_fund/microstructure/multilevel_mm.py 2227
+quant_fund/microstructure/zi_lob_simulator.py 3460
+quant_fund/research/agent.py 5839
+quant_fund/research/catalog/registry.py 13283
+
+quant_fund/research/catalog/retired_families.py 7591

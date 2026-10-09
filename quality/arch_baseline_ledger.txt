@@ -1,0 +1,28 @@
+# Frozen inventory of approved import-boundary baselines.
+#
+# configs/arch_boundaries.toml may only contain baselines listed here. Adding a
+# baseline for a newly introduced upward dependency is a ratchet widening, not a
+# fix, and must not be possible in the same commit that introduces the edge.
+# This file is the allowlist; quality/ratchet_migrations.json is the only way to
+# add to it, and every addition there must name an issue and a rationale.
+#
+# Rationale (issue #2991): an architecture guard whose baseline list can grow on
+# demand does not prevent regression; it records it. The kimi-lane sweep
+# nine layer-order edges rather than extracting a dependency-safe leaf. Those
+# nine are recorded below as debt to be paid, not as resolved.
+#
+# Format: FILE|MODULE|RULEsrc/quant_fund/fusion/stack_watch.py|quant_fund.research.evalues|layer-order
+src/quant_fund/metrics/analytics.py|quant_fund.portfolio.attribution|layer-order
+src/quant_fund/metrics/cross_section.py|quant_fund.models.asset_pricing|layer-order
+src/quant_fund/metrics/signature_features.py|quant_fund.models.path_signatures|layer-order
+src/quant_fund/microstructure/event_time_flow.py|quant_fund.models.changepoint|layer-order
+src/quant_fund/microstructure/sigkernel_mmd.py|quant_fund.models.sigkernel|layer-order
+src/quant_fund/models/robinhood_plus/bench.py|quant_fund.research.catalog|layer-order
+src/quant_fund/models/robinhood_plus/compare.py|quant_fund.pipeline.dataset|layer-order
+src/quant_fund/models/robinhood_plus/compare.py|quant_fund.pipeline.forecast|layer-order
+src/quant_fund/models/robinhood_plus/compare.py|quant_fund.research.catalog|layer-order
+src/quant_fund/northset/benches.py|quant_fund.research.catalog|layer-order
+src/quant_fund/pipeline/doctor.py|quant_fund.research.catalog|layer-order
+src/quant_fund/pipeline/doctor.py|quant_fund.research.verify|layer-order
+src/quant_fund/realized/hf_rv.py|quant_fund.models.realized|layer-order
+src/quant_fund/validation/gates.py|quant_fund.research.verify|layer-order

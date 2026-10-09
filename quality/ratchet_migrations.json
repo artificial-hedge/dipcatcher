@@ -1,0 +1,101 @@
+{
+  "$comment": [
+    "Reviewed migrations for the architecture ratchets.",
+    "",
+    "A ratchet that can be widened in the same commit that creates the debt is",
+    "not a ratchet (issue #2991). These two ledgers are the only way to widen:",
+    "  - quality/module_line_budget_ceilings.txt  (oversized-module line budget)",
+    "  - quality/arch_baseline_ledger.txt          (import-boundary baselines)",
+    "",
+    "Every entry records the previous value, the new value, the issue that",
+    "authorises it, and a non-empty rationale. tests/unit/test_ratchets.py",
+    "rejects a ledger change that has no matching entry, and rejects an entry",
+    "whose 'from' does not match the value the ledger held before the change.",
+    "That makes widening require a deliberate, reviewable, cited act rather",
+    "than an incidental edit to a number.",
+    "",
+    "Prefer paying the debt. An entry here is a debt schedule, not a fix."
+  ],
+  "version": 1,
+  "module_line_ceilings": [
+    {
+      "path": "quant_fund/cli/research_cmds.py",
+      "from": 4148,
+      "to": 4472,
+      "issue": 2991,
+      "rationale": "c8bff364d raised this pin in the same commit range that grew the module. Re-recorded here as approved debt so the ceiling is frozen rather than silently refreshed again. No claim is made that the module was refactored; the debt is 324 lines over the pre-growth pin and is owed a split into per-command submodules."
+    },
+    {
+      "path": "fx1/cli.py",
+      "from": 5516,
+      "to": 5597,
+      "issue": 2991,
+      "rationale": "Two growths recorded: c8bff364d (5516\u21925588) and the user's PRs #2997 (Flash usage accounting), #3000/#3001 (Flash security hardening), and #3002 (concierge ownership) bringing the file to 5597. Each growth landed as a reviewable PR; the ceiling tracks the resulting size. Owed a split of the audit/serve subcommand groups out of the single CLI module."
+    },
+    {
+      "path": "fx1/sdk.py",
+      "from": 4469,
+      "to": 4532,
+      "issue": 2991,
+      "rationale": "c8bff364d (4469\u21924495) and the user's PR #2998 (TLS for external endpoints) growing the SDK to 4532. The auth-header seam moved and 37 lines of new TLS probe code were added. Owed a split of the receipt-verification surface and the TLS-probe surface out of the SDK module."
+    },
+    {
+      "path": "fx1/serve/api.py",
+      "from": 10963,
+      "to": 11333,
+      "issue": 2991,
+      "rationale": "c8bff364d (10963\u219211005) and the user's PRs #2999 (source-map-js update) and #3001 (Flash hardening) growing the route table by 328 lines. Owed a split of the route table into per-domain routers."
+    },
+    {
+      "path": "fx1/serve/api_audit.py",
+      "from": 11037,
+      "to": 11073,
+      "issue": 2991,
+      "rationale": "36 lines added by the user's PR #3001 (Flash hardening: audit probes). No claim of refactor; the audit module is duplicating the route table. Owed a split where the audit module imports the route table rather than carrying its own copy."
+    },
+    {
+      "path": "fx1/serve/client.py",
+      "from": 3535,
+      "to": 3544,
+      "issue": 2991,
+      "rationale": "c8bff364d (3535\u21923544) only. The polling/replay-cursor surface is now 9 lines over the pre-growth pin. Owed a split of the polling/replay-cursor surface out of the client module."
+    },
+    {
+      "path": "fx1/serve/openai_compat.py",
+      "from": 3258,
+      "to": 3315,
+      "issue": 2991,
+      "rationale": "c8bff364d (3258\u21923273) and 42 lines added by the user's PR #2999 (source-map-js security update: openai-compat surface). Owed a split of the chat-completions shim from the embeddings/tool shim."
+    },
+    {
+      "path": "quant_fund/research/agent.py",
+      "from": 5807,
+      "to": 5839,
+      "issue": 2991,
+      "rationale": "32 lines added by the user's recent wave of research-PRs (coverages/sweeps). Owed a split of the lane dispatch from the bench selection logic."
+    },
+    {
+      "path": "quant_fund/research/catalog/registry.py",
+      "from": 13253,
+      "to": 13283,
+      "issue": 2991,
+      "rationale": "30 lines added by the user's recent catalog work (family blob registration). The module is 11283 lines over MAX_MODULE_LINES and is owed a complete split into per-family subregistries; the current ceiling is the smallest honest acknowledgement of the debt while the split is pending."
+    },
+    {
+      "path": "quant_fund/research/catalog/retired_families.py",
+      "from": 0,
+      "to": 7591,
+      "issue": 2991,
+      "rationale": "Generated file (scripts/canon_qualify.py --emit-retired-families), not human-edited. The regeneration is the appropriate size-tuning mechanism. The module is exempt from human-driven shrinking (a shrink is meaningful only when it means a non-generated file is being trimmed). Pinning the current generated size keeps the ratchet honest about what is owed if the file grows further."
+    }
+  ],
+  "arch_baselines": [
+    {
+      "file": "src/quant_fund/realized/hf_rv.py",
+      "module": "quant_fund.models.realized",
+      "rule": "layer-order",
+      "issue": 2991,
+      "rationale": "Added in 141f91270 when the HF-RV implementation landed. The realized layer should not depend on models.*; the shared bipower_variation/lee_mykland_jump math should be either moved down to a foundation leaf or imported lazily. The lazy-import path was rejected by arch-guard because the import is module-scope for clarity, so a baseline was the honest acknowledgement. The HF-RV design memo (docs/HF_RV_DESIGN.md) tracks the math-relocation follow-up."
+    }
+  ]
+}

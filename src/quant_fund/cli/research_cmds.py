@@ -429,7 +429,7 @@ def verify_receipt_cmd(
     """
     import json
 
-    from quant_fund.research.receipt_v2 import verify_receipt_file
+    from quant_fund.schemas.receipt_v2_leaf import verify_receipt_file
 
     result = verify_receipt_file(path)
     typer.echo(json.dumps(result, indent=2))
@@ -505,7 +505,7 @@ def replay_cmd(
     verdict or a non-declared receipt.
     """
     import quant_fund.research.replay_proof as _replay_proof_mod
-    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
     from quant_fund.utils.atomicio import atomic_write_text
 
     root = Path.cwd()
@@ -583,7 +583,7 @@ def replay_all_cmd(
     when every carrier skipped — an all-skip run proves nothing.
     """
     import quant_fund.research.replay_sweep as _replay_sweep_mod
-    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
     from quant_fund.utils.atomicio import atomic_write_text
 
     root = Path.cwd()
@@ -1065,7 +1065,7 @@ def suite_health_cmd(
             is_known_contract_legacy,
             is_known_unsealed,
         )
-        from quant_fund.research.receipt_v2 import verify_receipt_file
+        from quant_fund.schemas.receipt_v2_leaf import verify_receipt_file
 
         bad: list[str] = []
         for row in frame.filter(~pl.col("valid")).iter_rows(named=True):
@@ -2042,7 +2042,7 @@ def corpus_proof_cmd(
     if member is None:
         raise typer.BadParameter("--member is required unless --check is passed")
     body = member_proof(corpus_dir, member, epoch_receipt=epoch)
-    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
 
     sealed = seal_receipt(
         wrap_receipt_v2(
@@ -2198,7 +2198,7 @@ def corpus_absence_cmd(
     if member is None:
         raise typer.BadParameter("--member is required unless --check is passed")
     from quant_fund.research.epoch_merkle import history_absence_receipt
-    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
 
     if history:
         # The member glob is the corpus's declared pattern (receipts/*.json,
@@ -2289,7 +2289,7 @@ def epoch_delta_cmd(
         epoch_delta_receipt,
         verify_epoch_delta,
     )
-    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
     from quant_fund.utils.atomicio import atomic_write_text
 
     if check is not None:
@@ -2416,7 +2416,7 @@ def epoch_position_cmd(
     target = receipt or epoch
     if target is None:
         raise typer.BadParameter("--receipt is required unless --check is passed")
-    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.schemas.receipt_v2_leaf import seal_receipt, wrap_receipt_v2
     from quant_fund.utils.atomicio import atomic_write_text
 
     body = epoch_position_receipt(corpus_dir, target)
@@ -3427,7 +3427,7 @@ def verify_rotations_cmd(
     for n in result["notes"]:
         typer.echo(f"  note: {n}")
     if out is not None:
-        from quant_fund.research.receipt_v2 import seal_receipt
+        from quant_fund.schemas.receipt_v2_leaf import seal_receipt
         from quant_fund.utils.atomicio import atomic_write_text
 
         payload = dict(result)

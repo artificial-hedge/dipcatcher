@@ -204,10 +204,6 @@ allowed = [
     # cli/api/paper coupling may enter through them.
     "quant_fund.models.iv_approx",
     "quant_fund.models.options",
-    # receipt.v2 envelope — data structure module (pydantic models) that fx1
-    # legitimately needs for sealed evidence handling. Not a pipeline/research
-    # orchestration coupling; same category as schemas.
-    "quant_fund.research.receipt_v2",
 ]
 note = "fx1 is kept isolated: only leaf services of the harness are fair game"
 
