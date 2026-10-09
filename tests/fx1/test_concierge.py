@@ -649,6 +649,34 @@ def test_cancel_stops_background_research(env: Path, tmp_path: Path) -> None:
     assert "(cancelled)" in joined(out)
 
 
+def test_second_background_job_cannot_orphan_first(env: Path, tmp_path: Path) -> None:
+    researcher = FakeResearcher(block=True)
+    concierge, out = make_concierge(tmp_path, researcher=researcher)
+    concierge.handle_line("/research first goal")
+    first = concierge._job  # noqa: SLF001
+    assert first is not None
+
+    concierge.handle_line("/research second goal")
+
+    assert concierge._job is first  # noqa: SLF001
+    assert "already running" in joined(out)
+    concierge.handle_line("/cancel")
+    concierge.join_job(timeout_s=5)
+
+
+def test_shutdown_cancels_and_joins_owned_job(env: Path, tmp_path: Path) -> None:
+    researcher = FakeResearcher(block=True)
+    concierge, _ = make_concierge(tmp_path, researcher=researcher)
+    concierge.handle_line("/research long task")
+    job = concierge._job  # noqa: SLF001
+    assert job is not None and job.running
+
+    assert concierge.shutdown(timeout_s=5)
+    assert job.cancel_event.is_set()
+    assert job.done_event.is_set()
+    assert job.thread is not None and not job.thread.is_alive()
+
+
 def test_redirect_retargets_running_research(env: Path, tmp_path: Path) -> None:
     researcher = FakeResearcher(block=True)
     concierge, out = make_concierge(tmp_path, researcher=researcher)
