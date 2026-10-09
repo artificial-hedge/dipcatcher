@@ -87,6 +87,7 @@ class BackgroundJob:
     result: Any = None
     error: str = ""
     announced: bool = False
+    thread: threading.Thread | None = field(default=None, init=False, repr=False)
 
     def start(self) -> BackgroundJob:
         def on_event(event: str, detail: str) -> None:
@@ -100,7 +101,8 @@ class BackgroundJob:
             finally:
                 self.done_event.set()
 
-        threading.Thread(target=target, daemon=True, name=f"dip-{self.label}").start()
+        self.thread = threading.Thread(target=target, daemon=True, name=f"dip-{self.label}")
+        self.thread.start()
         return self
 
     @property
@@ -109,6 +111,12 @@ class BackgroundJob:
 
     def cancel(self) -> None:
         self.cancel_event.set()
+
+    def join(self, timeout_s: float | None = None) -> bool:
+        """Wait for the worker and report whether it actually stopped."""
+        if self.thread is not None:
+            self.thread.join(timeout_s)
+        return self.done_event.is_set()
 
     def drain(self) -> list[tuple[str, str]]:
         out: list[tuple[str, str]] = []
@@ -183,6 +191,7 @@ class Concierge:
         if text.startswith("/"):
             return self._slash(text)
         if text.lower() in {"exit", "quit"}:
+            self.shutdown()
             return True
         self._chat_turn(text)
         return False
@@ -217,8 +226,34 @@ class Concierge:
     def join_job(self, timeout_s: float | None = None) -> None:
         """Block until the background job settles (used by --sync and tests)."""
         if self._job is not None and self._job.running:
-            self._job.done_event.wait(timeout_s)
+            self._job.join(timeout_s)
         self.tick()
+
+    def shutdown(self, timeout_s: float = 5.0) -> bool:
+        """Cancel and join the session-owned worker before the session exits."""
+        job = self._job
+        if job is None:
+            return True
+        if job.running:
+            job.cancel()
+            stopped = job.join(timeout_s)
+            if not stopped:
+                self._say(f"[{job.label}] did not stop within {timeout_s:.1f}s")
+                return False
+        self.tick()
+        return True
+
+    def _job_slot_available(self) -> bool:
+        """Refuse to orphan an active worker by replacing its only handle."""
+        if self._job is not None and self._job.running:
+            self._say(
+                f"[{self._job.label}] already running — wait for it or use /cancel before "
+                "starting another background job"
+            )
+            return False
+        # Announce/drain a completed predecessor before replacing its handle.
+        self.tick()
+        return True
 
     # -- slash commands ------------------------------------------------------
 
@@ -241,6 +276,7 @@ class Concierge:
 
     def _cmd_exit(self, rest: str) -> bool:
         del rest
+        self.shutdown()
         return True
 
     def _cmd_model(self, rest: str) -> bool:
@@ -349,6 +385,8 @@ class Concierge:
         goal = " ".join(t for t in tokens if t != "--sync")
         if not goal.strip():
             raise ValueError("usage: /superpower <goal> [--sync]")
+        if not self._job_slot_available():
+            return False
         backend = self._backend()
         model_fn = None
         if backend is not None:
@@ -437,6 +475,8 @@ class Concierge:
         goal = " ".join(positional)
         if not goal.strip():
             raise ValueError("usage: /research <goal> ...")
+        if not self._job_slot_available():
+            return False
         from fx1.webresearch.engine import ResearchBudget
 
         base = self._research_budget
@@ -936,6 +976,7 @@ def run_console(
             line = _tty_polling_read(input_fn, "dip › " if prompt_pending else "", poll_timeout_s)
         except (EOFError, KeyboardInterrupt):
             output_fn("")
+            concierge.shutdown()
             return
         if line is None:  # poll timeout — render background progress
             prompt_pending = False
