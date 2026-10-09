@@ -1,5 +1,7 @@
 """Flash context — store, retrieval, refresh. Offline; no network, no model."""
 
+import os
+import stat
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
@@ -80,6 +82,64 @@ def test_torn_last_line_reported_not_fatal(store: FlashStore) -> None:
         fh.write('{"schema_version": "fx1.flash-entry/v1", "id": "x", "te\n')
     assert store.get("x") is None
     assert store.read_errors() == ["line 2: not JSON"]
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX permission contract")
+def test_store_enforces_private_directory_and_file_modes(tmp_path: Path) -> None:
+    flash_dir = tmp_path / "flash"
+    path = flash_dir / "entries.jsonl"
+    previous_umask = os.umask(0)
+    try:
+        FlashStore(path).add(text="private research context")
+    finally:
+        os.umask(previous_umask)
+
+    assert stat.S_IMODE(flash_dir.stat().st_mode) == 0o700
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX permission contract")
+def test_store_repairs_existing_permissive_modes(tmp_path: Path) -> None:
+    flash_dir = tmp_path / "flash"
+    flash_dir.mkdir(mode=0o777)
+    flash_dir.chmod(0o777)
+    path = flash_dir / "entries.jsonl"
+    path.write_text("", encoding="utf-8")
+    path.chmod(0o666)
+
+    FlashStore(path).add(text="private research context")
+
+    assert stat.S_IMODE(flash_dir.stat().st_mode) == 0o700
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX symlink contract")
+def test_store_rejects_file_symlink_without_touching_target(tmp_path: Path) -> None:
+    target = tmp_path / "target.txt"
+    target.write_text("do not alter", encoding="utf-8")
+    flash_dir = tmp_path / "flash"
+    flash_dir.mkdir()
+    path = flash_dir / "entries.jsonl"
+    store = FlashStore(path)
+    path.symlink_to(target)
+
+    with pytest.raises(ValueError, match="regular file"):
+        store.add(text="secret")
+
+    assert target.read_text(encoding="utf-8") == "do not alter"
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX symlink contract")
+def test_store_rejects_symlink_parent(tmp_path: Path) -> None:
+    real_dir = tmp_path / "real"
+    real_dir.mkdir()
+    linked_dir = tmp_path / "flash"
+    linked_dir.symlink_to(real_dir, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="real directory"):
+        FlashStore(linked_dir / "entries.jsonl").add(text="secret")
+
+    assert list(real_dir.iterdir()) == []
 
 
 def test_mark_used_increments(store: FlashStore) -> None:

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 import threading
 import uuid
 from datetime import UTC, datetime
@@ -34,6 +35,8 @@ from fx1.interactive.profiles import config_dir
 
 ENTRY_SCHEMA = "fx1.flash-entry/v1"
 FILE_NAME = "entries.jsonl"
+_NO_DIRECTORY_FD = -1
+_SUPPORTS_DIRECTORY_FD = os.open in os.supports_dir_fd and os.stat in os.supports_dir_fd
 
 Uncertainty = Literal["low", "medium", "high"]
 
@@ -108,7 +111,10 @@ class FlashStore:
     _transaction_lock = threading.RLock()
 
     def __init__(self, path: Path | None = None) -> None:
-        self._path = (path or default_store_path()).resolve()
+        # ``resolve()`` follows an existing symlink and would permanently hide
+        # that the configured store path was redirected. Keep the lexical
+        # absolute path so every open can enforce no-follow semantics.
+        self._path = (path or default_store_path()).expanduser().absolute()
 
     @property
     def path(self) -> Path:
@@ -116,16 +122,83 @@ class FlashStore:
 
     # -- low-level persistence ---------------------------------------------
 
+    def _open_parent(self, *, create: bool) -> int | None:
+        parent = self._path.parent
+        if create:
+            parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        try:
+            parent_stat = parent.lstat()
+        except FileNotFoundError:
+            return None
+        if stat.S_ISLNK(parent_stat.st_mode) or not stat.S_ISDIR(parent_stat.st_mode):
+            raise ValueError("flash store parent must be a real directory")
+        if not _SUPPORTS_DIRECTORY_FD:
+            if create and os.name == "posix":
+                parent.chmod(0o700)
+            return _NO_DIRECTORY_FD
+        flags = os.O_RDONLY
+        flags |= getattr(os, "O_DIRECTORY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        directory_fd = os.open(parent, flags)
+        if create:
+            os.fchmod(directory_fd, 0o700)
+        return directory_fd
+
+    def _open_file(self, *, write: bool) -> int | None:
+        directory_fd = self._open_parent(create=write)
+        if directory_fd is None:
+            return None
+        try:
+            try:
+                if directory_fd == _NO_DIRECTORY_FD:
+                    target_stat = self._path.lstat()
+                else:
+                    target_stat = os.stat(
+                        self._path.name,
+                        dir_fd=directory_fd,
+                        follow_symlinks=False,
+                    )
+            except FileNotFoundError:
+                target_stat = None
+            if target_stat is not None and not stat.S_ISREG(target_stat.st_mode):
+                raise ValueError("flash store path must be a regular file")
+
+            flags = os.O_RDONLY
+            mode = 0
+            if write:
+                flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT
+                flags |= getattr(os, "O_NONBLOCK", 0)
+                mode = 0o600
+            flags |= getattr(os, "O_NOFOLLOW", 0)
+            try:
+                if directory_fd == _NO_DIRECTORY_FD:
+                    file_fd = os.open(self._path, flags, mode)
+                else:
+                    file_fd = os.open(self._path.name, flags, mode, dir_fd=directory_fd)
+            except FileNotFoundError:
+                return None
+            opened_stat = os.fstat(file_fd)
+            if not stat.S_ISREG(opened_stat.st_mode):
+                os.close(file_fd)
+                raise ValueError("flash store path must be a regular file")
+            if write:
+                os.fchmod(file_fd, 0o600)
+            return file_fd
+        finally:
+            if directory_fd != _NO_DIRECTORY_FD:
+                os.close(directory_fd)
+
     def _load_raw(self) -> tuple[list[dict[str, Any]], list[str]]:
         """Replay the append log in order: tombstones suppress the matching
         id, revisions replace earlier lines for the same id. Returns
         (current entries, parse-error descriptions)."""
         with FlashStore._transaction_lock:
-            if not self._path.is_file():
+            file_fd = self._open_file(write=False)
+            if file_fd is None:
                 return [], []
             by_id: dict[str, dict[str, Any]] = {}
             errors: list[str] = []
-            with self._path.open(encoding="utf-8") as fh:
+            with os.fdopen(file_fd, encoding="utf-8") as fh:
                 for lineno, line in enumerate(fh, start=1):
                     line = line.strip()
                     if not line:
@@ -149,11 +222,14 @@ class FlashStore:
             return list(by_id.values()), errors
 
     def _append_line(self, raw: dict[str, Any]) -> None:
-        self._path.parent.mkdir(parents=True, exist_ok=True)
-        with FlashStore._transaction_lock, self._path.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(raw, sort_keys=True) + "\n")
-            fh.flush()
-            os.fsync(fh.fileno())
+        with FlashStore._transaction_lock:
+            file_fd = self._open_file(write=True)
+            if file_fd is None:  # pragma: no cover - O_CREAT makes this unreachable
+                raise FileNotFoundError(self._path)
+            with os.fdopen(file_fd, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(raw, sort_keys=True) + "\n")
+                fh.flush()
+                os.fsync(fh.fileno())
 
     # -- entries ------------------------------------------------------------
 
