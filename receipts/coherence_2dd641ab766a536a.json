@@ -30,7 +30,7 @@
     "threadpools": []
   },
   "generated_at": "2026-09-28T05:23:29.931907+00:00",
-  "git_revision": "7219a9de1414cea701fa1a3471e4ca8534583f84",
+  "git_revision": "19b8cf1c1267ea08c8999deac365e12b6bb64150",
   "kind": "coherence_eval",
   "live_pnl_claim": false,
   "params_hash": "d29eea5b4b60b58d8ed4003ac2ef9085d2b1cf2378332c6d659a4cf94d0d1106",

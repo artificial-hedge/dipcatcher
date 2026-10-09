@@ -30,7 +30,7 @@
     "threadpools": []
   },
   "generated_at": "2026-09-28T07:06:53.366878+00:00",
-  "git_revision": "ecb77bdd2f96530c6ab4c31fe4c92b93db36382f",
+  "git_revision": "069a537b91f6d88f6934df3c1504d39467993e11",
   "kind": "multih_fleet_eval",
   "live_pnl_claim": false,
   "params_hash": "1f318dca919f3831cac47b633f4bf77966d98e1068172f9f8f471a0a2932b77d",
