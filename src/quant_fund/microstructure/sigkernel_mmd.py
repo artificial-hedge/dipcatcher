@@ -293,7 +293,7 @@ def write_sigkernel_mmd_receipt(
     import json
     from pathlib import Path as _Path
 
-    from quant_fund.schemas.receipt import verify_receipt_payload
+    from quant_fund.schemas.receipt_v2_leaf import verify_receipt_payload
     from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
     if receipt.get("kind") != "sigkernel_mmd" or receipt.get("schema") != SCHEMA:

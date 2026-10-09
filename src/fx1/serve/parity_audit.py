@@ -1449,7 +1449,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         )
         # each surface seals its own record — the docs verify on their own
         # surface's verifier and carry the same cross-surface hashes.
-        from quant_fund.schemas.receipt import (  # noqa: PLC0415
+        from quant_fund.schemas.receipt_v2_leaf import (  # noqa: PLC0415
             verify_receipt_payload as _vrp,
         )
 

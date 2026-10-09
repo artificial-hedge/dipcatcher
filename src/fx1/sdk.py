@@ -157,7 +157,7 @@ from fx1.serve.uploads import (
 )
 from fx1.serve.usage_report import UsageReport
 from fx1.serve.vectorstores import VectorStoreError, VectorStoreStore
-from quant_fund.schemas.receipt import verify_receipt_file, verify_receipt_payload
+from quant_fund.schemas.receipt_v2_leaf import verify_receipt_file, verify_receipt_payload
 
 __all__ = [
     "BackendNotConfiguredError",

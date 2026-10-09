@@ -52,7 +52,7 @@ def _mentions(node: Any, name: str, path: str = "$") -> list[str]:
 
 
 def _receipt_verified(path: Path) -> tuple[bool, list[str], dict[str, Any]]:
-    from quant_fund.schemas.receipt import verify_receipt_file
+    from quant_fund.schemas.receipt_v2_leaf import verify_receipt_file
 
     result = verify_receipt_file(path)
     if isinstance(result, dict):
