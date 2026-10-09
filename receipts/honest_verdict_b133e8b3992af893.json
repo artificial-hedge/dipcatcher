@@ -133,6 +133,7 @@
     "schema": "honest_verdict_run.v1",
     "status_sha256": "742d8432903c98fbdfd73bb27ce17dfa0cd276a9f505243bf100ef777bfd1032"
   },
+  "schema": "loss_cs.v1",
   "unavailable_lanes": [],
   "verdict": "not_supported",
   "winner": "qar"

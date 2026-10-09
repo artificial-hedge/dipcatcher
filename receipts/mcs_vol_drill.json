@@ -29,6 +29,7 @@
   "n_origins": 96,
   "receipt_sha256": "682e8ffac5176756f26ac2afb92185b28c3ae4f33c56b9e2cabf4f4f43cbfc5e",
   "research_only": true,
+  "schema": "mcs_seq.v1",
   "survivors": [
     "dip_garch_t",
     "har",

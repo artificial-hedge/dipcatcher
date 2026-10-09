@@ -67,5 +67,6 @@
       }
     ]
   },
-  "research_only": true
+  "research_only": true,
+  "schema": "serial_watch.v1"
 }

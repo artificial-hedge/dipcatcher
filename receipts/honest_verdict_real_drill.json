@@ -123,6 +123,7 @@
     "schema": "honest_verdict_run.v1",
     "status_sha256": "404388e6f46dbf3e3980557f5c4dbdb876104e2075017da481dbf118a15b5b09"
   },
+  "schema": "loss_cs.v1",
   "unavailable_lanes": [],
   "verdict": "not_supported",
   "winner": "gaussian"

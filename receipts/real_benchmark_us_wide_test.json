@@ -1,37 +1,6 @@
 {
-  "manifest_sha256": "819e12ea1e57c79a64d27662e356a85a5d988dc4304c743030071e514dfbff3d",
-  "phase": "test",
-  "created_at": "2026-09-29T13:59:37.949139+00:00",
-  "scores": {
-    "zero": {
-      "date_equal_weight_mse": 0.0003899407444036479,
-      "date_equal_weight_mae": 0.012870926140241257,
-      "n_rows": 181451,
-      "n_dates": 431
-    },
-    "historical_mean": {
-      "date_equal_weight_mse": 0.0003897374788546645,
-      "date_equal_weight_mae": 0.012854571264094788,
-      "n_rows": 181451,
-      "n_dates": 431
-    },
-    "rolling_mean_20": {
-      "date_equal_weight_mse": 0.0004090936928422287,
-      "date_equal_weight_mae": 0.013320458128902708,
-      "n_rows": 181451,
-      "n_dates": 431
-    },
-    "ridge": {
-      "date_equal_weight_mse": 0.0003890317418507178,
-      "date_equal_weight_mae": 0.012853767095097219,
-      "n_rows": 181451,
-      "n_dates": 431
-    }
-  },
-  "research_only": true,
-  "live_pnl_claim": false,
-  "promote": false,
   "claim": "fixed_split_forecast_diagnostic",
+  "created_at": "2026-09-29T13:59:37.949139+00:00",
   "holdout_status": "previously_inspected",
   "limitations": [
     "Source, usage rights and historical availability are user declarations, not independently verified.",
@@ -40,5 +9,37 @@
     "Input universe has survivorship bias.",
     "Historical availability timestamps were reconstructed."
   ],
-  "receipt_sha256": "0b76b80d097306608776f781a99e6dc3aee534a87f8961daa69ae64e7cd46c8c"
+  "live_pnl_claim": false,
+  "manifest_sha256": "819e12ea1e57c79a64d27662e356a85a5d988dc4304c743030071e514dfbff3d",
+  "phase": "test",
+  "promote": false,
+  "receipt_sha256": "0b76b80d097306608776f781a99e6dc3aee534a87f8961daa69ae64e7cd46c8c",
+  "research_only": true,
+  "schema": "real_benchmark_scores.v1",
+  "scores": {
+    "historical_mean": {
+      "date_equal_weight_mae": 0.012854571264094788,
+      "date_equal_weight_mse": 0.0003897374788546645,
+      "n_dates": 431,
+      "n_rows": 181451
+    },
+    "ridge": {
+      "date_equal_weight_mae": 0.012853767095097219,
+      "date_equal_weight_mse": 0.0003890317418507178,
+      "n_dates": 431,
+      "n_rows": 181451
+    },
+    "rolling_mean_20": {
+      "date_equal_weight_mae": 0.013320458128902708,
+      "date_equal_weight_mse": 0.0004090936928422287,
+      "n_dates": 431,
+      "n_rows": 181451
+    },
+    "zero": {
+      "date_equal_weight_mae": 0.012870926140241257,
+      "date_equal_weight_mse": 0.0003899407444036479,
+      "n_dates": 431,
+      "n_rows": 181451
+    }
+  }
 }

@@ -39,5 +39,6 @@
   },
   "receipt_sha256": "d5d5401328353481637a40f05465ab52b3f7142de8de7fbf72df0e08219b0107",
   "research_only": true,
+  "schema": "drift_alarm.v1",
   "stream": "gaussian_pit"
 }

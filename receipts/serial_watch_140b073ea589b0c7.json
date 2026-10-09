@@ -61,5 +61,6 @@
   "pooled_alarmed": false,
   "pooled_evalue": 4.22224229209249e-11,
   "receipt_sha256": "140b073ea589b0c79cbd473d3de7480420aa364dc801b010c08b06d0794ea691",
-  "research_only": true
+  "research_only": true,
+  "schema": "serial_watch.v1"
 }

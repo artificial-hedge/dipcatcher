@@ -32,5 +32,6 @@
   "n_obs": 300,
   "receipt_sha256": "7c8520d38190357f3f66c293c74c1666582833d809e854845176022ecafcd701",
   "research_only": true,
+  "schema": "conformal_monitor.v1",
   "window": 50
 }

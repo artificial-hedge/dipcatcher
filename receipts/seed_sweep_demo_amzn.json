@@ -156,7 +156,7 @@
   },
   "receipt_sha256": "9eda6f54e96b06421aa86a4d7ba9f113a27f61ba4c368e86d87fb6a430e844d8",
   "research_only": true,
-  "schema": 1,
+  "schema": "seed_sweep_demo.v1",
   "tape": {
     "date": "2012-06-21",
     "msg": "AMZN_2012-06-21_34200000_57600000_message_10.csv",

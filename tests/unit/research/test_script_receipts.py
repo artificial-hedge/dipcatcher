@@ -232,18 +232,28 @@ _LANE_COVERED_SCHEMAS = frozenset(
 _KIND_DISPATCHED_SCHEMAS = frozenset(
     {
         "calibration_audit.v1",
+        "conformal_monitor.v1",
         "corpus_inference.v1",
         "coverage_audit.v1",
         "coverage_cs.v1",
         "changepoint_localize.v1",
+        "drift_alarm.v1",
         "emerge_drill.v1",
+        "fifo_priority.v1",
         "fleet_race.v1",
         "lane_power.v1",
         "loss_cs.v1",
         "monitor_run.v1",
+        "mcs_seq.v1",
         "panel_audit.v1",
+        "real_benchmark_manifest.v1",
+        "real_benchmark_scores.v1",
+        "seed_sweep_demo.v1",
+        "serial_watch.v1",
         "suite_health.v1",
+        "sweep_width.v1",
         "tail_audit.v1",
+        "fast_replay_p42_conformance.v1",
         "receipt_admission.v1",
     }
 )

@@ -121,6 +121,7 @@
       }
     }
   },
+  "schema": "loss_cs.v1",
   "unavailable_lanes": [],
   "verdict": "not_supported",
   "winner": "gaussian"

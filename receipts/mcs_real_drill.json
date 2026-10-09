@@ -49,6 +49,7 @@
   "n_origins": 300,
   "receipt_sha256": "f0b72cb3aa796bbff4cc8744e72d6ef40c4539b4e3445e0356ddee5452dc4411",
   "research_only": true,
+  "schema": "mcs_seq.v1",
   "survivors": [
     "fhs_skew",
     "hstep_t",

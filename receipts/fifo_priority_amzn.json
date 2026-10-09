@@ -26,7 +26,7 @@
   },
   "receipt_sha256": "76025ec9345d42fd63c08d837bd03a1f4cbc11f1219feb59ca63e5624bb6a28b",
   "research_only": true,
-  "schema": 1,
+  "schema": "fifo_priority.v1",
   "sim_arms": {
     "iid": {
       "max_rank_verified": 0,
