@@ -6,6 +6,8 @@ previously had no coverage. Tree backends are optional imports (skip if absent).
 
 from __future__ import annotations
 
+import sys
+
 import numpy as np
 import pytest
 
@@ -103,6 +105,10 @@ def test_har_fit_too_few_rows_stays_unfitted() -> None:
 
 
 @pytest.mark.parametrize("backend", ["lightgbm", "xgboost"])
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="xgboost/lightgbm loky worker segfaults on darwin/arm64 in suite context",
+)
 def test_tree_vol_fit_predict_metadata(backend: str) -> None:
     pytest.importorskip(backend)
     rng = np.random.default_rng(5)

@@ -1,8 +1,10 @@
 import math
+import sys
 from pathlib import Path
 
 import numpy as np
 import polars as pl
+import pytest
 
 from quant_fund.config import load_config
 from quant_fund.research.agent import (
@@ -73,6 +75,10 @@ def test_worktree_fingerprint_is_a_real_sha256() -> None:
     assert all(char in "0123456789abcdef" for char in fingerprint)
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="torch backward pass hangs ~20min+ on darwin/arm64 in suite context",
+)
 def test_research_recovers_synthetic_oracle(tmp_path: Path) -> None:
     cfg = load_config("configs/research.yaml")
     cfg.data.root = tmp_path
@@ -269,6 +275,10 @@ def test_research_recovers_synthetic_oracle(tmp_path: Path) -> None:
         next(h for h in nb.hypotheses if h.id == hid)
 
 
+@pytest.mark.skipif(
+    sys.platform == "darwin",
+    reason="torch backward pass hangs ~20min+ on darwin/arm64 in suite context",
+)
 def test_research_receipt_records_runtime_fingerprint(tmp_path: Path) -> None:
     cfg = load_config("configs/research.yaml")
     cfg.data.root = tmp_path
