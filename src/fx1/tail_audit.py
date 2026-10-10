@@ -66,8 +66,11 @@ __all__ = ["fx1_tail_audit", "fx1_tail_audit_bench"]
 def fx1_tail_audit() -> dict[str, Any]:
     import hashlib
     import json
+    import os
     import tempfile
     from pathlib import Path
+
+    env_before = dict(os.environ)
 
     from fx1.data.notebooks import notebook_examples
     from fx1.data.traces import ToolCall, TraceRecorder, TraceStep, Trajectory
@@ -264,6 +267,9 @@ def fx1_tail_audit() -> dict[str, Any]:
         out["tracker_metric_shape"] = json.loads(lines[1])["step"] == 2
         out["tracker_close_noop"] = _raises(lambda: tr.close()) == "no-raise"
 
+    # mlflow import + set_tracking_uri mutate os.environ — restore
+    os.environ.clear()
+    os.environ.update(env_before)
     return out
 
 

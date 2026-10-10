@@ -56,6 +56,19 @@ __all__ = ["serve_audit", "serve_audit_bench"]
 
 
 def serve_audit() -> dict[str, Any]:
+    """``FX1_SIGNING_KEY`` is mutated deep inside the body; restore it even
+    when a probe raises — a leaked signing key poisons sibling batteries."""
+    saved_key = os.environ.get("FX1_SIGNING_KEY")
+    try:
+        return _serve_audit_body()
+    finally:
+        if saved_key is None:
+            os.environ.pop("FX1_SIGNING_KEY", None)
+        else:
+            os.environ["FX1_SIGNING_KEY"] = saved_key
+
+
+def _serve_audit_body() -> dict[str, Any]:
     import json
     import tempfile
     from pathlib import Path

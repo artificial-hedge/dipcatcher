@@ -56,6 +56,7 @@ Sealed ``webhookdel_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import socket
@@ -293,6 +294,23 @@ class _Ctx:
     app: FastAPI
 
 
+# Every app the battery builds keeps a non-daemon jobs_executor that the
+# TestClient never shuts down (no lifespan hook). Registry -> teardown.
+_APPS: list[FastAPI] = []
+
+
+def _track(app: FastAPI) -> FastAPI:
+    _APPS.append(app)
+    return app
+
+
+def _close_apps() -> None:
+    for app in _APPS:
+        with contextlib.suppress(Exception):
+            app.state.jobs_executor.shutdown(wait=True)
+    _APPS.clear()
+
+
 def _boom_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
     del argv, timeout_s
     raise RuntimeError("synthetic runner fault")
@@ -307,7 +325,7 @@ def _make_ctx(
 ) -> _Ctx:
     from fastapi.testclient import TestClient  # noqa: PLC0415
 
-    app = _app(workdir, runner=runner, max_inflight=max_inflight, state_dir=state_dir)
+    app = _track(_app(workdir, runner=runner, max_inflight=max_inflight, state_dir=state_dir))
     return _Ctx(client=TestClient(app, raise_server_exceptions=False), app=app)
 
 
@@ -1016,7 +1034,7 @@ def _probe_drain(td: Path, sink: _Sink) -> dict[str, bool]:
     # shutdown: the lifespan's cancel_pending flips queued jobs to
     # 'cancelled' and fires the webhook exactly once — measured through
     # the real lifespan, not a re-implementation
-    app = _app(td / "drain-off", max_inflight=1)
+    app = _track(_app(td / "drain-off", max_inflight=1))
     n0 = len(sink.hits)
     with TestClient(app, raise_server_exceptions=False) as client:
         app.state.jobs_executor.submit(lambda: time.sleep(2.5))
@@ -1194,6 +1212,7 @@ def webhookdel_audit() -> dict[str, Any]:
         try:
             sink.close()
         finally:
+            _close_apps()
             # Env restore must survive a close() failure — the opt-in is
             # process-wide and must never leak past the battery.
             for k, v in saved.items():

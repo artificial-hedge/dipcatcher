@@ -59,6 +59,7 @@ Sealed ``replay_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import tempfile
@@ -262,7 +263,20 @@ def _make_ctx(
     from fastapi.testclient import TestClient  # noqa: PLC0415
 
     app = _app(workdir, backend, sse_keepalive_s=sse_keepalive_s, max_inflight=max_inflight)
+    _APPS.append(app)
     return _Ctx(client=TestClient(app, raise_server_exceptions=False), app=app)
+
+
+# Each ctx app's jobs_executor runs non-daemon workers the TestClient
+# never shuts down (no lifespan hook); the battery tears them down itself.
+_APPS: list[FastAPI] = []
+
+
+def _close_apps() -> None:
+    for app in _APPS:
+        with contextlib.suppress(Exception):
+            app.state.jobs_executor.shutdown(wait=True)
+    _APPS.clear()
 
 
 def _submit_bg(client: TestClient, payload: dict[str, Any] | None = None) -> str:
@@ -1033,6 +1047,7 @@ def replay_audit() -> dict[str, Any]:
             ctx_drain = _make_ctx(wd / "drain", _StubBackend())
             out.update(_probe_drain(ctx_drain))
     finally:
+        _close_apps()
         for k, v in saved.items():
             if v is None:
                 os.environ.pop(k, None)

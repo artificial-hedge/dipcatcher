@@ -166,6 +166,7 @@ def ds_audit() -> dict[str, Any]:
         extra_env={"DS_AUDIT_KEY": "v"},
     )
     out["env_scrub_allowlist"] = scrub.returncode == 3 and leak.returncode == 0
+    os.environ.pop("DS_AUDIT_SENTINEL", None)
 
     # ---------------- probe ladder (temp plugin root) -------------
     with tempfile.TemporaryDirectory() as td:
