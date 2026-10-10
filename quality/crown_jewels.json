@@ -6,7 +6,7 @@
     ".github/codeql/codeql-config.yml": "acb715120442b5aa3eb9ff6e1541ead7a6c5b7a75966a380285e211ed4d80fe4",
     ".github/dependabot.yml": "0377bba62c89d512c9d0535d4d1b401797e66cabe82ef042b3e17af7290968ee",
     ".gitignore": "898184eee1b0d028041d81ba105e5e85d0dec3775a02784a77f7dd5da5b59e3f",
-    ".gitleaks.toml": "c7d9a797adcecacdaa364fc245d798d84b3df69bbc97a6720852deb113eadf64",
+    ".gitleaks.toml": "fa2d009dff7f34f25986c14a2a38e61b6cb9fba44551585b1da1a3373f6ddcb2",
     ".pre-commit-config.yaml": "f03dc1edab77b369931fe7d73583c8b3232cbe58c39250fb5596084b2a43cb98",
     ".python-version": "7b55f8e67b5623c4bef3fa691288da9437d79d3aba156de48d481db32ac7d16d",
     ".test_durations": "548b3342f687099b4fe5bcacd6c7f6c392321caa4f5c9992dd6aab7c2d2b5e3f",
