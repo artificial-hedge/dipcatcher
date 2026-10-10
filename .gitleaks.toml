@@ -136,3 +136,16 @@ condition = "AND"
 paths = ['''(?:^|/)web/public/fixtures/index\.json$''']
 regexTarget = "secret"
 regexes = ['''^[0-9a-f]{64}$''']
+
+# epoch_allowed_removals.json maps removed corpus member names -> their last
+# stamped sha256 digest ("<name>.json": "64-hex"). Public integrity
+# bookkeeping, not a credential; the generic-api-key rule only fires on
+# member names containing api/key-ish tokens (e.g. fx1_api_audit.json), so
+# scope the exception to this one manifest and digest-valued lines.
+[[allowlists]]
+description = "Corpus-epoch removal waivers pin member sha256 digests"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)quality/epoch_allowed_removals\.json$''']
+regexTarget = "line"
+regexes = ['''^\s*"[^"]+"\s*:\s*"[0-9a-f]{64}",?\s*$''']

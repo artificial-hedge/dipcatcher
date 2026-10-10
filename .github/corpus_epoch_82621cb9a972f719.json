@@ -1,0 +1,58 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "5e7d6caa2b09b19f211ae36bf92a15cf9489081efecaa841b70319f07ef90661",
+  "inputs_sha256": "64faff681bc07abe12ac05ff9fb9ddd852b8de41919993c15be4c3cb288b3793",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "aef007f4d0e4f01dee9284b5cfc64647a00e7f3045ddf0356c74f6742fa6bf89",
+  "members": [
+    {
+      "name": "HISTORY_REWRITE_PLAN.md",
+      "sha256": "2f8ab97634040aab5853a8423c417b45206dcaa4ee31acea1280d0eecd4b9f54"
+    },
+    {
+      "name": "PULL_REQUEST_TEMPLATE.md",
+      "sha256": "b758ec958f9d43f8b32f85f39fe53da4958d147922444eb809b5de364b51e345"
+    },
+    {
+      "name": "codeql/codeql-config.yml",
+      "sha256": "acb715120442b5aa3eb9ff6e1541ead7a6c5b7a75966a380285e211ed4d80fe4"
+    },
+    {
+      "name": "corpus_epoch_0861a7387e453c36.json",
+      "sha256": "f810173afdb57fe84a469fecb8f76a6305b602994a296d2767d191d71145c5e7"
+    },
+    {
+      "name": "corpus_epoch_66b11cb0bac7bc80.json",
+      "sha256": "416012ace1be36fb1f26d55af3de7970eaf58fd1f7538f2b6ac066972e001d19"
+    },
+    {
+      "name": "corpus_epoch_be5d893e741c5b8a.json",
+      "sha256": "c42928447724dbe168949b5d82fa169a113084d1aaafdf458093029060511a9b"
+    },
+    {
+      "name": "corpus_epoch_f44bcc2f08b414bb.json",
+      "sha256": "3e4149633d9c7104f01ccb1aa883b220a9767971810e535c7901b94ff47e34c3"
+    },
+    {
+      "name": "dependabot.yml",
+      "sha256": "0377bba62c89d512c9d0535d4d1b401797e66cabe82ef042b3e17af7290968ee"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_be5d893e741c5b8a.json"
+  ],
+  "members_removed": [],
+  "n_members": 8,
+  "params": {
+    "head_sha": "548fe6cfb44f5131bde37a8d1c6f39e0cc207cd1",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_be5d893e741c5b8a.json",
+  "prev_epoch_sha256": "2e54a6bceb5d3beeb3611ce70334e9286cf726ac8cb735bc65550e8bae1d5754",
+  "receipt_sha256": "82621cb9a972f719ab30fd8e9e451a92b8569b5e7f452d15cd5b80098126d538",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

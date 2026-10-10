@@ -1,0 +1,46 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "b1705e9b75bf67d803b963a62a639749290b64f07122fc1aceea7432e47e4d91",
+  "inputs_sha256": "a332cd78e6e53a3cf8eb2f925a8fa819e04b0e483714e56c137b550de130c68b",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "4e5b8b1e30301c53cac98d2344141cbd68945d71a2101eb9aa09bc29e9b9754f",
+  "members": [
+    {
+      "name": "corpus_epoch_586dc6318114aa89.json",
+      "sha256": "ddbfe172167fe35fb4feb63993cf304cd58a115511b6e66f2614741afc8b0a84"
+    },
+    {
+      "name": "corpus_epoch_c2b24dba7fd4bdc9.json",
+      "sha256": "afbac52f1e20ec5a118d87810bae4441dde3a627b820cc0222357cb53420b08f"
+    },
+    {
+      "name": "corpus_epoch_caf7fd11cd148fac.json",
+      "sha256": "b00e88a3b124ed8cb73ef829ca6193036082b3258baecc94b57145538f0aa3db"
+    },
+    {
+      "name": "corpus_epoch_e6c30f8cf64e039d.json",
+      "sha256": "6a17ff9a160a76c8e33c54411a0efe13c844b1f265d93699927035f242e0b186"
+    },
+    {
+      "name": "cvxpy/__init__.pyi",
+      "sha256": "6b5f9a9adca5c62fdd1f67cc89adab051333b67acba6b53d4e2a1ed8360a1f0f"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_586dc6318114aa89.json"
+  ],
+  "members_removed": [],
+  "n_members": 5,
+  "params": {
+    "head_sha": "548fe6cfb44f5131bde37a8d1c6f39e0cc207cd1",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_586dc6318114aa89.json",
+  "prev_epoch_sha256": "7a6f99842a8d9e38ba2fcc6ec884092ef447c3e1157680ce907ed92d096f629d",
+  "receipt_sha256": "36157b3dbe13ee30dfd330519146aacac3647e6b60f22da27f8a5f7df4285764",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
