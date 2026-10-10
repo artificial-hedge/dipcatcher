@@ -1,0 +1,42 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "7a6f99842a8d9e38ba2fcc6ec884092ef447c3e1157680ce907ed92d096f629d",
+  "inputs_sha256": "a332cd78e6e53a3cf8eb2f925a8fa819e04b0e483714e56c137b550de130c68b",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "c185de02fa22f1ed0d2c29fa66a47e20c50425b6e3c6f185492a5ab26bd36c55",
+  "members": [
+    {
+      "name": "corpus_epoch_c2b24dba7fd4bdc9.json",
+      "sha256": "afbac52f1e20ec5a118d87810bae4441dde3a627b820cc0222357cb53420b08f"
+    },
+    {
+      "name": "corpus_epoch_caf7fd11cd148fac.json",
+      "sha256": "b00e88a3b124ed8cb73ef829ca6193036082b3258baecc94b57145538f0aa3db"
+    },
+    {
+      "name": "corpus_epoch_e6c30f8cf64e039d.json",
+      "sha256": "6a17ff9a160a76c8e33c54411a0efe13c844b1f265d93699927035f242e0b186"
+    },
+    {
+      "name": "cvxpy/__init__.pyi",
+      "sha256": "6b5f9a9adca5c62fdd1f67cc89adab051333b67acba6b53d4e2a1ed8360a1f0f"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_e6c30f8cf64e039d.json"
+  ],
+  "members_removed": [],
+  "n_members": 4,
+  "params": {
+    "head_sha": "1b374faee203fd94317c5cf1650b7cb28697734f",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_e6c30f8cf64e039d.json",
+  "prev_epoch_sha256": "db9ad1649e36a1abb19bc05b5e2412b3721446e25ca6f108fb28976315f3465b",
+  "receipt_sha256": "586dc6318114aa895f87df8fec72bc52aa8f04d9f4e5b0ffe71d69d7fc2994c7",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

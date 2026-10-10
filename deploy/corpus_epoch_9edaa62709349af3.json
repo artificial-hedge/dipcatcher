@@ -1,0 +1,66 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "7b2acc20dc12d9a9df95914a6cc6d9840b2b8053a17a0a3141a92f03cdadf942",
+  "inputs_sha256": "4942b888116388b372a1bcd3b40dc3734138e3347bb664fd7b2ea4a16be5a406",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "c479da7d6a793aa4e5f84926913e12888641e1857f0e3b8e0b876da4c7a30a62",
+  "members": [
+    {
+      "name": "corpus_epoch_7f742ea75f61a23e.json",
+      "sha256": "04c378a8b7310516a344014f464680c67f1356ac4ad0a6ea4c355662df4b3b34"
+    },
+    {
+      "name": "corpus_epoch_98b7d4dbd5652bab.json",
+      "sha256": "2482a850954b22a22cbe3222edc7b297af7358c105af5be2e4fc2602828cc919"
+    },
+    {
+      "name": "corpus_epoch_9c7c7ece7aaa757f.json",
+      "sha256": "4f0b4378653be99ca3d4d18e494d6c081d9fda3db3ebd43aad9c47af39987e91"
+    },
+    {
+      "name": "observability/docker-compose.yml",
+      "sha256": "ac0cad1d8ccfab5dd474d5752f6c68d6f3841f3b323ade54fe3b61ebe99f12e0"
+    },
+    {
+      "name": "observability/grafana/dashboards/dipcatcher.json",
+      "sha256": "a82b8fbef6b9ad7fe4cc9affb51b67c7f2df381f9924d3c72157d60a398c8474"
+    },
+    {
+      "name": "observability/grafana/provisioning/dashboards/dashboards.yml",
+      "sha256": "62c815be126d1b6d188c1e778954f66dbd6d9a60a6419e871abf51aa349199b7"
+    },
+    {
+      "name": "observability/grafana/provisioning/datasources/datasource.yml",
+      "sha256": "72305a9fded6b40fe740ec82dac495f006990e6e37de754d1fcd01d93da4834a"
+    },
+    {
+      "name": "observability/otel-collector.yaml",
+      "sha256": "b0c83dc0e453e259ccedcad804f46256e45012c3c3359fc394435c06f8608e02"
+    },
+    {
+      "name": "observability/prometheus.yml",
+      "sha256": "2348696d94a69d95002f93e17e9420a774542d07b21d5ba91ce750454dfeb8aa"
+    },
+    {
+      "name": "observability/slo.yml",
+      "sha256": "89ada49fcb79c281ff0ddd0cae5801343eedc8f84e13630889836713a775c92e"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_9c7c7ece7aaa757f.json"
+  ],
+  "members_removed": [],
+  "n_members": 10,
+  "params": {
+    "head_sha": "1b374faee203fd94317c5cf1650b7cb28697734f",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_9c7c7ece7aaa757f.json",
+  "prev_epoch_sha256": "13164dd2d5291013e311a8e20320d2319e832048848ba20f9a71eb845d276d63",
+  "receipt_sha256": "9edaa62709349af3f6d43fc50128be3d789b12f93d4a9d22e470e28df1c4ce7b",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

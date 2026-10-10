@@ -1,0 +1,42 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "b16008eb263440ba02794478dbd260adea2cfa01dd3d9e608f1961fb49820bc4",
+  "inputs_sha256": "2da7943861166cac37240f7cc74e61f3175536961fb12c94bc60dfa115d0a7fb",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "3bdd041870bf28cb0947a88d9802bb80d0ba44c58f190f690346cba78bec3e59",
+  "members": [
+    {
+      "name": "corpus_epoch_11743a5d7f52dc4f.json",
+      "sha256": "4704bd3b60db4939f0672b8d4373b10f93d870fb9854f7102454fe691bdd346e"
+    },
+    {
+      "name": "corpus_epoch_24a9473a7c11a03a.json",
+      "sha256": "cad0e73657fc401703f2850305c9eb532f32e7de2c1432387ab902e644a71180"
+    },
+    {
+      "name": "corpus_epoch_4f2fd3317b7375bb.json",
+      "sha256": "14bac0857397daac87ce1a855c87ac4bdfdb1fc878a6c92df1275794ee1c7d91"
+    },
+    {
+      "name": "cost_calibration_flat_vs_ohlc.md",
+      "sha256": "d6f723fe9e13fe108ccb76b72a4f56c9aa8ee3d1ba1179c20800f25d2b04fc8e"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_4f2fd3317b7375bb.json"
+  ],
+  "members_removed": [],
+  "n_members": 4,
+  "params": {
+    "head_sha": "1b374faee203fd94317c5cf1650b7cb28697734f",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_4f2fd3317b7375bb.json",
+  "prev_epoch_sha256": "681295bec12c54865bce58411cfb63853f96c1d9931a83ce65fe7007dd7b643b",
+  "receipt_sha256": "dabfbed48360de34f7dc7e13cf299b97b4d7d0c71f0af4ca7dafe0bcedd15497",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
