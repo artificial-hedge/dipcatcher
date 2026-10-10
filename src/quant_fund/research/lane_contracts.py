@@ -253,6 +253,129 @@ _MEASURE_SCHEMAS = frozenset(
         "tick_rule.v1",
         "vol_signature.v1",
         "vpin.v1",
+        "alert_budget.v1",
+        "anthropic_sdk_audit.v1",
+        "api_audit.v1",
+        "api_fuzz.v1",
+        "asof_audit.v1",
+        "attestation_audit.v1",
+        "attribution.v1",
+        "auth_audit.v1",
+        "backend_parity.v1",
+        "bank_audit.v1",
+        "boundary_audit.v1",
+        "byok_audit.v1",
+        "cache_audit.v1",
+        "cancel_gradient.v1",
+        "cancel_lead.v1",
+        "cap_audit.v1",
+        "capability_audit.v1",
+        "causality_scan.v1",
+        "cli_audit.v1",
+        "client_audit.v1",
+        "contamination_audit.v1",
+        "contract_probe.v1",
+        "corpus_audit.v1",
+        "decay_watch.v1",
+        "dip_audit.v1",
+        "dip_run_audit.v1",
+        "disclosure_audit.v1",
+        "dispatch_audit.v1",
+        "diversity.v1",
+        "doctor_audit.v1",
+        "drain_audit.v1",
+        "ds_audit.v1",
+        "duration_check.v1",
+        "e2e_audit.v1",
+        "em_audit.v1",
+        "engine_fuzz.v1",
+        "error_shape.v1",
+        "eval_core_audit.v1",
+        "eval_lifecycle_audit.v1",
+        "ext_bench_audit.v1",
+        "fault_audit.v1",
+        "forecast_core_audit.v1",
+        "forecast_data_audit.v1",
+        "forecast_infra_audit.v1",
+        "fx1_contract_audit.v1",
+        "fx1_tail_audit.v1",
+        "grad_fidelity.v1",
+        "harness_audit.v1",
+        "hmm_stability.v1",
+        "hmm_verify.v1",
+        "honesty_audit.v1",
+        "hypotheses_audit.v1",
+        "imbalance_predict.v1",
+        "inherit_audit.v1",
+        "initiative_fade.v1",
+        "intraday_exec.v1",
+        "jobs_audit.v1",
+        "journal_audit.v1",
+        "kill_audit.v1",
+        "label_horizon_map.v1",
+        "label_stability.v1",
+        "ledger_audit.v1",
+        "lineage_dag.v1",
+        "lob_invariants.v1",
+        "map_parity.v1",
+        "masking_audit.v1",
+        "meta_model.v1",
+        "middleware_audit.v1",
+        "modelcard_audit.v1",
+        "mrm_audit.v1",
+        "native_conformance.v1",
+        "oai_sdk_audit.v1",
+        "ops_audit.v1",
+        "options_audit.v1",
+        "parity_audit.v1",
+        "parity_leak_audit.v1",
+        "perf_audit.v1",
+        "pipeline_audit.v1",
+        "pipeline_flat_audit.v1",
+        "promotion_gate.v1",
+        "quality_audit.v1",
+        "queue_class.v1",
+        "queue_fate.v1",
+        "queue_jump.v1",
+        "queue_occupancy.v1",
+        "quota2_audit.v1",
+        "receipts_audit.v1",
+        "replay_audit.v1",
+        "report_audit.v1",
+        "retrieval_audit.v1",
+        "reward_audit.v1",
+        "rt_audit.v1",
+        "rubric_audit.v1",
+        "run_audit.v1",
+        "sbom_audit.v1",
+        "schema_drift.v1",
+        "schema_fingerprint.v1",
+        "sdk_audit.v1",
+        "seed_audit.v1",
+        "serve_audit.v1",
+        "side_imbalance.v1",
+        "sim_sensitivity.v1",
+        "sources_audit.v1",
+        "spec_audit.v1",
+        "stack_invariance.v1",
+        "stack_watch.v1",
+        "sweep_bound.v1",
+        "tail_quota.v1",
+        "tape_surgery.v1",
+        "timepart_audit.v1",
+        "trade_decomp.v1",
+        "train_infra_audit.v1",
+        "train_receipt_audit.v1",
+        "trust_step.v1",
+        "ts_reasoning_audit.v1",
+        "usage_audit.v1",
+        "validator_fuzz.v1",
+        "vine_audit.v1",
+        "vine_dominance.v1",
+        "vine_panel.v1",
+        "vs_audit.v1",
+        "warmup_spec.v1",
+        "webhook_audit.v1",
     }
 )
 
@@ -291,9 +414,13 @@ def _measurement_claim_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     elif isinstance(claim, dict):
         results = claim.get("results")
         if isinstance(results, dict) and all(isinstance(v, bool) for v in results.values()):
-            if claim.get("n_probes") != len(results):
+            # n_probes/n_passed are optional tallies — audit-shape claims
+            # carry only ok+results; a present tally must still agree.
+            if claim.get("n_probes") is not None and claim.get("n_probes") != len(results):
                 errors.append("n_probes_mismatch")
-            if claim.get("n_passed") != sum(1 for v in results.values() if v):
+            if claim.get("n_passed") is not None and claim.get("n_passed") != sum(
+                1 for v in results.values() if v
+            ):
                 errors.append("n_passed_mismatch")
             if claim.get("ok") is not None and claim.get("ok") != all(results.values()):
                 errors.append("ok_mismatch")
@@ -305,7 +432,11 @@ def _measurement_claim_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     elif isinstance(claims, dict) and not claims:
         errors.append("claims_empty")
     interp = payload.get("interpretation")
-    if interp is not None and (not isinstance(interp, str) or not interp.strip()):
+    # A structured interpretation (stats map) is honest evidence; only a
+    # present-but-empty one fails.
+    if interp is not None and not (
+        (isinstance(interp, str) and interp.strip()) or (isinstance(interp, dict) and interp)
+    ):
         errors.append("interpretation_empty")
     return errors
 

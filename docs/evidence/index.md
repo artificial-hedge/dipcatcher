@@ -3252,355 +3252,6 @@ counted. Prose that contains such a token is quoted verbatim.
 - `research_only`: true
 - `schema`: bank_audit.v1
 
-### `receipts/basis_carry_dd7705fc0f2f1c25.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/basis_carry_dd7705fc0f2f1c25.json | 852f56a1e2aeb3654d406fbb14a4a2baa7cd20949d45153a98c5a99a2248f741 | dd7705fc0f2f1c25f7c7bbe3f131395931007080cddc9378c5c45e1dee79b8a8 | not_checked | c0194c18e3d54182d305da821214c8b1479818df | inputs_sha256=a5a7bd6664572a7515af9e91359c5ad63a7b528d8fac675a4afbce2c8d593be4 | unspecified | absent | true | false |
-
-- `claim`: research_only
-- `cross_contract`:
-  - `frac_within_tolerance`: 0.4
-  - `n_contracts`: 5
-  - `n_delivered`: 5
-  - `residual_max_abs`: 0.00825956686641372
-  - `residual_mean`: -0.003865422359408857
-  - `residual_std`: 0.004219440789149606
-  - `residuals`:
-    - -0.0021258985685353796
-    - -0.005910546520925502
-    - -0.005617618882193931
-    - 0.0025865190410242485
-    - -0.00825956686641372
-  - `tolerance`: 0.005
-- `data_label`: kraken
-- `generated_at`: 2026-09-29T19:49:36.110321+00:00
-- `git_revision`: c0194c18e3d54182d305da821214c8b1479818df
-- `inputs`:
-  - `contracts`:
-    - `FF_XBTUSD_260925`:
-      - `data_label`: kraken
-      - `delivery`: 2026-09-25T08:00:00+00:00
-      - `first_date`: 2026-02-20
-      - `last_date`: 2026-09-25
-      - `n_rows`: 218
-      - `sha256`: 2fa871f3470f9732620f8bd3a280ff0d531b0fbd19df9fa6304bc6d9ac40db51
-    - `FI_XBTUSD_250926`:
-      - `data_label`: kraken
-      - `delivery`: 2025-09-26T16:00:00+00:00
-      - `first_date`: 2025-02-28
-      - `last_date`: 2025-09-26
-      - `n_rows`: 211
-      - `sha256`: 2a110aa376d72d00714721b11db5ebfdadd57e402af23480a1d0f9d7a9ad71db
-    - `FI_XBTUSD_251226`:
-      - `data_label`: kraken
-      - `delivery`: 2025-12-26T16:00:00+00:00
-      - `first_date`: 2025-05-30
-      - `last_date`: 2025-12-26
-      - `n_rows`: 211
-      - `sha256`: c683120e3bcdc190221d809b4d89035922f47df1561be538488562ee7a0b49b0
-    - `FI_XBTUSD_260327`:
-      - `data_label`: kraken
-      - `delivery`: 2026-03-27T16:00:00+00:00
-      - `first_date`: 2025-08-29
-      - `last_date`: 2026-03-27
-      - `n_rows`: 211
-      - `sha256`: ff1e15ea34d99f632fef0b4adfea74b3b33180de1b221fa5c6a1feb5e69ced84
-    - `FI_XBTUSD_260626`:
-      - `data_label`: kraken
-      - `delivery`: 2026-06-26T16:00:00+00:00
-      - `first_date`: 2025-11-28
-      - `last_date`: 2026-06-26
-      - `n_rows`: 211
-      - `sha256`: c93e84dfb2060fa9f4b5dec3459b9c7b1988d43046aacf8e6b64c1fcc7b72bd2
-  - `params`:
-    - `annualization_days`: 365.0
-    - `convergence_note`: convergence_residual is the basis at the last observed shared date; for contracts still listed it is measured residual_dte_days before delivery, not at settlement
-    - `dte_buckets`:
-      - 90.0
-      - 60.0
-      - 30.0
-      - 14.0
-      - 7.0
-      - 1.0
-    - `dte_floor_days`: 1.0
-    - `min_overlap`: 5
-    - `tolerance`: 0.005
-  - `spot`:
-    - `data_label`: kraken
-    - `first_date`: 2024-10-09
-    - `last_date`: 2026-09-28
-    - `n_rows`: 720
-    - `sha256`: f148611c431d93d77886f7db686fa8a82e14a0c2ee3f77a80a6a80095642d7cf
-- `kind`: basis_carry
-- `n_contracts`: 5
-- `n_error_rows`: 0
-- `n_rows`: 5
-- `params`:
-  - `annualization_days`: 365.0
-  - `convergence_note`: convergence_residual is the basis at the last observed shared date; for contracts still listed it is measured residual_dte_days before delivery, not at settlement
-  - `dte_buckets`:
-    - 90.0
-    - 60.0
-    - 30.0
-    - 14.0
-    - 7.0
-    - 1.0
-  - `dte_floor_days`: 1.0
-  - `min_overlap`: 5
-  - `tolerance`: 0.005
-- `receipt_sha256`: dd7705fc0f2f1c25f7c7bbe3f131395931007080cddc9378c5c45e1dee79b8a8
-- `research_only`: true
-- `results`:
-  - [0]
-    - `ann_basis_mean`: -0.005951836711651675
-    - `ann_basis_n`: 217
-    - `ann_basis_std`: 0.10462648582634972
-    - `basis_diff_std`: 0.005572170633201624
-    - `basis_first`: 0.022329257861628714
-    - `basis_last`: -0.0021258985685353796
-    - `basis_max`: 0.022329257861628714
-    - `basis_min`: -0.020580120962240576
-    - `contract`: FF_XBTUSD_260925
-    - `convergence_residual`: -0.0021258985685353796
-    - `delivered`: true
-    - `delivery`: 2026-09-25T08:00:00+00:00
-    - `dte_buckets`:
-      - `1`:
-        - `ann_basis`: null
-        - `basis`: -0.0021258985685353796
-        - `date`: 2026-09-25
-        - `dte_days`: 0.3333333333333333
-      - `14`:
-        - `ann_basis`: -0.15638619380362703
-        - `basis`: -0.005712737673191855
-        - `date`: 2026-09-12
-        - `dte_days`: 13.333333333333334
-      - `30`:
-        - `ann_basis`: -0.12628006137956038
-        - `basis`: -0.010148534613151884
-        - `date`: 2026-08-27
-        - `dte_days`: 29.333333333333332
-      - `60`:
-        - `ann_basis`: -0.0034781871112633963
-        - `basis`: -0.0005654039322419037
-        - `date`: 2026-07-28
-        - `dte_days`: 59.333333333333336
-      - `7`:
-        - `ann_basis`: -0.30920701890392543
-        - `basis`: -0.005365235944451674
-        - `date`: 2026-09-19
-        - `dte_days`: 6.333333333333333
-      - `90`:
-        - `ann_basis`: -0.019649045099214803
-        - `basis`: -0.0048090813576160425
-        - `date`: 2026-06-28
-        - `dte_days`: 89.33333333333333
-    - `first_date`: 2026-02-20
-    - `last_date`: 2026-09-25
-    - `n_dates`: 218
-    - `residual_dte_days`: 0.3333333333333333
-    - `status`: ok
-  - [1]
-    - `ann_basis_mean`: 0.047906092717365976
-    - `ann_basis_n`: 210
-    - `ann_basis_std`: 0.023798523409683775
-    - `basis_diff_std`: 0.005832924510682373
-    - `basis_first`: -0.00016214126097742896
-    - `basis_last`: -0.005910546520925502
-    - `basis_max`: 0.06214810042407721
-    - `basis_min`: -0.005910546520925502
-    - `contract`: FI_XBTUSD_250926
-    - `convergence_residual`: -0.005910546520925502
-    - `delivered`: true
-    - `delivery`: 2025-09-26T16:00:00+00:00
-    - `dte_buckets`:
-      - `1`:
-        - `ann_basis`: null
-        - `basis`: -0.005910546520925502
-        - `date`: 2025-09-26
-        - `dte_days`: 0.6666666666666666
-      - `14`:
-        - `ann_basis`: 0.10982284241782463
-        - `basis`: 0.0041120881635897805
-        - `date`: 2025-09-13
-        - `dte_days`: 13.666666666666666
-      - `30`:
-        - `ann_basis`: 0.04098208841836609
-        - `basis`: 0.003330964264141171
-        - `date`: 2025-08-28
-        - `dte_days`: 29.666666666666668
-      - `60`:
-        - `ann_basis`: 0.08190535030233229
-        - `basis`: 0.013389093793714592
-        - `date`: 2025-07-29
-        - `dte_days`: 59.666666666666664
-      - `7`:
-        - `ann_basis`: -0.01309604276182913
-        - `basis`: -0.00023919712806993844
-        - `date`: 2025-09-20
-        - `dte_days`: 6.666666666666667
-      - `90`:
-        - `ann_basis`: 0.04197883939935576
-        - `basis`: 0.010312609861576895
-        - `date`: 2025-06-29
-        - `dte_days`: 89.66666666666667
-    - `first_date`: 2025-02-28
-    - `last_date`: 2025-09-26
-    - `n_dates`: 211
-    - `residual_dte_days`: 0.6666666666666666
-    - `status`: ok
-  - [2]
-    - `ann_basis_mean`: 0.026016246386637673
-    - `ann_basis_n`: 210
-    - `ann_basis_std`: 0.06825742556171652
-    - `basis_diff_std`: 0.005713341989918736
-    - `basis_first`: 8.373413882184243e-05
-    - `basis_last`: -0.005617618882193931
-    - `basis_max`: 0.03975683524169132
-    - `basis_min`: -0.017734980103374355
-    - `contract`: FI_XBTUSD_251226
-    - `convergence_residual`: -0.005617618882193931
-    - `delivered`: true
-    - `delivery`: 2025-12-26T16:00:00+00:00
-    - `dte_buckets`:
-      - `1`:
-        - `ann_basis`: null
-        - `basis`: -0.005617618882193931
-        - `date`: 2025-12-26
-        - `dte_days`: 0.6666666666666666
-      - `14`:
-        - `ann_basis`: -0.0661010425430854
-        - `basis`: -0.0024750162048095903
-        - `date`: 2025-12-13
-        - `dte_days`: 13.666666666666666
-      - `30`:
-        - `ann_basis`: 0.024039485971212478
-        - `basis`: 0.0019538942935506034
-        - `date`: 2025-11-27
-        - `dte_days`: 29.666666666666668
-      - `60`:
-        - `ann_basis`: 0.04262656153849514
-        - `basis`: 0.006968177639626145
-        - `date`: 2025-10-28
-        - `dte_days`: 59.666666666666664
-      - `7`:
-        - `ann_basis`: -0.12521861210869875
-        - `basis`: -0.002287097938058425
-        - `date`: 2025-12-20
-        - `dte_days`: 6.666666666666667
-      - `90`:
-        - `ann_basis`: 0.05428198113789836
-        - `basis`: 0.013335025503282794
-        - `date`: 2025-09-28
-        - `dte_days`: 89.66666666666667
-    - `first_date`: 2025-05-30
-    - `last_date`: 2025-12-26
-    - `n_dates`: 211
-    - `residual_dte_days`: 0.6666666666666666
-    - `status`: ok
-  - [3]
-    - `ann_basis_mean`: 0.06382504232428857
-    - `ann_basis_n`: 210
-    - `ann_basis_std`: 0.14428892885164102
-    - `basis_diff_std`: 0.006272707912933614
-    - `basis_first`: -0.0001741695810244147
-    - `basis_last`: 0.0025865190410242485
-    - `basis_max`: 0.04180801518642847
-    - `basis_min`: -0.016077497217856646
-    - `contract`: FI_XBTUSD_260327
-    - `convergence_residual`: 0.0025865190410242485
-    - `delivered`: true
-    - `delivery`: 2026-03-27T16:00:00+00:00
-    - `dte_buckets`:
-      - `1`:
-        - `ann_basis`: null
-        - `basis`: 0.0025865190410242485
-        - `date`: 2026-03-27
-        - `dte_days`: 0.6666666666666666
-      - `14`:
-        - `ann_basis`: 0.18986224065060717
-        - `basis`: 0.007108997138515885
-        - `date`: 2026-03-14
-        - `dte_days`: 13.666666666666666
-      - `30`:
-        - `ann_basis`: 0.08948908107934185
-        - `basis`: 0.007273541749827785
-        - `date`: 2026-02-26
-        - `dte_days`: 29.666666666666668
-      - `60`:
-        - `ann_basis`: 0.01102338605728856
-        - `basis`: 0.0018019964422416913
-        - `date`: 2026-01-27
-        - `dte_days`: 59.666666666666664
-      - `7`:
-        - `ann_basis`: 0.3767408170872671
-        - `basis`: 0.006881110814379308
-        - `date`: 2026-03-21
-        - `dte_days`: 6.666666666666667
-      - `90`:
-        - `ann_basis`: -0.023824549098608108
-        - `basis`: -0.005852788773995965
-        - `date`: 2025-12-28
-        - `dte_days`: 89.66666666666667
-    - `first_date`: 2025-08-29
-    - `last_date`: 2026-03-27
-    - `n_dates`: 211
-    - `residual_dte_days`: 0.6666666666666666
-    - `status`: ok
-  - [4]
-    - `ann_basis_mean`: 9.404742959199314e-05
-    - `ann_basis_n`: 210
-    - `ann_basis_std`: 0.0027733312420510497
-    - `basis_diff_std`: 0.0006161572493513994
-    - `basis_first`: 1.0999563327580444e-07
-    - `basis_last`: -0.00825956686641372
-    - `basis_max`: 0.00043417356566328346
-    - `basis_min`: -0.00825956686641372
-    - `contract`: FI_XBTUSD_260626
-    - `convergence_residual`: -0.00825956686641372
-    - `delivered`: true
-    - `delivery`: 2026-06-26T16:00:00+00:00
-    - `dte_buckets`:
-      - `1`:
-        - `ann_basis`: null
-        - `basis`: -0.00825956686641372
-        - `date`: 2026-06-26
-        - `dte_days`: 0.6666666666666666
-      - `14`:
-        - `ann_basis`: 0.00828124218916916
-        - `basis`: 0.0003100739084529092
-        - `date`: 2026-06-13
-        - `dte_days`: 13.666666666666666
-      - `30`:
-        - `ann_basis`: 0.001758922610631562
-        - `basis`: 0.00014296265967690322
-        - `date`: 2026-05-28
-        - `dte_days`: 29.666666666666668
-      - `60`:
-        - `ann_basis`: -0.00066677351651706
-        - `basis`: -0.00010899767986899885
-        - `date`: 2026-04-28
-        - `dte_days`: 59.666666666666664
-      - `7`:
-        - `ann_basis`: -0.027575209999673642
-        - `basis`: -0.0005036568036470072
-        - `date`: 2026-06-20
-        - `dte_days`: 6.666666666666667
-      - `90`:
-        - `ann_basis`: 0.0005480977629498348
-        - `basis`: 0.0001346468477018316
-        - `date`: 2026-03-29
-        - `dte_days`: 89.66666666666667
-    - `first_date`: 2025-11-28
-    - `last_date`: 2026-06-26
-    - `n_dates`: 211
-    - `residual_dte_days`: 0.6666666666666666
-    - `status`: ok
-- `schema`: basis_carry.v1
-- `simulated_only`: false
-- `verdict`: 5/5 contracts measured, 5 delivered; residual mean -0.38654% max |residual| 0.82596%; 40% within tolerance 0.50%
-
 ### `receipts/boundary_audit.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -3737,62 +3388,6 @@ counted. Prose that contains such a token is quoted verbatim.
       - `ok`: true
       - `detail`: 
 - `receipt_sha256`: 15aec0437aa0db146beec603f8b0324c2bbb70e98e14dbf9a8fbc15e705914ac
-
-### `receipts/calib_real_drill.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/calib_real_drill.json | 7480b2af38274f5d6e6c4a107e01890a3d49f0524b5920a5b3b946a9f8a5a571 | 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370 | not_checked | absent | inputs_sha256=1c11a0367aa3ca772482ebd4f0e4a60ccc4c88680f185c1c19ffc5c66f081deb | unspecified | absent | true | false |
-
-- `data_label`: yahoo_eod
-- `drill`:
-  - `excluded_heads`:
-    - nbeats
-    - nhits
-    - lgbm_q2
-  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
-  - `n_eval`: 300
-  - `n_train`: 1000
-  - `shard`:
-    - `data_label`: yahoo_eod
-    - `first`: 2016-01-04 21:00:00+00:00
-    - `last`: 2026-09-18 20:00:00+00:00
-    - `n_bars`: 2693
-    - `source`: yahoo
-    - `symbol`: NVDA
-  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
-- `evidence`:
-  - ville_inequality
-  - nonnegative_test_martingale
-  - fixed_predictable_bets
-  - level_test_not_change_test
-- `generated_at_commit`: dc1e47215d316108cbd403ee0c6ad2c91ee742bb
-- `kind`: calibration_audit.drill.v1
-- `n_models`: 12
-- `n_shards`: 1
-- `params`:
-  - `alpha`: 0.05
-  - `channels`:
-    - loc_hi
-    - loc_lo
-    - overconf
-    - underconf
-    - grapa_loc
-    - grapa_disp
-  - `n_eval`: 300
-  - `n_train`: 1000
-  - `seed`: 0
-  - `taus`:
-    - 0.05
-    - 0.1
-    - 0.25
-    - 0.5
-    - 0.75
-    - 0.9
-    - 0.95
-- `receipt_sha256`: 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370
-- `research_only`: true
-- `schema`: calibration_audit.drill.v1
 
 ### `receipts/calibration_audit.json`
 
@@ -9220,1120 +8815,16 @@ counted. Prose that contains such a token is quoted verbatim.
 - `research_only`: true
 - `schema`: corpus_audit.v1
 
-### `receipts/corpus_epoch_0a2e8964712cfb0a.json`
+### `receipts/corpus_epoch_0954867c72759398.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_0a2e8964712cfb0a.json | 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c | 0a2e8964712cfb0abdb414e940235feff38dd8647699eff6adce44335bb5e7b4 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+| receipts/corpus_epoch_0954867c72759398.json | aecb4ecc21ffd2928bd3e41df8caa0bcd8f908b5c859737184cd2901d84d854f | 0954867c7275939898159f5c5be675d3ce4b42d7d3f9be3bb8a0c8a0ec0e820b | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
 
 - `data_label`: CORPUS
-- `epoch_root_sha256`: f168d4709c80476984f514a546ec155d24c7b8685f2c1c3d1293c8cd11cd941e
+- `epoch_root_sha256`: e46d2159ebe4158e314ebc79e30e6a5ef9ca3765dd309bfd4153f6f7d4a619e2
 - `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [7]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [8]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [9]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [10]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [11]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [12]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [13]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [14]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [15]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [16]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [17]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [18]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [19]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [20]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [21]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [22]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [23]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [24]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [25]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [26]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [27]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [28]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [29]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [30]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [31]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [32]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [33]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [34]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [35]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [36]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [37]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [38]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [39]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [40]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [41]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [42]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [43]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [44]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [45]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [46]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [47]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [48]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [49]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [50]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [51]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [52]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [53]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [54]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [55]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [56]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [57]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [58]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [59]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [60]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [61]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [62]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [63]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [64]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [65]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [66]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [67]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [68]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [69]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [70]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [71]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_a5d113f0994c74b5.json
-- `members_removed`:
-- `n_members`: 72
-- `params`:
-  - `head_sha`: 263b42fcdeb1ef5fcfe713b1418c3ce15e9f143e
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_a5d113f0994c74b5.json
-- `prev_epoch_sha256`: b7f7992d0ef77761d83589394a3740485fab8c37b6ae1d721dc7b3717633d180
-- `receipt_sha256`: 0a2e8964712cfb0abdb414e940235feff38dd8647699eff6adce44335bb5e7b4
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_0af2a2d5723b14ae.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_0af2a2d5723b14ae.json | 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72 | 0af2a2d5723b14aeff89a5ca67940d223ebd64ff9a075155ab04868d81e0a1a8 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 02b20095ad15896d9b07145a9c33dd023f1b2873271ceb351db7d42d0d752c56
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: a2c60f7ec8796695654f730db06e3bea0010bf7237102e84ed612ad695346e9e
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [9]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [10]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [11]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [12]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [13]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [14]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [15]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [16]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [17]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [18]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [19]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [20]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [21]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [22]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [23]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [24]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [25]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [26]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [27]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [28]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [29]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [30]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [31]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [32]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [33]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [34]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [35]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [36]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [37]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [38]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [39]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [40]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [41]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [42]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [43]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [44]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [45]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [46]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [47]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [48]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [49]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [50]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [51]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [52]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [53]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [54]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [55]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [56]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [57]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [58]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [59]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [60]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [61]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [62]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [63]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [64]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [65]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [66]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [67]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [68]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [69]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [70]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [71]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [72]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [73]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [74]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [75]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [76]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [77]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [78]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [79]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [80]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [81]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [82]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [83]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [84]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [85]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [86]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [87]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [88]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [89]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [90]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [91]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [92]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [93]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_cb39a076f3287171.json
-- `members_removed`:
-- `n_members`: 94
-- `params`:
-  - `head_sha`: fa97450165496fc215952dbc0f44206ad66713d9
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_cb39a076f3287171.json
-- `prev_epoch_sha256`: 505811de5ed80b7c5dbf3737cb2af9ea6eec3bc6222835ce216cf37c63608a63
-- `receipt_sha256`: 0af2a2d5723b14aeff89a5ca67940d223ebd64ff9a075155ab04868d81e0a1a8
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_1384f0d99dac82aa.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_1384f0d99dac82aa.json | d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258 | 1384f0d99dac82aad9e8b6f2fda8a832fc70e9c57d86ca0d46d25fb4cd503d74 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: cac87e33336c3c364db988cace66a65cb1aa029ee3d25749690a6174213cae4b
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 98feb017125094eb0d8d5e4713c567a17c9f8912bcd5715cc223d0a0ac94b85c
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [8]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [9]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [10]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [11]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [12]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [13]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [14]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [15]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [16]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [17]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [18]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [19]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [20]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [21]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [22]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [23]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [24]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [25]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [26]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [27]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [28]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [29]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [30]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [31]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [32]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [33]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [34]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [35]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [36]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [37]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [38]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [39]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [40]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [41]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [42]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [43]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [44]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [45]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [46]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [47]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [48]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [49]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [50]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [51]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [52]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [53]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [54]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [55]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [56]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [57]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [58]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [59]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [60]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [61]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [62]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [63]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [64]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [65]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [66]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [67]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [68]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [69]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [70]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [71]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [72]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [73]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [74]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [75]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [76]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [77]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [78]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [79]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [80]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [81]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [82]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [83]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [84]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [85]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [86]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_e0f905c031ef39b1.json
-- `members_removed`:
-- `n_members`: 87
-- `params`:
-  - `head_sha`: 146fb4c522c9624ceeb3ca67787dfe66fe69080c
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_e0f905c031ef39b1.json
-- `prev_epoch_sha256`: f550e4f632add2fe7564c90c7382ce73d48bb44167aca0a470ae641b82dccf67
-- `receipt_sha256`: 1384f0d99dac82aad9e8b6f2fda8a832fc70e9c57d86ca0d46d25fb4cd503d74
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_2b5db388ddee23aa.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_2b5db388ddee23aa.json | f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f | 2b5db388ddee23aa4ce29d879bc598b96883c3eae9bd32a071de7a44bd6a016b | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 50702a337ecfbe9afa662d01328542f19ba225b76407fafb0a08d265fe173595
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [8]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [9]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [10]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [11]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [12]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [13]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [14]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [15]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [16]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [17]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [18]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [19]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [20]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [21]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [22]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [23]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [24]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [25]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [26]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [27]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [28]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [29]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [30]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [31]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [32]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [33]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [34]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [35]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [36]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [37]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [38]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [39]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [40]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [41]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [42]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [43]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [44]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [45]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [46]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [47]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [48]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [49]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [50]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [51]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [52]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [53]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [54]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [55]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [56]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [57]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [58]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [59]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [60]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [61]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [62]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [63]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [64]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [65]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [66]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [67]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [68]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [69]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [70]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [71]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [72]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [73]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [74]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [75]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [76]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [77]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [78]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [79]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [80]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_568c538fcf4b21cd.json
-- `members_removed`:
-- `n_members`: 81
-- `params`:
-  - `head_sha`: 71b190385524799948a33943812fa93dec484c9f
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_568c538fcf4b21cd.json
-- `prev_epoch_sha256`: fd52acc4b762cff458a5db4da29edafbbc345ca8ccf520eb110bbe882466b8f9
-- `receipt_sha256`: 2b5db388ddee23aa4ce29d879bc598b96883c3eae9bd32a071de7a44bd6a016b
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_2bd794275af2b3d8.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_2bd794275af2b3d8.json | 67bb35e85a4c083d35023936032dbcc790a58f81166195d19f669fd007d8c4a7 | 2bd794275af2b3d8e419616244ab441c0163b11c7a8776c5a7dc779f665f2496 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 83d7d0ba4a83a919eba7fce73e68411a9d50cb3d8f9119d2d87a3703b397aed2
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 09152eed218b4b9b51d490a3c2f1049e8dd45660b927fbfbb7687f1774b34b67
+- `member_tree_root`: 6bd123a7292eebb6bdc24089fad7ff3fd06dcf4716ad8735f1c8a002bf0d9530
 - `members`:
   - [0]
     - `name`: abc_calibrate_amzn.json
@@ -10375,1131 +8866,2099 @@ counted. Prose that contains such a token is quoted verbatim.
     - `name`: bank_audit.json
     - `sha256`: 07d92059b00305ba6b5880edc4152180d0fd31bd9f0829bbea3052b0ceb075fc
   - [13]
-    - `name`: basis_carry_dd7705fc0f2f1c25.json
-    - `sha256`: 852f56a1e2aeb3654d406fbb14a4a2baa7cd20949d45153a98c5a99a2248f741
-  - [14]
     - `name`: boundary_audit.json
     - `sha256`: f958b32b0d6bedbd542c105d7b530431c4356dda768d2bb90fb8055db56b6cdf
-  - [15]
+  - [14]
     - `name`: byok_audit.json
     - `sha256`: 0dda10232d681aecd75835b70382ecab3f0698f91e5a371e171968a73ba23406
-  - [16]
+  - [15]
     - `name`: cache_audit.json
     - `sha256`: 248835c82eeba8f0ef65fc30345da462bcea7180374008d5aa56c526f4bd5f61
-  - [17]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [18]
+  - [16]
     - `name`: calibration_audit.json
     - `sha256`: c9f800216f05073fed4da606f04823cc71bb37909d4242492f5e280cdb64964f
-  - [19]
+  - [17]
     - `name`: cancel_cluster_amzn.json
     - `sha256`: d6554e87ef5ca20ee1df623ac0b6f08fba4b91f2c00bce68bfa949767691abf1
-  - [20]
+  - [18]
     - `name`: cancel_gradient_amzn.json
     - `sha256`: b140be66a1d4467c73f104a992ab9f692ed83b959a7918461b3951fd091bff04
-  - [21]
+  - [19]
     - `name`: cancel_gradient_bench.json
     - `sha256`: d01943ba6fa197eb7b8f259b796acc28a6cde10a2bee9995dd47a98b0535a91e
-  - [22]
+  - [20]
     - `name`: cancel_lead_amzn.json
     - `sha256`: 8151e7dc1cbbedb112d8fdc3cd3e0f52aca58ef4d23ad698d2229a02060a705e
-  - [23]
+  - [21]
     - `name`: capability_audit.json
     - `sha256`: 787b45652557c719c5beffef50ad571f773d3253f28ddc0e0a406e0cdc75399c
-  - [24]
+  - [22]
     - `name`: capacity_eval_3622d0c059d42009.json
     - `sha256`: 57ad3394513fe58e48127141858a990580fade56ae4755ad0a3b868aa2568f2b
-  - [25]
+  - [23]
     - `name`: capacity_eval_cd0854242ed8a9ec.json
     - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [26]
+  - [24]
     - `name`: causality_scan.json
     - `sha256`: 2d7b2e0963fe468305afbbbe190b22b356ad7bdf8cc4f47c279fc25855d61161
-  - [27]
+  - [25]
     - `name`: churn_reseed.json
     - `sha256`: 3a444c77bfef84e0e070d4611368569639ee6a551ed30cbdc6a107202ccbff7d
-  - [28]
+  - [26]
     - `name`: churn_stability.json
     - `sha256`: 7ab02a6f41f6c626d79bca729a02300d4c79dae243758a460b57a636604fdcc4
-  - [29]
+  - [27]
     - `name`: cli_audit.json
     - `sha256`: 16b8a95f44d73964a6578cee9c7cc4aeae2d74770d1b2891422b859feb01d597
-  - [30]
+  - [28]
     - `name`: closure_fit_amzn.json
     - `sha256`: ff6d30e8251032109ace27be9dd1e488206be1eeb81d5fa1f9c5d8f56eb29294
-  - [31]
+  - [29]
     - `name`: closure_stack_amzn.json
     - `sha256`: 994f8f2cf89faaace83e6e3f7441d3361e111c0d2b9e05cf123c2c602c2389cd
-  - [32]
+  - [30]
     - `name`: coherence_2dd641ab766a536a.json
     - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [33]
+  - [31]
     - `name`: concordance_df424fa2f6b1c4e9.json
     - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [34]
+  - [32]
     - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
     - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [35]
+  - [33]
     - `name`: conformal_real_drill_gaussian_pit.json
     - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [36]
+  - [34]
     - `name`: contamination_audit.json
     - `sha256`: bce466d9ffb4b6144cf78590caa1bb1c48f59ac06ad94a7141d1796013ab53fe
-  - [37]
+  - [35]
     - `name`: continuation_attr_amzn.json
     - `sha256`: e2340d411b4af81d839dc85ad7326835fe7a8c97c834432c861664c773f0cbbc
-  - [38]
+  - [36]
     - `name`: contract_audit.json
     - `sha256`: f5ccc9f01e32b707526d4fb684e45d9e7d3b64af7b3b647c12223d72764d1e64
-  - [39]
+  - [37]
     - `name`: contract_probe.json
     - `sha256`: 9cd19ecff9d41c85487e6991e0bfd67eff42a9ed154b6759f4f9f1c8b49178ec
-  - [40]
+  - [38]
     - `name`: corpus_absence_exemplar.json
     - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [41]
+  - [39]
     - `name`: corpus_audit.json
     - `sha256`: 374807979a66c7dc455ee3f1236eff03be43e1b7f9f550b4e97789b1807b3552
-  - [42]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [43]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [44]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [45]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [46]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [47]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [48]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [49]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [50]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [51]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [52]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [53]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [54]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [55]
-    - `name`: corpus_epoch_5a8dac905c9cc22d.json
-    - `sha256`: 50b853da7d6c07efc3e4c533e5a4a6beae5295da68c696f2656491b28fbf6b18
-  - [56]
-    - `name`: corpus_epoch_5c9754ab2a9408a1.json
-    - `sha256`: a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2
-  - [57]
-    - `name`: corpus_epoch_6340cdebc9a6efe1.json
-    - `sha256`: 3e3473c359007fb425361a8a618d1e7b3de5edc23e1a0937ab241d2831c95dc0
-  - [58]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [59]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [60]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [61]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [62]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [63]
-    - `name`: corpus_epoch_7d6b1f5442b13ea1.json
-    - `sha256`: 29bb1eae00b9d91e5833450631d74c3aaff4aa7c42230e89a074c94df626c5c9
-  - [64]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [65]
-    - `name`: corpus_epoch_959513b12d66742b.json
-    - `sha256`: b557f12c51d23d9873d829aa683eec9d55dd998d0f7d12f1d0f7286f885a7eed
-  - [66]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [67]
-    - `name`: corpus_epoch_9d41d1d7410eb02d.json
-    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
-  - [68]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [69]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [70]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [71]
-    - `name`: corpus_epoch_a4cb68008a317f90.json
-    - `sha256`: 66894e231d5029cd138f613c62447e58700a44d7def29bc1a16da44146dc69f2
-  - [72]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [73]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [74]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [75]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [76]
-    - `name`: corpus_epoch_ac2e4ae4bcae4dd8.json
-    - `sha256`: 4e97881c7c558ad93674533f102ea582de60bd109c178a1c7489b30f027f8a93
-  - [77]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [78]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [79]
-    - `name`: corpus_epoch_cb415a040387f7b0.json
-    - `sha256`: f7a80fdf1eb8820d00f4c26faf536113a11948a437d4637acb191b35b6dfa050
-  - [80]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [81]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [82]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [83]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [84]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [85]
+  - [40]
+    - `name`: corpus_epoch_51c18304677442e1.json
+    - `sha256`: 8bb38c93294d9d43ae6744c192e7b85c1bc102b6d73bc48141a43c1160333a2f
+  - [41]
     - `name`: corpus_history_absence_a5753b57fab08b0f.json
     - `sha256`: 3904f2838779802fcad32a15b13d82eb6860a0fafecc2feb9437af93a7360f8f
-  - [86]
+  - [42]
     - `name`: corpus_proof_a56dff22d5b4931c.json
     - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [87]
+  - [43]
     - `name`: corpus_proof_exemplar.json
     - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [88]
+  - [44]
     - `name`: corpus_real_drill.json
     - `sha256`: 25230923d07164342facbe10ec0520975ee04c0ef690b3661f5daaf9d69f250e
-  - [89]
+  - [45]
     - `name`: cost_calibration_eval_df9b8d7068bf709b.json
     - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [90]
+  - [46]
     - `name`: cost_calibration_eval_f130c7e871e9aa64.json
     - `sha256`: da4f8269942b5c87bebed33e422d6326cb73d327f48648d97b02e6e6b36dd1e9
-  - [91]
+  - [47]
     - `name`: coverage_cs_real_drill.json
     - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [92]
+  - [48]
     - `name`: coverage_real_drill.json
     - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [93]
+  - [49]
     - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
     - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [94]
+  - [50]
     - `name`: cp_real_drill_gaussian_pit.json
     - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [95]
-    - `name`: crossvenue_basis_3f4ff76f517655a7.json
-    - `sha256`: 14ce799a46e282849e8e7852ff74489ed4747274c164040fcc52974bbb72a087
-  - [96]
+  - [51]
     - `name`: crown_behind.json
     - `sha256`: 1ae02ca68d023ddd18c2b0023b240d1cf729b0a2b04597954548402afbe769c6
-  - [97]
+  - [52]
     - `name`: crown_density_amzn.json
     - `sha256`: 4945e95537a122d7d13c12d84fe59e518e3051eb8ddd9ca8db66f3218a0c6268
-  - [98]
+  - [53]
     - `name`: crown_join.json
     - `sha256`: df42ab245b4f82d535fb52d4a4068414b4b11537e152ec63b0e3ab6823e40af9
-  - [99]
+  - [54]
     - `name`: crown_size.json
     - `sha256`: 751a7c4351d1639d547330d7b8f8251fb6341f500f099304a13945810a560fe0
-  - [100]
+  - [55]
     - `name`: cxl_shield_amzn.json
     - `sha256`: 16cac426d34c9af016963a251e9fef5422babd2ced8be9795a7413e9c6b84e40
-  - [101]
+  - [56]
     - `name`: decay_watch_synth.json
     - `sha256`: 8f37ccea904fe09557819f36a60d5dcb2d99467db21301111b5c7d9836ccf6d4
-  - [102]
+  - [57]
     - `name`: deep_book_bench.json
     - `sha256`: 9410e500ad2602dc085c5146640d7bf7219a9626c8bccd32ea47a71829f03392
-  - [103]
+  - [58]
     - `name`: deep_microprice_amzn.json
     - `sha256`: a9fddf27e4c26bc144ced56ca35856411f8a6220d91100872170b60411738acd
-  - [104]
+  - [59]
     - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
     - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [105]
+  - [60]
     - `name`: depth_consumption_amzn.json
     - `sha256`: 1bd84264cd6b886a28c16ff5246ec2c4467f81d0a656589c534dad34d8754846
-  - [106]
+  - [61]
     - `name`: depth_tilt_amzn.json
     - `sha256`: a42581086e0846cbc71a272b6cb39e018031176fd7414ebc57dc95ba7415d2b2
-  - [107]
+  - [62]
     - `name`: dip_audit.json
     - `sha256`: 085f0a461518911bd57e27e12c0c01f4f0f2134254f7b240ab4066d95cc8233f
-  - [108]
+  - [63]
     - `name`: dip_run_audit.json
     - `sha256`: e0498594b7ae8e371c24761c7e5f7b3a97fb24e708e645d4abcfbfcda71bab86
-  - [109]
+  - [64]
     - `name`: disclosure_audit.json
     - `sha256`: 79f2a55cc0ba899cbdb8a26e7e103e3e008acc554890ef21d63d1d3bf48d0538
-  - [110]
+  - [65]
     - `name`: dispatch_audit.json
     - `sha256`: 19bba277befd9b88272175e899a962822a40a3bd8757c750882d56d92513d8dc
-  - [111]
+  - [66]
     - `name`: diversity_bench.json
     - `sha256`: f9c48ad14bff833f98ae5b56aea24192b9815f1e5acbc86a0a8fd61a7c27325c
-  - [112]
+  - [67]
     - `name`: doctor_audit.json
     - `sha256`: 0c0e69fb4cf225577f2b67144e306034a28ffdf64acf3dc4f315588159c2aa13
-  - [113]
+  - [68]
     - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
     - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [114]
+  - [69]
     - `name`: drift_real_drill_gaussian_pit.json
     - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [115]
+  - [70]
     - `name`: ds_audit.json
     - `sha256`: 67a0e581ad6876ffca1e43b82b9bfd9dc7f91531e6b926af1751eaec4d727a8d
-  - [116]
+  - [71]
     - `name`: duration_check.json
     - `sha256`: 12188ad90369774c642fb7f516f14dd7b20c4ec7367434c75b24aa1a5ba5e6ab
-  - [117]
+  - [72]
     - `name`: em_audit.json
     - `sha256`: 69735454a8da7e781be4e56dc4d9eb83c56f05bbd51ce6e3a4db47e2bb547e00
-  - [118]
+  - [73]
     - `name`: emerge_real_drill.json
     - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [119]
+  - [74]
     - `name`: empirical_flow_bench.json
     - `sha256`: e12abc02ca462ff660e4aaa39fe5182508ab5896c1bdab180c5bb6caaf4c9c99
-  - [120]
+  - [75]
     - `name`: engine_fuzz.json
     - `sha256`: 5fe71d9e05862d39cdaf2aaf153f508d992a2bc6132bc882f45d86da64f54396
-  - [121]
+  - [76]
     - `name`: epoch_delta_44955f3515007971.json
     - `sha256`: 8c4823fcd372f927ada7ef5d08fff5457bd25db3ea5d7f42c49679236616da6e
-  - [122]
+  - [77]
     - `name`: epoch_position_2e120d21df5a400d.json
     - `sha256`: 9c1bf6a2af75b9d2035688e89a872e45dfd166eef7b557aa58efc53aedadbfc6
-  - [123]
+  - [78]
     - `name`: error_shape.json
     - `sha256`: a9b29bff34f219cab4fb4375d56560b392097906df05d87d69bb526d591d2284
-  - [124]
+  - [79]
     - `name`: eval_core_audit.json
     - `sha256`: fb50b648b07af58fcaf0e9b8837ef946fd9b4b04e18cb48d991c264154da3e96
-  - [125]
+  - [80]
     - `name`: event_burst_amzn.json
     - `sha256`: 4c8872dc6f781544ef15cbace7537df2876d0320410570283e558306a9c5b019
-  - [126]
+  - [81]
     - `name`: event_granger_amzn.json
     - `sha256`: 628431d7b7099ac23e9e0c40a0b99de811952a701333949202e2ea0696256362
-  - [127]
+  - [82]
     - `name`: event_matrix_amzn.json
     - `sha256`: e1a8e84ffc8b0ac08a7e8a821bc0650cb56bd10c924318e8c0be4a74587710d1
-  - [128]
+  - [83]
     - `name`: evidence_audit_3464d8f8197bf737.json
     - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [129]
+  - [84]
     - `name`: evidence_audit_5c9f07c823727701.json
     - `sha256`: 6124e972cc182ef134a5c411f2794c4f2e3fcea205f6a0bfc0a05f4ec912cd23
-  - [130]
+  - [85]
     - `name`: evidence_audit_d449e1ca0cc119a6.json
     - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [131]
+  - [86]
     - `name`: evidence_audit_f45ae8d6bc7cd677.json
     - `sha256`: 04128fa07fd2ca3650981d0cad06d07f921a525b301945b2c539ddd8c7447989
-  - [132]
+  - [87]
     - `name`: exec_cost_real_amzn.json
     - `sha256`: 297d59df884a80c0503cad9c511579193cf77504fd5313492b732b4297993788
-  - [133]
+  - [88]
     - `name`: exec_cost_split.json
     - `sha256`: 53ef2528042134aeb7bd8c20d6c94f7e4ab3391fafd9851531f84df3fe3ae9f5
-  - [134]
+  - [89]
     - `name`: ext_bench_audit.json
     - `sha256`: 324025ce928acda2167ecaa25bca6bcf16373400eb8ddb657e348483010c6ec3
-  - [135]
+  - [90]
     - `name`: fast_replay_p42_conformance_20260928.json
     - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [136]
+  - [91]
     - `name`: fbm_circulant.json
     - `sha256`: 8a8fcbcd46b58942852e9c79603d854aaddf1e5ea3c35b5dc9d42978005f5802
-  - [137]
+  - [92]
     - `name`: fifo_priority_amzn.json
     - `sha256`: f180b99da62d936a31bf9df79f637141a9b7bd4c4679fc3782739455dafd7e30
-  - [138]
+  - [93]
     - `name`: flee_wide.json
     - `sha256`: 186fec1776108a9051fbe02f47f411279a710999045cc97028fcf5a9f9482e77
-  - [139]
+  - [94]
     - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
     - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [140]
+  - [95]
     - `name`: fleet_eval_5e907be710811a44.json
     - `sha256`: c95ce361609bdb00912147e0f87548fdbd2c0221ad27b8c1a4d0ba558b9330e1
-  - [141]
+  - [96]
     - `name`: fleet_race_real_drill.json
     - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [142]
+  - [97]
     - `name`: floor_compose.json
     - `sha256`: 53d4493e5009a0da44acdab958fb3bf8df5dcc01fd5bc76d5d24fe04d07692f1
-  - [143]
+  - [98]
     - `name`: floor_pins.json
     - `sha256`: a38bb073ef069de28dff2ada970c05f2ac57a19433df20a19dfab727e9a0a5a0
-  - [144]
+  - [99]
     - `name`: floor_rate.json
     - `sha256`: 632d421666dcd4ea2e7d4acd798ef82cab735054aeaa7d719eaacda91fea35f3
-  - [145]
+  - [100]
     - `name`: floor_reseed.json
     - `sha256`: 2c02b255e4506593755d30d448e15bdc8f242e81ecbf380056b3a8c32698060a
-  - [146]
+  - [101]
     - `name`: floor_stability.json
     - `sha256`: fbd9860771b933e799ee938c90ba3ea43620ead6dd99f0f44231c7c5d9916ce9
-  - [147]
+  - [102]
     - `name`: flow_couple.json
     - `sha256`: 5dc9e98c044ada0edef8fc7f0be4ec7efabdc5d52781d9cacbd327549fb9f992
-  - [148]
+  - [103]
     - `name`: forecast_core_audit.json
     - `sha256`: fb5960935d5182ae83223cf1e0645c0f3812abe37dacacf9f211ee920e2f0c18
-  - [149]
+  - [104]
     - `name`: forecast_data_audit.json
     - `sha256`: 3174e1b32201a37b02fe225f469781f58e9470c9aa971ad259624bbbda2ee224
-  - [150]
+  - [105]
     - `name`: forecast_infra_audit.json
     - `sha256`: 57d88d8385893260ddb771942ecdbb889e6e9aea1ee53c9660ef4f3a7350f9b3
-  - [151]
+  - [106]
     - `name`: forecast_pipeline_audit.json
     - `sha256`: bd9b0903ffd6f40e3b237f4bbe46557ef345cfd547ec9e045dadc0ee806084c2
-  - [152]
+  - [107]
     - `name`: full_impact.json
     - `sha256`: 29a1b45e52fca254985f19c30d096eb6b2de14a406494282206e1092b3ea905e
-  - [153]
+  - [108]
     - `name`: full_stack.json
     - `sha256`: 2048f94b0d052bf5ebfa38c6786d60b900b37468a814ec46e9b25262d6c9d1fc
-  - [154]
+  - [109]
     - `name`: fx1_anthropic_sdk_audit.json
     - `sha256`: 03fd468413780b70daebbd231a925c4289faf62c6f0327fbdd0572f83764d01b
-  - [155]
+  - [110]
     - `name`: fx1_api_audit.json
     - `sha256`: 3d94c3ed069123be4b774613a3e35d114698ab6000ce195fa97187e2a5596bb1
-  - [156]
+  - [111]
     - `name`: fx1_auth_audit.json
     - `sha256`: fb7e0783ffa11fb79b7c4a1fceedb0b9e3f5eb836db4cda2b195b000128d8044
-  - [157]
+  - [112]
+    - `name`: fx1_cap_audit.json
+    - `sha256`: 99737d09622533bad5f5793cd7fef198e211b235251bb79455c9a5e8643547b3
+  - [113]
     - `name`: fx1_cli_audit.json
     - `sha256`: 19a95549bfb8e5f3143474a94bfaa24ccc593f634237b3e8f33e811481dd0add
-  - [158]
+  - [114]
     - `name`: fx1_client_audit.json
     - `sha256`: 3c83b261c8966f3ae7d63bb5bb18371adddb1b3ca2c21795223b8d3ceab3acc4
-  - [159]
+  - [115]
     - `name`: fx1_contract_audit.json
     - `sha256`: 913e276befeaecd002582c8125ebddc96c85996764b57b91a956b5f7b32173e0
-  - [160]
+  - [116]
     - `name`: fx1_drain_audit.json
     - `sha256`: f864d2a9cff6e6c396045afa8105c337362a769e491d6fc002af7dcff29e454b
-  - [161]
+  - [117]
     - `name`: fx1_e2e_audit.json
     - `sha256`: e4671f251df3cf35c7ec50adbc59803a8d733f1759380edea714a532c6ec49ac
-  - [162]
+  - [118]
     - `name`: fx1_eval_lifecycle_audit.json
-    - `sha256`: 03851ed9f14a7c2c5b9958f758d3ec5496c50255a671212db7e3f06f4b7388f3
-  - [163]
+    - `sha256`: 16c6e3969091a825443712614b1dd31b0c1224c8196d1fa35596f6fafb4872dd
+  - [119]
     - `name`: fx1_fault_audit.json
     - `sha256`: 43c78649e2f8246708940e27e83038f69f2e7aa36fe758d442fac9f6bea04205
-  - [164]
+  - [120]
     - `name`: fx1_jobs_audit.json
     - `sha256`: c952e24df7c07978437e3ed7f36aadf0cd13103980588013f3677e371f9775bf
-  - [165]
+  - [121]
     - `name`: fx1_oai_sdk_audit.json
     - `sha256`: 2e1421dd4e7b06191da9ee4c537d10ecd0fcb5e8a13a32608820f295e81fd0fb
-  - [166]
+  - [122]
+    - `name`: fx1_ops_audit.json
+    - `sha256`: 6362b090bd931070e3f1a12caec01d2dc0df14db98c71658c29b58bf10fb8d08
+  - [123]
     - `name`: fx1_parity_audit.json
     - `sha256`: e71e77a4d8169d731bdc48c27765c24c3db59f1240437e55fc1f9edb928c90af
-  - [167]
+  - [124]
     - `name`: fx1_perf_audit.json
     - `sha256`: 7f0fe1b11dca4412cb54b8dc3f40ad929016ac1e59788b3b3dd2857907b32148
-  - [168]
+  - [125]
     - `name`: fx1_quota2_audit.json
     - `sha256`: 6e135a43144e89e3fab4b7d4473d89db1d98ae6f888f7611d2e9433ac00cadca
-  - [169]
+  - [126]
+    - `name`: fx1_replay_audit.json
+    - `sha256`: d3cbeaa2e484021f6a1524df38d01c42cf19db7ad0de0aa78b4a44e750dcbacf
+  - [127]
     - `name`: fx1_retrieval_audit.json
     - `sha256`: c2edb7a020d4ecd07358915c28df2a54e33986faef25f35ecc566e2883ee5a29
-  - [170]
+  - [128]
     - `name`: fx1_sdk_audit.json
     - `sha256`: 1556d7498e4618e386f891777e820fd3b2f08b4bde0ff7a9ad6e3d4689ef60d1
-  - [171]
+  - [129]
     - `name`: fx1_spec_audit.json
     - `sha256`: e86dc5bffb1267539df5876ed3487bb0154512d5b9fbbcc83223d4a5db05fdb8
-  - [172]
+  - [130]
     - `name`: fx1_tail_audit.json
     - `sha256`: 8874bc452c43fd807a7c7525c5105663a01f4406c05ea6a37ad5a361e5d8add6
-  - [173]
+  - [131]
     - `name`: fx1_usage_audit.json
     - `sha256`: e728655fa53df38114d91ad618c9e278cbc1ab0391ef8beec3b89cc4693787e1
-  - [174]
+  - [132]
     - `name`: fx1_vs_audit.json
-    - `sha256`: ee0a91338bcd0ae61416ccea0c83165548f67a39df58b05c981216afde8f6102
-  - [175]
+    - `sha256`: bc79a4e09195983847b3274b903844372a3043e9dfedefcf35602245b53936b9
+  - [133]
     - `name`: fx1_webhook_audit.json
     - `sha256`: 0b262022d1bed02812e22e5c5558fdff740eae4e178609eb4d7ca0aca9f6c525
-  - [176]
+  - [134]
     - `name`: gap_close.json
     - `sha256`: c405793974f1ca9c88feb19c56e341185c68d87809dd755eee6cc604c65a85e7
-  - [177]
+  - [135]
     - `name`: glft_bench_synth.json
     - `sha256`: 4efd3a9a814d245873371a8f09c2d2502fca71393dbf738496e59cb4dc369467
-  - [178]
+  - [136]
     - `name`: grad_fidelity.json
     - `sha256`: e86ebeeae2bae5736b2bca3089d8e415b41ce901bc23df5d2f515bda12bae660
-  - [179]
+  - [137]
     - `name`: grammar_map.json
     - `sha256`: f8ee1c31439b03bbe14989ee0cebb7b0917f5186326cc91c2d81d7705686198a
-  - [180]
+  - [138]
     - `name`: harness_audit.json
     - `sha256`: 0292862d23f09133aa7b11437b2e543d1740aa0d5ba6170f2069ea18808c6208
-  - [181]
+  - [139]
     - `name`: hawkes_clock_bench.json
     - `sha256`: 816f8bd60cab106505a1adb153803ee48579ce6615a85ccd3e5d27785f2f3b77
-  - [182]
+  - [140]
     - `name`: hawkes_mv.json
     - `sha256`: 5f386d77d237a6bbdc12fad5d794184508548fad474b1cb258f48bded96d7431
-  - [183]
+  - [141]
     - `name`: hawkes_real_amzn.json
     - `sha256`: 9d398acb03bfc6bfd9f965d5d6115b5ca4d64244d312e90993ea11e7bd8a80ea
-  - [184]
+  - [142]
     - `name`: hidden_depth_amzn.json
     - `sha256`: 24b6c5ca511ec6211f79115fdac3eac85f52d393738a5a88adebad8c46575ea2
-  - [185]
+  - [143]
     - `name`: hidden_depth_bench.json
     - `sha256`: 4e18ea2564f675b351bfdd93ce9c1541af0638ef07e43728cfb48a83b3912330
-  - [186]
+  - [144]
     - `name`: hit_flee_amzn.json
     - `sha256`: 72765463da5af6990d81e3026dd7d23ecf83265407fb0b0b43d14a5d2690a6d0
-  - [187]
+  - [145]
     - `name`: hit_starve_amzn.json
     - `sha256`: 3d98298e540b6ab7fa14c9b8452feb06c7b5c28a2b09a55ea8a9c4b6710acb39
-  - [188]
+  - [146]
     - `name`: hmm_stability.json
     - `sha256`: 5d06bc292b14e6a4de8d6fbd640e76c66b6ad82e4705e27ae068c2ef5a88c040
-  - [189]
+  - [147]
     - `name`: hmm_verify.json
     - `sha256`: 269ee7b7e767d0388ab285e3257a5de62f4a631ada045aa83577b2b7786a51f2
-  - [190]
+  - [148]
     - `name`: honest_verdict_b133e8b3992af893.json
     - `sha256`: 1a003a670945452a5c86d033900bc33429f2981422c8938b1b8e2469fc764f3a
-  - [191]
+  - [149]
     - `name`: honest_verdict_real_drill.json
     - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [192]
+  - [150]
     - `name`: honesty_audit.json
     - `sha256`: 63d79882e619905c0d45fc094d08c67cce9be60c98e43ca846b677c3337370de
-  - [193]
+  - [151]
     - `name`: hypotheses_audit.json
     - `sha256`: bd65b431cfc36ce9ec54bd7262002eeb735025e2dc71995e983df73924bceb4b
-  - [194]
+  - [152]
     - `name`: ice_budget.json
     - `sha256`: b0be60f820caea3783400f5f7eaff399c68d243ee11508a95212d64907789642
-  - [195]
+  - [153]
     - `name`: ice_crown.json
     - `sha256`: a57b172d4c2d0f528461fd35dbcaafefc1af9b3b08c9cb2cd690d7e76053665c
-  - [196]
+  - [154]
     - `name`: iceberg_bench.json
     - `sha256`: da07cac898aadafc9bb434319334d0fc72d504fb5fe4c9ff5d0031b09499e7cc
-  - [197]
+  - [155]
     - `name`: iid_floor.json
     - `sha256`: cd2d6153b177482f1df86f78f6c795d03e93a17046a897c58874dc14fcde2753
-  - [198]
+  - [156]
     - `name`: imbalance_predict_amzn.json
     - `sha256`: d467e13e158dddf59e0ec2dd6b0941aeae37237f491757705418f7420c789655
-  - [199]
+  - [157]
     - `name`: impact_instant_amzn.json
     - `sha256`: e6d80527e2bb993d7450087db961d6229561fe1a87c0e8b68d3920ca50315c4b
-  - [200]
+  - [158]
     - `name`: impact_persist_amzn.json
     - `sha256`: 58bcb731c697074949a3705ee2270181d9f2df5e5d2c8f08fbf04b020f3200dc
-  - [201]
+  - [159]
     - `name`: improve_flow_bench.json
     - `sha256`: ec0836e7b4d24834d0b68a43c5676ea213049fce8200966dc15d98d30a0a4488
-  - [202]
+  - [160]
     - `name`: inherit_audit.json
     - `sha256`: 718adc7b101c76e503cc475cbedcd086fb0f696a14968d977f4ce5de7dc32a07
-  - [203]
+  - [161]
     - `name`: initiative_fade_bench.json
     - `sha256`: f9a3f118c2fd37a308bd691633c7e7a9668e770d959535ca16bc2c583e4db867
-  - [204]
+  - [162]
     - `name`: instant_decomp_amzn.json
     - `sha256`: e9fcb9c72331341fe60237cb457fa8456dcbdb340e87060fbb9318a7265b4df0
-  - [205]
+  - [163]
     - `name`: intraday_exec_amzn.json
     - `sha256`: 04803c1f783145e75ccf403990146768490e123bc82c26dbdcef3901eb59fa0a
-  - [206]
+  - [164]
     - `name`: intraday_shape_amzn.json
     - `sha256`: 7e831325e8e77d61360d07100a35234c210f79b99825d6d4040d5d903470cd1d
-  - [207]
+  - [165]
     - `name`: joint_fit_amzn.json
     - `sha256`: 1041b3196b85319688e89a359401fadef29a4ff14a7371e389668b0c2d6175bf
-  - [208]
+  - [166]
     - `name`: joint_stability.json
     - `sha256`: cd43e7ec5f39ddbb3ff5c6ea9acce41191bcd250cff7e986c20637c8719c9e84
-  - [209]
+  - [167]
     - `name`: joint_tune.json
     - `sha256`: 27aea6f04b845ae84445bcd97dbf31c6eb68cb85053af2d568fafe51027f38f6
-  - [210]
+  - [168]
     - `name`: journal_audit.json
     - `sha256`: 04fa04a533738617f528b94d0c819e1bf0b8d0ee71b653142136ed8fdb8e6942
-  - [211]
+  - [169]
     - `name`: kill_audit.json
     - `sha256`: bd65e84d2037d452282b5fba052b6be102fef2e50995a14cb2a381405d8d2565
-  - [212]
+  - [170]
     - `name`: label_horizon_map.json
     - `sha256`: facf0481adaaf3cb55b307b27c9259423b0ff6d13363b9a24e68b2b86a8cb955
-  - [213]
+  - [171]
     - `name`: label_stability.json
     - `sha256`: bda24271b910cd2d912104d445d81c50f9f8fd61824b2c10e8a18f5c042c96dc
-  - [214]
+  - [172]
     - `name`: lane_power_drill.json
     - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [215]
+  - [173]
     - `name`: lattice_drill_verdict.json
     - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [216]
+  - [174]
     - `name`: lattice_drill_vol_bench_a.json
     - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [217]
+  - [175]
     - `name`: lattice_drill_vol_bench_b.json
     - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [218]
+  - [176]
     - `name`: ledger_audit.json
     - `sha256`: ce5203012f63807d82146868ab26fd44cc23019364feadfdbffb03cda064f522
-  - [219]
+  - [177]
     - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
     - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [220]
+  - [178]
     - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
     - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [221]
+  - [179]
+    - `name`: legacy-unsealed/basis_carry_dd7705fc0f2f1c25.json
+    - `sha256`: 852f56a1e2aeb3654d406fbb14a4a2baa7cd20949d45153a98c5a99a2248f741
+  - [180]
     - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
     - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [222]
+  - [181]
     - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
     - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [223]
+  - [182]
+    - `name`: legacy-unsealed/calib_real_drill.json
+    - `sha256`: 7480b2af38274f5d6e6c4a107e01890a3d49f0524b5920a5b3b946a9f8a5a571
+  - [183]
+    - `name`: legacy-unsealed/crossvenue_basis_3f4ff76f517655a7.json
+    - `sha256`: 14ce799a46e282849e8e7852ff74489ed4747274c164040fcc52974bbb72a087
+  - [184]
     - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
     - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [224]
+  - [185]
     - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
     - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [225]
+  - [186]
+    - `name`: legacy-unsealed/forward_record_preregistration_v1.json
+    - `sha256`: d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3
+  - [187]
+    - `name`: legacy-unsealed/forward_record_preregistration_v1.json.seal.json
+    - `sha256`: afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc
+  - [188]
     - `name`: legacy-unsealed/incumbent_bench_qlib.json
     - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [226]
+  - [189]
+    - `name`: legacy-unsealed/mid_dark_amzn.json
+    - `sha256`: da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1
+  - [190]
     - `name`: level_gap_amzn.json
     - `sha256`: 3c1b21418c1b617164a629f45f039f341ce9bab5321c81d77831a339222cde9d
-  - [227]
+  - [191]
     - `name`: lineage_dag.json
     - `sha256`: e00ad05cbcc7e60916ebd9c9e12b704b29de788acbd82ee544be3df2375e66da
-  - [228]
+  - [192]
     - `name`: lo_response_amzn.json
     - `sha256`: df91141443b114f39d4dba23cb499de6c4c8961eb6d1d6b1b60ca6d751dd66c2
-  - [229]
+  - [193]
     - `name`: lob_exec_amzn.json
     - `sha256`: e334cb33cf73a06b99bbfc834825e409e849ec860b8533a093dfefbdac2e0932
-  - [230]
+  - [194]
     - `name`: lob_invariants_amzn.json
     - `sha256`: 8a890214de32880ca3043d8ebb863992b938708828aeb3639fa79fd90e7948e0
-  - [231]
+  - [195]
     - `name`: lob_resilience_amzn.json
     - `sha256`: b8728dbb705d8ae62e1339a4d7482070f7f827209c20c342b31ce6a9980a585d
-  - [232]
+  - [196]
     - `name`: lobster_replay_amzn_2012-06-21.json
     - `sha256`: 44f53ca3f6e42bad9617d284fc37542ca64d3b4373642fe54deae83302a9dd10
-  - [233]
+  - [197]
     - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
     - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [234]
+  - [198]
     - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
     - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [235]
+  - [199]
     - `name`: maker_age_bench.json
     - `sha256`: 743ba4eb58ce5575b1334ea8a1731ae39ebeab7789ea43733256e1458c8f5c49
-  - [236]
+  - [200]
     - `name`: map_parity.json
     - `sha256`: 4dff84d32892f41c5d10b30c4c55ab5ba9a072affe9f67d2c3e4c50cc39330f6
-  - [237]
+  - [201]
     - `name`: marketable_limit_amzn.json
     - `sha256`: 0e231a062d7253b3cdce1acd4a6ca72c75890e7b19fbbc47c76cc6815448c932
-  - [238]
+  - [202]
     - `name`: markout_amzn.json
     - `sha256`: 70730f6f3bd4e398497f1e302f3b375c739a548b856b68f2282f4fa18b3de864
-  - [239]
+  - [203]
     - `name`: masking_audit.json
     - `sha256`: 331d20547c6fec39fce38951b75d0b9d653f4d0cc37dff3908ba06e15b7950c7
-  - [240]
+  - [204]
     - `name`: mcs_real_drill.json
     - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [241]
+  - [205]
     - `name`: mcs_vol_drill.json
     - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [242]
+  - [206]
     - `name`: meta_model_synth.json
     - `sha256`: 351b5285fcd9f08a8dcfa478db62ed1dfd407c9bda7065efdf2cc2fcf4e3b0e2
-  - [243]
+  - [207]
     - `name`: metaorder_detect_amzn.json
     - `sha256`: c2bfd7554d2aba52493daa287850c08aced9893f7beb8f0aa976e9b0c791ec8d
-  - [244]
-    - `name`: mid_dark_amzn.json
-    - `sha256`: da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1
-  - [245]
+  - [208]
     - `name`: mid_jump_amzn.json
     - `sha256`: b4afddf6927e2254d1e0362517bdd14ec3dd07d1dcebcfbb2da40384a1585d17
-  - [246]
+  - [209]
     - `name`: middleware_audit.json
     - `sha256`: 559ace707af811672313127e2c1ef1758c5f90abce890f91054efc81deb332da
-  - [247]
+  - [210]
     - `name`: modelcard_audit.json
     - `sha256`: ea042e48135698a878772ae2388c88d86ac11c666d385fe91e9f7ae52ddf84d2
-  - [248]
+  - [211]
     - `name`: monitor_run_13d20aef00774027.json
     - `sha256`: 3ce1cd7f59c301be6b4710326ab905313725317bee3669ae8e755f6d422bc12d
-  - [249]
+  - [212]
     - `name`: monitor_run_drill_clean.json
     - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [250]
+  - [213]
     - `name`: monitor_run_drill_defect.json
     - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [251]
+  - [214]
     - `name`: monitor_run_real_drill.json
     - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [252]
+  - [215]
     - `name`: mortal_repost.json
     - `sha256`: c351dc60be497d864fc2cea3a06acfe8fcf3c9ef019836f3af0a0a6d58cbffd7
-  - [253]
+  - [216]
     - `name`: mrm_audit.json
     - `sha256`: 58eb74524b8e5e97f5a07109503b2c4d350f3c316c53bd44177bf280a13978ae
-  - [254]
+  - [217]
     - `name`: multih_fleet_eval_5db1cab214e291d7.json
     - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [255]
+  - [218]
     - `name`: native_conformance.json
     - `sha256`: 6754767a42cdff244d3ff4d59b2366ff8655990087cf42957147e0890fbdc5ad
-  - [256]
+  - [219]
     - `name`: nautilus_conformance_7bf19a08c147547b.json
     - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [257]
+  - [220]
     - `name`: options_audit.json
     - `sha256`: 80c4ce7b746b194f0e7dc78edc123768654a8db6e99d79398943822ac951e0f5
-  - [258]
+  - [221]
     - `name`: order_lifetime_amzn.json
     - `sha256`: 57d744ba5f963aed36a2fef198015643bf4be0855f610ab32dcc21bc83941e01
-  - [259]
+  - [222]
     - `name`: order_revision_amzn.json
     - `sha256`: dbb7239f51f26e176f62493fea10a2e921b1a97945eb251eae5e3432badab3ce
-  - [260]
+  - [223]
     - `name`: panel_audit_real_drill.json
     - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [261]
+  - [224]
     - `name`: parity_audit.json
     - `sha256`: a3f63f1bc2c5a8a1eda080ce56e6e4a14994b9b0a5fa40fa26d77a326b720163
-  - [262]
+  - [225]
     - `name`: parity_leak_audit.json
     - `sha256`: 2e0cb6046a0cd26672101b4e3739d929e0e91fbfc360ceae94638287b83d451a
-  - [263]
+  - [226]
     - `name`: pin_stability.json
     - `sha256`: cb002632c4d286eb8d3a1c9597f86b16d05bca58d12e3b06f472b25627bd61f1
-  - [264]
+  - [227]
     - `name`: pipeline_audit.json
     - `sha256`: 728186040bc8ffa34264155cb8a54d1d6123c71968edcadbf7bac0b8cee90077
-  - [265]
+  - [228]
     - `name`: pipeline_flat_audit.json
     - `sha256`: d849f5c4e74db12eaf84ed3161170c4151bfd05682aab9ffbf476e0478e1c37f
-  - [266]
+  - [229]
     - `name`: place_law_amzn.json
     - `sha256`: a85ba039fc645e0455f7fa969be74bd40838b5c06b8893737d13352b68aef901
-  - [267]
+  - [230]
     - `name`: place_mix_amzn.json
     - `sha256`: b496d4d2cdab3e254968926073316a3e74167d24734a226aa22146565996a994
-  - [268]
+  - [231]
     - `name`: post_trade_drift_amzn.json
     - `sha256`: 83ad54e2add374fc7fa0333072c4ef745f6a1ed4112f36d14cefb9b23262192d
-  - [269]
+  - [232]
     - `name`: price_clustering_synth.json
     - `sha256`: adfab5e558bdaa8b54abb8376b1d4f33c11f605d9215146ccea3b82d163b0c7f
-  - [270]
+  - [233]
     - `name`: price_improvement_amzn.json
     - `sha256`: 870ef7c83529dc34f22ea1a7555abbbbed92f84d6d498096ae6159a4b4ef93f1
-  - [271]
+  - [234]
     - `name`: promotion_gate_conf_t.json
     - `sha256`: a353477ea44ae58d507ff43f5be735937b0e0f3b2f84ef10d2d7f29e846f3506
-  - [272]
+  - [235]
     - `name`: propagator_real_amzn.json
     - `sha256`: 4c7a02f864596c226f78948ee5d4ae227a2323a5aee8e1efd6b9f492f3d3089d
-  - [273]
+  - [236]
     - `name`: quality_audit.json
     - `sha256`: 60c619c630ec06fd0384bdf08f11b6940e06c914bc89fe75b7c62a4817aa06bc
-  - [274]
+  - [237]
     - `name`: queue_class_bench.json
     - `sha256`: d3941977a98261a06825573ad173a9b5d21e1515ea7a3dd48430e61779dc341d
-  - [275]
+  - [238]
     - `name`: queue_fate_amzn.json
     - `sha256`: 54ce63133d050866a22b42879797e56d076c3f9de8f646902e2090287acedf55
-  - [276]
+  - [239]
     - `name`: queue_jump_amzn.json
     - `sha256`: 467134b64f8e9b397acd3f221e716b735ee62a5e70e2a533875be62b5d42924a
-  - [277]
+  - [240]
     - `name`: queue_occupancy_amzn.json
     - `sha256`: c2f2b5caf9a82f3066a34abab1b0529acf44948abd7e61d7b3e1a35e20efbe23
-  - [278]
+  - [241]
     - `name`: queue_priority.json
     - `sha256`: c03de3a987fe19ee42eadf2f5ac6e97e61da5d55bf89f3a81493e0abf399e7d4
-  - [279]
+  - [242]
     - `name`: quote_floor.json
     - `sha256`: 20fe58eafd0338916ce1f2872ae0279f079f399ab211c61122e0be68294e1e48
-  - [280]
+  - [243]
     - `name`: quote_place_amzn.json
     - `sha256`: 493540278637dde9c9500d180d3651a9a34efa279eda7278da2a6655f5e1d4df
-  - [281]
+  - [244]
     - `name`: rankic_eval_8d740c0ddf6d5c54.json
     - `sha256`: e48fce1ae4cebf94e417773bdef20c9ed7b0822397505c6a51e8843a8da06c81
-  - [282]
+  - [245]
     - `name`: rankic_eval_9ebdad7da83e7348.json
     - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [283]
+  - [246]
     - `name`: real_benchmark_us_wide_manifest.json
     - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [284]
+  - [247]
     - `name`: real_benchmark_us_wide_test.json
     - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [285]
+  - [248]
     - `name`: real_benchmark_us_wide_validation.json
     - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [286]
+  - [249]
     - `name`: receipt_admission_529da640b520a49d.json
     - `sha256`: 597c5aeecd2c1b57f0908fa6fdf05890fece05e541a42be5a662ba235ff67f03
-  - [287]
+  - [250]
     - `name`: receipts_audit.json
     - `sha256`: 5fdba4c796f2dff49486c62bd3c501e3053657231d6c45bfdd5bdb04ba2bb1cb
-  - [288]
+  - [251]
     - `name`: refill_hazard_amzn.json
     - `sha256`: 195c5461c91d8d5faa684d1c3b179292e1ad717fcdabe1a61f0a851dea7e016f
-  - [289]
+  - [252]
     - `name`: regime_clock_bench.json
     - `sha256`: 55c7d545b7f2e62b50ed135b63920effa0811d198cdc2c84fe0c035157626619
-  - [290]
+  - [253]
     - `name`: release_chase_amzn.json
     - `sha256`: 8305fd598f154fe8c465ad718ece1fffe297c47471096a86543b69adfd02709d
-  - [291]
+  - [254]
     - `name`: reload_gate.json
     - `sha256`: 98590cf3583cb8e138ee24c43324da205e4bf04df29a91467b0f69ac5fc8deda
-  - [292]
+  - [255]
     - `name`: replay_coverage_5e5e7ff56ee42196.json
     - `sha256`: 5dd7d736d1be3a13b977b79901fc9dfef5fdc0d841c489f5848cd7c0839e521e
-  - [293]
+  - [256]
     - `name`: replay_coverage_e72b56ffaf7abe4b.json
     - `sha256`: aa201319a975a4a347405a1e824db3a47084b4b8a140b0d087a46d85593ad02f
-  - [294]
+  - [257]
     - `name`: replay_proof_0de5fa4e0c739037.json
     - `sha256`: 4a870f4bb735b8ebf2c87ae3dde8994dfe2220d55ead2f10871ed2c893cf70c2
-  - [295]
+  - [258]
     - `name`: replay_proof_6d266ef51218e3e7.json
     - `sha256`: 4f20eb438da29c42f4bc54f38a643590f149458db80a8c86196e72477551ecd6
-  - [296]
+  - [259]
     - `name`: replay_proof_701ae84c3d9813e0.json
     - `sha256`: 4f49bb965f299970c04f1d01673142e0b6e5df77004c5d034b6bb6028760ad18
-  - [297]
+  - [260]
     - `name`: replay_proof_73137fe1a97c3538.json
     - `sha256`: 74fbc282a7a1d5eb53bcfa17e44a460f8235f5950c463233abf70099e1a5c91a
-  - [298]
+  - [261]
     - `name`: replay_proof_7e1d9b632f022f5a.json
     - `sha256`: a3a21f8a745cb80cac90f8e53f9512294c297e0caf5d3a4665d5f07214de4517
-  - [299]
+  - [262]
     - `name`: replay_proof_b23a176a5c91e210.json
     - `sha256`: 1f4a8bd88480f4ddd2f07791b2f00deaa39c83a2151cd9395d395f1e20a4a7ad
-  - [300]
+  - [263]
     - `name`: replay_proof_cbbad2b0389750e5.json
     - `sha256`: a320cc68307ecffe319ee675feaefa837472ff8a41f07416ac7208e1e98e1667
-  - [301]
+  - [264]
     - `name`: replay_proof_e1fa8dd41197ef11.json
     - `sha256`: b7f6dc1c01a736a198ec1b10d2aa4e645eaa12c42aba06d749e210f612bc9f6b
-  - [302]
+  - [265]
     - `name`: replay_proof_f5fe541481bbf231.json
     - `sha256`: bf65017c57348aed947123163223ef59ebf385c9907052b2497016d3753ae2ce
-  - [303]
+  - [266]
     - `name`: report_audit.json
     - `sha256`: 90dbdda1d64beab2bd4b82cfcfecd207d0aa2ecce9906fe7c333c9ca3ac2b9f5
-  - [304]
+  - [267]
     - `name`: repost_frontier.json
     - `sha256`: e946c2b132bb9334ace262e6731f96c13e14ce613f68537acf7e6d207fda2dbf
-  - [305]
+  - [268]
     - `name`: repost_latency.json
     - `sha256`: 5afe00ca1d7db9a0c2dbbbc604b5e661b139609856fa479e035e0c158c675e8a
-  - [306]
+  - [269]
     - `name`: reseed_hazard.json
     - `sha256`: 0edfaeeea62f26b073232904ea7417de7373e31214cda255219d1c23c81a5054
-  - [307]
+  - [270]
     - `name`: reward_audit.json
     - `sha256`: 89fd58aa04e5efccd68045bca4c6f263b78e2823a91e8aa50c70f331a0c06822
-  - [308]
+  - [271]
     - `name`: rough_vol.json
     - `sha256`: a7a0dc640fe0c45b08e3a686dbc341f24e2ede115bd0777ce8d7ceb946bea648
-  - [309]
+  - [272]
     - `name`: round_lot_amzn.json
     - `sha256`: 84c474210f467bd43f8285361cb93bc840b0a6821185a64d7fad0d0036198d6c
-  - [310]
+  - [273]
     - `name`: rt_audit.json
     - `sha256`: 5cf3b9efba744325443e6dc9599ccf9dd651332ee7a1fd3eec5b45c7d03ccd7a
-  - [311]
+  - [274]
     - `name`: rubric_audit.json
     - `sha256`: 2f6945fda3c5d3357a29f723a5e6eeac530d6de70909b108c4e7a04095ec239b
-  - [312]
+  - [275]
     - `name`: run_audit.json
     - `sha256`: 05db03bc5b9474bee5eb68e1d3d5b2dca1a8ac239c01348f86f53e6ec1db237e
-  - [313]
+  - [276]
     - `name`: sbom_audit.json
     - `sha256`: aea10d964151ed5af028e1f308b42c23378dfe6da86bcb5d6392174bb21d4bc7
-  - [314]
+  - [277]
     - `name`: schema_drift.json
     - `sha256`: 739cdc3d79a415c89a28a696e7e98fd5aaea52a774ac0c621f2c721342999bc8
-  - [315]
+  - [278]
     - `name`: schema_fingerprint.json
     - `sha256`: f02529f36e47efbd95c9d9c328517ec18cf1660ef6c3f14f33254af94898975b
-  - [316]
+  - [279]
     - `name`: seed_audit.json
     - `sha256`: be653f889a4ca02a62b230bbeb0e4c7bc863c282369d365a691b234eb9d32fa7
-  - [317]
+  - [280]
     - `name`: seed_sweep_demo_amzn.json
     - `sha256`: 7f5be12dde7fe0a377100dd6a2623ecd9b34a9d6d95cd68954c80f5068b9539f
-  - [318]
+  - [281]
     - `name`: serial_watch_140b073ea589b0c7.json
     - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [319]
+  - [282]
     - `name`: serial_watch_1e8e1446e506fce1.json
     - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [320]
+  - [283]
     - `name`: serial_watch_2c14615c26efd19b.json
     - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [321]
+  - [284]
     - `name`: serial_watch_46445c3b227aa15e.json
     - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [322]
+  - [285]
     - `name`: serial_watch_47297eff3cb55178.json
     - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [323]
+  - [286]
     - `name`: serial_watch_4f4a495b59d022fb.json
     - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [324]
+  - [287]
     - `name`: serial_watch_771602cd1580476c.json
     - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [325]
+  - [288]
     - `name`: serial_watch_78dd891261e2aae9.json
     - `sha256`: cafb78f75257cff2a338fe26021e82a4eae4b8049feeb02c7256ccfef805db0f
-  - [326]
+  - [289]
     - `name`: serial_watch_85db152db863d25d.json
     - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [327]
+  - [290]
     - `name`: serial_watch_8977244ef78bfd2f.json
     - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [328]
+  - [291]
     - `name`: serial_watch_a6fd40311ce0fa04.json
     - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [329]
+  - [292]
     - `name`: serial_watch_d311f5ea367a66a9.json
     - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [330]
+  - [293]
     - `name`: serial_watch_dbd21a6c99c81e00.json
     - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [331]
+  - [294]
     - `name`: serve_audit.json
     - `sha256`: 37ce4766e87a0a7200ba38e20f49fd5a5fe734640ab9ff43a4aa18ccea7b2113
-  - [332]
+  - [295]
     - `name`: shield_decay_amzn.json
     - `sha256`: 2e88cdc4707a8890a0dea647749561eff8fda0d0b7711ff07bd42549e15319b2
-  - [333]
+  - [296]
     - `name`: side_imbalance_amzn.json
     - `sha256`: fdce661d9fd73f5bd47f17dfbec526e3c4079ed0ea97dd6c59f2cb2a07791a76
-  - [334]
+  - [297]
     - `name`: sigkernel_mmd.json
     - `sha256`: f56d3a4e991a23592af3e4406f64b2fecbd4abf8dddcec96f03e89934779358a
-  - [335]
+  - [298]
     - `name`: sign_autocorr_real_amzn.json
     - `sha256`: d2b4dce996ab14b7e2e16112862b073e87294c06fe07b755942230c65ed65438
-  - [336]
+  - [299]
     - `name`: sign_predict_amzn.json
     - `sha256`: fbbe98aec24936c1b3a0dff0c922a660fdb2e2419e402bf35ba30f923a7cf13f
-  - [337]
+  - [300]
     - `name`: sim_real_ledger_amzn.json
     - `sha256`: 814b4853c24bd668b2c2fdb66f6fd4eb8b9854fcc335edc0ea22dbc6d3271622
-  - [338]
+  - [301]
     - `name`: sim_sensitivity.json
     - `sha256`: cb33e655209b155f557770674a45d14a77e523f4d964f8cea6c69644048ca140
-  - [339]
+  - [302]
     - `name`: sources_audit.json
     - `sha256`: 1819d4b627eb9bc9589978a0c16b7b38452bf72747f81641478bd4b64bc2af03
-  - [340]
+  - [303]
     - `name`: split_flow_bench.json
     - `sha256`: 37c6fe8de4fab801aa4dbb5eff23c326ecbf8d471e869d500be9451d9fb6e73f
-  - [341]
+  - [304]
     - `name`: spread_dynamics_amzn.json
     - `sha256`: 13bb86c5bbf5f826279c0af371790259cfdb202c8bf85c4f09155199cdd3bdce
-  - [342]
+  - [305]
     - `name`: spread_floor_bench.json
     - `sha256`: 37861b395d98f358141ada1962c698679c80c24632baa50e7c08b32873930a6f
-  - [343]
+  - [306]
     - `name`: spread_reopen.json
     - `sha256`: d22bb5a384368a0d383a9cf6df4f38b40e148830e700784a96ae446354aed406
-  - [344]
+  - [307]
     - `name`: spread_response_amzn.json
     - `sha256`: ab2a078fc13c3bebf659ea962fb21ab18e826508f0abad2fc83e1210ba3c8463
-  - [345]
+  - [308]
     - `name`: spread_response_bench.json
     - `sha256`: df3253be3c3a3f43bc4e4cccbda6d72f2a627d95ba99a683117cd9d19e9d5352
-  - [346]
+  - [309]
     - `name`: stack_invariance.json
     - `sha256`: 4f3a5c2449d4192a248d17b06b05e6a5818d8671719af69bd37f216ddef0f1c6
-  - [347]
+  - [310]
     - `name`: stack_watch_synth.json
     - `sha256`: d90dfbd42266b54ddeb8e237e12d674ecbb24359287166f074d6241ad61a7dba
-  - [348]
+  - [311]
     - `name`: stale_quote_amzn.json
     - `sha256`: 91bfc70fb7cd64be078a327fae0df159395301ce2d42d954157c6749628bf6ce
-  - [349]
+  - [312]
     - `name`: streak_calibrate_bench.json
     - `sha256`: 684c6584fc9d7d18d8e6801934e63a1ced7249321e13bc8f06f7868e60a2b86f
-  - [350]
+  - [313]
     - `name`: streak_stats_amzn.json
     - `sha256`: d51d2a74e86e484183fa2af0405ad38af8273f38fb3621f2bcd39e6029556129
-  - [351]
+  - [314]
     - `name`: suite_health_drill.json
     - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [352]
+  - [315]
     - `name`: sweep_bound.json
     - `sha256`: 87670d4022ace1a09b1eec2e2c142bfb3a3cbd33e4b983a3369e6b7421ef1791
-  - [353]
+  - [316]
     - `name`: sweep_crown.json
     - `sha256`: d42626eead90475119af14f9c8d60d0ca5b94f62ad14c24ff157b4505f264b13
-  - [354]
+  - [317]
     - `name`: sweep_width_amzn.json
     - `sha256`: ed310e546e4b4f2c2544f99c24cf010197ae78d3fa753bede0af328dde59ccdd
-  - [355]
+  - [318]
     - `name`: sweep_width_bench.json
     - `sha256`: 67f57afee23c89322c27d64070da7731ba292703388bb68768afc34019f69431
-  - [356]
+  - [319]
     - `name`: tail_quota.json
     - `sha256`: 307c022496df278307301b62207cdaf7c5fc3078cea9151fd486e088d60bafed
-  - [357]
+  - [320]
     - `name`: tail_real_drill.json
     - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [358]
+  - [321]
     - `name`: tape_digest_amzn.json
     - `sha256`: 4915ad1bb6cf3c0857a09020ca27f3c7e6685a9f64681c2fefd8f2e91a8b15cd
-  - [359]
+  - [322]
     - `name`: tape_surgery_amzn.json
     - `sha256`: 4696227f39dac4b343da3dc5f9a708069d44b64db94a7f5ca12e6455c54629b5
-  - [360]
+  - [323]
     - `name`: tick_rule_amzn.json
     - `sha256`: d69bc89702def00c3abee7c06e071378f18f0996a186a296a68ba16d676e3840
-  - [361]
+  - [324]
     - `name`: timepart_audit.json
     - `sha256`: afe622b75c555ba7c810a074205287ba12588cdba90388876d9aea438fad95c5
-  - [362]
+  - [325]
     - `name`: touch_empty.json
     - `sha256`: 909b434110fae047594dfa08b7342959281df4102e3ee8ba4d65d9c547319c95
-  - [363]
+  - [326]
     - `name`: touch_follow_amzn.json
     - `sha256`: 8dc68233094f788f38f52a8e32fc5a04a25c27c35806b73d5b677f7160033bdb
-  - [364]
+  - [327]
     - `name`: trade_decomp_amzn.json
     - `sha256`: af272bd9ef0a1845d901080caa9c3a27257a3ae341848cdffadd8f03475c0427
-  - [365]
+  - [328]
     - `name`: train_infra_audit.json
     - `sha256`: 31319d104c42dee087fe7d24b42c92af5a99bba75587ebcb3336d9ea81d1e90b
-  - [366]
+  - [329]
     - `name`: train_receipt_audit.json
     - `sha256`: e31a42fa72953f9b740dde1e2179b8525b6dd49c00c28fec4ebc8e160687c25a
-  - [367]
+  - [330]
     - `name`: trust_step.json
     - `sha256`: 39f62ffed6cce8684bdb43ba62406bf2ecf12eede96e68d11f4d06ca50de59a8
-  - [368]
+  - [331]
     - `name`: ts_reasoning_audit.json
     - `sha256`: fba6cce35080058c5eabcc308541cac27bdc27b3538596c1856755cdbdee8591
-  - [369]
+  - [332]
     - `name`: unhit_chase_amzn.json
     - `sha256`: a7c9de93641c46d2853515894aa636286ba5d49bc12833aa936cc4c056080081
-  - [370]
+  - [333]
     - `name`: vac_chase_amzn.json
     - `sha256`: 371db4e5f9b635abc95f30ea5e6e0b135202c998322124897d35b26f9a130b1c
-  - [371]
+  - [334]
     - `name`: validator_fuzz.json
     - `sha256`: 524d611ec21c3688ec7b8af92b4eda6bd7f70fc23c7a558215fb5ec3d22d4ae2
-  - [372]
+  - [335]
     - `name`: verdict_real_drill.json
     - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-  - [373]
+  - [336]
     - `name`: vine_audit.json
     - `sha256`: 86febce575e975c471715538d9ae242a5e56522d10afb46ff11e2e462c180962
-  - [374]
+  - [337]
     - `name`: vine_dominance.json
     - `sha256`: 2c555910f452082daebc5ad1ee719d515725d1a6c1350932cb4d860ae7e230ce
-  - [375]
+  - [338]
     - `name`: vine_panel.json
     - `sha256`: 4ed248f50d9977ef333f1456a947c01e6d01687eff3f93082e9afa2cc0d9484f
-  - [376]
+  - [339]
     - `name`: vol_bench_f3bf2afc2f159ace.json
     - `sha256`: b9b70f7186d75054e91ee734b87b8aeeba22d66af713806a8d5410a9bc603ee3
-  - [377]
+  - [340]
     - `name`: vol_of_vol.json
     - `sha256`: 8a46d4ec9cf6574f032ebc0041b4cb4466ebddfb53d16ac217fc6954d8f707e2
-  - [378]
+  - [341]
     - `name`: vol_signature_amzn.json
     - `sha256`: 66c853a1efbe2fe0a41535ef9e191eee310e5346e7057fd157a8832b3b1e3eb8
-  - [379]
+  - [342]
     - `name`: vpin_amzn.json
     - `sha256`: feed66eda5cf279af3d12224eeeb7cae7ff47a998dcc767249d185f78bcd27db
-  - [380]
+  - [343]
     - `name`: warmup_spec.json
     - `sha256`: 01b3b622ed4e6d6852fd56f2122d257e1b9f31d100ae850cbea38921a38bafd6
-  - [381]
+  - [344]
     - `name`: wave23_map_amzn.json
     - `sha256`: ad949f2ebda26df715cc45e1d6efef08c10e6deeac503580bc6668b61bf10ee6
-  - [382]
+  - [345]
     - `name`: wave24_map.json
     - `sha256`: 5c765aa1b4d50ddd0fb2f3645de5edc6c60465ae6b6c936b7133507e3a0069aa
-  - [383]
+  - [346]
     - `name`: zone_card.json
     - `sha256`: 751e3497d28c9a1f6e50d5040ec6b80a416194b0ea1b0ab2b05462c897b219d3
-  - [384]
+  - [347]
     - `name`: zone_churn.json
     - `sha256`: 7f4b68803588fe0ddc3ee3c45698a7a2ea367f8c2bf5cad7e542fd56e91441f5
-  - [385]
+  - [348]
     - `name`: zone_embargo.json
     - `sha256`: ee556605f12d88c494b6ead3a02099f569dfef7875cc21ca7ea5657983aea180
-  - [386]
+  - [349]
     - `name`: zone_map.json
     - `sha256`: 43753aa2492ac472d22f2e221fa155d2c1393ed13201a1d9028231e15a4d68f7
-  - [387]
+  - [350]
     - `name`: zone_stability.json
     - `sha256`: bd695896930494a0d8da307b9088744b98abe575a6574369d929ba7ffc8a4b2f
-  - [388]
+  - [351]
+    - `name`: zone_ttl.json
+    - `sha256`: b5987b6ac2dfd8484a15f89fbbfa7dd8d6009df8dd1d4ec1098b4efe9580d722
+- `members_added`:
+  - corpus_epoch_51c18304677442e1.json
+- `members_removed`:
+- `n_members`: 352
+- `params`:
+  - `head_sha`: 981dc46489ffbdac76dd0fa109d7688027f9417b
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_51c18304677442e1.json
+- `prev_epoch_sha256`: bd08b7a8385287355719474129ee43d64484ae5e24da9a506f09bbf3a54e7983
+- `receipt_sha256`: 0954867c7275939898159f5c5be675d3ce4b42d7d3f9be3bb8a0c8a0ec0e820b
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_51c18304677442e1.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_51c18304677442e1.json | 8bb38c93294d9d43ae6744c192e7b85c1bc102b6d73bc48141a43c1160333a2f | 51c18304677442e1a37d57f06843fe1544306c6594809ec05b5a50cd6fae2a10 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: bd08b7a8385287355719474129ee43d64484ae5e24da9a506f09bbf3a54e7983
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: e9a3d247dcd6ccf1e4a1fd13f8b6f54117733c81d65ec0a46fc6c0926848939e
+- `members`:
+  - [0]
+    - `name`: abc_calibrate_amzn.json
+    - `sha256`: 31aedff635330e6727b42bfa6b0c406c24aa305825c41cb09ae6aac33dca65f1
+  - [1]
+    - `name`: aftermath_flow_amzn.json
+    - `sha256`: 229bfe14cfd239f30786ef89c8aa0f2b2775800e00cd85a6a9d3239265604da8
+  - [2]
+    - `name`: alert_budget.json
+    - `sha256`: 04e96f138a830001cb130a3b4758f684627588bccc648f4efd35a72bdb2111e7
+  - [3]
+    - `name`: anchor_scan_amzn.json
+    - `sha256`: 65c11ec3e7f771bbedf4cde31b63bbe9576e97a9de55f7ab030d3c8c34c28c8a
+  - [4]
+    - `name`: api_audit.json
+    - `sha256`: 2957d91704d025c08f5d7ece51f037827539d9254246091d8499fb1fde4a3177
+  - [5]
+    - `name`: api_fuzz.json
+    - `sha256`: c403f16743569dd1a6b7aa0711a58a42ca8bdd26abc5b0645bf5ab19952e792e
+  - [6]
+    - `name`: asof_audit.json
+    - `sha256`: 436c3737e93cd19673ae6e6127e69f47498efbeacdfc25e8447a9abdc1b7512a
+  - [7]
+    - `name`: attestation_audit.json
+    - `sha256`: 5b44675be81133eb52a25feb2553c487bf6392ec297bf390fde875085ae46ee4
+  - [8]
+    - `name`: attribution.json
+    - `sha256`: b9a8d0e5e42087e034ca2551afedaadd6f82eeee74666794dff88fdbaeb00b4c
+  - [9]
+    - `name`: backend_parity.json
+    - `sha256`: 9b2b2433e4106a88b1f2583bca0816a738370635046254267a50f83e50b3ac5c
+  - [10]
+    - `name`: band_occupancy.json
+    - `sha256`: 98635a72af8ee0b3f395cefb81bc3be5018d39b7f9cdd8a359007c50780e70da
+  - [11]
+    - `name`: band_shape.json
+    - `sha256`: 1e0d626f6a4b69a5761dc498a5b1bcd7d446b7a0d6c5439bf6c3beb048eafcbc
+  - [12]
+    - `name`: bank_audit.json
+    - `sha256`: 07d92059b00305ba6b5880edc4152180d0fd31bd9f0829bbea3052b0ceb075fc
+  - [13]
+    - `name`: boundary_audit.json
+    - `sha256`: f958b32b0d6bedbd542c105d7b530431c4356dda768d2bb90fb8055db56b6cdf
+  - [14]
+    - `name`: byok_audit.json
+    - `sha256`: 0dda10232d681aecd75835b70382ecab3f0698f91e5a371e171968a73ba23406
+  - [15]
+    - `name`: cache_audit.json
+    - `sha256`: 248835c82eeba8f0ef65fc30345da462bcea7180374008d5aa56c526f4bd5f61
+  - [16]
+    - `name`: calibration_audit.json
+    - `sha256`: c9f800216f05073fed4da606f04823cc71bb37909d4242492f5e280cdb64964f
+  - [17]
+    - `name`: cancel_cluster_amzn.json
+    - `sha256`: d6554e87ef5ca20ee1df623ac0b6f08fba4b91f2c00bce68bfa949767691abf1
+  - [18]
+    - `name`: cancel_gradient_amzn.json
+    - `sha256`: b140be66a1d4467c73f104a992ab9f692ed83b959a7918461b3951fd091bff04
+  - [19]
+    - `name`: cancel_gradient_bench.json
+    - `sha256`: d01943ba6fa197eb7b8f259b796acc28a6cde10a2bee9995dd47a98b0535a91e
+  - [20]
+    - `name`: cancel_lead_amzn.json
+    - `sha256`: 8151e7dc1cbbedb112d8fdc3cd3e0f52aca58ef4d23ad698d2229a02060a705e
+  - [21]
+    - `name`: capability_audit.json
+    - `sha256`: 787b45652557c719c5beffef50ad571f773d3253f28ddc0e0a406e0cdc75399c
+  - [22]
+    - `name`: capacity_eval_3622d0c059d42009.json
+    - `sha256`: 57ad3394513fe58e48127141858a990580fade56ae4755ad0a3b868aa2568f2b
+  - [23]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [24]
+    - `name`: causality_scan.json
+    - `sha256`: 2d7b2e0963fe468305afbbbe190b22b356ad7bdf8cc4f47c279fc25855d61161
+  - [25]
+    - `name`: churn_reseed.json
+    - `sha256`: 3a444c77bfef84e0e070d4611368569639ee6a551ed30cbdc6a107202ccbff7d
+  - [26]
+    - `name`: churn_stability.json
+    - `sha256`: 7ab02a6f41f6c626d79bca729a02300d4c79dae243758a460b57a636604fdcc4
+  - [27]
+    - `name`: cli_audit.json
+    - `sha256`: 16b8a95f44d73964a6578cee9c7cc4aeae2d74770d1b2891422b859feb01d597
+  - [28]
+    - `name`: closure_fit_amzn.json
+    - `sha256`: ff6d30e8251032109ace27be9dd1e488206be1eeb81d5fa1f9c5d8f56eb29294
+  - [29]
+    - `name`: closure_stack_amzn.json
+    - `sha256`: 994f8f2cf89faaace83e6e3f7441d3361e111c0d2b9e05cf123c2c602c2389cd
+  - [30]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [31]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [32]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [33]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [34]
+    - `name`: contamination_audit.json
+    - `sha256`: bce466d9ffb4b6144cf78590caa1bb1c48f59ac06ad94a7141d1796013ab53fe
+  - [35]
+    - `name`: continuation_attr_amzn.json
+    - `sha256`: e2340d411b4af81d839dc85ad7326835fe7a8c97c834432c861664c773f0cbbc
+  - [36]
+    - `name`: contract_audit.json
+    - `sha256`: f5ccc9f01e32b707526d4fb684e45d9e7d3b64af7b3b647c12223d72764d1e64
+  - [37]
+    - `name`: contract_probe.json
+    - `sha256`: 9cd19ecff9d41c85487e6991e0bfd67eff42a9ed154b6759f4f9f1c8b49178ec
+  - [38]
+    - `name`: corpus_absence_exemplar.json
+    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
+  - [39]
+    - `name`: corpus_audit.json
+    - `sha256`: 374807979a66c7dc455ee3f1236eff03be43e1b7f9f550b4e97789b1807b3552
+  - [40]
+    - `name`: corpus_history_absence_a5753b57fab08b0f.json
+    - `sha256`: 3904f2838779802fcad32a15b13d82eb6860a0fafecc2feb9437af93a7360f8f
+  - [41]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [42]
+    - `name`: corpus_proof_exemplar.json
+    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
+  - [43]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 25230923d07164342facbe10ec0520975ee04c0ef690b3661f5daaf9d69f250e
+  - [44]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [45]
+    - `name`: cost_calibration_eval_f130c7e871e9aa64.json
+    - `sha256`: da4f8269942b5c87bebed33e422d6326cb73d327f48648d97b02e6e6b36dd1e9
+  - [46]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [47]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [48]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [49]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [50]
+    - `name`: crown_behind.json
+    - `sha256`: 1ae02ca68d023ddd18c2b0023b240d1cf729b0a2b04597954548402afbe769c6
+  - [51]
+    - `name`: crown_density_amzn.json
+    - `sha256`: 4945e95537a122d7d13c12d84fe59e518e3051eb8ddd9ca8db66f3218a0c6268
+  - [52]
+    - `name`: crown_join.json
+    - `sha256`: df42ab245b4f82d535fb52d4a4068414b4b11537e152ec63b0e3ab6823e40af9
+  - [53]
+    - `name`: crown_size.json
+    - `sha256`: 751a7c4351d1639d547330d7b8f8251fb6341f500f099304a13945810a560fe0
+  - [54]
+    - `name`: cxl_shield_amzn.json
+    - `sha256`: 16cac426d34c9af016963a251e9fef5422babd2ced8be9795a7413e9c6b84e40
+  - [55]
+    - `name`: decay_watch_synth.json
+    - `sha256`: 8f37ccea904fe09557819f36a60d5dcb2d99467db21301111b5c7d9836ccf6d4
+  - [56]
+    - `name`: deep_book_bench.json
+    - `sha256`: 9410e500ad2602dc085c5146640d7bf7219a9626c8bccd32ea47a71829f03392
+  - [57]
+    - `name`: deep_microprice_amzn.json
+    - `sha256`: a9fddf27e4c26bc144ced56ca35856411f8a6220d91100872170b60411738acd
+  - [58]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [59]
+    - `name`: depth_consumption_amzn.json
+    - `sha256`: 1bd84264cd6b886a28c16ff5246ec2c4467f81d0a656589c534dad34d8754846
+  - [60]
+    - `name`: depth_tilt_amzn.json
+    - `sha256`: a42581086e0846cbc71a272b6cb39e018031176fd7414ebc57dc95ba7415d2b2
+  - [61]
+    - `name`: dip_audit.json
+    - `sha256`: 085f0a461518911bd57e27e12c0c01f4f0f2134254f7b240ab4066d95cc8233f
+  - [62]
+    - `name`: dip_run_audit.json
+    - `sha256`: e0498594b7ae8e371c24761c7e5f7b3a97fb24e708e645d4abcfbfcda71bab86
+  - [63]
+    - `name`: disclosure_audit.json
+    - `sha256`: 79f2a55cc0ba899cbdb8a26e7e103e3e008acc554890ef21d63d1d3bf48d0538
+  - [64]
+    - `name`: dispatch_audit.json
+    - `sha256`: 19bba277befd9b88272175e899a962822a40a3bd8757c750882d56d92513d8dc
+  - [65]
+    - `name`: diversity_bench.json
+    - `sha256`: f9c48ad14bff833f98ae5b56aea24192b9815f1e5acbc86a0a8fd61a7c27325c
+  - [66]
+    - `name`: doctor_audit.json
+    - `sha256`: 0c0e69fb4cf225577f2b67144e306034a28ffdf64acf3dc4f315588159c2aa13
+  - [67]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [68]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [69]
+    - `name`: ds_audit.json
+    - `sha256`: 67a0e581ad6876ffca1e43b82b9bfd9dc7f91531e6b926af1751eaec4d727a8d
+  - [70]
+    - `name`: duration_check.json
+    - `sha256`: 12188ad90369774c642fb7f516f14dd7b20c4ec7367434c75b24aa1a5ba5e6ab
+  - [71]
+    - `name`: em_audit.json
+    - `sha256`: 69735454a8da7e781be4e56dc4d9eb83c56f05bbd51ce6e3a4db47e2bb547e00
+  - [72]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [73]
+    - `name`: empirical_flow_bench.json
+    - `sha256`: e12abc02ca462ff660e4aaa39fe5182508ab5896c1bdab180c5bb6caaf4c9c99
+  - [74]
+    - `name`: engine_fuzz.json
+    - `sha256`: 5fe71d9e05862d39cdaf2aaf153f508d992a2bc6132bc882f45d86da64f54396
+  - [75]
+    - `name`: epoch_delta_44955f3515007971.json
+    - `sha256`: 8c4823fcd372f927ada7ef5d08fff5457bd25db3ea5d7f42c49679236616da6e
+  - [76]
+    - `name`: epoch_position_2e120d21df5a400d.json
+    - `sha256`: 9c1bf6a2af75b9d2035688e89a872e45dfd166eef7b557aa58efc53aedadbfc6
+  - [77]
+    - `name`: error_shape.json
+    - `sha256`: a9b29bff34f219cab4fb4375d56560b392097906df05d87d69bb526d591d2284
+  - [78]
+    - `name`: eval_core_audit.json
+    - `sha256`: fb50b648b07af58fcaf0e9b8837ef946fd9b4b04e18cb48d991c264154da3e96
+  - [79]
+    - `name`: event_burst_amzn.json
+    - `sha256`: 4c8872dc6f781544ef15cbace7537df2876d0320410570283e558306a9c5b019
+  - [80]
+    - `name`: event_granger_amzn.json
+    - `sha256`: 628431d7b7099ac23e9e0c40a0b99de811952a701333949202e2ea0696256362
+  - [81]
+    - `name`: event_matrix_amzn.json
+    - `sha256`: e1a8e84ffc8b0ac08a7e8a821bc0650cb56bd10c924318e8c0be4a74587710d1
+  - [82]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [83]
+    - `name`: evidence_audit_5c9f07c823727701.json
+    - `sha256`: 6124e972cc182ef134a5c411f2794c4f2e3fcea205f6a0bfc0a05f4ec912cd23
+  - [84]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [85]
+    - `name`: evidence_audit_f45ae8d6bc7cd677.json
+    - `sha256`: 04128fa07fd2ca3650981d0cad06d07f921a525b301945b2c539ddd8c7447989
+  - [86]
+    - `name`: exec_cost_real_amzn.json
+    - `sha256`: 297d59df884a80c0503cad9c511579193cf77504fd5313492b732b4297993788
+  - [87]
+    - `name`: exec_cost_split.json
+    - `sha256`: 53ef2528042134aeb7bd8c20d6c94f7e4ab3391fafd9851531f84df3fe3ae9f5
+  - [88]
+    - `name`: ext_bench_audit.json
+    - `sha256`: 324025ce928acda2167ecaa25bca6bcf16373400eb8ddb657e348483010c6ec3
+  - [89]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [90]
+    - `name`: fbm_circulant.json
+    - `sha256`: 8a8fcbcd46b58942852e9c79603d854aaddf1e5ea3c35b5dc9d42978005f5802
+  - [91]
+    - `name`: fifo_priority_amzn.json
+    - `sha256`: f180b99da62d936a31bf9df79f637141a9b7bd4c4679fc3782739455dafd7e30
+  - [92]
+    - `name`: flee_wide.json
+    - `sha256`: 186fec1776108a9051fbe02f47f411279a710999045cc97028fcf5a9f9482e77
+  - [93]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [94]
+    - `name`: fleet_eval_5e907be710811a44.json
+    - `sha256`: c95ce361609bdb00912147e0f87548fdbd2c0221ad27b8c1a4d0ba558b9330e1
+  - [95]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [96]
+    - `name`: floor_compose.json
+    - `sha256`: 53d4493e5009a0da44acdab958fb3bf8df5dcc01fd5bc76d5d24fe04d07692f1
+  - [97]
+    - `name`: floor_pins.json
+    - `sha256`: a38bb073ef069de28dff2ada970c05f2ac57a19433df20a19dfab727e9a0a5a0
+  - [98]
+    - `name`: floor_rate.json
+    - `sha256`: 632d421666dcd4ea2e7d4acd798ef82cab735054aeaa7d719eaacda91fea35f3
+  - [99]
+    - `name`: floor_reseed.json
+    - `sha256`: 2c02b255e4506593755d30d448e15bdc8f242e81ecbf380056b3a8c32698060a
+  - [100]
+    - `name`: floor_stability.json
+    - `sha256`: fbd9860771b933e799ee938c90ba3ea43620ead6dd99f0f44231c7c5d9916ce9
+  - [101]
+    - `name`: flow_couple.json
+    - `sha256`: 5dc9e98c044ada0edef8fc7f0be4ec7efabdc5d52781d9cacbd327549fb9f992
+  - [102]
+    - `name`: forecast_core_audit.json
+    - `sha256`: fb5960935d5182ae83223cf1e0645c0f3812abe37dacacf9f211ee920e2f0c18
+  - [103]
+    - `name`: forecast_data_audit.json
+    - `sha256`: 3174e1b32201a37b02fe225f469781f58e9470c9aa971ad259624bbbda2ee224
+  - [104]
+    - `name`: forecast_infra_audit.json
+    - `sha256`: 57d88d8385893260ddb771942ecdbb889e6e9aea1ee53c9660ef4f3a7350f9b3
+  - [105]
+    - `name`: forecast_pipeline_audit.json
+    - `sha256`: bd9b0903ffd6f40e3b237f4bbe46557ef345cfd547ec9e045dadc0ee806084c2
+  - [106]
+    - `name`: full_impact.json
+    - `sha256`: 29a1b45e52fca254985f19c30d096eb6b2de14a406494282206e1092b3ea905e
+  - [107]
+    - `name`: full_stack.json
+    - `sha256`: 2048f94b0d052bf5ebfa38c6786d60b900b37468a814ec46e9b25262d6c9d1fc
+  - [108]
+    - `name`: fx1_anthropic_sdk_audit.json
+    - `sha256`: 03fd468413780b70daebbd231a925c4289faf62c6f0327fbdd0572f83764d01b
+  - [109]
+    - `name`: fx1_api_audit.json
+    - `sha256`: 3d94c3ed069123be4b774613a3e35d114698ab6000ce195fa97187e2a5596bb1
+  - [110]
+    - `name`: fx1_auth_audit.json
+    - `sha256`: fb7e0783ffa11fb79b7c4a1fceedb0b9e3f5eb836db4cda2b195b000128d8044
+  - [111]
+    - `name`: fx1_cap_audit.json
+    - `sha256`: 99737d09622533bad5f5793cd7fef198e211b235251bb79455c9a5e8643547b3
+  - [112]
+    - `name`: fx1_cli_audit.json
+    - `sha256`: 19a95549bfb8e5f3143474a94bfaa24ccc593f634237b3e8f33e811481dd0add
+  - [113]
+    - `name`: fx1_client_audit.json
+    - `sha256`: 3c83b261c8966f3ae7d63bb5bb18371adddb1b3ca2c21795223b8d3ceab3acc4
+  - [114]
+    - `name`: fx1_contract_audit.json
+    - `sha256`: 913e276befeaecd002582c8125ebddc96c85996764b57b91a956b5f7b32173e0
+  - [115]
+    - `name`: fx1_drain_audit.json
+    - `sha256`: f864d2a9cff6e6c396045afa8105c337362a769e491d6fc002af7dcff29e454b
+  - [116]
+    - `name`: fx1_e2e_audit.json
+    - `sha256`: e4671f251df3cf35c7ec50adbc59803a8d733f1759380edea714a532c6ec49ac
+  - [117]
+    - `name`: fx1_eval_lifecycle_audit.json
+    - `sha256`: 16c6e3969091a825443712614b1dd31b0c1224c8196d1fa35596f6fafb4872dd
+  - [118]
+    - `name`: fx1_fault_audit.json
+    - `sha256`: 43c78649e2f8246708940e27e83038f69f2e7aa36fe758d442fac9f6bea04205
+  - [119]
+    - `name`: fx1_jobs_audit.json
+    - `sha256`: c952e24df7c07978437e3ed7f36aadf0cd13103980588013f3677e371f9775bf
+  - [120]
+    - `name`: fx1_oai_sdk_audit.json
+    - `sha256`: 2e1421dd4e7b06191da9ee4c537d10ecd0fcb5e8a13a32608820f295e81fd0fb
+  - [121]
+    - `name`: fx1_ops_audit.json
+    - `sha256`: 6362b090bd931070e3f1a12caec01d2dc0df14db98c71658c29b58bf10fb8d08
+  - [122]
+    - `name`: fx1_parity_audit.json
+    - `sha256`: e71e77a4d8169d731bdc48c27765c24c3db59f1240437e55fc1f9edb928c90af
+  - [123]
+    - `name`: fx1_perf_audit.json
+    - `sha256`: 7f0fe1b11dca4412cb54b8dc3f40ad929016ac1e59788b3b3dd2857907b32148
+  - [124]
+    - `name`: fx1_quota2_audit.json
+    - `sha256`: 6e135a43144e89e3fab4b7d4473d89db1d98ae6f888f7611d2e9433ac00cadca
+  - [125]
+    - `name`: fx1_replay_audit.json
+    - `sha256`: d3cbeaa2e484021f6a1524df38d01c42cf19db7ad0de0aa78b4a44e750dcbacf
+  - [126]
+    - `name`: fx1_retrieval_audit.json
+    - `sha256`: c2edb7a020d4ecd07358915c28df2a54e33986faef25f35ecc566e2883ee5a29
+  - [127]
+    - `name`: fx1_sdk_audit.json
+    - `sha256`: 1556d7498e4618e386f891777e820fd3b2f08b4bde0ff7a9ad6e3d4689ef60d1
+  - [128]
+    - `name`: fx1_spec_audit.json
+    - `sha256`: e86dc5bffb1267539df5876ed3487bb0154512d5b9fbbcc83223d4a5db05fdb8
+  - [129]
+    - `name`: fx1_tail_audit.json
+    - `sha256`: 8874bc452c43fd807a7c7525c5105663a01f4406c05ea6a37ad5a361e5d8add6
+  - [130]
+    - `name`: fx1_usage_audit.json
+    - `sha256`: e728655fa53df38114d91ad618c9e278cbc1ab0391ef8beec3b89cc4693787e1
+  - [131]
+    - `name`: fx1_vs_audit.json
+    - `sha256`: bc79a4e09195983847b3274b903844372a3043e9dfedefcf35602245b53936b9
+  - [132]
+    - `name`: fx1_webhook_audit.json
+    - `sha256`: 0b262022d1bed02812e22e5c5558fdff740eae4e178609eb4d7ca0aca9f6c525
+  - [133]
+    - `name`: gap_close.json
+    - `sha256`: c405793974f1ca9c88feb19c56e341185c68d87809dd755eee6cc604c65a85e7
+  - [134]
+    - `name`: glft_bench_synth.json
+    - `sha256`: 4efd3a9a814d245873371a8f09c2d2502fca71393dbf738496e59cb4dc369467
+  - [135]
+    - `name`: grad_fidelity.json
+    - `sha256`: e86ebeeae2bae5736b2bca3089d8e415b41ce901bc23df5d2f515bda12bae660
+  - [136]
+    - `name`: grammar_map.json
+    - `sha256`: f8ee1c31439b03bbe14989ee0cebb7b0917f5186326cc91c2d81d7705686198a
+  - [137]
+    - `name`: harness_audit.json
+    - `sha256`: 0292862d23f09133aa7b11437b2e543d1740aa0d5ba6170f2069ea18808c6208
+  - [138]
+    - `name`: hawkes_clock_bench.json
+    - `sha256`: 816f8bd60cab106505a1adb153803ee48579ce6615a85ccd3e5d27785f2f3b77
+  - [139]
+    - `name`: hawkes_mv.json
+    - `sha256`: 5f386d77d237a6bbdc12fad5d794184508548fad474b1cb258f48bded96d7431
+  - [140]
+    - `name`: hawkes_real_amzn.json
+    - `sha256`: 9d398acb03bfc6bfd9f965d5d6115b5ca4d64244d312e90993ea11e7bd8a80ea
+  - [141]
+    - `name`: hidden_depth_amzn.json
+    - `sha256`: 24b6c5ca511ec6211f79115fdac3eac85f52d393738a5a88adebad8c46575ea2
+  - [142]
+    - `name`: hidden_depth_bench.json
+    - `sha256`: 4e18ea2564f675b351bfdd93ce9c1541af0638ef07e43728cfb48a83b3912330
+  - [143]
+    - `name`: hit_flee_amzn.json
+    - `sha256`: 72765463da5af6990d81e3026dd7d23ecf83265407fb0b0b43d14a5d2690a6d0
+  - [144]
+    - `name`: hit_starve_amzn.json
+    - `sha256`: 3d98298e540b6ab7fa14c9b8452feb06c7b5c28a2b09a55ea8a9c4b6710acb39
+  - [145]
+    - `name`: hmm_stability.json
+    - `sha256`: 5d06bc292b14e6a4de8d6fbd640e76c66b6ad82e4705e27ae068c2ef5a88c040
+  - [146]
+    - `name`: hmm_verify.json
+    - `sha256`: 269ee7b7e767d0388ab285e3257a5de62f4a631ada045aa83577b2b7786a51f2
+  - [147]
+    - `name`: honest_verdict_b133e8b3992af893.json
+    - `sha256`: 1a003a670945452a5c86d033900bc33429f2981422c8938b1b8e2469fc764f3a
+  - [148]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [149]
+    - `name`: honesty_audit.json
+    - `sha256`: 63d79882e619905c0d45fc094d08c67cce9be60c98e43ca846b677c3337370de
+  - [150]
+    - `name`: hypotheses_audit.json
+    - `sha256`: bd65b431cfc36ce9ec54bd7262002eeb735025e2dc71995e983df73924bceb4b
+  - [151]
+    - `name`: ice_budget.json
+    - `sha256`: b0be60f820caea3783400f5f7eaff399c68d243ee11508a95212d64907789642
+  - [152]
+    - `name`: ice_crown.json
+    - `sha256`: a57b172d4c2d0f528461fd35dbcaafefc1af9b3b08c9cb2cd690d7e76053665c
+  - [153]
+    - `name`: iceberg_bench.json
+    - `sha256`: da07cac898aadafc9bb434319334d0fc72d504fb5fe4c9ff5d0031b09499e7cc
+  - [154]
+    - `name`: iid_floor.json
+    - `sha256`: cd2d6153b177482f1df86f78f6c795d03e93a17046a897c58874dc14fcde2753
+  - [155]
+    - `name`: imbalance_predict_amzn.json
+    - `sha256`: d467e13e158dddf59e0ec2dd6b0941aeae37237f491757705418f7420c789655
+  - [156]
+    - `name`: impact_instant_amzn.json
+    - `sha256`: e6d80527e2bb993d7450087db961d6229561fe1a87c0e8b68d3920ca50315c4b
+  - [157]
+    - `name`: impact_persist_amzn.json
+    - `sha256`: 58bcb731c697074949a3705ee2270181d9f2df5e5d2c8f08fbf04b020f3200dc
+  - [158]
+    - `name`: improve_flow_bench.json
+    - `sha256`: ec0836e7b4d24834d0b68a43c5676ea213049fce8200966dc15d98d30a0a4488
+  - [159]
+    - `name`: inherit_audit.json
+    - `sha256`: 718adc7b101c76e503cc475cbedcd086fb0f696a14968d977f4ce5de7dc32a07
+  - [160]
+    - `name`: initiative_fade_bench.json
+    - `sha256`: f9a3f118c2fd37a308bd691633c7e7a9668e770d959535ca16bc2c583e4db867
+  - [161]
+    - `name`: instant_decomp_amzn.json
+    - `sha256`: e9fcb9c72331341fe60237cb457fa8456dcbdb340e87060fbb9318a7265b4df0
+  - [162]
+    - `name`: intraday_exec_amzn.json
+    - `sha256`: 04803c1f783145e75ccf403990146768490e123bc82c26dbdcef3901eb59fa0a
+  - [163]
+    - `name`: intraday_shape_amzn.json
+    - `sha256`: 7e831325e8e77d61360d07100a35234c210f79b99825d6d4040d5d903470cd1d
+  - [164]
+    - `name`: joint_fit_amzn.json
+    - `sha256`: 1041b3196b85319688e89a359401fadef29a4ff14a7371e389668b0c2d6175bf
+  - [165]
+    - `name`: joint_stability.json
+    - `sha256`: cd43e7ec5f39ddbb3ff5c6ea9acce41191bcd250cff7e986c20637c8719c9e84
+  - [166]
+    - `name`: joint_tune.json
+    - `sha256`: 27aea6f04b845ae84445bcd97dbf31c6eb68cb85053af2d568fafe51027f38f6
+  - [167]
+    - `name`: journal_audit.json
+    - `sha256`: 04fa04a533738617f528b94d0c819e1bf0b8d0ee71b653142136ed8fdb8e6942
+  - [168]
+    - `name`: kill_audit.json
+    - `sha256`: bd65e84d2037d452282b5fba052b6be102fef2e50995a14cb2a381405d8d2565
+  - [169]
+    - `name`: label_horizon_map.json
+    - `sha256`: facf0481adaaf3cb55b307b27c9259423b0ff6d13363b9a24e68b2b86a8cb955
+  - [170]
+    - `name`: label_stability.json
+    - `sha256`: bda24271b910cd2d912104d445d81c50f9f8fd61824b2c10e8a18f5c042c96dc
+  - [171]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [172]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [173]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [174]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [175]
+    - `name`: ledger_audit.json
+    - `sha256`: ce5203012f63807d82146868ab26fd44cc23019364feadfdbffb03cda064f522
+  - [176]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [177]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [178]
+    - `name`: legacy-unsealed/basis_carry_dd7705fc0f2f1c25.json
+    - `sha256`: 852f56a1e2aeb3654d406fbb14a4a2baa7cd20949d45153a98c5a99a2248f741
+  - [179]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [180]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [181]
+    - `name`: legacy-unsealed/calib_real_drill.json
+    - `sha256`: 7480b2af38274f5d6e6c4a107e01890a3d49f0524b5920a5b3b946a9f8a5a571
+  - [182]
+    - `name`: legacy-unsealed/crossvenue_basis_3f4ff76f517655a7.json
+    - `sha256`: 14ce799a46e282849e8e7852ff74489ed4747274c164040fcc52974bbb72a087
+  - [183]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [184]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [185]
+    - `name`: legacy-unsealed/forward_record_preregistration_v1.json
+    - `sha256`: d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3
+  - [186]
+    - `name`: legacy-unsealed/forward_record_preregistration_v1.json.seal.json
+    - `sha256`: afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc
+  - [187]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [188]
+    - `name`: legacy-unsealed/mid_dark_amzn.json
+    - `sha256`: da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1
+  - [189]
+    - `name`: level_gap_amzn.json
+    - `sha256`: 3c1b21418c1b617164a629f45f039f341ce9bab5321c81d77831a339222cde9d
+  - [190]
+    - `name`: lineage_dag.json
+    - `sha256`: e00ad05cbcc7e60916ebd9c9e12b704b29de788acbd82ee544be3df2375e66da
+  - [191]
+    - `name`: lo_response_amzn.json
+    - `sha256`: df91141443b114f39d4dba23cb499de6c4c8961eb6d1d6b1b60ca6d751dd66c2
+  - [192]
+    - `name`: lob_exec_amzn.json
+    - `sha256`: e334cb33cf73a06b99bbfc834825e409e849ec860b8533a093dfefbdac2e0932
+  - [193]
+    - `name`: lob_invariants_amzn.json
+    - `sha256`: 8a890214de32880ca3043d8ebb863992b938708828aeb3639fa79fd90e7948e0
+  - [194]
+    - `name`: lob_resilience_amzn.json
+    - `sha256`: b8728dbb705d8ae62e1339a4d7482070f7f827209c20c342b31ce6a9980a585d
+  - [195]
+    - `name`: lobster_replay_amzn_2012-06-21.json
+    - `sha256`: 44f53ca3f6e42bad9617d284fc37542ca64d3b4373642fe54deae83302a9dd10
+  - [196]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [197]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [198]
+    - `name`: maker_age_bench.json
+    - `sha256`: 743ba4eb58ce5575b1334ea8a1731ae39ebeab7789ea43733256e1458c8f5c49
+  - [199]
+    - `name`: map_parity.json
+    - `sha256`: 4dff84d32892f41c5d10b30c4c55ab5ba9a072affe9f67d2c3e4c50cc39330f6
+  - [200]
+    - `name`: marketable_limit_amzn.json
+    - `sha256`: 0e231a062d7253b3cdce1acd4a6ca72c75890e7b19fbbc47c76cc6815448c932
+  - [201]
+    - `name`: markout_amzn.json
+    - `sha256`: 70730f6f3bd4e398497f1e302f3b375c739a548b856b68f2282f4fa18b3de864
+  - [202]
+    - `name`: masking_audit.json
+    - `sha256`: 331d20547c6fec39fce38951b75d0b9d653f4d0cc37dff3908ba06e15b7950c7
+  - [203]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [204]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [205]
+    - `name`: meta_model_synth.json
+    - `sha256`: 351b5285fcd9f08a8dcfa478db62ed1dfd407c9bda7065efdf2cc2fcf4e3b0e2
+  - [206]
+    - `name`: metaorder_detect_amzn.json
+    - `sha256`: c2bfd7554d2aba52493daa287850c08aced9893f7beb8f0aa976e9b0c791ec8d
+  - [207]
+    - `name`: mid_jump_amzn.json
+    - `sha256`: b4afddf6927e2254d1e0362517bdd14ec3dd07d1dcebcfbb2da40384a1585d17
+  - [208]
+    - `name`: middleware_audit.json
+    - `sha256`: 559ace707af811672313127e2c1ef1758c5f90abce890f91054efc81deb332da
+  - [209]
+    - `name`: modelcard_audit.json
+    - `sha256`: ea042e48135698a878772ae2388c88d86ac11c666d385fe91e9f7ae52ddf84d2
+  - [210]
+    - `name`: monitor_run_13d20aef00774027.json
+    - `sha256`: 3ce1cd7f59c301be6b4710326ab905313725317bee3669ae8e755f6d422bc12d
+  - [211]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [212]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [213]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [214]
+    - `name`: mortal_repost.json
+    - `sha256`: c351dc60be497d864fc2cea3a06acfe8fcf3c9ef019836f3af0a0a6d58cbffd7
+  - [215]
+    - `name`: mrm_audit.json
+    - `sha256`: 58eb74524b8e5e97f5a07109503b2c4d350f3c316c53bd44177bf280a13978ae
+  - [216]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [217]
+    - `name`: native_conformance.json
+    - `sha256`: 6754767a42cdff244d3ff4d59b2366ff8655990087cf42957147e0890fbdc5ad
+  - [218]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [219]
+    - `name`: options_audit.json
+    - `sha256`: 80c4ce7b746b194f0e7dc78edc123768654a8db6e99d79398943822ac951e0f5
+  - [220]
+    - `name`: order_lifetime_amzn.json
+    - `sha256`: 57d744ba5f963aed36a2fef198015643bf4be0855f610ab32dcc21bc83941e01
+  - [221]
+    - `name`: order_revision_amzn.json
+    - `sha256`: dbb7239f51f26e176f62493fea10a2e921b1a97945eb251eae5e3432badab3ce
+  - [222]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [223]
+    - `name`: parity_audit.json
+    - `sha256`: a3f63f1bc2c5a8a1eda080ce56e6e4a14994b9b0a5fa40fa26d77a326b720163
+  - [224]
+    - `name`: parity_leak_audit.json
+    - `sha256`: 2e0cb6046a0cd26672101b4e3739d929e0e91fbfc360ceae94638287b83d451a
+  - [225]
+    - `name`: pin_stability.json
+    - `sha256`: cb002632c4d286eb8d3a1c9597f86b16d05bca58d12e3b06f472b25627bd61f1
+  - [226]
+    - `name`: pipeline_audit.json
+    - `sha256`: 728186040bc8ffa34264155cb8a54d1d6123c71968edcadbf7bac0b8cee90077
+  - [227]
+    - `name`: pipeline_flat_audit.json
+    - `sha256`: d849f5c4e74db12eaf84ed3161170c4151bfd05682aab9ffbf476e0478e1c37f
+  - [228]
+    - `name`: place_law_amzn.json
+    - `sha256`: a85ba039fc645e0455f7fa969be74bd40838b5c06b8893737d13352b68aef901
+  - [229]
+    - `name`: place_mix_amzn.json
+    - `sha256`: b496d4d2cdab3e254968926073316a3e74167d24734a226aa22146565996a994
+  - [230]
+    - `name`: post_trade_drift_amzn.json
+    - `sha256`: 83ad54e2add374fc7fa0333072c4ef745f6a1ed4112f36d14cefb9b23262192d
+  - [231]
+    - `name`: price_clustering_synth.json
+    - `sha256`: adfab5e558bdaa8b54abb8376b1d4f33c11f605d9215146ccea3b82d163b0c7f
+  - [232]
+    - `name`: price_improvement_amzn.json
+    - `sha256`: 870ef7c83529dc34f22ea1a7555abbbbed92f84d6d498096ae6159a4b4ef93f1
+  - [233]
+    - `name`: promotion_gate_conf_t.json
+    - `sha256`: a353477ea44ae58d507ff43f5be735937b0e0f3b2f84ef10d2d7f29e846f3506
+  - [234]
+    - `name`: propagator_real_amzn.json
+    - `sha256`: 4c7a02f864596c226f78948ee5d4ae227a2323a5aee8e1efd6b9f492f3d3089d
+  - [235]
+    - `name`: quality_audit.json
+    - `sha256`: 60c619c630ec06fd0384bdf08f11b6940e06c914bc89fe75b7c62a4817aa06bc
+  - [236]
+    - `name`: queue_class_bench.json
+    - `sha256`: d3941977a98261a06825573ad173a9b5d21e1515ea7a3dd48430e61779dc341d
+  - [237]
+    - `name`: queue_fate_amzn.json
+    - `sha256`: 54ce63133d050866a22b42879797e56d076c3f9de8f646902e2090287acedf55
+  - [238]
+    - `name`: queue_jump_amzn.json
+    - `sha256`: 467134b64f8e9b397acd3f221e716b735ee62a5e70e2a533875be62b5d42924a
+  - [239]
+    - `name`: queue_occupancy_amzn.json
+    - `sha256`: c2f2b5caf9a82f3066a34abab1b0529acf44948abd7e61d7b3e1a35e20efbe23
+  - [240]
+    - `name`: queue_priority.json
+    - `sha256`: c03de3a987fe19ee42eadf2f5ac6e97e61da5d55bf89f3a81493e0abf399e7d4
+  - [241]
+    - `name`: quote_floor.json
+    - `sha256`: 20fe58eafd0338916ce1f2872ae0279f079f399ab211c61122e0be68294e1e48
+  - [242]
+    - `name`: quote_place_amzn.json
+    - `sha256`: 493540278637dde9c9500d180d3651a9a34efa279eda7278da2a6655f5e1d4df
+  - [243]
+    - `name`: rankic_eval_8d740c0ddf6d5c54.json
+    - `sha256`: e48fce1ae4cebf94e417773bdef20c9ed7b0822397505c6a51e8843a8da06c81
+  - [244]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [245]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [246]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [247]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [248]
+    - `name`: receipt_admission_529da640b520a49d.json
+    - `sha256`: 597c5aeecd2c1b57f0908fa6fdf05890fece05e541a42be5a662ba235ff67f03
+  - [249]
+    - `name`: receipts_audit.json
+    - `sha256`: 5fdba4c796f2dff49486c62bd3c501e3053657231d6c45bfdd5bdb04ba2bb1cb
+  - [250]
+    - `name`: refill_hazard_amzn.json
+    - `sha256`: 195c5461c91d8d5faa684d1c3b179292e1ad717fcdabe1a61f0a851dea7e016f
+  - [251]
+    - `name`: regime_clock_bench.json
+    - `sha256`: 55c7d545b7f2e62b50ed135b63920effa0811d198cdc2c84fe0c035157626619
+  - [252]
+    - `name`: release_chase_amzn.json
+    - `sha256`: 8305fd598f154fe8c465ad718ece1fffe297c47471096a86543b69adfd02709d
+  - [253]
+    - `name`: reload_gate.json
+    - `sha256`: 98590cf3583cb8e138ee24c43324da205e4bf04df29a91467b0f69ac5fc8deda
+  - [254]
+    - `name`: replay_coverage_5e5e7ff56ee42196.json
+    - `sha256`: 5dd7d736d1be3a13b977b79901fc9dfef5fdc0d841c489f5848cd7c0839e521e
+  - [255]
+    - `name`: replay_coverage_e72b56ffaf7abe4b.json
+    - `sha256`: aa201319a975a4a347405a1e824db3a47084b4b8a140b0d087a46d85593ad02f
+  - [256]
+    - `name`: replay_proof_0de5fa4e0c739037.json
+    - `sha256`: 4a870f4bb735b8ebf2c87ae3dde8994dfe2220d55ead2f10871ed2c893cf70c2
+  - [257]
+    - `name`: replay_proof_6d266ef51218e3e7.json
+    - `sha256`: 4f20eb438da29c42f4bc54f38a643590f149458db80a8c86196e72477551ecd6
+  - [258]
+    - `name`: replay_proof_701ae84c3d9813e0.json
+    - `sha256`: 4f49bb965f299970c04f1d01673142e0b6e5df77004c5d034b6bb6028760ad18
+  - [259]
+    - `name`: replay_proof_73137fe1a97c3538.json
+    - `sha256`: 74fbc282a7a1d5eb53bcfa17e44a460f8235f5950c463233abf70099e1a5c91a
+  - [260]
+    - `name`: replay_proof_7e1d9b632f022f5a.json
+    - `sha256`: a3a21f8a745cb80cac90f8e53f9512294c297e0caf5d3a4665d5f07214de4517
+  - [261]
+    - `name`: replay_proof_b23a176a5c91e210.json
+    - `sha256`: 1f4a8bd88480f4ddd2f07791b2f00deaa39c83a2151cd9395d395f1e20a4a7ad
+  - [262]
+    - `name`: replay_proof_cbbad2b0389750e5.json
+    - `sha256`: a320cc68307ecffe319ee675feaefa837472ff8a41f07416ac7208e1e98e1667
+  - [263]
+    - `name`: replay_proof_e1fa8dd41197ef11.json
+    - `sha256`: b7f6dc1c01a736a198ec1b10d2aa4e645eaa12c42aba06d749e210f612bc9f6b
+  - [264]
+    - `name`: replay_proof_f5fe541481bbf231.json
+    - `sha256`: bf65017c57348aed947123163223ef59ebf385c9907052b2497016d3753ae2ce
+  - [265]
+    - `name`: report_audit.json
+    - `sha256`: 90dbdda1d64beab2bd4b82cfcfecd207d0aa2ecce9906fe7c333c9ca3ac2b9f5
+  - [266]
+    - `name`: repost_frontier.json
+    - `sha256`: e946c2b132bb9334ace262e6731f96c13e14ce613f68537acf7e6d207fda2dbf
+  - [267]
+    - `name`: repost_latency.json
+    - `sha256`: 5afe00ca1d7db9a0c2dbbbc604b5e661b139609856fa479e035e0c158c675e8a
+  - [268]
+    - `name`: reseed_hazard.json
+    - `sha256`: 0edfaeeea62f26b073232904ea7417de7373e31214cda255219d1c23c81a5054
+  - [269]
+    - `name`: reward_audit.json
+    - `sha256`: 89fd58aa04e5efccd68045bca4c6f263b78e2823a91e8aa50c70f331a0c06822
+  - [270]
+    - `name`: rough_vol.json
+    - `sha256`: a7a0dc640fe0c45b08e3a686dbc341f24e2ede115bd0777ce8d7ceb946bea648
+  - [271]
+    - `name`: round_lot_amzn.json
+    - `sha256`: 84c474210f467bd43f8285361cb93bc840b0a6821185a64d7fad0d0036198d6c
+  - [272]
+    - `name`: rt_audit.json
+    - `sha256`: 5cf3b9efba744325443e6dc9599ccf9dd651332ee7a1fd3eec5b45c7d03ccd7a
+  - [273]
+    - `name`: rubric_audit.json
+    - `sha256`: 2f6945fda3c5d3357a29f723a5e6eeac530d6de70909b108c4e7a04095ec239b
+  - [274]
+    - `name`: run_audit.json
+    - `sha256`: 05db03bc5b9474bee5eb68e1d3d5b2dca1a8ac239c01348f86f53e6ec1db237e
+  - [275]
+    - `name`: sbom_audit.json
+    - `sha256`: aea10d964151ed5af028e1f308b42c23378dfe6da86bcb5d6392174bb21d4bc7
+  - [276]
+    - `name`: schema_drift.json
+    - `sha256`: 739cdc3d79a415c89a28a696e7e98fd5aaea52a774ac0c621f2c721342999bc8
+  - [277]
+    - `name`: schema_fingerprint.json
+    - `sha256`: f02529f36e47efbd95c9d9c328517ec18cf1660ef6c3f14f33254af94898975b
+  - [278]
+    - `name`: seed_audit.json
+    - `sha256`: be653f889a4ca02a62b230bbeb0e4c7bc863c282369d365a691b234eb9d32fa7
+  - [279]
+    - `name`: seed_sweep_demo_amzn.json
+    - `sha256`: 7f5be12dde7fe0a377100dd6a2623ecd9b34a9d6d95cd68954c80f5068b9539f
+  - [280]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [281]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [282]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [283]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [284]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [285]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [286]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [287]
+    - `name`: serial_watch_78dd891261e2aae9.json
+    - `sha256`: cafb78f75257cff2a338fe26021e82a4eae4b8049feeb02c7256ccfef805db0f
+  - [288]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [289]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [290]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [291]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [292]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [293]
+    - `name`: serve_audit.json
+    - `sha256`: 37ce4766e87a0a7200ba38e20f49fd5a5fe734640ab9ff43a4aa18ccea7b2113
+  - [294]
+    - `name`: shield_decay_amzn.json
+    - `sha256`: 2e88cdc4707a8890a0dea647749561eff8fda0d0b7711ff07bd42549e15319b2
+  - [295]
+    - `name`: side_imbalance_amzn.json
+    - `sha256`: fdce661d9fd73f5bd47f17dfbec526e3c4079ed0ea97dd6c59f2cb2a07791a76
+  - [296]
+    - `name`: sigkernel_mmd.json
+    - `sha256`: f56d3a4e991a23592af3e4406f64b2fecbd4abf8dddcec96f03e89934779358a
+  - [297]
+    - `name`: sign_autocorr_real_amzn.json
+    - `sha256`: d2b4dce996ab14b7e2e16112862b073e87294c06fe07b755942230c65ed65438
+  - [298]
+    - `name`: sign_predict_amzn.json
+    - `sha256`: fbbe98aec24936c1b3a0dff0c922a660fdb2e2419e402bf35ba30f923a7cf13f
+  - [299]
+    - `name`: sim_real_ledger_amzn.json
+    - `sha256`: 814b4853c24bd668b2c2fdb66f6fd4eb8b9854fcc335edc0ea22dbc6d3271622
+  - [300]
+    - `name`: sim_sensitivity.json
+    - `sha256`: cb33e655209b155f557770674a45d14a77e523f4d964f8cea6c69644048ca140
+  - [301]
+    - `name`: sources_audit.json
+    - `sha256`: 1819d4b627eb9bc9589978a0c16b7b38452bf72747f81641478bd4b64bc2af03
+  - [302]
+    - `name`: split_flow_bench.json
+    - `sha256`: 37c6fe8de4fab801aa4dbb5eff23c326ecbf8d471e869d500be9451d9fb6e73f
+  - [303]
+    - `name`: spread_dynamics_amzn.json
+    - `sha256`: 13bb86c5bbf5f826279c0af371790259cfdb202c8bf85c4f09155199cdd3bdce
+  - [304]
+    - `name`: spread_floor_bench.json
+    - `sha256`: 37861b395d98f358141ada1962c698679c80c24632baa50e7c08b32873930a6f
+  - [305]
+    - `name`: spread_reopen.json
+    - `sha256`: d22bb5a384368a0d383a9cf6df4f38b40e148830e700784a96ae446354aed406
+  - [306]
+    - `name`: spread_response_amzn.json
+    - `sha256`: ab2a078fc13c3bebf659ea962fb21ab18e826508f0abad2fc83e1210ba3c8463
+  - [307]
+    - `name`: spread_response_bench.json
+    - `sha256`: df3253be3c3a3f43bc4e4cccbda6d72f2a627d95ba99a683117cd9d19e9d5352
+  - [308]
+    - `name`: stack_invariance.json
+    - `sha256`: 4f3a5c2449d4192a248d17b06b05e6a5818d8671719af69bd37f216ddef0f1c6
+  - [309]
+    - `name`: stack_watch_synth.json
+    - `sha256`: d90dfbd42266b54ddeb8e237e12d674ecbb24359287166f074d6241ad61a7dba
+  - [310]
+    - `name`: stale_quote_amzn.json
+    - `sha256`: 91bfc70fb7cd64be078a327fae0df159395301ce2d42d954157c6749628bf6ce
+  - [311]
+    - `name`: streak_calibrate_bench.json
+    - `sha256`: 684c6584fc9d7d18d8e6801934e63a1ced7249321e13bc8f06f7868e60a2b86f
+  - [312]
+    - `name`: streak_stats_amzn.json
+    - `sha256`: d51d2a74e86e484183fa2af0405ad38af8273f38fb3621f2bcd39e6029556129
+  - [313]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [314]
+    - `name`: sweep_bound.json
+    - `sha256`: 87670d4022ace1a09b1eec2e2c142bfb3a3cbd33e4b983a3369e6b7421ef1791
+  - [315]
+    - `name`: sweep_crown.json
+    - `sha256`: d42626eead90475119af14f9c8d60d0ca5b94f62ad14c24ff157b4505f264b13
+  - [316]
+    - `name`: sweep_width_amzn.json
+    - `sha256`: ed310e546e4b4f2c2544f99c24cf010197ae78d3fa753bede0af328dde59ccdd
+  - [317]
+    - `name`: sweep_width_bench.json
+    - `sha256`: 67f57afee23c89322c27d64070da7731ba292703388bb68768afc34019f69431
+  - [318]
+    - `name`: tail_quota.json
+    - `sha256`: 307c022496df278307301b62207cdaf7c5fc3078cea9151fd486e088d60bafed
+  - [319]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [320]
+    - `name`: tape_digest_amzn.json
+    - `sha256`: 4915ad1bb6cf3c0857a09020ca27f3c7e6685a9f64681c2fefd8f2e91a8b15cd
+  - [321]
+    - `name`: tape_surgery_amzn.json
+    - `sha256`: 4696227f39dac4b343da3dc5f9a708069d44b64db94a7f5ca12e6455c54629b5
+  - [322]
+    - `name`: tick_rule_amzn.json
+    - `sha256`: d69bc89702def00c3abee7c06e071378f18f0996a186a296a68ba16d676e3840
+  - [323]
+    - `name`: timepart_audit.json
+    - `sha256`: afe622b75c555ba7c810a074205287ba12588cdba90388876d9aea438fad95c5
+  - [324]
+    - `name`: touch_empty.json
+    - `sha256`: 909b434110fae047594dfa08b7342959281df4102e3ee8ba4d65d9c547319c95
+  - [325]
+    - `name`: touch_follow_amzn.json
+    - `sha256`: 8dc68233094f788f38f52a8e32fc5a04a25c27c35806b73d5b677f7160033bdb
+  - [326]
+    - `name`: trade_decomp_amzn.json
+    - `sha256`: af272bd9ef0a1845d901080caa9c3a27257a3ae341848cdffadd8f03475c0427
+  - [327]
+    - `name`: train_infra_audit.json
+    - `sha256`: 31319d104c42dee087fe7d24b42c92af5a99bba75587ebcb3336d9ea81d1e90b
+  - [328]
+    - `name`: train_receipt_audit.json
+    - `sha256`: e31a42fa72953f9b740dde1e2179b8525b6dd49c00c28fec4ebc8e160687c25a
+  - [329]
+    - `name`: trust_step.json
+    - `sha256`: 39f62ffed6cce8684bdb43ba62406bf2ecf12eede96e68d11f4d06ca50de59a8
+  - [330]
+    - `name`: ts_reasoning_audit.json
+    - `sha256`: fba6cce35080058c5eabcc308541cac27bdc27b3538596c1856755cdbdee8591
+  - [331]
+    - `name`: unhit_chase_amzn.json
+    - `sha256`: a7c9de93641c46d2853515894aa636286ba5d49bc12833aa936cc4c056080081
+  - [332]
+    - `name`: vac_chase_amzn.json
+    - `sha256`: 371db4e5f9b635abc95f30ea5e6e0b135202c998322124897d35b26f9a130b1c
+  - [333]
+    - `name`: validator_fuzz.json
+    - `sha256`: 524d611ec21c3688ec7b8af92b4eda6bd7f70fc23c7a558215fb5ec3d22d4ae2
+  - [334]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+  - [335]
+    - `name`: vine_audit.json
+    - `sha256`: 86febce575e975c471715538d9ae242a5e56522d10afb46ff11e2e462c180962
+  - [336]
+    - `name`: vine_dominance.json
+    - `sha256`: 2c555910f452082daebc5ad1ee719d515725d1a6c1350932cb4d860ae7e230ce
+  - [337]
+    - `name`: vine_panel.json
+    - `sha256`: 4ed248f50d9977ef333f1456a947c01e6d01687eff3f93082e9afa2cc0d9484f
+  - [338]
+    - `name`: vol_bench_f3bf2afc2f159ace.json
+    - `sha256`: b9b70f7186d75054e91ee734b87b8aeeba22d66af713806a8d5410a9bc603ee3
+  - [339]
+    - `name`: vol_of_vol.json
+    - `sha256`: 8a46d4ec9cf6574f032ebc0041b4cb4466ebddfb53d16ac217fc6954d8f707e2
+  - [340]
+    - `name`: vol_signature_amzn.json
+    - `sha256`: 66c853a1efbe2fe0a41535ef9e191eee310e5346e7057fd157a8832b3b1e3eb8
+  - [341]
+    - `name`: vpin_amzn.json
+    - `sha256`: feed66eda5cf279af3d12224eeeb7cae7ff47a998dcc767249d185f78bcd27db
+  - [342]
+    - `name`: warmup_spec.json
+    - `sha256`: 01b3b622ed4e6d6852fd56f2122d257e1b9f31d100ae850cbea38921a38bafd6
+  - [343]
+    - `name`: wave23_map_amzn.json
+    - `sha256`: ad949f2ebda26df715cc45e1d6efef08c10e6deeac503580bc6668b61bf10ee6
+  - [344]
+    - `name`: wave24_map.json
+    - `sha256`: 5c765aa1b4d50ddd0fb2f3645de5edc6c60465ae6b6c936b7133507e3a0069aa
+  - [345]
+    - `name`: zone_card.json
+    - `sha256`: 751e3497d28c9a1f6e50d5040ec6b80a416194b0ea1b0ab2b05462c897b219d3
+  - [346]
+    - `name`: zone_churn.json
+    - `sha256`: 7f4b68803588fe0ddc3ee3c45698a7a2ea367f8c2bf5cad7e542fd56e91441f5
+  - [347]
+    - `name`: zone_embargo.json
+    - `sha256`: ee556605f12d88c494b6ead3a02099f569dfef7875cc21ca7ea5657983aea180
+  - [348]
+    - `name`: zone_map.json
+    - `sha256`: 43753aa2492ac472d22f2e221fa155d2c1393ed13201a1d9028231e15a4d68f7
+  - [349]
+    - `name`: zone_stability.json
+    - `sha256`: bd695896930494a0d8da307b9088744b98abe575a6574369d929ba7ffc8a4b2f
+  - [350]
     - `name`: zone_ttl.json
     - `sha256`: b5987b6ac2dfd8484a15f89fbbfa7dd8d6009df8dd1d4ec1098b4efe9580d722
 - `members_added`:
@@ -11516,7 +10975,6 @@ counted. Prose that contains such a token is quoted verbatim.
   - band_occupancy.json
   - band_shape.json
   - bank_audit.json
-  - basis_carry_dd7705fc0f2f1c25.json
   - boundary_audit.json
   - byok_audit.json
   - cache_audit.json
@@ -11527,20 +10985,33 @@ counted. Prose that contains such a token is quoted verbatim.
   - cancel_lead_amzn.json
   - capability_audit.json
   - capacity_eval_3622d0c059d42009.json
+  - capacity_eval_cd0854242ed8a9ec.json
   - causality_scan.json
   - churn_reseed.json
   - churn_stability.json
   - cli_audit.json
   - closure_fit_amzn.json
   - closure_stack_amzn.json
+  - coherence_2dd641ab766a536a.json
+  - concordance_df424fa2f6b1c4e9.json
+  - conformal_real_drill_gaussian_minus_conf_t_pinball.json
+  - conformal_real_drill_gaussian_pit.json
   - contamination_audit.json
   - continuation_attr_amzn.json
   - contract_audit.json
   - contract_probe.json
+  - corpus_absence_exemplar.json
   - corpus_audit.json
-  - corpus_epoch_959513b12d66742b.json
+  - corpus_history_absence_a5753b57fab08b0f.json
+  - corpus_proof_a56dff22d5b4931c.json
+  - corpus_proof_exemplar.json
+  - corpus_real_drill.json
+  - cost_calibration_eval_df9b8d7068bf709b.json
   - cost_calibration_eval_f130c7e871e9aa64.json
-  - crossvenue_basis_3f4ff76f517655a7.json
+  - coverage_cs_real_drill.json
+  - coverage_real_drill.json
+  - cp_real_drill_gaussian_minus_conf_t_pinball.json
+  - cp_real_drill_gaussian_pit.json
   - crown_behind.json
   - crown_density_amzn.json
   - crown_join.json
@@ -11549,6 +11020,7 @@ counted. Prose that contains such a token is quoted verbatim.
   - decay_watch_synth.json
   - deep_book_bench.json
   - deep_microprice_amzn.json
+  - deps_security_hygiene_f3b4e6fd22e439b7.json
   - depth_consumption_amzn.json
   - depth_tilt_amzn.json
   - dip_audit.json
@@ -11557,25 +11029,35 @@ counted. Prose that contains such a token is quoted verbatim.
   - dispatch_audit.json
   - diversity_bench.json
   - doctor_audit.json
+  - drift_real_drill_gaussian_minus_conf_t_pinball.json
+  - drift_real_drill_gaussian_pit.json
   - ds_audit.json
   - duration_check.json
   - em_audit.json
+  - emerge_real_drill.json
   - empirical_flow_bench.json
   - engine_fuzz.json
+  - epoch_delta_44955f3515007971.json
+  - epoch_position_2e120d21df5a400d.json
   - error_shape.json
   - eval_core_audit.json
   - event_burst_amzn.json
   - event_granger_amzn.json
   - event_matrix_amzn.json
+  - evidence_audit_3464d8f8197bf737.json
   - evidence_audit_5c9f07c823727701.json
+  - evidence_audit_d449e1ca0cc119a6.json
   - evidence_audit_f45ae8d6bc7cd677.json
   - exec_cost_real_amzn.json
   - exec_cost_split.json
   - ext_bench_audit.json
+  - fast_replay_p42_conformance_20260928.json
   - fbm_circulant.json
   - fifo_priority_amzn.json
   - flee_wide.json
+  - fleet_eval_5ddf15b0dc7d3ca1.json
   - fleet_eval_5e907be710811a44.json
+  - fleet_race_real_drill.json
   - floor_compose.json
   - floor_pins.json
   - floor_rate.json
@@ -11591,6 +11073,7 @@ counted. Prose that contains such a token is quoted verbatim.
   - fx1_anthropic_sdk_audit.json
   - fx1_api_audit.json
   - fx1_auth_audit.json
+  - fx1_cap_audit.json
   - fx1_cli_audit.json
   - fx1_client_audit.json
   - fx1_contract_audit.json
@@ -11600,9 +11083,11 @@ counted. Prose that contains such a token is quoted verbatim.
   - fx1_fault_audit.json
   - fx1_jobs_audit.json
   - fx1_oai_sdk_audit.json
+  - fx1_ops_audit.json
   - fx1_parity_audit.json
   - fx1_perf_audit.json
   - fx1_quota2_audit.json
+  - fx1_replay_audit.json
   - fx1_retrieval_audit.json
   - fx1_sdk_audit.json
   - fx1_spec_audit.json
@@ -11625,6 +11110,7 @@ counted. Prose that contains such a token is quoted verbatim.
   - hmm_stability.json
   - hmm_verify.json
   - honest_verdict_b133e8b3992af893.json
+  - honest_verdict_real_drill.json
   - honesty_audit.json
   - hypotheses_audit.json
   - ice_budget.json
@@ -11647,7 +11133,24 @@ counted. Prose that contains such a token is quoted verbatim.
   - kill_audit.json
   - label_horizon_map.json
   - label_stability.json
+  - lane_power_drill.json
+  - lattice_drill_verdict.json
+  - lattice_drill_vol_bench_a.json
+  - lattice_drill_vol_bench_b.json
   - ledger_audit.json
+  - legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+  - legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+  - legacy-unsealed/basis_carry_dd7705fc0f2f1c25.json
+  - legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+  - legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+  - legacy-unsealed/calib_real_drill.json
+  - legacy-unsealed/crossvenue_basis_3f4ff76f517655a7.json
+  - legacy-unsealed/dip_bench_crypto_1d_20260925.json
+  - legacy-unsealed/fast_replay_p42_conformance_20260927.json
+  - legacy-unsealed/forward_record_preregistration_v1.json
+  - legacy-unsealed/forward_record_preregistration_v1.json.seal.json
+  - legacy-unsealed/incumbent_bench_qlib.json
+  - legacy-unsealed/mid_dark_amzn.json
   - level_gap_amzn.json
   - lineage_dag.json
   - lo_response_amzn.json
@@ -11655,24 +11158,33 @@ counted. Prose that contains such a token is quoted verbatim.
   - lob_invariants_amzn.json
   - lob_resilience_amzn.json
   - lobster_replay_amzn_2012-06-21.json
+  - loss_cs_real_drill_conf_t_vs_empirical.json
+  - loss_cs_real_drill_gaussian_vs_conf_t.json
   - maker_age_bench.json
   - map_parity.json
   - marketable_limit_amzn.json
   - markout_amzn.json
   - masking_audit.json
+  - mcs_real_drill.json
+  - mcs_vol_drill.json
   - meta_model_synth.json
   - metaorder_detect_amzn.json
-  - mid_dark_amzn.json
   - mid_jump_amzn.json
   - middleware_audit.json
   - modelcard_audit.json
   - monitor_run_13d20aef00774027.json
+  - monitor_run_drill_clean.json
+  - monitor_run_drill_defect.json
+  - monitor_run_real_drill.json
   - mortal_repost.json
   - mrm_audit.json
+  - multih_fleet_eval_5db1cab214e291d7.json
   - native_conformance.json
+  - nautilus_conformance_7bf19a08c147547b.json
   - options_audit.json
   - order_lifetime_amzn.json
   - order_revision_amzn.json
+  - panel_audit_real_drill.json
   - parity_audit.json
   - parity_leak_audit.json
   - pin_stability.json
@@ -11694,6 +11206,10 @@ counted. Prose that contains such a token is quoted verbatim.
   - quote_floor.json
   - quote_place_amzn.json
   - rankic_eval_8d740c0ddf6d5c54.json
+  - rankic_eval_9ebdad7da83e7348.json
+  - real_benchmark_us_wide_manifest.json
+  - real_benchmark_us_wide_test.json
+  - real_benchmark_us_wide_validation.json
   - receipt_admission_529da640b520a49d.json
   - receipts_audit.json
   - refill_hazard_amzn.json
@@ -11726,7 +11242,19 @@ counted. Prose that contains such a token is quoted verbatim.
   - schema_fingerprint.json
   - seed_audit.json
   - seed_sweep_demo_amzn.json
+  - serial_watch_140b073ea589b0c7.json
+  - serial_watch_1e8e1446e506fce1.json
+  - serial_watch_2c14615c26efd19b.json
+  - serial_watch_46445c3b227aa15e.json
+  - serial_watch_47297eff3cb55178.json
+  - serial_watch_4f4a495b59d022fb.json
+  - serial_watch_771602cd1580476c.json
   - serial_watch_78dd891261e2aae9.json
+  - serial_watch_85db152db863d25d.json
+  - serial_watch_8977244ef78bfd2f.json
+  - serial_watch_a6fd40311ce0fa04.json
+  - serial_watch_d311f5ea367a66a9.json
+  - serial_watch_dbd21a6c99c81e00.json
   - serve_audit.json
   - shield_decay_amzn.json
   - side_imbalance_amzn.json
@@ -11747,11 +11275,13 @@ counted. Prose that contains such a token is quoted verbatim.
   - stale_quote_amzn.json
   - streak_calibrate_bench.json
   - streak_stats_amzn.json
+  - suite_health_drill.json
   - sweep_bound.json
   - sweep_crown.json
   - sweep_width_amzn.json
   - sweep_width_bench.json
   - tail_quota.json
+  - tail_real_drill.json
   - tape_digest_amzn.json
   - tape_surgery_amzn.json
   - tick_rule_amzn.json
@@ -11766,6 +11296,7 @@ counted. Prose that contains such a token is quoted verbatim.
   - unhit_chase_amzn.json
   - vac_chase_amzn.json
   - validator_fuzz.json
+  - verdict_real_drill.json
   - vine_audit.json
   - vine_dominance.json
   - vine_panel.json
@@ -11783,12217 +11314,17 @@ counted. Prose that contains such a token is quoted verbatim.
   - zone_stability.json
   - zone_ttl.json
 - `members_removed`:
-- `n_members`: 389
+- `n_members`: 351
 - `params`:
-  - `head_sha`: 8312bb586199a74a08367a3820b0ea1815643ce0
+  - `head_sha`: 981dc46489ffbdac76dd0fa109d7688027f9417b
   - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_959513b12d66742b.json
-- `prev_epoch_sha256`: ff5c1c2d974331e9d4b23af34208dc435ef184ff37f5e74a23eb305a4f43394d
-- `receipt_sha256`: 2bd794275af2b3d8e419616244ab441c0163b11c7a8776c5a7dc779f665f2496
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_2ca91405e468cc6b.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_2ca91405e468cc6b.json | cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b | 2ca91405e468cc6b3d85fda7b3b3803f45bee8f36411ebc30d7e217365e0ed65 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: bc74e733bd32f5970ae94ef3e052907029b67e551e33b1c9bd3bbaa75da8dbf1
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [8]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [9]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [10]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [11]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [12]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [13]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [14]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [15]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [16]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [17]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [18]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [19]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [20]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [21]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [22]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [23]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [24]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [25]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [26]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [27]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [28]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [29]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [30]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [31]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [32]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [33]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [34]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [35]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [36]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [37]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [38]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [39]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [40]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [41]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [42]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [43]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [44]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [45]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [46]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [47]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [48]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [49]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [50]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [51]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [52]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [53]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [54]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [55]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [56]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [57]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [58]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [59]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [60]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [61]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [62]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [63]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [64]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [65]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [66]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [67]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [68]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [69]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [70]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [71]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [72]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [73]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [74]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [75]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_d1e7bb2567019bf7.json
-- `members_removed`:
-- `n_members`: 76
-- `params`:
-  - `head_sha`: 826097fcbd740e65b8834830d90acaeba13ea5f4
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_d1e7bb2567019bf7.json
-- `prev_epoch_sha256`: d135d5cc5a4294b6f21d133f77b5aa45eed7b49cdd66d460d1e56c4734df5e78
-- `receipt_sha256`: 2ca91405e468cc6b3d85fda7b3b3803f45bee8f36411ebc30d7e217365e0ed65
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_2ddb4fe7154677d3.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_2ddb4fe7154677d3.json | f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c | 2ddb4fe7154677d3f6bd8786351b1876d4dfedf6ef760f8e39b0df42d89e30c1 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: e52b070ca6e907567ea69a81e7436df905d81dcb5b0b93de05da4958f3435aa3
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: e8d624959aa8411c38112f27ae82ed7ea61a631c34ad609d59c71fcd9174cd98
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [13]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [14]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [15]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [16]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [17]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [18]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [19]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [20]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [21]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [22]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [23]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [24]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [25]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [26]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [27]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [28]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [29]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [30]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [31]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [32]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [33]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [34]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [35]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [36]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [37]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [38]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [39]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [40]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [41]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [42]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [43]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [44]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [45]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [46]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [47]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [48]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [49]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [50]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [51]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [52]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [53]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [54]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [55]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [56]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [57]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [58]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [59]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [60]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [61]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [62]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [63]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [64]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [65]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [66]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [67]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [68]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [69]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [70]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [71]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [72]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [73]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [74]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [75]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [76]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [77]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [78]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [79]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [80]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [81]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [82]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [83]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [84]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [85]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [86]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [87]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [88]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [89]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [90]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [91]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [92]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [93]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [94]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_0af2a2d5723b14ae.json
-- `members_removed`:
-- `n_members`: 95
-- `params`:
-  - `head_sha`: 078268df3758a2dba8a694f5f6e151284df228ea
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_0af2a2d5723b14ae.json
-- `prev_epoch_sha256`: 02b20095ad15896d9b07145a9c33dd023f1b2873271ceb351db7d42d0d752c56
-- `receipt_sha256`: 2ddb4fe7154677d3f6bd8786351b1876d4dfedf6ef760f8e39b0df42d89e30c1
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_2ecce33392960d8d.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_2ecce33392960d8d.json | c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8 | 2ecce33392960d8da447d302f728899768fc18705a291912452056ded0510710 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 2b38406428db3eae79ddadf5aa0758fcf51cbd8eb70d5aec004880da46d2e59a
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 6b00223daedaaf725a9a0e6c9e48a5ebbc9dd1f708d09b6b52de351c38684cec
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [14]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [15]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [16]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [17]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [18]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [19]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [20]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [21]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [22]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [23]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [24]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [25]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [26]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [27]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [28]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [29]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [30]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [31]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [32]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [33]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [34]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [35]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [36]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [37]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [38]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [39]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [40]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [41]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [42]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [43]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [44]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [45]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [46]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [47]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [48]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [49]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [50]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [51]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [52]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [53]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [54]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [55]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [56]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [57]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [58]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [59]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [60]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [61]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [62]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [63]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [64]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [65]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [66]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [67]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [68]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [69]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [70]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [71]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [72]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [73]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [74]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [75]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [76]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [77]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [78]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [79]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [80]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [81]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [82]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [83]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [84]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [85]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [86]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [87]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [88]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [89]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [90]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [91]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [92]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [93]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [94]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [95]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [96]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_54c82d2a8bcb86ed.json
-- `members_removed`:
-- `n_members`: 97
-- `params`:
-  - `head_sha`: 51607b32f134648d13b941c6bec9cbf940536150
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_54c82d2a8bcb86ed.json
-- `prev_epoch_sha256`: cdb9177b938bb52717365018a8260f15b5baf723cfa98e9ce4af50bf222798a7
-- `receipt_sha256`: 2ecce33392960d8da447d302f728899768fc18705a291912452056ded0510710
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_404d16a7af1d3862.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_404d16a7af1d3862.json | 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2 | 404d16a7af1d3862756e4d9a591fd8152d1b8aeb3ee447366d2397d5d2c5e405 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 87431fc1d25e0af42673b0375428c9fbb1bfd0b52fc6178ef573480143744e00
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [8]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [9]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [10]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [11]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [12]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [13]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [14]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [15]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [16]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [17]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [18]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [19]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [20]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [21]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [22]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [23]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [24]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [25]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [26]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [27]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [28]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [29]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [30]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [31]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [32]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [33]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [34]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [35]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [36]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [37]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [38]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [39]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [40]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [41]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [42]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [43]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [44]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [45]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [46]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [47]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [48]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [49]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [50]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [51]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [52]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [53]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [54]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [55]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [56]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [57]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [58]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [59]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [60]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [61]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [62]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [63]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [64]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [65]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [66]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [67]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [68]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [69]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [70]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [71]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [72]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [73]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_a1a8323db3be4842.json
-- `members_removed`:
-- `n_members`: 74
-- `params`:
-  - `head_sha`: 2fcd108864fd52bf9bc7f5b632b49f6e10a0b3e9
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_a1a8323db3be4842.json
-- `prev_epoch_sha256`: 48ce7dd52286071dab45b649f586beac6e98fc66c486eaec93fc9b8bf3e67ae1
-- `receipt_sha256`: 404d16a7af1d3862756e4d9a591fd8152d1b8aeb3ee447366d2397d5d2c5e405
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_4a75066db56e52fd.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_4a75066db56e52fd.json | 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e | 4a75066db56e52fdd44a90a5f42804f07bb90650bb34d8c11c835cfc46da4832 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 5eb85fb1ae415c24ee945bab088d97a9cf1869013da680669c663adceb5b860a
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [7]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [8]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [9]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [10]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [11]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [12]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [13]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [14]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [15]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [16]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [17]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [18]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [19]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [20]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [21]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [22]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [23]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [24]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [25]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [26]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [27]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [28]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [29]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [30]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [31]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [32]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [33]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [34]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [35]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [36]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [37]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [38]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [39]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [40]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [41]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [42]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [43]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [44]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [45]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [46]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [47]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [48]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [49]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [50]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [51]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [52]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [53]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [54]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [55]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [56]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [57]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [58]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [59]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [60]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [61]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [62]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [63]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [64]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [65]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [66]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [67]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [68]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [69]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_574953afdf88a0f6.json
-- `members_removed`:
-- `n_members`: 70
-- `params`:
-  - `head_sha`: 263b42fcdeb1ef5fcfe713b1418c3ce15e9f143e
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_574953afdf88a0f6.json
-- `prev_epoch_sha256`: d01c5fde5e5b710685d3184958218c7b7fce1d8b3f54327842b61f5e744f15c7
-- `receipt_sha256`: 4a75066db56e52fdd44a90a5f42804f07bb90650bb34d8c11c835cfc46da4832
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_4a79ac4ed05777f5.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_4a79ac4ed05777f5.json | 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d | 4a79ac4ed05777f52ed4778deee758450f26536f826c9b0fc1bef0e04b6237a8 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: e1ece22470cd997104d81621f7a50c892f4b0a5cbb073f87a0817cadbf5f1756
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: d73b6c0f69e2fc1f5ea00a5a0d1861775d6e4493027f4c9b1a9627906424fed5
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [8]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [9]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [10]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [11]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [12]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [13]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [14]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [15]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [16]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [17]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [18]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [19]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [20]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [21]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [22]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [23]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [24]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [25]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [26]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [27]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [28]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [29]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [30]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [31]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [32]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [33]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [34]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [35]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [36]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [37]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [38]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [39]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [40]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [41]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [42]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [43]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [44]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [45]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [46]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [47]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [48]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [49]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [50]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [51]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [52]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [53]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [54]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [55]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [56]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [57]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [58]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [59]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [60]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [61]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [62]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [63]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [64]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [65]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [66]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [67]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [68]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [69]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [70]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [71]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [72]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [73]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [74]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [75]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [76]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [77]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [78]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [79]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [80]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [81]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [82]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [83]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [84]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [85]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [86]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [87]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [88]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_ab1470227e387e4d.json
-- `members_removed`:
-- `n_members`: 89
-- `params`:
-  - `head_sha`: e951b0e0fac0c4cbbcf934cc5e7fdb811d659457
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_ab1470227e387e4d.json
-- `prev_epoch_sha256`: cb966de72bec251b9138a00947bb380b5eaba346b11d68238d908805df8d5678
-- `receipt_sha256`: 4a79ac4ed05777f52ed4778deee758450f26536f826c9b0fc1bef0e04b6237a8
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_54c82d2a8bcb86ed.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_54c82d2a8bcb86ed.json | 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870 | 54c82d2a8bcb86eda794331141699a1e682a3aa2b91e5e3aa3b6582e8647f0e0 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: cdb9177b938bb52717365018a8260f15b5baf723cfa98e9ce4af50bf222798a7
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 27ecdc5b11c834dac7d32dbaecc6b0f9eec9e6462ba8a187e2103e59c8bae3d4
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [14]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [15]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [16]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [17]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [18]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [19]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [20]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [21]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [22]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [23]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [24]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [25]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [26]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [27]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [28]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [29]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [30]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [31]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [32]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [33]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [34]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [35]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [36]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [37]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [38]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [39]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [40]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [41]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [42]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [43]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [44]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [45]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [46]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [47]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [48]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [49]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [50]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [51]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [52]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [53]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [54]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [55]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [56]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [57]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [58]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [59]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [60]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [61]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [62]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [63]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [64]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [65]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [66]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [67]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [68]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [69]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [70]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [71]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [72]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [73]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [74]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [75]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [76]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [77]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [78]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [79]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [80]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [81]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [82]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [83]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [84]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [85]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [86]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [87]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [88]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [89]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [90]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [91]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [92]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [93]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [94]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [95]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_2ddb4fe7154677d3.json
-- `members_removed`:
-- `n_members`: 96
-- `params`:
-  - `head_sha`: 924e6c46cb8b1c566736952ba07a751b1712df2a
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_2ddb4fe7154677d3.json
-- `prev_epoch_sha256`: e52b070ca6e907567ea69a81e7436df905d81dcb5b0b93de05da4958f3435aa3
-- `receipt_sha256`: 54c82d2a8bcb86eda794331141699a1e682a3aa2b91e5e3aa3b6582e8647f0e0
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_568c538fcf4b21cd.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_568c538fcf4b21cd.json | c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996 | 568c538fcf4b21cdae9e52533b0bd2b6cc45e8dd5b76092b80c5c4f081806019 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: fd52acc4b762cff458a5db4da29edafbbc345ca8ccf520eb110bbe882466b8f9
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [8]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [9]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [10]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [11]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [12]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [13]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [14]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [15]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [16]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [17]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [18]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [19]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [20]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [21]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [22]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [23]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [24]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [25]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [26]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [27]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [28]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [29]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [30]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [31]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [32]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [33]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [34]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [35]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [36]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [37]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [38]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [39]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [40]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [41]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [42]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [43]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [44]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [45]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [46]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [47]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [48]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [49]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [50]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [51]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [52]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [53]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [54]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [55]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [56]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [57]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [58]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [59]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [60]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [61]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [62]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [63]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [64]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [65]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [66]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [67]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [68]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [69]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [70]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [71]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [72]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [73]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [74]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [75]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [76]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [77]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [78]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [79]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_c5a45fd1b73737dc.json
-- `members_removed`:
-- `n_members`: 80
-- `params`:
-  - `head_sha`: dec909c777b806c8a9a2b9ebb6ce07691522afe6
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_c5a45fd1b73737dc.json
-- `prev_epoch_sha256`: 60a912bda7ca91a0230191fbd9083c36777d3e64262774f9d5de765fa135b209
-- `receipt_sha256`: 568c538fcf4b21cdae9e52533b0bd2b6cc45e8dd5b76092b80c5c4f081806019
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_574953afdf88a0f6.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_574953afdf88a0f6.json | 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1 | 574953afdf88a0f69edd878087a03f63c154375a4c1c45713bf72d4be3c447ce | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: d01c5fde5e5b710685d3184958218c7b7fce1d8b3f54327842b61f5e744f15c7
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [7]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [8]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [9]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [10]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [11]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [12]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [13]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [14]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [15]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [16]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [17]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [18]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [19]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [20]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [21]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [22]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [23]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [24]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [25]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [26]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [27]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [28]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [29]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [30]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [31]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [32]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [33]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [34]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [35]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [36]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [37]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [38]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [39]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [40]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [41]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [42]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [43]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [44]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [45]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [46]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [47]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [48]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [49]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [50]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [51]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [52]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [53]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [54]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [55]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [56]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [57]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [58]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [59]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [60]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [61]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [62]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [63]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [64]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [65]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [66]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [67]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [68]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_6cf185cfb5466dd7.json
-- `members_removed`:
-- `n_members`: 69
-- `params`:
-  - `head_sha`: 42dd0cc347dae1180460912b978a2667ad43a042
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_6cf185cfb5466dd7.json
-- `prev_epoch_sha256`: 35f0bc2483734347826bdeff73f6eaf37ad51cee7ab3f2c11cd2f8b073440a5e
-- `receipt_sha256`: 574953afdf88a0f69edd878087a03f63c154375a4c1c45713bf72d4be3c447ce
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_5a8dac905c9cc22d.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_5a8dac905c9cc22d.json | 50b853da7d6c07efc3e4c533e5a4a6beae5295da68c696f2656491b28fbf6b18 | 5a8dac905c9cc22dd1f9a72aa4e01c6765386e8de3b25077b2ee3de56d490225 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 9c1a77db96f7f51429d01ba1dc975c122cd55785eb1d67c8af3193afb2338d40
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: f6bcd2981a783de57699f5b36f8cacd5427be758da4ef0080448e1ab52bf561c
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [14]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [15]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [16]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [17]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [18]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [19]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [20]
-    - `name`: corpus_epoch_5c9754ab2a9408a1.json
-    - `sha256`: a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2
-  - [21]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [22]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [23]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [24]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [25]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [26]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [27]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [28]
-    - `name`: corpus_epoch_9d41d1d7410eb02d.json
-    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
-  - [29]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [30]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [31]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [32]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [33]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [34]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [35]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [36]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [37]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [38]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [39]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [40]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [41]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [42]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [43]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [44]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [45]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [46]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [47]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [48]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [49]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [50]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [51]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [52]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [53]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [54]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [55]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [56]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [57]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [58]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [59]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [60]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [61]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [62]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [63]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [64]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [65]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [66]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [67]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [68]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [69]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [70]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [71]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [72]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [73]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [74]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [75]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [76]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [77]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [78]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [79]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [80]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [81]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [82]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [83]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [84]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [85]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [86]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [87]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [88]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [89]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [90]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [91]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [92]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [93]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [94]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [95]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [96]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [97]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [98]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [99]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [100]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_5c9754ab2a9408a1.json
-- `members_removed`:
-- `n_members`: 101
-- `params`:
-  - `head_sha`: 4f427a8a3b092a88014d9784b634ca7a229078a0
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_5c9754ab2a9408a1.json
-- `prev_epoch_sha256`: 569244da945992358f17e9d2880d58e8cc1da47f9f3226d2a44fc52804cae03b
-- `receipt_sha256`: 5a8dac905c9cc22dd1f9a72aa4e01c6765386e8de3b25077b2ee3de56d490225
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_5c9754ab2a9408a1.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_5c9754ab2a9408a1.json | a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2 | 5c9754ab2a9408a1586f569322f0d99b5519e010dd214cbf4b4b778ad0d3d01a | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 569244da945992358f17e9d2880d58e8cc1da47f9f3226d2a44fc52804cae03b
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: c312256cf07aaf41b16547ea38c6a95405e7e1b25dcb41b379d0122f6e825ddf
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [14]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [15]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [16]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [17]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [18]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [19]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [20]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [21]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [22]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [23]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [24]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [25]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [26]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [27]
-    - `name`: corpus_epoch_9d41d1d7410eb02d.json
-    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
-  - [28]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [29]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [30]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [31]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [32]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [33]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [34]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [35]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [36]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [37]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [38]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [39]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [40]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [41]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [42]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [43]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [44]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [45]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [46]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [47]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [48]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [49]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [50]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [51]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [52]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [53]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [54]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [55]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [56]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [57]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [58]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [59]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [60]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [61]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [62]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [63]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [64]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [65]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [66]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [67]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [68]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [69]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [70]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [71]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [72]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [73]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [74]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [75]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [76]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [77]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [78]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [79]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [80]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [81]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [82]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [83]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [84]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [85]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [86]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [87]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [88]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [89]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [90]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [91]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [92]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [93]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [94]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [95]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [96]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [97]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [98]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [99]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_9d41d1d7410eb02d.json
-- `members_removed`:
-- `n_members`: 100
-- `params`:
-  - `head_sha`: 42b00e30b6839b538a177618e9035d8f73ccda4e
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_9d41d1d7410eb02d.json
-- `prev_epoch_sha256`: f8692d5b835e6aff6e9829286278db948495ebbbc01159272383538a1c13bcfe
-- `receipt_sha256`: 5c9754ab2a9408a1586f569322f0d99b5519e010dd214cbf4b4b778ad0d3d01a
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_6340cdebc9a6efe1.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_6340cdebc9a6efe1.json | 3e3473c359007fb425361a8a618d1e7b3de5edc23e1a0937ab241d2831c95dc0 | 6340cdebc9a6efe1a55c2e50ef43f14c8d1633ae782bc928f64ff84d2c113b4c | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: fb3768440e12ff5a3668959d6c08e3700a7423c241484e803e7ba84df616969e
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: e73c8434dd4f76f14335ce96a5ff0ba6b33dd4c6bcde8b12155a3109d17692c5
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [14]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [15]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [16]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [17]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [18]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [19]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [20]
-    - `name`: corpus_epoch_5a8dac905c9cc22d.json
-    - `sha256`: 50b853da7d6c07efc3e4c533e5a4a6beae5295da68c696f2656491b28fbf6b18
-  - [21]
-    - `name`: corpus_epoch_5c9754ab2a9408a1.json
-    - `sha256`: a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2
-  - [22]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [23]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [24]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [25]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [26]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [27]
-    - `name`: corpus_epoch_7d6b1f5442b13ea1.json
-    - `sha256`: 29bb1eae00b9d91e5833450631d74c3aaff4aa7c42230e89a074c94df626c5c9
-  - [28]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [29]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [30]
-    - `name`: corpus_epoch_9d41d1d7410eb02d.json
-    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
-  - [31]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [32]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [33]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [34]
-    - `name`: corpus_epoch_a4cb68008a317f90.json
-    - `sha256`: 66894e231d5029cd138f613c62447e58700a44d7def29bc1a16da44146dc69f2
-  - [35]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [36]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [37]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [38]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [39]
-    - `name`: corpus_epoch_ac2e4ae4bcae4dd8.json
-    - `sha256`: 4e97881c7c558ad93674533f102ea582de60bd109c178a1c7489b30f027f8a93
-  - [40]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [41]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [42]
-    - `name`: corpus_epoch_cb415a040387f7b0.json
-    - `sha256`: f7a80fdf1eb8820d00f4c26faf536113a11948a437d4637acb191b35b6dfa050
-  - [43]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [44]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [45]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [46]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [47]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [48]
-    - `name`: corpus_history_absence_a5753b57fab08b0f.json
-    - `sha256`: 3904f2838779802fcad32a15b13d82eb6860a0fafecc2feb9437af93a7360f8f
-  - [49]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [50]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [51]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [52]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [53]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [54]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [55]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [56]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [57]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [58]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [59]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [60]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [61]
-    - `name`: epoch_delta_44955f3515007971.json
-    - `sha256`: 8c4823fcd372f927ada7ef5d08fff5457bd25db3ea5d7f42c49679236616da6e
-  - [62]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [63]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [64]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [65]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [66]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [67]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [68]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [69]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [70]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [71]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [72]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [73]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [74]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [75]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [76]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [77]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [78]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [79]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [80]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [81]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [82]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [83]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [84]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [85]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [86]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [87]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [88]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [89]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [90]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [91]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [92]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [93]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [94]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [95]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [96]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [97]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [98]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [99]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [100]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [101]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [102]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [103]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [104]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [105]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [106]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [107]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_cb415a040387f7b0.json
-  - epoch_delta_44955f3515007971.json
-- `members_removed`:
-- `n_members`: 108
-- `params`:
-  - `head_sha`: db56294e58d01e1310e9b4b4c97815453b445cdb
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_cb415a040387f7b0.json
-- `prev_epoch_sha256`: 4783655af4ebd31e206f9661ddfbff4f59f9ee03cf3ff11e6612a3166710a4de
-- `receipt_sha256`: 6340cdebc9a6efe1a55c2e50ef43f14c8d1633ae782bc928f64ff84d2c113b4c
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_63761c8b4e63992b.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_63761c8b4e63992b.json | 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57 | 63761c8b4e63992b9727b0d77e1d6844b8555812e2b368867e4f127448a156c7 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: cd054b2e2a222ace7a61f972708b9615b19698442d2663eb7e151c3e37c8b5d3
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [7]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [8]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [9]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [10]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [11]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [12]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [13]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [14]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [15]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [16]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [17]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [18]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [19]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [20]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [21]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [22]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [23]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [24]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [25]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [26]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [27]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [28]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [29]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [30]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [31]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [32]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [33]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [34]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [35]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [36]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [37]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [38]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [39]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [40]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [41]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [42]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [43]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [44]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [45]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [46]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [47]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [48]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [49]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [50]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [51]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [52]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [53]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [54]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [55]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [56]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [57]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [58]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [59]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [60]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [61]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [62]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [63]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [64]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [65]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_96ba030697ddf0ff.json
-- `members_removed`:
-- `n_members`: 66
-- `params`:
-  - `head_sha`: 31359d2ed7a3a019d3ea592222039b9845e4dfda
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_96ba030697ddf0ff.json
-- `prev_epoch_sha256`: 7fee4c6bb52c76ee0a8fef717bd6fce9f6ca6ed642a708249b11d154d748a468
-- `receipt_sha256`: 63761c8b4e63992b9727b0d77e1d6844b8555812e2b368867e4f127448a156c7
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_6cf185cfb5466dd7.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_6cf185cfb5466dd7.json | 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416 | 6cf185cfb5466dd724b113333d5df6e1f4d00c4aa4cb46ab7a9bad0c5eebd915 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 35f0bc2483734347826bdeff73f6eaf37ad51cee7ab3f2c11cd2f8b073440a5e
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [7]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [8]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [9]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [10]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [11]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [12]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [13]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [14]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [15]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [16]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [17]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [18]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [19]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [20]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [21]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [22]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [23]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [24]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [25]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [26]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [27]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [28]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [29]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [30]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [31]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [32]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [33]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [34]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [35]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [36]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [37]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [38]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [39]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [40]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [41]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [42]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [43]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [44]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [45]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [46]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [47]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [48]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [49]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [50]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [51]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [52]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [53]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [54]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [55]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [56]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [57]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [58]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [59]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [60]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [61]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [62]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [63]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [64]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [65]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [66]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [67]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_a83ba798e9abd892.json
-- `members_removed`:
-- `n_members`: 68
-- `params`:
-  - `head_sha`: f32862bebf59fa896e5e89f2b99170359e91d563
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_a83ba798e9abd892.json
-- `prev_epoch_sha256`: c3534efa7e8ddcceae37f32161d3b52f907e8e25f567fa0c98606836255b3308
-- `receipt_sha256`: 6cf185cfb5466dd724b113333d5df6e1f4d00c4aa4cb46ab7a9bad0c5eebd915
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_6f8420fc2959f4e7.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_6f8420fc2959f4e7.json | 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5 | 6f8420fc2959f4e757506825624ded988a50e36c2b7fd66440485fa7ab9d9f8b | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: d8260040b7bd5488f2317ccc7ec5f36810695e25307e3b140fe09d79798c712a
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [8]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [9]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [10]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [11]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [12]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [13]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [14]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [15]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [16]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [17]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [18]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [19]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [20]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [21]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [22]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [23]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [24]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [25]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [26]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [27]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [28]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [29]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [30]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [31]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [32]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [33]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [34]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [35]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [36]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [37]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [38]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [39]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [40]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [41]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [42]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [43]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [44]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [45]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [46]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [47]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [48]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [49]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [50]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [51]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [52]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [53]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [54]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [55]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [56]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [57]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [58]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [59]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [60]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [61]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [62]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [63]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [64]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [65]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [66]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [67]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [68]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [69]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [70]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [71]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [72]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [73]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [74]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [75]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [76]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [77]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [78]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [79]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [80]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [81]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_2b5db388ddee23aa.json
-- `members_removed`:
-- `n_members`: 82
-- `params`:
-  - `head_sha`: 71b190385524799948a33943812fa93dec484c9f
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_2b5db388ddee23aa.json
-- `prev_epoch_sha256`: 50702a337ecfbe9afa662d01328542f19ba225b76407fafb0a08d265fe173595
-- `receipt_sha256`: 6f8420fc2959f4e757506825624ded988a50e36c2b7fd66440485fa7ab9d9f8b
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_6fb596b0230e9f17.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_6fb596b0230e9f17.json | a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380 | 6fb596b0230e9f1775b218995e0618227f951de91246d24e2db724501c4d21dd | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: dad94ab498d8cdc88d44326cc996144ff0663fd9d3a9eb360a8027d92905c479
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [8]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [9]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [10]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [11]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [12]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [13]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [14]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [15]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [16]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [17]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [18]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [19]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [20]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [21]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [22]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [23]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [24]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [25]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [26]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [27]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [28]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [29]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [30]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [31]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [32]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [33]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [34]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [35]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [36]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [37]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [38]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [39]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [40]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [41]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [42]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [43]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [44]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [45]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [46]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [47]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [48]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [49]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [50]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [51]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [52]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [53]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [54]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [55]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [56]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [57]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [58]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [59]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [60]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [61]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [62]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [63]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [64]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [65]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [66]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [67]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [68]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [69]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [70]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [71]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [72]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [73]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [74]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [75]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [76]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [77]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [78]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [79]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [80]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [81]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [82]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [83]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [84]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_a0e901c74a5f29c4.json
-- `members_removed`:
-- `n_members`: 85
-- `params`:
-  - `head_sha`: d58830123d898e6c23a70c09f71d526cd62c37b7
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_a0e901c74a5f29c4.json
-- `prev_epoch_sha256`: 73f1e3fc3a9e420724e4f1137a10728f974cdbadd029181df762033d82e713b9
-- `receipt_sha256`: 6fb596b0230e9f1775b218995e0618227f951de91246d24e2db724501c4d21dd
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_721e9b4fb855e1a1.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_721e9b4fb855e1a1.json | b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30 | 721e9b4fb855e1a1f49d6b54bf3559a1b6e57fd869690b3249dc8d0d1074046a | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 18d302aae2a897a1ff595f977fc873046b0ee4450ec5b3ff507de52d721f1da4
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 0594ec45986b9586821ee69ffeb549cad23b1ca96dfbf32683eab49393398c16
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [14]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [15]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [16]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [17]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [18]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [19]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [20]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [21]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [22]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [23]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [24]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [25]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [26]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [27]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [28]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [29]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [30]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [31]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [32]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [33]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [34]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [35]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [36]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [37]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [38]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [39]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [40]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [41]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [42]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [43]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [44]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [45]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [46]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [47]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [48]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [49]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [50]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [51]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [52]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [53]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [54]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [55]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [56]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [57]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [58]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [59]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [60]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [61]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [62]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [63]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [64]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [65]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [66]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [67]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [68]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [69]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [70]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [71]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [72]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [73]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [74]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [75]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [76]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [77]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [78]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [79]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [80]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [81]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [82]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [83]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [84]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [85]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [86]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [87]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [88]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [89]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [90]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [91]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [92]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [93]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [94]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [95]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [96]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [97]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_2ecce33392960d8d.json
-- `members_removed`:
-- `n_members`: 98
-- `params`:
-  - `head_sha`: 51607b32f134648d13b941c6bec9cbf940536150
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_2ecce33392960d8d.json
-- `prev_epoch_sha256`: 2b38406428db3eae79ddadf5aa0758fcf51cbd8eb70d5aec004880da46d2e59a
-- `receipt_sha256`: 721e9b4fb855e1a1f49d6b54bf3559a1b6e57fd869690b3249dc8d0d1074046a
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_7d6b1f5442b13ea1.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_7d6b1f5442b13ea1.json | 29bb1eae00b9d91e5833450631d74c3aaff4aa7c42230e89a074c94df626c5c9 | 7d6b1f5442b13ea1c5b6e6de083ffcb8762eb9c22a2e9870dee8050e8469cbb1 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 0cbe2dd3e39c52620e11c2f93f98d7f6ce5cbad5b130a6ce50a99cf2020fe809
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: a4d9ea5a3e76153c26fd98b27800c1ef6d6118c22802b5f9d7229e60af70ec16
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [14]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [15]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [16]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [17]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [18]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [19]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [20]
-    - `name`: corpus_epoch_5a8dac905c9cc22d.json
-    - `sha256`: 50b853da7d6c07efc3e4c533e5a4a6beae5295da68c696f2656491b28fbf6b18
-  - [21]
-    - `name`: corpus_epoch_5c9754ab2a9408a1.json
-    - `sha256`: a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2
-  - [22]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [23]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [24]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [25]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [26]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [27]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [28]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [29]
-    - `name`: corpus_epoch_9d41d1d7410eb02d.json
-    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
-  - [30]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [31]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [32]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [33]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [34]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [35]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [36]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [37]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [38]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [39]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [40]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [41]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [42]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [43]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [44]
-    - `name`: corpus_history_absence_1791a18109fce973.json
-    - `sha256`: 35a5a663f861c0ac399faefa432ca410da4fae597a0a9111d6c9a2341e0dfe03
-  - [45]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [46]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [47]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [48]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [49]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [50]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [51]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [52]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [53]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [54]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [55]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [56]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [57]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [58]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [59]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [60]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [61]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [62]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [63]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [64]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [65]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [66]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [67]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [68]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [69]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [70]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [71]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [72]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [73]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [74]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [75]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [76]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [77]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [78]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [79]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [80]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [81]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [82]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [83]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [84]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [85]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [86]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [87]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [88]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [89]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [90]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [91]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [92]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [93]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [94]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [95]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [96]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [97]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [98]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [99]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [100]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [101]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [102]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_5a8dac905c9cc22d.json
-  - corpus_history_absence_1791a18109fce973.json
-- `members_removed`:
-- `n_members`: 103
-- `params`:
-  - `head_sha`: b175c98f3b43477143341cfbd364951c8fa94436
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_5a8dac905c9cc22d.json
-- `prev_epoch_sha256`: 9c1a77db96f7f51429d01ba1dc975c122cd55785eb1d67c8af3193afb2338d40
-- `receipt_sha256`: 7d6b1f5442b13ea1c5b6e6de083ffcb8762eb9c22a2e9870dee8050e8469cbb1
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_84384f73f7d8e9d6.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_84384f73f7d8e9d6.json | 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db | 84384f73f7d8e9d6c25620648874ba0d02c1df38ef3f5e6c3d1ab02e3846ff0e | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: cae6872ec59c2fb4f10a7e3286386d0c7e25332632256f67a7478e8c1b9b2058
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 48865c5b80a7fd762429f068acb884c6e8e572b72db18ce878194e0cda0c6a8c
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [8]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [9]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [10]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [11]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [12]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [13]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [14]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [15]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [16]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [17]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [18]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [19]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [20]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [21]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [22]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [23]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [24]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [25]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [26]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [27]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [28]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [29]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [30]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [31]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [32]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [33]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [34]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [35]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [36]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [37]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [38]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [39]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [40]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [41]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [42]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [43]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [44]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [45]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [46]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [47]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [48]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [49]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [50]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [51]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [52]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [53]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [54]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [55]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [56]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [57]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [58]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [59]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [60]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [61]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [62]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [63]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [64]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [65]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [66]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [67]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [68]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [69]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [70]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [71]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [72]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [73]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [74]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [75]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [76]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [77]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [78]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [79]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [80]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [81]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [82]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [83]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [84]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [85]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [86]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [87]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [88]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [89]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_4a79ac4ed05777f5.json
-- `members_removed`:
-- `n_members`: 90
-- `params`:
-  - `head_sha`: e4fdb29b276e1fe2fa67dcf5bccc7e2399f16c90
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_4a79ac4ed05777f5.json
-- `prev_epoch_sha256`: e1ece22470cd997104d81621f7a50c892f4b0a5cbb073f87a0817cadbf5f1756
-- `receipt_sha256`: 84384f73f7d8e9d6c25620648874ba0d02c1df38ef3f5e6c3d1ab02e3846ff0e
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_959513b12d66742b.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_959513b12d66742b.json | b557f12c51d23d9873d829aa683eec9d55dd998d0f7d12f1d0f7286f885a7eed | 959513b12d66742be47f64f26e140b70a95dbda41162c0a7fbd8516e69f0eb51 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: ff5c1c2d974331e9d4b23af34208dc435ef184ff37f5e74a23eb305a4f43394d
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 8af4be3fafa6b6d381983b15e9f1d0e7a4488d511389ffeb561fc0467f30830c
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [14]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [15]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [16]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [17]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [18]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [19]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [20]
-    - `name`: corpus_epoch_5a8dac905c9cc22d.json
-    - `sha256`: 50b853da7d6c07efc3e4c533e5a4a6beae5295da68c696f2656491b28fbf6b18
-  - [21]
-    - `name`: corpus_epoch_5c9754ab2a9408a1.json
-    - `sha256`: a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2
-  - [22]
-    - `name`: corpus_epoch_6340cdebc9a6efe1.json
-    - `sha256`: 3e3473c359007fb425361a8a618d1e7b3de5edc23e1a0937ab241d2831c95dc0
-  - [23]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [24]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [25]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [26]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [27]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [28]
-    - `name`: corpus_epoch_7d6b1f5442b13ea1.json
-    - `sha256`: 29bb1eae00b9d91e5833450631d74c3aaff4aa7c42230e89a074c94df626c5c9
-  - [29]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [30]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [31]
-    - `name`: corpus_epoch_9d41d1d7410eb02d.json
-    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
-  - [32]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [33]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [34]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [35]
-    - `name`: corpus_epoch_a4cb68008a317f90.json
-    - `sha256`: 66894e231d5029cd138f613c62447e58700a44d7def29bc1a16da44146dc69f2
-  - [36]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [37]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [38]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [39]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [40]
-    - `name`: corpus_epoch_ac2e4ae4bcae4dd8.json
-    - `sha256`: 4e97881c7c558ad93674533f102ea582de60bd109c178a1c7489b30f027f8a93
-  - [41]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [42]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [43]
-    - `name`: corpus_epoch_cb415a040387f7b0.json
-    - `sha256`: f7a80fdf1eb8820d00f4c26faf536113a11948a437d4637acb191b35b6dfa050
-  - [44]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [45]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [46]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [47]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [48]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [49]
-    - `name`: corpus_history_absence_a5753b57fab08b0f.json
-    - `sha256`: 3904f2838779802fcad32a15b13d82eb6860a0fafecc2feb9437af93a7360f8f
-  - [50]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [51]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [52]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [53]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [54]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [55]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [56]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [57]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [58]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [59]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [60]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [61]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [62]
-    - `name`: epoch_delta_44955f3515007971.json
-    - `sha256`: 8c4823fcd372f927ada7ef5d08fff5457bd25db3ea5d7f42c49679236616da6e
-  - [63]
-    - `name`: epoch_position_2e120d21df5a400d.json
-    - `sha256`: 9c1bf6a2af75b9d2035688e89a872e45dfd166eef7b557aa58efc53aedadbfc6
-  - [64]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [65]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [66]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [67]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [68]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [69]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [70]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [71]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [72]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [73]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [74]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [75]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [76]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [77]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [78]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [79]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [80]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [81]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [82]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [83]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [84]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [85]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [86]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [87]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [88]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [89]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [90]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [91]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [92]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [93]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [94]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [95]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [96]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [97]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [98]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [99]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [100]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [101]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [102]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [103]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [104]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [105]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [106]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [107]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [108]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [109]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_6340cdebc9a6efe1.json
-  - epoch_position_2e120d21df5a400d.json
-- `members_removed`:
-- `n_members`: 110
-- `params`:
-  - `head_sha`: 462f3a9dd5818ef0e19f8174b1f2ff6b0fa206c5
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_6340cdebc9a6efe1.json
-- `prev_epoch_sha256`: fb3768440e12ff5a3668959d6c08e3700a7423c241484e803e7ba84df616969e
-- `receipt_sha256`: 959513b12d66742be47f64f26e140b70a95dbda41162c0a7fbd8516e69f0eb51
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_96ba030697ddf0ff.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_96ba030697ddf0ff.json | d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f | 96ba030697ddf0ff13511c5ba2d654f9c794c2cc1013961dafe5baac4293db0c | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 7fee4c6bb52c76ee0a8fef717bd6fce9f6ca6ed642a708249b11d154d748a468
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [7]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [8]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [9]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [10]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [11]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [12]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [13]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [14]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [15]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [16]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [17]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [18]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [19]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [20]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [21]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [22]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [23]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [24]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [25]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [26]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [27]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [28]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [29]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [30]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [31]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [32]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [33]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [34]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [35]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [36]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [37]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [38]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [39]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [40]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [41]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [42]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [43]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [44]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [45]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [46]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [47]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [48]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [49]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [50]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [51]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [52]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [53]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [54]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [55]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [56]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [57]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [58]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [59]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [60]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [61]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [62]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [63]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [64]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_fbb352a23e62d321.json
-  - corpus_proof_a56dff22d5b4931c.json
-- `members_removed`:
-- `n_members`: 65
-- `params`:
-  - `head_sha`: 6e5b598b5962b33ce145a42e9ae725a2ba597ee8
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_fbb352a23e62d321.json
-- `prev_epoch_sha256`: d463d1e095d524f54cbf9d625bf3425994a19aa5c71d28f90c8bd767d9a84569
-- `receipt_sha256`: 96ba030697ddf0ff13511c5ba2d654f9c794c2cc1013961dafe5baac4293db0c
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_9d41d1d7410eb02d.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_9d41d1d7410eb02d.json | 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328 | 9d41d1d7410eb02dae9416bbd7820a0b9232b9fcc1bfe2b38bdf09fcefdb4f39 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: f8692d5b835e6aff6e9829286278db948495ebbbc01159272383538a1c13bcfe
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 861b2ea59b0cd84a342ac33fdb239aa9e284511bf8c1d7f3b291f4b52e5f558a
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [14]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [15]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [16]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [17]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [18]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [19]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [20]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [21]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [22]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [23]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [24]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [25]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [26]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [27]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [28]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [29]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [30]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [31]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [32]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [33]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [34]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [35]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [36]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [37]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [38]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [39]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [40]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [41]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [42]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [43]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [44]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [45]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [46]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [47]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [48]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [49]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [50]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [51]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [52]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [53]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [54]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [55]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [56]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [57]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [58]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [59]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [60]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [61]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [62]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [63]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [64]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [65]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [66]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [67]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [68]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [69]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [70]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [71]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [72]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [73]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [74]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [75]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [76]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [77]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [78]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [79]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [80]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [81]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [82]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [83]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [84]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [85]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [86]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [87]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [88]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [89]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [90]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [91]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [92]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [93]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [94]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [95]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [96]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [97]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [98]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_721e9b4fb855e1a1.json
-- `members_removed`:
-- `n_members`: 99
-- `params`:
-  - `head_sha`: 047754f5f342780dffc2a6b5207198fdc767d3d5
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_721e9b4fb855e1a1.json
-- `prev_epoch_sha256`: 18d302aae2a897a1ff595f977fc873046b0ee4450ec5b3ff507de52d721f1da4
-- `receipt_sha256`: 9d41d1d7410eb02dae9416bbd7820a0b9232b9fcc1bfe2b38bdf09fcefdb4f39
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_9fd864d30fda3c69.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_9fd864d30fda3c69.json | 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9 | 9fd864d30fda3c69102815bbd91a029e8e69c47b2c246a797e2c057dd7d84c8b | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 5d4269942f124505fc6a0ff6454067065f175a2830140562075ee62a57ec7770
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [8]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [9]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [10]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [11]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [12]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [13]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [14]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [15]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [16]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [17]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [18]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [19]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [20]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [21]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [22]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [23]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [24]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [25]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [26]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [27]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [28]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [29]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [30]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [31]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [32]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [33]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [34]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [35]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [36]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [37]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [38]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [39]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [40]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [41]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [42]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [43]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [44]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [45]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [46]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [47]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [48]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [49]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [50]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [51]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [52]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [53]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [54]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [55]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [56]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [57]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [58]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [59]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [60]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [61]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [62]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [63]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [64]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [65]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [66]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [67]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [68]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [69]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [70]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [71]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [72]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [73]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [74]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [75]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [76]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_2ca91405e468cc6b.json
-- `members_removed`:
-- `n_members`: 77
-- `params`:
-  - `head_sha`: 5257b030418372bac2f0db62e0448476396048de
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_2ca91405e468cc6b.json
-- `prev_epoch_sha256`: bc74e733bd32f5970ae94ef3e052907029b67e551e33b1c9bd3bbaa75da8dbf1
-- `receipt_sha256`: 9fd864d30fda3c69102815bbd91a029e8e69c47b2c246a797e2c057dd7d84c8b
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_a0e901c74a5f29c4.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_a0e901c74a5f29c4.json | 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828 | a0e901c74a5f29c4d6dc35f339e206e2289c02e752e6a4385b7c0936c948df83 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 73f1e3fc3a9e420724e4f1137a10728f974cdbadd029181df762033d82e713b9
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [8]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [9]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [10]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [11]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [12]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [13]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [14]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [15]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [16]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [17]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [18]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [19]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [20]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [21]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [22]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [23]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [24]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [25]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [26]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [27]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [28]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [29]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [30]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [31]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [32]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [33]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [34]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [35]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [36]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [37]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [38]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [39]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [40]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [41]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [42]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [43]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [44]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [45]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [46]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [47]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [48]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [49]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [50]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [51]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [52]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [53]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [54]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [55]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [56]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [57]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [58]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [59]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [60]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [61]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [62]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [63]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [64]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [65]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [66]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [67]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [68]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [69]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [70]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [71]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [72]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [73]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [74]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [75]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [76]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [77]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [78]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [79]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [80]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [81]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [82]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [83]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_fbbcd3c1e840e14d.json
-- `members_removed`:
-- `n_members`: 84
-- `params`:
-  - `head_sha`: 4c322bd1dd71a5cdf2b1c53f29e3e3e92294b333
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_fbbcd3c1e840e14d.json
-- `prev_epoch_sha256`: ae71b4ec5ec8ead38d310f4def8f8282cb267a0b482bf2a29633c8bac0488042
-- `receipt_sha256`: a0e901c74a5f29c4d6dc35f339e206e2289c02e752e6a4385b7c0936c948df83
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_a1a8323db3be4842.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_a1a8323db3be4842.json | 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901 | a1a8323db3be4842b8dd133882c776a0ae6c89de94d7f33f4bae983d93fba000 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 48ce7dd52286071dab45b649f586beac6e98fc66c486eaec93fc9b8bf3e67ae1
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [8]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [9]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [10]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [11]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [12]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [13]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [14]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [15]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [16]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [17]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [18]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [19]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [20]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [21]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [22]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [23]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [24]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [25]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [26]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [27]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [28]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [29]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [30]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [31]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [32]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [33]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [34]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [35]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [36]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [37]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [38]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [39]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [40]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [41]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [42]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [43]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [44]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [45]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [46]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [47]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [48]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [49]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [50]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [51]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [52]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [53]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [54]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [55]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [56]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [57]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [58]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [59]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [60]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [61]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [62]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [63]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [64]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [65]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [66]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [67]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [68]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [69]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [70]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [71]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [72]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_0a2e8964712cfb0a.json
-- `members_removed`:
-- `n_members`: 73
-- `params`:
-  - `head_sha`: 589e8f1511b4611b9388a045539c38992093b251
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_0a2e8964712cfb0a.json
-- `prev_epoch_sha256`: f168d4709c80476984f514a546ec155d24c7b8685f2c1c3d1293c8cd11cd941e
-- `receipt_sha256`: a1a8323db3be4842b8dd133882c776a0ae6c89de94d7f33f4bae983d93fba000
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_a4cb68008a317f90.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_a4cb68008a317f90.json | 66894e231d5029cd138f613c62447e58700a44d7def29bc1a16da44146dc69f2 | a4cb68008a317f90d16ce49d164ac29a0a1c54804791780f6db28a65cda9fbcb | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: b7592d23d58eb30276830c39a00df6a0feb4ab0d92e48f8237f3876c93efa5b3
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: c457cfcd13d9ecdc4c5be63a3223021d34b0447f769d3dde7ee9d3844d3f0a69
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [14]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [15]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [16]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [17]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [18]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [19]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [20]
-    - `name`: corpus_epoch_5a8dac905c9cc22d.json
-    - `sha256`: 50b853da7d6c07efc3e4c533e5a4a6beae5295da68c696f2656491b28fbf6b18
-  - [21]
-    - `name`: corpus_epoch_5c9754ab2a9408a1.json
-    - `sha256`: a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2
-  - [22]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [23]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [24]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [25]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [26]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [27]
-    - `name`: corpus_epoch_7d6b1f5442b13ea1.json
-    - `sha256`: 29bb1eae00b9d91e5833450631d74c3aaff4aa7c42230e89a074c94df626c5c9
-  - [28]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [29]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [30]
-    - `name`: corpus_epoch_9d41d1d7410eb02d.json
-    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
-  - [31]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [32]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [33]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [34]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [35]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [36]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [37]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [38]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [39]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [40]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [41]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [42]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [43]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [44]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [45]
-    - `name`: corpus_history_absence_a5753b57fab08b0f.json
-    - `sha256`: 3904f2838779802fcad32a15b13d82eb6860a0fafecc2feb9437af93a7360f8f
-  - [46]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [47]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [48]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [49]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [50]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [51]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [52]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [53]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [54]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [55]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [56]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [57]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [58]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [59]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [60]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [61]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [62]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [63]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [64]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [65]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [66]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [67]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [68]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [69]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [70]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [71]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [72]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [73]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [74]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [75]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [76]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [77]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [78]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [79]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [80]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [81]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [82]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [83]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [84]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [85]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [86]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [87]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [88]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [89]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [90]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [91]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [92]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [93]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [94]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [95]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [96]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [97]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [98]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [99]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [100]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [101]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [102]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [103]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_7d6b1f5442b13ea1.json
-  - corpus_history_absence_a5753b57fab08b0f.json
-- `members_removed`:
-  - corpus_history_absence_1791a18109fce973.json
-- `n_members`: 104
-- `params`:
-  - `head_sha`: b175c98f3b43477143341cfbd364951c8fa94436
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_7d6b1f5442b13ea1.json
-- `prev_epoch_sha256`: 0cbe2dd3e39c52620e11c2f93f98d7f6ce5cbad5b130a6ce50a99cf2020fe809
-- `receipt_sha256`: a4cb68008a317f90d16ce49d164ac29a0a1c54804791780f6db28a65cda9fbcb
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: shrinking
-
-### `receipts/corpus_epoch_a5d113f0994c74b5.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_a5d113f0994c74b5.json | 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493 | a5d113f0994c74b5fdf334d58b8bbf9d316a57e4ae5c7f4a4473e1b8f2b647a4 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: b7f7992d0ef77761d83589394a3740485fab8c37b6ae1d721dc7b3717633d180
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [7]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [8]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [9]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [10]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [11]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [12]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [13]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [14]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [15]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [16]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [17]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [18]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [19]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [20]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [21]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [22]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [23]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [24]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [25]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [26]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [27]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [28]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [29]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [30]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [31]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [32]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [33]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [34]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [35]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [36]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [37]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [38]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [39]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [40]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [41]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [42]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [43]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [44]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [45]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [46]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [47]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [48]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [49]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [50]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [51]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [52]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [53]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [54]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [55]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [56]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [57]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [58]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [59]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [60]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [61]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [62]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [63]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [64]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [65]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [66]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [67]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [68]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [69]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [70]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_4a75066db56e52fd.json
-- `members_removed`:
-- `n_members`: 71
-- `params`:
-  - `head_sha`: 263b42fcdeb1ef5fcfe713b1418c3ce15e9f143e
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_4a75066db56e52fd.json
-- `prev_epoch_sha256`: 5eb85fb1ae415c24ee945bab088d97a9cf1869013da680669c663adceb5b860a
-- `receipt_sha256`: a5d113f0994c74b5fdf334d58b8bbf9d316a57e4ae5c7f4a4473e1b8f2b647a4
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_a83ba798e9abd892.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_a83ba798e9abd892.json | 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d | a83ba798e9abd89212c0fe153e461b4fd6a45831ad5fdbf28b4c92c373e49636 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: c3534efa7e8ddcceae37f32161d3b52f907e8e25f567fa0c98606836255b3308
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [7]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [8]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [9]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [10]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [11]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [12]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [13]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [14]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [15]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [16]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [17]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [18]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [19]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [20]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [21]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [22]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [23]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [24]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [25]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [26]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [27]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [28]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [29]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [30]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [31]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [32]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [33]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [34]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [35]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [36]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [37]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [38]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [39]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [40]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [41]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [42]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [43]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [44]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [45]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [46]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [47]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [48]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [49]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [50]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [51]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [52]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [53]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [54]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [55]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [56]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [57]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [58]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [59]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [60]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [61]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [62]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [63]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [64]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [65]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [66]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_63761c8b4e63992b.json
-- `members_removed`:
-- `n_members`: 67
-- `params`:
-  - `head_sha`: e974c1273cfc044c6fa9c3ca46704cea49d4a69a
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_63761c8b4e63992b.json
-- `prev_epoch_sha256`: cd054b2e2a222ace7a61f972708b9615b19698442d2663eb7e151c3e37c8b5d3
-- `receipt_sha256`: a83ba798e9abd89212c0fe153e461b4fd6a45831ad5fdbf28b4c92c373e49636
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_ab1470227e387e4d.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_ab1470227e387e4d.json | cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e | ab1470227e387e4dd813f030c0c1c60d1d75df2ff3c85cab237e5d0a0fe5d854 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: cb966de72bec251b9138a00947bb380b5eaba346b11d68238d908805df8d5678
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 034e4761481f261cacf66834b2279e526d90d4b2c75dcaa8316637543cc86293
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [8]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [9]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [10]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [11]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [12]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [13]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [14]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [15]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [16]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [17]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [18]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [19]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [20]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [21]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [22]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [23]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [24]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [25]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [26]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [27]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [28]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [29]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [30]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [31]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [32]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [33]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [34]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [35]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [36]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [37]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [38]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [39]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [40]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [41]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [42]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [43]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [44]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [45]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [46]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [47]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [48]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [49]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [50]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [51]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [52]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [53]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [54]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [55]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [56]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [57]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [58]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [59]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [60]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [61]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [62]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [63]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [64]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [65]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [66]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [67]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [68]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [69]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [70]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [71]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [72]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [73]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [74]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [75]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [76]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [77]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [78]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [79]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [80]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [81]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [82]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [83]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [84]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [85]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [86]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [87]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_1384f0d99dac82aa.json
-- `members_removed`:
-- `n_members`: 88
-- `params`:
-  - `head_sha`: 8b8f5541a16c19b2bdf9c9267fd0bcfb60ce8342
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_1384f0d99dac82aa.json
-- `prev_epoch_sha256`: cac87e33336c3c364db988cace66a65cb1aa029ee3d25749690a6174213cae4b
-- `receipt_sha256`: ab1470227e387e4dd813f030c0c1c60d1d75df2ff3c85cab237e5d0a0fe5d854
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_ac21f22e90c58c53.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_ac21f22e90c58c53.json | a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9 | ac21f22e90c58c53a4f013bf3c0d05f3094a7f089d08097964d4ef4a5414744a | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 911b765cbd2e69069b845ef386fbf881b32eb2b2618eadc482187221c840fa6f
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [8]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [9]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [10]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [11]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [12]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [13]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [14]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [15]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [16]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [17]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [18]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [19]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [20]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [21]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [22]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [23]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [24]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [25]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [26]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [27]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [28]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [29]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [30]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [31]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [32]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [33]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [34]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [35]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [36]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [37]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [38]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [39]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [40]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [41]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [42]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [43]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [44]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [45]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [46]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [47]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [48]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [49]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [50]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [51]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [52]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [53]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [54]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [55]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [56]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [57]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [58]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [59]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [60]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [61]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [62]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [63]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [64]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [65]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [66]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [67]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [68]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [69]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [70]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [71]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [72]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [73]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [74]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [75]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [76]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [77]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_9fd864d30fda3c69.json
-- `members_removed`:
-- `n_members`: 78
-- `params`:
-  - `head_sha`: a668dea840f69503dcc9d61bb40b2445dbd60da9
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_9fd864d30fda3c69.json
-- `prev_epoch_sha256`: 5d4269942f124505fc6a0ff6454067065f175a2830140562075ee62a57ec7770
-- `receipt_sha256`: ac21f22e90c58c53a4f013bf3c0d05f3094a7f089d08097964d4ef4a5414744a
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_ac2e4ae4bcae4dd8.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_ac2e4ae4bcae4dd8.json | 4e97881c7c558ad93674533f102ea582de60bd109c178a1c7489b30f027f8a93 | ac2e4ae4bcae4dd89a45e6db4c3ec25aa6fcae9a6b653bc919f619ba57710bc8 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 67c09d7b980ef01db9b659934c040b7b78cc304eea67b964773f4abe687b5f17
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: d19eacedf3c7b1ce0f81438ac5304e4132605ae606d896c52ec307e96aa49a93
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [14]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [15]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [16]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [17]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [18]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [19]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [20]
-    - `name`: corpus_epoch_5a8dac905c9cc22d.json
-    - `sha256`: 50b853da7d6c07efc3e4c533e5a4a6beae5295da68c696f2656491b28fbf6b18
-  - [21]
-    - `name`: corpus_epoch_5c9754ab2a9408a1.json
-    - `sha256`: a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2
-  - [22]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [23]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [24]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [25]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [26]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [27]
-    - `name`: corpus_epoch_7d6b1f5442b13ea1.json
-    - `sha256`: 29bb1eae00b9d91e5833450631d74c3aaff4aa7c42230e89a074c94df626c5c9
-  - [28]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [29]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [30]
-    - `name`: corpus_epoch_9d41d1d7410eb02d.json
-    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
-  - [31]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [32]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [33]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [34]
-    - `name`: corpus_epoch_a4cb68008a317f90.json
-    - `sha256`: 66894e231d5029cd138f613c62447e58700a44d7def29bc1a16da44146dc69f2
-  - [35]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [36]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [37]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [38]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [39]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [40]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [41]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [42]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [43]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [44]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [45]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [46]
-    - `name`: corpus_history_absence_a5753b57fab08b0f.json
-    - `sha256`: 3904f2838779802fcad32a15b13d82eb6860a0fafecc2feb9437af93a7360f8f
-  - [47]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [48]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [49]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [50]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [51]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [52]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [53]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [54]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [55]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [56]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [57]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [58]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [59]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [60]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [61]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [62]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [63]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [64]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [65]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [66]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [67]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [68]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [69]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [70]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [71]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [72]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [73]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [74]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [75]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [76]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [77]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [78]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [79]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [80]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [81]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [82]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [83]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [84]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [85]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [86]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [87]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [88]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [89]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [90]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [91]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [92]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [93]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [94]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [95]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [96]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [97]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [98]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [99]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [100]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [101]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [102]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [103]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [104]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_a4cb68008a317f90.json
-- `members_removed`:
-- `n_members`: 105
-- `params`:
-  - `head_sha`: b175c98f3b43477143341cfbd364951c8fa94436
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_a4cb68008a317f90.json
-- `prev_epoch_sha256`: b7592d23d58eb30276830c39a00df6a0feb4ab0d92e48f8237f3876c93efa5b3
-- `receipt_sha256`: ac2e4ae4bcae4dd89a45e6db4c3ec25aa6fcae9a6b653bc919f619ba57710bc8
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_babc8d62f8faa9fe.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_babc8d62f8faa9fe.json | 5323a49282e0288c9c3bbe19896f156f2a6589f6ff216cdddd35f08282bccaee | babc8d62f8faa9fe4da00bffebec21f76efa8f4f567b81619665a03d90e22b64 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: d68cca0bcb7f917756a41e391b8b286dda513642d0b2423e1569508aabfbf8d9
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 2ac24cc64bf2432e6aefbe0fa2c149c866e27447168cc098e05529902659c32a
-- `members`:
-  - [0]
-    - `name`: abc_calibrate_amzn.json
-    - `sha256`: 31aedff635330e6727b42bfa6b0c406c24aa305825c41cb09ae6aac33dca65f1
-  - [1]
-    - `name`: aftermath_flow_amzn.json
-    - `sha256`: 229bfe14cfd239f30786ef89c8aa0f2b2775800e00cd85a6a9d3239265604da8
-  - [2]
-    - `name`: alert_budget.json
-    - `sha256`: 04e96f138a830001cb130a3b4758f684627588bccc648f4efd35a72bdb2111e7
-  - [3]
-    - `name`: anchor_scan_amzn.json
-    - `sha256`: 65c11ec3e7f771bbedf4cde31b63bbe9576e97a9de55f7ab030d3c8c34c28c8a
-  - [4]
-    - `name`: api_audit.json
-    - `sha256`: 2957d91704d025c08f5d7ece51f037827539d9254246091d8499fb1fde4a3177
-  - [5]
-    - `name`: api_fuzz.json
-    - `sha256`: c403f16743569dd1a6b7aa0711a58a42ca8bdd26abc5b0645bf5ab19952e792e
-  - [6]
-    - `name`: asof_audit.json
-    - `sha256`: 436c3737e93cd19673ae6e6127e69f47498efbeacdfc25e8447a9abdc1b7512a
-  - [7]
-    - `name`: attestation_audit.json
-    - `sha256`: 5b44675be81133eb52a25feb2553c487bf6392ec297bf390fde875085ae46ee4
-  - [8]
-    - `name`: attribution.json
-    - `sha256`: b9a8d0e5e42087e034ca2551afedaadd6f82eeee74666794dff88fdbaeb00b4c
-  - [9]
-    - `name`: backend_parity.json
-    - `sha256`: 9b2b2433e4106a88b1f2583bca0816a738370635046254267a50f83e50b3ac5c
-  - [10]
-    - `name`: band_occupancy.json
-    - `sha256`: 98635a72af8ee0b3f395cefb81bc3be5018d39b7f9cdd8a359007c50780e70da
-  - [11]
-    - `name`: band_shape.json
-    - `sha256`: 1e0d626f6a4b69a5761dc498a5b1bcd7d446b7a0d6c5439bf6c3beb048eafcbc
-  - [12]
-    - `name`: bank_audit.json
-    - `sha256`: 07d92059b00305ba6b5880edc4152180d0fd31bd9f0829bbea3052b0ceb075fc
-  - [13]
-    - `name`: basis_carry_dd7705fc0f2f1c25.json
-    - `sha256`: 852f56a1e2aeb3654d406fbb14a4a2baa7cd20949d45153a98c5a99a2248f741
-  - [14]
-    - `name`: boundary_audit.json
-    - `sha256`: f958b32b0d6bedbd542c105d7b530431c4356dda768d2bb90fb8055db56b6cdf
-  - [15]
-    - `name`: byok_audit.json
-    - `sha256`: 0dda10232d681aecd75835b70382ecab3f0698f91e5a371e171968a73ba23406
-  - [16]
-    - `name`: cache_audit.json
-    - `sha256`: 248835c82eeba8f0ef65fc30345da462bcea7180374008d5aa56c526f4bd5f61
-  - [17]
-    - `name`: calib_real_drill.json
-    - `sha256`: 7480b2af38274f5d6e6c4a107e01890a3d49f0524b5920a5b3b946a9f8a5a571
-  - [18]
-    - `name`: calibration_audit.json
-    - `sha256`: c9f800216f05073fed4da606f04823cc71bb37909d4242492f5e280cdb64964f
-  - [19]
-    - `name`: cancel_cluster_amzn.json
-    - `sha256`: d6554e87ef5ca20ee1df623ac0b6f08fba4b91f2c00bce68bfa949767691abf1
-  - [20]
-    - `name`: cancel_gradient_amzn.json
-    - `sha256`: b140be66a1d4467c73f104a992ab9f692ed83b959a7918461b3951fd091bff04
-  - [21]
-    - `name`: cancel_gradient_bench.json
-    - `sha256`: d01943ba6fa197eb7b8f259b796acc28a6cde10a2bee9995dd47a98b0535a91e
-  - [22]
-    - `name`: cancel_lead_amzn.json
-    - `sha256`: 8151e7dc1cbbedb112d8fdc3cd3e0f52aca58ef4d23ad698d2229a02060a705e
-  - [23]
-    - `name`: capability_audit.json
-    - `sha256`: 787b45652557c719c5beffef50ad571f773d3253f28ddc0e0a406e0cdc75399c
-  - [24]
-    - `name`: capacity_eval_3622d0c059d42009.json
-    - `sha256`: 57ad3394513fe58e48127141858a990580fade56ae4755ad0a3b868aa2568f2b
-  - [25]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [26]
-    - `name`: causality_scan.json
-    - `sha256`: 2d7b2e0963fe468305afbbbe190b22b356ad7bdf8cc4f47c279fc25855d61161
-  - [27]
-    - `name`: churn_reseed.json
-    - `sha256`: 3a444c77bfef84e0e070d4611368569639ee6a551ed30cbdc6a107202ccbff7d
-  - [28]
-    - `name`: churn_stability.json
-    - `sha256`: 7ab02a6f41f6c626d79bca729a02300d4c79dae243758a460b57a636604fdcc4
-  - [29]
-    - `name`: cli_audit.json
-    - `sha256`: 16b8a95f44d73964a6578cee9c7cc4aeae2d74770d1b2891422b859feb01d597
-  - [30]
-    - `name`: closure_fit_amzn.json
-    - `sha256`: ff6d30e8251032109ace27be9dd1e488206be1eeb81d5fa1f9c5d8f56eb29294
-  - [31]
-    - `name`: closure_stack_amzn.json
-    - `sha256`: 994f8f2cf89faaace83e6e3f7441d3361e111c0d2b9e05cf123c2c602c2389cd
-  - [32]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [33]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [34]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [35]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [36]
-    - `name`: contamination_audit.json
-    - `sha256`: bce466d9ffb4b6144cf78590caa1bb1c48f59ac06ad94a7141d1796013ab53fe
-  - [37]
-    - `name`: continuation_attr_amzn.json
-    - `sha256`: e2340d411b4af81d839dc85ad7326835fe7a8c97c834432c861664c773f0cbbc
-  - [38]
-    - `name`: contract_audit.json
-    - `sha256`: f5ccc9f01e32b707526d4fb684e45d9e7d3b64af7b3b647c12223d72764d1e64
-  - [39]
-    - `name`: contract_probe.json
-    - `sha256`: 9cd19ecff9d41c85487e6991e0bfd67eff42a9ed154b6759f4f9f1c8b49178ec
-  - [40]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [41]
-    - `name`: corpus_audit.json
-    - `sha256`: 374807979a66c7dc455ee3f1236eff03be43e1b7f9f550b4e97789b1807b3552
-  - [42]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [43]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [44]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [45]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [46]
-    - `name`: corpus_epoch_2bd794275af2b3d8.json
-    - `sha256`: 67bb35e85a4c083d35023936032dbcc790a58f81166195d19f669fd007d8c4a7
-  - [47]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [48]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [49]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [50]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [51]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [52]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [53]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [54]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [55]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [56]
-    - `name`: corpus_epoch_5a8dac905c9cc22d.json
-    - `sha256`: 50b853da7d6c07efc3e4c533e5a4a6beae5295da68c696f2656491b28fbf6b18
-  - [57]
-    - `name`: corpus_epoch_5c9754ab2a9408a1.json
-    - `sha256`: a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2
-  - [58]
-    - `name`: corpus_epoch_6340cdebc9a6efe1.json
-    - `sha256`: 3e3473c359007fb425361a8a618d1e7b3de5edc23e1a0937ab241d2831c95dc0
-  - [59]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [60]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [61]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [62]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [63]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [64]
-    - `name`: corpus_epoch_7d6b1f5442b13ea1.json
-    - `sha256`: 29bb1eae00b9d91e5833450631d74c3aaff4aa7c42230e89a074c94df626c5c9
-  - [65]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [66]
-    - `name`: corpus_epoch_959513b12d66742b.json
-    - `sha256`: b557f12c51d23d9873d829aa683eec9d55dd998d0f7d12f1d0f7286f885a7eed
-  - [67]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [68]
-    - `name`: corpus_epoch_9d41d1d7410eb02d.json
-    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
-  - [69]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [70]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [71]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [72]
-    - `name`: corpus_epoch_a4cb68008a317f90.json
-    - `sha256`: 66894e231d5029cd138f613c62447e58700a44d7def29bc1a16da44146dc69f2
-  - [73]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [74]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [75]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [76]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [77]
-    - `name`: corpus_epoch_ac2e4ae4bcae4dd8.json
-    - `sha256`: 4e97881c7c558ad93674533f102ea582de60bd109c178a1c7489b30f027f8a93
-  - [78]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [79]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [80]
-    - `name`: corpus_epoch_cb415a040387f7b0.json
-    - `sha256`: f7a80fdf1eb8820d00f4c26faf536113a11948a437d4637acb191b35b6dfa050
-  - [81]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [82]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [83]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [84]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [85]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [86]
-    - `name`: corpus_history_absence_a5753b57fab08b0f.json
-    - `sha256`: 3904f2838779802fcad32a15b13d82eb6860a0fafecc2feb9437af93a7360f8f
-  - [87]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [88]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [89]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 25230923d07164342facbe10ec0520975ee04c0ef690b3661f5daaf9d69f250e
-  - [90]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [91]
-    - `name`: cost_calibration_eval_f130c7e871e9aa64.json
-    - `sha256`: da4f8269942b5c87bebed33e422d6326cb73d327f48648d97b02e6e6b36dd1e9
-  - [92]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [93]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [94]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [95]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [96]
-    - `name`: crossvenue_basis_3f4ff76f517655a7.json
-    - `sha256`: 14ce799a46e282849e8e7852ff74489ed4747274c164040fcc52974bbb72a087
-  - [97]
-    - `name`: crown_behind.json
-    - `sha256`: 1ae02ca68d023ddd18c2b0023b240d1cf729b0a2b04597954548402afbe769c6
-  - [98]
-    - `name`: crown_density_amzn.json
-    - `sha256`: 4945e95537a122d7d13c12d84fe59e518e3051eb8ddd9ca8db66f3218a0c6268
-  - [99]
-    - `name`: crown_join.json
-    - `sha256`: df42ab245b4f82d535fb52d4a4068414b4b11537e152ec63b0e3ab6823e40af9
-  - [100]
-    - `name`: crown_size.json
-    - `sha256`: 751a7c4351d1639d547330d7b8f8251fb6341f500f099304a13945810a560fe0
-  - [101]
-    - `name`: cxl_shield_amzn.json
-    - `sha256`: 16cac426d34c9af016963a251e9fef5422babd2ced8be9795a7413e9c6b84e40
-  - [102]
-    - `name`: decay_watch_synth.json
-    - `sha256`: 8f37ccea904fe09557819f36a60d5dcb2d99467db21301111b5c7d9836ccf6d4
-  - [103]
-    - `name`: deep_book_bench.json
-    - `sha256`: 9410e500ad2602dc085c5146640d7bf7219a9626c8bccd32ea47a71829f03392
-  - [104]
-    - `name`: deep_microprice_amzn.json
-    - `sha256`: a9fddf27e4c26bc144ced56ca35856411f8a6220d91100872170b60411738acd
-  - [105]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [106]
-    - `name`: depth_consumption_amzn.json
-    - `sha256`: 1bd84264cd6b886a28c16ff5246ec2c4467f81d0a656589c534dad34d8754846
-  - [107]
-    - `name`: depth_tilt_amzn.json
-    - `sha256`: a42581086e0846cbc71a272b6cb39e018031176fd7414ebc57dc95ba7415d2b2
-  - [108]
-    - `name`: dip_audit.json
-    - `sha256`: 085f0a461518911bd57e27e12c0c01f4f0f2134254f7b240ab4066d95cc8233f
-  - [109]
-    - `name`: dip_run_audit.json
-    - `sha256`: e0498594b7ae8e371c24761c7e5f7b3a97fb24e708e645d4abcfbfcda71bab86
-  - [110]
-    - `name`: disclosure_audit.json
-    - `sha256`: 79f2a55cc0ba899cbdb8a26e7e103e3e008acc554890ef21d63d1d3bf48d0538
-  - [111]
-    - `name`: dispatch_audit.json
-    - `sha256`: 19bba277befd9b88272175e899a962822a40a3bd8757c750882d56d92513d8dc
-  - [112]
-    - `name`: diversity_bench.json
-    - `sha256`: f9c48ad14bff833f98ae5b56aea24192b9815f1e5acbc86a0a8fd61a7c27325c
-  - [113]
-    - `name`: doctor_audit.json
-    - `sha256`: 0c0e69fb4cf225577f2b67144e306034a28ffdf64acf3dc4f315588159c2aa13
-  - [114]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [115]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [116]
-    - `name`: ds_audit.json
-    - `sha256`: 67a0e581ad6876ffca1e43b82b9bfd9dc7f91531e6b926af1751eaec4d727a8d
-  - [117]
-    - `name`: duration_check.json
-    - `sha256`: 12188ad90369774c642fb7f516f14dd7b20c4ec7367434c75b24aa1a5ba5e6ab
-  - [118]
-    - `name`: em_audit.json
-    - `sha256`: 69735454a8da7e781be4e56dc4d9eb83c56f05bbd51ce6e3a4db47e2bb547e00
-  - [119]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [120]
-    - `name`: empirical_flow_bench.json
-    - `sha256`: e12abc02ca462ff660e4aaa39fe5182508ab5896c1bdab180c5bb6caaf4c9c99
-  - [121]
-    - `name`: engine_fuzz.json
-    - `sha256`: 5fe71d9e05862d39cdaf2aaf153f508d992a2bc6132bc882f45d86da64f54396
-  - [122]
-    - `name`: epoch_delta_44955f3515007971.json
-    - `sha256`: 8c4823fcd372f927ada7ef5d08fff5457bd25db3ea5d7f42c49679236616da6e
-  - [123]
-    - `name`: epoch_position_2e120d21df5a400d.json
-    - `sha256`: 9c1bf6a2af75b9d2035688e89a872e45dfd166eef7b557aa58efc53aedadbfc6
-  - [124]
-    - `name`: error_shape.json
-    - `sha256`: a9b29bff34f219cab4fb4375d56560b392097906df05d87d69bb526d591d2284
-  - [125]
-    - `name`: eval_core_audit.json
-    - `sha256`: fb50b648b07af58fcaf0e9b8837ef946fd9b4b04e18cb48d991c264154da3e96
-  - [126]
-    - `name`: event_burst_amzn.json
-    - `sha256`: 4c8872dc6f781544ef15cbace7537df2876d0320410570283e558306a9c5b019
-  - [127]
-    - `name`: event_granger_amzn.json
-    - `sha256`: 628431d7b7099ac23e9e0c40a0b99de811952a701333949202e2ea0696256362
-  - [128]
-    - `name`: event_matrix_amzn.json
-    - `sha256`: e1a8e84ffc8b0ac08a7e8a821bc0650cb56bd10c924318e8c0be4a74587710d1
-  - [129]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [130]
-    - `name`: evidence_audit_5c9f07c823727701.json
-    - `sha256`: 6124e972cc182ef134a5c411f2794c4f2e3fcea205f6a0bfc0a05f4ec912cd23
-  - [131]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [132]
-    - `name`: evidence_audit_f45ae8d6bc7cd677.json
-    - `sha256`: 04128fa07fd2ca3650981d0cad06d07f921a525b301945b2c539ddd8c7447989
-  - [133]
-    - `name`: exec_cost_real_amzn.json
-    - `sha256`: 297d59df884a80c0503cad9c511579193cf77504fd5313492b732b4297993788
-  - [134]
-    - `name`: exec_cost_split.json
-    - `sha256`: 53ef2528042134aeb7bd8c20d6c94f7e4ab3391fafd9851531f84df3fe3ae9f5
-  - [135]
-    - `name`: ext_bench_audit.json
-    - `sha256`: 324025ce928acda2167ecaa25bca6bcf16373400eb8ddb657e348483010c6ec3
-  - [136]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [137]
-    - `name`: fbm_circulant.json
-    - `sha256`: 8a8fcbcd46b58942852e9c79603d854aaddf1e5ea3c35b5dc9d42978005f5802
-  - [138]
-    - `name`: fifo_priority_amzn.json
-    - `sha256`: f180b99da62d936a31bf9df79f637141a9b7bd4c4679fc3782739455dafd7e30
-  - [139]
-    - `name`: flee_wide.json
-    - `sha256`: 186fec1776108a9051fbe02f47f411279a710999045cc97028fcf5a9f9482e77
-  - [140]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [141]
-    - `name`: fleet_eval_5e907be710811a44.json
-    - `sha256`: c95ce361609bdb00912147e0f87548fdbd2c0221ad27b8c1a4d0ba558b9330e1
-  - [142]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [143]
-    - `name`: floor_compose.json
-    - `sha256`: 53d4493e5009a0da44acdab958fb3bf8df5dcc01fd5bc76d5d24fe04d07692f1
-  - [144]
-    - `name`: floor_pins.json
-    - `sha256`: a38bb073ef069de28dff2ada970c05f2ac57a19433df20a19dfab727e9a0a5a0
-  - [145]
-    - `name`: floor_rate.json
-    - `sha256`: 632d421666dcd4ea2e7d4acd798ef82cab735054aeaa7d719eaacda91fea35f3
-  - [146]
-    - `name`: floor_reseed.json
-    - `sha256`: 2c02b255e4506593755d30d448e15bdc8f242e81ecbf380056b3a8c32698060a
-  - [147]
-    - `name`: floor_stability.json
-    - `sha256`: fbd9860771b933e799ee938c90ba3ea43620ead6dd99f0f44231c7c5d9916ce9
-  - [148]
-    - `name`: flow_couple.json
-    - `sha256`: 5dc9e98c044ada0edef8fc7f0be4ec7efabdc5d52781d9cacbd327549fb9f992
-  - [149]
-    - `name`: forecast_core_audit.json
-    - `sha256`: fb5960935d5182ae83223cf1e0645c0f3812abe37dacacf9f211ee920e2f0c18
-  - [150]
-    - `name`: forecast_data_audit.json
-    - `sha256`: 3174e1b32201a37b02fe225f469781f58e9470c9aa971ad259624bbbda2ee224
-  - [151]
-    - `name`: forecast_infra_audit.json
-    - `sha256`: 57d88d8385893260ddb771942ecdbb889e6e9aea1ee53c9660ef4f3a7350f9b3
-  - [152]
-    - `name`: forecast_pipeline_audit.json
-    - `sha256`: bd9b0903ffd6f40e3b237f4bbe46557ef345cfd547ec9e045dadc0ee806084c2
-  - [153]
-    - `name`: forward_record_preregistration_v1.json
-    - `sha256`: d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3
-  - [154]
-    - `name`: forward_record_preregistration_v1.json.seal.json
-    - `sha256`: afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc
-  - [155]
-    - `name`: full_impact.json
-    - `sha256`: 29a1b45e52fca254985f19c30d096eb6b2de14a406494282206e1092b3ea905e
-  - [156]
-    - `name`: full_stack.json
-    - `sha256`: 2048f94b0d052bf5ebfa38c6786d60b900b37468a814ec46e9b25262d6c9d1fc
-  - [157]
-    - `name`: fx1_anthropic_sdk_audit.json
-    - `sha256`: 03fd468413780b70daebbd231a925c4289faf62c6f0327fbdd0572f83764d01b
-  - [158]
-    - `name`: fx1_api_audit.json
-    - `sha256`: 3d94c3ed069123be4b774613a3e35d114698ab6000ce195fa97187e2a5596bb1
-  - [159]
-    - `name`: fx1_auth_audit.json
-    - `sha256`: fb7e0783ffa11fb79b7c4a1fceedb0b9e3f5eb836db4cda2b195b000128d8044
-  - [160]
-    - `name`: fx1_cap_audit.json
-    - `sha256`: 99737d09622533bad5f5793cd7fef198e211b235251bb79455c9a5e8643547b3
-  - [161]
-    - `name`: fx1_cli_audit.json
-    - `sha256`: 19a95549bfb8e5f3143474a94bfaa24ccc593f634237b3e8f33e811481dd0add
-  - [162]
-    - `name`: fx1_client_audit.json
-    - `sha256`: 3c83b261c8966f3ae7d63bb5bb18371adddb1b3ca2c21795223b8d3ceab3acc4
-  - [163]
-    - `name`: fx1_contract_audit.json
-    - `sha256`: 913e276befeaecd002582c8125ebddc96c85996764b57b91a956b5f7b32173e0
-  - [164]
-    - `name`: fx1_drain_audit.json
-    - `sha256`: f864d2a9cff6e6c396045afa8105c337362a769e491d6fc002af7dcff29e454b
-  - [165]
-    - `name`: fx1_e2e_audit.json
-    - `sha256`: e4671f251df3cf35c7ec50adbc59803a8d733f1759380edea714a532c6ec49ac
-  - [166]
-    - `name`: fx1_eval_lifecycle_audit.json
-    - `sha256`: 16c6e3969091a825443712614b1dd31b0c1224c8196d1fa35596f6fafb4872dd
-  - [167]
-    - `name`: fx1_fault_audit.json
-    - `sha256`: 43c78649e2f8246708940e27e83038f69f2e7aa36fe758d442fac9f6bea04205
-  - [168]
-    - `name`: fx1_jobs_audit.json
-    - `sha256`: c952e24df7c07978437e3ed7f36aadf0cd13103980588013f3677e371f9775bf
-  - [169]
-    - `name`: fx1_oai_sdk_audit.json
-    - `sha256`: 2e1421dd4e7b06191da9ee4c537d10ecd0fcb5e8a13a32608820f295e81fd0fb
-  - [170]
-    - `name`: fx1_ops_audit.json
-    - `sha256`: 6362b090bd931070e3f1a12caec01d2dc0df14db98c71658c29b58bf10fb8d08
-  - [171]
-    - `name`: fx1_parity_audit.json
-    - `sha256`: e71e77a4d8169d731bdc48c27765c24c3db59f1240437e55fc1f9edb928c90af
-  - [172]
-    - `name`: fx1_perf_audit.json
-    - `sha256`: 7f0fe1b11dca4412cb54b8dc3f40ad929016ac1e59788b3b3dd2857907b32148
-  - [173]
-    - `name`: fx1_quota2_audit.json
-    - `sha256`: 6e135a43144e89e3fab4b7d4473d89db1d98ae6f888f7611d2e9433ac00cadca
-  - [174]
-    - `name`: fx1_replay_audit.json
-    - `sha256`: d3cbeaa2e484021f6a1524df38d01c42cf19db7ad0de0aa78b4a44e750dcbacf
-  - [175]
-    - `name`: fx1_retrieval_audit.json
-    - `sha256`: c2edb7a020d4ecd07358915c28df2a54e33986faef25f35ecc566e2883ee5a29
-  - [176]
-    - `name`: fx1_sdk_audit.json
-    - `sha256`: 1556d7498e4618e386f891777e820fd3b2f08b4bde0ff7a9ad6e3d4689ef60d1
-  - [177]
-    - `name`: fx1_spec_audit.json
-    - `sha256`: e86dc5bffb1267539df5876ed3487bb0154512d5b9fbbcc83223d4a5db05fdb8
-  - [178]
-    - `name`: fx1_tail_audit.json
-    - `sha256`: 8874bc452c43fd807a7c7525c5105663a01f4406c05ea6a37ad5a361e5d8add6
-  - [179]
-    - `name`: fx1_usage_audit.json
-    - `sha256`: e728655fa53df38114d91ad618c9e278cbc1ab0391ef8beec3b89cc4693787e1
-  - [180]
-    - `name`: fx1_vs_audit.json
-    - `sha256`: bc79a4e09195983847b3274b903844372a3043e9dfedefcf35602245b53936b9
-  - [181]
-    - `name`: fx1_webhook_audit.json
-    - `sha256`: 0b262022d1bed02812e22e5c5558fdff740eae4e178609eb4d7ca0aca9f6c525
-  - [182]
-    - `name`: gap_close.json
-    - `sha256`: c405793974f1ca9c88feb19c56e341185c68d87809dd755eee6cc604c65a85e7
-  - [183]
-    - `name`: glft_bench_synth.json
-    - `sha256`: 4efd3a9a814d245873371a8f09c2d2502fca71393dbf738496e59cb4dc369467
-  - [184]
-    - `name`: grad_fidelity.json
-    - `sha256`: e86ebeeae2bae5736b2bca3089d8e415b41ce901bc23df5d2f515bda12bae660
-  - [185]
-    - `name`: grammar_map.json
-    - `sha256`: f8ee1c31439b03bbe14989ee0cebb7b0917f5186326cc91c2d81d7705686198a
-  - [186]
-    - `name`: harness_audit.json
-    - `sha256`: 0292862d23f09133aa7b11437b2e543d1740aa0d5ba6170f2069ea18808c6208
-  - [187]
-    - `name`: hawkes_clock_bench.json
-    - `sha256`: 816f8bd60cab106505a1adb153803ee48579ce6615a85ccd3e5d27785f2f3b77
-  - [188]
-    - `name`: hawkes_mv.json
-    - `sha256`: 5f386d77d237a6bbdc12fad5d794184508548fad474b1cb258f48bded96d7431
-  - [189]
-    - `name`: hawkes_real_amzn.json
-    - `sha256`: 9d398acb03bfc6bfd9f965d5d6115b5ca4d64244d312e90993ea11e7bd8a80ea
-  - [190]
-    - `name`: hidden_depth_amzn.json
-    - `sha256`: 24b6c5ca511ec6211f79115fdac3eac85f52d393738a5a88adebad8c46575ea2
-  - [191]
-    - `name`: hidden_depth_bench.json
-    - `sha256`: 4e18ea2564f675b351bfdd93ce9c1541af0638ef07e43728cfb48a83b3912330
-  - [192]
-    - `name`: hit_flee_amzn.json
-    - `sha256`: 72765463da5af6990d81e3026dd7d23ecf83265407fb0b0b43d14a5d2690a6d0
-  - [193]
-    - `name`: hit_starve_amzn.json
-    - `sha256`: 3d98298e540b6ab7fa14c9b8452feb06c7b5c28a2b09a55ea8a9c4b6710acb39
-  - [194]
-    - `name`: hmm_stability.json
-    - `sha256`: 5d06bc292b14e6a4de8d6fbd640e76c66b6ad82e4705e27ae068c2ef5a88c040
-  - [195]
-    - `name`: hmm_verify.json
-    - `sha256`: 269ee7b7e767d0388ab285e3257a5de62f4a631ada045aa83577b2b7786a51f2
-  - [196]
-    - `name`: honest_verdict_b133e8b3992af893.json
-    - `sha256`: 1a003a670945452a5c86d033900bc33429f2981422c8938b1b8e2469fc764f3a
-  - [197]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [198]
-    - `name`: honesty_audit.json
-    - `sha256`: 63d79882e619905c0d45fc094d08c67cce9be60c98e43ca846b677c3337370de
-  - [199]
-    - `name`: hypotheses_audit.json
-    - `sha256`: bd65b431cfc36ce9ec54bd7262002eeb735025e2dc71995e983df73924bceb4b
-  - [200]
-    - `name`: ice_budget.json
-    - `sha256`: b0be60f820caea3783400f5f7eaff399c68d243ee11508a95212d64907789642
-  - [201]
-    - `name`: ice_crown.json
-    - `sha256`: a57b172d4c2d0f528461fd35dbcaafefc1af9b3b08c9cb2cd690d7e76053665c
-  - [202]
-    - `name`: iceberg_bench.json
-    - `sha256`: da07cac898aadafc9bb434319334d0fc72d504fb5fe4c9ff5d0031b09499e7cc
-  - [203]
-    - `name`: iid_floor.json
-    - `sha256`: cd2d6153b177482f1df86f78f6c795d03e93a17046a897c58874dc14fcde2753
-  - [204]
-    - `name`: imbalance_predict_amzn.json
-    - `sha256`: d467e13e158dddf59e0ec2dd6b0941aeae37237f491757705418f7420c789655
-  - [205]
-    - `name`: impact_instant_amzn.json
-    - `sha256`: e6d80527e2bb993d7450087db961d6229561fe1a87c0e8b68d3920ca50315c4b
-  - [206]
-    - `name`: impact_persist_amzn.json
-    - `sha256`: 58bcb731c697074949a3705ee2270181d9f2df5e5d2c8f08fbf04b020f3200dc
-  - [207]
-    - `name`: improve_flow_bench.json
-    - `sha256`: ec0836e7b4d24834d0b68a43c5676ea213049fce8200966dc15d98d30a0a4488
-  - [208]
-    - `name`: inherit_audit.json
-    - `sha256`: 718adc7b101c76e503cc475cbedcd086fb0f696a14968d977f4ce5de7dc32a07
-  - [209]
-    - `name`: initiative_fade_bench.json
-    - `sha256`: f9a3f118c2fd37a308bd691633c7e7a9668e770d959535ca16bc2c583e4db867
-  - [210]
-    - `name`: instant_decomp_amzn.json
-    - `sha256`: e9fcb9c72331341fe60237cb457fa8456dcbdb340e87060fbb9318a7265b4df0
-  - [211]
-    - `name`: intraday_exec_amzn.json
-    - `sha256`: 04803c1f783145e75ccf403990146768490e123bc82c26dbdcef3901eb59fa0a
-  - [212]
-    - `name`: intraday_shape_amzn.json
-    - `sha256`: 7e831325e8e77d61360d07100a35234c210f79b99825d6d4040d5d903470cd1d
-  - [213]
-    - `name`: joint_fit_amzn.json
-    - `sha256`: 1041b3196b85319688e89a359401fadef29a4ff14a7371e389668b0c2d6175bf
-  - [214]
-    - `name`: joint_stability.json
-    - `sha256`: cd43e7ec5f39ddbb3ff5c6ea9acce41191bcd250cff7e986c20637c8719c9e84
-  - [215]
-    - `name`: joint_tune.json
-    - `sha256`: 27aea6f04b845ae84445bcd97dbf31c6eb68cb85053af2d568fafe51027f38f6
-  - [216]
-    - `name`: journal_audit.json
-    - `sha256`: 04fa04a533738617f528b94d0c819e1bf0b8d0ee71b653142136ed8fdb8e6942
-  - [217]
-    - `name`: kill_audit.json
-    - `sha256`: bd65e84d2037d452282b5fba052b6be102fef2e50995a14cb2a381405d8d2565
-  - [218]
-    - `name`: label_horizon_map.json
-    - `sha256`: facf0481adaaf3cb55b307b27c9259423b0ff6d13363b9a24e68b2b86a8cb955
-  - [219]
-    - `name`: label_stability.json
-    - `sha256`: bda24271b910cd2d912104d445d81c50f9f8fd61824b2c10e8a18f5c042c96dc
-  - [220]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [221]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [222]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [223]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [224]
-    - `name`: ledger_audit.json
-    - `sha256`: ce5203012f63807d82146868ab26fd44cc23019364feadfdbffb03cda064f522
-  - [225]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [226]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [227]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [228]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [229]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [230]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [231]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [232]
-    - `name`: level_gap_amzn.json
-    - `sha256`: 3c1b21418c1b617164a629f45f039f341ce9bab5321c81d77831a339222cde9d
-  - [233]
-    - `name`: lineage_dag.json
-    - `sha256`: e00ad05cbcc7e60916ebd9c9e12b704b29de788acbd82ee544be3df2375e66da
-  - [234]
-    - `name`: lo_response_amzn.json
-    - `sha256`: df91141443b114f39d4dba23cb499de6c4c8961eb6d1d6b1b60ca6d751dd66c2
-  - [235]
-    - `name`: lob_exec_amzn.json
-    - `sha256`: e334cb33cf73a06b99bbfc834825e409e849ec860b8533a093dfefbdac2e0932
-  - [236]
-    - `name`: lob_invariants_amzn.json
-    - `sha256`: 8a890214de32880ca3043d8ebb863992b938708828aeb3639fa79fd90e7948e0
-  - [237]
-    - `name`: lob_resilience_amzn.json
-    - `sha256`: b8728dbb705d8ae62e1339a4d7482070f7f827209c20c342b31ce6a9980a585d
-  - [238]
-    - `name`: lobster_replay_amzn_2012-06-21.json
-    - `sha256`: 44f53ca3f6e42bad9617d284fc37542ca64d3b4373642fe54deae83302a9dd10
-  - [239]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [240]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [241]
-    - `name`: maker_age_bench.json
-    - `sha256`: 743ba4eb58ce5575b1334ea8a1731ae39ebeab7789ea43733256e1458c8f5c49
-  - [242]
-    - `name`: map_parity.json
-    - `sha256`: 4dff84d32892f41c5d10b30c4c55ab5ba9a072affe9f67d2c3e4c50cc39330f6
-  - [243]
-    - `name`: marketable_limit_amzn.json
-    - `sha256`: 0e231a062d7253b3cdce1acd4a6ca72c75890e7b19fbbc47c76cc6815448c932
-  - [244]
-    - `name`: markout_amzn.json
-    - `sha256`: 70730f6f3bd4e398497f1e302f3b375c739a548b856b68f2282f4fa18b3de864
-  - [245]
-    - `name`: masking_audit.json
-    - `sha256`: 331d20547c6fec39fce38951b75d0b9d653f4d0cc37dff3908ba06e15b7950c7
-  - [246]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [247]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [248]
-    - `name`: meta_model_synth.json
-    - `sha256`: 351b5285fcd9f08a8dcfa478db62ed1dfd407c9bda7065efdf2cc2fcf4e3b0e2
-  - [249]
-    - `name`: metaorder_detect_amzn.json
-    - `sha256`: c2bfd7554d2aba52493daa287850c08aced9893f7beb8f0aa976e9b0c791ec8d
-  - [250]
-    - `name`: mid_dark_amzn.json
-    - `sha256`: da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1
-  - [251]
-    - `name`: mid_jump_amzn.json
-    - `sha256`: b4afddf6927e2254d1e0362517bdd14ec3dd07d1dcebcfbb2da40384a1585d17
-  - [252]
-    - `name`: middleware_audit.json
-    - `sha256`: 559ace707af811672313127e2c1ef1758c5f90abce890f91054efc81deb332da
-  - [253]
-    - `name`: modelcard_audit.json
-    - `sha256`: ea042e48135698a878772ae2388c88d86ac11c666d385fe91e9f7ae52ddf84d2
-  - [254]
-    - `name`: monitor_run_13d20aef00774027.json
-    - `sha256`: 3ce1cd7f59c301be6b4710326ab905313725317bee3669ae8e755f6d422bc12d
-  - [255]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [256]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [257]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [258]
-    - `name`: mortal_repost.json
-    - `sha256`: c351dc60be497d864fc2cea3a06acfe8fcf3c9ef019836f3af0a0a6d58cbffd7
-  - [259]
-    - `name`: mrm_audit.json
-    - `sha256`: 58eb74524b8e5e97f5a07109503b2c4d350f3c316c53bd44177bf280a13978ae
-  - [260]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [261]
-    - `name`: native_conformance.json
-    - `sha256`: 6754767a42cdff244d3ff4d59b2366ff8655990087cf42957147e0890fbdc5ad
-  - [262]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [263]
-    - `name`: options_audit.json
-    - `sha256`: 80c4ce7b746b194f0e7dc78edc123768654a8db6e99d79398943822ac951e0f5
-  - [264]
-    - `name`: order_lifetime_amzn.json
-    - `sha256`: 57d744ba5f963aed36a2fef198015643bf4be0855f610ab32dcc21bc83941e01
-  - [265]
-    - `name`: order_revision_amzn.json
-    - `sha256`: dbb7239f51f26e176f62493fea10a2e921b1a97945eb251eae5e3432badab3ce
-  - [266]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [267]
-    - `name`: parity_audit.json
-    - `sha256`: a3f63f1bc2c5a8a1eda080ce56e6e4a14994b9b0a5fa40fa26d77a326b720163
-  - [268]
-    - `name`: parity_leak_audit.json
-    - `sha256`: 2e0cb6046a0cd26672101b4e3739d929e0e91fbfc360ceae94638287b83d451a
-  - [269]
-    - `name`: pin_stability.json
-    - `sha256`: cb002632c4d286eb8d3a1c9597f86b16d05bca58d12e3b06f472b25627bd61f1
-  - [270]
-    - `name`: pipeline_audit.json
-    - `sha256`: 728186040bc8ffa34264155cb8a54d1d6123c71968edcadbf7bac0b8cee90077
-  - [271]
-    - `name`: pipeline_flat_audit.json
-    - `sha256`: d849f5c4e74db12eaf84ed3161170c4151bfd05682aab9ffbf476e0478e1c37f
-  - [272]
-    - `name`: place_law_amzn.json
-    - `sha256`: a85ba039fc645e0455f7fa969be74bd40838b5c06b8893737d13352b68aef901
-  - [273]
-    - `name`: place_mix_amzn.json
-    - `sha256`: b496d4d2cdab3e254968926073316a3e74167d24734a226aa22146565996a994
-  - [274]
-    - `name`: post_trade_drift_amzn.json
-    - `sha256`: 83ad54e2add374fc7fa0333072c4ef745f6a1ed4112f36d14cefb9b23262192d
-  - [275]
-    - `name`: price_clustering_synth.json
-    - `sha256`: adfab5e558bdaa8b54abb8376b1d4f33c11f605d9215146ccea3b82d163b0c7f
-  - [276]
-    - `name`: price_improvement_amzn.json
-    - `sha256`: 870ef7c83529dc34f22ea1a7555abbbbed92f84d6d498096ae6159a4b4ef93f1
-  - [277]
-    - `name`: promotion_gate_conf_t.json
-    - `sha256`: a353477ea44ae58d507ff43f5be735937b0e0f3b2f84ef10d2d7f29e846f3506
-  - [278]
-    - `name`: propagator_real_amzn.json
-    - `sha256`: 4c7a02f864596c226f78948ee5d4ae227a2323a5aee8e1efd6b9f492f3d3089d
-  - [279]
-    - `name`: quality_audit.json
-    - `sha256`: 60c619c630ec06fd0384bdf08f11b6940e06c914bc89fe75b7c62a4817aa06bc
-  - [280]
-    - `name`: queue_class_bench.json
-    - `sha256`: d3941977a98261a06825573ad173a9b5d21e1515ea7a3dd48430e61779dc341d
-  - [281]
-    - `name`: queue_fate_amzn.json
-    - `sha256`: 54ce63133d050866a22b42879797e56d076c3f9de8f646902e2090287acedf55
-  - [282]
-    - `name`: queue_jump_amzn.json
-    - `sha256`: 467134b64f8e9b397acd3f221e716b735ee62a5e70e2a533875be62b5d42924a
-  - [283]
-    - `name`: queue_occupancy_amzn.json
-    - `sha256`: c2f2b5caf9a82f3066a34abab1b0529acf44948abd7e61d7b3e1a35e20efbe23
-  - [284]
-    - `name`: queue_priority.json
-    - `sha256`: c03de3a987fe19ee42eadf2f5ac6e97e61da5d55bf89f3a81493e0abf399e7d4
-  - [285]
-    - `name`: quote_floor.json
-    - `sha256`: 20fe58eafd0338916ce1f2872ae0279f079f399ab211c61122e0be68294e1e48
-  - [286]
-    - `name`: quote_place_amzn.json
-    - `sha256`: 493540278637dde9c9500d180d3651a9a34efa279eda7278da2a6655f5e1d4df
-  - [287]
-    - `name`: rankic_eval_8d740c0ddf6d5c54.json
-    - `sha256`: e48fce1ae4cebf94e417773bdef20c9ed7b0822397505c6a51e8843a8da06c81
-  - [288]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [289]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [290]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [291]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [292]
-    - `name`: receipt_admission_529da640b520a49d.json
-    - `sha256`: 597c5aeecd2c1b57f0908fa6fdf05890fece05e541a42be5a662ba235ff67f03
-  - [293]
-    - `name`: receipts_audit.json
-    - `sha256`: 5fdba4c796f2dff49486c62bd3c501e3053657231d6c45bfdd5bdb04ba2bb1cb
-  - [294]
-    - `name`: refill_hazard_amzn.json
-    - `sha256`: 195c5461c91d8d5faa684d1c3b179292e1ad717fcdabe1a61f0a851dea7e016f
-  - [295]
-    - `name`: regime_clock_bench.json
-    - `sha256`: 55c7d545b7f2e62b50ed135b63920effa0811d198cdc2c84fe0c035157626619
-  - [296]
-    - `name`: release_chase_amzn.json
-    - `sha256`: 8305fd598f154fe8c465ad718ece1fffe297c47471096a86543b69adfd02709d
-  - [297]
-    - `name`: reload_gate.json
-    - `sha256`: 98590cf3583cb8e138ee24c43324da205e4bf04df29a91467b0f69ac5fc8deda
-  - [298]
-    - `name`: replay_coverage_5e5e7ff56ee42196.json
-    - `sha256`: 5dd7d736d1be3a13b977b79901fc9dfef5fdc0d841c489f5848cd7c0839e521e
-  - [299]
-    - `name`: replay_coverage_e72b56ffaf7abe4b.json
-    - `sha256`: aa201319a975a4a347405a1e824db3a47084b4b8a140b0d087a46d85593ad02f
-  - [300]
-    - `name`: replay_proof_0de5fa4e0c739037.json
-    - `sha256`: 4a870f4bb735b8ebf2c87ae3dde8994dfe2220d55ead2f10871ed2c893cf70c2
-  - [301]
-    - `name`: replay_proof_6d266ef51218e3e7.json
-    - `sha256`: 4f20eb438da29c42f4bc54f38a643590f149458db80a8c86196e72477551ecd6
-  - [302]
-    - `name`: replay_proof_701ae84c3d9813e0.json
-    - `sha256`: 4f49bb965f299970c04f1d01673142e0b6e5df77004c5d034b6bb6028760ad18
-  - [303]
-    - `name`: replay_proof_73137fe1a97c3538.json
-    - `sha256`: 74fbc282a7a1d5eb53bcfa17e44a460f8235f5950c463233abf70099e1a5c91a
-  - [304]
-    - `name`: replay_proof_7e1d9b632f022f5a.json
-    - `sha256`: a3a21f8a745cb80cac90f8e53f9512294c297e0caf5d3a4665d5f07214de4517
-  - [305]
-    - `name`: replay_proof_b23a176a5c91e210.json
-    - `sha256`: 1f4a8bd88480f4ddd2f07791b2f00deaa39c83a2151cd9395d395f1e20a4a7ad
-  - [306]
-    - `name`: replay_proof_cbbad2b0389750e5.json
-    - `sha256`: a320cc68307ecffe319ee675feaefa837472ff8a41f07416ac7208e1e98e1667
-  - [307]
-    - `name`: replay_proof_e1fa8dd41197ef11.json
-    - `sha256`: b7f6dc1c01a736a198ec1b10d2aa4e645eaa12c42aba06d749e210f612bc9f6b
-  - [308]
-    - `name`: replay_proof_f5fe541481bbf231.json
-    - `sha256`: bf65017c57348aed947123163223ef59ebf385c9907052b2497016d3753ae2ce
-  - [309]
-    - `name`: report_audit.json
-    - `sha256`: 90dbdda1d64beab2bd4b82cfcfecd207d0aa2ecce9906fe7c333c9ca3ac2b9f5
-  - [310]
-    - `name`: repost_frontier.json
-    - `sha256`: e946c2b132bb9334ace262e6731f96c13e14ce613f68537acf7e6d207fda2dbf
-  - [311]
-    - `name`: repost_latency.json
-    - `sha256`: 5afe00ca1d7db9a0c2dbbbc604b5e661b139609856fa479e035e0c158c675e8a
-  - [312]
-    - `name`: reseed_hazard.json
-    - `sha256`: 0edfaeeea62f26b073232904ea7417de7373e31214cda255219d1c23c81a5054
-  - [313]
-    - `name`: reward_audit.json
-    - `sha256`: 89fd58aa04e5efccd68045bca4c6f263b78e2823a91e8aa50c70f331a0c06822
-  - [314]
-    - `name`: rough_vol.json
-    - `sha256`: a7a0dc640fe0c45b08e3a686dbc341f24e2ede115bd0777ce8d7ceb946bea648
-  - [315]
-    - `name`: round_lot_amzn.json
-    - `sha256`: 84c474210f467bd43f8285361cb93bc840b0a6821185a64d7fad0d0036198d6c
-  - [316]
-    - `name`: rt_audit.json
-    - `sha256`: 5cf3b9efba744325443e6dc9599ccf9dd651332ee7a1fd3eec5b45c7d03ccd7a
-  - [317]
-    - `name`: rubric_audit.json
-    - `sha256`: 2f6945fda3c5d3357a29f723a5e6eeac530d6de70909b108c4e7a04095ec239b
-  - [318]
-    - `name`: run_audit.json
-    - `sha256`: 05db03bc5b9474bee5eb68e1d3d5b2dca1a8ac239c01348f86f53e6ec1db237e
-  - [319]
-    - `name`: sbom_audit.json
-    - `sha256`: aea10d964151ed5af028e1f308b42c23378dfe6da86bcb5d6392174bb21d4bc7
-  - [320]
-    - `name`: schema_drift.json
-    - `sha256`: 739cdc3d79a415c89a28a696e7e98fd5aaea52a774ac0c621f2c721342999bc8
-  - [321]
-    - `name`: schema_fingerprint.json
-    - `sha256`: f02529f36e47efbd95c9d9c328517ec18cf1660ef6c3f14f33254af94898975b
-  - [322]
-    - `name`: seed_audit.json
-    - `sha256`: be653f889a4ca02a62b230bbeb0e4c7bc863c282369d365a691b234eb9d32fa7
-  - [323]
-    - `name`: seed_sweep_demo_amzn.json
-    - `sha256`: 7f5be12dde7fe0a377100dd6a2623ecd9b34a9d6d95cd68954c80f5068b9539f
-  - [324]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [325]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [326]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [327]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [328]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [329]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [330]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [331]
-    - `name`: serial_watch_78dd891261e2aae9.json
-    - `sha256`: cafb78f75257cff2a338fe26021e82a4eae4b8049feeb02c7256ccfef805db0f
-  - [332]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [333]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [334]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [335]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [336]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [337]
-    - `name`: serve_audit.json
-    - `sha256`: 37ce4766e87a0a7200ba38e20f49fd5a5fe734640ab9ff43a4aa18ccea7b2113
-  - [338]
-    - `name`: shield_decay_amzn.json
-    - `sha256`: 2e88cdc4707a8890a0dea647749561eff8fda0d0b7711ff07bd42549e15319b2
-  - [339]
-    - `name`: side_imbalance_amzn.json
-    - `sha256`: fdce661d9fd73f5bd47f17dfbec526e3c4079ed0ea97dd6c59f2cb2a07791a76
-  - [340]
-    - `name`: sigkernel_mmd.json
-    - `sha256`: f56d3a4e991a23592af3e4406f64b2fecbd4abf8dddcec96f03e89934779358a
-  - [341]
-    - `name`: sign_autocorr_real_amzn.json
-    - `sha256`: d2b4dce996ab14b7e2e16112862b073e87294c06fe07b755942230c65ed65438
-  - [342]
-    - `name`: sign_predict_amzn.json
-    - `sha256`: fbbe98aec24936c1b3a0dff0c922a660fdb2e2419e402bf35ba30f923a7cf13f
-  - [343]
-    - `name`: sim_real_ledger_amzn.json
-    - `sha256`: 814b4853c24bd668b2c2fdb66f6fd4eb8b9854fcc335edc0ea22dbc6d3271622
-  - [344]
-    - `name`: sim_sensitivity.json
-    - `sha256`: cb33e655209b155f557770674a45d14a77e523f4d964f8cea6c69644048ca140
-  - [345]
-    - `name`: sources_audit.json
-    - `sha256`: 1819d4b627eb9bc9589978a0c16b7b38452bf72747f81641478bd4b64bc2af03
-  - [346]
-    - `name`: split_flow_bench.json
-    - `sha256`: 37c6fe8de4fab801aa4dbb5eff23c326ecbf8d471e869d500be9451d9fb6e73f
-  - [347]
-    - `name`: spread_dynamics_amzn.json
-    - `sha256`: 13bb86c5bbf5f826279c0af371790259cfdb202c8bf85c4f09155199cdd3bdce
-  - [348]
-    - `name`: spread_floor_bench.json
-    - `sha256`: 37861b395d98f358141ada1962c698679c80c24632baa50e7c08b32873930a6f
-  - [349]
-    - `name`: spread_reopen.json
-    - `sha256`: d22bb5a384368a0d383a9cf6df4f38b40e148830e700784a96ae446354aed406
-  - [350]
-    - `name`: spread_response_amzn.json
-    - `sha256`: ab2a078fc13c3bebf659ea962fb21ab18e826508f0abad2fc83e1210ba3c8463
-  - [351]
-    - `name`: spread_response_bench.json
-    - `sha256`: df3253be3c3a3f43bc4e4cccbda6d72f2a627d95ba99a683117cd9d19e9d5352
-  - [352]
-    - `name`: stack_invariance.json
-    - `sha256`: 4f3a5c2449d4192a248d17b06b05e6a5818d8671719af69bd37f216ddef0f1c6
-  - [353]
-    - `name`: stack_watch_synth.json
-    - `sha256`: d90dfbd42266b54ddeb8e237e12d674ecbb24359287166f074d6241ad61a7dba
-  - [354]
-    - `name`: stale_quote_amzn.json
-    - `sha256`: 91bfc70fb7cd64be078a327fae0df159395301ce2d42d954157c6749628bf6ce
-  - [355]
-    - `name`: streak_calibrate_bench.json
-    - `sha256`: 684c6584fc9d7d18d8e6801934e63a1ced7249321e13bc8f06f7868e60a2b86f
-  - [356]
-    - `name`: streak_stats_amzn.json
-    - `sha256`: d51d2a74e86e484183fa2af0405ad38af8273f38fb3621f2bcd39e6029556129
-  - [357]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [358]
-    - `name`: sweep_bound.json
-    - `sha256`: 87670d4022ace1a09b1eec2e2c142bfb3a3cbd33e4b983a3369e6b7421ef1791
-  - [359]
-    - `name`: sweep_crown.json
-    - `sha256`: d42626eead90475119af14f9c8d60d0ca5b94f62ad14c24ff157b4505f264b13
-  - [360]
-    - `name`: sweep_width_amzn.json
-    - `sha256`: ed310e546e4b4f2c2544f99c24cf010197ae78d3fa753bede0af328dde59ccdd
-  - [361]
-    - `name`: sweep_width_bench.json
-    - `sha256`: 67f57afee23c89322c27d64070da7731ba292703388bb68768afc34019f69431
-  - [362]
-    - `name`: tail_quota.json
-    - `sha256`: 307c022496df278307301b62207cdaf7c5fc3078cea9151fd486e088d60bafed
-  - [363]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [364]
-    - `name`: tape_digest_amzn.json
-    - `sha256`: 4915ad1bb6cf3c0857a09020ca27f3c7e6685a9f64681c2fefd8f2e91a8b15cd
-  - [365]
-    - `name`: tape_surgery_amzn.json
-    - `sha256`: 4696227f39dac4b343da3dc5f9a708069d44b64db94a7f5ca12e6455c54629b5
-  - [366]
-    - `name`: tick_rule_amzn.json
-    - `sha256`: d69bc89702def00c3abee7c06e071378f18f0996a186a296a68ba16d676e3840
-  - [367]
-    - `name`: timepart_audit.json
-    - `sha256`: afe622b75c555ba7c810a074205287ba12588cdba90388876d9aea438fad95c5
-  - [368]
-    - `name`: touch_empty.json
-    - `sha256`: 909b434110fae047594dfa08b7342959281df4102e3ee8ba4d65d9c547319c95
-  - [369]
-    - `name`: touch_follow_amzn.json
-    - `sha256`: 8dc68233094f788f38f52a8e32fc5a04a25c27c35806b73d5b677f7160033bdb
-  - [370]
-    - `name`: trade_decomp_amzn.json
-    - `sha256`: af272bd9ef0a1845d901080caa9c3a27257a3ae341848cdffadd8f03475c0427
-  - [371]
-    - `name`: train_infra_audit.json
-    - `sha256`: 31319d104c42dee087fe7d24b42c92af5a99bba75587ebcb3336d9ea81d1e90b
-  - [372]
-    - `name`: train_receipt_audit.json
-    - `sha256`: e31a42fa72953f9b740dde1e2179b8525b6dd49c00c28fec4ebc8e160687c25a
-  - [373]
-    - `name`: trust_step.json
-    - `sha256`: 39f62ffed6cce8684bdb43ba62406bf2ecf12eede96e68d11f4d06ca50de59a8
-  - [374]
-    - `name`: ts_reasoning_audit.json
-    - `sha256`: fba6cce35080058c5eabcc308541cac27bdc27b3538596c1856755cdbdee8591
-  - [375]
-    - `name`: unhit_chase_amzn.json
-    - `sha256`: a7c9de93641c46d2853515894aa636286ba5d49bc12833aa936cc4c056080081
-  - [376]
-    - `name`: vac_chase_amzn.json
-    - `sha256`: 371db4e5f9b635abc95f30ea5e6e0b135202c998322124897d35b26f9a130b1c
-  - [377]
-    - `name`: validator_fuzz.json
-    - `sha256`: 524d611ec21c3688ec7b8af92b4eda6bd7f70fc23c7a558215fb5ec3d22d4ae2
-  - [378]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-  - [379]
-    - `name`: vine_audit.json
-    - `sha256`: 86febce575e975c471715538d9ae242a5e56522d10afb46ff11e2e462c180962
-  - [380]
-    - `name`: vine_dominance.json
-    - `sha256`: 2c555910f452082daebc5ad1ee719d515725d1a6c1350932cb4d860ae7e230ce
-  - [381]
-    - `name`: vine_panel.json
-    - `sha256`: 4ed248f50d9977ef333f1456a947c01e6d01687eff3f93082e9afa2cc0d9484f
-  - [382]
-    - `name`: vol_bench_f3bf2afc2f159ace.json
-    - `sha256`: b9b70f7186d75054e91ee734b87b8aeeba22d66af713806a8d5410a9bc603ee3
-  - [383]
-    - `name`: vol_of_vol.json
-    - `sha256`: 8a46d4ec9cf6574f032ebc0041b4cb4466ebddfb53d16ac217fc6954d8f707e2
-  - [384]
-    - `name`: vol_signature_amzn.json
-    - `sha256`: 66c853a1efbe2fe0a41535ef9e191eee310e5346e7057fd157a8832b3b1e3eb8
-  - [385]
-    - `name`: vpin_amzn.json
-    - `sha256`: feed66eda5cf279af3d12224eeeb7cae7ff47a998dcc767249d185f78bcd27db
-  - [386]
-    - `name`: warmup_spec.json
-    - `sha256`: 01b3b622ed4e6d6852fd56f2122d257e1b9f31d100ae850cbea38921a38bafd6
-  - [387]
-    - `name`: wave23_map_amzn.json
-    - `sha256`: ad949f2ebda26df715cc45e1d6efef08c10e6deeac503580bc6668b61bf10ee6
-  - [388]
-    - `name`: wave24_map.json
-    - `sha256`: 5c765aa1b4d50ddd0fb2f3645de5edc6c60465ae6b6c936b7133507e3a0069aa
-  - [389]
-    - `name`: zone_card.json
-    - `sha256`: 751e3497d28c9a1f6e50d5040ec6b80a416194b0ea1b0ab2b05462c897b219d3
-  - [390]
-    - `name`: zone_churn.json
-    - `sha256`: 7f4b68803588fe0ddc3ee3c45698a7a2ea367f8c2bf5cad7e542fd56e91441f5
-  - [391]
-    - `name`: zone_embargo.json
-    - `sha256`: ee556605f12d88c494b6ead3a02099f569dfef7875cc21ca7ea5657983aea180
-  - [392]
-    - `name`: zone_map.json
-    - `sha256`: 43753aa2492ac472d22f2e221fa155d2c1393ed13201a1d9028231e15a4d68f7
-  - [393]
-    - `name`: zone_stability.json
-    - `sha256`: bd695896930494a0d8da307b9088744b98abe575a6574369d929ba7ffc8a4b2f
-  - [394]
-    - `name`: zone_ttl.json
-    - `sha256`: b5987b6ac2dfd8484a15f89fbbfa7dd8d6009df8dd1d4ec1098b4efe9580d722
-- `members_added`:
-  - corpus_epoch_2bd794275af2b3d8.json
-  - forward_record_preregistration_v1.json
-  - forward_record_preregistration_v1.json.seal.json
-  - fx1_cap_audit.json
-  - fx1_ops_audit.json
-  - fx1_replay_audit.json
-- `members_removed`:
-- `n_members`: 395
-- `params`:
-  - `head_sha`: 826b3662459c424748fa10a82b05d3f039896efc
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_2bd794275af2b3d8.json
-- `prev_epoch_sha256`: 83d7d0ba4a83a919eba7fce73e68411a9d50cb3d8f9119d2d87a3703b397aed2
-- `receipt_sha256`: babc8d62f8faa9fe4da00bffebec21f76efa8f4f567b81619665a03d90e22b64
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_c5a45fd1b73737dc.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_c5a45fd1b73737dc.json | c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850 | c5a45fd1b73737dc0df77997eea11e8a88d93aa9d5f6a757c408f11b7d48f005 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 60a912bda7ca91a0230191fbd9083c36777d3e64262774f9d5de765fa135b209
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [8]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [9]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [10]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [11]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [12]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [13]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [14]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [15]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [16]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [17]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [18]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [19]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [20]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [21]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [22]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [23]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [24]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [25]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [26]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [27]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [28]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [29]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [30]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [31]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [32]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [33]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [34]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [35]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [36]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [37]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [38]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [39]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [40]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [41]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [42]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [43]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [44]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [45]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [46]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [47]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [48]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [49]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [50]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [51]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [52]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [53]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [54]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [55]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [56]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [57]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [58]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [59]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [60]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [61]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [62]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [63]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [64]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [65]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [66]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [67]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [68]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [69]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [70]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [71]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [72]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [73]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [74]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [75]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [76]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [77]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [78]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_ac21f22e90c58c53.json
-- `members_removed`:
-- `n_members`: 79
-- `params`:
-  - `head_sha`: 55d2213ff6ace1d7a6e76bfc80288b1d80ad63e4
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_ac21f22e90c58c53.json
-- `prev_epoch_sha256`: 911b765cbd2e69069b845ef386fbf881b32eb2b2618eadc482187221c840fa6f
-- `receipt_sha256`: c5a45fd1b73737dc0df77997eea11e8a88d93aa9d5f6a757c408f11b7d48f005
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_cb39a076f3287171.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_cb39a076f3287171.json | 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695 | cb39a076f328717148a62e9f8e134f0e055dd12c990d30d38273905bda499600 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 505811de5ed80b7c5dbf3737cb2af9ea6eec3bc6222835ce216cf37c63608a63
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 1c1be6f8c08bdbd3d23ee4057d420e8e5c0acb3c82d3b5df33a85415a348e4b3
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [9]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [10]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [11]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [12]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [13]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [14]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [15]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [16]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [17]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [18]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [19]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [20]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [21]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [22]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [23]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [24]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [25]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [26]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [27]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [28]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [29]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [30]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [31]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [32]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [33]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [34]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [35]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [36]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [37]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [38]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [39]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [40]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [41]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [42]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [43]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [44]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [45]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [46]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [47]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [48]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [49]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [50]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [51]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [52]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [53]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [54]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [55]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [56]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [57]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [58]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [59]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [60]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [61]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [62]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [63]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [64]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [65]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [66]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [67]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [68]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [69]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [70]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [71]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [72]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [73]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [74]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [75]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [76]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [77]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [78]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [79]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [80]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [81]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [82]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [83]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [84]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [85]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [86]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [87]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [88]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [89]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [90]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [91]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [92]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_absence_exemplar.json
-  - corpus_epoch_84384f73f7d8e9d6.json
-  - corpus_proof_exemplar.json
-- `members_removed`:
-- `n_members`: 93
-- `params`:
-  - `head_sha`: f5573f64c254bfab9179ce823db6b1297af434fb
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_84384f73f7d8e9d6.json
-- `prev_epoch_sha256`: cae6872ec59c2fb4f10a7e3286386d0c7e25332632256f67a7478e8c1b9b2058
-- `receipt_sha256`: cb39a076f328717148a62e9f8e134f0e055dd12c990d30d38273905bda499600
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_cb415a040387f7b0.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_cb415a040387f7b0.json | f7a80fdf1eb8820d00f4c26faf536113a11948a437d4637acb191b35b6dfa050 | cb415a040387f7b06aa9c96fab848807891736749e9b8c6c9b121d986a971f42 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 4783655af4ebd31e206f9661ddfbff4f59f9ee03cf3ff11e6612a3166710a4de
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: 30ae38f99f009984a918ce4bcb22b929d1956597eb17d6ff5af058756c292c5c
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_absence_exemplar.json
-    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
-  - [7]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [8]
-    - `name`: corpus_epoch_0af2a2d5723b14ae.json
-    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
-  - [9]
-    - `name`: corpus_epoch_1384f0d99dac82aa.json
-    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
-  - [10]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [11]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [12]
-    - `name`: corpus_epoch_2ddb4fe7154677d3.json
-    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
-  - [13]
-    - `name`: corpus_epoch_2ecce33392960d8d.json
-    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
-  - [14]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [15]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [16]
-    - `name`: corpus_epoch_4a79ac4ed05777f5.json
-    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
-  - [17]
-    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
-    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
-  - [18]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [19]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [20]
-    - `name`: corpus_epoch_5a8dac905c9cc22d.json
-    - `sha256`: 50b853da7d6c07efc3e4c533e5a4a6beae5295da68c696f2656491b28fbf6b18
-  - [21]
-    - `name`: corpus_epoch_5c9754ab2a9408a1.json
-    - `sha256`: a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2
-  - [22]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [23]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [24]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [25]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [26]
-    - `name`: corpus_epoch_721e9b4fb855e1a1.json
-    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
-  - [27]
-    - `name`: corpus_epoch_7d6b1f5442b13ea1.json
-    - `sha256`: 29bb1eae00b9d91e5833450631d74c3aaff4aa7c42230e89a074c94df626c5c9
-  - [28]
-    - `name`: corpus_epoch_84384f73f7d8e9d6.json
-    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
-  - [29]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [30]
-    - `name`: corpus_epoch_9d41d1d7410eb02d.json
-    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
-  - [31]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [32]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [33]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [34]
-    - `name`: corpus_epoch_a4cb68008a317f90.json
-    - `sha256`: 66894e231d5029cd138f613c62447e58700a44d7def29bc1a16da44146dc69f2
-  - [35]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [36]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [37]
-    - `name`: corpus_epoch_ab1470227e387e4d.json
-    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
-  - [38]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [39]
-    - `name`: corpus_epoch_ac2e4ae4bcae4dd8.json
-    - `sha256`: 4e97881c7c558ad93674533f102ea582de60bd109c178a1c7489b30f027f8a93
-  - [40]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [41]
-    - `name`: corpus_epoch_cb39a076f3287171.json
-    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
-  - [42]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [43]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [44]
-    - `name`: corpus_epoch_e0f905c031ef39b1.json
-    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
-  - [45]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [46]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [47]
-    - `name`: corpus_history_absence_a5753b57fab08b0f.json
-    - `sha256`: 3904f2838779802fcad32a15b13d82eb6860a0fafecc2feb9437af93a7360f8f
-  - [48]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [49]
-    - `name`: corpus_proof_exemplar.json
-    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
-  - [50]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [51]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [52]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [53]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [54]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [55]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [56]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [57]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [58]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [59]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [60]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [61]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [62]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [63]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [64]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [65]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [66]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [67]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [68]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [69]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [70]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [71]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [72]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [73]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [74]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [75]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [76]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [77]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [78]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [79]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [80]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [81]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [82]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [83]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [84]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [85]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [86]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [87]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [88]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [89]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [90]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [91]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [92]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [93]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [94]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [95]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [96]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [97]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [98]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [99]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [100]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [101]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [102]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [103]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [104]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [105]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_ac2e4ae4bcae4dd8.json
-- `members_removed`:
-- `n_members`: 106
-- `params`:
-  - `head_sha`: 8455c15bc24f1820111d0cdb513232fc4e4e07b9
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_ac2e4ae4bcae4dd8.json
-- `prev_epoch_sha256`: 67c09d7b980ef01db9b659934c040b7b78cc304eea67b964773f4abe687b5f17
-- `receipt_sha256`: cb415a040387f7b06aa9c96fab848807891736749e9b8c6c9b121d986a971f42
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_d1e7bb2567019bf7.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_d1e7bb2567019bf7.json | f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530 | d1e7bb2567019bf7cf295755ad3620e414c4d97c6ac79a751c071ff5f9b6f4c6 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: d135d5cc5a4294b6f21d133f77b5aa45eed7b49cdd66d460d1e56c4734df5e78
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [8]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [9]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [10]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [11]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [12]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [13]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [14]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [15]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [16]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [17]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [18]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [19]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [20]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [21]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [22]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [23]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [24]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [25]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [26]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [27]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [28]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [29]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [30]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [31]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [32]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [33]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [34]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [35]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [36]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [37]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [38]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [39]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [40]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [41]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [42]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [43]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [44]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [45]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [46]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [47]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [48]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [49]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [50]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [51]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [52]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [53]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [54]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [55]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [56]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [57]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [58]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [59]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [60]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [61]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [62]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [63]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [64]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [65]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [66]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [67]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [68]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [69]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [70]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [71]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [72]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [73]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [74]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_404d16a7af1d3862.json
-- `members_removed`:
-- `n_members`: 75
-- `params`:
-  - `head_sha`: bfb4d290f0a5acec615d41a4ca314b7111bcda76
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_404d16a7af1d3862.json
-- `prev_epoch_sha256`: 87431fc1d25e0af42673b0375428c9fbb1bfd0b52fc6178ef573480143744e00
-- `receipt_sha256`: d1e7bb2567019bf7cf295755ad3620e414c4d97c6ac79a751c071ff5f9b6f4c6
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_d479e96760271bba.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_d479e96760271bba.json | 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23 | d479e96760271bba4d287ffc0ce2c46f96ba4b82f25008b02a8ef81b982dc6df | not_checked | absent | inputs_sha256=f000340e6f165337572230b7d85c40f41c6d62dcf174ac7488153ddb5638dc92 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: 8ed0d5fc66b6fb53a65ee3332be29e729400e876fd5af180910c9a2c9b7d396d
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [7]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [8]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [9]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [10]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [11]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [12]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [13]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [14]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [15]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [16]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [17]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [18]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [19]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [20]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [21]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [22]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [23]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [24]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [25]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [26]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [27]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [28]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [29]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [30]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [31]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [32]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [33]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [34]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [35]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [36]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [37]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [38]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [39]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [40]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [41]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [42]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [43]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [44]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [45]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [46]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [47]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [48]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [49]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [50]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [51]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [52]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [53]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [54]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - calib_real_drill.json
-  - capacity_eval_cd0854242ed8a9ec.json
-  - coherence_2dd641ab766a536a.json
-  - concordance_df424fa2f6b1c4e9.json
-  - conformal_real_drill_gaussian_minus_conf_t_pinball.json
-  - conformal_real_drill_gaussian_pit.json
-  - corpus_real_drill.json
-  - cost_calibration_eval_df9b8d7068bf709b.json
-  - coverage_cs_real_drill.json
-  - coverage_real_drill.json
-  - cp_real_drill_gaussian_minus_conf_t_pinball.json
-  - cp_real_drill_gaussian_pit.json
-  - deps_security_hygiene_f3b4e6fd22e439b7.json
-  - drift_real_drill_gaussian_minus_conf_t_pinball.json
-  - drift_real_drill_gaussian_pit.json
-  - emerge_real_drill.json
-  - evidence_audit_3464d8f8197bf737.json
-  - evidence_audit_d449e1ca0cc119a6.json
-  - fast_replay_p42_conformance_20260928.json
-  - fleet_eval_5ddf15b0dc7d3ca1.json
-  - fleet_race_real_drill.json
-  - honest_verdict_real_drill.json
-  - lane_power_drill.json
-  - lattice_drill_verdict.json
-  - lattice_drill_vol_bench_a.json
-  - lattice_drill_vol_bench_b.json
-  - loss_cs_real_drill_conf_t_vs_empirical.json
-  - loss_cs_real_drill_gaussian_vs_conf_t.json
-  - mcs_real_drill.json
-  - mcs_vol_drill.json
-  - monitor_run_drill_clean.json
-  - monitor_run_drill_defect.json
-  - monitor_run_real_drill.json
-  - multih_fleet_eval_5db1cab214e291d7.json
-  - nautilus_conformance_7bf19a08c147547b.json
-  - panel_audit_real_drill.json
-  - rankic_eval_9ebdad7da83e7348.json
-  - real_benchmark_us_wide_manifest.json
-  - real_benchmark_us_wide_test.json
-  - real_benchmark_us_wide_validation.json
-  - serial_watch_140b073ea589b0c7.json
-  - serial_watch_1e8e1446e506fce1.json
-  - serial_watch_2c14615c26efd19b.json
-  - serial_watch_46445c3b227aa15e.json
-  - serial_watch_47297eff3cb55178.json
-  - serial_watch_4f4a495b59d022fb.json
-  - serial_watch_771602cd1580476c.json
-  - serial_watch_85db152db863d25d.json
-  - serial_watch_8977244ef78bfd2f.json
-  - serial_watch_a6fd40311ce0fa04.json
-  - serial_watch_d311f5ea367a66a9.json
-  - serial_watch_dbd21a6c99c81e00.json
-  - suite_health_drill.json
-  - tail_real_drill.json
-  - verdict_real_drill.json
-- `members_removed`:
-- `n_members`: 55
-- `params`:
 - `prev_epoch_receipt`: null
 - `prev_epoch_sha256`: 0000000000000000000000000000000000000000000000000000000000000000
-- `receipt_sha256`: d479e96760271bba4d287ffc0ce2c46f96ba4b82f25008b02a8ef81b982dc6df
+- `receipt_sha256`: 51c18304677442e1a37d57f06843fe1544306c6594809ec05b5a50cd6fae2a10
 - `research_only`: true
 - `schema`: corpus_epoch.v1
 - `simulated_only`: false
 - `verdict`: genesis
-
-### `receipts/corpus_epoch_e0f905c031ef39b1.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_e0f905c031ef39b1.json | 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8 | e0f905c031ef39b1cd3567ec87b9b28b9b213bc312b0eac762f53c49b503d501 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: f550e4f632add2fe7564c90c7382ce73d48bb44167aca0a470ae641b82dccf67
-- `kind`: corpus_epoch.v1
-- `member_tree_root`: ec81b0aec866024b48d559359dd3fd3c12b90d6a92893b27da6953e092971c89
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [8]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [9]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [10]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [11]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [12]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [13]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [14]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [15]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [16]
-    - `name`: corpus_epoch_6fb596b0230e9f17.json
-    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
-  - [17]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [18]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [19]
-    - `name`: corpus_epoch_a0e901c74a5f29c4.json
-    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
-  - [20]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [21]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [22]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [23]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [24]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [25]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [26]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [27]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [28]
-    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
-    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
-  - [29]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [30]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [31]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [32]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [33]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [34]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [35]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [36]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [37]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [38]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [39]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [40]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [41]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [42]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [43]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [44]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [45]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [46]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [47]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [48]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [49]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [50]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [51]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [52]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [53]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [54]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [55]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [56]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [57]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [58]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [59]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [60]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [61]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [62]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [63]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [64]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [65]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [66]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [67]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [68]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [69]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [70]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [71]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [72]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [73]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [74]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [75]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [76]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [77]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [78]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [79]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [80]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [81]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [82]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [83]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [84]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [85]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_6fb596b0230e9f17.json
-- `members_removed`:
-- `n_members`: 86
-- `params`:
-  - `head_sha`: ba43000f01261ec82c069f8f15d26f9ad575d7bd
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_6fb596b0230e9f17.json
-- `prev_epoch_sha256`: dad94ab498d8cdc88d44326cc996144ff0663fd9d3a9eb360a8027d92905c479
-- `receipt_sha256`: e0f905c031ef39b1cd3567ec87b9b28b9b213bc312b0eac762f53c49b503d501
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_fbb352a23e62d321.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_fbb352a23e62d321.json | d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5 | fbb352a23e62d3214b58b80e5b8f4b8a8414908f1c7c4555d0cc613aa3e25827 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: d463d1e095d524f54cbf9d625bf3425994a19aa5c71d28f90c8bd767d9a84569
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [7]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [8]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [9]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [10]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [11]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [12]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [13]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [14]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [15]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [16]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [17]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [18]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [19]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [20]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [21]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [22]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [23]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [24]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [25]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [26]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [27]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [28]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [29]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [30]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [31]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [32]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [33]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [34]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [35]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [36]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [37]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [38]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [39]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [40]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [41]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [42]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [43]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [44]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [45]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [46]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [47]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [48]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [49]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [50]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [51]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [52]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [53]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [54]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [55]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [56]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [57]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [58]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [59]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [60]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [61]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [62]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_d479e96760271bba.json
-  - legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-  - legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-  - legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-  - legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-  - legacy-unsealed/dip_bench_crypto_1d_20260925.json
-  - legacy-unsealed/fast_replay_p42_conformance_20260927.json
-  - legacy-unsealed/incumbent_bench_qlib.json
-- `members_removed`:
-- `n_members`: 63
-- `params`:
-  - `head_sha`: 95d404ff0b9281a969a80bc188c2cf07c8963017
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_d479e96760271bba.json
-- `prev_epoch_sha256`: 8ed0d5fc66b6fb53a65ee3332be29e729400e876fd5af180910c9a2c9b7d396d
-- `receipt_sha256`: fbb352a23e62d3214b58b80e5b8f4b8a8414908f1c7c4555d0cc613aa3e25827
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
-
-### `receipts/corpus_epoch_fbbcd3c1e840e14d.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/corpus_epoch_fbbcd3c1e840e14d.json | 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d | fbbcd3c1e840e14d6b485a31bb1519babc111b5d7fa41755c3f99c1261399584 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
-
-- `data_label`: CORPUS
-- `epoch_root_sha256`: ae71b4ec5ec8ead38d310f4def8f8282cb267a0b482bf2a29633c8bac0488042
-- `kind`: corpus_epoch.v1
-- `members`:
-  - [0]
-    - `name`: calib_real_drill.json
-    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
-  - [1]
-    - `name`: capacity_eval_cd0854242ed8a9ec.json
-    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
-  - [2]
-    - `name`: coherence_2dd641ab766a536a.json
-    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
-  - [3]
-    - `name`: concordance_df424fa2f6b1c4e9.json
-    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
-  - [4]
-    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
-  - [5]
-    - `name`: conformal_real_drill_gaussian_pit.json
-    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
-  - [6]
-    - `name`: corpus_epoch_0a2e8964712cfb0a.json
-    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
-  - [7]
-    - `name`: corpus_epoch_2b5db388ddee23aa.json
-    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
-  - [8]
-    - `name`: corpus_epoch_2ca91405e468cc6b.json
-    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
-  - [9]
-    - `name`: corpus_epoch_404d16a7af1d3862.json
-    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
-  - [10]
-    - `name`: corpus_epoch_4a75066db56e52fd.json
-    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
-  - [11]
-    - `name`: corpus_epoch_568c538fcf4b21cd.json
-    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
-  - [12]
-    - `name`: corpus_epoch_574953afdf88a0f6.json
-    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
-  - [13]
-    - `name`: corpus_epoch_63761c8b4e63992b.json
-    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
-  - [14]
-    - `name`: corpus_epoch_6cf185cfb5466dd7.json
-    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
-  - [15]
-    - `name`: corpus_epoch_6f8420fc2959f4e7.json
-    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
-  - [16]
-    - `name`: corpus_epoch_96ba030697ddf0ff.json
-    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
-  - [17]
-    - `name`: corpus_epoch_9fd864d30fda3c69.json
-    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
-  - [18]
-    - `name`: corpus_epoch_a1a8323db3be4842.json
-    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
-  - [19]
-    - `name`: corpus_epoch_a5d113f0994c74b5.json
-    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
-  - [20]
-    - `name`: corpus_epoch_a83ba798e9abd892.json
-    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
-  - [21]
-    - `name`: corpus_epoch_ac21f22e90c58c53.json
-    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
-  - [22]
-    - `name`: corpus_epoch_c5a45fd1b73737dc.json
-    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
-  - [23]
-    - `name`: corpus_epoch_d1e7bb2567019bf7.json
-    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
-  - [24]
-    - `name`: corpus_epoch_d479e96760271bba.json
-    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
-  - [25]
-    - `name`: corpus_epoch_fbb352a23e62d321.json
-    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
-  - [26]
-    - `name`: corpus_proof_a56dff22d5b4931c.json
-    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
-  - [27]
-    - `name`: corpus_real_drill.json
-    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
-  - [28]
-    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
-    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
-  - [29]
-    - `name`: coverage_cs_real_drill.json
-    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
-  - [30]
-    - `name`: coverage_real_drill.json
-    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
-  - [31]
-    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
-  - [32]
-    - `name`: cp_real_drill_gaussian_pit.json
-    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
-  - [33]
-    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
-    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
-  - [34]
-    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
-    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
-  - [35]
-    - `name`: drift_real_drill_gaussian_pit.json
-    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
-  - [36]
-    - `name`: emerge_real_drill.json
-    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
-  - [37]
-    - `name`: evidence_audit_3464d8f8197bf737.json
-    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
-  - [38]
-    - `name`: evidence_audit_d449e1ca0cc119a6.json
-    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
-  - [39]
-    - `name`: fast_replay_p42_conformance_20260928.json
-    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
-  - [40]
-    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
-    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
-  - [41]
-    - `name`: fleet_race_real_drill.json
-    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
-  - [42]
-    - `name`: honest_verdict_real_drill.json
-    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
-  - [43]
-    - `name`: lane_power_drill.json
-    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
-  - [44]
-    - `name`: lattice_drill_verdict.json
-    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
-  - [45]
-    - `name`: lattice_drill_vol_bench_a.json
-    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
-  - [46]
-    - `name`: lattice_drill_vol_bench_b.json
-    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
-  - [47]
-    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
-    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
-  - [48]
-    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
-    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
-  - [49]
-    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
-    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
-  - [50]
-    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
-    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
-  - [51]
-    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
-    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
-  - [52]
-    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
-    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
-  - [53]
-    - `name`: legacy-unsealed/incumbent_bench_qlib.json
-    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
-  - [54]
-    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
-    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
-  - [55]
-    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
-    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
-  - [56]
-    - `name`: mcs_real_drill.json
-    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
-  - [57]
-    - `name`: mcs_vol_drill.json
-    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
-  - [58]
-    - `name`: monitor_run_drill_clean.json
-    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
-  - [59]
-    - `name`: monitor_run_drill_defect.json
-    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
-  - [60]
-    - `name`: monitor_run_real_drill.json
-    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
-  - [61]
-    - `name`: multih_fleet_eval_5db1cab214e291d7.json
-    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
-  - [62]
-    - `name`: nautilus_conformance_7bf19a08c147547b.json
-    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
-  - [63]
-    - `name`: panel_audit_real_drill.json
-    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
-  - [64]
-    - `name`: rankic_eval_9ebdad7da83e7348.json
-    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
-  - [65]
-    - `name`: real_benchmark_us_wide_manifest.json
-    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
-  - [66]
-    - `name`: real_benchmark_us_wide_test.json
-    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
-  - [67]
-    - `name`: real_benchmark_us_wide_validation.json
-    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
-  - [68]
-    - `name`: serial_watch_140b073ea589b0c7.json
-    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
-  - [69]
-    - `name`: serial_watch_1e8e1446e506fce1.json
-    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
-  - [70]
-    - `name`: serial_watch_2c14615c26efd19b.json
-    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
-  - [71]
-    - `name`: serial_watch_46445c3b227aa15e.json
-    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
-  - [72]
-    - `name`: serial_watch_47297eff3cb55178.json
-    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
-  - [73]
-    - `name`: serial_watch_4f4a495b59d022fb.json
-    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
-  - [74]
-    - `name`: serial_watch_771602cd1580476c.json
-    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
-  - [75]
-    - `name`: serial_watch_85db152db863d25d.json
-    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
-  - [76]
-    - `name`: serial_watch_8977244ef78bfd2f.json
-    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
-  - [77]
-    - `name`: serial_watch_a6fd40311ce0fa04.json
-    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
-  - [78]
-    - `name`: serial_watch_d311f5ea367a66a9.json
-    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
-  - [79]
-    - `name`: serial_watch_dbd21a6c99c81e00.json
-    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
-  - [80]
-    - `name`: suite_health_drill.json
-    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
-  - [81]
-    - `name`: tail_real_drill.json
-    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
-  - [82]
-    - `name`: verdict_real_drill.json
-    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
-- `members_added`:
-  - corpus_epoch_6f8420fc2959f4e7.json
-- `members_removed`:
-- `n_members`: 83
-- `params`:
-  - `head_sha`: 9d9622cbe433c7931c9715a62bd8db3ef8252f22
-  - `pattern`: *.json
-- `prev_epoch_receipt`: corpus_epoch_6f8420fc2959f4e7.json
-- `prev_epoch_sha256`: d8260040b7bd5488f2317ccc7ec5f36810695e25307e3b140fe09d79798c712a
-- `receipt_sha256`: fbbcd3c1e840e14d6b485a31bb1519babc111b5d7fa41755c3f99c1261399584
-- `research_only`: true
-- `schema`: corpus_epoch.v1
-- `simulated_only`: false
-- `verdict`: advancing
 
 ### `receipts/corpus_history_absence_a5753b57fab08b0f.json`
 
@@ -25483,2654 +12814,6 @@ counted. Prose that contains such a token is quoted verbatim.
 - `stream`: gaussian_pit
 - `tau_hat`: 34
 - `window`: 40
-
-### `receipts/crossvenue_basis_3f4ff76f517655a7.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/crossvenue_basis_3f4ff76f517655a7.json | 14ce799a46e282849e8e7852ff74489ed4747274c164040fcc52974bbb72a087 | 3f4ff76f517655a728f29688cfbb96f4fe7a6e3dea9cb387db25a444fb6ae964 | not_checked | 8822eee7146f4e897b02a240c9a8648f99bc898d | absent | unspecified | absent | absent | false |
-
-- `code_files`:
-  - `crossvenue_basis.py`: eb4b339a504327e1b68b7201a329146c294199515b822ff3ec503c433fc3d610
-- `data_label`: kraken+okx
-- `dataset_hash`: 1e56d381e3b25f600fe929309731ee972f8df902627420ef9589496ea6273358
-- `environment`:
-  - `blas`:
-    - `found`: true
-    - `name`: accelerate
-    - `version`: null
-  - `byteorder`: little
-  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
-  - `implementation`: CPython
-  - `lapack`:
-    - `found`: true
-    - `name`: accelerate
-    - `version`: null
-  - `machine`: arm64
-  - `packages`:
-    - `numpy`: 2.5.3
-    - `polars`: 1.44.2
-    - `scipy`: 1.18.1
-  - `platform`: macOS-26.5.2-arm64-arm-64bit
-  - `python`: 3.12.14
-  - `threadpools`:
-- `generated_at`: 2026-09-29T22:57:37.934872+00:00
-- `git_revision`: 8822eee7146f4e897b02a240c9a8648f99bc898d
-- `kind`: crossvenue_basis
-- `params_hash`: 28d89f08175f79bb4e9988b88e1929d2cdf3b3bf72f5258e48bef7e263b9ad26
-- `payload`:
-  - `asset`: BTC
-  - `claim`: research_only
-  - `data_label`: kraken+okx
-  - `dataset_sha256`: 1c4780edba081c2c39672ca72c4cc27e570e3d6318a1523b5e3baad6f1bbb0fe
-  - `generated_at`: 2026-09-29T22:57:37.934872+00:00
-  - `git_revision`: 8822eee7146f4e897b02a240c9a8648f99bc898d
-  - `inputs`:
-    - `asset`: BTC
-    - `legs`:
-      - `kraken`:
-        - `data_label`: kraken
-        - `funding`:
-          - `n_rows`: 8887
-          - `sha256`: c7143f54ec014d36c447bbfe84af6d8af47b7078051e190aee0281b0ff1e6789
-        - `mark`:
-          - `first_date`: 2022-03-22
-          - `last_date`: 2026-09-28
-          - `n_rows`: 1652
-          - `sha256`: 2f72a08d78947d143e2427c4a21fc4ca1739bbd25cc14d40a10d91feaa52d975
-        - `spot`:
-          - `first_date`: 2024-10-09
-          - `last_date`: 2026-09-28
-          - `n_rows`: 720
-          - `sha256`: f148611c431d93d77886f7db686fa8a82e14a0c2ee3f77a80a6a80095642d7cf
-      - `okx`:
-        - `data_label`: okx
-        - `funding`:
-          - `n_rows`: 278
-          - `sha256`: 175ee645bedda2b65946be8f2b0835f4232f7f0a726e4f24a2796df973f3265c
-        - `mark`:
-          - `first_date`: 2026-06-22
-          - `last_date`: 2026-09-28
-          - `n_rows`: 99
-          - `sha256`: 65f5c084cc138e2a4f1d9b9390eb1e7692233ad800b44e5afcd132d411c39f3e
-        - `spot`:
-          - `first_date`: 2026-06-22
-          - `last_date`: 2026-09-28
-          - `n_rows`: 99
-          - `sha256`: e5430fcea9afc2d723e47d504be91b6a35d84c2155af7e07f0c3e53a08ce62ba
-    - `params`:
-      - `annualization_days`: 365.0
-      - `asset`: BTC
-      - `conventions`: basis_t = (mark_t - spot_t)/spot_t per venue on shared dates; basis_diff = a - b per venue pair; funding aggregated to per-calendar-day sums of realized rates before diffing, so venue cadences (hourly vs 8h) are comparable; daily_mean_annualized = daily_mean * annualization_days is a descriptive scaling, not a yield claim
-      - `min_overlap`: 5
-  - `inputs_sha256`: dfd67529579f9df0e28454b51a69b17f292f028e2e0afdab836e76b363d39a70
-  - `kind`: crossvenue_basis
-  - `legs`:
-    - [0]
-      - `basis_first`: 0.0003820047835645623
-      - `basis_last`: 1.3338945653385329e-05
-      - `basis_max`: 0.0017099744573727627
-      - `basis_mean`: 0.0001848838935315051
-      - `basis_min`: -0.0007778864469915593
-      - `basis_series`:
-        - [0]
-          - 2024-10-09
-          - 0.0003820047835645623
-        - [1]
-          - 2024-10-10
-          - 5.843738884036227e-05
-        - [2]
-          - 2024-10-11
-          - 0.0005615610723010941
-        - [3]
-          - 2024-10-12
-          - 0.0005454246953136708
-        - [4]
-          - 2024-10-13
-          - 0.00036426288331798914
-        - [5]
-          - 2024-10-14
-          - 0.0007330961191463893
-        - [6]
-          - 2024-10-15
-          - 0.0002916091301079324
-        - [7]
-          - 2024-10-16
-          - 0.00019174758785265304
-        - [8]
-          - 2024-10-17
-          - 0.00018656683482770676
-        - [9]
-          - 2024-10-18
-          - -0.0002768549042363437
-        - [10]
-          - 2024-10-19
-          - 3.8531102736547325e-05
-        - [11]
-          - 2024-10-20
-          - 0.0007424793552851061
-        - [12]
-          - 2024-10-21
-          - -0.00047814848611941264
-        - [13]
-          - 2024-10-22
-          - 0.00010632517676534379
-        - [14]
-          - 2024-10-23
-          - 0.00014643490694318215
-        - [15]
-          - 2024-10-24
-          - 0.0003030972563044555
-        - [16]
-          - 2024-10-25
-          - -8.523085178084812e-05
-        - [17]
-          - 2024-10-26
-          - 5.6374415241777275e-05
-        - [18]
-          - 2024-10-27
-          - 0.00046525940342233654
-        - [19]
-          - 2024-10-28
-          - 0.0006090952127092607
-        - [20]
-          - 2024-10-29
-          - 0.001146081988293552
-        - [21]
-          - 2024-10-30
-          - 0.0004584929631554131
-        - [22]
-          - 2024-10-31
-          - -0.0002711389677993478
-        - [23]
-          - 2024-11-01
-          - -0.00021582902387676803
-        - [24]
-          - 2024-11-02
-          - 0.0007559914866160897
-        - [25]
-          - 2024-11-03
-          - 8.682829583647333e-06
-        - [26]
-          - 2024-11-04
-          - 0.0005596538244567921
-        - [27]
-          - 2024-11-05
-          - -5.8613945026679825e-05
-        - [28]
-          - 2024-11-06
-          - 0.0007116071132333304
-        - [29]
-          - 2024-11-07
-          - -0.0001930838540195368
-        - [30]
-          - 2024-11-08
-          - 4.902318512133581e-05
-        - [31]
-          - 2024-11-09
-          - 0.00043721385171312314
-        - [32]
-          - 2024-11-10
-          - 0.0005208144281308587
-        - [33]
-          - 2024-11-11
-          - 0.0011880438972780212
-        - [34]
-          - 2024-11-12
-          - 4.676460615439813e-05
-        - [35]
-          - 2024-11-13
-          - 0.0008908256708553762
-        - [36]
-          - 2024-11-14
-          - 0.0009694730890999172
-        - [37]
-          - 2024-11-15
-          - 0.0009155265102479941
-        - [38]
-          - 2024-11-16
-          - 0.0011394236461888222
-        - [39]
-          - 2024-11-17
-          - 0.0010607115164296532
-        - [40]
-          - 2024-11-18
-          - 0.000591963810116058
-        - [41]
-          - 2024-11-19
-          - 0.00029473445982238736
-        - [42]
-          - 2024-11-20
-          - 0.00038583776842566656
-        - [43]
-          - 2024-11-21
-          - -6.693675761524604e-06
-        - [44]
-          - 2024-11-22
-          - 0.0009229795329212188
-        - [45]
-          - 2024-11-23
-          - 0.000835303935616193
-        - [46]
-          - 2024-11-24
-          - 0.0011749267333634838
-        - [47]
-          - 2024-11-25
-          - 0.0006020837068451025
-        - [48]
-          - 2024-11-26
-          - 0.0008488683765260284
-        - [49]
-          - 2024-11-27
-          - 0.0002416458532072415
-        - [50]
-          - 2024-11-28
-          - 0.0010457163062419208
-        - [51]
-          - 2024-11-29
-          - 0.0013708801842465064
-        - [52]
-          - 2024-11-30
-          - 0.0008577668258494166
-        - [53]
-          - 2024-12-01
-          - 0.0012367684341186666
-        - [54]
-          - 2024-12-02
-          - 0.0006132593136051916
-        - [55]
-          - 2024-12-03
-          - 0.0010261255940532802
-        - [56]
-          - 2024-12-04
-          - 0.0008928075741803795
-        - [57]
-          - 2024-12-05
-          - 0.0007579789040162237
-        - [58]
-          - 2024-12-06
-          - 0.0007131212147499895
-        - [59]
-          - 2024-12-07
-          - 0.0012469508496995953
-        - [60]
-          - 2024-12-08
-          - 0.0017099744573727627
-        - [61]
-          - 2024-12-09
-          - 0.0006329952188925535
-        - [62]
-          - 2024-12-10
-          - 0.00042659603196619136
-        - [63]
-          - 2024-12-11
-          - 0.0003777182475741139
-        - [64]
-          - 2024-12-12
-          - -0.00012682730602872947
-        - [65]
-          - 2024-12-13
-          - -0.00020403629573201643
-        - [66]
-          - 2024-12-14
-          - 0.00024419418383020755
-        - [67]
-          - 2024-12-15
-          - 0.0013157835788241133
-        - [68]
-          - 2024-12-16
-          - 0.0006261016754491487
-        - [69]
-          - 2024-12-17
-          - 0.00031327491071195463
-        - [70]
-          - 2024-12-18
-          - -2.2077468098519658e-05
-        - [71]
-          - 2024-12-19
-          - -0.0003806659233048867
-        - [72]
-          - 2024-12-20
-          - 0.0004079432256483553
-        - [73]
-          - 2024-12-21
-          - 3.4702295216909177e-06
-        - [74]
-          - 2024-12-22
-          - -0.00020797979183899884
-        - [75]
-          - 2024-12-23
-          - 0.0010736456991977522
-        - [76]
-          - 2024-12-24
-          - -0.0003276818054977484
-        - [77]
-          - 2024-12-25
-          - 0.0008250571602825879
-        - [78]
-          - 2024-12-26
-          - 0.0006007946637167942
-        - [79]
-          - 2024-12-27
-          - 0.0003740375416877676
-        - [80]
-          - 2024-12-28
-          - -0.00047404483685898935
-        - [81]
-          - 2024-12-29
-          - 0.0002336038869002189
-        - [82]
-          - 2024-12-30
-          - 0.00046035243876929404
-        - [83]
-          - 2024-12-31
-          - 0.0006699481312121896
-        - [84]
-          - 2025-01-01
-          - 0.0005712855963374048
-        - [85]
-          - 2025-01-02
-          - 0.0011760201675829688
-        - [86]
-          - 2025-01-03
-          - 0.0004462314150355304
-        - [87]
-          - 2025-01-04
-          - 0.00027547011269661673
-        - [88]
-          - 2025-01-05
-          - 0.0005850235149389997
-        - [89]
-          - 2025-01-06
-          - 0.0006382440092631709
-        - [90]
-          - 2025-01-07
-          - 0.0002022234275504839
-        - [91]
-          - 2025-01-08
-          - 9.23574603632244e-05
-        - [92]
-          - 2025-01-09
-          - 0.00034473783033381144
-        - [93]
-          - 2025-01-10
-          - 0.0003794362630487016
-        - [94]
-          - 2025-01-11
-          - 0.00038427221351253524
-        - [95]
-          - 2025-01-12
-          - 0.0006848786768181281
-        - [96]
-          - 2025-01-13
-          - 0.0004896076435502268
-        - [97]
-          - 2025-01-14
-          - -0.00016063934162247027
-        - [98]
-          - 2025-01-15
-          - 0.0004073637411728814
-        - [99]
-          - 2025-01-16
-          - 0.00020973375840276415
-        - [100]
-          - 2025-01-17
-          - 0.0007313296959364998
-        - [101]
-          - 2025-01-18
-          - 0.0010737847179092734
-        - [102]
-          - 2025-01-19
-          - 0.0006510207655346828
-        - [103]
-          - 2025-01-20
-          - 0.0002246999041060376
-        - [104]
-          - 2025-01-21
-          - -0.00010402431526768282
-        - [105]
-          - 2025-01-22
-          - 0.0003494579084492322
-        - [106]
-          - 2025-01-23
-          - 0.0001733116577239759
-        - [107]
-          - 2025-01-24
-          - 5.232392017392177e-05
-        - [108]
-          - 2025-01-25
-          - 0.000156639161544094
-        - [109]
-          - 2025-01-26
-          - -0.0001724898134156629
-        - [110]
-          - 2025-01-27
-          - -0.0006699476693028488
-        - [111]
-          - 2025-01-28
-          - -9.994887896037452e-05
-        - [112]
-          - 2025-01-29
-          - 0.00044287664475261835
-        - [113]
-          - 2025-01-30
-          - -0.00019332189242404302
-        - [114]
-          - 2025-01-31
-          - 6.588404336271326e-05
-        - [115]
-          - 2025-02-01
-          - -7.797113134217355e-05
-        - [116]
-          - 2025-02-02
-          - -0.00020715985785413641
-        - [117]
-          - 2025-02-03
-          - -1.0098365400798654e-05
-        - [118]
-          - 2025-02-04
-          - -0.0007778864469915593
-        - [119]
-          - 2025-02-05
-          - 0.00019403994914705201
-        - [120]
-          - 2025-02-06
-          - 5.893303179188951e-05
-        - [121]
-          - 2025-02-07
-          - -9.146214136770012e-05
-        - [122]
-          - 2025-02-08
-          - -0.00027695890888896507
-        - [123]
-          - 2025-02-09
-          - 0.00011472787543770452
-        - [124]
-          - 2025-02-10
-          - 0.0001765526327077262
-        - [125]
-          - 2025-02-11
-          - 2.1871996064396113e-05
-        - [126]
-          - 2025-02-12
-          - 9.711690503810354e-05
-        - [127]
-          - 2025-02-13
-          - 6.570686789126225e-05
-        - [128]
-          - 2025-02-14
-          - 0.00034149536050947924
-        - [129]
-          - 2025-02-15
-          - 0.00021889720297126012
-        - [130]
-          - 2025-02-16
-          - -2.6466138180094463e-05
-        - [131]
-          - 2025-02-17
-          - 0.00023628333129651222
-        - [132]
-          - 2025-02-18
-          - 0.0002657438663409723
-        - [133]
-          - 2025-02-19
-          - 0.00027287902559048683
-        - [134]
-          - 2025-02-20
-          - 1.4549361701383513e-05
-        - [135]
-          - 2025-02-21
-          - 0.0008477378225068284
-        - [136]
-          - 2025-02-22
-          - -0.00021604872210069243
-        - [137]
-          - 2025-02-23
-          - -0.00011419025687772481
-        - [138]
-          - 2025-02-24
-          - 7.870213727745478e-05
-        - [139]
-          - 2025-02-25
-          - -0.0002430437097591516
-        - [140]
-          - 2025-02-26
-          - 0.0007010145945941539
-        - [141]
-          - 2025-02-27
-          - -0.00046489127687566627
-        - [142]
-          - 2025-02-28
-          - -4.0565011235982246e-05
-        - [143]
-          - 2025-03-01
-          - 0.00011478196320998932
-        - [144]
-          - 2025-03-02
-          - 0.0004977001259383019
-        - [145]
-          - 2025-03-03
-          - 0.00024683326980893486
-        - [146]
-          - 2025-03-04
-          - 1.3438064158182955e-05
-        - [147]
-          - 2025-03-05
-          - -4.944541943177886e-06
-        - [148]
-          - 2025-03-06
-          - 2.1383821273647906e-05
-        - [149]
-          - 2025-03-07
-          - 8.77895077711359e-05
-        - [150]
-          - 2025-03-08
-          - 0.0006390085518690311
-        - [151]
-          - 2025-03-09
-          - 0.0003532518252676733
-        - [152]
-          - 2025-03-10
-          - -5.366920224095503e-05
-        - [153]
-          - 2025-03-11
-          - 0.0002500934006513711
-        - [154]
-          - 2025-03-12
-          - 4.543041420937088e-05
-        - [155]
-          - 2025-03-13
-          - -0.00018687013843035402
-        - [156]
-          - 2025-03-14
-          - -0.00010817602699135516
-        - [157]
-          - 2025-03-15
-          - 0.00033799247955191555
-        - [158]
-          - 2025-03-16
-          - -0.000247801033599249
-        - [159]
-          - 2025-03-17
-          - -8.809699103850186e-05
-        - [160]
-          - 2025-03-18
-          - -9.560518659127458e-08
-        - [161]
-          - 2025-03-19
-          - 3.0132533313443682e-05
-        - [162]
-          - 2025-03-20
-          - 0.00019372781439224284
-        - [163]
-          - 2025-03-21
-          - 0.00042839834014201164
-        - [164]
-          - 2025-03-22
-          - 0.0005997993080810919
-        - [165]
-          - 2025-03-23
-          - 0.0002164610394754293
-        - [166]
-          - 2025-03-24
-          - 0.0003027692263234365
-        - [167]
-          - 2025-03-25
-          - -0.00017637586486680016
-        - [168]
-          - 2025-03-26
-          - 5.58376377277713e-05
-        - [169]
-          - 2025-03-27
-          - 8.551098926957445e-05
-        - [170]
-          - 2025-03-28
-          - 0.00044421900525281363
-        - [171]
-          - 2025-03-29
-          - 6.311752230246366e-05
-        - [172]
-          - 2025-03-30
-          - 0.0005247475688536103
-        - [173]
-          - 2025-03-31
-          - 0.0003384607692557699
-        - [174]
-          - 2025-04-01
-          - -0.0002782527390127975
-        - [175]
-          - 2025-04-02
-          - -0.00012046015211719145
-        - [176]
-          - 2025-04-03
-          - 0.0006973811169358036
-        - [177]
-          - 2025-04-04
-          - 0.0006180150320952322
-        - [178]
-          - 2025-04-05
-          - 8.326359198360319e-05
-        - [179]
-          - 2025-04-06
-          - 0.00013914534752451692
-        - [180]
-          - 2025-04-07
-          - 0.0002631855782476679
-        - [181]
-          - 2025-04-08
-          - -0.00011092510149137044
-        - [182]
-          - 2025-04-09
-          - 0.000581293063137411
-        - [183]
-          - 2025-04-10
-          - 0.00012765542964413842
-        - [184]
-          - 2025-04-11
-          - -0.0003258929030737813
-        - [185]
-          - 2025-04-12
-          - -9.181419802999065e-05
-        - [186]
-          - 2025-04-13
-          - 0.00024161940086245366
-        - [187]
-          - 2025-04-14
-          - 0.0005723075386658422
-        - [188]
-          - 2025-04-15
-          - 6.029773056723061e-05
-        - [189]
-          - 2025-04-16
-          - 0.00012703576046304397
-        - [190]
-          - 2025-04-17
-          - 0.00044842946969559765
-        - [191]
-          - 2025-04-18
-          - -0.0001938885491988984
-        - [192]
-          - 2025-04-19
-          - -0.00037328043244402604
-        - [193]
-          - 2025-04-20
-          - 0.0005375440193446047
-        - [194]
-          - 2025-04-21
-          - 0.0002591780111186367
-        - [195]
-          - 2025-04-22
-          - 0.0005306659194806464
-        - [196]
-          - 2025-04-23
-          - 0.0007045939375311121
-        - [197]
-          - 2025-04-24
-          - 0.0003764262598057085
-        - [198]
-          - 2025-04-25
-          - -0.0001227247700954711
-        - [199]
-          - 2025-04-26
-          - 0.00015516078780527406
-        - [200]
-          - 2025-04-27
-          - -0.00023565296975821325
-        - [201]
-          - 2025-04-28
-          - 0.00043947638659721415
-        - [202]
-          - 2025-04-29
-          - 4.3232755246627663e-05
-        - [203]
-          - 2025-04-30
-          - -1.1447402053391535e-05
-        - [204]
-          - 2025-05-01
-          - 0.0008047053289306623
-        - [205]
-          - 2025-05-02
-          - 0.00012725897525202093
-        - [206]
-          - 2025-05-03
-          - 2.862466523392293e-05
-        - [207]
-          - 2025-05-04
-          - -0.00040411147931729166
-        - [208]
-          - 2025-05-05
-          - 0.00016313662113553963
-        - [209]
-          - 2025-05-06
-          - 0.00047997221235292
-        - [210]
-          - 2025-05-07
-          - 0.000252748652719724
-        - [211]
-          - 2025-05-08
-          - 0.0008777899874684483
-        - [212]
-          - 2025-05-09
-          - 0.0003595030929033868
-        - [213]
-          - 2025-05-10
-          - 0.0007461184327136994
-        - [214]
-          - 2025-05-11
-          - 0.000653794261719745
-        - [215]
-          - 2025-05-12
-          - 8.738474032870267e-05
-        - [216]
-          - 2025-05-13
-          - 0.00037467701929590945
-        - [217]
-          - 2025-05-14
-          - -0.0005250130594547941
-        - [218]
-          - 2025-05-15
-          - 0.0005651812727740491
-        - [219]
-          - 2025-05-16
-          - 8.214671435389644e-05
-        - [220]
-          - 2025-05-17
-          - 0.00014674681650405115
-        - [221]
-          - 2025-05-18
-          - -9.731351922641026e-05
-        - [222]
-          - 2025-05-19
-          - -5.962855017758643e-05
-        - [223]
-          - 2025-05-20
-          - 0.0003819680221382422
-        - [224]
-          - 2025-05-21
-          - 0.00048260751848861665
-        - [225]
-          - 2025-05-22
-          - 0.0005456078961561688
-        - [226]
-          - 2025-05-23
-          - 4.259661260831293e-05
-        - [227]
-          - 2025-05-24
-          - -0.00012429230419788652
-        - [228]
-          - 2025-05-25
-          - 0.00014243068978103042
-        - [229]
-          - 2025-05-26
-          - 0.0002412595140241167
-        - [230]
-          - 2025-05-27
-          - -2.575613054818969e-05
-        - [231]
-          - 2025-05-28
-          - 0.0003994950315392186
-        - [232]
-          - 2025-05-29
-          - -0.00026336412261472207
-        - [233]
-          - 2025-05-30
-          - 0.00020128653994970212
-        - [234]
-          - 2025-05-31
-          - 8.598951803039894e-05
-        - [235]
-          - 2025-06-01
-          - -7.306471954276604e-05
-        - [236]
-          - 2025-06-02
-          - -3.8873652397120144e-05
-        - [237]
-          - 2025-06-03
-          - 0.00014977171982816855
-        - [238]
-          - 2025-06-04
-          - 0.00012020762778043591
-        - [239]
-          - 2025-06-05
-          - -0.0002223670980894891
-        - [240]
-          - 2025-06-06
-          - 5.214088806863754e-06
-        - [241]
-          - 2025-06-07
-          - -0.00039859412441116144
-        - [242]
-          - 2025-06-08
-          - 0.00024690604795271414
-        - [243]
-          - 2025-06-09
-          - 0.00033026146387282463
-        - [244]
-          - 2025-06-10
-          - 0.00023436492966485476
-        - [245]
-          - 2025-06-11
-          - -0.0002296987464802567
-        - [246]
-          - 2025-06-12
-          - -0.0003873438879086191
-        - [247]
-          - 2025-06-13
-          - 0.00018349511446314365
-        - [248]
-          - 2025-06-14
-          - -3.444353153313883e-05
-        - [249]
-          - 2025-06-15
-          - 0.0004533703462901669
-        - [250]
-          - 2025-06-16
-          - 0.00023107668456853248
-        - [251]
-          - 2025-06-17
-          - -0.0004643051720262174
-        - [252]
-          - 2025-06-18
-          - 0.0003354504958671108
-        - [253]
-          - 2025-06-19
-          - 0.00023301413623380115
-        - [254]
-          - 2025-06-20
-          - 0.0003128206749768231
-        - [255]
-          - 2025-06-21
-          - 0.00014221497876131247
-        - [256]
-          - 2025-06-22
-          - 2.372794945144406e-05
-        - [257]
-          - 2025-06-23
-          - 0.000336127267299018
-        - [258]
-          - 2025-06-24
-          - 0.000492907543938772
-        - [259]
-          - 2025-06-25
-          - 0.00040506516857394525
-        - [260]
-          - 2025-06-26
-          - 0.0007418889689149211
-        - [261]
-          - 2025-06-27
-          - -6.704547437241475e-05
-        - [262]
-          - 2025-06-28
-          - 0.00030060899641362783
-        - [263]
-          - 2025-06-29
-          - 0.0001793443178013298
-        - [264]
-          - 2025-06-30
-          - 0.000534282450199462
-        - [265]
-          - 2025-07-01
-          - 0.0001775693829296107
-        - [266]
-          - 2025-07-02
-          - 0.0005426736611038127
-        - [267]
-          - 2025-07-03
-          - 0.00015529016642556833
-        - [268]
-          - 2025-07-04
-          - 0.0002464332424529971
-        - [269]
-          - 2025-07-05
-          - -0.00024286247280213722
-        - [270]
-          - 2025-07-06
-          - 0.00014027225220738655
-        - [271]
-          - 2025-07-07
-          - -6.776267356932047e-05
-        - [272]
-          - 2025-07-08
-          - 0.0004374468627142186
-        - [273]
-          - 2025-07-09
-          - 6.210284458660287e-05
-        - [274]
-          - 2025-07-10
-          - 0.0006859134782542563
-        - [275]
-          - 2025-07-11
-          - 0.0006760242565015766
-        - [276]
-          - 2025-07-12
-          - 0.00027476639914189805
-        - [277]
-          - 2025-07-13
-          - 0.0005202547638974399
-        - [278]
-          - 2025-07-14
-          - 0.0007004969630245322
-        - [279]
-          - 2025-07-15
-          - 0.0008686278677512555
-        - [280]
-          - 2025-07-16
-          - 0.00031431916750024905
-        - [281]
-          - 2025-07-17
-          - -9.500605751962817e-05
-        - [282]
-          - 2025-07-18
-          - 0.00019076991939288417
-        - [283]
-          - 2025-07-19
-          - 0.00030436222603682356
-        - [284]
-          - 2025-07-20
-          - 0.0004551943172287717
-        - [285]
-          - 2025-07-21
-          - 0.0004262662206783592
-        - [286]
-          - 2025-07-22
-          - 0.0011434094863436769
-        - [287]
-          - 2025-07-23
-          - 0.001086666561015104
-        - [288]
-          - 2025-07-24
-          - 0.00039128880211662594
-        - [289]
-          - 2025-07-25
-          - 0.0005708098381329787
-        - [290]
-          - 2025-07-26
-          - 0.00046508532493137354
-        - [291]
-          - 2025-07-27
-          - 0.0006480733571336262
-        - [292]
-          - 2025-07-28
-          - 0.0013378533158815219
-        - [293]
-          - 2025-07-29
-          - 0.0004325848955573165
-        - [294]
-          - 2025-07-30
-          - 0.00039943475739414675
-        - [295]
-          - 2025-07-31
-          - 0.00020777679145189394
-        - [296]
-          - 2025-08-01
-          - -0.00013923474474132077
-        - [297]
-          - 2025-08-02
-          - 0.0003693309115575764
-        - [298]
-          - 2025-08-03
-          - 0.00011623667810209352
-        - [299]
-          - 2025-08-04
-          - -4.006014147035681e-06
-        - [300]
-          - 2025-08-05
-          - 0.0003255231434088676
-        - [301]
-          - 2025-08-06
-          - 0.0002746393629893684
-        - [302]
-          - 2025-08-07
-          - 0.0004157368050359152
-        - [303]
-          - 2025-08-08
-          - 0.00046883883621997
-        - [304]
-          - 2025-08-09
-          - 0.0008537750601602532
-        - [305]
-          - 2025-08-10
-          - 0.0008744283546816005
-        - [306]
-          - 2025-08-11
-          - 8.435516145278269e-05
-        - [307]
-          - 2025-08-12
-          - 5.3807279648323854e-05
-        - [308]
-          - 2025-08-13
-          - 0.0006041161140997923
-        - [309]
-          - 2025-08-14
-          - 0.0001323041536832101
-        - [310]
-          - 2025-08-15
-          - 0.0001579509206023549
-        - [311]
-          - 2025-08-16
-          - -0.00014635318725146726
-        - [312]
-          - 2025-08-17
-          - 0.0004328932550822395
-        - [313]
-          - 2025-08-18
-          - 0.0003359068132462051
-        - [314]
-          - 2025-08-19
-          - 0.0003415524667540509
-        - [315]
-          - 2025-08-20
-          - 0.0005975841911674042
-        - [316]
-          - 2025-08-21
-          - 0.00030972253083736074
-        - [317]
-          - 2025-08-22
-          - 0.0014103145560038237
-        - [318]
-          - 2025-08-23
-          - 0.000996929548157981
-        - [319]
-          - 2025-08-24
-          - 0.00081893659365958
-        - [320]
-          - 2025-08-25
-          - 0.00014547405781209082
-        - [321]
-          - 2025-08-26
-          - 9.342768334241157e-05
-        - [322]
-          - 2025-08-27
-          - 0.00025795412309039954
-        - [323]
-          - 2025-08-28
-          - 0.000505239279751885
-        - [324]
-          - 2025-08-29
-          - -2.5769637242989442e-05
-        - [325]
-          - 2025-08-30
-          - 0.0009158907119558064
-        - [326]
-          - 2025-08-31
-          - 0.0002955349738115185
-        - [327]
-          - 2025-09-01
-          - 4.9694387396570676e-05
-        - [328]
-          - 2025-09-02
-          - 0.0007496791831229315
-        - [329]
-          - 2025-09-03
-          - 2.5951862435813712e-05
-        - [330]
-          - 2025-09-04
-          - 0.00011884292698947399
-        - [331]
-          - 2025-09-05
-          - 0.0005361233024723618
-        - [332]
-          - 2025-09-06
-          - -0.00028904317154419145
-        - [333]
-          - 2025-09-07
-          - 5.211265884974661e-05
-        - [334]
-          - 2025-09-08
-          - 0.0004180440003275242
-        - [335]
-          - 2025-09-09
-          - 0.00016374164118667576
-        - [336]
-          - 2025-09-10
-          - 0.0004919678087935566
-        - [337]
-          - 2025-09-11
-          - 0.00044659305919827065
-        - [338]
-          - 2025-09-12
-          - 2.054098659316425e-05
-        - [339]
-          - 2025-09-13
-          - 0.00040430767741360884
-        - [340]
-          - 2025-09-14
-          - -0.0002878870042361399
-        - [341]
-          - 2025-09-15
-          - 0.0003263427078532714
-        - [342]
-          - 2025-09-16
-          - 0.0009121804232890393
-        - [343]
-          - 2025-09-17
-          - 0.0004661746967039012
-        - [344]
-          - 2025-09-18
-          - 2.4909660054132077e-05
-        - [345]
-          - 2025-09-19
-          - 0.00039798755792935916
-        - [346]
-          - 2025-09-20
-          - 0.00048064915176192474
-        - [347]
-          - 2025-09-21
-          - 0.0002685554041964067
-        - [348]
-          - 2025-09-22
-          - 0.00014873941130382883
-        - [349]
-          - 2025-09-23
-          - 0.0005764925259107668
-        - [350]
-          - 2025-09-24
-          - 0.0007052789083530702
-        - [351]
-          - 2025-09-25
-          - 7.779782954669455e-05
-        - [352]
-          - 2025-09-26
-          - 3.2818771507175e-05
-        - [353]
-          - 2025-09-27
-          - -0.0002851625435675587
-        - [354]
-          - 2025-09-28
-          - 0.0008764978407602943
-        - [355]
-          - 2025-09-29
-          - 5.683254201799549e-05
-        - [356]
-          - 2025-09-30
-          - 0.0008256420479459281
-        - [357]
-          - 2025-10-01
-          - 0.0006388548695117994
-        - [358]
-          - 2025-10-02
-          - -0.00022100396282710531
-        - [359]
-          - 2025-10-03
-          - 0.0006595491389617504
-        - [360]
-          - 2025-10-04
-          - 0.0005477028026912633
-        - [361]
-          - 2025-10-05
-          - 0.00025209648484520093
-        - [362]
-          - 2025-10-06
-          - -0.00021316985254289303
-        - [363]
-          - 2025-10-07
-          - 5.113018660547049e-05
-        - [364]
-          - 2025-10-08
-          - 0.00023904543326711737
-        - [365]
-          - 2025-10-09
-          - 0.0005456351820746487
-        - [366]
-          - 2025-10-10
-          - 0.0002017710383936886
-        - [367]
-          - 2025-10-11
-          - 6.584985865957255e-06
-        - [368]
-          - 2025-10-12
-          - -0.0003746109099712192
-        - [369]
-          - 2025-10-13
-          - 0.0012274210790418445
-        - [370]
-          - 2025-10-14
-          - -0.00015528835004084566
-        - [371]
-          - 2025-10-15
-          - 0.00036099058668249403
-        - [372]
-          - 2025-10-16
-          - 0.0004790696476271991
-        - [373]
-          - 2025-10-17
-          - 3.970258907190862e-05
-        - [374]
-          - 2025-10-18
-          - 0.00017072133387341045
-        - [375]
-          - 2025-10-19
-          - 0.0002146665310841006
-        - [376]
-          - 2025-10-20
-          - -1.8599516832181734e-06
-        - [377]
-          - 2025-10-21
-          - -0.0002557092971410839
-        - [378]
-          - 2025-10-22
-          - -0.0003675565471940499
-        - [379]
-          - 2025-10-23
-          - 0.00032995384103292794
-        - [380]
-          - 2025-10-24
-          - 0.0004883381471413855
-        - [381]
-          - 2025-10-25
-          - 0.00038855106815341797
-        - [382]
-          - 2025-10-26
-          - 0.0008268190204873534
-        - [383]
-          - 2025-10-27
-          - -0.00016027723505554942
-        - [384]
-          - 2025-10-28
-          - 0.00014831506019414727
-        - [385]
-          - 2025-10-29
-          - -0.0005732137905783053
-        - [386]
-          - 2025-10-30
-          - 0.00020925276609730402
-        - [387]
-          - 2025-10-31
-          - 0.00014523019281221703
-        - [388]
-          - 2025-11-01
-          - 0.0005655472958733822
-        - [389]
-          - 2025-11-02
-          - -0.00022034824395787298
-        - [390]
-          - 2025-11-03
-          - 0.00045094408123935026
-        - [391]
-          - 2025-11-04
-          - -0.0005709963348720845
-        - [392]
-          - 2025-11-05
-          - -5.64028450808162e-05
-        - [393]
-          - 2025-11-06
-          - 0.0003403690922251971
-        - [394]
-          - 2025-11-07
-          - 0.00025182523177986153
-        - [395]
-          - 2025-11-08
-          - 0.00021137945511286497
-        - [396]
-          - 2025-11-09
-          - -1.0719867828532511e-05
-        - [397]
-          - 2025-11-10
-          - 0.00023710544588580323
-        - [398]
-          - 2025-11-11
-          - 0.00031693811455413425
-        - [399]
-          - 2025-11-12
-          - -9.866582374053903e-05
-        - [400]
-          - 2025-11-13
-          - -0.00018772857268102865
-        - [401]
-          - 2025-11-14
-          - 0.0001066182747814444
-        - [402]
-          - 2025-11-15
-          - 0.00034947242117318636
-        - [403]
-          - 2025-11-16
-          - 0.0002555303374472834
-        - [404]
-          - 2025-11-17
-          - 0.000493754693631922
-        - [405]
-          - 2025-11-18
-          - -0.00019023524233143508
-        - [406]
-          - 2025-11-19
-          - 0.0007660417890563282
-        - [407]
-          - 2025-11-20
-          - 0.0005498710160827205
-        - [408]
-          - 2025-11-21
-          - 0.00019654278655791124
-        - [409]
-          - 2025-11-22
-          - 0.0001658095948933111
-        - [410]
-          - 2025-11-23
-          - 0.0004226943664929176
-        - [411]
-          - 2025-11-24
-          - -7.871780543645733e-05
-        - [412]
-          - 2025-11-25
-          - 0.0001436748793295535
-        - [413]
-          - 2025-11-26
-          - -0.0006368537507944062
-        - [414]
-          - 2025-11-27
-          - 0.0005264812385360363
-        - [415]
-          - 2025-11-28
-          - 5.859604782605467e-05
-        - [416]
-          - 2025-11-29
-          - 0.0001097072516380597
-        - [417]
-          - 2025-11-30
-          - 0.00024912997065642466
-        - [418]
-          - 2025-12-01
-          - -0.00011436430648209901
-        - [419]
-          - 2025-12-02
-          - 2.5378054757114303e-06
-        - [420]
-          - 2025-12-03
-          - 7.797395163172628e-05
-        - [421]
-          - 2025-12-04
-          - -0.0003819973936539945
-        - [422]
-          - 2025-12-05
-          - 0.00030526290714354414
-        - [423]
-          - 2025-12-06
-          - -5.17290793719838e-06
-        - [424]
-          - 2025-12-07
-          - -0.00017116557089674983
-        - [425]
-          - 2025-12-08
-          - -1.3982001432067432e-06
-        - [426]
-          - 2025-12-09
-          - -3.174197113886e-06
-        - [427]
-          - 2025-12-10
-          - 0.0004566914131099685
-        - [428]
-          - 2025-12-11
-          - 0.00021284785887441433
-        - [429]
-          - 2025-12-12
-          - 6.8418984052031495e-06
-        - [430]
-          - 2025-12-13
-          - 0.00010879385448517489
-        - [431]
-          - 2025-12-14
-          - 7.312187032095023e-05
-        - [432]
-          - 2025-12-15
-          - -7.541043063578351e-05
-        - [433]
-          - 2025-12-16
-          - 0.00015631883152113736
-        - [434]
-          - 2025-12-17
-          - 0.00021136320101776702
-        - [435]
-          - 2025-12-18
-          - 0.00012195374621387586
-        - [436]
-          - 2025-12-19
-          - -7.871754320852063e-05
-        - [437]
-          - 2025-12-20
-          - 7.6221232789606e-05
-        - [438]
-          - 2025-12-21
-          - 0.00021035522775669104
-        - [439]
-          - 2025-12-22
-          - 0.00031671112482353363
-        - [440]
-          - 2025-12-23
-          - 0.0003177667762799667
-        - [441]
-          - 2025-12-24
-          - 0.00018596802079244785
-        - [442]
-          - 2025-12-25
-          - -0.00017816915950710787
-        - [443]
-          - 2025-12-26
-          - 0.00015133237635785412
-        - [444]
-          - 2025-12-27
-          - 0.0005032397610513568
-        - [445]
-          - 2025-12-28
-          - 0.0006340479559458415
-        - [446]
-          - 2025-12-29
-          - 0.0003192880866389284
-        - [447]
-          - 2025-12-30
-          - 0.00014882526849427897
-        - [448]
-          - 2025-12-31
-          - 0.000661736987587405
-        - [449]
-          - 2026-01-01
-          - 0.00019622469921604235
-        - [450]
-          - 2026-01-02
-          - 0.000296384999817721
-        - [451]
-          - 2026-01-03
-          - 0.00021964798410523145
-        - [452]
-          - 2026-01-04
-          - 0.00017058543969199552
-        - [453]
-          - 2026-01-05
-          - 8.917122278578524e-05
-        - [454]
-          - 2026-01-06
-          - 0.000425798280210145
-        - [455]
-          - 2026-01-07
-          - 0.0005578511067694207
-        - [456]
-          - 2026-01-08
-          - 2.6172884984989577e-05
-        - [457]
-          - 2026-01-09
-          - 0.00044230741516274876
-        - [458]
-          - 2026-01-10
-          - 0.00044399336187800456
-        - [459]
-          - 2026-01-11
-          - 0.0008464189179987607
-        - [460]
-          - 2026-01-12
-          - 0.00028850270603876846
-        - [461]
-          - 2026-01-13
-          - 0.0003847103628941575
-        - [462]
-          - 2026-01-14
-          - 0.00032763207749444625
-        - [463]
-          - 2026-01-15
-          - 0.0005113380376091455
-        - [464]
-          - 2026-01-16
-          - 0.0001684335914759599
-        - [465]
-          - 2026-01-17
-          - 0.00044074125543937774
-        - [466]
-          - 2026-01-18
-          - 0.00012199721094363953
-        - [467]
-          - 2026-01-19
-          - 0.0003850880701852134
-        - [468]
-          - 2026-01-20
-          - 0.0004535541967537251
-        - [469]
-          - 2026-01-21
-          - 0.00022386654902556102
-        - [470]
-          - 2026-01-22
-          - 0.00030467588458797244
-        - [471]
-          - 2026-01-23
-          - 0.00028307315278399775
-        - [472]
-          - 2026-01-24
-          - 0.00027870201918502475
-        - [473]
-          - 2026-01-25
-          - 0.00022770770964965377
-        - [474]
-          - 2026-01-26
-          - 0.00031107447333747474
-        - [475]
-          - 2026-01-27
-          - 0.00022985053757956065
-        - [476]
-          - 2026-01-28
-          - 0.000502916975390131
-        - [477]
-          - 2026-01-29
-          - 0.00010649618449837477
-        - [478]
-          - 2026-01-30
-          - 0.00016966158601816988
-        - [479]
-          - 2026-01-31
-          - -0.00013478240275695895
-        - [480]
-          - 2026-02-01
-          - 0.00040041409322054216
-        - [481]
-          - 2026-02-02
-          - 3.5702824233636826e-05
-        - [482]
-          - 2026-02-03
-          - 0.0001604579621527062
-        - [483]
-          - 2026-02-04
-          - 0.00027733307821549647
-        - [484]
-          - 2026-02-05
-          - -0.0006682825435209813
-        - [485]
-          - 2026-02-06
-          - -0.00028092657922719943
-        - [486]
-          - 2026-02-07
-          - -0.00022802792240375383
-        - [487]
-          - 2026-02-08
-          - -0.00028567958643198495
-        - [488]
-          - 2026-02-09
-          - 0.0002682638755678905
-        - [489]
-          - 2026-02-10
-          - 0.00023644597665055243
-        - [490]
-          - 2026-02-11
-          - 0.00014441768999568587
-        - [491]
-          - 2026-02-12
-          - 0.00020809803277755098
-        - [492]
-          - 2026-02-13
-          - 0.00023410649595707398
-        - [493]
-          - 2026-02-14
-          - 0.00011196044061220498
-        - [494]
-          - 2026-02-15
-          - 7.598892183479375e-05
-        - [495]
-          - 2026-02-16
-          - 6.74696415914159e-06
-        - [496]
-          - 2026-02-17
-          - 8.536739975179834e-05
-        - [497]
-          - 2026-02-18
-          - 0.0002940995363226153
-        - [498]
-          - 2026-02-19
-          - 0.000276498084974564
-        - [499]
-          - 2026-02-20
-          - -8.710500395458057e-05
-        - [500]
-          - 2026-02-21
-          - 9.901129203302289e-05
-        - [501]
-          - 2026-02-22
-          - 0.00015821202673614674
-        - [502]
-          - 2026-02-23
-          - 0.00017928114681678008
-        - [503]
-          - 2026-02-24
-          - -0.00012842144213493802
-        - [504]
-          - 2026-02-25
-          - 0.00021988981431802964
-        - [505]
-          - 2026-02-26
-          - 0.00033956843931280244
-        - [506]
-          - 2026-02-27
-          - -0.00010861170327773083
-        - [507]
-          - 2026-02-28
-          - 3.994190094428498e-05
-        - [508]
-          - 2026-03-01
-          - 0.0002525486986666089
-        - [509]
-          - 2026-03-02
-          - 0.00011328788847875437
-        - [510]
-          - 2026-03-03
-          - -0.00010543655696711598
-        - [511]
-          - 2026-03-04
-          - -0.0001719051924941278
-        - [512]
-          - 2026-03-05
-          - 9.891467165134031e-05
-        - [513]
-          - 2026-03-06
-          - -0.0001784426929265859
-        - [514]
-          - 2026-03-07
-          - -8.109676872045543e-05
-        - [515]
-          - 2026-03-08
-          - -0.00020119896667853852
-        - [516]
-          - 2026-03-09
-          - -0.00040497459318087676
-        - [517]
-          - 2026-03-10
-          - -0.00021210722620407956
-        - [518]
-          - 2026-03-11
-          - -0.0002711257366666893
-        - [519]
-          - 2026-03-12
-          - -3.6485336908399707e-06
-        - [520]
-          - 2026-03-13
-          - -0.000211471498755456
-        - [521]
-          - 2026-03-14
-          - 9.964480819133381e-05
-        - [522]
-          - 2026-03-15
-          - -0.00017354347886534456
-        - [523]
-          - 2026-03-16
-          - 5.444093619111973e-05
-        - [524]
-          - 2026-03-17
-          - 4.42248932435414e-06
-        - [525]
-          - 2026-03-18
-          - -0.0002872194915358009
-        - [526]
-          - 2026-03-19
-          - 0.00013484846609231158
-        - [527]
-          - 2026-03-20
-          - -0.0002797286740863491
-        - [528]
-          - 2026-03-21
-          - -0.00014489246267398434
-        - [529]
-          - 2026-03-22
-          - -0.00015760216914958525
-        - [530]
-          - 2026-03-23
-          - 4.813932524785705e-05
-        - [531]
-          - 2026-03-24
-          - 0.00035002775707629184
-        - [532]
-          - 2026-03-25
-          - 0.00013509578782930435
-        - [533]
-          - 2026-03-26
-          - 0.0001395420517691751
-        - [534]
-          - 2026-03-27
-          - -1.9760405735362473e-05
-        - [535]
-          - 2026-03-28
-          - 4.8730828795157086e-05
-        - [536]
-          - 2026-03-29
-          - 4.9725598267046915e-05
-        - [537]
-          - 2026-03-30
-          - 0.0001960221212529572
-        - [538]
-          - 2026-03-31
-          - -1.349317698550072e-05
-        - [539]
-          - 2026-04-01
-          - 0.00013016117091569447
-        - [540]
-          - 2026-04-02
-          - 0.0001289388167350904
-        - [541]
-          - 2026-04-03
-          - 0.00030441831071077464
-        - [542]
-          - 2026-04-04
-          - 4.576353841642605e-05
-        - [543]
-          - 2026-04-05
-          - 0.00021959278406487163
-        - [544]
-          - 2026-04-06
-          - -0.000174246307006417
-        - [545]
-          - 2026-04-07
-          - -2.9878147452191452e-05
-        - [546]
-          - 2026-04-08
-          - -0.000702433969573503
-        - [547]
-          - 2026-04-09
-          - -0.0002419178411804545
-        - [548]
-          - 2026-04-10
-          - -3.496748166051812e-05
-        - [549]
-          - 2026-04-11
-          - 3.119919643693998e-05
-        - [550]
-          - 2026-04-12
-          - -0.0001411550373392566
-        - [551]
-          - 2026-04-13
-          - -4.771110538574954e-05
-        - [552]
-          - 2026-04-14
-          - -0.0003487850456967601
-        - [553]
-          - 2026-04-15
-          - 0.00024248601514483976
-        - [554]
-          - 2026-04-16
-          - -3.325770550285578e-06
-        - [555]
-          - 2026-04-17
-          - -0.00041650690262768204
-        - [556]
-          - 2026-04-18
-          - -0.00034601946730583057
-        - [557]
-          - 2026-04-19
-          - -0.0005840303661544386
-        - [558]
-          - 2026-04-20
-          - -3.958439348150184e-05
-        - [559]
-          - 2026-04-21
-          - -2.523526597100103e-05
-        - [560]
-          - 2026-04-22
-          - -0.00033379509864844815
-        - [561]
-          - 2026-04-23
-          - -0.0002224765615327142
-        - [562]
-          - 2026-04-24
-          - 4.518752824220515e-05
-        - [563]
-          - 2026-04-25
-          - -0.00010668500523378014
-        - [564]
-          - 2026-04-26
-          - 0.0002629904427833812
-        - [565]
-          - 2026-04-27
-          - -0.00026924142240686175
-        - [566]
-          - 2026-04-28
-          - -0.00015396199220889256
-        - [567]
-          - 2026-04-29
-          - -7.185668318273825e-06
-        - [568]
-          - 2026-04-30
-          - -0.00013037263484599562
-        - [569]
-          - 2026-05-01
-          - -0.0002582789056973463
-        - [570]
-          - 2026-05-02
-          - 0.0001969066158072631
-        - [571]
-          - 2026-05-03
-          - 0.0001494673581736681
-        - [572]
-          - 2026-05-04
-          - -0.00010081749968873925
-        - [573]
-          - 2026-05-05
-          - -0.0002781964451340543
-        - [574]
-          - 2026-05-06
-          - -0.0002082716310960098
-        - [575]
-          - 2026-05-07
-          - -0.00010217394285578399
-        - [576]
-          - 2026-05-08
-          - -0.00010673908080238358
-        - [577]
-          - 2026-05-09
-          - -0.0002441453569155407
-        - [578]
-          - 2026-05-10
-          - 0.00015415319436959453
-        - [579]
-          - 2026-05-11
-          - -0.00012276540462012955
-        - [580]
-          - 2026-05-12
-          - -0.00024030782793767742
-        - [581]
-          - 2026-05-13
-          - 0.00012196118237620139
-        - [582]
-          - 2026-05-14
-          - 5.521231166731361e-05
-        - [583]
-          - 2026-05-15
-          - 0.0001366289109008188
-        - [584]
-          - 2026-05-16
-          - -0.00020080292625081572
-        - [585]
-          - 2026-05-17
-          - -8.118664548770419e-05
-        - [586]
-          - 2026-05-18
-          - 1.0838467350628214e-05
-        - [587]
-          - 2026-05-19
-          - 0.00035350305228628735
-        - [588]
-          - 2026-05-20
-          - 0.0001345183136357272
-        - [589]
-          - 2026-05-21
-          - -1.3525379013635701e-05
-        - [590]
-          - 2026-05-22
-          - 1.8734086345102584e-05
-        - [591]
-          - 2026-05-23
-          - -0.00020389732102736626
-        - [592]
-          - 2026-05-24
-          - -0.0002889524166386802
-        - [593]
-          - 2026-05-25
-          - -0.00013210677141526028
-        - [594]
-          - 2026-05-26
-          - 0.0001231889900295451
-        - [595]
-          - 2026-05-27
-          - 0.00015639079358881002
-        - [596]
-          - 2026-05-28
-          - 0.00015554896036096914
-        - [597]
-          - 2026-05-29
-          - 4.087566634503069e-05
-        - [598]
-          - 2026-05-30
-          - 0.00015791444735106154
-        - [599]
-          - 2026-05-31
-          - 0.00029650725712515336
-        - [600]
-          - 2026-06-01
-          - 0.00016565514273220866
-        - [601]
-          - 2026-06-02
-          - -1.4868956586001338e-05
-        - [602]
-          - 2026-06-03
-          - 0.00042807342609442467
-        - [603]
-          - 2026-06-04
-          - -2.1908874985120397e-05
-        - [604]
-          - 2026-06-05
-          - 6.181630268406171e-05
-        - [605]
-          - 2026-06-06
-          - 2.2077032225439953e-05
-        - [606]
-          - 2026-06-07
-          - 0.00012356641976948683
-        - [607]
-          - 2026-06-08
-          - -0.00015307060525327932
-        - [608]
-          - 2026-06-09
-          - -7.103476401192043e-05
-        - [609]
-          - 2026-06-10
-          - -0.00018441026278624703
-        - [610]
-          - 2026-06-11
-          - 0.0002316542217968438
-        - [611]
-          - 2026-06-12
-          - 6.079609708829938e-05
-        - [612]
-          - 2026-06-13
-          - 0.00039971247702624125
-        - [613]
-          - 2026-06-14
-          - -0.00018995380773540095
-        - [614]
-          - 2026-06-15
-          - -4.3607482639142774e-05
-        - [615]
-          - 2026-06-16
-          - 0.00020570747578017515
-        - [616]
-          - 2026-06-17
-          - 8.852313328563888e-05
-        - [617]
-          - 2026-06-18
-          - -1.2881003140633426e-05
-        - [618]
-          - 2026-06-19
-          - -0.00020861143586189246
-        - [619]
-          - 2026-06-20
-          - -0.0004535056511336314
-        - [620]
-          - 2026-06-21
-          - -8.447673939334554e-05
-        - [621]
-          - 2026-06-22
-          - 9.36894774461215e-05
-        - [622]
-          - 2026-06-23
-          - 0.0001354756651747188
-        - [623]
-          - 2026-06-24
-          - 0.00023068798591189524
-        - [624]
-          - 2026-06-25
-          - 7.279652153604633e-06
-        - [625]
-          - 2026-06-26
-          - 0.0001907725012098622
-        - [626]
-          - 2026-06-27
-          - -0.00013052705590451332
-        - [627]
-          - 2026-06-28
-          - -8.135341590866301e-05
-        - [628]
-          - 2026-06-29
-          - 0.0003673067408044469
-        - [629]
-          - 2026-06-30
-          - 0.00011759234055274775
-        - [630]
-          - 2026-07-01
-          - -4.0284349066174324e-05
-        - [631]
-          - 2026-07-02
-          - 0.0002972418469790798
-        - [632]
-          - 2026-07-03
-          - 5.14395773548676e-05
-        - [633]
-          - 2026-07-04
-          - -2.187506980178172e-05
-        - [634]
-          - 2026-07-05
-          - 3.187382558613821e-05
-        - [635]
-          - 2026-07-06
-          - -7.23165374555429e-05
-        - [636]
-          - 2026-07-07
-          - 0.00025527795639933504
-        - [637]
-          - 2026-07-08
-          - 2.729551736552212e-05
-        - [638]
-          - 2026-07-09
-          - 7.780384482536512e-05
-        - [639]
-          - 2026-07-10
-          - -2.6052544020862054e-05
-        - [640]
-          - 2026-07-11
-          - -0.00010699794786412102
-        - [641]
-          - 2026-07-12
-          - 5.775067319345758e-05
-        - [642]
-          - 2026-07-13
-          - 0.00024379661341933107
-        - [643]
-          - 2026-07-14
-          - 0.00034497322247958634
-        - [644]
-          - 2026-07-15
-          - 5.680316976974175e-05
-        - [645]
-          - 2026-07-16
-          - -0.00018714512042577991
-        - [646]
-          - 2026-07-17
-          - -0.00019462358258722287
-        - [647]
-          - 2026-07-18
-          - -2.192176987713645e-05
-        - [648]
-          - 2026-07-19
-          - 1.735099334709023e-05
-        - [649]
-          - 2026-07-20
-          - -7.745876868295156e-05
-        - [650]
-          - 2026-07-21
-          - 0.0001921178533280914
-        - [651]
-          - 2026-07-22
-          - 0.0001816917562404471
-        - [652]
-          - 2026-07-23
-          - 8.597663262934854e-05
-        - [653]
-          - 2026-07-24
-          - 3.8833325739026565e-05
-        - [654]
-          - 2026-07-25
-          - -1.8723142117737124e-05
-        - [655]
-          - 2026-07-26
-          - 0.00017236632214409105
-        - [656]
-          - 2026-07-27
-          - 4.733821384025794e-05
-        - [657]
-          - 2026-07-28
-          - -7.282468906007673e-05
-        - [658]
-          - 2026-07-29
-          - 9.700752817012815e-05
-        - [659]
-          - 2026-07-30
-          - -1.4305518321113009e-05
-        - [660]
-          - 2026-07-31
-          - 1.1469549520836864e-05
-        - [661]
-          - 2026-08-01
-          - 0.00010643699114407378
-        - [662]
-          - 2026-08-02
-          - 0.00019007843637639129
-        - [663]
-          - 2026-08-03
-          - 0.00010174452647030048
-        - [664]
-          - 2026-08-04
-          - -0.00014590822201362576
-        - [665]
-          - 2026-08-05
-          - 1.9671768393464388e-05
-        - [666]
-          - 2026-08-06
-          - 0.00019822811514306045
-        - [667]
-          - 2026-08-07
-          - -9.749296524834562e-05
-        - [668]
-          - 2026-08-08
-          - 0.00010713449958168648
-        - [669]
-          - 2026-08-09
-          - -0.00020768647788622357
-        - [670]
-          - 2026-08-10
-          - -7.978921551228772e-05
-        - [671]
-          - 2026-08-11
-          - -8.203655454032216e-05
-        - [672]
-          - 2026-08-12
-          - 0.00012142986156093142
-        - [673]
-          - 2026-08-13
-          - 0.000169992942248276
-        - [674]
-          - 2026-08-14
-          - 7.925190728709379e-05
-        - [675]
-          - 2026-08-15
-          - -4.79028356443493e-05
-        - [676]
-          - 2026-08-16
-          - 0.00025740488832852335
-        - [677]
-          - 2026-08-17
-          - -5.381729030716522e-05
-        - [678]
-          - 2026-08-18
-          - 0.00011612158874232136
-        - [679]
-          - 2026-08-19
-          - 0.00022002163543327754
-        - [680]
-          - 2026-08-20
-          - 2.1736084510955532e-05
-        - [681]
-          - 2026-08-21
-          - 0.0003204006991377885
-        - [682]
-          - 2026-08-22
-          - -0.00015547866844144382
-        - [683]
-          - 2026-08-23
-          - -4.654998704236978e-05
-        - [684]
-          - 2026-08-24
-          - 6.30517704127408e-05
-        - [685]
-          - 2026-08-25
-          - 0.0001599487108665742
-        - [686]
-          - 2026-08-26
-          - 0.0002779559979963958
-        - [687]
-          - 2026-08-27
-          - -5.898287310798045e-05
-        - [688]
-          - 2026-08-28
-          - 2.4808164764477904e-06
-        - [689]
-          - 2026-08-29
-          - 0.0001395675029911734
-        - [690]
-          - 2026-08-30
-          - -7.077070155774358e-06
-        - [691]
-          - 2026-08-31
-          - 6.224783164607827e-05
-        - [692]
-          - 2026-09-01
-          - 2.5822558017525953e-05
-        - [693]
-          - 2026-09-02
-          - 3.7772436066879895e-05
-        - [694]
-          - 2026-09-03
-          - -0.00015414005649149227
-        - [695]
-          - 2026-09-04
-          - -8.138137823620588e-05
-        - [696]
-          - 2026-09-05
-          - 0.0002777962344804765
-        - [697]
-          - 2026-09-06
-          - 0.00013763031194764984
-        - [698]
-          - 2026-09-07
-          - 8.362647962638487e-05
-        - [699]
-          - 2026-09-08
-          - 0.00016711830176813206
-        - [700]
-          - 2026-09-09
-          - 0.00013160398378053123
-        - [701]
-          - 2026-09-10
-          - 1.8570769709046152e-06
-        - [702]
-          - 2026-09-11
-          - -4.675371445090551e-05
-        - [703]
-          - 2026-09-12
-          - 0.00021571753460755192
-        - [704]
-          - 2026-09-13
-          - 2.3345356927555855e-05
-        - [705]
-          - 2026-09-14
-          - 0.00010530249083602505
-        - [706]
-          - 2026-09-15
-          - 0.0002122774404888978
-        - [707]
-          - 2026-09-16
-          - 0.00010914352758694032
-        - [708]
-          - 2026-09-17
-          - 5.298950422103492e-05
-        - [709]
-          - 2026-09-18
-          - 6.478064720720517e-05
-        - [710]
-          - 2026-09-19
-          - 0.00020189078118343292
-        - [711]
-          - 2026-09-20
-          - 5.428842330219382e-05
-        - [712]
-          - 2026-09-21
-          - 0.0002327344445305903
-        - [713]
-          - 2026-09-22
-          - 0.00010558146798087342
-        - [714]
-          - 2026-09-23
-          - -0.0001445142516667899
-        - [715]
-          - 2026-09-24
-          - -5.366943120436512e-06
-        - [716]
-          - 2026-09-25
-          - -4.823358752296002e-05
-        - [717]
-          - 2026-09-26
-          - -2.8444657776519583e-05
-        - [718]
-          - 2026-09-27
-          - 0.00021274166293246306
-        - [719]
-          - 2026-09-28
-          - 1.3338945653385329e-05
-      - `basis_std`: 0.00034373376694045
-      - `first_date`: 2024-10-09
-      - `funding`:
-        - `cadence_seconds`: 3600.0
-        - `daily_max`: 0.000700643183333333
-        - `daily_mean`: 8.6999960180436e-05
-        - `daily_mean_annualized`: 0.03175498546585914
-        - `daily_min`: -0.00033336311111111205
-        - `daily_std`: 0.0001457939375214909
-        - `expected_settlements_per_day`: 24.0
-        - `first_ts`: 2025-09-24T08:00:00+00:00
-        - `last_ts`: 2026-09-29T22:00:00+00:00
-        - `n_days`: 371
-        - `n_partial_days`: 9
-        - `n_settlements`: 8887
-        - `status`: ok
-      - `last_date`: 2026-09-28
-      - `n_dates`: 720
-      - `status`: ok
-      - `venue`: kraken
-    - [1]
-      - `basis_first`: -0.0005247736913455845
-      - `basis_last`: -0.00048622696260250967
-      - `basis_max`: 0.0001894364525040751
-      - `basis_mean`: -0.00044617089584298635
-      - `basis_min`: -0.0007494928431761175
-      - `basis_series`:
-        - [0]
-          - 2026-06-22
-          - -0.0005247736913455845
-        - [1]
-          - 2026-06-23
-          - -0.0004909814048763844
-        - [2]
-          - 2026-06-24
-          - -0.00046824604201114203
-        - [3]
-          - 2026-06-25
-          - -0.0005234253759298394
-        - [4]
-          - 2026-06-26
-          - -0.0005390638258223915
-        - [5]
-          - 2026-06-27
-          - -0.0007494928431761175
-        - [6]
-          - 2026-06-28
-          - -0.0004582389858987092
-        - [7]
-          - 2026-06-29
-          - -0.0004630013773876343
-        - [8]
-          - 2026-06-30
-          - -0.00043324009005938214
-        - [9]
-          - 2026-07-01
-          - -0.0005530015324138366
-        - [10]
-          - 2026-07-02
-          - -0.00035575568843601444
-        - [11]
-          - 2026-07-03
-          - -0.0006055232024029439
-        - [12]
-          - 2026-07-04
-          - -0.00031992093835023883
-        - [13]
-          - 2026-07-05
-          - -0.00047136904425212585
-        - [14]
-          - 2026-07-06
-          - -0.00037315180564882283
-        - [15]
-          - 2026-07-07
-          - -0.0004955174606781876
-        - [16]
-          - 2026-07-08
-          - -0.0004864617533494884
-        - [17]
-          - 2026-07-09
-          - -0.000506100888048902
-        - [18]
-          - 2026-07-10
-          - -0.0004955617613324009
-        - [19]
-          - 2026-07-11
-          - -0.0005672451940855614
-        - [20]
-          - 2026-07-12
-          - -0.0005518486931219129
-        - [21]
-          - 2026-07-13
-          - -0.00030321455558213916
-        - [22]
-          - 2026-07-14
-          - -0.0004259094396600776
-        - [23]
-          - 2026-07-15
-          - -0.000541998724527308
-        - [24]
-          - 2026-07-16
-          - -0.0005357914987749545
-        - [25]
-          - 2026-07-17
-          - -0.00046138951754296783
-        - [26]
-          - 2026-07-18
-          - -0.000478144921098376
-        - [27]
-          - 2026-07-19
-          - -0.00047118291629783085
-        - [28]
-          - 2026-07-20
-          - -0.0005164007024276099
-        - [29]
-          - 2026-07-21
-          - -0.0006324711594654465
-        - [30]
-          - 2026-07-22
-          - -0.0004840139275007638
-        - [31]
-          - 2026-07-23
-          - -0.00046393019540366676
-        - [32]
-          - 2026-07-24
-          - -0.00048791589764059007
-        - [33]
-          - 2026-07-25
-          - -0.0004893165878323275
-        - [34]
-          - 2026-07-26
-          - -0.0004403191702429191
-        - [35]
-          - 2026-07-27
-          - -0.000517566683762051
-        - [36]
-          - 2026-07-28
-          - -0.0004739633030393548
-        - [37]
-          - 2026-07-29
-          - -0.00045636266453276105
-        - [38]
-          - 2026-07-30
-          - -0.0003920805895410412
-        - [39]
-          - 2026-07-31
-          - -0.0005151762332031314
-        - [40]
-          - 2026-08-01
-          - -0.0004982473790276955
-        - [41]
-          - 2026-08-02
-          - -0.00047817839199934336
-        - [42]
-          - 2026-08-03
-          - -0.0003888073845068457
-        - [43]
-          - 2026-08-04
-          - -0.00019347611038126426
-        - [44]
-          - 2026-08-05
-          - -0.0004840757632699845
-        - [45]
-          - 2026-08-06
-          - -0.000453939165933488
-        - [46]
-          - 2026-08-07
-          - -0.0004729152064574814
-        - [47]
-          - 2026-08-08
-          - -0.00044029194742973486
-        - [48]
-          - 2026-08-09
-          - -0.0004283559298791036
-        - [49]
-          - 2026-08-10
-          - -0.00043142324339626723
-        - [50]
-          - 2026-08-11
-          - -0.0003679858592784561
-        - [51]
-          - 2026-08-12
-          - -0.0003575664687711699
-        - [52]
-          - 2026-08-13
-          - -0.00034814717961399055
-        - [53]
-          - 2026-08-14
-          - -0.0003695901831771893
-        - [54]
-          - 2026-08-15
-          - -0.00042641422099343705
-        - [55]
-          - 2026-08-16
-          - -0.00040696999709077727
-        - [56]
-          - 2026-08-17
-          - -0.0005036229862828594
-        - [57]
-          - 2026-08-18
-          - -0.0004680924691183009
-        - [58]
-          - 2026-08-19
-          - -0.00040093975663826306
-        - [59]
-          - 2026-08-20
-          - -0.0005394917549501679
-        - [60]
-          - 2026-08-21
-          - -0.00023104623094673835
-        - [61]
-          - 2026-08-22
-          - 0.0001894364525040751
-        - [62]
-          - 2026-08-23
-          - -0.0002739800033184813
-        - [63]
-          - 2026-08-24
-          - -0.00048612456182338143
-        - [64]
-          - 2026-08-25
-          - -0.00043161565580763345
-        - [65]
-          - 2026-08-26
-          - -0.00046310882677839255
-        - [66]
-          - 2026-08-27
-          - -0.0004286802008317982
-        - [67]
-          - 2026-08-28
-          - -0.00040979026189315624
-        - [68]
-          - 2026-08-29
-          - -0.0004908414607645645
-        - [69]
-          - 2026-08-30
-          - -0.00039136071227642143
-        - [70]
-          - 2026-08-31
-          - -0.00040721741974317303
-        - [71]
-          - 2026-09-01
-          - -0.00047265631557933676
-        - [72]
-          - 2026-09-02
-          - -0.00045125653610839377
-        - [73]
-          - 2026-09-03
-          - -0.0004061033643817814
-        - [74]
-          - 2026-09-04
-          - -0.0005071509539835099
-        - [75]
-          - 2026-09-05
-          - -0.0004735050143930857
-        - [76]
-          - 2026-09-06
-          - -0.0005265031478165474
-        - [77]
-          - 2026-09-07
-          - -0.0004348276742535087
-        - [78]
-          - 2026-09-08
-          - -0.0004881549146239093
-        - [79]
-          - 2026-09-09
-          - -0.00048403143266911
-        - [80]
-          - 2026-09-10
-          - -0.0004009403160506346
-        - [81]
-          - 2026-09-11
-          - -0.0004998484915192969
-        - [82]
-          - 2026-09-12
-          - -0.0003623141522495827
-        - [83]
-          - 2026-09-13
-          - -0.0005479202457182287
-        - [84]
-          - 2026-09-14
-          - -0.00018798987668116137
-        - [85]
-          - 2026-09-15
-          - -0.00039264420089630083
-        - [86]
-          - 2026-09-16
-          - -0.0004396256226936059
-        - [87]
-          - 2026-09-17
-          - -0.0004030395462926631
-        - [88]
-          - 2026-09-18
-          - -0.00033249694078086326
-        - [89]
-          - 2026-09-19
-          - -0.0004245328293082699
-        - [90]
-          - 2026-09-20
-          - -0.00043730198227140806
-        - [91]
-          - 2026-09-21
-          - -0.000308250729064893
-        - [92]
-          - 2026-09-22
-          - -0.0004837076364329478
-        - [93]
-          - 2026-09-23
-          - -0.00040166114728160926
-        - [94]
-          - 2026-09-24
-          - -0.0004798021082860047
-        - [95]
-          - 2026-09-25
-          - -0.0004684954636796416
-        - [96]
-          - 2026-09-26
-          - -0.0006039798720746946
-        - [97]
-          - 2026-09-27
-          - -0.0004640206441837272
-        - [98]
-          - 2026-09-28
-          - -0.00048622696260250967
-      - `basis_std`: 0.000106026747189363
-      - `first_date`: 2026-06-22
-      - `funding`:
-        - `cadence_seconds`: 28800.0
-        - `daily_max`: 0.00030000000000000003
-        - `daily_mean`: 0.00015769705495988708
-        - `daily_mean_annualized`: 0.057559425060358785
-        - `daily_min`: -3.99940733157e-05
-        - `daily_std`: 8.003662197884562e-05
-        - `expected_settlements_per_day`: 3.0
-        - `first_ts`: 2026-06-29T08:00:00+00:00
-        - `last_ts`: 2026-09-29T16:00:00+00:00
-        - `n_days`: 93
-        - `n_partial_days`: 1
-        - `n_settlements`: 278
-        - `status`: ok
-      - `last_date`: 2026-09-28
-      - `n_dates`: 99
-      - `status`: ok
-      - `venue`: okx
-  - `n_error_rows`: 0
-  - `n_leg_rows`: 2
-  - `n_rows`: 1
-  - `params`:
-    - `annualization_days`: 365.0
-    - `asset`: BTC
-    - `conventions`: basis_t = (mark_t - spot_t)/spot_t per venue on shared dates; basis_diff = a - b per venue pair; funding aggregated to per-calendar-day sums of realized rates before diffing, so venue cadences (hourly vs 8h) are comparable; daily_mean_annualized = daily_mean * annualization_days is a descriptive scaling, not a yield claim
-    - `min_overlap`: 5
-  - `research_only`: true
-  - `results`:
-    - [0]
-      - `basis_diff`:
-        - `first_date`: 2026-06-22
-        - `frac_positive`: 0.98989898989899
-        - `last_date`: 2026-09-28
-        - `max`: 0.0008303081181920812
-        - `max_abs`: 0.0008303081181920812
-        - `mean`: 0.0005075397110974355
-        - `mean_abs`: 0.0005145076933387591
-        - `min`: -0.0003449151209455189
-        - `n`: 99
-        - `n_dates`: 99
-        - `sign_flips`: 2
-        - `std`: 0.00016467142022453306
-      - `funding_diff`:
-        - `first_date`: 2026-06-29
-        - `frac_positive`: 0.4838709677419355
-        - `last_date`: 2026-09-29
-        - `max`: 0.000433083712971733
-        - `max_abs`: 0.000433083712971733
-        - `mean`: -2.4801619021614496e-06
-        - `mean_abs`: 0.00011772104535538478
-        - `min`: -0.000236823410278302
-        - `n`: 93
-        - `n_dates`: 93
-        - `n_partial_days_a`: 1
-        - `n_partial_days_b`: 1
-        - `sign_flips`: 40
-        - `status`: ok
-        - `std`: 0.00014243547222281567
-      - `pair`: kraken~okx
-      - `status`: ok
-      - `venue_a`: kraken
-      - `venue_b`: okx
-  - `schema`: crossvenue_basis.v1
-  - `simulated_only`: false
-  - `venues`:
-    - kraken
-    - okx
-  - `verdict`: 2/2 legs measured; 1/1 pairs ok; kraken~okx basis-diff mean +0.050754%, funding-diff mean -0.000248%/day
-- `receipt_sha256`: 3f4ff76f517655a728f29688cfbb96f4fe7a6e3dea9cb387db25a444fb6ae964
-- `schema`: receipt.v2
-- `schema_version`: 2
-- `verdict`: pass
 
 ### `receipts/crown_behind.json`
 
@@ -39671,81 +24354,6 @@ counted. Prose that contains such a token is quoted verbatim.
 - `receipt_sha256`: b96983f04ff66a1f9c8be770c415d678a9d3a0c4e17f63668ab184dada1abdea
 - `research_only`: true
 - `schema`: forecast_pipeline_audit.v1
-
-### `receipts/forward_record_preregistration_v1.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/forward_record_preregistration_v1.json | d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3 | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
-
-- `_seal`:
-  - `content_sha256`: b62151e486c97d233bbd2b0d9c071e85ae0a3af6c57253fa99eb0a156ddbd59e
-  - `schema`: prereg_seal.v1
-  - `sealed_at`: 2026-10-07T00:00:00+00:00
-- `admission_rule`:
-  - `material_effect_bps`: 5.0
-  - `primary_test`: one-sided H0: E[D_t] <= 0 vs H1: E[D_t] > 0, alpha=0.05, single fixed analysis
-  - `referee`: frozen validation/agent_referee.py betting referee (post-submission-only)
-  - `required_eligible_paired_sessions`: 1400
-  - `semantics`: anytime-valid admission at every stopping time; no optional-stopping inflation
-- `costs`:
-  - `borrow_bps_per_year`: 50.0
-  - `commission_bps`: 1.0
-  - `financing`: 0.0
-  - `half_spread_bps`: 5.0
-  - `impact_coefficient`: 0.1
-  - `participation_limit`: 0.1
-- `declaration_date`: 2026-10-07
-- `declaration_timezone`: Asia/Calcutta
-- `grid`:
-  - `comparator`: frozen equal-weight
-  - `strategy`: frozen momentum-20
-  - `trials`: single primary comparison; no mid-collection tuning
-- `holdout_statement`:
-  - `holdout_2025`: SPENT
-  - `reason`: The vendor pool already has results for the 2025 holdout and discloses survivorship bias. The 2025 holdout is spent and cannot be reused as new forward evidence.
-- `honesty`:
-  - `broker_connectivity_claim`: false
-  - `live_trading_claim`: false
-  - `note`: Forward record is simulated/shadow evidence only. No live orders, no live P&L, no profitability claim.
-  - `research_only`: true
-  - `synthetic_substitution`: false
-- `not_yet_collected`: true
-- `recorded`:
-  - externally timestamped inputs and decision cutoff
-  - intended signed quantities and simulated orders
-  - fills (including partials), rejects and reasons
-<!-- verbatim-receipt-text -->
-> positions, cash, costs, NAV and net-return accounting
-<!-- /verbatim-receipt-text -->
-  - kill-switch state
-  - software/config/data hashes and broker-state cursor
-  - immutable receipt chain
-- `schema`: forward_record_preregistration.v1
-- `splits`:
-  - `forward`: first accepted decision must occur on a LATER market date than the recorded freeze
-  - `warmup`: all historical bars on/before 2026-09-18 (warmup only, already inspected)
-- `status`: NOT_YET_COLLECTED
-- `universe`:
-  - `kind`: static_complete_universe
-  - `membership_selection_bias`: recorded in selection_basis; fixed-universe experiment
-  - `names`: static 424-name US universe frozen at the warmup boundary
-- `window`:
-  - `end`: null
-  - `label`: forward_2026H2
-  - `note`: Named forward window. It is NOT YET COLLECTED. Freeze and externally timestamp this record BEFORE the first forward close.
-  - `start`: 2026-07-01
-
-### `receipts/forward_record_preregistration_v1.json.seal.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/forward_record_preregistration_v1.json.seal.json | afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
-
-- `file`: forward_record_preregistration_v1.json
-- `schema`: prereg_seal.v1
-- `sealed_at`: 2026-10-07T00:00:00+00:00
-- `sha256`: d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3
 
 ### `receipts/full_impact.json`
 
@@ -53966,6 +38574,355 @@ Omitted 14 fields whose names tokenize to a forbidden research-headline metric.
 
 Omitted 5 fields whose names tokenize to a forbidden research-headline metric.
 
+### `receipts/legacy-unsealed/basis_carry_dd7705fc0f2f1c25.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/legacy-unsealed/basis_carry_dd7705fc0f2f1c25.json | 852f56a1e2aeb3654d406fbb14a4a2baa7cd20949d45153a98c5a99a2248f741 | dd7705fc0f2f1c25f7c7bbe3f131395931007080cddc9378c5c45e1dee79b8a8 | not_checked | c0194c18e3d54182d305da821214c8b1479818df | inputs_sha256=a5a7bd6664572a7515af9e91359c5ad63a7b528d8fac675a4afbce2c8d593be4 | unspecified | absent | true | false |
+
+- `claim`: research_only
+- `cross_contract`:
+  - `frac_within_tolerance`: 0.4
+  - `n_contracts`: 5
+  - `n_delivered`: 5
+  - `residual_max_abs`: 0.00825956686641372
+  - `residual_mean`: -0.003865422359408857
+  - `residual_std`: 0.004219440789149606
+  - `residuals`:
+    - -0.0021258985685353796
+    - -0.005910546520925502
+    - -0.005617618882193931
+    - 0.0025865190410242485
+    - -0.00825956686641372
+  - `tolerance`: 0.005
+- `data_label`: kraken
+- `generated_at`: 2026-09-29T19:49:36.110321+00:00
+- `git_revision`: c0194c18e3d54182d305da821214c8b1479818df
+- `inputs`:
+  - `contracts`:
+    - `FF_XBTUSD_260925`:
+      - `data_label`: kraken
+      - `delivery`: 2026-09-25T08:00:00+00:00
+      - `first_date`: 2026-02-20
+      - `last_date`: 2026-09-25
+      - `n_rows`: 218
+      - `sha256`: 2fa871f3470f9732620f8bd3a280ff0d531b0fbd19df9fa6304bc6d9ac40db51
+    - `FI_XBTUSD_250926`:
+      - `data_label`: kraken
+      - `delivery`: 2025-09-26T16:00:00+00:00
+      - `first_date`: 2025-02-28
+      - `last_date`: 2025-09-26
+      - `n_rows`: 211
+      - `sha256`: 2a110aa376d72d00714721b11db5ebfdadd57e402af23480a1d0f9d7a9ad71db
+    - `FI_XBTUSD_251226`:
+      - `data_label`: kraken
+      - `delivery`: 2025-12-26T16:00:00+00:00
+      - `first_date`: 2025-05-30
+      - `last_date`: 2025-12-26
+      - `n_rows`: 211
+      - `sha256`: c683120e3bcdc190221d809b4d89035922f47df1561be538488562ee7a0b49b0
+    - `FI_XBTUSD_260327`:
+      - `data_label`: kraken
+      - `delivery`: 2026-03-27T16:00:00+00:00
+      - `first_date`: 2025-08-29
+      - `last_date`: 2026-03-27
+      - `n_rows`: 211
+      - `sha256`: ff1e15ea34d99f632fef0b4adfea74b3b33180de1b221fa5c6a1feb5e69ced84
+    - `FI_XBTUSD_260626`:
+      - `data_label`: kraken
+      - `delivery`: 2026-06-26T16:00:00+00:00
+      - `first_date`: 2025-11-28
+      - `last_date`: 2026-06-26
+      - `n_rows`: 211
+      - `sha256`: c93e84dfb2060fa9f4b5dec3459b9c7b1988d43046aacf8e6b64c1fcc7b72bd2
+  - `params`:
+    - `annualization_days`: 365.0
+    - `convergence_note`: convergence_residual is the basis at the last observed shared date; for contracts still listed it is measured residual_dte_days before delivery, not at settlement
+    - `dte_buckets`:
+      - 90.0
+      - 60.0
+      - 30.0
+      - 14.0
+      - 7.0
+      - 1.0
+    - `dte_floor_days`: 1.0
+    - `min_overlap`: 5
+    - `tolerance`: 0.005
+  - `spot`:
+    - `data_label`: kraken
+    - `first_date`: 2024-10-09
+    - `last_date`: 2026-09-28
+    - `n_rows`: 720
+    - `sha256`: f148611c431d93d77886f7db686fa8a82e14a0c2ee3f77a80a6a80095642d7cf
+- `kind`: basis_carry
+- `n_contracts`: 5
+- `n_error_rows`: 0
+- `n_rows`: 5
+- `params`:
+  - `annualization_days`: 365.0
+  - `convergence_note`: convergence_residual is the basis at the last observed shared date; for contracts still listed it is measured residual_dte_days before delivery, not at settlement
+  - `dte_buckets`:
+    - 90.0
+    - 60.0
+    - 30.0
+    - 14.0
+    - 7.0
+    - 1.0
+  - `dte_floor_days`: 1.0
+  - `min_overlap`: 5
+  - `tolerance`: 0.005
+- `receipt_sha256`: dd7705fc0f2f1c25f7c7bbe3f131395931007080cddc9378c5c45e1dee79b8a8
+- `research_only`: true
+- `results`:
+  - [0]
+    - `ann_basis_mean`: -0.005951836711651675
+    - `ann_basis_n`: 217
+    - `ann_basis_std`: 0.10462648582634972
+    - `basis_diff_std`: 0.005572170633201624
+    - `basis_first`: 0.022329257861628714
+    - `basis_last`: -0.0021258985685353796
+    - `basis_max`: 0.022329257861628714
+    - `basis_min`: -0.020580120962240576
+    - `contract`: FF_XBTUSD_260925
+    - `convergence_residual`: -0.0021258985685353796
+    - `delivered`: true
+    - `delivery`: 2026-09-25T08:00:00+00:00
+    - `dte_buckets`:
+      - `1`:
+        - `ann_basis`: null
+        - `basis`: -0.0021258985685353796
+        - `date`: 2026-09-25
+        - `dte_days`: 0.3333333333333333
+      - `14`:
+        - `ann_basis`: -0.15638619380362703
+        - `basis`: -0.005712737673191855
+        - `date`: 2026-09-12
+        - `dte_days`: 13.333333333333334
+      - `30`:
+        - `ann_basis`: -0.12628006137956038
+        - `basis`: -0.010148534613151884
+        - `date`: 2026-08-27
+        - `dte_days`: 29.333333333333332
+      - `60`:
+        - `ann_basis`: -0.0034781871112633963
+        - `basis`: -0.0005654039322419037
+        - `date`: 2026-07-28
+        - `dte_days`: 59.333333333333336
+      - `7`:
+        - `ann_basis`: -0.30920701890392543
+        - `basis`: -0.005365235944451674
+        - `date`: 2026-09-19
+        - `dte_days`: 6.333333333333333
+      - `90`:
+        - `ann_basis`: -0.019649045099214803
+        - `basis`: -0.0048090813576160425
+        - `date`: 2026-06-28
+        - `dte_days`: 89.33333333333333
+    - `first_date`: 2026-02-20
+    - `last_date`: 2026-09-25
+    - `n_dates`: 218
+    - `residual_dte_days`: 0.3333333333333333
+    - `status`: ok
+  - [1]
+    - `ann_basis_mean`: 0.047906092717365976
+    - `ann_basis_n`: 210
+    - `ann_basis_std`: 0.023798523409683775
+    - `basis_diff_std`: 0.005832924510682373
+    - `basis_first`: -0.00016214126097742896
+    - `basis_last`: -0.005910546520925502
+    - `basis_max`: 0.06214810042407721
+    - `basis_min`: -0.005910546520925502
+    - `contract`: FI_XBTUSD_250926
+    - `convergence_residual`: -0.005910546520925502
+    - `delivered`: true
+    - `delivery`: 2025-09-26T16:00:00+00:00
+    - `dte_buckets`:
+      - `1`:
+        - `ann_basis`: null
+        - `basis`: -0.005910546520925502
+        - `date`: 2025-09-26
+        - `dte_days`: 0.6666666666666666
+      - `14`:
+        - `ann_basis`: 0.10982284241782463
+        - `basis`: 0.0041120881635897805
+        - `date`: 2025-09-13
+        - `dte_days`: 13.666666666666666
+      - `30`:
+        - `ann_basis`: 0.04098208841836609
+        - `basis`: 0.003330964264141171
+        - `date`: 2025-08-28
+        - `dte_days`: 29.666666666666668
+      - `60`:
+        - `ann_basis`: 0.08190535030233229
+        - `basis`: 0.013389093793714592
+        - `date`: 2025-07-29
+        - `dte_days`: 59.666666666666664
+      - `7`:
+        - `ann_basis`: -0.01309604276182913
+        - `basis`: -0.00023919712806993844
+        - `date`: 2025-09-20
+        - `dte_days`: 6.666666666666667
+      - `90`:
+        - `ann_basis`: 0.04197883939935576
+        - `basis`: 0.010312609861576895
+        - `date`: 2025-06-29
+        - `dte_days`: 89.66666666666667
+    - `first_date`: 2025-02-28
+    - `last_date`: 2025-09-26
+    - `n_dates`: 211
+    - `residual_dte_days`: 0.6666666666666666
+    - `status`: ok
+  - [2]
+    - `ann_basis_mean`: 0.026016246386637673
+    - `ann_basis_n`: 210
+    - `ann_basis_std`: 0.06825742556171652
+    - `basis_diff_std`: 0.005713341989918736
+    - `basis_first`: 8.373413882184243e-05
+    - `basis_last`: -0.005617618882193931
+    - `basis_max`: 0.03975683524169132
+    - `basis_min`: -0.017734980103374355
+    - `contract`: FI_XBTUSD_251226
+    - `convergence_residual`: -0.005617618882193931
+    - `delivered`: true
+    - `delivery`: 2025-12-26T16:00:00+00:00
+    - `dte_buckets`:
+      - `1`:
+        - `ann_basis`: null
+        - `basis`: -0.005617618882193931
+        - `date`: 2025-12-26
+        - `dte_days`: 0.6666666666666666
+      - `14`:
+        - `ann_basis`: -0.0661010425430854
+        - `basis`: -0.0024750162048095903
+        - `date`: 2025-12-13
+        - `dte_days`: 13.666666666666666
+      - `30`:
+        - `ann_basis`: 0.024039485971212478
+        - `basis`: 0.0019538942935506034
+        - `date`: 2025-11-27
+        - `dte_days`: 29.666666666666668
+      - `60`:
+        - `ann_basis`: 0.04262656153849514
+        - `basis`: 0.006968177639626145
+        - `date`: 2025-10-28
+        - `dte_days`: 59.666666666666664
+      - `7`:
+        - `ann_basis`: -0.12521861210869875
+        - `basis`: -0.002287097938058425
+        - `date`: 2025-12-20
+        - `dte_days`: 6.666666666666667
+      - `90`:
+        - `ann_basis`: 0.05428198113789836
+        - `basis`: 0.013335025503282794
+        - `date`: 2025-09-28
+        - `dte_days`: 89.66666666666667
+    - `first_date`: 2025-05-30
+    - `last_date`: 2025-12-26
+    - `n_dates`: 211
+    - `residual_dte_days`: 0.6666666666666666
+    - `status`: ok
+  - [3]
+    - `ann_basis_mean`: 0.06382504232428857
+    - `ann_basis_n`: 210
+    - `ann_basis_std`: 0.14428892885164102
+    - `basis_diff_std`: 0.006272707912933614
+    - `basis_first`: -0.0001741695810244147
+    - `basis_last`: 0.0025865190410242485
+    - `basis_max`: 0.04180801518642847
+    - `basis_min`: -0.016077497217856646
+    - `contract`: FI_XBTUSD_260327
+    - `convergence_residual`: 0.0025865190410242485
+    - `delivered`: true
+    - `delivery`: 2026-03-27T16:00:00+00:00
+    - `dte_buckets`:
+      - `1`:
+        - `ann_basis`: null
+        - `basis`: 0.0025865190410242485
+        - `date`: 2026-03-27
+        - `dte_days`: 0.6666666666666666
+      - `14`:
+        - `ann_basis`: 0.18986224065060717
+        - `basis`: 0.007108997138515885
+        - `date`: 2026-03-14
+        - `dte_days`: 13.666666666666666
+      - `30`:
+        - `ann_basis`: 0.08948908107934185
+        - `basis`: 0.007273541749827785
+        - `date`: 2026-02-26
+        - `dte_days`: 29.666666666666668
+      - `60`:
+        - `ann_basis`: 0.01102338605728856
+        - `basis`: 0.0018019964422416913
+        - `date`: 2026-01-27
+        - `dte_days`: 59.666666666666664
+      - `7`:
+        - `ann_basis`: 0.3767408170872671
+        - `basis`: 0.006881110814379308
+        - `date`: 2026-03-21
+        - `dte_days`: 6.666666666666667
+      - `90`:
+        - `ann_basis`: -0.023824549098608108
+        - `basis`: -0.005852788773995965
+        - `date`: 2025-12-28
+        - `dte_days`: 89.66666666666667
+    - `first_date`: 2025-08-29
+    - `last_date`: 2026-03-27
+    - `n_dates`: 211
+    - `residual_dte_days`: 0.6666666666666666
+    - `status`: ok
+  - [4]
+    - `ann_basis_mean`: 9.404742959199314e-05
+    - `ann_basis_n`: 210
+    - `ann_basis_std`: 0.0027733312420510497
+    - `basis_diff_std`: 0.0006161572493513994
+    - `basis_first`: 1.0999563327580444e-07
+    - `basis_last`: -0.00825956686641372
+    - `basis_max`: 0.00043417356566328346
+    - `basis_min`: -0.00825956686641372
+    - `contract`: FI_XBTUSD_260626
+    - `convergence_residual`: -0.00825956686641372
+    - `delivered`: true
+    - `delivery`: 2026-06-26T16:00:00+00:00
+    - `dte_buckets`:
+      - `1`:
+        - `ann_basis`: null
+        - `basis`: -0.00825956686641372
+        - `date`: 2026-06-26
+        - `dte_days`: 0.6666666666666666
+      - `14`:
+        - `ann_basis`: 0.00828124218916916
+        - `basis`: 0.0003100739084529092
+        - `date`: 2026-06-13
+        - `dte_days`: 13.666666666666666
+      - `30`:
+        - `ann_basis`: 0.001758922610631562
+        - `basis`: 0.00014296265967690322
+        - `date`: 2026-05-28
+        - `dte_days`: 29.666666666666668
+      - `60`:
+        - `ann_basis`: -0.00066677351651706
+        - `basis`: -0.00010899767986899885
+        - `date`: 2026-04-28
+        - `dte_days`: 59.666666666666664
+      - `7`:
+        - `ann_basis`: -0.027575209999673642
+        - `basis`: -0.0005036568036470072
+        - `date`: 2026-06-20
+        - `dte_days`: 6.666666666666667
+      - `90`:
+        - `ann_basis`: 0.0005480977629498348
+        - `basis`: 0.0001346468477018316
+        - `date`: 2026-03-29
+        - `dte_days`: 89.66666666666667
+    - `first_date`: 2025-11-28
+    - `last_date`: 2026-06-26
+    - `n_dates`: 211
+    - `residual_dte_days`: 0.6666666666666666
+    - `status`: ok
+- `schema`: basis_carry.v1
+- `simulated_only`: false
+- `verdict`: 5/5 contracts measured, 5 delivered; residual mean -0.38654% max |residual| 0.82596%; 40% within tolerance 0.50%
+
 ### `receipts/legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -54033,6 +38990,2710 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - 0.00012397308872545248
   - 0.00011681797278370385
 
+### `receipts/legacy-unsealed/calib_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/legacy-unsealed/calib_real_drill.json | 7480b2af38274f5d6e6c4a107e01890a3d49f0524b5920a5b3b946a9f8a5a571 | 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370 | not_checked | absent | inputs_sha256=1c11a0367aa3ca772482ebd4f0e4a60ccc4c88680f185c1c19ffc5c66f081deb | unspecified | absent | true | false |
+
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - ville_inequality
+  - nonnegative_test_martingale
+  - fixed_predictable_bets
+  - level_test_not_change_test
+- `generated_at_commit`: dc1e47215d316108cbd403ee0c6ad2c91ee742bb
+- `kind`: calibration_audit.drill.v1
+- `n_models`: 12
+- `n_shards`: 1
+- `params`:
+  - `alpha`: 0.05
+  - `channels`:
+    - loc_hi
+    - loc_lo
+    - overconf
+    - underconf
+    - grapa_loc
+    - grapa_disp
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `seed`: 0
+  - `taus`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 0.75
+    - 0.9
+    - 0.95
+- `receipt_sha256`: 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370
+- `research_only`: true
+- `schema`: calibration_audit.drill.v1
+
+### `receipts/legacy-unsealed/crossvenue_basis_3f4ff76f517655a7.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/legacy-unsealed/crossvenue_basis_3f4ff76f517655a7.json | 14ce799a46e282849e8e7852ff74489ed4747274c164040fcc52974bbb72a087 | 3f4ff76f517655a728f29688cfbb96f4fe7a6e3dea9cb387db25a444fb6ae964 | not_checked | 8822eee7146f4e897b02a240c9a8648f99bc898d | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `crossvenue_basis.py`: eb4b339a504327e1b68b7201a329146c294199515b822ff3ec503c433fc3d610
+- `data_label`: kraken+okx
+- `dataset_hash`: 1e56d381e3b25f600fe929309731ee972f8df902627420ef9589496ea6273358
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T22:57:37.934872+00:00
+- `git_revision`: 8822eee7146f4e897b02a240c9a8648f99bc898d
+- `kind`: crossvenue_basis
+- `params_hash`: 28d89f08175f79bb4e9988b88e1929d2cdf3b3bf72f5258e48bef7e263b9ad26
+- `payload`:
+  - `asset`: BTC
+  - `claim`: research_only
+  - `data_label`: kraken+okx
+  - `dataset_sha256`: 1c4780edba081c2c39672ca72c4cc27e570e3d6318a1523b5e3baad6f1bbb0fe
+  - `generated_at`: 2026-09-29T22:57:37.934872+00:00
+  - `git_revision`: 8822eee7146f4e897b02a240c9a8648f99bc898d
+  - `inputs`:
+    - `asset`: BTC
+    - `legs`:
+      - `kraken`:
+        - `data_label`: kraken
+        - `funding`:
+          - `n_rows`: 8887
+          - `sha256`: c7143f54ec014d36c447bbfe84af6d8af47b7078051e190aee0281b0ff1e6789
+        - `mark`:
+          - `first_date`: 2022-03-22
+          - `last_date`: 2026-09-28
+          - `n_rows`: 1652
+          - `sha256`: 2f72a08d78947d143e2427c4a21fc4ca1739bbd25cc14d40a10d91feaa52d975
+        - `spot`:
+          - `first_date`: 2024-10-09
+          - `last_date`: 2026-09-28
+          - `n_rows`: 720
+          - `sha256`: f148611c431d93d77886f7db686fa8a82e14a0c2ee3f77a80a6a80095642d7cf
+      - `okx`:
+        - `data_label`: okx
+        - `funding`:
+          - `n_rows`: 278
+          - `sha256`: 175ee645bedda2b65946be8f2b0835f4232f7f0a726e4f24a2796df973f3265c
+        - `mark`:
+          - `first_date`: 2026-06-22
+          - `last_date`: 2026-09-28
+          - `n_rows`: 99
+          - `sha256`: 65f5c084cc138e2a4f1d9b9390eb1e7692233ad800b44e5afcd132d411c39f3e
+        - `spot`:
+          - `first_date`: 2026-06-22
+          - `last_date`: 2026-09-28
+          - `n_rows`: 99
+          - `sha256`: e5430fcea9afc2d723e47d504be91b6a35d84c2155af7e07f0c3e53a08ce62ba
+    - `params`:
+      - `annualization_days`: 365.0
+      - `asset`: BTC
+      - `conventions`: basis_t = (mark_t - spot_t)/spot_t per venue on shared dates; basis_diff = a - b per venue pair; funding aggregated to per-calendar-day sums of realized rates before diffing, so venue cadences (hourly vs 8h) are comparable; daily_mean_annualized = daily_mean * annualization_days is a descriptive scaling, not a yield claim
+      - `min_overlap`: 5
+  - `inputs_sha256`: dfd67529579f9df0e28454b51a69b17f292f028e2e0afdab836e76b363d39a70
+  - `kind`: crossvenue_basis
+  - `legs`:
+    - [0]
+      - `basis_first`: 0.0003820047835645623
+      - `basis_last`: 1.3338945653385329e-05
+      - `basis_max`: 0.0017099744573727627
+      - `basis_mean`: 0.0001848838935315051
+      - `basis_min`: -0.0007778864469915593
+      - `basis_series`:
+        - [0]
+          - 2024-10-09
+          - 0.0003820047835645623
+        - [1]
+          - 2024-10-10
+          - 5.843738884036227e-05
+        - [2]
+          - 2024-10-11
+          - 0.0005615610723010941
+        - [3]
+          - 2024-10-12
+          - 0.0005454246953136708
+        - [4]
+          - 2024-10-13
+          - 0.00036426288331798914
+        - [5]
+          - 2024-10-14
+          - 0.0007330961191463893
+        - [6]
+          - 2024-10-15
+          - 0.0002916091301079324
+        - [7]
+          - 2024-10-16
+          - 0.00019174758785265304
+        - [8]
+          - 2024-10-17
+          - 0.00018656683482770676
+        - [9]
+          - 2024-10-18
+          - -0.0002768549042363437
+        - [10]
+          - 2024-10-19
+          - 3.8531102736547325e-05
+        - [11]
+          - 2024-10-20
+          - 0.0007424793552851061
+        - [12]
+          - 2024-10-21
+          - -0.00047814848611941264
+        - [13]
+          - 2024-10-22
+          - 0.00010632517676534379
+        - [14]
+          - 2024-10-23
+          - 0.00014643490694318215
+        - [15]
+          - 2024-10-24
+          - 0.0003030972563044555
+        - [16]
+          - 2024-10-25
+          - -8.523085178084812e-05
+        - [17]
+          - 2024-10-26
+          - 5.6374415241777275e-05
+        - [18]
+          - 2024-10-27
+          - 0.00046525940342233654
+        - [19]
+          - 2024-10-28
+          - 0.0006090952127092607
+        - [20]
+          - 2024-10-29
+          - 0.001146081988293552
+        - [21]
+          - 2024-10-30
+          - 0.0004584929631554131
+        - [22]
+          - 2024-10-31
+          - -0.0002711389677993478
+        - [23]
+          - 2024-11-01
+          - -0.00021582902387676803
+        - [24]
+          - 2024-11-02
+          - 0.0007559914866160897
+        - [25]
+          - 2024-11-03
+          - 8.682829583647333e-06
+        - [26]
+          - 2024-11-04
+          - 0.0005596538244567921
+        - [27]
+          - 2024-11-05
+          - -5.8613945026679825e-05
+        - [28]
+          - 2024-11-06
+          - 0.0007116071132333304
+        - [29]
+          - 2024-11-07
+          - -0.0001930838540195368
+        - [30]
+          - 2024-11-08
+          - 4.902318512133581e-05
+        - [31]
+          - 2024-11-09
+          - 0.00043721385171312314
+        - [32]
+          - 2024-11-10
+          - 0.0005208144281308587
+        - [33]
+          - 2024-11-11
+          - 0.0011880438972780212
+        - [34]
+          - 2024-11-12
+          - 4.676460615439813e-05
+        - [35]
+          - 2024-11-13
+          - 0.0008908256708553762
+        - [36]
+          - 2024-11-14
+          - 0.0009694730890999172
+        - [37]
+          - 2024-11-15
+          - 0.0009155265102479941
+        - [38]
+          - 2024-11-16
+          - 0.0011394236461888222
+        - [39]
+          - 2024-11-17
+          - 0.0010607115164296532
+        - [40]
+          - 2024-11-18
+          - 0.000591963810116058
+        - [41]
+          - 2024-11-19
+          - 0.00029473445982238736
+        - [42]
+          - 2024-11-20
+          - 0.00038583776842566656
+        - [43]
+          - 2024-11-21
+          - -6.693675761524604e-06
+        - [44]
+          - 2024-11-22
+          - 0.0009229795329212188
+        - [45]
+          - 2024-11-23
+          - 0.000835303935616193
+        - [46]
+          - 2024-11-24
+          - 0.0011749267333634838
+        - [47]
+          - 2024-11-25
+          - 0.0006020837068451025
+        - [48]
+          - 2024-11-26
+          - 0.0008488683765260284
+        - [49]
+          - 2024-11-27
+          - 0.0002416458532072415
+        - [50]
+          - 2024-11-28
+          - 0.0010457163062419208
+        - [51]
+          - 2024-11-29
+          - 0.0013708801842465064
+        - [52]
+          - 2024-11-30
+          - 0.0008577668258494166
+        - [53]
+          - 2024-12-01
+          - 0.0012367684341186666
+        - [54]
+          - 2024-12-02
+          - 0.0006132593136051916
+        - [55]
+          - 2024-12-03
+          - 0.0010261255940532802
+        - [56]
+          - 2024-12-04
+          - 0.0008928075741803795
+        - [57]
+          - 2024-12-05
+          - 0.0007579789040162237
+        - [58]
+          - 2024-12-06
+          - 0.0007131212147499895
+        - [59]
+          - 2024-12-07
+          - 0.0012469508496995953
+        - [60]
+          - 2024-12-08
+          - 0.0017099744573727627
+        - [61]
+          - 2024-12-09
+          - 0.0006329952188925535
+        - [62]
+          - 2024-12-10
+          - 0.00042659603196619136
+        - [63]
+          - 2024-12-11
+          - 0.0003777182475741139
+        - [64]
+          - 2024-12-12
+          - -0.00012682730602872947
+        - [65]
+          - 2024-12-13
+          - -0.00020403629573201643
+        - [66]
+          - 2024-12-14
+          - 0.00024419418383020755
+        - [67]
+          - 2024-12-15
+          - 0.0013157835788241133
+        - [68]
+          - 2024-12-16
+          - 0.0006261016754491487
+        - [69]
+          - 2024-12-17
+          - 0.00031327491071195463
+        - [70]
+          - 2024-12-18
+          - -2.2077468098519658e-05
+        - [71]
+          - 2024-12-19
+          - -0.0003806659233048867
+        - [72]
+          - 2024-12-20
+          - 0.0004079432256483553
+        - [73]
+          - 2024-12-21
+          - 3.4702295216909177e-06
+        - [74]
+          - 2024-12-22
+          - -0.00020797979183899884
+        - [75]
+          - 2024-12-23
+          - 0.0010736456991977522
+        - [76]
+          - 2024-12-24
+          - -0.0003276818054977484
+        - [77]
+          - 2024-12-25
+          - 0.0008250571602825879
+        - [78]
+          - 2024-12-26
+          - 0.0006007946637167942
+        - [79]
+          - 2024-12-27
+          - 0.0003740375416877676
+        - [80]
+          - 2024-12-28
+          - -0.00047404483685898935
+        - [81]
+          - 2024-12-29
+          - 0.0002336038869002189
+        - [82]
+          - 2024-12-30
+          - 0.00046035243876929404
+        - [83]
+          - 2024-12-31
+          - 0.0006699481312121896
+        - [84]
+          - 2025-01-01
+          - 0.0005712855963374048
+        - [85]
+          - 2025-01-02
+          - 0.0011760201675829688
+        - [86]
+          - 2025-01-03
+          - 0.0004462314150355304
+        - [87]
+          - 2025-01-04
+          - 0.00027547011269661673
+        - [88]
+          - 2025-01-05
+          - 0.0005850235149389997
+        - [89]
+          - 2025-01-06
+          - 0.0006382440092631709
+        - [90]
+          - 2025-01-07
+          - 0.0002022234275504839
+        - [91]
+          - 2025-01-08
+          - 9.23574603632244e-05
+        - [92]
+          - 2025-01-09
+          - 0.00034473783033381144
+        - [93]
+          - 2025-01-10
+          - 0.0003794362630487016
+        - [94]
+          - 2025-01-11
+          - 0.00038427221351253524
+        - [95]
+          - 2025-01-12
+          - 0.0006848786768181281
+        - [96]
+          - 2025-01-13
+          - 0.0004896076435502268
+        - [97]
+          - 2025-01-14
+          - -0.00016063934162247027
+        - [98]
+          - 2025-01-15
+          - 0.0004073637411728814
+        - [99]
+          - 2025-01-16
+          - 0.00020973375840276415
+        - [100]
+          - 2025-01-17
+          - 0.0007313296959364998
+        - [101]
+          - 2025-01-18
+          - 0.0010737847179092734
+        - [102]
+          - 2025-01-19
+          - 0.0006510207655346828
+        - [103]
+          - 2025-01-20
+          - 0.0002246999041060376
+        - [104]
+          - 2025-01-21
+          - -0.00010402431526768282
+        - [105]
+          - 2025-01-22
+          - 0.0003494579084492322
+        - [106]
+          - 2025-01-23
+          - 0.0001733116577239759
+        - [107]
+          - 2025-01-24
+          - 5.232392017392177e-05
+        - [108]
+          - 2025-01-25
+          - 0.000156639161544094
+        - [109]
+          - 2025-01-26
+          - -0.0001724898134156629
+        - [110]
+          - 2025-01-27
+          - -0.0006699476693028488
+        - [111]
+          - 2025-01-28
+          - -9.994887896037452e-05
+        - [112]
+          - 2025-01-29
+          - 0.00044287664475261835
+        - [113]
+          - 2025-01-30
+          - -0.00019332189242404302
+        - [114]
+          - 2025-01-31
+          - 6.588404336271326e-05
+        - [115]
+          - 2025-02-01
+          - -7.797113134217355e-05
+        - [116]
+          - 2025-02-02
+          - -0.00020715985785413641
+        - [117]
+          - 2025-02-03
+          - -1.0098365400798654e-05
+        - [118]
+          - 2025-02-04
+          - -0.0007778864469915593
+        - [119]
+          - 2025-02-05
+          - 0.00019403994914705201
+        - [120]
+          - 2025-02-06
+          - 5.893303179188951e-05
+        - [121]
+          - 2025-02-07
+          - -9.146214136770012e-05
+        - [122]
+          - 2025-02-08
+          - -0.00027695890888896507
+        - [123]
+          - 2025-02-09
+          - 0.00011472787543770452
+        - [124]
+          - 2025-02-10
+          - 0.0001765526327077262
+        - [125]
+          - 2025-02-11
+          - 2.1871996064396113e-05
+        - [126]
+          - 2025-02-12
+          - 9.711690503810354e-05
+        - [127]
+          - 2025-02-13
+          - 6.570686789126225e-05
+        - [128]
+          - 2025-02-14
+          - 0.00034149536050947924
+        - [129]
+          - 2025-02-15
+          - 0.00021889720297126012
+        - [130]
+          - 2025-02-16
+          - -2.6466138180094463e-05
+        - [131]
+          - 2025-02-17
+          - 0.00023628333129651222
+        - [132]
+          - 2025-02-18
+          - 0.0002657438663409723
+        - [133]
+          - 2025-02-19
+          - 0.00027287902559048683
+        - [134]
+          - 2025-02-20
+          - 1.4549361701383513e-05
+        - [135]
+          - 2025-02-21
+          - 0.0008477378225068284
+        - [136]
+          - 2025-02-22
+          - -0.00021604872210069243
+        - [137]
+          - 2025-02-23
+          - -0.00011419025687772481
+        - [138]
+          - 2025-02-24
+          - 7.870213727745478e-05
+        - [139]
+          - 2025-02-25
+          - -0.0002430437097591516
+        - [140]
+          - 2025-02-26
+          - 0.0007010145945941539
+        - [141]
+          - 2025-02-27
+          - -0.00046489127687566627
+        - [142]
+          - 2025-02-28
+          - -4.0565011235982246e-05
+        - [143]
+          - 2025-03-01
+          - 0.00011478196320998932
+        - [144]
+          - 2025-03-02
+          - 0.0004977001259383019
+        - [145]
+          - 2025-03-03
+          - 0.00024683326980893486
+        - [146]
+          - 2025-03-04
+          - 1.3438064158182955e-05
+        - [147]
+          - 2025-03-05
+          - -4.944541943177886e-06
+        - [148]
+          - 2025-03-06
+          - 2.1383821273647906e-05
+        - [149]
+          - 2025-03-07
+          - 8.77895077711359e-05
+        - [150]
+          - 2025-03-08
+          - 0.0006390085518690311
+        - [151]
+          - 2025-03-09
+          - 0.0003532518252676733
+        - [152]
+          - 2025-03-10
+          - -5.366920224095503e-05
+        - [153]
+          - 2025-03-11
+          - 0.0002500934006513711
+        - [154]
+          - 2025-03-12
+          - 4.543041420937088e-05
+        - [155]
+          - 2025-03-13
+          - -0.00018687013843035402
+        - [156]
+          - 2025-03-14
+          - -0.00010817602699135516
+        - [157]
+          - 2025-03-15
+          - 0.00033799247955191555
+        - [158]
+          - 2025-03-16
+          - -0.000247801033599249
+        - [159]
+          - 2025-03-17
+          - -8.809699103850186e-05
+        - [160]
+          - 2025-03-18
+          - -9.560518659127458e-08
+        - [161]
+          - 2025-03-19
+          - 3.0132533313443682e-05
+        - [162]
+          - 2025-03-20
+          - 0.00019372781439224284
+        - [163]
+          - 2025-03-21
+          - 0.00042839834014201164
+        - [164]
+          - 2025-03-22
+          - 0.0005997993080810919
+        - [165]
+          - 2025-03-23
+          - 0.0002164610394754293
+        - [166]
+          - 2025-03-24
+          - 0.0003027692263234365
+        - [167]
+          - 2025-03-25
+          - -0.00017637586486680016
+        - [168]
+          - 2025-03-26
+          - 5.58376377277713e-05
+        - [169]
+          - 2025-03-27
+          - 8.551098926957445e-05
+        - [170]
+          - 2025-03-28
+          - 0.00044421900525281363
+        - [171]
+          - 2025-03-29
+          - 6.311752230246366e-05
+        - [172]
+          - 2025-03-30
+          - 0.0005247475688536103
+        - [173]
+          - 2025-03-31
+          - 0.0003384607692557699
+        - [174]
+          - 2025-04-01
+          - -0.0002782527390127975
+        - [175]
+          - 2025-04-02
+          - -0.00012046015211719145
+        - [176]
+          - 2025-04-03
+          - 0.0006973811169358036
+        - [177]
+          - 2025-04-04
+          - 0.0006180150320952322
+        - [178]
+          - 2025-04-05
+          - 8.326359198360319e-05
+        - [179]
+          - 2025-04-06
+          - 0.00013914534752451692
+        - [180]
+          - 2025-04-07
+          - 0.0002631855782476679
+        - [181]
+          - 2025-04-08
+          - -0.00011092510149137044
+        - [182]
+          - 2025-04-09
+          - 0.000581293063137411
+        - [183]
+          - 2025-04-10
+          - 0.00012765542964413842
+        - [184]
+          - 2025-04-11
+          - -0.0003258929030737813
+        - [185]
+          - 2025-04-12
+          - -9.181419802999065e-05
+        - [186]
+          - 2025-04-13
+          - 0.00024161940086245366
+        - [187]
+          - 2025-04-14
+          - 0.0005723075386658422
+        - [188]
+          - 2025-04-15
+          - 6.029773056723061e-05
+        - [189]
+          - 2025-04-16
+          - 0.00012703576046304397
+        - [190]
+          - 2025-04-17
+          - 0.00044842946969559765
+        - [191]
+          - 2025-04-18
+          - -0.0001938885491988984
+        - [192]
+          - 2025-04-19
+          - -0.00037328043244402604
+        - [193]
+          - 2025-04-20
+          - 0.0005375440193446047
+        - [194]
+          - 2025-04-21
+          - 0.0002591780111186367
+        - [195]
+          - 2025-04-22
+          - 0.0005306659194806464
+        - [196]
+          - 2025-04-23
+          - 0.0007045939375311121
+        - [197]
+          - 2025-04-24
+          - 0.0003764262598057085
+        - [198]
+          - 2025-04-25
+          - -0.0001227247700954711
+        - [199]
+          - 2025-04-26
+          - 0.00015516078780527406
+        - [200]
+          - 2025-04-27
+          - -0.00023565296975821325
+        - [201]
+          - 2025-04-28
+          - 0.00043947638659721415
+        - [202]
+          - 2025-04-29
+          - 4.3232755246627663e-05
+        - [203]
+          - 2025-04-30
+          - -1.1447402053391535e-05
+        - [204]
+          - 2025-05-01
+          - 0.0008047053289306623
+        - [205]
+          - 2025-05-02
+          - 0.00012725897525202093
+        - [206]
+          - 2025-05-03
+          - 2.862466523392293e-05
+        - [207]
+          - 2025-05-04
+          - -0.00040411147931729166
+        - [208]
+          - 2025-05-05
+          - 0.00016313662113553963
+        - [209]
+          - 2025-05-06
+          - 0.00047997221235292
+        - [210]
+          - 2025-05-07
+          - 0.000252748652719724
+        - [211]
+          - 2025-05-08
+          - 0.0008777899874684483
+        - [212]
+          - 2025-05-09
+          - 0.0003595030929033868
+        - [213]
+          - 2025-05-10
+          - 0.0007461184327136994
+        - [214]
+          - 2025-05-11
+          - 0.000653794261719745
+        - [215]
+          - 2025-05-12
+          - 8.738474032870267e-05
+        - [216]
+          - 2025-05-13
+          - 0.00037467701929590945
+        - [217]
+          - 2025-05-14
+          - -0.0005250130594547941
+        - [218]
+          - 2025-05-15
+          - 0.0005651812727740491
+        - [219]
+          - 2025-05-16
+          - 8.214671435389644e-05
+        - [220]
+          - 2025-05-17
+          - 0.00014674681650405115
+        - [221]
+          - 2025-05-18
+          - -9.731351922641026e-05
+        - [222]
+          - 2025-05-19
+          - -5.962855017758643e-05
+        - [223]
+          - 2025-05-20
+          - 0.0003819680221382422
+        - [224]
+          - 2025-05-21
+          - 0.00048260751848861665
+        - [225]
+          - 2025-05-22
+          - 0.0005456078961561688
+        - [226]
+          - 2025-05-23
+          - 4.259661260831293e-05
+        - [227]
+          - 2025-05-24
+          - -0.00012429230419788652
+        - [228]
+          - 2025-05-25
+          - 0.00014243068978103042
+        - [229]
+          - 2025-05-26
+          - 0.0002412595140241167
+        - [230]
+          - 2025-05-27
+          - -2.575613054818969e-05
+        - [231]
+          - 2025-05-28
+          - 0.0003994950315392186
+        - [232]
+          - 2025-05-29
+          - -0.00026336412261472207
+        - [233]
+          - 2025-05-30
+          - 0.00020128653994970212
+        - [234]
+          - 2025-05-31
+          - 8.598951803039894e-05
+        - [235]
+          - 2025-06-01
+          - -7.306471954276604e-05
+        - [236]
+          - 2025-06-02
+          - -3.8873652397120144e-05
+        - [237]
+          - 2025-06-03
+          - 0.00014977171982816855
+        - [238]
+          - 2025-06-04
+          - 0.00012020762778043591
+        - [239]
+          - 2025-06-05
+          - -0.0002223670980894891
+        - [240]
+          - 2025-06-06
+          - 5.214088806863754e-06
+        - [241]
+          - 2025-06-07
+          - -0.00039859412441116144
+        - [242]
+          - 2025-06-08
+          - 0.00024690604795271414
+        - [243]
+          - 2025-06-09
+          - 0.00033026146387282463
+        - [244]
+          - 2025-06-10
+          - 0.00023436492966485476
+        - [245]
+          - 2025-06-11
+          - -0.0002296987464802567
+        - [246]
+          - 2025-06-12
+          - -0.0003873438879086191
+        - [247]
+          - 2025-06-13
+          - 0.00018349511446314365
+        - [248]
+          - 2025-06-14
+          - -3.444353153313883e-05
+        - [249]
+          - 2025-06-15
+          - 0.0004533703462901669
+        - [250]
+          - 2025-06-16
+          - 0.00023107668456853248
+        - [251]
+          - 2025-06-17
+          - -0.0004643051720262174
+        - [252]
+          - 2025-06-18
+          - 0.0003354504958671108
+        - [253]
+          - 2025-06-19
+          - 0.00023301413623380115
+        - [254]
+          - 2025-06-20
+          - 0.0003128206749768231
+        - [255]
+          - 2025-06-21
+          - 0.00014221497876131247
+        - [256]
+          - 2025-06-22
+          - 2.372794945144406e-05
+        - [257]
+          - 2025-06-23
+          - 0.000336127267299018
+        - [258]
+          - 2025-06-24
+          - 0.000492907543938772
+        - [259]
+          - 2025-06-25
+          - 0.00040506516857394525
+        - [260]
+          - 2025-06-26
+          - 0.0007418889689149211
+        - [261]
+          - 2025-06-27
+          - -6.704547437241475e-05
+        - [262]
+          - 2025-06-28
+          - 0.00030060899641362783
+        - [263]
+          - 2025-06-29
+          - 0.0001793443178013298
+        - [264]
+          - 2025-06-30
+          - 0.000534282450199462
+        - [265]
+          - 2025-07-01
+          - 0.0001775693829296107
+        - [266]
+          - 2025-07-02
+          - 0.0005426736611038127
+        - [267]
+          - 2025-07-03
+          - 0.00015529016642556833
+        - [268]
+          - 2025-07-04
+          - 0.0002464332424529971
+        - [269]
+          - 2025-07-05
+          - -0.00024286247280213722
+        - [270]
+          - 2025-07-06
+          - 0.00014027225220738655
+        - [271]
+          - 2025-07-07
+          - -6.776267356932047e-05
+        - [272]
+          - 2025-07-08
+          - 0.0004374468627142186
+        - [273]
+          - 2025-07-09
+          - 6.210284458660287e-05
+        - [274]
+          - 2025-07-10
+          - 0.0006859134782542563
+        - [275]
+          - 2025-07-11
+          - 0.0006760242565015766
+        - [276]
+          - 2025-07-12
+          - 0.00027476639914189805
+        - [277]
+          - 2025-07-13
+          - 0.0005202547638974399
+        - [278]
+          - 2025-07-14
+          - 0.0007004969630245322
+        - [279]
+          - 2025-07-15
+          - 0.0008686278677512555
+        - [280]
+          - 2025-07-16
+          - 0.00031431916750024905
+        - [281]
+          - 2025-07-17
+          - -9.500605751962817e-05
+        - [282]
+          - 2025-07-18
+          - 0.00019076991939288417
+        - [283]
+          - 2025-07-19
+          - 0.00030436222603682356
+        - [284]
+          - 2025-07-20
+          - 0.0004551943172287717
+        - [285]
+          - 2025-07-21
+          - 0.0004262662206783592
+        - [286]
+          - 2025-07-22
+          - 0.0011434094863436769
+        - [287]
+          - 2025-07-23
+          - 0.001086666561015104
+        - [288]
+          - 2025-07-24
+          - 0.00039128880211662594
+        - [289]
+          - 2025-07-25
+          - 0.0005708098381329787
+        - [290]
+          - 2025-07-26
+          - 0.00046508532493137354
+        - [291]
+          - 2025-07-27
+          - 0.0006480733571336262
+        - [292]
+          - 2025-07-28
+          - 0.0013378533158815219
+        - [293]
+          - 2025-07-29
+          - 0.0004325848955573165
+        - [294]
+          - 2025-07-30
+          - 0.00039943475739414675
+        - [295]
+          - 2025-07-31
+          - 0.00020777679145189394
+        - [296]
+          - 2025-08-01
+          - -0.00013923474474132077
+        - [297]
+          - 2025-08-02
+          - 0.0003693309115575764
+        - [298]
+          - 2025-08-03
+          - 0.00011623667810209352
+        - [299]
+          - 2025-08-04
+          - -4.006014147035681e-06
+        - [300]
+          - 2025-08-05
+          - 0.0003255231434088676
+        - [301]
+          - 2025-08-06
+          - 0.0002746393629893684
+        - [302]
+          - 2025-08-07
+          - 0.0004157368050359152
+        - [303]
+          - 2025-08-08
+          - 0.00046883883621997
+        - [304]
+          - 2025-08-09
+          - 0.0008537750601602532
+        - [305]
+          - 2025-08-10
+          - 0.0008744283546816005
+        - [306]
+          - 2025-08-11
+          - 8.435516145278269e-05
+        - [307]
+          - 2025-08-12
+          - 5.3807279648323854e-05
+        - [308]
+          - 2025-08-13
+          - 0.0006041161140997923
+        - [309]
+          - 2025-08-14
+          - 0.0001323041536832101
+        - [310]
+          - 2025-08-15
+          - 0.0001579509206023549
+        - [311]
+          - 2025-08-16
+          - -0.00014635318725146726
+        - [312]
+          - 2025-08-17
+          - 0.0004328932550822395
+        - [313]
+          - 2025-08-18
+          - 0.0003359068132462051
+        - [314]
+          - 2025-08-19
+          - 0.0003415524667540509
+        - [315]
+          - 2025-08-20
+          - 0.0005975841911674042
+        - [316]
+          - 2025-08-21
+          - 0.00030972253083736074
+        - [317]
+          - 2025-08-22
+          - 0.0014103145560038237
+        - [318]
+          - 2025-08-23
+          - 0.000996929548157981
+        - [319]
+          - 2025-08-24
+          - 0.00081893659365958
+        - [320]
+          - 2025-08-25
+          - 0.00014547405781209082
+        - [321]
+          - 2025-08-26
+          - 9.342768334241157e-05
+        - [322]
+          - 2025-08-27
+          - 0.00025795412309039954
+        - [323]
+          - 2025-08-28
+          - 0.000505239279751885
+        - [324]
+          - 2025-08-29
+          - -2.5769637242989442e-05
+        - [325]
+          - 2025-08-30
+          - 0.0009158907119558064
+        - [326]
+          - 2025-08-31
+          - 0.0002955349738115185
+        - [327]
+          - 2025-09-01
+          - 4.9694387396570676e-05
+        - [328]
+          - 2025-09-02
+          - 0.0007496791831229315
+        - [329]
+          - 2025-09-03
+          - 2.5951862435813712e-05
+        - [330]
+          - 2025-09-04
+          - 0.00011884292698947399
+        - [331]
+          - 2025-09-05
+          - 0.0005361233024723618
+        - [332]
+          - 2025-09-06
+          - -0.00028904317154419145
+        - [333]
+          - 2025-09-07
+          - 5.211265884974661e-05
+        - [334]
+          - 2025-09-08
+          - 0.0004180440003275242
+        - [335]
+          - 2025-09-09
+          - 0.00016374164118667576
+        - [336]
+          - 2025-09-10
+          - 0.0004919678087935566
+        - [337]
+          - 2025-09-11
+          - 0.00044659305919827065
+        - [338]
+          - 2025-09-12
+          - 2.054098659316425e-05
+        - [339]
+          - 2025-09-13
+          - 0.00040430767741360884
+        - [340]
+          - 2025-09-14
+          - -0.0002878870042361399
+        - [341]
+          - 2025-09-15
+          - 0.0003263427078532714
+        - [342]
+          - 2025-09-16
+          - 0.0009121804232890393
+        - [343]
+          - 2025-09-17
+          - 0.0004661746967039012
+        - [344]
+          - 2025-09-18
+          - 2.4909660054132077e-05
+        - [345]
+          - 2025-09-19
+          - 0.00039798755792935916
+        - [346]
+          - 2025-09-20
+          - 0.00048064915176192474
+        - [347]
+          - 2025-09-21
+          - 0.0002685554041964067
+        - [348]
+          - 2025-09-22
+          - 0.00014873941130382883
+        - [349]
+          - 2025-09-23
+          - 0.0005764925259107668
+        - [350]
+          - 2025-09-24
+          - 0.0007052789083530702
+        - [351]
+          - 2025-09-25
+          - 7.779782954669455e-05
+        - [352]
+          - 2025-09-26
+          - 3.2818771507175e-05
+        - [353]
+          - 2025-09-27
+          - -0.0002851625435675587
+        - [354]
+          - 2025-09-28
+          - 0.0008764978407602943
+        - [355]
+          - 2025-09-29
+          - 5.683254201799549e-05
+        - [356]
+          - 2025-09-30
+          - 0.0008256420479459281
+        - [357]
+          - 2025-10-01
+          - 0.0006388548695117994
+        - [358]
+          - 2025-10-02
+          - -0.00022100396282710531
+        - [359]
+          - 2025-10-03
+          - 0.0006595491389617504
+        - [360]
+          - 2025-10-04
+          - 0.0005477028026912633
+        - [361]
+          - 2025-10-05
+          - 0.00025209648484520093
+        - [362]
+          - 2025-10-06
+          - -0.00021316985254289303
+        - [363]
+          - 2025-10-07
+          - 5.113018660547049e-05
+        - [364]
+          - 2025-10-08
+          - 0.00023904543326711737
+        - [365]
+          - 2025-10-09
+          - 0.0005456351820746487
+        - [366]
+          - 2025-10-10
+          - 0.0002017710383936886
+        - [367]
+          - 2025-10-11
+          - 6.584985865957255e-06
+        - [368]
+          - 2025-10-12
+          - -0.0003746109099712192
+        - [369]
+          - 2025-10-13
+          - 0.0012274210790418445
+        - [370]
+          - 2025-10-14
+          - -0.00015528835004084566
+        - [371]
+          - 2025-10-15
+          - 0.00036099058668249403
+        - [372]
+          - 2025-10-16
+          - 0.0004790696476271991
+        - [373]
+          - 2025-10-17
+          - 3.970258907190862e-05
+        - [374]
+          - 2025-10-18
+          - 0.00017072133387341045
+        - [375]
+          - 2025-10-19
+          - 0.0002146665310841006
+        - [376]
+          - 2025-10-20
+          - -1.8599516832181734e-06
+        - [377]
+          - 2025-10-21
+          - -0.0002557092971410839
+        - [378]
+          - 2025-10-22
+          - -0.0003675565471940499
+        - [379]
+          - 2025-10-23
+          - 0.00032995384103292794
+        - [380]
+          - 2025-10-24
+          - 0.0004883381471413855
+        - [381]
+          - 2025-10-25
+          - 0.00038855106815341797
+        - [382]
+          - 2025-10-26
+          - 0.0008268190204873534
+        - [383]
+          - 2025-10-27
+          - -0.00016027723505554942
+        - [384]
+          - 2025-10-28
+          - 0.00014831506019414727
+        - [385]
+          - 2025-10-29
+          - -0.0005732137905783053
+        - [386]
+          - 2025-10-30
+          - 0.00020925276609730402
+        - [387]
+          - 2025-10-31
+          - 0.00014523019281221703
+        - [388]
+          - 2025-11-01
+          - 0.0005655472958733822
+        - [389]
+          - 2025-11-02
+          - -0.00022034824395787298
+        - [390]
+          - 2025-11-03
+          - 0.00045094408123935026
+        - [391]
+          - 2025-11-04
+          - -0.0005709963348720845
+        - [392]
+          - 2025-11-05
+          - -5.64028450808162e-05
+        - [393]
+          - 2025-11-06
+          - 0.0003403690922251971
+        - [394]
+          - 2025-11-07
+          - 0.00025182523177986153
+        - [395]
+          - 2025-11-08
+          - 0.00021137945511286497
+        - [396]
+          - 2025-11-09
+          - -1.0719867828532511e-05
+        - [397]
+          - 2025-11-10
+          - 0.00023710544588580323
+        - [398]
+          - 2025-11-11
+          - 0.00031693811455413425
+        - [399]
+          - 2025-11-12
+          - -9.866582374053903e-05
+        - [400]
+          - 2025-11-13
+          - -0.00018772857268102865
+        - [401]
+          - 2025-11-14
+          - 0.0001066182747814444
+        - [402]
+          - 2025-11-15
+          - 0.00034947242117318636
+        - [403]
+          - 2025-11-16
+          - 0.0002555303374472834
+        - [404]
+          - 2025-11-17
+          - 0.000493754693631922
+        - [405]
+          - 2025-11-18
+          - -0.00019023524233143508
+        - [406]
+          - 2025-11-19
+          - 0.0007660417890563282
+        - [407]
+          - 2025-11-20
+          - 0.0005498710160827205
+        - [408]
+          - 2025-11-21
+          - 0.00019654278655791124
+        - [409]
+          - 2025-11-22
+          - 0.0001658095948933111
+        - [410]
+          - 2025-11-23
+          - 0.0004226943664929176
+        - [411]
+          - 2025-11-24
+          - -7.871780543645733e-05
+        - [412]
+          - 2025-11-25
+          - 0.0001436748793295535
+        - [413]
+          - 2025-11-26
+          - -0.0006368537507944062
+        - [414]
+          - 2025-11-27
+          - 0.0005264812385360363
+        - [415]
+          - 2025-11-28
+          - 5.859604782605467e-05
+        - [416]
+          - 2025-11-29
+          - 0.0001097072516380597
+        - [417]
+          - 2025-11-30
+          - 0.00024912997065642466
+        - [418]
+          - 2025-12-01
+          - -0.00011436430648209901
+        - [419]
+          - 2025-12-02
+          - 2.5378054757114303e-06
+        - [420]
+          - 2025-12-03
+          - 7.797395163172628e-05
+        - [421]
+          - 2025-12-04
+          - -0.0003819973936539945
+        - [422]
+          - 2025-12-05
+          - 0.00030526290714354414
+        - [423]
+          - 2025-12-06
+          - -5.17290793719838e-06
+        - [424]
+          - 2025-12-07
+          - -0.00017116557089674983
+        - [425]
+          - 2025-12-08
+          - -1.3982001432067432e-06
+        - [426]
+          - 2025-12-09
+          - -3.174197113886e-06
+        - [427]
+          - 2025-12-10
+          - 0.0004566914131099685
+        - [428]
+          - 2025-12-11
+          - 0.00021284785887441433
+        - [429]
+          - 2025-12-12
+          - 6.8418984052031495e-06
+        - [430]
+          - 2025-12-13
+          - 0.00010879385448517489
+        - [431]
+          - 2025-12-14
+          - 7.312187032095023e-05
+        - [432]
+          - 2025-12-15
+          - -7.541043063578351e-05
+        - [433]
+          - 2025-12-16
+          - 0.00015631883152113736
+        - [434]
+          - 2025-12-17
+          - 0.00021136320101776702
+        - [435]
+          - 2025-12-18
+          - 0.00012195374621387586
+        - [436]
+          - 2025-12-19
+          - -7.871754320852063e-05
+        - [437]
+          - 2025-12-20
+          - 7.6221232789606e-05
+        - [438]
+          - 2025-12-21
+          - 0.00021035522775669104
+        - [439]
+          - 2025-12-22
+          - 0.00031671112482353363
+        - [440]
+          - 2025-12-23
+          - 0.0003177667762799667
+        - [441]
+          - 2025-12-24
+          - 0.00018596802079244785
+        - [442]
+          - 2025-12-25
+          - -0.00017816915950710787
+        - [443]
+          - 2025-12-26
+          - 0.00015133237635785412
+        - [444]
+          - 2025-12-27
+          - 0.0005032397610513568
+        - [445]
+          - 2025-12-28
+          - 0.0006340479559458415
+        - [446]
+          - 2025-12-29
+          - 0.0003192880866389284
+        - [447]
+          - 2025-12-30
+          - 0.00014882526849427897
+        - [448]
+          - 2025-12-31
+          - 0.000661736987587405
+        - [449]
+          - 2026-01-01
+          - 0.00019622469921604235
+        - [450]
+          - 2026-01-02
+          - 0.000296384999817721
+        - [451]
+          - 2026-01-03
+          - 0.00021964798410523145
+        - [452]
+          - 2026-01-04
+          - 0.00017058543969199552
+        - [453]
+          - 2026-01-05
+          - 8.917122278578524e-05
+        - [454]
+          - 2026-01-06
+          - 0.000425798280210145
+        - [455]
+          - 2026-01-07
+          - 0.0005578511067694207
+        - [456]
+          - 2026-01-08
+          - 2.6172884984989577e-05
+        - [457]
+          - 2026-01-09
+          - 0.00044230741516274876
+        - [458]
+          - 2026-01-10
+          - 0.00044399336187800456
+        - [459]
+          - 2026-01-11
+          - 0.0008464189179987607
+        - [460]
+          - 2026-01-12
+          - 0.00028850270603876846
+        - [461]
+          - 2026-01-13
+          - 0.0003847103628941575
+        - [462]
+          - 2026-01-14
+          - 0.00032763207749444625
+        - [463]
+          - 2026-01-15
+          - 0.0005113380376091455
+        - [464]
+          - 2026-01-16
+          - 0.0001684335914759599
+        - [465]
+          - 2026-01-17
+          - 0.00044074125543937774
+        - [466]
+          - 2026-01-18
+          - 0.00012199721094363953
+        - [467]
+          - 2026-01-19
+          - 0.0003850880701852134
+        - [468]
+          - 2026-01-20
+          - 0.0004535541967537251
+        - [469]
+          - 2026-01-21
+          - 0.00022386654902556102
+        - [470]
+          - 2026-01-22
+          - 0.00030467588458797244
+        - [471]
+          - 2026-01-23
+          - 0.00028307315278399775
+        - [472]
+          - 2026-01-24
+          - 0.00027870201918502475
+        - [473]
+          - 2026-01-25
+          - 0.00022770770964965377
+        - [474]
+          - 2026-01-26
+          - 0.00031107447333747474
+        - [475]
+          - 2026-01-27
+          - 0.00022985053757956065
+        - [476]
+          - 2026-01-28
+          - 0.000502916975390131
+        - [477]
+          - 2026-01-29
+          - 0.00010649618449837477
+        - [478]
+          - 2026-01-30
+          - 0.00016966158601816988
+        - [479]
+          - 2026-01-31
+          - -0.00013478240275695895
+        - [480]
+          - 2026-02-01
+          - 0.00040041409322054216
+        - [481]
+          - 2026-02-02
+          - 3.5702824233636826e-05
+        - [482]
+          - 2026-02-03
+          - 0.0001604579621527062
+        - [483]
+          - 2026-02-04
+          - 0.00027733307821549647
+        - [484]
+          - 2026-02-05
+          - -0.0006682825435209813
+        - [485]
+          - 2026-02-06
+          - -0.00028092657922719943
+        - [486]
+          - 2026-02-07
+          - -0.00022802792240375383
+        - [487]
+          - 2026-02-08
+          - -0.00028567958643198495
+        - [488]
+          - 2026-02-09
+          - 0.0002682638755678905
+        - [489]
+          - 2026-02-10
+          - 0.00023644597665055243
+        - [490]
+          - 2026-02-11
+          - 0.00014441768999568587
+        - [491]
+          - 2026-02-12
+          - 0.00020809803277755098
+        - [492]
+          - 2026-02-13
+          - 0.00023410649595707398
+        - [493]
+          - 2026-02-14
+          - 0.00011196044061220498
+        - [494]
+          - 2026-02-15
+          - 7.598892183479375e-05
+        - [495]
+          - 2026-02-16
+          - 6.74696415914159e-06
+        - [496]
+          - 2026-02-17
+          - 8.536739975179834e-05
+        - [497]
+          - 2026-02-18
+          - 0.0002940995363226153
+        - [498]
+          - 2026-02-19
+          - 0.000276498084974564
+        - [499]
+          - 2026-02-20
+          - -8.710500395458057e-05
+        - [500]
+          - 2026-02-21
+          - 9.901129203302289e-05
+        - [501]
+          - 2026-02-22
+          - 0.00015821202673614674
+        - [502]
+          - 2026-02-23
+          - 0.00017928114681678008
+        - [503]
+          - 2026-02-24
+          - -0.00012842144213493802
+        - [504]
+          - 2026-02-25
+          - 0.00021988981431802964
+        - [505]
+          - 2026-02-26
+          - 0.00033956843931280244
+        - [506]
+          - 2026-02-27
+          - -0.00010861170327773083
+        - [507]
+          - 2026-02-28
+          - 3.994190094428498e-05
+        - [508]
+          - 2026-03-01
+          - 0.0002525486986666089
+        - [509]
+          - 2026-03-02
+          - 0.00011328788847875437
+        - [510]
+          - 2026-03-03
+          - -0.00010543655696711598
+        - [511]
+          - 2026-03-04
+          - -0.0001719051924941278
+        - [512]
+          - 2026-03-05
+          - 9.891467165134031e-05
+        - [513]
+          - 2026-03-06
+          - -0.0001784426929265859
+        - [514]
+          - 2026-03-07
+          - -8.109676872045543e-05
+        - [515]
+          - 2026-03-08
+          - -0.00020119896667853852
+        - [516]
+          - 2026-03-09
+          - -0.00040497459318087676
+        - [517]
+          - 2026-03-10
+          - -0.00021210722620407956
+        - [518]
+          - 2026-03-11
+          - -0.0002711257366666893
+        - [519]
+          - 2026-03-12
+          - -3.6485336908399707e-06
+        - [520]
+          - 2026-03-13
+          - -0.000211471498755456
+        - [521]
+          - 2026-03-14
+          - 9.964480819133381e-05
+        - [522]
+          - 2026-03-15
+          - -0.00017354347886534456
+        - [523]
+          - 2026-03-16
+          - 5.444093619111973e-05
+        - [524]
+          - 2026-03-17
+          - 4.42248932435414e-06
+        - [525]
+          - 2026-03-18
+          - -0.0002872194915358009
+        - [526]
+          - 2026-03-19
+          - 0.00013484846609231158
+        - [527]
+          - 2026-03-20
+          - -0.0002797286740863491
+        - [528]
+          - 2026-03-21
+          - -0.00014489246267398434
+        - [529]
+          - 2026-03-22
+          - -0.00015760216914958525
+        - [530]
+          - 2026-03-23
+          - 4.813932524785705e-05
+        - [531]
+          - 2026-03-24
+          - 0.00035002775707629184
+        - [532]
+          - 2026-03-25
+          - 0.00013509578782930435
+        - [533]
+          - 2026-03-26
+          - 0.0001395420517691751
+        - [534]
+          - 2026-03-27
+          - -1.9760405735362473e-05
+        - [535]
+          - 2026-03-28
+          - 4.8730828795157086e-05
+        - [536]
+          - 2026-03-29
+          - 4.9725598267046915e-05
+        - [537]
+          - 2026-03-30
+          - 0.0001960221212529572
+        - [538]
+          - 2026-03-31
+          - -1.349317698550072e-05
+        - [539]
+          - 2026-04-01
+          - 0.00013016117091569447
+        - [540]
+          - 2026-04-02
+          - 0.0001289388167350904
+        - [541]
+          - 2026-04-03
+          - 0.00030441831071077464
+        - [542]
+          - 2026-04-04
+          - 4.576353841642605e-05
+        - [543]
+          - 2026-04-05
+          - 0.00021959278406487163
+        - [544]
+          - 2026-04-06
+          - -0.000174246307006417
+        - [545]
+          - 2026-04-07
+          - -2.9878147452191452e-05
+        - [546]
+          - 2026-04-08
+          - -0.000702433969573503
+        - [547]
+          - 2026-04-09
+          - -0.0002419178411804545
+        - [548]
+          - 2026-04-10
+          - -3.496748166051812e-05
+        - [549]
+          - 2026-04-11
+          - 3.119919643693998e-05
+        - [550]
+          - 2026-04-12
+          - -0.0001411550373392566
+        - [551]
+          - 2026-04-13
+          - -4.771110538574954e-05
+        - [552]
+          - 2026-04-14
+          - -0.0003487850456967601
+        - [553]
+          - 2026-04-15
+          - 0.00024248601514483976
+        - [554]
+          - 2026-04-16
+          - -3.325770550285578e-06
+        - [555]
+          - 2026-04-17
+          - -0.00041650690262768204
+        - [556]
+          - 2026-04-18
+          - -0.00034601946730583057
+        - [557]
+          - 2026-04-19
+          - -0.0005840303661544386
+        - [558]
+          - 2026-04-20
+          - -3.958439348150184e-05
+        - [559]
+          - 2026-04-21
+          - -2.523526597100103e-05
+        - [560]
+          - 2026-04-22
+          - -0.00033379509864844815
+        - [561]
+          - 2026-04-23
+          - -0.0002224765615327142
+        - [562]
+          - 2026-04-24
+          - 4.518752824220515e-05
+        - [563]
+          - 2026-04-25
+          - -0.00010668500523378014
+        - [564]
+          - 2026-04-26
+          - 0.0002629904427833812
+        - [565]
+          - 2026-04-27
+          - -0.00026924142240686175
+        - [566]
+          - 2026-04-28
+          - -0.00015396199220889256
+        - [567]
+          - 2026-04-29
+          - -7.185668318273825e-06
+        - [568]
+          - 2026-04-30
+          - -0.00013037263484599562
+        - [569]
+          - 2026-05-01
+          - -0.0002582789056973463
+        - [570]
+          - 2026-05-02
+          - 0.0001969066158072631
+        - [571]
+          - 2026-05-03
+          - 0.0001494673581736681
+        - [572]
+          - 2026-05-04
+          - -0.00010081749968873925
+        - [573]
+          - 2026-05-05
+          - -0.0002781964451340543
+        - [574]
+          - 2026-05-06
+          - -0.0002082716310960098
+        - [575]
+          - 2026-05-07
+          - -0.00010217394285578399
+        - [576]
+          - 2026-05-08
+          - -0.00010673908080238358
+        - [577]
+          - 2026-05-09
+          - -0.0002441453569155407
+        - [578]
+          - 2026-05-10
+          - 0.00015415319436959453
+        - [579]
+          - 2026-05-11
+          - -0.00012276540462012955
+        - [580]
+          - 2026-05-12
+          - -0.00024030782793767742
+        - [581]
+          - 2026-05-13
+          - 0.00012196118237620139
+        - [582]
+          - 2026-05-14
+          - 5.521231166731361e-05
+        - [583]
+          - 2026-05-15
+          - 0.0001366289109008188
+        - [584]
+          - 2026-05-16
+          - -0.00020080292625081572
+        - [585]
+          - 2026-05-17
+          - -8.118664548770419e-05
+        - [586]
+          - 2026-05-18
+          - 1.0838467350628214e-05
+        - [587]
+          - 2026-05-19
+          - 0.00035350305228628735
+        - [588]
+          - 2026-05-20
+          - 0.0001345183136357272
+        - [589]
+          - 2026-05-21
+          - -1.3525379013635701e-05
+        - [590]
+          - 2026-05-22
+          - 1.8734086345102584e-05
+        - [591]
+          - 2026-05-23
+          - -0.00020389732102736626
+        - [592]
+          - 2026-05-24
+          - -0.0002889524166386802
+        - [593]
+          - 2026-05-25
+          - -0.00013210677141526028
+        - [594]
+          - 2026-05-26
+          - 0.0001231889900295451
+        - [595]
+          - 2026-05-27
+          - 0.00015639079358881002
+        - [596]
+          - 2026-05-28
+          - 0.00015554896036096914
+        - [597]
+          - 2026-05-29
+          - 4.087566634503069e-05
+        - [598]
+          - 2026-05-30
+          - 0.00015791444735106154
+        - [599]
+          - 2026-05-31
+          - 0.00029650725712515336
+        - [600]
+          - 2026-06-01
+          - 0.00016565514273220866
+        - [601]
+          - 2026-06-02
+          - -1.4868956586001338e-05
+        - [602]
+          - 2026-06-03
+          - 0.00042807342609442467
+        - [603]
+          - 2026-06-04
+          - -2.1908874985120397e-05
+        - [604]
+          - 2026-06-05
+          - 6.181630268406171e-05
+        - [605]
+          - 2026-06-06
+          - 2.2077032225439953e-05
+        - [606]
+          - 2026-06-07
+          - 0.00012356641976948683
+        - [607]
+          - 2026-06-08
+          - -0.00015307060525327932
+        - [608]
+          - 2026-06-09
+          - -7.103476401192043e-05
+        - [609]
+          - 2026-06-10
+          - -0.00018441026278624703
+        - [610]
+          - 2026-06-11
+          - 0.0002316542217968438
+        - [611]
+          - 2026-06-12
+          - 6.079609708829938e-05
+        - [612]
+          - 2026-06-13
+          - 0.00039971247702624125
+        - [613]
+          - 2026-06-14
+          - -0.00018995380773540095
+        - [614]
+          - 2026-06-15
+          - -4.3607482639142774e-05
+        - [615]
+          - 2026-06-16
+          - 0.00020570747578017515
+        - [616]
+          - 2026-06-17
+          - 8.852313328563888e-05
+        - [617]
+          - 2026-06-18
+          - -1.2881003140633426e-05
+        - [618]
+          - 2026-06-19
+          - -0.00020861143586189246
+        - [619]
+          - 2026-06-20
+          - -0.0004535056511336314
+        - [620]
+          - 2026-06-21
+          - -8.447673939334554e-05
+        - [621]
+          - 2026-06-22
+          - 9.36894774461215e-05
+        - [622]
+          - 2026-06-23
+          - 0.0001354756651747188
+        - [623]
+          - 2026-06-24
+          - 0.00023068798591189524
+        - [624]
+          - 2026-06-25
+          - 7.279652153604633e-06
+        - [625]
+          - 2026-06-26
+          - 0.0001907725012098622
+        - [626]
+          - 2026-06-27
+          - -0.00013052705590451332
+        - [627]
+          - 2026-06-28
+          - -8.135341590866301e-05
+        - [628]
+          - 2026-06-29
+          - 0.0003673067408044469
+        - [629]
+          - 2026-06-30
+          - 0.00011759234055274775
+        - [630]
+          - 2026-07-01
+          - -4.0284349066174324e-05
+        - [631]
+          - 2026-07-02
+          - 0.0002972418469790798
+        - [632]
+          - 2026-07-03
+          - 5.14395773548676e-05
+        - [633]
+          - 2026-07-04
+          - -2.187506980178172e-05
+        - [634]
+          - 2026-07-05
+          - 3.187382558613821e-05
+        - [635]
+          - 2026-07-06
+          - -7.23165374555429e-05
+        - [636]
+          - 2026-07-07
+          - 0.00025527795639933504
+        - [637]
+          - 2026-07-08
+          - 2.729551736552212e-05
+        - [638]
+          - 2026-07-09
+          - 7.780384482536512e-05
+        - [639]
+          - 2026-07-10
+          - -2.6052544020862054e-05
+        - [640]
+          - 2026-07-11
+          - -0.00010699794786412102
+        - [641]
+          - 2026-07-12
+          - 5.775067319345758e-05
+        - [642]
+          - 2026-07-13
+          - 0.00024379661341933107
+        - [643]
+          - 2026-07-14
+          - 0.00034497322247958634
+        - [644]
+          - 2026-07-15
+          - 5.680316976974175e-05
+        - [645]
+          - 2026-07-16
+          - -0.00018714512042577991
+        - [646]
+          - 2026-07-17
+          - -0.00019462358258722287
+        - [647]
+          - 2026-07-18
+          - -2.192176987713645e-05
+        - [648]
+          - 2026-07-19
+          - 1.735099334709023e-05
+        - [649]
+          - 2026-07-20
+          - -7.745876868295156e-05
+        - [650]
+          - 2026-07-21
+          - 0.0001921178533280914
+        - [651]
+          - 2026-07-22
+          - 0.0001816917562404471
+        - [652]
+          - 2026-07-23
+          - 8.597663262934854e-05
+        - [653]
+          - 2026-07-24
+          - 3.8833325739026565e-05
+        - [654]
+          - 2026-07-25
+          - -1.8723142117737124e-05
+        - [655]
+          - 2026-07-26
+          - 0.00017236632214409105
+        - [656]
+          - 2026-07-27
+          - 4.733821384025794e-05
+        - [657]
+          - 2026-07-28
+          - -7.282468906007673e-05
+        - [658]
+          - 2026-07-29
+          - 9.700752817012815e-05
+        - [659]
+          - 2026-07-30
+          - -1.4305518321113009e-05
+        - [660]
+          - 2026-07-31
+          - 1.1469549520836864e-05
+        - [661]
+          - 2026-08-01
+          - 0.00010643699114407378
+        - [662]
+          - 2026-08-02
+          - 0.00019007843637639129
+        - [663]
+          - 2026-08-03
+          - 0.00010174452647030048
+        - [664]
+          - 2026-08-04
+          - -0.00014590822201362576
+        - [665]
+          - 2026-08-05
+          - 1.9671768393464388e-05
+        - [666]
+          - 2026-08-06
+          - 0.00019822811514306045
+        - [667]
+          - 2026-08-07
+          - -9.749296524834562e-05
+        - [668]
+          - 2026-08-08
+          - 0.00010713449958168648
+        - [669]
+          - 2026-08-09
+          - -0.00020768647788622357
+        - [670]
+          - 2026-08-10
+          - -7.978921551228772e-05
+        - [671]
+          - 2026-08-11
+          - -8.203655454032216e-05
+        - [672]
+          - 2026-08-12
+          - 0.00012142986156093142
+        - [673]
+          - 2026-08-13
+          - 0.000169992942248276
+        - [674]
+          - 2026-08-14
+          - 7.925190728709379e-05
+        - [675]
+          - 2026-08-15
+          - -4.79028356443493e-05
+        - [676]
+          - 2026-08-16
+          - 0.00025740488832852335
+        - [677]
+          - 2026-08-17
+          - -5.381729030716522e-05
+        - [678]
+          - 2026-08-18
+          - 0.00011612158874232136
+        - [679]
+          - 2026-08-19
+          - 0.00022002163543327754
+        - [680]
+          - 2026-08-20
+          - 2.1736084510955532e-05
+        - [681]
+          - 2026-08-21
+          - 0.0003204006991377885
+        - [682]
+          - 2026-08-22
+          - -0.00015547866844144382
+        - [683]
+          - 2026-08-23
+          - -4.654998704236978e-05
+        - [684]
+          - 2026-08-24
+          - 6.30517704127408e-05
+        - [685]
+          - 2026-08-25
+          - 0.0001599487108665742
+        - [686]
+          - 2026-08-26
+          - 0.0002779559979963958
+        - [687]
+          - 2026-08-27
+          - -5.898287310798045e-05
+        - [688]
+          - 2026-08-28
+          - 2.4808164764477904e-06
+        - [689]
+          - 2026-08-29
+          - 0.0001395675029911734
+        - [690]
+          - 2026-08-30
+          - -7.077070155774358e-06
+        - [691]
+          - 2026-08-31
+          - 6.224783164607827e-05
+        - [692]
+          - 2026-09-01
+          - 2.5822558017525953e-05
+        - [693]
+          - 2026-09-02
+          - 3.7772436066879895e-05
+        - [694]
+          - 2026-09-03
+          - -0.00015414005649149227
+        - [695]
+          - 2026-09-04
+          - -8.138137823620588e-05
+        - [696]
+          - 2026-09-05
+          - 0.0002777962344804765
+        - [697]
+          - 2026-09-06
+          - 0.00013763031194764984
+        - [698]
+          - 2026-09-07
+          - 8.362647962638487e-05
+        - [699]
+          - 2026-09-08
+          - 0.00016711830176813206
+        - [700]
+          - 2026-09-09
+          - 0.00013160398378053123
+        - [701]
+          - 2026-09-10
+          - 1.8570769709046152e-06
+        - [702]
+          - 2026-09-11
+          - -4.675371445090551e-05
+        - [703]
+          - 2026-09-12
+          - 0.00021571753460755192
+        - [704]
+          - 2026-09-13
+          - 2.3345356927555855e-05
+        - [705]
+          - 2026-09-14
+          - 0.00010530249083602505
+        - [706]
+          - 2026-09-15
+          - 0.0002122774404888978
+        - [707]
+          - 2026-09-16
+          - 0.00010914352758694032
+        - [708]
+          - 2026-09-17
+          - 5.298950422103492e-05
+        - [709]
+          - 2026-09-18
+          - 6.478064720720517e-05
+        - [710]
+          - 2026-09-19
+          - 0.00020189078118343292
+        - [711]
+          - 2026-09-20
+          - 5.428842330219382e-05
+        - [712]
+          - 2026-09-21
+          - 0.0002327344445305903
+        - [713]
+          - 2026-09-22
+          - 0.00010558146798087342
+        - [714]
+          - 2026-09-23
+          - -0.0001445142516667899
+        - [715]
+          - 2026-09-24
+          - -5.366943120436512e-06
+        - [716]
+          - 2026-09-25
+          - -4.823358752296002e-05
+        - [717]
+          - 2026-09-26
+          - -2.8444657776519583e-05
+        - [718]
+          - 2026-09-27
+          - 0.00021274166293246306
+        - [719]
+          - 2026-09-28
+          - 1.3338945653385329e-05
+      - `basis_std`: 0.00034373376694045
+      - `first_date`: 2024-10-09
+      - `funding`:
+        - `cadence_seconds`: 3600.0
+        - `daily_max`: 0.000700643183333333
+        - `daily_mean`: 8.6999960180436e-05
+        - `daily_mean_annualized`: 0.03175498546585914
+        - `daily_min`: -0.00033336311111111205
+        - `daily_std`: 0.0001457939375214909
+        - `expected_settlements_per_day`: 24.0
+        - `first_ts`: 2025-09-24T08:00:00+00:00
+        - `last_ts`: 2026-09-29T22:00:00+00:00
+        - `n_days`: 371
+        - `n_partial_days`: 9
+        - `n_settlements`: 8887
+        - `status`: ok
+      - `last_date`: 2026-09-28
+      - `n_dates`: 720
+      - `status`: ok
+      - `venue`: kraken
+    - [1]
+      - `basis_first`: -0.0005247736913455845
+      - `basis_last`: -0.00048622696260250967
+      - `basis_max`: 0.0001894364525040751
+      - `basis_mean`: -0.00044617089584298635
+      - `basis_min`: -0.0007494928431761175
+      - `basis_series`:
+        - [0]
+          - 2026-06-22
+          - -0.0005247736913455845
+        - [1]
+          - 2026-06-23
+          - -0.0004909814048763844
+        - [2]
+          - 2026-06-24
+          - -0.00046824604201114203
+        - [3]
+          - 2026-06-25
+          - -0.0005234253759298394
+        - [4]
+          - 2026-06-26
+          - -0.0005390638258223915
+        - [5]
+          - 2026-06-27
+          - -0.0007494928431761175
+        - [6]
+          - 2026-06-28
+          - -0.0004582389858987092
+        - [7]
+          - 2026-06-29
+          - -0.0004630013773876343
+        - [8]
+          - 2026-06-30
+          - -0.00043324009005938214
+        - [9]
+          - 2026-07-01
+          - -0.0005530015324138366
+        - [10]
+          - 2026-07-02
+          - -0.00035575568843601444
+        - [11]
+          - 2026-07-03
+          - -0.0006055232024029439
+        - [12]
+          - 2026-07-04
+          - -0.00031992093835023883
+        - [13]
+          - 2026-07-05
+          - -0.00047136904425212585
+        - [14]
+          - 2026-07-06
+          - -0.00037315180564882283
+        - [15]
+          - 2026-07-07
+          - -0.0004955174606781876
+        - [16]
+          - 2026-07-08
+          - -0.0004864617533494884
+        - [17]
+          - 2026-07-09
+          - -0.000506100888048902
+        - [18]
+          - 2026-07-10
+          - -0.0004955617613324009
+        - [19]
+          - 2026-07-11
+          - -0.0005672451940855614
+        - [20]
+          - 2026-07-12
+          - -0.0005518486931219129
+        - [21]
+          - 2026-07-13
+          - -0.00030321455558213916
+        - [22]
+          - 2026-07-14
+          - -0.0004259094396600776
+        - [23]
+          - 2026-07-15
+          - -0.000541998724527308
+        - [24]
+          - 2026-07-16
+          - -0.0005357914987749545
+        - [25]
+          - 2026-07-17
+          - -0.00046138951754296783
+        - [26]
+          - 2026-07-18
+          - -0.000478144921098376
+        - [27]
+          - 2026-07-19
+          - -0.00047118291629783085
+        - [28]
+          - 2026-07-20
+          - -0.0005164007024276099
+        - [29]
+          - 2026-07-21
+          - -0.0006324711594654465
+        - [30]
+          - 2026-07-22
+          - -0.0004840139275007638
+        - [31]
+          - 2026-07-23
+          - -0.00046393019540366676
+        - [32]
+          - 2026-07-24
+          - -0.00048791589764059007
+        - [33]
+          - 2026-07-25
+          - -0.0004893165878323275
+        - [34]
+          - 2026-07-26
+          - -0.0004403191702429191
+        - [35]
+          - 2026-07-27
+          - -0.000517566683762051
+        - [36]
+          - 2026-07-28
+          - -0.0004739633030393548
+        - [37]
+          - 2026-07-29
+          - -0.00045636266453276105
+        - [38]
+          - 2026-07-30
+          - -0.0003920805895410412
+        - [39]
+          - 2026-07-31
+          - -0.0005151762332031314
+        - [40]
+          - 2026-08-01
+          - -0.0004982473790276955
+        - [41]
+          - 2026-08-02
+          - -0.00047817839199934336
+        - [42]
+          - 2026-08-03
+          - -0.0003888073845068457
+        - [43]
+          - 2026-08-04
+          - -0.00019347611038126426
+        - [44]
+          - 2026-08-05
+          - -0.0004840757632699845
+        - [45]
+          - 2026-08-06
+          - -0.000453939165933488
+        - [46]
+          - 2026-08-07
+          - -0.0004729152064574814
+        - [47]
+          - 2026-08-08
+          - -0.00044029194742973486
+        - [48]
+          - 2026-08-09
+          - -0.0004283559298791036
+        - [49]
+          - 2026-08-10
+          - -0.00043142324339626723
+        - [50]
+          - 2026-08-11
+          - -0.0003679858592784561
+        - [51]
+          - 2026-08-12
+          - -0.0003575664687711699
+        - [52]
+          - 2026-08-13
+          - -0.00034814717961399055
+        - [53]
+          - 2026-08-14
+          - -0.0003695901831771893
+        - [54]
+          - 2026-08-15
+          - -0.00042641422099343705
+        - [55]
+          - 2026-08-16
+          - -0.00040696999709077727
+        - [56]
+          - 2026-08-17
+          - -0.0005036229862828594
+        - [57]
+          - 2026-08-18
+          - -0.0004680924691183009
+        - [58]
+          - 2026-08-19
+          - -0.00040093975663826306
+        - [59]
+          - 2026-08-20
+          - -0.0005394917549501679
+        - [60]
+          - 2026-08-21
+          - -0.00023104623094673835
+        - [61]
+          - 2026-08-22
+          - 0.0001894364525040751
+        - [62]
+          - 2026-08-23
+          - -0.0002739800033184813
+        - [63]
+          - 2026-08-24
+          - -0.00048612456182338143
+        - [64]
+          - 2026-08-25
+          - -0.00043161565580763345
+        - [65]
+          - 2026-08-26
+          - -0.00046310882677839255
+        - [66]
+          - 2026-08-27
+          - -0.0004286802008317982
+        - [67]
+          - 2026-08-28
+          - -0.00040979026189315624
+        - [68]
+          - 2026-08-29
+          - -0.0004908414607645645
+        - [69]
+          - 2026-08-30
+          - -0.00039136071227642143
+        - [70]
+          - 2026-08-31
+          - -0.00040721741974317303
+        - [71]
+          - 2026-09-01
+          - -0.00047265631557933676
+        - [72]
+          - 2026-09-02
+          - -0.00045125653610839377
+        - [73]
+          - 2026-09-03
+          - -0.0004061033643817814
+        - [74]
+          - 2026-09-04
+          - -0.0005071509539835099
+        - [75]
+          - 2026-09-05
+          - -0.0004735050143930857
+        - [76]
+          - 2026-09-06
+          - -0.0005265031478165474
+        - [77]
+          - 2026-09-07
+          - -0.0004348276742535087
+        - [78]
+          - 2026-09-08
+          - -0.0004881549146239093
+        - [79]
+          - 2026-09-09
+          - -0.00048403143266911
+        - [80]
+          - 2026-09-10
+          - -0.0004009403160506346
+        - [81]
+          - 2026-09-11
+          - -0.0004998484915192969
+        - [82]
+          - 2026-09-12
+          - -0.0003623141522495827
+        - [83]
+          - 2026-09-13
+          - -0.0005479202457182287
+        - [84]
+          - 2026-09-14
+          - -0.00018798987668116137
+        - [85]
+          - 2026-09-15
+          - -0.00039264420089630083
+        - [86]
+          - 2026-09-16
+          - -0.0004396256226936059
+        - [87]
+          - 2026-09-17
+          - -0.0004030395462926631
+        - [88]
+          - 2026-09-18
+          - -0.00033249694078086326
+        - [89]
+          - 2026-09-19
+          - -0.0004245328293082699
+        - [90]
+          - 2026-09-20
+          - -0.00043730198227140806
+        - [91]
+          - 2026-09-21
+          - -0.000308250729064893
+        - [92]
+          - 2026-09-22
+          - -0.0004837076364329478
+        - [93]
+          - 2026-09-23
+          - -0.00040166114728160926
+        - [94]
+          - 2026-09-24
+          - -0.0004798021082860047
+        - [95]
+          - 2026-09-25
+          - -0.0004684954636796416
+        - [96]
+          - 2026-09-26
+          - -0.0006039798720746946
+        - [97]
+          - 2026-09-27
+          - -0.0004640206441837272
+        - [98]
+          - 2026-09-28
+          - -0.00048622696260250967
+      - `basis_std`: 0.000106026747189363
+      - `first_date`: 2026-06-22
+      - `funding`:
+        - `cadence_seconds`: 28800.0
+        - `daily_max`: 0.00030000000000000003
+        - `daily_mean`: 0.00015769705495988708
+        - `daily_mean_annualized`: 0.057559425060358785
+        - `daily_min`: -3.99940733157e-05
+        - `daily_std`: 8.003662197884562e-05
+        - `expected_settlements_per_day`: 3.0
+        - `first_ts`: 2026-06-29T08:00:00+00:00
+        - `last_ts`: 2026-09-29T16:00:00+00:00
+        - `n_days`: 93
+        - `n_partial_days`: 1
+        - `n_settlements`: 278
+        - `status`: ok
+      - `last_date`: 2026-09-28
+      - `n_dates`: 99
+      - `status`: ok
+      - `venue`: okx
+  - `n_error_rows`: 0
+  - `n_leg_rows`: 2
+  - `n_rows`: 1
+  - `params`:
+    - `annualization_days`: 365.0
+    - `asset`: BTC
+    - `conventions`: basis_t = (mark_t - spot_t)/spot_t per venue on shared dates; basis_diff = a - b per venue pair; funding aggregated to per-calendar-day sums of realized rates before diffing, so venue cadences (hourly vs 8h) are comparable; daily_mean_annualized = daily_mean * annualization_days is a descriptive scaling, not a yield claim
+    - `min_overlap`: 5
+  - `research_only`: true
+  - `results`:
+    - [0]
+      - `basis_diff`:
+        - `first_date`: 2026-06-22
+        - `frac_positive`: 0.98989898989899
+        - `last_date`: 2026-09-28
+        - `max`: 0.0008303081181920812
+        - `max_abs`: 0.0008303081181920812
+        - `mean`: 0.0005075397110974355
+        - `mean_abs`: 0.0005145076933387591
+        - `min`: -0.0003449151209455189
+        - `n`: 99
+        - `n_dates`: 99
+        - `sign_flips`: 2
+        - `std`: 0.00016467142022453306
+      - `funding_diff`:
+        - `first_date`: 2026-06-29
+        - `frac_positive`: 0.4838709677419355
+        - `last_date`: 2026-09-29
+        - `max`: 0.000433083712971733
+        - `max_abs`: 0.000433083712971733
+        - `mean`: -2.4801619021614496e-06
+        - `mean_abs`: 0.00011772104535538478
+        - `min`: -0.000236823410278302
+        - `n`: 93
+        - `n_dates`: 93
+        - `n_partial_days_a`: 1
+        - `n_partial_days_b`: 1
+        - `sign_flips`: 40
+        - `status`: ok
+        - `std`: 0.00014243547222281567
+      - `pair`: kraken~okx
+      - `status`: ok
+      - `venue_a`: kraken
+      - `venue_b`: okx
+  - `schema`: crossvenue_basis.v1
+  - `simulated_only`: false
+  - `venues`:
+    - kraken
+    - okx
+  - `verdict`: 2/2 legs measured; 1/1 pairs ok; kraken~okx basis-diff mean +0.050754%, funding-diff mean -0.000248%/day
+- `receipt_sha256`: 3f4ff76f517655a728f29688cfbb96f4fe7a6e3dea9cb387db25a444fb6ae964
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
 ### `receipts/legacy-unsealed/fast_replay_p42_conformance_20260927.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -54064,6 +41725,946 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 <!-- verbatim-receipt-text -->
 > All workloads are SYNTHETIC generated fixtures. This receipt attests engine conformance, not performance; NAV/fee/P&L numbers are not evidence of live-trading results.
 <!-- /verbatim-receipt-text -->
+
+### `receipts/legacy-unsealed/forward_record_preregistration_v1.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/legacy-unsealed/forward_record_preregistration_v1.json | d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3 | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
+
+- `_seal`:
+  - `content_sha256`: b62151e486c97d233bbd2b0d9c071e85ae0a3af6c57253fa99eb0a156ddbd59e
+  - `schema`: prereg_seal.v1
+  - `sealed_at`: 2026-10-07T00:00:00+00:00
+- `admission_rule`:
+  - `material_effect_bps`: 5.0
+  - `primary_test`: one-sided H0: E[D_t] <= 0 vs H1: E[D_t] > 0, alpha=0.05, single fixed analysis
+  - `referee`: frozen validation/agent_referee.py betting referee (post-submission-only)
+  - `required_eligible_paired_sessions`: 1400
+  - `semantics`: anytime-valid admission at every stopping time; no optional-stopping inflation
+- `costs`:
+  - `borrow_bps_per_year`: 50.0
+  - `commission_bps`: 1.0
+  - `financing`: 0.0
+  - `half_spread_bps`: 5.0
+  - `impact_coefficient`: 0.1
+  - `participation_limit`: 0.1
+- `declaration_date`: 2026-10-07
+- `declaration_timezone`: Asia/Calcutta
+- `grid`:
+  - `comparator`: frozen equal-weight
+  - `strategy`: frozen momentum-20
+  - `trials`: single primary comparison; no mid-collection tuning
+- `holdout_statement`:
+  - `holdout_2025`: SPENT
+  - `reason`: The vendor pool already has results for the 2025 holdout and discloses survivorship bias. The 2025 holdout is spent and cannot be reused as new forward evidence.
+- `honesty`:
+  - `broker_connectivity_claim`: false
+  - `live_trading_claim`: false
+  - `note`: Forward record is simulated/shadow evidence only. No live orders, no live P&L, no profitability claim.
+  - `research_only`: true
+  - `synthetic_substitution`: false
+- `not_yet_collected`: true
+- `recorded`:
+  - externally timestamped inputs and decision cutoff
+  - intended signed quantities and simulated orders
+  - fills (including partials), rejects and reasons
+<!-- verbatim-receipt-text -->
+> positions, cash, costs, NAV and net-return accounting
+<!-- /verbatim-receipt-text -->
+  - kill-switch state
+  - software/config/data hashes and broker-state cursor
+  - immutable receipt chain
+- `schema`: forward_record_preregistration.v1
+- `splits`:
+  - `forward`: first accepted decision must occur on a LATER market date than the recorded freeze
+  - `warmup`: all historical bars on/before 2026-09-18 (warmup only, already inspected)
+- `status`: NOT_YET_COLLECTED
+- `universe`:
+  - `kind`: static_complete_universe
+  - `membership_selection_bias`: recorded in selection_basis; fixed-universe experiment
+  - `names`: static 424-name US universe frozen at the warmup boundary
+- `window`:
+  - `end`: null
+  - `label`: forward_2026H2
+  - `note`: Named forward window. It is NOT YET COLLECTED. Freeze and externally timestamp this record BEFORE the first forward close.
+  - `start`: 2026-07-01
+
+### `receipts/legacy-unsealed/forward_record_preregistration_v1.json.seal.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/legacy-unsealed/forward_record_preregistration_v1.json.seal.json | afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
+
+- `file`: forward_record_preregistration_v1.json
+- `schema`: prereg_seal.v1
+- `sealed_at`: 2026-10-07T00:00:00+00:00
+- `sha256`: d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3
+
+### `receipts/legacy-unsealed/mid_dark_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/legacy-unsealed/mid_dark_amzn.json | da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1 | 14d782f4c6dee695f77dd48ecc798b6bc2c2970534e2ef21003332c10a54eab6 | not_checked | 5b4eaa2696ae8f6c705b4788659023b22ffe2c19 | absent | unspecified | absent | absent | absent |
+
+- `best_cell`:
+  - `channels_in_tol`: 3
+  - `mid_dark_frac`: 0.0
+  - `mid_dark_ttl`: 0
+  - `refill_cooldown`: 0
+  - `unhit_imp_frac`: 0.5
+- `claims`:
+  - `dark_channel_active`: true
+  - `dark_dilutes_instant`: false
+  - `dark_preserves_lo`: true
+  - `grid_evaluated`: true
+  - `joint_closure_exists`: false
+- `data_label`: SYNTHETIC
+- `git_revision`: 5b4eaa2696ae8f6c705b4788659023b22ffe2c19
+- `grid`:
+  - [0]
+    - `all_in_tol`: false
+    - `attr_windows`:
+      - `10_50`:
+        - `n_anchor_fills`: 611
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.04746317512274959
+            - `total`: -0.038461538461538464
+            - `unhit`: -0.08592471358428805
+          - `fill`:
+            - `hit`: 1.2545008183306057
+            - `total`: 1.0826513911620295
+            - `unhit`: -0.1718494271685761
+          - `lo`:
+            - `hit`: -1.2225859247135842
+            - `total`: -0.602291325695581
+            - `unhit`: 0.6202945990180033
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `1_10`:
+        - `n_anchor_fills`: 269
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.01486988847583643
+            - `total`: -0.020446096654275093
+            - `unhit`: -0.03531598513011153
+          - `fill`:
+            - `hit`: 0.5074349442379182
+            - `total`: 0.4516728624535316
+            - `unhit`: -0.055762081784386616
+          - `lo`:
+            - `hit`: -0.6282527881040892
+            - `total`: -0.2174721189591078
+            - `unhit`: 0.4107806691449814
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `50_200`:
+        - `n_anchor_fills`: 732
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.13934426229508196
+            - `total`: -0.23155737704918034
+            - `unhit`: -0.3709016393442623
+          - `fill`:
+            - `hit`: 3.773907103825137
+            - `total`: 3.1113387978142075
+            - `unhit`: -0.662568306010929
+          - `lo`:
+            - `hit`: -3.4405737704918034
+            - `total`: -1.790983606557377
+            - `unhit`: 1.6495901639344261
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+    - `cxl_channel_ticks`: -0.2707
+    - `cxl_in_tol`: true
+    - `dark_fill_share`: 0.0
+    - `fill_channel_ticks`: 4.1946
+    - `fill_in_tol`: false
+    - `instant_in_tol`: true
+    - `instant_signed_ticks`: 0.7395
+    - `k200_in_tol`: false
+    - `k200_per_channel_ticks`:
+      - `cxl`: -0.2707
+      - `fill`: 4.1946
+      - `lo`: -2.3918
+      - `none`: 0.0
+    - `k200_ticks`: 2.2524
+    - `lo_channel_ticks`: -2.3918
+    - `lo_in_tol`: false
+    - `mid_dark_frac`: 0.0
+    - `mid_dark_ttl`: 0
+    - `n_dark_fills`: 0
+    - `n_fills`: 735
+    - `refill_cooldown`: 0
+    - `unhit_imp_frac`: 0.0
+    - `unhit_imp_window`: 0
+  - [1]
+    - `all_in_tol`: false
+    - `attr_windows`:
+      - `10_50`:
+        - `n_anchor_fills`: 425
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.18588235294117647
+            - `total`: -0.04352941176470588
+            - `unhit`: -0.22941176470588234
+          - `fill`:
+            - `hit`: 0.8047058823529412
+            - `total`: 0.7835294117647059
+            - `unhit`: -0.021176470588235293
+          - `lo`:
+            - `hit`: -0.3211764705882353
+            - `total`: 0.6905882352941176
+            - `unhit`: 1.011764705882353
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `1_10`:
+        - `n_anchor_fills`: 166
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.09939759036144578
+            - `total`: -0.07228915662650602
+            - `unhit`: -0.1716867469879518
+          - `fill`:
+            - `hit`: 0.5753012048192772
+            - `total`: 0.5632530120481928
+            - `unhit`: -0.012048192771084338
+          - `lo`:
+            - `hit`: -0.1716867469879518
+            - `total`: 0.463855421686747
+            - `unhit`: 0.6355421686746988
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `50_200`:
+        - `n_anchor_fills`: 809
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.34239802224969096
+            - `total`: -0.22991347342398022
+            - `unhit`: -0.5723114956736712
+          - `fill`:
+            - `hit`: 1.215698393077874
+            - `total`: 0.9901112484548825
+            - `unhit`: -0.22558714462299134
+          - `lo`:
+            - `hit`: -0.6650185414091471
+            - `total`: 0.9678615574783683
+            - `unhit`: 1.6328800988875154
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+    - `cxl_channel_ticks`: -0.2474
+    - `cxl_in_tol`: true
+    - `dark_fill_share`: 0.8392
+    - `fill_channel_ticks`: 1.4067
+    - `fill_in_tol`: false
+    - `instant_in_tol`: false
+    - `instant_signed_ticks`: 0.1158
+    - `k200_in_tol`: false
+    - `k200_per_channel_ticks`:
+      - `cxl`: -0.2474
+      - `fill`: 1.4067
+      - `lo`: 1.3294
+      - `none`: 0.0
+    - `k200_ticks`: 2.2214
+    - `lo_channel_ticks`: 1.3294
+    - `lo_in_tol`: false
+    - `mid_dark_frac`: 0.4
+    - `mid_dark_ttl`: 0
+    - `n_dark_fills`: 830
+    - `n_fills`: 989
+    - `refill_cooldown`: 0
+    - `unhit_imp_frac`: 0.0
+    - `unhit_imp_window`: 0
+  - [2]
+    - `all_in_tol`: false
+    - `attr_windows`:
+      - `10_50`:
+        - `n_anchor_fills`: 422
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.13744075829383887
+            - `total`: -0.10900473933649289
+            - `unhit`: -0.24644549763033174
+          - `fill`:
+            - `hit`: 0.669431279620853
+            - `total`: 0.6220379146919431
+            - `unhit`: -0.04739336492890995
+          - `lo`:
+            - `hit`: -0.28080568720379145
+            - `total`: 0.6090047393364929
+            - `unhit`: 0.8898104265402843
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `1_10`:
+        - `n_anchor_fills`: 138
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.08333333333333333
+            - `total`: -0.025362318840579712
+            - `unhit`: -0.10869565217391304
+          - `fill`:
+            - `hit`: 0.644927536231884
+            - `total`: 0.6268115942028986
+            - `unhit`: -0.018115942028985508
+          - `lo`:
+            - `hit`: -0.15579710144927536
+            - `total`: 0.29347826086956524
+            - `unhit`: 0.4492753623188406
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `50_200`:
+        - `n_anchor_fills`: 761
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.23390275952693823
+            - `total`: -0.2943495400788436
+            - `unhit`: -0.5282522996057819
+          - `fill`:
+            - `hit`: 1.1938239159001314
+            - `total`: 1.016425755584757
+            - `unhit`: -0.1773981603153745
+          - `lo`:
+            - `hit`: -0.5847568988173456
+            - `total`: 0.9691195795006571
+            - `unhit`: 1.5538764783180026
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+    - `cxl_channel_ticks`: -0.3279
+    - `cxl_in_tol`: true
+    - `dark_fill_share`: 0.8561
+    - `fill_channel_ticks`: 1.3489
+    - `fill_in_tol`: false
+    - `instant_in_tol`: false
+    - `instant_signed_ticks`: 0.1143
+    - `k200_in_tol`: false
+    - `k200_per_channel_ticks`:
+      - `cxl`: -0.3279
+      - `fill`: 1.3489
+      - `lo`: 1.2428
+      - `none`: 0.0
+    - `k200_ticks`: 2.0459
+    - `lo_channel_ticks`: 1.2428
+    - `lo_in_tol`: false
+    - `mid_dark_frac`: 0.4
+    - `mid_dark_ttl`: 200
+    - `n_dark_fills`: 839
+    - `n_fills`: 980
+    - `refill_cooldown`: 0
+    - `unhit_imp_frac`: 0.0
+    - `unhit_imp_window`: 0
+  - [3]
+    - `all_in_tol`: false
+    - `attr_windows`:
+      - `10_50`:
+        - `n_anchor_fills`: 592
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.05067567567567568
+            - `total`: 0.032939189189189186
+            - `unhit`: -0.017736486486486486
+          - `fill`:
+            - `hit`: 0.8386824324324325
+            - `total`: 0.8057432432432432
+            - `unhit`: -0.032939189189189186
+          - `lo`:
+            - `hit`: -0.08192567567567567
+            - `total`: 0.9172297297297297
+            - `unhit`: 0.9991554054054054
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `1_10`:
+        - `n_anchor_fills`: 416
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.002403846153846154
+            - `total`: -0.004807692307692308
+            - `unhit`: -0.007211538461538462
+          - `fill`:
+            - `hit`: 0.2980769230769231
+            - `total`: 0.28966346153846156
+            - `unhit`: -0.008413461538461538
+          - `lo`:
+            - `hit`: -0.016826923076923076
+            - `total`: 0.5048076923076923
+            - `unhit`: 0.5216346153846154
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `50_200`:
+        - `n_anchor_fills`: 743
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.11574697173620457
+            - `total`: 0.07604306864064603
+            - `unhit`: -0.039703903095558546
+          - `fill`:
+            - `hit`: 2.2166890982503364
+            - `total`: 1.9899057873485868
+            - `unhit`: -0.22678331090174966
+          - `lo`:
+            - `hit`: -0.35262449528936746
+            - `total`: 1.9899057873485868
+            - `unhit`: 2.3425302826379544
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+    - `cxl_channel_ticks`: 0.0939
+    - `cxl_in_tol`: false
+    - `dark_fill_share`: 0.0
+    - `fill_channel_ticks`: 2.6428
+    - `fill_in_tol`: true
+    - `instant_in_tol`: false
+    - `instant_signed_ticks`: 0.2203
+    - `k200_in_tol`: true
+    - `k200_per_channel_ticks`:
+      - `cxl`: 0.0939
+      - `fill`: 2.6428
+      - `lo`: 2.8414
+      - `none`: 0.0
+    - `k200_ticks`: 4.8219
+    - `lo_channel_ticks`: 2.8414
+    - `lo_in_tol`: true
+    - `mid_dark_frac`: 0.0
+    - `mid_dark_ttl`: 0
+    - `n_dark_fills`: 0
+    - `n_fills`: 960
+    - `refill_cooldown`: 0
+    - `unhit_imp_frac`: 0.5
+    - `unhit_imp_window`: 200
+  - [4]
+    - `all_in_tol`: false
+    - `attr_windows`:
+      - `10_50`:
+        - `n_anchor_fills`: 545
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.045871559633027525
+            - `total`: 0.026605504587155965
+            - `unhit`: -0.01926605504587156
+          - `fill`:
+            - `hit`: 0.9522935779816514
+            - `total`: 0.9275229357798165
+            - `unhit`: -0.024770642201834864
+          - `lo`:
+            - `hit`: -0.047706422018348627
+            - `total`: 1.136697247706422
+            - `unhit`: 1.1844036697247706
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `1_10`:
+        - `n_anchor_fills`: 412
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.014563106796116505
+            - `total`: 0.007281553398058253
+            - `unhit`: -0.007281553398058253
+          - `fill`:
+            - `hit`: 0.279126213592233
+            - `total`: 0.27427184466019416
+            - `unhit`: -0.0048543689320388345
+          - `lo`:
+            - `hit`: -0.019417475728155338
+            - `total`: 0.5449029126213593
+            - `unhit`: 0.5643203883495146
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `50_200`:
+        - `n_anchor_fills`: 722
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.14473684210526316
+            - `total`: 0.10249307479224377
+            - `unhit`: -0.04224376731301939
+          - `fill`:
+            - `hit`: 2.5325484764542936
+            - `total`: 2.46606648199446
+            - `unhit`: -0.0664819944598338
+          - `lo`:
+            - `hit`: -0.14958448753462603
+            - `total`: 2.595567867036011
+            - `unhit`: 2.7451523545706373
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+    - `cxl_channel_ticks`: 0.1183
+    - `cxl_in_tol`: false
+    - `dark_fill_share`: 0.0375
+    - `fill_channel_ticks`: 3.0951
+    - `fill_in_tol`: true
+    - `instant_in_tol`: false
+    - `instant_signed_ticks`: 0.2279
+    - `k200_in_tol`: false
+    - `k200_per_channel_ticks`:
+      - `cxl`: 0.1183
+      - `fill`: 3.0951
+      - `lo`: 3.5058
+      - `none`: 0.0
+    - `k200_ticks`: 5.7071
+    - `lo_channel_ticks`: 3.5058
+    - `lo_in_tol`: true
+    - `mid_dark_frac`: 0.2
+    - `mid_dark_ttl`: 0
+    - `n_dark_fills`: 36
+    - `n_fills`: 961
+    - `refill_cooldown`: 0
+    - `unhit_imp_frac`: 0.5
+    - `unhit_imp_window`: 200
+  - [5]
+    - `all_in_tol`: false
+    - `attr_windows`:
+      - `10_50`:
+        - `n_anchor_fills`: 549
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.030965391621129327
+            - `total`: -0.0009107468123861566
+            - `unhit`: -0.031876138433515486
+          - `fill`:
+            - `hit`: 0.8761384335154827
+            - `total`: 0.8633879781420765
+            - `unhit`: -0.012750455373406194
+          - `lo`:
+            - `hit`: -0.06557377049180328
+            - `total`: 0.9089253187613844
+            - `unhit`: 0.9744990892531876
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `1_10`:
+        - `n_anchor_fills`: 329
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.015197568389057751
+            - `total`: 0.001519756838905775
+            - `unhit`: -0.013677811550151976
+          - `fill`:
+            - `hit`: 0.34498480243161095
+            - `total`: 0.33890577507598785
+            - `unhit`: -0.0060790273556231
+          - `lo`:
+            - `hit`: -0.022796352583586626
+            - `total`: 0.4726443768996961
+            - `unhit`: 0.49544072948328266
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `50_200`:
+        - `n_anchor_fills`: 688
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.10610465116279069
+            - `total`: 0.023982558139534885
+            - `unhit`: -0.08212209302325581
+          - `fill`:
+            - `hit`: 2.2594476744186047
+            - `total`: 2.1119186046511627
+            - `unhit`: -0.14752906976744187
+          - `lo`:
+            - `hit`: -0.28924418604651164
+            - `total`: 2.1438953488372094
+            - `unhit`: 2.433139534883721
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+    - `cxl_channel_ticks`: 0.0226
+    - `cxl_in_tol`: false
+    - `dark_fill_share`: 0.083
+    - `fill_channel_ticks`: 2.8093
+    - `fill_in_tol`: true
+    - `instant_in_tol`: false
+    - `instant_signed_ticks`: 0.1834
+    - `k200_in_tol`: true
+    - `k200_per_channel_ticks`:
+      - `cxl`: 0.0226
+      - `fill`: 2.8093
+      - `lo`: 2.9342
+      - `none`: 0.0
+    - `k200_ticks`: 4.5227
+    - `lo_channel_ticks`: 2.9342
+    - `lo_in_tol`: true
+    - `mid_dark_frac`: 0.4
+    - `mid_dark_ttl`: 0
+    - `n_dark_fills`: 81
+    - `n_fills`: 976
+    - `refill_cooldown`: 0
+    - `unhit_imp_frac`: 0.5
+    - `unhit_imp_window`: 200
+  - [6]
+    - `all_in_tol`: false
+    - `attr_windows`:
+      - `10_50`:
+        - `n_anchor_fills`: 675
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.034074074074074076
+            - `total`: 0.0007407407407407407
+            - `unhit`: -0.03333333333333333
+          - `fill`:
+            - `hit`: 0.9474074074074074
+            - `total`: 0.9281481481481482
+            - `unhit`: -0.01925925925925926
+          - `lo`:
+            - `hit`: -0.061481481481481484
+            - `total`: 1.1422222222222222
+            - `unhit`: 1.2037037037037037
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `1_10`:
+        - `n_anchor_fills`: 436
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.011467889908256881
+            - `total`: 0.0022935779816513763
+            - `unhit`: -0.009174311926605505
+          - `fill`:
+            - `hit`: 0.4793577981651376
+            - `total`: 0.47591743119266056
+            - `unhit`: -0.0034403669724770644
+          - `lo`:
+            - `hit`: -0.02522935779816514
+            - `total`: 0.6754587155963303
+            - `unhit`: 0.7006880733944955
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `50_200`:
+        - `n_anchor_fills`: 870
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.12011494252873563
+            - `total`: 0.0603448275862069
+            - `unhit`: -0.059770114942528735
+          - `fill`:
+            - `hit`: 2.5195402298850573
+            - `total`: 2.3885057471264366
+            - `unhit`: -0.1310344827586207
+          - `lo`:
+            - `hit`: -0.28620689655172415
+            - `total`: 2.3850574712643677
+            - `unhit`: 2.671264367816092
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+    - `cxl_channel_ticks`: 0.0597
+    - `cxl_in_tol`: false
+    - `dark_fill_share`: 0.0972
+    - `fill_channel_ticks`: 3.2373
+    - `fill_in_tol`: true
+    - `instant_in_tol`: false
+    - `instant_signed_ticks`: 0.2192
+    - `k200_in_tol`: false
+    - `k200_per_channel_ticks`:
+      - `cxl`: 0.0597
+      - `fill`: 3.2373
+      - `lo`: 3.484
+      - `none`: 0.0
+    - `k200_ticks`: 5.9604
+    - `lo_channel_ticks`: 3.484
+    - `lo_in_tol`: true
+    - `mid_dark_frac`: 0.4
+    - `mid_dark_ttl`: 200
+    - `n_dark_fills`: 105
+    - `n_fills`: 1080
+    - `refill_cooldown`: 0
+    - `unhit_imp_frac`: 0.5
+    - `unhit_imp_window`: 200
+  - [7]
+    - `all_in_tol`: false
+    - `attr_windows`:
+      - `10_50`:
+        - `n_anchor_fills`: 408
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.0428921568627451
+            - `total`: 0.023284313725490197
+            - `unhit`: -0.0196078431372549
+          - `fill`:
+            - `hit`: 0.7450980392156863
+            - `total`: 0.7254901960784313
+            - `unhit`: -0.0196078431372549
+          - `lo`:
+            - `hit`: -0.10049019607843138
+            - `total`: 0.7769607843137255
+            - `unhit`: 0.8774509803921569
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `1_10`:
+        - `n_anchor_fills`: 229
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.010917030567685589
+            - `total`: -0.006550218340611353
+            - `unhit`: -0.017467248908296942
+          - `fill`:
+            - `hit`: 0.4432314410480349
+            - `total`: 0.4279475982532751
+            - `unhit`: -0.015283842794759825
+          - `lo`:
+            - `hit`: -0.026200873362445413
+            - `total`: 0.4868995633187773
+            - `unhit`: 0.5131004366812227
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `50_200`:
+        - `n_anchor_fills`: 526
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.12547528517110265
+            - `total`: 0.08079847908745247
+            - `unhit`: -0.04467680608365019
+          - `fill`:
+            - `hit`: 2.3517110266159698
+            - `total`: 2.203422053231939
+            - `unhit`: -0.1482889733840304
+          - `lo`:
+            - `hit`: -0.3526615969581749
+            - `total`: 2.061787072243346
+            - `unhit`: 2.414448669201521
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+    - `cxl_channel_ticks`: 0.0911
+    - `cxl_in_tol`: false
+    - `dark_fill_share`: 0.1941
+    - `fill_channel_ticks`: 2.7795
+    - `fill_in_tol`: true
+    - `instant_in_tol`: false
+    - `instant_signed_ticks`: 0.1747
+    - `k200_in_tol`: true
+    - `k200_per_channel_ticks`:
+      - `cxl`: 0.0911
+      - `fill`: 2.7795
+      - `lo`: 2.7143
+      - `none`: 0.0
+    - `k200_ticks`: 3.8907
+    - `lo_channel_ticks`: 2.7143
+    - `lo_in_tol`: true
+    - `mid_dark_frac`: 0.6
+    - `mid_dark_ttl`: 200
+    - `n_dark_fills`: 165
+    - `n_fills`: 850
+    - `refill_cooldown`: 0
+    - `unhit_imp_frac`: 0.5
+    - `unhit_imp_window`: 200
+  - [8]
+    - `all_in_tol`: false
+    - `attr_windows`:
+      - `10_50`:
+        - `n_anchor_fills`: 790
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.07658227848101266
+            - `total`: 0.020253164556962026
+            - `unhit`: -0.056329113924050635
+          - `fill`:
+            - `hit`: 1.3784810126582279
+            - `total`: 1.3512658227848102
+            - `unhit`: -0.02721518987341772
+          - `lo`:
+            - `hit`: -0.5677215189873418
+            - `total`: 0.6740506329113924
+            - `unhit`: 1.2417721518987341
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `1_10`:
+        - `n_anchor_fills`: 493
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.029411764705882353
+            - `total`: 0.013184584178498986
+            - `unhit`: -0.016227180527383367
+          - `fill`:
+            - `hit`: 0.5354969574036511
+            - `total`: 0.5324543610547667
+            - `unhit`: -0.0030425963488843813
+          - `lo`:
+            - `hit`: -0.12271805273833672
+            - `total`: 0.3752535496957404
+            - `unhit`: 0.49797160243407707
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `50_200`:
+        - `n_anchor_fills`: 1052
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.19819391634980987
+            - `total`: 0.06273764258555133
+            - `unhit`: -0.13545627376425856
+          - `fill`:
+            - `hit`: 3.8830798479087454
+            - `total`: 3.711026615969582
+            - `unhit`: -0.1720532319391635
+          - `lo`:
+            - `hit`: -1.4006653992395437
+            - `total`: 1.5860266159695817
+            - `unhit`: 2.9866920152091256
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+    - `cxl_channel_ticks`: 0.0775
+    - `cxl_in_tol`: false
+    - `dark_fill_share`: 0.4026
+    - `fill_channel_ticks`: 4.6879
+    - `fill_in_tol`: false
+    - `instant_in_tol`: false
+    - `instant_signed_ticks`: 0.2851
+    - `k200_in_tol`: false
+    - `k200_per_channel_ticks`:
+      - `cxl`: 0.0775
+      - `fill`: 4.6879
+      - `lo`: 2.1411
+      - `none`: 0.0
+    - `k200_ticks`: 6.3827
+    - `lo_channel_ticks`: 2.1411
+    - `lo_in_tol`: true
+    - `mid_dark_frac`: 0.4
+    - `mid_dark_ttl`: 200
+    - `n_dark_fills`: 519
+    - `n_fills`: 1289
+    - `refill_cooldown`: 400
+    - `unhit_imp_frac`: 0.5
+    - `unhit_imp_window`: 200
+  - [9]
+    - `all_in_tol`: false
+    - `attr_windows`:
+      - `10_50`:
+        - `n_anchor_fills`: 864
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.1840277777777778
+            - `total`: 0.07581018518518519
+            - `unhit`: -0.10821759259259259
+          - `fill`:
+            - `hit`: 1.8634259259259258
+            - `total`: 1.8414351851851851
+            - `unhit`: -0.02199074074074074
+          - `lo`:
+            - `hit`: -1.0179398148148149
+            - `total`: 0.1440972222222222
+            - `unhit`: 1.162037037037037
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `1_10`:
+        - `n_anchor_fills`: 484
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.07747933884297521
+            - `total`: 0.03202479338842975
+            - `unhit`: -0.045454545454545456
+          - `fill`:
+            - `hit`: 0.6962809917355371
+            - `total`: 0.6890495867768595
+            - `unhit`: -0.007231404958677686
+          - `lo`:
+            - `hit`: -0.4297520661157025
+            - `total`: 0.11880165289256199
+            - `unhit`: 0.5485537190082644
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+      - `50_200`:
+        - `n_anchor_fills`: 1217
+        - `per_channel_ticks`:
+          - `cxl`:
+            - `hit`: 0.5390304026294166
+            - `total`: 0.22925225965488907
+            - `unhit`: -0.30977814297452755
+          - `fill`:
+            - `hit`: 4.339359079704191
+            - `total`: 4.1516023007395235
+            - `unhit`: -0.18775677896466722
+          - `lo`:
+            - `hit`: -2.8352506162695152
+            - `total`: 0.12448644207066557
+            - `unhit`: 2.9597370583401807
+          - `none`:
+            - `hit`: 0.0
+            - `total`: 0.0
+            - `unhit`: 0.0
+    - `cxl_channel_ticks`: 0.2817
+    - `cxl_in_tol`: false
+    - `dark_fill_share`: 0.6188
+    - `fill_channel_ticks`: 5.5173
+    - `fill_in_tol`: false
+    - `instant_in_tol`: false
+    - `instant_signed_ticks`: 0.3262
+    - `k200_in_tol`: false
+    - `k200_per_channel_ticks`:
+      - `cxl`: 0.2817
+      - `fill`: 5.5173
+      - `lo`: 0.2533
+      - `none`: 0.0
+    - `k200_ticks`: 5.9553
+    - `lo_channel_ticks`: 0.2533
+    - `lo_in_tol`: false
+    - `mid_dark_frac`: 0.6
+    - `mid_dark_ttl`: 200
+    - `n_dark_fills`: 857
+    - `n_fills`: 1385
+    - `refill_cooldown`: 400
+    - `unhit_imp_frac`: 0.5
+    - `unhit_imp_window`: 200
+- `horizon_events`: 20000
+- `kind`: sim_bench
+- `receipt_sha256`: 14d782f4c6dee695f77dd48ecc798b6bc2c2970534e2ef21003332c10a54eab6
+- `schema`: mid_dark.v1
+- `seed`: 7
+- `target_instant_ticks`: 0.887
+- `target_k200_ticks`: 4.6447
+- `tolerances`:
+  - `cxl`: 0.5
+  - `fill`: 1.0
+  - `instant`: 0.2
+  - `k200`: 1.0
+  - `lo`: 1.0
 
 ### `receipts/level_gap_amzn.json`
 
@@ -56011,871 +44612,6 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - `precision`: 0.9473
   - `recall`: 0.2353
 - `ticker`: AMZN
-
-### `receipts/mid_dark_amzn.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/mid_dark_amzn.json | da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1 | 14d782f4c6dee695f77dd48ecc798b6bc2c2970534e2ef21003332c10a54eab6 | not_checked | 5b4eaa2696ae8f6c705b4788659023b22ffe2c19 | absent | unspecified | absent | absent | absent |
-
-- `best_cell`:
-  - `channels_in_tol`: 3
-  - `mid_dark_frac`: 0.0
-  - `mid_dark_ttl`: 0
-  - `refill_cooldown`: 0
-  - `unhit_imp_frac`: 0.5
-- `claims`:
-  - `dark_channel_active`: true
-  - `dark_dilutes_instant`: false
-  - `dark_preserves_lo`: true
-  - `grid_evaluated`: true
-  - `joint_closure_exists`: false
-- `data_label`: SYNTHETIC
-- `git_revision`: 5b4eaa2696ae8f6c705b4788659023b22ffe2c19
-- `grid`:
-  - [0]
-    - `all_in_tol`: false
-    - `attr_windows`:
-      - `10_50`:
-        - `n_anchor_fills`: 611
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.04746317512274959
-            - `total`: -0.038461538461538464
-            - `unhit`: -0.08592471358428805
-          - `fill`:
-            - `hit`: 1.2545008183306057
-            - `total`: 1.0826513911620295
-            - `unhit`: -0.1718494271685761
-          - `lo`:
-            - `hit`: -1.2225859247135842
-            - `total`: -0.602291325695581
-            - `unhit`: 0.6202945990180033
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `1_10`:
-        - `n_anchor_fills`: 269
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.01486988847583643
-            - `total`: -0.020446096654275093
-            - `unhit`: -0.03531598513011153
-          - `fill`:
-            - `hit`: 0.5074349442379182
-            - `total`: 0.4516728624535316
-            - `unhit`: -0.055762081784386616
-          - `lo`:
-            - `hit`: -0.6282527881040892
-            - `total`: -0.2174721189591078
-            - `unhit`: 0.4107806691449814
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `50_200`:
-        - `n_anchor_fills`: 732
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.13934426229508196
-            - `total`: -0.23155737704918034
-            - `unhit`: -0.3709016393442623
-          - `fill`:
-            - `hit`: 3.773907103825137
-            - `total`: 3.1113387978142075
-            - `unhit`: -0.662568306010929
-          - `lo`:
-            - `hit`: -3.4405737704918034
-            - `total`: -1.790983606557377
-            - `unhit`: 1.6495901639344261
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-    - `cxl_channel_ticks`: -0.2707
-    - `cxl_in_tol`: true
-    - `dark_fill_share`: 0.0
-    - `fill_channel_ticks`: 4.1946
-    - `fill_in_tol`: false
-    - `instant_in_tol`: true
-    - `instant_signed_ticks`: 0.7395
-    - `k200_in_tol`: false
-    - `k200_per_channel_ticks`:
-      - `cxl`: -0.2707
-      - `fill`: 4.1946
-      - `lo`: -2.3918
-      - `none`: 0.0
-    - `k200_ticks`: 2.2524
-    - `lo_channel_ticks`: -2.3918
-    - `lo_in_tol`: false
-    - `mid_dark_frac`: 0.0
-    - `mid_dark_ttl`: 0
-    - `n_dark_fills`: 0
-    - `n_fills`: 735
-    - `refill_cooldown`: 0
-    - `unhit_imp_frac`: 0.0
-    - `unhit_imp_window`: 0
-  - [1]
-    - `all_in_tol`: false
-    - `attr_windows`:
-      - `10_50`:
-        - `n_anchor_fills`: 425
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.18588235294117647
-            - `total`: -0.04352941176470588
-            - `unhit`: -0.22941176470588234
-          - `fill`:
-            - `hit`: 0.8047058823529412
-            - `total`: 0.7835294117647059
-            - `unhit`: -0.021176470588235293
-          - `lo`:
-            - `hit`: -0.3211764705882353
-            - `total`: 0.6905882352941176
-            - `unhit`: 1.011764705882353
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `1_10`:
-        - `n_anchor_fills`: 166
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.09939759036144578
-            - `total`: -0.07228915662650602
-            - `unhit`: -0.1716867469879518
-          - `fill`:
-            - `hit`: 0.5753012048192772
-            - `total`: 0.5632530120481928
-            - `unhit`: -0.012048192771084338
-          - `lo`:
-            - `hit`: -0.1716867469879518
-            - `total`: 0.463855421686747
-            - `unhit`: 0.6355421686746988
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `50_200`:
-        - `n_anchor_fills`: 809
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.34239802224969096
-            - `total`: -0.22991347342398022
-            - `unhit`: -0.5723114956736712
-          - `fill`:
-            - `hit`: 1.215698393077874
-            - `total`: 0.9901112484548825
-            - `unhit`: -0.22558714462299134
-          - `lo`:
-            - `hit`: -0.6650185414091471
-            - `total`: 0.9678615574783683
-            - `unhit`: 1.6328800988875154
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-    - `cxl_channel_ticks`: -0.2474
-    - `cxl_in_tol`: true
-    - `dark_fill_share`: 0.8392
-    - `fill_channel_ticks`: 1.4067
-    - `fill_in_tol`: false
-    - `instant_in_tol`: false
-    - `instant_signed_ticks`: 0.1158
-    - `k200_in_tol`: false
-    - `k200_per_channel_ticks`:
-      - `cxl`: -0.2474
-      - `fill`: 1.4067
-      - `lo`: 1.3294
-      - `none`: 0.0
-    - `k200_ticks`: 2.2214
-    - `lo_channel_ticks`: 1.3294
-    - `lo_in_tol`: false
-    - `mid_dark_frac`: 0.4
-    - `mid_dark_ttl`: 0
-    - `n_dark_fills`: 830
-    - `n_fills`: 989
-    - `refill_cooldown`: 0
-    - `unhit_imp_frac`: 0.0
-    - `unhit_imp_window`: 0
-  - [2]
-    - `all_in_tol`: false
-    - `attr_windows`:
-      - `10_50`:
-        - `n_anchor_fills`: 422
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.13744075829383887
-            - `total`: -0.10900473933649289
-            - `unhit`: -0.24644549763033174
-          - `fill`:
-            - `hit`: 0.669431279620853
-            - `total`: 0.6220379146919431
-            - `unhit`: -0.04739336492890995
-          - `lo`:
-            - `hit`: -0.28080568720379145
-            - `total`: 0.6090047393364929
-            - `unhit`: 0.8898104265402843
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `1_10`:
-        - `n_anchor_fills`: 138
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.08333333333333333
-            - `total`: -0.025362318840579712
-            - `unhit`: -0.10869565217391304
-          - `fill`:
-            - `hit`: 0.644927536231884
-            - `total`: 0.6268115942028986
-            - `unhit`: -0.018115942028985508
-          - `lo`:
-            - `hit`: -0.15579710144927536
-            - `total`: 0.29347826086956524
-            - `unhit`: 0.4492753623188406
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `50_200`:
-        - `n_anchor_fills`: 761
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.23390275952693823
-            - `total`: -0.2943495400788436
-            - `unhit`: -0.5282522996057819
-          - `fill`:
-            - `hit`: 1.1938239159001314
-            - `total`: 1.016425755584757
-            - `unhit`: -0.1773981603153745
-          - `lo`:
-            - `hit`: -0.5847568988173456
-            - `total`: 0.9691195795006571
-            - `unhit`: 1.5538764783180026
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-    - `cxl_channel_ticks`: -0.3279
-    - `cxl_in_tol`: true
-    - `dark_fill_share`: 0.8561
-    - `fill_channel_ticks`: 1.3489
-    - `fill_in_tol`: false
-    - `instant_in_tol`: false
-    - `instant_signed_ticks`: 0.1143
-    - `k200_in_tol`: false
-    - `k200_per_channel_ticks`:
-      - `cxl`: -0.3279
-      - `fill`: 1.3489
-      - `lo`: 1.2428
-      - `none`: 0.0
-    - `k200_ticks`: 2.0459
-    - `lo_channel_ticks`: 1.2428
-    - `lo_in_tol`: false
-    - `mid_dark_frac`: 0.4
-    - `mid_dark_ttl`: 200
-    - `n_dark_fills`: 839
-    - `n_fills`: 980
-    - `refill_cooldown`: 0
-    - `unhit_imp_frac`: 0.0
-    - `unhit_imp_window`: 0
-  - [3]
-    - `all_in_tol`: false
-    - `attr_windows`:
-      - `10_50`:
-        - `n_anchor_fills`: 592
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.05067567567567568
-            - `total`: 0.032939189189189186
-            - `unhit`: -0.017736486486486486
-          - `fill`:
-            - `hit`: 0.8386824324324325
-            - `total`: 0.8057432432432432
-            - `unhit`: -0.032939189189189186
-          - `lo`:
-            - `hit`: -0.08192567567567567
-            - `total`: 0.9172297297297297
-            - `unhit`: 0.9991554054054054
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `1_10`:
-        - `n_anchor_fills`: 416
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.002403846153846154
-            - `total`: -0.004807692307692308
-            - `unhit`: -0.007211538461538462
-          - `fill`:
-            - `hit`: 0.2980769230769231
-            - `total`: 0.28966346153846156
-            - `unhit`: -0.008413461538461538
-          - `lo`:
-            - `hit`: -0.016826923076923076
-            - `total`: 0.5048076923076923
-            - `unhit`: 0.5216346153846154
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `50_200`:
-        - `n_anchor_fills`: 743
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.11574697173620457
-            - `total`: 0.07604306864064603
-            - `unhit`: -0.039703903095558546
-          - `fill`:
-            - `hit`: 2.2166890982503364
-            - `total`: 1.9899057873485868
-            - `unhit`: -0.22678331090174966
-          - `lo`:
-            - `hit`: -0.35262449528936746
-            - `total`: 1.9899057873485868
-            - `unhit`: 2.3425302826379544
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-    - `cxl_channel_ticks`: 0.0939
-    - `cxl_in_tol`: false
-    - `dark_fill_share`: 0.0
-    - `fill_channel_ticks`: 2.6428
-    - `fill_in_tol`: true
-    - `instant_in_tol`: false
-    - `instant_signed_ticks`: 0.2203
-    - `k200_in_tol`: true
-    - `k200_per_channel_ticks`:
-      - `cxl`: 0.0939
-      - `fill`: 2.6428
-      - `lo`: 2.8414
-      - `none`: 0.0
-    - `k200_ticks`: 4.8219
-    - `lo_channel_ticks`: 2.8414
-    - `lo_in_tol`: true
-    - `mid_dark_frac`: 0.0
-    - `mid_dark_ttl`: 0
-    - `n_dark_fills`: 0
-    - `n_fills`: 960
-    - `refill_cooldown`: 0
-    - `unhit_imp_frac`: 0.5
-    - `unhit_imp_window`: 200
-  - [4]
-    - `all_in_tol`: false
-    - `attr_windows`:
-      - `10_50`:
-        - `n_anchor_fills`: 545
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.045871559633027525
-            - `total`: 0.026605504587155965
-            - `unhit`: -0.01926605504587156
-          - `fill`:
-            - `hit`: 0.9522935779816514
-            - `total`: 0.9275229357798165
-            - `unhit`: -0.024770642201834864
-          - `lo`:
-            - `hit`: -0.047706422018348627
-            - `total`: 1.136697247706422
-            - `unhit`: 1.1844036697247706
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `1_10`:
-        - `n_anchor_fills`: 412
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.014563106796116505
-            - `total`: 0.007281553398058253
-            - `unhit`: -0.007281553398058253
-          - `fill`:
-            - `hit`: 0.279126213592233
-            - `total`: 0.27427184466019416
-            - `unhit`: -0.0048543689320388345
-          - `lo`:
-            - `hit`: -0.019417475728155338
-            - `total`: 0.5449029126213593
-            - `unhit`: 0.5643203883495146
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `50_200`:
-        - `n_anchor_fills`: 722
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.14473684210526316
-            - `total`: 0.10249307479224377
-            - `unhit`: -0.04224376731301939
-          - `fill`:
-            - `hit`: 2.5325484764542936
-            - `total`: 2.46606648199446
-            - `unhit`: -0.0664819944598338
-          - `lo`:
-            - `hit`: -0.14958448753462603
-            - `total`: 2.595567867036011
-            - `unhit`: 2.7451523545706373
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-    - `cxl_channel_ticks`: 0.1183
-    - `cxl_in_tol`: false
-    - `dark_fill_share`: 0.0375
-    - `fill_channel_ticks`: 3.0951
-    - `fill_in_tol`: true
-    - `instant_in_tol`: false
-    - `instant_signed_ticks`: 0.2279
-    - `k200_in_tol`: false
-    - `k200_per_channel_ticks`:
-      - `cxl`: 0.1183
-      - `fill`: 3.0951
-      - `lo`: 3.5058
-      - `none`: 0.0
-    - `k200_ticks`: 5.7071
-    - `lo_channel_ticks`: 3.5058
-    - `lo_in_tol`: true
-    - `mid_dark_frac`: 0.2
-    - `mid_dark_ttl`: 0
-    - `n_dark_fills`: 36
-    - `n_fills`: 961
-    - `refill_cooldown`: 0
-    - `unhit_imp_frac`: 0.5
-    - `unhit_imp_window`: 200
-  - [5]
-    - `all_in_tol`: false
-    - `attr_windows`:
-      - `10_50`:
-        - `n_anchor_fills`: 549
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.030965391621129327
-            - `total`: -0.0009107468123861566
-            - `unhit`: -0.031876138433515486
-          - `fill`:
-            - `hit`: 0.8761384335154827
-            - `total`: 0.8633879781420765
-            - `unhit`: -0.012750455373406194
-          - `lo`:
-            - `hit`: -0.06557377049180328
-            - `total`: 0.9089253187613844
-            - `unhit`: 0.9744990892531876
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `1_10`:
-        - `n_anchor_fills`: 329
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.015197568389057751
-            - `total`: 0.001519756838905775
-            - `unhit`: -0.013677811550151976
-          - `fill`:
-            - `hit`: 0.34498480243161095
-            - `total`: 0.33890577507598785
-            - `unhit`: -0.0060790273556231
-          - `lo`:
-            - `hit`: -0.022796352583586626
-            - `total`: 0.4726443768996961
-            - `unhit`: 0.49544072948328266
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `50_200`:
-        - `n_anchor_fills`: 688
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.10610465116279069
-            - `total`: 0.023982558139534885
-            - `unhit`: -0.08212209302325581
-          - `fill`:
-            - `hit`: 2.2594476744186047
-            - `total`: 2.1119186046511627
-            - `unhit`: -0.14752906976744187
-          - `lo`:
-            - `hit`: -0.28924418604651164
-            - `total`: 2.1438953488372094
-            - `unhit`: 2.433139534883721
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-    - `cxl_channel_ticks`: 0.0226
-    - `cxl_in_tol`: false
-    - `dark_fill_share`: 0.083
-    - `fill_channel_ticks`: 2.8093
-    - `fill_in_tol`: true
-    - `instant_in_tol`: false
-    - `instant_signed_ticks`: 0.1834
-    - `k200_in_tol`: true
-    - `k200_per_channel_ticks`:
-      - `cxl`: 0.0226
-      - `fill`: 2.8093
-      - `lo`: 2.9342
-      - `none`: 0.0
-    - `k200_ticks`: 4.5227
-    - `lo_channel_ticks`: 2.9342
-    - `lo_in_tol`: true
-    - `mid_dark_frac`: 0.4
-    - `mid_dark_ttl`: 0
-    - `n_dark_fills`: 81
-    - `n_fills`: 976
-    - `refill_cooldown`: 0
-    - `unhit_imp_frac`: 0.5
-    - `unhit_imp_window`: 200
-  - [6]
-    - `all_in_tol`: false
-    - `attr_windows`:
-      - `10_50`:
-        - `n_anchor_fills`: 675
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.034074074074074076
-            - `total`: 0.0007407407407407407
-            - `unhit`: -0.03333333333333333
-          - `fill`:
-            - `hit`: 0.9474074074074074
-            - `total`: 0.9281481481481482
-            - `unhit`: -0.01925925925925926
-          - `lo`:
-            - `hit`: -0.061481481481481484
-            - `total`: 1.1422222222222222
-            - `unhit`: 1.2037037037037037
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `1_10`:
-        - `n_anchor_fills`: 436
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.011467889908256881
-            - `total`: 0.0022935779816513763
-            - `unhit`: -0.009174311926605505
-          - `fill`:
-            - `hit`: 0.4793577981651376
-            - `total`: 0.47591743119266056
-            - `unhit`: -0.0034403669724770644
-          - `lo`:
-            - `hit`: -0.02522935779816514
-            - `total`: 0.6754587155963303
-            - `unhit`: 0.7006880733944955
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `50_200`:
-        - `n_anchor_fills`: 870
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.12011494252873563
-            - `total`: 0.0603448275862069
-            - `unhit`: -0.059770114942528735
-          - `fill`:
-            - `hit`: 2.5195402298850573
-            - `total`: 2.3885057471264366
-            - `unhit`: -0.1310344827586207
-          - `lo`:
-            - `hit`: -0.28620689655172415
-            - `total`: 2.3850574712643677
-            - `unhit`: 2.671264367816092
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-    - `cxl_channel_ticks`: 0.0597
-    - `cxl_in_tol`: false
-    - `dark_fill_share`: 0.0972
-    - `fill_channel_ticks`: 3.2373
-    - `fill_in_tol`: true
-    - `instant_in_tol`: false
-    - `instant_signed_ticks`: 0.2192
-    - `k200_in_tol`: false
-    - `k200_per_channel_ticks`:
-      - `cxl`: 0.0597
-      - `fill`: 3.2373
-      - `lo`: 3.484
-      - `none`: 0.0
-    - `k200_ticks`: 5.9604
-    - `lo_channel_ticks`: 3.484
-    - `lo_in_tol`: true
-    - `mid_dark_frac`: 0.4
-    - `mid_dark_ttl`: 200
-    - `n_dark_fills`: 105
-    - `n_fills`: 1080
-    - `refill_cooldown`: 0
-    - `unhit_imp_frac`: 0.5
-    - `unhit_imp_window`: 200
-  - [7]
-    - `all_in_tol`: false
-    - `attr_windows`:
-      - `10_50`:
-        - `n_anchor_fills`: 408
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.0428921568627451
-            - `total`: 0.023284313725490197
-            - `unhit`: -0.0196078431372549
-          - `fill`:
-            - `hit`: 0.7450980392156863
-            - `total`: 0.7254901960784313
-            - `unhit`: -0.0196078431372549
-          - `lo`:
-            - `hit`: -0.10049019607843138
-            - `total`: 0.7769607843137255
-            - `unhit`: 0.8774509803921569
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `1_10`:
-        - `n_anchor_fills`: 229
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.010917030567685589
-            - `total`: -0.006550218340611353
-            - `unhit`: -0.017467248908296942
-          - `fill`:
-            - `hit`: 0.4432314410480349
-            - `total`: 0.4279475982532751
-            - `unhit`: -0.015283842794759825
-          - `lo`:
-            - `hit`: -0.026200873362445413
-            - `total`: 0.4868995633187773
-            - `unhit`: 0.5131004366812227
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `50_200`:
-        - `n_anchor_fills`: 526
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.12547528517110265
-            - `total`: 0.08079847908745247
-            - `unhit`: -0.04467680608365019
-          - `fill`:
-            - `hit`: 2.3517110266159698
-            - `total`: 2.203422053231939
-            - `unhit`: -0.1482889733840304
-          - `lo`:
-            - `hit`: -0.3526615969581749
-            - `total`: 2.061787072243346
-            - `unhit`: 2.414448669201521
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-    - `cxl_channel_ticks`: 0.0911
-    - `cxl_in_tol`: false
-    - `dark_fill_share`: 0.1941
-    - `fill_channel_ticks`: 2.7795
-    - `fill_in_tol`: true
-    - `instant_in_tol`: false
-    - `instant_signed_ticks`: 0.1747
-    - `k200_in_tol`: true
-    - `k200_per_channel_ticks`:
-      - `cxl`: 0.0911
-      - `fill`: 2.7795
-      - `lo`: 2.7143
-      - `none`: 0.0
-    - `k200_ticks`: 3.8907
-    - `lo_channel_ticks`: 2.7143
-    - `lo_in_tol`: true
-    - `mid_dark_frac`: 0.6
-    - `mid_dark_ttl`: 200
-    - `n_dark_fills`: 165
-    - `n_fills`: 850
-    - `refill_cooldown`: 0
-    - `unhit_imp_frac`: 0.5
-    - `unhit_imp_window`: 200
-  - [8]
-    - `all_in_tol`: false
-    - `attr_windows`:
-      - `10_50`:
-        - `n_anchor_fills`: 790
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.07658227848101266
-            - `total`: 0.020253164556962026
-            - `unhit`: -0.056329113924050635
-          - `fill`:
-            - `hit`: 1.3784810126582279
-            - `total`: 1.3512658227848102
-            - `unhit`: -0.02721518987341772
-          - `lo`:
-            - `hit`: -0.5677215189873418
-            - `total`: 0.6740506329113924
-            - `unhit`: 1.2417721518987341
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `1_10`:
-        - `n_anchor_fills`: 493
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.029411764705882353
-            - `total`: 0.013184584178498986
-            - `unhit`: -0.016227180527383367
-          - `fill`:
-            - `hit`: 0.5354969574036511
-            - `total`: 0.5324543610547667
-            - `unhit`: -0.0030425963488843813
-          - `lo`:
-            - `hit`: -0.12271805273833672
-            - `total`: 0.3752535496957404
-            - `unhit`: 0.49797160243407707
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `50_200`:
-        - `n_anchor_fills`: 1052
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.19819391634980987
-            - `total`: 0.06273764258555133
-            - `unhit`: -0.13545627376425856
-          - `fill`:
-            - `hit`: 3.8830798479087454
-            - `total`: 3.711026615969582
-            - `unhit`: -0.1720532319391635
-          - `lo`:
-            - `hit`: -1.4006653992395437
-            - `total`: 1.5860266159695817
-            - `unhit`: 2.9866920152091256
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-    - `cxl_channel_ticks`: 0.0775
-    - `cxl_in_tol`: false
-    - `dark_fill_share`: 0.4026
-    - `fill_channel_ticks`: 4.6879
-    - `fill_in_tol`: false
-    - `instant_in_tol`: false
-    - `instant_signed_ticks`: 0.2851
-    - `k200_in_tol`: false
-    - `k200_per_channel_ticks`:
-      - `cxl`: 0.0775
-      - `fill`: 4.6879
-      - `lo`: 2.1411
-      - `none`: 0.0
-    - `k200_ticks`: 6.3827
-    - `lo_channel_ticks`: 2.1411
-    - `lo_in_tol`: true
-    - `mid_dark_frac`: 0.4
-    - `mid_dark_ttl`: 200
-    - `n_dark_fills`: 519
-    - `n_fills`: 1289
-    - `refill_cooldown`: 400
-    - `unhit_imp_frac`: 0.5
-    - `unhit_imp_window`: 200
-  - [9]
-    - `all_in_tol`: false
-    - `attr_windows`:
-      - `10_50`:
-        - `n_anchor_fills`: 864
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.1840277777777778
-            - `total`: 0.07581018518518519
-            - `unhit`: -0.10821759259259259
-          - `fill`:
-            - `hit`: 1.8634259259259258
-            - `total`: 1.8414351851851851
-            - `unhit`: -0.02199074074074074
-          - `lo`:
-            - `hit`: -1.0179398148148149
-            - `total`: 0.1440972222222222
-            - `unhit`: 1.162037037037037
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `1_10`:
-        - `n_anchor_fills`: 484
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.07747933884297521
-            - `total`: 0.03202479338842975
-            - `unhit`: -0.045454545454545456
-          - `fill`:
-            - `hit`: 0.6962809917355371
-            - `total`: 0.6890495867768595
-            - `unhit`: -0.007231404958677686
-          - `lo`:
-            - `hit`: -0.4297520661157025
-            - `total`: 0.11880165289256199
-            - `unhit`: 0.5485537190082644
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-      - `50_200`:
-        - `n_anchor_fills`: 1217
-        - `per_channel_ticks`:
-          - `cxl`:
-            - `hit`: 0.5390304026294166
-            - `total`: 0.22925225965488907
-            - `unhit`: -0.30977814297452755
-          - `fill`:
-            - `hit`: 4.339359079704191
-            - `total`: 4.1516023007395235
-            - `unhit`: -0.18775677896466722
-          - `lo`:
-            - `hit`: -2.8352506162695152
-            - `total`: 0.12448644207066557
-            - `unhit`: 2.9597370583401807
-          - `none`:
-            - `hit`: 0.0
-            - `total`: 0.0
-            - `unhit`: 0.0
-    - `cxl_channel_ticks`: 0.2817
-    - `cxl_in_tol`: false
-    - `dark_fill_share`: 0.6188
-    - `fill_channel_ticks`: 5.5173
-    - `fill_in_tol`: false
-    - `instant_in_tol`: false
-    - `instant_signed_ticks`: 0.3262
-    - `k200_in_tol`: false
-    - `k200_per_channel_ticks`:
-      - `cxl`: 0.2817
-      - `fill`: 5.5173
-      - `lo`: 0.2533
-      - `none`: 0.0
-    - `k200_ticks`: 5.9553
-    - `lo_channel_ticks`: 0.2533
-    - `lo_in_tol`: false
-    - `mid_dark_frac`: 0.6
-    - `mid_dark_ttl`: 200
-    - `n_dark_fills`: 857
-    - `n_fills`: 1385
-    - `refill_cooldown`: 400
-    - `unhit_imp_frac`: 0.5
-    - `unhit_imp_window`: 200
-- `horizon_events`: 20000
-- `kind`: sim_bench
-- `receipt_sha256`: 14d782f4c6dee695f77dd48ecc798b6bc2c2970534e2ef21003332c10a54eab6
-- `schema`: mid_dark.v1
-- `seed`: 7
-- `target_instant_ticks`: 0.887
-- `target_k200_ticks`: 4.6447
-- `tolerances`:
-  - `cxl`: 0.5
-  - `fill`: 1.0
-  - `instant`: 0.2
-  - `k200`: 1.0
-  - `lo`: 1.0
 
 ### `receipts/mid_jump_amzn.json`
 

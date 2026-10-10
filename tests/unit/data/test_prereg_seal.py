@@ -19,7 +19,10 @@ from quant_fund.data.prereg_seal import (
 )
 
 RECEIPTS = Path(__file__).resolve().parents[3] / "receipts"
-COMMITTED = RECEIPTS / "forward_record_preregistration_v1.json"
+# The pre-registration doc predates the receipt_sha256 envelope — it lives in
+# the pinned legacy-unsealed quarantine but still self-verifies under its own
+# `_seal` convention, which is what this file exercises.
+COMMITTED = RECEIPTS / "legacy-unsealed" / "forward_record_preregistration_v1.json"
 
 
 def _prereg() -> dict:

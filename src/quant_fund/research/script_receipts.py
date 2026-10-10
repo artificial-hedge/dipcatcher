@@ -534,6 +534,151 @@ _MEASUREMENT_SCHEMAS = (
 )
 
 
+def lobster_replay_contract_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Deep-check the LOBSTER replay receipt: honesty envelope plus the
+    structural claims a real tape reconstruction must carry — the dataset
+    name rides ``data_label`` (predates the label enum), so the tape
+    provenance fields carry the binding."""
+    errors: list[str] = []
+    if payload.get("kind") != "lobster_replay":
+        errors.append("kind_mismatch")
+    if payload.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if payload.get("live_pnl_claim") is True:
+        errors.append("live_pnl_claim_true")
+    label = payload.get("data_label")
+    if not (isinstance(label, str) and label.strip()):
+        errors.append("data_label_missing")
+    rev = payload.get("git_revision")
+    if not (
+        isinstance(rev, str)
+        and 7 <= len(rev) <= 40
+        and all(c in "0123456789abcdef" for c in rev.lower())
+    ):
+        errors.append("git_revision_not_hex")
+    sha = payload.get("tape_sha256")
+    if not (isinstance(sha, str) and len(sha) == 64 and _is_hex(sha)):
+        errors.append("tape_sha256_invalid")
+    files = payload.get("tape_files")
+    if not (isinstance(files, list) and files and all(isinstance(f, str) and f for f in files)):
+        errors.append("tape_files_missing")
+    if not isinstance(payload.get("ticker"), str) or not payload["ticker"]:
+        errors.append("ticker_missing")
+    if not isinstance(payload.get("measurements"), dict) or not payload["measurements"]:
+        errors.append("measurements_missing")
+    if not isinstance(payload.get("reconstruction"), dict) or not payload["reconstruction"]:
+        errors.append("reconstruction_missing")
+    if not isinstance(payload.get("engine_valid_on_emitted"), bool):
+        errors.append("engine_valid_not_bool")
+    interp = payload.get("interpretation")
+    if not (isinstance(interp, str) and interp.strip()):
+        errors.append("interpretation_empty")
+    return errors
+
+
+def queue_priority_contract_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Deep-check the queue-priority sim study: honesty envelope (the receipt
+    predates ``git_revision`` — ``code_revision`` carries the commit) plus the
+    two-arm comparison shape it claims."""
+    errors: list[str] = []
+    if payload.get("kind") != "queue_priority":
+        errors.append("kind_mismatch")
+    if payload.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if payload.get("live_pnl_claim") is True:
+        errors.append("live_pnl_claim_true")
+    if payload.get("data_label") not in {"SYNTHETIC", "MIXED", "REAL"}:
+        errors.append("data_label_invalid")
+    rev = payload.get("code_revision")
+    if not (
+        isinstance(rev, str)
+        and 7 <= len(rev) <= 40
+        and all(c in "0123456789abcdef" for c in rev.lower())
+    ):
+        errors.append("code_revision_not_hex")
+    if not (isinstance(payload.get("arms"), dict) and payload["arms"]):
+        errors.append("arms_missing")
+    claims = payload.get("claims")
+    if not (
+        isinstance(claims, list)
+        and claims
+        and all(isinstance(c, dict) and c.get("text") for c in claims)
+    ):
+        errors.append("claims_malformed")
+    if not (isinstance(payload.get("comparison"), dict) and payload["comparison"]):
+        errors.append("comparison_missing")
+    evidence = payload.get("evidence")
+    if not (
+        isinstance(evidence, list) and evidence and all(isinstance(e, str) and e for e in evidence)
+    ):
+        errors.append("evidence_malformed")
+    interp = payload.get("interpretation")
+    if not (
+        isinstance(interp, list)
+        and interp
+        and all(isinstance(s, str) and s.strip() for s in interp)
+    ):
+        errors.append("interpretation_malformed")
+    claim = payload.get("claim")
+    if not (isinstance(claim, str) and claim.strip()):
+        errors.append("claim_empty")
+    return errors
+
+
+def _is_hex(value: str) -> bool:
+    return all(c in "0123456789abcdef" for c in value.lower())
+
+
+def tape_sim_study_contract_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Deep-check the int-schema (``schema: 1``) tape-bound sim studies —
+    ``fifo_priority.v1`` / ``seed_sweep_demo.v1`` / ``sweep_width.v1`` dispatch
+    here by ``kind``. Honesty envelope plus the tape/sim-arm structure the
+    committed AMZN receipts carry."""
+    errors: list[str] = []
+    kind = payload.get("kind")
+    if kind not in TAPE_SIM_STUDY_KINDS:
+        errors.append("kind_mismatch")
+    if payload.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if payload.get("live_pnl_claim") is True:
+        errors.append("live_pnl_claim_true")
+    if payload.get("data_label") not in {"SYNTHETIC", "MIXED", "REAL"}:
+        errors.append("data_label_invalid")
+    rev = payload.get("git_revision")
+    if not (isinstance(rev, str) and 7 <= len(rev) <= 40 and _is_hex(rev)):
+        errors.append("git_revision_not_hex")
+    tape = payload.get("tape")
+    if not (isinstance(tape, dict) and tape):
+        errors.append("tape_missing")
+    claim = payload.get("claim")
+    if not (isinstance(claim, str) and claim.strip()):
+        errors.append("claim_empty")
+    interp = payload.get("interpretation")
+    if not (isinstance(interp, str) and interp.strip()):
+        errors.append("interpretation_empty")
+    if kind == "seed_sweep_demo.v1":
+        lanes = payload.get("lanes")
+        if not (isinstance(lanes, dict) and lanes):
+            errors.append("lanes_missing")
+    else:
+        if not (isinstance(payload.get("sim_arms"), dict) and payload["sim_arms"]):
+            errors.append("sim_arms_missing")
+        if not isinstance(payload.get("real"), dict):
+            errors.append("real_missing")
+        if not isinstance(payload.get("divergences"), (dict, list)):
+            errors.append("divergences_missing")
+    return errors
+
+
+TAPE_SIM_STUDY_KINDS: frozenset[str] = frozenset(
+    {
+        "fifo_priority.v1",
+        "seed_sweep_demo.v1",
+        "sweep_width.v1",
+    }
+)
+
+
 SCRIPT_RECEIPT_CONTRACTS: dict[str, Any] = {
     "adaptive_mix_band_search.v1": band_search_contract_errors,
     "adaptive_mix_replay.v1": adaptive_mix_replay_contract_errors,
@@ -543,6 +688,8 @@ SCRIPT_RECEIPT_CONTRACTS: dict[str, Any] = {
     "fx1.dip_bench/v1": dip_bench_contract_errors,
     "deps_hygiene.v1": deps_hygiene_contract_errors,
     "joint_tune.v2": joint_tune_v2_contract_errors,
+    "lobster_replay.v1": lobster_replay_contract_errors,
+    "queue_priority.v1": queue_priority_contract_errors,
     **{s: measurement_receipt_contract_errors for s in _MEASUREMENT_SCHEMAS},
 }
 
@@ -550,6 +697,9 @@ SCRIPT_RECEIPT_CONTRACTS: dict[str, Any] = {
 def script_receipt_contract_errors(schema: object, payload: Mapping[str, Any]) -> list[str]:
     """Re-derive a script receipt's headline claims; ``[]`` when unknown schema."""
     check = SCRIPT_RECEIPT_CONTRACTS.get(str(schema))
+    if check is None and payload.get("kind") in TAPE_SIM_STUDY_KINDS:
+        # ``schema: 1`` receipts carry no schema name — kind is their tag.
+        check = tape_sim_study_contract_errors
     if check is None:
         return []
     try:
