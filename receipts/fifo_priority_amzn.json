@@ -24,7 +24,7 @@
     "shadow_share": 0.06206819701359483,
     "unclean_share": 0.6603521283708491
   },
-  "receipt_sha256": "76025ec9345d42fd63c08d837bd03a1f4cbc11f1219feb59ca63e5624bb6a28b",
+  "receipt_sha256": "973b6f22d41add7861ed6d5230a48308597b931484a08502bab79783d6a52b7f",
   "research_only": true,
   "schema": "fifo_priority.v1",
   "sim_arms": {

@@ -80,7 +80,7 @@
   "live_pnl_claim": false,
   "n_heads": 3,
   "n_obs": 128,
-  "receipt_sha256": "b133e8b3992af8937df8b38e6d89432215769344f3fd58af3251652ceba7c882",
+  "receipt_sha256": "8e213a98bcd27de335e168eec4e02861de8dbf56ec9e41b76b06a36df2009cd0",
   "replay": {
     "argv": [
       "dipcatcher",

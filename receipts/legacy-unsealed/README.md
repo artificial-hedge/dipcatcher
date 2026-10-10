@@ -21,3 +21,21 @@ cleanly does not belong here. Four of the seven additionally fail
 `forbidden_metric_keys` (they headline Sharpe-style metrics from before the
 proper-scores honesty contract); `basis_reversion_screen`, `dip_bench_crypto`,
 and `fast_replay_p42_conformance` fail only the seal check.
+
+Two later arrivals (`basis_carry_dd7705fc0f2f1c25`,
+`crossvenue_basis_3f4ff76f517655a7`) are sealed and contract-clean but
+declare non-synthetic `dataset_sha256` bindings (`kraken`, `kraken+okx`)
+whose tapes were never pinned by a committed `tape_manifest.v1` — the
+tape-binding ratchet fails them `tape_manifest_unknown`, fail-closed by
+design. They return to `receipts/` once the underlying tapes are pinned
+(`dipcatcher tape-pin … --eval-stream`) and their digests attestable.
+
+Two more (`cp_real_drill_gaussian_minus_conf_t_pinball`,
+`cp_real_drill_gaussian_pit`) predate their kind's deep contract —
+`changepoint_localize.v1` now requires a `params` block these artifacts
+never carried. `suite-health` already tolerates them under the
+`KNOWN_CONTRACT_LEGACY` byte-pin (which keeps working, keyed by
+basename); quarantining them is what turns `receipts-reverify` green —
+the sealed set is then end-to-end re-verifiable as its contract demands.
+Re-sealing them would require fabricating the original `params`, which
+is the one thing a receipt must never do.

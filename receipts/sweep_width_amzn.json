@@ -32,7 +32,7 @@
       "8": 1
     }
   },
-  "receipt_sha256": "a52e2a7415bdbdda9ce1f81bc4976478e758a845db7ccc440fd9792a6ae65fb9",
+  "receipt_sha256": "07fbff38629058e8b8bec70a5352480ed44432e2a68aaf94cbc48797ad44f436",
   "research_only": true,
   "schema": "sweep_width.v1",
   "sim_arms": {

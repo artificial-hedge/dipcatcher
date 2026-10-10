@@ -435,7 +435,7 @@
       0.95
     ]
   },
-  "receipt_sha256": "2dd641ab766a536a8bc1d7a29cd3527c99cc24c148c9cee879cfc334a9a9f846",
+  "receipt_sha256": "4c2844836673f2e05b3517da2608f68a3f0f4fd4a79075c24e47190009c5e3f9",
   "schema": "receipt.v2",
   "schema_version": 2,
   "verdict": "pass"

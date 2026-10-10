@@ -68,6 +68,7 @@ def _honesty_errors(doc: Mapping[str, Any]) -> tuple[list[str], list[str]]:
 def _link_or_copy(src: Path, dst: Path) -> None:
     if dst.exists():
         return  # already linked — e.g. the candidate lives inside the corpus
+    dst.parent.mkdir(parents=True, exist_ok=True)
     try:
         os.link(src, dst)
     except OSError:  # cross-filesystem corpus dirs still gate correctly
@@ -109,6 +110,8 @@ def admission_check(
     q: float = 0.05,
     known_inconsistent: Mapping[str, str] | None = None,
     tombstone_dir: Path | str | None = None,
+    allowed_removals: Mapping[str, str] | None = None,
+    check_epoch: bool = True,
 ) -> dict[str, Any]:
     """Gate a candidate receipt against an existing corpus.
 
@@ -220,30 +223,39 @@ def admission_check(
     hard_chain_errors: list[str] = []
     epoch_head: str | None = None
     epoch_root_value: str | None = None
-    try:
-        from quant_fund.research.corpus_epoch import check_epoch_chain
-    except ImportError:
-        checks.append({"name": "epoch_chain", "ok": True, "skipped": "corpus_epoch_unavailable"})
+    if not check_epoch:
+        # admit_batch defers the chain check to the batch end-state: a
+        # per-file intermediate view flags a batch's own ordering noise as
+        # chain damage — the honest question is whether the landed diff
+        # leaves the corpus chained, not whether each prefix does.
+        checks.append({"name": "epoch_chain", "ok": True, "skipped": "batch_end_state"})
     else:
-        chain_result = check_epoch_chain(corpus_dir)
-        chain_errors = list(chain_result["errors"])
-        # An unstamped corpus ("no_epoch_receipts") is benign — the gate
-        # works fine before the first epoch stamp exists. Only a *broken
-        # stamped chain* (fork, member_removed/mutated, dishonest delta)
-        # is a quarantine-class finding.
-        hard_chain_errors = [e for e in chain_errors if e != "no_epoch_receipts"]
-        head_name = chain_result.get("head")
-        epoch_head = head_name if isinstance(head_name, str) else None
-        root_value = chain_result.get("head_epoch_root")
-        epoch_root_value = root_value if isinstance(root_value, str) else None
-        checks.append(
-            {
-                "name": "epoch_chain",
-                "ok": not hard_chain_errors,
-                "errors": chain_errors,
-                "unstamped": list(chain_result["unstamped"]),
-            }
-        )
+        try:
+            from quant_fund.research.corpus_epoch import check_epoch_chain
+        except ImportError:
+            checks.append(
+                {"name": "epoch_chain", "ok": True, "skipped": "corpus_epoch_unavailable"}
+            )
+        else:
+            chain_result = check_epoch_chain(corpus_dir, allowed_removals=allowed_removals)
+            chain_errors = list(chain_result["errors"])
+            # An unstamped corpus ("no_epoch_receipts") is benign — the gate
+            # works fine before the first epoch stamp exists. Only a *broken
+            # stamped chain* (fork, member_removed/mutated, dishonest delta)
+            # is a quarantine-class finding.
+            hard_chain_errors = [e for e in chain_errors if e != "no_epoch_receipts"]
+            head_name = chain_result.get("head")
+            epoch_head = head_name if isinstance(head_name, str) else None
+            root_value = chain_result.get("head_epoch_root")
+            epoch_root_value = root_value if isinstance(root_value, str) else None
+            checks.append(
+                {
+                    "name": "epoch_chain",
+                    "ok": not hard_chain_errors,
+                    "errors": chain_errors,
+                    "unstamped": list(chain_result["unstamped"]),
+                }
+            )
 
     # -- 6. retraction -----------------------------------------------------------
     # An append-only corpus can't delete a bad receipt — it retracts it via a
@@ -327,6 +339,7 @@ def admit_batch(
     *,
     q: float = 0.05,
     known_inconsistent: Mapping[str, str] | None = None,
+    allowed_removals: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Gate a set of incoming receipts the way a merge actually lands them.
 
@@ -341,9 +354,11 @@ def admit_batch(
     intra-diff contradictions are attributed to the file that introduces
     them and no commit sneaks a contradiction in inside a batch.
 
-    Only top-level ``*.json`` members of the corpus are gated: quarantined
-    subtrees (``legacy-unsealed/``) and non-receipt files are not corpus
-    members and are skipped — they carry their own byte-pins elsewhere.
+    Only top-level ``*.json`` members of the corpus are gated as candidates:
+    quarantined subtrees (``legacy-unsealed/``) carry their own byte-pins
+    elsewhere. The shadow still mirrors the corpus recursively — epoch
+    membership is ``rglob`` — so subtree members are present when the chain
+    check runs (their absence would read as ``member_removed``).
 
     Fails closed: a missing candidate, a candidate inside the corpus under a
     *different* name, or an unreadable corpus dir raises.
@@ -358,9 +373,10 @@ def admit_batch(
 
     changed_names = {c.name for c in ordered}
     shadow = Path(tempfile.mkdtemp(prefix="admit_batch_base_"))
-    for path in sorted(corpus_dir.glob("*.json")):
-        if path.is_file() and path.name not in changed_names:
-            _link_or_copy(path, shadow / path.name)
+    for path in sorted(corpus_dir.rglob("*.json")):
+        rel = path.relative_to(corpus_dir).as_posix()
+        if path.is_file() and rel not in changed_names:
+            _link_or_copy(path, shadow / rel)
 
     results: list[dict[str, Any]] = []
     for cand in ordered:
@@ -370,6 +386,8 @@ def admit_batch(
             q=q,
             known_inconsistent=known_inconsistent,
             tombstone_dir=corpus_dir,
+            allowed_removals=allowed_removals,
+            check_epoch=False,
         )
         results.append(result)
         # Post-merge coexistence: a merged diff lands all of its files
@@ -377,16 +395,39 @@ def admit_batch(
         # contains the earlier ones — whatever verdict they drew.
         _link_or_copy(cand, shadow / cand.name)
 
+    # Epoch-chain integrity is a property of the landed diff, not of any
+    # per-file prefix: a restamp batch is exactly the case where an
+    # intermediate view (old head vs new members) flags ordering noise.
+    # The shadow now holds the full post-merge state, so one end-state
+    # chain check decides whether the batch leaves the corpus chained.
+    epoch_chain_result: dict[str, Any] = {"ok": True, "skipped": "corpus_epoch_unavailable"}
+    batch_chain_errors: list[str] = []
+    try:
+        from quant_fund.research.corpus_epoch import check_epoch_chain
+    except ImportError:
+        pass
+    else:
+        final_chain = check_epoch_chain(shadow, allowed_removals=allowed_removals)
+        batch_chain_errors = [e for e in final_chain["errors"] if e != "no_epoch_receipts"]
+        epoch_chain_result = {
+            "ok": not batch_chain_errors,
+            "errors": final_chain["errors"],
+            "unstamped": list(final_chain["unstamped"]),
+            "head": final_chain.get("head"),
+            "head_epoch_root": final_chain.get("head_epoch_root"),
+        }
+
     verdicts = [r["verdict"] for r in results]
     if "reject" in verdicts:
         verdict = "reject"
-    elif "quarantine" in verdicts:
+    elif "quarantine" in verdicts or batch_chain_errors:
         verdict = "quarantine"
     else:
         verdict = "admit"
     return {
         "verdict": verdict,
         "n_candidates": len(ordered),
+        "epoch_chain": epoch_chain_result,
         "results": results,
         "failures": [r["candidate"] for r in results if r["verdict"] != "admit"],
     }

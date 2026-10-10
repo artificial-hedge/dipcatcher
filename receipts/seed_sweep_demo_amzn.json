@@ -154,7 +154,7 @@
       }
     }
   },
-  "receipt_sha256": "9eda6f54e96b06421aa86a4d7ba9f113a27f61ba4c368e86d87fb6a430e844d8",
+  "receipt_sha256": "467a64e291b3a7b9b52955cd47f273316e5ba773d68d416cc8465d4e0458fe1d",
   "research_only": true,
   "schema": "seed_sweep_demo.v1",
   "tape": {

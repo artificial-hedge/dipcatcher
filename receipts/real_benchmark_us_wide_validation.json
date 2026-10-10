@@ -13,7 +13,7 @@
   "manifest_sha256": "819e12ea1e57c79a64d27662e356a85a5d988dc4304c743030071e514dfbff3d",
   "phase": "validation",
   "promote": false,
-  "receipt_sha256": "519c05933f3756cfc92503f3dd5147540ab4cade2471238b40a3f3ac47d525b7",
+  "receipt_sha256": "271ddaf4114dcf61980aa4cb91fb60fdcc4cae75ae1c9df6247dd07ffcd12a1c",
   "research_only": true,
   "schema": "real_benchmark_scores.v1",
   "scores": {

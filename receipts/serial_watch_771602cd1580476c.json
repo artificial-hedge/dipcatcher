@@ -60,7 +60,7 @@
   },
   "pooled_alarmed": false,
   "pooled_evalue": 1.267130129950862e-10,
-  "receipt_sha256": "771602cd1580476c5d3aea8cd46b7d9226dc73c59b64acb2ceacb194477c77e3",
+  "receipt_sha256": "eb88f3c1ded7ada0dce889c959a39c437611510e497c5c1087037aefc5a7ae09",
   "research_only": true,
   "schema": "serial_watch.v1"
 }
