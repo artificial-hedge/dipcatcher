@@ -1100,8 +1100,10 @@ def _client_probes() -> dict[str, Any]:
             retry_writes=True,
             sleep=lambda s: time.sleep(min(s, _WINDOW_RECOVER_S)),
         )
-        hc3.complete([{"role": "user", "content": "a"}], backend="byok")
-        ok_retry = hc3.complete([{"role": "user", "content": "b"}], backend="byok")
+        hc3.complete([{"role": "user", "content": "a"}], backend="byok", idempotency_key="qa-3a")
+        ok_retry = hc3.complete(
+            [{"role": "user", "content": "b"}], backend="byok", idempotency_key="qa-3b"
+        )
         posts3 = [c for c in spy3.calls if c[0] == "POST" and c[1] == _COMPLETE_PATH]
         out["client_retries_rate_limited_to_admit"] = (
             ok_retry.content == "ok:b" and len(posts3) == 3

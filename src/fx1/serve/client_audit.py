@@ -662,8 +662,11 @@ def _retry_probes() -> dict[str, bool]:  # NOSONAR(S3776) — retry matrix fans 
     out["long_wait_breaks_fast"] = (
         type(exc).__name__ == "HarnessTransportError" and len(calls) == 1 and sleeps == []
     )
-    c, calls, sleeps = client_for((429, {_RA: "-5"}, _ERR_BODY), ok, max_retries=1)
-    out["negative_ra_retries_immediately"] = c.commands() == ["alpha", "beta"] and sleeps == [0.0]
+    c, calls, _ = client_for((429, {_RA: "-5"}, _ERR_BODY), ok, max_retries=1)
+    exc = _exc(c.commands)
+    out["negative_ra_not_retried"] = (
+        type(exc).__name__ == "HarnessTransportError" and len(calls) == 1
+    )
     c, calls, _ = client_for(
         (429, {_RA: "Wed, 21 Oct 2015 07:28:00 GMT"}, _ERR_BODY), ok, max_retries=2
     )
@@ -698,7 +701,16 @@ def _retry_probes() -> dict[str, bool]:  # NOSONAR(S3776) — retry matrix fans 
         type(exc).__name__ == "HarnessTransportError" and len(calls) == 1
     )
     c, calls, _ = client_for(fault, comp_body, max_retries=3, retry_writes=True)
-    out["retry_writes_retries_post"] = c.complete(_MSGS).content == "ok" and len(calls) == 2
+    out["retry_writes_retries_keyed_post"] = (
+        c.complete(_MSGS, idempotency_key="rw-1").content == "ok" and len(calls) == 2
+    )
+    # the flag alone no longer widens unkeyed writes — a write whose first
+    # attempt may have landed is never replayed
+    c, calls, _ = client_for(fault, comp_body, max_retries=3, retry_writes=True)
+    exc = _exc(lambda: c.complete(_MSGS))
+    out["retry_writes_unkeyed_still_no_replay"] = (
+        type(exc).__name__ == "HarnessTransportError" and len(calls) == 1
+    )
     c, calls, _ = client_for(ra429, comp_body, max_retries=3)
     exc = _exc(lambda: c.complete(_MSGS))
     out["no_retry_429_on_unkeyed_write"] = (

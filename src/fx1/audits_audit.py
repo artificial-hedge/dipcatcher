@@ -47,19 +47,11 @@ _REPO_ROOT = _FX1_ROOT.parents[1]
 _TESTS_ROOT = _REPO_ROOT / "tests"
 _CENSUS_PATH = _REPO_ROOT / "quality" / "audit_coverage_fx1.json"
 
-# Batteries whose offline execution is owned by an open repair lane.
-# api_audit's callback probes need live DNS (gaierror offline) and its
-# private-networks seam repair rides PR #2926; until it merges the bench
-# is deferred to import/export probes only. The set is pinned — adding a
-# module here without removing the entry is itself a flagged defect.
-_DEFERRED: dict[str, str] = {
-    "fx1.serve.api_audit": "offline DNS/callback-env flake; repair lane open",
-    "fx1.serve.cap_audit": "bench raises KeyError('choices') on current main — response-shape drift; repair tracked",
-    "fx1.serve.client_audit": "bench escapes 429 rate_limited under the meta baseline — ambient throttle state; repair tracked",
-    "fx1.serve.parity_audit": "bench escapes HarnessTransportError('boom') on current main — probe-harness drift; repair tracked",
-    "fx1.serve.quota_audit": "bench escapes 429 rate_limited under the meta baseline — ambient throttle state; repair tracked",
-    "fx1.serve.serve_audit": "local engine spawn exits rc=0 under the meta baseline — env-dependent spawn defect; repair tracked",
-}
+# Benches allowed to skip execution while a repair lane runs, with the
+# documented reason each was deferred. The set is pinned — adding a
+# module here without updating the probe below is itself a flagged
+# defect. Empty on a healthy main: every bench runs.
+_DEFERRED: dict[str, str] = {}
 
 # Older batteries whose claim.results deliberately carries measured
 # values (ints, floats, strings, nested dicts/lists of verdicts) instead
@@ -263,14 +255,7 @@ def _probe_conventions(modules: dict[str, Path], out: dict[str, bool]) -> None:
         )
 
     # the deferred set is exactly what is documented — no silent growth
-    out["conv_deferred_set_documented"] = set(_DEFERRED) == {
-        "fx1.serve.api_audit",
-        "fx1.serve.cap_audit",
-        "fx1.serve.client_audit",
-        "fx1.serve.parity_audit",
-        "fx1.serve.quota_audit",
-        "fx1.serve.serve_audit",
-    }
+    out["conv_deferred_set_documented"] = set(_DEFERRED) == set()
     out["conv_deferred_all_exist"] = all(name in modules for name in _DEFERRED)
     # every allowlisted module is real and not also in the deferred set
     out["conv_measured_set_valid"] = all(

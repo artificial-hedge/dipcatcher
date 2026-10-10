@@ -2411,8 +2411,11 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         retry_writes=True,
         sleep=lambda s: None,
     )
+    # retry_writes only widens *keyed* writes — an unkeyed write whose
+    # first attempt may have landed is never replayed.
     out["writes_retry_when_opted_in"] = (
-        resilient6b.complete([{"role": "user", "content": "hi"}]).content == "c"
+        resilient6b.complete([{"role": "user", "content": "hi"}], idempotency_key="par-6b").content
+        == "c"
         and calls6b["n"] == 2
     )
 
