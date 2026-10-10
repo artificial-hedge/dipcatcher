@@ -16,7 +16,9 @@
       "status": "audited"
     },
     "extensions": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 95,
+      "status": "audited"
     },
     "forecast": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -24,11 +26,14 @@
       "status": "audited"
     },
     "operations": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 48,
+      "status": "partial",
+      "reason": "scoring + stats + data-quality + io + framework batteries land piecewise; remaining modules keep auditing"
     },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 58,
+      "n_modules": 71,
       "status": "partial",
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },
@@ -56,7 +61,8 @@
       "status": "waived"
     },
     "capabilities.py": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
     },
     "cli.py": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -194,7 +200,8 @@
       "status": "audited"
     },
     "selftest.py": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
     },
     "serve/anthropic_compat.py": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -213,6 +220,20 @@
       "status": "audited"
     },
     "tail_audit.py": {
+      "status": "audited"
+    },
+    "audits_audit.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "capabilities_audit.py": {
+      "status": "audited"
+    },
+    "selftest_audit.py": {
+      "status": "audited"
+    },
+    "serve/apisurface_audit.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     }
   },

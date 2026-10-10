@@ -406,3 +406,661 @@ drain are 0..600.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 53 to 54 and remains
 `partial`.
+
+
+### SDK concurrency audit maintenance 
+
+The new `sdk_concurrency_audit` battery pins the shared-state seams of
+the in-process `Fx1Harness` SDK under threaded contention: the
+`_CompletionLog` record store (bounded capacity, `dropped` accounting),
+the `_last_response_headers` publication, the `_bg_cancel` background
+response registry, and the `_files` upload map — plus a mixed storm of
+completers, uploaders, background submitters and readers running
+together.
+
+The battery pins 69 measured contracts: parallel writes never lose a
+record or tear a `CompletionRecord`; the bounded log evicts oldest and
+counts `dropped` honestly; readers see coherent snapshots mid-flood;
+each `last_response_headers` read returns a fresh dict isolated from
+caller mutation; cid/rid pairing stays consecutive under serial and
+flood scheduling (proven by tagged-uuid minting); background responses
+always reach a terminal state with unique rids and a drained registry;
+cancel lands once regardless of how many threads race it, and persists
+when the response later completes; the files map caps at 256 with
+oldest-evicted under a parallel burst.
+
+Deterministic scheduling via per-thread line tracing parks a writer
+inside `_record_call` at the exact line that used to mutate the
+published header dict, exposing the store-then-mutate tear window —
+a real defect fixed on this PR: `sdk.py` now builds the headers dict
+completely (including `x-fx1-completion-id`) and publishes it in a
+single store, so no reader can observe a header set missing its
+completion id.
+
+Not verified (documented in `coverage.not_verified`): cross-process
+contention (the seams are in-process by design), real wire-level
+ordering (transports are spy backends), and journal-replay recovery
+(the log's `--state-dir` persistence lane).
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 58 to 59 and remains
+`partial`.
+
+
+### Client retry audit maintenance 
+
+The new `client_retry_audit` battery pins the retry mechanics inside
+`HarnessClient._request` past the error-map surface `client_audit`
+already covered: exact attempt counts (max_retries=N means N retries
+past the initial call, only on retryable calls — unkeyed writes never
+retry, keyed writes and `retry_writes` do, every attempt hits the same
+path), the sleep schedule as arithmetic (the doubling backoff feeds
+transport-fault retries while a declared Retry-After — slept verbatim
+under the cap — feeds refusal retries, and the backoff still doubles
+across a status sleep for the next fault), Retry-After parsing edges
+(seconds-only `float()` with a `max(0, …)` floor: whitespace, signs,
+fractions and scientific forms parse; HTTP-date/junk/empty fall to
+not-retryable; `inf` breaks over budget; `nan` floors to 0.0 and
+retries immediately), the lifecycle of the shared slots
+(`_last_response_headers` clears only on transport-class escapes —
+a mapped 503/404 keeps its headers while a mapped 429/500 loses
+them — and `_last_api_version` survives faults untouched), the
+circuit breaker's error-class split (transport-class escapes trip,
+mapped refusals don't — an honestly-refusing 503 stays reachable),
+threshold-1 opening, half-open probe close/fault-reopen, strict-<
+`open_until` boundary, fail-fast with no sleep and no transport call,
+and consecutive-fault counting across a mid-window success; plus
+`timeout_s` and the Idempotency-Key (and API key) reaching every
+attempt verbatim, and parallel callers getting independent retry
+schedules over the shared circuit counter.
+
+Maintenance review found four production defects the first pass
+pinned as semantics; all repaired and re-pinned:
+
+- `Retry-After` non-finite (`nan`/`inf`) or negative values were floored
+  to `0.0` — an untrusted header could collapse backoff into an
+  immediate retry or wedge the sleeper. `_retry_after_s` now treats
+  them as malformed: the status is not retryable and maps normally.
+- Transport-fault sleeps ignored `max_retry_wait_s`, doubling without
+  bound. They now share the cap (`min(backoff, max_retry_wait_s)`);
+  sleeps stay deterministic by design — callers wanting spread inject
+  a jittering `sleep=` hook.
+- The half-open window admitted every caller: a `_cb_lock`-guarded
+  single-probe flag now lets exactly one racer dial while the rest
+  fail fast; the probe releases on any completed response, re-opens
+  on a transport fault, closes via `_cb_reset` on success.
+- `retry_writes=True` retried unkeyed POSTs — an ambiguous fault could
+  replay a landed write. Writes now retry only when keyed
+  (`Idempotency-Key`); keyed calls already mark idempotent, so the
+  flag only ever widens keyed traffic.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 59 to 60 and remains
+`partial`.
+
+### Webhook delivery audit maintenance 
+
+The new `webhook_delivery_audit` battery runs the outbound webhook
+dispatcher (`sign_webhook`/`verify_webhook`/`deliver_signed`) over a
+real loopback `http.server` recorder with an event-clock harness —
+`time.sleep` patched to a log so backoff arithmetic is measured, never
+slept — plus direct probes of the SSRF seams
+(`_resolved_addresses`, `_is_public_unicast`, the pinned connections).
+
+It pins the signature contract end to end: `sha256=`-prefixed hex
+over `<ts>.<raw body>` byte-exact (reserialized JSON fails), the
+`sha256=` prefix required, ASCII-only timestamp and signature, an
+inclusive `abs(ref - ts) <= tolerance` freshness window in both
+directions, negative tolerance disabling freshness, non-finite
+tolerance/timestamps refused, and a verify path that never raises on
+garbage. The callback-URL grammar is pinned scheme/host-validating
+with every literal-private form refused — loopback, RFC-1918, CGNAT,
+link-local, multicast, and IPv6 ULA/link-local — and
+`FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS` is checked live per call
+(`1`/`true`/`yes`), scoped per leg so the opt-in never leaks.
+
+The dispatcher semantics are pinned as measured: per-attempt fresh
+timestamps and signatures; `backoff_s << (attempt - 1)` sleeps;
+`4xx` definitive with no retry; `5xx` exhausting `max_attempts` then
+returning `(False, err, attempts)`; a connect/HTTP fault walking the
+validated address list while a `5xx` response short-circuits it into
+the outer retry; per-attempt `timeout_s` arming a slow endpoint into a
+retryable fault on loopback; unsigned delivery sending no signature or timestamp
+headers; `Content-Type`/`Content-Length` and the full path+query on
+the wire; `max_attempts <= 1` single-shot; invalid URLs refused with
+`(False, err, 0)` and zero network attempts; and a private literal
+target refused with zero attempts even when the resolver could
+resolve it.
+
+Zero production defects — every held semantic was already correct;
+the battery's only corrections were its own measurement seams
+(server delay moved off `time.sleep` so a patched backoff clock
+cannot speed the server, hits-keyed timestamp capture so `time.time`
+stays safe for the server's Date header).
+
+Maintenance-review repairs (2026-10-06): the battery now pins the
+exact 111-probe key set (`_EXPECTED_PROBES` — a dropped or renamed
+probe fails `audit()` loudly, and `bench()` refuses to seal an
+all-True subset); `_audit_context` saves, clears, and restores
+`FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS` verbatim so a caller's ambient
+opt-in can no longer flip the refusal legs; the SSRF literal battery
+gained RFC-1918 172.16/12 edges, CGNAT 100.64/10, and IPv6 ULA
+fc00::/7–fd00::/8 literals plus resolution-level pins
+(`resolved_17216/cgnat/ula_refused`); the misnamed `mixed` answer
+list (duplicate publics) was split into a real
+`mixed_public_private_refused` fail-closed probe and a
+`resolved_17232_public_passes` boundary sanity; and the receipt was
+resealed at the integrated source commit with the committed-vs-fresh
+and revision-binds-source tests the ledger now requires.
+
+Not verified (documented in `coverage.not_verified`): real DNS
+resolution (the recorder is a literal loopback IP), HTTPS delivery
+(the pinned-HTTPS leg is probed at the connection object, not a live
+TLS socket), and the `fx1_job_record.v1` webhook path in the jobs
+lane's own battery.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 60 to 61 and remains
+`partial`.
+
+### Webhook delivery audit maintenance (PR #2905)
+
+The `webhookdel_audit` battery pins the HMAC-signed webhook *dispatcher*
+end to end (the `webhook_audit` lane covered the registration surface):
+the verdict table measured on a live loopback sink — 2xx delivers on
+attempt 1, every 4xx including 429-with-`Retry-After` is definitive in a
+single attempt, 5xx and 3xx retry to the `WEBHOOK_MAX_ATTEMPTS=3`
+ceiling, and redirects are never followed (the `Location` target never
+receives a request). The exponential backoff schedule is measured on the
+wire (0.5s then 1.0s gaps), each attempt opens a fresh connection,
+re-mints the signature pair, and re-resolves DNS; connection-refused,
+unresolvable DNS, read timeout, and TLS-mismatch faults each classify
+loudly into `callback_error` and stay bounded; a dead resolved address
+fails over to its sibling inside the same attempt.
+
+At the app surface: submit returns before the delivery verdict can
+exist, the terminal status is GETable while the verdict is mid-flight,
+a queued-cancel DELETE returns only after the `cancelled` delivery lands
+(delivery runs on the request thread), and a retrying delivery holds its
+inflight slot — a second submit is refused `503 over_capacity` until the
+verdict lands. A single-worker executor delivers FIFO; a pool dispatches
+concurrently; cancel-path deliveries run on request threads even with
+every pool worker asleep. Every terminal surface fires exactly once and
+never re-fires. Under `--state-dir` the post-verdict mark journals
+`callback_status`/`callback_attempts` atomically, the signing secret
+never touches disk, a restart restores the verdict without re-firing,
+a recovered queued job fails closed as `failed` with zero attempts
+(honest abandon — nothing can re-sign), and idempotency mappings
+survive. The drain latch refuses new work `503 draining` without
+freezing admitted work, and lifespan shutdown flips queued jobs to
+`cancelled` and fires the webhook exactly once. `callback_*` verdicts
+surface honestly on every record GET, and every refusal arrives in the
+path's own error grammar.
+
+No defects found — the contract held on all 75 probes.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 61 to 62 and remains
+`partial`.
+
+
+### Compat audit (dialect-translation battery)
+
+The new `compat_audit` pins 126 translation invariants over
+`openai_compat` and `anthropic_compat` — the dialect boundary every
+request and every answer crosses. Probes are pure-function calls: no
+transport, no server, deterministic by construction.
+
+Coverage: request-model accept/refuse pairs (bounds, `max_tokens` vs
+`max_completion_tokens` disagreement, `tool_choice` requiring
+`tools`); `openai_to_kwargs` / `response_to_kwargs` /
+`embeddings_to_kwargs` link resolution in the documented order
+(`fx1.backend` > header > model > byok-headers > `hosted_k3`) with
+fail-closed 404s on unregistered models and refused half-formed BYOK
+credentials; envelope builders (`chatcmpl-`/`cmpl-`/`resp_`/`msg_`
+derivations, n-fanout, null-content tool-call turns, legacy echo and
+usage sums); stream chunk grammar (role-first deltas, ~64-char
+whitespace pieces, per-index grouped `n`, terminal usage frames);
+Responses input folding (`function_call` → `tool_calls`,
+`function_call_output` → tool turns, loud refusals on empty
+`call_id`/unknown item types); cursor pagination that fails closed;
+the `OpenAIEnvelopeStore` put/get/list/evict/delete contract with
+re-put refresh and journaled ops; Anthropic field translation
+(system→system, tool_use↔tool_calls, tool_result→tool, `store=False`
+forced), the `finish_reason`→`stop_reason` map, bad tool args held
+in-band as `_raw`, the typed SSE lifecycle, and the batch/file/model
+request shapes with `results_url` gated on `ended`.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 62 to 63 and remains
+`partial`.
+
+
+### Backends audit (transport/policy battery)
+
+The new `backends_audit` pins 198 contracts over `serve.backends` —
+the module every other audit patched at its seams but none probed.
+Probes are pure functions plus the documented `_openai_urlopen` seam:
+no sockets, no real child processes (a faked `Popen` records the spawn
+template), deterministic by construction.
+
+Coverage: `SamplingParams.body_fields` (deterministic `temperature`
+default, declared-fields-only, `stop` tuple→list, frozen dataclass);
+harness-side stop truncation including mid-chunk cuts and the
+empty-piece rule; URL normalization (`_chat_completions_url`,
+`_openai_sibling_url`) and `_env_float` precedence/refusals; the BYOK
+policy chain — `byok_base_url_problem` (userinfo/query/fragment/port/
+host refusals; reasons never echo the URL), `_byok_address_allowed`
+(private opt-in never admits link-local/multicast/unspecified),
+`_byok_resolved_addresses` fail-closed on prohibited or mixed answer
+sets with v4-mapped normalization; transport (`_RefuseRedirects`
+unconditional refusal, `_openai_urlopen` normal + DNS-pinned legs,
+non-2xx→HTTPError with response and connection closed, per-request
+policy stamps, `FX1_BYOK_ALLOW_PRIVATE_NETWORKS` truthy variants);
+`_extract_usage`/`_extract_token_count` rejecting bools, strings,
+non-finite floats; `_UsageTracker` concurrent accumulation; the
+fail-closed `tool_calls[]`/embeddings `data[]` shape validators; wire
+helpers (`_openai_chat_complete`, `..._tools`, `..._stream`,
+`_openai_tokenize_count`, `_openai_embeddings_complete`) — request
+shapes, labeled `RuntimeError` envelopes for HTTP/URL/transport/
+decode faults, `TokenCountUnavailableError` on refused tokenize
+routes (never an estimate), stream frame grammar (`[DONE]`,
+role frames, usage-only frames, `usage_out` capture,
+`stream_options` never sent); the three backend classes (key/env
+precedence, missing-config `BackendNotConfiguredError`, ship-gate +
+signature enforcement, `_ensure_engine` spawn template expansion +
+`FX1_CHECKPOINT_DIR`, `close()` semantics); `get_backend` dispatch;
+and the capability protocols (`InferenceBackend` deliberately not
+runtime-checkable — capability checks belong on the optional
+channels only).
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 63 to 64 and remains
+`partial`.
+
+
+### Finetune audit (job-store state machine)
+
+The new `finetune_audit` pins 112 contracts over `serve.finetune` —
+the `/v1/fine_tuning/jobs` surface. In-process only: tmpdir journals,
+no trainers, no network.
+
+Coverage: `validate_chat_jsonl` admission (utf-8, per-line JSON,
+`{"messages": [...]}` shape, role whitelist, non-empty string
+content, lineno in the error, all-blank files refused); the request
+shapes (`model`/`training_file` bounds, `suffix` charset, `seed>=0`,
+`method="supervised"` only, metadata cap, `extra=forbid` on every
+envelope, `FTHyperparameters` ranges); the `FTJobStore` state machine —
+newest-first listing with exclusive `after` cursors, `get`/`lookup_idem`
+MRU refresh, bounded eviction dropping job+key+cards, the `ft:` model
+registry (sorted listing, register-only-while-alive, unregister
+tombstones, `checkpoint_for`, checkpoints oldest-first with derived
+`ftckpt-` ids), the event feed (oldest-first, 256 cap pops oldest),
+cancel verdicts (queued/paused flip terminal now, running flag-only),
+pause verdicts + `paused_from` bookkeeping + idempotent re-pause,
+resume restoring the captured status, `cancel_pending` drain
+semantics (queued→cancelled, running→flagged), per-key async claim
+locks, and journaled replay (terminal jobs return as-was, in-flight
+recover as failed with a restart-explaining error, `ft:` keys
+resolve, model cards rebuild minus evicted-producer refs,
+`callback_secret` never touches disk).
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 64 to 65 and remains
+`partial`.
+
+
+## Ops-receipt audit (sealed-export battery)
+
+`ops_receipt` is the disclosure boundary every other audit leans on —
+it turns completion-log rows, job-ledger rows, and bench results into
+sealed documents (`receipt_sha256` over canonical JSON) verifiable by
+`verify_receipt_payload` / `POST /receipts/verify`. `opsreceipt_audit`
+pins 30+ contracts of the sealed-export shape in-process:
+
+- *Envelope* — every doc carries `kind`/`schema`/`git_revision`,
+  `data_label="OPS"`, `research_only`, `live_pnl_claim: False`; the seal
+  is 64-hex canonical-JSON, re-verifies, is deterministic per record,
+  leaves the input unmutated, and breaks on a one-byte tamper.
+- *bench_receipt* — `fx1_bench_result.v1`; record verbatim.
+- *completion_record_receipt* — `fx1_completion_record.v1`; verbatim
+  passthrough, idempotent re-export.
+- *run_result_receipt* — `fx1_run_result.v1`; only declared passthrough
+  keys survive, `stdout`/`stderr` ship as `*_sha256` digests, `ok`
+  derives from `exit_code == 0` only when unreported.
+- *job_record_receipt* — `fx1_job_record.v1`; ledger keys pass through,
+  `callback_url` becomes `callback_url_sha256`, `callback_secret` never
+  appears anywhere in the export, terminal `result` embeds
+  pre-digested.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 65 to 66 and remains
+`partial`.
+
+
+## Scoring audit (proper-score primitives)
+
+The `score_*` operations are the harness's honesty-critical math — every
+sealed research claim bottoms out in pinball, interval, Brier/log-loss,
+or empirical-CRPS scoring, so a silent sign or denominator change turns
+every downstream receipt into a lie. `scoring_audit` pins 60+ contracts
+against hand-computed fixtures and an independent O(n²) CRPS reference:
+
+- *Descriptor contract* — `skills.*` ids, `kind="skill"`, module-local
+  schemas/handlers, host-facing `describe()` shape.
+- *score_quantiles* — exact level-weighted pinball orientation,
+  per-level means + unweighted cross-level mean, crossings rejected
+  (ties allowed), strictly increasing levels, shape/finite/`extra=forbid`
+  enforcement.
+- *score_intervals* — additive width + `2/(1-c)` miss penalties,
+  inclusive endpoint coverage, inverted/unequal/out-of-range refused.
+- *score_binary_forecasts* — `(p-y)²` Brier on raw probabilities,
+  nats log loss, impossible endpoints → `positive_infinity` + null
+  unless a declared clip rescues (Brier still uses the raw p).
+- *score_empirical_crps* — exact empirical-CDF CRPS: degenerate
+  perfect forecasts score 0, singletons `|s-y|`, sorted-gap integration
+  matches `E|X-y| − E|X−X'|/2` on sorted/unsorted/tied/unequal-ensemble
+  fixtures.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The operations census moves from `pending` to
+`partial` with 44 modules pinned.
+
+
+## Stats audit (feature-math battery)
+
+The `features.*` operations are the descriptive transform layer —
+every z-score, EWMA forecast, trend slope, and entropy figure a skill or
+eval consumes is produced here under causal trailing-window semantics.
+`stats_audit` pins ~110 contracts against hand-computed fixtures:
+
+- *simple_returns / drawdown_path* — lagged fractional changes with
+  null warmups; running high-water marks, nonpositive drawdowns,
+  durations resetting on reattained peaks; nonpositive prices refused.
+- *ewma_variance* — strictly pre-observation forecasts under the
+  declared zero-mean recursion; `next_variance` continues the chain.
+- *rolling_zscore / rolling_mad / rolling_rank* — population z-scores,
+  median + raw MAD + unscaled robust scores (`warmup`/`zero_mad`/
+  `numeric_overflow` statuses), average-rank ties, unique-max = 1.
+- *rolling_autocorrelation* — separately centered Pearson lagged pairs,
+  `window − lag ≥ minimum_pairs` admission, clamped to [-1, 1].
+- *rolling_linear_trend* — OLS on the centered index: slope, midpoint
+  intercept, `sqrt(RSS/(w−2))` scale, R² null on constant windows.
+- *bipower_variation* — `RV = Σr²`, `BV = (π/2)·factor·Σ|rᵢ₋₁||rᵢ|`,
+  `n/(n−1)` correction named; single return → `insufficient_pairs`.
+- *permutation_entropy* — delayed ordinal patterns, stable/drop/reject
+  tie policies, `H/log(m!)` normalization, full status ladder, bounded
+  pattern reporting.
+- *spectral_summary* — boxcar periodogram with interior doubling,
+  DC-excluded peak/entropy, constant input zeroing positive power,
+  Parseval invariant verified against direct time-domain energy.
+- *time_weighted_mean* — left-continuous latest-observable-event
+  integration; activation gated on event AND availability clocks; stale
+  revisions hold zero duration; missing initial coverage fails closed;
+  naive/unix clocks and duplicate event times refused.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The operations census moves from `pending` to
+`partial` with 44 modules pinned.
+
+
+## Data-quality audit (`skills.audit_*` operation battery)
+
+`fx1.operations.dataqual_audit` exercises all twelve `audit_*` data-quality
+sentinels in-process: `audit_bar_integrity` (per-cell failure taxonomy,
+inverted-range envelope suppression, bounded diagnostics),
+`audit_duplicate_keys` (JSON scalar semantics — `1 == 1.0`, `True != 1`,
+`"1" != 1` — under reject/equal/distinct null policies),
+`audit_missingness` (absent/null/optional-empty counting, supplied-order
+runs, unassessed empty states), `audit_monotonic_sequences` (never
+reorders input; group-wide duplicate clocks incl. timezone-equivalent
+instants; singleton unassessed), `audit_cross_field_contracts`
+(type-aware equality, bool ≠ number, ordering restricted to numbers,
+missing-before-null precedence), `audit_missingness_association` (2×2
+contingency, Jaccard, null phi on constants), `audit_panel_gaps`
+(per-security anchored elapsed-time grid), `audit_point_in_time`
+(availability always required; completed-event/ingestion opt-in),
+`audit_referential_integrity` (parent/child verdicts under numeric
+policy), `audit_revision_conflicts` (conflicting fields vs exact
+duplicates), `audit_schema_drift` (added/removed/type/optionality/
+nullability), `audit_source_coverage` (latest-event selection,
+exclusions, staleness clocks). ~95 literal-bool probes seal into a
+`dataqual_audit.v1` receipt.
+
+
+## I/O operations audit (`plugins.*` readers + `skills.*` bitemporal joins)
+
+`fx1.operations.ioops_audit` exercises the file-backed operation surface
+inside a real temp workspace plus the bitemporal selection machinery:
+`read_csv`/`read_jsonl`/`read_toml` (exact-string cells, strict JSON with
+duplicate-key and NaN/Infinity refusal, temporal classification,
+fingerprinted sources, honest paging), `inspect_numpy_array`/
+`inspect_parquet`/`inspect_zip` (header/footer/central-directory metadata
+without materializing payloads; object arrays and trailing bytes
+refused), `verify_file_hash` (byte-exact SHA-256 + optional size check),
+workspace containment probes (escape, wrong suffix, missing file,
+symlink, byte-cap all fail closed), `join_asof_observations`
+(activation at `max(event, available)`, latest-vintage winner with
+declared tie policy, same-clock payload conflicts refused at
+validation), `select_asof_revisions` (latest observable vintage,
+opt-in future-event exclusion), `select_universe_membership`
+(latest-availability revision, effective intervals, expired exclusions
+revealing inclusions, same-effective ambiguity), and
+`summarize_ingestion_latency` (signed lags keep clock anomalies
+visible). ~85 literal-bool probes seal into an `ioops_audit.v1`
+receipt.
+
+
+## Operations framework audit (`base.py` + `registry.py`)
+
+`fx1.operations.opsframe_audit` pins the machinery every operation
+stands on: descriptor id/kind/namespace agreement, module-local
+input/output schemas, the `fx1.operation-result/v1` invoke envelope
+with input/output SHA-256 and honesty flags, `extra="forbid"` +
+`allow_inf_nan=False` on both model classes, the frozen abspath'd
+`OperationContext`, `resolve_file` spelling checks vs the
+`open_binary` descriptor-relative `O_NOFOLLOW` walk (internal symlinks
+resolve but refuse at open; escape symlinks refuse at resolve),
+`WorkspaceReader` bounded reads with EOF-gated `source_sha256`,
+canonical JSON (sorted, compact, raw UTF-8, NaN refused, byte budget
+enforced during encoding), `\\?\`/`\\?\UNC\` normalization, and the
+reviewed registry: exactly 40 implementations, every on-disk
+non-battery module registered, bounded discovery with kind/query
+filters, and schema-gated dispatch for the three literal function
+tools. ~80 literal-bool probes seal into an `opsframe_audit.v1`
+receipt.
+
+
+## Extensions audit (`extensions/` machinery + `capabilities.py` seed ledger)
+
+`fx1.extensions.extensions_audit` pins the generated-card machinery:
+naming rules (owner regex, dash→underscore, kind dispatch failing
+closed), `ExtensionModule` post-init identity checks (declared module
+path must equal `module_path(kind, owner)`, nonempty references),
+bounded `records()` paging with foreign-record refusal, per-kind
+subclass invariants (skill→command, plugin→source adapter,
+feature→catalog metadata), the reviewed 45-entry feature catalog
+(`synthetic_only` iff family `synthetic_oracle`, every name backed by
+an on-disk module file), the capabilities seed ledger
+(`owner_references` progressions per owner, `resolve_seed_id`
+round-trip for every owner's first and last seed, total residue
+layout: skills ≡0, plugins ≡1, features ≡2 mod 3), and the registry's
+`list_extensions`/`get_extension`/`extension_manifest` across all 86
+generated modules — each of which must export a `MODULE` matching its
+registered (kind, owner, path) identity and verify its own seed
+references. ~90 literal-bool probes seal into an
+`extensions_audit.v1` receipt.
+
+
+## Selftest audit (`selftest.py`)
+
+`fx1.selftest_audit` pins the deploy-gate machinery beneath the golden
+walk: `SelftestReport.ok` requires a nonempty all-true check set and
+`as_dict` preserves name/ok/detail; `_run` never escapes (expect-match
+vs truthiness, exceptions captured as `{Type}: {msg}` details);
+`_wait_job` returns terminal statuses immediately and reports
+`{"status": "timeout"}` past the deadline instead of hanging;
+`_server_down` distinguishes a live listener from a closed port. The
+battery runs remote mode twice — against an unreachable target (every
+check recorded with an honest failure detail, never raised) and
+against a real in-process app (health, version parity, commands,
+score advisory, gate preflight, and the missing-key auth-gate check
+all green) — plus the full local golden path, once bare and once with
+a `state_dir` so the `restart_recovers_job` leg runs. The environment
+contract is pinned end-to-end: every env var the selftest touches
+(`FX1_API_KEY`, `FX1_BYOK_*`, `MOONSHOT_API_KEY`,
+`FX1_BYOK_ALLOW_PRIVATE_NETWORKS`) and the `fx1.serve.api` logger
+level are restored after the run — the audit's sentinel probes caught
+two restore gaps (`FX1_BYOK_ALLOW_PRIVATE_NETWORKS` and
+`MOONSHOT_API_KEY`) which the lane fixes. ~45 literal-bool probes seal
+into a `selftest_audit.v1` receipt; `selftest.py` moves to `audited`.
+
+
+## Capability seed ledger audit (`capabilities.py`)
+
+`fx1.capabilities_audit` proves the compact seed table *is* the
+declaration ledger: every shard under
+`scripts/generated_capability_declarations/{features,skills,plugins}/`
+is expanded line-by-line and its `_register(seed_id)` ids must
+reproduce the owner's `(first, stride, count)` progression exactly
+(hyphenated owners map to underscored shard/wrapper names); each
+shard's header must import a resolvable `fx1.extensions.<kind>.<owner>`
+`MODULE`. Resolution contract pinned: `owner_references` exact
+arithmetic per owner, `ValueError`/`KeyError` error split,
+`resolve_seed_id` bounds at `0..1_000_000`, the per-kind owner-field
+echo (`feature`/`command`/`source`), and the full partition — the
+three tables tile every in-range id exactly once with zero intra-kind
+collisions and zero cross-kind shadowing, so resolve is a total
+injective owner lookup. ~115 literal-bool probes seal into a
+`capabilities_audit.v1` receipt; `capabilities.py` moves to `audited`,
+completing the fx1 root-module surface.
+
+## Cited completion + release signing audit (`chat.py`, `signing.py`)
+
+`fx1.serve.chat_signing_audit` pins the two contracts the serving layer
+leans on. `chat.py`: `sampling.stop` truncates before the gate (a
+forbidden tail cut by the stop list passes; one left in fails),
+`validate_fx1_output` raises `Fx1HonestyError` inside the wrapper so
+the footer can never be reached ungated, and provenance footers carry
+16-char receipt prefixes plus the `verify-research` hint. The tool
+half: a backend without `complete_with_tools` fails closed naming the
+backend class, the gate reads `content` only (forbidden text inside
+`tool_calls[].function.arguments` is machine JSON, not a claim),
+`logprobs` ride through verbatim (`None` under silence), and an
+untouched completion returns the identical object while a gated one
+preserves tool_calls/finish_reason/logprobs. `signing.py`: manifest
+covers the complete regular-file inventory minus the two root
+metadata files (nested `release.sig` under a subdir is a real
+artifact), signing needs `FX1_SIGNING_KEY` (never hardcoded),
+verification authenticates before hashing and fails closed on
+tampered bytes, added/removed files, forged manifest or signature,
+corrupt manifest JSON, a manifest declaring traversal paths (never
+opened — key comparison first), missing metadata, missing key
+(RuntimeError), symlink artifacts and FIFOs. ~55 literal-bool probes
+seal into a `chat_signing_audit.v1` receipt.
+
+## Managed key store audit (`keys.py`)
+
+`fx1.serve.keys_audit` pins the multi-tenant auth store the wire
+batteries lean on. Mint: `fx1k_`+40-hex secrets shown once,
+sha256-only storage, `key_id`/`prefix` display fingerprints, wire
+views strip `sha256` and every `_`-counter, scope resolution
+(defaults, additive `admin`, canonical `SCOPES` order, empty/unknown
+refused), per-field validation, and the store cap. Authenticate:
+uniform `None` for wrong/unknown/disabled/expired (no oracle),
+refusal ordering budgets → scope → window so a refused call never
+counts as a use nor burns a window slot, `rate_limited` carrying
+honest `retry_after` + `key_id`, rolling-window recovery, token
+budgets charged after served responses. Revoke/update/rotate:
+tombstones not deletes, double-revoke refuses `key_revoked`, patches
+keep counters while `clear` reverts only `CLEARABLE_KEY_FIELDS`,
+rotation inherits declared policy verbatim (absolute `expires_at`
+carried unless a fresh `ttl_s` rebases it), the predecessor's
+tombstone and successor journal in one line, and `keys_cap` is
+checked before the predecessor is touched. Durability: replay
+restores records + counters, live rate windows stay process-local,
+torn journals quarantine recovered keys while keeping auth required,
+and a later clean mint is not re-quarantined. ~75 literal-bool probes
+seal into a `keys_audit.v1` receipt.
+
+## Receipt index audit (`receipt_store.py`)
+
+`fx1.serve.receiptstore_audit` pins the lazy sha256→file index behind
+`GET /receipts*`: admission is strict (regular `*.json` files whose
+document carries a full-match 64-hex `receipt_sha256`; malformed,
+non-dict, wrong-length, uppercase, symlinked, directory, binary, and
+recursion-depth inputs never index and never raise), duplicate
+digests resolve to the lexicographically first filename, items list in
+name order, and staleness is honest — additions, removals, renames,
+same-name replacements, corrupt-then-repaired files, and a missing or
+unreadable root all flip lookups correctly while unavailable roots
+clear the cache instead of serving stale results. ~30 literal-bool
+probes seal into a `receiptstore_audit.v1` receipt.
+
+
+## API surface audit (`api.py` route wiring)
+
+`fx1.serve.apisurface_audit` pins what requests meet before any handler
+runs: the route inventory itself (required families present, ≥60
+routes, no double-bound (method, path) pairs, the shared scope map —
+`/harness/keys*` and `/harness/drain` are `admin`, safe methods `read`,
+rest `write`), the public surface (`/health` exactly, in both dev and
+key-armed mode), and the auth wiring — authentication precedes routing
+(unknown paths 401 unauthenticated, 404 authenticated),
+`Authorization: Bearer` honored only under `/v1`, `X-API-Key`
+everywhere, dev mode trusting loopback only (a non-loopback client is
+403, not silently trusted), and minted keys laddering
+read < write < admin with 403 `insufficient_scope` in the path's own
+grammar (OpenAI `error` object under `/v1`, `{"detail","code"}`
+elsewhere). Error dialects are per-family (v1 catch-all 404
+`Invalid URL`, harness 405 `method_not_allowed`), response headers
+always carry `X-Request-ID`/`nosniff`/`X-Fx1-Api-Version`, the drain
+latch is one-way while liveness answers, and CORS defaults closed with
+wildcard refused and explicit-origin preflight unauthenticated. ~77
+literal-bool probes seal into an `apisurface_audit.v1` receipt.
+
+
+### Audit-contract meta battery 
+
+`src/fx1/audits_audit.py` audits the audit suite itself: 922 probes over
+the 72 discovered `*_audit.py` modules plus suite-level conventions. For
+each battery it pins that the module imports, exports an audit/bench
+callable pair (resolving the documented stem-prefix exceptions —
+`dip_run_audit`, `eval_core_audit`, `forecast_*`, `train_receipt_audit`,
+`run_audit`, `fx1_tail_audit` — via a unique-callable fallback), executes
+inside a shared 180s budget, restores the process environment and leaves
+no leaked non-daemon threads behind. Its returned bench pins the sealed
+receipt contract: required keys, `SYNTHETIC`/`research_only`/
+`live_pnl_claim=False` honesty fields, `*.v1` schema, non-empty
+`claim.results` (probe-keyed dict or verdict-row list), boolean
+`claim.ok`, and a 64-hex `receipt_sha256` that the verifier accepts.
+
+Batteries claiming literal-bool `claim.results` get `bools_literal` and
+`ok_consistent` probes (`ok == all(results)`); the 16 older batteries
+whose results deliberately carry measured values are pinned in
+`_MEASURED_RESULTS` — a module may only appear there while its results
+actually are non-bool, so the allowlist flags itself stale instead of
+growing silently. `_DEFERRED` carries `fx1.serve.api_audit` whose
+offline-DNS/callback repair rides an open lane; the set is pinned to
+exactly that one entry. Convention probes require every battery to be
+imported by at least one `test_*.py` (dotted or `from <parent> import
+<stem>` forms), require every fx1-root `*.py` to hold a census `modules`
+entry, and recount each directory census `n_modules` recursively.
+
+The first full run exposed eight contract-level defects in existing
+batteries, all repaired in this PR rather than waived: five batteries
+leaked `fx1-job` thread-pool workers (`create_app`'s
+`ThreadPoolExecutor` is only shut down by the lifespan, which bare
+`TestClient(app)` never enters) — `anthropic_sdk_audit`,
+`oai_sdk_audit`, `stream_audit`, `webhook_audit` and
+`eval_lifecycle_audit` now register created apps and drain
+`app.state.jobs_executor` in teardown; `ds_audit` left its
+`DS_AUDIT_SENTINEL` marker set; `calibration_audit` inherited
+BLAS/numexpr `KMP_*`/`_RJEM_MALLOC_CONF` mutations and `tail_audit`
+inherited mlflow `_MLFLOW_TELEMETRY_SESSION_ID`/`MLFLOW_TRACKING_URI`
+mutations — both now snapshot and restore `os.environ`. These are
+teardown defects in the batteries, not in `api.py`'s executor contract.
+
+The receipt is `SYNTHETIC`, `research_only`, makes no live-PnL claim, and
+a running battery in the caller's process necessarily shares ambient
+state — budget/thread checks bound, not eliminate, that coupling.
