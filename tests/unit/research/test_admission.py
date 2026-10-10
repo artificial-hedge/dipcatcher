@@ -82,6 +82,9 @@ def test_quarantine_missing_stamps(corpus: Path, tmp_path: Path) -> None:
     body = _claim_body(1.0)
     del body["research_only"]
     del body["data_label"]
+    # the tape ratchet fails closed on a bound-but-unlabeled receipt — the
+    # missing-stamps quarantine path requires no unresolvable tape bindings
+    del body["dataset_sha256"]
     candidate = _write(tmp_path, "bare.json", body)
     result = admission_check(candidate, corpus)
     assert result["verdict"] == "quarantine"

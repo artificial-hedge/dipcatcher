@@ -270,7 +270,10 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # Tool-local state with no security surface — deliberately NOT corpora.
 # data/ is absent from this list only because data/metadata IS a corpus.
-NON_CORPUS_TOP_DIRS = frozenset({".freebuff", ".serena"})
+# `.mavis` is planner tool state; `attic/` is a quarantined graveyard of
+# non-qualifying artifacts (its own README declares it inert — epoch-covering
+# it would launder rejected material back into evidence).
+NON_CORPUS_TOP_DIRS = frozenset({".freebuff", ".serena", ".mavis", "attic"})
 
 # The pinned set of tracked root-level files. Root files sit above every
 # corpus dir, so the epoch chains can't see them — a new root file lands
@@ -304,8 +307,11 @@ ROOT_FILES = frozenset(
         "conftest.py",
         "day_grind_progress.md",
         "docker-compose.yml",
+        "Executive Summary.pdf",
+        "FULL_COVERAGE.md",
         "fx1_seed_corpus.jsonl",
         "gate_pins.sig",
+        "install.sh",
         "mkdocs.yml",
         "pyproject.toml",
         "uv.lock",

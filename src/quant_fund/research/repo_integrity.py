@@ -120,6 +120,9 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     # Remaining .github files (templates, plans); workflows/ is its own
     # corpus above and exempt here.
     (".github", "*", True, True, ("workflows/*",)),
+    # Package-manager release surface — the Homebrew formula ships the fxi
+    # installer, same supply-chain class as docker/ and deploy/.
+    ("packaging", "*", True, True, ()),
 )
 
 # Corpora whose epoch receipts never clone (gitignored even when the member

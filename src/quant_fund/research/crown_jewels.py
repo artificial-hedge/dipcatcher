@@ -64,6 +64,10 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "SECURITY.md",  # disclosure policy
     "day_grind_progress.md",  # progress tracker
     "docker-compose.yml",  # local service definitions
+    "Executive Summary.pdf",  # published executive summary — a swapped doc
+    # asserts unreviewed claims
+    "FULL_COVERAGE.md",  # the coverage-lane scope declaration
+    "install.sh",  # the curl-pipe-sh installer — top supply-chain surface
     # --- gate-defining files ---
     ".gitleaks.toml",  # secret-scan allowlist — removing a rule opens exfil lanes
     ".github/dependabot.yml",  # dep-bump policy — tampering injects malicious upgrades

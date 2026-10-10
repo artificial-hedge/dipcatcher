@@ -1,0 +1,30 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "7e51715b007d732ec6474226534a008fe6a0234e1072c3517028917893fdc11c",
+  "inputs_sha256": "825616cca0ed653d7ee3537da209f689bb56bbd7be24d90652c6950f81180c32",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "6ab9fff58542d5214215dc0ae953e28fb00462a7b7bc22e4769dd0ec17110415",
+  "members": [
+    {
+      "name": "homebrew/fxi.rb",
+      "sha256": "343fe9ccb5533a0ce69db4e2646a8d8ae094b3b71c997024dcc7d8e9a62e69db"
+    }
+  ],
+  "members_added": [
+    "homebrew/fxi.rb"
+  ],
+  "members_removed": [],
+  "n_members": 1,
+  "params": {
+    "head_sha": "fda467aceb251dd828b465a41767e8ec8c1269e3",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "c4bf66744057497440922384b2c6c9542cf96d877a8af50f765a5157fae196cf",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}
