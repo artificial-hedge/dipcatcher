@@ -379,6 +379,13 @@ def lane_power_bench(
         "schema": LANE_POWER_SCHEMA,
         "kind": "lane_power",
         "level": "research",
+        # SYNTHETIC lane: the bench's data is generated inside the bench
+        # (defect injection grid) — no external tape binds it. Mark the
+        # lane explicitly so the tape registry's binding check returns []
+        # (the SYNTHETIC exemption) and the seal passes.
+        "data_label": "SYNTHETIC",
+        "research_only": True,
+        "live_pnl_claim": False,
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
         # Corpus-level fingerprint: digest over the exact update streams fed
         # to each lane process per (lane, defect, seed) cell — runs over
