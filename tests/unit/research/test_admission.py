@@ -82,6 +82,10 @@ def test_quarantine_missing_stamps(corpus: Path, tmp_path: Path) -> None:
     body = _claim_body(1.0)
     del body["research_only"]
     del body["data_label"]
+    # Drop the tape-binding digests so the seal check (which is a separate
+    # gate) doesn't trip the test on its own before honesty fires. The
+    # honesty quarantine covers the missing-stamp assertions.
+    body.pop("dataset_sha256", None)
     candidate = _write(tmp_path, "bare.json", body)
     result = admission_check(candidate, corpus)
     assert result["verdict"] == "quarantine"
