@@ -82,8 +82,16 @@ def gaussian_copula_samples(
     out = np.empty((m, d))
     for j, x in enumerate(marginals):
         xs = np.sort(x)
-        idx = np.clip((u[:, j] * m).astype(int), 0, m - 1)
-        out[:, j] = xs[idx]
+        # Rank-based bijection: floor(u * m) collapses ties in continuous u
+        # (rare but real — and the test asserts sorted(out) == sorted(marginal),
+        # which a tie-producing bucket map can violate when several u values
+        # land in the same bucket and produce duplicated xs entries). The
+        # stable-rank path below produces a strict bijection from (0,1) to
+        # {0, …, m-1} so the sorted output reproduces the sorted marginal.
+        order = np.argsort(u[:, j], kind="mergesort")
+        inverse = np.empty_like(order)
+        inverse[order] = np.arange(m)
+        out[:, j] = xs[inverse]
     return out
 
 
