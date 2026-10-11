@@ -19,7 +19,6 @@ import pytest
 
 from quant_fund.config import load_config
 from quant_fund.config.models import ValidationConfig
-from quant_fund.models.base import save_joblib_artifact
 from quant_fund.models.calibration import ProbabilityCalibrator
 from quant_fund.models.deep_rl import PolicyGradientTrace
 from quant_fund.models.quantile_bandit import QuantileBanditTrace
@@ -1284,7 +1283,8 @@ def test_train_reinforcement_auto_records_policy_gradient_unavailable(
         if model_name == "policy_gradient":
             raise ImportError("torch is not installed")
         path = Path(config.data.root) / "metadata" / f"rl_{model_name}.joblib"
-        save_joblib_artifact(
+        _save_with_identity(
+            config,
             {"policy": LinUCBRanker(1), "policy_name": model_name, "features": ["f0"]},
             path,
         )
@@ -1306,7 +1306,11 @@ def test_train_reinforcement_auto_propagates_non_pg_import_error(
         if model_name == "thompson":
             raise ImportError("unexpected missing dependency")
         path = Path(config.data.root) / "metadata" / f"rl_{model_name}.joblib"
-        save_joblib_artifact({"policy": LinUCBRanker(1), "policy_name": model_name}, path)
+        _save_with_identity(
+            config,
+            {"policy": LinUCBRanker(1), "policy_name": model_name},
+            path,
+        )
         return {"path": str(path), "metrics": {"mean_advantage_vs_uniform": 0.01}}
 
     monkeypatch.setattr(train_module, "train_reinforcement", fake_train)
@@ -1328,7 +1332,7 @@ def test_train_reinforcement_auto_no_viable_and_malformed_artifact(
 
     def malformed_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"rl_{model_name}.joblib"
-        save_joblib_artifact({"not_a_policy": True}, path)
+        _save_with_identity(config, {"not_a_policy": True}, path)
         return {"path": str(path), "metrics": {"mean_advantage_vs_uniform": 0.01}}
 
     monkeypatch.setattr(train_module, "train_reinforcement", malformed_train)
@@ -1877,7 +1881,7 @@ def test_train_distribution_auto_selects_lowest_pinball(
 
     def fake_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"dist_{model_name}.joblib"
-        save_joblib_artifact({"model": model_name}, path)
+        _save_with_identity(config, {"model": model_name}, path)
         return {
             "path": str(path),
             "metrics": {
@@ -1906,7 +1910,28 @@ def test_train_volatility_auto_selects_lowest_qlike(
 
     def fake_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"vol_{model_name}.joblib"
-        save_joblib_artifact({"model": model_name}, path)
+        # The real production path uses save_training_artifact (with an
+        # identity block); the test fake must do the same so
+        # train_volatility_auto's downstream identity_from_artifact() call
+        # can verify the saved artifact.
+        from quant_fund.pipeline.artifact_manifest import (
+            identity_for_training,
+            save_training_artifact,
+        )
+
+        df = _stub_panel()
+        identity = identity_for_training(
+            df,
+            config=config,
+            label=config.train.volatility_target,
+            features=["vol_20", "vol_ewma", "vol_parkinson", "ret_1", "vol_of_vol"],
+            label_horizon_bars=1,
+        )
+        save_training_artifact(
+            {"model": model_name},
+            path,
+            identity=identity,
+        )
         return {
             "path": str(path),
             "metrics": {"qlike": qlike[model_name], "n_oos_rows": 20.0},
@@ -1952,28 +1977,38 @@ def test_train_alpha_mean_branch(tmp_path: Path, stub_train) -> None:
 def test_train_regime_hmm_scores_heldout_likelihood(
     tmp_path: Path, stub_train, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    class FakeHMM:
-        labels = {"states": 3}
-
-        def __init__(self, *_args) -> None:
-            pass
-
-        def fit(self, _x):  # noqa: ANN001, ANN202
-            return self
-
-        def aic_bic(self, _x):  # noqa: ANN001, ANN202
-            return {"avg_ll": -1.25}
-
-        def save(self, path):  # noqa: ANN001
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-            Path(path).write_bytes(b"hmm")
-
     stub_train(_stub_panel())
-    monkeypatch.setattr(train_module, "GaussianHMMRegime", FakeHMM)
+    monkeypatch.setattr(train_module, "GaussianHMMRegime", _ModuleLevelFakeHMM)
     result = train_regime(_cfg(tmp_path), "hmm")
     assert result["metrics"]["oos_avg_ll"] == -1.25
     assert result["labels"] == {"states": 3}
     assert Path(result["path"]).is_file()
+
+
+class _ModuleLevelFakeHMM:
+    """Module-level stand-in for ``GaussianHMMRegime`` so pickle can resolve it.
+
+    A class defined inside a test function lives at
+    ``<locals>.<ClassName>`` which the standard pickle module cannot
+    import. Hoisting it to module scope lets joblib round-trip the
+    artifact; the production code never instantiates this class — it
+    only monkeypatches ``train_module.GaussianHMMRegime`` to point at it.
+    """
+
+    labels = {"states": 3}
+
+    def __init__(self, *_args) -> None:
+        pass
+
+    def fit(self, _x):  # noqa: ANN001, ANN202
+        return self
+
+    def aic_bic(self, _x):  # noqa: ANN001, ANN202
+        return {"avg_ll": -1.25}
+
+    def save(self, path):  # noqa: ANN001
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_bytes(b"hmm")
 
 
 def test_train_regime_hmm_no_evaluable_fold_fail_closed(
@@ -2116,3 +2151,27 @@ def test_train_regime_threshold_branch(tmp_path: Path, stub_train) -> None:
     result = train_regime(_cfg(tmp_path), "threshold")
     assert result["metrics"] == {}
     assert Path(result["path"]).name == "regime_threshold.joblib"
+
+
+def _save_with_identity(config, payload, path):
+    """Save a joblib artifact with the same identity block the production path uses.
+
+    The auto-select dispatch (``train_*_auto``) reads back the saved
+    artifact via ``identity_from_artifact``; without the identity block,
+    the verify call raises and the auto-select fails. This helper makes
+    the test fake match the production flow without re-implementing the
+    identity computation in every test.
+    """
+    from quant_fund.pipeline.artifact_manifest import (
+        identity_for_training,
+        save_training_artifact,
+    )
+
+    identity = identity_for_training(
+        _stub_panel(),
+        config=config,
+        label=config.train.volatility_target,
+        features=["vol_20", "vol_ewma", "vol_parkinson", "ret_1", "vol_of_vol"],
+        label_horizon_bars=1,
+    )
+    save_training_artifact(payload, path, identity=identity)

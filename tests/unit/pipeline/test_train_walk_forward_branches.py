@@ -78,6 +78,45 @@ def _stub_panel(n_dates: int = 64, n_secs: int = 6) -> pl.DataFrame:
     return pl.DataFrame(rows)
 
 
+class _ModuleLevelFakeGarch:
+    """Module-level stand-in for ``GARCHVol`` so pickle can resolve it.
+
+    A class defined inside a test function lives at ``<locals>.<ClassName>``
+    which the standard pickle module cannot import. Hoisting it to module
+    scope lets joblib round-trip the artifact; the production code never
+    instantiates this class — it only monkeypatches
+    ``quant_fund.pipeline.train.GARCHVol`` to point at it.
+
+    The observed-return history is written through the class-level
+    ``observed`` attribute so the test function can swap it per call.
+    """
+
+    observed: list[np.ndarray] = []
+
+    fit_status = "fitted"
+    converged = True
+    fallback_reason = None
+    n_obs = 0
+    returns_scale = 100.0
+
+    def __init__(self, **_kwargs):
+        self.last_return = 0.0
+
+    def fit(self, _x, _y, *, returns):  # noqa: ANN001
+        self.observed.append(np.asarray(returns, dtype=float).copy())
+        self.n_obs = len(returns)
+        self.last_return = float(returns[-1])
+        return self
+
+    def forecast(self, *, horizon):
+        return {"cumulative_variance": np.repeat(self.last_return + horizon, horizon)}
+
+    def save(self, path):  # noqa: ANN001
+        output = Path(path)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(b"fake-garch")
+
+
 @pytest.fixture()
 def stub_train(monkeypatch: pytest.MonkeyPatch):
     def _apply(frame: pl.DataFrame) -> None:
@@ -308,32 +347,10 @@ def test_train_garch_persisted_fit_uses_latest_return_history(
     )
     stub_train(frame)
     observed: list[np.ndarray] = []
-
-    class FakeGarch:
-        def __init__(self, **_kwargs):
-            pass
-
-        fit_status = "fitted"
-        converged = True
-        fallback_reason = None
-        n_obs = 0
-        returns_scale = 100.0
-
-        def fit(self, _x, _y, *, returns):  # noqa: ANN001
-            observed.append(np.asarray(returns, dtype=float).copy())
-            self.n_obs = len(returns)
-            self.last_return = float(returns[-1])
-            return self
-
-        def forecast(self, *, horizon):
-            return {"cumulative_variance": np.repeat(self.last_return + horizon, horizon)}
-
-        def save(self, path):  # noqa: ANN001
-            output = Path(path)
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_bytes(b"fake-garch")
-
-    monkeypatch.setattr("quant_fund.pipeline.train.GARCHVol", FakeGarch)
+    monkeypatch.setattr("quant_fund.pipeline.train.GARCHVol", _ModuleLevelFakeGarch)
+    # The fake captures returns on fit; route the ``observed`` list
+    # through a module-scope holder so the class can write to it.
+    _ModuleLevelFakeGarch.observed = observed
     result = train_volatility(_cfg(tmp_path), "garch")
 
     assert Path(result["path"]).is_file()
