@@ -142,9 +142,20 @@ def _windows_physical_memory() -> tuple[int, int] | None:
 
 def ram_plan() -> dict[str, int | float]:
     total, available = physical_memory()
-    headroom = min(RAM_HEADROOM_BYTES, max(total // 5, 8 * 1024**3))
+    # Headroom floor is a target for the production lab. On small CI runners
+    # the floor would exceed the machine's total RAM, so we clamp to
+    # ``total - 512MB`` to preserve the ``workspace + headroom <= total``
+    # invariant that test_ram_plan_leaves_headroom pins. The 512MB slack
+    # leaves room for the workspace floor (also 512MB) so neither side
+    # dominates the plan on tight hardware.
+    min_workspace = 512 * 1024**2
+    headroom = min(
+        RAM_HEADROOM_BYTES,
+        max(total // 5, 8 * 1024**3),
+        max(total - min_workspace, 0),
+    )
     target = int(min(available, total - headroom) * RAM_TARGET_FRACTION)
-    target = max(target, 512 * 1024**2)
+    target = max(target, min_workspace)
     return {
         "total_bytes": int(total),
         "available_bytes": int(available),
