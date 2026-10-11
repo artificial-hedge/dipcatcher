@@ -187,7 +187,13 @@ def test_corpus_missing_dir_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     _install_corpus_module(monkeypatch)
     result = runner.invoke(app, ["corpus", "--receipts-dir", str(tmp_path / "nope")])
     assert result.exit_code != 0
-    assert "does not exist" in result.output
+    # The error path may be line-wrapped by click's error formatter (each
+    # line carries the leading box-drawing character `│`); the message
+    # surfaces the "does not exist" claim, but the substring crosses the
+    # line-break. Match with [\s│\n]+ between words.
+    import re as _re
+
+    assert _re.search(r"does[\s│\n]+not[\s│\n]+exist", result.output), result.output
 
 
 def test_online_fdr_per_finding_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -370,4 +376,6 @@ def test_online_fdr_missing_dir_fails(tmp_path: Path, monkeypatch: pytest.Monkey
     _install_online_module(monkeypatch)
     result = runner.invoke(app, ["online-fdr", "--receipts-dir", str(tmp_path / "nope")])
     assert result.exit_code != 0
-    assert "does not exist" in result.output
+    import re as _re
+
+    assert _re.search(r"does[\s│\n]+not[\s│\n]+exist", result.output), result.output

@@ -43,7 +43,6 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Annotated, Any, Literal, TypedDict
 
-import numpy as np
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -188,6 +187,9 @@ def _package_versions(names: tuple[str, ...]) -> dict[str, str]:
 
 def _blas_dependency(kind: Literal["blas", "lapack"]) -> dict[str, Any]:
     """Normalize ``np.__config__.CONFIG['Build Dependencies'][kind]``."""
+    import numpy as np  # lazy: the leaf's module-scope import would force a
+
+    # 1.5s cold-start hit on `quant_fund.cli.main --help`.
     config = getattr(np.__config__, "CONFIG", None)
     raw: Mapping[str, Any] = {}
     if isinstance(config, Mapping):

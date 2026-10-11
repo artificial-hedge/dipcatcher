@@ -5,8 +5,6 @@ from __future__ import annotations
 import os
 import random
 
-import numpy as np
-
 
 def set_global_seed(seed: int) -> None:
     """Seed the process RNGs.
@@ -16,6 +14,12 @@ def set_global_seed(seed: int) -> None:
     hash order is already fixed.
     """
     random.seed(seed)
+    # ``numpy`` and ``torch`` are imported lazily so this module — and every
+    # consumer of ``quant_fund.utils`` — does not pay a ~1.5s cold-start for
+    # the common case where seeding happens only inside long-running research
+    # or training tasks, never during CLI bootstrap.
+    import numpy as np
+
     np.random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     try:
