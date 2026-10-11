@@ -117,8 +117,6 @@ does not score them.
 - `receipts/corpus_proof_a56dff22d5b4931c.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_proof_exemplar.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_real_drill.json`: corpus_inference.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/cost_aware_rerun_20261007.json`: lane_receipt.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/cost_aware_rerun_20261007.json.seal.json`: prereg_seal.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cost_calibration_eval_df9b8d7068bf709b.json`: cost_calibration.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cost_calibration_eval_f130c7e871e9aa64.json`: cost_calibration.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/coverage_cs_real_drill.json`: coverage_cs.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -182,8 +180,6 @@ does not score them.
 - `receipts/forecast_data_audit.json`: forecast_data_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/forecast_infra_audit.json`: forecast_infra_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/forecast_pipeline_audit.json`: forecast_pipeline_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/forward_record_preregistration_v1.json`: forward_record_preregistration.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/forward_record_preregistration_v1.json.seal.json`: prereg_seal.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/full_impact.json`: full_impact.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/full_stack.json`: full_stack.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fx1_anthropic_sdk_audit.json`: anthropic_sdk_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
