@@ -59,7 +59,7 @@
     "validation_end": "2023-12-31",
     "validation_start": "2022-01-10"
   },
-  "receipt_sha256": "819e12ea1e57c79a64d27662e356a85a5d988dc4304c743030071e514dfbff3d",
+  "receipt_sha256": "0cca4d26b5c33cadb7b1f82945507d8b98bc399c1a8191ecd4480d7e14cf6edf",
   "research_only": true,
   "runtime": {
     "numpy": "2.5.3",

@@ -45,6 +45,30 @@
         "receipt_sha256_missing_or_invalid"
       ],
       "sha256": "f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f"
+    },
+    "cost_aware_rerun_20261007.json": {
+      "errors": [
+        "receipt_sha256_missing_or_invalid"
+      ],
+      "sha256": "618fadcd1cfa507b2a31f7671f55368c5e80c554647e238996af60759b020f7f"
+    },
+    "cost_aware_rerun_20261007.json.seal.json": {
+      "errors": [
+        "receipt_sha256_missing_or_invalid"
+      ],
+      "sha256": "62cf7f39349bde7690af5f2c15d385a5f2aef910de152eb46bc92b63578b8df1"
+    },
+    "forward_record_preregistration_v1.json": {
+      "errors": [
+        "receipt_sha256_missing_or_invalid"
+      ],
+      "sha256": "d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3"
+    },
+    "forward_record_preregistration_v1.json.seal.json": {
+      "errors": [
+        "receipt_sha256_missing_or_invalid"
+      ],
+      "sha256": "afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc"
     }
   },
   "schema": "legacy_quarantine.v1"

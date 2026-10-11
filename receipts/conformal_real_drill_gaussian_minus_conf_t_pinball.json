@@ -30,7 +30,7 @@
   "mode": "fixed",
   "n_inconclusive": 0,
   "n_obs": 300,
-  "receipt_sha256": "f71a5f7c5b6f461c50d1501941a6aea9faede3e0b4775ecd94fb326491c96d8d",
+  "receipt_sha256": "50e74f7958e3da3d13c0b751c80aa589417edfcbcb2ac66de43148689e06d5d4",
   "research_only": true,
   "schema": "conformal_monitor.v1",
   "window": 50

@@ -78,7 +78,7 @@
   "live_pnl_claim": false,
   "n_heads": 8,
   "n_obs": 2048,
-  "receipt_sha256": "d6bed78a0de6ab91dc043f0158da1a3a22c8e85c139066f75dc9b8f11cbeecd2",
+  "receipt_sha256": "3417611e0c03448ea8daece50a248da005d6cad7fda8e2f341ba62e57c5be92a",
   "research_only": true,
   "run": {
     "code_revision": "92a0cfce8c869665e46e7570fe5913c2ecc7af6f",

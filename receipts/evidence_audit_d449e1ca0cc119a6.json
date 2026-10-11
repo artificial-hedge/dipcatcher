@@ -98,7 +98,7 @@
     "receipts_dir": "receipts",
     "schema": "evidence_audit.v1"
   },
-  "receipt_sha256": "d449e1ca0cc119a62dbef15f3916494ff65cc018494b36253a6f6f5807173b2b",
+  "receipt_sha256": "8d81dbed34dd63f04329f3604d9a174a375a677e62160489f08d89141b76571c",
   "schema": "receipt.v2",
   "schema_version": 2,
   "verdict": "pass"

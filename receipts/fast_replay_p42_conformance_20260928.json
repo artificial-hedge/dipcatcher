@@ -30,7 +30,7 @@
   "generated": "2026-09-28T00:00:00Z",
   "live_pnl_claim": false,
   "receipt": "fast_replay_p42_conformance",
-  "receipt_sha256": "136a459c3ee50ea5b234847c2756c7ef370dbd12aba944859442efdf1f7486bc",
+  "receipt_sha256": "903d3a02edfe417e7bb9b38a01b0fc78c5e2939ca6ebdcc8f1b86c8b62cef8a5",
   "rerun": "uv run pytest tests/unit/backtest/test_fast_replay.py tests/property/test_fast_replay_byte_identity.py tests/unit/test_perf_equivalence.py -x -q",
   "research_only": true,
   "schema": "fast_replay_p42_conformance.v1",

@@ -27,7 +27,7 @@
   "n_eliminated": 0,
   "n_heads": 5,
   "n_origins": 96,
-  "receipt_sha256": "682e8ffac5176756f26ac2afb92185b28c3ae4f33c56b9e2cabf4f4f43cbfc5e",
+  "receipt_sha256": "764dc4883a069bf5bb588d55c53c1e26ad737c3273b05edd5b1499244070f26b",
   "research_only": true,
   "schema": "mcs_seq.v1",
   "survivors": [

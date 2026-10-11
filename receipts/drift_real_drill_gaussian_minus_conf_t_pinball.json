@@ -37,7 +37,7 @@
     "final_statistic": 0.13126228297147766,
     "h": 5.0
   },
-  "receipt_sha256": "c0e3bd0f904afeed9f43a15608ae3985b0a67e8bc1e266353730c181f6c49223",
+  "receipt_sha256": "01c4613989c12af5baf6d6f3c13ae18c056b8cdeffa072c7116638c9bd6b8576",
   "research_only": true,
   "schema": "drift_alarm.v1",
   "stream": "gaussian_minus_conf_t_pinball"

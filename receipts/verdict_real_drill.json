@@ -101,7 +101,7 @@
   "live_pnl_claim": false,
   "n_heads": 12,
   "n_obs": 300,
-  "receipt_sha256": "1e775c9c68c2c4afb30f68e40829c746174bb3297301e619579ddee426d5e66c",
+  "receipt_sha256": "f290ee783a36631ea1a1ff3e078b5d00ec4369c587c219b2245ceb742b015338",
   "research_only": true,
   "run": {
     "params": {

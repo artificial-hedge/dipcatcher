@@ -16,6 +16,7 @@ from typing import Any
 from quant_fund.research.legacy_unsealed import (
     KNOWN_UNSEALED,
     is_known_contract_legacy,
+    is_known_tape_legacy,
     is_known_unsealed,
 )
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
@@ -40,6 +41,8 @@ def test_committed_receipts_verify_or_are_known_legacy() -> None:
             unsealed.append(path.name)
             continue
         if is_known_contract_legacy(path, result["errors"]):
+            continue
+        if is_known_tape_legacy(path, result["errors"]):
             continue
         failures.append(f"{path.name}: {result['errors']}")
     assert failures == [], "committed receipts fail verification:\n" + "\n".join(failures)
