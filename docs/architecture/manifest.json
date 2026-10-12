@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13409,
+  "module_count": 13410,
   "module_edges": [
     {
       "dst": "fx1.interactive.concierge",
@@ -2155,12 +2155,20 @@
       "src": "fx1.interactive.evidence_ledger"
     },
     {
+      "dst": "fx1.interactive.evidence",
+      "src": "fx1.interactive.evidence_ledger"
+    },
+    {
       "dst": "fx1.interactive.redact",
       "src": "fx1.interactive.evidence_ledger"
     },
     {
       "dst": "quant_fund.schemas.receipt_v2_leaf",
       "src": "fx1.interactive.evidence_ledger"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.intent"
     },
     {
       "dst": "fx1.interactive.atomicstore",
@@ -2179,6 +2187,10 @@
       "src": "fx1.interactive.jobs"
     },
     {
+      "dst": "fx1.interactive.endpoint",
+      "src": "fx1.interactive.model_client"
+    },
+    {
       "dst": "fx1.interactive.redact",
       "src": "fx1.interactive.model_client"
     },
@@ -2187,12 +2199,20 @@
       "src": "fx1.interactive.model_client"
     },
     {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.orb"
+    },
+    {
       "dst": "fx1.honesty",
       "src": "fx1.interactive.planner"
     },
     {
       "dst": "fx1.interactive.contracts",
       "src": "fx1.interactive.planner"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.policy"
     },
     {
       "dst": "fx1.interactive.redact",
@@ -2217,6 +2237,10 @@
     {
       "dst": "fx1.serve.backends",
       "src": "fx1.interactive.profiles"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.sessions"
     },
     {
       "dst": "fx1.interactive.actions",
@@ -2255,6 +2279,10 @@
       "src": "fx1.interactive.system_prompt"
     },
     {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.system_prompt"
+    },
+    {
       "dst": "fx1.interactive.atomicstore",
       "src": "fx1.interactive.telemetry"
     },
@@ -2268,6 +2296,10 @@
     },
     {
       "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.terminal"
+    },
+    {
+      "dst": "fx1.interactive.redact",
       "src": "fx1.interactive.terminal"
     },
     {
@@ -4839,6 +4871,10 @@
       "src": "quant_fund.cli"
     },
     {
+      "dst": "quant_fund",
+      "src": "quant_fund.cli._app"
+    },
+    {
       "dst": "quant_fund.cli.benchmark_cmds",
       "src": "quant_fund.cli._app"
     },
@@ -4904,6 +4940,10 @@
     },
     {
       "dst": "quant_fund.stress.cli",
+      "src": "quant_fund.cli._app"
+    },
+    {
+      "dst": "quant_fund.utils.bundled_configs",
       "src": "quant_fund.cli._app"
     },
     {
@@ -5003,11 +5043,19 @@
       "src": "quant_fund.cli.capability_cmds"
     },
     {
+      "dst": "quant_fund.cli._app",
+      "src": "quant_fund.cli.data_cmds"
+    },
+    {
       "dst": "quant_fund.cli.app",
       "src": "quant_fund.cli.data_cmds"
     },
     {
       "dst": "quant_fund.cli.support",
+      "src": "quant_fund.cli.data_cmds"
+    },
+    {
+      "dst": "quant_fund.config",
       "src": "quant_fund.cli.data_cmds"
     },
     {
@@ -75033,6 +75081,7 @@
     "quant_fund.stress.vendor_cache",
     "quant_fund.utils",
     "quant_fund.utils.atomicio",
+    "quant_fund.utils.bundled_configs",
     "quant_fund.utils.hashing",
     "quant_fund.utils.logging",
     "quant_fund.utils.numeric",
@@ -75412,12 +75461,12 @@
     },
     {
       "dst": "fx1.honesty",
-      "imports": 6,
+      "imports": 8,
       "src": "fx1.interactive"
     },
     {
       "dst": "fx1.interactive",
-      "imports": 58,
+      "imports": 64,
       "src": "fx1.interactive"
     },
     {
@@ -75876,6 +75925,11 @@
       "src": "quant_fund.calendars"
     },
     {
+      "dst": "quant_fund",
+      "imports": 1,
+      "src": "quant_fund.cli"
+    },
+    {
       "dst": "quant_fund.audit",
       "imports": 2,
       "src": "quant_fund.cli"
@@ -75887,12 +75941,12 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 48,
+      "imports": 49,
       "src": "quant_fund.cli"
     },
     {
       "dst": "quant_fund.config",
-      "imports": 3,
+      "imports": 4,
       "src": "quant_fund.cli"
     },
     {
@@ -75997,7 +76051,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 13,
+      "imports": 14,
       "src": "quant_fund.cli"
     },
     {

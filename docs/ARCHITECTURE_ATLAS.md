@@ -230,7 +230,7 @@ flowchart LR
   fx1_interactive -->|1| fx1_doctor
   fx1_interactive -->|7| fx1_flash
   fx1_interactive -->|4| fx1_harness
-  fx1_interactive -->|6| fx1_honesty
+  fx1_interactive -->|8| fx1_honesty
   fx1_interactive -->|5| fx1_serve
   fx1_interactive -->|1| fx1_webresearch
   fx1_interactive -->|1| quant_fund_schemas
@@ -314,9 +314,10 @@ flowchart LR
   quant_fund_backtest -->|2| quant_fund_risk
   quant_fund_backtest -->|9| quant_fund_schemas
   quant_fund_backtest -->|1| quant_fund_utils
+  quant_fund_cli -->|1| quant_fund
   quant_fund_cli -->|2| quant_fund_audit
   quant_fund_cli -->|3| quant_fund_backtest
-  quant_fund_cli -->|3| quant_fund_config
+  quant_fund_cli -->|4| quant_fund_config
   quant_fund_cli -->|12| quant_fund_data
   quant_fund_cli -->|3| quant_fund_features
   quant_fund_cli -->|1| quant_fund_hmm
@@ -337,7 +338,7 @@ flowchart LR
   quant_fund_cli -->|74| quant_fund_research
   quant_fund_cli -->|3| quant_fund_schemas
   quant_fund_cli -->|1| quant_fund_stress
-  quant_fund_cli -->|13| quant_fund_utils
+  quant_fund_cli -->|14| quant_fund_utils
   quant_fund_cli -->|1| quant_fund_validation
   quant_fund_compute -->|8| quant_fund_utils
   quant_fund_config -->|1| quant_fund_models
@@ -834,12 +835,12 @@ sequenceDiagram
 | `quant_fund.schemas` | 9 |
 | `quant_fund.simtest` | 10 |
 | `quant_fund.stress` | 14 |
-| `quant_fund.utils` | 9 |
+| `quant_fund.utils` | 10 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13409**
+- Modules scanned: **13410**
 - Packages: **94**
-- Cross-package import edges: **392**
+- Cross-package import edges: **393**
 
 <!-- END GENERATED: coverage -->
 
