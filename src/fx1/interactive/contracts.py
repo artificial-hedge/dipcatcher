@@ -58,7 +58,7 @@ _TYPES = frozenset({"flag", "int", "float", "str", "enum", "path", "csv"})
 _ITEM_TYPES = frozenset({"int", "float", "str", "enum"})
 _PATH_ROLES = frozenset({"config", "input", "output_dir", "any"})
 _NUMERIC_TYPES = frozenset({"int", "float", "csv"})
-_CHOICE_TYPES = frozenset({"str", "enum", "csv"})
+_CHOICE_TYPES = frozenset({"str", "enum", "csv", "int"})
 _SHELL_CHARS = frozenset(";|&`$()<>\\\n\r\x00")
 _PATH_META = frozenset(";|&`$()<>\n\r\x00")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -538,10 +538,11 @@ def _parse_arg(raw: Any, ctx: str) -> ArgSpec:
     kind = _member(obj.get("kind"), _KINDS, f"{ctx}.kind")
     typ = _member(obj.get("type"), _TYPES, f"{ctx}.type")
     _check_name_kind(name, kind, ctx)
-    has_default = "default" in obj
-    default = obj.get("default") if has_default else None
-    if has_default and default is None:
-        raise ContractError(f"{ctx}.default must not be null")
+    # The lab publishes ``"default": null`` for an option with no default, and
+    # every other default as text; an absent key and a null both mean "no
+    # default", and text is coerced to the declared type once, here.
+    default = _coerce_default(typ, obj.get("default"), ctx)
+    has_default = default is not None
     spec = ArgSpec(
         name=name,
         kind=kind,
@@ -559,6 +560,27 @@ def _parse_arg(raw: Any, ctx: str) -> ArgSpec:
     )
     _check_arg_shape(spec, ctx)
     return spec
+
+
+def _coerce_default(kind: str, raw: Any, ctx: str) -> Any:
+    """Typed form of a published default; non-text values pass through."""
+    if not isinstance(raw, str):
+        return raw
+    text = raw.strip()
+    if kind == "int":
+        if re.fullmatch(r"[+-]?\d+", text) is None:
+            raise ContractError(f"{ctx}.default is not an integer")
+        return int(text)
+    if kind == "float":
+        try:
+            return float(text)
+        except ValueError:
+            raise ContractError(f"{ctx}.default is not a number") from None
+    if kind == "flag":
+        if text.lower() in {"true", "false"}:
+            return text.lower() == "true"
+        raise ContractError(f"{ctx}.default is not a boolean")
+    return raw
 
 
 def _check_arg_shape(spec: ArgSpec, ctx: str) -> None:
@@ -896,6 +918,9 @@ def _val_int(spec: ArgSpec, raw: Any, tight: ArgTightening | None) -> int:
     if isinstance(raw, bool) or not isinstance(raw, int):
         raise ContractViolation("bad_type", spec.name, "expected an integer")
     _check_range(spec, float(raw), tight)
+    choices = _effective_choices(spec, tight)
+    if choices is not None and str(raw) not in choices:
+        raise ContractViolation("bad_choice", spec.name, "value is not an allowed choice")
     return raw
 
 
