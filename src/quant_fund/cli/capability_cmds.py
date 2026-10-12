@@ -1,16 +1,17 @@
 """Read-only ``dipcatcher capabilities`` contract.
 
-The research catalog is imported only when a family view is built. Command
-introspection loads ``quant_fund.cli.main`` on first use, not at import.
-Published defaults drop absolute paths and URL hostnames. ``executable`` is
-true only for overlay status ``qualified`` whose command, arg hints, and
-evidence files all resolve.
+The research catalog is imported only when a family view or selective
+``--only`` choices are built. Command introspection loads ``quant_fund.cli.main``
+on first use, not at import. Published defaults drop absolute paths and URL
+hostnames. ``executable`` is true only for overlay status ``qualified`` whose
+command, arg hints, and evidence files all resolve. A required family is
+executable only when the selective surface has a runner for it.
 """
 
 from __future__ import annotations
 
 import json
-import os
+import math
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -19,6 +20,39 @@ from typing import Any
 
 import typer
 
+from quant_fund.cli.capability_audit import (
+    _coverage_problems,
+    _scan_text,
+    _structural_problems,
+)
+from quant_fund.cli.capability_families import (
+    FamilyCensus,
+    _census_from_sets,
+    _census_total,
+    _family_doc_problems,
+    _family_rows,
+    _validate_family_page,
+    apply_required_hint,
+    apply_status_note,
+    bind_selective_arg,
+    command_id_binds,
+    overlay_bind_id,
+    published_scores,
+    selective_contract_problems,
+)
+from quant_fund.cli.capability_introspect import _collect
+from quant_fund.cli.capability_model import (
+    _ID_RE,
+    LabCommand,
+    _as_number,
+    _is_number,
+    _nonportable,
+    _optional_int,
+    _order_arg,
+    _positive_int,
+    dumps_document,
+    find_repo_root,
+)
 from quant_fund.cli.capability_overlay import (
     AUDITED_ON,
     CURATED_OVERLAY,
@@ -28,16 +62,11 @@ from quant_fund.cli.capability_overlay import (
     RULESET,
     SCHEMA,
     overlay_sha256,
+    qualified_ids,
 )
 
-NO_RUNNER_REASON = "runs only inside the full `research` scorecard; no per-family runner exists"
 _CONSEQUENTIAL_TOKENS = frozenset({"train", "optimize", "paper"})
 _WEAKENING_ARGS = frozenset({"--check-index", "--write", "--claim-live", "--dev"})
-_ARG_TYPES = frozenset({"flag", "int", "float", "str", "enum", "path", "csv"})
-_ARG_KINDS = frozenset({"option", "argument"})
-_PATH_ROLES = frozenset({"config", "input", "output_dir", "any"})
-_ITEM_TYPES = frozenset({"int", "float", "str"})
-_FAMILY_STATUSES = frozenset({"required", "live", "retired", "all"})
 _ENTRY_KEYS = frozenset(
     {
         "id",
@@ -57,94 +86,17 @@ _ENTRY_KEYS = frozenset(
         "evidence_class",
     }
 )
-_CAP_KEYS = frozenset(
-    {
-        "id",
-        "version",
-        "purpose",
-        "tasks",
-        "aliases",
-        "command",
-        "args",
-        "inputs",
-        "outputs",
-        "dependencies",
-        "post_checks",
-        "limits",
-        "qualification",
-        "evidence_class",
-        "executable",
-        "executable_reason",
-    }
-)
-_COMMAND_KEYS = frozenset({"argv", "role", "read_only", "writes", "consequential", "timeout_s"})
-_INPUT_KEYS = frozenset({"data_labels", "requires_dataset", "availability_timing"})
-_OUTPUT_KEYS = frozenset({"scores", "receipt_schema", "receipt_flag", "receipt_stdout_marker"})
-_LIMIT_KEYS = frozenset({"max_runtime_s", "max_output_chars"})
-_QUAL_KEYS = frozenset({"status", "evidence", "ruleset", "audited_on"})
-_ARG_REQUIRED = frozenset({"name", "kind", "type", "required", "default", "repeatable", "help"})
-_ARG_OPTIONAL = frozenset({"choices", "min", "max", "item_type", "path_role"})
-_POST_REQUIRED = frozenset({"kind"})
-_POST_OPTIONAL = frozenset({"from"})
-_ARG_ORDER = (
-    "name",
-    "kind",
-    "type",
-    "required",
-    "default",
-    "repeatable",
-    "help",
-    "choices",
-    "min",
-    "max",
-    "item_type",
-    "path_role",
-)
 _STATUS_REASON = {
     "retired": "retired capability is not executable",
     "experimental": "experimental capability is not executable",
     "unqualified": "unqualified capability is not executable",
 }
-_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*( [a-z0-9][a-z0-9-]*)*$")
-_TOKEN_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
-_TASK_RE = re.compile(r"^[a-z][a-z0-9_]*$")
-_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-_SHA_RE = re.compile(r"^[0-9a-f]{64}$")
 _EVIDENCE_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_./-]*\.py$")
-_HOSTPATH = re.compile(r"/home(?:/|\"|$)|/Users/|[A-Za-z]:[\\/]|https?://")
-_SECRET = re.compile(
-    r"(?i)(api[_-]?key\s*[:=]|secret[_-]?key|BEGIN [A-Z0-9 ]*PRIVATE KEY|"
-    r"AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{20,})"
-)
-_FQDN = re.compile(r"\b(?:[a-z0-9-]+\.)+(?:com|net|org|io|dev|ai)\b", re.I)
 
 capabilities_app = typer.Typer(
     help="Read-only capability and benchmark-family contract. Missing qualification fails closed.",
     no_args_is_help=True,
 )
-
-
-@dataclass
-class LabCommand:
-    """One invocable lab command, already introspected."""
-
-    argv: tuple[str, ...]
-    help_text: str
-    hidden: bool
-    args: tuple[dict[str, Any], ...]
-
-    @property
-    def id(self) -> str:
-        return " ".join(self.argv)
-
-
-@dataclass(frozen=True)
-class FamilyCensus:
-    """Ordered required names, sorted live names, and retired rows."""
-
-    required: tuple[str, ...]
-    live: tuple[str, ...]
-    retired: tuple[tuple[str, str, int], ...]
 
 
 @dataclass
@@ -154,35 +106,10 @@ class _Built:
     commands: tuple[LabCommand, ...]
 
 
-def find_repo_root(start: Path | None = None) -> Path | None:
-    """Return the checkout root, or None when this file is not inside one."""
-    here = (start or Path(__file__)).resolve()
-    for parent in (here, *here.parents):
-        if (parent / "pyproject.toml").is_file() and (parent / "src" / "quant_fund").is_dir():
-            return parent
-    return None
-
-
-def dumps_document(doc: Mapping[str, Any]) -> str:
-    """Serialize one document with stable key order and a trailing newline."""
-    return json.dumps(doc, indent=2, ensure_ascii=True, allow_nan=False) + "\n"
-
-
 def commands_from_app(app: Any) -> tuple[LabCommand, ...]:
     """Introspect a Typer app or an already-built Click group."""
     root = typer.main.get_command(app) if isinstance(app, typer.Typer) else app
     return tuple(sorted(_collect(root), key=lambda item: item.id))
-
-
-def _collect(root: Any) -> list[LabCommand]:
-    """Walk groups. A one-command Typer app is the command itself, not a group."""
-    found = _walk(root, ())
-    if found or isinstance(getattr(root, "commands", None), dict):
-        return found
-    name = getattr(root, "name", None)
-    if not name:
-        return []
-    return [_leaf(root, (str(name),))]
 
 
 def list_lab_commands() -> tuple[LabCommand, ...]:
@@ -263,7 +190,7 @@ def build_family_document(
     offset: int = 0,
     census: FamilyCensus | None = None,
 ) -> dict[str, Any]:
-    """Page family metadata. No family is executable; there is no per-family runner."""
+    """Page family metadata. Executable only when required and a runner exists."""
     _validate_family_page(status, limit, offset)
     loaded = census if census is not None else load_family_census()
     rows = _family_rows(loaded, status)
@@ -334,6 +261,7 @@ def audit_capabilities(
     problems.extend(_scan_text(dumps_document(built.document), "capabilities"))
     if include_families:
         problems.extend(audit_family_contract())
+        problems.extend(_selective_audit(built.document))
     return sorted(set(problems))
 
 
@@ -424,7 +352,10 @@ def _overlay_capability(
     status = str(entry["qualification"]["status"])
     executable, reason = _decide(status, gates, in_overlay=True)
     executable, reason = _apply_force(entry, executable, reason)
+    executable, reason = apply_status_note(entry, executable, reason, _STATUS_REASON.get(status))
     cap = _from_overlay(entry, args, executable, reason)
+    if executable:
+        _coerce_executable_numbers(cap)
     problems = [*gates, *_force_problems(str(entry["id"]), status, executable)]
     return cap, problems
 
@@ -461,7 +392,7 @@ def _shape_problems(entry: Mapping[str, Any]) -> list[str]:
     argv = entry["command"].get("argv")
     if not isinstance(argv, list) or not argv:
         return [f"{ident}: overlay command.argv is malformed"]
-    if ident != " ".join(str(part) for part in argv):
+    if not command_id_binds(ident, argv):
         return [f"{ident}: id does not match command.argv"]
     return []
 
@@ -572,7 +503,9 @@ def _select_args(
     selected = _allowed_args(ident, allowed, hints, by_name, problems)
     problems.extend(_missing_required(ident, command, allowed))
     status = str(entry["qualification"]["status"])
-    return _drop_weakening(ident, selected, problems, qualified=status == "qualified"), problems
+    kept = _drop_weakening(ident, selected, problems, qualified=status == "qualified")
+    problems.extend(bind_selective_arg(ident, kept))
+    return kept, problems
 
 
 def _unknown_hint_problems(
@@ -644,6 +577,7 @@ def _with_hint(
     _apply_bound_hint(arg, hint, problems, where, "max", higher_is_tighter=False)
     _apply_choices_hint(arg, hint, problems, where)
     _apply_default_hint(arg, hint, problems, where)
+    apply_required_hint(arg, hint, problems, where)
     if "path_role" in hint:
         arg["path_role"] = str(hint["path_role"])
     if "item_type" in hint:
@@ -819,7 +753,7 @@ def _from_overlay(
         data_labels=[str(item) for item in inputs["data_labels"]],
         requires_dataset=bool(inputs["requires_dataset"]),
         availability=str(inputs["availability_timing"]),
-        scores=[str(item) for item in outputs["scores"]],
+        scores=published_scores(str(entry["id"]), outputs["scores"]),
         receipt_schema=str(outputs["receipt_schema"]),
         receipt_flag=[str(item) for item in outputs["receipt_flag"]],
         receipt_marker=str(outputs["receipt_stdout_marker"]),
@@ -907,6 +841,90 @@ def _capability(
     }
 
 
+def _coerce_executable_numbers(cap: dict[str, Any]) -> None:
+    """Publish real numbers for executable rows and keep defaults inside bounds.
+
+    Click and the overlay emit ``"2"`` and ``"0.05"``. An advertised default
+    outside ``min``/``max`` is clamped to the bound so the contract does not
+    tell the caller to pass a value the overlay forbids.
+    """
+    args = cap.get("args")
+    if not isinstance(args, list):
+        return
+    for arg in args:
+        if isinstance(arg, dict):
+            _coerce_number_arg(arg)
+
+
+def _coerce_number_arg(arg: dict[str, Any]) -> None:
+    typ = arg.get("type")
+    if typ not in {"int", "float"}:
+        return
+    if "default" in arg:
+        arg["default"] = _as_published_number(arg.get("default"), str(typ))
+    for key in ("min", "max"):
+        if key in arg and arg[key] is not None:
+            arg[key] = _as_published_number(arg[key], str(typ))
+    _clamp_numeric_default(arg)
+
+
+def _as_published_number(value: object, typ: str) -> object:
+    if value is None or isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return _cast_number(float(value), typ)
+    if isinstance(value, str):
+        return _number_text(value.strip(), typ)
+    return value
+
+
+def _number_text(text: str, typ: str) -> object:
+    try:
+        parsed = int(text) if typ == "int" else float(text)
+    except ValueError:
+        return text
+    if isinstance(parsed, float) and not math.isfinite(parsed):
+        return text
+    return parsed
+
+
+def _cast_number(number: float, typ: str) -> int | float:
+    if typ == "int" and number.is_integer():
+        return int(number)
+    return number
+
+
+def _clamp_numeric_default(arg: dict[str, Any]) -> None:
+    default = arg.get("default")
+    if isinstance(default, bool) or not isinstance(default, (int, float)):
+        return
+    arg["default"] = _clamp_to_bounds(default, arg.get("min"), arg.get("max"), arg.get("type"))
+
+
+def _clamp_to_bounds(default: int | float, lo: object, hi: object, typ: object) -> int | float:
+    clamped = _apply_low(default, lo)
+    clamped = _apply_high(clamped, hi)
+    if typ == "int" and isinstance(clamped, float) and clamped.is_integer():
+        return int(clamped)
+    return clamped
+
+
+def _apply_low(default: int | float, lo: object) -> int | float:
+    if isinstance(lo, bool) or not isinstance(lo, (int, float)):
+        return default
+    if default < lo:
+        return lo
+    return default
+
+
+def _apply_high(default: int | float, hi: object) -> int | float:
+    if isinstance(hi, bool) or not isinstance(hi, (int, float)):
+        return default
+    if default > hi:
+        return hi
+    return default
+
+
 def _consequential(argv: Sequence[str], requested: bool) -> bool:
     return requested or any(part in _CONSEQUENTIAL_TOKENS for part in argv)
 
@@ -923,275 +941,6 @@ def _unqualified_class(help_text: str, argv: Sequence[str]) -> str:
     if "doctor" in argv or any(part.startswith("verify") for part in argv):
         return "VERIFICATION"
     return "RESEARCH"
-
-
-def _walk(node: Any, prefix: tuple[str, ...]) -> list[LabCommand]:
-    found: list[LabCommand] = []
-    children = getattr(node, "commands", None)
-    if not isinstance(children, dict):
-        return found
-    for name in children:
-        child = children[name]
-        argv = prefix + (str(name),)
-        nested = getattr(child, "commands", None)
-        if isinstance(nested, dict) and nested:
-            found.extend(_walk(child, argv))
-            continue
-        found.append(_leaf(child, argv))
-    return found
-
-
-def _leaf(node: Any, argv: tuple[str, ...]) -> LabCommand:
-    params = getattr(node, "params", ()) or ()
-    args = tuple(_arg_from_param(param) for param in params if not _skip_param(param))
-    return LabCommand(
-        argv=argv,
-        help_text=_clip_help(getattr(node, "help", None)),
-        hidden=bool(getattr(node, "hidden", False)),
-        args=args,
-    )
-
-
-def _skip_param(param: Any) -> bool:
-    """Ignore Click's help option and Typer's shell-completion installers."""
-    name = str(getattr(param, "name", ""))
-    return name in {"help", "install_completion", "show_completion"}
-
-
-def _arg_from_param(param: Any) -> dict[str, Any]:
-    kind = _kind(param)
-    name = _public_name(param, kind)
-    schema_type = _schema_type(param)
-    arg: dict[str, Any] = {
-        "name": name,
-        "kind": kind,
-        "type": schema_type,
-        "required": bool(getattr(param, "required", False)),
-        "default": _default_text(getattr(param, "default", None)),
-        "repeatable": bool(getattr(param, "multiple", False)),
-        "help": _clip_help(getattr(param, "help", None)),
-    }
-    choices = _choice_list(param)
-    if choices is not None:
-        arg["choices"] = choices
-    lower, upper = _range_bounds(param)
-    if lower is not None:
-        arg["min"] = lower
-    if upper is not None:
-        arg["max"] = upper
-    if schema_type == "path":
-        arg["path_role"] = _path_role(name)
-    return _order_arg(arg)
-
-
-def _kind(param: Any) -> str:
-    if "argument" in type(param).__name__.lower():
-        return "argument"
-    opts = [str(opt) for opt in (getattr(param, "opts", ()) or ())]
-    if opts and not opts[0].startswith("-"):
-        return "argument"
-    return "option"
-
-
-def _public_name(param: Any, kind: str) -> str:
-    opts = [str(opt) for opt in (getattr(param, "opts", ()) or ())]
-    if kind == "option":
-        longs = [opt for opt in opts if opt.startswith("--")]
-        if longs:
-            return max(longs, key=len)
-        shorts = [opt for opt in opts if opt.startswith("-")]
-        if shorts:
-            return max(shorts, key=len)
-    if opts:
-        return opts[0]
-    return str(getattr(param, "name", "arg"))
-
-
-def _schema_type(param: Any) -> str:
-    if bool(getattr(param, "is_flag", False)):
-        return "flag"
-    type_name = type(getattr(param, "type", object())).__name__.lower()
-    if "choice" in type_name:
-        return "enum"
-    if "path" in type_name:
-        return "path"
-    if "float" in type_name:
-        return "float"
-    if "int" in type_name:
-        return "int"
-    return "str"
-
-
-def _choice_list(param: Any) -> list[str] | None:
-    annotation = getattr(param, "type", None)
-    if annotation is None or "choice" not in type(annotation).__name__.lower():
-        return None
-    raw = getattr(annotation, "choices", None)
-    if not raw:
-        return None
-    return [str(item) for item in raw]
-
-
-def _range_bounds(param: Any) -> tuple[int | float | None, int | float | None]:
-    annotation = getattr(param, "type", None)
-    if annotation is None or "range" not in type(annotation).__name__.lower():
-        return None, None
-    return (
-        _number_or_none(getattr(annotation, "min", None)),
-        _number_or_none(getattr(annotation, "max", None)),
-    )
-
-
-def _path_role(name: str) -> str:
-    token = name.lstrip("-").lower().replace("_", "-")
-    parts = token.split("-")
-    if "config" in parts:
-        return "config"
-    if token in {"out", "output", "out-dir", "output-dir"} or token.endswith("-out"):
-        return "output_dir"
-    if "out-dir" in token or token.endswith("-output"):
-        return "output_dir"
-    return "input"
-
-
-def _default_text(value: object) -> str | None:
-    if value is None or type(value).__name__ in {"Sentinel", "UNSET"}:
-        return None
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, int):
-        return str(value)
-    if isinstance(value, float):
-        return format(value, ".12g")
-    text = _path_text(value) if isinstance(value, os.PathLike) else _plain_text(value)
-    if text is None or _nonportable(text):
-        return None
-    return text
-
-
-def _plain_text(value: object) -> str | None:
-    if isinstance(value, str):
-        return value
-    if isinstance(value, (list, tuple)):
-        parts = [
-            _plain_text(item) if not isinstance(item, os.PathLike) else _path_text(item)
-            for item in value
-        ]
-        if any(part is None for part in parts):
-            return None
-        return ",".join(str(part) for part in parts)
-    return None
-
-
-def _path_text(value: os.PathLike[str] | os.PathLike[bytes]) -> str:
-    raw = os.fspath(value)
-    if isinstance(raw, bytes):
-        return raw.decode("utf-8", errors="replace")
-    return Path(raw).as_posix()
-
-
-def _nonportable(text: str) -> bool:
-    if "://" in text:
-        return True
-    normalized = text.replace("\\", "/")
-    if normalized.startswith("/"):
-        return True
-    return len(normalized) >= 3 and normalized[0].isalpha() and normalized[1:3] == ":/"
-
-
-def _clip_help(text: object) -> str:
-    raw = "" if text is None else str(text)
-    stripped = raw.strip()
-    if not stripped:
-        return ""
-    collapsed = " ".join(stripped.splitlines()[0].split())
-    if len(collapsed) <= 160:
-        return collapsed
-    return collapsed[:157] + "..."
-
-
-def _order_arg(arg: Mapping[str, Any]) -> dict[str, Any]:
-    return {key: arg[key] for key in _ARG_ORDER if key in arg}
-
-
-def _census_from_sets(
-    *,
-    required: set[str],
-    order: tuple[str, ...],
-    live: set[str],
-    retired: Mapping[str, Mapping[str, Any]],
-) -> FamilyCensus:
-    ordered = tuple(name for name in order if name in required)
-    ordered += tuple(sorted(required.difference(ordered)))
-    live_names = tuple(sorted(live - required))
-    return FamilyCensus(
-        required=ordered,
-        live=live_names,
-        retired=_retired_rows(retired, required),
-    )
-
-
-def _retired_rows(
-    retired: Mapping[str, Mapping[str, Any]],
-    required: set[str],
-) -> tuple[tuple[str, str, int], ...]:
-    rows: list[tuple[str, str, int]] = []
-    for name in sorted(retired):
-        if name in required:
-            continue
-        record = retired[name]
-        rows.append(
-            (str(name), str(record["reason"]), _as_version(record["last_receipt_schema_version"]))
-        )
-    return tuple(rows)
-
-
-def _as_version(value: object) -> int:
-    if isinstance(value, bool) or not isinstance(value, int):
-        raise TypeError("last_receipt_schema_version is not an int")
-    return value
-
-
-def _family_rows(census: FamilyCensus, status: str) -> list[dict[str, Any]]:
-    required = [_family_entry(name, "required", None, None) for name in census.required]
-    live = [_family_entry(name, "live", None, None) for name in census.live]
-    retired = [
-        _family_entry(name, "retired", reason, version) for name, reason, version in census.retired
-    ]
-    if status == "required":
-        return required
-    if status == "live":
-        return live
-    if status == "retired":
-        return retired
-    return [*required, *live, *retired]
-
-
-def _family_entry(
-    ident: str, status: str, reason: str | None, version: int | None
-) -> dict[str, Any]:
-    return {
-        "id": ident,
-        "status": status,
-        "retired_reason": reason,
-        "last_receipt_schema_version": version,
-        "runner": None,
-        "executable": False,
-        "executable_reason": NO_RUNNER_REASON,
-    }
-
-
-def _validate_family_page(status: str, limit: int, offset: int) -> None:
-    if status not in _FAMILY_STATUSES:
-        raise ValueError("status must be required, live, retired, or all")
-    if limit < 1:
-        raise ValueError("limit must be >= 1")
-    if offset < 0:
-        raise ValueError("offset must be >= 0")
-
-
-def _census_total(census: FamilyCensus) -> int:
-    return len(census.required) + len(census.live) + len(census.retired)
 
 
 def _resolve_commands(commands: Sequence[LabCommand] | None) -> tuple[LabCommand, ...]:
@@ -1221,8 +970,18 @@ def _group_overlay(
 ) -> dict[str, list[Mapping[str, Any]]]:
     grouped: dict[str, list[Mapping[str, Any]]] = {}
     for entry in overlay:
-        grouped.setdefault(str(entry.get("id", "")), []).append(entry)
+        grouped.setdefault(overlay_bind_id(entry), []).append(entry)
     return grouped
+
+
+def _selective_audit(cap_doc: Mapping[str, Any]) -> list[str]:
+    census = load_family_census()
+    limit = max(_census_total(census), 1)
+    families = build_family_document(status="all", limit=limit, offset=0, census=census)
+    rows = families["families"]
+    if not isinstance(rows, list):
+        return ["families must be a list"]
+    return selective_contract_problems(cap_doc, rows)
 
 
 def _document(
@@ -1266,522 +1025,6 @@ def _describe_error(matches: Sequence[Mapping[str, Any]]) -> str | None:
     if not matches:
         return "unknown capability"
     return "duplicate capability"
-
-
-def _coverage_problems(doc: Mapping[str, Any], commands: Sequence[LabCommand]) -> list[str]:
-    published = {str(cap["id"]) for cap in doc["capabilities"]}
-    problems = [
-        f"lab command missing from capabilities: {cmd.id}"
-        for cmd in commands
-        if cmd.id not in published
-    ]
-    roots = {cmd.argv[0] for cmd in commands}
-    known = {cmd.id for cmd in commands}
-    for cap in doc["capabilities"]:
-        problems.extend(_argv_coverage(cap, roots, known))
-    n_lab = doc["generated_by"]["n_lab_commands"]
-    if n_lab != len(tuple(commands)):
-        problems.append("n_lab_commands does not match the lab command count")
-    return problems
-
-
-def _argv_coverage(cap: Mapping[str, Any], roots: set[str], known: set[str]) -> list[str]:
-    argv = cap["command"]["argv"]
-    ident = str(cap["id"])
-    problems: list[str] = []
-    if not argv or argv[0] not in roots:
-        problems.append(f"{ident}: command.argv[0] is not a real lab command")
-    if " ".join(str(part) for part in argv) not in known:
-        problems.append(f"{ident}: command argv is not a real lab command")
-    return problems
-
-
-def _structural_problems(doc: Mapping[str, Any]) -> list[str]:
-    problems = _top_problems(doc)
-    caps = doc.get("capabilities")
-    if not isinstance(caps, list):
-        return [*problems, "capabilities must be a list"]
-    for index, cap in enumerate(caps):
-        problems.extend(_one_capability_problems(cap, index))
-    return problems
-
-
-def _top_problems(doc: Mapping[str, Any]) -> list[str]:
-    problems = _key_problems(
-        doc, frozenset({"schema", "generated_by", "capabilities"}), frozenset(), "document"
-    )
-    if doc.get("schema") != SCHEMA:
-        problems.append("schema is not dipcatcher.capabilities.v1")
-    generated = doc.get("generated_by")
-    problems.extend(
-        _key_problems(
-            generated, frozenset({"overlay_sha256", "n_lab_commands"}), frozenset(), "generated_by"
-        )
-    )
-    if isinstance(generated, dict):
-        problems.extend(_generated_problems(generated))
-    return problems
-
-
-def _generated_problems(generated: Mapping[str, Any]) -> list[str]:
-    problems: list[str] = []
-    digest = generated.get("overlay_sha256")
-    if not isinstance(digest, str) or _SHA_RE.fullmatch(digest) is None:
-        problems.append("generated_by.overlay_sha256 is invalid")
-    count = generated.get("n_lab_commands")
-    if not _nonnegative_int(count):
-        problems.append("generated_by.n_lab_commands is invalid")
-    return problems
-
-
-def _one_capability_problems(cap: object, index: int) -> list[str]:
-    where = f"capabilities[{index}]"
-    problems = _key_problems(cap, _CAP_KEYS, frozenset(), where)
-    if not isinstance(cap, dict):
-        return problems
-    problems.extend(_identity_problems(cap, where))
-    problems.extend(_command_block_problems(cap.get("command"), f"{where}.command"))
-    problems.extend(_args_problems(cap.get("args"), f"{where}.args"))
-    problems.extend(_io_problems(cap, where))
-    problems.extend(_qual_block_problems(cap, where))
-    return problems
-
-
-def _identity_problems(cap: Mapping[str, Any], where: str) -> list[str]:
-    problems = _id_problems(cap, where)
-    problems.extend(_text_problems(cap.get("version"), f"{where}.version"))
-    problems.extend(_text_problems(cap.get("purpose"), f"{where}.purpose"))
-    problems.extend(_task_problems(cap.get("tasks"), f"{where}.tasks"))
-    problems.extend(_alias_problems(cap.get("aliases"), f"{where}.aliases"))
-    problems.extend(_string_list_problems(cap.get("dependencies"), f"{where}.dependencies"))
-    if cap.get("evidence_class") not in EVIDENCE_CLASSES:
-        problems.append(f"{where}.evidence_class is invalid")
-    problems.extend(_exec_problems(cap, where))
-    return problems
-
-
-def _id_problems(cap: Mapping[str, Any], where: str) -> list[str]:
-    ident = cap.get("id")
-    if not isinstance(ident, str) or _ID_RE.fullmatch(ident) is None:
-        return [f"{where}.id is invalid"]
-    command = cap.get("command")
-    if not isinstance(command, dict):
-        return []
-    argv = command.get("argv")
-    if isinstance(argv, list) and ident != " ".join(str(part) for part in argv):
-        return [f"{where}.id does not match command.argv"]
-    return []
-
-
-def _exec_problems(cap: Mapping[str, Any], where: str) -> list[str]:
-    executable = cap.get("executable")
-    reason = cap.get("executable_reason")
-    status = _status_of(cap)
-    problems: list[str] = []
-    if not isinstance(executable, bool):
-        problems.append(f"{where}.executable must be bool")
-    if not isinstance(reason, str):
-        return [*problems, f"{where}.executable_reason must be str"]
-    if executable is True and reason != "":
-        problems.append(f"{where}.executable_reason must be empty when executable")
-    if executable is False and not reason:
-        problems.append(f"{where}.executable_reason must be set when not executable")
-    if executable is True and status != "qualified":
-        problems.append(f"{where}: executable with non-qualified status")
-    if status == "retired" and executable is True:
-        problems.append(f"{where}: retired capability is executable")
-    return problems
-
-
-def _status_of(cap: Mapping[str, Any]) -> object:
-    qual = cap.get("qualification")
-    if not isinstance(qual, dict):
-        return None
-    return qual.get("status")
-
-
-def _command_block_problems(command: object, where: str) -> list[str]:
-    problems = _key_problems(command, _COMMAND_KEYS, frozenset(), where)
-    if not isinstance(command, dict):
-        return problems
-    problems.extend(_argv_problems(command.get("argv"), f"{where}.argv"))
-    problems.extend(_text_problems(command.get("role"), f"{where}.role"))
-    if not isinstance(command.get("read_only"), bool):
-        problems.append(f"{where}.read_only must be bool")
-    problems.extend(_string_list_problems(command.get("writes"), f"{where}.writes"))
-    if not isinstance(command.get("consequential"), bool):
-        problems.append(f"{where}.consequential must be bool")
-    if not _optional_timeout(command.get("timeout_s")):
-        problems.append(f"{where}.timeout_s is invalid")
-    return problems
-
-
-def _argv_problems(argv: object, where: str) -> list[str]:
-    if not isinstance(argv, list) or not argv:
-        return [f"{where} must be a non-empty list"]
-    if all(isinstance(part, str) and _TOKEN_RE.fullmatch(part) for part in argv):
-        return []
-    return [f"{where} has an invalid token"]
-
-
-def _args_problems(args: object, where: str) -> list[str]:
-    if not isinstance(args, list):
-        return [f"{where} must be a list"]
-    problems: list[str] = []
-    for index, arg in enumerate(args):
-        problems.extend(_one_arg_problems(arg, f"{where}[{index}]"))
-    return problems
-
-
-def _one_arg_problems(arg: object, where: str) -> list[str]:
-    problems = _key_problems(arg, _ARG_REQUIRED, _ARG_OPTIONAL, where)
-    if not isinstance(arg, dict):
-        return problems
-    problems.extend(_text_problems(arg.get("name"), f"{where}.name", allow_empty=False))
-    if arg.get("kind") not in _ARG_KINDS:
-        problems.append(f"{where}.kind is invalid")
-    if arg.get("type") not in _ARG_TYPES:
-        problems.append(f"{where}.type is invalid")
-    if not isinstance(arg.get("required"), bool):
-        problems.append(f"{where}.required must be bool")
-    if not isinstance(arg.get("repeatable"), bool):
-        problems.append(f"{where}.repeatable must be bool")
-    if not isinstance(arg.get("help"), str):
-        problems.append(f"{where}.help must be str")
-    problems.extend(_default_problems(arg.get("default"), where))
-    problems.extend(_choice_problems(arg.get("choices"), where))
-    problems.extend(_bound_key_problems(arg, where))
-    problems.extend(_path_role_problems(arg, where))
-    problems.extend(_item_type_problems(arg, where))
-    return problems
-
-
-def _default_problems(default: object, where: str) -> list[str]:
-    if default is None:
-        return []
-    if not isinstance(default, str):
-        return [f"{where}.default must be a string or null"]
-    if _nonportable(default):
-        return [f"{where}.default is not portable"]
-    return []
-
-
-def _choice_problems(choices: object, where: str) -> list[str]:
-    if choices is None:
-        return []
-    return _string_list_problems(choices, f"{where}.choices")
-
-
-def _bound_key_problems(arg: Mapping[str, Any], where: str) -> list[str]:
-    problems: list[str] = []
-    for key in ("min", "max"):
-        if key in arg and not _is_number(arg[key]):
-            problems.append(f"{where}.{key} must be a number")
-    return problems
-
-
-def _path_role_problems(arg: Mapping[str, Any], where: str) -> list[str]:
-    if "path_role" not in arg:
-        if arg.get("type") == "path":
-            return [f"{where}.path_role is required for path args"]
-        return []
-    if arg.get("path_role") not in _PATH_ROLES:
-        return [f"{where}.path_role is invalid"]
-    if arg.get("type") != "path":
-        return [f"{where}.path_role is only valid for path args"]
-    return []
-
-
-def _item_type_problems(arg: Mapping[str, Any], where: str) -> list[str]:
-    if "item_type" not in arg:
-        return []
-    if arg.get("item_type") not in _ITEM_TYPES:
-        return [f"{where}.item_type is invalid"]
-    if arg.get("type") != "csv":
-        return [f"{where}.item_type is only valid for csv args"]
-    return []
-
-
-def _io_problems(cap: Mapping[str, Any], where: str) -> list[str]:
-    problems = _input_problems(cap.get("inputs"), f"{where}.inputs")
-    problems.extend(_output_problems(cap.get("outputs"), f"{where}.outputs"))
-    problems.extend(_limit_problems(cap.get("limits"), f"{where}.limits"))
-    problems.extend(_post_problems(cap.get("post_checks"), f"{where}.post_checks"))
-    return problems
-
-
-def _input_problems(inputs: object, where: str) -> list[str]:
-    problems = _key_problems(inputs, _INPUT_KEYS, frozenset(), where)
-    if not isinstance(inputs, dict):
-        return problems
-    problems.extend(_string_list_problems(inputs.get("data_labels"), f"{where}.data_labels"))
-    if not isinstance(inputs.get("requires_dataset"), bool):
-        problems.append(f"{where}.requires_dataset must be bool")
-    problems.extend(
-        _text_problems(inputs.get("availability_timing"), f"{where}.availability_timing")
-    )
-    return problems
-
-
-def _output_problems(outputs: object, where: str) -> list[str]:
-    problems = _key_problems(outputs, _OUTPUT_KEYS, frozenset(), where)
-    if not isinstance(outputs, dict):
-        return problems
-    problems.extend(_string_list_problems(outputs.get("scores"), f"{where}.scores"))
-    problems.extend(
-        _text_problems(outputs.get("receipt_schema"), f"{where}.receipt_schema", allow_empty=True)
-    )
-    problems.extend(_string_list_problems(outputs.get("receipt_flag"), f"{where}.receipt_flag"))
-    marker = outputs.get("receipt_stdout_marker")
-    if not isinstance(marker, str):
-        problems.append(f"{where}.receipt_stdout_marker must be str")
-    return problems
-
-
-def _limit_problems(limits: object, where: str) -> list[str]:
-    problems = _key_problems(limits, _LIMIT_KEYS, frozenset(), where)
-    if not isinstance(limits, dict):
-        return problems
-    if not _optional_timeout(limits.get("max_runtime_s")):
-        problems.append(f"{where}.max_runtime_s is invalid")
-    if not _optional_timeout(limits.get("max_output_chars")):
-        problems.append(f"{where}.max_output_chars is invalid")
-    return problems
-
-
-def _post_problems(checks: object, where: str) -> list[str]:
-    if not isinstance(checks, list):
-        return [f"{where} must be a list"]
-    problems: list[str] = []
-    for index, item in enumerate(checks):
-        problems.extend(_one_post_problems(item, f"{where}[{index}]"))
-    return problems
-
-
-def _one_post_problems(item: object, where: str) -> list[str]:
-    problems = _key_problems(item, _POST_REQUIRED, _POST_OPTIONAL, where)
-    if not isinstance(item, dict):
-        return problems
-    if not isinstance(item.get("kind"), str) or not str(item.get("kind")).strip():
-        problems.append(f"{where}.kind must be a non-empty string")
-    if "from" in item and not isinstance(item.get("from"), str):
-        problems.append(f"{where}.from must be a string")
-    return problems
-
-
-def _qual_block_problems(cap: Mapping[str, Any], where: str) -> list[str]:
-    qual = cap.get("qualification")
-    problems = _key_problems(qual, _QUAL_KEYS, frozenset(), f"{where}.qualification")
-    if not isinstance(qual, dict):
-        return problems
-    if qual.get("status") not in QUALIFICATION_STATUSES:
-        problems.append(f"{where}.qualification.status is invalid")
-    problems.extend(_string_list_problems(qual.get("evidence"), f"{where}.qualification.evidence"))
-    problems.extend(_text_problems(qual.get("ruleset"), f"{where}.qualification.ruleset"))
-    audited = qual.get("audited_on")
-    if not isinstance(audited, str) or _DATE_RE.fullmatch(audited) is None:
-        problems.append(f"{where}.qualification.audited_on is invalid")
-    return problems
-
-
-def _family_doc_problems(doc: Mapping[str, Any], census: FamilyCensus) -> list[str]:
-    problems = _family_header_problems(doc, census)
-    families = doc.get("families")
-    if not isinstance(families, list):
-        return [*problems, "families must be a list"]
-    seen: set[str] = set()
-    for entry in families:
-        problems.extend(_one_family_problems(entry, seen))
-    problems.extend(_family_order_problems(families, census))
-    return problems
-
-
-def _family_header_problems(doc: Mapping[str, Any], census: FamilyCensus) -> list[str]:
-    problems: list[str] = []
-    if doc.get("schema") != SCHEMA:
-        problems.append("family schema is invalid")
-    if doc.get("view") != "families":
-        problems.append("family view is invalid")
-    if doc.get("status") != "all":
-        problems.append("family audit status must be all")
-    counts = doc.get("counts")
-    if not isinstance(counts, dict):
-        return [*problems, "family counts must be an object"]
-    if counts.get("required") != len(census.required):
-        problems.append("required family count drifted")
-    if counts.get("live") != len(census.live):
-        problems.append("live family count drifted")
-    if counts.get("retired") != len(census.retired):
-        problems.append("retired family count drifted")
-    if doc.get("total") != _census_total(census):
-        problems.append("family total drifted")
-    return problems
-
-
-def _one_family_problems(entry: object, seen: set[str]) -> list[str]:
-    if not isinstance(entry, dict):
-        return ["family entry is not an object"]
-    ident = str(entry.get("id", ""))
-    problems: list[str] = []
-    if ident in seen:
-        problems.append(f"duplicate family id: {ident}")
-    seen.add(ident)
-    if entry.get("runner") is not None:
-        problems.append(f"{ident}: family runner must be null")
-    if entry.get("executable") is not False:
-        problems.append(f"{ident}: family is executable")
-    if entry.get("executable_reason") != NO_RUNNER_REASON:
-        problems.append(f"{ident}: family executable_reason drifted")
-    problems.extend(_retired_field_problems(ident, entry))
-    return problems
-
-
-def _retired_field_problems(ident: str, entry: Mapping[str, Any]) -> list[str]:
-    status = entry.get("status")
-    if status not in {"required", "live", "retired"}:
-        return [f"{ident}: family status is invalid"]
-    reason = entry.get("retired_reason")
-    version = entry.get("last_receipt_schema_version")
-    if status != "retired":
-        if reason is not None or version is not None:
-            return [f"{ident}: non-retired family carries retirement metadata"]
-        return []
-    return _retired_ok(ident, reason, version)
-
-
-def _retired_ok(ident: str, reason: object, version: object) -> list[str]:
-    problems: list[str] = []
-    if not isinstance(reason, str) or not reason.strip():
-        problems.append(f"{ident}: retired family is missing a reason")
-    if isinstance(version, bool) or not isinstance(version, int):
-        problems.append(f"{ident}: retired family is missing last_receipt_schema_version")
-    return problems
-
-
-def _family_order_problems(families: Sequence[object], census: FamilyCensus) -> list[str]:
-    required = [
-        entry["id"]
-        for entry in families
-        if isinstance(entry, dict) and entry.get("status") == "required"
-    ]
-    live = [
-        entry["id"]
-        for entry in families
-        if isinstance(entry, dict) and entry.get("status") == "live"
-    ]
-    retired = [
-        entry["id"]
-        for entry in families
-        if isinstance(entry, dict) and entry.get("status") == "retired"
-    ]
-    problems: list[str] = []
-    if required != list(census.required):
-        problems.append("required families are not in catalog order")
-    if live != sorted(live):
-        problems.append("live families are not sorted")
-    if retired != sorted(retired):
-        problems.append("retired families are not sorted")
-    return problems
-
-
-def _scan_text(text: str, where: str) -> list[str]:
-    problems: list[str] = []
-    if _HOSTPATH.search(text):
-        problems.append(f"{where}: output contains an absolute path or URL")
-    if _SECRET.search(text):
-        problems.append(f"{where}: output contains a secret-like token")
-    if _FQDN.search(text):
-        problems.append(f"{where}: output contains a hostname")
-    return problems
-
-
-def _key_problems(
-    obj: object, required: frozenset[str], optional: frozenset[str], where: str
-) -> list[str]:
-    if not isinstance(obj, dict):
-        return [f"{where} must be an object"]
-    allowed = required | optional
-    missing = sorted(required - set(obj))
-    extra = sorted(set(obj) - allowed)
-    problems = [f"{where} missing {key}" for key in missing]
-    problems.extend(f"{where} unknown key {key}" for key in extra)
-    return problems
-
-
-def _text_problems(value: object, where: str, *, allow_empty: bool = False) -> list[str]:
-    if not isinstance(value, str):
-        return [f"{where} must be str"]
-    if not allow_empty and not value.strip():
-        return [f"{where} must be non-empty"]
-    return []
-
-
-def _string_list_problems(value: object, where: str) -> list[str]:
-    if isinstance(value, list) and all(isinstance(item, str) for item in value):
-        return []
-    return [f"{where} must be a list of strings"]
-
-
-def _task_problems(tasks: object, where: str) -> list[str]:
-    problems = _string_list_problems(tasks, where)
-    if problems or not isinstance(tasks, list):
-        return problems
-    return [
-        f"{where} task is not snake_case: {item}"
-        for item in tasks
-        if not isinstance(item, str) or _TASK_RE.fullmatch(item) is None
-    ]
-
-
-def _alias_problems(aliases: object, where: str) -> list[str]:
-    problems = _string_list_problems(aliases, where)
-    if problems or not isinstance(aliases, list):
-        return problems
-    return [
-        f"{where} alias must be lowercase: {item}"
-        for item in aliases
-        if not isinstance(item, str) or item != item.lower() or not item.strip()
-    ]
-
-
-def _positive_int(value: object) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and value > 0
-
-
-def _nonnegative_int(value: object) -> bool:
-    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
-
-
-def _optional_timeout(value: object) -> bool:
-    if value is None:
-        return True
-    return _nonnegative_int(value)
-
-
-def _optional_int(value: object) -> int | None:
-    if value is None or isinstance(value, bool) or not isinstance(value, int):
-        return None
-    return value
-
-
-def _is_number(value: object) -> bool:
-    if isinstance(value, bool):
-        return False
-    return isinstance(value, (int, float))
-
-
-def _number_or_none(value: object) -> int | float | None:
-    if not _is_number(value):
-        return None
-    return _as_number(value)
-
-
-def _as_number(value: object) -> int | float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise TypeError("expected a number")
-    if isinstance(value, float) and value.is_integer():
-        return int(value)
-    return value
 
 
 def _fit(text: str, width: int) -> str:
@@ -1910,7 +1153,7 @@ def capabilities_families(
     limit: int = typer.Option(50, "--limit"),
     offset: int = typer.Option(0, "--offset"),
 ) -> None:
-    """List scorecard families. None of them is a standalone runner."""
+    """List scorecard families. Required families with a runner use research --only."""
     try:
         doc = build_family_document(status=status, limit=limit, offset=offset)
     except ValueError as exc:
@@ -1934,7 +1177,6 @@ __all__ = [
     "FAIL_CLOSED_REASON",
     "FamilyCensus",
     "LabCommand",
-    "NO_RUNNER_REASON",
     "SCHEMA",
     "audit_capabilities",
     "audit_family_contract",
@@ -1947,4 +1189,6 @@ __all__ = [
     "find_repo_root",
     "list_lab_commands",
     "load_family_census",
+    "overlay_sha256",
+    "qualified_ids",
 ]

@@ -6,7 +6,8 @@ a clock reading. The sha256 is taken over canonical JSON (sorted keys, compact
 separators) so the digest does not depend on dict insertion order.
 
 ``timeout_s`` / ``limits`` are harness ceilings the caller must enforce. They
-are not measured runtimes.
+are not measured runtimes. The 2026-10-12 revision records selective family
+runs (``research-only``) and refuses commands whose default output is ``receipts/``.
 """
 
 from __future__ import annotations
@@ -14,12 +15,18 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping, Sequence
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 SCHEMA = "dipcatcher.capabilities.v1"
 RULESET = "overlay-v1"
 AUDITED_ON = "2026-10-12"
 FAIL_CLOSED_REASON = "no qualification overlay entry; missing qualification metadata fails closed"
+RESEARCH_ONLY_ID = "research-only"
+PARTIAL_RUN_SCHEMA = "dipcatcher.family_run.v1"
+VERIFY_ALL_UNQUALIFIED_REASON = (
+    "writes a sealed evidence_audit receipt into receipts/ by default; "
+    "model-driven execution is refused because that directory is implicit"
+)
 EVIDENCE_CLASSES = frozenset({"SYNTHETIC", "RESEARCH", "VERIFICATION"})
 QUALIFICATION_STATUSES = frozenset({"qualified", "experimental", "unqualified", "retired"})
 
@@ -32,8 +39,9 @@ class ArgHint(TypedDict, total=False):
     min: int
     max: int
     choices: list[str]
-    default: str
+    default: str | None
     path_role: str
+    required: bool
 
 
 class CommandContract(TypedDict):
@@ -68,6 +76,7 @@ class Qualification(TypedDict):
     evidence: list[str]
     ruleset: str
     audited_on: str
+    reason: NotRequired[str]
 
 
 class OverlayEntry(TypedDict):
@@ -153,6 +162,30 @@ def _verify_outputs() -> OutputContract:
     }
 
 
+def _out_dir() -> ArgHint:
+    """Caller-supplied receipt directory. No ``receipts/`` default."""
+    return {"path_role": "output_dir", "default": None, "required": True}
+
+
+def _unqualified(evidence: list[str], reason: str) -> Qualification:
+    return {
+        "status": "unqualified",
+        "evidence": evidence,
+        "ruleset": RULESET,
+        "audited_on": AUDITED_ON,
+        "reason": reason,
+    }
+
+
+def _partial_outputs() -> OutputContract:
+    return {
+        "scores": [],
+        "receipt_schema": PARTIAL_RUN_SCHEMA,
+        "receipt_flag": [],
+        "receipt_stdout_marker": "json=",
+    }
+
+
 _EXIT: dict[str, str] = {"kind": "exit_code"}
 _RECEIPT_CHECK: dict[str, str] = {
     "kind": "verify_receipt",
@@ -174,16 +207,19 @@ def overlay_sha256(entries: Sequence[Mapping[str, Any]] | None = None) -> str:
 
 def qualified_ids() -> tuple[str, ...]:
     """Capability ids the curated overlay marks qualified, in overlay order."""
-    return tuple(entry["id"] for entry in CURATED_OVERLAY)
+    return tuple(
+        entry["id"] for entry in CURATED_OVERLAY if entry["qualification"]["status"] == "qualified"
+    )
 
 
 CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
     {
         "id": "doctor",
-        "version": "1",
+        "version": "2",
         "purpose": (
-            "Report local research-tree health (directories, manifest, core imports) "
-            "without running a benchmark family."
+            "Report local research-tree health and write resolved_config.json under "
+            "the configured data root. Also ensures that root's raw, bronze, silver, "
+            "gold, and metadata directories exist. Does not write receipts/."
         ),
         "tasks": ["lab_health", "preflight"],
         "aliases": ["doctor", "health", "preflight"],
@@ -191,7 +227,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
             ["doctor"],
             "verification",
             read_only=False,
-            writes=["resolved_config"],
+            writes=["resolved_config", "data_dirs"],
             timeout_s=60,
         ),
         "allowed_args": ["--config"],
@@ -201,7 +237,12 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "dependencies": [],
         "post_checks": [_EXIT],
         "limits": _limits(60),
-        "qualification": _qualified(["tests/unit/cli/test_cli_api.py"]),
+        "qualification": _qualified(
+            [
+                "tests/unit/cli/test_cli_api.py",
+                "tests/unit/cli/test_capabilities_cmd.py",
+            ]
+        ),
         "evidence_class": "VERIFICATION",
     },
     {
@@ -268,10 +309,11 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
     },
     {
         "id": "verify-all",
-        "version": "1",
+        "version": "2",
         "purpose": (
             "Audit a receipts directory for seals, filename binding, duplicate seals, "
-            "and evidence-index freshness, and write an evidence-audit receipt."
+            "and evidence-index freshness, and write an evidence-audit receipt. "
+            "Not executable: the default output directory is receipts/."
         ),
         "tasks": ["evidence_audit", "receipt_verification"],
         "aliases": ["verify all", "evidence audit"],
@@ -283,7 +325,10 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
             timeout_s=300,
         ),
         "allowed_args": ["--receipts-dir", "--out-dir"],
-        "arg_hints": {},
+        "arg_hints": {
+            "--out-dir": {"path_role": "output_dir", "default": None},
+            "--receipts-dir": {"path_role": "input", "default": None},
+        },
         "inputs": _inputs([], "caller-supplied receipts directory; nothing is fetched"),
         "outputs": {
             "scores": [],
@@ -294,12 +339,15 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "dependencies": [],
         "post_checks": [_RECEIPT_CHECK],
         "limits": _limits(300),
-        "qualification": _qualified(["tests/unit/research/test_evidence_audit.py"]),
+        "qualification": _unqualified(
+            ["tests/unit/research/test_evidence_audit.py"],
+            VERIFY_ALL_UNQUALIFIED_REASON,
+        ),
         "evidence_class": "VERIFICATION",
     },
     {
         "id": "vol-bench",
-        "version": "1",
+        "version": "2",
         "purpose": "Score SYNTHETIC volatility forecasts with QLIKE and MSE and write a sealed receipt.",
         "tasks": ["volatility_forecast_evaluation", "qlike_scoring"],
         "aliases": ["realized variance", "har", "garch", "volatility"],
@@ -332,6 +380,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
             "--stride": {"min": 1, "max": 50},
             "--n-bars": {"min": 1, "max": 2000},
             "--receipt-version": _v2(),
+            "--out-dir": _out_dir(),
         },
         "inputs": _inputs(["SYNTHETIC"], "n/a — seeded synthetic shards"),
         "outputs": _receipt_outputs(["QLIKE", "MSE"]),
@@ -348,7 +397,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
     },
     {
         "id": "calibration-eval",
-        "version": "1",
+        "version": "2",
         "purpose": (
             "Score SYNTHETIC distribution-fleet calibration with PIT histograms "
             "and reliability diagnostics and write a sealed receipt."
@@ -380,6 +429,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
             "--n-eval": {"min": 64, "max": 256},
             "--pit-bins": {"min": 5, "max": 50},
             "--receipt-version": _v2(),
+            "--out-dir": _out_dir(),
         },
         "inputs": _inputs(["SYNTHETIC"], "n/a — seeded synthetic shards"),
         "outputs": _receipt_outputs(["PIT"]),
@@ -391,7 +441,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
     },
     {
         "id": "rankic",
-        "version": "1",
+        "version": "2",
         "purpose": (
             "Score SYNTHETIC cross-sectional rank-IC of challenger transforms "
             "and write a sealed receipt."
@@ -422,6 +472,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
             "--n-assets": {"min": 2, "max": 32},
             "--n-dates": {"min": 20, "max": 96},
             "--receipt-version": _v2(),
+            "--out-dir": _out_dir(),
         },
         "inputs": _inputs(["SYNTHETIC"], "n/a — seeded synthetic panels"),
         "outputs": _receipt_outputs(["RankIC"]),
@@ -438,7 +489,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
     },
     {
         "id": "serial-watch",
-        "version": "1",
+        "version": "2",
         "purpose": (
             "Audit SYNTHETIC PIT streams for serial independence with anytime-valid "
             "e-processes and write a sealed receipt."
@@ -465,6 +516,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
             "--n-lags": {"min": 1, "max": 5},
             "--data-label": {"default": "SYNTHETIC", "choices": ["SYNTHETIC"]},
             "--receipt-version": _v2(),
+            "--out-dir": _out_dir(),
         },
         "inputs": _inputs(
             ["SYNTHETIC"],
@@ -479,7 +531,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
     },
     {
         "id": "lane-power",
-        "version": "1",
+        "version": "2",
         "purpose": (
             "Measure SYNTHETIC alarm rate and time of sequential monitor lanes "
             "under injected defects and write a sealed receipt."
@@ -508,6 +560,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
             "--n-steps": {"min": 16, "max": 200},
             "--n-seeds": {"min": 1, "max": 10},
             "--receipt-version": _v2(),
+            "--out-dir": _out_dir(),
         },
         "inputs": _inputs(["SYNTHETIC"], "n/a — seeded synthetic streams"),
         "outputs": _receipt_outputs([]),
@@ -519,11 +572,11 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
     },
     {
         "id": "research",
-        "version": "1",
+        "version": "2",
         "purpose": (
             "Execute the whole REQUIRED research scorecard on the default SYNTHETIC "
-            "config and write the labeled notebook; this command cannot be narrowed "
-            "to chosen families."
+            "config and write the labeled notebook. This is the heavy run used when "
+            "no family selection is supplied. Selective runs are research-only."
         ),
         "tasks": ["required_scorecard"],
         "aliases": ["research", "scorecard", "full scorecard"],
@@ -538,7 +591,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "arg_hints": {},
         "inputs": _inputs(
             ["SYNTHETIC"],
-            "n/a — default config runs seeded SYNTHETIC shards; the command always executes the full REQUIRED scorecard",
+            "n/a — default config runs seeded SYNTHETIC shards; this capability does not accept --only",
         ),
         "outputs": {
             "scores": ["QLIKE"],
@@ -550,6 +603,41 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "post_checks": [{"kind": "verify_research", "from": "json="}],
         "limits": _limits(3600, 48000),
         "qualification": _qualified(["tests/unit/cli/test_cli_main_cov.py"]),
+        "evidence_class": "SYNTHETIC",
+    },
+    {
+        "id": RESEARCH_ONLY_ID,
+        "version": "1",
+        "purpose": (
+            "Run only the qualified families named by --only and write a partial "
+            "dipcatcher.family_run.v1 record. The record is not a sealed receipt, "
+            "verified stays false, and verify-research does not apply."
+        ),
+        "tasks": ["selective_family_run"],
+        "aliases": ["research only", "selective families", "family run"],
+        "command": _command(
+            ["research"],
+            "research",
+            read_only=False,
+            writes=["family_runs", "resolved_config"],
+            timeout_s=3600,
+        ),
+        "allowed_args": ["--config", "--only"],
+        "arg_hints": {"--only": {"type": "csv", "item_type": "str", "required": True}},
+        "inputs": _inputs(
+            ["SYNTHETIC"],
+            "n/a — qualified path uses the default SYNTHETIC config; --only selects runners",
+        ),
+        "outputs": _partial_outputs(),
+        "dependencies": [],
+        "post_checks": [],
+        "limits": _limits(3600, 48000),
+        "qualification": _qualified(
+            [
+                "tests/unit/research/test_family_surface.py",
+                "tests/unit/cli/test_family_cmds.py",
+            ]
+        ),
         "evidence_class": "SYNTHETIC",
     },
 )

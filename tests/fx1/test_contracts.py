@@ -572,6 +572,98 @@ def test_cache_refetches_on_mismatch_corruption_and_failure(tmp_path: Path) -> N
         failing.get()
 
 
+def test_build_argv_revalidates_confined_paths(tmp_path: Path) -> None:
+    cap = _cap(sample_catalog(), "forecast-eval")
+    root = tmp_path / "input"
+    root.mkdir()
+    target = root / "mine.csv"
+    roots = {"input": [root]}
+    validated = validate_args(cap, {"--dataset": str(target)}, roots=roots)
+    argv = build_argv(cap, validated, roots=roots)
+    assert argv[0] == "forecast-eval"
+    assert str(target.resolve()) in argv
+    escaped = _violation(cap, validated)
+    assert escaped.code == "path_escape"
+
+
+def test_null_default_is_absent_and_numeric_strings_stay_strict() -> None:
+    doc = sample_catalog_document()
+    for arg in capability_entry(doc, "vol-bench")["args"]:
+        if arg["name"] == "--n-origins":
+            arg["default"] = None
+    catalog = CapabilityCatalog.from_json(doc)
+    assert "--n-origins" not in validate_args(_cap(catalog, "vol-bench"), {})
+    strict = sample_catalog_document()
+    for arg in capability_entry(strict, "vol-bench")["args"]:
+        if arg["name"] == "--n-origins":
+            arg["default"] = "4"
+    with pytest.raises(ContractError, match="default"):
+        CapabilityCatalog.from_json(strict)
+
+
+def test_non_executable_rows_tolerate_nulls_and_string_numbers() -> None:
+    doc = sample_catalog_document()
+    doc["capabilities"].append(
+        {
+            "aliases": [],
+            "args": [
+                {
+                    "default": "5",
+                    "help": "",
+                    "kind": "argument",
+                    "min": "1",
+                    "name": "run_a",
+                    "repeatable": False,
+                    "required": False,
+                    "type": "int",
+                }
+            ],
+            "command": {
+                "argv": ["allocation", "compare"],
+                "consequential": False,
+                "read_only": False,
+                "role": "unspecified",
+                "timeout_s": None,
+                "writes": [],
+            },
+            "dependencies": ["missing-row"],
+            "evidence_class": "RESEARCH",
+            "executable": False,
+            "executable_reason": "no qualification overlay entry; missing qualification metadata fails closed",
+            "id": "allocation compare",
+            "inputs": {
+                "availability_timing": "unavailable",
+                "data_labels": [],
+                "requires_dataset": False,
+            },
+            "limits": {"max_output_chars": None, "max_runtime_s": None},
+            "outputs": {
+                "receipt_flag": [],
+                "receipt_schema": "",
+                "receipt_stdout_marker": "",
+                "scores": [],
+            },
+            "post_checks": [],
+            "purpose": "Compare two allocations.",
+            "qualification": {"evidence": [], "status": "unqualified"},
+            "tasks": [],
+            "version": "0",
+        }
+    )
+    catalog = CapabilityCatalog.from_json(doc)
+    row = _cap(catalog, "allocation compare")
+    assert row.executable is False
+    assert row.timeout_s == 0
+    assert row.max_runtime_s == 0
+    assert row.argv == ("allocation", "compare")
+    assert row.dependencies == ()
+    spec = next(arg for arg in row.args if arg.name == "run_a")
+    assert spec.default == 5
+    assert spec.minimum == 1
+    blocked = _violation(row, {})
+    assert blocked.code == "not_executable"
+
+
 def test_negative_ttl_is_rejected(tmp_path: Path) -> None:
     def runner(name: str, args: list[str]) -> tuple[int, str]:
         return 0, "{}"

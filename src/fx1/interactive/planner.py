@@ -7,9 +7,17 @@ then id ascending.
 
 Only executable capabilities become steps. Dependencies are inserted and
 count toward ``max_steps``. ``post_checks`` stay on the step. Declared
-defaults are the only arguments the deterministic planner fills in. A model
-may propose arguments; each proposal is validated and never coerced. Any
-structural problem in the model reply keeps the deterministic plan.
+defaults are used for optional arguments. A required ``output_dir`` is the
+first configured output root, and a required input path is that root only
+when the capability does not require a caller dataset. Required choices are
+filled from goal tokens that name them. A model may propose arguments; each
+proposal is validated and never coerced. Any structural problem in the model
+reply keeps the deterministic plan.
+
+Alias and task phrases score first. A goal token of length 5 or more that
+belongs to exactly one executable capability also scores, so ``serial``
+selects ``serial-watch`` without the full alias. ``research`` and
+``research-only`` stay distinct ids even when they share ``argv[0]``.
 
 When the goal refers to user data, or ``datasets`` is non-empty, a
 synthetic-only step is kept only with an explicit SYNTHETIC note, and a
@@ -72,8 +80,8 @@ _STOP = frozenset(
         "cannot",
         "could",
         "during",
-        "family",
         "inside",
+        "model",
         "narrowed",
         "other",
         "should",
@@ -259,7 +267,7 @@ def _deterministic_plan(
 ) -> ExecutionPlan:
     ranked = _rank(goal, catalog)
     user_data = _user_data(goal, datasets)
-    steps, exclusions = _select(ranked, catalog, roots, max_steps, user_data=user_data)
+    steps, exclusions = _select(ranked, catalog, roots, max_steps, goal=goal, user_data=user_data)
     ordered = order_steps(steps, catalog)
     kept, budget_ex = _apply_budget(ordered, budget_s)
     exclusions.extend(budget_ex)
@@ -292,7 +300,7 @@ def _refine(
     raw = _call_model(model_fn, _prompt(goal, catalog))
     if isinstance(raw, Exclusion):
         return _with_note(fallback, raw.detail)
-    steps, exclusions = _steps_from_model(raw["steps"], catalog, roots, max_steps)
+    steps, exclusions = _steps_from_model(raw["steps"], catalog, roots, max_steps, goal)
     ordered = order_steps(steps, catalog)
     kept, budget_ex = _apply_budget(ordered, budget_s)
     exclusions.extend(budget_ex)
@@ -366,6 +374,7 @@ def _select(
     roots: Roots,
     max_steps: int,
     *,
+    goal: str,
     user_data: bool,
 ) -> tuple[list[PlanStep], list[Exclusion]]:
     status = [_status_exclusion(cap) for _, cap, _detail in ranked if not cap.executable]
@@ -373,8 +382,8 @@ def _select(
     if not runnable and not status:
         return [], [Exclusion(None, "no_match", _NO_MATCH)]
     if user_data:
-        return _select_user_data(runnable, status, catalog, roots, max_steps)
-    steps, problems = _take_steps(runnable, catalog, roots, max_steps)
+        return _select_user_data(runnable, status, catalog, roots, max_steps, goal)
+    steps, problems = _take_steps(runnable, catalog, roots, max_steps, goal)
     return steps, [*status, *problems]
 
 
@@ -384,16 +393,17 @@ def _select_user_data(
     catalog: CapabilityCatalog,
     roots: Roots,
     max_steps: int,
+    goal: str,
 ) -> tuple[list[PlanStep], list[Exclusion]]:
     bound = [row for row in runnable if _dataset_bound(row[1])]
     other = [row for row in runnable if not _dataset_bound(row[1])]
     if not bound:
-        steps, problems = _take_steps(other, catalog, roots, max_steps)
+        steps, problems = _take_steps(other, catalog, roots, max_steps, goal)
         return steps, [*status, *problems]
-    steps, problems = _take_steps(bound, catalog, roots, max_steps)
+    steps, problems = _take_steps(bound, catalog, roots, max_steps, goal)
     if steps:
         return steps, [*status, *problems]
-    fallback, more = _take_steps(other, catalog, roots, max_steps)
+    fallback, more = _take_steps(other, catalog, roots, max_steps, goal)
     return fallback, [*status, *problems, *more]
 
 
@@ -402,6 +412,7 @@ def _take_steps(
     catalog: CapabilityCatalog,
     roots: Roots,
     max_steps: int,
+    goal: str,
 ) -> tuple[list[PlanStep], list[Exclusion]]:
     chosen: list[PlanStep] = []
     seen: set[str] = set()
@@ -410,7 +421,7 @@ def _take_steps(
         if cap.id in seen:
             continue
         rationale = f"selected because the goal matched {detail}"
-        added, problem = _consider(cap, rationale, catalog, roots, chosen, seen, max_steps)
+        added, problem = _consider(cap, rationale, catalog, roots, chosen, seen, max_steps, goal)
         if problem is not None:
             exclusions.append(problem)
         chosen.extend(added)
@@ -425,8 +436,9 @@ def _consider(
     chosen: Sequence[PlanStep],
     seen: set[str],
     max_steps: int,
+    goal: str,
 ) -> tuple[list[PlanStep], Exclusion | None]:
-    steps, problem = _try_chain(cap, catalog, roots, detail)
+    steps, problem = _try_chain(cap, catalog, roots, detail, goal)
     if problem is not None:
         return [], problem
     fresh = [step for step in steps if step.capability_id not in seen]
@@ -444,6 +456,7 @@ def _try_chain(
     catalog: CapabilityCatalog,
     roots: Roots,
     detail: str,
+    goal: str,
 ) -> tuple[list[PlanStep], Exclusion | None]:
     ordered: list[str] = []
     if not _linearize(cap.id, catalog, {}, ordered):
@@ -451,11 +464,11 @@ def _try_chain(
             cap.id, "dependency_missing", f"{cap.id} dependency is missing or not executable"
         )
     steps, problem = _default_steps(
-        [item for item in ordered if item != cap.id], catalog, roots, cap.id
+        [item for item in ordered if item != cap.id], catalog, roots, cap.id, goal
     )
     if problem is not None:
         return [], problem
-    built = _step_from_defaults(cap, roots, detail)
+    built = _step_from_defaults(cap, roots, detail, goal)
     if isinstance(built, Exclusion):
         return [], built
     steps.append(built)
@@ -467,22 +480,25 @@ def _default_steps(
     catalog: CapabilityCatalog,
     roots: Roots,
     parent: str,
+    goal: str,
 ) -> tuple[list[PlanStep], Exclusion | None]:
     steps: list[PlanStep] = []
     for dep_id in dep_ids:
         dep = catalog.get(dep_id)
         if dep is None:
             return [], Exclusion(parent, "dependency_missing", f"{parent} dependency is missing")
-        built = _step_from_defaults(dep, roots, f"prerequisite of {parent}")
+        built = _step_from_defaults(dep, roots, f"prerequisite of {parent}", goal)
         if isinstance(built, Exclusion):
             return [], built
         steps.append(built)
     return steps, None
 
 
-def _step_from_defaults(cap: Capability, roots: Roots, rationale: str) -> PlanStep | Exclusion:
+def _step_from_defaults(
+    cap: Capability, roots: Roots, rationale: str, goal: str
+) -> PlanStep | Exclusion:
     try:
-        args = validate_args(cap, {}, roots=roots)
+        args = validate_args(cap, _suggested_args(cap, goal, roots), roots=roots)
     except ContractViolation as exc:
         return Exclusion(cap.id, "invalid_args", f"{exc.code}:{exc.arg}")
     return _new_step(cap, args, _safe_text(rationale, f"selected {cap.id}"))
@@ -564,21 +580,80 @@ def _note_if_empty(steps: Sequence[PlanStep], notes: list[str]) -> None:
 
 def _rank(goal: str, catalog: CapabilityCatalog) -> list[Ranked]:
     norm = _normalize(goal)
+    rare = _rare_tokens(catalog)
     rows: list[Ranked] = []
     for cap in catalog.capabilities.values():
-        score, detail = _score_capability(norm, cap)
+        score, detail = _score_capability(norm, cap, rare)
         if score >= 8:
             rows.append((score, cap, detail))
     rows.sort(key=lambda row: (-row[0], row[1].id))
     return rows
 
 
-def _score_capability(norm: str, cap: Capability) -> tuple[int, str]:
+def _score_capability(norm: str, cap: Capability, rare: Mapping[str, str]) -> tuple[int, str]:
     aliases, tasks = _hits(norm, cap)
-    if not aliases and not tasks:
+    tokens = _rare_hits(norm, cap, rare)
+    if not aliases and not tasks and not tokens:
         return 0, ""
-    score = 10 * len(aliases) + 8 * len(tasks) + _purpose_overlap(norm, cap.purpose)
-    return score, ", ".join([*aliases, *tasks])
+    score = 10 * len(aliases) + 8 * len(tasks) + 10 * len(tokens)
+    score += _purpose_overlap(norm, cap.purpose)
+    return score, ", ".join([*aliases, *tasks, *tokens])
+
+
+def _rare_tokens(catalog: CapabilityCatalog) -> dict[str, str]:
+    owners: dict[str, str] = {}
+    shared: set[str] = set()
+    for cap in catalog.capabilities.values():
+        if not cap.executable:
+            continue
+        for token in _surface_tokens(cap):
+            _claim_token(owners, shared, token, cap.id)
+    for token in shared:
+        owners.pop(token, None)
+    return owners
+
+
+def _claim_token(owners: dict[str, str], shared: set[str], token: str, cap_id: str) -> None:
+    if len(token) < 5 or token in _STOP:
+        return
+    previous = owners.get(token)
+    if previous is None:
+        owners[token] = cap_id
+        return
+    if previous != cap_id:
+        shared.add(token)
+
+
+def _surface_tokens(cap: Capability) -> set[str]:
+    found: set[str] = set()
+    for alias in cap.aliases:
+        found.update(_normalize(alias).split())
+    for task in cap.tasks:
+        found.update(_normalize(task.replace("_", " ")).split())
+    return found
+
+
+def _rare_hits(norm: str, cap: Capability, rare: Mapping[str, str]) -> list[str]:
+    covered = _covered_tokens(norm, cap)
+    hits: list[str] = []
+    for token in norm.split():
+        if token in covered or rare.get(token) != cap.id:
+            continue
+        hits.append(token)
+    return hits
+
+
+def _covered_tokens(norm: str, cap: Capability) -> set[str]:
+    covered: set[str] = set()
+    for alias in cap.aliases:
+        phrase = _normalize(alias)
+        if _phrase_in(norm, phrase):
+            covered.update(phrase.split())
+    for task in cap.tasks:
+        phrase = _normalize(task.replace("_", " "))
+        if _phrase_in(norm, phrase):
+            covered.update(phrase.split())
+    return covered
 
 
 def _hits(norm: str, cap: Capability) -> tuple[list[str], list[str]]:
@@ -670,6 +745,58 @@ def _status_exclusions(plan: ExecutionPlan) -> list[Exclusion]:
     ]
 
 
+def _suggested_args(cap: Capability, goal: str, roots: Roots) -> dict[str, Any]:
+    suggestions: dict[str, Any] = {}
+    tokens = set(_normalize(goal).split())
+    norm = _normalize(goal)
+    for spec in cap.args:
+        if spec.has_default or not spec.required:
+            continue
+        value = _suggest_required(spec, cap, tokens, norm, roots)
+        if value is not None:
+            suggestions[spec.name] = value
+    return suggestions
+
+
+def _suggest_required(spec: Any, cap: Capability, tokens: set[str], norm: str, roots: Roots) -> Any:
+    if spec.type == "path":
+        return _suggest_path(spec, cap, roots)
+    if spec.choices:
+        return _suggest_choices(spec, tokens, norm)
+    return None
+
+
+def _suggest_path(spec: Any, cap: Capability, roots: Roots) -> str | None:
+    if spec.path_role == "output_dir":
+        return _first_root(roots, "output_dir")
+    if spec.path_role == "input" and not cap.requires_dataset:
+        return _first_root(roots, "input")
+    return None
+
+
+def _first_root(roots: Roots, role: str) -> str | None:
+    values = roots.get(role) or ()
+    for value in values:
+        return str(value)
+    return None
+
+
+def _suggest_choices(spec: Any, tokens: set[str], norm: str) -> Any:
+    matched = [choice for choice in spec.choices if _choice_mentioned(choice, tokens, norm)]
+    if not matched:
+        return None
+    if spec.type == "csv":
+        return matched
+    return matched[0]
+
+
+def _choice_mentioned(choice: str, tokens: set[str], norm: str) -> bool:
+    folded = _normalize(choice.replace("_", " "))
+    if not folded:
+        return False
+    return folded in tokens or _phrase_in(norm, folded)
+
+
 def _estimate(cap: Capability) -> float:
     if cap.max_runtime_s > 0:
         return float(cap.max_runtime_s)
@@ -751,12 +878,13 @@ def _steps_from_model(
     catalog: CapabilityCatalog,
     roots: Roots,
     max_steps: int,
+    goal: str,
 ) -> tuple[list[PlanStep], list[Exclusion]]:
     chosen: list[PlanStep] = []
     seen_keys: set[str] = set()
     exclusions: list[Exclusion] = []
     for entry in entries:
-        chain, problem = _model_step(entry, catalog, roots)
+        chain, problem = _model_step(entry, catalog, roots, goal)
         if problem is not None:
             exclusions.append(problem)
             continue
@@ -765,7 +893,7 @@ def _steps_from_model(
 
 
 def _model_step(
-    entry: Any, catalog: CapabilityCatalog, roots: Roots
+    entry: Any, catalog: CapabilityCatalog, roots: Roots, goal: str
 ) -> tuple[list[PlanStep], Exclusion | None]:
     if not isinstance(entry, Mapping):
         return [], Exclusion(None, "invalid_args", "step is not an object")
@@ -783,7 +911,7 @@ def _model_step(
         return [], problem
     why = entry.get("why", "")
     args = entry.get("args", {})
-    return _model_chain(cap, args, why, catalog, roots)
+    return _model_chain(cap, args, why, catalog, roots, goal)
 
 
 def _check_model_fields(cap_id: str, args: Any, why: Any) -> Exclusion | None:
@@ -800,6 +928,7 @@ def _model_chain(
     why: str,
     catalog: CapabilityCatalog,
     roots: Roots,
+    goal: str,
 ) -> tuple[list[PlanStep], Exclusion | None]:
     ordered: list[str] = []
     if not _linearize(cap.id, catalog, {}, ordered):
@@ -807,7 +936,7 @@ def _model_chain(
             cap.id, "dependency_missing", f"{cap.id} dependency is missing or not executable"
         )
     deps = [item for item in ordered if item != cap.id]
-    steps, problem = _default_steps(deps, catalog, roots, cap.id)
+    steps, problem = _default_steps(deps, catalog, roots, cap.id, goal)
     if problem is not None:
         return [], problem
     try:
