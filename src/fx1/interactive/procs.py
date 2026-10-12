@@ -196,6 +196,18 @@ class ProcessRegistry:
         self._lock = threading.Lock()
         self._live: dict[int, LiveProc] = {}
         self._atexit_installed = False
+        self._stopping = False
+
+    @property
+    def stopping(self) -> bool:
+        """True after a terminal stop until :meth:`resume`."""
+        with self._lock:
+            return self._stopping
+
+    def resume(self) -> None:
+        """Allow new owned processes after a terminal stop."""
+        with self._lock:
+            self._stopping = False
 
     def add(self, proc: LiveProc) -> None:
         """Track *proc* until :meth:`discard` or :meth:`terminate_all`."""
@@ -216,21 +228,29 @@ class ProcessRegistry:
         found.sort(key=lambda proc: (proc.started_at, proc.pid))
         return found
 
-    def terminate_all(self, grace_s: float = 2.0) -> int:
-        """Signal every tracked process group. Returns how many were signaled."""
+    def terminate_all(self, grace_s: float = 2.0, *, stop: bool = False) -> int:
+        """Signal every tracked process group. Returns how many were signaled.
+
+        ``stop=True`` latches :attr:`stopping` before any signal is sent. The
+        terminal-stop handler and interpreter exit use it so a worker cannot
+        replace a child that this call is killing. A plain reap does not
+        latch. :meth:`resume` clears the latch.
+        """
         with self._lock:
+            if stop:
+                self._stopping = True
             snapshot = list(self._live.values())
         for proc in snapshot:
             self._stop_one(proc, grace_s)
         return len(snapshot)
 
     def install_atexit(self) -> None:
-        """Register :meth:`terminate_all` once, for interpreter shutdown."""
+        """Register a terminal stop once, for interpreter shutdown."""
         with self._lock:
             if self._atexit_installed:
                 return
             self._atexit_installed = True
-        atexit.register(self.terminate_all)
+        atexit.register(self.terminate_all, stop=True)
 
     def _stop_one(self, proc: LiveProc, grace_s: float) -> None:
         try:
@@ -302,6 +322,19 @@ def run_owned(
     now = _clock_of(clock)
     started = now()
     step_safe = _clean_step(step)
+    reg = _registry_of(registry)
+    if reg.stopping:
+        return _finished_early(
+            summary,
+            EXIT_CANCEL,
+            "\n[cancel] process registry is stopping\n",
+            cancelled=True,
+            started=started,
+            clock=now,
+            emit=emit,
+            step=step_safe,
+            spawn_error="process registry is stopping",
+        )
     if _cancelled(cancel_event):
         return _finished_early(
             summary,
@@ -323,7 +356,7 @@ def run_owned(
         summary,
         limits,
         cancel_event,
-        _registry_of(registry),
+        reg,
         emit,
         killer,
         step_safe,
@@ -477,7 +510,7 @@ def _stop_handler(
     code: int, registry: ProcessRegistry, grace_s: float
 ) -> Callable[[int, object], None]:
     def handler(_signum: int, _frame: object) -> None:
-        registry.terminate_all(grace_s)
+        registry.terminate_all(grace_s, stop=True)
         raise SystemExit(code)
 
     return handler
@@ -698,6 +731,7 @@ def _finished_early(
     clock: Clock,
     emit: Emit | None,
     step: str | None,
+    spawn_error: str | None = None,
 ) -> ProcResult:
     result = _result(
         summary,
@@ -707,7 +741,7 @@ def _finished_early(
         timed_out=False,
         cancelled=cancelled,
         truncated=False,
-        spawn_error=None,
+        spawn_error=spawn_error,
         duration_s=_elapsed(started, clock),
         pid=None,
         pgid=None,
@@ -778,7 +812,7 @@ def _supervise(
     threads.extend(_start_readers(proc, _output_limit(limits), boxes[0], boxes[1], stop))
     _remember(registry, pid, pgid, summary, step, clock)
     _emit(emit, "proc.spawn", {"pid": pid, "pgid": pgid, "argv": list(summary), "step": step})
-    reason = _poll_until_done(proc, limits, cancel_event, clock)
+    reason = _poll_until_done(proc, limits, cancel_event, clock, registry)
     _ensure_stopped(proc, reason, pgid, limits, killer, platform, emit, summary, step, pid)
     stop.set()
     _join_readers(threads, _reader_join_timeout(limits))
@@ -968,17 +1002,23 @@ def _poll_until_done(
     limits: ProcLimits,
     cancel_event: threading.Event | None,
     clock: Clock,
+    registry: ProcessRegistry,
 ) -> str | None:
+    """Wait until the child ends. A stop or cancel wins over the exit status."""
     deadline = clock() + limits.timeout_s
     while True:
+        if _stop_requested(cancel_event, registry):
+            return "cancel"
         if proc.poll() is not None:
             return None
-        if _cancelled(cancel_event):
-            return "cancel"
         now = clock()
         if now >= deadline:
             return "timeout"
         _wait_slice(proc, _slice_for(limits, deadline, now))
+
+
+def _stop_requested(cancel_event: threading.Event | None, registry: ProcessRegistry) -> bool:
+    return registry.stopping or _cancelled(cancel_event)
 
 
 def _slice_for(limits: ProcLimits, deadline: float, now: float) -> float:

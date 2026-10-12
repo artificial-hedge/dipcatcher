@@ -581,9 +581,16 @@ def _attempt_loop(
     step: PlanStep,
 ) -> CapabilityRun:
     first = _attempt(state, cap_id, cap, argv, f"{state.run_id}:{step.step_key}")
-    if first.status != "failed" or not _prepare_retry(state):
+    if first.status != "failed" or _registry_stopping() or not _prepare_retry(state):
         return first
     return _attempt(state, cap_id, cap, argv, f"{state.run_id}:{step.step_key}")
+
+
+def _registry_stopping() -> bool:
+    """True while a terminal stop has latched the process-wide registry."""
+    from fx1.interactive.procs import REGISTRY
+
+    return REGISTRY.stopping
 
 
 def _attempt(
