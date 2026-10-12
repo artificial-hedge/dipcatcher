@@ -510,7 +510,11 @@ def test_family_selector_constrains_research_to_eligible_ids(store: FlashStore) 
     assert harness.calls == [("research", ["--only", "volatility"])]
     assert "excluded a1_degrees: retired" in plan.describe()
     assert result.summary
-    assert "verified receipt" not in result.summary
+    # The harness evidence block reports a zero count ("0 verified receipts").
+    # The prose above that block must not claim a verified receipt.
+    prose, block, _rest = result.summary.partition("Evidence (harness-verified")
+    assert block
+    assert "verified receipt" not in prose
 
 
 def test_family_surface_failure_does_not_run_the_full_catalog(store: FlashStore) -> None:

@@ -1230,6 +1230,36 @@ class EvidenceLedger:
         )
         return self._append(item)
 
+    def add_artifact(
+        self,
+        path: str | Path,
+        *,
+        detail: str,
+        roots: Sequence[Path] | None = None,
+        step: str | None = None,
+        data_label: str = "UNKNOWN",
+    ) -> EvidenceItem:
+        """Record a non-receipt file as ``UNVERIFIABLE`` without reading bytes.
+
+        A path outside ``roots`` is not opened. Callers use this for partial
+        family records (``json=``), which are not sealed research receipts
+        and must not become ``VERIFIED``.
+        """
+        note = _artifact_note(path, detail, () if roots is None else roots)
+        item = EvidenceItem(
+            item_id="E0",
+            kind=EvidenceKind.RECEIPT,
+            ref=note[0],
+            sha256=None,
+            seal=None,
+            verdict=Verdict.UNVERIFIABLE,
+            data_label=data_label or "UNKNOWN",
+            schema=None,
+            detail=note[1],
+            step=_clean_step(step),
+        )
+        return self._append(item)
+
     def add_flash(self, entry_id: str, *, verified_flag: bool, detail: str = "") -> EvidenceItem:
         text = _flash_detail(verified_flag)
         extra = redact_text(detail).strip()
@@ -1284,6 +1314,15 @@ class EvidenceLedger:
         items = self.items()
         lines = [_BLOCK_HEADER, *(_row(item) for item in items), _summary(items)]
         return "\n".join(_wrap_lines(lines, width))
+
+
+def _artifact_note(path: str | Path, detail: str, roots: Sequence[Path]) -> tuple[str, str]:
+    located = _locate(path, roots)
+    ref = located.ref or _safe_ref(path)
+    text = _clip(detail) or "non-receipt artifact"
+    if located.detail:
+        text = _join_note(text, located.detail)
+    return redact_text(ref)[:_MAX_PATH_CHARS], text
 
 
 def _flash_detail(verified_flag: bool) -> str:

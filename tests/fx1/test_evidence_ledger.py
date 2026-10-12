@@ -1069,6 +1069,74 @@ def test_evidence_module_does_not_import_research() -> None:
     assert "verify_receipt_bytes" in source
 
 
+def test_add_artifact_is_unverifiable_and_does_not_read_bytes(tmp_path: Path) -> None:
+    path = tmp_path / "family.json"
+    path.write_text('{"verified": true, "data_label": "SYNTHETIC"}', encoding="utf-8")
+    calls: list[Path] = []
+
+    def boom(receipt: Path, _max_bytes: int) -> bytes:
+        calls.append(receipt)
+        raise AssertionError("artifact bytes were read")
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(evidence_module, "_read_limited", boom)
+    try:
+        ledger = EvidenceLedger()
+        item = ledger.add_artifact(
+            path,
+            roots=[tmp_path],
+            detail="partial family record — not a sealed research receipt; verified=false",
+            data_label="SYNTHETIC",
+            step="research",
+        )
+    finally:
+        monkeypatch.undo()
+    assert calls == []
+    assert item.verdict is Verdict.UNVERIFIABLE
+    assert item.sha256 is None
+    assert item.data_label == "SYNTHETIC"
+    assert "verified=false" in item.detail
+    assert "partial family record" in item.detail
+    assert ledger.has_verified() is False
+    out = compose_answer(f"SYNTHETIC partial {path.name} is verified", ledger)
+    assert out.status != "verified"
+    assert any(problem.code == "verified_language_without_receipt" for problem in out.problems)
+
+
+def test_add_artifact_outside_roots_is_not_opened(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root"
+    root.mkdir()
+    outside = tmp_path / "secret.json"
+    outside.write_text("{}", encoding="utf-8")
+
+    def boom(_path: Path, _max_bytes: int) -> bytes:
+        raise AssertionError("outside artifact was read")
+
+    monkeypatch.setattr(evidence_module, "_read_limited", boom)
+    item = EvidenceLedger().add_artifact(
+        outside,
+        roots=[root],
+        detail="partial family record — not a sealed research receipt",
+    )
+    assert item.verdict is Verdict.UNVERIFIABLE
+    assert "outside allowed roots" in item.detail
+    assert item.sha256 is None
+
+
+def test_add_artifact_roundtrip_stays_unverifiable(tmp_path: Path) -> None:
+    path = tmp_path / "note.json"
+    path.write_text("{}", encoding="utf-8")
+    ledger = EvidenceLedger()
+    ledger.add_artifact(path, roots=[tmp_path], detail="partial family record", data_label="REAL")
+    restored = EvidenceLedger.from_dict(ledger.to_dict())
+    item = restored.items()[0]
+    assert item.verdict is Verdict.UNVERIFIABLE
+    assert item.data_label == "REAL"
+    assert restored.has_verified() is False
+
+
 def test_citation_problem_is_frozen() -> None:
     problem = CitationProblem(code="unknown_hash", detail="x")
     with pytest.raises(AttributeError):

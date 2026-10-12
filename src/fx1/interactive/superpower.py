@@ -20,13 +20,15 @@ from __future__ import annotations
 import json
 import re
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from fx1.harness import HARNESS_REGISTRY, Harness, HarnessRole
-from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive.approvals import ApprovalGate
+from fx1.interactive.contracts import CapabilityCatalog
+from fx1.interactive.planner import DatasetRef, PlanStep
 
 # ---------------------------------------------------------------------------
 # Capability registry
@@ -175,6 +177,16 @@ CAPABILITIES: dict[str, dict[str, Any]] = {
 }
 
 ModelFn = Callable[[str], str]
+Selector = Callable[[str], dict[str, Any]]
+TelemetryEmit = Callable[[str, Mapping[str, Any]], None]
+
+
+@dataclass(frozen=True)
+class CatalogResult:
+    """A capabilities fetch. ``catalog`` is None when the fetch failed closed."""
+
+    catalog: CapabilityCatalog | None
+    reason: str | None = None
 
 
 def _score_goal(goal: str, terms: tuple[str, ...]) -> int:
@@ -198,23 +210,49 @@ class SuperpowerPlan:
     families: list[str] = field(default_factory=list)
     family_exclusions: list[dict[str, str]] = field(default_factory=list)
     research_constrained: bool = False
+    exclusions: list[dict[str, str]] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
+    typed_steps: tuple[PlanStep, ...] = ()
+    catalog_digest: str = ""
+    catalog_unavailable: str = ""
+    bound_catalog: CapabilityCatalog | None = field(default=None, repr=False, compare=False)
 
     def ids(self) -> list[str]:
         return [cap.id for cap in self.capabilities]
 
     def describe(self) -> str:
         lines = [f"plan for: {self.goal}", f"planner: {self.source}"]
-        for cap in self.capabilities:
-            meta = CAPABILITIES.get(cap.id, {})
-            lines.append(
-                f"- {cap.id} ({meta.get('kind', '?')}, {meta.get('cost', '?')}): {cap.rationale}"
-            )
-        if self.research_constrained:
-            chosen = ", ".join(self.families) if self.families else "none eligible"
-            lines.append(f"families: {chosen}")
-            for item in self.family_exclusions:
-                lines.append(f"  excluded {item.get('id', '?')}: {item.get('reason', '')}")
+        _append_capability_lines(lines, self.capabilities)
+        _append_family_lines(lines, self)
+        _append_plan_notes(lines, self)
         return "\n".join(lines)
+
+
+def _append_capability_lines(lines: list[str], capabilities: Sequence[PlannedCapability]) -> None:
+    for cap in capabilities:
+        meta = CAPABILITIES.get(cap.id, {})
+        lines.append(
+            f"- {cap.id} ({meta.get('kind', '?')}, {meta.get('cost', '?')}): {cap.rationale}"
+        )
+
+
+def _append_family_lines(lines: list[str], plan: SuperpowerPlan) -> None:
+    if not plan.research_constrained:
+        return
+    chosen = ", ".join(plan.families) if plan.families else "none eligible"
+    lines.append(f"families: {chosen}")
+    for item in plan.family_exclusions:
+        lines.append(f"  excluded {item.get('id', '?')}: {item.get('reason', '')}")
+
+
+def _append_plan_notes(lines: list[str], plan: SuperpowerPlan) -> None:
+    for item in plan.exclusions:
+        cap = item.get("capability_id") or "-"
+        lines.append(f"excluded {cap}: {item.get('code', '')}: {item.get('detail', '')}")
+    for note in plan.notes:
+        lines.append(f"note: {note}")
+    if plan.catalog_unavailable:
+        lines.append(f"catalog unavailable: {plan.catalog_unavailable}")
 
 
 def plan_goal(
@@ -223,46 +261,88 @@ def plan_goal(
     capabilities: dict[str, dict[str, Any]] | None = None,
     model_fn: ModelFn | None = None,
     max_harness: int = 4,
-    family_selector: Callable[[str], dict[str, Any]] | None = None,
+    family_selector: Selector | None = None,
+    catalog: CapabilityCatalog | None = None,
+    datasets: Sequence[DatasetRef] = (),
+    roots: Mapping[str, Sequence[Path]] | None = None,
+    catalog_unavailable: str | None = None,
 ) -> SuperpowerPlan:
     """Select the relevant capability subset for *goal*.
 
-    Deterministic pass: score every harness capability by trigger terms and
-    web/flash by their own triggers. Optional model pass: a hosted turn is
-    asked for a JSON selection from the registry, including capabilities the
-    keyword pass did not select. Unknown ids are dropped, duplicates are
-    removed, and the same harness limit applies after refinement. Malformed
-    or failed model replies fall back to the bounded deterministic plan.
+    Without a catalog, the historical keyword planner is unchanged. With a
+    catalog, only executable capabilities that are also in ``HARNESS_REGISTRY``
+    become harness steps, and the typed planner re-validates after model
+    refinement. ``catalog_unavailable`` (and no catalog) fails closed: harness
+    steps are not executable. Web research is still planned only when the goal
+    asks for external information.
     """
     if max_harness < 0:
         raise ValueError("max_harness must be nonnegative")
+    if catalog is None and catalog_unavailable:
+        from fx1.interactive.orchestration import plan_catalog_unavailable
+
+        return plan_catalog_unavailable(goal, catalog_unavailable)
+    if catalog is not None:
+        from fx1.interactive.orchestration import plan_with_catalog
+
+        return plan_with_catalog(
+            goal,
+            catalog,
+            datasets=datasets,
+            roots=roots,
+            model_fn=model_fn,
+            max_harness=max_harness,
+            family_selector=family_selector,
+        )
+    return _plan_keyword(
+        goal,
+        capabilities=capabilities,
+        model_fn=model_fn,
+        max_harness=max_harness,
+        family_selector=family_selector,
+    )
+
+
+def _plan_keyword(
+    goal: str,
+    *,
+    capabilities: dict[str, dict[str, Any]] | None,
+    model_fn: ModelFn | None,
+    max_harness: int,
+    family_selector: Selector | None,
+) -> SuperpowerPlan:
     registry = capabilities or CAPABILITIES
+    harness_ids = _matched_harness(goal, registry, max_harness)
+    plan = SuperpowerPlan(
+        goal=goal,
+        capabilities=_keyword_spine(goal, registry, harness_ids),
+        source="deterministic",
+    )
+    return _maybe_refine(plan, goal, registry, model_fn, max_harness, family_selector)
+
+
+def _matched_harness(
+    goal: str, registry: Mapping[str, Mapping[str, Any]], max_harness: int
+) -> list[str]:
     scored: list[tuple[int, str]] = []
     for cap_id, meta in registry.items():
         if meta.get("kind") != KIND_HARNESS:
             continue
-        terms = _TRIGGERS.get(cap_id, ())
-        score = _score_goal(goal, terms)
+        score = _score_goal(goal, _TRIGGERS.get(cap_id, ()))
         if score:
             scored.append((score, cap_id))
     scored.sort(key=lambda pair: pair[0], reverse=True)
-    harness_ids = [cap_id for _, cap_id in scored[:max_harness]]
+    return [cap_id for _, cap_id in scored[:max_harness]]
 
-    selected: list[PlannedCapability] = [
+
+def _keyword_spine(
+    goal: str, registry: Mapping[str, Mapping[str, Any]], harness_ids: Sequence[str]
+) -> list[PlannedCapability]:
+    selected = [
         PlannedCapability("flash_retrieve", "memory is cheap and may already hold this research"),
+        *_harness_plans(goal, registry, harness_ids),
     ]
-    for cap_id in harness_ids:
-        meta = registry[cap_id]
-        terms = _TRIGGERS.get(cap_id, ())
-        matched = [t for t in terms if re.search(rf"\b{re.escape(t)}\b", goal.lower())]
-        selected.append(
-            PlannedCapability(
-                cap_id,
-                f"goal mentions {', '.join(repr(t) for t in matched[:4])}; "
-                f"{meta.get('description', '')}",
-            )
-        )
-    if _score_goal(goal, _WEB_TRIGGERS) or not harness_ids:
+    if _wants_web(goal, harness_ids):
         selected.append(
             PlannedCapability(
                 "web_research",
@@ -270,23 +350,58 @@ def plan_goal(
                 "matched — public web research fills the gap",
             )
         )
-    selected.append(
-        PlannedCapability(
-            "flash_save",
-            "new findings belong in flash context with sources and uncertainty",
+    selected.extend(
+        (
+            PlannedCapability(
+                "flash_save",
+                "new findings belong in flash context with sources and uncertainty",
+            ),
+            PlannedCapability(
+                "synthesize",
+                "compose the final answer and explain the capability choices",
+            ),
         )
     )
-    selected.append(
-        PlannedCapability(
-            "synthesize", "compose the final answer and explain the capability choices"
-        )
-    )
+    return selected
 
-    plan = SuperpowerPlan(goal=goal, capabilities=selected, source="deterministic")
+
+def _harness_plans(
+    goal: str, registry: Mapping[str, Mapping[str, Any]], harness_ids: Sequence[str]
+) -> list[PlannedCapability]:
+    found: list[PlannedCapability] = []
+    lowered = goal.lower()
+    for cap_id in harness_ids:
+        meta = registry[cap_id]
+        terms = _TRIGGERS.get(cap_id, ())
+        matched = [term for term in terms if re.search(rf"\b{re.escape(term)}\b", lowered)]
+        found.append(
+            PlannedCapability(
+                cap_id,
+                f"goal mentions {', '.join(repr(term) for term in matched[:4])}; "
+                f"{meta.get('description', '')}",
+            )
+        )
+    return found
+
+
+def _wants_web(goal: str, harness_ids: Sequence[str]) -> bool:
+    if _score_goal(goal, _WEB_TRIGGERS):
+        return True
+    return not harness_ids
+
+
+def _maybe_refine(
+    plan: SuperpowerPlan,
+    goal: str,
+    registry: Mapping[str, Mapping[str, Any]],
+    model_fn: ModelFn | None,
+    max_harness: int,
+    family_selector: Selector | None,
+) -> SuperpowerPlan:
     if model_fn is not None:
         plan = _model_refine(plan, goal, registry, model_fn, max_harness=max_harness)
     if family_selector is not None and "research" in plan.ids():
-        plan = _attach_families(plan, family_selector)
+        return _attach_families(plan, family_selector)
     return plan
 
 
@@ -332,7 +447,7 @@ def _attach_families(
 def _model_refine(
     fallback: SuperpowerPlan,
     goal: str,
-    registry: dict[str, dict[str, Any]],
+    registry: Mapping[str, Mapping[str, Any]],
     model_fn: ModelFn,
     *,
     max_harness: int,
@@ -405,13 +520,20 @@ class SuperpowerResult:
     summary: str = ""
     honesty_violation: str | None = None
     errors: list[str] = field(default_factory=list)
+    evidence: dict[str, Any] = field(default_factory=dict)
+    status: str = "no-evidence"
+    job_id: str | None = None
+    run_id: str = ""
 
     def explain(self) -> str:
         lines = ["capabilities used and why:", ""]
-        for run in self.runs:
-            lines.append(f"[{run.status}] {run.name}: {run.detail}")
+        lines.extend(f"[{run.status}] {run.name}: {run.detail}" for run in self.runs)
         if self.honesty_violation:
-            lines += ["", f"honesty gate: {self.honesty_violation}"]
+            lines.extend(["", f"honesty gate: {self.honesty_violation}"])
+        lines.extend(["", f"evidence status: {self.status}"])
+        count = _evidence_count(self.evidence)
+        if count is not None:
+            lines.append(f"evidence items: {count}")
         return "\n".join(lines)
 
 
@@ -430,299 +552,42 @@ class SuperpowerContext:
     budget: Any | None = None
     max_stdout_chars: int = 12000
     save_to_flash: bool = True
+    catalog: CapabilityCatalog | None = None
+    datasets: Sequence[DatasetRef] = ()
+    roots: Mapping[str, Sequence[Path]] = field(default_factory=dict)
+    job_ledger: Any | None = None
+    evidence: Any | None = None
+    run_dir: Path | None = None
+    session_id: str | None = None
+    run_id: str | None = None
+    telemetry_emit: TelemetryEmit | None = None
 
 
-def _emit(ctx: SuperpowerContext, event: str, detail: str) -> None:
-    if ctx.on_event is not None:
-        ctx.on_event(event, detail)
-
-
-def _cancelled(ctx: SuperpowerContext) -> bool:
-    return ctx.cancel_event is not None and ctx.cancel_event.is_set()
-
-
-def _budget_block(ctx: SuperpowerContext) -> str | None:
-    """Charge one step. None means the step may run."""
-    budget = ctx.budget
-    if budget is None:
-        return None
-    try:
-        if bool(budget.expired()):
-            return "budget expired before this step"
-        budget.charge_step()
-    except Exception as exc:  # noqa: BLE001 — a budget object reports its own refusal
-        return str(exc)
+def _evidence_count(evidence: Mapping[str, Any]) -> int | None:
+    items = evidence.get("items")
+    if isinstance(items, list):
+        return len(items)
     return None
 
 
-def _harness_run(
-    cap_id: str,
-    ctx: SuperpowerContext,
-    extra_args: list[str] | None = None,
-) -> tuple[int, str, str]:
-    harness = ctx.harness if ctx.harness is not None else Harness()
-    try:
-        result = harness.run(cap_id, extra_args, cancel_event=ctx.cancel_event)
-    except TypeError:
-        result = harness.run(cap_id, extra_args)
-    return result.exit_code, result.stdout, result.stderr
+def load_catalog(
+    harness: Harness,
+    *,
+    config_dir: Path | None = None,
+    ttl_s: float = 300.0,
+    clock: Callable[[], float] | None = None,
+) -> CatalogResult:
+    """Load the capabilities catalog. A failed fetch fails closed."""
+    from fx1.interactive.orchestration import load_catalog as _load_catalog
 
-
-def _ground_text(summary: str, result: SuperpowerResult) -> str:
-    """Downgrade unverified claims when the evidence gate is installed."""
-    try:
-        from fx1.interactive.evidence import EvidenceError, ground_summary
-    except ImportError:
-        return summary
-    artifacts = {path for run in result.runs for path in run.artifacts if path}
-    try:
-        return ground_summary(summary, verified_receipts=set(), artifact_paths=artifacts)
-    except EvidenceError as exc:
-        raise Fx1HonestyError(str(exc)) from exc
-
-
-def _data_label_of(stdout: str) -> str:
-    """Preserve the harness's honesty label lines into the synthesis context."""
-    labels = [
-        line.strip()
-        for line in stdout.splitlines()
-        if line.startswith("DATA_LABEL=") or line.strip() == "SYNTHETIC"
-    ]
-    return "; ".join(labels[:4])
+    return _load_catalog(harness, config_dir=config_dir, ttl_s=ttl_s, clock=clock)
 
 
 def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
-    result = SuperpowerResult(goal=plan.goal, plan=plan)
-    selected = list(dict.fromkeys(plan.ids()))
-    context_parts: list[str] = []
+    """Execute *plan* and compose one evidence-grounded answer."""
+    from fx1.interactive.orchestration import execute_superpower
 
-    # 1 — flash retrieval (cheap, first, feeds everything else)
-    if "flash_retrieve" in selected and ctx.flash_store is not None:
-        try:
-            from fx1.flash.retrieve import context_block, release_private, retrieve
-
-            hits = release_private(retrieve(ctx.flash_store, plan.goal, k=4), ctx.approvals)
-            if hits:
-                context_parts.append(context_block(hits))
-                for hit in hits:
-                    ctx.flash_store.mark_used(hit.entry.id)
-                result.runs.append(
-                    CapabilityRun(
-                        "flash_retrieve",
-                        "flash context (retrieve)",
-                        "ran",
-                        f"{len(hits)} relevant memory entries retrieved",
-                    )
-                )
-            else:
-                result.runs.append(
-                    CapabilityRun(
-                        "flash_retrieve",
-                        "flash context (retrieve)",
-                        "ran",
-                        "no stored context scored above threshold for this goal",
-                    )
-                )
-        except Exception as exc:  # noqa: BLE001 — memory must not block the run
-            result.runs.append(
-                CapabilityRun("flash_retrieve", "flash context (retrieve)", "failed", str(exc))
-            )
-            result.errors.append(f"flash_retrieve: {exc}")
-
-    # 2 — web research (budgeted, cancellable)
-    if "web_research" in selected and ctx.researcher is not None and not _cancelled(ctx):
-        blocked = _budget_block(ctx)
-        if blocked:
-            result.runs.append(
-                CapabilityRun("web_research", "deep web research", "skipped", blocked)
-            )
-        else:
-            try:
-                report = ctx.researcher.run(
-                    plan.goal,
-                    budget=ctx.research_budget,
-                    cancel_event=ctx.cancel_event,
-                    on_progress=lambda p: _emit(ctx, f"web:{p.event}", p.detail[:200]),
-                )
-                context_parts.append(report.to_markdown())
-                result.runs.append(
-                    CapabilityRun(
-                        "web_research",
-                        "deep web research",
-                        "ran",
-                        f"{len([s for s in report.sources if s.ok])} sources; "
-                        f"{len(report.groups)} claim topics"
-                        + (" (cancelled)" if report.cancelled else ""),
-                        artifacts=[s.url for s in report.sources[:6]],
-                    )
-                )
-            except Exception as exc:  # noqa: BLE001
-                result.runs.append(
-                    CapabilityRun("web_research", "deep web research", "failed", str(exc))
-                )
-                result.errors.append(f"web_research: {exc}")
-
-    # 3 — harness commands (approval for consequential, cancellable between steps)
-    for cap_id in selected:
-        meta = CAPABILITIES.get(cap_id)
-        if not meta or meta.get("kind") != KIND_HARNESS:
-            continue
-        if _cancelled(ctx):
-            result.runs.append(
-                CapabilityRun(cap_id, cap_id, "skipped", "cancelled before execution")
-            )
-            continue
-        blocked = _budget_block(ctx)
-        if blocked:
-            result.runs.append(CapabilityRun(cap_id, cap_id, "skipped", blocked))
-            continue
-        if cap_id == "research" and plan.research_constrained and not plan.families:
-            reason = "; ".join(
-                f"{item.get('id', '?')}: {item.get('reason', '')}"
-                for item in plan.family_exclusions
-            )
-            result.runs.append(
-                CapabilityRun(
-                    cap_id,
-                    cap_id,
-                    "skipped",
-                    reason or "no suitable qualified family",
-                )
-            )
-            continue
-        extra_args = None
-        if cap_id == "research" and plan.families:
-            extra_args = ["--only", ",".join(plan.families)]
-        gate = ctx.approvals or ApprovalGate()
-        if meta.get("consequential") and not gate.ask(
-            f"run harness command {cap_id!r} (consequential: {meta.get('description', '')})?",
-            kind="consequential",
-        ):
-            result.runs.append(
-                CapabilityRun(
-                    cap_id,
-                    cap_id,
-                    "approval-denied",
-                    "operator did not approve this consequential command",
-                )
-            )
-            continue
-        _emit(ctx, "harness", f"running {cap_id} (registered command)")
-        try:
-            code, stdout, stderr = _harness_run(cap_id, ctx, extra_args)
-        except Exception as exc:  # noqa: BLE001
-            result.runs.append(CapabilityRun(cap_id, cap_id, "failed", str(exc)))
-            result.errors.append(f"{cap_id}: {exc}")
-            continue
-        status = "ran" if code == 0 else "failed"
-        labels = _data_label_of(stdout)
-        detail = stdout.strip().splitlines()[-1][:160] if stdout.strip() else stderr[:160]
-        if labels:
-            detail = f"{labels}; {detail}"
-        context_parts.append(f"# harness {cap_id} (exit {code})\n{stdout[-ctx.max_stdout_chars :]}")
-        result.runs.append(CapabilityRun(cap_id, cap_id, status, detail))
-
-    # 4 — flash save
-    if "flash_save" in selected and ctx.save_to_flash and ctx.flash_store is not None:
-        try:
-            entry = ctx.flash_store.add(
-                text=(f"/superpower run on: {plan.goal} — capabilities: {', '.join(selected)}"),
-                task=plan.goal,
-                tags=["superpower"],
-                uncertainty="medium",
-            )
-            result.runs.append(
-                CapabilityRun(
-                    "flash_save",
-                    "flash context (save)",
-                    "ran",
-                    f"saved run summary as flash entry {entry.id[:8]}",
-                    artifacts=[entry.id],
-                )
-            )
-        except Exception as exc:  # noqa: BLE001
-            result.runs.append(
-                CapabilityRun("flash_save", "flash context (save)", "failed", str(exc))
-            )
-            result.errors.append(f"flash_save: {exc}")
-
-    # 5 — synthesis
-    if "synthesize" in selected:
-        if ctx.model_fn is None:
-            result.summary = _ground_text(_offline_summary(result), result)
-            result.runs.append(
-                CapabilityRun(
-                    "synthesize",
-                    "synthesis",
-                    "ran",
-                    "no model endpoint available — offline summary of collected results",
-                )
-            )
-        else:
-            try:
-                answer = ctx.model_fn(_synthesis_prompt(plan, result, context_parts))
-                validate_fx1_output(answer)
-                answer = _ground_text(answer, result)
-                validate_fx1_output(answer)
-                result.summary = answer
-                result.runs.append(
-                    CapabilityRun("synthesize", "synthesis", "ran", "honesty gate passed")
-                )
-            except Fx1HonestyError as exc:
-                result.honesty_violation = str(exc)
-                result.summary = (
-                    "synthesis withheld by the fx-1 honesty gate "
-                    f"({result.honesty_violation}). Raw capability outputs are "
-                    "reported above; no violating text was emitted."
-                )
-                result.runs.append(
-                    CapabilityRun(
-                        "synthesize", "synthesis", "failed", "honesty gate rejected output"
-                    )
-                )
-            except Exception as exc:  # noqa: BLE001
-                result.runs.append(CapabilityRun("synthesize", "synthesis", "failed", str(exc)))
-                result.errors.append(f"synthesize: {exc}")
-    return result
-
-
-def _offline_summary(result: SuperpowerResult) -> str:
-    """Deterministic summary when no model endpoint is available — real
-    results, no fabrication: what ran, what failed, what was found."""
-    lines = [f"/superpower goal: {result.goal}", ""]
-    for run in result.runs:
-        if run.id == "synthesize":
-            continue
-        lines.append(f"- {run.name} ({run.id}): {run.status} — {run.detail}")
-    if result.errors:
-        lines.append("")
-        lines.append("errors: " + "; ".join(result.errors))
-    lines.append("")
-    lines.append(
-        "note: no model endpoint was available, so this is the raw capability "
-        "summary — run `fxi keys set` to enable model synthesis."
-    )
-    return "\n".join(lines)
-
-
-def _synthesis_prompt(
-    plan: SuperpowerPlan, result: SuperpowerResult, context_parts: list[str]
-) -> str:
-    runs = "\n".join(f"- {run.name}: {run.status} — {run.detail}" for run in result.runs)
-    evidence = "\n\n".join(context_parts) or "(no capability output)"
-    return (
-        "You are dipcatcher's /superpower coordinator for the fx-1 research "
-        "lab. Answer the goal using ONLY the capability results below; do not "
-        "invent sources, numbers, or receipts. Cite web sources by URL and "
-        "harness results by receipt/artifact path when given. Keep every "
-        "SYNTHETIC / DATA_LABEL marker visible. State uncertainty and "
-        "conflicting evidence explicitly. Never headline Sharpe/Sortino/"
-        "Calmar/P&L/NAV — research results are proper scores.\n\n"
-        f"GOAL: {plan.goal}\n\n"
-        f"CAPABILITIES USED AND WHY:\n{runs}\n\n"
-        f"CAPABILITY RESULTS:\n{evidence}\n\n"
-        "Final answer (concise, honest, sources attached):"
-    )
+    return execute_superpower(plan, ctx)
 
 
 def describe_capabilities() -> str:
