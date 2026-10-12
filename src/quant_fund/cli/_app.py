@@ -16,6 +16,7 @@ from quant_fund.cli.benchmark_cmds import (
     ranker_probability_app,
     real_benchmark_app,
 )
+from quant_fund.cli.capability_cmds import capabilities_app
 
 # SOTA / forward-evidence operator surface. Restored on this branch after the
 # mount was found missing; independently re-added upstream by 8eb627ff2. Kept
@@ -120,6 +121,7 @@ app.add_typer(sota_app, name="sota")
 app.add_typer(real_benchmark_app, name="real-benchmark")
 app.add_typer(net_tournament_app, name="net-tournament")
 app.add_typer(ranker_probability_app, name="ranker-probability")
+app.add_typer(capabilities_app, name="capabilities")
 
 
 def _cfg(config: Path) -> AppConfig:
