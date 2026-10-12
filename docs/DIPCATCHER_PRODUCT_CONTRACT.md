@@ -1,10 +1,13 @@
 # dipcatcher production product contract
 
-**Date:** 2026-10-08. **Status:** release requirements plus an implemented first
-engineering slice: the chat launcher, in-chat endpoint setup, ordinary-chat
-honesty checks, and bounded planner refinement. Remaining orchestration and
-production acceptance are open. The requested 25% is a bounded work allocation,
-not a measured production-readiness percentage; see the concrete
+**Date:** 2026-10-08, surfaces remeasured 2026-10-12. **Status:** release
+requirements plus the implemented engineering: the chat launcher, in-chat
+endpoint setup and identity probes, honesty checks on every model-authored
+surface, bounded planner refinement with a research-family eligibility gate,
+hard run budgets, cancellable subprocess execution, durable session journals
+with interrupted-job reconciliation, and the Ctrl-C/history console layer.
+Production acceptance (P1–P7) still requires the evidence listed below — code
+and tests do not substitute for it; see the dated
 [handoff](CLAUDE_DIPCATCHER_HANDOFF.md).
 
 ## Product definition
@@ -41,16 +44,16 @@ Work on 2026-10-08 began at local `50f25b2ce` in a concurrently modified
 working tree. The table includes the implementation in this handoff; it is
 not hosted-model or full release certification.
 
-| Surface | Observed source | Gap to this contract |
+| Surface | Observed source (2026-10-12) | Gap to this contract |
 |---|---|---|
-| Product entry | `dipcatcher_cli.app` opens chat for bare terminal invocation, supports `chat --model`, and forwards lab commands; `quant` retains its existing entry. | Complete cross-platform UX acceptance and release packaging approval. |
-| Existing conversation | The launcher reuses `concierge.run_console`; `/keys set` configures key and endpoint in chat, with accurate startup endpoint status. | Durable session recovery, richer editing, and the complete journey suite remain open. |
-| Models | `fx1.interactive.profiles.MODELS` contains `fx1` and `fx1-lite`; profiles store endpoints. | Verify both real service identities and errors; make selection and any change visible. |
-| Research planning | `fx1.interactive.superpower` selects from `HARNESS_REGISTRY` plus memory/web/synthesis capabilities. | Command selection is not qualified research-family selection. Add explicit eligibility, data checks, and family-to-runner mapping. |
-| Planner limits | Both deterministic and refined plans now enforce `max_harness`; refined IDs and executed steps are deduplicated. | Add family eligibility and comprehensive resource budgets; registered reselection is allowed within the cap. |
-| Answer validation | Ordinary chat and tool preambles now use the same honesty validator as `/superpower` synthesis before display/history. | Add semantic claim/receipt verification and audit other expert/export surfaces; lexical checks alone are insufficient. |
-| Jobs | `concierge.BackgroundJob` is an in-process thread; cancellation is cooperative. | Bound cancellation of active work; record restart state and recover without duplicate work. |
-| Documentation | [FXI](FXI.md) and [Concierge](DIP_CONCIERGE.md) describe the new working-tree launcher and remaining gaps. | Finish broader naming/status reconciliation when the release candidate is fixed. |
+| Product entry | `dipcatcher_cli.app` opens chat for bare terminal invocation, supports `chat --model` / `chat --resume`, `--version`, and forwards lab commands; `quant` retains its existing entry. | Cross-platform UX acceptance on real Windows/macOS terminals and release packaging approval. |
+| Existing conversation | `concierge.run_console` with a `LineReader` (POSIX select / Windows msvcrt / blocking), Ctrl-C cancel-then-exit policy, secret-filtered persistent history, `/keys set` in chat, startup endpoint status with failure guidance. | Multiline editing/paste and resize handling; the frozen journey suite and moderated trial. |
+| Models | `profiles.MODELS` holds `fx1` and `fx1-lite`; `/use` keeps the conversation and journals the switch; `/keys test` records requested vs served identity, latency and failure class; endpoint failures map to classes with next actions and bounded retries. | Real authenticated smoke runs against the service (P2) — mock tests do not close the gate. |
+| Research planning | `superpower.plan_goal` selects from `HARNESS_REGISTRY` plus memory/web/synthesis; a family gate backed by the read-only `research-families` lab command classifies named families and refuses retired/unknown ones; the model cannot reinstate a blocked capability. | `research` still executes its configured scorecard — selection narrows eligibility and reporting, not the benches executed; typed dataset/config arguments and data-availability checks are not implemented. |
+| Planner limits | `max_harness` on both paths; `RunBudget`/`BudgetLedger` enforce wall, step, model-call, retry and web-source ceilings; the remaining wall budget becomes each subprocess deadline. | Token spend is capped only when configured; provider prices are unknown so no currency cap is claimed. |
+| Answer validation | Ordinary chat, tool preambles and synthesis pass the honesty validator; every capability result carries an evidence class; partial runs say partial; web content is framed as untrusted data. | Semantic claim/receipt verification; audit other expert/export surfaces. |
+| Jobs | `BackgroundJob` threads with cooperative cancellation; owned subprocesses receive SIGTERM → SIGKILL on cancel or deadline; the session journal records start/step/finish and marks work left open by a dead process as interrupted on the next start. | Automatic safe resume of idempotent steps; remote (fleet) cancellation acknowledgement. |
+| Documentation | [FXI](FXI.md) and [Concierge](DIP_CONCIERGE.md) describe the implemented behaviour and remaining gaps. | Reconcile README/root instructions when the release candidate is fixed. |
 
 The repository-wide [production audit](ULTRA_PROD_READINESS.md) owns CI,
 history reconciliation, artifact integrity, catalog cleanup, and release

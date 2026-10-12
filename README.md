@@ -162,9 +162,13 @@ from the command line. The CLI is designed like Codex CLI: chat-first, with
 about 99% of the interface being a conversation with the active model. The
 `/superpower` slash command plans and runs whichever of dipcatcher's research
 families fit the goal you typed, and explains what it used and why. Type
-`dipcatcher` in a terminal to open the chat. The design and its current status
-(working tree, not yet a release) live in
-[`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md).
+`dipcatcher` in a terminal to open the chat. Sessions are journaled and
+resumable (`/sessions`, `/resume`), every run is budgeted and cancellable
+(Ctrl-C once cancels, twice exits), every result names its evidence class,
+and research-family selection is checked against the lab's read-only family
+catalog. The design, the implemented behaviour and the still-open production
+gates live in [`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md) and
+[`docs/DIPCATCHER_PRODUCT_CONTRACT.md`](docs/DIPCATCHER_PRODUCT_CONTRACT.md).
 
 Underneath the chat, dipcatcher is receipt-bound quant research on US equities
 and crypto for a small Alpaca account. It is research and simulated paper

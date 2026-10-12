@@ -122,10 +122,16 @@ fxi · fx1@fx-lite.example.test › !ls data/fx1 # raw shell passthrough
 fxi · fx1@fx-lite.example.test › exit
 ```
 
-One-shot equivalents: `fxi keys …`, `fxi doctor`, `fxi eval [--out PATH]`,
-`fxi chat -m "…"`, `fxi harness list|describe|run`, `fxi verify PATH`,
-`fxi run TOOL ARGS…`, `fxi setup` (re-run the wizard). The global
-`--model fx1|fx1-lite` flag selects the model for one invocation.
+One-shot equivalents: `fxi keys …` (including `fxi keys test [model]`, an
+authenticated identity probe that exits 1 on failure), `fxi doctor`,
+`fxi eval [--out PATH]`, `fxi chat -m "…"`, `fxi harness list|describe|run`,
+`fxi verify PATH`, `fxi run TOOL ARGS…`, `fxi setup` (re-run the wizard),
+`fxi sessions [--limit N]` and `fxi resume SESSION` (the durable session
+journal), `fxi superpower GOAL --sync [--approve-consequential]` and
+`fxi research GOAL --sync`. One-shot runs never wait for an approval:
+consequential harness commands are denied unless `--approve-consequential`
+states the policy. The global `--model fx1|fx1-lite` flag selects the model
+for one invocation; `dipcatcher --version` prints the distribution version.
 
 ## Uninstall
 
