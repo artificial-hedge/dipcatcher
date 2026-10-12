@@ -79,6 +79,17 @@ app = typer.Typer(
     help="Dipcatcher — Artificial Hedge's proprietary research lab. Default mode is research, never live."
 )
 
+
+def _version_callback(value: bool) -> None:
+    """Print the distribution version. The import is the package root only."""
+    if not value:
+        return
+    from quant_fund import __version__
+
+    typer.echo(__version__)
+    raise typer.Exit()
+
+
 # The fx-1 interactive front door is the `fxi` console script (pyproject.toml:
 # fxi = "fx1.interactive.app:main"; see docs/FXI.md). It is deliberately NOT
 # wired into bare `dipcatcher`: doing so requires a quant_fund -> fx1 import,
@@ -89,13 +100,24 @@ app = typer.Typer(
 
 
 @app.callback(invoke_without_command=True)
-def _bare_help(ctx: typer.Context) -> None:
+def _bare_help(
+    ctx: typer.Context,
+    version: bool = typer.Option(
+        False,
+        "--version",
+        "-V",
+        help="Show the package version and exit.",
+        callback=_version_callback,
+        is_eager=True,
+    ),
+) -> None:
     """Bare ``dipcatcher`` prints help and exits 0.
 
     Click exits 2 when a root Typer app has only sub-typers and no direct
     commands, even with ``no_args_is_help=True``. This callback restores the
     expected help-and-zero behavior without importing any fx1 code.
     """
+    del version
     if ctx.invoked_subcommand is None:
         ctx.get_help()
         raise typer.Exit()
@@ -124,11 +146,22 @@ app.add_typer(ranker_probability_app, name="ranker-probability")
 app.add_typer(capabilities_app, name="capabilities")
 
 
+def _existing_config(config: Path) -> Path:
+    """Resolve a lab config, exiting 2 when neither cwd nor the bundle has it."""
+    from quant_fund.utils.bundled_configs import resolve_lab_config
+
+    resolved = resolve_lab_config(config)
+    if resolved.is_file():
+        return resolved
+    typer.echo(f"config not found: {resolved}", err=True)
+    raise typer.Exit(code=2)
+
+
 def _cfg(config: Path) -> AppConfig:
     from quant_fund.config import dump_resolved, load_config
     from quant_fund.utils.logging import configure_logging
 
-    cfg = load_config(config)
+    cfg = load_config(_existing_config(config))
     configure_logging()
     dump_resolved(cfg, Path(cfg.data.root) / "metadata" / "resolved_config.json")
     return cfg

@@ -13,15 +13,29 @@ import typer
 from .app import app
 from .support import _cfg, _collect_param_value
 
+_LAKE_PARTS = ("raw", "bronze", "silver", "gold", "metadata")
 
-@app.command()
-def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
+
+def _require_config(config: Path) -> Path:
+    from quant_fund.cli._app import _existing_config
+
+    return _existing_config(config)
+
+
+def _run_doctor(config: Path) -> dict[str, object]:
     from quant_fund.pipeline.doctor import doctor as run_doctor
 
-    info = run_doctor(str(config))
-    for k, v in info.items():
-        typer.echo(f"{k}: {v}")
-    # Research-only Kyle/OFI dump path (CLI hint; not a live gate).
+    try:
+        return run_doctor(str(config))
+    except FileNotFoundError as exc:
+        missing = exc.filename if exc.filename else config
+        typer.echo(f"config not found: {missing}", err=True)
+        raise typer.Exit(code=2) from None
+
+
+def _echo_doctor(info: dict[str, object]) -> None:
+    for key, value in info.items():
+        typer.echo(f"{key}: {value}")
     typer.echo(
         "kyle_ofi: dipcatcher kyle-ofi --dump-lambda-series PATH "
         "(research_only λ date-series parquet; no Sharpe/pnl)"
@@ -34,26 +48,45 @@ def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
         "ls: dipcatcher ls hunt|book|race|confirm "
         "(frozen Lightspeed engines; research_only, no live broker)"
     )
-    cfg = _cfg(config)
-    ns = cfg.northset
-    typer.echo(
-        f"northset.shape_floors: depth_shape_finite_floor={ns.depth_shape_finite_floor} "
-        f"concentration_top_finite_floor={ns.concentration_top_finite_floor} "
-        f"queue_priority_finite_floor={ns.queue_priority_finite_floor} "
-        f"side_notional_finite_floor={ns.side_notional_finite_floor} "
-        f"tob_size_share_finite_floor={ns.tob_size_share_finite_floor} "
-        f"(shape_columns_ensured is a receipt stamp when synth ensure runs)"
-    )
-    required = [
-        info.get(f"dir_{part}") == "ok" for part in ("raw", "bronze", "silver", "gold", "metadata")
-    ]
-    healthy = (
+
+
+def _lake_healthy(info: dict[str, object]) -> bool:
+    required = [info.get(f"dir_{part}") == "ok" for part in _LAKE_PARTS]
+    return bool(
         all(required)
         and info.get("data_manifest") == "ok"
         and info.get("research_receipt") == "ok"
         and info.get("core_imports") == "ok"
         and info.get("live") != "REJECTED"
     )
+
+
+def _echo_northset(config: Path, *, healthy: bool) -> None:
+    cfg = _cfg(config) if healthy else _load_only(config)
+    floors = cfg.northset
+    typer.echo(
+        f"northset.shape_floors: depth_shape_finite_floor={floors.depth_shape_finite_floor} "
+        f"concentration_top_finite_floor={floors.concentration_top_finite_floor} "
+        f"queue_priority_finite_floor={floors.queue_priority_finite_floor} "
+        f"side_notional_finite_floor={floors.side_notional_finite_floor} "
+        f"tob_size_share_finite_floor={floors.tob_size_share_finite_floor} "
+        f"(shape_columns_ensured is a receipt stamp when synth ensure runs)"
+    )
+
+
+def _load_only(config: Path) -> Any:
+    from quant_fund.config import load_config
+
+    return load_config(config)
+
+
+@app.command()
+def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
+    resolved = _require_config(config)
+    info = _run_doctor(resolved)
+    _echo_doctor(info)
+    healthy = _lake_healthy(info)
+    _echo_northset(resolved, healthy=healthy)
     if not healthy:
         raise typer.Exit(code=1)
 
