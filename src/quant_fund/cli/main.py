@@ -47,6 +47,7 @@ from quant_fund.cli.micro_cmds import (
     candle_book,
     kyle_ofi,
 )
+from quant_fund.cli.family_cmds import families_cmd as families_cmd
 from quant_fund.cli.research_cmds import (
     research,
     execution_sensitivity_cmd,
@@ -186,6 +187,7 @@ __all__ = [
     "backtest",
     "candle_book",
     "kyle_ofi",
+    "families_cmd",
     "research",
     "execution_sensitivity_cmd",
     "verify_all_cmd",
