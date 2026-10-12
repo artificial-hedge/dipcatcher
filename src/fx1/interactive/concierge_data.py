@@ -102,8 +102,15 @@ class DataCommands:
         reason = self._dataset_block()
         if not reason:
             return False
-        self._say(reason)
+        self._record_block(reason)
         return True
+
+    def _record_block(self, reason: str) -> None:
+        self._say(reason)
+        self._set_status("error")
+
+    def _set_status(self, status: str) -> None:
+        raise NotImplementedError
 
     def _dataset_block(self) -> str | None:
         with self._state_lock:
@@ -241,7 +248,7 @@ def _blocked_result(plan: Any, reason: str) -> SuperpowerResult:
     goal = getattr(plan, "goal", "")
     if not isinstance(goal, str):
         goal = ""
-    return SuperpowerResult(goal=goal, plan=plan, summary=reason, status="no-evidence")
+    return SuperpowerResult(goal=goal, plan=plan, summary=reason, status="error")
 
 
 def _score_without_issue_time(result: SuperpowerResult) -> bool:

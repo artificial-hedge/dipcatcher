@@ -7,6 +7,8 @@ rechecked before a run; a different file is not scored.
 
 from __future__ import annotations
 
+import csv
+import errno
 import hashlib
 import json
 import os
@@ -38,7 +40,10 @@ _CAP = f"dataset limit is {MAX_DATASETS}; /data remove <n> first"
 _PROFILE_UNAVAILABLE = "dataset profile unavailable; attached without a profile"
 _MAX_PROFILE_CHARS = 1_000_000
 _HEX64 = re.compile(r"^[0-9a-fA-F]{64}$")
+_SHELL_META = re.compile(r"[;|&`$()<>]")
 _READ = 1024 * 1024
+_HEADER_CAP = 1024 * 1024
+_MAX_COUNTED = 2**63 - 1
 
 
 @dataclass(frozen=True)
@@ -134,9 +139,15 @@ def restore_stored(
     cwd: Path | None = None,
     legacy: object = None,
 ) -> tuple[list[Attachment], tuple[str, ...]]:
-    """Rebuild attachments inside ``data/``. A changed digest is kept stale."""
+    """Rebuild attachments inside ``data/``. A changed digest is kept stale.
+
+    An explicit empty ``attachments`` list does not fall back to legacy
+    ``datasets`` rows. A missing list still does, for older sessions.
+    """
     base = Path.cwd() if cwd is None else cwd
-    if isinstance(value, list) and value:
+    if isinstance(value, list):
+        if not value:
+            return [], ()
         return _restore_list(value, base)
     return _restore_legacy(legacy, base)
 
@@ -169,7 +180,7 @@ def model_context(rows: Sequence[Attachment]) -> str:
 
 def annotate_summary(summary: str, *, unchecked: bool) -> str:
     """State that point-in-time validity was not checked for this score."""
-    if not unchecked or "point-in-time" in summary.casefold():
+    if not unchecked or _states_pit_unchecked(summary):
         return summary
     body = summary.rstrip()
     if not body:
@@ -203,21 +214,38 @@ def stale_warnings(rows: Sequence[Attachment]) -> tuple[str, ...]:
 
 
 def file_sha256(path: Path) -> str:
-    """Streaming sha256 of a regular file the caller already accepted."""
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(_READ), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    """Streaming sha256 of one regular file. A symlink or special file fails."""
+    flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags)
+    try:
+        return _hash_fd(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 def _split_command(rest: str) -> tuple[str, str]:
-    parts = shlex.split(rest)
+    try:
+        parts = _command_tokens(rest)
+    except ValueError:
+        raise ValueError(_USAGE) from None
     if not parts or (len(parts) == 1 and parts[0] == "list"):
         return "list", ""
     if len(parts) == 2 and parts[0] in {"attach", "remove", "inspect"}:
         return parts[0], parts[1]
     raise ValueError(_USAGE)
+
+
+def _command_tokens(rest: str) -> list[str]:
+    """Split a ``/data`` line without treating ``\\`` as an escape.
+
+    ``shlex.split`` drops backslashes, so a Windows path never reaches
+    :func:`contain_path`, which is what turns them into portable separators.
+    """
+    lexer = shlex.shlex(rest, posix=True)
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    lexer.escape = ""
+    return list(lexer)
 
 
 def _attach(
@@ -232,6 +260,8 @@ def _attach(
     if _at_cap(rows, path):
         return rows, _CAP, False
     item, text = _profile_or_attach(harness, path)
+    if item is None:
+        return rows, text, False
     return _upsert(rows, item), text, True
 
 
@@ -328,19 +358,35 @@ def _special_reason(info: os.stat_result) -> str | None:
 
 
 def _at_cap(rows: Sequence[Attachment], path: Path) -> bool:
-    if any(row.path == str(path) for row in rows):
+    if any(_same_stored_path(row.path, str(path)) for row in rows):
         return False
     return len(rows) >= MAX_DATASETS
 
 
-def _profile_or_attach(harness: Any, path: Path) -> tuple[Attachment, str]:
+def _profile_or_attach(harness: Any, path: Path) -> tuple[Attachment | None, str]:
     head = f"attached dataset {path}"
     digest = _digest(path) or ""
     profile = _optional_profile(harness, path, digest)
+    current = _digest(path) or ""
+    if current != digest:
+        return _after_drift(path, head, current)
     if profile is None:
-        item = _unprofiled(path, digest)
-        return item, f"{head}\n{_PROFILE_UNAVAILABLE}"
-    return _from_profile(path, profile), f"{head}\n{_render_profile(profile)}"
+        return _unprofiled(path, digest), f"{head}\n{_PROFILE_UNAVAILABLE}"
+    item = _from_profile(path, profile)
+    return item, f"{head}\n{_render_profile(_profile_for_display(profile, item))}"
+
+
+def _profile_for_display(profile: _Profile, item: Attachment) -> _Profile:
+    if item.available_time_col:
+        return profile
+    return replace(profile, has_available_time=False, available_time_col="")
+
+
+def _after_drift(path: Path, head: str, current: str) -> tuple[Attachment | None, str]:
+    if not current:
+        return None, "dataset changed during attach; retry"
+    item = _unprofiled(path, current)
+    return item, f"{head}\nfile changed during attach; attached without a profile"
 
 
 def _optional_profile(harness: Any, path: Path, digest: str) -> _Profile | None:
@@ -422,11 +468,11 @@ def parse_profile(stdout: str, digest: str, size: int) -> _Profile | None:
     timing = _time_view(payload.get("time"))
     roles = payload.get("suggested_roles")
     available = _available_flag(roles)
-    column = _exact_issue_column(roles)
     row_count = _as_int(payload.get("n_rows"))
     if columns is None or timing is None or available is None or row_count is None:
         return None
     names, nulls = columns
+    column = _exact_issue_column(roles, names)
     has_time, monotonic = timing
     return _Profile(
         rows=row_count,
@@ -525,21 +571,31 @@ def _available_flag(value: object) -> bool | None:
     return bool(column.strip())
 
 
-def _exact_issue_column(roles: object) -> str:
-    if not isinstance(roles, dict):
+def _exact_issue_column(roles: object, columns: tuple[str, ...]) -> str:
+    raw = _issue_name(roles)
+    if raw is None:
         return ""
+    return _column_bindable(_clean_name(raw), columns)
+
+
+def _issue_name(roles: object) -> str | None:
+    if not isinstance(roles, dict):
+        return None
     slot = roles.get("available_time")
     if not isinstance(slot, dict) or slot.get("confidence") != "exact_name":
-        return ""
+        return None
     column = slot.get("column")
     if not isinstance(column, str) or not column.strip():
-        return ""
-    cleaned = _clean_name(column)
-    return "" if cleaned == "?" else cleaned
+        return None
+    return column
 
 
 def _from_profile(path: Path, profile: _Profile) -> Attachment:
     kind = "parquet" if path.suffix.lower() == ".parquet" else "csv"
+    names = _confirmed_columns(path, profile.columns)
+    column = profile.available_time_col if profile.available_time_col in names else ""
+    if _column_rejected(column):
+        column = ""
     return Attachment(
         path=str(path),
         kind=kind,
@@ -547,13 +603,13 @@ def _from_profile(path: Path, profile: _Profile) -> Attachment:
         sha256=profile.sha256,
         size=profile.size,
         rows=profile.rows,
-        columns=profile.columns,
+        columns=names,
         stale=False,
         has_time=profile.has_time,
         time_monotonic=profile.time_monotonic,
         has_nulls=profile.has_nulls,
         has_available_time=profile.has_available_time,
-        available_time_col=profile.available_time_col,
+        available_time_col=column,
     )
 
 
@@ -649,7 +705,7 @@ def _index(token: str, count: int) -> int | None:
 
 def _upsert(rows: list[Attachment], item: Attachment) -> list[Attachment]:
     for index, row in enumerate(rows):
-        if row.path == item.path:
+        if _same_stored_path(row.path, item.path):
             updated = list(rows)
             updated[index] = item
             return updated
@@ -659,10 +715,14 @@ def _upsert(rows: list[Attachment], item: Attachment) -> list[Attachment]:
 def _restore_list(value: list[object], cwd: Path) -> tuple[list[Attachment], tuple[str, ...]]:
     kept: list[Attachment] = []
     warnings: list[str] = []
+    overflow = False
     for item in value:
         if len(kept) >= MAX_DATASETS:
+            overflow = True
             break
         _restore_one(item, kept, warnings, cwd)
+    if overflow:
+        warnings.append(f"dataset limit is {MAX_DATASETS}; extra records were dropped")
     return kept, tuple(warnings)
 
 
@@ -689,20 +749,35 @@ def _restore_one(item: object, kept: list[Attachment], warnings: list[str], cwd:
     if parsed is None:
         warnings.append("warning: dropped invalid dataset record")
         return
-    if not _still_inside_data(parsed, cwd):
+    resolved = _resolved_dataset(parsed, cwd)
+    if resolved is None:
         warnings.append(f"warning: dropped missing dataset {_show_text(Path(parsed.path).name)}")
         return
-    problem = _stored_problem(Path(parsed.path))
+    if not _kind_matches(resolved, parsed.kind):
+        warnings.append("warning: dropped invalid dataset record")
+        return
+    problem = _stored_problem(resolved)
     if problem is not None:
-        warnings.append(f"warning: dropped missing dataset {_show_text(Path(parsed.path).name)}")
+        warnings.append(f"warning: dropped missing dataset {_show_text(resolved.name)}")
         return
-    kept.append(_restore_row(parsed))
+    kept.append(_restore_row(_with_bound_columns(replace(parsed, path=str(resolved)))))
 
 
-def _still_inside_data(row: Attachment, cwd: Path) -> bool:
+def _resolved_dataset(row: Attachment, cwd: Path) -> Path | None:
     kind = row.kind if row.kind in {"csv", "parquet"} else "csv"
     kept = restore_datasets([{"path": row.path, "kind": kind, "label": "file"}], cwd=cwd)
-    return bool(kept)
+    if not kept:
+        return None
+    return Path(kept[0].path)
+
+
+def _kind_matches(path: Path, kind: str) -> bool:
+    suffix = path.suffix.lower()
+    if kind == "csv":
+        return suffix == ".csv"
+    if kind == "parquet":
+        return suffix == ".parquet"
+    return False
 
 
 def _restore_row(row: Attachment) -> Attachment:
@@ -826,7 +901,7 @@ def _ref(row: Attachment) -> DatasetRef:
         path=row.path,
         kind=row.kind,
         label="file",
-        available_time_col=row.available_time_col,
+        available_time_col=_bound_issue_column(row),
     )
 
 
@@ -857,9 +932,113 @@ def _show_text(value: str) -> str:
 def _as_int(value: object) -> int | None:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         return None
+    if value > _MAX_COUNTED:
+        return None
     return value
 
 
 def _first_line(text: str) -> str:
     line = text.splitlines()[0] if text else ""
     return line or "refusing dataset"
+
+
+def _hash_fd(descriptor: int) -> str:
+    info = os.fstat(descriptor)
+    if not stat.S_ISREG(info.st_mode):
+        raise OSError(errno.EINVAL, "not a regular file")
+    digest = hashlib.sha256()
+    while True:
+        chunk = os.read(descriptor, _READ)
+        if not chunk:
+            break
+        digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _states_pit_unchecked(summary: str) -> bool:
+    return "point-in-time validity is not verified" in summary.casefold()
+
+
+def _same_stored_path(left: str, right: str) -> bool:
+    return os.path.normcase(left) == os.path.normcase(right)
+
+
+def _column_bindable(name: str, columns: tuple[str, ...]) -> str:
+    if not name or name not in columns or _column_rejected(name):
+        return ""
+    return name
+
+
+def _column_shape_rejected(name: str) -> bool:
+    if not name or len(name) > MAX_COLUMN_CHARS or name != name.strip():
+        return True
+    return name.startswith("-") or any(char.isspace() for char in name)
+
+
+def _column_rejected(name: str) -> bool:
+    if _column_shape_rejected(name):
+        return True
+    if any(ord(char) < 32 or ord(char) == 127 for char in name):
+        return True
+    return _SHELL_META.search(name) is not None
+
+
+def _confirmed_columns(path: Path, names: tuple[str, ...]) -> tuple[str, ...]:
+    observed = _header_names(path)
+    if observed is None:
+        return names
+    return tuple(name for name in names if name in observed)
+
+
+def _header_names(path: Path) -> frozenset[str] | None:
+    suffix = path.suffix.lower()
+    if suffix == ".csv":
+        return _csv_header(path)
+    if suffix == ".parquet":
+        return _parquet_header(path)
+    return None
+
+
+def _csv_header(path: Path) -> frozenset[str] | None:
+    try:
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            line = handle.readline(_HEADER_CAP)
+    except (OSError, UnicodeError):
+        return None
+    if not line:
+        return frozenset()
+    if len(line) >= _HEADER_CAP:
+        return None
+    return _header_cells(line)
+
+
+def _header_cells(line: str) -> frozenset[str] | None:
+    try:
+        cells = next(csv.reader([line]))
+    except csv.Error:
+        return None
+    return frozenset(_clean_name(cell) for cell in cells if cell.strip())
+
+
+def _parquet_header(path: Path) -> frozenset[str] | None:
+    try:
+        import pyarrow.parquet as pq
+
+        schema = pq.read_schema(path)
+    except Exception:
+        return None
+    names = getattr(schema, "names", None)
+    if not isinstance(names, list):
+        return None
+    return frozenset(_clean_name(name) for name in names if isinstance(name, str))
+
+
+def _with_bound_columns(row: Attachment) -> Attachment:
+    names = _confirmed_columns(Path(row.path), row.columns)
+    column = _column_bindable(row.available_time_col, names)
+    return replace(row, columns=names, available_time_col=column)
+
+
+def _bound_issue_column(row: Attachment) -> str:
+    names = _confirmed_columns(Path(row.path), row.columns)
+    return _column_bindable(row.available_time_col, names)

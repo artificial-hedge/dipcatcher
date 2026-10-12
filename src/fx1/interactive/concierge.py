@@ -1583,6 +1583,11 @@ class Concierge(DataCommands):
         self._status_explicit = True
         self._emit("concierge.status", {"status": status, "model": self.model})
 
+    def _record_block(self, reason: str) -> None:
+        with self._state_lock:
+            self._last_answer = reason
+        super()._record_block(reason)
+
     def _remember_user_goal(self, goal: str) -> None:
         self._append_if_new("user", goal)
 

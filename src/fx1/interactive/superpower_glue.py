@@ -181,11 +181,13 @@ def build_context(
 
 
 def operator_status(result: SuperpowerResult) -> str:
-    """Map a run onto ``withheld``, ``cancelled``, or ``ok``."""
+    """Map a run onto ``withheld``, ``cancelled``, ``error``, or ``ok``."""
     if result.status == "withheld" or result.honesty_violation:
         return "withheld"
     if result.status == "cancelled" or _any_cancelled(result):
         return "cancelled"
+    if result.status == "error":
+        return "error"
     return "ok"
 
 

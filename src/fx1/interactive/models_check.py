@@ -526,8 +526,12 @@ def _public_name(value: str | None) -> str | None:
     if value is None:
         return None
     from fx1.honesty import public_label
+    from fx1.interactive.redact import redact_text
+    from fx1.interactive.terminal import sanitize_for_terminal
 
-    return public_label(value)
+    text = sanitize_for_terminal(redact_text(public_label(value)), keep_sgr=False)
+    collapsed = " ".join(text.split())
+    return collapsed[:128] or None
 
 
 def _honest_hint(hint: str) -> str:

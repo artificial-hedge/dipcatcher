@@ -136,8 +136,9 @@ def _call_backend(
     tracker.charge_step()
     retries = 0
     while True:
+        note = _dataset_note(host)
         outbound = build_outbound(
-            host._transcript(),
+            _fold_dataset_note(host._transcript(), note),
             host.model,
             tools=CHAT_TOOL_NAMES,
             mode="chat",
@@ -148,9 +149,7 @@ def _call_backend(
         started = host._clock()
         try:
             with host._orb():
-                completion = backend.complete_with_tools(
-                    _with_dataset_note(outbound.messages, _dataset_note(host)), **kwargs
-                )
+                completion = backend.complete_with_tools(outbound.messages, **kwargs)
         except ModelError as exc:
             retries += 1
             if retries > _CONTEXT_RETRIES or not _shrunk_for_retry(host, exc, outbound):
@@ -171,12 +170,26 @@ def _dataset_note(host: Any) -> str:
     return note if isinstance(note, str) else ""
 
 
-def _with_dataset_note(messages: list[dict[str, Any]], note: str) -> list[dict[str, Any]]:
+def _fold_dataset_note(messages: list[dict[str, Any]], note: str) -> list[dict[str, Any]]:
+    """Put the dataset note in the latest user turn so it counts toward the fit."""
     if not note:
-        return messages
-    if not messages:
-        return [{"role": "user", "content": note}]
-    return [messages[0], {"role": "user", "content": note}, *messages[1:]]
+        return list(messages)
+    copied = [dict(item) for item in messages]
+    index = _last_user(copied)
+    if index is None:
+        return [*copied, {"role": "user", "content": note}]
+    message = copied[index]
+    content = message.get("content")
+    body = content if isinstance(content, str) else ""
+    copied[index] = {**message, "content": f"{note}\n\n{body}"}
+    return copied
+
+
+def _last_user(messages: list[dict[str, Any]]) -> int | None:
+    for index in range(len(messages) - 1, -1, -1):
+        if messages[index].get("role") == "user":
+            return index
+    return None
 
 
 def _announce_trim(host: Any, outbound: Outbound) -> None:

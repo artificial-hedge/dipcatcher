@@ -463,7 +463,7 @@ def _model_row(
 def _footer_served(model: str, identity: ModelIdentity | None) -> str | None:
     if identity is None or not identity.served or identity.served == model:
         return None
-    return public_label(identity.served)
+    return _one_line(identity.served)
 
 
 def _clean_identity(identity: ModelIdentity | None) -> ModelIdentity | None:
@@ -517,8 +517,17 @@ def _matched_after(identity: ModelIdentity, served: str | None) -> bool | None:
 
 def _served_text(served: Any) -> str:
     if isinstance(served, str) and served:
-        return public_label(served)
+        return _one_line(served)
     return "-"
+
+
+def _one_line(value: str) -> str:
+    """One terminal-safe token. Server ids cannot inject a second line."""
+    from fx1.interactive.terminal import sanitize_for_terminal
+
+    text = sanitize_for_terminal(redact_text(public_label(value)), keep_sgr=False)
+    collapsed = " ".join(text.split())
+    return collapsed[:128] or "withheld"
 
 
 def _latency_cell(latency: Any) -> str:

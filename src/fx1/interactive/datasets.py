@@ -67,11 +67,27 @@ def _clean_request(raw: str) -> str:
 def _resolve_under_data(text: str, cwd: Path) -> Path:
     root = input_dir(cwd)
     found = _contained(text, cwd, root)
-    if found is None:
-        found = _contained(text, root, root)
+    if found is not None:
+        return found
+    # ``data/name.csv`` is also tried relative to ``data/``. Do not do that
+    # when the cwd-relative path already exists: a symlink that leaves data/
+    # would otherwise attach ``data/data/name.csv`` instead.
+    if _named_candidate_exists(text, cwd):
+        raise ValueError("dataset path must stay inside data/")
+    found = _contained(text, root, root)
     if found is None:
         raise ValueError("dataset path must stay inside data/")
     return found
+
+
+def _named_candidate_exists(text: str, cwd: Path) -> bool:
+    candidate = Path(text)
+    if not candidate.is_absolute():
+        candidate = cwd / candidate
+    try:
+        return candidate.is_symlink() or candidate.exists()
+    except OSError:
+        return False
 
 
 def _contained(text: str, base: Path, data_root: Path) -> Path | None:
@@ -97,7 +113,9 @@ def _one_restored(item: object, cwd: Path) -> DatasetRef | None:
     if parsed is None:
         return None
     path, kind, label = parsed
-    resolved = _contained(path, input_dir(cwd), input_dir(cwd))
+    resolved = _contained(path, cwd, input_dir(cwd))
+    if resolved is None:
+        resolved = _contained(path, input_dir(cwd), input_dir(cwd))
     if resolved is None or resolved.suffix.lower() not in _KINDS:
         return None
     return DatasetRef(str(resolved), kind, label)
