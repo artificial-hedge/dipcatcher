@@ -12,6 +12,8 @@ from typing import Any
 
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive.chat_tools import CHAT_TOOL_NAMES, chat_tool_schemas, execute_tool_call
+from fx1.interactive.evidence import EvidenceError, ground_summary
+from fx1.interactive.evidence_ledger import extract_receipt_paths
 from fx1.interactive.model_client import ErrorKind, ModelError
 from fx1.interactive.model_ux import (
     CallSnapshot,
@@ -29,6 +31,7 @@ from fx1.interactive.usage_budget import BudgetExceeded, UsageTracker
 
 def run_chat_turn(host: Any, text: str) -> None:
     """Append the user line and run tool rounds when a backend is open."""
+    _begin_turn(host)
     opened = open_backend(host.model, host._backend_factory)
     if opened.backend is None:
         host._say(opened.detail)
@@ -56,7 +59,7 @@ def _run_turn(host: Any, backend: Any) -> None:
         _tool_rounds(host, backend)
     except KeyboardInterrupt:
         _cancel_marked(host, start)
-    except Fx1HonestyError as exc:
+    except (Fx1HonestyError, EvidenceError) as exc:
         _withhold(host, start, exc)
     except BudgetExceeded:
         _stop_for_budget(host)
@@ -112,6 +115,7 @@ def _call_backend(
     tools: list[dict[str, Any]],
 ) -> Any:
     messages = outbound_messages(host._transcript(), host.model, tools=CHAT_TOOL_NAMES, mode="chat")
+    messages = _with_dataset_note(messages, _dataset_note(host))
     kwargs = completion_kwargs(
         tracker, backend, cancel, pass_deadline=host._pass_deadline, tools=tools
     )
@@ -124,8 +128,26 @@ def _call_backend(
     return completion
 
 
+def _dataset_note(host: Any) -> str:
+    provider = getattr(host, "dataset_model_note", None)
+    if not callable(provider):
+        return ""
+    note = provider()
+    if not isinstance(note, str):
+        return ""
+    return note
+
+
+def _with_dataset_note(messages: list[dict[str, Any]], note: str) -> list[dict[str, Any]]:
+    if not note:
+        return messages
+    if not messages:
+        return [{"role": "user", "content": note}]
+    return [messages[0], {"role": "user", "content": note}, *messages[1:]]
+
+
 def _consume_completion(host: Any, completion: Any, tracker: UsageTracker, backend: Any) -> bool:
-    content = scrub_transcript(validate_fx1_output(completion.content or ""))
+    content = _ground_content(host, scrub_transcript(validate_fx1_output(completion.content or "")))
     snapshot = host._pending_snapshot
     if snapshot is not None:
         host._note_call(snapshot)
@@ -166,10 +188,41 @@ def _apply_tool_calls(host: Any, completion: Any) -> None:
     env = host._tool_env(host._current_cancel())
     for call in completion.tool_calls:
         result_text = scrub_transcript(execute_tool_call(call, env))
+        _collect_verified(host, result_text)
         host._append_message({"role": "tool", "tool_call_id": call["id"], "content": result_text})
 
 
-def _withhold(host: Any, start: int, exc: Fx1HonestyError) -> None:
+def _begin_turn(host: Any) -> None:
+    begin = getattr(host, "begin_chat_turn", None)
+    if callable(begin):
+        begin()
+
+
+def _ground_content(host: Any, content: str) -> str:
+    """Keep a verification claim only when this turn verified that receipt."""
+    grounded = ground_summary(content, verified_receipts=_verified_paths(host))
+    return validate_fx1_output(scrub_transcript(grounded))
+
+
+def _verified_paths(host: Any) -> set[str]:
+    reader = getattr(host, "turn_verified_receipts", None)
+    if not callable(reader):
+        return set()
+    raw = reader()
+    if not isinstance(raw, (set, frozenset, list, tuple)):
+        return set()
+    return {item for item in raw if isinstance(item, str) and item}
+
+
+def _collect_verified(host: Any, text: str) -> None:
+    note = getattr(host, "note_verified_receipt", None)
+    if not callable(note):
+        return
+    for path in extract_receipt_paths(text):
+        note(path)
+
+
+def _withhold(host: Any, start: int, exc: BaseException) -> None:
     refusal = f"answer withheld by the fx-1 honesty gate ({exc}). Ask a follow-up to continue."
     if any(message.get("role") == "tool" for message in host._messages[start:]):
         # A blocked answer cannot undo completed tool actions. Keep

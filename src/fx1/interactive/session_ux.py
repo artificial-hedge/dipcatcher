@@ -73,6 +73,7 @@ def stage_record(
     job_present: bool,
     budget: Mapping[str, Any],
     approvals: list[dict[str, Any]],
+    attachments: Sequence[Mapping[str, Any]] | None = None,
 ) -> None:
     """Update the in-memory session before :meth:`SessionStore.save`."""
     record["model"] = model
@@ -81,6 +82,8 @@ def stage_record(
     if budget:
         record["budget"] = dict(budget)
     record["approvals"] = list(approvals)
+    if attachments is not None:
+        record["attachments"] = [dict(item) for item in attachments]
 
 
 def format_session_line(record: Mapping[str, Any], model: str) -> str:

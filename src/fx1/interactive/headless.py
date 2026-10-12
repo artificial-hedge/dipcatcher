@@ -83,6 +83,7 @@ class ExecRequest:
     approve_keys: tuple[str, ...] = ()
     session: str = "none"
     output_path: Any = None
+    datasets: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -154,6 +155,8 @@ class _RunState:
     previous_signals: list[tuple[int, Any]] = field(default_factory=list)
     endpoint_url: str | None = None
     resume_warning: str = ""
+    exec_datasets: tuple[Any, ...] = ()
+    dataset_warnings: tuple[str, ...] = ()
 
 
 def exec_approvals(keys: tuple[str, ...]) -> Any:
@@ -164,9 +167,9 @@ def exec_approvals(keys: tuple[str, ...]) -> Any:
 
 
 def install_exec_signals(handler: SignalHandler) -> list[tuple[int, Any]]:
-    """Install SIGINT and SIGTERM. Unsupported signals are skipped (Windows)."""
+    """Install SIGINT, SIGTERM, and SIGHUP. Unsupported signals are skipped (Windows)."""
     installed: list[tuple[int, Any]] = []
-    for name in ("SIGINT", "SIGTERM"):
+    for name in ("SIGINT", "SIGTERM", "SIGHUP"):
         sig = getattr(signal, name, None)
         if not isinstance(sig, int):
             continue
@@ -213,6 +216,7 @@ def run_exec(
     clock = time.monotonic if monotonic is None else monotonic
     started = clock()
     normalized = _validated(request)
+    attached = _require_datasets(normalized.datasets, harness)
     shortcut = _shortcut(normalized, started, clock)
     if shortcut is not None:
         return _attach_file(shortcut, normalized.output_path)
@@ -227,6 +231,7 @@ def run_exec(
         concierge_factory,
         harness,
     )
+    state.exec_datasets = attached
     try:
         try:
             _execute(state)
@@ -235,6 +240,36 @@ def run_exec(
         return _finish(state, started, clock)
     finally:
         _disarm(state)
+
+
+def _dataset_paths(values: object) -> tuple[str, ...]:
+    if isinstance(values, str) or not isinstance(values, tuple):
+        raise ExecUsageError("datasets must be a tuple of paths")
+    paths: list[str] = []
+    for item in values:
+        if not isinstance(item, str):
+            raise ExecUsageError("datasets must be a tuple of paths")
+        paths.append(item)
+    return tuple(paths)
+
+
+def _require_datasets(paths: tuple[str, ...], harness: Any) -> tuple[Any, ...]:
+    if not paths:
+        return ()
+    from fx1.interactive.data_ux import attach_paths
+
+    rows, problem = attach_paths(paths, _dataset_harness(harness))
+    if problem:
+        raise ExecUsageError(problem)
+    return tuple(rows)
+
+
+def _dataset_harness(harness: Any) -> Any:
+    if harness is not None:
+        return harness
+    from fx1.harness import Harness
+
+    return Harness()
 
 
 def _validated(request: ExecRequest) -> ExecRequest:
@@ -247,6 +282,7 @@ def _validated(request: ExecRequest) -> ExecRequest:
         approve_keys=tuple(request.approve_keys),
         session=_require_session(request.session),
         output_path=request.output_path,
+        datasets=_dataset_paths(request.datasets),
     )
 
 
@@ -298,12 +334,48 @@ def _open_state(
     return state
 
 
+def _adopt_datasets(state: _RunState) -> None:
+    if state.exec_datasets:
+        _merge_exec_datasets(state, state.exec_datasets)
+    _remember_dataset_warnings(state)
+
+
+def _merge_exec_datasets(state: _RunState, rows: tuple[Any, ...]) -> None:
+    adopt = getattr(state.concierge, "adopt_attachments", None)
+    if not callable(adopt):
+        raise ExecUsageError("dataset attach is not available")
+    problem = adopt(rows)
+    if problem:
+        raise ExecUsageError(str(problem))
+
+
+def _remember_dataset_warnings(state: _RunState) -> None:
+    reader = getattr(state.concierge, "attachment_warnings", None)
+    if not callable(reader):
+        return
+    notes = reader()
+    if isinstance(notes, tuple):
+        state.dataset_warnings = tuple(item for item in notes if isinstance(item, str))
+
+
+def _with_dataset_warnings(judgement: _Judgement, state: _RunState) -> _Judgement:
+    if not state.dataset_warnings:
+        return judgement
+    return _Judgement(
+        judgement.status,
+        judgement.answer,
+        (*state.dataset_warnings, *judgement.warnings),
+        judgement.errors,
+    )
+
+
 def _execute(state: _RunState) -> None:
     if state.install_signals:
         state.previous_signals = install_exec_signals(_signal_handler(state))
     _arm_timer(state)
     try:
         _resume(state)
+        _adopt_datasets(state)
         _dispatch(state)
         _join_background(state)
     finally:
@@ -675,7 +747,7 @@ def _interpret(state: _RunState) -> _Judgement:
     base = _text_judgement(state) if public is None else public
     base = _normalize_special(base, state)
     base = _with_denials(state, base)
-    return _with_resume(base, state.resume_warning)
+    return _with_dataset_warnings(_with_resume(base, state.resume_warning), state)
 
 
 def _timeout_judgement(state: _RunState) -> _Judgement:
@@ -963,15 +1035,40 @@ def _usage_dict(raw: Any) -> dict[str, int] | None:
 
 
 def _evidence(state: _RunState) -> dict[str, Any] | None:
+    notes = _joined_notes(state.dataset_warnings)
     result = _result_of(state.concierge)
     if result is None:
+        return _notes_only(notes)
+    return _result_evidence(state, result, notes)
+
+
+def _joined_notes(notes: tuple[str, ...]) -> str:
+    return "\n".join(note for note in notes if note)
+
+
+def _notes_only(notes: str) -> dict[str, Any] | None:
+    if not notes:
         return None
+    return {"summary": notes, "artifacts": []}
+
+
+def _result_evidence(state: _RunState, result: Any, notes: str) -> dict[str, Any] | None:
     summary = getattr(result, "summary", None)
     artifacts = _artifacts(result)
-    if not isinstance(summary, str) and not artifacts:
+    if not isinstance(summary, str) and not artifacts and not notes:
         return None
     text = summary if isinstance(summary, str) else ""
-    return {"summary": _scrub(_hide_url(text, state.endpoint_url)), "artifacts": artifacts}
+    shown = _with_note(text, notes)
+    return {"summary": _scrub(_hide_url(shown, state.endpoint_url)), "artifacts": artifacts}
+
+
+def _with_note(text: str, notes: str) -> str:
+    if not notes or notes in text:
+        return text
+    body = text.rstrip()
+    if not body:
+        return notes
+    return f"{body}\n{notes}"
 
 
 def _artifacts(result: Any) -> list[str]:
@@ -1067,16 +1164,25 @@ def _elapsed(started: float, clock: Callable[[], float]) -> float:
 def _cancel_only(concierge: Any) -> None:
     if concierge is None:
         return
-    cancel = getattr(concierge, "cancel_turn", None)
-    if callable(cancel):
-        _call_quiet(cancel)
+    _call_named(concierge, "cancel_turn")
+    if _call_named(concierge, "cancel_job"):
         return
+    _cancel_raw_job(concierge)
+
+
+def _call_named(obj: Any, name: str) -> bool:
+    fn = getattr(obj, name, None)
+    if not callable(fn):
+        return False
+    _call_quiet(fn)
+    return True
+
+
+def _cancel_raw_job(concierge: Any) -> None:
     job = getattr(concierge, "_job", None)
     if job is None or not getattr(job, "running", False):
         return
-    job_cancel = getattr(job, "cancel", None)
-    if callable(job_cancel):
-        _call_quiet(job_cancel)
+    _call_named(job, "cancel")
 
 
 def _flush(concierge: Any, grace_s: float) -> None:

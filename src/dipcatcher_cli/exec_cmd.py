@@ -16,7 +16,7 @@ exit codes:
   3    answer withheld by the honesty gate
   4    time or usage budget exceeded (json status timeout or budget)
   5    no model endpoint configured for the selected model
-  130  interrupted (SIGINT)
+  130  interrupted (SIGINT or SIGHUP)
   143  terminated (SIGTERM)
 
 json status: ok, error, withheld, cancelled, timeout, budget, no_endpoint
@@ -52,6 +52,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             approve_keys=_approve_keys(options.approve or []),
             session=options.session,
             output_path=options.output_last_message,
+            datasets=tuple(options.data or ()),
         )
         outcome = run_exec(request)
     except ExecUsageError as exc:
@@ -99,6 +100,12 @@ def _parser() -> argparse.ArgumentParser:
         "--output-last-message",
         default=None,
         help="write the final answer atomically with mode 0600",
+    )
+    parser.add_argument(
+        "--data",
+        action="append",
+        default=None,
+        help="CSV or Parquet to attach for this turn (repeatable)",
     )
     parser.add_argument("prompt", nargs="*", help="prompt text, or '-' to read stdin")
     return parser

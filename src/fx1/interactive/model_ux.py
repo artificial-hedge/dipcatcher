@@ -435,3 +435,81 @@ def _approval_line(row: Mapping[str, Any]) -> str:
         f"{row.get('scope', '-')} {row.get('kind', '-')} key={key} "
         f"approved={row.get('approved')} reusable={row.get('reusable')}"
     )
+
+
+_MODELS_USAGE = "usage: /models [check [--live] [fx1|fx1-lite]]"
+
+
+def models_command(
+    rest: str,
+    *,
+    active: str,
+    stats: Mapping[str, Mapping[str, Any]],
+) -> tuple[str, dict[str, dict[str, Any]]]:
+    """``/models`` table, or ``check`` text plus live observations to merge."""
+    tokens = _model_tokens(rest)
+    if not tokens:
+        return render_models_table(active, stats), {}
+    if tokens[0] != "check":
+        raise ValueError(_MODELS_USAGE)
+    report = _run_check(tokens[1:])
+    return _check_text(report), _live_updates(report)
+
+
+def _model_tokens(rest: str) -> list[str]:
+    import shlex
+
+    return shlex.split(rest)
+
+
+def _run_check(tokens: list[str]) -> Any:
+    from fx1.interactive.models_check import check_models
+
+    live, models = _parse_check(tokens)
+    return check_models(models, live=live)
+
+
+def _parse_check(tokens: list[str]) -> tuple[bool, tuple[str, ...] | None]:
+    live = False
+    chosen: list[str] = []
+    for token in tokens:
+        if token == "--live":
+            live = True
+            continue
+        if token.startswith("-"):
+            raise ValueError(_MODELS_USAGE)
+        chosen.append(token)
+    if len(chosen) > 1:
+        raise ValueError(_MODELS_USAGE)
+    if not chosen:
+        return live, None
+    return live, (chosen[0],)
+
+
+def _check_text(report: Any) -> str:
+    from fx1.interactive.models_check import format_check_report
+
+    return format_check_report(report)
+
+
+def _live_updates(report: Any) -> dict[str, dict[str, Any]]:
+    updates: dict[str, dict[str, Any]] = {}
+    for row in report.models:
+        if not row.contacted:
+            continue
+        updates[str(row.requested_model)] = _live_stat(row)
+    return updates
+
+
+def _live_stat(row: Any) -> dict[str, Any]:
+    return {
+        "served": row.served_model,
+        "latency_s": _latency_seconds(row.latency_ms),
+        "matched": row.matched,
+    }
+
+
+def _latency_seconds(latency_ms: Any) -> float | None:
+    if isinstance(latency_ms, bool) or not isinstance(latency_ms, (int, float)):
+        return None
+    return float(latency_ms) / 1000.0

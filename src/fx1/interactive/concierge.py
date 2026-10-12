@@ -32,7 +32,7 @@ import sys  # noqa: F401 — tests patch this module's sys; console shares the o
 import threading
 import time
 from collections import deque
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -43,6 +43,18 @@ from fx1.interactive import actions, profiles
 from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.chat_tools import ToolEnv, run_registered_harness
 from fx1.interactive.chat_turn import cancel_chat_keyboard, run_chat_turn
+from fx1.interactive.data_ux import (
+    Attachment,
+    annotate_summary,
+    attachment_payload,
+    dataset_refs,
+    handle_data,
+    merge_attachments,
+    model_context,
+    rehash_rows,
+    restore_stored,
+    stale_warnings,
+)
 from fx1.interactive.diagnostics_ux import (
     render_diagnostics,
     telemetry_owner,
@@ -59,17 +71,18 @@ from fx1.interactive.model_ux import (
     charge_reported_usage,
     completion_kwargs,
     endpoint_stored_line,
+    models_command,
     open_backend,
     outbound_messages,
     public_error,
     render_approvals,
-    render_models_table,
     startup_lines,
     use_lines,
 )
 from fx1.interactive.orb import OrbAnimator, OrbState
 from fx1.interactive.profiles import DEFAULT_MODEL
 from fx1.interactive.runctx import new_session_id
+from fx1.interactive.runs_ux import render_runs
 from fx1.interactive.session_ux import (
     export_session,
     format_session_line,
@@ -104,11 +117,12 @@ Chat
   plain text          talk to the active model (flash, web, harness)
   /use <model>        switch fx1 | fx1-lite; keep this conversation
   /model              show the active model id
-  /models             both models: status, host, source, fingerprint
+  /models             status table; check [--live] [fx1|fx1-lite]
 
 Research
-  /superpower <goal>  plan and run capabilities (--sync runs inline)
-  /superpower help    list capabilities the planner may select
+  /superpower <goal>  plan and run capabilities (--sync runs inline; help lists them)
+  /data ...           attach|list|remove|inspect a CSV or Parquet
+  /runs [id]          persisted jobs, newest first
   /research <goal>    background web research
   /status             job state and evidence status
   /cancel             cancel the background job
@@ -286,6 +300,8 @@ class Concierge:
         self._last_latency_s: float | None = None
         self._last_result: Any | None = None
         self._model_stats: dict[str, dict[str, Any]] = {}
+        self._attachments: list[Attachment] = []
+        self._turn_verified: set[str] = set()
         self._corr_session = new_session_id()
         self._active_tracker: UsageTracker | None = None
         self._pending_snapshot: CallSnapshot | None = None
@@ -297,7 +313,23 @@ class Concierge:
         self._output(text)
 
     def _say_error(self, exc: Exception) -> None:
-        typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
+        typer.secho(f"error: {public_error(exc)}", err=True, fg=typer.colors.RED)
+
+    def _refuse_long_input(self, count: int) -> None:
+        self._say(f"input too long ({count} characters; limit {_MAX_INPUT_CHARS})")
+        self._set_status("error")
+
+    def begin_chat_turn(self) -> None:
+        """Drop verified-receipt paths from the previous chat turn."""
+        self._turn_verified = set()
+
+    def turn_verified_receipts(self) -> set[str]:
+        """Receipt paths this chat turn has verified. Empty until one verifies."""
+        return set(self._turn_verified)
+
+    def note_verified_receipt(self, path: str) -> None:
+        """Record *path* only when the file verifies under its own directory."""
+        self._turn_verified.update(_verified_receipt_paths(path))
 
     def _backend(self) -> Any | None:
         opened = open_backend(self.model, self._backend_factory)
@@ -389,6 +421,9 @@ class Concierge:
 
     def handle_line(self, line: str) -> bool:
         """Dispatch one input line. Returns True when the session should end."""
+        if len(line) > _MAX_INPUT_CHARS:
+            self._refuse_long_input(len(line))
+            return False
         text = line.strip()
         if not text:
             return False
@@ -514,7 +549,7 @@ class Concierge:
         self._emit("concierge.command", {"command": command})
         handler = getattr(self, f"_cmd_{command.replace('-', '_')}", None)
         if handler is None:
-            self._say_error(ValueError(f"unknown command /{command}; try /help"))
+            self._say_error(ValueError(_unknown_command(command)))
             return False
         try:
             ended = bool(handler(rest))
@@ -564,11 +599,24 @@ class Concierge:
         return False
 
     def _cmd_models(self, rest: str) -> bool:
-        del rest
         with self._state_lock:
             stats = {key: dict(value) for key, value in self._model_stats.items()}
             active = self.model
-        self._say(render_models_table(active, stats))
+        text, updates = models_command(rest, active=active, stats=stats)
+        if updates:
+            with self._state_lock:
+                self._model_stats.update(updates)
+        self._say(text)
+        return False
+
+    def _cmd_data(self, rest: str) -> bool:
+        rows, text = handle_data(rest, self._attachment_snapshot(), self._harness_obj())
+        self._set_attachments(rows)
+        self._say(text)
+        return False
+
+    def _cmd_runs(self, rest: str) -> bool:
+        self._say(render_runs(self._job_ledger(), rest.strip()))
         return False
 
     def _cmd_diagnostics(self, rest: str) -> bool:
@@ -683,6 +731,51 @@ class Concierge:
         ]
         stored_budget = record.get("budget")
         self._budget_overrides = dict(stored_budget) if isinstance(stored_budget, dict) else {}
+        self._restore_attachments(record.get("attachments"))
+
+    def _restore_attachments(self, stored: object) -> None:
+        rows, warnings = restore_stored(stored)
+        self._set_attachments(rows)
+        for warning in warnings:
+            self._say(warning)
+
+    def _set_attachments(self, rows: Sequence[Attachment]) -> None:
+        with self._state_lock:
+            self._attachments = list(rows)
+
+    def _attachment_snapshot(self) -> list[Attachment]:
+        with self._state_lock:
+            return list(self._attachments)
+
+    def dataset_model_note(self) -> str:
+        """Sanitized dataset labels for the model, already wrapped as untrusted."""
+        return model_context(self._attachment_snapshot())
+
+    def attachment_warnings(self) -> tuple[str, ...]:
+        """Stale-dataset lines. Empty when every attached digest still matches."""
+        return stale_warnings(self._attachment_snapshot())
+
+    def adopt_attachments(self, rows: Sequence[Attachment]) -> str | None:
+        """Add already-profiled datasets. A cap refusal leaves the list unchanged."""
+        with self._state_lock:
+            merged, problem = merge_attachments(self._attachments, rows)
+            if problem:
+                return problem
+            self._attachments = merged
+        return None
+
+    def _refuse_datasets(self) -> bool:
+        reason = self._dataset_block()
+        if not reason:
+            return False
+        self._say(reason)
+        return True
+
+    def _dataset_block(self) -> str | None:
+        with self._state_lock:
+            rows, reason = rehash_rows(self._attachments)
+            self._attachments = rows
+        return reason
 
     def _cmd_export(self, rest: str) -> bool:
         if self._session_store is None or self._session is None:
@@ -702,6 +795,7 @@ class Concierge:
         self._persist_session()
         self._messages = []
         self._budget_overrides = {}
+        self._set_attachments([])
         self._job = None
         self._session = None
         if self._session_store is not None:
@@ -818,12 +912,13 @@ class Concierge:
             self._say("session was not saved")
 
     def _write_session(self, store: Any) -> None:
-        if self._session is None:
-            self._session = store.create(model=self.model, messages=list(self._messages))
-            return
+        record = self._session
+        if record is None:
+            record = store.create(model=self.model, messages=list(self._messages))
+            self._session = record
         job = self._job
         stage_record(
-            self._session,
+            record,
             model=self.model,
             messages=list(self._messages),
             job_running=job is not None and job.running,
@@ -831,8 +926,9 @@ class Concierge:
             job_present=job is not None,
             budget=self._budget_overrides,
             approvals=self._approvals.snapshot(),
+            attachments=attachment_payload(self._attachment_snapshot()),
         )
-        store.save(self._session)
+        store.save(record)
 
     def _note_turn(self) -> None:
         store = self._session_store
@@ -891,9 +987,10 @@ class Concierge:
 
         endpoint = profiles.resolve_endpoint(model)
         default_url = endpoint[1] if endpoint else profiles.default_base_url()
+        mark = _prompt_mark()
         try:
-            api_key = getpass.getpass(f"› {model} API key: ")
-            base_url = self._input(f"› {model} endpoint URL [{default_url}]: ").strip()
+            api_key = getpass.getpass(f"{mark} {model} API key: ")
+            base_url = self._input(f"{mark} {model} endpoint URL [{default_url}]: ").strip()
         except (EOFError, KeyboardInterrupt):
             self._say(f"endpoint setup for {model!r} cancelled; no changes saved")
             return None
@@ -932,6 +1029,8 @@ class Concierge:
         return self._launch_superpower(goal, sync=sync)
 
     def _launch_superpower(self, goal: str, *, sync: bool) -> bool:
+        if self._refuse_datasets():
+            return False
         prepared = self._prepare_superpower()
         model_fn = self._bind_model_fn(self._backend())
         plan = make_plan(
@@ -945,11 +1044,17 @@ class Concierge:
         if sync:
             self._superpower_sync(prepared, plan, model_fn)
             return False
+        if self._refuse_datasets():
+            return False
         self._superpower_async(prepared, plan, model_fn)
         return False
 
     def _prepare_superpower(self) -> PreparedRun:
-        prepared = prepare_qualified_run(self._harness_obj(), config_dir=profiles.config_dir())
+        prepared = prepare_qualified_run(
+            self._harness_obj(),
+            config_dir=profiles.config_dir(),
+            datasets=dataset_refs(self._attachment_snapshot()),
+        )
         self._prepared = prepared
         self._evidence = prepared.evidence
         return prepared
@@ -969,9 +1074,11 @@ class Concierge:
     def _superpower_sync(
         self, prepared: PreparedRun, plan: Any, model_fn: Callable[[str], str] | None
     ) -> None:
+        if self._refuse_datasets():
+            return
         self._emit("concierge.job", {"label": "superpower", "state": "started"})
         self._arm_superpower_cancel(threading.Event())
-        result = run_plan(plan, self._context_for(prepared, model_fn, None, None))
+        result = self._executed_plan(prepared, plan, model_fn, None, None)
         job = BackgroundJob(label="superpower", run_fn=lambda *_args: result)
         job.result = result
         job.done_event.set()
@@ -986,7 +1093,10 @@ class Concierge:
             cancel_event: threading.Event, on_event: Callable[[str, str], None]
         ) -> SuperpowerResult:
             self._arm_superpower_cancel(cancel_event)
-            return run_plan(plan, self._context_for(prepared, model_fn, on_event, cancel_event))
+            blocked = self._dataset_block()
+            if blocked:
+                return _blocked_result(plan, blocked)
+            return self._executed_plan(prepared, plan, model_fn, on_event, cancel_event)
 
         self._emit("concierge.job", {"label": "superpower", "state": "started"})
         self._job = BackgroundJob(label="superpower", run_fn=run_fn).start()
@@ -1008,7 +1118,7 @@ class Concierge:
         tracker = UsageTracker(self._usage_preset, monotonic=self._clock)
         tracker.start()
         messages = outbound_messages(
-            [{"role": "user", "content": prompt}],
+            [{"role": "user", "content": _with_dataset_context(prompt, self.dataset_model_note())}],
             self.model,
             tools=(),
             mode="superpower",
@@ -1051,6 +1161,24 @@ class Concierge:
                 telemetry_emit=self._telemetry,
             ),
         )
+
+    def _executed_plan(
+        self,
+        prepared: PreparedRun,
+        plan: Any,
+        model_fn: Callable[[str], str] | None,
+        on_event: Callable[[str, str], None] | None,
+        cancel_event: threading.Event | None,
+    ) -> SuperpowerResult:
+        blocked = self._dataset_block()
+        if blocked:
+            return _blocked_result(plan, blocked)
+        result = run_plan(plan, self._context_for(prepared, model_fn, on_event, cancel_event))
+        result.summary = annotate_summary(
+            result.summary or "",
+            unchecked=_score_without_issue_time(result),
+        )
+        return result
 
     def _harness_obj(self) -> Any:
         from fx1.harness import Harness
@@ -1537,6 +1665,128 @@ def run_console(*args: Any, **kwargs: Any) -> None:
     from fx1.interactive.console import run_console as _run
 
     return _run(*args, **kwargs)
+
+
+_MAX_INPUT_CHARS = 16_000
+
+
+def _verified_receipt_paths(path: str) -> set[str]:
+    if not isinstance(path, str) or not path or len(path) > 512:
+        return set()
+    try:
+        item = _verify_one(path)
+    except (OSError, ValueError, RuntimeError):
+        return set()
+    from fx1.interactive.evidence_ledger import Verdict
+
+    if item.verdict is not Verdict.VERIFIED:
+        return set()
+    found = {path}
+    ref = getattr(item, "ref", None)
+    if isinstance(ref, str) and ref:
+        found.add(ref)
+    return found
+
+
+def _verify_one(path: str) -> Any:
+    from fx1.interactive.evidence_ledger import verify_receipt
+
+    return verify_receipt(path, roots=[_receipt_parent(path)])
+
+
+def _receipt_parent(path: str) -> Path:
+    candidate = Path(path)
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    return candidate.parent
+
+
+def _unknown_command(command: str) -> str:
+    shown = _visible_command(command)
+    match = _closest_command(shown)
+    if match is None:
+        return f"unknown command /{shown}; try /help"
+    return f"unknown command /{shown}; did you mean /{match}? try /help"
+
+
+def _visible_command(command: str) -> str:
+    from fx1.interactive.terminal import sanitize_for_terminal
+
+    text = sanitize_for_terminal(command)
+    visible = "".join(ch for ch in text if ch.isprintable())
+    collapsed = " ".join(visible.split())
+    return collapsed or "command"
+
+
+def _closest_command(shown: str) -> str | None:
+    import difflib
+
+    folded = shown.replace("_", "-").casefold()
+    found = difflib.get_close_matches(folded, _slash_names(), n=1, cutoff=0.6)
+    if not found:
+        return None
+    return found[0]
+
+
+def _slash_names() -> list[str]:
+    return sorted(
+        name.removeprefix("_cmd_").replace("_", "-")
+        for name in dir(Concierge)
+        if name.startswith("_cmd_")
+    )
+
+
+def _prompt_mark() -> str:
+    from fx1.interactive.terminal import unicode_stdout
+
+    if unicode_stdout():
+        return "›"
+    return ">"
+
+
+def _with_dataset_context(prompt: str, note: str) -> str:
+    if not note:
+        return prompt
+    return f"{note}\n\n{prompt}"
+
+
+def _blocked_result(plan: Any, reason: str) -> SuperpowerResult:
+    goal = getattr(plan, "goal", "")
+    if not isinstance(goal, str):
+        goal = ""
+    return SuperpowerResult(goal=goal, plan=plan, summary=reason, status="no-evidence")
+
+
+def _score_without_issue_time(result: SuperpowerResult) -> bool:
+    if not _plan_scored(result):
+        return False
+    return not _bound_issue_time(result)
+
+
+def _plan_scored(result: SuperpowerResult) -> bool:
+    if _ran_score(result.runs):
+        return True
+    steps = getattr(result.plan, "typed_steps", ())
+    return _planned_score(steps)
+
+
+def _bound_issue_time(result: SuperpowerResult) -> bool:
+    steps = getattr(result.plan, "typed_steps", ())
+    for step in steps:
+        if getattr(step, "capability_id", "") != "score-forecasts":
+            continue
+        args = getattr(step, "args", {})
+        if isinstance(args, Mapping) and "--available-time-col" in args:
+            return True
+    return False
+
+
+def _ran_score(runs: Sequence[Any]) -> bool:
+    return any(getattr(run, "id", "") == "score-forecasts" for run in runs)
+
+
+def _planned_score(steps: Sequence[Any]) -> bool:
+    return any(getattr(step, "capability_id", "") == "score-forecasts" for step in steps)
 
 
 def _parse_superpower(rest: str) -> tuple[str | None, bool]:

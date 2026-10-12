@@ -16,6 +16,7 @@ from typing import Any
 from fx1.interactive.chat_tools import ensure_output_roots, policy_roots
 from fx1.interactive.evidence_ledger import EvidenceLedger
 from fx1.interactive.jobs import JobState, ReconcileReport
+from fx1.interactive.planner import DatasetRef
 from fx1.interactive.runctx import new_run_id, require_id
 from fx1.interactive.superpower import (
     SuperpowerContext,
@@ -31,7 +32,7 @@ TelemetryEmit = Callable[[str, Mapping[str, Any]], None]
 
 @dataclass
 class PreparedRun:
-    """One qualified superpower attempt. ``datasets`` stays empty."""
+    """One qualified superpower attempt. ``datasets`` are the attached files."""
 
     catalog: Any
     roots: dict[str, tuple[Path, ...]]
@@ -39,6 +40,7 @@ class PreparedRun:
     run_dir: Path
     evidence: EvidenceLedger
     unavailable: str | None
+    datasets: tuple[DatasetRef, ...] = ()
 
 
 @dataclass
@@ -60,12 +62,16 @@ class RunSeams:
 
 
 def qualified_roots(
-    cwd: Path | None = None, config_dir: Path | None = None
+    cwd: Path | None = None,
+    config_dir: Path | None = None,
+    *,
+    extra_inputs: Sequence[Path] = (),
 ) -> dict[str, tuple[Path, ...]]:
     """Map :func:`policy_roots` into catalog path roles.
 
     ``output_dir`` covers receipts and the config runs directory so a typed
     step can land inside either. Output directories are created here.
+    ``extra_inputs`` are individual attached files, not their directories.
     """
     root = Path.cwd() if cwd is None else Path(cwd)
     raw = policy_roots(root, config_dir)
@@ -77,7 +83,7 @@ def qualified_roots(
     # inside that directory.
     return {
         "config": (root, raw["config"]),
-        "input": (raw["input"],),
+        "input": _input_roots(raw["input"], extra_inputs),
         "output": (output,),
         "runs": (runs,),
         "output_dir": (output, runs),
@@ -93,10 +99,16 @@ def prepare_run_dir(runs_root: Path, run_id: str) -> Path:
     return path
 
 
-def prepare_qualified_run(harness: Any, *, config_dir: Path | None = None) -> PreparedRun:
+def prepare_qualified_run(
+    harness: Any,
+    *,
+    config_dir: Path | None = None,
+    datasets: Sequence[DatasetRef] = (),
+) -> PreparedRun:
     """Load the catalog and allocate one evidence ledger plus a run directory."""
     loaded = load_catalog(harness, config_dir=config_dir)
-    roots = qualified_roots(config_dir=config_dir)
+    attached = tuple(datasets)
+    roots = qualified_roots(config_dir=config_dir, extra_inputs=_dataset_files(attached))
     run_id = new_run_id()
     unavailable = None if loaded.catalog is not None else (loaded.reason or "catalog unavailable")
     return PreparedRun(
@@ -106,6 +118,7 @@ def prepare_qualified_run(harness: Any, *, config_dir: Path | None = None) -> Pr
         run_dir=prepare_run_dir(roots["runs"][0], run_id),
         evidence=EvidenceLedger(),
         unavailable=unavailable,
+        datasets=attached,
     )
 
 
@@ -124,14 +137,14 @@ def make_plan(
         family_selector=family_selector,
         max_harness=max_harness,
         catalog=prepared.catalog,
-        datasets=(),
+        datasets=prepared.datasets,
         roots=prepared.roots,
         catalog_unavailable=prepared.unavailable,
     )
 
 
 def build_context(prepared: PreparedRun, seams: RunSeams) -> SuperpowerContext:
-    """Context for :func:`run_plan`. Datasets stay an empty tuple."""
+    """Context for :func:`run_plan`. Datasets are the prepared attachments."""
     return SuperpowerContext(
         model_fn=seams.model_fn,
         harness=seams.harness,
@@ -143,7 +156,7 @@ def build_context(prepared: PreparedRun, seams: RunSeams) -> SuperpowerContext:
         cancel_event=seams.cancel_event,
         budget=seams.budget,
         catalog=prepared.catalog,
-        datasets=(),
+        datasets=prepared.datasets,
         roots=prepared.roots,
         job_ledger=seams.job_ledger,
         evidence=prepared.evidence,
@@ -241,6 +254,15 @@ def _find_item(ledger: EvidenceLedger, focus: str) -> Any:
         if item.item_id == token:
             return item
     return None
+
+
+def _input_roots(base: Path, extra: Sequence[Path]) -> tuple[Path, ...]:
+    """The policy input directory plus each attached file, never its parent."""
+    return (base, *tuple(extra))
+
+
+def _dataset_files(datasets: Sequence[DatasetRef]) -> tuple[Path, ...]:
+    return tuple(Path(item.path) for item in datasets if item.path)
 
 
 def _process_lines(notes: Sequence[Any], label: str) -> list[str]:
