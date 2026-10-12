@@ -20,6 +20,8 @@ import typer
 
 import fx1
 from fx1.interactive import actions, concierge, profiles, shell, wizard
+from fx1.interactive.approvals import ApprovalGate
+from fx1.serve.backends import HostedK3Backend
 
 app = typer.Typer(
     name="fxi",
@@ -148,6 +150,31 @@ def keys_remove(model: str = typer.Argument(..., help="fx1 | fx1-lite")) -> None
     typer.echo(f"removed endpoint {model!r}" if removed else f"endpoint {model!r} was not stored")
 
 
+@keys_app.command("test")
+def keys_test(
+    model: str | None = typer.Argument(None, help="fx1 | fx1-lite (default: active model)"),
+) -> None:
+    """Authenticated identity probe: requested vs served model id, latency, failure class."""
+    from fx1.interactive.endpoint import probe_identity
+
+    target = model or state["model"]
+    try:
+        profiles.check_model(target)
+    except KeyError as exc:
+        raise typer.BadParameter(str(exc)) from None
+    try:
+        resolved = profiles.resolve_endpoint(target)
+    except ValueError as exc:
+        _fail(exc)
+    if not resolved:
+        _fail(RuntimeError(f"no endpoint for model {target!r}; run `fxi keys set {target}`"))
+    api_key, base_url = resolved
+    backend = HostedK3Backend(api_key=api_key, model=target, api_url=base_url)
+    report = probe_identity(backend, model=target, endpoint_host=profiles.host_of(base_url))
+    typer.echo(report.render())
+    raise typer.Exit(code=0 if report.ok else 1)
+
+
 @app.command("doctor")
 def doctor_cmd() -> None:
     """Readiness: fx-1 state, endpoints (presence-only), store, API reachability."""
@@ -242,6 +269,15 @@ def superpower_cmd(
     help_catalog: bool = typer.Option(
         False, "--capabilities", help="List the capabilities the planner may select."
     ),
+    approve_consequential: bool = typer.Option(
+        False,
+        "--approve-consequential",
+        help=(
+            "Scoped non-interactive policy: approve consequential harness commands "
+            "(train/optimize/paper) for this run. Default is deny — scripts never hang "
+            "waiting for approval."
+        ),
+    ),
 ) -> None:
     """Plan, select, coordinate, and explain research capabilities for a goal."""
     from fx1.interactive.superpower import describe_capabilities
@@ -252,9 +288,58 @@ def superpower_cmd(
     if not goal:
         raise typer.BadParameter("a research goal is required (or use --capabilities)")
     goal_text = " ".join(goal)
-    operator = concierge.Concierge(model=state["model"])
+    gate = ApprovalGate(ask_fn=(lambda question: True) if approve_consequential else None)
+    operator = concierge.Concierge(model=state["model"], approvals=gate)
     operator._slash(f"/superpower {goal_text}{' --sync' if sync else ''}")  # noqa: SLF001
-    operator.join_job(timeout_s=3600)
+    operator.join_job(timeout_s=operator.run_budget.max_wall_s + 60)
+    operator.close("one-shot")
+    job = operator.job
+    if job is not None and job.error:
+        raise typer.Exit(code=1)
+
+
+@app.command("sessions")
+def sessions_cmd(
+    limit: int = typer.Option(10, "--limit", "-n", help="How many recent sessions to list."),
+) -> None:
+    """List recent chat sessions from the durable session journal."""
+    from fx1.interactive import session as session_mod
+
+    summaries = session_mod.list_sessions(limit=max(1, limit))
+    if not summaries:
+        typer.echo("(no recorded sessions)")
+        return
+    typer.echo(
+        actions.render_table(
+            [
+                {
+                    "session": s.session_id,
+                    "started": s.started_at[:19],
+                    "model": s.model,
+                    "turns": str(s.turns),
+                    "jobs": f"{s.jobs_total}" + (f" ({s.jobs_open} open)" if s.jobs_open else ""),
+                    "ended": (s.ended_at or "-")[:19],
+                }
+                for s in summaries
+            ]
+        )
+    )
+
+
+@app.command("resume")
+def resume_cmd(
+    session_id: str = typer.Argument(..., help="Session id or unique prefix."),
+) -> None:
+    """Print a prior session's transcript (read-only; nothing is re-executed)."""
+    from fx1.interactive import session as session_mod
+
+    try:
+        events = session_mod.load_session(session_id)
+    except ValueError as exc:
+        _fail(exc)
+    if events is None:
+        _fail(KeyError(f"no session matches {session_id!r}"))
+    typer.echo(session_mod.transcript(events))
 
 
 @app.command("research")
@@ -277,6 +362,7 @@ def research_cmd(
     operator = concierge.Concierge(model=state["model"])
     operator._slash(f"/research {goal_text} {' '.join(extra)}")  # noqa: SLF001
     operator.join_job(timeout_s=budget_s + 30)
+    operator.close("one-shot")
 
 
 @flash_app.command("add")

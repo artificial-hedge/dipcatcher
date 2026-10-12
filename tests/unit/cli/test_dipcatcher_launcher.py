@@ -27,11 +27,38 @@ def test_terminal_routes_to_conversation(
 ) -> None:
     from fx1.interactive import concierge
 
-    seen: list[str] = []
-    monkeypatch.setattr(concierge, "run_console", lambda *, model: seen.append(model))
+    seen: list[tuple[str, str | None]] = []
+    monkeypatch.setattr(
+        concierge, "run_console", lambda *, model, resume=None: seen.append((model, resume))
+    )
     _terminal(monkeypatch, stdin=True, stdout=True)
     main(args)
-    assert seen == [model]
+    assert seen == [(model, None)]
+
+
+def test_chat_resume_flag_reaches_the_console(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fx1.interactive import concierge
+
+    seen: list[tuple[str, str | None]] = []
+    monkeypatch.setattr(
+        concierge, "run_console", lambda *, model, resume=None: seen.append((model, resume))
+    )
+    _terminal(monkeypatch, stdin=True, stdout=True)
+    main(["chat", "--model", "fx1-lite", "--resume", "20261012T"])
+    assert seen == [("fx1-lite", "20261012T")]
+
+
+@pytest.mark.parametrize("flag", ["--version", "-V"])
+def test_version_flag_is_fast_and_terminal_independent(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], flag: str
+) -> None:
+    import fx1
+
+    _terminal(monkeypatch, stdin=False, stdout=False)
+    main([flag])
+    out = capsys.readouterr().out
+    assert out.startswith(f"dipcatcher {fx1.__version__}")
+    assert "fx1-lite" in out
 
 
 @pytest.mark.parametrize("stdin,stdout", [(False, False), (True, False), (False, True)])

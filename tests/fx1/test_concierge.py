@@ -734,7 +734,10 @@ def test_superpower_sync_offline_pipeline(env: Path, tmp_path: Path) -> None:
     assert "plan for: run the conformal volatility benchmark" in text
     assert "planner: deterministic" in text
     assert "[ran] research" in text  # harness ran and was explained
-    assert harness.calls == [("research", None)]
+    # the family catalog is consulted (read-only) before the research bench runs;
+    # the fake harness cannot serve it, so eligibility is reported fail-closed
+    assert harness.calls == [("research-families", None), ("research", None)]
+    assert "family catalog unavailable" in text
     # planner coordinated: a pure lab-benchmark goal does not trigger web research
     assert researcher.goals == []
     # offline synthesis is honest about the missing model

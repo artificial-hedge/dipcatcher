@@ -429,7 +429,12 @@ def test_run_plan_cancel_skips_remaining_work(store: FlashStore) -> None:
     assert researcher.calls == []  # web research never started
     assert harness.calls == []  # harness never started
     statuses = {r.id: r.status for r in result.runs}
-    assert statuses["research"] == "skipped"
+    assert statuses["research"] == "cancelled"
+    assert statuses["web_research"] == "cancelled"
+    assert result.cancelled is True
+    assert result.partial is True
+    assert "cancelled by operator" in result.explain()
+    assert "PARTIAL" in result.summary
 
 
 def test_run_plan_harness_failure_recorded_not_fatal(store: FlashStore) -> None:

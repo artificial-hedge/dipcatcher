@@ -719,3 +719,106 @@ def test_cli_superpower_requires_goal(isolated_store: Path) -> None:
     result = RUNNER.invoke(fxi_app, ["superpower"])
     assert result.exit_code == 2
     assert "research goal is required" in result.output
+
+
+# ---------------------------------------------------------------------------
+# fxi one-shot additions: keys test, sessions, resume, scoped approvals
+# ---------------------------------------------------------------------------
+
+
+def test_cli_keys_test_fail_closed_without_endpoint(isolated_store: Path) -> None:
+    result = RUNNER.invoke(fxi_app, ["keys", "test", "fx1"])
+    assert result.exit_code == 2
+    assert "no endpoint for model 'fx1'" in result.output
+
+
+def test_cli_keys_test_reports_identity(
+    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profiles.set_endpoint("fx1", SECRET_FX1, ALT_BASE)
+
+    class Probe:
+        def __init__(self, **kwargs: object) -> None:
+            self.kwargs = kwargs
+
+        def identity_probe(self, *, max_tokens: int = 1) -> dict[str, object]:
+            return {"model": "fx1", "id": "cmpl-1"}
+
+    import sys
+
+    monkeypatch.setattr(sys.modules["fx1.interactive.app"], "HostedK3Backend", Probe)
+    result = RUNNER.invoke(fxi_app, ["keys", "test", "fx1"])
+    assert result.exit_code == 0
+    assert "fx1 @ fx-lite.example.test: OK" in result.output
+    assert SECRET_FX1 not in result.output
+
+
+def test_cli_keys_test_nonzero_on_failure(
+    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    profiles.set_endpoint("fx1", SECRET_FX1, ALT_BASE)
+
+    class Probe:
+        def __init__(self, **kwargs: object) -> None:
+            pass
+
+        def identity_probe(self, *, max_tokens: int = 1) -> dict[str, object]:
+            raise RuntimeError("hosted_k3 endpoint returned HTTP 401")
+
+    import sys
+
+    monkeypatch.setattr(sys.modules["fx1.interactive.app"], "HostedK3Backend", Probe)
+    result = RUNNER.invoke(fxi_app, ["keys", "test", "fx1"])
+    assert result.exit_code == 1
+    assert "FAILED (auth, HTTP 401)" in result.output
+    assert "fxi keys set" not in result.output or "/keys set fx1" in result.output
+
+
+def test_cli_sessions_and_resume(isolated_store: Path) -> None:
+    from fx1.interactive import session as session_mod
+
+    result = RUNNER.invoke(fxi_app, ["sessions"])
+    assert result.exit_code == 0
+    assert "(no recorded sessions)" in result.output
+    journal = session_mod.SessionJournal(model="fx1-lite", endpoint_host="unconfigured")
+    journal.turn("user", "/model")
+    journal.close()
+    result = RUNNER.invoke(fxi_app, ["sessions", "--limit", "5"])
+    assert result.exit_code == 0
+    assert journal.session_id in result.output
+    assert "fx1-lite" in result.output
+    result = RUNNER.invoke(fxi_app, ["resume", journal.session_id])
+    assert result.exit_code == 0
+    assert "/model" in result.output
+    result = RUNNER.invoke(fxi_app, ["resume", "nope-nothing"])
+    assert result.exit_code == 2
+
+
+def test_cli_superpower_one_shot_denies_consequential_by_default(
+    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fx1.interactive import concierge as concierge_module
+
+    seen: list[object] = []
+
+    class Recorder(concierge_module.Concierge):
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            seen.append(kwargs.get("approvals"))
+            kwargs.setdefault("persist", False)
+            super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+
+        def _slash(self, text: str) -> bool:
+            return False
+
+    monkeypatch.setattr(concierge_module, "Concierge", Recorder)
+    result = RUNNER.invoke(fxi_app, ["superpower", "train", "a", "model", "--sync"])
+    assert result.exit_code == 0
+    gate = seen[0]
+    assert gate is not None and gate.ask("run train?") is False  # fail closed
+
+    result = RUNNER.invoke(
+        fxi_app, ["superpower", "train", "a", "model", "--sync", "--approve-consequential"]
+    )
+    assert result.exit_code == 0
+    gate = seen[1]
+    assert gate is not None and gate.ask("run train?") is True  # explicit scoped policy
