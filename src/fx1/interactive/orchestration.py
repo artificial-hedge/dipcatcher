@@ -21,7 +21,7 @@ from typing import Any
 
 from fx1.harness import HARNESS_REGISTRY, Harness, OwnedRunner
 from fx1.honesty import scrub_model_text
-from fx1.interactive.approvals import ApprovalGate
+from fx1.interactive.approvals import ActionBounds, ApprovalGate
 from fx1.interactive.atomicstore import ensure_private_dir
 from fx1.interactive.contracts import (
     Capability,
@@ -522,9 +522,6 @@ def _run_typed_step(state: RunState, step: PlanStep) -> None:
         run = _skip_capability(state, step.capability_id, reason)
         state.outcomes[step.capability_id] = run.status
         return
-    if not _consequential_ok(state, step.capability_id, _step_consequential(state, step)):
-        state.outcomes[step.capability_id] = "approval-denied"
-        return
     run = _execute_typed(state, step)
     state.outcomes[step.capability_id] = run.status
 
@@ -564,6 +561,15 @@ def _execute_typed(state: RunState, step: PlanStep) -> CapabilityRun:
         argv = _argv_for(state, step, cap)
     except ContractViolation as exc:
         return _fail_capability(state, step.capability_id, f"args rejected: {exc.code}:{exc.arg}")
+    denied = _approval_block(
+        state,
+        step.capability_id,
+        _step_consequential(state, step),
+        argv,
+        f"{state.run_id}:{step.step_key}",
+    )
+    if denied is not None:
+        return denied
     return _attempt_loop(state, step.capability_id, cap, argv, step)
 
 
@@ -627,11 +633,12 @@ def _run_legacy_one(state: RunState, cap_id: str, meta: Mapping[str, Any]) -> No
     if reason is not None:
         _skip_capability(state, cap_id, reason)
         return
-    if not _consequential_ok(state, cap_id, bool(meta.get("consequential"))):
-        return
     extra = _legacy_extra(state.plan, cap_id)
     argv = [cap_id, *(extra or [])]
-    _attempt(state, cap_id, None, argv, f"{state.run_id}:{cap_id}")
+    idem_key = f"{state.run_id}:{cap_id}"
+    if _approval_block(state, cap_id, bool(meta.get("consequential")), argv, idem_key) is not None:
+        return
+    _attempt(state, cap_id, None, argv, idem_key)
 
 
 def _legacy_block(state: RunState, cap_id: str) -> str | None:
@@ -1128,12 +1135,42 @@ def _attach_spawn(state: RunState, fields: Mapping[str, Any]) -> None:
         return
 
 
-def _consequential_ok(state: RunState, cap_id: str, consequential: bool) -> bool:
+def _approval_block(
+    state: RunState,
+    cap_id: str,
+    consequential: bool,
+    argv: Sequence[str],
+    idem_key: str,
+) -> CapabilityRun | None:
+    """Deny record when this argv is not already approved. Replay does not ask."""
+    if _replay_ready(state, idem_key):
+        return None
+    if _consequential_ok(state, cap_id, consequential, argv):
+        return None
+    return state.result.runs[-1]
+
+
+def _replay_ready(state: RunState, idem_key: str) -> bool:
+    if not idem_key:
+        return False
+    ledger = state.ctx.job_ledger
+    if ledger is None or state.job_id is None:
+        return False
+    found = ledger.find_step_by_key(idem_key)
+    if found is None:
+        return False
+    return found[1].state is JobState.SUCCEEDED
+
+
+def _consequential_ok(
+    state: RunState, cap_id: str, consequential: bool, argv: Sequence[str]
+) -> bool:
     if not _needs_approval(cap_id, consequential):
         return True
     gate = state.ctx.approvals or ApprovalGate()
     question = _approval_question(cap_id)
-    if gate.ask(question, kind="consequential", key=f"harness:{cap_id}"):
+    bounds = ActionBounds(argv=tuple(argv), writes=True)
+    if gate.ask(question, kind="consequential", key=f"harness:{cap_id}", bounds=bounds):
         return True
     _append_run(
         state,
