@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+import fx1.interactive.atomicstore as atomicstore
 import fx1.interactive.sessions as sessions
 from fx1.interactive.sessions import SESSION_SCHEMA, SessionError, SessionStore
 
@@ -226,21 +227,25 @@ def test_unknown_model_raises(store: SessionStore, model: str) -> None:
         store.create(model=model)
 
 
+def _session_names(directory: Path) -> list[str]:
+    return sorted(path.name for path in directory.iterdir() if not path.name.endswith(".lock"))
+
+
 def test_atomic_save_leaves_no_temp_files(
     store: SessionStore, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     record = store.create(model="fx1", messages=[{"role": "user", "content": "kept"}])
-    assert [path.name for path in store.directory.iterdir()] == [f"{record['id']}.json"]
+    assert _session_names(store.directory) == [f"{record['id']}.json"]
 
     def fail_replace(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
         raise OSError("replace failed")
 
-    monkeypatch.setattr(sessions.os, "replace", fail_replace)
+    monkeypatch.setattr(atomicstore.os, "replace", fail_replace)
     record["messages"].append({"role": "user", "content": "nope"})
     with pytest.raises(SessionError):
         store.save(record)
     names = [path.name for path in store.directory.iterdir()]
-    assert names == [f"{record['id']}.json"]
+    assert _session_names(store.directory) == [f"{record['id']}.json"]
     assert all(not name.endswith(".tmp") for name in names)
     assert all(not name.startswith(".session-") for name in names)
     loaded = store.load(record["id"])
@@ -259,6 +264,7 @@ def test_append_turn_redacts_and_saves(store: SessionStore) -> None:
 
 def test_default_directory(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.delenv("FX1_SESSION_DIR", raising=False)
+    monkeypatch.delenv("FX1_CONFIG_DIR", raising=False)
     monkeypatch.setattr(sessions.Path, "home", lambda: tmp_path)
     assert SessionStore().directory == tmp_path / ".fx1" / "sessions"
     monkeypatch.setenv("FX1_SESSION_DIR", str(tmp_path / "from-env"))
