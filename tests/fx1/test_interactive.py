@@ -30,6 +30,10 @@ def isolated_store(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     monkeypatch.setenv("FX1_CONFIG_DIR", str(store_dir))
     monkeypatch.delenv("MOONSHOT_API_KEY", raising=False)
     monkeypatch.delenv("FX1_BASE_URL", raising=False)
+    monkeypatch.delenv("DIPCATCHER_FX1_API_KEY", raising=False)
+    monkeypatch.delenv("DIPCATCHER_FX1_BASE_URL", raising=False)
+    monkeypatch.delenv("DIPCATCHER_FX1_LITE_API_KEY", raising=False)
+    monkeypatch.delenv("DIPCATCHER_FX1_LITE_BASE_URL", raising=False)
     monkeypatch.delenv("NO_COLOR", raising=False)
     return store_dir
 
