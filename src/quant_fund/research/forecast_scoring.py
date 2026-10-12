@@ -232,12 +232,15 @@ def run_selftest(task: str) -> SelftestResult:
 
 
 def forecast_scoring_v2_consistency_errors(envelope: Mapping[str, Any]) -> list[str]:
-    """Re-derive dataset and parameter digests for a ``forecast_scoring.v1`` envelope.
+    """Re-derive bindings a ``forecast_scoring.v1`` envelope already carries.
 
-    Scores are not recomputed: the source rows are not inside the receipt.
-    A byte edit that is not resealed still fails the envelope seal in
-    ``verify_receipt_file``. This checker catches a reseal that drifts from
-    the embedded dataset identity, parameter block, or honesty flags.
+    Dataset and parameter digests, honesty flags, and the limitations list are
+    checked against the sealed body. The headline primary score is the
+    n-weighted mean of ``diagnostics.blocks`` (and ``bootstrap.point``). Other
+    scores are not recomputed: the source rows are not in the receipt, so a
+    reseal that edits ``mse`` / ``crps`` / coverage and leaves the block table
+    consistent still verifies. A byte edit that is not resealed still fails
+    the envelope seal in ``verify_receipt_file``.
     """
     errors = _kind_errors(envelope)
     payload = envelope.get("payload")
@@ -245,6 +248,8 @@ def forecast_scoring_v2_consistency_errors(envelope: Mapping[str, Any]) -> list[
         return [*errors, "payload_not_object"]
     errors.extend(_payload_flag_errors(payload, envelope))
     errors.extend(_binding_errors(payload, envelope))
+    errors.extend(_limitation_errors(payload))
+    errors.extend(_primary_score_errors(payload))
     if not _forbidden_clean(payload):
         errors.append("forbidden_metric_keys")
     return errors
@@ -1728,6 +1733,145 @@ def _payload_flag_errors(payload: Mapping[str, Any], envelope: Mapping[str, Any]
     if payload.get("data_label") != envelope.get("data_label"):
         errors.append("data_label_mismatch")
     return errors
+
+
+def _limitation_errors(payload: Mapping[str, Any]) -> list[str]:
+    expected = _rederived_limitations(payload)
+    if expected is None:
+        return ["limitations_unverifiable"]
+    if payload.get("limitations") != expected:
+        return ["limitations_mismatch"]
+    return []
+
+
+def _rederived_limitations(payload: Mapping[str, Any]) -> list[str] | None:
+    label = payload.get("data_label")
+    diagnostics = payload.get("diagnostics")
+    if not isinstance(label, str) or not isinstance(diagnostics, Mapping):
+        return None
+    pit = _pit_verified(diagnostics)
+    naive = _bool_field(diagnostics.get("naive_timestamps_as_utc"))
+    undefined = _kupiec_gap(diagnostics)
+    if pit is None or naive is None or undefined is None:
+        return None
+    return _limitations(label=label, pit=pit, naive=naive, kupiec_undefined=undefined)
+
+
+def _pit_verified(diagnostics: Mapping[str, Any]) -> bool | None:
+    pit = diagnostics.get("point_in_time")
+    if not isinstance(pit, Mapping):
+        return None
+    return _bool_field(pit.get("verified"))
+
+
+def _kupiec_gap(diagnostics: Mapping[str, Any]) -> bool | None:
+    rows = diagnostics.get("kupiec")
+    if not isinstance(rows, list):
+        return None
+    return any(isinstance(row, Mapping) and row.get("p_value") is None for row in rows)
+
+
+def _bool_field(value: object) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    return None
+
+
+def _primary_score_errors(payload: Mapping[str, Any]) -> list[str]:
+    observed = _observed_primary(payload)
+    if observed is None:
+        return ["primary_score_unverifiable"]
+    claimed, point, mean, total_n, rows = observed
+    errors: list[str] = []
+    if not _scores_close(claimed, mean):
+        errors.append("primary_score_mismatch")
+    if not _scores_close(point, mean):
+        errors.append("bootstrap_point_mismatch")
+    if rows != total_n:
+        errors.append("block_rows_mismatch")
+    return errors
+
+
+def _observed_primary(
+    payload: Mapping[str, Any],
+) -> tuple[float, float, float, int, int] | None:
+    parts = _primary_parts(payload)
+    if parts is None:
+        return None
+    diagnostics, scores, rows = parts
+    return _assemble_primary(diagnostics, scores, rows)
+
+
+def _primary_parts(
+    payload: Mapping[str, Any],
+) -> tuple[Mapping[str, Any], Mapping[str, Any], int] | None:
+    diagnostics = payload.get("diagnostics")
+    scores = payload.get("scores")
+    rows = payload.get("rows")
+    if not isinstance(diagnostics, Mapping) or not isinstance(scores, Mapping):
+        return None
+    if isinstance(rows, bool) or not isinstance(rows, int):
+        return None
+    return diagnostics, scores, rows
+
+
+def _assemble_primary(
+    diagnostics: Mapping[str, Any], scores: Mapping[str, Any], rows: int
+) -> tuple[float, float, float, int, int] | None:
+    name = diagnostics.get("primary")
+    blocks = diagnostics.get("blocks")
+    bootstrap = diagnostics.get("bootstrap")
+    if (
+        not isinstance(name, str)
+        or not isinstance(blocks, list)
+        or not isinstance(bootstrap, Mapping)
+    ):
+        return None
+    claimed = _as_number(scores.get(name))
+    point = _as_number(bootstrap.get("point"))
+    totals = _block_total(blocks)
+    if claimed is None or point is None or totals is None:
+        return None
+    total_n, mean = totals
+    return claimed, point, mean, total_n, rows
+
+
+def _block_total(blocks: list[object]) -> tuple[int, float] | None:
+    total_n = 0
+    total = 0.0
+    for block in blocks:
+        parsed = _one_block(block)
+        if parsed is None:
+            return None
+        count, mean = parsed
+        total_n += count
+        total += count * mean
+    if total_n <= 0:
+        return None
+    return total_n, total / float(total_n)
+
+
+def _one_block(block: object) -> tuple[int, float] | None:
+    if not isinstance(block, Mapping):
+        return None
+    count = block.get("n")
+    mean = _as_number(block.get("primary"))
+    if isinstance(count, bool) or not isinstance(count, int) or count < 1 or mean is None:
+        return None
+    return count, mean
+
+
+def _as_number(value: object) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return None
+    number = float(value)
+    if not math.isfinite(number):
+        return None
+    return number
+
+
+def _scores_close(left: float, right: float) -> bool:
+    return math.isclose(left, right, rel_tol=1e-9, abs_tol=1e-8)
 
 
 def _binding_errors(payload: Mapping[str, Any], envelope: Mapping[str, Any]) -> list[str]:
