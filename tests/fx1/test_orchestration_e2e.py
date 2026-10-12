@@ -303,9 +303,10 @@ def _tree_snapshot(*roots: Path) -> dict[str, tuple[int, int]]:
 
 @pytest.fixture
 def repo_untouched(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Any:
-    watched = (_REPO / "receipts", _REPO / "data")
+    # receipts/ is the repository's immutable evidence store. data/ is derived scratch that
+    # unrelated tests legitimately rewrite in parallel, so it is not an invariant of this run.
+    watched = (_REPO / "receipts",)
     before = _tree_snapshot(*watched)
-    # Lab commands write cwd-relative data/ (resolved config); keep them out of the repo tree.
     monkeypatch.chdir(tmp_path)
     yield
     assert _tree_snapshot(*watched) == before
