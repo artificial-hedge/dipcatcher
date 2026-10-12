@@ -19,6 +19,7 @@ Harness roles:
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import subprocess  # noqa: S404 - runner is injectable; see Harness.run
 import sys
@@ -233,6 +234,10 @@ HARNESS_REGISTRY: tuple[HarnessCommand, ...] = (
     ),
 )
 
+# Captured at import so a later mutation of a registry object cannot raise
+# the deadline the runner is allowed to use.
+_TIMEOUT_CEILING: dict[str, int] = {command.name: command.timeout_s for command in HARNESS_REGISTRY}
+
 
 class HarnessResult(BaseModel):
     command: str
@@ -326,12 +331,12 @@ def popen_cancellable(
     termination. Cancel returns ``(130, stdout, stderr + "cancelled")``; a
     deadline raises ``subprocess.TimeoutExpired`` like ``subprocess.run``.
     """
-    from fx1.interactive.procs import ProcLimits, run_owned
+    from fx1.interactive.procs import ProcLimits, run_owned, scrub_env
 
     result = run_owned(
         [str(part) for part in argv],
         ProcLimits(timeout_s=float(timeout_s)),
-        env=dict(os.environ),
+        env=scrub_env(os.environ),
         cancel_event=cancel_event,
     )
     if result.timed_out:
@@ -371,6 +376,7 @@ class Harness:
         cancel_event: threading.Event | None = None,
         env_extra: Mapping[str, str] | None = None,
         step: str | None = None,
+        timeout_s: int | None = None,
     ) -> HarnessResult:
         """Execute a registered harness command, fail-closed on unknown names.
 
@@ -378,11 +384,13 @@ class Harness:
         the lab API's allowlist posture. Runners without ``supports_extended``
         are called as ``runner(argv, timeout_s)``. Extended runners also receive
         cancellation, extra environment, and step. A deadline is a result with
-        exit code 124, not an exception.
+        exit code 124, not an exception. ``timeout_s`` may shorten the registry
+        ceiling; a larger request is clamped down to that ceiling.
         """
         command = self.get(name)
+        limit = _clamp_timeout(command.name, command.timeout_s, timeout_s)
         argv = _assemble_argv(command, extra_args, config)
-        outcome = self._dispatch(argv, command.timeout_s, cancel_event, env_extra, step)
+        outcome = self._dispatch(argv, limit, cancel_event, env_extra, step)
         return _coerce(name, outcome)
 
     def _dispatch(
@@ -434,21 +442,128 @@ def _assemble_argv(
     return argv
 
 
+def _clamp_timeout(name: str, registered: int, requested: int | None) -> int:
+    ceiling = _TIMEOUT_CEILING.get(name, registered)
+    chosen = _requested_timeout(registered, requested)
+    if chosen > ceiling:
+        return ceiling
+    return chosen
+
+
+def _requested_timeout(registered: int, requested: int | None) -> int:
+    chosen = registered if requested is None else requested
+    if isinstance(chosen, bool) or not isinstance(chosen, int) or chosen < 1:
+        raise ValueError(f"timeout_s must be a positive int, got {chosen!r}")
+    return chosen
+
+
 def _contained_config(raw: Path | str) -> Path:
-    configs_dir = (Path.cwd() / "configs").resolve()
-    resolved = Path(raw).resolve()
-    if configs_dir not in resolved.parents and resolved != configs_dir:
-        raise ValueError(f"config path {resolved} escapes the configs/ allowlist")
-    return resolved
+    path = Path(raw)
+    if path.is_symlink():
+        raise ValueError(f"config path {path} escapes the configs/ allowlist")
+    resolved = path.resolve()
+    if _path_allowed(resolved):
+        return resolved
+    raise ValueError(f"config path {resolved} escapes the configs/ allowlist")
+
+
+def _path_allowed(resolved: Path) -> bool:
+    return any(_within_root(resolved, root) for root in _config_roots())
+
+
+def _config_roots() -> tuple[Path, ...]:
+    bundled = _bundled_configs_dir()
+    if bundled is None:
+        return (_configs_dir(),)
+    return (_configs_dir(), bundled)
+
+
+def _within_root(resolved: Path, root: Path) -> bool:
+    return resolved == root or root in resolved.parents
+
+
+def _bundled_configs_dir() -> Path | None:
+    """Installed ``quant_fund/_bundled/configs``, without importing quant_fund."""
+    origin = _quant_fund_origin()
+    if origin is None:
+        return None
+    packaged = origin.parent / "_bundled" / "configs"
+    if packaged.is_dir() and not packaged.is_symlink():
+        return packaged.resolve()
+    return _ancestor_configs(origin.parent)
+
+
+def _quant_fund_origin() -> Path | None:
+    spec = importlib.util.find_spec("quant_fund")
+    if spec is None or spec.origin is None:
+        return None
+    return Path(spec.origin)
+
+
+def _ancestor_configs(start: Path) -> Path | None:
+    for candidate in (start, *start.parents):
+        configs = candidate / "configs"
+        marker = (candidate / "pyproject.toml").is_file()
+        if marker and configs.is_dir() and not configs.is_symlink():
+            return configs.resolve()
+    return None
+
+
+def _configs_dir() -> Path:
+    """Nearest directory that has both ``pyproject.toml`` and ``configs/``.
+
+    A scratch working directory with only ``configs/`` (no project marker)
+    keeps that directory as the allowlist. A symlink standing in for
+    ``configs`` is rejected: resolving it would move the allowlist.
+    """
+    here = Path.cwd().resolve()
+    found = _marked_configs(here)
+    if found is not None:
+        return found
+    return _plain_configs(here)
+
+
+def _plain_configs(here: Path) -> Path:
+    local = here / "configs"
+    if local.is_symlink():
+        raise ValueError(f"config path {local} escapes the configs/ allowlist")
+    return local.resolve()
+
+
+def _marked_configs(here: Path) -> Path | None:
+    for candidate in (here, *here.parents):
+        configs = candidate / "configs"
+        if (candidate / "pyproject.toml").is_file() and configs.is_dir():
+            if configs.is_symlink():
+                raise ValueError(f"config path {configs} escapes the configs/ allowlist")
+            return configs.resolve()
+    return None
 
 
 def _reject_extra_config(extra_args: list[str]) -> None:
     # ``--config`` in extra_args must obey the same containment as the keyword.
     for index, arg in enumerate(extra_args):
-        if arg == "--config" and index + 1 < len(extra_args):
-            _contained_config(extra_args[index + 1])
-        elif arg.startswith("--config="):
-            _contained_config(arg.split("=", 1)[1])
+        _check_config_arg(extra_args, index, arg)
+
+
+def _check_config_arg(extra_args: list[str], index: int, arg: str) -> None:
+    if arg == "--config":
+        _require_config_value(extra_args, index)
+        return
+    if arg.startswith("--config="):
+        _require_config_text(arg.split("=", 1)[1])
+
+
+def _require_config_value(extra_args: list[str], index: int) -> None:
+    if index + 1 >= len(extra_args):
+        raise ValueError("missing --config value escapes the configs/ allowlist")
+    _require_config_text(extra_args[index + 1])
+
+
+def _require_config_text(value: str) -> None:
+    if value == "":
+        raise ValueError("missing --config value escapes the configs/ allowlist")
+    _contained_config(value)
 
 
 def _coerce(name: str, outcome: ProcResult | tuple[int, str, str]) -> HarnessResult:
