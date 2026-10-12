@@ -1164,6 +1164,58 @@ class HostedK3Backend(_UsageTracker):
         self._record_usage(_extract_usage(payload))
         return content
 
+    def identity_probe(self, *, max_tokens: int = 1) -> dict[str, Any]:
+        """One minimal authenticated completion used to read provider identity.
+
+        Sends ``messages=[{"role": "user", "content": "ping"}]`` and
+        ``max_tokens`` (overriding ``SamplingParams`` when that field is
+        set). Returns the provider envelope fields verbatim: ``model``,
+        ``id``, and ``usage``. Request construction, headers, and the
+        ``_openai_urlopen`` error mapping match ``complete``. Usage is
+        recorded via ``_record_usage`` when the payload carries integer
+        counters. Nothing is synthesized.
+        """
+        fields = {
+            "model": self._model,
+            "messages": [{"role": "user", "content": "ping"}],
+            **SamplingParams().body_fields(),
+        }
+        fields["max_tokens"] = max_tokens
+        body = json.dumps(fields).encode()
+        request = urllib.request.Request(
+            self._api_url,
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self._api_key}",
+            },
+            method="POST",
+        )
+        try:
+            with _openai_urlopen(request, timeout_s=self._timeout_s) as response:
+                payload = json.loads(response.read().decode())
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError(f"hosted_k3 endpoint returned HTTP {exc.code}") from exc
+        except urllib.error.URLError as exc:
+            reason = type(exc.reason).__name__
+            raise RuntimeError(f"hosted_k3 endpoint unreachable ({reason})") from exc
+        except (OSError, http.client.HTTPException) as exc:
+            raise RuntimeError(
+                f"hosted_k3 endpoint transport fault ({type(exc).__name__})"
+            ) from exc
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RuntimeError("malformed hosted_k3 completion payload: not JSON") from exc
+        except UnicodeError as exc:
+            raise RuntimeError(
+                f"hosted_k3 endpoint transport fault ({type(exc).__name__})"
+            ) from exc
+        self._record_usage(_extract_usage(payload))
+        return {
+            "model": payload.get("model"),
+            "id": payload.get("id"),
+            "usage": payload.get("usage"),
+        }
+
     def complete_with_tools(
         self,
         messages: list[dict[str, Any]],
