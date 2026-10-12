@@ -1,0 +1,18 @@
+- id: planning-001
+  category: planning
+  title: A plain-language volatility request plans an eligible capability
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    harness:
+      mode: fake
+  steps:
+    - say: score volatility forecasts with QLIKE
+      expect:
+        - routing this to research orchestration
+        - vol-bench
+    - wait_job: true
+      expect:
+        - evidence status

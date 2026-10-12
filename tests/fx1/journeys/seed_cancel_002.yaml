@@ -1,0 +1,20 @@
+- id: cancel-002
+  category: cancel
+  title: Cancel stops a background research job and does not finish it
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+    research:
+      hold: true
+  steps:
+    - say: /research volatility notes
+      expect:
+        - running in the background
+    - cancel: job
+      expect:
+        - cancel requested
+    - wait_job: true
+      expect:
+        - cancelled
