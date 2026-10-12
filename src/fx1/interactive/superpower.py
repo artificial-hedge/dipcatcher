@@ -642,6 +642,25 @@ def _data_label_of(stdout: str) -> str:
     return "; ".join(labels[:4])
 
 
+def _harness_detail(stdout: str, stderr: str) -> str:
+    """One informative line from a command's output: a JSON verdict's first
+    error (or its ``valid`` flag) when the command speaks JSON, otherwise the
+    last non-empty stdout line, otherwise the tail of stderr."""
+    text = stdout.strip()
+    if text.startswith("{") and text.endswith("}"):
+        with contextlib.suppress(ValueError):
+            payload = json.loads(text)
+            if isinstance(payload, dict):
+                errors = payload.get("errors")
+                if isinstance(errors, list) and errors:
+                    return f"errors: {str(errors[0])[:150]}"
+                if "valid" in payload:
+                    return f"valid={payload['valid']!r}"
+    if text:
+        return text.splitlines()[-1][:160]
+    return stderr.strip().splitlines()[-1][:160] if stderr.strip() else "(no output)"
+
+
 def _harness_evidence(cap_id: str, code: int, labels: str) -> str:
     if "SYNTHETIC" in labels.upper():
         return EvidenceClass.SYNTHETIC.value
@@ -822,7 +841,7 @@ def _stage_harness(
         return
     code, stdout = outcome.exit_code, outcome.stdout
     labels = _data_label_of(stdout)
-    detail = stdout.strip().splitlines()[-1][:160] if stdout.strip() else outcome.stderr[:160]
+    detail = _harness_detail(stdout, outcome.stderr)
     if labels:
         detail = f"{labels}; {detail}"
     if outcome.cancelled:

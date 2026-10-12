@@ -745,3 +745,23 @@ def test_console_saves_history_without_secrets(
     assert "/model" in history
     assert "/keys" not in history
     assert "sk-secret-value" not in history
+
+
+def test_harness_detail_prefers_json_errors_over_closing_brace(tmp_path: Path) -> None:
+    class JsonVerdictHarness:
+        def run(self, name: str, extra_args: list[str] | None = None, **kwargs: Any) -> Result:
+            return Result(
+                1,
+                json.dumps(
+                    {"valid": False, "path": "x.json", "errors": ["unreadable: no such file"]},
+                    indent=2,
+                ),
+            )
+
+    plan = SuperpowerPlan(goal="g", capabilities=[PlannedCapability("verify-research", "t")])
+    result = run_plan(
+        plan, SuperpowerContext(harness=JsonVerdictHarness(), approvals=ApprovalGate())
+    )
+    assert result.runs[0].status == "failed"
+    assert result.runs[0].detail == "errors: unreadable: no such file"
+    assert result.runs[0].evidence == "none"
