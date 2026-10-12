@@ -16,6 +16,7 @@ from typing import Any
 from fx1.interactive.chat_tools import ensure_output_roots, policy_roots
 from fx1.interactive.evidence_ledger import EvidenceLedger
 from fx1.interactive.jobs import JobState, ReconcileReport
+from fx1.interactive.planner import DatasetRef
 from fx1.interactive.runctx import new_run_id, require_id
 from fx1.interactive.superpower import (
     SuperpowerContext,
@@ -116,22 +117,35 @@ def make_plan(
     model_fn: Callable[[str], str] | None,
     family_selector: Selector | None,
     max_harness: int,
+    budget_s: float | None = None,
+    datasets: Sequence[DatasetRef] = (),
 ) -> SuperpowerPlan:
-    """Plan *goal*. A missing catalog is passed as ``catalog_unavailable``."""
+    """Plan *goal*. A missing catalog is passed as ``catalog_unavailable``.
+
+    ``budget_s`` trims catalog steps by estimated runtime. The keyword
+    planner ignores it. ``datasets`` are operator attachments; an empty
+    sequence is not replaced with a synthetic file.
+    """
     return plan_goal(
         goal,
         model_fn=model_fn,
         family_selector=family_selector,
         max_harness=max_harness,
         catalog=prepared.catalog,
-        datasets=(),
+        datasets=tuple(datasets),
         roots=prepared.roots,
         catalog_unavailable=prepared.unavailable,
+        budget_s=budget_s,
     )
 
 
-def build_context(prepared: PreparedRun, seams: RunSeams) -> SuperpowerContext:
-    """Context for :func:`run_plan`. Datasets stay an empty tuple."""
+def build_context(
+    prepared: PreparedRun,
+    seams: RunSeams,
+    *,
+    datasets: Sequence[DatasetRef] = (),
+) -> SuperpowerContext:
+    """Context for :func:`run_plan`. ``datasets`` are not invented."""
     return SuperpowerContext(
         model_fn=seams.model_fn,
         harness=seams.harness,
@@ -143,7 +157,7 @@ def build_context(prepared: PreparedRun, seams: RunSeams) -> SuperpowerContext:
         cancel_event=seams.cancel_event,
         budget=seams.budget,
         catalog=prepared.catalog,
-        datasets=(),
+        datasets=tuple(datasets),
         roots=prepared.roots,
         job_ledger=seams.job_ledger,
         evidence=prepared.evidence,

@@ -160,8 +160,13 @@ def plan_with_catalog(
     model_fn: ModelFn | None = None,
     max_harness: int = 4,
     family_selector: Selector | None = None,
+    budget_s: float | None = None,
 ) -> SuperpowerPlan:
-    """Select executable, registered capabilities and re-validate after refinement."""
+    """Select executable, registered capabilities and re-validate after refinement.
+
+    ``budget_s`` is the operator's estimated-runtime ceiling. ``None`` leaves
+    the catalog plan unbounded, matching a session that has not set one.
+    """
     gated = gate_to_registry(catalog)
     root_map: Mapping[str, Sequence[Path]] = {} if roots is None else roots
     planning = gated if family_selector is None else _selector_owns_only(gated)
@@ -169,6 +174,7 @@ def plan_with_catalog(
         goal,
         planning,
         max_steps=max_harness,
+        budget_s=budget_s,
         datasets=tuple(datasets),
         roots=root_map,
         model_fn=model_fn,

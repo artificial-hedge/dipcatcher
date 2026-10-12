@@ -266,6 +266,7 @@ def plan_goal(
     datasets: Sequence[DatasetRef] = (),
     roots: Mapping[str, Sequence[Path]] | None = None,
     catalog_unavailable: str | None = None,
+    budget_s: float | None = None,
 ) -> SuperpowerPlan:
     """Select the relevant capability subset for *goal*.
 
@@ -293,6 +294,7 @@ def plan_goal(
             model_fn=model_fn,
             max_harness=max_harness,
             family_selector=family_selector,
+            budget_s=budget_s,
         )
     return _plan_keyword(
         goal,

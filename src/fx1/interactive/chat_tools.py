@@ -131,6 +131,7 @@ class ToolEnv:
     cwd: Path
     config_dir: Path
     emit: Callable[[str, Mapping[str, Any]], None] | None = None
+    last_failed: bool = False
 
 
 def execute_tool_call(call: Mapping[str, Any], env: ToolEnv) -> str:
@@ -180,9 +181,11 @@ def _load_arguments(raw: object) -> dict[str, Any]:
 
 def run_registered_harness(name: str, extra_args: Sequence[str], env: ToolEnv) -> str:
     """Policy, approval, then run. The return value is text for the model."""
+    env.last_failed = False
     try:
         argv = _checked_argv(name, extra_args, env)
     except PolicyViolation as exc:
+        env.last_failed = True
         _emit_policy(env, exc.code)
         env.say(exc.code)
         return exc.code
@@ -190,16 +193,22 @@ def run_registered_harness(name: str, extra_args: Sequence[str], env: ToolEnv) -
         env.say(f"[harness] {name}: not approved — skipped")
         return "not approved"
     result = _invoke(name, argv, env)
+    env.last_failed = _command_failed(result)
     return _present_harness(name, result, env)
 
 
 def present_untrusted(kind: str, source: str, raw: str, say: Callable[[str], None]) -> str:
-    """Scan *raw*, tell the operator, and return a scrubbed envelope."""
-    raw = scrub_model_text(raw)
+    """Scan *raw*, tell the operator, and return a scrubbed envelope.
+
+    The scan sees the original text. A forbidden headline must not replace
+    the page before the injection notice is shown, and it must not be what
+    the model receives.
+    """
     notice = security_notice(scan_injection(raw))
     if notice:
         say(dim_text(notice))
-    return wrap_untrusted(kind, source, scrub_transcript(raw))
+    cleaned = scrub_transcript(scrub_model_text(raw))
+    return wrap_untrusted(kind, source, cleaned)
 
 
 def _function(
@@ -396,6 +405,15 @@ def _emit_policy(env: ToolEnv, code: str) -> None:
     if env.emit is None:
         return
     env.emit("concierge.policy", {"code": code})
+
+
+def _command_failed(result: Any) -> bool:
+    if bool(getattr(result, "timed_out", False)):
+        return True
+    code = getattr(result, "exit_code", 1)
+    if isinstance(code, bool) or not isinstance(code, int):
+        return True
+    return code != 0
 
 
 def _flag_line(result: Any) -> str:

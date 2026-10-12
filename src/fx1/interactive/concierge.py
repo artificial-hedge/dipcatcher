@@ -39,7 +39,12 @@ from typing import Any
 
 import typer
 
-from fx1.honesty import scrub_model_text, scrub_model_transcript
+from fx1.honesty import (
+    Fx1HonestyError,
+    scrub_model_text,
+    scrub_model_transcript,
+    validate_fx1_output,
+)
 from fx1.interactive import actions, profiles
 from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.chat_tools import ToolEnv, run_registered_harness
@@ -125,6 +130,7 @@ Session
   /new                fresh session; keep the active model
 
 Lab
+  /data ...           list | attach <csv-or-parquet under data/>
   /flash ...          add|list|show|remove|correct|search|refresh
   /harness ...        list|describe|run registered commands
   /keys ...           list|set|remove endpoints (presence-only)
@@ -209,6 +215,33 @@ def _stdout_color() -> bool:
         return bool(detect_caps().color)
     except (OSError, ValueError):
         return False
+
+
+def _int_field(obj: Any, name: str, default: int) -> int:
+    limit = getattr(obj, name, default)
+    if isinstance(limit, bool) or not isinstance(limit, int):
+        return default
+    return limit
+
+
+def _superpower_memory(result: SuperpowerResult) -> str:
+    parts = (
+        _scrub_user(result.summary or ""),
+        evidence_status_line(result),
+        _scrub_user(result.explain()),
+    )
+    text = "\n\n".join(part for part in parts if part.strip())
+    return _memory_text(text)
+
+
+def _memory_text(text: str) -> str:
+    if not text.strip():
+        return ""
+    try:
+        validate_fx1_output(text)
+    except Fx1HonestyError:
+        return "answer withheld by the fx-1 honesty gate"
+    return text
 
 
 def _scrub_user(text: str) -> str:
@@ -314,6 +347,7 @@ class Concierge:
         self._session_store = session_store
         self._session: dict[str, Any] | None = None
         self._budget_overrides: dict[str, Any] = {}
+        self._datasets: list[Any] = []
         self.resume_notice = ""
         self._telemetry = telemetry_emit
         self._telemetry_box = (
@@ -548,6 +582,7 @@ class Concierge:
         result = job.result
         if isinstance(result, SuperpowerResult):
             self._publish_superpower(result)
+            self._record_superpower_answer(result)
             self._say("")
             self._say(scrub_model_text(result.summary or "(no summary)"))
             self._say(evidence_status_line(result))
@@ -773,10 +808,34 @@ class Concierge:
         )
         stored_budget = record.get("budget")
         self._budget_overrides = dict(stored_budget) if isinstance(stored_budget, dict) else {}
+        from fx1.interactive.datasets import restore_datasets
+
+        self._datasets = list(restore_datasets(record.get("datasets"), cwd=Path.cwd()))
+
+    def _cmd_data(self, rest: str) -> bool:
+        from fx1.interactive.datasets import attach_dataset, format_datasets
+
+        tokens = shlex.split(rest)
+        if not tokens or tokens[0] == "list":
+            self._say(format_datasets(self._datasets))
+            return False
+        if tokens[0] != "attach" or len(tokens) != 2:
+            raise ValueError("usage: /data [list | attach <csv-or-parquet>]")
+        ref = attach_dataset(tokens[1], cwd=Path.cwd())
+        self._remember_dataset(ref)
+        self._say(f"attached dataset {ref.path}")
+        return False
+
+    def _remember_dataset(self, ref: Any) -> None:
+        path = str(getattr(ref, "path", ""))
+        if any(str(getattr(item, "path", "")) == path for item in self._datasets):
+            return
+        self._datasets.append(ref)
 
     def _cmd_export(self, rest: str) -> bool:
         if self._session_store is None or self._session is None:
             raise ValueError("no persisted session to export")
+        self._stage_current()
         kind, dest = _export_args(rest)
         _path, message = export_session(
             self._session_store, self._session, kind, dest, profiles.config_dir()
@@ -784,12 +843,29 @@ class Concierge:
         self._say(message)
         return False
 
+    def _stage_current(self) -> None:
+        record = self._session
+        if not isinstance(record, dict):
+            return
+        job = self._job
+        stage_record(
+            record,
+            model=self.model,
+            messages=list(self._messages),
+            job_running=job is not None and job.running,
+            job_error="" if job is None else job.error,
+            job_present=job is not None,
+            budget=self._budget_overrides,
+            approvals=self._approvals.snapshot(),
+        )
+
     def _cmd_new(self, rest: str) -> bool:
         del rest
         if self.job_running:
             self._say("a background job is running; /cancel it before /new")
             return False
         self._persist_session()
+        self._datasets = []
         self._messages = []
         self._budget_overrides = {}
         self._job = None
@@ -910,6 +986,7 @@ class Concierge:
     def _write_session(self, store: Any) -> None:
         if self._session is None:
             self._session = store.create(model=self.model, messages=list(self._messages))
+            self._save_datasets(store, created=True)
             return
         job = self._job
         stage_record(
@@ -922,7 +999,20 @@ class Concierge:
             budget=self._budget_overrides,
             approvals=self._approvals.snapshot(),
         )
-        store.save(self._session)
+        self._save_datasets(store, created=False)
+
+    def _save_datasets(self, store: Any, *, created: bool) -> None:
+        from fx1.interactive.datasets import dataset_rows
+
+        record = self._session
+        if not isinstance(record, dict):
+            return
+        if not self._datasets and "datasets" not in record:
+            if not created:
+                store.save(record)
+            return
+        record["datasets"] = dataset_rows(self._datasets)
+        store.save(record)
 
     def _note_turn(self) -> None:
         store = self._session_store
@@ -1008,7 +1098,11 @@ class Concierge:
 
     def _run_harness(self, name: str, extra_args: list[str]) -> str:
         """Approval-gated, registry-constrained harness execution."""
-        return run_registered_harness(name, extra_args, self._tool_env(self._current_cancel()))
+        env = self._tool_env(self._current_cancel())
+        text = run_registered_harness(name, extra_args, env)
+        if env.last_failed:
+            self._set_status("error")
+        return text
 
     # -- /superpower ---------------------------------------------------------
 
@@ -1019,7 +1113,9 @@ class Concierge:
             return False
         if not self._job_slot_available():
             return False
-        return self._launch_superpower(_scrub_user(goal), sync=sync)
+        cleaned = _scrub_user(goal)
+        self._remember_user_goal(cleaned)
+        return self._launch_superpower(cleaned, sync=sync)
 
     def _launch_superpower(self, goal: str, *, sync: bool) -> bool:
         prepared = self._prepare_superpower()
@@ -1046,7 +1142,9 @@ class Concierge:
             prepared,
             model_fn=model_fn,
             family_selector=self._family_selector(),
-            max_harness=self._max_families(),
+            max_harness=self._planner_step_cap(),
+            budget_s=self._planner_budget_s(),
+            datasets=tuple(self._datasets),
         )
         self._say_superpower_plan(plan)
         if cancel.is_set():
@@ -1174,6 +1272,7 @@ class Concierge:
                 session_id=self._corr_session,
                 telemetry_emit=self._telemetry,
             ),
+            datasets=tuple(self._datasets),
         )
 
     def _harness_obj(self) -> Any:
@@ -1190,8 +1289,25 @@ class Concierge:
 
     def _max_families(self) -> int:
         budget = self._run_budget()
-        limit = getattr(budget, "max_families", 4)
-        return int(limit) if isinstance(limit, int) else 4
+        if budget is None:
+            return 4
+        return _int_field(budget, "max_families", 4)
+
+    def _planner_step_cap(self) -> int:
+        """Harness-step ceiling for the planner. Family count is separate."""
+        budget = self._run_budget()
+        if budget is None:
+            return 4
+        return _int_field(budget, "max_harness", 4)
+
+    def _planner_budget_s(self) -> float | None:
+        """Estimated-runtime ceiling only after the operator sets max-seconds."""
+        if "max_seconds" not in self._budget_overrides:
+            return None
+        raw = self._budget_overrides.get("max_seconds")
+        if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+            return None
+        return float(raw)
 
     def _run_budget(self) -> Any | None:
         try:
@@ -1478,7 +1594,9 @@ class Concierge:
             prepared,
             model_fn=None,
             family_selector=self._family_selector(),
-            max_harness=self._max_families(),
+            max_harness=self._planner_step_cap(),
+            budget_s=self._planner_budget_s(),
+            datasets=tuple(self._datasets),
         )
         result = run_plan(plan, self._context_for(prepared, None, None, self._current_cancel()))
         self._publish_superpower(result)
@@ -1540,6 +1658,30 @@ class Concierge:
         self._assign_status(status)
         self._status_explicit = True
         self._emit("concierge.status", {"status": status, "model": self.model})
+
+    def _remember_user_goal(self, goal: str) -> None:
+        self._append_if_new("user", goal)
+
+    def _record_superpower_answer(self, result: SuperpowerResult) -> None:
+        text = _superpower_memory(result)
+        if not text:
+            return
+        self._append_if_new("assistant", text)
+        self._persist_session()
+
+    def _append_if_new(self, role: str, content: str) -> None:
+        cleaned = content.strip()
+        if not cleaned:
+            return
+        with self._state_lock:
+            last = self._messages[-1] if self._messages else None
+            if (
+                isinstance(last, dict)
+                and last.get("role") == role
+                and last.get("content") == cleaned
+            ):
+                return
+            self._messages.append({"role": role, "content": cleaned})
 
     def _remember_answer(self, content: str) -> None:
         from fx1.interactive.redact import redact_text

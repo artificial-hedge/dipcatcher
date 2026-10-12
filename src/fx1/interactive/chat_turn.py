@@ -7,6 +7,7 @@ read-only API do not move.
 
 from __future__ import annotations
 
+import re
 import threading
 from typing import Any
 
@@ -18,6 +19,7 @@ from fx1.honesty import (
     validate_fx1_output,
 )
 from fx1.interactive.chat_tools import CHAT_TOOL_NAMES, chat_tool_schemas, execute_tool_call
+from fx1.interactive.evidence import EvidenceError, ground_summary
 from fx1.interactive.model_client import ErrorKind, ModelError
 from fx1.interactive.model_ux import (
     CallSnapshot,
@@ -175,11 +177,8 @@ def _finish_answer(
     tracker: UsageTracker,
     backend: Any,
 ) -> bool:
-    host._append_message({"role": "assistant", "content": content})
-    host._say(content)
-    _say_footer(host, snapshot)
-    host._remember_answer(content)
-    charge_reported_usage(tracker, backend)
+    shown = _shown_answer(content, _verified_refs(host))
+    _publish_answer(host, shown, content, snapshot, tracker, backend)
     return True
 
 
@@ -286,8 +285,16 @@ def _raise_if_cancelled(host: Any) -> None:
         raise _CancelledTurn()
 
 
+def _refusal_text(exc: Fx1HonestyError) -> str:
+    """Operator text for a withhold. The sentence itself must pass the gate."""
+    detail = str(exc)
+    if scrub_model_text(detail) != detail:
+        return MODEL_TEXT_WITHHELD
+    return f"answer withheld by the fx-1 honesty gate ({detail}). Ask a follow-up to continue."
+
+
 def _withhold(host: Any, start: int, exc: Fx1HonestyError) -> None:
-    refusal = f"answer withheld by the fx-1 honesty gate ({exc}). Ask a follow-up to continue."
+    refusal = _refusal_text(exc)
     if any(message.get("role") == "tool" for message in host._messages[start:]):
         # A blocked answer cannot undo completed tool actions. Keep
         # their validated call/result transcript for the next turn.
@@ -333,6 +340,84 @@ def _cancel_marked(host: Any, start: int) -> None:
     host._truncate_messages(start)
     host._say("turn cancelled")
     host._set_status("cancelled")
+
+
+_METRIC = re.compile(
+    r"\b(?:sharpe|sortino|calmar|nav|pnl)\b|\bp\s*&\s*l\b",
+    re.IGNORECASE,
+)
+
+
+def _shown_answer(content: str, verified: set[str]) -> str:
+    grounded = _ground_visible(content, verified)
+    try:
+        return validate_fx1_output(grounded)
+    except Fx1HonestyError:
+        return MODEL_TEXT_WITHHELD
+
+
+def _ground_visible(text: str, verified: set[str]) -> str:
+    """Rewrite a forged verification claim. Bare metric discussion stays."""
+    try:
+        return ground_summary(text, verified_receipts=verified)
+    except EvidenceError:
+        return _ground_after_metric(text, verified)
+
+
+def _ground_after_metric(text: str, verified: set[str]) -> str:
+    masked = _METRIC.sub("metric", text)
+    if masked == text:
+        return MODEL_TEXT_WITHHELD
+    try:
+        rewritten = ground_summary(masked, verified_receipts=verified)
+    except EvidenceError:
+        return MODEL_TEXT_WITHHELD
+    if rewritten == masked:
+        return text
+    return MODEL_TEXT_WITHHELD
+
+
+def _verified_refs(host: Any) -> set[str]:
+    ledger = getattr(host, "_evidence", None)
+    take = getattr(ledger, "verified_receipts", None)
+    if not callable(take):
+        return set()
+    return _ref_set(take())
+
+
+def _ref_set(items: Any) -> set[str]:
+    found: set[str] = set()
+    for item in items:
+        ref = getattr(item, "ref", "")
+        if isinstance(ref, str) and ref:
+            found.add(ref)
+    return found
+
+
+def _publish_answer(
+    host: Any,
+    shown: str,
+    content: str,
+    snapshot: CallSnapshot | None,
+    tracker: UsageTracker,
+    backend: Any,
+) -> None:
+    host._append_message({"role": "assistant", "content": shown})
+    host._say(shown)
+    if shown == MODEL_TEXT_WITHHELD and shown != content:
+        _note_withheld(host, shown)
+        charge_reported_usage(tracker, backend)
+        return
+    _say_footer(host, snapshot)
+    host._remember_answer(shown)
+    charge_reported_usage(tracker, backend)
+
+
+def _note_withheld(host: Any, shown: str) -> None:
+    host._set_status("withheld")
+    remember = getattr(host, "_remember_withheld", None)
+    if callable(remember):
+        remember(shown)
 
 
 def _say_footer(host: Any, snapshot: CallSnapshot | None) -> None:
