@@ -71,10 +71,6 @@ _SKIP_FOLD = re.compile(
     "[\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff\ufe0e\ufe0f]"
 )
 _NON_ASCII_RE = re.compile(r"[^\x00-\x7e]")
-_DISPLAY_RE = re.compile(
-    r"[\x00-\x08\x0b-\x1f\x7f-\x9f\u00ad\u061c\u180e"
-    r"\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff\ufe0e\ufe0f]"
-)
 
 
 def fingerprint(secret: str) -> str:
@@ -287,7 +283,7 @@ def redact_text(text: str, *, registry: SecretRegistry | None = None) -> str:
     if not text:
         return text
     reg = registry or DEFAULT_REGISTRY
-    return _strip_display(_scrub_secrets(text, reg))
+    return _scrub_secrets(text, reg)
 
 
 def _scrub_secrets(text: str, registry: SecretRegistry) -> str:
@@ -315,7 +311,7 @@ def _build_fold(text: str) -> tuple[str, list[tuple[int, int]]] | None:
     parts: list[str] = []
     spans: list[tuple[int, int]] = []
     for index, ch in enumerate(text):
-        if _SKIP_FOLD.match(ch):
+        if _SKIP_FOLD.match(ch) or unicodedata.category(ch) == "Cf":
             continue
         parts.append(_fold_char(ch))
         spans.append((index, index + 1))
@@ -345,14 +341,6 @@ def _redact_mapped(
         return text
     orig = [_orig_span(spans, start, end) for start, end in hits if end > start]
     return _replace_spans(text, orig)
-
-
-def _strip_display(text: str) -> str:
-    if _DISPLAY_RE.search(text) is None:
-        return text
-    from fx1.interactive.terminal import sanitize_for_terminal
-
-    return sanitize_for_terminal(text)
 
 
 def contains_secret(text: str, *, registry: SecretRegistry | None = None) -> bool:

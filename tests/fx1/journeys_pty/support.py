@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from tests.fx1.journeys.textutil import FX1_KEY, LITE_KEY, substitute
+from tests.fx1.journeys_pty.textutil import FX1_KEY, LITE_KEY, substitute
 
 CORRUPT_ID = "deadbeefdeadbeefdeadbeefdeadbeef"
 _ISOLATED = (

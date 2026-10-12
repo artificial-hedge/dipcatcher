@@ -1,0 +1,23 @@
+- id: onboarding-001
+  category: onboarding
+  title: First run with no endpoint keeps help available
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+      fx1-lite: missing
+  steps:
+    - say: hello
+      expect:
+        - "no model endpoint configured"
+        - "/keys set"
+      forbid:
+        - "stub fx1 reply"
+      status: no_endpoint
+    - say: /help
+      expect:
+        - /superpower
+        - /keys
+        - /cancel
+      status: ok

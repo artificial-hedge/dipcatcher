@@ -1,0 +1,15 @@
+- id: models-003
+  category: models
+  title: A rejected API key names /keys set and does not echo the key
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: bad_key
+  steps:
+    - say: hello
+      status: error
+      expect:
+        - "/keys set fx1"
+      forbid:
+        - "{key_fx1}"

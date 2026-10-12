@@ -35,6 +35,7 @@ from email.utils import parsedate_to_datetime
 from enum import StrEnum
 from typing import Any, cast
 
+from fx1.honesty import public_label, scrub_model_text
 from fx1.interactive.endpoint import EndpointError, normalize_endpoint
 from fx1.interactive.redact import redact_text, redact_value, register_secret
 from fx1.serve.backends import (
@@ -49,7 +50,10 @@ _KNOWN_MODELS = ("fx1", "fx1-lite")
 _ENV_API_KEY = "MOONSHOT_API_KEY"
 _ENV_BASE_URL = "FX1_BASE_URL"
 _ERROR_BODY_CAP = 64 * 1024
+_MAX_TOOL_CALLS = 32
 _POLL_S = 0.05
+# A blackholed host must not hold the prompt for the whole read timeout.
+_CONNECT_TIMEOUT_S = 15.0
 _JOIN_S = 0.05
 _REQUEST_ID_HEADERS = ("x-request-id", "request-id", "openai-request-id")
 _REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
@@ -352,6 +356,7 @@ class _Box:
         self.conn: http.client.HTTPConnection | None = None
         self.error: ModelError | None = None
         self.outcome: _Outcome | None = None
+        self.produced = False
 
 
 class ModelClient:
@@ -557,6 +562,7 @@ class ModelClient:
     ) -> None:
         try:
             holder.append(self._read_models(box))
+            box.produced = True
         except Exception as exc:
             box.error = self._coerce(exc)
         finally:
@@ -565,7 +571,7 @@ class ModelClient:
     def _read_models(self, box: _Box) -> tuple[int, dict[str, str], bytes]:
         conn = self._open_connection(self._timeout_s)
         try:
-            conn.connect()
+            _connect_published(conn, box)
             self._attach(box, conn)
             self._ensure_live(box)
             return _send_get(
@@ -627,7 +633,6 @@ class ModelClient:
             deadline,
             require_text,
         )
-        self._guard(cancel_event, deadline)
         self._commit(outcome)
         self._emit_response(outcome, started)
         return outcome.completion
@@ -668,6 +673,7 @@ class ModelClient:
         def worker() -> None:
             try:
                 box.outcome = self._exchange(body, sampling, require_text, box)
+                box.produced = True
             except Exception as exc:
                 box.error = self._coerce(exc)
             finally:
@@ -696,7 +702,7 @@ class ModelClient:
     ) -> _Outcome:
         conn = self._open_connection(self._timeout_s)
         try:
-            conn.connect()
+            _connect_published(conn, box)
             self._attach(box, conn)
             self._ensure_live(box)
             status, headers, raw = _send_and_read(
@@ -736,7 +742,7 @@ class ModelClient:
             raise self._malformed(status, framing)
         try:
             payload = _load_json(raw)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, ValueError, RecursionError, OverflowError):
             raise self._malformed(status, "not json") from None
         try:
             completion = _validate_completion(payload)
@@ -813,6 +819,8 @@ class ModelClient:
         while not box.done.is_set():
             self._abort_if_stopped(box, cancel_event, deadline)
             box.done.wait(self._poll_timeout(cancel_event, deadline))
+        if box.produced and box.error is None:
+            return
         self._abort_if_stopped(box, cancel_event, deadline)
 
     def _abort_if_stopped(
@@ -1353,7 +1361,13 @@ def _detail(code: str, message: str) -> str:
     raw = code.strip() or message.strip()
     if not raw:
         return ""
-    return _snippet(raw)
+    return _honest_snippet(_snippet(raw))
+
+
+def _honest_snippet(text: str) -> str:
+    if not text or scrub_model_text(text) == text:
+        return text
+    return "withheld by the honesty gate"
 
 
 def _snippet(text: str, limit: int = 80) -> str:
@@ -1583,9 +1597,19 @@ def _choice_message(payload: object) -> tuple[dict[str, Any], dict[str, Any]]:
 
 def _content(message: Mapping[str, Any]) -> str | None:
     content = message.get("content")
-    if content is None or isinstance(content, str):
+    if content is None:
+        return None
+    if isinstance(content, str) and _encodes_utf8(content):
         return content
     raise _BadPayload("content is not str|null")
+
+
+def _encodes_utf8(text: str) -> bool:
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return True
 
 
 def _logprobs(choice: Mapping[str, Any]) -> dict[str, Any] | None:
@@ -1603,6 +1627,8 @@ def _tool_calls(message: Mapping[str, Any]) -> tuple[dict[str, Any], ...] | None
         return None
     if not isinstance(raw, list):
         raise _BadPayload("tool_calls is not a list")
+    if len(raw) > _MAX_TOOL_CALLS:
+        raise _BadPayload(f"tool_calls exceeds {_MAX_TOOL_CALLS}")
     return tuple(_one_tool_call(item, index) for index, item in enumerate(raw))
 
 
@@ -1617,11 +1643,15 @@ def _one_tool_call(raw: object, index: int) -> dict[str, Any]:
 
 
 def _tool_call_ok(raw: Mapping[str, Any], function: object, arguments: object) -> bool:
-    if not isinstance(raw.get("id"), str) or raw.get("type") != "function":
+    ident = raw.get("id")
+    if not isinstance(ident, str) or raw.get("type") != "function":
         return False
-    if not isinstance(function, dict) or not isinstance(function.get("name"), str):
+    if not isinstance(function, dict):
         return False
-    return isinstance(arguments, str)
+    name = function.get("name")
+    if not isinstance(name, str) or not isinstance(arguments, str):
+        return False
+    return _encodes_utf8(ident) and _encodes_utf8(name) and _encodes_utf8(arguments)
 
 
 def _with_stops(completion: ToolCompletion, sampling: SamplingParams) -> ToolCompletion:
@@ -1661,17 +1691,23 @@ def _identity_from(
     payload: object,
     headers: Mapping[str, str],
 ) -> ModelIdentity:
-    served = _served_model(payload)
+    served = _clean_label(_served_model(payload))
     matched = None if served is None else _models_match(requested, served)
     return ModelIdentity(
         requested=requested,
         served=served,
-        request_id=_public_id(_header_request_id(headers)),
+        request_id=_clean_label(_public_id(_header_request_id(headers))),
         host=host,
-        system_fingerprint=_fingerprint_field(payload),
+        system_fingerprint=_clean_label(_fingerprint_field(payload)),
         matched=matched,
-        response_id=_response_id(payload),
+        response_id=_clean_label(_response_id(payload)),
     )
+
+
+def _clean_label(value: str | None) -> str | None:
+    if not value:
+        return value
+    return public_label(value)
 
 
 def _models_match(requested: str, served: str) -> bool:
@@ -1703,12 +1739,19 @@ def _is_date_suffix(suffix: str) -> bool:
     return len(suffix) == 8 and suffix.isdigit()
 
 
+def _drop_secret(value: str) -> str | None:
+    """Drop a provider field when it is itself a credential."""
+    if redact_text(value) != value:
+        return None
+    return value
+
+
 def _served_model(payload: object) -> str | None:
     if not isinstance(payload, dict):
         return None
     model = payload.get("model")
     if isinstance(model, str) and model:
-        return model
+        return _drop_secret(model)
     return None
 
 
@@ -1717,7 +1760,7 @@ def _fingerprint_field(payload: object) -> str | None:
         return None
     value = payload.get("system_fingerprint")
     if isinstance(value, str) and value:
-        return value
+        return _drop_secret(value)
     return None
 
 
@@ -1759,6 +1802,153 @@ def _header_request_id(headers: Mapping[str, str]) -> str | None:
         if isinstance(value, str) and value.strip():
             return value.strip()
     return None
+
+
+def _connect_published(conn: http.client.HTTPConnection, box: _Box) -> None:
+    """Connect *conn* with its socket visible so cancel can close it."""
+    creator = getattr(conn, "_create_connection", None)
+    if not callable(creator):
+        conn.connect()
+        return
+    setattr(conn, "_create_connection", _dial_factory(conn, box))  # noqa: B010
+    try:
+        conn.connect()
+    finally:
+        setattr(conn, "_create_connection", creator)  # noqa: B010
+
+
+def _dial_factory(conn: http.client.HTTPConnection, box: _Box) -> Callable[..., socket.socket]:
+    def dial(
+        address: tuple[Any, ...],
+        timeout: float | None = None,
+        source_address: tuple[Any, ...] | None = None,
+        *_args: object,
+        **_kwargs: object,
+    ) -> socket.socket:
+        connect = timeout if timeout is None else min(timeout, _CONNECT_TIMEOUT_S)
+        sock = _dial(address, connect, source_address, conn, box)
+        if timeout is not None:
+            sock.settimeout(timeout)
+        return sock
+
+    return dial
+
+
+_STOCK_CONNECT = socket.create_connection
+
+
+def _dial(
+    address: tuple[Any, ...],
+    timeout: float | None,
+    source_address: tuple[Any, ...] | None,
+    conn: http.client.HTTPConnection,
+    box: _Box,
+) -> socket.socket:
+    if socket.create_connection is not _STOCK_CONNECT:
+        return _delegated_connect(address, timeout, source_address, conn, box)
+    host = ""
+    port = 0
+    if len(address) >= 2:
+        host = str(address[0] or "")
+        port = int(address[1])
+    infos = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+    return _dial_infos(list(infos), timeout, source_address, conn, box)
+
+
+def _delegated_connect(
+    address: tuple[Any, ...],
+    timeout: float | None,
+    source_address: tuple[Any, ...] | None,
+    conn: http.client.HTTPConnection,
+    box: _Box,
+) -> socket.socket:
+    sock = socket.create_connection(address, timeout, source_address)
+    _publish_socket(conn, box, sock)
+    return sock
+
+
+def _dial_infos(
+    infos: list[Any],
+    timeout: float | None,
+    source_address: tuple[Any, ...] | None,
+    conn: http.client.HTTPConnection,
+    box: _Box,
+) -> socket.socket:
+    last = _dial_each(infos, timeout, source_address, conn, box)
+    if isinstance(last, socket.socket):
+        return last
+    if last is not None:
+        raise last
+    raise OSError("model endpoint address did not resolve")
+
+
+def _dial_each(
+    infos: list[Any],
+    timeout: float | None,
+    source_address: tuple[Any, ...] | None,
+    conn: http.client.HTTPConnection,
+    box: _Box,
+) -> socket.socket | OSError | None:
+    last: OSError | None = None
+    for info in infos:
+        try:
+            return _dial_one(info, timeout, source_address, conn, box)
+        except _Abandoned:
+            raise
+        except OSError as exc:
+            last = exc
+    return last
+
+
+def _dial_one(
+    info: Any,
+    timeout: float | None,
+    source_address: tuple[Any, ...] | None,
+    conn: http.client.HTTPConnection,
+    box: _Box,
+) -> socket.socket:
+    sock = socket.socket(int(info[0]), info[1], info[2])
+    try:
+        _prepare_sock(sock, timeout, source_address)
+        _publish_socket(conn, box, sock)
+        sock.connect(info[4])
+    except _Abandoned:
+        _drop_socket(conn, sock)
+        raise
+    except OSError:
+        _drop_socket(conn, sock)
+        if box.abandoned.is_set():
+            raise _Abandoned() from None
+        raise
+    return sock
+
+
+def _prepare_sock(
+    sock: socket.socket,
+    timeout: float | None,
+    source_address: tuple[Any, ...] | None,
+) -> None:
+    if timeout is not None:
+        sock.settimeout(timeout)
+    if source_address:
+        sock.bind(source_address)
+
+
+def _publish_socket(conn: http.client.HTTPConnection, box: _Box, sock: socket.socket) -> None:
+    with box.lock:
+        conn.sock = sock
+        box.conn = conn
+        abandoned = box.abandoned.is_set()
+    if abandoned:
+        _drop_socket(conn, sock)
+        raise _Abandoned()
+
+
+def _drop_socket(conn: http.client.HTTPConnection, sock: socket.socket) -> None:
+    if conn.sock is sock:
+        conn.sock = None
+    with contextlib.suppress(OSError):
+        sock.close()
 
 
 def _shutdown_conn(conn: http.client.HTTPConnection) -> None:

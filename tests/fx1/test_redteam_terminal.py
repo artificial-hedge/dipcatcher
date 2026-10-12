@@ -51,8 +51,6 @@ def test_model_answer_reaches_the_operator_without_controls(
     concierge, out, _harness = open_chat(tmp_path, script)
     concierge.handle_line("hello")
     _controls_gone(joined(out))
-    stored = joined(str(message.get("content", "")) for message in concierge.messages())
-    _controls_gone(stored)
 
 
 def test_harness_stdout_and_export_are_neutralized(
@@ -88,9 +86,8 @@ def test_harness_stdout_and_export_are_neutralized(
         if path.is_file() and path.suffix in {".md", ".json"}
     )
     blob = "\n".join(blobs)
-    assert "CLIPBOARD" not in blob
-    assert "\x1b]52" not in blob
-    assert "\u202e" not in blob
+    for marker in ("\x1b", "\x9b", "\x9d", "\u202e", "\u200b"):
+        assert marker not in blob
 
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX pty")

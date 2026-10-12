@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import os
 from contextlib import nullcontext, redirect_stderr
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from tests.fx1.journeys.checks import final_problem
-from tests.fx1.journeys.textutil import substitute
+from tests.fx1.journeys_pty.checks import final_problem
+from tests.fx1.journeys_pty.textutil import substitute
 
 
 class _UrlInput:
@@ -78,9 +79,12 @@ def run_inproc(
         session_store=store,
         approvals=ApprovalGate(),
     )
+    previous = Path.cwd()
+    os.chdir(paths["work"])
     try:
         problem, ended = _drive(concierge, journey, transcript, stub, stub_url, paths, url_input)
     finally:
+        os.chdir(previous)
         _stop(concierge)
     if problem:
         return problem, transcript.text(), None, ended
@@ -127,7 +131,7 @@ def _one_step(
     work: str,
     url_input: _UrlInput,
 ) -> tuple[str | None, bool]:
-    from tests.fx1.journeys.match import match_output, wait_requests
+    from tests.fx1.journeys_pty.match import match_output, wait_requests
 
     before = transcript.text()
     seen = 0 if stub is None else len(stub.requests)
@@ -173,7 +177,7 @@ def _opt(value: object, stub_url: str, work: str) -> str | None:
 
 
 def _hang(step: dict[str, Any]) -> float:
-    from tests.fx1.journeys.match import hang_seconds
+    from tests.fx1.journeys_pty.match import hang_seconds
 
     return hang_seconds(step)
 

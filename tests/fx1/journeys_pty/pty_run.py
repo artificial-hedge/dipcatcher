@@ -9,9 +9,9 @@ import time
 from pathlib import Path
 from typing import Any
 
-from tests.fx1.journeys.checks import final_problem, job_state_of, newest_session
-from tests.fx1.journeys.match import STARTUP_HANG_S, hang_seconds, match_output, wait_requests
-from tests.fx1.journeys.textutil import (
+from tests.fx1.journeys_pty.checks import final_problem, job_state_of, newest_session
+from tests.fx1.journeys_pty.match import STARTUP_HANG_S, hang_seconds, match_output, wait_requests
+from tests.fx1.journeys_pty.textutil import (
     KEY_PROMPT_RE,
     PROMPT_RE,
     URL_PROMPT_RE,

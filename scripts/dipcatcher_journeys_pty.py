@@ -25,8 +25,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Comma-separated ids, categories, modes, or 'critical'",
     )
     args = parser.parse_args(argv)
-    from tests.fx1.journeys.runner import gate_satisfied, run_suite
-    from tests.fx1.journeys.textutil import redact
+    from tests.fx1.journeys_pty.runner import gate_satisfied, run_suite
+    from tests.fx1.journeys_pty.textutil import redact
 
     payload = run_suite(args.filter)
     text = json.dumps(payload, indent=2, sort_keys=True) + "\n"

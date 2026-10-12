@@ -325,8 +325,8 @@ def _check_failure(exc: Any, *, timed_out: bool) -> tuple[str, str]:
 
 def _from_identity(base: ModelCheck, identity: Any, client: Any, latency: float) -> ModelCheck:
     matched = getattr(identity, "matched", None)
-    served = _text(getattr(identity, "served", None))
-    request_id = _text(getattr(identity, "request_id", None))
+    served = _public_name(_text(getattr(identity, "served", None)))
+    request_id = _public_name(_text(getattr(identity, "request_id", None)))
     host = _text(getattr(identity, "host", None)) or base.host
     usage = _usage_dict(getattr(client, "last_usage", None))
     matched_flag = matched if isinstance(matched, bool) else None
@@ -368,7 +368,7 @@ def _failed(base: ModelCheck, kind: str, hint: str, host: str, latency: float) -
         latency_ms=latency,
         status="failed",
         error_kind=kind,
-        hint=_scrub(hint),
+        hint=_honest_hint(_scrub(hint)),
     )
 
 
@@ -520,6 +520,22 @@ def _usage_dict(raw: Any) -> dict[str, int] | None:
     if not cleaned:
         return None
     return cleaned
+
+
+def _public_name(value: str | None) -> str | None:
+    if value is None:
+        return None
+    from fx1.honesty import public_label
+
+    return public_label(value)
+
+
+def _honest_hint(hint: str) -> str:
+    from fx1.honesty import scrub_model_text
+
+    if scrub_model_text(hint) == hint:
+        return hint
+    return "response withheld by the fx-1 honesty gate"
 
 
 def _text(value: Any) -> str | None:

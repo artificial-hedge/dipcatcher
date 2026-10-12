@@ -12,9 +12,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from tests.fx1.journeys import RESULT_SCHEMA
-from tests.fx1.journeys.load import CATEGORIES, load_catalog, select_journeys, suite_sha256
-from tests.fx1.journeys.support import (
+from tests.fx1.journeys_pty import RESULT_SCHEMA
+from tests.fx1.journeys_pty.load import CATEGORIES, load_catalog, select_journeys, suite_sha256
+from tests.fx1.journeys_pty.support import (
     apply_setup,
     help_text,
     isolated_env,
@@ -23,7 +23,7 @@ from tests.fx1.journeys.support import (
     prepare_tree,
     queue_replies,
 )
-from tests.fx1.journeys.textutil import FX1_KEY, LITE_KEY, redact
+from tests.fx1.journeys_pty.textutil import FX1_KEY, LITE_KEY, redact
 
 SCOPE = (
     "This is an automated scripted suite with a stub model and NOT the "
@@ -126,11 +126,11 @@ def _execute(
     journey: dict[str, Any], paths: dict[str, Path], stub: Any, stub_url: str
 ) -> str | None:
     if journey["mode"] == "pty":
-        from tests.fx1.journeys.pty_run import run_pty
+        from tests.fx1.journeys_pty.pty_run import run_pty
 
         problem, _transcript, _code, _ended = run_pty(journey, paths, stub=stub, stub_url=stub_url)
         return problem
-    from tests.fx1.journeys.inproc import run_inproc
+    from tests.fx1.journeys_pty.inproc import run_inproc
 
     problem, _transcript, _code, _ended = run_inproc(journey, paths, stub=stub, stub_url=stub_url)
     return problem

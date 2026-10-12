@@ -18,6 +18,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
+from fx1.interactive.datasets import attach_dataset, restore_datasets
 from fx1.interactive.planner import DatasetRef
 from fx1.interactive.policy import wrap_untrusted
 from fx1.interactive.redact import redact_text
@@ -34,8 +35,7 @@ PROFILE_SCHEMA = "dataset_profile.v1"
 PIT_NOTE = "Forecast issue time was not provided; point-in-time validity is NOT verified."
 _USAGE = "usage: /data attach <path> | list | remove <n> | inspect <n>"
 _CAP = f"dataset limit is {MAX_DATASETS}; /data remove <n> first"
-_PROFILE_FAILED = "dataset profile failed"
-_CHANGED_DURING = "dataset changed during profile; retry /data attach"
+_PROFILE_UNAVAILABLE = "dataset profile unavailable; attached without a profile"
 _MAX_PROFILE_CHARS = 1_000_000
 _HEX64 = re.compile(r"^[0-9a-fA-F]{64}$")
 _READ = 1024 * 1024
@@ -49,14 +49,15 @@ class Attachment:
     kind: str
     label: str
     sha256: str
-    size: int
-    rows: int
+    size: int | None
+    rows: int | None
     columns: tuple[str, ...]
     stale: bool
     has_time: bool
     time_monotonic: bool
     has_nulls: bool
     has_available_time: bool
+    available_time_col: str = ""
 
     def as_json(self) -> dict[str, Any]:
         return {
@@ -72,6 +73,7 @@ class Attachment:
             "time_monotonic": self.time_monotonic,
             "has_nulls": self.has_nulls,
             "has_available_time": self.has_available_time,
+            "available_time_col": self.available_time_col,
         }
 
 
@@ -83,6 +85,7 @@ class _Profile:
     has_time: bool
     time_monotonic: bool
     has_available_time: bool
+    available_time_col: str
     sha256: str
     size: int
 
@@ -95,6 +98,8 @@ def handle_data(
     cwd: Path | None = None,
 ) -> tuple[list[Attachment], str]:
     """Run one ``/data`` command. The returned list replaces the session rows."""
+    if "\x00" in rest:
+        return list(rows), "path contains NUL"
     action, arg = _split_command(rest)
     current = list(rows)
     if action == "list":
@@ -123,11 +128,17 @@ def attach_paths(
     return rows, None
 
 
-def restore_stored(value: object) -> tuple[list[Attachment], tuple[str, ...]]:
-    """Rebuild attachments. Missing files are dropped; a new digest is stale."""
-    if not isinstance(value, list):
-        return [], ()
-    return _restore_list(value)
+def restore_stored(
+    value: object,
+    *,
+    cwd: Path | None = None,
+    legacy: object = None,
+) -> tuple[list[Attachment], tuple[str, ...]]:
+    """Rebuild attachments inside ``data/``. A changed digest is kept stale."""
+    base = Path.cwd() if cwd is None else cwd
+    if isinstance(value, list) and value:
+        return _restore_list(value, base)
+    return _restore_legacy(legacy, base)
 
 
 def rehash_rows(rows: Sequence[Attachment]) -> tuple[list[Attachment], str | None]:
@@ -202,7 +213,7 @@ def file_sha256(path: Path) -> str:
 
 def _split_command(rest: str) -> tuple[str, str]:
     parts = shlex.split(rest)
-    if len(parts) == 1 and parts[0] == "list":
+    if not parts or (len(parts) == 1 and parts[0] == "list"):
         return "list", ""
     if len(parts) == 2 and parts[0] in {"attach", "remove", "inspect"}:
         return parts[0], parts[1]
@@ -220,76 +231,83 @@ def _attach(
         return rows, reason or "refusing dataset", False
     if _at_cap(rows, path):
         return rows, _CAP, False
-    profile, failure = _load_profile(harness, path)
-    if profile is None:
-        return rows, failure, False
-    item = _from_profile(path, profile)
-    return _upsert(rows, item), _render_profile(profile), True
+    item, text = _profile_or_attach(harness, path)
+    return _upsert(rows, item), text, True
 
 
 def resolve_dataset(raw: str, *, cwd: Path | None = None) -> tuple[Path | None, str | None]:
-    """Accept one CSV or Parquet file. The reason is a single refusal line."""
-    reason = _raw_reason(raw)
-    if reason is not None:
-        return None, reason
-    candidate = _candidate(raw, Path.cwd() if cwd is None else cwd)
+    """Resolve one dataset. Containment is :func:`attach_dataset`."""
+    if "\x00" in raw:
+        return None, "path contains NUL"
+    base = Path.cwd() if cwd is None else cwd
+    hazard = _existing_hazard(raw, base)
+    if hazard is not None:
+        return None, hazard
     try:
-        info = candidate.lstat()
-    except OSError:
-        return None, "file does not exist"
-    early = _link_reason(candidate, info)
-    if early is not None:
-        return None, early
-    try:
-        resolved = candidate.resolve(strict=True)
-        final = resolved.lstat()
-    except OSError:
-        return None, "file does not exist"
-    problem = _file_reason(resolved, final)
+        ref = attach_dataset(raw, cwd=base)
+    except ValueError as exc:
+        return None, str(exc)
+    path = Path(ref.path)
+    problem = _file_reason(path, _lstat(path))
     if problem is not None:
         return None, problem
-    return resolved, None
+    return path, None
 
 
-def _raw_reason(raw: str) -> str | None:
-    if "\x00" in raw:
-        return "path contains NUL"
-    if "\n" in raw or "\r" in raw:
-        return "path contains a newline"
-    if not raw:
-        return "file does not exist"
-    return None
-
-
-def _candidate(raw: str, cwd: Path) -> Path:
-    expanded = Path(raw).expanduser()
-    if expanded.is_absolute():
-        return expanded
-    return cwd / expanded
-
-
-def _link_reason(path: Path, info: os.stat_result) -> str | None:
-    """Refuse a symlink. The message names the real path and does not attach it."""
+def _existing_hazard(raw: str, cwd: Path) -> str | None:
+    """Refuse a named FIFO, device, or oversize file before it is read."""
+    candidate = _named_file(raw, cwd)
+    if candidate is None:
+        return None
+    info = _lstat(candidate)
+    if info is None:
+        return None
     if stat.S_ISLNK(info.st_mode):
-        return _symlink_line(path)
-    return _special_reason(info)
-
-
-def _symlink_line(path: Path) -> str:
-    try:
-        resolved = path.resolve(strict=True)
-    except OSError:
-        return "refusing a symlink; the target does not exist"
-    shown = _show_text(str(resolved))
-    return f"refusing a symlink; re-attach the real file {shown}"
-
-
-def _file_reason(path: Path, info: os.stat_result) -> str | None:
+        return _link_hazard(candidate)
     special = _special_reason(info)
     if special is not None:
         return special
-    if path.suffix.lower() not in {".csv", ".parquet"}:
-        return "dataset must be a .csv or .parquet file"
+    if info.st_size > DATA_MAX_BYTES:
+        return f"dataset exceeds {DATA_MAX_BYTES} bytes"
+    return None
+
+
+def _named_file(raw: str, cwd: Path) -> Path | None:
+    text = raw.strip()
+    if not text or "\x00" in text:
+        return None
+    expanded = Path(text).expanduser()
+    if not expanded.is_absolute():
+        expanded = cwd / expanded
+    return expanded
+
+
+def _link_hazard(path: Path) -> str | None:
+    try:
+        info = path.resolve(strict=True).lstat()
+    except OSError:
+        return None
+    special = _special_reason(info)
+    if special is not None:
+        return special
+    if info.st_size > DATA_MAX_BYTES:
+        return f"dataset exceeds {DATA_MAX_BYTES} bytes"
+    return None
+
+
+def _lstat(path: Path) -> os.stat_result | None:
+    try:
+        return path.lstat()
+    except OSError:
+        return None
+
+
+def _file_reason(path: Path, info: os.stat_result | None) -> str | None:
+    if info is None:
+        return "dataset file was not found under data/"
+    special = _special_reason(info)
+    if special is not None:
+        return special
     if info.st_size > DATA_MAX_BYTES:
         return f"dataset exceeds {DATA_MAX_BYTES} bytes"
     if len(str(path)) > MAX_PATH_CHARS:
@@ -315,23 +333,47 @@ def _at_cap(rows: Sequence[Attachment], path: Path) -> bool:
     return len(rows) >= MAX_DATASETS
 
 
-def _load_profile(harness: Any, path: Path) -> tuple[_Profile | None, str]:
-    before = _digest(path)
-    if before is None:
-        return None, _PROFILE_FAILED
+def _profile_or_attach(harness: Any, path: Path) -> tuple[Attachment, str]:
+    head = f"attached dataset {path}"
+    digest = _digest(path) or ""
+    profile = _optional_profile(harness, path, digest)
+    if profile is None:
+        item = _unprofiled(path, digest)
+        return item, f"{head}\n{_PROFILE_UNAVAILABLE}"
+    return _from_profile(path, profile), f"{head}\n{_render_profile(profile)}"
+
+
+def _optional_profile(harness: Any, path: Path, digest: str) -> _Profile | None:
+    if not digest:
+        return None
     code, stdout = _run_inspect(harness, path)
-    if _digest(path) != before:
-        return None, _CHANGED_DURING
-    if code != 0:
-        return None, _PROFILE_FAILED
+    if _digest(path) != digest or code != 0:
+        return None
     try:
         size = path.stat().st_size
     except OSError:
-        return None, _PROFILE_FAILED
-    profile = parse_profile(stdout, before, size)
-    if profile is None:
-        return None, _PROFILE_FAILED
-    return profile, ""
+        return None
+    return parse_profile(stdout, digest, size)
+
+
+def _unprofiled(path: Path, digest: str) -> Attachment:
+    kind = "parquet" if path.suffix.lower() == ".parquet" else "csv"
+    size = _lstat(path)
+    return Attachment(
+        path=str(path),
+        kind=kind,
+        label="file",
+        sha256=digest,
+        size=None if size is None else size.st_size,
+        rows=None,
+        columns=(),
+        stale=False,
+        has_time=False,
+        time_monotonic=False,
+        has_nulls=False,
+        has_available_time=False,
+        available_time_col="",
+    )
 
 
 def _run_inspect(harness: Any, path: Path) -> tuple[int, str]:
@@ -372,13 +414,15 @@ def _coerce_result(result: Any) -> tuple[int, str]:
 
 
 def parse_profile(stdout: str, digest: str, size: int) -> _Profile | None:
-    """Defensive ``dataset_profile.v1`` parse. ``None`` means do not attach."""
+    """Defensive ``dataset_profile.v1`` parse. ``None`` means attach without a profile."""
     payload = _json_object(stdout)
     if payload is None or not _profile_identity(payload, digest, size):
         return None
     columns = _profile_columns(payload.get("columns"))
     timing = _time_view(payload.get("time"))
-    available = _available_flag(payload.get("suggested_roles"))
+    roles = payload.get("suggested_roles")
+    available = _available_flag(roles)
+    column = _exact_issue_column(roles)
     row_count = _as_int(payload.get("n_rows"))
     if columns is None or timing is None or available is None or row_count is None:
         return None
@@ -391,6 +435,7 @@ def parse_profile(stdout: str, digest: str, size: int) -> _Profile | None:
         has_time=has_time,
         time_monotonic=monotonic,
         has_available_time=available,
+        available_time_col=column,
         sha256=digest,
         size=size,
     )
@@ -480,12 +525,25 @@ def _available_flag(value: object) -> bool | None:
     return bool(column.strip())
 
 
+def _exact_issue_column(roles: object) -> str:
+    if not isinstance(roles, dict):
+        return ""
+    slot = roles.get("available_time")
+    if not isinstance(slot, dict) or slot.get("confidence") != "exact_name":
+        return ""
+    column = slot.get("column")
+    if not isinstance(column, str) or not column.strip():
+        return ""
+    cleaned = _clean_name(column)
+    return "" if cleaned == "?" else cleaned
+
+
 def _from_profile(path: Path, profile: _Profile) -> Attachment:
     kind = "parquet" if path.suffix.lower() == ".parquet" else "csv"
     return Attachment(
         path=str(path),
         kind=kind,
-        label=_label_for(path),
+        label="file",
         sha256=profile.sha256,
         size=profile.size,
         rows=profile.rows,
@@ -495,6 +553,7 @@ def _from_profile(path: Path, profile: _Profile) -> Attachment:
         time_monotonic=profile.time_monotonic,
         has_nulls=profile.has_nulls,
         has_available_time=profile.has_available_time,
+        available_time_col=profile.available_time_col,
     )
 
 
@@ -557,15 +616,16 @@ def _inspect_stale(reason: str | None, digest: str | None, previous: str) -> boo
 def _inspect_lines(path: Path, harness: Any, reason: str | None) -> list[str]:
     if reason is not None:
         return [reason]
-    profile, failure = _load_profile(harness, path)
+    digest = _digest(path) or ""
+    profile = _optional_profile(harness, path, digest)
     if profile is None:
-        return [failure]
+        return [_PROFILE_UNAVAILABLE]
     return _render_profile(profile).splitlines()
 
 
 def _list_text(rows: Sequence[Attachment]) -> str:
     if not rows:
-        return "no datasets"
+        return "no datasets attached"
     return "\n".join(_list_line(index, row) for index, row in enumerate(rows, start=1))
 
 
@@ -573,7 +633,7 @@ def _list_line(index: int, row: Attachment) -> str:
     digest = row.sha256[:8] if row.sha256 else "-"
     marker = " stale" if row.stale else ""
     return (
-        f"{index} {row.kind} {_show_text(row.label)} rows={row.rows} "
+        f"{index} {row.kind} {_show_text(Path(row.path).name)} rows={_row_count(row)} "
         f"sha={digest}{marker} {_show_text(row.path)}"
     )
 
@@ -596,26 +656,53 @@ def _upsert(rows: list[Attachment], item: Attachment) -> list[Attachment]:
     return [*rows, item]
 
 
-def _restore_list(value: list[object]) -> tuple[list[Attachment], tuple[str, ...]]:
+def _restore_list(value: list[object], cwd: Path) -> tuple[list[Attachment], tuple[str, ...]]:
     kept: list[Attachment] = []
     warnings: list[str] = []
     for item in value:
         if len(kept) >= MAX_DATASETS:
             break
-        _restore_one(item, kept, warnings)
+        _restore_one(item, kept, warnings, cwd)
     return kept, tuple(warnings)
 
 
-def _restore_one(item: object, kept: list[Attachment], warnings: list[str]) -> None:
+def _restore_legacy(raw: object, cwd: Path) -> tuple[list[Attachment], tuple[str, ...]]:
+    kept: list[Attachment] = []
+    for ref in restore_datasets(raw, cwd=cwd):
+        if len(kept) >= MAX_DATASETS:
+            break
+        path = Path(ref.path)
+        digest = _digest(path)
+        if digest is None:
+            continue
+        info = _lstat(path)
+        kept.append(
+            _unprofiled(path, digest)
+            if info is None
+            else replace(_unprofiled(path, digest), size=info.st_size, kind=ref.kind)
+        )
+    return kept, ()
+
+
+def _restore_one(item: object, kept: list[Attachment], warnings: list[str], cwd: Path) -> None:
     parsed = _parse_stored(item)
     if parsed is None:
         warnings.append("warning: dropped invalid dataset record")
         return
+    if not _still_inside_data(parsed, cwd):
+        warnings.append(f"warning: dropped missing dataset {_show_text(Path(parsed.path).name)}")
+        return
     problem = _stored_problem(Path(parsed.path))
     if problem is not None:
-        warnings.append(f"warning: dropped missing dataset {_show_text(parsed.label)}")
+        warnings.append(f"warning: dropped missing dataset {_show_text(Path(parsed.path).name)}")
         return
     kept.append(_restore_row(parsed))
+
+
+def _still_inside_data(row: Attachment, cwd: Path) -> bool:
+    kind = row.kind if row.kind in {"csv", "parquet"} else "csv"
+    kept = restore_datasets([{"path": row.path, "kind": kind, "label": "file"}], cwd=cwd)
+    return bool(kept)
 
 
 def _restore_row(row: Attachment) -> Attachment:
@@ -630,12 +717,18 @@ def _parse_stored(item: object) -> Attachment | None:
     path, kind, digest = _stored_strings(item)
     if path is None or kind is None or digest is None:
         return None
-    row_count = _as_int(item.get("rows"))
-    size = _as_int(item.get("size"))
     columns = _stored_columns(item.get("columns"))
-    if row_count is None or size is None or columns is None:
-        return None
-    return _stored_attachment(item, path, kind, digest, size, row_count, columns)
+    if columns is None:
+        columns = ()
+    return _stored_attachment(
+        item,
+        path,
+        kind,
+        digest,
+        _as_int(item.get("size")),
+        _optional_rows(item.get("rows")),
+        columns,
+    )
 
 
 def _stored_strings(item: dict[object, object]) -> tuple[str | None, str | None, str | None]:
@@ -662,20 +755,27 @@ def _stored_columns(value: object) -> tuple[str, ...] | None:
     return tuple(names)
 
 
+def _optional_rows(value: object) -> int | None:
+    if value is None:
+        return None
+    return _as_int(value)
+
+
 def _stored_attachment(
     item: dict[object, object],
     path: str,
     kind: str,
     digest: str,
-    size: int,
-    rows: int,
+    size: int | None,
+    rows: int | None,
     columns: tuple[str, ...],
 ) -> Attachment:
-    label = _clean_name(str(item.get("label") or ""))
+    column = item.get("available_time_col")
+    issue = column if isinstance(column, str) else ""
     return Attachment(
         path=path,
         kind=kind,
-        label=label if label != "?" else "dataset",
+        label="file",
         sha256=digest,
         size=size,
         rows=rows,
@@ -685,6 +785,7 @@ def _stored_attachment(
         time_monotonic=item.get("time_monotonic") is True,
         has_nulls=item.get("has_nulls") is True,
         has_available_time=item.get("has_available_time") is True,
+        available_time_col=issue,
     )
 
 
@@ -721,19 +822,23 @@ def _stale_line(index: int, *, missing: bool) -> str:
 
 
 def _ref(row: Attachment) -> DatasetRef:
-    return DatasetRef(path=row.path, kind=row.kind, label=row.label)
+    return DatasetRef(
+        path=row.path,
+        kind=row.kind,
+        label="file",
+        available_time_col=row.available_time_col,
+    )
 
 
 def _context_line(row: Attachment) -> str:
     columns = ", ".join(row.columns) or "-"
-    return f"label={row.label} rows={row.rows} columns={columns}"
+    return f"label=file rows={_row_count(row)} columns={columns}"
 
 
-def _label_for(path: Path) -> str:
-    label = _clean_name(path.stem)
-    if label == "?":
-        return "dataset"
-    return label
+def _row_count(row: Attachment) -> str:
+    if row.rows is None:
+        return "unknown"
+    return str(row.rows)
 
 
 def _clean_name(name: str) -> str:

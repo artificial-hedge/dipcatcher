@@ -60,6 +60,7 @@ def _isolate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _csv(path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "timestamp,realized,forecast_var\n2020-01-01T00:00:00+00:00,1.0,1.1\n",
         encoding="utf-8",
@@ -83,9 +84,10 @@ def test_attach_list_remove_resume_and_new(tmp_path: Path) -> None:
     harness = PathHarness()
     out: list[str] = []
     concierge = _concierge(store, harness, out)
-    path = _csv(tmp_path / "panel.csv")
+    path = _csv(tmp_path / "data" / "panel.csv")
     assert concierge.handle_line(f"/data attach {path}") is False
     text = "\n".join(out)
+    assert text.splitlines()[0] == f"attached dataset {path.resolve()}"
     assert "profile rows=3 columns=timestamp, realized" in text
     assert "point-in-time validity will NOT be verified" in text
     out.clear()
@@ -93,8 +95,9 @@ def test_attach_list_remove_resume_and_new(tmp_path: Path) -> None:
     assert "panel" in "\n".join(out)
     session_id = str(concierge._session["id"])  # noqa: SLF001
     saved = store.load(session_id)
-    assert saved["attachments"][0]["label"] == "panel"
+    assert saved["attachments"][0]["label"] == "file"
     assert saved["attachments"][0]["sha256"]
+    assert saved["datasets"] == [{"path": str(path.resolve()), "kind": "csv", "label": "file"}]
     other_out: list[str] = []
     other = _concierge(store, harness, other_out)
     other.handle_line(f"/resume {session_id[:8]}")
@@ -104,7 +107,7 @@ def test_attach_list_remove_resume_and_new(tmp_path: Path) -> None:
     other.handle_line("/new")
     other_out.clear()
     other.handle_line("/data list")
-    assert "\n".join(other_out) == "no datasets"
+    assert "\n".join(other_out) == "no datasets attached"
     fresh = store.load(str(other._session["id"]))  # noqa: SLF001
     assert fresh["attachments"] == []
 
@@ -114,7 +117,7 @@ def test_superpower_refuses_a_changed_digest(tmp_path: Path) -> None:
     harness = PathHarness()
     out: list[str] = []
     concierge = _concierge(store, harness, out)
-    path = _csv(tmp_path / "panel.csv")
+    path = _csv(tmp_path / "data" / "panel.csv")
     concierge.handle_line(f"/data attach {path}")
     path.write_text(path.read_text(encoding="utf-8") + "extra\n", encoding="utf-8")
     out.clear()

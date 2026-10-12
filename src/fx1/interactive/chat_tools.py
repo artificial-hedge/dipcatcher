@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from fx1.honesty import Fx1HonestyError, scrub_model_text, validate_fx1_output
 from fx1.interactive import profiles
 from fx1.interactive.model_ux import dim_text, scrub_transcript
 from fx1.interactive.policy import (
@@ -135,6 +136,7 @@ class ToolEnv:
     config_dir: Path
     emit: Callable[[str, Mapping[str, Any]], None] | None = None
     calls_used: int = 0
+    last_failed: bool = False
 
 
 def execute_tool_call(call: Mapping[str, Any], env: ToolEnv) -> str:
@@ -169,25 +171,37 @@ def parse_tool_call(call: Mapping[str, Any]) -> tuple[str, dict[str, Any]]:
     function = call.get("function", {})
     if not isinstance(function, dict):
         function = {}
-    name = str(function.get("name", ""))
-    raw = function.get("arguments") or "{}"
-    if not isinstance(raw, str):
+    raw_name = function.get("name", "")
+    name = raw_name if isinstance(raw_name, str) else ""
+    raw = function.get("arguments")
+    if raw is None or raw == "" or raw == b"":
         raw = "{}"
-    _reject_argument_blob(raw)
+    if isinstance(raw, str) and _blob_too_large(raw):
+        return name, {}
+    return name, _load_arguments(raw)
+
+
+def _reject_json_constant(value: str) -> Any:
+    raise ValueError(value)
+
+
+def _load_arguments(raw: object) -> dict[str, Any]:
+    """Object arguments, or ``{}`` when the blob is not a JSON object."""
+    if isinstance(raw, dict):
+        return dict(raw)
+    if not isinstance(raw, (str, bytes, bytearray)):
+        return {}
     try:
-        arguments = json.loads(raw)
-    except RecursionError:
-        raise PolicyViolation("too_large", "tool arguments are too deep") from None
-    except (json.JSONDecodeError, ValueError):
-        arguments = {}
-    if not isinstance(arguments, dict):
-        arguments = {}
-    return name, arguments
+        parsed = json.loads(raw, parse_constant=_reject_json_constant)
+    except (ValueError, RecursionError, OverflowError):
+        return {}
+    if not isinstance(parsed, dict):
+        return {}
+    return parsed
 
 
-def _reject_argument_blob(raw: str) -> None:
-    if len(raw) > _MAX_ARG_CHARS or _json_too_deep(raw):
-        raise PolicyViolation("too_large", "tool arguments are too large")
+def _blob_too_large(raw: str) -> bool:
+    return len(raw) > _MAX_ARG_CHARS or _json_too_deep(raw)
 
 
 def _json_too_deep(text: str) -> bool:
@@ -224,9 +238,11 @@ def _json_string_step(ch: str, depth: int, escaped: bool) -> tuple[int, bool, bo
 
 def run_registered_harness(name: str, extra_args: Sequence[str], env: ToolEnv) -> str:
     """Policy, approval, then run. The return value is text for the model."""
+    env.last_failed = False
     try:
         argv = _checked_argv(name, extra_args, env)
     except PolicyViolation as exc:
+        env.last_failed = True
         _emit_policy(env, exc.code)
         env.say(exc.code)
         return exc.code
@@ -234,15 +250,22 @@ def run_registered_harness(name: str, extra_args: Sequence[str], env: ToolEnv) -
         env.say(f"[harness] {name}: not approved — skipped")
         return "not approved"
     result = _invoke(name, argv, env)
+    env.last_failed = _command_failed(result)
     return _present_harness(name, result, env)
 
 
 def present_untrusted(kind: str, source: str, raw: str, say: Callable[[str], None]) -> str:
-    """Scan *raw*, tell the operator, and return a scrubbed envelope."""
+    """Scan *raw*, tell the operator, and return a scrubbed envelope.
+
+    The scan sees the original text. A forbidden headline must not replace
+    the page before the injection notice is shown, and it must not be what
+    the model receives.
+    """
     notice = security_notice(scan_injection(raw))
     if notice:
         say(dim_text(notice))
-    return wrap_untrusted(kind, source, scrub_transcript(raw))
+    cleaned = scrub_transcript(scrub_model_text(raw))
+    return wrap_untrusted(kind, source, cleaned)
 
 
 def _function(
@@ -278,6 +301,10 @@ def _flash_save(arguments: Mapping[str, Any], env: ToolEnv) -> str:
         text = check_flash_save(str(arguments.get("text", "")))
     except PolicyViolation as exc:
         return exc.code
+    try:
+        validate_fx1_output(text)
+    except Fx1HonestyError:
+        return "withheld by the fx-1 honesty gate"
     entry = env.store.add(
         text=scrub_transcript(text),
         task=scrub_transcript(str(arguments.get("task", ""))),
@@ -306,12 +333,23 @@ def _superpower_run(arguments: Mapping[str, Any], env: ToolEnv) -> str:
 
 
 def _harness_run(arguments: Mapping[str, Any], env: ToolEnv) -> str:
-    name = str(arguments.get("name", ""))
-    raw_args = arguments.get("args", [])
-    if not isinstance(raw_args, list):
-        raw_args = []
-    args = [str(item) for item in raw_args if isinstance(item, (str, int, float))]
-    return run_registered_harness(name, args, env)
+    raw_name = arguments.get("name", "")
+    name = raw_name if isinstance(raw_name, str) else ""
+    return run_registered_harness(name, _string_args(arguments.get("args")), env)
+
+
+def _string_args(raw: object) -> list[str]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise PolicyViolation("bad_arg", "arguments must be strings")
+    return [_string_arg(item) for item in raw]
+
+
+def _string_arg(item: object) -> str:
+    if not isinstance(item, str):
+        raise PolicyViolation("bad_arg", "arguments must be strings")
+    return item
 
 
 def _private_texts(store: Any) -> list[str]:
@@ -332,7 +370,9 @@ def _web_report(query: str, env: ToolEnv) -> str:
         max_depth=0,
         search_pause_s=0.0,
     )
-    report = env.researcher.run(query, budget=budget, queries=[query])
+    report = env.researcher.run(
+        query, budget=budget, queries=[query], cancel_event=env.cancel_event
+    )
     parts, urls = _web_parts(report)
     if not parts:
         return "web lookup found nothing (or the network is unavailable)"
@@ -420,7 +460,7 @@ def _clip_output(text: str) -> str:
 
 
 def _visible_output(raw: object) -> str:
-    return scrub_transcript(_clip_output(str(raw)))
+    return scrub_model_text(scrub_transcript(_clip_output(str(raw))))
 
 
 def _present_harness(name: str, result: Any, env: ToolEnv) -> str:
@@ -443,6 +483,15 @@ def _emit_policy(env: ToolEnv, code: str) -> None:
     if env.emit is None:
         return
     env.emit("concierge.policy", {"code": code})
+
+
+def _command_failed(result: Any) -> bool:
+    if bool(getattr(result, "timed_out", False)):
+        return True
+    code = getattr(result, "exit_code", 1)
+    if isinstance(code, bool) or not isinstance(code, int):
+        return True
+    return code != 0
 
 
 def _flag_line(result: Any) -> str:

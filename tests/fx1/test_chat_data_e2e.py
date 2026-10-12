@@ -31,6 +31,7 @@ def _isolate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _vol_csv(path: Path, rows: int = 40) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     lines = ["timestamp,realized,forecast_var"]
     for index in range(rows):
         day = index // 24 + 1
@@ -40,7 +41,7 @@ def _vol_csv(path: Path, rows: int = 40) -> None:
 
 
 def test_attached_csv_scores_and_verifies(tmp_path: Path) -> None:
-    csv_path = tmp_path / "vol.csv"
+    csv_path = tmp_path / "data" / "vol.csv"
     _vol_csv(csv_path)
     out: list[str] = []
     with StubModelServer({"fx1": _KEY, "fx1-lite": _KEY}) as server:

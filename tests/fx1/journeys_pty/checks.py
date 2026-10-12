@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from tests.fx1.journeys.support import CORRUPT_ID
-from tests.fx1.journeys.textutil import snippet, substitute
+from tests.fx1.journeys_pty.support import CORRUPT_ID
+from tests.fx1.journeys_pty.textutil import snippet, substitute
 
 
 def final_problem(

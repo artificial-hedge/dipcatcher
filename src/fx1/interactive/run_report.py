@@ -33,7 +33,7 @@ from dataclasses import dataclass
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive.evidence import EvidenceError, ground_summary
 from fx1.interactive.evidence_ledger import EvidenceLedger, compose_answer
-from fx1.interactive.policy import wrap_untrusted
+from fx1.interactive.policy import neutralize_untrusted, wrap_untrusted
 
 _OFFLINE_NOTE = (
     "note: no model endpoint was available, so this is the raw capability "
@@ -98,7 +98,7 @@ def synthesis_prompt(
     pieces: Sequence[tuple[str, str, str]],
 ) -> str:
     """User prompt. Wrapped tool text is data, not a new instruction channel."""
-    rendered = "\n".join(f"- {run.name}: {run.status} — {run.detail}" for run in runs)
+    rendered = _status_block(runs)
     evidence = _wrap_pieces(pieces) or "(no capability output)"
     return (
         "You are dipcatcher's /superpower coordinator for the fx-1 research "
@@ -110,11 +110,20 @@ def synthesis_prompt(
         "every SYNTHETIC / DATA_LABEL marker visible. State uncertainty and "
         "conflicting evidence explicitly. Never headline Sharpe/Sortino/"
         "Calmar/P&L/NAV — research results are proper scores.\n\n"
-        f"GOAL: {goal}\n\n"
+        f"GOAL: {neutralize_untrusted(goal)}\n\n"
         f"CAPABILITIES USED AND WHY:\n{rendered}\n\n"
         f"CAPABILITY RESULTS:\n{evidence}\n\n"
         "Final answer (concise, honest, sources attached):"
     )
+
+
+def _status_block(runs: Sequence[CapabilityView]) -> str:
+    lines: list[str] = []
+    for run in runs:
+        lines.append(neutralize_untrusted(f"- {run.name}: {run.status}"))
+        if run.detail:
+            lines.append(_wrap_one("status", run.id, run.detail))
+    return "\n".join(lines)
 
 
 def compose_run_answer(

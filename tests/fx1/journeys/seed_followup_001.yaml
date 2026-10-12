@@ -1,0 +1,24 @@
+- id: followup-001
+  category: followup
+  title: A follow-up turn is sent with the earlier user text still in context
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+  steps:
+    - say: Define pinball loss in one sentence.
+      expect:
+        - stub fx1 reply
+    - say: Use the same definition and name the proper score again.
+      expect:
+        - stub fx1 reply
+      sent:
+        - Define pinball loss in one sentence.
+  final:
+    session:
+      turns_at_least: 2
+      model: fx1
+      messages_contain:
+        - Define pinball loss in one sentence.
+        - Use the same definition and name the proper score again.

@@ -7,7 +7,7 @@ stays **OPEN** until that trial and installed-wheel runs exist.
 ## What a journey is
 
 Each journey is a `dipcatcher.journey.v1` record in
-`tests/fx1/journeys/journeys.json` (ids `J001`–`J100`, immutable). The
+`tests/fx1/journeys_pty/journeys.json` (ids `J001`–`J100`, immutable). The
 result document records the SHA-256 of that file. A journey is data:
 
 | Field | Meaning |
@@ -46,7 +46,7 @@ journey passes):
 ```bash
 cd /workspace && NO_COLOR=1 TERM=xterm-256color \
   PYTHONPATH=/workspace:/workspace/src \
-  .venv/bin/python scripts/dipcatcher_journeys.py --out result.json
+  .venv/bin/python scripts/dipcatcher_journeys_pty.py --out result.json
 ```
 
 One pytest case per journey. `JOURNEYS_FILTER` is a comma-separated list of
@@ -57,7 +57,7 @@ ids, categories, `inproc`, `pty`, or `critical`. Pty journeys are marked
 cd /workspace && NO_COLOR=1 TERM=dumb FORCE_COLOR=0 \
   OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 TOKENIZERS_PARALLELISM=false \
   PYTHONPATH=src JOURNEYS_FILTER=J001,J011,J021 \
-  .venv/bin/python -m pytest tests/fx1/journeys/test_journeys.py \
+  .venv/bin/python -m pytest tests/fx1/journeys_pty/test_journeys.py \
   -o addopts="" -q -p no:cacheprovider
 ```
 

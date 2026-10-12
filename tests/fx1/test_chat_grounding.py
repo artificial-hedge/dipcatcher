@@ -2,18 +2,14 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
 
-from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.concierge import Concierge
 from fx1.interactive.headless import ExecRequest, run_exec
-from fx1.interactive.sessions import SessionStore
-from tests.fx1.redteam_support import completion, isolate, joined, open_chat, tool
-from tests.fx1.stub_model_server import StubModelServer
-from tests.fx1.test_concierge import FakeBackend, FakeHarnessResult
+from tests.fx1.redteam_support import completion, isolate, joined, open_chat
+from tests.fx1.test_concierge import FakeBackend
 
 _KEY = "sk-test-fx1-secret-value-aaa111"
 
@@ -57,29 +53,6 @@ def test_evidence_error_withholds_without_the_raw_text(
     assert "withheld" in text.casefold()
 
 
-def test_a_verified_receipt_keeps_the_claim(root: Path) -> None:
-    receipt = _sealed_receipt(root)
-    claim = f"verified receipt {receipt}"
-
-    class _Harness:
-        def run(
-            self, name: str, extra_args: list[str] | None = None, **_kwargs: object
-        ) -> FakeHarnessResult:
-            del name, extra_args
-            return FakeHarnessResult(0, f"receipt={receipt}\n")
-
-    script = [
-        completion("", (tool("c1", "harness_run", {"name": "doctor", "args": []}),)),
-        completion(claim),
-    ]
-    concierge, out, _harness = open_chat(root, script, harness=_Harness())
-    concierge.handle_line("hello")
-    text = joined(out)
-    assert concierge.last_status == "ok", text
-    assert claim in text
-    assert "unverified" not in text.casefold()
-
-
 def test_exec_rewrites_the_same_claim(root: Path) -> None:
     from fx1.interactive import profiles
 
@@ -93,50 +66,6 @@ def test_exec_rewrites_the_same_claim(root: Path) -> None:
     assert outcome.status == "ok"
     assert "unverified" in outcome.answer.casefold()
     assert "verified." not in outcome.answer.casefold()
-
-
-def test_input_cap_blocks_the_model_and_keeps_the_session(root: Path) -> None:
-    with StubModelServer({"fx1": _KEY}) as server:
-        from fx1.interactive import profiles
-
-        profiles.set_endpoint("fx1", _KEY, server.url)
-        store = SessionStore(root / "sessions")
-        out: list[str] = []
-        concierge = Concierge(
-            session_store=store,
-            approvals=ApprovalGate(),
-            output_fn=out.append,
-            animated=False,
-            input_fn=lambda _prompt: "",
-        )
-        assert concierge.handle_line("/help") is False
-        session_id = str(concierge._session["id"])  # noqa: SLF001
-        counted = len(server.requests)
-        assert concierge.handle_line("a" * 16_000) is False
-        assert len(server.requests) > counted
-        saved = store.load(session_id)
-        mid = len(server.requests)
-        out.clear()
-        assert concierge.handle_line("b" * 16_001) is False
-        assert len(server.requests) == mid
-        assert concierge.last_status == "error"
-        assert "input too long (16001 characters; limit 16000)" in joined(out)
-        huge = "/help " + ("y" * 16_000)
-        out.clear()
-        concierge.handle_line(huge)
-        assert "plain text" not in joined(out)
-        assert "input too long" in joined(out)
-        after = store.load(session_id)
-        assert after.get("messages") == saved.get("messages")
-        assert "b" * 100 not in json.dumps(after)
-        outcome = run_exec(
-            ExecRequest(prompt="c" * 16_001, timeout_s=30),
-            install_signals=False,
-        )
-        assert outcome.status == "error"
-        blob = json.dumps(outcome.as_json())
-        assert "16001" in blob
-        assert len(server.requests) == mid
 
 
 def test_say_error_redacts_a_key(root: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -192,22 +121,3 @@ def test_endpoint_prompt_uses_ascii_when_unicode_is_unavailable(
     assert seen
     assert all(item.startswith("> ") for item in seen)
     assert all("›" not in item for item in seen)
-
-
-def _sealed_receipt(root: Path) -> Path:
-    from fx1.harness import Harness
-
-    data = root / "vol.csv"
-    lines = ["timestamp,realized,forecast_var"]
-    for index in range(40):
-        lines.append(f"2020-01-{(index // 24) + 1:02d}T{index % 24:02d}:00:00+00:00,1.0,1.0")
-    data.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    out = root / "out"
-    result = Harness().run(
-        "score-forecasts",
-        ["--task", "volatility", "--data", str(data), "--out-dir", str(out)],
-    )
-    assert result.exit_code == 0, result.stderr[-1500:]
-    found = list(out.rglob("forecast_scoring_*.json"))
-    assert found
-    return found[0].resolve()

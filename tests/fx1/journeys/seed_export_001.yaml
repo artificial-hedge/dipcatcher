@@ -1,0 +1,33 @@
+- id: export-001
+  category: export
+  title: Markdown and JSON exports omit planted API keys
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+      fx1-lite: ok
+  steps:
+    - say: summarize pinball loss
+      expect:
+        - stub fx1 reply
+    - say: /export md
+      expect:
+        - exported session
+      files:
+        - path: config:exports
+          glob: "*.md"
+          exists: true
+          forbid:
+            - "{key_fx1}"
+            - "{key_lite}"
+    - say: /export json
+      expect:
+        - exported session
+      files:
+        - path: config:exports
+          glob: "*.json"
+          exists: true
+          forbid:
+            - "{key_fx1}"
+            - "{key_lite}"

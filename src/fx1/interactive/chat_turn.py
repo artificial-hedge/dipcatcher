@@ -7,21 +7,28 @@ read-only API do not move.
 
 from __future__ import annotations
 
+import re
 import threading
 from typing import Any
 
-from fx1.honesty import Fx1HonestyError, validate_fx1_output
+from fx1.honesty import (
+    MODEL_TEXT_WITHHELD,
+    Fx1HonestyError,
+    screen_piece,
+    scrub_model_text,
+    validate_fx1_output,
+)
 from fx1.interactive.chat_tools import CHAT_TOOL_NAMES, chat_tool_schemas, execute_tool_call
 from fx1.interactive.evidence import EvidenceError, ground_summary
-from fx1.interactive.evidence_ledger import extract_receipt_paths
 from fx1.interactive.model_client import ErrorKind, ModelError
 from fx1.interactive.model_ux import (
     CallSnapshot,
+    Outbound,
+    build_outbound,
     charge_reported_usage,
     completion_kwargs,
     footer_lines,
     open_backend,
-    outbound_messages,
     read_snapshot,
     render_model_error,
     scrub_transcript,
@@ -29,13 +36,19 @@ from fx1.interactive.model_ux import (
 from fx1.interactive.usage_budget import BudgetExceeded, UsageTracker
 
 
+class _CancelledTurn(Exception):
+    """The operator cancelled between steps. Not a model failure."""
+
+
 def run_chat_turn(host: Any, text: str) -> None:
     """Append the user line and run tool rounds when a backend is open."""
-    _begin_turn(host)
     opened = open_backend(host.model, host._backend_factory)
     if opened.backend is None:
         host._say(opened.detail)
         host._set_status(opened.status)
+        return
+    if _cancelled_now(host):
+        _cancel_marked(host, len(host._messages))
         return
     host._turn_mark = len(host._messages)
     host._append_message({"role": "user", "content": scrub_transcript(text)})
@@ -59,7 +72,9 @@ def _run_turn(host: Any, backend: Any) -> None:
         _tool_rounds(host, backend)
     except KeyboardInterrupt:
         _cancel_marked(host, start)
-    except (Fx1HonestyError, EvidenceError) as exc:
+    except _CancelledTurn:
+        _cancel_marked(host, start)
+    except Fx1HonestyError as exc:
         _withhold(host, start, exc)
     except BudgetExceeded:
         _stop_for_budget(host)
@@ -103,6 +118,7 @@ def _one_round(
     cancel: threading.Event,
     tools: list[dict[str, Any]],
 ) -> bool:
+    _raise_if_cancelled(host)
     completion = _call_backend(host, backend, tracker, cancel, tools)
     return _consume_completion(host, completion, tracker, backend)
 
@@ -114,18 +130,37 @@ def _call_backend(
     cancel: threading.Event,
     tools: list[dict[str, Any]],
 ) -> Any:
-    messages = outbound_messages(host._transcript(), host.model, tools=CHAT_TOOL_NAMES, mode="chat")
-    messages = _with_dataset_note(messages, _dataset_note(host))
     kwargs = completion_kwargs(
         tracker, backend, cancel, pass_deadline=host._pass_deadline, tools=tools
     )
     tracker.charge_step()
-    tracker.charge_model_call()
-    started = host._clock()
-    with host._orb():
-        completion = backend.complete_with_tools(messages, **kwargs)
-    host._pending_snapshot = read_snapshot(backend, started, host._clock)
-    return completion
+    retries = 0
+    while True:
+        outbound = build_outbound(
+            host._transcript(),
+            host.model,
+            tools=CHAT_TOOL_NAMES,
+            mode="chat",
+            max_chars=host._context_budget.limit(host.model),
+        )
+        _announce_trim(host, outbound)
+        tracker.charge_model_call()
+        started = host._clock()
+        try:
+            with host._orb():
+                completion = backend.complete_with_tools(
+                    _with_dataset_note(outbound.messages, _dataset_note(host)), **kwargs
+                )
+        except ModelError as exc:
+            retries += 1
+            if retries > _CONTEXT_RETRIES or not _shrunk_for_retry(host, exc, outbound):
+                raise
+            continue
+        host._pending_snapshot = read_snapshot(backend, started, host._clock)
+        return completion
+
+
+_CONTEXT_RETRIES = 3
 
 
 def _dataset_note(host: Any) -> str:
@@ -133,9 +168,7 @@ def _dataset_note(host: Any) -> str:
     if not callable(provider):
         return ""
     note = provider()
-    if not isinstance(note, str):
-        return ""
-    return note
+    return note if isinstance(note, str) else ""
 
 
 def _with_dataset_note(messages: list[dict[str, Any]], note: str) -> list[dict[str, Any]]:
@@ -146,8 +179,38 @@ def _with_dataset_note(messages: list[dict[str, Any]], note: str) -> list[dict[s
     return [messages[0], {"role": "user", "content": note}, *messages[1:]]
 
 
+def _announce_trim(host: Any, outbound: Outbound) -> None:
+    if not outbound.omitted:
+        host._context_trim_said = False
+        return
+    if host._context_trim_said:
+        return
+    host._context_trim_said = True
+    host._say(
+        f"context: {outbound.omitted} older messages are no longer sent to {host.model} "
+        "so the conversation fits; they stay in the saved session"
+    )
+
+
+def _shrunk_for_retry(host: Any, exc: ModelError, outbound: Outbound) -> bool:
+    """True when a too-long prompt can be retried with fewer earlier turns."""
+    if exc.kind is not ErrorKind.CONTEXT_TOO_LONG or outbound.turns < 2:
+        return False
+    if not host._context_budget.shrink(host.model, outbound.chars):
+        return False
+    host._say(f"context: {host.model} rejected the prompt as too long; retrying with less history")
+    return True
+
+
+_MAX_TOOL_CALLS = 32
+
+
 def _consume_completion(host: Any, completion: Any, tracker: UsageTracker, backend: Any) -> bool:
-    content = _ground_content(host, scrub_transcript(validate_fx1_output(completion.content or "")))
+    if _refuse_tool_burst(host, completion):
+        return True
+    content = scrub_transcript(completion.content or "")
+    _require_clean(host, content)
+    _require_clean_calls(host, completion)
     snapshot = host._pending_snapshot
     if snapshot is not None:
         host._note_call(snapshot)
@@ -158,6 +221,15 @@ def _consume_completion(host: Any, completion: Any, tracker: UsageTracker, backe
     return False
 
 
+def _refuse_tool_burst(host: Any, completion: Any) -> bool:
+    calls = getattr(completion, "tool_calls", None)
+    if not calls or len(calls) <= _MAX_TOOL_CALLS:
+        return False
+    host._say("too many tool calls in one response")
+    host._set_status("error")
+    return True
+
+
 def _finish_answer(
     host: Any,
     content: str,
@@ -165,11 +237,8 @@ def _finish_answer(
     tracker: UsageTracker,
     backend: Any,
 ) -> bool:
-    host._append_message({"role": "assistant", "content": content})
-    host._say(content)
-    _say_footer(host, snapshot)
-    host._remember_answer(content)
-    charge_reported_usage(tracker, backend)
+    shown = _shown_answer(content, _verified_refs(host))
+    _publish_answer(host, shown, content, snapshot, tracker, backend)
     return True
 
 
@@ -184,46 +253,108 @@ def _append_tool_round(host: Any, content: str, completion: Any) -> None:
     _apply_tool_calls(host, completion)
 
 
+class _GateBlock:
+    def __init__(self) -> None:
+        self.flag = False
+
+
+def _visible_contents(host: Any) -> list[str]:
+    """Assistant lines only, so a tool envelope cannot separate a split claim."""
+    parts: list[str] = []
+    for message in host._messages:
+        if message.get("role") != "assistant":
+            continue
+        content = message.get("content")
+        if isinstance(content, str) and content:
+            parts.append(content)
+    return parts
+
+
+def _require_clean(host: Any, text: str) -> None:
+    validate_fx1_output(text)
+    if screen_piece(_visible_contents(host), text) != text:
+        raise Fx1HonestyError("fx-1 output failed the honesty gate")
+
+
+def _require_clean_calls(host: Any, completion: Any) -> None:
+    for call in completion.tool_calls or ():
+        _require_call(host, call)
+
+
+def _require_call(host: Any, call: Any) -> None:
+    if not isinstance(call, dict):
+        return
+    function = call.get("function")
+    if not isinstance(function, dict):
+        return
+    arguments = function.get("arguments")
+    if isinstance(arguments, str):
+        _require_clean(host, arguments)
+
+
 def _apply_tool_calls(host: Any, completion: Any) -> None:
     env = host._tool_env(host._current_cancel())
+    block = _GateBlock()
+    _guard_says(host, env, block)
     for call in completion.tool_calls:
-        result_text = scrub_transcript(execute_tool_call(call, env))
-        _collect_verified(host, result_text)
+        _raise_if_cancelled(host)
+        block.flag = False
+        result_text = _tool_result(host, call, env, block)
         host._append_message({"role": "tool", "tool_call_id": call["id"], "content": result_text})
 
 
-def _begin_turn(host: Any) -> None:
-    begin = getattr(host, "begin_chat_turn", None)
-    if callable(begin):
-        begin()
+def _tool_result(host: Any, call: Any, env: Any, block: _GateBlock) -> str:
+    result_text = scrub_transcript(execute_tool_call(call, env))
+    if block.flag or screen_piece(_visible_contents(host), result_text) != result_text:
+        return MODEL_TEXT_WITHHELD
+    return result_text
 
 
-def _ground_content(host: Any, content: str) -> str:
-    """Keep a verification claim only when this turn verified that receipt."""
-    grounded = ground_summary(content, verified_receipts=_verified_paths(host))
-    return validate_fx1_output(scrub_transcript(grounded))
+def _guard_says(host: Any, env: Any, block: _GateBlock) -> None:
+    say = env.say
+    say_error = env.say_error
+
+    def emit(text: str) -> None:
+        say(_shown(host, text, block))
+
+    def emit_error(exc: Exception) -> None:
+        cleaned = _shown(host, str(exc), block)
+        if cleaned != str(exc):
+            say_error(RuntimeError(cleaned))
+            return
+        say_error(exc)
+
+    env.say = emit
+    env.say_error = emit_error
 
 
-def _verified_paths(host: Any) -> set[str]:
-    reader = getattr(host, "turn_verified_receipts", None)
-    if not callable(reader):
-        return set()
-    raw = reader()
-    if not isinstance(raw, (set, frozenset, list, tuple)):
-        return set()
-    return {item for item in raw if isinstance(item, str) and item}
+def _shown(host: Any, text: str, block: _GateBlock) -> str:
+    cleaned = screen_piece(_visible_contents(host), text)
+    if cleaned != text:
+        block.flag = True
+    return cleaned
 
 
-def _collect_verified(host: Any, text: str) -> None:
-    note = getattr(host, "note_verified_receipt", None)
-    if not callable(note):
-        return
-    for path in extract_receipt_paths(text):
-        note(path)
+def _cancelled_now(host: Any) -> bool:
+    checker = getattr(host, "_turn_cancelled", None)
+    return bool(callable(checker) and checker())
 
 
-def _withhold(host: Any, start: int, exc: BaseException) -> None:
-    refusal = f"answer withheld by the fx-1 honesty gate ({exc}). Ask a follow-up to continue."
+def _raise_if_cancelled(host: Any) -> None:
+    if _cancelled_now(host):
+        raise _CancelledTurn()
+
+
+def _refusal_text(exc: Fx1HonestyError) -> str:
+    """Operator text for a withhold. The sentence itself must pass the gate."""
+    detail = str(exc)
+    if scrub_model_text(detail) != detail:
+        return MODEL_TEXT_WITHHELD
+    return f"answer withheld by the fx-1 honesty gate ({detail}). Ask a follow-up to continue."
+
+
+def _withhold(host: Any, start: int, exc: Fx1HonestyError) -> None:
+    refusal = _refusal_text(exc)
     if any(message.get("role") == "tool" for message in host._messages[start:]):
         # A blocked answer cannot undo completed tool actions. Keep
         # their validated call/result transcript for the next turn.
@@ -232,6 +363,9 @@ def _withhold(host: Any, start: int, exc: BaseException) -> None:
         host._truncate_messages(start)
     host._say(refusal)
     host._set_status("withheld")
+    remember = getattr(host, "_remember_withheld", None)
+    if callable(remember):
+        remember(refusal)
 
 
 def _fail_model(host: Any, start: int, exc: ModelError) -> None:
@@ -240,7 +374,7 @@ def _fail_model(host: Any, start: int, exc: ModelError) -> None:
         return
     host._truncate_messages(start)
     if exc.kind is ErrorKind.DEADLINE:
-        host._say(str(exc))
+        host._say(scrub_model_text(str(exc)))
         host._set_status("budget")
         return
     host._say_error(RuntimeError(render_model_error(exc)))
@@ -250,7 +384,7 @@ def _fail_model(host: Any, start: int, exc: ModelError) -> None:
 
 def _fail_generic(host: Any, start: int, exc: Exception) -> None:
     host._truncate_messages(start)
-    host._say_error(exc)
+    host._say_error(RuntimeError(scrub_model_text(str(exc))))
     host._set_status("error")
 
 
@@ -268,12 +402,90 @@ def _cancel_marked(host: Any, start: int) -> None:
     host._set_status("cancelled")
 
 
+_METRIC = re.compile(
+    r"\b(?:sharpe|sortino|calmar|nav|pnl)\b|\bp\s*&\s*l\b",
+    re.IGNORECASE,
+)
+
+
+def _shown_answer(content: str, verified: set[str]) -> str:
+    grounded = _ground_visible(content, verified)
+    try:
+        return validate_fx1_output(grounded)
+    except Fx1HonestyError:
+        return MODEL_TEXT_WITHHELD
+
+
+def _ground_visible(text: str, verified: set[str]) -> str:
+    """Rewrite a forged verification claim. Bare metric discussion stays."""
+    try:
+        return ground_summary(text, verified_receipts=verified)
+    except EvidenceError:
+        return _ground_after_metric(text, verified)
+
+
+def _ground_after_metric(text: str, verified: set[str]) -> str:
+    masked = _METRIC.sub("metric", text)
+    if masked == text:
+        return MODEL_TEXT_WITHHELD
+    try:
+        rewritten = ground_summary(masked, verified_receipts=verified)
+    except EvidenceError:
+        return MODEL_TEXT_WITHHELD
+    if rewritten == masked:
+        return text
+    return MODEL_TEXT_WITHHELD
+
+
+def _verified_refs(host: Any) -> set[str]:
+    ledger = getattr(host, "_evidence", None)
+    take = getattr(ledger, "verified_receipts", None)
+    if not callable(take):
+        return set()
+    return _ref_set(take())
+
+
+def _ref_set(items: Any) -> set[str]:
+    found: set[str] = set()
+    for item in items:
+        ref = getattr(item, "ref", "")
+        if isinstance(ref, str) and ref:
+            found.add(ref)
+    return found
+
+
+def _publish_answer(
+    host: Any,
+    shown: str,
+    content: str,
+    snapshot: CallSnapshot | None,
+    tracker: UsageTracker,
+    backend: Any,
+) -> None:
+    host._append_message({"role": "assistant", "content": shown})
+    host._say(shown)
+    if shown == MODEL_TEXT_WITHHELD and shown != content:
+        _note_withheld(host, shown)
+        charge_reported_usage(tracker, backend)
+        return
+    _say_footer(host, snapshot)
+    host._remember_answer(shown)
+    charge_reported_usage(tracker, backend)
+
+
+def _note_withheld(host: Any, shown: str) -> None:
+    host._set_status("withheld")
+    remember = getattr(host, "_remember_withheld", None)
+    if callable(remember):
+        remember(shown)
+
+
 def _say_footer(host: Any, snapshot: CallSnapshot | None) -> None:
     latency = None if snapshot is None else snapshot.latency_s
     usage = None if snapshot is None else snapshot.usage
     identity = None if snapshot is None else snapshot.identity
     for line in footer_lines(host.model, latency, usage, identity):
-        host._say(line)
+        host._say(scrub_model_text(line))
 
 
 def _scrub_tool_calls(calls: Any) -> list[dict[str, Any]]:
@@ -289,6 +501,8 @@ def _scrub_tool_calls(calls: Any) -> list[dict[str, Any]]:
             arguments = fn.get("arguments")
             if isinstance(arguments, str):
                 fn["arguments"] = scrub_transcript(arguments)
+                if screen_piece([], fn["arguments"]) != fn["arguments"]:
+                    fn["arguments"] = "{}"
             copied["function"] = fn
         scrubbed.append(copied)
     return scrubbed

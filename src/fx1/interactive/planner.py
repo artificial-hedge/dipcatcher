@@ -464,7 +464,7 @@ def _call_model(model_fn: ModelFn, prompt: str) -> Mapping[str, Any] | Exclusion
         return Exclusion(None, "invalid_args", "model refinement rejected: reply was not text")
     try:
         return _parse_model_payload(raw)
-    except ValueError as exc:
+    except (ValueError, RecursionError, OverflowError) as exc:
         return Exclusion(None, "invalid_args", f"model refinement rejected: {exc}")
 
 
@@ -1534,8 +1534,10 @@ def _model_chain(
     steps, problem = _default_steps(deps, catalog, roots, cap.id, goal)
     if problem is not None:
         return [], problem
+    # The model never chooses where a run writes: the per-run output root is bound here.
+    bound = {**dict(args), **_bind_output_dir(cap, roots)}
     try:
-        validated = validate_args(cap, dict(args), roots=roots)
+        validated = validate_args(cap, bound, roots=roots)
     except ContractViolation as exc:
         return [], Exclusion(cap.id, "invalid_args", f"{exc.code}:{exc.arg}")
     steps.append(_new_step(cap, validated, _safe_text(why, f"selected {cap.id}")))

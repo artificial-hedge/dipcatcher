@@ -129,22 +129,35 @@ def make_plan(
     model_fn: Callable[[str], str] | None,
     family_selector: Selector | None,
     max_harness: int,
+    budget_s: float | None = None,
+    datasets: Sequence[DatasetRef] = (),
 ) -> SuperpowerPlan:
-    """Plan *goal*. A missing catalog is passed as ``catalog_unavailable``."""
+    """Plan *goal*. A missing catalog is passed as ``catalog_unavailable``.
+
+    ``budget_s`` trims catalog steps by estimated runtime. The keyword
+    planner ignores it. ``datasets`` are operator attachments; with none given
+    the prepared attachments are used and nothing is replaced with a synthetic file.
+    """
     return plan_goal(
         goal,
         model_fn=model_fn,
         family_selector=family_selector,
         max_harness=max_harness,
         catalog=prepared.catalog,
-        datasets=prepared.datasets,
+        datasets=tuple(datasets) if datasets else prepared.datasets,
         roots=prepared.roots,
         catalog_unavailable=prepared.unavailable,
+        budget_s=budget_s,
     )
 
 
-def build_context(prepared: PreparedRun, seams: RunSeams) -> SuperpowerContext:
-    """Context for :func:`run_plan`. Datasets are the prepared attachments."""
+def build_context(
+    prepared: PreparedRun,
+    seams: RunSeams,
+    *,
+    datasets: Sequence[DatasetRef] = (),
+) -> SuperpowerContext:
+    """Context for :func:`run_plan`. ``datasets`` default to the prepared attachments."""
     return SuperpowerContext(
         model_fn=seams.model_fn,
         harness=seams.harness,
@@ -156,7 +169,7 @@ def build_context(prepared: PreparedRun, seams: RunSeams) -> SuperpowerContext:
         cancel_event=seams.cancel_event,
         budget=seams.budget,
         catalog=prepared.catalog,
-        datasets=prepared.datasets,
+        datasets=tuple(datasets) if datasets else prepared.datasets,
         roots=prepared.roots,
         job_ledger=seams.job_ledger,
         evidence=prepared.evidence,

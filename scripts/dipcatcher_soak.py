@@ -10,6 +10,7 @@ product contract (P6) requires.
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import os
 import signal
@@ -568,6 +569,7 @@ class _Driver:
         baseline = self._baseline
         if baseline is None:
             return
+        self.server.clear_requests()
         sample = self._sample()
         self._traced_samples.append(sample.traced_bytes)
         problems = diff_resources(baseline, sample, self.bounds, check_alloc=True)
@@ -610,6 +612,7 @@ class _Driver:
     def _sample(self) -> ResourceSample:
         from fx1.interactive.procs import REGISTRY
 
+        gc.collect()
         current, _peak = tracemalloc.get_traced_memory()
         nondaemon, daemons = thread_census()
         return ResourceSample(

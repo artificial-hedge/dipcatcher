@@ -166,7 +166,7 @@ flowchart LR
     fx1_webresearch["fx1.webresearch"]
   end
   dipcatcher_cli -->|1| fx1
-  dipcatcher_cli -->|13| fx1_interactive
+  dipcatcher_cli -->|14| fx1_interactive
   dipcatcher_cli -->|1| quant_fund_cli
   fx1_bench -->|1| fx1_honesty
   fx1_bench -->|5| quant_fund_utils
@@ -231,7 +231,7 @@ flowchart LR
   fx1_interactive -->|1| fx1_doctor
   fx1_interactive -->|8| fx1_flash
   fx1_interactive -->|8| fx1_harness
-  fx1_interactive -->|8| fx1_honesty
+  fx1_interactive -->|16| fx1_honesty
   fx1_interactive -->|5| fx1_serve
   fx1_interactive -->|2| fx1_webresearch
   fx1_interactive -->|1| quant_fund_schemas
@@ -765,7 +765,7 @@ sequenceDiagram
 | `fx1.honesty_audit` | 1 |
 | `fx1.hypotheses` | 1 |
 | `fx1.hypotheses_audit` | 1 |
-| `fx1.interactive` | 45 |
+| `fx1.interactive` | 48 |
 | `fx1.modelcard` | 1 |
 | `fx1.modelcard_audit` | 1 |
 | `fx1.mrm` | 1 |
@@ -839,7 +839,7 @@ sequenceDiagram
 | `quant_fund.utils` | 10 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13433**
+- Modules scanned: **13436**
 - Packages: **94**
 - Cross-package import edges: **394**
 

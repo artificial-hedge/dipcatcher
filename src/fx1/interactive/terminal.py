@@ -72,7 +72,7 @@ _TERMINAL_UNSAFE_RE = re.compile(
     r"|[\x00-\x08\x0b-\x1f\x7f]"
     r"|[\u0080-\u009f]"
     r"|[\u200e\u200f\u202a-\u202e\u2066-\u2069]"
-    r"|[\u00ad\u061c\u180e\u200b-\u200d\u2060\u206a-\u206f\ufeff\ufe0e\ufe0f]"
+    r"|[\u00ad\u061c\u180e\u200b-\u200d\u2028\u2029\u2060\u206a-\u206f\ufeff\ufe0e\ufe0f]"
 )
 _SGR_RE = re.compile(r"\x1b\[[0-9;:]*m")
 _SGR_SLOT_RE = re.compile("\ue000(\\d+)\ue001")

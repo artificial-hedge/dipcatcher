@@ -26,6 +26,7 @@ def _plain(text: str) -> str:
 
 
 def _csv(path: Path, rows: int = 40) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     lines = ["timestamp,realized,forecast_var"]
     for index in range(rows):
         day = index // 24 + 1
@@ -123,7 +124,7 @@ def test_pty_scores_the_attached_csv(tmp_path: Path, monkeypatch: pytest.MonkeyP
 
     work = tmp_path / "work"
     work.mkdir()
-    _csv(work / "vol.csv")
+    _csv(work / "data" / "vol.csv")
     export = work / "session.md"
     env = _env(tmp_path)
     for key, value in env.items():

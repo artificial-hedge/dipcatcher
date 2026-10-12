@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from tests.fx1.journeys import SCHEMA
+from tests.fx1.journeys_pty import SCHEMA
 
 CATALOG_PATH = Path(__file__).resolve().parent / "journeys.json"
 CATEGORIES = (

@@ -406,7 +406,7 @@ def _load_document(doc: Mapping[str, Any] | str) -> dict[str, Any]:
 def _parse_json_text(doc: str) -> Any:
     try:
         return json.loads(doc)
-    except json.JSONDecodeError as exc:
+    except (ValueError, RecursionError, OverflowError) as exc:
         raise ContractError("catalog is not valid JSON") from exc
 
 

@@ -127,8 +127,15 @@ def ground_summary(
 
 
 def _reject_forbidden(summary: str) -> None:
+    from fx1.honesty import Fx1HonestyError, _normalize, validate_fx1_output
+
+    try:
+        validate_fx1_output(summary)
+    except Fx1HonestyError as exc:
+        raise EvidenceError(str(exc)) from exc
+    folded = _normalize(summary)
     for name, pattern in _FORBIDDEN:
-        if pattern.search(summary):
+        if pattern.search(folded):
             raise EvidenceError(
                 "summary contains forbidden headline token "
                 f"{name!r}; withholding rather than paraphrasing it"

@@ -320,6 +320,11 @@ class StubModelServer:
         with self._lock:
             return list(self._requests)
 
+    def clear_requests(self) -> None:
+        """Drop the recorded request log so a long run does not grow with every turn."""
+        with self._lock:
+            self._requests.clear()
+
     def queue(self, reply: Reply) -> None:
         """Append a scripted reply. Served in order, ahead of the default handler."""
         with self._lock:

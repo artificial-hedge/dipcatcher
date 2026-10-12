@@ -1,0 +1,17 @@
+- id: data-001
+  category: data
+  title: A goal about my data stays SYNTHETIC and records needs_dataset
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    harness:
+      mode: fake
+  steps:
+    - say: evaluate my data volatility forecasts
+      expect:
+        - routing this to research orchestration
+        - "SYNTHETIC correctness evidence only"
+        - needs_dataset
+    - wait_job: true

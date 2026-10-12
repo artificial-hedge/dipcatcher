@@ -7,12 +7,15 @@ status. A command exit code is not an input to this module.
 
 from __future__ import annotations
 
+import contextvars
 import hashlib
 import json
 import math
 import os
 import re
+import stat
 import threading
+import unicodedata
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import StrEnum
@@ -50,6 +53,7 @@ _CANONICAL_LABELS = {
 }
 _HEX64 = re.compile(r"[0-9a-fA-F]{64}")
 _HASH_RE = re.compile(r"(?<![0-9A-Fa-f])([0-9A-Fa-f]{64})(?![0-9A-Fa-f])")
+_NEAR_HASH_RE = re.compile(r"(?<![0-9A-Fa-f])([0-9A-Fa-f]{63}|[0-9A-Fa-f]{65})(?![0-9A-Fa-f])")
 _JSON_PATH_RE = re.compile(
     r"(?<![A-Za-z0-9_./\\-])([A-Za-z0-9_./\\-]*[A-Za-z0-9_-]\.json)(?![A-Za-z0-9_./\\-])"
 )
@@ -305,7 +309,18 @@ def _path_text(path: str | Path) -> str | None:
 def _path_text_rejected(text: str) -> bool:
     if not text or len(text) > _MAX_LOCATE_CHARS:
         return True
-    return "\x00" in text or "\n" in text or "\r" in text
+    if "\x00" in text or "\n" in text or "\r" in text:
+        return True
+    return _windows_or_tilde(text)
+
+
+def _windows_or_tilde(text: str) -> bool:
+    folded = text.replace("\\", "/")
+    if text.startswith("~") or "/~" in folded:
+        return True
+    if text.startswith("\\\\") or text.startswith("//"):
+        return True
+    return len(text) >= 2 and text[0].isalpha() and text[1] == ":"
 
 
 def _as_path(path: str | Path) -> Path | None:
@@ -433,18 +448,33 @@ def _use_nofollow() -> bool:
     return os.name == "posix"
 
 
+_OPEN_ROOTS: contextvars.ContextVar[tuple[Path, ...]] = contextvars.ContextVar(
+    "fx1_receipt_roots", default=()
+)
+
+
 def _read_limited(path: Path, max_bytes: int) -> bytes:
-    flags = os.O_RDONLY
-    if _use_nofollow():
-        flags |= getattr(os, "O_NOFOLLOW", 0)
-    fd = os.open(path, flags)
+    fd = _open_receipt(path)
     try:
+        _require_receipt_fd(fd, max_bytes)
         return _read_fd(fd, max_bytes + 1)
     finally:
         os.close(fd)
 
 
-def _read_capped(path: Path, max_bytes: int) -> tuple[bytes | None, str | None]:
+def _read_capped(
+    path: Path, max_bytes: int, roots: Sequence[Path] | None = None
+) -> tuple[bytes | None, str | None]:
+    if roots is None:
+        return _read_capped_open(path, max_bytes)
+    token = _OPEN_ROOTS.set(tuple(roots))
+    try:
+        return _read_capped_open(path, max_bytes)
+    finally:
+        _OPEN_ROOTS.reset(token)
+
+
+def _read_capped_open(path: Path, max_bytes: int) -> tuple[bytes | None, str | None]:
     size = _file_size(path)
     if size is None:
         return None, "receipt unreadable"
@@ -457,6 +487,110 @@ def _read_capped(path: Path, max_bytes: int) -> tuple[bytes | None, str | None]:
     if len(data) > max_bytes:
         return None, "receipt exceeds size limit"
     return data, None
+
+
+def _open_receipt(path: Path) -> int:
+    roots = _OPEN_ROOTS.get()
+    if roots and _use_nofollow():
+        return _open_in_roots(path, roots)
+    return _open_direct(path)
+
+
+def _open_direct(path: Path) -> int:
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    if _use_nofollow():
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    return os.open(path, flags)
+
+
+def _open_in_roots(path: Path, roots: Sequence[Path]) -> int:
+    for root in roots:
+        opened = _try_root(path, root)
+        if opened is not None:
+            return opened
+    raise OSError("receipt path is not inside a root")
+
+
+def _try_root(path: Path, root: Path) -> int | None:
+    relative = _child_of(path, root)
+    if relative is None:
+        return None
+    try:
+        return _open_below(root, relative)
+    except OSError:
+        return None
+
+
+def _child_of(path: Path, root: Path) -> Path | None:
+    try:
+        relative = path.relative_to(root.resolve())
+    except (OSError, ValueError):
+        return None
+    if not relative.parts or any(part in {"", ".", ".."} for part in relative.parts):
+        return None
+    return relative
+
+
+def _open_below(root: Path, relative: Path) -> int:
+    dirfd = _open_root_fd(root)
+    try:
+        return _open_relative(dirfd, relative)
+    finally:
+        os.close(dirfd)
+
+
+def _open_root_fd(root: Path) -> int:
+    flags = os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_CLOEXEC", 0)
+    fd = os.open(root, flags)
+    try:
+        _same_directory(fd, root)
+    except OSError:
+        os.close(fd)
+        raise
+    return fd
+
+
+def _same_directory(fd: int, root: Path) -> None:
+    opened = os.fstat(fd)
+    current = os.stat(root)
+    if not stat.S_ISDIR(opened.st_mode):
+        raise OSError("not a directory")
+    if (opened.st_dev, opened.st_ino) != (current.st_dev, current.st_ino):
+        raise OSError("directory changed")
+
+
+def _open_relative(dirfd: int, relative: Path) -> int:
+    current = dirfd
+    opened: list[int] = []
+    try:
+        for part in relative.parts[:-1]:
+            current = _open_component(part, current, directory=True)
+            opened.append(current)
+        return _open_component(relative.parts[-1], current, directory=False)
+    finally:
+        for held in opened:
+            os.close(held)
+
+
+def _open_component(name: str, dirfd: int, *, directory: bool) -> int:
+    if name in {"", ".", ".."}:
+        raise OSError("bad path component")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    if directory:
+        flags |= os.O_DIRECTORY
+    else:
+        flags |= os.O_NONBLOCK
+    if _use_nofollow():
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+    return os.open(name, flags, dir_fd=dirfd)
+
+
+def _require_receipt_fd(fd: int, max_bytes: int) -> None:
+    info = os.fstat(fd)
+    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+        raise OSError("not a private regular file")
+    if info.st_size > max_bytes:
+        raise OSError("receipt exceeds size limit")
 
 
 def _as_object(value: object) -> dict[str, Any] | None:
@@ -760,7 +894,7 @@ def verify_receipt(
             verdict=located.verdict or Verdict.UNVERIFIABLE,
             detail=located.detail or "path unreadable",
         )
-    data, read_error = _read_capped(located.path, max_bytes)
+    data, read_error = _read_capped(located.path, max_bytes, roots)
     if data is None:
         return _receipt_item(
             ref=located.ref,
@@ -1009,10 +1143,33 @@ def _one_hash_problem(token: str, items: Sequence[EvidenceItem]) -> CitationProb
     return CitationProblem(code="unknown_hash", detail=f"hash {key} is not in the ledger")
 
 
-def _hash_problems(answer: str, items: Sequence[EvidenceItem]) -> list[CitationProblem]:
+def _hash_surface(answer: str) -> str:
+    """Drop format characters so a zero-width mark cannot split a digest."""
+    return "".join(ch for ch in answer if unicodedata.category(ch) != "Cf")
+
+
+def _near_hash_problems(answer: str) -> list[CitationProblem]:
     problems: list[CitationProblem] = []
     seen: set[str] = set()
-    for match in _HASH_RE.finditer(answer):
+    for match in _NEAR_HASH_RE.finditer(answer):
+        key = match.group(1).lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        problems.append(
+            CitationProblem(
+                code="unknown_hash",
+                detail=f"hash {key} is not a 64-hex receipt digest",
+            )
+        )
+    return problems
+
+
+def _hash_problems(answer: str, items: Sequence[EvidenceItem]) -> list[CitationProblem]:
+    surface = _hash_surface(answer)
+    problems: list[CitationProblem] = []
+    seen: set[str] = set()
+    for match in _HASH_RE.finditer(surface):
         token = match.group(1)
         key = token.lower()
         if key in seen:
@@ -1021,6 +1178,7 @@ def _hash_problems(answer: str, items: Sequence[EvidenceItem]) -> list[CitationP
         problem = _one_hash_problem(token, items)
         if problem is not None:
             problems.append(problem)
+    problems.extend(_near_hash_problems(surface))
     return problems
 
 
@@ -1198,7 +1356,7 @@ def _digest_matches(item: EvidenceItem, roots: Sequence[Path]) -> bool:
     located = _locate(item.ref, roots)
     if located.verdict is not None or located.path is None:
         return False
-    data, error = _read_capped(located.path, MAX_RECEIPT_BYTES)
+    data, error = _read_capped(located.path, MAX_RECEIPT_BYTES, roots)
     if data is None or error is not None:
         return False
     return hashlib.sha256(data).hexdigest() == item.sha256

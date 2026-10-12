@@ -228,6 +228,7 @@ def _deny(*_args, **_kwargs):
     raise OSError(1, "Operation not permitted")
 
 os.chmod = _deny
+os.fchmod = _deny
 store = SessionStore(Path(sys.argv[1]))
 record = store.load(sys.argv[2])
 record["messages"] = [{"role": "user", "content": "nope"}]
@@ -244,17 +245,10 @@ import sys
 from pathlib import Path
 from fx1.interactive.sessions import SessionError, SessionStore
 
-real_fdopen = os.fdopen
+def _full(*_args, **_kwargs):
+    raise OSError(28, "No space left on device")
 
-def _fdopen(fd, mode="r", *args, **kwargs):
-    handle = real_fdopen(fd, mode, *args, **kwargs)
-    if "w" in mode:
-        def _full(*_args, **_kwargs):
-            raise OSError(28, "No space left on device")
-        handle.write = _full
-    return handle
-
-os.fdopen = _fdopen
+os.write = _full
 store = SessionStore(Path(sys.argv[1]))
 record = store.load(sys.argv[2])
 record["messages"] = [{"role": "user", "content": "x" * 4000}]

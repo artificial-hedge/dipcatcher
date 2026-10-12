@@ -6,7 +6,7 @@ import re
 import time
 from typing import Any
 
-from tests.fx1.journeys.textutil import snippet, substitute
+from tests.fx1.journeys_pty.textutil import snippet, substitute
 
 MIN_HANG_S = 60.0
 STARTUP_HANG_S = 90.0

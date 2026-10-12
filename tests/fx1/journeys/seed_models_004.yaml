@@ -1,0 +1,16 @@
+- id: models-004
+  category: models
+  title: An unknown model id points at /models and stays on the requested id
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: unknown_model
+  steps:
+    - say: hello
+      status: error
+      expect:
+        - /models
+      forbid:
+        - "{key_fx1}"
+      model: fx1

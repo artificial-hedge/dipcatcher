@@ -13,6 +13,7 @@ import json
 import math
 import os
 import re
+import stat
 import threading
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass
@@ -21,7 +22,7 @@ from enum import IntEnum
 from pathlib import Path
 from typing import Any
 
-from fx1.interactive.atomicstore import DIR_MODE, FILE_MODE, FileLock, ensure_private_dir
+from fx1.interactive.atomicstore import FILE_MODE, FileLock, ensure_private_dir
 from fx1.interactive.redact import (
     DEFAULT_REGISTRY,
     SecretRegistry,
@@ -34,6 +35,7 @@ from fx1.interactive.runctx import is_valid_id, require_id
 EmitFn = Callable[[str, Mapping[str, Any]], None]
 
 MAX_VALUE_CHARS = 500
+_MAX_LOG_READ = 16 * 1024 * 1024
 SCHEMA_VERSION = 1
 _MAX_DEPTH = 8
 CONTENT_FIELD_NAMES: frozenset[str] = frozenset(
@@ -371,9 +373,9 @@ def _backup_path(path: Path, index: int) -> Path:
 
 
 def _append_flags() -> int:
-    flags = os.O_APPEND | os.O_CREAT | os.O_WRONLY
+    flags = os.O_APPEND | os.O_CREAT | os.O_WRONLY | getattr(os, "O_CLOEXEC", 0)
     if os.name == "posix":
-        flags |= getattr(os, "O_NOFOLLOW", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
     return flags
 
 
@@ -391,19 +393,26 @@ def _append_line(path: Path, line: bytes) -> None:
         raise OSError("refusing to follow symlink log")
     fd = os.open(path, _append_flags(), FILE_MODE)
     try:
-        if os.name == "posix":
-            os.chmod(path, FILE_MODE)
+        _require_log_fd(fd)
         _write_all(fd, line)
     finally:
         os.close(fd)
+
+
+def _require_log_fd(fd: int) -> None:
+    info = os.fstat(fd)
+    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+        raise OSError("refusing to follow a non-private log")
+    if os.name == "posix":
+        os.fchmod(fd, FILE_MODE)
 
 
 def _ensure_log_dir(directory: Path) -> None:
     if directory.is_symlink():
         raise OSError("refusing to follow symlink log directory")
     ensure_private_dir(directory)
-    if os.name == "posix":
-        os.chmod(directory, DIR_MODE)
+    if directory.is_symlink():
+        raise OSError("refusing to follow symlink log directory")
 
 
 def _remove_file(path: Path) -> None:
@@ -479,7 +488,7 @@ def _parse_line(line: str) -> dict[str, Any] | None:
 
 def _read_file(path: Path) -> list[dict[str, Any]]:
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        text = _read_log_text(path)
     except OSError:
         return []
     rows: list[dict[str, Any]] = []
@@ -488,6 +497,37 @@ def _read_file(path: Path) -> list[dict[str, Any]]:
         if parsed is not None:
             rows.append(parsed)
     return rows
+
+
+def _read_log_text(path: Path) -> str:
+    if path.is_symlink():
+        raise OSError("refusing to follow symlink log")
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+    if os.name == "posix":
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    fd = os.open(path, flags)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise OSError("refusing to follow a non-private log")
+        if info.st_size > _MAX_LOG_READ:
+            raise OSError("log exceeds size limit")
+        data = _read_log_fd(fd, _MAX_LOG_READ)
+    finally:
+        os.close(fd)
+    return data.decode("utf-8", errors="replace")
+
+
+def _read_log_fd(fd: int, limit: int) -> bytes:
+    chunks: list[bytes] = []
+    remaining = limit
+    while remaining > 0:
+        block = os.read(fd, min(remaining, 1024 * 1024))
+        if not block:
+            break
+        chunks.append(block)
+        remaining -= len(block)
+    return b"".join(chunks)
 
 
 def _read_events(paths: Sequence[Path]) -> list[dict[str, Any]]:

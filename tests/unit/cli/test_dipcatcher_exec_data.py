@@ -37,6 +37,7 @@ def _isolate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def _csv(path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "timestamp,realized,forecast_var\n"
         "2020-01-01T00:00:00+00:00,1.0,1.1\n"
@@ -64,30 +65,41 @@ def _row(path: Path) -> Attachment:
     )
 
 
-def test_exec_refuses_a_symlink(tmp_path: Path) -> None:
-    real = _csv(tmp_path / "real.csv")
-    link = tmp_path / "link.csv"
-    link.symlink_to(real)
-    with pytest.raises(ExecUsageError, match="refusing a symlink") as raised:
+def test_exec_symlink_stays_inside_data(tmp_path: Path) -> None:
+    data = tmp_path / "data"
+    data.mkdir()
+    outside = _csv(tmp_path / "outside.csv")
+    escape = data / "escape.csv"
+    escape.symlink_to(outside)
+    with pytest.raises(ExecUsageError, match="stay inside data"):
         run_exec(
-            ExecRequest(prompt="/data list", datasets=(str(link),), timeout_s=30),
+            ExecRequest(prompt="/help", datasets=(str(escape),), timeout_s=30),
             install_signals=False,
         )
-    assert str(real.resolve()) in str(raised.value)
-    dangling = tmp_path / "gone.csv"
-    dangling.symlink_to(tmp_path / "missing.csv")
-    with pytest.raises(ExecUsageError, match="does not exist"):
+    dangling = data / "gone.csv"
+    dangling.symlink_to(data / "missing.csv")
+    with pytest.raises(ExecUsageError, match="not found"):
         run_exec(
-            ExecRequest(prompt="/help", datasets=(str(dangling),), timeout_s=30),
+            ExecRequest(prompt="/help", datasets=("gone.csv",), timeout_s=30),
             install_signals=False,
         )
+    real = _csv(data / "real.csv")
+    alias = data / "alias.csv"
+    alias.symlink_to(real)
+    outcome = run_exec(
+        ExecRequest(prompt="/data list", datasets=("alias.csv",), timeout_s=60),
+        install_signals=False,
+    )
+    assert outcome.exit_code == 0
+    assert "real.csv" in outcome.answer
 
 
 def test_bad_dataset_exits_2(tmp_path: Path) -> None:
     from dipcatcher_cli.exec_cmd import main
 
-    missing = tmp_path / "missing.csv"
-    with pytest.raises(ExecUsageError, match="does not exist"):
+    (tmp_path / "data").mkdir(exist_ok=True)
+    missing = tmp_path / "data" / "missing.csv"
+    with pytest.raises(ExecUsageError, match="not found"):
         run_exec(
             ExecRequest(prompt="/help", datasets=(str(missing),), timeout_s=30),
             install_signals=False,
@@ -98,8 +110,8 @@ def test_bad_dataset_exits_2(tmp_path: Path) -> None:
 
 
 def test_repeatable_data_lists_both_files(tmp_path: Path) -> None:
-    first = _csv(tmp_path / "alpha.csv")
-    second = _csv(tmp_path / "beta.csv")
+    first = _csv(tmp_path / "data" / "alpha.csv")
+    second = _csv(tmp_path / "data" / "beta.csv")
     outcome = run_exec(
         ExecRequest(
             prompt="/data list",
@@ -117,7 +129,7 @@ def test_repeatable_data_lists_both_files(tmp_path: Path) -> None:
 
 
 def test_stale_session_dataset_is_a_warning(tmp_path: Path) -> None:
-    path = _csv(tmp_path / "panel.csv")
+    path = _csv(tmp_path / "data" / "panel.csv")
     store = SessionStore(tmp_path / "sessions")
     record = store.create(model="fx1", messages=[])
     record["attachments"] = attachment_payload([_row(path)])

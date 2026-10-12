@@ -115,3 +115,60 @@ def _required_values(cap: Capability, roots: dict[str, list[Path]]) -> dict[str,
         if spec.choices:
             supplied[spec.name] = [spec.choices[0]] if spec.type == "csv" else spec.choices[0]
     return supplied
+
+
+def test_model_plan_without_an_out_dir_gets_the_bound_run_root(
+    live_catalog: CapabilityCatalog, tmp_path: Path
+) -> None:
+    import json
+
+    run_root = tmp_path / "run"
+    run_root.mkdir()
+    reply = json.dumps(
+        {
+            "steps": [
+                {
+                    "capability": "vol-bench",
+                    "args": {"--models": "rv_roll", "--shards": "garch_vol", "--horizons": "1"},
+                    "why": "QLIKE scoring",
+                }
+            ],
+            "rationale": "volatility scoring",
+        }
+    )
+    plan = plan_goal(
+        "volatility forecast QLIKE scoring",
+        live_catalog,
+        roots={"output_dir": [run_root], "config": [tmp_path], "input": [tmp_path]},
+        model_fn=lambda _prompt: reply,
+    )
+    assert [step.capability_id for step in plan.steps] == ["vol-bench"]
+    assert plan.steps[0].args["--out-dir"] == str(run_root)
+    assert not [e for e in plan.exclusions if e.code == "invalid_args"]
+
+
+def test_model_chosen_out_dir_is_replaced_by_the_run_root(
+    live_catalog: CapabilityCatalog, tmp_path: Path
+) -> None:
+    import json
+
+    run_root = tmp_path / "run"
+    run_root.mkdir()
+    reply = json.dumps(
+        {
+            "steps": [
+                {
+                    "capability": "vol-bench",
+                    "args": {"--out-dir": "/etc", "--models": "rv_roll"},
+                    "why": "x",
+                }
+            ]
+        }
+    )
+    plan = plan_goal(
+        "volatility forecast QLIKE scoring",
+        live_catalog,
+        roots={"output_dir": [run_root], "config": [tmp_path], "input": [tmp_path]},
+        model_fn=lambda _prompt: reply,
+    )
+    assert plan.steps and plan.steps[0].args["--out-dir"] == str(run_root)

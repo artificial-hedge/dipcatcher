@@ -14,6 +14,7 @@ from fx1.interactive.contracts import _inside_root
 from fx1.interactive.data_ux import (
     DATA_MAX_BYTES,
     Attachment,
+    dataset_refs,
     handle_data,
     model_context,
     rehash_rows,
@@ -46,8 +47,13 @@ def _isolate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
 def _csv(path: Path, text: str | None = None) -> Path:
     body = text or "timestamp,realized\n2020-01-01T00:00:00+00:00,1.0\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(body, encoding="utf-8")
     return path
+
+
+def _inside(tmp_path: Path, name: str, text: str | None = None) -> Path:
+    return _csv(tmp_path / "data" / name, text)
 
 
 def _profile(path: Path, **overrides: object) -> str:
@@ -75,15 +81,23 @@ def _profile(path: Path, **overrides: object) -> str:
 
 def test_path_refusals(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     harness = ScriptHarness()
-    missing = tmp_path / "nope.csv"
+    rows, text = handle_data("", [], harness)
+    assert rows == []
+    assert text == "no datasets attached"
+    _rows_none, text = handle_data("list", [], harness)
+    assert text == "no datasets attached"
+    missing = tmp_path / "data" / "nope.csv"
     rows, text = handle_data(f"attach {missing}", [], harness)
     assert rows == []
-    assert text == "file does not exist"
+    assert text == "dataset file was not found under data/"
+    outside = _csv(tmp_path / "loose.csv")
+    _rows_none, text = handle_data(f"attach {outside}", [], harness)
+    assert "stay inside data" in text
     notes = _csv(tmp_path / "notes.txt", "nope")
     _rows_none, text = handle_data(f"attach {notes}", [], harness)
     assert "csv or .parquet" in text
-    directory = tmp_path / "folder.csv"
-    directory.mkdir()
+    directory = tmp_path / "data" / "folder.csv"
+    directory.mkdir(parents=True)
     _rows_none, text = handle_data(f"attach {directory}", [], harness)
     assert text == "refusing a directory"
     huge = tmp_path / "big.csv"
@@ -104,14 +118,13 @@ def test_path_refusals(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     link = tmp_path / "alias.csv"
     link.symlink_to(target)
     _rows_none, text = handle_data(f"attach {link}", [], harness)
-    assert "refusing a symlink" in text
-    assert "notes-target.txt" in text
-    blocked = _csv(tmp_path / "blocked.csv")
+    assert "stay inside data" in text
+    blocked = _inside(tmp_path, "blocked.csv")
     blocked.chmod(0)
     _rows_none, text = handle_data(f"attach {blocked}", [], harness)
     blocked.chmod(0o644)
     assert text == "dataset is not readable"
-    locked = _csv(tmp_path / "locked.csv")
+    locked = _inside(tmp_path, "locked.csv")
     real_access = os.access
 
     def denied(path: object, mode: int, *, follow_symlinks: bool = True) -> bool:
@@ -126,40 +139,40 @@ def test_path_refusals(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         handle_data("attach", [], harness)
 
 
-def test_symlinks_are_refused_even_inside_the_cwd(tmp_path: Path) -> None:
-    real = _csv(tmp_path / "real.csv")
-    inside = tmp_path / "link.csv"
+def test_in_data_symlink_resolves_and_escapes_are_refused(tmp_path: Path) -> None:
+    real = _inside(tmp_path, "real.csv")
+    inside = tmp_path / "data" / "link.csv"
     inside.symlink_to(real)
     harness = ScriptHarness(_profile(real))
     rows, text = handle_data("attach link.csv", [], harness)
-    assert rows == []
-    assert harness.calls == []
-    assert "refusing a symlink" in text
-    assert str(real.resolve()) in text
-    outside = tmp_path / "outside.csv"
-    _csv(outside)
-    escaped = tmp_path / "nested"
-    escaped.mkdir()
-    link = escaped / "alias.csv"
-    link.symlink_to(outside)
-    rows, text = handle_data(f"attach {link}", [], harness)
-    assert rows == []
-    assert str(outside.resolve()) in text
-    dangling = tmp_path / "gone.csv"
-    dangling.symlink_to(tmp_path / "missing.csv")
-    rows, text = handle_data(f"attach {dangling}", [], harness)
-    assert rows == []
-    assert "does not exist" in text
-    hostile = tmp_path / "evil.csv"
+    assert rows
+    assert rows[0].path == str(real.resolve())
+    assert text.startswith(f"attached dataset {real.resolve()}")
+    outside = _csv(tmp_path / "outside.csv")
+    escape = tmp_path / "data" / "escape.csv"
+    escape.symlink_to(outside)
+    kept, message = handle_data("attach escape.csv", rows, harness)
+    assert kept == rows
+    assert "stay inside data" in message
+    dangling = tmp_path / "data" / "gone.csv"
+    dangling.symlink_to(tmp_path / "data" / "missing.csv")
+    kept, message = handle_data("attach gone.csv", rows, harness)
+    assert kept == rows
+    assert "not found" in message
+    hostile = tmp_path / "data" / "evil.csv"
     hostile.symlink_to(tmp_path / "bad\x1b[31m.csv")
-    rows, text = handle_data(f"attach {hostile}", [], harness)
-    assert "\x1b" not in text
+    kept, message = handle_data("attach evil.csv", rows, harness)
+    assert kept == rows
+    assert "\x1b" not in message
+    assert "stay inside data" in message
 
 
 def test_profile_warnings_hostile_names_and_malformed(tmp_path: Path) -> None:
-    path = _csv(tmp_path / "panel.csv")
+    path = _inside(tmp_path, "panel.csv")
     hostile = "\x1b[31mred\x1b[0m"
     osc = "osc\x1b]0;owned\x07"
+    hidden_key = "sk-\u200b" + ("b" * 24)
+    clipboard = "a\x1b]52;c;CLIPBOARD\x07"
     harness = ScriptHarness(
         _profile(
             path,
@@ -167,36 +180,48 @@ def test_profile_warnings_hostile_names_and_malformed(tmp_path: Path) -> None:
                 {"name": hostile, "dtype": "String", "nulls": 0},
                 {"name": osc, "dtype": "String", "nulls": 2},
                 {"name": _SECRET, "dtype": "String", "nulls": 0},
+                {"name": hidden_key, "dtype": "String", "nulls": 0},
+                {"name": clipboard, "dtype": "String", "nulls": 0},
             ],
         )
     )
     rows, text = handle_data(f"attach {path}", [], harness)
     assert rows
+    assert text.startswith(f"attached dataset {path.resolve()}")
     assert "profile rows=2 columns=" in text
     assert "warning: no time column" in text
     assert "warning: columns contain nulls" in text
     assert "point-in-time validity will NOT be verified" in text
     assert "\x1b" not in text
     assert _SECRET not in text
+    assert "CLIPBOARD" not in text
+    assert "\u200b" not in text
     assert "\x1b" not in "".join(rows[0].columns)
     context = model_context(rows)
     assert "UNTRUSTED" in context
     assert rows[0].path not in context
     assert _SECRET not in context
+    assert "CLIPBOARD" not in context
+    assert "\u200b" not in context
     bad = ScriptHarness("not json")
-    refused, message = handle_data(f"attach {path}", [], bad)
-    assert refused == []
-    assert message == "dataset profile failed"
+    attached, message = handle_data(f"attach {path}", [], bad)
+    assert attached
+    assert attached[0].sha256 == hashlib.sha256(path.read_bytes()).hexdigest()
+    assert attached[0].rows is None
+    assert message.startswith(f"attached dataset {path.resolve()}")
+    assert "dataset profile unavailable; attached without a profile" in message
     wrong = ScriptHarness(_profile(path, schema="nope"))
-    refused, message = handle_data(f"attach {path}", [], wrong)
-    assert message == "dataset profile failed"
+    attached, message = handle_data(f"attach {path}", [], wrong)
+    assert attached
+    assert "dataset profile unavailable; attached without a profile" in message
     array = ScriptHarness("[1, 2, 3]")
-    refused, message = handle_data(f"attach {path}", [], array)
-    assert message == "dataset profile failed"
+    attached, message = handle_data(f"attach {path}", [], array)
+    assert attached
+    assert "dataset profile unavailable; attached without a profile" in message
 
 
 def test_monotonic_warning_and_eight_dataset_cap(tmp_path: Path) -> None:
-    path = _csv(tmp_path / "times.csv")
+    path = _inside(tmp_path, "times.csv")
     harness = ScriptHarness(
         _profile(
             path,
@@ -215,12 +240,12 @@ def test_monotonic_warning_and_eight_dataset_cap(tmp_path: Path) -> None:
     assert "no time column" not in text
     rows: list[Attachment] = []
     for index in range(8):
-        item = _csv(tmp_path / f"f{index}.csv")
+        item = _inside(tmp_path, f"f{index}.csv")
         harness.stdout = _profile(item)
         rows, text = handle_data(f"attach {item}", rows, harness)
         assert "profile rows=" in text
     assert len(rows) == 8
-    extra = _csv(tmp_path / "ninth.csv")
+    extra = _inside(tmp_path, "ninth.csv")
     harness.stdout = _profile(extra)
     kept, text = handle_data(f"attach {extra}", rows, harness)
     assert kept == rows
@@ -238,7 +263,7 @@ def test_monotonic_warning_and_eight_dataset_cap(tmp_path: Path) -> None:
 
 
 def test_stale_digest_and_file_root(tmp_path: Path) -> None:
-    path = _csv(tmp_path / "panel.csv")
+    path = _inside(tmp_path, "nested/panel.csv")
     harness = ScriptHarness(_profile(path))
     rows, _text = handle_data(f"attach {path}", [], harness)
     original = rows[0].sha256
@@ -255,7 +280,7 @@ def test_stale_digest_and_file_root(tmp_path: Path) -> None:
     assert reason is not None
     assert "dataset changed since attach" in reason
     assert "/data inspect 1" in reason
-    sibling = _csv(tmp_path / "other.csv")
+    sibling = _inside(tmp_path, "other.csv")
     roots = qualified_roots(extra_inputs=(path.resolve(),))
     assert path.resolve() in roots["input"]
     assert path.parent not in roots["input"]
@@ -267,7 +292,7 @@ def test_real_inspect_profile(tmp_path: Path) -> None:
     from fx1.harness import Harness
 
     path = _csv(
-        tmp_path / "vol.csv",
+        tmp_path / "data" / "vol.csv",
         "timestamp,realized,forecast_var\n"
         "2020-01-01T00:00:00+00:00,1.0,1.1\n"
         "2020-01-01T01:00:00+00:00,1.0,1.1\n",
@@ -283,17 +308,34 @@ def test_real_inspect_profile(tmp_path: Path) -> None:
 
 
 def test_parquet_suffix_and_ansi_filename(tmp_path: Path) -> None:
-    parquet = tmp_path / "panel.parquet"
+    parquet = tmp_path / "data" / "panel.parquet"
+    parquet.parent.mkdir(parents=True)
     parquet.write_bytes(b"PAR1")
     harness = ScriptHarness(_profile(parquet))
     rows, text = handle_data(f"attach {parquet}", [], harness)
     assert rows[0].kind == "parquet"
+    assert rows[0].label == "file"
     assert "profile rows=" in text
-    nasty = tmp_path / "evil\x1b[31mname.csv"
+    nasty = tmp_path / "data" / "evil\x1b[31mname.csv"
     _csv(nasty)
     harness.stdout = _profile(nasty)
     named, shown = handle_data(f"attach {nasty}", [], harness)
-    assert named
+    assert named == []
     assert "\x1b" not in shown
-    _kept, listing = handle_data("list", named, harness)
-    assert "\x1b" not in listing
+    assert "stay inside data" in shown
+
+
+def test_issue_time_binds_only_for_an_exact_name(tmp_path: Path) -> None:
+    path = _inside(tmp_path, "issued.csv")
+    exact = {
+        "available_time": {"column": "timestamp", "confidence": "exact_name"},
+    }
+    rows, _text = handle_data(
+        f"attach {path}", [], ScriptHarness(_profile(path, suggested_roles=exact))
+    )
+    assert dataset_refs(rows)[0].available_time_col == "timestamp"
+    alias = {"available_time": {"column": "timestamp", "confidence": "alias"}}
+    rows, _text = handle_data(
+        f"attach {path}", [], ScriptHarness(_profile(path, suggested_roles=alias))
+    )
+    assert dataset_refs(rows)[0].available_time_col == ""

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
@@ -620,15 +621,20 @@ def _destination(raw: object) -> Path | None:
         return None
     if not isinstance(raw, str) or not raw.strip():
         raise _UsageError("refusing empty --out path")
+    if "\x00" in raw or "\n" in raw or "\r" in raw:
+        raise _UsageError("refusing unsafe --out path")
     return Path(raw)
 
 
 def _write_export(path: Path, text: str) -> None:
-    if path.exists():
+    if os.path.lexists(path):
         raise _UsageError(f"refusing to overwrite {path}")
     from fx1.interactive.atomicstore import atomic_write_text
 
-    atomic_write_text(path, _ensure_newline(text), mode=0o600)
+    try:
+        atomic_write_text(path, _ensure_newline(text), mode=0o600, exclusive=True)
+    except FileExistsError as exc:
+        raise _UsageError(f"refusing to overwrite {path}") from exc
     print(_scrub(f"wrote {path}"), file=sys.stderr, flush=True)
 
 

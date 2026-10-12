@@ -1,0 +1,318 @@
+- id: recovery-002
+  category: recovery
+  title: A rejected key, then /keys set, then a successful turn
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: bad_key
+    accept_keys:
+      fx1: user-typed-fx1-key-aaaa1111
+  steps:
+    - say: hello before the key is fixed
+      expect:
+        - HTTP 401
+        - /keys set fx1
+      forbid:
+        - "{key_fx1}"
+        - user-typed-fx1-key-aaaa1111
+      status: error
+      model: fx1
+    - say: /keys set fx1
+      secret: user-typed-fx1-key-aaaa1111
+      input: "{stub_url}"
+      expect:
+        - stored for 'fx1'
+      forbid:
+        - "{key_fx1}"
+        - user-typed-fx1-key-aaaa1111
+      files:
+        - path: config:credentials.json
+          exists: true
+          mode: "0600"
+    - say: hello again now that the key is stored
+      expect:
+        - stub fx1 reply
+      forbid:
+        - "{key_fx1}"
+        - user-typed-fx1-key-aaaa1111
+        - HTTP 401
+      status: ok
+      model: fx1
+  final:
+    restarted: false
+- id: recovery-003
+  category: recovery
+  title: A 503 on one turn recovers on the next turn
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    replies:
+      - error: 503
+      - error: 503
+  steps:
+    - say: hello during the outage
+      expect:
+        - HTTP 503
+      forbid:
+        - stub fx1 reply
+      status: error
+      model: fx1
+    - say: hello after the endpoint recovered
+      expect:
+        - stub fx1 reply
+      forbid:
+        - HTTP 503
+      status: ok
+      model: fx1
+- id: recovery-004
+  category: recovery
+  title: Rate limiting on one turn recovers on the next turn
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    replies:
+      - error:
+          status: 429
+          code: rate_limit_exceeded
+          message: slow down
+          type: rate_limit_error
+      - error:
+          status: 429
+          code: rate_limit_exceeded
+          message: slow down
+          type: rate_limit_error
+  steps:
+    - say: hello while the server is limiting us
+      expect:
+        - rate-limiting
+      forbid:
+        - stub fx1 reply
+      status: error
+    - say: hello after the limit cleared
+      expect:
+        - stub fx1 reply
+      forbid:
+        - rate-limiting
+      status: ok
+      model: fx1
+- id: recovery-005
+  category: recovery
+  title: A queued job is interrupted on startup and resume does not restart it
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+    sessions:
+      - model: fx1
+        messages:
+          - role: user
+            content: score volatility forecasts
+        job:
+          state: running
+    jobs:
+      - kind: superpower
+        goal: score volatility forecasts
+        state: queued
+  steps:
+    - say: /resume
+      expect:
+        - not restarted
+        - interrupted
+      forbid:
+        - running in the background
+    - say: /status
+      expect:
+        - no background job
+      forbid:
+        - running in the background
+  final:
+    expect:
+      - was interrupted and was not restarted
+    job: interrupted
+    restarted: false
+- id: recovery-006
+  category: recovery
+  title: A saved transcript survives restart and a switch to fx1-lite
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+      fx1-lite: ok
+    sessions:
+      - model: fx1
+        messages:
+          - role: user
+            content: Define pinball loss for this saved session.
+          - role: assistant
+            content: Pinball loss is a proper score. SYNTHETIC note only.
+        job:
+          state: finished
+  steps:
+    - say: /resume
+      expect:
+        - resumed session
+        - fx1
+      model: fx1
+      session:
+        messages_contain:
+          - Define pinball loss for this saved session.
+    - restart:
+        resume: true
+      expect:
+        - resumed session
+        - fx1
+      model: fx1
+    - say: /use fx1-lite
+      expect:
+        - conversation kept
+        - fx1-lite
+      model: fx1-lite
+    - say: Explain that definition in one sentence.
+      expect:
+        - stub fx1-lite reply
+      model: fx1-lite
+      sent:
+        - Define pinball loss for this saved session.
+  final:
+    restarted: false
+    session:
+      model: fx1-lite
+      messages_contain:
+        - Define pinball loss for this saved session.
+        - Explain that definition in one sentence.
+- id: recovery-007
+  category: recovery
+  title: A zero step budget skips the harness instead of running it
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+  steps:
+    - say: /budget max-steps 0
+      expect:
+        - budget max_steps=0
+    - say: score volatility forecasts with QLIKE
+      expect:
+        - routing this to research orchestration
+        - max_steps=0
+    - wait_job: true
+      expect:
+        - step budget exceeded
+        - skipped
+        - "evidence status: unverified"
+        - not independently verified
+      forbid:
+        - vol-bench finished
+        - sealed receipt verified
+- id: recovery-008
+  category: recovery
+  title: A zero second budget excludes the harness before it runs
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+  steps:
+    - say: /budget max-seconds 0
+      expect:
+        - budget max_seconds=0.0
+    - say: score volatility forecasts with QLIKE
+      expect:
+        - routing this to research orchestration
+        - max_seconds=0.0
+        - estimated runtime exceeds budget
+        - excluded vol-bench
+        - No suitable capability
+    - wait_job: true
+      expect:
+        - "evidence status: unverified"
+        - not independently verified
+      forbid:
+        - vol-bench finished
+        - sealed receipt verified
+  final:
+    restarted: false
+- id: recovery-009
+  category: recovery
+  title: fx1 stays down while fx1-lite still answers in the same chat
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: down
+      fx1-lite: ok
+  steps:
+    - say: hello on the primary model
+      expect:
+        - HTTP 503
+      forbid:
+        - stub fx1 reply
+      status: error
+      model: fx1
+    - say: /use fx1-lite
+      expect:
+        - conversation kept
+        - fx1-lite
+      model: fx1-lite
+    - say: summarize pinball in one sentence
+      expect:
+        - stub fx1-lite reply
+      forbid:
+        - HTTP 503
+      status: ok
+      model: fx1-lite
+    - say: /use fx1
+      expect:
+        - conversation kept
+      model: fx1
+    - say: hello again on the primary model
+      expect:
+        - HTTP 503
+      forbid:
+        - stub fx1 reply
+        - stub fx1-lite reply
+      status: error
+      model: fx1
+- id: recovery-010
+  category: recovery
+  title: Restart after a chat restores the turn and does not start a job
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+  steps:
+    - say: Define pinball loss for this live session.
+      expect:
+        - stub fx1 reply
+      status: ok
+    - restart:
+        resume: true
+      expect:
+        - resumed session
+      forbid:
+        - running in the background
+        - not restarted
+    - say: Use that definition in one sentence.
+      expect:
+        - stub fx1 reply
+      sent:
+        - Define pinball loss for this live session.
+      status: ok
+      model: fx1
+  final:
+    restarted: false
+    session:
+      turns_at_least: 2
+      model: fx1
+      messages_contain:
+        - Define pinball loss for this live session.
+        - Use that definition in one sentence.

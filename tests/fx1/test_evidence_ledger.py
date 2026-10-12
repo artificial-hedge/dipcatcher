@@ -807,7 +807,7 @@ def test_render_model_item_is_not_verified() -> None:
         ("Confirmed by receipt today", ["verified_language_without_receipt"]),
         (HASH, ["unknown_hash"]),
         (HASH.upper(), ["unknown_hash"]),
-        (HASH[:63], []),
+        (HASH[:63], ["unknown_hash"]),
         (HASH + "aa", []),
         ("see file.json.bak please", []),
         ("see receipts/missing.json", ["unknown_receipt_path"]),

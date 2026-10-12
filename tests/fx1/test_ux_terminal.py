@@ -201,7 +201,7 @@ def test_ux_hundred_kilobyte_paste(tmp_path: Path) -> None:
         [
             ("wait", _PROMPT),
             ("send", blob),
-            ("wait", b"input too long"),
+            ("wait", b"Slash commands still work"),
             ("send", b"/exit\n"),
             ("wait", b"TERMIOS_OK"),
         ],
@@ -390,7 +390,7 @@ def test_ux_sighup_during_a_job_does_not_leave_it_running(tmp_path: Path) -> Non
     _pids_gone([result.child, *result.orphans])
 
 
-_HOSTILE = r'''
+_HOSTILE = r"""
 from fx1.interactive.concierge import Concierge
 from fx1.interactive.console import run_console
 
@@ -408,7 +408,7 @@ Concierge.handle_line = handle  # type: ignore[method-assign]
 
 if __name__ == "__main__":
     run_console()
-'''
+"""
 
 
 def test_ux_say_strips_hostile_controls_on_a_pty(tmp_path: Path) -> None:

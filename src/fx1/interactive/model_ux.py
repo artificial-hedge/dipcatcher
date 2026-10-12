@@ -9,12 +9,15 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from fx1.honesty import public_label, scrub_model_text
 from fx1.interactive import profiles
+from fx1.interactive.context_window import fit_dialogue, omission_note
 from fx1.interactive.model_client import ErrorKind, ModelClient, ModelError, ModelIdentity
 from fx1.interactive.redact import redact_text
 from fx1.interactive.system_prompt import Mode, build_system_prompt
@@ -132,8 +135,20 @@ def render_model_error(exc: ModelError) -> str:
     text = str(exc)
     step = _next_step(exc)
     if step and step not in text:
-        return f"{text} Next: {step}"
-    return text
+        text = f"{text} Next: {step}"
+    if scrub_model_text(text) == text:
+        return text
+    return f"{exc.model} @ {exc.host}: response withheld by the fx-1 honesty gate"
+
+
+@dataclass(frozen=True)
+class Outbound:
+    """One request body plus what fitting left out of it."""
+
+    messages: list[dict[str, Any]]
+    omitted: int
+    chars: int
+    turns: int
 
 
 def outbound_messages(
@@ -148,8 +163,34 @@ def outbound_messages(
     Every stored system message is hoisted into the prompt notes. The built
     prompt is not written back into the transcript.
     """
-    prompt = build_system_prompt(model, tools=tools, mode=mode, notes=_system_notes(messages))
-    return [{"role": "system", "content": prompt}, *_dialogue(messages)]
+    return build_outbound(messages, model, tools=tools, mode=mode).messages
+
+
+def build_outbound(
+    messages: Sequence[Mapping[str, Any]],
+    model: str,
+    *,
+    tools: Sequence[str] = (),
+    mode: Mode = "chat",
+    max_chars: int | None = None,
+) -> Outbound:
+    """:func:`outbound_messages` that can drop the oldest whole turns to fit ``max_chars``.
+
+    The system prompt names how many leading messages were left out. The stored
+    transcript is untouched.
+    """
+    ceiling = sys.maxsize if max_chars is None else max_chars
+    fitted = fit_dialogue(_dialogue(messages), ceiling)
+    notes = _system_notes(messages)
+    if fitted.omitted:
+        notes.append(omission_note(fitted.omitted))
+    prompt = build_system_prompt(model, tools=tools, mode=mode, notes=notes)
+    return Outbound(
+        messages=[{"role": "system", "content": prompt}, *fitted.messages],
+        omitted=fitted.omitted,
+        chars=fitted.chars,
+        turns=fitted.turns,
+    )
 
 
 def sampling_for(tracker: UsageTracker) -> SamplingParams | None:
@@ -196,6 +237,7 @@ def read_snapshot(backend: Any, started: float, clock: Callable[[], float]) -> C
     identity = getattr(backend, "last_identity", None)
     if not isinstance(identity, ModelIdentity):
         identity = None
+    identity = _clean_identity(identity)
     return CallSnapshot(
         usage=_usage_dict(getattr(backend, "last_usage", None)),
         identity=identity,
@@ -216,13 +258,14 @@ def footer_lines(
 ) -> list[str]:
     """Dim footer. The requested model id is never replaced by the served id."""
     parts = [model, _latency_phrase(latency_s), _token_phrase(usage)]
-    if identity is not None and identity.served and identity.served != model:
-        parts.append(f"served {identity.served}")
+    served_name = _footer_served(model, identity)
+    if served_name is not None:
+        parts.append(f"served {served_name}")
     lines = ["· " + " · ".join(parts)]
     if identity is not None and identity.matched is False:
-        served = identity.served or "unreported"
-        lines.append(f"warning: served model {served} differs from requested model {model}")
-    return [dim_text(line) for line in lines]
+        shown = served_name or "unreported"
+        lines.append(f"warning: served model {shown} differs from requested model {model}")
+    return [dim_text(scrub_model_text(line)) for line in lines]
 
 
 def render_models_table(active: str, stats: Mapping[str, Mapping[str, Any]]) -> str:
@@ -417,9 +460,64 @@ def _model_row(
     }
 
 
+def _footer_served(model: str, identity: ModelIdentity | None) -> str | None:
+    if identity is None or not identity.served or identity.served == model:
+        return None
+    return public_label(identity.served)
+
+
+def _clean_identity(identity: ModelIdentity | None) -> ModelIdentity | None:
+    if identity is None:
+        return None
+    served = _label(identity.served)
+    fingerprint = _label(identity.system_fingerprint)
+    request_id = _label(identity.request_id)
+    response_id = _label(identity.response_id)
+    if _identity_unchanged(identity, served, fingerprint, request_id, response_id):
+        return identity
+    return ModelIdentity(
+        requested=identity.requested,
+        served=served,
+        request_id=request_id,
+        host=identity.host,
+        system_fingerprint=fingerprint,
+        matched=_matched_after(identity, served),
+        response_id=response_id,
+    )
+
+
+def _label(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return public_label(value)
+
+
+def _identity_unchanged(
+    identity: ModelIdentity,
+    served: str | None,
+    fingerprint: str | None,
+    request_id: str | None,
+    response_id: str | None,
+) -> bool:
+    return (
+        served == identity.served
+        and fingerprint == identity.system_fingerprint
+        and request_id == identity.request_id
+        and response_id == identity.response_id
+    )
+
+
+def _matched_after(identity: ModelIdentity, served: str | None) -> bool | None:
+    if served == identity.served:
+        return identity.matched
+    if served is None:
+        return None
+    return False
+
+
 def _served_text(served: Any) -> str:
     if isinstance(served, str) and served:
-        return served
+        return public_label(served)
     return "-"
 
 

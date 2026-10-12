@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard dipcatcher-test dipcatcher-journeys dipcatcher-gate dipcatcher-evidence
 
 .DEFAULT_GOAL := help
 
@@ -203,6 +203,26 @@ fx1-gate: fx1-lint ## Full fx-1 CI gate locally: lint + types + tests + honesty 
 	PYTHONPATH=src uv run pytest tests/fx1 -q
 	PYTHONPATH=src uv run pytest tests/fx1 -q -k honesty
 	uv run fx1 corpus build --receipts-dir receipts --out data/fx1/corpus_ci_smoke.jsonl
+
+# --- dipcatcher CLI harness (chat, exec, models, sessions) -----------------
+dipcatcher-test: ## dipcatcher harness: fx1 lane + launcher/lab CLI tests (xdist)
+	PYTHONPATH=src $(TEST_ENV) uv run pytest tests/fx1 tests/unit/cli -q -n auto --dist loadfile
+
+dipcatcher-journeys: ## frozen scripted chat-journey suite (not the five-user trial)
+	PYTHONPATH=src $(TEST_ENV) uv run pytest tests/fx1/journeys -q
+
+dipcatcher-gate: ## dipcatcher harness gate: lint + strict types (fx1, launcher) + tests + journeys
+	uv run ruff check src tests
+	uv run ruff format --check src tests
+	uv run mypy --strict src/fx1 src/dipcatcher_cli
+	$(MAKE) dipcatcher-test
+	$(MAKE) dipcatcher-journeys
+
+dipcatcher-evidence: ## write bounded evidence records (latency, soak, wheel smoke) to EVIDENCE_DIR
+	@mkdir -p "$${EVIDENCE_DIR:-data/dipcatcher-evidence}"
+	uv run python scripts/dipcatcher_latency.py --runs 30 --events 200 --out "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/latency.json"
+	uv run python scripts/dipcatcher_soak.py --duration-s 60 --out "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/soak.json"
+	uv run python scripts/dipcatcher_release_smoke.py --out "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/release_smoke.json" --checksums "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/SHA256SUMS"
 
 fx1-coverage: ## fx-1 coverage ratchet, floor 80 (same command as proofcore.yml fx1-coverage)
 	uv run pytest tests/fx1 -q --cov=fx1 --cov-fail-under=80 --cov-report=term-missing

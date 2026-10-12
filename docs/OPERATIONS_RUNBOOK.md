@@ -1548,3 +1548,119 @@ DATA_CONTRACTS. Off inventing. No commits.
 **Snaps vs n_session:** **7/7 GREEN** (not INFLIGHT).
 
 DATA_CONTRACTS. Off inventing. No commits.
+
+## dipcatcher chat: operation and support
+
+This section is how to run and inspect the chat. It does not change the
+research procedures above. Command behavior and the honesty contract are
+in [DIP_CONCIERGE.md](DIP_CONCIERGE.md). No live model was authenticated
+for this section. Checks used a loopback HTTP stub. Do not tell an
+operator that fx1 or fx1-lite answered, or quote a latency, price, or
+context window, from these notes.
+
+### Start and stop
+
+| Situation | Command | What to expect |
+|---|---|---|
+| Person at a terminal | `dipcatcher` or `dipcatcher chat --model fx1-lite` | Prompt `<model> › `. `/exit` or a second Ctrl-C leaves. |
+| Script or CI | `dipcatcher exec "…"` | Answer on stdout, footer and errors on stderr. `--json` is one document. |
+| Redirected bare CLI | `dipcatcher` | Preface plus lab help. Stdin is not read. Exit 0. |
+| Lab only | `quant` | Lab help, no chat preface. |
+| Compatible launcher | `fxi` | Same concierge. Closed stdin prints the banner and exits on EOF. |
+
+`dipcatcher chat` and `dipcatcher resume` on a pipe exit 2 and name the
+terminal requirement. Use `exec` for scripts.
+
+Ctrl-C at an idle chat prompt prints `press Ctrl-C again to exit, or /exit`.
+A second Ctrl-C exits. That pair was observed on a pseudo-terminal. When a
+background job is running, the console requests cancel instead of exiting;
+that branch was not exercised with a live job here. Ctrl-D on an empty
+prompt exits (`fxi` with stdin closed printed the banner and exited).
+
+### Where state lives
+
+Default root is `~/.fx1`. `FX1_CONFIG_DIR` replaces it. Keep support
+bundles from that tree; do not copy it into a ticket without redacting.
+
+| Path | Contents | Mode observed on Linux |
+|---|---|---|
+| `$FX1_CONFIG_DIR/credentials.json` | Both models' keys and completion URLs | `0600` file, directory `0700` |
+| `$FX1_SESSION_DIR` or `$FX1_CONFIG_DIR/sessions` | One JSON file per chat | export via `sessions export` is `0600` |
+| `$FX1_CONFIG_DIR/jobs` | Job ledger. Reconcile does not restart work | |
+| `$FX1_CONFIG_DIR/runs/<run_id>/` | One `/superpower` attempt | `0700` |
+| `$FX1_CONFIG_DIR/logs/<session-id>.jsonl` | Local telemetry. Not uploaded | |
+| `$FX1_CONFIG_DIR/history` | Chat history JSON | `0600` |
+
+Session lookup order is `$FX1_SESSION_DIR`, then `$FX1_CONFIG_DIR/sessions`,
+then `~/.fx1/sessions`. An interrupted job is not restarted. Confirm with
+`dipcatcher sessions show <id>`: `job_state: interrupted` and
+`job_resume: manual`.
+
+Windows restricts the credentials file with `icacls`. That was not run
+here. If store health says `Windows ACL was not applied to the credentials
+store`, the file is not private yet. The Windows console is blocking
+input; background progress appears after the next submitted line.
+
+### Endpoint support
+
+Ask for presence, never the key.
+
+```sh
+dipcatcher models list
+dipcatcher models check
+dipcatcher models check --live --json --timeout-s 30
+```
+
+`models check` without `--live` prints `offline configuration check;
+nothing was contacted`. Exit 5 when a selected model has no endpoint.
+`--live` places one call per configured model. Exit 0 only when each
+served id matches the requested id. Exit 1 on a failed call or
+`identity_mismatch`. The JSON note says the record is not a release claim.
+Unset rows show host `api.moonshot.ai` because that is the built-in URL
+constant, not because an endpoint is configured (`status` `unset`).
+
+Precedence is stored profile, then `DIPCATCHER_FX1_*` or
+`DIPCATCHER_FX1_LITE_*`, then `MOONSHOT_API_KEY` / `FX1_BASE_URL`.
+`/keys set <model>` is the interactive write. `exec` will not run
+`/keys set`.
+
+Plain HTTP is rejected unless the host is a literal loopback address
+(`127.0.0.1`, not the name `localhost`). Userinfo and query strings are
+rejected and are not echoed.
+
+### Exec exit codes
+
+| Code | Meaning | Support note |
+|---|---|---|
+| 0 | Answer | Footer on stderr is usage and latency for that call, not a service SLO. |
+| 1 | Model or tool error | Read stderr. Auth text already says `/keys set <model>`. |
+| 2 | Usage | Unknown model, empty `--approve`, missing prompt. |
+| 3 | Honesty gate withheld the answer | Not a result. Status `withheld`. |
+| 4 | `--timeout-s` or a usage ceiling | Status `timeout` or `budget`. Not a dollar cap. |
+| 5 | No endpoint | Status `no_endpoint`. |
+| 130 | SIGINT | |
+| 143 | SIGTERM | |
+
+### Diagnostics
+
+`/diagnostics` inside chat, or the same text from a support session, is
+local and presence-only. `DIPCATCHER_LOG` is `off`, `error`, `info`
+(default), or `debug`. Unknown values fall back to `info`. Logs omit
+prompt and answer text. `/diagnostics --bundle PATH` writes a zip, mode
+`0600`, refuses to overwrite, and does not upload it.
+
+The credentials line in the text report is redacted because the slot name
+matches the secret filter. Sessions, jobs, logs, and history show `ok` or
+`absent`.
+
+### What not to claim
+
+- Do not mark a stub or offline check as proof that either hosted model
+  is up.
+- Do not restart a job that the ledger marked interrupted. Resume reloads
+  the transcript only.
+- Do not quote Sharpe, Sortino, Calmar, P&L, or NAV as a research result.
+  A withheld answer is the gate working.
+- A 24-hour soak, a five-user trial, authenticated smoke for both models,
+  and the macOS/Windows matrix are open. They are not implied by a local
+  stub session.

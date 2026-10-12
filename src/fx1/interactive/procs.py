@@ -41,7 +41,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import IO, Any
 
-from fx1.interactive.redact import is_sensitive_key, redact_argv, redact_text
+from fx1.interactive.redact import is_sensitive_key, redact_argv, redact_text, register_secret
 
 EXIT_TIMEOUT = 124
 EXIT_CANCEL = 130
@@ -257,10 +257,15 @@ def scrub_env(
     *allow_secrets* (those names are never copied from *base*). When the
     parent did not set them, thread-pin variables default to one thread;
     *extra* may override those defaults. ``DIPCATCHER_CHILD=1`` and
-    ``PYTHONUNBUFFERED=1`` are always set last.
+    ``PYTHONUNBUFFERED=1`` are always set last. Copied values are redacted.
+    Values of credential-named variables are registered first so a later
+    argv or allowed variable cannot carry the same secret, except names
+    passed in *allow_secrets*.
     """
     patterns = tuple(allow)
     secret_ok = {item.casefold() for item in allow_secrets}
+    _register_credential_values(base, secret_ok)
+    _register_credential_values(extra, secret_ok)
     cleaned: dict[str, str] = {}
     _take_base(cleaned, base, patterns)
     _fill_thread_defaults(cleaned)
@@ -286,10 +291,13 @@ def run_owned(
     """Run *argv* as an owned process. Never raises for spawn, timeout, or cancel.
 
     *env* ``None`` scrubs ``os.environ``. A mapping is used verbatim — callers
-    that need isolation pass :func:`scrub_env` themselves. *killer*, when
+    that need isolation pass :func:`scrub_env` themselves. The child is
+    started with the redacted argv, which is also the recorded summary.
+    *killer*, when
     set, replaces platform tree-kill and is invoked with the child pid.
     *clock* defaults to ``time.monotonic`` and must advance while waiting.
     """
+    child_env = _child_env(env)
     summary = redact_argv([str(part) for part in argv])
     now = _clock_of(clock)
     started = now()
@@ -305,10 +313,9 @@ def run_owned(
             emit=emit,
             step=step_safe,
         )
-    child_env = _child_env(env)
     factory = _popen if popen is None else popen
     try:
-        proc = _spawn(factory, [str(part) for part in argv], child_env, cwd, sys.platform)
+        proc = _spawn(factory, summary, child_env, cwd, sys.platform)
     except (OSError, ValueError) as exc:
         return _spawn_failed(summary, exc, started, now, emit, step_safe)
     return _owned_loop(
@@ -432,6 +439,24 @@ def _cancelled(cancel_event: threading.Event | None) -> bool:
 _PROXY_ENV = frozenset({"http_proxy", "https_proxy", "all_proxy", "ftp_proxy", "socks_proxy"})
 
 
+def _credential_name(name: str) -> bool:
+    folded = name.casefold()
+    if _suffix_denied(folded):
+        return True
+    return is_sensitive_key(name)
+
+
+def _register_credential_values(source: Mapping[str, str] | None, skip: set[str]) -> None:
+    """Remember credential-named values so later copies and argv can be scrubbed."""
+    if source is None:
+        return
+    for key, value in source.items():
+        if key.casefold() in skip:
+            continue
+        if _credential_name(key):
+            register_secret(value)
+
+
 def _take_base(cleaned: dict[str, str], base: Mapping[str, str], patterns: tuple[str, ...]) -> None:
     for key, value in base.items():
         if _keep_base(key, patterns):
@@ -451,15 +476,19 @@ def _take_extra(
     if extra is None:
         return
     for key, value in extra.items():
-        if _keep_extra(key, secret_ok):
-            _put_env(cleaned, key, value)
+        if not _keep_extra(key, secret_ok):
+            continue
+        if key.casefold() in secret_ok:
+            cleaned[key] = value
+            continue
+        _put_env(cleaned, key, value)
 
 
 def _put_env(cleaned: dict[str, str], key: str, value: str) -> None:
     stored = _scrubbed_env_value(key, value)
     if stored is None:
         return
-    cleaned[key] = stored
+    cleaned[key] = redact_text(stored)
 
 
 def _scrubbed_env_value(key: str, value: str) -> str | None:
