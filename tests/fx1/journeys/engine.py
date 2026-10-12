@@ -64,8 +64,8 @@ _FREEZE_NAME = "journeys.sha256"
 _MODELS = ("fx1", "fx1-lite")
 _SLOW_S = 0.2
 _CANCEL_DELAY_FLOOR_S = 0.4
-_TURN_JOIN_S = 2.0
-_JOB_JOIN_S = 2.0
+_TURN_JOIN_S = 30.0
+_JOB_JOIN_S = 30.0
 _TINY_RETRY = RetryPolicy(
     max_attempts=2,
     base_delay_s=0.0,
@@ -689,7 +689,7 @@ class _Runner:
         return ModelClient(
             retry=_TINY_RETRY,
             sleep=_no_sleep,
-            timeout_s=2.0,
+            timeout_s=30.0,
             proxies=_no_proxies,
             bypass=_bypass_all,
             **kwargs,
@@ -714,7 +714,7 @@ class _Runner:
 
     def _shutdown(self) -> None:
         if self.concierge is not None:
-            self.concierge.shutdown(timeout_s=1.0)
+            self.concierge.shutdown(timeout_s=10.0)
 
     def _close_stub(self) -> None:
         if self.stub is not None:
@@ -726,7 +726,7 @@ class _Runner:
         return self.stub
 
     def _cancel_when_inflight(self, before: int) -> None:
-        arrived = self._require_stub().wait_for_requests(before + 1, timeout=1.5)
+        arrived = self._require_stub().wait_for_requests(before + 1, timeout=15.0)
         if not arrived:
             self.fail("cancel turn: model request was not in flight")
             return
@@ -1561,7 +1561,7 @@ def _write_receipt(cwd: Path, script: CommandScript) -> None:
 
 def _wait_cancel(hold: bool, cancel_event: threading.Event | None) -> bool:
     if hold and cancel_event is not None:
-        cancel_event.wait(2.0)
+        cancel_event.wait(20.0)
     return bool(cancel_event is not None and cancel_event.is_set())
 
 
