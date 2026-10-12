@@ -1,13 +1,17 @@
 # dipcatcher production product contract
 
-**Date:** 2026-10-12. **Status:** the chat launcher, qualified family
-selection, partial selective runs, session recovery, cancellation of owned
-subprocesses, step/time budgets, and evidence-class grounding are implemented
-and covered by offline tests. Production acceptance gates P1–P7 below stay
-open until their evidence exists. Live model smoke, a moderated user trial,
-a soak, and signed release artifacts are not implied by the code. The
-requested 25% note in the handoff is historical; it is not a readiness
-percentage.
+**Date:** 2026-10-12. **Status:** the chat launcher, dataset attach, the
+read-only job list, qualified family selection, partial selective runs,
+session recovery, cancellation of owned subprocesses, step/time budgets,
+and evidence-class grounding are implemented and covered by offline tests.
+Scripted journey runs, a relevance run, a two-minute soak, a latency run
+on this machine, and an offline wheel smoke exist. Production acceptance
+gates P1–P7 below stay open. None of those runs is the evidence the gate
+text requires. Live model smoke, a moderated user trial, a 24-hour soak,
+and signed release artifacts are not implied. The requested 25% note in
+the handoff is historical; it is not a readiness percentage. Partial
+measurements are in
+[the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md).
 
 ## Product definition
 
@@ -43,16 +47,19 @@ Work on 2026-10-08 began at local `50f25b2ce` in a concurrently modified
 working tree. The table includes the implementation in this handoff; it is
 not hosted-model or full release certification.
 
-| Surface | Observed source | Gap to this contract |
+| Surface | What exists now | What remains |
 |---|---|---|
-| Product entry | `dipcatcher_cli.app` opens chat for bare terminal invocation, supports `chat --model`, and forwards lab commands; `quant` retains its existing entry. | Complete cross-platform UX acceptance and release packaging approval. |
-| Existing conversation | The launcher reuses `concierge.run_console`; `/keys set` configures key and endpoint in chat, with accurate startup endpoint status. Sessions reload with `/resume` and `chat --resume`. | Richer editing and the 99-journey suite remain open. An interrupted job is recorded and is not restarted. |
-| Models | `fx1.interactive.profiles.MODELS` contains `fx1` and `fx1-lite`; profiles store endpoints. | Verify both real service identities and errors; make selection and any change visible. |
-| Research planning | `fx1.interactive.superpower` selects harness commands, then the read-only `families` surface constrains `research --only` to executable required families. | Command selection and family selection are both enforced. Live-optional names without a selective runner stay refused. A full notebook still runs only when no family selector is injected (tests and direct lab use). |
+| Product entry | `dipcatcher_cli.app` opens chat on a terminal, supports `chat --model`, `exec` (including repeatable `--data`), `models check`, and `sessions`, and forwards lab commands. `quant` stays the lab entry. Redirected bare `dipcatcher` prints help and does not read stdin. An offline wheel smoke imported the three packages and ran those help paths. | Cross-platform UX acceptance, signed artifacts, rollback, and release packaging approval. P7 stays open. |
+| Existing conversation | `/help` matches the dispatcher, including `/data`, `/runs`, `/models check`, `/resume`, and `/evidence`. Sessions reload with `/resume` and `chat --resume` and restore attachments. `/new` clears them. An interrupted job is recorded and is not restarted. Two automated 100-journey suites exist. The pty/in-proc suite's latest recorded run is 100/100, including its critical journeys, on a stub model. An earlier run of a different suite digest was 99/100 (`J082`, corrupt session file reported and not quarantined; that failure is fixed in the later run). | The five-user trial and retained terminal recordings. P1 stays open. The YAML suite was not re-executed for the evidence table. |
+| Models | `fx1.interactive.profiles.MODELS` contains `fx1` and `fx1-lite`. `/models` and `dipcatcher models check` report presence. `--live` is one identity call per configured model and says the record is not a release claim. Offline check does not open a socket. | P2 stays open until a real authenticated smoke of both models records 401, unknown model, 429, timeout, and server failure against the real service. Stub and mock runs are a different check. |
+| Research planning | The planner selects harness commands. The read-only `families` surface constrains `research --only`. Unsafe goals are refused before selection (exclusion code `unsafe`). `/data` and `exec --data` attach a CSV or Parquet under `<cwd>/data`; the sha256 is rechecked before a run. The relevance suite (55 cases) recorded supported-case pass rate 1.0, unsafe refusal rate 1.0, and invariant failures none. | The expert half of P3 (at least 90% on the preregistered rubric) is not rated. P3 stays open. |
+| Plain-text routing | `intent.looks_like_orchestration` sends some sentences down the same planner. On the 64-phrase labeled set, precision is 1.0 and recall is 0.625. | Misses stay on the chat path until the operator types `/superpower`. P3 stays open. |
 | Planner limits | Deterministic and refined plans enforce `max_harness`. Family selection enforces `max_families`. `RunBudget` caps steps, retries, and seconds and reports `spend_cap=None`. | Dollar spend cannot be capped without a price catalog. |
-| Answer validation | Honesty validator plus `ground_summary`. Verification phrasing is kept only when the run record lists that receipt path. | Lexical and path checks are not a semantic proof of a receipt. `verify-research` is still required before a result is called verified. |
-| Jobs | In-process thread plus cancel of an owned subprocess group. Sessions record `interrupted` and do not auto-retry. | Remote Windows fleet cancellation still uses the existing manifest launcher. |
-| Documentation | [FXI](FXI.md) and [Concierge](DIP_CONCIERGE.md) describe the new working-tree launcher and remaining gaps. | Finish broader naming/status reconciliation when the release candidate is fixed. |
+| Answer validation | Honesty validator plus `ground_summary`. Glued forms such as `sharpe3.2` are headlines. Verification phrasing is kept only when the run record lists that receipt path. Red-team tests exercise tamper, injection, and secret-leakage failures. | Lexical and path checks are not a semantic proof. Spelled-out numbers, a bare metric name, and a token glued onto a prefix stay outside the gate. `verify-research` is still required before a result is called verified. P4 stays open. |
+| Jobs | In-process thread, cancel of an owned subprocess group, and a terminal stop that cancels the in-flight step and does not start a replacement. Sessions record `interrupted` and do not auto-retry. `/sessions` quarantines a corrupt file. `/runs` is read-only. | Remote Windows fleet cancellation still uses the existing manifest launcher. |
+| Responsiveness | One latency record on this machine: cold prompt p95 0.244281 s over 30 starts, local ack p95 0.03819 s over 200 events, owned-sleeper stop 0.100916 s. `reference_hardware` is false and `p5_gate_closed` is false. | Reference hardware, crash/restart as the gate defines it, and model latency measured separately. P5 stays open. |
+| Bounded operation | Step, time, retry, and token ceilings exist. Unknown price does not imply a spend cap. A 120-second stub soak recorded `ok` true, no orphan children, and `reference_24h` false. `make dipcatcher-evidence` asks for 60 seconds, which is a different run. | The 24-hour mixed-workload soak. P6 stays open. |
+| Documentation | [FXI](FXI.md), [Concierge](DIP_CONCIERGE.md), the runbook's chat section, and [the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md) describe the tree and the measurements above. | Naming stays as in this contract. The docs epoch pin and the crown-jewel pin are red. Re-stamp needs the signing key. |
 
 The repository-wide [production audit](ULTRA_PROD_READINESS.md) owns CI,
 history reconciliation, artifact integrity, catalog cleanup, and release
@@ -81,10 +88,12 @@ not a claim of feature parity or a requirement to duplicate another product.
    budget, evidence class, and cancellation state. Keep raw logs and full
    configuration available as optional details. A spinner is not progress.
 5. **Control:** provide discoverable model selection, help, status, cancel,
-   session resume, and evidence inspection. Existing `/use`, `/model`, `/help`,
-   `/status`, and `/cancel` are starting points; resume and evidence inspection
-   still need a defined command/API. Keep multiline input, paste, history,
-   keyboard navigation, narrow terminals, `NO_COLOR`, and plain output usable.
+   session resume, and evidence inspection. `/use`, `/model`, `/help`,
+   `/status`, `/cancel`, `/resume`, `/evidence`, `/runs`, `/data`, and
+   `/models check` exist. Keep multiline input, paste, history, keyboard
+   navigation, narrow terminals, `NO_COLOR`, and plain output usable. A
+   background job uses a cbreak line reader, so that line has no history
+   and no arrow keys.
 6. **Finish:** explain what was learned, what failed or remains uncertain,
    and link the verified receipt/artifacts. A partial run must say partial.
    Unconfigured models may return a clearly labeled deterministic status
@@ -193,10 +202,12 @@ incremental approach exists. Never trade the honesty gate for typing effects.
 
 ## Production acceptance gates
 
-All rows are **OPEN / not verified by this document**. Numeric limits below
-are proposed initial release targets, not measured performance or a service
-promise. Freeze the supported OS/Python/terminal matrix and reference hardware
-before measuring; record sample sizes and failures.
+All rows are **OPEN**. Numeric limits below are proposed initial release
+targets, not a service promise. The measurements in
+[the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md) do not close
+any row. Freeze the supported OS/Python/terminal matrix and reference
+hardware before treating a number as the gate. Record sample sizes and
+failures.
 
 | Gate | Acceptance evidence |
 |---|---|
@@ -208,9 +219,12 @@ before measuring; record sample sizes and failures.
 | P6 — Bounded operation | Hard time, step, retry, token and spend ceilings cover planning through synthesis. Unknown price cannot imply a guaranteed spend cap. A 24-hour mixed-workload soak leaves no orphan local children or unaccounted jobs; injected failures remain recoverable. Redacted diagnostics correlate session/run/step and model/family identity. |
 | P7 — Repeatable release | Repository gates and required CI pass at the candidate revision; clean install/upgrade/uninstall, supported-platform smoke tests, dependency/security checks, signed artifacts, checksums, rollback drill, and support/runbooks are evidenced. Existing production-audit blockers are explicitly closed or the release remains blocked. |
 
-Maintain a release evidence table with gate ID, owner, candidate SHA, exact
-command/scenario, platform, artifact path/hash, timestamp, result, and remaining
-blocker. Docs or a merged implementation never substitute for passing evidence.
+The release evidence table is
+[DIPCATCHER_RELEASE_EVIDENCE.md](DIPCATCHER_RELEASE_EVIDENCE.md). Columns are
+gate ID, owner, candidate SHA, exact command/scenario, platform, artifact
+path/hash, timestamp, result, and remaining blocker. Owner is unassigned
+in that table. Docs or a merged implementation never substitute for passing
+evidence.
 Use the existing [Operations runbook](OPERATIONS_RUNBOOK.md) and
 [API stability contract](FX1_API_STABILITY.md) for release and recovery details.
 Model-release claims additionally require each model's own evaluation/card and

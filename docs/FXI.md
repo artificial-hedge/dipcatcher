@@ -21,6 +21,13 @@ directly; `/keys set fx1` stores the key and URL there. Redirected bare
 requires a terminal. With stdin closed, bare `fxi` prints the concierge
 banner and exits on EOF; it does not print the lab help.
 
+`/data`, `/runs`, and `/models check` are chat commands. `dipcatcher exec
+--data` attaches a CSV or Parquet for one turn, using the same resolver as
+`/data` (the file has to already be under `./data`). Exit codes, the
+SIGHUP difference between chat (129) and exec (130), and the open gates are
+in the CLI guide. With `PYTHONIOENCODING=ascii` the banner observed here
+was `dipcatcher | fx1 @ unconfigured | unset` and the prompt was `fx1 > `.
+
 ## Model endpoints
 
 | Model | Environment when nothing is stored | Shared fallback |
@@ -75,7 +82,10 @@ stdout is not a TTY, when `NO_COLOR` is set (any value), or when
 `FXI_ORBS=off`. With `NO_COLOR=1` on a pseudo-terminal the startup banner
 was plain text (`dipcatcher · fx1 @ unconfigured · unset`), not the
 braille box. The scripted non-TTY console still printed the static
-braille banner. Bracketed paste stays on for the TTY line editor.
+braille banner. Bracketed paste stays on for the idle TTY line editor.
+While a background job runs, that line uses the cbreak reader (no history,
+no arrow keys). A fatal tty signal restores the terminal and turns
+bracketed paste off.
 
 ## Install
 

@@ -1490,14 +1490,34 @@ uv run dipcatcher           # terminal: chat. redirected: help, no stdin read
 uv run dipcatcher exec "ping"          # one turn; exit 5 until an endpoint exists
 uv run dipcatcher models list          # presence only, not a liveness claim
 uv run dipcatcher models check         # offline; does not open a socket
+uv run dipcatcher models check --live  # one call per configured model; not a release claim
+uv run dipcatcher exec --data vol.csv "ping"  # ./data/vol.csv; same resolver as /data
 ```
 
 `dipcatcher chat --model fx1-lite` picks the starting model and requires a
 terminal. Without an endpoint, slash commands still run and a model turn
-reports that no endpoint is configured. `fxi` opens the same chat; with
-stdin closed it prints the banner and exits. `quant` is the lab CLI
-without the chat preface. Details and current status:
-[`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md). The typed subcommands
+reports that no endpoint is configured. Inside the chat, `/data` attaches
+a CSV or Parquet that already lives in `./data`, `/runs` reads the job
+ledger, and `/models check` is the same offline check. `fxi` opens the
+same chat; with stdin closed it prints the banner and exits. `quant` is
+the lab CLI without the chat preface. Details and current status:
+[`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md). Measured local runs and
+the open gates are in
+[`docs/DIPCATCHER_RELEASE_EVIDENCE.md`](docs/DIPCATCHER_RELEASE_EVIDENCE.md).
+
+```bash
+make dipcatcher-journeys       # YAML chat journeys; not the five-user trial
+make dipcatcher-journeys-pty   # JSON under $EVIDENCE_DIR (default data/dipcatcher-evidence)
+make dipcatcher-relevance      # goal/data suite; JSON in that directory
+make dipcatcher-evidence       # latency (30 starts, 200 acks), a 60s soak, wheel smoke
+make dipcatcher-gate           # ruff, mypy --strict src/fx1 src/dipcatcher_cli, tests, both journey targets, relevance
+```
+
+`make dipcatcher-evidence` writes `latency.json`, `soak.json` (that target
+passes `--duration-s 60`), and `release_smoke.json` under
+`data/dipcatcher-evidence`. The copies cited in the evidence table are not
+that 60-second soak. A true `ok` in those files is the script's own check.
+It does not close a contract gate. The typed subcommands
 below are the non-interactive lab path, used by scripts and CI:
 
 ```bash
@@ -1575,7 +1595,7 @@ generated diagrams in [Visual tour](#visual-tour).
 
 | Command | What it does |
 |---|---|
-| `uv run dipcatcher` | Terminal: chat with `fx1`/`fx1-lite`. Redirected: help, no stdin read. `fxi` opens the same chat. `dipcatcher exec` is the one-turn script path. |
+| `uv run dipcatcher` | Terminal: chat with `fx1`/`fx1-lite`. Redirected: help, no stdin read. `fxi` opens the same chat. `dipcatcher exec` is the one-turn script path. `exec --data` attaches a file under `./data`. |
 | `uv run dipcatcher research --config <cfg>` | Builds a panel, runs the research pipeline, writes a sealed notebook. |
 | `uv run dipcatcher verify-research [path]` | Recomputes a notebook or run directory's receipt hash; fails closed. |
 | `uv run dipcatcher doctor --config <cfg>` | Environment/data/receipt readiness check; exit code is the answer. |
@@ -3276,6 +3296,7 @@ flowchart TD
 |  make demo-data                labeled offline dataset              |
 |  make lint && make typecheck && make test                           |
 |  make fx1-gate                 fx-1 lane: lint+types+tests+honesty  |
+|  make dipcatcher-gate          chat harness gate; gates P1-P7 stay open |
 |  make receipts-reverify        re-verify every committed receipt    |
 |  uv run fx1 corpus build --receipts-dir receipts --out <path>       |
 +---------------------------------------------------------------------+

@@ -10,6 +10,12 @@ The version source is `fx1.__version__`.
 
 ### Added
 
+- dipcatcher chat: `/data` attaches a CSV or Parquet under `<cwd>/data`
+  (sha256 checked again before a run; a changed file is refused), `/runs`
+  reads the job ledger, `/models check` is offline unless `--live`, and
+  `dipcatcher exec --data` uses the same resolver. Chat SIGHUP is exit 129;
+  exec SIGHUP is exit 130. Measured local runs (stub model, this machine,
+  gates P1–P7 still open) are in `docs/DIPCATCHER_RELEASE_EVIDENCE.md`.
 - **PROOFCORE wave 2 — causal proven runs + cryptographic replay + IO
   guard**: `quant_fund.proofcore.scheduler` (pure decision-window scheduler),
   `quant_fund.proof.runner.run_proven` (causal walk-forward over a declared

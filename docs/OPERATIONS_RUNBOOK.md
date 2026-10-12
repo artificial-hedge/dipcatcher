@@ -1562,8 +1562,8 @@ context window, from these notes.
 
 | Situation | Command | What to expect |
 |---|---|---|
-| Person at a terminal | `dipcatcher` or `dipcatcher chat --model fx1-lite` | Prompt `<model> › `. `/exit` or a second Ctrl-C leaves. |
-| Script or CI | `dipcatcher exec "…"` | Answer on stdout, footer and errors on stderr. `--json` is one document. |
+| Person at a terminal | `dipcatcher` or `dipcatcher chat --model fx1-lite` | Prompt `<model> › `. `/exit` or a second Ctrl-C leaves. ASCII stdout uses `>` and a `|` banner. |
+| Script or CI | `dipcatcher exec "…"` | Answer on stdout, footer and errors on stderr. `--json` is one document on stdout; the footer was also on stderr in a local `--json` run. `--data PATH` is repeatable. |
 | Redirected bare CLI | `dipcatcher` | Preface plus lab help. Stdin is not read. Exit 0. |
 | Lab only | `quant` | Lab help, no chat preface. |
 | Compatible launcher | `fxi` | Same concierge. Closed stdin prints the banner and exits on EOF. |
@@ -1574,8 +1574,15 @@ terminal requirement. Use `exec` for scripts.
 Ctrl-C at an idle chat prompt prints `press Ctrl-C again to exit, or /exit`.
 A second Ctrl-C exits. That pair was observed on a pseudo-terminal. When a
 background job is running, the console requests cancel instead of exiting;
-that branch was not exercised with a live job here. Ctrl-D on an empty
-prompt exits (`fxi` with stdin closed printed the banner and exited).
+that branch was not exercised with a live job here. While a job is active
+the POSIX line reader is cbreak, so that line has no history and no arrow
+keys. Ctrl-D on an empty prompt exits (`fxi` with stdin closed printed the
+banner and exited).
+
+Chat closed by SIGHUP exits 129. Chat closed by SIGTERM exits 143. Those
+are `install_terminal_stop` when the signals still have the default
+disposition. This section did not signal a live chat. A terminal stop
+cancels the running step and does not launch a replacement.
 
 ### Where state lives
 
@@ -1589,12 +1596,31 @@ bundles from that tree; do not copy it into a ticket without redacting.
 | `$FX1_CONFIG_DIR/jobs` | Job ledger. Reconcile does not restart work | |
 | `$FX1_CONFIG_DIR/runs/<run_id>/` | One `/superpower` attempt | `0700` |
 | `$FX1_CONFIG_DIR/logs/<session-id>.jsonl` | Local telemetry. Not uploaded | |
-| `$FX1_CONFIG_DIR/history` | Chat history JSON | `0600` |
+| `$FX1_CONFIG_DIR/history` | Chat history JSON. `/keys` lines are not stored | `0600` |
+| session `attachments` and `datasets` | Files attached with `/data`. `datasets` drops a row whose sha256 no longer matches | inside the session JSON |
 
 Session lookup order is `$FX1_SESSION_DIR`, then `$FX1_CONFIG_DIR/sessions`,
 then `~/.fx1/sessions`. An interrupted job is not restarted. Confirm with
 `dipcatcher sessions show <id>`: `job_state: interrupted` and
-`job_resume: manual`.
+`job_resume: manual`. `/sessions` quarantines a corrupt session file and
+keeps listing the others. A newer schema is reported and left in place.
+
+`/data attach` reads only a regular CSV or Parquet inside `<cwd>/data`.
+Copy the file there. A symlink that leaves `data/` is refused
+(`dataset path must stay inside data/`). The sha256 is checked again
+before a run. A changed file prints
+`dataset changed since attach; /data inspect <n> then re-attach` and the
+run does not start. `/runs` lists the job ledger and does not restart a
+job. `/new` clears attachments. `/resume` restores them.
+
+If `models check` prints `credentials directory must not be a symlink`
+(exit 2 when `FX1_CONFIG_DIR` itself is a symlink), or
+`ensure_private_dir` reports `refusing to follow symlink directory` plus
+the path it was given, set `FX1_CONFIG_DIR` and `FX1_SESSION_DIR` to the
+resolved real directory. That is the failure when an ancestor (`/tmp`,
+`/var`, or the home directory on some machines) is a symlink. macOS was
+not executed here. The ancestor message was observed by calling
+`ensure_private_dir` on a directory under a symlink, not by a macOS run.
 
 Windows restricts the credentials file with `icacls`. That was not run
 here. If store health says `Windows ACL was not applied to the credentials
@@ -1638,8 +1664,8 @@ rejected and are not echoed.
 | 3 | Honesty gate withheld the answer | Not a result. Status `withheld`. |
 | 4 | `--timeout-s` or a usage ceiling | Status `timeout` or `budget`. Not a dollar cap. |
 | 5 | No endpoint | Status `no_endpoint`. |
-| 130 | SIGINT | |
-| 143 | SIGTERM | |
+| 130 | SIGINT or SIGHUP | `exec --help` text: `interrupted (SIGINT or SIGHUP)`. Not the chat's 129. |
+| 143 | SIGTERM | `exec --help` text: `terminated (SIGTERM)`. |
 
 ### Diagnostics
 
@@ -1653,6 +1679,28 @@ The credentials line in the text report is redacted because the slot name
 matches the secret filter. Sessions, jobs, logs, and history show `ok` or
 `absent`.
 
+### Evidence commands
+
+These write local JSON. They do not close gates P1–P7. Read
+[the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md) before quoting
+a number. `EVIDENCE_DIR` defaults to `data/dipcatcher-evidence`.
+
+| Target | What it runs | How to read the file |
+|---|---|---|
+| `make dipcatcher-journeys` | `pytest tests/fx1/journeys` | The gate report is the pytest result. A frozen file exists. This is not the five-user trial. |
+| `make dipcatcher-journeys-pty` | `scripts/dipcatcher_journeys_pty.py` | `dipcatcher.journeys.v1`. `pass_rate` 1.0 still leaves P1 open. |
+| `make dipcatcher-relevance` | `scripts/dipcatcher_relevance.py` | `dipcatcher.relevance.v1`. `ok` true does not rate the expert rubric. |
+| `make dipcatcher-evidence` | latency `--runs 30 --events 200`, soak `--duration-s 60`, wheel smoke | `dipcatcher.latency.v1` (`p5_gate_closed` stays false), `dipcatcher.soak.v1` (`reference_24h` false), `dipcatcher.release_smoke.v1` (`not_covered` lists signing, rollback, macOS/Windows). |
+| `make dipcatcher-gate` | ruff, `mypy --strict src/fx1 src/dipcatcher_cli`, `dipcatcher-test`, both journey targets, relevance | Exit 0 would still not be P7. Signed artifacts and the platform matrix are not in that target. |
+
+`make -n dipcatcher-evidence` on this tree prints the three script lines
+above. The soak artifact cited in the evidence table is a 120-second run,
+not this 60-second target.
+
+A blackholed handshake is capped at `min(read timeout, 15 s)`. The read
+timeout default remains 90 s. This section did not time a dropped
+handshake. Connection refused is a separate, immediate `network` error.
+
 ### What not to claim
 
 - Do not mark a stub or offline check as proof that either hosted model
@@ -1662,5 +1710,8 @@ matches the secret filter. Sessions, jobs, logs, and history show `ok` or
 - Do not quote Sharpe, Sortino, Calmar, P&L, or NAV as a research result.
   A withheld answer is the gate working.
 - A 24-hour soak, a five-user trial, authenticated smoke for both models,
-  and the macOS/Windows matrix are open. They are not implied by a local
-  stub session.
+  the macOS/Windows matrix, signed artifacts, and a rollback drill are
+  open. They are not implied by a local stub session.
+- Do not treat a green `make dipcatcher-evidence` as P5 or P6. Read
+  `p5_gate_closed` and `reference_24h`.
+- Do not restart a job from `/runs`. It is read-only.

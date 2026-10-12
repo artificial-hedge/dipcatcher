@@ -24,12 +24,20 @@ or model-release claim.
 > read-only family surface; a family that cannot be bound with `--only` is
 > refused instead of widening to the full scorecard. Selective family
 > records are partial (`verified=false` on the evidence item) and are not
-> sealed receipts. Sessions persist under `$FX1_SESSION_DIR`, else
-> `$FX1_CONFIG_DIR/sessions`, else `~/.fx1/sessions`. A job that was still
+> sealed receipts. `/data` attaches a CSV or Parquet that already sits
+> under `<cwd>/data`. `/runs` reads the job ledger and does not start
+> work. `/models check` is offline unless `--live` is set. Sessions persist
+> under `$FX1_SESSION_DIR`, else `$FX1_CONFIG_DIR/sessions`, else
+> `~/.fx1/sessions`, including dataset attachments. A job that was still
 > `running` is marked `interrupted` on resume and is not started again.
-> Live authenticated smoke for both models, a five-user trial, a 24-hour
-> soak, and the macOS/Windows matrix are open. See
-> [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md).
+> The chat process treats SIGHUP as exit 129 and SIGTERM as exit 143.
+> `dipcatcher exec --help` maps SIGINT and SIGHUP to 130 and SIGTERM to
+> 143. Two automated journey suites, a relevance suite, chaos tests, and
+> red-team tests exist. They do not close gates P1–P7. Live authenticated
+> smoke for both models, a five-user trial, a 24-hour soak, the
+> macOS/Windows matrix, and signed release artifacts are open. See
+> [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md) and
+> [the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md).
 
 ## Honesty contract
 
@@ -41,7 +49,12 @@ and no `SYNTHETIC` label. SYNTHETIC results are correctness tests, always
 labeled, and are not market evidence. There is no broker connectivity and
 no live-trading claim. Receipts are immutable evidence; a verification
 claim needs a receipt the harness checked. The lexical gate does not prove
-that a cited receipt is the right one for the sentence.
+that a cited receipt is the right one for the sentence. A decimal glued to
+the token (`sharpe3.2`, `sharpe_3.2`, `NAV1.9`, `pnl4.2`) is a headline. A
+bare integer glued on (`sharpe2`) is not. Spelled-out numbers ("sharpe of
+two point one"), a token glued onto a prefix ("mySharpe 2.1"), and a bare
+metric name with no number stay outside the gate. A compromised endpoint
+can still return false but well-formed prose that this gate does not catch.
 
 A loopback reply of `The strategy Sharpe 2.1 beat the book.` came back as
 exec status `withheld`, exit code 3, with this answer:
@@ -70,8 +83,10 @@ dipcatcher                  # terminal: chat. redirected: preface + lab help
 dipcatcher chat --model fx1-lite
 dipcatcher version
 dipcatcher exec "ping"      # one turn; exit 5 until an endpoint exists
+dipcatcher exec --data vol.csv "ping"   # file must already be under ./data
 dipcatcher models list
 dipcatcher models check     # offline; does not open a socket
+dipcatcher models check --live   # one identity call per configured model
 ```
 
 `dipcatcher version` prints `dipcatcher` and the package version.
@@ -91,7 +106,7 @@ no model endpoint configured — set one with `/keys set fx1`, or export MOONSHO
 |---|---|
 | `dipcatcher` | Terminal: chat. Not a terminal: preface, then lab `--help`. Does not read stdin. |
 | `dipcatcher chat [--model fx1\|fx1-lite] [--resume]` | Chat. Requires a terminal on stdin and stdout. `--resume` reloads the newest session and does not restart an interrupted job. |
-| `dipcatcher exec ...` | One turn, no prompts. Plain mode prints the answer on stdout and the footer on stderr. `--json` prints one `dipcatcher.exec.v1` document. |
+| `dipcatcher exec ...` | One turn, no prompts. Plain mode prints the answer on stdout and the footer on stderr. `--json` prints one `dipcatcher.exec.v1` document and, in the run below, also wrote the footer on stderr. `--data` is repeatable and uses the same resolver as `/data`. |
 | `dipcatcher models list [--json]` | Presence table for both models. Not a liveness claim. |
 | `dipcatcher models check [model] [--live] [--json] [--out PATH] [--timeout-s N]` | Offline configuration check, or one call per model with `--live`. `--out` is atomic mode `0600`. |
 | `dipcatcher sessions list\|show\|export\|rm\|prune` | Saved chats. JSON schema `dipcatcher.sessions.v1`. |
@@ -214,7 +229,8 @@ warning: served model someone-else differs from requested model fx1
 ```
 
 `dipcatcher exec` puts that footer on stderr in plain mode, and in the
-JSON `warnings` array. The answer is the only stdout line.
+JSON `warnings` array. In plain mode the answer is the only stdout line.
+A `--json` run in this pass also wrote the footer line on stderr.
 
 The honesty gate runs before the answer is shown. A withheld turn stays
 in the session so you can ask a follow-up. Completed tool calls from that
@@ -241,8 +257,24 @@ line (`hello \` then `world` became `hello \nworld`). A line that is
 exactly three backticks, or three double-quotes, opens a fence closed by the same line.
 
 History is `$FX1_CONFIG_DIR/history`, a JSON list, mode `0600`. After
-`/model` on the TTY it contained `["/model"]`. Secrets from `/keys set`
+`/model` on the TTY it contained `["/model"]`. A line whose first token is
+`/keys`, and secret-shaped text, are not stored. Secrets from `/keys set`
 are not stored in history.
+
+With `PYTHONIOENCODING=ascii` the banner was
+`dipcatcher | fx1 @ unconfigured | unset` and the prompt was `fx1 > `.
+The same run printed `warning: credentials directory permissions were
+tightened to 0700`. Unicode stdout keeps the `·` banner and the `›`
+prompt. While a background job is active on a POSIX tty, the line reader
+is cbreak (`tty_guard.read_cbreak`), so that line has no readline history
+and no arrow keys. This pass did not leave a half-typed line on screen.
+`guard_tty` restores termios and turns bracketed paste off
+(`\x1b[?2004l`) on SIGTERM and SIGQUIT. Model text, tool output, dataset
+names, and exports go through `sanitize_for_terminal`. OSC, CSI other than
+SGR, C1, bidi, and zero-width format characters are removed. With color
+on, SGR keeps color and intensity; conceal, blink, and reverse are
+dropped. Those paths are what the terminal and red-team tests lock. A
+hostile sequence was not pasted into the live chat for this page.
 
 On Windows the console uses blocking `input()` because `select` is not
 used on console handles. Queued background progress appears after you
@@ -270,38 +302,57 @@ claim about either model's real window.
 
 ## Slash commands
 
-`/help` prints this list. One line each:
+`/help` prints `HELP_TEXT`. The wording below is that text.
 
-| Command | Meaning |
+| | |
 |---|---|
-| plain text | One turn with the active model (flash, web, harness tools). |
-| `/help` | Print the command list. |
-| `/use <fx1\|fx1-lite>` | Switch model and keep the conversation. |
-| `/model` | Print `active model: <id>`. |
-| `/models` | Both models: status, host, source, fingerprint. |
-| `/superpower <goal> [--sync]` | Plan and run capabilities. `--sync` runs inline. |
-| `/superpower help` | List capabilities the planner may select. |
-| `/research <goal> [--budget-s N] [--max-sources N] [--queries a\|b] [--sync]` | Background web research. A live search was not run here. |
-| `/status` | Job state. `no background job` when idle. |
-| `/cancel` | Cancel the background job. `no running background job` when idle. |
-| `/redirect <goal>` | Retarget background research. Empty goal: `usage: /redirect <new goal>`. |
-| `/evidence [E1]` | Ledger items, or one item. Idle: `no receipt paths on the last job`. |
-| `/budget` | Run ceilings and the chat usage line. Not a dollar cap. |
-| `/budget max-steps N` | Also `max-seconds`, `max-families`, `max-harness`, `max-retries`. Observed `budget max_steps=3`. |
-| `/session` | Id, model, job state, turn count. |
-| `/sessions [N]` | Newest sessions. |
-| `/resume [id]` | Prefix, `last`, or id. A job is not restarted. |
-| `/export [md\|json]` | Redacted transcript. Observed a mode-`0600` markdown file under `exports/`. |
-| `/new` | Fresh session, same model. Refuses while a job is running. |
-| `/flash add\|list\|show\|remove\|correct\|search\|refresh` | Local research memory. Empty store: `(no flash entries)`. |
-| `/harness list\|describe\|run` | The 32 registered lab commands. |
-| `/keys list\|set\|remove` | Endpoints, presence-only. |
-| `/approvals` | Recorded decisions. Idle: `no approvals recorded`. |
-| `/approvals revoke [key]` | Drop one grant, or all of them. |
-| `/diagnostics [--bundle PATH]` | Local report. The bundle is a mode-`0600` zip and is not uploaded. |
-| `/exit` | Leave. |
+| **Chat** | |
+| plain text | talk to the active model (flash, web, harness) |
+| `/use <model>` | switch fx1 \| fx1-lite; keep this conversation |
+| `/model` | show the active model id |
+| `/models` | status table; check [--live] [fx1\|fx1-lite] |
+| **Research** | |
+| `/superpower <goal>` | plan and run capabilities (--sync runs inline; help lists them) |
+| `/runs [id]` | persisted jobs, newest first |
+| `/research <goal>` | background web research |
+| `/status` | job state and evidence status |
+| `/cancel` | cancel the background job |
+| `/redirect <goal>` | retarget background research |
+| `/evidence [E1]` | ledger items, or one item's detail |
+| `/budget` | ceilings; tokens are not a spend cap |
+| **Session** | |
+| `/session` | id, model, job state, and turn count |
+| `/sessions [N]` | newest sessions |
+| `/resume [id]` | prefix, last, or id; a job is not restarted |
+| `/export [md\|json]` | write a redacted transcript |
+| `/new` | fresh session; keep the active model |
+| **Lab** | |
+| `/data ...` | attach \<csv-or-parquet\> \| list \| remove \<n\> \| inspect \<n\> |
+| `/flash ...` | add\|list\|show\|remove\|correct\|search\|refresh |
+| `/harness ...` | list\|describe\|run registered commands |
+| `/keys ...` | list\|set\|remove endpoints (presence-only) |
+| `/approvals` | decisions; /approvals revoke [key] |
+| `/diagnostics` | local report; --bundle PATH writes a zip |
+| `/help` | this help |
+| `/exit` | leave |
 
-An unknown slash command prints `unknown command /<name>; try /help`.
+`/superpower help` lists capabilities the planner may select. A live web
+search was not run for `/research`. Idle `/status` is `no background job`.
+Idle `/cancel` is `no running background job`. An empty `/redirect` is
+`usage: /redirect <new goal>`. Idle `/evidence` is `no receipt paths on the
+last job`. `/budget max-steps N` also accepts `max-seconds`,
+`max-families`, `max-harness`, and `max-retries`. Observed
+`budget max_steps=3`. An export wrote a mode-`0600` markdown file under
+`exports/`. `/new` refuses while a job is running. An empty flash store
+prints `(no flash entries)`. `/harness` is the 32 registered lab commands.
+Idle `/approvals` is `no approvals recorded`. `/approvals revoke` drops one
+grant, or all of them. The diagnostics bundle is a mode-`0600` zip and is
+not uploaded.
+
+An unknown slash command with no close match prints
+`unknown command /nope; try /help` (observed). A close match adds a
+suggestion. Observed: `unknown command /superpwer; did you mean /superpower? try /help`.
+The cutoff is `difflib.get_close_matches` at 0.6.
 
 `/budget` with no arguments printed:
 
@@ -316,6 +367,71 @@ ceiling. Token counts are not a price.
 A turn that crosses a usage ceiling says `turn stopped by usage ceiling.`
 and then that usage line. Status is `budget`.
 
+## /data
+
+A dataset is a regular `.csv` or `.parquet` file inside `<cwd>/data`.
+Copy the file there. The command does not fetch one and does not invent a
+column. At most 8 are kept (`dataset limit is 8; /data remove <n> first`);
+this pass did not fill that cap. A bare name is resolved from the cwd and
+then from `data/`. A path that leaves `data/`, including a symlink that
+does, is refused. The sha256 is recorded at attach and checked again
+immediately before a run. A changed file is not scored.
+
+`score-forecasts --inspect` supplies a profile when it exits 0 and the
+digest is unchanged. Without that profile the file is still attached, and
+the line is `dataset profile unavailable; attached without a profile`.
+Profile text is untrusted: it is redacted and passed through
+`sanitize_for_terminal` before display. The issue-time column is bound
+only when the profile's `available_time` role has confidence `exact_name`
+and that column is in the file header. Otherwise the answer says
+point-in-time validity was not verified.
+
+Attachments are stored on the session as `record['attachments']` (the
+profile fields) and `record['datasets']` (path, kind, label for rows that
+are not stale). `/resume` restores them. `/new` clears them. After a file
+change, `datasets` on the saved record was an empty list and
+`attachments` kept the row with `stale` true.
+
+Captured on a pseudo-terminal, `NO_COLOR=1`, loopback stub, work directory
+`/tmp/hdocs-b2rgcmxk/work`. `data/vol.csv` had a header
+`timestamp,realized,forecast_var` and two data rows.
+
+```text
+/data attach vol.csv
+attached dataset /tmp/hdocs-b2rgcmxk/work/data/vol.csv
+profile rows=2 columns=timestamp, realized, forecast_var
+warning: point-in-time validity will NOT be verified
+/data list
+1 csv vol.csv rows=2 sha=a79d3ca5 /tmp/hdocs-b2rgcmxk/work/data/vol.csv
+/data inspect 1
+profile rows=2 columns=timestamp, realized, forecast_var
+warning: point-in-time validity will NOT be verified
+/data attach outside.csv
+dataset path must stay inside data/
+/data attach escape.csv
+dataset path must stay inside data/
+```
+
+`outside.csv` was in the cwd, not under `data/`. `data/escape.csv` was a
+symlink to a file outside `data/`. After the CSV gained one row,
+`/superpower score qlike --sync` printed
+`dataset changed since attach; /data inspect 1 then re-attach` and did not
+start a bench. `/data list` then showed the same row with `stale`. `/new`
+printed `new session on model fx1`. The next `/data list` was
+`no datasets attached`.
+
+A second session attached the same shape of file, exited, and
+`dipcatcher chat --resume` printed
+`resumed session 49b96544a22c4b91b4c1eee9028c5f24 on model fx1`. `/data list`
+showed the file again, not stale. That record had one `attachments` row
+and one `datasets` row (`kind` `csv`, `label` `file`). `dipcatcher exec
+--data vol.csv --json ping` from that directory exited 0 with status `ok`
+and answer `stub fx1 reply`. `dipcatcher exec --data missing.csv ping`
+exited 2 and printed `dataset file was not found under data/`. Those
+timings are the stub. They are not a hosted-model measurement. The profile
+on this file did not bind an issue-time column (`has_available_time`
+false).
+
 ## Approvals
 
 Consequential harness commands (`train`, `optimize`, `paper`) and
@@ -326,8 +442,11 @@ approval required — <question> [y]es once / [a]lways this session / [N]o:
 ```
 
 `y` or `yes` is once. `a` or `always` is this session, and only for the
-same action key and the same bounds. Anything else, EOF, or Ctrl-C
-denies. A denial is recorded and not retried.
+same action key and the same bounds. A session grant stores
+`ActionBounds`, including the argv that will run. A later argv for the
+same capability does not reuse it. Idempotent replay of a succeeded step
+does not ask again. Anything else, EOF, or Ctrl-C denies. A denial is
+recorded and not retried.
 
 Non-interactive callers (exec, pipes, scripts) do not prompt. The default
 is deny. `dipcatcher exec --approve harness:research` allows that key for
@@ -351,8 +470,12 @@ A qualified run does more than that keyword list:
    is the authority; the counts will change when the catalog changes.
 2. Only capabilities that are executable and registered in
    `fx1.harness.HARNESS_REGISTRY` become harness steps. Arguments are
-   typed. A step missing a required argument is excluded. Observed:
-   `excluded score-forecasts: invalid_args: missing_required:--data`.
+   typed. A step missing a required argument is excluded. Observed on an
+   earlier pass: `excluded score-forecasts: invalid_args: missing_required:--data`.
+   An attached file under `data/` supplies that argument. A goal the
+   planner classifies as unsafe is refused before selection, with
+   exclusion code `unsafe` (verifier tampering, a live trade, a forbidden
+   headline, or a prompt-injection directive).
 3. `dipcatcher families` is the read-only family surface. For the goal
    `qlike volatility forecast` it selected family `volatility` with
    runner `research --only volatility` and score `qlike`. It does not
@@ -365,7 +488,11 @@ A qualified run does more than that keyword list:
    not replaced by "run everything".
 5. Each attempt gets a directory `$FX1_CONFIG_DIR/runs/<run_id>/`, mode
    `0700` on POSIX. The id looks like `r-20261012T073017Z-934caa7f`.
-   Datasets are not invented for the plan.
+   The plan does not invent a dataset path. It uses files already attached
+   with `/data` or `exec --data`. A digest that no longer matches is a
+   refusal, not a run. Re-checked on this tree: `dipcatcher capabilities
+   list --json` still printed 190 rows, 11 qualified and executable, 179
+   unqualified and not executable.
 6. The evidence ledger is harness-authored. `/evidence` prints it.
    Classes observed by recording items and by verifying one committed
    receipt locally:
@@ -388,8 +515,10 @@ wants. `/cancel` prints `[<label>] cancel requested` and
 `cancellation pending` until the job ledger confirms `cancelled`.
 `/redirect` applies to background web research.
 
-This documentation pass planned goals and did not execute benches, so no
-new receipt was produced by `/superpower`.
+The earlier pass on this page planned goals and did not execute benches.
+The `/data` capture above sent one `/superpower` after the file changed;
+it was refused before a bench. No new receipt was produced by
+`/superpower` for this page.
 
 ## Sessions and resume
 
@@ -405,8 +534,11 @@ became `state=interrupted`, `resume=manual`, and the notice was
 `resumed session <id> on model fx1; the previous job was not restarted`.
 Completed steps were left in place. Nothing was launched.
 
-`/resume` inside chat uses the same rule. `/new` starts a new id and
-keeps the model.
+`/resume` inside chat uses the same rule and restores dataset
+attachments. `/new` starts a new id, keeps the model, and clears
+attachments. `/sessions` lists through `SessionStore.list`, which
+quarantines a corrupt session file and reports it. A newer schema is
+reported and left in place. This pass did not plant a corrupt file.
 
 The job ledger directory is `$FX1_CONFIG_DIR/jobs`. Reconcile on an empty
 ledger returned no interrupted, orphan, or corrupt ids. Startup text for
@@ -422,6 +554,7 @@ dipcatcher exec --json --model fx1-lite "ping"
 dipcatcher exec --timeout-s 300 --session new "ping"
 dipcatcher exec --approve harness:research "run the registered research command"
 dipcatcher exec --output-last-message answer.txt "ping"
+dipcatcher exec --data vol.csv "ping"    # repeatable; same resolver as /data
 ```
 
 `--model` is `fx1` (default) or `fx1-lite`. `--timeout-s` defaults to 300
@@ -440,8 +573,17 @@ block`.
 | 3 | `withheld` | Honesty gate. |
 | 4 | `timeout` or `budget` | Deadline or usage ceiling. |
 | 5 | `no_endpoint` | No key for the selected model. |
-| 130 | `cancelled` or SIGINT | Interrupted. |
-| 143 | SIGTERM | Terminated. |
+| 130 | `cancelled`, SIGINT, or SIGHUP | Interrupted. `dipcatcher exec --help` says `interrupted (SIGINT or SIGHUP)`. |
+| 143 | SIGTERM | Terminated. `exec --help` says `terminated (SIGTERM)`. |
+
+The chat console is a different process. `install_terminal_stop` arms
+SIGHUP as exit 129 and SIGTERM as exit 143 when those signals still have
+the default disposition. Exec installs its own handlers first, so exec
+keeps 130 for SIGHUP. This pass did not signal a live chat or a live exec.
+A terminal-stop signal cancels the in-flight step and does not start a
+replacement: `terminate_all(stop=True)` latches the process registry, and
+the orchestrator does not retry while that latch is set. A plain
+`terminate_all()` reaps and does not latch.
 
 A stub `pong` with usage exited 0. Stdout was `pong`. Stderr was
 `· fx1 · 0.00s · 4 tokens`. JSON for fx1-lite included `served_model`,
@@ -478,6 +620,14 @@ that a future change still holds, and they were not a penetration test.
 | Owned lab children get a scrubbed environment. `*_API_KEY`, `MOONSHOT_*`, and `FX1_BASE_URL` are not copied. `DIPCATCHER_CHILD=1` and `PYTHONUNBUFFERED=1` are set. Argv summaries passed to telemetry are redacted. | `fx1.interactive.procs.scrub_env` | `tests/fx1/test_harness.py` |
 | Approvals are deny, once, or session. A session grant does not widen bounds. Non-interactive policy denies `consequential` unless the key is listed. | `fx1.interactive.approvals` | `tests/fx1/test_approvals_scoped.py` |
 | Diagnostics and session exports redact secrets. | `fx1.interactive.diagnostics`, `fx1.interactive.redact` | `tests/fx1/test_diagnostics.py`, `tests/fx1/test_concierge_diagnostics.py` |
+| On Linux the direct child is started through a one-shot wrapper that arms `PR_SET_PDEATHSIG` (`SIGKILL`) so it dies if this process is killed. The signal is not inherited by grandchildren. A descendant that has double-forked into a new session and been reparented is not visible, and the result does not claim that pid was killed. | `fx1.interactive.procs` | `tests/fx1/test_chaos_children.py`, `tests/fx1/test_chaos_kill.py` |
+| SIGTERM and SIGHUP on the chat cancel the in-flight step and do not start a replacement. | `fx1.interactive.procs.install_terminal_stop`, `fx1.interactive.orchestration` | `tests/fx1/test_chaos_signals.py`, `tests/fx1/test_review_r2_stop.py` |
+| `/sessions` quarantines a corrupt session file. A symlink session file is moved aside on load. | `fx1.interactive.sessions` | `tests/fx1/test_chaos_store.py` |
+| Session approval for a superpower step or a chat tool is the key plus `ActionBounds.argv`. | `fx1.interactive.approvals` | `tests/fx1/test_review_r2_orchestration_approvals.py`, `tests/fx1/test_approvals_scoped.py` |
+| Proxy environment values copied to a child keep scheme, host, and port. Userinfo, path, and query are dropped. | `fx1.interactive.procs._proxy_authority` | `tests/fx1/test_chaos_children.py` |
+| Redaction matches secrets after NFKC fold. Combining marks and unpaired surrogates are skipped so they cannot hide a character inside a token. | `fx1.interactive.redact` | `tests/fx1/test_redteam_secrets.py`, `tests/fx1/test_redteam_chat_secrets.py` |
+| TCP, a proxy `CONNECT`, and the TLS handshake share one connect budget of `min(read timeout, 15 s)`. The default read timeout stays 90 s and is restored on the socket after connect. | `fx1.interactive.model_client`, `fx1.interactive.model_dial` | `tests/fx1/test_chaos_model.py` |
+| The planner refuses an unsafe goal before selection. Exclusion code `unsafe`. | `fx1.interactive.planner` | `tests/fx1/relevance/` |
 
 `scrub_env` was also run in this environment: `MOONSHOT_API_KEY` and
 `DIPCATCHER_FX1_API_KEY` were absent from the child map. A parent
@@ -520,6 +670,10 @@ the error already contains.
 | honesty withheld | The Sharpe sentence in the honesty section. Exit 3, status `withheld`. | Ask a follow-up. Do not treat the withheld text as a result. |
 | chat without a terminal | `chat requires an interactive terminal on stdin and stdout; use explicit lab commands or fxi one-shot commands for scripts` | `dipcatcher exec`, or a real terminal. |
 | bad endpoint paste | The normalization errors in the table above. The URL is not stored. | Paste an https URL, or literal-loopback http, with no userinfo and no query. |
+| dataset path | `dataset path must stay inside data/` or `dataset file was not found under data/`. Exec exits 2 for a missing `--data` file. | Copy a regular CSV or Parquet into `<cwd>/data` and pass that name. A symlink that resolves outside `data/` is refused. |
+| dataset changed | `dataset changed since attach; /data inspect 1 then re-attach` | The sha256 at attach no longer matches. Inspect, then attach again. The run does not start. |
+| symlink in the config path | `dipcatcher models check` with `FX1_CONFIG_DIR` set to a symlink exited 2 and printed `credentials directory must not be a symlink`. `ensure_private_dir` on a directory under that link raised `refusing to follow symlink directory` plus the path that was requested. | Point `FX1_CONFIG_DIR` and `FX1_SESSION_DIR` at the resolved real directory. This is the failure when an ancestor such as macOS `/tmp`, `/var`, or a symlinked home is a link. Those OS paths were not executed here. |
+| blackholed endpoint | A connect that does not complete is a timeout: `timed out (TimeoutError) — The model server did not answer before the timeout; retry.` The connect budget is `min(read timeout, 15 s)`, not the 90 s read timeout. | This page did not time a dropped handshake. A connection refused to a closed loopback port is the `network` row, and it returns without waiting out the read timeout. |
 
 `dipcatcher models check` without `--live` prints `offline configuration
 check; nothing was contacted` and exits 5 when either model is unset.
@@ -549,8 +703,20 @@ Offline, with network seams injected:
 - `tests/fx1/test_approvals_scoped.py` — once / session / deny.
 - `tests/fx1/test_context_window.py` — outbound fitting, the omission note, and the too-long retry.
 - `tests/fx1/test_docs_drift.py` — `fx1` commands, `make` targets, and `fx1` imports cited from `README.md` and `docs/FX1*.md` exist.
+- `tests/fx1/test_ux_help.py`, `tests/fx1/test_ux_terminal.py`, `tests/fx1/test_ux_portable.py` — `/help` matches the dispatcher, terminal sanitizing, portable layout.
+- `tests/fx1/journeys/` — YAML journey engine. `make dipcatcher-journeys`. Freeze file present. Not the five-user trial.
+- `tests/fx1/journeys_pty/` — second 100-journey suite, JSON, in-process and pty. `scripts/dipcatcher_journeys_pty.py`. `make dipcatcher-journeys-pty`. Notes in `docs/DIPCATCHER_JOURNEYS_PTY.md`.
+- `tests/fx1/relevance/` — `scripts/dipcatcher_relevance.py`, `make dipcatcher-relevance`, `docs/DIPCATCHER_RELEVANCE.md`.
+- `tests/fx1/test_chaos_*.py` and `tests/fx1/chaos_support.py` — owned children, signals, store, model connect, kill.
+- `tests/fx1/test_redteam_*.py` and `tests/fx1/redteam_support.py` — two authors. `test_redteam_chat_*` drive the chat.
+- `tests/fx1/test_review_r1_*.py`, `tests/fx1/test_review_r2_*.py` — review fixes for attach, redaction, connect budget, approvals, and the terminal stop.
+- `tests/unit/cli/test_dipcatcher_contract_*.py` — launcher, exec, models, sessions.
+- `scripts/dipcatcher_latency.py`, `scripts/dipcatcher_soak.py`, `scripts/dipcatcher_release_smoke.py` — `make dipcatcher-evidence`. `make dipcatcher-gate` runs lint, strict types, `dipcatcher-test`, both journey targets, and relevance.
 
 This page's command transcript is from a local run, not from that suite.
+Measured pass counts that exist are in
+[the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md). They do not
+close a gate.
 
 ## Known limitations
 
@@ -581,5 +747,59 @@ This page's command transcript is from a local run, not from that suite.
   Moonshot or operator endpoint was authenticated. Offline scripted
   backends still cover the wire client in the test suite.
 - **Still open:** a 24-hour soak, a five-user trial, a real authenticated
-  smoke for both fx1 and fx1-lite, and the macOS/Windows matrix. Those
-  are not implied by the local stub runs above.
+  smoke for both fx1 and fx1-lite, the macOS/Windows matrix, signed
+  release artifacts, a rollback drill, and the corpus-epoch re-stamp
+  (it needs the signing key). Those are not implied by the local stub
+  runs above. Gates P1–P7 stay open. The partial numbers are in
+  [the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md).
+- **Honesty gate boundary.** Spelled-out numbers, a bare metric name with
+  no number, a bare integer glued on (`sharpe2`), and a forbidden token
+  glued onto a prefix ("mySharpe 2.1") are outside the lexical gate. A
+  compromised endpoint can return false but well-formed prose.
+- **Plain text is a conservative router.** `intent.looks_like_orchestration`
+  is a verb next to an object. On the 64-phrase labeled set in the
+  relevance artifact (32 that should enter `/superpower`, 32 that should
+  stay chat): precision 1.0 (tp 20, fp 0), recall 0.625 (fn 12, tn 32).
+  The misses have no router verb next to a router object. Use
+  `/superpower` explicitly. How-to questions stay on the chat path on
+  purpose.
+- **Datasets live in `<cwd>/data`.** Copy the file there. Anywhere else,
+  including a symlink out of that directory, is refused.
+- **Symlink ancestors.** `ensure_private_dir` refuses a symlink anywhere
+  in the path it was given. The error names that path
+  (`refusing to follow symlink directory ...`). When the config directory
+  itself is the symlink, `dipcatcher models check` printed
+  `credentials directory must not be a symlink` and exited 2. Set
+  `FX1_CONFIG_DIR` and `FX1_SESSION_DIR` to the resolved real path. macOS
+  `/tmp` and `/var`, and a symlinked home, were not executed here.
+- **Owned-process residual.** On Linux the direct child dies with the chat
+  via `PR_SET_PDEATHSIG`. A grandchild that double-forks and calls
+  `setsid` is not killed by that signal and is not found by the descendant
+  sweep. `procs.py` states that limit. It was not re-measured for this
+  page.
+- **Windows and macOS code paths** in this tree were exercised by
+  monkeypatched tests. They were not run on those operating systems.
+- **Expert half of P3** (at least 90% rated by a domain expert) is open.
+  The automated relevance suite is necessary and is not that rating.
+- **McCabe ratchet is red** on pre-existing lab entries. None of the names
+  are dipcatcher modules. `scripts/check_mccabe_ratchet.py` on this tree
+  exited 1 with:
+  `src/quant_fund/backtest/carry_engine.py:run_carry_backtest` (57 > baseline 52),
+  `src/quant_fund/hedge_lab/lightspeed_book.py:run_lightspeed_file_book` (baseline 10, now 9),
+  `src/quant_fund/hedge_lab/runner.py:run_hedge_lab` (20 < baseline 22),
+  `src/quant_fund/leakage/ast_scan.py:_check_lh011` (24 > baseline 15),
+  `src/quant_fund/leakage/ast_scan.py:_check_lh013` (23 > baseline 14),
+  `src/quant_fund/leakage/ast_scan.py:_receiver_price_like` (12 > baseline 11),
+  `src/quant_fund/monitoring/drift.py:model_health_report` (baseline 12, now 9),
+  `src/quant_fund/pipeline/forecast/history.py:history_for_calibration` (14 < baseline 15),
+  `src/quant_fund/research/catalog/rates.py:northset_all_floor_unit_honesty_errors` (baseline 10, now 9),
+  `src/quant_fund/research/cost_allocation.py:allocate` (baseline 17, missing),
+  `src/quant_fund/research/reality_sweep.py:run_sweep` (baseline 10, now 9),
+  `src/quant_fund/research/receipt_v2.py:_verify_v1` (baseline 19, missing),
+  `src/quant_fund/schemas/receipt_v2_leaf.py:_verify_v1` (19, new).
+- **Crown-jewel and docs epoch pins are red.** `dipcatcher crown-jewels
+  --check` exited 1 with `jewel_mutated` on 39 paths, including lab modules
+  and also `Makefile`, `README.md`, `CHANGELOG.md`, `.gitignore`, and
+  `AGENTS.md`. The list is in the release evidence table. `corpus-epoch`
+  on `docs/*` was already drifting before this page was edited, including
+  this file. Re-stamping needs the signing key and was not done.
