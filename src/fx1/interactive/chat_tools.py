@@ -36,6 +36,10 @@ CHAT_TOOL_NAMES: tuple[str, ...] = (
     "harness_run",
 )
 _CONSEQUENTIAL = frozenset({"train", "optimize", "paper"})
+_MAX_TOOL_CALLS = 32
+_MAX_ARG_CHARS = 32_768
+_MAX_JSON_DEPTH = 32
+_SHOW_CAP = 4_000
 HarnessValidator = Callable[[str, list[str]], list[str]]
 
 
@@ -130,19 +134,34 @@ class ToolEnv:
     cwd: Path
     config_dir: Path
     emit: Callable[[str, Mapping[str, Any]], None] | None = None
+    calls_used: int = 0
 
 
 def execute_tool_call(call: Mapping[str, Any], env: ToolEnv) -> str:
     """Run one tool call. Policy violations return the code and nothing else."""
+    limited = _call_budget(env)
+    if limited is not None:
+        return limited
+    try:
+        return _dispatch_tool(call, env)
+    except PolicyViolation as exc:
+        _emit_policy(env, exc.code)
+        return exc.code
+
+
+def _dispatch_tool(call: Mapping[str, Any], env: ToolEnv) -> str:
     name, arguments = parse_tool_call(call)
     handler = _HANDLERS.get(name)
     if handler is None:
         return f"unknown tool {name!r}"
-    try:
-        return handler(arguments, env)
-    except PolicyViolation as exc:
-        _emit_policy(env, exc.code)
-        return exc.code
+    return handler(arguments, env)
+
+
+def _call_budget(env: ToolEnv) -> str | None:
+    if env.calls_used >= _MAX_TOOL_CALLS:
+        return "too_many_calls"
+    env.calls_used = env.calls_used + 1
+    return None
 
 
 def parse_tool_call(call: Mapping[str, Any]) -> tuple[str, dict[str, Any]]:
@@ -152,13 +171,55 @@ def parse_tool_call(call: Mapping[str, Any]) -> tuple[str, dict[str, Any]]:
         function = {}
     name = str(function.get("name", ""))
     raw = function.get("arguments") or "{}"
+    if not isinstance(raw, str):
+        raw = "{}"
+    _reject_argument_blob(raw)
     try:
         arguments = json.loads(raw)
-    except json.JSONDecodeError:
+    except RecursionError:
+        raise PolicyViolation("too_large", "tool arguments are too deep") from None
+    except (json.JSONDecodeError, ValueError):
         arguments = {}
     if not isinstance(arguments, dict):
         arguments = {}
     return name, arguments
+
+
+def _reject_argument_blob(raw: str) -> None:
+    if len(raw) > _MAX_ARG_CHARS or _json_too_deep(raw):
+        raise PolicyViolation("too_large", "tool arguments are too large")
+
+
+def _json_too_deep(text: str) -> bool:
+    depth = 0
+    in_string = False
+    escaped = False
+    for ch in text:
+        depth, in_string, escaped, over = _json_step(ch, depth, in_string, escaped)
+        if over:
+            return True
+    return False
+
+
+def _json_step(ch: str, depth: int, in_string: bool, escaped: bool) -> tuple[int, bool, bool, bool]:
+    if in_string:
+        return _json_string_step(ch, depth, escaped)
+    if ch == '"':
+        return depth, True, False, False
+    if ch in "{[":
+        nxt = depth + 1
+        return nxt, False, False, nxt > _MAX_JSON_DEPTH
+    if ch in "}]":
+        return max(0, depth - 1), False, False, False
+    return depth, False, False, False
+
+
+def _json_string_step(ch: str, depth: int, escaped: bool) -> tuple[int, bool, bool, bool]:
+    if escaped or ch == "\\":
+        return depth, True, not escaped, False
+    if ch == '"':
+        return depth, False, False, False
+    return depth, True, False, False
 
 
 def run_registered_harness(name: str, extra_args: Sequence[str], env: ToolEnv) -> str:
@@ -169,7 +230,7 @@ def run_registered_harness(name: str, extra_args: Sequence[str], env: ToolEnv) -
         _emit_policy(env, exc.code)
         env.say(exc.code)
         return exc.code
-    if not _approved(name, env):
+    if not _approved(name, argv, env):
         env.say(f"[harness] {name}: not approved — skipped")
         return "not approved"
     result = _invoke(name, argv, env)
@@ -310,11 +371,21 @@ def _consequential(name: str) -> bool:
     return command.role.value == "model_training" or name in _CONSEQUENTIAL
 
 
-def _approved(name: str, env: ToolEnv) -> bool:
+def _approved(name: str, argv: Sequence[str], env: ToolEnv) -> bool:
     if not _consequential(name):
         return True
+    return _ask_harness(name, argv, env)
+
+
+def _ask_harness(name: str, argv: Sequence[str], env: ToolEnv) -> bool:
+    from fx1.interactive.approvals import ActionBounds
+
+    bounds = ActionBounds(argv=tuple(argv), writes=True)
     question = f"run harness command {name!r} (consequential)?"
-    return bool(env.approvals.ask(question, kind="consequential", key=f"harness:{name}"))
+    allowed = env.approvals.ask(
+        question, kind="consequential", key=f"harness:{name}", bounds=bounds
+    )
+    return bool(allowed)
 
 
 def _invoke(name: str, argv: list[str], env: ToolEnv) -> Any:
@@ -341,13 +412,24 @@ def _accepts_extended(harness: Any) -> bool:
     return "cancel_event" in params and "env_extra" in params
 
 
+def _clip_output(text: str) -> str:
+    if len(text) <= _SHOW_CAP:
+        return text
+    extra = len(text) - _SHOW_CAP
+    return f"{text[:_SHOW_CAP]}\n[truncated: {extra} chars omitted]"
+
+
+def _visible_output(raw: object) -> str:
+    return scrub_transcript(_clip_output(str(raw)))
+
+
 def _present_harness(name: str, result: Any, env: ToolEnv) -> str:
-    stdout = scrub_transcript(str(getattr(result, "stdout", "") or ""))
-    stderr = scrub_transcript(str(getattr(result, "stderr", "") or ""))
+    stdout = _visible_output(getattr(result, "stdout", "") or "")
+    stderr = _visible_output(getattr(result, "stderr", "") or "")
     if stdout:
-        env.say(stdout.rstrip()[-4000:])
+        env.say(stdout)
     if stderr:
-        env.say_error(RuntimeError(stderr.strip()[-4000:]))
+        env.say_error(RuntimeError(stderr))
     flags = _flag_line(result)
     if flags:
         env.say(f"[harness] {name}: {flags}")

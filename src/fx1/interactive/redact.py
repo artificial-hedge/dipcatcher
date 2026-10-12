@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import re
 import threading
+import unicodedata
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -64,6 +65,15 @@ _PROVIDER_KEYS: tuple[re.Pattern[str], ...] = tuple(
 _FLAG_RE = re.compile(
     r"(?i)^--?[a-z0-9-]*(?:api-?key|token|secret|passw(?:or)?d|passwd|credential|authorization)"
     r"[a-z0-9-]*$"
+)
+# Format characters and variation selectors that can sit inside a token.
+_SKIP_FOLD = re.compile(
+    "[\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff\ufe0e\ufe0f]"
+)
+_NON_ASCII_RE = re.compile(r"[^\x00-\x7e]")
+_DISPLAY_RE = re.compile(
+    r"[\x00-\x08\x0b-\x1f\x7f-\x9f\u00ad\u061c\u180e"
+    r"\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff\ufe0e\ufe0f]"
 )
 
 
@@ -277,9 +287,72 @@ def redact_text(text: str, *, registry: SecretRegistry | None = None) -> str:
     if not text:
         return text
     reg = registry or DEFAULT_REGISTRY
-    scrubbed = reg.redact(text)
-    scrubbed = _redact_unicode_secrets(scrubbed, reg)
-    return _redact_shapes(scrubbed)
+    return _strip_display(_scrub_secrets(text, reg))
+
+
+def _scrub_secrets(text: str, registry: SecretRegistry) -> str:
+    scrubbed = registry.redact(text)
+    scrubbed = _redact_unicode_secrets(scrubbed, registry)
+    return _redact_folded(_redact_shapes(scrubbed), registry)
+
+
+def _redact_folded(text: str, registry: SecretRegistry) -> str:
+    """Match secrets after NFKC fold and format-character removal."""
+    folded = _fold_view(text)
+    if folded is None:
+        return text
+    view, spans = folded
+    return _redact_mapped(text, view, spans, registry)
+
+
+def _fold_view(text: str) -> tuple[str, list[tuple[int, int]]] | None:
+    if _NON_ASCII_RE.search(text) is None:
+        return None
+    return _build_fold(text)
+
+
+def _build_fold(text: str) -> tuple[str, list[tuple[int, int]]] | None:
+    parts: list[str] = []
+    spans: list[tuple[int, int]] = []
+    for index, ch in enumerate(text):
+        if _SKIP_FOLD.match(ch):
+            continue
+        parts.append(_fold_char(ch))
+        spans.append((index, index + 1))
+    view = "".join(parts)
+    if view == text:
+        return None
+    return view, spans
+
+
+def _fold_char(ch: str) -> str:
+    folded = unicodedata.normalize("NFKC", ch)
+    if len(folded) == 1:
+        return folded
+    return ch
+
+
+def _redact_mapped(
+    text: str,
+    view: str,
+    spans: list[tuple[int, int]],
+    registry: SecretRegistry,
+) -> str:
+    hits = _keyed_spans(view)
+    hits.extend(_literal_spans(view, registry.values()))
+    hits.extend(_pattern_spans(view))
+    if not hits:
+        return text
+    orig = [_orig_span(spans, start, end) for start, end in hits if end > start]
+    return _replace_spans(text, orig)
+
+
+def _strip_display(text: str) -> str:
+    if _DISPLAY_RE.search(text) is None:
+        return text
+    from fx1.interactive.terminal import sanitize_for_terminal
+
+    return sanitize_for_terminal(text)
 
 
 def contains_secret(text: str, *, registry: SecretRegistry | None = None) -> bool:

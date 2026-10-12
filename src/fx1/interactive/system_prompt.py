@@ -24,7 +24,7 @@ Mode = Literal["chat", "superpower", "exec"]
 _LIMIT = 3999
 _FORMAT_CHAR_CLASS = "\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff"
 _FORMAT_CHARS = re.compile(f"[{_FORMAT_CHAR_CLASS}]")
-_C0_EXCEPT_WS = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+_C0_EXCEPT_WS = re.compile(r"[\x00-\x08\x0b-\x1f\x7f-\x9f]")
 _SENTENCE_SPLIT = re.compile(r"(?<=[.;])\s+")
 
 _MINIMAL_HONESTY = """\

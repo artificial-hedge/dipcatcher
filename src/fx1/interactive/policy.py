@@ -28,7 +28,7 @@ Severity = Literal["low", "medium", "high"]
 
 # Same set honesty uses so bidi / zero-width marks cannot hide inside a token
 # or a path segment. Escaped to keep the source free of raw format controls.
-_FORMAT_CHAR_CLASS = "\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff"
+_FORMAT_CHAR_CLASS = "\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff\ufe0e\ufe0f"
 _FORMAT_CHARS = re.compile(f"[{_FORMAT_CHAR_CLASS}]")
 # C0/C1 and Unicode line separators, keeping TAB and LF. CR is removed.
 # C1 (U+0080–U+009F) is an 8-bit CSI/OSC and must not survive into text
