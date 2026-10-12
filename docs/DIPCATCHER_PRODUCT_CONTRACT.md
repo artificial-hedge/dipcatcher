@@ -46,7 +46,7 @@ not hosted-model or full release certification.
 | Surface | Observed source | Gap to this contract |
 |---|---|---|
 | Product entry | `dipcatcher_cli.app` opens chat for bare terminal invocation, supports `chat --model`, and forwards lab commands; `quant` retains its existing entry. | Complete cross-platform UX acceptance and release packaging approval. |
-| Existing conversation | The launcher reuses `concierge.run_console`; `/keys set` configures key and endpoint in chat, with accurate startup endpoint status. | Durable session recovery, richer editing, and the complete journey suite remain open. |
+| Existing conversation | The launcher reuses `concierge.run_console`; `/keys set` configures key and endpoint in chat, with accurate startup endpoint status. Sessions reload with `/resume` and `chat --resume`. | Richer editing and the 99-journey suite remain open. An interrupted job is recorded and is not restarted. |
 | Models | `fx1.interactive.profiles.MODELS` contains `fx1` and `fx1-lite`; profiles store endpoints. | Verify both real service identities and errors; make selection and any change visible. |
 | Research planning | `fx1.interactive.superpower` selects harness commands, then the read-only `families` surface constrains `research --only` to executable required families. | Command selection and family selection are both enforced. Live-optional names without a selective runner stay refused. A full notebook still runs only when no family selector is injected (tests and direct lab use). |
 | Planner limits | Deterministic and refined plans enforce `max_harness`. Family selection enforces `max_families`. `RunBudget` caps steps, retries, and seconds and reports `spend_cap=None`. | Dollar spend cannot be capped without a price catalog. |

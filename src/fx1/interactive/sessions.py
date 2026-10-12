@@ -96,6 +96,23 @@ def _redact_text(value: str, secrets: tuple[str, ...]) -> str:
     return value
 
 
+def scrub_secret_text(text: str) -> str:
+    """Replace known credential values inside chat and flash text.
+
+    The credentials file and the honesty validator stay untouched. Only
+    values already present in secret-named environment variables are removed,
+    and only when they are long enough to be unambiguous.
+    """
+    secrets = sorted(
+        {item for item in _environment_secrets() if len(item) >= 8}, key=len, reverse=True
+    )
+    scrubbed = text
+    for secret in secrets:
+        if secret in scrubbed:
+            scrubbed = scrubbed.replace(secret, _REDACTED)
+    return scrubbed
+
+
 def _keep_literal(key: str, item: Any, *, top_level: bool) -> bool:
     if not top_level:
         return False

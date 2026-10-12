@@ -295,8 +295,9 @@ verifiable with the stored credentials — see Known limitations.
   are not).
 - **Cost budgets**: time/search/source/byte limits are enforced; *token*
   spend is tracked by the backend usage tracker but not yet budget-capped.
-- **Background jobs** live in-process; they do not survive a console restart
-  (flash entries and reports written before the restart do).
+- **Background jobs** are in-process. A restart marks a running job
+  interrupted and does not start it again. The session record and flash
+  entries from before the restart remain.
 - **Retrieval** is hashed bag-of-words — no embeddings, so paraphrased queries
   with no shared vocabulary miss.
 - **Contested detection** catches explicit negation/antonymy only; subtle

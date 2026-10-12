@@ -995,6 +995,21 @@ def test_superpower_skips_research_without_an_eligible_family(env: Path, tmp_pat
     assert all(call[0] != "research" for call in harness.calls)
 
 
+def test_chat_scrubs_an_api_key_out_of_the_transcript(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "super-secret-key")
+    backend = FakeBackend(
+        [ToolCompletion(content="noted super-secret-key", tool_calls=None, finish_reason="stop")]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend)
+    concierge.handle_line("please keep super-secret-key private")
+    blob = json.dumps(concierge._messages)  # noqa: SLF001
+    assert "super-secret-key" not in blob
+    assert "[redacted]" in blob
+    assert "super-secret-key" not in joined(out)
+
+
 def test_background_job_drain_and_cancel() -> None:
     release = threading.Event()
 

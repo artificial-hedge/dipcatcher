@@ -54,6 +54,27 @@ from fx1.interactive.superpower import (
 )
 from fx1.serve.backends import HostedK3Backend
 
+
+def _scrub_tool_calls(calls: Any) -> list[dict[str, Any]]:
+    """Copy tool calls with credential values removed from argument JSON."""
+    from fx1.interactive.sessions import scrub_secret_text
+
+    scrubbed: list[dict[str, Any]] = []
+    for call in calls or ():
+        if not isinstance(call, dict):
+            continue
+        copied = dict(call)
+        function = copied.get("function")
+        if isinstance(function, dict):
+            fn = dict(function)
+            arguments = fn.get("arguments")
+            if isinstance(arguments, str):
+                fn["arguments"] = scrub_secret_text(arguments)
+            copied["function"] = fn
+        scrubbed.append(copied)
+    return scrubbed
+
+
 HELP_TEXT = """\
 conversation          plain text chats with the active model (tools: flash, web, harness)
 /superpower <goal>    plan + run the relevant research capabilities (--sync to run inline)
@@ -134,9 +155,7 @@ class BackgroundJob:
 # The concierge
 # ---------------------------------------------------------------------------
 
-_SECRET_ERROR = re.compile(
-    r"(?i)(?:\bsk-[A-Za-z0-9]+|\bapi[_-]?key\b|\bbearer\b|\bsecret\b)"
-)
+_SECRET_ERROR = re.compile(r"(?i)(?:\bsk-[A-Za-z0-9]+|\bapi[_-]?key\b|\bbearer\b|\bsecret\b)")
 
 
 def _safe_slash_error(exc: Exception) -> str:
@@ -787,8 +806,10 @@ class Concierge:
         text = " ".join(positional)
         if not text.strip():
             raise ValueError("usage: /flash add <text> [--task T] [--tags a,b] [--source URL] ...")
+        from fx1.interactive.sessions import scrub_secret_text
+
         entry = self._store.add(
-            text=text,
+            text=scrub_secret_text(text),
             task=options.get("task", ""),
             tags=[t.strip() for t in options.get("tags", "").split(",") if t.strip()],
             sources=[{"url": options["source"]}] if options.get("source") else [],
@@ -899,7 +920,9 @@ class Concierge:
             )
             return
         start = len(self._messages)
-        self._messages.append({"role": "user", "content": text})
+        from fx1.interactive.sessions import scrub_secret_text
+
+        self._messages.append({"role": "user", "content": scrub_secret_text(text)})
         tools = self._chat_tools()
         try:
             for _ in range(6):
@@ -909,7 +932,7 @@ class Concierge:
                     completion = backend.complete_with_tools(
                         self._messages, tools=tools, tool_choice="auto"
                     )
-                content = validate_fx1_output(completion.content or "")
+                content = scrub_secret_text(validate_fx1_output(completion.content or ""))
                 if not completion.tool_calls:
                     self._messages.append({"role": "assistant", "content": content})
                     self._say(content)
@@ -917,12 +940,12 @@ class Concierge:
                 self._messages.append(
                     {
                         "role": "assistant",
-                        "content": completion.content,
-                        "tool_calls": list(completion.tool_calls),
+                        "content": content,
+                        "tool_calls": _scrub_tool_calls(completion.tool_calls),
                     }
                 )
                 for call in completion.tool_calls:
-                    result_text = self._execute_tool(call)
+                    result_text = scrub_secret_text(self._execute_tool(call))
                     self._messages.append(
                         {
                             "role": "tool",
@@ -1059,9 +1082,11 @@ class Concierge:
                 self._store.mark_used(hit.entry.id)
             return context_block(hits)
         if name == "flash_save":
+            from fx1.interactive.sessions import scrub_secret_text
+
             entry = self._store.add(
-                text=str(arguments.get("text", "")),
-                task=str(arguments.get("task", "")),
+                text=scrub_secret_text(str(arguments.get("text", ""))),
+                task=scrub_secret_text(str(arguments.get("task", ""))),
                 uncertainty=arguments.get("uncertainty"),
                 tags=["model-saved"],
             )

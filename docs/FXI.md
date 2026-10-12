@@ -3,8 +3,9 @@
 `dipcatcher` now opens the **concierge console** in an interactive terminal;
 `fxi` remains a compatible launcher for the same conversation with **fx1** or
 **fx1-lite**. The console includes `/superpower` command planning, background
-web research, and persistent flash-context memory. Research-family suitability
-and durable session/job recovery remain open. See [the CLI guide](DIP_CONCIERGE.md)
+web research, and persistent flash-context memory. Qualified family
+selection and session reload are described in [the CLI guide](DIP_CONCIERGE.md).
+Live model smoke remains a separate gate. See that guide
 for the working-tree status and full workflow; this page covers endpoints,
 security, and the classic shell.
 **fx1 and fx1-lite are model names** — each has one *endpoint* here: an API
