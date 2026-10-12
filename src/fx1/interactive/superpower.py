@@ -195,6 +195,9 @@ class SuperpowerPlan:
     goal: str
     capabilities: list[PlannedCapability] = field(default_factory=list)
     source: str = "deterministic"
+    families: list[str] = field(default_factory=list)
+    family_exclusions: list[dict[str, str]] = field(default_factory=list)
+    research_constrained: bool = False
 
     def ids(self) -> list[str]:
         return [cap.id for cap in self.capabilities]
@@ -206,6 +209,11 @@ class SuperpowerPlan:
             lines.append(
                 f"- {cap.id} ({meta.get('kind', '?')}, {meta.get('cost', '?')}): {cap.rationale}"
             )
+        if self.research_constrained:
+            chosen = ", ".join(self.families) if self.families else "none eligible"
+            lines.append(f"families: {chosen}")
+            for item in self.family_exclusions:
+                lines.append(f"  excluded {item.get('id', '?')}: {item.get('reason', '')}")
         return "\n".join(lines)
 
 
@@ -215,6 +223,7 @@ def plan_goal(
     capabilities: dict[str, dict[str, Any]] | None = None,
     model_fn: ModelFn | None = None,
     max_harness: int = 4,
+    family_selector: Callable[[str], dict[str, Any]] | None = None,
 ) -> SuperpowerPlan:
     """Select the relevant capability subset for *goal*.
 
@@ -276,6 +285,47 @@ def plan_goal(
     plan = SuperpowerPlan(goal=goal, capabilities=selected, source="deterministic")
     if model_fn is not None:
         plan = _model_refine(plan, goal, registry, model_fn, max_harness=max_harness)
+    if family_selector is not None and "research" in plan.ids():
+        plan = _attach_families(plan, family_selector)
+    return plan
+
+
+def parse_family_selection(payload: dict[str, Any]) -> tuple[list[str], list[dict[str, str]]]:
+    """Fail closed unless every selected family is an executable required id."""
+    if not isinstance(payload, dict) or payload.get("schema") != "dipcatcher.family_surface.v1":
+        raise ValueError("family surface schema mismatch")
+    ids: list[str] = []
+    for row in payload.get("selected") or []:
+        if not isinstance(row, dict):
+            raise ValueError("selected entries must be objects")
+        family_id = row.get("id")
+        eligible = row.get("executable") is True and row.get("qualification") == "required"
+        if (
+            not eligible
+            or not isinstance(family_id, str)
+            or re.fullmatch(r"[a-z][a-z0-9_]*", family_id) is None
+        ):
+            raise ValueError(f"ineligible family in selection: {family_id!r}")
+        if family_id not in ids:
+            ids.append(family_id)
+    exclusions = [item for item in payload.get("exclusions") or [] if isinstance(item, dict)]
+    return ids, exclusions
+
+
+def _attach_families(
+    plan: SuperpowerPlan, selector: Callable[[str], dict[str, Any]]
+) -> SuperpowerPlan:
+    """Constrain research to the selector's eligible ids. A failure does not run the catalog."""
+    try:
+        family_ids, exclusions = parse_family_selection(selector(plan.goal))
+    except Exception as exc:  # noqa: BLE001 — fail closed, never fall through to a full catalog run
+        plan.research_constrained = True
+        plan.families = []
+        plan.family_exclusions = [{"id": "research", "reason": f"family surface refused: {exc}"}]
+        return plan
+    plan.research_constrained = True
+    plan.families = family_ids
+    plan.family_exclusions = exclusions
     return plan
 
 
@@ -377,6 +427,7 @@ class SuperpowerContext:
     flash_store: Any | None = None
     on_event: Callable[[str, str], None] | None = None
     cancel_event: threading.Event | None = None
+    budget: Any | None = None
     max_stdout_chars: int = 12000
     save_to_flash: bool = True
 
@@ -390,12 +441,44 @@ def _cancelled(ctx: SuperpowerContext) -> bool:
     return ctx.cancel_event is not None and ctx.cancel_event.is_set()
 
 
+def _budget_block(ctx: SuperpowerContext) -> str | None:
+    """Charge one step. None means the step may run."""
+    budget = ctx.budget
+    if budget is None:
+        return None
+    try:
+        if bool(budget.expired()):
+            return "budget expired before this step"
+        budget.charge_step()
+    except Exception as exc:  # noqa: BLE001 — a budget object reports its own refusal
+        return str(exc)
+    return None
+
+
 def _harness_run(
-    cap_id: str, ctx: SuperpowerContext, extra_args: list[str] | None = None
+    cap_id: str,
+    ctx: SuperpowerContext,
+    extra_args: list[str] | None = None,
 ) -> tuple[int, str, str]:
     harness = ctx.harness if ctx.harness is not None else Harness()
-    result = harness.run(cap_id, extra_args)
+    try:
+        result = harness.run(cap_id, extra_args, cancel_event=ctx.cancel_event)
+    except TypeError:
+        result = harness.run(cap_id, extra_args)
     return result.exit_code, result.stdout, result.stderr
+
+
+def _ground_text(summary: str, result: SuperpowerResult) -> str:
+    """Downgrade unverified claims when the evidence gate is installed."""
+    try:
+        from fx1.interactive.evidence import EvidenceError, ground_summary
+    except ImportError:
+        return summary
+    artifacts = {path for run in result.runs for path in run.artifacts if path}
+    try:
+        return ground_summary(summary, verified_receipts=set(), artifact_paths=artifacts)
+    except EvidenceError as exc:
+        raise Fx1HonestyError(str(exc)) from exc
 
 
 def _data_label_of(stdout: str) -> str:
@@ -448,30 +531,36 @@ def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
 
     # 2 — web research (budgeted, cancellable)
     if "web_research" in selected and ctx.researcher is not None and not _cancelled(ctx):
-        try:
-            report = ctx.researcher.run(
-                plan.goal,
-                budget=ctx.research_budget,
-                cancel_event=ctx.cancel_event,
-                on_progress=lambda p: _emit(ctx, f"web:{p.event}", p.detail[:200]),
-            )
-            context_parts.append(report.to_markdown())
+        blocked = _budget_block(ctx)
+        if blocked:
             result.runs.append(
-                CapabilityRun(
-                    "web_research",
-                    "deep web research",
-                    "ran",
-                    f"{len([s for s in report.sources if s.ok])} sources; "
-                    f"{len(report.groups)} claim topics"
-                    + (" (cancelled)" if report.cancelled else ""),
-                    artifacts=[s.url for s in report.sources[:6]],
+                CapabilityRun("web_research", "deep web research", "skipped", blocked)
+            )
+        else:
+            try:
+                report = ctx.researcher.run(
+                    plan.goal,
+                    budget=ctx.research_budget,
+                    cancel_event=ctx.cancel_event,
+                    on_progress=lambda p: _emit(ctx, f"web:{p.event}", p.detail[:200]),
                 )
-            )
-        except Exception as exc:  # noqa: BLE001
-            result.runs.append(
-                CapabilityRun("web_research", "deep web research", "failed", str(exc))
-            )
-            result.errors.append(f"web_research: {exc}")
+                context_parts.append(report.to_markdown())
+                result.runs.append(
+                    CapabilityRun(
+                        "web_research",
+                        "deep web research",
+                        "ran",
+                        f"{len([s for s in report.sources if s.ok])} sources; "
+                        f"{len(report.groups)} claim topics"
+                        + (" (cancelled)" if report.cancelled else ""),
+                        artifacts=[s.url for s in report.sources[:6]],
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001
+                result.runs.append(
+                    CapabilityRun("web_research", "deep web research", "failed", str(exc))
+                )
+                result.errors.append(f"web_research: {exc}")
 
     # 3 — harness commands (approval for consequential, cancellable between steps)
     for cap_id in selected:
@@ -483,6 +572,27 @@ def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
                 CapabilityRun(cap_id, cap_id, "skipped", "cancelled before execution")
             )
             continue
+        blocked = _budget_block(ctx)
+        if blocked:
+            result.runs.append(CapabilityRun(cap_id, cap_id, "skipped", blocked))
+            continue
+        if cap_id == "research" and plan.research_constrained and not plan.families:
+            reason = "; ".join(
+                f"{item.get('id', '?')}: {item.get('reason', '')}"
+                for item in plan.family_exclusions
+            )
+            result.runs.append(
+                CapabilityRun(
+                    cap_id,
+                    cap_id,
+                    "skipped",
+                    reason or "no suitable qualified family",
+                )
+            )
+            continue
+        extra_args = None
+        if cap_id == "research" and plan.families:
+            extra_args = ["--only", ",".join(plan.families)]
         gate = ctx.approvals or ApprovalGate()
         if meta.get("consequential") and not gate.ask(
             f"run harness command {cap_id!r} (consequential: {meta.get('description', '')})?",
@@ -499,7 +609,7 @@ def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
             continue
         _emit(ctx, "harness", f"running {cap_id} (registered command)")
         try:
-            code, stdout, stderr = _harness_run(cap_id, ctx)
+            code, stdout, stderr = _harness_run(cap_id, ctx, extra_args)
         except Exception as exc:  # noqa: BLE001
             result.runs.append(CapabilityRun(cap_id, cap_id, "failed", str(exc)))
             result.errors.append(f"{cap_id}: {exc}")
@@ -539,7 +649,7 @@ def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
     # 5 — synthesis
     if "synthesize" in selected:
         if ctx.model_fn is None:
-            result.summary = _offline_summary(result)
+            result.summary = _ground_text(_offline_summary(result), result)
             result.runs.append(
                 CapabilityRun(
                     "synthesize",
@@ -551,6 +661,8 @@ def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
         else:
             try:
                 answer = ctx.model_fn(_synthesis_prompt(plan, result, context_parts))
+                validate_fx1_output(answer)
+                answer = _ground_text(answer, result)
                 validate_fx1_output(answer)
                 result.summary = answer
                 result.runs.append(

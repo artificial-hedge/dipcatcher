@@ -9,16 +9,23 @@ conversation reaches dipcatcher's research families — it picks the
 capabilities that fit your goal, runs them, and explains what it used and
 why.
 
-> **Status (2026-10-08, working tree).** The packaged `dipcatcher` launcher
-> now opens chat when stdin and stdout are terminals. `dipcatcher chat
-> --model fx1-lite` chooses the starting model; `fxi` remains compatible.
-> Redirected bare invocation prints help, and explicit lab commands retain
-> their existing behavior. Ordinary chat and `/superpower` synthesis use the
-> honesty validator; refined plans enforce the same command cap as the
-> deterministic planner. Qualified family selection, durable jobs, full
-> terminal UX, and production acceptance remain open in
-> [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md). These changes are
-> not yet a published release or proof of live model availability.
+> **Status (2026-10-12).** Bare `dipcatcher` opens chat on a terminal.
+> `dipcatcher chat --model fx1-lite` chooses the starting model. `fxi` stays
+> compatible. Redirected bare invocation prints help. `/superpower` asks the
+> read-only `families` surface for qualified required families and runs
+> `research --only` for that subset. Retired, unknown, and runner-less
+> families are refused, and a selector failure does not fall through to the
+> full catalog. Selective runs are partial records with `verified=false`.
+> Sessions persist under `~/.fx1/sessions` (or `$FX1_SESSION_DIR`); a session
+> whose job was still running is marked interrupted on the next start and is
+> not auto-restarted. `/use` keeps the conversation and shows the model
+> change. Owned harness subprocesses can be cancelled. Step and time budgets
+> are hard ceilings and are not a dollar spend cap. Synthesis still has to
+> pass the honesty validator; verification claims are rewritten unless the
+> run record contains a verified receipt path. Live `fx1` / `fx1-lite`
+> service smoke, the 99-journey trial, the soak, and signed release evidence
+> are still open in [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md).
+> This is not a published release and not proof that either model is live.
 
 ## Design: Codex-style, chat-first
 
@@ -74,11 +81,14 @@ fail-closed posture:
 | `web_lookup` | one bounded search + up to two page reads | fetch policy |
 | `flash_save` | persists a finding with task/uncertainty | none (local write) |
 | `harness_run` | runs one registered `dipcatcher` command | approval when consequential |
+| `superpower_run` | same planner and family gate as `/superpower` | family surface, honesty |
 
 Slash commands:
 
 ```text
-/superpower <goal> [--sync]     plan + coordinate research capabilities
+/superpower <goal> [--sync]     plan + coordinate eligible research families
+/session                        persisted session id, model, and job state
+/resume [id]                    reload a session; interrupted jobs stay stopped
 /superpower help                list the capability catalog
 /research <goal> [--budget-s N] [--max-sources N] [--queries a|b] [--sync]
 /status                         background job progress
@@ -119,8 +129,12 @@ together with web research, flash retrieve/save, and synthesis.
    `max_harness=4`; refinement deduplicates IDs and preserves retrieval first
    and synthesis last. The model may select another registered command that
    the keyword pass missed, within that same cap. Consequential commands
-   still stop at the approval gate. This is command-level planning; suitable
-   research-family selection remains future work.
+   still stop at the approval gate. When a family selector is attached, a
+   selected `research` step is limited to executable required families from
+   `dipcatcher families` and is invoked as `research --only`. Retired,
+   unknown, and runner-less families are excluded in the plan. An empty
+   eligible set skips `research` instead of running the whole catalog. The
+   artifact is a partial unverified record.
 2. **Recall.** Flash context is retrieved first (cheap, local) so prior
    findings feed everything downstream.
 3. **Execute.** Web research (budgeted, cancellable) runs before harness

@@ -6,6 +6,7 @@ approval gating, and message bookkeeping are all observable.
 """
 
 import io
+import json
 import threading
 from pathlib import Path
 from typing import Any
@@ -63,6 +64,22 @@ class FakeHarness:
 
     def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
         self.calls.append((name, extra_args))
+        if name == "families":
+            goal = ""
+            args = extra_args or []
+            if "--select" in args:
+                goal = args[args.index("--select") + 1].lower()
+            selected = [
+                {"id": family_id, "executable": True, "qualification": "required"}
+                for family_id in ("volatility", "conformal")
+                if family_id in goal
+            ]
+            payload = {
+                "schema": "dipcatcher.family_surface.v1",
+                "selected": selected,
+                "exclusions": [],
+            }
+            return FakeHarnessResult(0, json.dumps(payload), "")
         return FakeHarnessResult(0, f"DATA_LABEL=SYNTHETIC\n{name} ran\n", "")
 
 
@@ -734,7 +751,8 @@ def test_superpower_sync_offline_pipeline(env: Path, tmp_path: Path) -> None:
     assert "plan for: run the conformal volatility benchmark" in text
     assert "planner: deterministic" in text
     assert "[ran] research" in text  # harness ran and was explained
-    assert harness.calls == [("research", None)]
+    assert harness.calls[0][0] == "families"
+    assert ("research", ["--only", "volatility,conformal"]) in harness.calls
     # planner coordinated: a pure lab-benchmark goal does not trigger web research
     assert researcher.goals == []
     # offline synthesis is honest about the missing model
@@ -931,6 +949,50 @@ def test_run_console_banner_shows_actual_endpoint_and_respects_no_color(
     assert "api.moonshot.ai" not in text
     assert "test-private-key" not in text
     assert "\x1b" not in text
+
+
+def test_use_keeps_prior_turns(env: Path, tmp_path: Path) -> None:
+    profiles.set_endpoint("fx1", "test-private-key", "https://fx1.example.test")
+    profiles.set_endpoint("fx1-lite", "test-private-key-lite", "https://lite.example.test")
+    concierge, out = make_concierge(tmp_path)
+    concierge._messages.append({"role": "user", "content": "prior question"})  # noqa: SLF001
+    concierge.handle_line("/use fx1-lite")
+    assert concierge.model == "fx1-lite"
+    assert concierge._messages[0]["content"] == "prior question"  # noqa: SLF001
+    assert any("fx1-lite" in message["content"] for message in concierge._messages)  # noqa: SLF001
+    assert "conversation kept" in joined(out)
+    assert "test-private-key" not in joined(out)
+
+
+def test_resume_marks_a_running_session_interrupted(env: Path, tmp_path: Path) -> None:
+    from fx1.interactive.sessions import SessionStore
+
+    store = SessionStore(tmp_path / "sessions")
+    first, _out = make_concierge(tmp_path)
+    first._session_store = store  # noqa: SLF001
+    first.handle_line("/help")
+    session = first._session  # noqa: SLF001
+    assert session is not None
+    session["job"]["state"] = "running"
+    store.save(session)
+    second, out = make_concierge(tmp_path)
+    second._session_store = store  # noqa: SLF001
+    second.handle_line("/resume")
+    assert "not restarted" in joined(out)
+    assert second._job is None  # noqa: SLF001
+    loaded = store.load(str(session["id"]))
+    assert loaded["job"]["state"] == "interrupted"
+    assert loaded["job"]["resume"] == "manual"
+
+
+def test_superpower_skips_research_without_an_eligible_family(env: Path, tmp_path: Path) -> None:
+    harness = FakeHarness()
+    concierge, out = make_concierge(tmp_path, harness=harness)
+    concierge.handle_line("/superpower run the benchmark family --sync")
+    text = joined(out)
+    assert "none eligible" in text
+    assert "[skipped] research" in text
+    assert all(call[0] != "research" for call in harness.calls)
 
 
 def test_background_job_drain_and_cancel() -> None:

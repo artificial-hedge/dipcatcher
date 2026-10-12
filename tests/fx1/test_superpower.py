@@ -22,6 +22,7 @@ from fx1.interactive.superpower import (
     SuperpowerContext,
     SuperpowerPlan,
     describe_capabilities,
+    parse_family_selection,
     plan_goal,
     run_plan,
 )
@@ -487,3 +488,50 @@ def test_console_ask_fn_yes_no_eof() -> None:
         raise EOFError
 
     assert console_ask_fn(eof)("q?") is False
+
+
+def test_family_selector_constrains_research_to_eligible_ids(store: FlashStore) -> None:
+    harness = FakeHarness()
+
+    def selector(goal: str) -> dict[str, object]:
+        assert "volatility" in goal
+        return {
+            "schema": "dipcatcher.family_surface.v1",
+            "selected": [
+                {"id": "volatility", "executable": True, "qualification": "required"},
+            ],
+            "exclusions": [{"id": "a1_degrees", "reason": "retired"}],
+        }
+
+    plan = plan_goal("score volatility with qlike", family_selector=selector)
+    assert plan.research_constrained is True
+    assert plan.families == ["volatility"]
+    result = run_plan(plan, SuperpowerContext(harness=harness, flash_store=store))
+    assert harness.calls == [("research", ["--only", "volatility"])]
+    assert "excluded a1_degrees: retired" in plan.describe()
+    assert result.summary
+    assert "verified receipt" not in result.summary
+
+
+def test_family_surface_failure_does_not_run_the_full_catalog(store: FlashStore) -> None:
+    harness = FakeHarness()
+
+    def selector(_goal: str) -> dict[str, object]:
+        raise RuntimeError("catalog unavailable")
+
+    plan = plan_goal("run the benchmark family", family_selector=selector)
+    result = run_plan(plan, SuperpowerContext(harness=harness, flash_store=store))
+    assert plan.families == []
+    assert harness.calls == []
+    assert any(run.id == "research" and run.status == "skipped" for run in result.runs)
+
+
+def test_ineligible_family_payload_is_refused() -> None:
+    with pytest.raises(ValueError, match="ineligible"):
+        parse_family_selection(
+            {
+                "schema": "dipcatcher.family_surface.v1",
+                "selected": [{"id": "volatility", "executable": False, "qualification": "retired"}],
+                "exclusions": [],
+            }
+        )

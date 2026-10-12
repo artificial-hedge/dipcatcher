@@ -19,10 +19,14 @@ Harness roles:
 
 from __future__ import annotations
 
+import os
+import signal
 import subprocess  # noqa: S404 - runner is injectable; see Harness.run
+import time
 from collections.abc import Callable
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -106,6 +110,12 @@ HARNESS_REGISTRY: tuple[HarnessCommand, ...] = (
         HarnessRole.EVALUATION,
         "Scientific benches (proper scores; SYNTHETIC labeled).",
         timeout_s=3600,
+    ),
+    _cmd(
+        "families",
+        HarnessRole.EVALUATION,
+        "Read-only qualified research-family surface. Does not execute benches.",
+        timeout_s=120,
     ),
     _cmd(
         "northset",
@@ -197,6 +207,58 @@ def _subprocess_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
     return proc.returncode, proc.stdout, proc.stderr
 
 
+def _terminate_process(proc: subprocess.Popen[str]) -> None:
+    """Stop a harness child and its group. A failed signal still reports the process."""
+    if proc.poll() is not None:
+        return
+    if os.name == "nt":
+        proc.terminate()
+    else:
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            proc.terminate()
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        if os.name == "nt":
+            proc.kill()
+        else:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                proc.kill()
+        proc.wait(timeout=5)
+
+
+def popen_cancellable(
+    argv: list[str],
+    timeout_s: int,
+    cancel_event: Any | None = None,
+) -> tuple[int, str, str]:
+    """Run argv until exit, timeout, or cancel. Callers pass a full argv, not a shell string."""
+    kwargs: dict[str, Any] = {"stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "text": True}
+    if os.name == "nt":
+        kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    else:
+        kwargs["start_new_session"] = True
+    proc = subprocess.Popen(argv, **kwargs)  # noqa: S603 - argv is built by the harness registry
+    deadline = time.monotonic() + timeout_s
+    while proc.poll() is None:
+        if cancel_event is not None and cancel_event.is_set():
+            _terminate_process(proc)
+            out, err = proc.communicate()
+            return 130, out or "", ((err or "") + "\ncancelled").strip()
+        if time.monotonic() >= deadline:
+            _terminate_process(proc)
+            out, err = proc.communicate()
+            raise subprocess.TimeoutExpired(argv, timeout_s, output=out, stderr=err)
+        time.sleep(0.05)
+    out, err = proc.communicate()
+    code = proc.returncode
+    return int(code if code is not None else 1), out or "", err or ""
+
+
 class Harness:
     """The fx-1 side of the dipcatcher harness."""
 
@@ -224,6 +286,7 @@ class Harness:
         extra_args: list[str] | None = None,
         *,
         config: Path | None = None,
+        cancel_event: Any | None = None,
     ) -> HarnessResult:
         """Execute a registered harness command, fail-closed on unknown names.
 
@@ -251,5 +314,10 @@ class Harness:
                 elif arg.startswith("--config="):
                     check_contained(arg.split("=", 1)[1])
             argv += list(extra_args)
-        code, out, err = self._runner(argv, command.timeout_s)
+        if cancel_event is not None and self._runner is _subprocess_runner:
+            code, out, err = popen_cancellable(
+                ["dipcatcher", *argv], command.timeout_s, cancel_event
+            )
+        else:
+            code, out, err = self._runner(argv, command.timeout_s)
         return HarnessResult(command=name, exit_code=code, stdout=out, stderr=err)

@@ -1,11 +1,13 @@
 # dipcatcher production product contract
 
-**Date:** 2026-10-08. **Status:** release requirements plus an implemented first
-engineering slice: the chat launcher, in-chat endpoint setup, ordinary-chat
-honesty checks, and bounded planner refinement. Remaining orchestration and
-production acceptance are open. The requested 25% is a bounded work allocation,
-not a measured production-readiness percentage; see the concrete
-[handoff](CLAUDE_DIPCATCHER_HANDOFF.md).
+**Date:** 2026-10-12. **Status:** the chat launcher, qualified family
+selection, partial selective runs, session recovery, cancellation of owned
+subprocesses, step/time budgets, and evidence-class grounding are implemented
+and covered by offline tests. Production acceptance gates P1–P7 below stay
+open until their evidence exists. Live model smoke, a moderated user trial,
+a soak, and signed release artifacts are not implied by the code. The
+requested 25% note in the handoff is historical; it is not a readiness
+percentage.
 
 ## Product definition
 
@@ -46,10 +48,10 @@ not hosted-model or full release certification.
 | Product entry | `dipcatcher_cli.app` opens chat for bare terminal invocation, supports `chat --model`, and forwards lab commands; `quant` retains its existing entry. | Complete cross-platform UX acceptance and release packaging approval. |
 | Existing conversation | The launcher reuses `concierge.run_console`; `/keys set` configures key and endpoint in chat, with accurate startup endpoint status. | Durable session recovery, richer editing, and the complete journey suite remain open. |
 | Models | `fx1.interactive.profiles.MODELS` contains `fx1` and `fx1-lite`; profiles store endpoints. | Verify both real service identities and errors; make selection and any change visible. |
-| Research planning | `fx1.interactive.superpower` selects from `HARNESS_REGISTRY` plus memory/web/synthesis capabilities. | Command selection is not qualified research-family selection. Add explicit eligibility, data checks, and family-to-runner mapping. |
-| Planner limits | Both deterministic and refined plans now enforce `max_harness`; refined IDs and executed steps are deduplicated. | Add family eligibility and comprehensive resource budgets; registered reselection is allowed within the cap. |
-| Answer validation | Ordinary chat and tool preambles now use the same honesty validator as `/superpower` synthesis before display/history. | Add semantic claim/receipt verification and audit other expert/export surfaces; lexical checks alone are insufficient. |
-| Jobs | `concierge.BackgroundJob` is an in-process thread; cancellation is cooperative. | Bound cancellation of active work; record restart state and recover without duplicate work. |
+| Research planning | `fx1.interactive.superpower` selects harness commands, then the read-only `families` surface constrains `research --only` to executable required families. | Command selection and family selection are both enforced. Live-optional names without a selective runner stay refused. A full notebook still runs only when no family selector is injected (tests and direct lab use). |
+| Planner limits | Deterministic and refined plans enforce `max_harness`. Family selection enforces `max_families`. `RunBudget` caps steps, retries, and seconds and reports `spend_cap=None`. | Dollar spend cannot be capped without a price catalog. |
+| Answer validation | Honesty validator plus `ground_summary`. Verification phrasing is kept only when the run record lists that receipt path. | Lexical and path checks are not a semantic proof of a receipt. `verify-research` is still required before a result is called verified. |
+| Jobs | In-process thread plus cancel of an owned subprocess group. Sessions record `interrupted` and do not auto-retry. | Remote Windows fleet cancellation still uses the existing manifest launcher. |
 | Documentation | [FXI](FXI.md) and [Concierge](DIP_CONCIERGE.md) describe the new working-tree launcher and remaining gaps. | Finish broader naming/status reconciliation when the release candidate is fixed. |
 
 The repository-wide [production audit](ULTRA_PROD_READINESS.md) owns CI,
