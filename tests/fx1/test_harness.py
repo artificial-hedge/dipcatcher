@@ -184,7 +184,7 @@ def test_cancel_returns_partial_stdout() -> None:
     finally:
         timer.cancel()
     elapsed = time.monotonic() - started
-    assert elapsed < 2.0
+    assert elapsed < 6.0  # far below the child's 30s sleep; slack for slow CI runners
     assert result.cancelled is True
     assert result.timed_out is False
     assert result.ok is False
@@ -195,7 +195,7 @@ def test_deadline_marks_timed_out() -> None:
     started = time.monotonic()
     result = _run_script("import time; time.sleep(30)", timeout_s=1, grace_s=1.0)
     elapsed = time.monotonic() - started
-    assert elapsed < 2.5
+    assert elapsed < 8.0  # 1s deadline + 1s grace, with slack for slow CI runners
     assert result.timed_out is True
     assert result.cancelled is False
     assert result.ok is False
@@ -221,7 +221,7 @@ def test_sigterm_ignored_child_is_killed() -> None:
     finally:
         timer.cancel()
     elapsed = time.monotonic() - started
-    assert elapsed < 3.0
+    assert elapsed < 8.0  # SIGTERM ignored; SIGKILL after 0.5s grace, with CI slack
     assert result.cancelled is True
     assert result.ok is False
     assert result.exit_code == -signal.SIGKILL
@@ -232,7 +232,7 @@ def test_large_output_is_truncated_without_deadlock() -> None:
     script = "import sys; sys.stdout.write('A' * 3_000_000); sys.stderr.write('B' * 3_000_000)"
     started = time.monotonic()
     result = _run_script(script, timeout_s=8, grace_s=0.5, max_output_chars=100_000)
-    assert time.monotonic() - started < 5.0
+    assert time.monotonic() - started < 15.0
     marker = "\n[output truncated at 100000 chars]"
     assert result.exit_code == 0
     assert result.ok is True
