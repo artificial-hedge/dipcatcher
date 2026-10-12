@@ -60,7 +60,7 @@ from fx1.interactive.atomicstore import (
 )
 from fx1.interactive.endpoint import EndpointError, EndpointSpec, normalize_endpoint
 from fx1.interactive.redact import fingerprint as _secret_fingerprint
-from fx1.interactive.redact import register_secret
+from fx1.interactive.redact import redact_text, register_secret
 from fx1.serve.backends import MOONSHOT_API_URL
 
 MODELS: tuple[str, ...] = ("fx1", "fx1-lite")
@@ -113,6 +113,10 @@ class _EnvChoice:
     raw_url: str
     source: _EnvSource
     url_var: str
+
+    def __repr__(self) -> str:
+        url = redact_text(self.raw_url)
+        return f"_EnvChoice(source={self.source!r}, url_var={self.url_var!r}, raw_url={url!r})"
 
 
 def config_dir() -> Path:
@@ -333,13 +337,14 @@ def _profiles_of(current: Any, path: Path) -> dict[str, Any]:
 
 
 def _heal_permissions(path: Path) -> None:
-    if os.name != "posix" or not path.is_file():
+    if os.name != "posix" or path.is_symlink() or not path.is_file():
         return
     try:
-        mode = stat.S_IMODE(path.stat().st_mode)
+        info = path.lstat()
+        mode = stat.S_IMODE(info.st_mode)
     except OSError:
         return
-    if mode & 0o077 == 0:
+    if not stat.S_ISREG(info.st_mode) or info.st_nlink > 1 or mode & 0o077 == 0:
         return
     try:
         os.chmod(path, 0o600)
@@ -353,6 +358,20 @@ def _symlink_problem(path: Path) -> str | None:
         return "credentials store must not be a symlink"
     if path.parent.is_symlink():
         return "credentials directory must not be a symlink"
+    return _special_store(path)
+
+
+def _special_store(path: Path) -> str | None:
+    try:
+        if not path.exists():
+            return None
+        info = path.lstat()
+    except OSError:
+        return "credentials store is unreadable"
+    if not stat.S_ISREG(info.st_mode):
+        return "credentials store must be a regular file"
+    if info.st_nlink > 1:
+        return "credentials store must not be a hard link"
     return None
 
 
@@ -373,10 +392,15 @@ def _owned_by_us(path: Path) -> bool:
 
 
 def _chmod_owned_dir(parent: Path) -> bool:
-    if not _owned_by_us(parent):
+    if not _owned_by_us(parent) or parent.is_symlink():
         return False
     try:
-        os.chmod(parent, 0o700)
+        flags = os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(parent, flags)
+        try:
+            os.fchmod(fd, 0o700)
+        finally:
+            os.close(fd)
     except OSError:
         return False
     return _posix_mode(parent) == 0o700
@@ -398,10 +422,10 @@ def _prepare_config_dir(store: Path) -> None:
     if os.name != "posix" or not parent.is_dir():
         return
     mode = _posix_mode(parent)
-    if mode is None or mode & 0o022 == 0:
+    if mode is None or mode & 0o077 == 0:
         return
     if not _chmod_owned_dir(parent):
-        raise ValueError("credentials directory is group or world writable")
+        raise ValueError("credentials directory is group or world accessible")
     _note(store, "credentials directory permissions were tightened to 0700")
 
 
@@ -499,6 +523,7 @@ def set_endpoint_spec(
     model = check_model(model)
     key = _clean_api_key(api_key, model)
     spec = _spec_or_value_error(_requested_url(base_url))
+    register_secret(key)
     saved = _commit(path, lambda profiles: _put_profile(profiles, model, key, spec))
     return saved, spec
 

@@ -40,6 +40,8 @@ def _parse_json(stdout: str) -> Any:
         return json.loads(stdout)
     except json.JSONDecodeError as exc:
         raise FamilyClientError(f"family surface returned invalid JSON: {exc}") from exc
+    except (ValueError, RecursionError, OverflowError) as exc:
+        raise FamilyClientError("family surface returned invalid JSON") from exc
 
 
 def _require_object(payload: Any) -> dict[str, Any]:

@@ -20,6 +20,7 @@ from types import MappingProxyType
 from typing import Any
 
 from fx1.harness import HARNESS_REGISTRY, Harness, OwnedRunner
+from fx1.honesty import scrub_model_text
 from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.atomicstore import ensure_private_dir
 from fx1.interactive.contracts import (
@@ -659,9 +660,46 @@ def _argv_for(state: RunState, step: PlanStep, cap: Capability) -> list[str]:
     roots = _exec_roots(state, out)
     validated = validate_args(cap, args, roots=roots)
     argv = build_argv(cap, validated, roots=roots)
+    if out is not None:
+        _require_pinned(out, state.run_dir)
     if out is not None and flag is None:
         return [*argv, "--out-dir", str(out)]
     return argv
+
+
+def _require_pinned(path: Path, root: Path | None) -> None:
+    if root is None or _escaped_output(path, root):
+        raise ContractViolation(
+            "path_escape", "--out-dir", "output directory escaped the run directory"
+        )
+
+
+def _escaped_output(path: Path, root: Path) -> bool:
+    if _component_is_link(root, path):
+        return True
+    try:
+        resolved = path.resolve()
+        base = root.resolve()
+    except OSError:
+        return True
+    return resolved != base and not resolved.is_relative_to(base)
+
+
+def _component_is_link(root: Path, path: Path) -> bool:
+    if root.is_symlink() or path.is_symlink():
+        return True
+    try:
+        relative = path.relative_to(root)
+    except ValueError:
+        return True
+    current = root
+    for part in relative.parts:
+        if part in {"", ".", ".."}:
+            return True
+        current = current / part
+        if current.is_symlink():
+            return True
+    return False
 
 
 def _receipt_dir(state: RunState, cap: Capability) -> Path | None:
@@ -853,9 +891,10 @@ def _save_flash(state: RunState) -> None:
     if store is None:
         return
     selected = list(dict.fromkeys(state.plan.ids()))
+    goal = redact_text(state.plan.goal)
     entry = store.add(
-        text=f"/superpower run on: {state.plan.goal} — capabilities: {', '.join(selected)}",
-        task=state.plan.goal,
+        text=redact_text(f"/superpower run on: {goal} — capabilities: {', '.join(selected)}"),
+        task=goal,
         tags=["superpower"],
         uncertainty="medium",
     )
@@ -917,7 +956,7 @@ def _compose(state: RunState, draft: str, notes: Sequence[str]) -> ComposedRun:
 
 
 def _apply_composed(state: RunState, composed: ComposedRun, *, offline: bool) -> None:
-    state.result.summary = composed.summary
+    state.result.summary = redact_text(composed.summary)
     state.result.honesty_violation = composed.honesty_violation
     status = "withheld" if composed.honesty_violation else composed.status
     _store_evidence(state, status)
@@ -1260,9 +1299,20 @@ def _ensure_run_dir(ctx: SuperpowerContext, run_id: str, needed: bool) -> Path |
 
 def _prepare_dir(path: Path) -> Path:
     ensure_private_dir(path)
-    if os.name == "posix":
-        os.chmod(path, 0o700)
+    _chmod_dir_nofollow(path)
     return path
+
+
+def _chmod_dir_nofollow(path: Path) -> None:
+    if os.name != "posix":
+        return
+    flags = os.O_RDONLY | os.O_DIRECTORY | getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(path, flags)
+    try:
+        os.fchmod(fd, 0o700)
+    finally:
+        os.close(fd)
 
 
 def _config_dir() -> Path:
@@ -1392,7 +1442,7 @@ def _append_run(
     detail: str,
     artifacts: Sequence[str] | None = None,
 ) -> CapabilityRun:
-    run = CapabilityRun(cap_id, name, status, detail, list(artifacts or []))
+    run = CapabilityRun(cap_id, name, status, scrub_model_text(detail), list(artifacts or []))
     state.result.runs.append(run)
     _telemetry(state, "superpower.step", {"capability": cap_id, "status": status})
     return run
@@ -1472,7 +1522,7 @@ def _announce(ctx: SuperpowerContext, cap_id: str) -> None:
 def _on_web(state: RunState, progress: Any) -> None:
     if state.ctx.on_event is None:
         return
-    state.ctx.on_event(f"web:{progress.event}", str(progress.detail)[:200])
+    state.ctx.on_event(f"web:{progress.event}", scrub_model_text(str(progress.detail)[:200]))
 
 
 def _telemetry(state: RunState, kind: str, fields: Mapping[str, Any]) -> None:

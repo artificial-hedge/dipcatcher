@@ -17,13 +17,16 @@ import contextlib
 import inspect
 import io
 import math
+import os
 import re
 import signal
+import stat
 import threading
 import time
 import urllib.parse
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 from types import FrameType
 from typing import Any
 
@@ -149,6 +152,7 @@ class _RunState:
     messages_before: int = 0
     timed_out: threading.Event = field(default_factory=threading.Event)
     done: threading.Event = field(default_factory=threading.Event)
+    stop_lock: threading.Lock = field(default_factory=threading.Lock)
     signum: int | None = None
     timer: threading.Timer | None = None
     previous_signals: list[tuple[int, Any]] = field(default_factory=list)
@@ -232,8 +236,10 @@ def run_exec(
             _execute(state)
         except ExecInterrupted as exc:
             state.signum = exc.signum
+            _reap(state)
         return _finish(state, started, clock)
     finally:
+        _reap(state)
         _disarm(state)
 
 
@@ -307,7 +313,7 @@ def _execute(state: _RunState) -> None:
         _dispatch(state)
         _join_background(state)
     finally:
-        state.done.set()
+        _mark_done(state)
         _cancel_timer(state)
 
 
@@ -540,9 +546,8 @@ def _block_input(_prompt: str = "", *_args: object, **_kwargs: object) -> str:
 
 def _signal_handler(state: _RunState) -> SignalHandler:
     def handler(signum: int, _frame: FrameType | None) -> None:
+        # Assignment and raise only. Locks and process kills run after unwind.
         state.signum = signum
-        _cancel_only(state.concierge)
-        _terminate(state.registry, _STOP_GRACE_S)
         raise ExecInterrupted(signum)
 
     return handler
@@ -554,28 +559,44 @@ def _arm_timer(state: _RunState) -> None:
         delay = 0.0
 
     def fire() -> None:
-        if state.done.is_set():
+        if not _claim_stop(state):
             return
-        state.timed_out.set()
         _cancel_only(state.concierge)
         _terminate(state.registry, _STOP_GRACE_S)
 
     timer = threading.Timer(delay, fire)
+    timer.name = "fx1-exec-deadline"
     timer.daemon = True
     timer.start()
     state.timer = timer
+
+
+def _claim_stop(state: _RunState) -> bool:
+    """Record a deadline only when the turn has not already finished."""
+    with state.stop_lock:
+        if state.done.is_set():
+            return False
+        state.timed_out.set()
+        return True
+
+
+def _mark_done(state: _RunState) -> None:
+    with state.stop_lock:
+        state.done.set()
 
 
 def _cancel_timer(state: _RunState) -> None:
     timer = state.timer
     if timer is None:
         return
-    timer.cancel()
     state.timer = None
+    timer.cancel()
+    if timer.is_alive() and timer is not threading.current_thread():
+        timer.join(timeout=1.0)
 
 
 def _disarm(state: _RunState) -> None:
-    state.done.set()
+    _mark_done(state)
     _cancel_timer(state)
     previous = state.previous_signals
     state.previous_signals = []
@@ -1045,16 +1066,48 @@ def _scrub(text: str) -> str:
 def _write_last_message(path: Any, answer: str) -> str | None:
     if path is None:
         return None
-    from pathlib import Path
-
-    from fx1.interactive.atomicstore import atomic_write_text
+    from fx1.interactive.atomicstore import StoreError, atomic_write_text
 
     try:
-        atomic_write_text(Path(path), answer, mode=0o600)
-    except OSError as exc:
-        reason = exc.strerror or "os error"
+        target = Path(path)
+    except (TypeError, ValueError):
+        return "could not write the last message (invalid path)"
+    problem = _output_problem(target)
+    if problem is not None:
+        return problem
+    try:
+        atomic_write_text(target, answer, mode=0o600)
+    except (OSError, StoreError, ValueError) as exc:
+        reason = getattr(exc, "strerror", None) or "could not encode text"
         return _scrub(f"could not write the last message ({reason})")
     return None
+
+
+def _output_problem(path: Path) -> str | None:
+    if _unsafe_output_text(os.fspath(path)):
+        return "could not write the last message (unsafe path)"
+    try:
+        return _special_output(path)
+    except (OSError, ValueError):
+        return "could not write the last message (unsafe path)"
+
+
+def _special_output(path: Path) -> str | None:
+    if path.is_symlink():
+        return "could not write the last message (unsafe path)"
+    if not os.path.lexists(path):
+        return None
+    if stat.S_ISREG(path.lstat().st_mode):
+        return None
+    return "could not write the last message (unsafe path)"
+
+
+def _unsafe_output_text(text: str) -> bool:
+    if "\x00" in text or "\n" in text or "\r" in text:
+        return True
+    if text.startswith("\\\\") or text.startswith("//"):
+        return True
+    return len(text) >= 2 and text[0].isalpha() and text[1] == ":"
 
 
 def _elapsed(started: float, clock: Callable[[], float]) -> float:
@@ -1067,16 +1120,17 @@ def _elapsed(started: float, clock: Callable[[], float]) -> float:
 def _cancel_only(concierge: Any) -> None:
     if concierge is None:
         return
-    cancel = getattr(concierge, "cancel_turn", None)
-    if callable(cancel):
-        _call_quiet(cancel)
+    for name in ("cancel_turn", "cancel_job"):
+        method = getattr(concierge, name, None)
+        if callable(method):
+            _call_quiet(method)
+
+
+def _reap(state: _RunState) -> None:
+    if state.signum is None and not state.timed_out.is_set():
         return
-    job = getattr(concierge, "_job", None)
-    if job is None or not getattr(job, "running", False):
-        return
-    job_cancel = getattr(job, "cancel", None)
-    if callable(job_cancel):
-        _call_quiet(job_cancel)
+    _cancel_only(state.concierge)
+    _terminate(state.registry, _STOP_GRACE_S)
 
 
 def _flush(concierge: Any, grace_s: float) -> None:

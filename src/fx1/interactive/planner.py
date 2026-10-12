@@ -376,7 +376,7 @@ def _call_model(model_fn: ModelFn, prompt: str) -> Mapping[str, Any] | Exclusion
         return Exclusion(None, "invalid_args", "model refinement rejected: reply was not text")
     try:
         return _parse_model_payload(raw)
-    except ValueError as exc:
+    except (ValueError, RecursionError, OverflowError) as exc:
         return Exclusion(None, "invalid_args", f"model refinement rejected: {exc}")
 
 

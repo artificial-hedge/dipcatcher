@@ -115,13 +115,13 @@ def _prompt_from(
     if not args:
         if isatty:
             raise ExecUsageError("exec needs a prompt; stdin is a terminal so it will not block")
-        return read()
+        return _read_stdin(read)
     if list(args) == ["-"]:
         if isatty:
             raise ExecUsageError(
                 "exec will not read a prompt from a terminal; pass the text as arguments"
             )
-        return read()
+        return _read_stdin(read)
     if "-" in args:
         raise ExecUsageError("pass the prompt as arguments or as '-', not both")
     return " ".join(args)
@@ -180,19 +180,48 @@ def _usage(message: str, *, json_mode: bool, model: str) -> None:
 
 
 def _emit(outcome: Any, *, json_mode: bool) -> None:
+    from fx1.interactive.terminal import sanitize_for_terminal
+
     if json_mode:
         _write_json(outcome.as_json())
     elif outcome.answer:
-        text = outcome.answer
-        sys.stdout.write(text if text.endswith("\n") else text + "\n")
-        sys.stdout.flush()
+        _write_stdout(sanitize_for_terminal(outcome.answer))
     for line in (*outcome.warnings, *outcome.errors):
-        print(line, file=sys.stderr, flush=True)
+        _write_stderr(sanitize_for_terminal(line))
+
+
+def _read_stdin(read: Callable[[], str]) -> str:
+    try:
+        return read()
+    except UnicodeError as exc:
+        from fx1.interactive.headless import ExecUsageError
+
+        raise ExecUsageError("prompt is not valid UTF-8") from exc
 
 
 def _write_json(payload: Mapping[str, Any]) -> None:
-    sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
-    sys.stdout.flush()
+    _write_stdout(json.dumps(payload, ensure_ascii=False))
+
+
+def _write_stdout(text: str) -> None:
+    _write_encoded(sys.stdout, text)
+
+
+def _write_stderr(text: str) -> None:
+    _write_encoded(sys.stderr, text)
+
+
+def _write_encoded(stream: Any, text: str) -> None:
+    encoded = text.encode("utf-8", errors="replace")
+    if not encoded.endswith(b"\n"):
+        encoded += b"\n"
+    buffer = getattr(stream, "buffer", None)
+    if buffer is None:
+        stream.write(encoded.decode("utf-8"))
+        stream.flush()
+        return
+    buffer.write(encoded)
+    buffer.flush()
 
 
 def _sigterm() -> int:

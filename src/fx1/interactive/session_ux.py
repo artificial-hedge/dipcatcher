@@ -6,11 +6,12 @@ A revision conflict is reported and is never forced over a newer file.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from fx1.interactive.atomicstore import atomic_write_text
+from fx1.interactive.atomicstore import StoreError, atomic_write_text
 from fx1.interactive.model_ux import public_error, scrub_transcript
 from fx1.interactive.sessions import SessionConflict, SessionError
 
@@ -113,12 +114,11 @@ def export_session(
 ) -> tuple[Path | None, str]:
     """Write a redacted export. Refuses to replace an existing path."""
     target = _export_target(record, kind, dest, config_dir)
-    if target.exists():
-        return None, f"refusing to overwrite {target}"
+    refused = _export_refused(target)
+    if refused is not None:
+        return None, refused
     body = _export_body(store, record, kind)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(target, body)
-    return target, f"exported session to {target}"
+    return _write_export(target, body)
 
 
 def _job_blob(current: Any, running: bool, error: str, present: bool) -> dict[str, Any]:
@@ -140,6 +140,35 @@ def _list_row(row: Mapping[str, Any]) -> str:
         f"{ident[:8]}  {row.get('model')}  {row.get('status')}  "
         f"turns {row.get('n_turns', 0)}  {row.get('updated_at')}"
     )
+
+
+def _export_refused(target: Path) -> str | None:
+    if _unsafe_export_text(os.fspath(target)):
+        return "refusing unsafe export path"
+    try:
+        if os.path.lexists(target):
+            return f"refusing to overwrite {target}"
+    except (OSError, ValueError):
+        return "refusing unsafe export path"
+    return None
+
+
+def _unsafe_export_text(text: str) -> bool:
+    if "\x00" in text or "\n" in text or "\r" in text:
+        return True
+    if text.startswith("\\\\") or text.startswith("//"):
+        return True
+    return len(text) >= 2 and text[0].isalpha() and text[1] == ":"
+
+
+def _write_export(target: Path, body: str) -> tuple[Path | None, str]:
+    try:
+        atomic_write_text(target, body, exclusive=True)
+    except FileExistsError:
+        return None, f"refusing to overwrite {target}"
+    except (OSError, StoreError, ValueError):
+        return None, "refusing to write export"
+    return target, f"exported session to {target}"
 
 
 def _export_target(

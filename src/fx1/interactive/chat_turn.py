@@ -10,7 +10,13 @@ from __future__ import annotations
 import threading
 from typing import Any
 
-from fx1.honesty import Fx1HonestyError, validate_fx1_output
+from fx1.honesty import (
+    MODEL_TEXT_WITHHELD,
+    Fx1HonestyError,
+    screen_piece,
+    scrub_model_text,
+    validate_fx1_output,
+)
 from fx1.interactive.chat_tools import CHAT_TOOL_NAMES, chat_tool_schemas, execute_tool_call
 from fx1.interactive.model_client import ErrorKind, ModelError
 from fx1.interactive.model_ux import (
@@ -27,12 +33,19 @@ from fx1.interactive.model_ux import (
 from fx1.interactive.usage_budget import BudgetExceeded, UsageTracker
 
 
+class _CancelledTurn(Exception):
+    """The operator cancelled between steps. Not a model failure."""
+
+
 def run_chat_turn(host: Any, text: str) -> None:
     """Append the user line and run tool rounds when a backend is open."""
     opened = open_backend(host.model, host._backend_factory)
     if opened.backend is None:
         host._say(opened.detail)
         host._set_status(opened.status)
+        return
+    if _cancelled_now(host):
+        _cancel_marked(host, len(host._messages))
         return
     host._turn_mark = len(host._messages)
     host._append_message({"role": "user", "content": scrub_transcript(text)})
@@ -55,6 +68,8 @@ def _run_turn(host: Any, backend: Any) -> None:
     try:
         _tool_rounds(host, backend)
     except KeyboardInterrupt:
+        _cancel_marked(host, start)
+    except _CancelledTurn:
         _cancel_marked(host, start)
     except Fx1HonestyError as exc:
         _withhold(host, start, exc)
@@ -100,6 +115,7 @@ def _one_round(
     cancel: threading.Event,
     tools: list[dict[str, Any]],
 ) -> bool:
+    _raise_if_cancelled(host)
     completion = _call_backend(host, backend, tracker, cancel, tools)
     return _consume_completion(host, completion, tracker, backend)
 
@@ -124,8 +140,15 @@ def _call_backend(
     return completion
 
 
+_MAX_TOOL_CALLS = 32
+
+
 def _consume_completion(host: Any, completion: Any, tracker: UsageTracker, backend: Any) -> bool:
-    content = scrub_transcript(validate_fx1_output(completion.content or ""))
+    if _refuse_tool_burst(host, completion):
+        return True
+    content = scrub_transcript(completion.content or "")
+    _require_clean(host, content)
+    _require_clean_calls(host, completion)
     snapshot = host._pending_snapshot
     if snapshot is not None:
         host._note_call(snapshot)
@@ -134,6 +157,15 @@ def _consume_completion(host: Any, completion: Any, tracker: UsageTracker, backe
     charge_reported_usage(tracker, backend)
     _append_tool_round(host, content, completion)
     return False
+
+
+def _refuse_tool_burst(host: Any, completion: Any) -> bool:
+    calls = getattr(completion, "tool_calls", None)
+    if not calls or len(calls) <= _MAX_TOOL_CALLS:
+        return False
+    host._say("too many tool calls in one response")
+    host._set_status("error")
+    return True
 
 
 def _finish_answer(
@@ -162,11 +194,96 @@ def _append_tool_round(host: Any, content: str, completion: Any) -> None:
     _apply_tool_calls(host, completion)
 
 
+class _GateBlock:
+    def __init__(self) -> None:
+        self.flag = False
+
+
+def _visible_contents(host: Any) -> list[str]:
+    """Assistant lines only, so a tool envelope cannot separate a split claim."""
+    parts: list[str] = []
+    for message in host._messages:
+        if message.get("role") != "assistant":
+            continue
+        content = message.get("content")
+        if isinstance(content, str) and content:
+            parts.append(content)
+    return parts
+
+
+def _require_clean(host: Any, text: str) -> None:
+    validate_fx1_output(text)
+    if screen_piece(_visible_contents(host), text) != text:
+        raise Fx1HonestyError("fx-1 output failed the honesty gate")
+
+
+def _require_clean_calls(host: Any, completion: Any) -> None:
+    for call in completion.tool_calls or ():
+        _require_call(host, call)
+
+
+def _require_call(host: Any, call: Any) -> None:
+    if not isinstance(call, dict):
+        return
+    function = call.get("function")
+    if not isinstance(function, dict):
+        return
+    arguments = function.get("arguments")
+    if isinstance(arguments, str):
+        _require_clean(host, arguments)
+
+
 def _apply_tool_calls(host: Any, completion: Any) -> None:
     env = host._tool_env(host._current_cancel())
+    block = _GateBlock()
+    _guard_says(host, env, block)
     for call in completion.tool_calls:
-        result_text = scrub_transcript(execute_tool_call(call, env))
+        _raise_if_cancelled(host)
+        block.flag = False
+        result_text = _tool_result(host, call, env, block)
         host._append_message({"role": "tool", "tool_call_id": call["id"], "content": result_text})
+
+
+def _tool_result(host: Any, call: Any, env: Any, block: _GateBlock) -> str:
+    result_text = scrub_transcript(execute_tool_call(call, env))
+    if block.flag or screen_piece(_visible_contents(host), result_text) != result_text:
+        return MODEL_TEXT_WITHHELD
+    return result_text
+
+
+def _guard_says(host: Any, env: Any, block: _GateBlock) -> None:
+    say = env.say
+    say_error = env.say_error
+
+    def emit(text: str) -> None:
+        say(_shown(host, text, block))
+
+    def emit_error(exc: Exception) -> None:
+        cleaned = _shown(host, str(exc), block)
+        if cleaned != str(exc):
+            say_error(RuntimeError(cleaned))
+            return
+        say_error(exc)
+
+    env.say = emit
+    env.say_error = emit_error
+
+
+def _shown(host: Any, text: str, block: _GateBlock) -> str:
+    cleaned = screen_piece(_visible_contents(host), text)
+    if cleaned != text:
+        block.flag = True
+    return cleaned
+
+
+def _cancelled_now(host: Any) -> bool:
+    checker = getattr(host, "_turn_cancelled", None)
+    return bool(callable(checker) and checker())
+
+
+def _raise_if_cancelled(host: Any) -> None:
+    if _cancelled_now(host):
+        raise _CancelledTurn()
 
 
 def _withhold(host: Any, start: int, exc: Fx1HonestyError) -> None:
@@ -179,6 +296,9 @@ def _withhold(host: Any, start: int, exc: Fx1HonestyError) -> None:
         host._truncate_messages(start)
     host._say(refusal)
     host._set_status("withheld")
+    remember = getattr(host, "_remember_withheld", None)
+    if callable(remember):
+        remember(refusal)
 
 
 def _fail_model(host: Any, start: int, exc: ModelError) -> None:
@@ -187,7 +307,7 @@ def _fail_model(host: Any, start: int, exc: ModelError) -> None:
         return
     host._truncate_messages(start)
     if exc.kind is ErrorKind.DEADLINE:
-        host._say(str(exc))
+        host._say(scrub_model_text(str(exc)))
         host._set_status("budget")
         return
     host._say_error(RuntimeError(render_model_error(exc)))
@@ -197,7 +317,7 @@ def _fail_model(host: Any, start: int, exc: ModelError) -> None:
 
 def _fail_generic(host: Any, start: int, exc: Exception) -> None:
     host._truncate_messages(start)
-    host._say_error(exc)
+    host._say_error(RuntimeError(scrub_model_text(str(exc))))
     host._set_status("error")
 
 
@@ -220,7 +340,7 @@ def _say_footer(host: Any, snapshot: CallSnapshot | None) -> None:
     usage = None if snapshot is None else snapshot.usage
     identity = None if snapshot is None else snapshot.identity
     for line in footer_lines(host.model, latency, usage, identity):
-        host._say(line)
+        host._say(scrub_model_text(line))
 
 
 def _scrub_tool_calls(calls: Any) -> list[dict[str, Any]]:
@@ -236,6 +356,8 @@ def _scrub_tool_calls(calls: Any) -> list[dict[str, Any]]:
             arguments = fn.get("arguments")
             if isinstance(arguments, str):
                 fn["arguments"] = scrub_transcript(arguments)
+                if screen_piece([], fn["arguments"]) != fn["arguments"]:
+                    fn["arguments"] = "{}"
             copied["function"] = fn
         scrubbed.append(copied)
     return scrubbed

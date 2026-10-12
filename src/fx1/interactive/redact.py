@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import re
 import threading
+import unicodedata
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -39,6 +40,7 @@ _ASSIGN_TAIL = re.compile(r"""\s*[:=]\s*([\"']?)([^\s\"'\\,;&)}}\]]{4,})""")
 _IDENT_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-")
 _JSON_LITERALS = frozenset({"true", "false", "null", "none"})
 _UESC = re.compile(r"\\u([0-9a-fA-F]{4})")
+_NON_ASCII = re.compile(r"[^\x00-\x7f]")
 # Userinfo runs to the last "@" before the path so a password containing "@" is not split.
 _URL_USERINFO = re.compile(r"(?i)\b([a-z][a-z0-9+.\-]*://)([^\s/]+)@")
 _URL_QUERY_SECRET = re.compile(
@@ -260,6 +262,43 @@ def _redact_unicode_secrets(text: str, registry: SecretRegistry) -> str:
     return _replace_spans(text, orig)
 
 
+def _without_format(text: str) -> tuple[str, list[tuple[int, int]]] | None:
+    """Drop Unicode format characters and remember where the rest came from.
+
+    Zero-width and bidi marks can split a token so an exact value or a
+    credential shape no longer matches. Callers redact the stripped view,
+    then replace the original span, which still contains those marks.
+    """
+    parts: list[str] = []
+    spans: list[tuple[int, int]] = []
+    removed = False
+    for index, char in enumerate(text):
+        if unicodedata.category(char) == "Cf":
+            removed = True
+            continue
+        parts.append(char)
+        spans.append((index, index + 1))
+    if not removed:
+        return None
+    return "".join(parts), spans
+
+
+def _redact_format_secrets(text: str, registry: SecretRegistry) -> str:
+    if _NON_ASCII.search(text) is None:
+        return text
+    decoded = _without_format(text)
+    if decoded is None:
+        return text
+    view, spans = decoded
+    hits = _keyed_spans(view)
+    hits.extend(_literal_spans(view, registry.values()))
+    hits.extend(_pattern_spans(view))
+    if not hits:
+        return text
+    original = [_orig_span(spans, start, end) for start, end in hits if end > start]
+    return _replace_spans(text, original)
+
+
 def _redact_shapes(text: str) -> str:
     text = _PEM_PRIVATE.sub(REDACTED, text)
     text = _AUTH_HEADER.sub(_sub_auth, text)
@@ -279,6 +318,7 @@ def redact_text(text: str, *, registry: SecretRegistry | None = None) -> str:
     reg = registry or DEFAULT_REGISTRY
     scrubbed = reg.redact(text)
     scrubbed = _redact_unicode_secrets(scrubbed, reg)
+    scrubbed = _redact_format_secrets(scrubbed, reg)
     return _redact_shapes(scrubbed)
 
 

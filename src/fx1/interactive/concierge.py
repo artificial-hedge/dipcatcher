@@ -39,6 +39,7 @@ from typing import Any
 
 import typer
 
+from fx1.honesty import scrub_model_text, scrub_model_transcript
 from fx1.interactive import actions, profiles
 from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.chat_tools import ToolEnv, run_registered_harness
@@ -154,14 +155,16 @@ class BackgroundJob:
     thread: threading.Thread | None = field(default=None, init=False, repr=False)
 
     def start(self) -> BackgroundJob:
+        from fx1.interactive.redact import redact_text
+
         def on_event(event: str, detail: str) -> None:
-            self.events.append((event, detail))
+            self.events.append((redact_text(event), redact_text(detail)))
 
         def target() -> None:
             try:
                 self.result = self.run_fn(self.cancel_event, on_event)
             except Exception as exc:  # noqa: BLE001 — report, never crash the shell
-                self.error = f"{type(exc).__name__}: {exc}"
+                self.error = redact_text(f"{type(exc).__name__}: {exc}")
             finally:
                 self.done_event.set()
 
@@ -199,6 +202,48 @@ def _safe_slash_error(exc: Exception) -> str:
     return public_error(exc)
 
 
+def _stdout_color() -> bool:
+    from fx1.interactive.terminal import detect_caps
+
+    try:
+        return bool(detect_caps().color)
+    except (OSError, ValueError):
+        return False
+
+
+def _scrub_user(text: str) -> str:
+    from fx1.interactive.model_ux import scrub_transcript
+
+    return scrub_transcript(text)
+
+
+def _scrub_maybe(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    return _scrub_user(value)
+
+
+def _scrub_patch_value(value: Any) -> Any:
+    if isinstance(value, str):
+        return _scrub_user(value)
+    if isinstance(value, list):
+        return [_scrub_patch_value(item) for item in value]
+    return value
+
+
+def _scrub_patch(patch: dict[str, Any]) -> dict[str, Any]:
+    return {key: _scrub_patch_value(value) for key, value in patch.items()}
+
+
+def _for_display(text: str, *, keep_color: bool | None = None) -> str:
+    """Sanitize for the terminal after callers have validated the text."""
+    from fx1.interactive.redact import redact_text
+    from fx1.interactive.terminal import sanitize_for_terminal
+
+    color = _stdout_color() if keep_color is None else keep_color
+    return sanitize_for_terminal(redact_text(text), keep_sgr=color)
+
+
 class _ApprovalTap:
     """Forwards approvals and emits the key plus the decision, never the question."""
 
@@ -206,8 +251,18 @@ class _ApprovalTap:
         self._gate = gate
         self._emit = emit
 
-    def ask(self, question: str, *, kind: str = "action", key: str | None = None) -> bool:
-        approved = bool(self._gate.ask(question, kind=kind, key=key))
+    def ask(
+        self,
+        question: str,
+        *,
+        kind: str = "action",
+        key: str | None = None,
+        bounds: Any = None,
+        timeout_s: float | None = None,
+    ) -> bool:
+        approved = bool(
+            self._gate.ask(question, kind=kind, key=key, bounds=bounds, timeout_s=timeout_s)
+        )
         self._emit(
             "concierge.approval",
             {"key": key or "", "kind": kind, "approved": approved},
@@ -277,6 +332,8 @@ class Concierge:
         self._pass_deadline = clock is None or clock is time.monotonic
         self._state_lock = threading.Lock()
         self._turn_cancel: threading.Event | None = None
+        self._cancel_scope = False
+        self._cancel_requested = False
         self._turn_mark: int | None = None
         self._status_explicit = False
         self._last_answer = ""
@@ -294,10 +351,11 @@ class Concierge:
     # -- output helpers ------------------------------------------------------
 
     def _say(self, text: str = "") -> None:
-        self._output(text)
+        self._output(_for_display(text))
 
     def _say_error(self, exc: Exception) -> None:
-        typer.secho(f"error: {exc}", err=True, fg=typer.colors.RED)
+        message = _for_display(f"error: {exc}", keep_color=False)
+        typer.secho(message, err=True, fg=typer.colors.RED)
 
     def _backend(self) -> Any | None:
         opened = open_backend(self.model, self._backend_factory)
@@ -361,10 +419,34 @@ class Concierge:
 
     def cancel_turn(self) -> None:
         """Cancel the in-flight model turn. Safe to call from another thread."""
-        with self._state_lock:
-            event = self._turn_cancel
+        event = self._mark_cancel()
         if event is not None:
             event.set()
+
+    def _mark_cancel(self) -> threading.Event | None:
+        with self._state_lock:
+            event = self._turn_cancel
+            if event is None and self._cancel_scope:
+                self._cancel_requested = True
+            return event
+
+    def _turn_cancelled(self) -> bool:
+        with self._state_lock:
+            if self._cancel_requested:
+                return True
+            event = self._turn_cancel
+        return event is not None and event.is_set()
+
+    def _open_cancel_scope(self) -> None:
+        with self._state_lock:
+            self._cancel_scope = True
+            self._cancel_requested = False
+
+    def _close_cancel_scope(self) -> None:
+        with self._state_lock:
+            self._cancel_scope = False
+            self._cancel_requested = False
+            self._turn_cancel = None
 
     @property
     def job_running(self) -> bool:
@@ -392,6 +474,13 @@ class Concierge:
         text = line.strip()
         if not text:
             return False
+        self._open_cancel_scope()
+        try:
+            return self._run_line(text)
+        finally:
+            self._close_cancel_scope()
+
+    def _run_line(self, text: str) -> bool:
         self._status_explicit = False
         self._emit("concierge.turn", {"phase": "start", "model": self.model})
         try:
@@ -445,31 +534,32 @@ class Concierge:
         if self._job is None:
             return
         for event, detail in self._job.drain():
-            self._say(f"[{self._job.label}] {event}: {detail}")
+            shown = scrub_model_text(str(detail))
+            self._say(f"[{self._job.label}] {event}: {shown}")
         if self._job.done_event.is_set() and not self._job.announced:
             self._job.announced = True
             self._announce_job(self._job)
 
     def _announce_job(self, job: BackgroundJob) -> None:
         if job.error:
-            self._say(f"[{job.label}] failed: {job.error}")
+            self._say(f"[{job.label}] failed: {scrub_model_text(job.error)}")
             self._set_status("error")
             return
         result = job.result
         if isinstance(result, SuperpowerResult):
             self._publish_superpower(result)
             self._say("")
-            self._say(result.summary or "(no summary)")
+            self._say(scrub_model_text(result.summary or "(no summary)"))
             self._say(evidence_status_line(result))
             self._say("")
-            self._say(result.explain())
+            self._say(scrub_model_text(result.explain()))
             self._emit(
                 "concierge.job",
                 {"label": job.label, "state": operator_status(result)},
             )
             return
         if result is not None and hasattr(result, "to_markdown"):
-            self._say(result.to_markdown())
+            self._say(scrub_model_text(str(result.to_markdown())))
             return
         self._say(f"[{job.label}] finished")
 
@@ -678,9 +768,9 @@ class Concierge:
         profiles.check_model(restored)
         with self._state_lock:
             self.model = restored
-        self._messages = [
-            dict(item) for item in record.get("messages") or [] if isinstance(item, dict)
-        ]
+        self._messages = scrub_model_transcript(
+            [item for item in record.get("messages") or [] if isinstance(item, dict)]
+        )
         stored_budget = record.get("budget")
         self._budget_overrides = dict(stored_budget) if isinstance(stored_budget, dict) else {}
 
@@ -929,11 +1019,28 @@ class Concierge:
             return False
         if not self._job_slot_available():
             return False
-        return self._launch_superpower(goal, sync=sync)
+        return self._launch_superpower(_scrub_user(goal), sync=sync)
 
     def _launch_superpower(self, goal: str, *, sync: bool) -> bool:
         prepared = self._prepare_superpower()
         model_fn = self._bind_model_fn(self._backend())
+        cancel = threading.Event()
+        self._arm_turn(cancel)
+        self._arm_superpower_cancel(cancel)
+        try:
+            return self._start_superpower(prepared, goal, model_fn, cancel, sync=sync)
+        finally:
+            self._disarm_turn()
+
+    def _start_superpower(
+        self,
+        prepared: PreparedRun,
+        goal: str,
+        model_fn: Callable[[str], str] | None,
+        cancel: threading.Event,
+        *,
+        sync: bool,
+    ) -> bool:
         plan = make_plan(
             goal,
             prepared,
@@ -942,6 +1049,10 @@ class Concierge:
             max_harness=self._max_families(),
         )
         self._say_superpower_plan(plan)
+        if cancel.is_set():
+            self._say("turn cancelled")
+            self._set_status("cancelled")
+            return False
         if sync:
             self._superpower_sync(prepared, plan, model_fn)
             return False
@@ -970,8 +1081,7 @@ class Concierge:
         self, prepared: PreparedRun, plan: Any, model_fn: Callable[[str], str] | None
     ) -> None:
         self._emit("concierge.job", {"label": "superpower", "state": "started"})
-        self._arm_superpower_cancel(threading.Event())
-        result = run_plan(plan, self._context_for(prepared, model_fn, None, None))
+        result = run_plan(plan, self._context_for(prepared, model_fn, None, self._current_cancel()))
         job = BackgroundJob(label="superpower", run_fn=lambda *_args: result)
         job.result = result
         job.done_event.set()
@@ -1005,6 +1115,7 @@ class Concierge:
         return model_fn
 
     def _synthesize(self, backend: Any, prompt: str, cancel: threading.Event | None) -> str:
+        _refuse_cancelled(cancel)
         tracker = UsageTracker(self._usage_preset, monotonic=self._clock)
         tracker.start()
         messages = outbound_messages(
@@ -1019,13 +1130,26 @@ class Concierge:
         tracker.charge_model_call()
         with self._orb():
             text = str(backend.complete(messages, **kwargs))
+        _refuse_cancelled(cancel)
         charge_reported_usage(tracker, backend)
         return text
 
     def _arm_superpower_cancel(self, cancel: threading.Event | None) -> None:
-        holder = self._superpower_cancel
-        if holder is not None:
+        carry = self._carry_superpower_cancel(cancel)
+        if cancel is not None and carry:
+            cancel.set()
+
+    def _carry_superpower_cancel(self, cancel: threading.Event | None) -> bool:
+        with self._state_lock:
+            holder = self._superpower_cancel
+            carry = self._cancel_requested
+            if holder is None:
+                return carry
+            previous = holder.get("cancel")
+            if previous is not None and previous.is_set():
+                carry = True
             holder["cancel"] = cancel
+            return carry
 
     def _context_for(
         self,
@@ -1151,7 +1275,8 @@ class Concierge:
         if isinstance(result, SuperpowerResult):
             self._say(evidence_status_line(result))
         for event, detail in self._job.drain():
-            self._say(f"[{self._job.label}] {event}: {detail}")
+            shown = scrub_model_text(str(detail))
+            self._say(f"[{self._job.label}] {event}: {shown}")
         if not self._job.running and not self._job.announced:
             self._job.announced = True
             self._announce_job(self._job)
@@ -1236,15 +1361,13 @@ class Concierge:
         text = " ".join(positional)
         if not text.strip():
             raise ValueError("usage: /flash add <text> [--task T] [--tags a,b] [--source URL] ...")
-        from fx1.interactive.sessions import scrub_secret_text
-
         entry = self._store.add(
-            text=scrub_secret_text(text),
-            task=options.get("task", ""),
-            tags=[t.strip() for t in options.get("tags", "").split(",") if t.strip()],
-            sources=[{"url": options["source"]}] if options.get("source") else [],
-            uncertainty=options.get("uncertainty"),
-            conflicts=[options["conflict"]] if options.get("conflict") else [],
+            text=_scrub_user(text),
+            task=_scrub_user(str(options.get("task", ""))),
+            tags=[_scrub_user(t.strip()) for t in options.get("tags", "").split(",") if t.strip()],
+            sources=[{"url": _scrub_user(options["source"])}] if options.get("source") else [],
+            uncertainty=_scrub_maybe(options.get("uncertainty")),
+            conflicts=[_scrub_user(options["conflict"])] if options.get("conflict") else [],
             private=bool(options.get("private")),
             verified=bool(options.get("verified")),
         )
@@ -1311,7 +1434,7 @@ class Concierge:
                 i += 2
                 continue
             raise ValueError(f"unknown /flash correct option {token!r}")
-        revised = self._store.update(entry_id, patch)
+        revised = self._store.update(entry_id, _scrub_patch(patch))
         if revised is None:
             raise KeyError(f"no flash entry {entry_id!r}")
         self._say(f"corrected {entry_id} (revision kept; history preserved)")
@@ -1348,9 +1471,10 @@ class Concierge:
         cancel_chat_keyboard(self)
 
     def _tool_superpower(self, goal: str) -> str:
+        cleaned = _scrub_user(goal)
         prepared = self._prepare_superpower()
         plan = make_plan(
-            goal,
+            cleaned,
             prepared,
             model_fn=None,
             family_selector=self._family_selector(),
@@ -1358,7 +1482,7 @@ class Concierge:
         )
         result = run_plan(plan, self._context_for(prepared, None, None, self._current_cancel()))
         self._publish_superpower(result)
-        return f"{result.summary}\n\n{result.explain()}"
+        return _scrub_user(f"{result.summary}\n\n{result.explain()}")
 
     def _tool_env(self, cancel: threading.Event | None) -> ToolEnv:
         return ToolEnv(
@@ -1396,6 +1520,8 @@ class Concierge:
 
     def _arm_turn(self, event: threading.Event) -> None:
         with self._state_lock:
+            if self._cancel_requested:
+                event.set()
             self._turn_cancel = event
 
     def _disarm_turn(self) -> None:
@@ -1416,10 +1542,18 @@ class Concierge:
         self._emit("concierge.status", {"status": status, "model": self.model})
 
     def _remember_answer(self, content: str) -> None:
+        from fx1.interactive.redact import redact_text
+
         with self._state_lock:
-            self._last_answer = content
+            self._last_answer = redact_text(content)
             self._last_status = "ok"
         self._status_explicit = True
+
+    def _remember_withheld(self, content: str) -> None:
+        from fx1.interactive.redact import redact_text
+
+        with self._state_lock:
+            self._last_answer = redact_text(content)
 
     def _note_call(self, snapshot: CallSnapshot) -> None:
         served = None if snapshot.identity is None else snapshot.identity.served
@@ -1437,7 +1571,7 @@ class Concierge:
     def _publish_superpower(self, result: SuperpowerResult) -> None:
         with self._state_lock:
             self._last_result = result
-            self._last_answer = result.summary or ""
+            self._last_answer = _scrub_user(result.summary or "")
             self._last_status = operator_status(result)
         self._status_explicit = True
 
@@ -1449,6 +1583,11 @@ class Concierge:
             emit(event, dict(fields))
         except Exception:  # noqa: BLE001 — telemetry must not break a turn
             return
+
+
+def _refuse_cancelled(cancel: threading.Event | None) -> None:
+    if cancel is not None and cancel.is_set():
+        raise RuntimeError("synthesis cancelled")
 
 
 class _null:
@@ -1472,7 +1611,10 @@ def _family_payload_from_harness(harness: Any, goal: str, max_families: int) -> 
     if int(getattr(result, "exit_code", 1)) != 0:
         detail = getattr(result, "stderr", "") or "families command failed"
         raise RuntimeError(str(detail)[:500])
-    payload = json.loads(getattr(result, "stdout", "") or "")
+    try:
+        payload = json.loads(getattr(result, "stdout", "") or "")
+    except (ValueError, RecursionError, OverflowError) as exc:
+        raise RuntimeError("families payload is not valid JSON") from exc
     if not isinstance(payload, dict):
         raise RuntimeError("families payload must be an object")
     payload.setdefault("schema", "dipcatcher.family_surface.v1")

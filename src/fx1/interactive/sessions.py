@@ -44,6 +44,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TypeGuard
 
+from fx1.honesty import public_label, scrub_model_transcript
 from fx1.interactive.atomicstore import (
     FileLock,
     StoreCorruptError,
@@ -497,10 +498,10 @@ def _ensure_json(payload: Mapping[str, Any]) -> None:
         raise SessionError("unable to save session") from exc
 
 
-def _write_payload(path: Path, payload: Mapping[str, Any]) -> None:
+def _write_payload(path: Path, payload: Mapping[str, Any], *, exclusive: bool = False) -> None:
     _ensure_json(payload)
     try:
-        atomic_write_json(path, payload)
+        atomic_write_json(path, payload, exclusive=exclusive)
     except StoreError as exc:
         if "symlink" in str(exc):
             raise SessionError("refusing to follow symlink session directory") from exc
@@ -1063,6 +1064,20 @@ def _transcript_lines(record: Mapping[str, Any]) -> list[str]:
     return lines
 
 
+def _scrub_export(record: dict[str, Any]) -> None:
+    messages = record.get("messages")
+    if isinstance(messages, list):
+        record["messages"] = scrub_model_transcript(
+            [item for item in messages if isinstance(item, dict)]
+        )
+    turns = record.get("turns")
+    if not isinstance(turns, list):
+        return
+    for turn in turns:
+        if isinstance(turn, dict) and isinstance(turn.get("served_model"), str):
+            turn["served_model"] = public_label(turn["served_model"])
+
+
 def _export_text(record: Mapping[str, Any]) -> str:
     lines = _header_lines(record)
     lines.extend(_job_lines(record.get("job")))
@@ -1196,9 +1211,9 @@ class SessionStore:
         prepared = self._prepare(stored, session_id, 0, stamp=False)
         path = self._path_for(session_id)
         with self._lock(path):
-            if path.exists():
+            if path.exists() or path.is_symlink():
                 raise SessionError("session already exists")
-            _write_payload(path, prepared)
+            _write_payload(path, prepared, exclusive=True)
         self._emit("session.created", _public_fields(prepared))
         return prepared
 
@@ -1315,11 +1330,13 @@ class SessionStore:
     def export_markdown(self, record: Mapping[str, Any]) -> str:
         """Redacted transcript. Does not mutate ``record`` or touch the disk."""
         redacted = _as_dict(_redact(_copy_record(record)), "session record must be an object")
+        _scrub_export(redacted)
         return _finish_export(_export_text(redacted))
 
     def export_json(self, record: Mapping[str, Any]) -> str:
         """Redacted session JSON. Does not mutate ``record``."""
         redacted = _as_dict(_redact(_copy_record(record)), "session record must be an object")
+        _scrub_export(redacted)
         return _dumps(redacted)
 
     def mark_interrupted(self, session_id: str) -> dict[str, Any]:
@@ -1549,8 +1566,7 @@ class SessionStore:
         return current.astimezone(UTC)
 
     def _resolved_directory(self) -> Path:
-        if self.directory.is_symlink():
-            raise SessionError("refusing to follow symlink session directory")
+        _refuse_session_symlink(self.directory)
         return self.directory.resolve()
 
     def _path_for(self, session_id: str) -> Path:
@@ -1584,6 +1600,22 @@ class SessionStore:
         if self._emit_fn is None:
             return
         self._emit_fn(name, dict(fields))
+
+
+def _refuse_session_symlink(path: Path) -> None:
+    current = path
+    seen: list[Path] = []
+    while True:
+        seen.append(current)
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+    for item in reversed(seen):
+        if item.is_symlink():
+            raise SessionError("refusing to follow symlink session directory")
+        if not item.exists():
+            return
 
 
 def _restore_turns(record: dict[str, Any], previous: Any) -> None:

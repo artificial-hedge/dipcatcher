@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from fx1.honesty import Fx1HonestyError, scrub_model_text, validate_fx1_output
 from fx1.interactive import profiles
 from fx1.interactive.model_ux import dim_text, scrub_transcript
 from fx1.interactive.policy import (
@@ -150,15 +151,31 @@ def parse_tool_call(call: Mapping[str, Any]) -> tuple[str, dict[str, Any]]:
     function = call.get("function", {})
     if not isinstance(function, dict):
         function = {}
-    name = str(function.get("name", ""))
-    raw = function.get("arguments") or "{}"
+    raw_name = function.get("name", "")
+    name = raw_name if isinstance(raw_name, str) else ""
+    raw = function.get("arguments")
+    if raw is None or raw == "" or raw == b"":
+        raw = "{}"
+    return name, _load_arguments(raw)
+
+
+def _reject_json_constant(value: str) -> Any:
+    raise ValueError(value)
+
+
+def _load_arguments(raw: object) -> dict[str, Any]:
+    """Object arguments, or ``{}`` when the blob is not a JSON object."""
+    if isinstance(raw, dict):
+        return dict(raw)
+    if not isinstance(raw, (str, bytes, bytearray)):
+        return {}
     try:
-        arguments = json.loads(raw)
-    except json.JSONDecodeError:
-        arguments = {}
-    if not isinstance(arguments, dict):
-        arguments = {}
-    return name, arguments
+        parsed = json.loads(raw, parse_constant=_reject_json_constant)
+    except (ValueError, RecursionError, OverflowError):
+        return {}
+    if not isinstance(parsed, dict):
+        return {}
+    return parsed
 
 
 def run_registered_harness(name: str, extra_args: Sequence[str], env: ToolEnv) -> str:
@@ -178,6 +195,7 @@ def run_registered_harness(name: str, extra_args: Sequence[str], env: ToolEnv) -
 
 def present_untrusted(kind: str, source: str, raw: str, say: Callable[[str], None]) -> str:
     """Scan *raw*, tell the operator, and return a scrubbed envelope."""
+    raw = scrub_model_text(raw)
     notice = security_notice(scan_injection(raw))
     if notice:
         say(dim_text(notice))
@@ -217,6 +235,10 @@ def _flash_save(arguments: Mapping[str, Any], env: ToolEnv) -> str:
         text = check_flash_save(str(arguments.get("text", "")))
     except PolicyViolation as exc:
         return exc.code
+    try:
+        validate_fx1_output(text)
+    except Fx1HonestyError:
+        return "withheld by the fx-1 honesty gate"
     entry = env.store.add(
         text=scrub_transcript(text),
         task=scrub_transcript(str(arguments.get("task", ""))),
@@ -245,12 +267,23 @@ def _superpower_run(arguments: Mapping[str, Any], env: ToolEnv) -> str:
 
 
 def _harness_run(arguments: Mapping[str, Any], env: ToolEnv) -> str:
-    name = str(arguments.get("name", ""))
-    raw_args = arguments.get("args", [])
-    if not isinstance(raw_args, list):
-        raw_args = []
-    args = [str(item) for item in raw_args if isinstance(item, (str, int, float))]
-    return run_registered_harness(name, args, env)
+    raw_name = arguments.get("name", "")
+    name = raw_name if isinstance(raw_name, str) else ""
+    return run_registered_harness(name, _string_args(arguments.get("args")), env)
+
+
+def _string_args(raw: object) -> list[str]:
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise PolicyViolation("bad_arg", "arguments must be strings")
+    return [_string_arg(item) for item in raw]
+
+
+def _string_arg(item: object) -> str:
+    if not isinstance(item, str):
+        raise PolicyViolation("bad_arg", "arguments must be strings")
+    return item
 
 
 def _private_texts(store: Any) -> list[str]:
@@ -271,7 +304,9 @@ def _web_report(query: str, env: ToolEnv) -> str:
         max_depth=0,
         search_pause_s=0.0,
     )
-    report = env.researcher.run(query, budget=budget, queries=[query])
+    report = env.researcher.run(
+        query, budget=budget, queries=[query], cancel_event=env.cancel_event
+    )
     parts, urls = _web_parts(report)
     if not parts:
         return "web lookup found nothing (or the network is unavailable)"
@@ -342,8 +377,8 @@ def _accepts_extended(harness: Any) -> bool:
 
 
 def _present_harness(name: str, result: Any, env: ToolEnv) -> str:
-    stdout = scrub_transcript(str(getattr(result, "stdout", "") or ""))
-    stderr = scrub_transcript(str(getattr(result, "stderr", "") or ""))
+    stdout = scrub_model_text(scrub_transcript(str(getattr(result, "stdout", "") or "")))
+    stderr = scrub_model_text(scrub_transcript(str(getattr(result, "stderr", "") or "")))
     if stdout:
         env.say(stdout.rstrip()[-4000:])
     if stderr:

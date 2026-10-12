@@ -1290,9 +1290,12 @@ class JobLedger:
     def _write_new(self, record: JobRecord) -> None:
         ensure_private_dir(self.root)
         path = self._path(record.job_id)
-        if path.exists():
+        if path.exists() or path.is_symlink():
             raise IllegalTransition(f"job file already exists for {record.job_id}")
-        atomic_write_json(path, _job_to_dict(record))
+        try:
+            atomic_write_json(path, _job_to_dict(record), exclusive=True)
+        except FileExistsError as exc:
+            raise IllegalTransition(f"job file already exists for {record.job_id}") from exc
 
     def _write_existing(self, record: JobRecord) -> None:
         atomic_write_json(self._path(record.job_id), _job_to_dict(record))

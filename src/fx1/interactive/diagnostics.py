@@ -743,6 +743,8 @@ def _reject_member(path: Path) -> str | None:
         return "symlink"
     if not stat.S_ISREG(info.st_mode):
         return "not_regular"
+    if info.st_nlink > 1:
+        return "hardlink"
     if info.st_size > _MAX_MEMBER_BYTES:
         return "too_large"
     return None
@@ -754,6 +756,9 @@ def _read_member(path: Path) -> bytes:
         flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
     fd = os.open(path, flags)
     try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink > 1:
+            raise OSError("not a private telemetry file")
         return _read_limited_fd(fd, _MAX_MEMBER_BYTES)
     finally:
         os.close(fd)

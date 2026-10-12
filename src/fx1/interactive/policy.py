@@ -44,6 +44,7 @@ UNTRUSTED_PREAMBLE = (
 )
 # Callers can ask for a smaller body, never a larger one.
 _BODY_CAP = 6000
+_MAX_PATH_CHARS = 4096
 QUERY_MAX_CHARS = 200
 DEFAULT_SHINGLE_WORDS = 6
 FLASH_SAVE_MAX_CHARS = 8000
@@ -73,15 +74,33 @@ PATH_FLAGS: frozenset[str] = frozenset(
         "--out",
         "--out-dir",
         "--output",
+        "--output-dir",
+        "--out-md",
+        "--out-json",
         "--corpus-dir",
+        "--receipts-dir",
         "--in",
         "--input",
+        "--data",
+        "--config",
+        "--equity",
+        "--fills",
+        "--weights",
+        "--bars",
+        "--manifest",
+        "--ledger",
+        "--path",
+        "--receipt",
+        "--allowed-removals",
+        "--signing-key",
+        "--trust-pub",
     }
 )
 _FALSE_VALUES: dict[str, frozenset[str]] = {
     "--require-stamped": frozenset({"false", "0", "no", "off"}),
 }
-_SHELL_META = re.compile(r"[;&|`$><()\n\r\x1b\x7f-\x9f\u2028\u2029]")
+_SHELL_META = re.compile(r"[;&|`$><()\t\n\r\x1b\x7f-\x9f\u2028\u2029]")
+_FILE_SUFFIXES = (".json", ".jsonl", ".parquet", ".csv", ".yaml", ".yml", ".md", ".txt")
 _WORD_RE = re.compile(r"[0-9a-z]+(?:'[0-9a-z]+)?")
 
 _OVERRIDE_RE = re.compile(
@@ -193,6 +212,17 @@ def wrap_untrusted(
     return _envelope(_token(kind) or "unknown", _field(source) or "unknown", token, body)
 
 
+def neutralize_untrusted(text: str) -> str:
+    """Strip controls and delimiter runs without opening an envelope.
+
+    Goals and status lines are not tool bodies, but a harness tail or a
+    model-chosen goal can still forge the closing line of a later envelope.
+    """
+    if not isinstance(text, str):
+        raise PolicyViolation("bad_arg", "untrusted text must be text")
+    return _sanitize_untrusted(text)
+
+
 def scan_injection(text: str) -> list[InjectionSignal]:
     """Advisory injection hints. Never raises ``PolicyViolation`` for content.
 
@@ -257,7 +287,7 @@ def check_argv_shape(args: Sequence[str], *, max_args: int = 64, max_len: int = 
     """Reject argv arrays that are not safe to forward, even without a shell.
 
     Non-strings, NUL, newlines, overlong tokens, and shell metacharacters
-    (``; | & ` $ ( ) > <`` and CR/LF) fail. NFKC lookalikes are checked too.
+    (``; | & ` $ ( ) > <`` and TAB/CR/LF) fail. NFKC lookalikes are checked too.
     """
     if max_args < 0 or max_len < 0:
         raise ValueError("limits must be non-negative")
@@ -286,7 +316,7 @@ class HarnessCallPolicy:
         self._names = frozenset(registry_names)
         self._validator = validator
         self._roots = tuple(Path(root) for root in roots)
-        self._forbidden = frozenset(flag.casefold() for flag in forbidden_flags)
+        self._forbidden = frozenset(_canonical_flag(flag) for flag in forbidden_flags)
 
     def check(self, name: str, args: Sequence[str]) -> list[str]:
         """Return a sanitized argv, or raise ``PolicyViolation``."""
@@ -485,6 +515,8 @@ def _normalize_path_text(raw: str) -> str:
 
 def _prepare_path_text(raw: object) -> str:
     text = _require_path_text(raw)
+    if len(text) > _MAX_PATH_CHARS:
+        raise PolicyViolation("path_escape", "path is too long")
     _reject_path_controls(text)
     _reject_path_tricks(text)
     return text
@@ -772,12 +804,57 @@ def _scan_one_flag(
 ) -> int:
     parsed = _split_flag(args[index])
     if parsed is None:
+        _contain_token(args[index], roots)
         return index + 1
     flag, value, consumed = _flag_value(args, index, parsed)
     _reject_forbidden(flag, value, forbidden)
-    if flag.casefold() in {name.casefold() for name in PATH_FLAGS}:
+    if _is_path_flag(flag) or _value_looks_like_path(value):
         _require_contained_value(value, roots)
     return index + consumed
+
+
+def _contain_token(token: str, roots: Sequence[Path]) -> None:
+    if _value_looks_like_path(token):
+        _require_contained_value(token, roots)
+
+
+def _canonical_flag(flag: str) -> str:
+    if flag.startswith("--"):
+        return "--" + flag[2:].replace("_", "-").casefold()
+    return flag.casefold()
+
+
+def _is_path_flag(flag: str) -> bool:
+    folded = _canonical_flag(flag)
+    return any(_canonical_flag(name) == folded for name in PATH_FLAGS)
+
+
+def _value_looks_like_path(value: str | None) -> bool:
+    if not value:
+        return False
+    if _path_shaped(value):
+        return True
+    if _is_windows_syntax(value) or _tilde_surprise(value):
+        return True
+    return any(part == ".." for part in re.split(r"[\\/]", value))
+
+
+def _path_shaped(value: str) -> bool:
+    if "/" in value or "\\" in value:
+        return True
+    return value.casefold().endswith(_FILE_SUFFIXES)
+
+
+def _cli_path(value: str) -> str:
+    """Relative harness paths open from the process cwd, not from a root.
+
+    ``contain_path`` joins a relative path onto each root. The lab CLI uses
+    the process working directory. Check the path the process will open.
+    """
+    text = _prepare_path_text(value)
+    if _is_windows_syntax(text) or Path(text).is_absolute():
+        return text
+    return str(Path.cwd() / text)
 
 
 def _split_flag(arg: str) -> tuple[str, str | None] | None:
@@ -807,14 +884,14 @@ def _has_separate_value(args: Sequence[str], index: int) -> bool:
 
 
 def _flag_takes_value(flag: str) -> bool:
-    folded = flag.casefold()
+    folded = _canonical_flag(flag)
     if folded in _FALSE_VALUES:
         return True
-    return folded in {name.casefold() for name in PATH_FLAGS}
+    return _is_path_flag(flag)
 
 
 def _reject_forbidden(flag: str, value: str | None, forbidden: frozenset[str]) -> None:
-    folded = flag.casefold()
+    folded = _canonical_flag(flag)
     combined = f"{folded}={value.casefold()}" if value is not None else ""
     if folded in forbidden or (combined and combined in forbidden):
         raise PolicyViolation("forbidden_flag", "flag is not allowed")
@@ -830,7 +907,7 @@ def _reject_false_value(flag: str, value: str | None) -> None:
 def _require_contained_value(value: str | None, roots: Sequence[Path]) -> None:
     if value is None or not roots:
         raise PolicyViolation("path_escape", "path flag is outside configured roots")
-    contain_path(value, roots)
+    contain_path(_cli_path(value), roots)
 
 
 __all__ = [
@@ -847,6 +924,7 @@ __all__ = [
     "check_flash_save",
     "check_web_query",
     "contain_path",
+    "neutralize_untrusted",
     "scan_injection",
     "security_notice",
     "wrap_untrusted",

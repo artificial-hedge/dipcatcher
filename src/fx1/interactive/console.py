@@ -39,6 +39,7 @@ from fx1.interactive.terminal import (
     TermCaps,
     detect_caps,
     format_duration,
+    sanitize_for_terminal,
 )
 
 _LEGACY_PROMPT = "dip › "
@@ -293,6 +294,9 @@ def _engine_loop(
             if _on_prompt_interrupt(concierge, output, tracker):
                 _blank(output)
                 return
+        except UnicodeError:
+            output("error: input is not valid UTF-8")
+            return
         except Exception as exc:  # noqa: BLE001 — one bad turn must not kill the shell
             _show_error(output, exc, to_output=True)
 
@@ -375,6 +379,9 @@ def _legacy_step(
     except (EOFError, KeyboardInterrupt):
         _blank(output)
         return None
+    except UnicodeError:
+        output("error: input is not valid UTF-8")
+        return None
     return _legacy_after(concierge, line, output)
 
 
@@ -416,7 +423,7 @@ def _legacy_after(concierge: Any, line: str | None, output: Callable[..., None])
 
 
 def _show_error(output: Callable[..., None], exc: Exception, *, to_output: bool) -> None:
-    message = f"error: {public_error(exc)}"
+    message = sanitize_for_terminal(f"error: {public_error(exc)}", keep_sgr=False)
     if to_output:
         output(message)
         return

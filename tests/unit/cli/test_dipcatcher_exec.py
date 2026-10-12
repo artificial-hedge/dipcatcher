@@ -468,3 +468,23 @@ def test_models_check_unknown_model_exits_2(
     code, _out, err = _run(["models", "check", "other"], capsys)
     assert code == 2
     assert err.strip()
+
+
+def test_plain_mode_output_cannot_inject_terminal_controls(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from types import SimpleNamespace
+
+    from dipcatcher_cli import exec_cmd
+
+    outcome = SimpleNamespace(
+        answer="ok \x1b]0;pwned\x07 \x1b[2J done",
+        warnings=["w \x9b31m"],
+        errors=[],
+        as_json=lambda: {"answer": "x"},
+    )
+    exec_cmd._emit(outcome, json_mode=False)
+    captured = capsys.readouterr()
+    assert "\x1b" not in captured.out and "\x07" not in captured.out
+    assert "\x9b" not in captured.err
+    assert "ok" in captured.out and "done" in captured.out
