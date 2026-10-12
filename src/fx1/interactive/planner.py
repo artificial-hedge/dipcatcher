@@ -1,0 +1,1164 @@
+"""Qualified planner for ``/superpower``.
+
+Selection uses catalog task tags and aliases (word-boundary match with simple
+plural folding). Purpose keywords only add rank after a tag or alias hit;
+they never select a capability on their own. Ordering is score descending,
+then id ascending.
+
+Only executable capabilities become steps. Dependencies are inserted and
+count toward ``max_steps``. ``post_checks`` stay on the step. Declared
+defaults are the only arguments the deterministic planner fills in. A model
+may propose arguments; each proposal is validated and never coerced. Any
+structural problem in the model reply keeps the deterministic plan.
+
+When the goal refers to user data, or ``datasets`` is non-empty, a
+synthetic-only step is kept only with an explicit SYNTHETIC note, and a
+``needs_dataset`` exclusion is recorded unless a dataset-bound step was
+actually planned. Dataset-bound means ``requires_dataset``, an evidence
+class other than ``SYNTHETIC``, and a data label other than ``SYNTHETIC``.
+Experimental qualification is reported as ``unqualified``. Budget trimming
+drops a suffix of the ordered plan and does not reorder steps.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import re
+import textwrap
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+from types import MappingProxyType
+from typing import Any
+
+from fx1.honesty import Fx1HonestyError, validate_fx1_output
+from fx1.interactive.contracts import (
+    Capability,
+    CapabilityCatalog,
+    ContractViolation,
+    contains_shell_metacharacters,
+    validate_args,
+)
+
+ModelFn = Callable[[str], str]
+EXCLUSION_CODES = frozenset(
+    {
+        "not_executable",
+        "retired",
+        "unqualified",
+        "needs_dataset",
+        "budget",
+        "max_steps",
+        "invalid_args",
+        "unknown_id",
+        "duplicate",
+        "no_match",
+        "dependency_missing",
+    }
+)
+SYNTHETIC_NOTE = "SYNTHETIC correctness evidence only — it does not evaluate your data"
+_NO_MATCH = "No suitable capability"
+_NEEDS_DATASET = "no qualified dataset-bound runner matched"
+_STOP = frozenset(
+    {
+        "about",
+        "across",
+        "after",
+        "again",
+        "before",
+        "between",
+        "cannot",
+        "could",
+        "during",
+        "family",
+        "inside",
+        "narrowed",
+        "other",
+        "should",
+        "their",
+        "there",
+        "these",
+        "those",
+        "under",
+        "using",
+        "where",
+        "which",
+        "while",
+        "within",
+        "without",
+        "would",
+    }
+)
+_USER_WORDS = ("attached", "supplied")
+_PATH_RE = re.compile(
+    r"(?:(?:^|[\s\"'])(?:\.{1,2}[/\\]|[/\\]|[A-Za-z]:[/\\])\S+)"
+    r"|(?:\b[\w.-]+\.(?:csv|parquet|jsonl|json|feather|arrow)\b)",
+    re.IGNORECASE,
+)
+Ranked = tuple[int, Capability, str]
+Roots = Mapping[str, Sequence[Path]]
+
+
+@dataclass(frozen=True)
+class DatasetRef:
+    """A dataset the caller says is already available."""
+
+    path: str
+    kind: str
+    label: str
+
+
+@dataclass(frozen=True)
+class PlanStep:
+    """One scheduled capability invocation."""
+
+    capability_id: str
+    args: Mapping[str, Any]
+    rationale: str
+    depends_on: tuple[str, ...]
+    evidence_class: str
+    consequential: bool
+    est_runtime_s: float
+    step_key: str
+    scores: tuple[str, ...] = ()
+    post_checks: tuple[Mapping[str, Any], ...] = ()
+    max_output_chars: int = 0
+
+
+@dataclass(frozen=True)
+class Exclusion:
+    """Why a capability or proposal was left out of the plan."""
+
+    capability_id: str | None
+    code: str
+    detail: str
+
+    def __post_init__(self) -> None:
+        if self.code not in EXCLUSION_CODES:
+            raise ValueError(f"unknown exclusion code {self.code}")
+
+
+@dataclass
+class ExecutionPlan:
+    """A validated selection for one goal."""
+
+    goal: str
+    steps: list[PlanStep]
+    exclusions: list[Exclusion]
+    notes: list[str]
+    source: str
+    catalog_digest: str
+    max_steps: int
+    budget_s: float | None = None
+
+    def describe(self, width: int = 100) -> str:
+        """Human-readable plan: steps, scores, limits, exclusions, and notes."""
+        return _wrap(_describe_text(self), width)
+
+    def to_dict(self) -> dict[str, Any]:
+        """JSON-safe provenance record."""
+        payload = {
+            "budget_s": self.budget_s,
+            "catalog_digest": self.catalog_digest,
+            "exclusions": [_exclusion_dict(item) for item in self.exclusions],
+            "goal": self.goal,
+            "max_steps": self.max_steps,
+            "notes": list(self.notes),
+            "source": self.source,
+            "steps": [_step_dict(step) for step in self.steps],
+        }
+        encoded = json.dumps(payload, sort_keys=True)
+        loaded: dict[str, Any] = json.loads(encoded)
+        return loaded
+
+
+def plan_goal(
+    goal: str,
+    catalog: CapabilityCatalog,
+    *,
+    max_steps: int = 4,
+    budget_s: float | None = None,
+    datasets: Sequence[DatasetRef] = (),
+    roots: Roots | None = None,
+    model_fn: ModelFn | None = None,
+) -> ExecutionPlan:
+    """Plan ``goal`` from ``catalog``.
+
+    ``model_fn`` may replace the deterministic selection. Structural model
+    failures keep that selection and record a note. The returned plan's
+    steps satisfy :func:`validate_plan` for the same limits.
+    """
+    _check_limits(max_steps, budget_s)
+    root_map: Roots = {} if roots is None else roots
+    deterministic = _deterministic_plan(
+        goal,
+        catalog,
+        max_steps=max_steps,
+        budget_s=budget_s,
+        datasets=tuple(datasets),
+        roots=root_map,
+    )
+    if model_fn is None:
+        return deterministic
+    return _refine(
+        deterministic,
+        goal,
+        catalog,
+        model_fn,
+        max_steps=max_steps,
+        budget_s=budget_s,
+        datasets=tuple(datasets),
+        roots=root_map,
+    )
+
+
+def validate_plan(
+    plan: ExecutionPlan,
+    catalog: CapabilityCatalog,
+    *,
+    max_steps: int,
+    budget_s: float | None,
+    roots: Roots | None = None,
+) -> list[Exclusion]:
+    """Return problems with ``plan``. An empty list means the steps are valid."""
+    _check_limits(max_steps, budget_s)
+    root_map: Roots = {} if roots is None else roots
+    problems: list[Exclusion] = []
+    problems.extend(_count_problems(plan, max_steps))
+    problems.extend(_duplicate_problems(plan))
+    problems.extend(_step_problems(plan, catalog, root_map))
+    problems.extend(_budget_problems(plan, budget_s))
+    problems.extend(_order_problems(plan, catalog))
+    return problems
+
+
+def order_steps(steps: Sequence[PlanStep], catalog: CapabilityCatalog) -> list[PlanStep]:
+    """Stable dependency order. Cyclic steps keep their input order at the end."""
+    indexed = list(enumerate(steps))
+    deps = {index: _dep_indexes(step, index, indexed, catalog) for index, step in indexed}
+    return _topo(indexed, deps)
+
+
+def make_step_key(capability_id: str, args: Mapping[str, Any]) -> str:
+    """Stable idempotency key for one capability invocation."""
+    payload = {"args": _plain(args), "capability": capability_id}
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _deterministic_plan(
+    goal: str,
+    catalog: CapabilityCatalog,
+    *,
+    max_steps: int,
+    budget_s: float | None,
+    datasets: Sequence[DatasetRef],
+    roots: Roots,
+) -> ExecutionPlan:
+    ranked = _rank(goal, catalog)
+    user_data = _user_data(goal, datasets)
+    steps, exclusions = _select(ranked, catalog, roots, max_steps, user_data=user_data)
+    ordered = order_steps(steps, catalog)
+    kept, budget_ex = _apply_budget(ordered, budget_s)
+    exclusions.extend(budget_ex)
+    notes: list[str] = []
+    _apply_honesty(kept, catalog, user_data=user_data, exclusions=exclusions, notes=notes)
+    _note_if_empty(kept, notes)
+    return _new_plan(
+        goal,
+        kept,
+        exclusions,
+        notes,
+        source="deterministic",
+        catalog=catalog,
+        max_steps=max_steps,
+        budget_s=budget_s,
+    )
+
+
+def _refine(
+    fallback: ExecutionPlan,
+    goal: str,
+    catalog: CapabilityCatalog,
+    model_fn: ModelFn,
+    *,
+    max_steps: int,
+    budget_s: float | None,
+    datasets: Sequence[DatasetRef],
+    roots: Roots,
+) -> ExecutionPlan:
+    raw = _call_model(model_fn, _prompt(goal, catalog))
+    if isinstance(raw, Exclusion):
+        return _with_note(fallback, raw.detail)
+    steps, exclusions = _steps_from_model(raw["steps"], catalog, roots, max_steps)
+    ordered = order_steps(steps, catalog)
+    kept, budget_ex = _apply_budget(ordered, budget_s)
+    exclusions.extend(budget_ex)
+    exclusions[0:0] = _status_exclusions(fallback)
+    notes: list[str] = []
+    model_note = _model_note(str(raw.get("rationale", "")))
+    if model_note is not None:
+        notes.append(model_note)
+    user_data = _user_data(goal, datasets)
+    _apply_honesty(kept, catalog, user_data=user_data, exclusions=exclusions, notes=notes)
+    if not kept and not any(item.code == "no_match" for item in exclusions):
+        exclusions.append(Exclusion(None, "no_match", _NO_MATCH))
+    _note_if_empty(kept, notes)
+    return _new_plan(
+        goal,
+        kept,
+        exclusions,
+        notes,
+        source="model+validated",
+        catalog=catalog,
+        max_steps=max_steps,
+        budget_s=budget_s,
+    )
+
+
+def _call_model(model_fn: ModelFn, prompt: str) -> Mapping[str, Any] | Exclusion:
+    try:
+        raw = model_fn(prompt)
+    except Exception:  # noqa: BLE001 — model failures fall back to the deterministic plan
+        return Exclusion(None, "invalid_args", "model refinement rejected: model call failed")
+    if not isinstance(raw, str):
+        return Exclusion(None, "invalid_args", "model refinement rejected: reply was not text")
+    try:
+        return _parse_model_payload(raw)
+    except ValueError as exc:
+        return Exclusion(None, "invalid_args", f"model refinement rejected: {exc}")
+
+
+def _new_plan(
+    goal: str,
+    steps: list[PlanStep],
+    exclusions: list[Exclusion],
+    notes: list[str],
+    *,
+    source: str,
+    catalog: CapabilityCatalog,
+    max_steps: int,
+    budget_s: float | None,
+) -> ExecutionPlan:
+    return ExecutionPlan(
+        goal=goal,
+        steps=steps,
+        exclusions=_dedupe_exclusions(exclusions),
+        notes=_dedupe_notes(notes),
+        source=source,
+        catalog_digest=catalog.digest,
+        max_steps=max_steps,
+        budget_s=None if budget_s is None else float(budget_s),
+    )
+
+
+def _with_note(plan: ExecutionPlan, note: str) -> ExecutionPlan:
+    if note not in plan.notes:
+        plan.notes.append(note)
+    return plan
+
+
+def _select(
+    ranked: Sequence[Ranked],
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    max_steps: int,
+    *,
+    user_data: bool,
+) -> tuple[list[PlanStep], list[Exclusion]]:
+    status = [_status_exclusion(cap) for _, cap, _detail in ranked if not cap.executable]
+    runnable = [row for row in ranked if row[1].executable]
+    if not runnable and not status:
+        return [], [Exclusion(None, "no_match", _NO_MATCH)]
+    if user_data:
+        return _select_user_data(runnable, status, catalog, roots, max_steps)
+    steps, problems = _take_steps(runnable, catalog, roots, max_steps)
+    return steps, [*status, *problems]
+
+
+def _select_user_data(
+    runnable: Sequence[Ranked],
+    status: list[Exclusion],
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    max_steps: int,
+) -> tuple[list[PlanStep], list[Exclusion]]:
+    bound = [row for row in runnable if _dataset_bound(row[1])]
+    other = [row for row in runnable if not _dataset_bound(row[1])]
+    if not bound:
+        steps, problems = _take_steps(other, catalog, roots, max_steps)
+        return steps, [*status, *problems]
+    steps, problems = _take_steps(bound, catalog, roots, max_steps)
+    if steps:
+        return steps, [*status, *problems]
+    fallback, more = _take_steps(other, catalog, roots, max_steps)
+    return fallback, [*status, *problems, *more]
+
+
+def _take_steps(
+    rows: Sequence[Ranked],
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    max_steps: int,
+) -> tuple[list[PlanStep], list[Exclusion]]:
+    chosen: list[PlanStep] = []
+    seen: set[str] = set()
+    exclusions: list[Exclusion] = []
+    for _score, cap, detail in rows:
+        if cap.id in seen:
+            continue
+        rationale = f"selected because the goal matched {detail}"
+        added, problem = _consider(cap, rationale, catalog, roots, chosen, seen, max_steps)
+        if problem is not None:
+            exclusions.append(problem)
+        chosen.extend(added)
+    return chosen, exclusions
+
+
+def _consider(
+    cap: Capability,
+    detail: str,
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    chosen: Sequence[PlanStep],
+    seen: set[str],
+    max_steps: int,
+) -> tuple[list[PlanStep], Exclusion | None]:
+    steps, problem = _try_chain(cap, catalog, roots, detail)
+    if problem is not None:
+        return [], problem
+    fresh = [step for step in steps if step.capability_id not in seen]
+    if len(chosen) + len(fresh) > max_steps:
+        return [], Exclusion(
+            cap.id, "max_steps", f"adding {cap.id} would exceed max_steps={max_steps}"
+        )
+    for step in fresh:
+        seen.add(step.capability_id)
+    return fresh, None
+
+
+def _try_chain(
+    cap: Capability,
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    detail: str,
+) -> tuple[list[PlanStep], Exclusion | None]:
+    ordered: list[str] = []
+    if not _linearize(cap.id, catalog, {}, ordered):
+        return [], Exclusion(
+            cap.id, "dependency_missing", f"{cap.id} dependency is missing or not executable"
+        )
+    steps, problem = _default_steps(
+        [item for item in ordered if item != cap.id], catalog, roots, cap.id
+    )
+    if problem is not None:
+        return [], problem
+    built = _step_from_defaults(cap, roots, detail)
+    if isinstance(built, Exclusion):
+        return [], built
+    steps.append(built)
+    return steps, None
+
+
+def _default_steps(
+    dep_ids: Sequence[str],
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    parent: str,
+) -> tuple[list[PlanStep], Exclusion | None]:
+    steps: list[PlanStep] = []
+    for dep_id in dep_ids:
+        dep = catalog.get(dep_id)
+        if dep is None:
+            return [], Exclusion(parent, "dependency_missing", f"{parent} dependency is missing")
+        built = _step_from_defaults(dep, roots, f"prerequisite of {parent}")
+        if isinstance(built, Exclusion):
+            return [], built
+        steps.append(built)
+    return steps, None
+
+
+def _step_from_defaults(cap: Capability, roots: Roots, rationale: str) -> PlanStep | Exclusion:
+    try:
+        args = validate_args(cap, {}, roots=roots)
+    except ContractViolation as exc:
+        return Exclusion(cap.id, "invalid_args", f"{exc.code}:{exc.arg}")
+    return _new_step(cap, args, _safe_text(rationale, f"selected {cap.id}"))
+
+
+def _linearize(
+    cap_id: str, catalog: CapabilityCatalog, state: dict[str, int], out: list[str]
+) -> bool:
+    mark = state.get(cap_id, 0)
+    if mark == 2:
+        return True
+    if mark == 1:
+        return False
+    cap = catalog.get(cap_id)
+    if cap is None or not cap.executable:
+        return False
+    state[cap_id] = 1
+    for dep in cap.dependencies:
+        if not _linearize(dep, catalog, state, out):
+            return False
+    state[cap_id] = 2
+    out.append(cap_id)
+    return True
+
+
+def _apply_budget(
+    steps: Sequence[PlanStep], budget_s: float | None
+) -> tuple[list[PlanStep], list[Exclusion]]:
+    if budget_s is None:
+        return list(steps), []
+    total = 0.0
+    limit = float(budget_s)
+    for index, step in enumerate(steps):
+        if total + step.est_runtime_s > limit:
+            excluded = [
+                Exclusion(item.capability_id, "budget", "estimated runtime exceeds budget")
+                for item in steps[index:]
+            ]
+            return list(steps[:index]), excluded
+        total += step.est_runtime_s
+    return list(steps), []
+
+
+def _apply_honesty(
+    steps: Sequence[PlanStep],
+    catalog: CapabilityCatalog,
+    *,
+    user_data: bool,
+    exclusions: list[Exclusion],
+    notes: list[str],
+) -> None:
+    if not user_data:
+        return
+    if _any_synthetic(steps, catalog) and SYNTHETIC_NOTE not in notes:
+        notes.append(SYNTHETIC_NOTE)
+    if not _any_dataset_bound(steps, catalog):
+        exclusions.append(Exclusion(None, "needs_dataset", _NEEDS_DATASET))
+
+
+def _any_synthetic(steps: Sequence[PlanStep], catalog: CapabilityCatalog) -> bool:
+    return any(_step_is(step, catalog, _synthetic_only) for step in steps)
+
+
+def _any_dataset_bound(steps: Sequence[PlanStep], catalog: CapabilityCatalog) -> bool:
+    return any(_step_is(step, catalog, _dataset_bound) for step in steps)
+
+
+def _step_is(
+    step: PlanStep, catalog: CapabilityCatalog, predicate: Callable[[Capability], bool]
+) -> bool:
+    cap = catalog.get(step.capability_id)
+    return cap is not None and predicate(cap)
+
+
+def _note_if_empty(steps: Sequence[PlanStep], notes: list[str]) -> None:
+    if not steps and _NO_MATCH not in notes:
+        notes.append(_NO_MATCH)
+
+
+def _rank(goal: str, catalog: CapabilityCatalog) -> list[Ranked]:
+    norm = _normalize(goal)
+    rows: list[Ranked] = []
+    for cap in catalog.capabilities.values():
+        score, detail = _score_capability(norm, cap)
+        if score >= 8:
+            rows.append((score, cap, detail))
+    rows.sort(key=lambda row: (-row[0], row[1].id))
+    return rows
+
+
+def _score_capability(norm: str, cap: Capability) -> tuple[int, str]:
+    aliases, tasks = _hits(norm, cap)
+    if not aliases and not tasks:
+        return 0, ""
+    score = 10 * len(aliases) + 8 * len(tasks) + _purpose_overlap(norm, cap.purpose)
+    return score, ", ".join([*aliases, *tasks])
+
+
+def _hits(norm: str, cap: Capability) -> tuple[list[str], list[str]]:
+    aliases = [alias for alias in cap.aliases if _phrase_in(norm, _normalize(alias))]
+    tasks = [task for task in cap.tasks if _phrase_in(norm, _normalize(task.replace("_", " ")))]
+    return aliases, tasks
+
+
+def _purpose_overlap(norm_goal: str, purpose: str) -> int:
+    goal_tokens = set(norm_goal.split())
+    count = 0
+    seen: set[str] = set()
+    for token in _normalize(purpose).split():
+        if not _purpose_token(token, seen, goal_tokens):
+            continue
+        seen.add(token)
+        count += 1
+    return min(count, 4)
+
+
+def _purpose_token(token: str, seen: set[str], goal_tokens: set[str]) -> bool:
+    if len(token) < 6 or token in _STOP or token in seen:
+        return False
+    return token in goal_tokens
+
+
+def _phrase_in(haystack: str, needle: str) -> bool:
+    if not needle:
+        return False
+    return f" {needle} " in f" {haystack} "
+
+
+def _normalize(text: str) -> str:
+    cleaned = re.sub(r"[^a-z0-9]+", " ", text.lower())
+    return " ".join(_fold_token(part) for part in cleaned.split())
+
+
+def _fold_token(token: str) -> str:
+    if len(token) > 3 and token.endswith("s") and not token.endswith("ss"):
+        return token[:-1]
+    return token
+
+
+def _user_data(goal: str, datasets: Sequence[DatasetRef]) -> bool:
+    if len(datasets) > 0:
+        return True
+    return _mentions_user_data(goal)
+
+
+def _mentions_user_data(goal: str) -> bool:
+    folded = f" {_normalize(goal)} "
+    if " my data " in folded or " my forecast " in folded or " this dataset " in folded:
+        return True
+    lowered = goal.lower()
+    if any(re.search(rf"\b{word}\b", lowered) for word in _USER_WORDS):
+        return True
+    return _PATH_RE.search(goal) is not None
+
+
+def _dataset_bound(cap: Capability) -> bool:
+    if not cap.requires_dataset or cap.evidence_class == "SYNTHETIC":
+        return False
+    labels = {label.upper() for label in cap.data_labels}
+    return bool(labels - {"SYNTHETIC"})
+
+
+def _synthetic_only(cap: Capability) -> bool:
+    if cap.evidence_class == "SYNTHETIC":
+        return True
+    labels = {label.upper() for label in cap.data_labels}
+    return bool(labels) and labels <= {"SYNTHETIC"}
+
+
+def _status_exclusion(cap: Capability) -> Exclusion:
+    if cap.qualification_status == "retired":
+        code = "retired"
+    elif cap.qualification_status != "qualified":
+        code = "unqualified"
+    else:
+        code = "not_executable"
+    return Exclusion(cap.id, code, cap.executable_reason or code)
+
+
+def _status_exclusions(plan: ExecutionPlan) -> list[Exclusion]:
+    return [
+        item
+        for item in plan.exclusions
+        if item.code in {"retired", "unqualified", "not_executable"}
+    ]
+
+
+def _estimate(cap: Capability) -> float:
+    if cap.max_runtime_s > 0:
+        return float(cap.max_runtime_s)
+    return float(cap.timeout_s)
+
+
+def _new_step(cap: Capability, args: Mapping[str, Any], rationale: str) -> PlanStep:
+    frozen = MappingProxyType(dict(args))
+    checks = tuple(MappingProxyType(dict(check)) for check in cap.post_checks)
+    return PlanStep(
+        capability_id=cap.id,
+        args=frozen,
+        rationale=rationale,
+        depends_on=cap.dependencies,
+        evidence_class=cap.evidence_class,
+        consequential=cap.consequential,
+        est_runtime_s=_estimate(cap),
+        step_key=make_step_key(cap.id, frozen),
+        scores=cap.scores,
+        post_checks=checks,
+        max_output_chars=cap.max_output_chars,
+    )
+
+
+def _safe_text(text: str, fallback: str) -> str:
+    cleaned = " ".join(text.split())
+    if not cleaned or len(cleaned) > 400 or contains_shell_metacharacters(cleaned):
+        return fallback
+    try:
+        validate_fx1_output(cleaned)
+    except Fx1HonestyError:
+        return fallback
+    return cleaned
+
+
+def _prompt(goal: str, catalog: CapabilityCatalog) -> str:
+    lines = [_prompt_line(cap) for cap in catalog.executable()]
+    listing = "\n".join(lines)
+    return (
+        "Select qualified dipcatcher capabilities for the goal. "
+        "Reply with one JSON object only: "
+        '{"steps":[{"capability":"<id>","args":{},"why":"..."}],"rationale":"..."}. '
+        "Use only the ids listed. Do not invent flags.\n"
+        f"Available:\n{listing}\n\nGoal: {goal}"
+    )
+
+
+def _prompt_line(cap: Capability) -> str:
+    names = ", ".join(spec.name for spec in cap.args) or "(none)"
+    return f"- {cap.id}: {cap.purpose} | args: {names}"
+
+
+def _parse_model_payload(raw: str) -> dict[str, Any]:
+    try:
+        value = _first_object(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError("malformed JSON") from exc
+    steps = value.get("steps")
+    if not isinstance(steps, list):
+        raise ValueError("steps must be a list")
+    rationale = value.get("rationale", "")
+    if not isinstance(rationale, str):
+        raise ValueError("rationale must be a string")
+    return {"rationale": rationale, "steps": steps}
+
+
+def _first_object(raw: str) -> dict[str, Any]:
+    start = raw.find("{")
+    if start < 0:
+        raise ValueError("no JSON object")
+    value, _end = json.JSONDecoder().raw_decode(raw[start:])
+    if not isinstance(value, dict):
+        raise ValueError("JSON value is not an object")
+    return value
+
+
+def _steps_from_model(
+    entries: Sequence[Any],
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    max_steps: int,
+) -> tuple[list[PlanStep], list[Exclusion]]:
+    chosen: list[PlanStep] = []
+    seen_keys: set[str] = set()
+    exclusions: list[Exclusion] = []
+    for entry in entries:
+        chain, problem = _model_step(entry, catalog, roots)
+        if problem is not None:
+            exclusions.append(problem)
+            continue
+        _absorb(chain, chosen, seen_keys, max_steps, exclusions)
+    return chosen, exclusions
+
+
+def _model_step(
+    entry: Any, catalog: CapabilityCatalog, roots: Roots
+) -> tuple[list[PlanStep], Exclusion | None]:
+    if not isinstance(entry, Mapping):
+        return [], Exclusion(None, "invalid_args", "step is not an object")
+    cap_id = entry.get("capability")
+    if not isinstance(cap_id, str) or not cap_id or contains_shell_metacharacters(cap_id):
+        shown = cap_id if isinstance(cap_id, str) else None
+        return [], Exclusion(shown, "unknown_id", "unknown capability id")
+    cap = catalog.get(cap_id)
+    if cap is None:
+        return [], Exclusion(cap_id, "unknown_id", "unknown capability id")
+    if not cap.executable:
+        return [], _status_exclusion(cap)
+    problem = _check_model_fields(cap_id, entry.get("args", {}), entry.get("why", ""))
+    if problem is not None:
+        return [], problem
+    why = entry.get("why", "")
+    args = entry.get("args", {})
+    return _model_chain(cap, args, why, catalog, roots)
+
+
+def _check_model_fields(cap_id: str, args: Any, why: Any) -> Exclusion | None:
+    if not isinstance(args, Mapping):
+        return Exclusion(cap_id, "invalid_args", "args must be an object")
+    if not isinstance(why, str):
+        return Exclusion(cap_id, "invalid_args", "why must be a string")
+    return None
+
+
+def _model_chain(
+    cap: Capability,
+    args: Mapping[str, Any],
+    why: str,
+    catalog: CapabilityCatalog,
+    roots: Roots,
+) -> tuple[list[PlanStep], Exclusion | None]:
+    ordered: list[str] = []
+    if not _linearize(cap.id, catalog, {}, ordered):
+        return [], Exclusion(
+            cap.id, "dependency_missing", f"{cap.id} dependency is missing or not executable"
+        )
+    deps = [item for item in ordered if item != cap.id]
+    steps, problem = _default_steps(deps, catalog, roots, cap.id)
+    if problem is not None:
+        return [], problem
+    try:
+        validated = validate_args(cap, dict(args), roots=roots)
+    except ContractViolation as exc:
+        return [], Exclusion(cap.id, "invalid_args", f"{exc.code}:{exc.arg}")
+    steps.append(_new_step(cap, validated, _safe_text(why, f"selected {cap.id}")))
+    return steps, None
+
+
+def _absorb(
+    chain: Sequence[PlanStep],
+    chosen: list[PlanStep],
+    seen_keys: set[str],
+    max_steps: int,
+    exclusions: list[Exclusion],
+) -> None:
+    fresh = [step for step in chain if step.step_key not in seen_keys]
+    if not fresh:
+        cap_id = chain[-1].capability_id if chain else None
+        exclusions.append(Exclusion(cap_id, "duplicate", "duplicate step_key"))
+        return
+    if len(chosen) + len(fresh) > max_steps:
+        exclusions.append(
+            Exclusion(chain[-1].capability_id, "max_steps", f"plan exceeds max_steps={max_steps}")
+        )
+        return
+    for step in fresh:
+        chosen.append(step)
+        seen_keys.add(step.step_key)
+
+
+def _model_note(rationale: str) -> str | None:
+    safe = _safe_text(rationale, "")
+    if not safe:
+        return None
+    return f"model rationale: {safe}"
+
+
+def _dep_indexes(
+    step: PlanStep,
+    index: int,
+    indexed: Sequence[tuple[int, PlanStep]],
+    catalog: CapabilityCatalog,
+) -> set[int]:
+    names = set(_required_refs(step, catalog))
+    found: set[int] = set()
+    for other_index, other in indexed:
+        if other_index != index and _ref_matches(other, names):
+            found.add(other_index)
+    return found
+
+
+def _ref_matches(step: PlanStep, names: set[str]) -> bool:
+    return step.capability_id in names or step.step_key in names
+
+
+def _required_refs(step: PlanStep, catalog: CapabilityCatalog) -> list[str]:
+    refs = list(step.depends_on)
+    cap = catalog.get(step.capability_id)
+    if cap is None:
+        return refs
+    for dep in cap.dependencies:
+        if dep not in refs:
+            refs.append(dep)
+    return refs
+
+
+def _topo(indexed: Sequence[tuple[int, PlanStep]], deps: Mapping[int, set[int]]) -> list[PlanStep]:
+    remaining = {index for index, _step in indexed}
+    emitted: list[PlanStep] = []
+    while remaining:
+        ready = sorted(index for index in remaining if deps[index].isdisjoint(remaining))
+        if not ready:
+            return _append_remaining(indexed, remaining, emitted)
+        nxt = ready[0]
+        remaining.remove(nxt)
+        emitted.append(indexed[nxt][1])
+    return emitted
+
+
+def _append_remaining(
+    indexed: Sequence[tuple[int, PlanStep]], remaining: set[int], emitted: list[PlanStep]
+) -> list[PlanStep]:
+    for index, step in indexed:
+        if index in remaining:
+            emitted.append(step)
+    return emitted
+
+
+def _count_problems(plan: ExecutionPlan, max_steps: int) -> list[Exclusion]:
+    return [
+        Exclusion(step.capability_id, "max_steps", f"plan exceeds max_steps={max_steps}")
+        for step in plan.steps[max_steps:]
+    ]
+
+
+def _duplicate_problems(plan: ExecutionPlan) -> list[Exclusion]:
+    seen: set[str] = set()
+    problems: list[Exclusion] = []
+    for step in plan.steps:
+        if step.step_key in seen:
+            problems.append(Exclusion(step.capability_id, "duplicate", "duplicate step_key"))
+        seen.add(step.step_key)
+    return problems
+
+
+def _step_problems(
+    plan: ExecutionPlan, catalog: CapabilityCatalog, roots: Roots
+) -> list[Exclusion]:
+    problems: list[Exclusion] = []
+    for step in plan.steps:
+        problems.extend(_one_step_problems(step, catalog, roots))
+    return problems
+
+
+def _one_step_problems(step: PlanStep, catalog: CapabilityCatalog, roots: Roots) -> list[Exclusion]:
+    cap = catalog.get(step.capability_id)
+    if cap is None:
+        return [Exclusion(step.capability_id, "unknown_id", "unknown capability id")]
+    if not cap.executable:
+        return [_status_exclusion(cap)]
+    problems = _metadata_problems(step, cap)
+    problems.extend(_arg_problems(step, cap, roots))
+    return problems
+
+
+def _metadata_problems(step: PlanStep, cap: Capability) -> list[Exclusion]:
+    checks = (
+        (step.evidence_class != cap.evidence_class, "evidence_class does not match the catalog"),
+        (step.consequential != cap.consequential, "consequential does not match the catalog"),
+        (step.scores != cap.scores, "scores do not match the catalog"),
+        (step.est_runtime_s != _estimate(cap), "est_runtime_s does not match the catalog"),
+        (
+            step.max_output_chars != cap.max_output_chars,
+            "max_output_chars does not match the catalog",
+        ),
+        (
+            step.step_key != make_step_key(step.capability_id, step.args),
+            "step_key does not match capability and args",
+        ),
+        (_post_checks_differ(step, cap), "post_checks do not match the catalog"),
+    )
+    return [
+        Exclusion(step.capability_id, "invalid_args", detail) for failed, detail in checks if failed
+    ]
+
+
+def _post_checks_differ(step: PlanStep, cap: Capability) -> bool:
+    got = tuple(str(item.get("kind", "")) for item in step.post_checks)
+    expected = tuple(str(item.get("kind", "")) for item in cap.post_checks)
+    return got != expected
+
+
+def _arg_problems(step: PlanStep, cap: Capability, roots: Roots) -> list[Exclusion]:
+    try:
+        checked = validate_args(cap, dict(step.args), roots=roots)
+    except ContractViolation as exc:
+        return [Exclusion(step.capability_id, "invalid_args", f"{exc.code}:{exc.arg}")]
+    if _signature(checked) != _signature(step.args):
+        return [Exclusion(step.capability_id, "invalid_args", "args are not in canonical form")]
+    return []
+
+
+def _budget_problems(plan: ExecutionPlan, budget_s: float | None) -> list[Exclusion]:
+    if budget_s is None:
+        return []
+    total = 0.0
+    limit = float(budget_s)
+    for index, step in enumerate(plan.steps):
+        if total + step.est_runtime_s > limit:
+            return [
+                Exclusion(item.capability_id, "budget", "estimated runtime exceeds budget")
+                for item in plan.steps[index:]
+            ]
+        total += step.est_runtime_s
+    return []
+
+
+def _order_problems(plan: ExecutionPlan, catalog: CapabilityCatalog) -> list[Exclusion]:
+    seen_ids: set[str] = set()
+    seen_keys: set[str] = set()
+    problems: list[Exclusion] = []
+    for step in plan.steps:
+        if _missing_deps(step, catalog, seen_ids, seen_keys):
+            problems.append(
+                Exclusion(
+                    step.capability_id, "dependency_missing", "prerequisite is not an earlier step"
+                )
+            )
+        seen_ids.add(step.capability_id)
+        seen_keys.add(step.step_key)
+    return problems
+
+
+def _missing_deps(
+    step: PlanStep, catalog: CapabilityCatalog, seen_ids: set[str], seen_keys: set[str]
+) -> bool:
+    for ref in _required_refs(step, catalog):
+        if ref not in seen_ids and ref not in seen_keys:
+            return True
+    return False
+
+
+def _signature(args: Mapping[str, Any]) -> str:
+    return json.dumps(_plain(args), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def _plain(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {str(key): _plain(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_plain(item) for item in value]
+    if isinstance(value, Path):
+        return str(value)
+    return value
+
+
+def _describe_text(plan: ExecutionPlan) -> str:
+    lines = [
+        f"Execution plan ({plan.source})",
+        f"Goal: {plan.goal}",
+        f"Catalog digest: {plan.catalog_digest[:12]}",
+        f"Steps: {len(plan.steps)} of {plan.max_steps}",
+        _budget_line(plan),
+    ]
+    if not plan.steps:
+        lines.append(_NO_MATCH)
+    for index, step in enumerate(plan.steps, start=1):
+        lines.extend(_step_block(index, step))
+    lines.extend(_exclusion_lines(plan.exclusions))
+    lines.extend(_note_lines(plan.notes))
+    return "\n".join(lines)
+
+
+def _budget_line(plan: ExecutionPlan) -> str:
+    total = sum(step.est_runtime_s for step in plan.steps)
+    if plan.budget_s is None:
+        return f"Budget: unbounded; estimated total {total:g}s"
+    return f"Budget: {plan.budget_s:g}s; estimated total {total:g}s"
+
+
+def _step_block(index: int, step: PlanStep) -> list[str]:
+    marker = "yes" if step.consequential else "no"
+    scores = ", ".join(step.scores) if step.scores else "(none)"
+    depends = ", ".join(step.depends_on) if step.depends_on else "(none)"
+    checks = ", ".join(str(item.get("kind", "")) for item in step.post_checks) or "(none)"
+    return [
+        f"{index}. {step.capability_id} [{step.evidence_class}] consequential: {marker}",
+        f"Why: {step.rationale}",
+        f"Args: {_format_args(step.args)}",
+        f"Proper scores: {scores}",
+        f"Depends on: {depends}",
+        f"Post-checks: {checks}",
+        f"Time limit: {step.est_runtime_s:g}s; output limit: {step.max_output_chars} chars",
+    ]
+
+
+def _format_args(args: Mapping[str, Any]) -> str:
+    if not args:
+        return "(none)"
+    return ", ".join(f"{key}={_format_value(value)}" for key, value in args.items())
+
+
+def _format_value(value: Any) -> str:
+    if isinstance(value, list):
+        return ",".join(str(item) for item in value)
+    return str(value)
+
+
+def _exclusion_lines(exclusions: Sequence[Exclusion]) -> list[str]:
+    lines = ["Exclusions:"]
+    if not exclusions:
+        lines.append("- (none)")
+        return lines
+    for item in exclusions:
+        ident = item.capability_id or "-"
+        lines.append(f"- {ident} {item.code}: {item.detail}")
+    return lines
+
+
+def _note_lines(notes: Sequence[str]) -> list[str]:
+    lines = ["Notes:"]
+    if not notes:
+        lines.append("- (none)")
+        return lines
+    lines.extend(f"- {note}" for note in notes)
+    return lines
+
+
+def _wrap(text: str, width: int) -> str:
+    limit = width if width >= 20 else 20
+    wrapped: list[str] = []
+    for line in text.splitlines():
+        wrapped.extend(_wrap_line(line, limit))
+    return "\n".join(wrapped)
+
+
+def _wrap_line(line: str, limit: int) -> list[str]:
+    if not line:
+        return [""]
+    pieces = textwrap.wrap(line, width=limit, break_long_words=False, break_on_hyphens=False)
+    return pieces or [line]
+
+
+def _exclusion_dict(item: Exclusion) -> dict[str, Any]:
+    return {"capability_id": item.capability_id, "code": item.code, "detail": item.detail}
+
+
+def _step_dict(step: PlanStep) -> dict[str, Any]:
+    return {
+        "args": {key: _plain(value) for key, value in step.args.items()},
+        "capability_id": step.capability_id,
+        "consequential": step.consequential,
+        "depends_on": list(step.depends_on),
+        "est_runtime_s": step.est_runtime_s,
+        "evidence_class": step.evidence_class,
+        "max_output_chars": step.max_output_chars,
+        "post_checks": [_plain(dict(item)) for item in step.post_checks],
+        "rationale": step.rationale,
+        "scores": list(step.scores),
+        "step_key": step.step_key,
+    }
+
+
+def _dedupe_exclusions(items: Sequence[Exclusion]) -> list[Exclusion]:
+    found: list[Exclusion] = []
+    seen: set[tuple[str | None, str, str]] = set()
+    for item in items:
+        key = (item.capability_id, item.code, item.detail)
+        if key in seen:
+            continue
+        seen.add(key)
+        found.append(item)
+    return found
+
+
+def _dedupe_notes(notes: Sequence[str]) -> list[str]:
+    found: list[str] = []
+    for note in notes:
+        if note not in found:
+            found.append(note)
+    return found
+
+
+def _check_limits(max_steps: int, budget_s: float | None) -> None:
+    if isinstance(max_steps, bool) or not isinstance(max_steps, int) or max_steps < 0:
+        raise ValueError("max_steps must be a nonnegative integer")
+    if budget_s is None:
+        return
+    if isinstance(budget_s, bool) or not isinstance(budget_s, (int, float)):
+        raise ValueError("budget_s must be a nonnegative number")
+    if not math.isfinite(float(budget_s)) or float(budget_s) < 0:
+        raise ValueError("budget_s must be a nonnegative number")
