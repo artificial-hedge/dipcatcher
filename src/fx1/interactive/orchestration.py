@@ -1216,10 +1216,31 @@ def _detail_of(raw: Any, status: str) -> str:
 
 def _stdout_detail(stdout: str, stderr: str) -> str:
     labels = _data_labels(stdout)
-    tail = _tail(stdout, stderr)
-    if labels:
-        return f"{labels}; {tail}"[:500]
-    return tail[:500]
+    prose, receipts = _peel_receipts(_tail(stdout, stderr))
+    head = _labeled(labels, prose)[:500]
+    if not receipts:
+        return head
+    block = "\n".join(receipts)
+    if not head:
+        return block
+    return f"{head}\n{block}"
+
+
+def _labeled(labels: str, prose: str) -> str:
+    if labels and prose:
+        return f"{labels}; {prose}"
+    return labels or prose
+
+
+def _peel_receipts(text: str) -> tuple[str, list[str]]:
+    prose: list[str] = []
+    receipts: list[str] = []
+    for line in text.splitlines():
+        if "receipt=" in line:
+            receipts.append(line)
+        elif line.strip():
+            prose.append(line.strip())
+    return " ".join(prose), receipts
 
 
 def _with_flags(detail: str, raw: Any, status: str) -> str:
@@ -1506,9 +1527,15 @@ def _exclusion_dicts(items: Sequence[Exclusion]) -> list[dict[str, str]]:
 
 
 def _string_rows(items: Sequence[Mapping[str, Any]]) -> list[dict[str, str]]:
-    return [
-        {"id": str(item.get("id", "")), "reason": str(item.get("reason", ""))} for item in items
-    ]
+    return [_family_row(item) for item in items]
+
+
+def _family_row(item: Mapping[str, Any]) -> dict[str, str]:
+    return {
+        "id": str(item.get("id", "")),
+        "reason": str(item.get("reason", "")),
+        "code": str(item.get("code", "")),
+    }
 
 
 def _joined_reason(items: Sequence[Mapping[str, str]]) -> str:
@@ -1553,9 +1580,24 @@ def _result_stderr(result: Any) -> str:
 
 
 def _tail(stdout: str, stderr: str) -> str:
-    if stdout.strip():
-        return stdout.strip().splitlines()[-1][:160]
-    return stderr[:160]
+    text = stdout if stdout.strip() else stderr
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    receipts = [_clip_receipt(line) for line in lines if "receipt=" in line]
+    plain = [line for line in lines if "receipt=" not in line]
+    body = plain[-1][:160] if plain else ""
+    if not receipts:
+        return body
+    block = "\n".join(receipts)
+    if not body:
+        return block
+    return f"{body}\n{block}"
+
+
+def _clip_receipt(line: str) -> str:
+    """Keep a ``receipt=`` path intact, with a hard cap against unbounded stdout."""
+    if len(line) <= 1024:
+        return line
+    return line[:1021] + "..."
 
 
 def _safe_name(cap_id: str) -> str:
