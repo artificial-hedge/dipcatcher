@@ -148,35 +148,38 @@ def run_console(
     if not caps.unicode:
         _soften_stdio()
     safe_output = _guard_output(output_fn, caps)
-    if _use_engine(engine, input_fn, output_fn, caps):
-        _run_engine(
+    from fx1.interactive.procs import terminal_stop_scope
+
+    with terminal_stop_scope():
+        if _use_engine(engine, input_fn, output_fn, caps):
+            _run_engine(
+                model,
+                caps=caps,
+                caps_fn=provider,
+                concierge_factory=concierge_factory,
+                input_fn=input_fn,
+                output_fn=safe_output,
+                poll_timeout_s=poll_timeout_s,
+                resume=resume,
+                model_explicit=model_explicit,
+                clock=_clock(clock),
+                interrupt_clock=_clock(interrupt_clock),
+                secret_fn=secret_fn,
+                telemetry_factory=telemetry_factory,
+                history_path=history_path,
+                stream=stream,
+            )
+            return
+        _run_legacy(
             model,
-            caps=caps,
-            caps_fn=provider,
             concierge_factory=concierge_factory,
             input_fn=input_fn,
             output_fn=safe_output,
             poll_timeout_s=poll_timeout_s,
             resume=resume,
             model_explicit=model_explicit,
-            clock=_clock(clock),
-            interrupt_clock=_clock(interrupt_clock),
-            secret_fn=secret_fn,
             telemetry_factory=telemetry_factory,
-            history_path=history_path,
-            stream=stream,
         )
-        return
-    _run_legacy(
-        model,
-        concierge_factory=concierge_factory,
-        input_fn=input_fn,
-        output_fn=safe_output,
-        poll_timeout_s=poll_timeout_s,
-        resume=resume,
-        model_explicit=model_explicit,
-        telemetry_factory=telemetry_factory,
-    )
 
 
 def _run_engine(

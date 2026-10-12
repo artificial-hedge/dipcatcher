@@ -37,6 +37,7 @@ from typing import Any, cast
 
 from fx1.honesty import public_label, scrub_model_text
 from fx1.interactive.endpoint import EndpointError, normalize_endpoint
+from fx1.interactive.model_dial import open_http, open_https
 from fx1.interactive.redact import redact_text, redact_value, register_secret
 from fx1.serve.backends import (
     MOONSHOT_API_URL,
@@ -1170,12 +1171,7 @@ def _https_connection(
     timeout: float,
     proxy: tuple[str, int] | None,
 ) -> http.client.HTTPConnection:
-    context = ssl.create_default_context()
-    if proxy is None:
-        return http.client.HTTPSConnection(host, port, timeout=timeout, context=context)
-    conn = http.client.HTTPSConnection(proxy[0], proxy[1], timeout=timeout, context=context)
-    conn.set_tunnel(host, port)
-    return conn
+    return open_https(host, port, timeout, proxy, connect_cap=_CONNECT_TIMEOUT_S)
 
 
 def _http_connection(
@@ -1184,11 +1180,7 @@ def _http_connection(
     timeout: float,
     proxy: tuple[str, int] | None,
 ) -> http.client.HTTPConnection:
-    if proxy is None:
-        return http.client.HTTPConnection(host, port, timeout=timeout)
-    conn = http.client.HTTPConnection(proxy[0], proxy[1], timeout=timeout)
-    conn.set_tunnel(host, port)
-    return conn
+    return open_http(host, port, timeout, proxy, connect_cap=_CONNECT_TIMEOUT_S)
 
 
 def _retry_after_seconds(text: str) -> float | None:

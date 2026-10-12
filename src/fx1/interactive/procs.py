@@ -36,7 +36,7 @@ import sys
 import threading
 import time
 import urllib.parse
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import IO, Any
@@ -334,49 +334,124 @@ def run_owned(
 
 
 # Linux-only. Runs in the child, then execs the real argv. prctl persists
-# across exec, so the owned command dies with this process even on SIGKILL.
+# across exec. It is best-effort: a missing libc symbol must not swallow the
+# command. SIGPIPE and SIGXFSZ are restored so Python's ignore mask does not
+# leak across exec. The child dies only when its parent pid is no longer the
+# pid recorded at spawn (a live pid-1 parent is not "already reparented").
 _DEATH_WRAPPER = (
-    "import ctypes,os,signal,sys\n"
-    "ctypes.CDLL(None).prctl(1, signal.SIGKILL)\n"
-    "pid=os.getppid()\n"
-    "os.kill(os.getpid(), signal.SIGKILL) if pid==1 else None\n"
+    "import os,signal,sys\n"
     "try:\n"
-    " os.execvp(sys.argv[1], sys.argv[1:])\n"
+    " import ctypes\n"
+    " ctypes.CDLL(None).prctl(1, int(signal.SIGKILL))\n"
+    "except Exception:\n"
+    " pass\n"
+    "for _name in ('SIGPIPE','SIGXFSZ'):\n"
+    " _sig=getattr(signal,_name,None)\n"
+    " signal.signal(_sig, signal.SIG_DFL) if isinstance(_sig, int) else None\n"
+    "os.kill(os.getpid(), signal.SIGKILL) if os.getppid()!=int(sys.argv[1]) else None\n"
+    "try:\n"
+    " os.execvp(sys.argv[2], sys.argv[2:])\n"
     "except OSError:\n"
     " os._exit(127)\n"
 )
 
 
 def _popen(argv: Sequence[str], **kwargs: Any) -> subprocess.Popen[bytes]:
-    command = _death_argv([str(part) for part in argv])
+    command = _death_argv(
+        [str(part) for part in argv],
+        path=_child_path(kwargs.get("env")),
+        cwd=_cwd_text(kwargs.get("cwd")),
+    )
     return subprocess.Popen(command, **kwargs)  # noqa: S603 - argv is a sequence, no shell
 
 
-def _death_argv(argv: list[str]) -> list[str]:
+def _death_argv(argv: list[str], *, path: str | None = None, cwd: str | None = None) -> list[str]:
     """Prefix a Linux parent-death wrapper. Missing executables stay unwrapped.
 
     ``Popen`` must still raise for a missing binary so the caller reports
-    spawn exit 127. Other platforms spawn *argv* unchanged.
+    spawn exit 127. Executability is judged from the child's cwd and PATH.
+    Other platforms spawn *argv* unchanged.
     """
-    if sys.platform != "linux" or not argv or not _can_exec(argv[0]):
+    if sys.platform != "linux" or not argv or not _can_exec(argv[0], path_env=path, cwd=cwd):
         return argv
-    return [sys.executable, "-c", _DEATH_WRAPPER, *argv]
+    return [sys.executable, "-c", _DEATH_WRAPPER, str(os.getpid()), *argv]
 
 
-def _can_exec(path: str) -> bool:
-    if os.path.isfile(path) and os.access(path, os.X_OK):
+def _child_path(env: object) -> str | None:
+    """PATH the child will see. ``None`` means the parent environment."""
+    if not isinstance(env, Mapping):
+        return None
+    raw = env.get("PATH")
+    if raw is None:
+        return ""
+    return str(raw)
+
+
+def _cwd_text(cwd: object) -> str | None:
+    if isinstance(cwd, (str, Path)):
+        return os.fspath(cwd)
+    return None
+
+
+def _can_exec(path: str, *, path_env: str | None = None, cwd: str | None = None) -> bool:
+    if _has_dir_sep(path):
+        return _is_exec(_rooted(path, cwd))
+    return _on_path(path, path_env)
+
+
+def _has_dir_sep(path: str) -> bool:
+    if os.sep in path:
         return True
-    if os.sep in path or (os.altsep is not None and os.altsep in path):
-        return False
-    return _on_path(path)
+    return os.altsep is not None and os.altsep in path
 
 
-def _on_path(name: str) -> bool:
-    for directory in os.environ.get("PATH", "").split(os.pathsep):
+def _rooted(path: str, cwd: str | None) -> str:
+    if os.path.isabs(path):
+        return path
+    base = os.getcwd() if cwd is None else cwd
+    return os.path.join(base, path)
+
+
+def _is_exec(path: str) -> bool:
+    return os.path.isfile(path) and os.access(path, os.X_OK)
+
+
+def _on_path(name: str, path_env: str | None = None) -> bool:
+    text = os.environ.get("PATH", "") if path_env is None else path_env
+    for directory in text.split(os.pathsep):
         candidate = os.path.join(directory, name) if directory else name
-        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+        if _is_exec(candidate):
             return True
     return False
+
+
+@contextlib.contextmanager
+def terminal_stop_scope(
+    registry: ProcessRegistry | None = None, *, grace_s: float = 2.0
+) -> Iterator[None]:
+    """Arm SIGTERM/SIGHUP for this session, then put the previous handlers back."""
+    saved = _saved_stop_handlers()
+    with contextlib.suppress(OSError, ValueError):
+        install_terminal_stop(registry, grace_s=grace_s)
+    try:
+        yield
+    finally:
+        _restore_stop_handlers(saved)
+
+
+def _saved_stop_handlers() -> list[tuple[int, Any]]:
+    saved: list[tuple[int, Any]] = []
+    for name in ("SIGTERM", "SIGHUP"):
+        sig = getattr(signal, name, None)
+        if isinstance(sig, int):
+            saved.append((sig, signal.getsignal(sig)))
+    return saved
+
+
+def _restore_stop_handlers(saved: list[tuple[int, Any]]) -> None:
+    for sig, handler in saved:
+        with contextlib.suppress(OSError, ValueError):
+            signal.signal(sig, handler)
 
 
 def install_terminal_stop(registry: ProcessRegistry | None = None, *, grace_s: float = 2.0) -> bool:

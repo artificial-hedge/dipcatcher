@@ -14,8 +14,10 @@ the gate. The text returned to the caller is the original, unchanged.
 Documented matching boundary: a headline claim is a digit-carrying numeric
 value adjacent to the token, in either order, through connective phrasing.
 Separated letters (spaces, dots, hyphens) and compatibility digits are folded
-before that test. Spelled-out numbers ("sharpe of two point one") and a
-forbidden token glued onto a prefix ("mySharpe 2.1") stay outside the gate.
+before that test. A decimal glued to the token (``sharpe3.2``, ``sharpe_3.2``)
+is a headline; a bare integer glued on (``sharpe2``) is not. Spelled-out
+numbers ("sharpe of two point one") and a forbidden token glued onto a prefix
+("mySharpe 2.1") stay outside the gate.
 """
 
 from __future__ import annotations
@@ -247,9 +249,23 @@ def _reverse_headline(text: str, spelling: str) -> bool:
     return pattern.search(text) is not None
 
 
+_GLUED_NUMBER = r"[-+$]?\d[\d,]*\.\d+%?"
+
+
+def _glued_headline(text: str, spelling: str) -> bool:
+    """``sharpe3.2`` and ``sharpe_3.2``. A bare ``sharpe2`` is not a headline."""
+    pattern = re.compile(
+        rf"\b(?:{spelling}){_INFLECTION}(?:_+{_GLUED_NUMBER}|{_GLUED_NUMBER})",
+        re.IGNORECASE,
+    )
+    return pattern.search(text) is not None
+
+
 def _token_headline(text: str, token: str) -> bool:
     spelling = _TOKEN_SPELLINGS.get(token, re.escape(token))
-    return _forward_headline(text, spelling) or _reverse_headline(text, spelling)
+    if _forward_headline(text, spelling) or _reverse_headline(text, spelling):
+        return True
+    return _glued_headline(text, spelling)
 
 
 def _contains_forbidden_headline(text: str) -> str | None:

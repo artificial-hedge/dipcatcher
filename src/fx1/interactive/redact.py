@@ -307,25 +307,47 @@ def _fold_view(text: str) -> tuple[str, list[tuple[int, int]]] | None:
     return _build_fold(text)
 
 
+# Mn/Me hide a code point inside a token; Cs is an unpaired surrogate.
+# Cf is already covered by category and by ``_SKIP_FOLD``.
+_FOLD_SKIP = frozenset({"Cf", "Mn", "Me", "Cs"})
+
+
 def _build_fold(text: str) -> tuple[str, list[tuple[int, int]]] | None:
     parts: list[str] = []
     spans: list[tuple[int, int]] = []
+    changed = False
     for index, ch in enumerate(text):
-        if _SKIP_FOLD.match(ch) or unicodedata.category(ch) == "Cf":
-            continue
-        parts.append(_fold_char(ch))
-        spans.append((index, index + 1))
+        changed = _append_fold(parts, spans, index, ch) or changed
+    if not changed:
+        return None
     view = "".join(parts)
     if view == text:
         return None
     return view, spans
 
 
-def _fold_char(ch: str) -> str:
+def _append_fold(parts: list[str], spans: list[tuple[int, int]], index: int, ch: str) -> bool:
+    if _skip_fold_char(ch):
+        return True
+    folded = _fold_pieces(ch)
+    for piece in folded:
+        parts.append(piece)
+        spans.append((index, index + 1))
+    return folded != ch
+
+
+def _skip_fold_char(ch: str) -> bool:
+    if _SKIP_FOLD.match(ch):
+        return True
+    return unicodedata.category(ch) in _FOLD_SKIP
+
+
+def _fold_pieces(ch: str) -> str:
+    """NFKC of one character, including ligatures that expand (``ﬁ`` → ``fi``)."""
     folded = unicodedata.normalize("NFKC", ch)
-    if len(folded) == 1:
-        return folded
-    return ch
+    if not folded:
+        return ch
+    return folded
 
 
 def _redact_mapped(

@@ -146,9 +146,10 @@ class _SignalGuard:
         self._flag[0] = True
         _chain(self._previous(signum), signum, frame)
 
-    def _on_fatal(self, signum: int, _frame: object) -> None:
+    def _on_fatal(self, signum: int, frame: object) -> None:
         self._restore_termios()
         self._paste_off()
+        _chain(self._previous(signum), signum, frame)
         raise SystemExit(128 + signum)
 
     def _previous(self, signum: int) -> Any:

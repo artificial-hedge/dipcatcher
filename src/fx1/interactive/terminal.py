@@ -181,6 +181,86 @@ def stream_lock(stream: TextIO) -> threading.Lock:
         return lock
 
 
+_SGR_PLAIN = frozenset(
+    {
+        0,
+        1,
+        2,
+        22,
+        *range(30, 38),
+        39,
+        *range(40, 48),
+        49,
+        *range(90, 98),
+        *range(100, 108),
+    }
+)
+
+
+def _safe_sgr(sequence: str) -> bool:
+    """True for reset, intensity, and color. Conceal, blink, and reverse are not."""
+    body = sequence[2:-1]
+    if body == "":
+        return True
+    return _sgr_body_safe(body)
+
+
+def _sgr_body_safe(body: str) -> bool:
+    try:
+        codes = [int(part) if part else 0 for part in re.split(r"[;:]", body)]
+    except ValueError:
+        return False
+    return _sgr_codes_safe(codes)
+
+
+def _sgr_codes_safe(codes: list[int]) -> bool:
+    index = 0
+    while index < len(codes):
+        step = _sgr_step(codes, index)
+        if step is None:
+            return False
+        index = step
+    return True
+
+
+def _sgr_step(codes: list[int], index: int) -> int | None:
+    code = codes[index]
+    if code in _SGR_PLAIN:
+        return index + 1
+    if code in {38, 48}:
+        return _sgr_color(codes, index)
+    return None
+
+
+def _sgr_color(codes: list[int], index: int) -> int | None:
+    if index + 1 >= len(codes):
+        return None
+    mode = codes[index + 1]
+    if mode == 5:
+        return _sgr_indexed(codes, index)
+    if mode == 2:
+        return _sgr_rgb(codes, index)
+    return None
+
+
+def _sgr_indexed(codes: list[int], index: int) -> int | None:
+    if index + 2 >= len(codes) or not _byte_ok(codes[index + 2]):
+        return None
+    return index + 3
+
+
+def _sgr_rgb(codes: list[int], index: int) -> int | None:
+    if index + 4 >= len(codes):
+        return None
+    if all(_byte_ok(codes[index + offset]) for offset in (2, 3, 4)):
+        return index + 5
+    return None
+
+
+def _byte_ok(value: int) -> bool:
+    return 0 <= value <= 255
+
+
 def sanitize_for_terminal(text: str, *, keep_sgr: bool = False) -> str:
     """Drop terminal controls. Printable text, newlines, and tabs remain.
 
@@ -200,6 +280,8 @@ def _sanitize_keeping_sgr(text: str) -> str:
     saved: list[str] = []
 
     def grab(match: re.Match[str]) -> str:
+        if not _safe_sgr(match.group(0)):
+            return ""
         saved.append(match.group(0))
         return f"\ue000{len(saved) - 1}\ue001"
 
