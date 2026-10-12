@@ -83,6 +83,19 @@ HARNESS_REGISTRY: tuple[HarnessCommand, ...] = (
         HarnessRole.VERIFICATION,
         "Operational monitoring surface for the harness runtime.",
     ),
+    _cmd(
+        "capabilities",
+        HarnessRole.VERIFICATION,
+        "Read-only capability contract catalog (dipcatcher.capabilities.v1). "
+        "Does not execute benches.",
+        timeout_s=120,
+    ),
+    _cmd(
+        "verify-receipt",
+        HarnessRole.VERIFICATION,
+        "Verify one sealed receipt: structure plus hash consistency.",
+        timeout_s=120,
+    ),
     # --- Data engine ---
     _cmd(
         "ingest",
@@ -119,6 +132,36 @@ HARNESS_REGISTRY: tuple[HarnessCommand, ...] = (
         HarnessRole.EVALUATION,
         "Read-only qualified research-family surface. Does not execute benches.",
         timeout_s=120,
+    ),
+    _cmd(
+        "vol-bench",
+        HarnessRole.EVALUATION,
+        "SYNTHETIC volatility bench: QLIKE + MSE with a sealed receipt.",
+        timeout_s=900,
+    ),
+    _cmd(
+        "calibration-eval",
+        HarnessRole.EVALUATION,
+        "SYNTHETIC calibration lane: PIT, coverage, reliability with a sealed receipt.",
+        timeout_s=900,
+    ),
+    _cmd(
+        "rankic",
+        HarnessRole.EVALUATION,
+        "SYNTHETIC cross-sectional rank-IC bench with a sealed receipt.",
+        timeout_s=900,
+    ),
+    _cmd(
+        "serial-watch",
+        HarnessRole.EVALUATION,
+        "Serial-dependence watch over supplied PIT series with a sealed receipt.",
+        timeout_s=600,
+    ),
+    _cmd(
+        "lane-power",
+        HarnessRole.EVALUATION,
+        "Detection-power lane for monitors on SYNTHETIC streams with a sealed receipt.",
+        timeout_s=900,
     ),
     _cmd(
         "northset",
