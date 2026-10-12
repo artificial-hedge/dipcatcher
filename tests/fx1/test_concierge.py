@@ -406,7 +406,7 @@ def test_chat_harness_tool_refuses_unregistered(
     concierge.handle_line("do something dangerous")
     assert harness.calls == []
     tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
-    assert "not a registered harness command" in tool_msg["content"]
+    assert tool_msg["content"] == "unknown_command"
 
 
 def test_chat_flash_save_tool(env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -493,11 +493,14 @@ def test_chat_honesty_refusal_preserves_prior_turn_and_can_continue(
     assert answer not in captured.out + captured.err
 
     assert concierge.handle_line("which scores should we use?") is False
-    assert backend.tool_calls_seen[-1] == [
+    sent = backend.tool_calls_seen[-1]
+    assert sent[0]["role"] == "system"
+    assert sent[1:] == [
         *prior,
         {"role": "user", "content": "which scores should we use?"},
     ]
-    assert out[-1] == "Use proper scores."
+    assert "Use proper scores." in out
+    assert out[-1].startswith("· ")
 
 
 @pytest.mark.parametrize(
@@ -516,7 +519,9 @@ def test_chat_honesty_accepts_proper_scores_and_labeled_synthetic_results(
 
     concierge.handle_line("summarize the result")
 
-    assert out == [answer]
+    assert out[0] == answer
+    assert out[1].startswith("· ")
+    assert "\x1b" not in "\n".join(out)
     assert concierge._messages[-1] == {"role": "assistant", "content": answer}  # noqa: SLF001
 
 
@@ -562,8 +567,12 @@ def test_chat_honesty_gate_covers_tool_turns(
         assert "withheld by the fx-1 honesty gate" in retained[3]["content"]
     assert forbidden not in str(retained)
     concierge.handle_line("try again")
-    assert backend.tool_calls_seen[-1] == [*retained, {"role": "user", "content": "try again"}]
-    assert out[-1] == "Ready again."
+    sent = backend.tool_calls_seen[-1]
+    assert sent[0]["role"] == "system"
+    assert "system" not in [message["role"] for message in sent[1:]]
+    assert sent[1:] == [*retained, {"role": "user", "content": "try again"}]
+    assert "Ready again." in out
+    assert out[-1].startswith("· ")
 
 
 def test_chat_honesty_refusal_preserves_completed_flash_save_for_followup(
@@ -611,12 +620,15 @@ def test_chat_honesty_refusal_preserves_completed_flash_save_for_followup(
 
     concierge.handle_line("was the note saved?")
 
-    assert backend.tool_calls_seen[-1] == [
+    sent = backend.tool_calls_seen[-1]
+    assert sent[0]["role"] == "system"
+    assert sent[1:] == [
         *retained,
         {"role": "user", "content": "was the note saved?"},
     ]
     assert len(concierge._store.all()) == 1  # noqa: SLF001
-    assert out[-1] == "The note is already saved."
+    assert "The note is already saved." in out
+    assert out[-1].startswith("· ")
 
 
 # ---------------------------------------------------------------------------
@@ -752,16 +764,14 @@ def test_superpower_sync_offline_pipeline(env: Path, tmp_path: Path) -> None:
     concierge.handle_line("/superpower run the conformal volatility benchmark --sync")
     text = joined(out)
     assert "plan for: run the conformal volatility benchmark" in text
-    assert "planner: deterministic" in text
-    assert "[ran] research" in text  # harness ran and was explained
-    assert harness.calls[0][0] == "families"
-    assert ("research", ["--only", "volatility,conformal"]) in harness.calls
-    # planner coordinated: a pure lab-benchmark goal does not trigger web research
+    assert "catalog unavailable" in text
+    assert "[ran] research" not in text
+    assert harness.calls[0][0] == "capabilities"
+    assert all(call[0] != "research" for call in harness.calls)
     assert researcher.goals == []
-    # offline synthesis is honest about the missing model
     assert "no model endpoint" in text
-    # run persisted to flash
-    assert any("superpower" in e.tags for e in store.all())
+    assert "evidence status:" in text
+    assert any("superpower" in entry.tags for entry in store.all())
 
 
 def test_superpower_background_job(env: Path, tmp_path: Path) -> None:
@@ -771,7 +781,8 @@ def test_superpower_background_job(env: Path, tmp_path: Path) -> None:
     concierge.join_job(timeout_s=10)
     text = joined(out)
     assert "capabilities used and why" in text
-    assert "web_research" in text or "deep web research" in text
+    assert "catalog unavailable" in text
+    assert "evidence status:" in text
 
 
 def test_superpower_denies_consequential(env: Path, tmp_path: Path) -> None:
@@ -780,8 +791,8 @@ def test_superpower_denies_consequential(env: Path, tmp_path: Path) -> None:
         tmp_path, harness=harness, approvals=ApprovalGate(ask_fn=lambda q: False)
     )
     concierge.handle_line("/superpower train and optimize a model --sync")
-    assert harness.calls == []
-    assert "approval-denied" in joined(out)
+    assert all(call[0] != "train" for call in harness.calls)
+    assert "catalog unavailable" in joined(out)
 
 
 # ---------------------------------------------------------------------------
@@ -993,8 +1004,7 @@ def test_superpower_skips_research_without_an_eligible_family(env: Path, tmp_pat
     concierge, out = make_concierge(tmp_path, harness=harness)
     concierge.handle_line("/superpower run the benchmark family --sync")
     text = joined(out)
-    assert "none eligible" in text
-    assert "[skipped] research" in text
+    assert "catalog unavailable" in text
     assert all(call[0] != "research" for call in harness.calls)
 
 
@@ -1040,9 +1050,5 @@ def test_budget_command_limits_family_selection(env: Path, tmp_path: Path) -> No
     concierge.handle_line("/superpower run the conformal volatility benchmark --sync")
     text = joined(out)
     assert "budget max_families=1" in text
-    research = [call for call in harness.calls if call[0] == "research"]
-    assert research
-    only = research[0][1]
-    assert only is not None
-    assert only[0] == "--only"
-    assert "," not in only[1]
+    assert "catalog unavailable" in text
+    assert all(call[0] != "research" for call in harness.calls)

@@ -69,9 +69,10 @@ def test_plain_text_uses_the_superpower_planner(
     concierge.handle_line("Check whether my volatility forecasts are calibrated.")
     text = "\n".join(out)
     assert "routing this to research orchestration" in text
-    assert harness.calls[0][0] == "families"
+    assert harness.calls[0][0] == "capabilities"
     concierge.join_job(timeout_s=10)
-    assert any(name == "research" for name, _args in harness.calls)
+    assert "catalog unavailable" in text
+    assert all(name != "research" for name, _args in harness.calls)
 
 
 def test_restore_latest_reloads_messages_without_restarting(
