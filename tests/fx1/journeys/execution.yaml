@@ -1,0 +1,263 @@
+- id: execution-003
+  category: execution
+  title: A typed train command is denied when nobody can approve it
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    harness:
+      mode: fake
+  steps:
+    - say: /harness run train
+      expect:
+        - "[harness] train: not approved — skipped"
+      forbid:
+        - train finished
+      approvals:
+        - key: harness:train
+          approved: false
+          scope: no-prompter
+          kind: consequential
+
+- id: execution-004
+  category: execution
+  title: A session approval lets a second typed train run without asking again
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    approvals:
+      - decision: session
+        key: harness:train
+    harness:
+      mode: fake
+      commands:
+        train:
+          exit: 0
+          stdout: "DATA_LABEL=SYNTHETIC\ntrain finished\n"
+  steps:
+    - say: /harness run train
+      expect:
+        - DATA_LABEL=SYNTHETIC
+        - train finished
+      approvals:
+        - key: harness:train
+          approved: true
+          scope: session
+    - say: /harness run train
+      expect:
+        - train finished
+      approvals:
+        - key: harness:train
+          approved: true
+          scope: session-reuse
+    - say: /approvals
+      expect:
+        - session-reuse consequential key=harness:train approved=True
+
+- id: execution-005
+  category: execution
+  title: A once approval does not cover a second typed train
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    approvals:
+      - decision: once
+        key: harness:train
+      - decision: deny
+        key: harness:train
+    harness:
+      mode: fake
+      commands:
+        train:
+          exit: 0
+          stdout: "DATA_LABEL=SYNTHETIC\ntrain finished\n"
+  steps:
+    - say: /harness run train
+      expect:
+        - train finished
+      approvals:
+        - key: harness:train
+          approved: true
+          scope: once
+    - say: /harness run train
+      expect:
+        - "[harness] train: not approved — skipped"
+      forbid:
+        - train finished
+      approvals:
+        - key: harness:train
+          approved: false
+          scope: denied
+
+- id: execution-006
+  category: execution
+  title: An explicit deny blocks a typed optimize command
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    approvals:
+      - decision: deny
+        key: harness:optimize
+    harness:
+      mode: fake
+  steps:
+    - say: /harness run optimize
+      expect:
+        - "[harness] optimize: not approved — skipped"
+      forbid:
+        - optimize finished
+      approvals:
+        - key: harness:optimize
+          approved: false
+          scope: denied
+          kind: consequential
+
+- id: execution-007
+  category: execution
+  title: A typed doctor command that exits non-zero is reported as a failure
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    harness:
+      mode: fake
+      commands:
+        doctor:
+          exit: 2
+          stdout: "DATA_LABEL=SYNTHETIC\n"
+          stderr: "doctor failed closed\n"
+  steps:
+    - say: /harness run doctor
+      status: error
+      expect:
+        - DATA_LABEL=SYNTHETIC
+        - doctor failed closed
+      forbid:
+        - doctor finished
+
+- id: execution-008
+  category: execution
+  title: A typed read-only doctor command runs without an approval
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    harness:
+      mode: fake
+  steps:
+    - say: /harness run doctor
+      expect:
+        - DATA_LABEL=SYNTHETIC
+        - doctor finished
+      forbid:
+        - not approved
+    - say: /approvals
+      expect:
+        - no approvals recorded
+
+- id: execution-009
+  category: execution
+  title: A zero step budget skips harness lanes after the plan is shown
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    harness:
+      mode: fake
+  steps:
+    - say: /budget max-steps 0
+      expect:
+        - budget max_steps=0
+    - say: /superpower score volatility forecasts --sync
+      expect:
+        - vol-bench
+        - step budget exceeded
+      forbid:
+        - vol-bench finished
+        - calibration-eval finished
+
+- id: execution-010
+  category: execution
+  title: Repeated model timeouts stop the turn before any command runs
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    replies:
+      - error: 408
+      - error: 408
+      - error: 408
+  steps:
+    - say: please answer this health question now
+      status: error
+      expect:
+        - did not answer before the timeout
+      forbid:
+        - doctor finished
+        - stub fx1 reply
+
+- id: execution-011
+  category: execution
+  title: One model timeout is retried and the answer still arrives
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    replies:
+      - error: 408
+      - ok: "The pit histogram was flat. SYNTHETIC correctness check only."
+  steps:
+    - say: how should I read a flat pit histogram
+      status: ok
+      expect:
+        - The pit histogram was flat. SYNTHETIC correctness check only.
+
+- id: execution-012
+  category: execution
+  title: A session grant for train does not approve a typed paper command
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+    approvals:
+      - decision: session
+        key: harness:train
+    harness:
+      mode: fake
+      commands:
+        train:
+          exit: 0
+          stdout: "DATA_LABEL=SYNTHETIC\ntrain finished\n"
+  steps:
+    - say: /harness run train
+      expect:
+        - train finished
+    - say: /harness run paper
+      expect:
+        - "[harness] paper: not approved — skipped"
+      forbid:
+        - paper finished
+      approvals:
+        - key: harness:paper
+          approved: false
+          scope: denied
+    - say: /harness run train
+      expect:
+        - train finished
+      approvals:
+        - key: harness:train
+          approved: true
+          scope: session-reuse

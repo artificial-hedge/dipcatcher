@@ -1,0 +1,314 @@
+- id: onboarding-002
+  category: onboarding
+  title: An unknown slash command points at help and does not invent an answer
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+      fx1-lite: missing
+  steps:
+    - say: /frobnicate the book
+      expect:
+        - "unknown command /frobnicate; try /help"
+      forbid:
+        - "stub fx1 reply"
+      status: ok
+    - say: what is pinball loss?
+      expect:
+        - "no model endpoint configured"
+        - "/keys set fx1"
+      forbid:
+        - "stub fx1 reply"
+      status: no_endpoint
+      model: fx1
+
+- id: onboarding-003
+  category: onboarding
+  title: Model identity stays visible when neither endpoint is configured
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+      fx1-lite: missing
+  steps:
+    - say: /model
+      expect:
+        - "active model: fx1"
+      forbid:
+        - "stub fx1 reply"
+      model: fx1
+    - say: /use fx1-lite
+      expect:
+        - "active model 'fx1-lite'; conversation kept"
+        - "fx1-lite has no endpoint configured"
+      model: fx1-lite
+    - say: summarize the pinball note
+      expect:
+        - "no model endpoint configured"
+        - "/keys set fx1-lite"
+      forbid:
+        - "stub fx1-lite reply"
+      status: no_endpoint
+      model: fx1-lite
+
+- id: onboarding-004
+  category: onboarding
+  title: An unknown model name is refused and the active model stays fx1
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+  steps:
+    - say: /use gpt-4
+      expect:
+        - "unknown model 'gpt-4'"
+        - fx1-lite
+      status: error
+      model: fx1
+    - say: /model
+      expect:
+        - "active model: fx1"
+      model: fx1
+
+- id: onboarding-005
+  category: onboarding
+  title: Offline inspection lists unset models, the budget, and an idle job
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+      fx1-lite: missing
+  steps:
+    - say: /keys list
+      expect:
+        - fx1
+        - fx1-lite
+        - unset
+      forbid:
+        - "{key_fx1}"
+        - "{key_lite}"
+    - say: /status
+      expect:
+        - "no background job"
+    - say: /budget
+      expect:
+        - "max_steps="
+        - "not a dollar cap"
+      forbid:
+        - "{key_fx1}"
+
+- id: onboarding-006
+  category: onboarding
+  title: The first session list is empty and the following resume finds that session
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+  steps:
+    - say: /sessions
+      expect:
+        - "no saved sessions"
+    - say: /resume
+      expect:
+        - "resumed session"
+      model: fx1
+      session:
+        model: fx1
+        turns_at_least: 1
+
+- id: onboarding-007
+  category: onboarding
+  title: A new session drops the previous pinball turn and keeps fx1
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: ok
+  steps:
+    - say: remember the pinball definition for this desk
+      expect:
+        - "stub fx1 reply"
+      model: fx1
+    - say: /new
+      expect:
+        - "new session on model fx1"
+      model: fx1
+      session:
+        model: fx1
+        messages_forbid:
+          - "remember the pinball definition for this desk"
+    - say: /session
+      expect:
+        - "model fx1"
+        - "job idle"
+
+- id: onboarding-008
+  category: onboarding
+  title: First-run key entry rejects a blank, a spaced key, and a bad URL
+  critical: true
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+      fx1-lite: missing
+    accept_keys:
+      fx1: user-typed-fx1-key-aaaa1111
+  steps:
+    - say: /keys set fx1
+      secret: "        "
+      input: "{stub_url}"
+      expect:
+        - "empty API key for model 'fx1'"
+      forbid:
+        - "{key_fx1}"
+      status: error
+    - say: /keys set fx1
+      secret: "bad key with spaces!!"
+      input: "{stub_url}"
+      expect:
+        - "contains whitespace or control characters"
+      status: error
+    - say: /keys set fx1
+      secret: "{key_fx1}"
+      input: "not a url"
+      expect:
+        - "invalid base URL"
+      forbid:
+        - "{key_fx1}"
+      status: error
+    - say: /keys set fx1
+      secret: "{key_fx1}"
+      input: "{stub_url}"
+      expect:
+        - "stored for 'fx1'"
+      forbid:
+        - "{key_fx1}"
+      files:
+        - path: config:credentials.json
+          exists: true
+          mode: "0600"
+    - say: /keys remove fx1-lite
+      expect:
+        - "endpoint 'fx1-lite' was not stored"
+    - say: /keys remove fx1
+      expect:
+        - "removed endpoint 'fx1'"
+    - say: hello after the key was removed
+      expect:
+        - "no model endpoint configured"
+      status: no_endpoint
+
+- id: onboarding-009
+  category: onboarding
+  title: A fresh session refuses consequential train without an approval
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+    harness:
+      mode: fake
+  steps:
+    - say: /approvals
+      expect:
+        - "no approvals recorded"
+    - say: /harness run train
+      expect:
+        - "not approved"
+      forbid:
+        - "train finished"
+      approvals:
+        - key: harness:train
+          approved: false
+          scope: no-prompter
+          kind: consequential
+    - say: /approvals
+      expect:
+        - "harness:train"
+        - "approved=False"
+
+- id: onboarding-010
+  category: onboarding
+  title: Help, diagnostics, and bare superpower work with no endpoint
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+      fx1-lite: missing
+  steps:
+    - say: /superpower
+      expect:
+        - "usage: /superpower <goal> [--sync]"
+      status: error
+    - say: /superpower help
+      expect:
+        - "vol-bench"
+        - "approval-required"
+      forbid:
+        - "stub fx1 reply"
+    - say: /diagnostics
+      expect:
+        - "dipcatcher diagnostics"
+        - forbidden_headline_tokens
+      forbid:
+        - "{key_fx1}"
+        - "{key_lite}"
+    - say: /help
+      expect:
+        - /data
+        - /export
+        - /keys
+
+- id: onboarding-011
+  category: onboarding
+  title: A definition question and a quoted command stay on the chat path
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+  steps:
+    - say: what does pinball loss mean on a quantile forecast?
+      expect:
+        - "no model endpoint configured"
+      forbid:
+        - "routing this to research orchestration"
+      status: no_endpoint
+    - say: can you spell the command /superpower for me
+      expect:
+        - "no model endpoint configured"
+      forbid:
+        - "routing this to research orchestration"
+      status: no_endpoint
+
+- id: onboarding-012
+  category: onboarding
+  title: A budget override stores a step ceiling and rejects a dollar field
+  critical: false
+  in_chat: true
+  setup:
+    endpoints:
+      fx1: missing
+  steps:
+    - say: /budget max-steps 2
+      expect:
+        - "budget max_steps=2"
+    - say: /budget
+      expect:
+        - "max_steps=2"
+        - "not a dollar cap"
+    - say: /budget max-steps lots
+      expect:
+        - "max-steps needs a number"
+      status: error
+    - say: /budget max-dollars 5
+      expect:
+        - "unknown budget field 'max-dollars'"
+      status: error
+      model: fx1
