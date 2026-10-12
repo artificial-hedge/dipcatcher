@@ -1332,8 +1332,10 @@ def _model_chain(
     steps, problem = _default_steps(deps, catalog, roots, cap.id, goal)
     if problem is not None:
         return [], problem
+    # The model never chooses where a run writes: the per-run output root is bound here.
+    bound = {**dict(args), **_bind_output_dir(cap, roots)}
     try:
-        validated = validate_args(cap, dict(args), roots=roots)
+        validated = validate_args(cap, bound, roots=roots)
     except ContractViolation as exc:
         return [], Exclusion(cap.id, "invalid_args", f"{exc.code}:{exc.arg}")
     steps.append(_new_step(cap, validated, _safe_text(why, f"selected {cap.id}")))
