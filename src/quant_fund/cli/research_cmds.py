@@ -6,32 +6,16 @@ Split out of the original module. Import the parent path; it re-exports these na
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable, Mapping
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 import typer
 
 from .app import app
+from .research_banner import _echo_synthetic_marker as _echo_synthetic_marker
+from .research_pvalues import _harvest_p_values as _harvest_p_values
 from .support import _cfg, format_data_label, format_fdr_families
-
-
-def _harvest_p_values(findings: Iterable[Any]) -> list[float]:
-    """Pull the ``stat == "p"`` values out of one harvest_findings result.
-
-    Findings are dicts on the corpus-inference lane; attribute access is
-    tolerated so the command survives a dataclass-shaped finding.
-    """
-    out: list[float] = []
-    for finding in findings:
-        if isinstance(finding, Mapping):
-            stat, value = finding.get("stat"), finding.get("value")
-        else:
-            stat = getattr(finding, "stat", None)
-            value = getattr(finding, "value", None)
-        if stat == "p" and isinstance(value, (int, float)) and not isinstance(value, bool):
-            out.append(float(value))
-    return out
 
 
 @app.command()
@@ -58,8 +42,7 @@ def research(
     nb = run_research(cfg)
     # Always print DATA_LABEL + FDR families (regression-tested).
     typer.echo(format_data_label(synthetic=bool(nb.synthetic), data_source=str(nb.data_source)))
-    if nb.synthetic:
-        typer.echo("SYNTHETIC")
+    _echo_synthetic_marker(bool(nb.synthetic))
     typer.echo(f"{nb.product} — {nb.firm}'s proprietary research lab {nb.version}")
     typer.echo(format_fdr_families(list(nb.hypotheses)))
     typer.echo(nb.disclaimer)

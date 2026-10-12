@@ -2749,6 +2749,40 @@ def _reject_bad_receipt_sha(sha256: str) -> None:
         raise ApiError(422, "sha256 must be 64 lowercase hex", code="invalid_sha256")
 
 
+def _receipt_verify_fields(receipt: Mapping[str, Any]) -> dict[str, Any]:
+    """Shared verify-route fields for one receipt.
+
+    A verifier exception is an invalid verdict, never a 500. The batch
+    route records that verdict and continues; the single route returns it.
+    Callers build the response models so a schema bug still surfaces.
+    """
+    try:
+        result = verify_receipt_payload(receipt, path=Path("<api>"))
+    except Exception as exc:  # verifier must fail closed, never 500
+        return {
+            "valid": False,
+            "path": "<api>",
+            "schema_tag": "",
+            "kind": None,
+            "verdict": None,
+            "digest_convention": None,
+            "errors": [str(exc)],
+            "warnings": [],
+        }
+    kind = result["kind"]
+    verdict = result["verdict"]
+    return {
+        "valid": result["valid"],
+        "path": result["path"],
+        "schema_tag": result["schema"],
+        "kind": kind if isinstance(kind, str) else None,
+        "verdict": verdict if isinstance(verdict, str) else None,
+        "digest_convention": result["digest_convention"],
+        "errors": list(result["errors"]),
+        "warnings": list(result["warnings"]),
+    }
+
+
 def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
     """Receipt-verify + content-addressed fetch routes, kept out of
     ``create_app`` to keep its branch complexity under the repo's ruff cap."""
@@ -2759,29 +2793,7 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         operation_id="verify_receipt",
     )
     def verify_receipt(body: ReceiptVerifyRequest) -> ReceiptVerifyResponse:
-        try:
-            result = verify_receipt_payload(body.receipt, path=Path("<api>"))
-        except Exception as exc:  # verifier must fail closed, never 500
-            return ReceiptVerifyResponse(
-                valid=False,
-                path="<api>",
-                schema_tag="",
-                kind=None,
-                verdict=None,
-                digest_convention=None,
-                errors=[str(exc)],
-                warnings=[],
-            )
-        return ReceiptVerifyResponse(
-            valid=result["valid"],
-            path=result["path"],
-            schema_tag=result["schema"],
-            kind=result["kind"] if isinstance(result["kind"], str) else None,
-            verdict=result["verdict"] if isinstance(result["verdict"], str) else None,
-            digest_convention=result["digest_convention"],
-            errors=list(result["errors"]),
-            warnings=list(result["warnings"]),
-        )
+        return ReceiptVerifyResponse(**_receipt_verify_fields(body.receipt))
 
     @app.post(
         "/receipts/verify/batch",
@@ -2789,38 +2801,10 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         operation_id="verify_receipts_batch",
     )
     def verify_receipts_batch(body: ReceiptVerifyBatchRequest) -> ReceiptVerifyBatchResponse:
-        items: list[ReceiptVerifyBatchItem] = []
-        for i, receipt in enumerate(body.receipts):
-            try:
-                result = verify_receipt_payload(receipt, path=Path("<api>"))
-            except Exception as exc:  # verifier must fail item-local, never 500
-                items.append(
-                    ReceiptVerifyBatchItem(
-                        index=i,
-                        valid=False,
-                        path="<api>",
-                        schema_tag="",
-                        kind=None,
-                        verdict=None,
-                        digest_convention=None,
-                        errors=[str(exc)],
-                        warnings=[],
-                    )
-                )
-                continue
-            items.append(
-                ReceiptVerifyBatchItem(
-                    index=i,
-                    valid=result["valid"],
-                    path=result["path"],
-                    schema_tag=result["schema"],
-                    kind=result["kind"] if isinstance(result["kind"], str) else None,
-                    verdict=result["verdict"] if isinstance(result["verdict"], str) else None,
-                    digest_convention=result["digest_convention"],
-                    errors=list(result["errors"]),
-                    warnings=list(result["warnings"]),
-                )
-            )
+        items = [
+            ReceiptVerifyBatchItem(index=i, **_receipt_verify_fields(receipt))
+            for i, receipt in enumerate(body.receipts)
+        ]
         verified = sum(1 for it in items if it.valid)
         return ReceiptVerifyBatchResponse(
             verified=verified,

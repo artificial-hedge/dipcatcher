@@ -674,16 +674,10 @@ def _write_artifact(directory: Path, payload: dict[str, Any]) -> str:
     return str(target)
 
 
-def run_families(
-    config: Any,
-    family_ids: list[str],
-    *,
-    runners: Mapping[str, Runner] | None = None,
-    load_panel: Callable[[Any], PanelBundle] | None = None,
-    write_artifact: bool = True,
-    budget_s: float | None = None,
-) -> dict[str, Any]:
-    """Execute only the named eligible runners. Refuses the rest before any bench."""
+def _select_runners(
+    family_ids: list[str], budget_s: float | None
+) -> tuple[list[FamilyRunner], int]:
+    """Validate ids and eligibility before any bench runs; return runners and the estimate."""
     if not family_ids:
         raise FamilySurfaceError("refusing to run an empty family selection")
     checked = [_check_id(family_id) for family_id in family_ids]
@@ -701,6 +695,20 @@ def run_families(
             f"estimated resource_limit_s {estimated} exceeds budget_s {budget_s}; "
             "refusing before execution. This is an estimate, not a spend guarantee."
         )
+    return selected, estimated
+
+
+def run_families(
+    config: Any,
+    family_ids: list[str],
+    *,
+    runners: Mapping[str, Runner] | None = None,
+    load_panel: Callable[[Any], PanelBundle] | None = None,
+    write_artifact: bool = True,
+    budget_s: float | None = None,
+) -> dict[str, Any]:
+    """Execute only the named eligible runners. Refuses the rest before any bench."""
+    selected, estimated = _select_runners(family_ids, budget_s)
     needs_panel = any(runner.needs != "none" for runner in selected)
     bundle: PanelBundle | None = None
     if needs_panel:
