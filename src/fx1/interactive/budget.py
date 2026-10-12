@@ -293,7 +293,7 @@ class BudgetLedger:
         with self._lock:
             elapsed = self._elapsed()
             return (
-                f"budget: {_plain(elapsed)}s/{_plain(self._budget.max_wall_s)}s wall · "
+                f"budget: {elapsed:.0f}s/{_plain(self._budget.max_wall_s)}s wall · "
                 f"{len(self._step_ids)}/{self._budget.max_harness_steps} harness · "
                 f"{self._model_calls}/{self._budget.max_model_calls} model calls · "
                 f"tokens p={self._prompt_tokens} c={self._completion_tokens} · "
