@@ -36,12 +36,20 @@ import shutil
 import sys
 import threading
 import time
+import unicodedata
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, TextIO
+from typing import Any, Literal, TextIO
 
-from fx1.interactive.atomicstore import FileLock, StoreCorruptError, atomic_write_json, read_json
+from fx1.interactive.atomicstore import (
+    FileLock,
+    StoreCorruptError,
+    StoreError,
+    atomic_write_json,
+    read_json,
+)
+from fx1.interactive.redact import contains_secret
 
 _WIDTH_MIN = 40
 _WIDTH_MAX = 200
@@ -50,8 +58,27 @@ _HEIGHT_FALLBACK = 24
 _FENCE_MARKS = frozenset({"```", '"""'})
 _PASTE_MARKERS = ("\x1b[200~", "\x1b[201~")
 _PASTE_LIMIT = 200
-_ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[@-_]")
+# Longer sequences first. Lone ESC is last so it only catches what the others miss.
+_TERMINAL_UNSAFE_RE = re.compile(
+    r"\x1b\[[0-?]*[ -/]*[@-~]"
+    r"|\x1b\[[0-?]*[ -/]*$"
+    r"|\x9b[0-?]*[ -/]*[@-~]"
+    r"|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)?"
+    r"|\x9d[^\x07\x9c]*(?:\x07|\x9c)?"
+    r"|\x1b[PX^_][^\x1b]*(?:\x1b\\)?"
+    r"|[\x90\x98\x9e\x9f][^\x9c]*(?:\x9c)?"
+    r"|\x1b[@-_]"
+    r"|\x1b"
+    r"|[\x00-\x08\x0b-\x1f\x7f]"
+    r"|[\u0080-\u009f]"
+    r"|[\u200e\u200f\u202a-\u202e\u2066-\u2069]"
+)
+_SGR_RE = re.compile(r"\x1b\[[0-9;:]*m")
+_SGR_SLOT_RE = re.compile("\ue000(\\d+)\ue001")
 _FENCE_OPEN_RE = re.compile(r"^`{3}[A-Za-z0-9_+#.-]*$")
+_ZERO_WIDTH_CHARS = frozenset({0x200B, 0x200C, 0x200D, 0x2060, 0xFE0E, 0xFE0F, 0xFEFF})
+_STREAM_LOCKS: dict[int, threading.Lock] = {}
+_STREAM_LOCK_GUARD = threading.Lock()
 
 Completer = Callable[[str, int], str | None]
 
@@ -110,11 +137,17 @@ def detect_caps(
     stdout_tty = _stream_isatty(out_stream)
     term = env.get("TERM", "")
     width, height = _terminal_size(measure)
+    plain = plain_requested(env)
+    interactive = stdin_tty and stdout_tty and term != "dumb"
+    color = _color_enabled(env, stdout_tty=stdout_tty, term=term)
+    if plain:
+        interactive = False
+        color = False
     return TermCaps(
         stdin_tty=stdin_tty,
         stdout_tty=stdout_tty,
-        interactive=stdin_tty and stdout_tty and term != "dumb",
-        color=_color_enabled(env, stdout_tty=stdout_tty, term=term),
+        interactive=interactive,
+        color=color,
         unicode=_unicode_enabled(env, out_stream),
         width=width,
         height=height,
@@ -125,6 +158,57 @@ def detect_caps(
 def readline_is_libedit(doc: str | None) -> bool:
     """True when a ``readline`` module docstring says it is libedit."""
     return doc is not None and "libedit" in doc.lower()
+
+
+def plain_requested(env: Mapping[str, str] | None = None) -> bool:
+    """True when ``DIPCATCHER_PLAIN`` asks for a text-only terminal."""
+    source = os.environ if env is None else env
+    raw = source.get("DIPCATCHER_PLAIN")
+    if raw is None:
+        return False
+    return raw.strip().lower() not in {"", "0", "false", "no", "off"}
+
+
+def stream_lock(stream: TextIO) -> threading.Lock:
+    """Lock shared by :class:`ConsoleWriter` and the orb animator for ``stream``."""
+    key = id(stream)
+    with _STREAM_LOCK_GUARD:
+        lock = _STREAM_LOCKS.get(key)
+        if lock is None:
+            lock = threading.Lock()
+            _STREAM_LOCKS[key] = lock
+        return lock
+
+
+def sanitize_for_terminal(text: str, *, keep_sgr: bool = False) -> str:
+    """Drop terminal controls. Printable text, newlines, and tabs remain.
+
+    OSC (including clipboard and title writes), CSI other than SGR, DCS, APC,
+    PM, SOS, C1 controls, and bidi overrides are removed. The result is
+    idempotent. ``keep_sgr`` retains color/intensity SGR and nothing else.
+    """
+    if text == "":
+        return ""
+    if not keep_sgr:
+        return _TERMINAL_UNSAFE_RE.sub("", text)
+    return _sanitize_keeping_sgr(text)
+
+
+def _sanitize_keeping_sgr(text: str) -> str:
+    saved: list[str] = []
+
+    def grab(match: re.Match[str]) -> str:
+        saved.append(match.group(0))
+        return f"\ue000{len(saved) - 1}\ue001"
+
+    def put(match: re.Match[str]) -> str:
+        index = int(match.group(1))
+        if 0 <= index < len(saved):
+            return saved[index]
+        return ""
+
+    protected = _SGR_RE.sub(grab, text)
+    return _SGR_SLOT_RE.sub(put, _TERMINAL_UNSAFE_RE.sub("", protected))
 
 
 def readline_tab_binding(*, libedit: bool) -> str:
@@ -173,8 +257,8 @@ class Style:
 
     @staticmethod
     def strip_ansi(text: str) -> str:
-        """Remove CSI, OSC, and single-character Fe sequences."""
-        return _ANSI_RE.sub("", text)
+        """Remove terminal controls. Alias of :func:`sanitize_for_terminal`."""
+        return sanitize_for_terminal(text)
 
     def _paint(self, code: str, text: str) -> str:
         if not self._color or text == "":
@@ -194,7 +278,8 @@ def wrap_text(
     Blank lines stay blank. A fenced region (three backticks, optionally with a
     language tag, or three double-quotes, through the matching closer) is
     copied unchanged. Tokens and URLs split only when longer than the content
-    width. Display width is ``len`` (code points), not East-Asian width.
+    width. Display width follows Unicode East Asian Width; combining marks
+    and zero-width joiners contribute nothing.
     """
     safe = width if width > 0 else 1
     rendered: list[str] = []
@@ -205,11 +290,16 @@ def wrap_text(
     return "\n".join(rendered)
 
 
+def display_width(text: str) -> int:
+    """Terminal columns occupied by ``text`` (East Asian width, not ``len``)."""
+    return sum(_char_width(ch) for ch in text)
+
+
 def truncate_middle(text: str, width: int) -> str:
     """Shorten ``text`` to ``width`` with a single-character ellipsis in the middle."""
     if width <= 0:
         return ""
-    if len(text) <= width:
+    if display_width(text) <= width:
         return text
     if width == 1:
         return "…"
@@ -217,8 +307,8 @@ def truncate_middle(text: str, width: int) -> str:
     left = keep // 2
     right = keep - left
     if right == 0:
-        return text[:left] + "…"
-    return text[:left] + "…" + text[-right:]
+        return _take_prefix(text, left) + "…"
+    return _take_prefix(text, left) + "…" + _take_suffix(text, right)
 
 
 def format_duration(seconds: float) -> str:
@@ -268,7 +358,8 @@ def render_table(
     if not cols:
         return ""
     widths = _column_widths(cols, rows, width if width > 0 else 1)
-    lines = [_join_cells(_fit(col, w) for col, w in zip(cols, widths, strict=True))]
+    shown = [_fit(sanitize_for_terminal(col), w) for col, w in zip(cols, widths, strict=True)]
+    lines = [_join_cells(shown)]
     lines.append(_join_cells("-" * w for w in widths))
     for row in rows:
         lines.extend(_body_lines(cols, row, widths))
@@ -295,7 +386,7 @@ class ConsoleWriter:
         self._caps_fn = caps_fn if caps_fn is not None else (lambda: frozen)
         self._clock = time.monotonic if clock is None else clock
         self._status_interval_s = status_interval_s if status_interval_s > 0 else 0.0
-        self._lock = threading.Lock()
+        self._lock = stream_lock(self._out)
         self._prompt: str | None = None
         self._buffer_fn: Callable[[], str] | None = None
         self._status_active = False
@@ -325,9 +416,16 @@ class ConsoleWriter:
             self._caps = fresh
             return fresh
 
+    def emit(self, text: str = "") -> None:
+        """Thread-safe transcript line. Stays above a visible composer."""
+        self.line(text)
+
     def line(self, text: str = "", *, err: bool = False) -> None:
         stream = self._err if err else self._out
         with self._lock:
+            if stream is self._out and self._prompt is not None:
+                self._write_above_locked(text)
+                return
             self._end_status_locked(stream)
             self._emit_line_locked(stream, text)
 
@@ -342,11 +440,7 @@ class ConsoleWriter:
                 self._end_status_locked(self._out)
                 self._emit_line_locked(self._out, text)
                 return
-            self._out.write(self._erase_sequence())
-            self._status_active = False
-            self._status_seen = False
-            self._emit_line_locked(self._out, text)
-            self._redraw_locked()
+            self._write_above_locked(text)
 
     def status(self, text: str) -> None:
         """In-place status on an interactive TTY; a throttled plain line otherwise.
@@ -391,10 +485,7 @@ class ConsoleWriter:
     def write_prompt(self, prompt: str) -> None:
         """Write ``prompt`` with no newline, under the writer lock."""
         with self._lock:
-            if self._caps.color or self._caps.interactive:
-                shown = prompt
-            else:
-                shown = Style.strip_ansi(prompt)
+            shown = sanitize_for_terminal(prompt, keep_sgr=self._caps.color)
             self._out.write(shown)
             self._out.flush()
 
@@ -425,9 +516,18 @@ class ConsoleWriter:
             stream.write("\n")
         stream.flush()
 
+    def _write_above_locked(self, text: str) -> None:
+        self._out.write(self._erase_sequence())
+        self._status_active = False
+        self._status_seen = False
+        self._emit_line_locked(self._out, text)
+        self._redraw_locked()
+
     def _redraw_locked(self) -> None:
-        self._out.write(self._prompt or "")
-        self._out.write(self._buffer_text())
+        prompt = sanitize_for_terminal(self._prompt or "", keep_sgr=self._caps.color)
+        buffer = sanitize_for_terminal(self._buffer_text(), keep_sgr=self._caps.color)
+        self._out.write(prompt)
+        self._out.write(buffer)
         self._out.flush()
 
     def _buffer_text(self) -> str:
@@ -453,9 +553,7 @@ class ConsoleWriter:
         self._emit_line_locked(self._out, shown)
 
     def _render_user(self, text: str) -> str:
-        if self._caps.color:
-            return text
-        return Style.strip_ansi(text)
+        return sanitize_for_terminal(text, keep_sgr=self._caps.color)
 
     def _erase_sequence(self) -> str:
         if self._caps.interactive:
@@ -501,8 +599,10 @@ class InterruptTracker:
 
 
 def _skip_key_lines(line: str) -> bool:
-    """Default history filter: ``/keys`` lines can carry credentials."""
-    return line.startswith("/keys")
+    """Default history filter: ``/keys`` lines and credential-shaped text."""
+    if line.lstrip().casefold().startswith("/keys"):
+        return True
+    return contains_secret(line)
 
 
 class LineReader:
@@ -538,6 +638,11 @@ class LineReader:
         self._secret_fn = secret_fn
         self._paste_window_s = paste_window_s if paste_window_s > 0 else 0.0
         self._history: list[str] = []
+        self._history_base = 0
+        self._queued_lines: list[str] = []
+        self._stdin_prefix = ""
+        self._io_thread = threading.get_ident()
+        self._buffer_snapshot = ""
         self._matches: list[str] = []
         self._rl_ready = False
         self._completer_set = False
@@ -605,7 +710,7 @@ class LineReader:
         prompt_now = prompt
         while True:
             try:
-                line = self._next_message_line(
+                line = self._message_source(
                     prompt_now, idle=idle, poll_s=poll_s, job_active=job_active
                 )
             except EOFError:
@@ -614,6 +719,7 @@ class LineReader:
                 raise
             prompt_now = continuation_prompt
             if builder.feed(line):
+                self._queued_lines.extend(builder.pending)
                 return builder.text()
 
     def read_secret(self, prompt: str) -> str:
@@ -638,26 +744,41 @@ class LineReader:
         self._history = _load_history_file(
             self._history_path, limit=self._history_max, skip=self._skip_history
         )
+        self._history_base = len(self._history)
         if self._rl_ready:
             self._replay_history()
 
     def save_history(self) -> None:
-        """Atomically write history mode ``0600``. No-op without a path.
+        """Merge this session's new lines into the on-disk history and write it.
 
-        Consecutive duplicates and lines for which ``skip_history`` is true
-        are omitted. Only the newest ``history_max`` lines are kept.
+        The file lock covers the read-modify-write, so two live sessions append
+        instead of dropping each other's lines. Mode is ``0600``. No-op without
+        a path. ``history_max`` of zero clears the file. Secrets and ``/keys``
+        lines are omitted. A read-only directory raises; :meth:`close` does not.
         """
         path = self._history_path
         if path is None:
             return
-        payload = _clip_history(self._history, limit=self._history_max, skip=self._skip_history)
-        self._history = payload
+        if self._history_max <= 0:
+            self._store_history(path, [])
+            return
+        fresh = self._history[self._history_base :]
         with FileLock(path):
-            atomic_write_json(path, payload)
+            disk = _load_history_file(path, limit=self._history_max, skip=self._skip_history)
+            merged = _clip_history(
+                [*disk, *fresh], limit=self._history_max, skip=self._skip_history
+            )
+            atomic_write_json(path, merged)
+        self._history = merged
+        self._history_base = len(self._history)
+        if self._rl_ready:
+            self._replay_history()
 
     def close(self) -> None:
         try:
             self.save_history()
+        except (OSError, StoreError):
+            pass
         finally:
             self._detach_readline()
 
@@ -698,7 +819,8 @@ class LineReader:
         editing = self._should_edit(caps, polling)
         if editing:
             self._arm_readline()
-        buffer_fn = self._get_buffer if editing else None
+        self._io_thread = threading.get_ident()
+        buffer_fn = self._snapshot_buffer if editing else None
         self._writer.set_prompt_visible(prompt, buffer_fn)
         try:
             raw = self._dispatch(prompt, idle, poll_s, polling=polling, editing=editing)
@@ -729,14 +851,14 @@ class LineReader:
         if self._stdin is sys.stdin:
             return input(prompt)
         self._writer.write_prompt(prompt)
-        return _read_stream_line(self._stdin)
+        return self._prefixed(_read_stream_line(self._stdin))
 
     def _read_polled(self, prompt: str, idle: Callable[[], None] | None, poll_s: float) -> str:
         self._writer.write_prompt(prompt)
         timeout = poll_s if poll_s > 0 else 0.0
         while True:
             if _stdin_ready(self._stdin, timeout):
-                return _read_stream_line(self._stdin)
+                return self._prefixed(_read_stream_line(self._stdin))
             if idle is not None:
                 idle()
 
@@ -761,20 +883,76 @@ class LineReader:
             return []
         return self._drain_ready(self._paste_window_s)
 
+    def _message_source(
+        self,
+        prompt: str,
+        *,
+        idle: Callable[[], None] | None,
+        poll_s: float,
+        job_active: Callable[[], bool] | None,
+    ) -> str:
+        if self._queued_lines:
+            text = "\n".join(self._queued_lines)
+            self._queued_lines = []
+            return text
+        return self._next_message_line(prompt, idle=idle, poll_s=poll_s, job_active=job_active)
+
+    def _snapshot_buffer(self) -> str:
+        if threading.get_ident() != self._io_thread:
+            return self._buffer_snapshot
+        get = self._get_buffer
+        if get is None:
+            return self._buffer_snapshot
+        try:
+            value = get() or ""
+        except (OSError, RuntimeError):
+            return self._buffer_snapshot
+        self._buffer_snapshot = value
+        return value
+
+    def _store_history(self, path: Path, payload: list[str]) -> None:
+        with FileLock(path):
+            atomic_write_json(path, payload)
+        self._history = payload
+        self._history_base = len(payload)
+
     def _drain_ready(self, first_timeout: float) -> list[str]:
         found: list[str] = []
         timeout = first_timeout
-        while _stdin_ready(self._stdin, timeout):
+        while len(found) < _PASTE_LIMIT and _stdin_ready(self._stdin, timeout):
             extra = self._stdin.readline()
             if extra == "":
                 break
-            cleaned = _clean_line(extra)
-            found.append(cleaned)
-            self._remember(cleaned)
+            self._accept_paste(found, extra)
             timeout = 0.0
-            if len(found) >= _PASTE_LIMIT:
-                break
+        if self._stdin is not sys.stdin:
+            self._take_partial(found)
         return found
+
+    def _prefixed(self, raw: str) -> str:
+        prefix = self._stdin_prefix
+        self._stdin_prefix = ""
+        if prefix == "":
+            return raw
+        return prefix + raw
+
+    def _take_partial(self, found: list[str]) -> None:
+        raw = _scoop_partial_text(self._stdin)
+        if raw == "":
+            return
+        if "\x1b[201~" in raw:
+            self._accept_paste(found, raw)
+            return
+        self._stdin_prefix += raw
+
+    def _accept_paste(self, found: list[str], raw: str) -> None:
+        if raw == "" or len(found) >= _PASTE_LIMIT:
+            return
+        cleaned = _clean_line(raw)
+        if cleaned == "" and "\n" not in raw and "\r" not in raw:
+            return
+        found.append(cleaned)
+        self._remember(cleaned)
 
     def _remember(self, line: str) -> None:
         if self._history_max <= 0 or line == "" or self._skip_history(line):
@@ -785,6 +963,7 @@ class LineReader:
         overflow = len(self._history) - self._history_max
         if overflow > 0:
             del self._history[:overflow]
+            self._history_base = max(0, self._history_base - overflow)
         self._readline_add(line)
 
     def _collect(self, text: str) -> list[str]:
@@ -799,7 +978,9 @@ class LineReader:
         found: list[str] = []
         seen: set[str] = set()
         for word in options:
-            if word in seen or not word.startswith(text):
+            if not isinstance(word, str) or word in seen or not word.startswith(text):
+                continue
+            if contains_secret(word):
                 continue
             seen.add(word)
             found.append(word)
@@ -879,9 +1060,11 @@ class _MessageBuilder:
         self.parts: list[str] = []
         self.fence: str | None = None
         self.started = False
+        self.pending: list[str] = []
 
     def feed(self, text: str) -> bool:
         self.started = True
+        self.pending = []
         pieces = text.split("\n")
         pasted = len(pieces) > 1
         finished = False
@@ -889,6 +1072,7 @@ class _MessageBuilder:
             last = index + 1 == len(pieces)
             finished = self._take(piece, may_finish=last or not pasted)
             if finished and not last:
+                self.pending = pieces[index + 1 :]
                 return True
         return finished
 
@@ -1090,7 +1274,7 @@ def _wrap_line(line: str, width: int, indent: str, subsequent: str) -> list[str]
     first = True
     while pending:
         prefix = indent if first else subsequent
-        taken, pending = _take_row(pending, max(1, width - len(prefix)))
+        taken, pending = _take_row(pending, max(1, width - display_width(prefix)))
         if not taken:
             break
         lines.append(prefix + " ".join(taken))
@@ -1106,7 +1290,8 @@ def _take_row(words: list[str], budget: int) -> tuple[list[str], list[str]]:
     index = 0
     while index < len(words):
         word = words[index]
-        needed = len(word) if not row else len(word) + 1
+        word_w = display_width(word)
+        needed = word_w if not row else word_w + 1
         if needed <= budget - used:
             row.append(word)
             used += needed
@@ -1119,10 +1304,13 @@ def _take_row(words: list[str], budget: int) -> tuple[list[str], list[str]]:
 
 
 def _split_overflow(word: str, budget: int, tail: list[str]) -> tuple[list[str], list[str]]:
-    rest = word[budget:]
+    piece = _take_prefix(word, budget)
+    if piece == "":
+        piece = word[:1]
+    rest = word[len(piece) :]
     if rest:
-        return [word[:budget]], [rest, *tail]
-    return [word[:budget]], tail
+        return [piece], [rest, *tail]
+    return [piece], tail
 
 
 def _scaled(value: int, scale: int) -> str:
@@ -1149,10 +1337,18 @@ def _column_widths(cols: Sequence[str], rows: Sequence[Mapping[str, str]], width
     return _shrink_widths(natural, usable)
 
 
+def _cell_text(row: Mapping[str, str], col: str) -> str:
+    value: object = row.get(col, "")
+    if not isinstance(value, str):
+        return ""
+    return sanitize_for_terminal(value)
+
+
 def _natural_width(col: str, rows: Sequence[Mapping[str, str]]) -> int:
-    longest = len(col)
+    longest = display_width(sanitize_for_terminal(col))
     for row in rows:
-        longest = max(longest, len(str(row.get(col, ""))))
+        for part in _cell_text(row, col).split("\n"):
+            longest = max(longest, display_width(part))
     return max(longest, 1)
 
 
@@ -1194,7 +1390,7 @@ def _give_remainder(widths: list[int], left: int, raw: list[float], weights: lis
 
 def _body_lines(cols: Sequence[str], row: Mapping[str, str], widths: Sequence[int]) -> list[str]:
     blocks = [
-        _cell_lines(str(row.get(col, "")), width) for col, width in zip(cols, widths, strict=True)
+        _cell_lines(_cell_text(row, col), width) for col, width in zip(cols, widths, strict=True)
     ]
     height = max(len(block) for block in blocks)
     lines: list[str] = []
@@ -1219,22 +1415,67 @@ def _cell_lines(text: str, width: int) -> list[str]:
     return lines or [""]
 
 
+def _char_width(ch: str) -> int:
+    if ch == "\t":
+        return 1
+    if unicodedata.combining(ch):
+        return 0
+    code = ord(ch)
+    if code < 32 or 0x7F <= code <= 0x9F:
+        return 0
+    if code in _ZERO_WIDTH_CHARS:
+        return 0
+    if unicodedata.east_asian_width(ch) in {"W", "F"}:
+        return 2
+    return 1
+
+
+def _take_prefix(text: str, width: int) -> str:
+    if width <= 0:
+        return ""
+    used = 0
+    out: list[str] = []
+    for ch in text:
+        needed = _char_width(ch)
+        if used + needed > width:
+            break
+        out.append(ch)
+        used += needed
+    return "".join(out)
+
+
+def _take_suffix(text: str, width: int) -> str:
+    if width <= 0:
+        return ""
+    used = 0
+    chars: list[str] = []
+    for ch in reversed(text):
+        needed = _char_width(ch)
+        if used + needed > width:
+            break
+        chars.append(ch)
+        used += needed
+    chars.reverse()
+    return "".join(chars)
+
+
 def _fit(text: str, width: int) -> str:
     if width <= 0:
         return ""
-    if len(text) <= width:
-        return text.ljust(width)
+    current = display_width(text)
+    if current <= width:
+        return text + (" " * (width - current))
     return _clip_end(text, width)
 
 
 def _clip_end(text: str, width: int) -> str:
     if width <= 0:
         return ""
-    if len(text) <= width:
+    if display_width(text) <= width:
         return text
     if width == 1:
         return "…"
-    return text[: width - 1] + "…"
+    return _take_prefix(text, width - 1) + "…"
 
 
 def _join_cells(cells: Iterable[str]) -> str:
@@ -1276,6 +1517,67 @@ def _load_history_file(
     if not isinstance(payload, list):
         return []
     return _clip_history(payload, limit=limit, skip=skip)
+
+
+def _scoop_partial_text(stream: TextIO) -> str:
+    """Read a partial tty line that cooked ``readline`` will not deliver.
+
+    Bracketed paste often ends with ``ESC[201~`` and no trailing newline.
+    ``BufferedReader.peek`` is not used here: on a canonical tty it blocks
+    until a full line exists.
+    """
+    if os.name != "posix":
+        return ""
+    data = _scoop_partial_bytes(stream)
+    if data == b"":
+        return ""
+    encoding = getattr(stream, "encoding", None) or "utf-8"
+    return data.decode(encoding, errors="replace")
+
+
+def _scoop_partial_bytes(stream: TextIO) -> bytes:
+    fd = _stream_fd(stream)
+    if fd is None:
+        return b""
+    try:
+        import termios
+    except ImportError:
+        return b""
+    try:
+        saved = termios.tcgetattr(fd)
+    except termios.error:
+        return b""
+    return _read_noncanonical(fd, saved)
+
+
+def _read_noncanonical(fd: int, saved: Any) -> bytes:
+    import termios
+
+    updated = termios.tcgetattr(fd)
+    updated[3] = int(updated[3]) & ~termios.ICANON
+    cc = list(updated[6])
+    cc[termios.VMIN] = 0
+    cc[termios.VTIME] = 0
+    updated[6] = cc
+    try:
+        termios.tcsetattr(fd, termios.TCSANOW, updated)
+        return _nonblocking_read(fd)
+    finally:
+        with contextlib.suppress(termios.error):
+            termios.tcsetattr(fd, termios.TCSANOW, saved)
+
+
+def _nonblocking_read(fd: int) -> bytes:
+    import fcntl
+
+    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+    try:
+        return os.read(fd, 65536)
+    except BlockingIOError:
+        return b""
+    finally:
+        fcntl.fcntl(fd, fcntl.F_SETFL, flags)
 
 
 def _stdin_ready(stream: TextIO, timeout: float) -> bool:
@@ -1352,11 +1654,15 @@ __all__ = [
     "TermCaps",
     "bracketed_paste_supported",
     "detect_caps",
+    "display_width",
     "format_count",
     "format_duration",
+    "plain_requested",
     "readline_is_libedit",
     "readline_tab_binding",
     "render_table",
+    "sanitize_for_terminal",
+    "stream_lock",
     "truncate_middle",
     "wrap_text",
 ]
