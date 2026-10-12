@@ -135,3 +135,89 @@ assert sys.stdin.read() == '/superpower must-not-execute\\n'
     )
     assert result.returncode == 0, result.stderr
     assert not Path(env["FX1_CONFIG_DIR"]).exists()
+
+
+def test_version_prints_package_version(capsys: pytest.CaptureFixture[str]) -> None:
+    from fx1 import __version__
+
+    main(["version"])
+    main(["--version"])
+    output = capsys.readouterr().out
+    assert output == f"dipcatcher {__version__}\ndipcatcher {__version__}\n"
+
+
+def test_version_rejects_extra_arguments() -> None:
+    with pytest.raises(SystemExit) as stopped:
+        main(["version", "--help"])
+    assert stopped.value.code == 2
+
+
+def test_launcher_commands_are_the_front_door_names() -> None:
+    from dipcatcher_cli.app import LAUNCHER_COMMANDS
+
+    assert (
+        frozenset({"chat", "exec", "models", "version", "sessions", "resume"}) == LAUNCHER_COMMANDS
+    )
+
+
+def test_launcher_commands_do_not_shadow_lab_commands() -> None:
+    from typer.main import get_command
+
+    from dipcatcher_cli.app import LAUNCHER_COMMANDS
+    from quant_fund.cli.main import app
+
+    names = set(get_command(app).commands)
+    assert "research" in names
+    assert {"sessions", "resume"} <= LAUNCHER_COMMANDS
+    assert {"sessions", "resume"}.isdisjoint(names)
+    assert LAUNCHER_COMMANDS.isdisjoint(names)
+
+
+def test_quant_and_fxi_entry_points_stay_on_their_apps() -> None:
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert 'quant = "quant_fund.cli.main:app"' in text
+    assert 'fxi = "fx1.interactive.app:main"' in text
+
+
+def test_help_and_lab_passthrough_do_not_import_concierge(tmp_path: Path) -> None:
+    env = {**os.environ, "PYTHONPATH": str(ROOT / "src"), "NO_COLOR": "1"}
+    env["FX1_CONFIG_DIR"] = str(tmp_path / "unused-config")
+    script = """
+import sys
+from dipcatcher_cli.app import main
+for args in (
+    [],
+    ["--help"],
+    ["exec", "--help"],
+    ["models", "--help"],
+    ["sessions", "--help"],
+    ["resume", "--help"],
+    ["research", "--help"],
+):
+    try:
+        main(args)
+    except SystemExit:
+        pass
+    assert "fx1.interactive.concierge" not in sys.modules, args
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    help_run = subprocess.run(
+        [sys.executable, "-m", "dipcatcher_cli", "exec", "--help"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+    )
+    assert help_run.returncode == 0, help_run.stderr
+    assert "130" in help_run.stdout
+    assert "withheld" in help_run.stdout
+    assert not Path(env["FX1_CONFIG_DIR"]).exists()
