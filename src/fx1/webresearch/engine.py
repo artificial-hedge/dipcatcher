@@ -373,9 +373,7 @@ def group_claims(claims: list[Claim], *, threshold: float = 0.6) -> list[ClaimGr
             for right in group.claims[i + 1 :]:
                 if left.source_url == right.source_url:
                     continue
-                conflict = False
-                if _negated(left) != _negated(right):
-                    conflict = True
+                conflict = _negated(left) != _negated(right)
                 left_pol = _polarity(left)
                 right_pol = _polarity(right)
                 if left_pol and right_pol and left_pol != right_pol:

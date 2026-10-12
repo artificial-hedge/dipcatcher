@@ -95,6 +95,17 @@ def _now_iso() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
+def _flash_open_flags(write: bool) -> tuple[int, int]:
+    flags = os.O_RDONLY
+    mode = 0
+    if write:
+        flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT
+        flags |= getattr(os, "O_NONBLOCK", 0)
+        mode = 0o600
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    return flags, mode
+
+
 class FlashStore:
     """Append-only JSONL store for flash entries.
 
@@ -144,38 +155,37 @@ class FlashStore:
             os.fchmod(directory_fd, 0o700)
         return directory_fd
 
+    def _stat_target(self, directory_fd: int) -> os.stat_result | None:
+        try:
+            if directory_fd == _NO_DIRECTORY_FD:
+                return self._path.lstat()
+            return os.stat(
+                self._path.name,
+                dir_fd=directory_fd,
+                follow_symlinks=False,
+            )
+        except FileNotFoundError:
+            return None
+
+    def _open_target(self, directory_fd: int, flags: int, mode: int) -> int | None:
+        try:
+            if directory_fd == _NO_DIRECTORY_FD:
+                return os.open(self._path, flags, mode)
+            return os.open(self._path.name, flags, mode, dir_fd=directory_fd)
+        except FileNotFoundError:
+            return None
+
     def _open_file(self, *, write: bool) -> int | None:
         directory_fd = self._open_parent(create=write)
         if directory_fd is None:
             return None
         try:
-            try:
-                if directory_fd == _NO_DIRECTORY_FD:
-                    target_stat = self._path.lstat()
-                else:
-                    target_stat = os.stat(
-                        self._path.name,
-                        dir_fd=directory_fd,
-                        follow_symlinks=False,
-                    )
-            except FileNotFoundError:
-                target_stat = None
+            target_stat = self._stat_target(directory_fd)
             if target_stat is not None and not stat.S_ISREG(target_stat.st_mode):
                 raise ValueError("flash store path must be a regular file")
-
-            flags = os.O_RDONLY
-            mode = 0
-            if write:
-                flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT
-                flags |= getattr(os, "O_NONBLOCK", 0)
-                mode = 0o600
-            flags |= getattr(os, "O_NOFOLLOW", 0)
-            try:
-                if directory_fd == _NO_DIRECTORY_FD:
-                    file_fd = os.open(self._path, flags, mode)
-                else:
-                    file_fd = os.open(self._path.name, flags, mode, dir_fd=directory_fd)
-            except FileNotFoundError:
+            flags, mode = _flash_open_flags(write)
+            file_fd = self._open_target(directory_fd, flags, mode)
+            if file_fd is None:
                 return None
             opened_stat = os.fstat(file_fd)
             if not stat.S_ISREG(opened_stat.st_mode):

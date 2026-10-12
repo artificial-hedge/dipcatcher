@@ -106,7 +106,7 @@ def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Modu
     import torch
     from torch import nn
 
-    class _Block(nn.Module):
+    class _Block(nn.Module):  # type: ignore[misc, unused-ignore]
         def __init__(self) -> None:
             super().__init__()
             self.ln1 = nn.LayerNorm(dim)
@@ -137,7 +137,7 @@ def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Modu
             x = x + self.mlp["fc2"](nn.functional.gelu(self.mlp["fc1"](m), approximate="tanh"))
             return x
 
-    class _TinyLM(nn.Module):
+    class _TinyLM(nn.Module):  # type: ignore[misc, unused-ignore]
         def __init__(self) -> None:
             super().__init__()
             self.tok_emb = nn.Embedding(vocab, dim)
@@ -225,7 +225,7 @@ def train_tiny_lm(
         logits = model(window[:, :-1])
         loss = nn.functional.cross_entropy(logits[0], window[0, 1:])
         opt.zero_grad()
-        loss.backward()
+        loss.backward()  # type: ignore[no-untyped-call, unused-ignore]
         opt.step()
         final_loss = float(loss.item())
         done += 1

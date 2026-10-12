@@ -128,7 +128,7 @@ from fx1.serve.backends import (
     truncate_chunks,
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
-from fx1.serve.contract import API_VERSION
+from fx1.serve.contract import API_VERSION as API_VERSION
 from fx1.serve.evals import (
     EVAL_SAMPLING,
     EVAL_SUITES,
@@ -2744,6 +2744,11 @@ def _make_lifespan(
     return _lifespan
 
 
+def _reject_bad_receipt_sha(sha256: str) -> None:
+    if not _SHA256_HEX.fullmatch(sha256):
+        raise ApiError(422, "sha256 must be 64 lowercase hex", code="invalid_sha256")
+
+
 def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
     """Receipt-verify + content-addressed fetch routes, kept out of
     ``create_app`` to keep its branch complexity under the repo's ruff cap."""
@@ -2853,8 +2858,7 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         verifier is reported on ``X-Fx1-Receipt-Valid`` so a caller learns
         the receipt it fetched still verifies without a second round trip.
         """
-        if not _SHA256_HEX.fullmatch(sha256):
-            raise ApiError(422, "sha256 must be 64 lowercase hex", code="invalid_sha256")
+        _reject_bad_receipt_sha(sha256)
         if not receipt_index.available():
             raise ApiError(503, "receipts store unavailable", code="receipts_unavailable")
         path = receipt_index.lookup(sha256)
