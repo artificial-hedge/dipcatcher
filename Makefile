@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard dipcatcher-test dipcatcher-journeys dipcatcher-gate dipcatcher-evidence
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify receipt-integrity-scan audit-cli-mounts pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all native-lint native-test robustness-smoke fx1-coverage arch-guard dipcatcher-test dipcatcher-journeys dipcatcher-journeys-pty dipcatcher-relevance dipcatcher-gate dipcatcher-evidence
 
 .DEFAULT_GOAL := help
 
@@ -211,12 +211,22 @@ dipcatcher-test: ## dipcatcher harness: fx1 lane + launcher/lab CLI tests (xdist
 dipcatcher-journeys: ## frozen scripted chat-journey suite (not the five-user trial)
 	PYTHONPATH=src $(TEST_ENV) uv run pytest tests/fx1/journeys -q
 
-dipcatcher-gate: ## dipcatcher harness gate: lint + strict types (fx1, launcher) + tests + journeys
+dipcatcher-journeys-pty: ## pty/inproc journey suite via the script; JSON under EVIDENCE_DIR
+	@mkdir -p "$${EVIDENCE_DIR:-data/dipcatcher-evidence}"
+	PYTHONPATH=src $(TEST_ENV) uv run python scripts/dipcatcher_journeys_pty.py --out "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/journeys_pty.json"
+
+dipcatcher-relevance: ## frozen goal/data relevance suite; JSON under EVIDENCE_DIR
+	@mkdir -p "$${EVIDENCE_DIR:-data/dipcatcher-evidence}"
+	PYTHONPATH=src $(TEST_ENV) uv run python scripts/dipcatcher_relevance.py --out "$${EVIDENCE_DIR:-data/dipcatcher-evidence}/relevance.json"
+
+dipcatcher-gate: ## dipcatcher harness gate: lint + strict types + tests + both journey suites + relevance
 	uv run ruff check src tests
 	uv run ruff format --check src tests
 	uv run mypy --strict src/fx1 src/dipcatcher_cli
 	$(MAKE) dipcatcher-test
 	$(MAKE) dipcatcher-journeys
+	$(MAKE) dipcatcher-journeys-pty
+	$(MAKE) dipcatcher-relevance
 
 dipcatcher-evidence: ## write bounded evidence records (latency, soak, wheel smoke) to EVIDENCE_DIR
 	@mkdir -p "$${EVIDENCE_DIR:-data/dipcatcher-evidence}"

@@ -317,6 +317,17 @@ def _body(drive: _Drive, step: dict[str, Any]) -> str | None:
     return _finish(drive, step, seen)
 
 
+# Linux syscall numbers for a tty read blocked in the kernel. A SIGINT that
+# arrives while readline is between ``input()`` calls is dropped; the second
+# Ctrl-C has to land in one of these, and the product window is only 2s.
+_BLOCKING_READS = {
+    "x86_64": frozenset({"0", "7", "23", "270", "271"}),
+    "amd64": frozenset({"0", "7", "23", "270", "271"}),
+    "aarch64": frozenset({"63", "72", "73"}),
+    "arm64": frozenset({"63", "72", "73"}),
+}
+
+
 def _do_signal(proc: PtyProc, step: dict[str, Any], start: int, deadline: float) -> str | None:
     kind = step.get("signal")
     if kind not in {"INT", "INT2"}:
@@ -327,8 +338,74 @@ def _do_signal(proc: PtyProc, step: dict[str, Any], start: int, deadline: float)
     seen = proc.wait_until(lambda: _HINT in proc.region(start), deadline)
     if not seen:
         return f"Ctrl-C hint did not appear: {snippet(proc.region(start))}"
-    proc.interrupt()
-    return None
+    return _second_interrupt(proc, start, deadline)
+
+
+def _second_interrupt(proc: PtyProc, start: int, deadline: float) -> str | None:
+    """Send the second Ctrl-C once the prompt is back and the read is blocked."""
+    ready = proc.wait_until(lambda: _second_ctrl_c_ready(proc, start), deadline)
+    if ready:
+        proc.interrupt()
+        return None
+    if not proc.running():
+        return None
+    return f"prompt did not return after Ctrl-C: {snippet(proc.region(start))}"
+
+
+def _second_ctrl_c_ready(proc: PtyProc, start: int) -> bool:
+    if not _prompt_after_hint(proc, start) or not proc.running():
+        return False
+    if _syscall_visible(proc):
+        return _blocking_read(proc)
+    return _output_settled(proc)
+
+
+def _prompt_after_hint(proc: PtyProc, start: int) -> bool:
+    region = proc.region(start)
+    hint_at = region.rfind(_HINT)
+    if hint_at < 0:
+        return False
+    return PROMPT_RE.search(region[hint_at + len(_HINT) :]) is not None
+
+
+def _syscall_visible(proc: PtyProc) -> bool:
+    child = proc.proc
+    if child is None or os.name != "posix":
+        return False
+    if os.uname().machine not in _BLOCKING_READS:
+        return False
+    return Path(f"/proc/{child.pid}/syscall").exists()
+
+
+def _blocking_read(proc: PtyProc) -> bool:
+    """True when Linux shows the child blocked in a tty read."""
+    child = proc.proc
+    if child is None:
+        return False
+    numbers = _BLOCKING_READS[os.uname().machine]
+    try:
+        status = Path(f"/proc/{child.pid}/status").read_text(encoding="utf-8")
+        syscall = Path(f"/proc/{child.pid}/syscall").read_text(encoding="utf-8")
+    except OSError:
+        return False
+    if not _sleeping(status):
+        return False
+    return syscall.split(maxsplit=1)[0] in numbers
+
+
+def _sleeping(status: str) -> bool:
+    for line in status.splitlines():
+        if line.startswith("State:"):
+            parts = line.split()
+            return len(parts) > 1 and parts[1] == "S"
+    return False
+
+
+def _output_settled(proc: PtyProc) -> bool:
+    """Non-Linux fallback: the prompt is up and a short read added no bytes."""
+    before = len(proc.text)
+    proc.pump(0.05)
+    return len(proc.text) == before and proc.running()
 
 
 def _send_user(

@@ -30,6 +30,7 @@ data/gold/**
 !data/gold/.gitkeep
 data/metadata/**
 !data/metadata/.gitkeep
+data/dipcatcher-evidence/
 data/file_us/**
 data/file_uk/**
 data/binance_carry/**

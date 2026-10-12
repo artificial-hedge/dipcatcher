@@ -65,21 +65,22 @@ Pty hang guards are at least 60s (startup wait 90s). Do not tighten them.
 
 ## Latest measured result
 
-Two back-to-back runs, then a third run saved as the artifact, on
-2026-10-12 against git `1c2583ffc` (dirty worktree; other agents were
-editing `src/`). All three pass/fail sets were identical, including the
-reason on `J082`.
-`os.cpu_count()` reported 4. Python 3.12.3, Linux.
+One sequential script run on 2026-10-12 against git `c2e624f36` (worktree
+dirty only in `Makefile` and `tests/fx1/journeys_pty/pty_run.py`). The same
+100 journeys, including critical `J073` and `J082`, also passed inside three
+back-to-back `pytest tests/fx1 -n 3` lanes on that tree.
+`os.cpu_count()` reported 4. Python 3.12.3, Linux. Script wall time 21 s.
+Exit 0.
 
 | | |
 |---|---|
-| Suite SHA-256 | `cccb7768a2d779e5f7349c53caa005793f0328adfa7894afdef9d9fce245713a` |
-| Passed | 99 |
-| Failed | 1 |
+| Suite SHA-256 | `7ae3b65231d73a4190cd678606e4a39dc48f45e2555158025c31e9295e084ac2` |
+| Passed | 100 |
+| Failed | 0 |
 | Unavailable | 0 |
-| Pass rate | 0.99 (99/100) |
-| Critical | 20/21 passed. Failed: `J082` |
-| Script exit | 1 (a critical journey failed) |
+| Pass rate | 1.0 (100/100) |
+| Critical | 21/21 passed |
+| Script exit | 0 |
 | Lab executions declared | 8 (`J021`–`J026`, `J030` dataset inspect; `J064` `verify-research`) |
 | Pty / inproc | 24 / 76 |
 
@@ -93,20 +94,9 @@ reason on `J082`.
 | follow-ups | 10 | 10 | 0 | 0 |
 | verification | 10 | 10 | 0 | 0 |
 | cancellation | 10 | 10 | 0 | 0 |
-| recovery | 10 | 9 | 1 | 0 |
+| recovery | 10 | 10 | 0 | 0 |
 | export | 10 | 10 | 0 | 0 |
 
-### Failures
-
-| Id | Status | Reason | Attribution |
-|---|---|---|---|
-| J082 | failed | corrupt session file was reported but not quarantined | product defect |
-
-`J082` is critical. `/sessions` prints `invalid session JSON` and the prompt
-stays usable. `SessionStore.list` loads with `quarantine=False`, and
-`SessionStore.diagnose` has no caller, so the corrupt file stays in the
-session directory.
-
-No journey was skipped, xfailed, or rewritten to avoid this result.
+No failures. No journey was skipped, xfailed, or rewritten to avoid a result.
 `/data`, `/runs`, and `/models check` were present in `/help` on this tree,
 so those journeys ran instead of being marked unavailable.
