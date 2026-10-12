@@ -17,6 +17,7 @@ from quant_fund.research.family_surface import (
     parse_only,
     run_families,
     select_families,
+    verify_family_artifact,
 )
 
 
@@ -198,3 +199,32 @@ def test_run_families_rejects_duplicates_and_empty() -> None:
         run_families(SimpleNamespace(), [], write_artifact=False)
     with pytest.raises(FamilySurfaceError, match="duplicate"):
         run_families(SimpleNamespace(), ["cpcv", "cpcv"], write_artifact=False)
+
+
+def test_forbidden_metric_key_is_not_sealed(tmp_path: Path) -> None:
+    def bad() -> dict[str, float]:
+        return {"sharpe": 2.0}
+
+    with pytest.raises(FamilySurfaceError, match="forbidden"):
+        run_families(
+            SimpleNamespace(data=SimpleNamespace(root=tmp_path, source="synthetic")),
+            ["cpcv"],
+            runners={"cpcv": bad},
+        )
+    assert list(tmp_path.glob("family_runs/*")) == []
+
+
+def test_family_artifact_seal_fails_closed_on_tamper(tmp_path: Path) -> None:
+    import numpy as np
+
+    def cpcv() -> dict[str, np.float64]:
+        return {"n_folds": np.float64(2.0)}
+
+    config = SimpleNamespace(data=SimpleNamespace(root=tmp_path, source="synthetic"))
+    payload = run_families(config, ["cpcv"], runners={"cpcv": cpcv})
+    artifact = Path(payload["artifact"])
+    assert verify_family_artifact(artifact) == []
+    text = artifact.read_text(encoding="utf-8").replace("2.0", "9.0", 1)
+    artifact.write_text(text, encoding="utf-8")
+    errors = verify_family_artifact(artifact)
+    assert any("sha256" in error for error in errors)

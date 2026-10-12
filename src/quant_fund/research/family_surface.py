@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+import math
 import os
 import re
 import subprocess
@@ -580,15 +581,96 @@ def _artifact_dir(config: Any) -> Path | None:
     return Path(root) / "family_runs"
 
 
+def _reject_forbidden(family_id: str, cooked: Any) -> None:
+    from quant_fund.research.catalog.registry import family_blob_forbidden_metrics_absent
+
+    if not family_blob_forbidden_metrics_absent(cooked):
+        raise FamilySurfaceError(
+            f"{family_id} output contains a forbidden research metric key; "
+            "the partial record was not sealed"
+        )
+
+
+def _jsonable(value: Any) -> Any:
+    """Make bench output safe for JSON without turning a score into a headline."""
+    if isinstance(value, dict):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, bool) or value is None or isinstance(value, str):
+        return value
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return None
+        return value
+    item = getattr(value, "item", None)
+    if callable(item):
+        try:
+            return _jsonable(item())
+        except (TypeError, ValueError):
+            return str(value)
+    return str(value)
+
+
+def canonical_record_bytes(payload: Mapping[str, Any]) -> bytes:
+    """Bytes covered by ``sha256``. The artifact path and the digest are excluded."""
+    body = {
+        key: _jsonable(value) for key, value in payload.items() if key not in {"sha256", "artifact"}
+    }
+    return (json.dumps(body, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+
+
+def verify_family_record(payload: Mapping[str, Any]) -> list[str]:
+    """Check a partial record. An empty list means the digest matches and it stays unverified."""
+    errors: list[str] = []
+    if payload.get("schema") != RUN_SCHEMA:
+        errors.append("unexpected schema")
+    if payload.get("partial") is not True:
+        errors.append("partial must be true")
+    if payload.get("verified") is not False:
+        errors.append("verified must stay false until verify-research accepts a receipt")
+    digest = hashlib.sha256(canonical_record_bytes(payload)).hexdigest()
+    if payload.get("sha256") != digest:
+        errors.append("sha256 does not match the canonical record")
+    return errors
+
+
+def verify_family_artifact(path: Path) -> list[str]:
+    """Check the written file bytes and the canonical record inside them."""
+    if not path.is_file():
+        return ["artifact missing"]
+    raw = path.read_bytes()
+    errors: list[str] = []
+    sidecar = path.with_name(path.name + ".sha256")
+    actual = hashlib.sha256(raw).hexdigest()
+    if not sidecar.is_file():
+        errors.append("sha256 sidecar missing")
+    elif sidecar.read_text(encoding="utf-8").strip() != actual:
+        errors.append("file sha256 mismatch")
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+        return [*errors, "artifact is not json"]
+    if not isinstance(payload, dict):
+        return [*errors, "artifact is not an object"]
+    return [*errors, *verify_family_record(payload)]
+
+
 def _write_artifact(directory: Path, payload: dict[str, Any]) -> str:
     directory.mkdir(parents=True, exist_ok=True)
-    digest = payload["sha256"]
+    digest = str(payload["sha256"])
     target = directory / f"{digest[:16]}.json"
+    encoded = (json.dumps(_jsonable(payload), indent=2, sort_keys=True) + "\n").encode("utf-8")
     temporary = directory / f".{digest[:16]}.tmp"
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.write_bytes(encoded)
     os.chmod(temporary, 0o600)
     os.replace(temporary, target)
     os.chmod(target, 0o600)
+    sidecar = target.with_name(target.name + ".sha256")
+    sidecar.write_text(hashlib.sha256(encoded).hexdigest() + "\n", encoding="utf-8")
+    os.chmod(sidecar, 0o600)
     return str(target)
 
 
@@ -629,7 +711,9 @@ def run_families(
     overrides = dict(runners or {})
     for runner in selected:
         fn = overrides.get(runner.family_id, _callable(runner.target))
-        results[runner.family_id] = _invoke(runner, fn, bundle, config)
+        cooked = _jsonable(_invoke(runner, fn, bundle, config))
+        _reject_forbidden(runner.family_id, cooked)
+        results[runner.family_id] = cooked
     elapsed = time.monotonic() - started
     source = str(getattr(getattr(config, "data", None), "source", "unknown"))
     payload: dict[str, Any] = {
@@ -650,9 +734,7 @@ def run_families(
         ),
     }
     payload["artifact"] = ""
-    body = {key: value for key, value in payload.items() if key not in {"sha256", "artifact"}}
-    encoded = json.dumps(body, sort_keys=True, default=str).encode("utf-8")
-    payload["sha256"] = hashlib.sha256(encoded).hexdigest()
+    payload["sha256"] = hashlib.sha256(canonical_record_bytes(payload)).hexdigest()
     if write_artifact:
         directory = _artifact_dir(config)
         if directory is not None:
