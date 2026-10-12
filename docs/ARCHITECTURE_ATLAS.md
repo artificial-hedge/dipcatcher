@@ -230,7 +230,7 @@ flowchart LR
   fx1_interactive -->|4| fx1
   fx1_interactive -->|1| fx1_doctor
   fx1_interactive -->|8| fx1_flash
-  fx1_interactive -->|7| fx1_harness
+  fx1_interactive -->|8| fx1_harness
   fx1_interactive -->|8| fx1_honesty
   fx1_interactive -->|5| fx1_serve
   fx1_interactive -->|2| fx1_webresearch
@@ -765,7 +765,7 @@ sequenceDiagram
 | `fx1.honesty_audit` | 1 |
 | `fx1.hypotheses` | 1 |
 | `fx1.hypotheses_audit` | 1 |
-| `fx1.interactive` | 42 |
+| `fx1.interactive` | 45 |
 | `fx1.modelcard` | 1 |
 | `fx1.modelcard_audit` | 1 |
 | `fx1.mrm` | 1 |
@@ -839,7 +839,7 @@ sequenceDiagram
 | `quant_fund.utils` | 10 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13430**
+- Modules scanned: **13433**
 - Packages: **94**
 - Cross-package import edges: **394**
 

@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13430,
+  "module_count": 13433,
   "module_edges": [
     {
       "dst": "fx1",
@@ -2043,6 +2043,10 @@
       "src": "fx1.interactive.actions"
     },
     {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.actions"
+    },
+    {
       "dst": "fx1.serve.backends",
       "src": "fx1.interactive.actions"
     },
@@ -2099,6 +2103,10 @@
       "src": "fx1.interactive.chat_tools"
     },
     {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.chat_tools"
+    },
+    {
       "dst": "fx1.interactive.model_ux",
       "src": "fx1.interactive.chat_tools"
     },
@@ -2124,6 +2132,14 @@
     },
     {
       "dst": "fx1.interactive.chat_tools",
+      "src": "fx1.interactive.chat_turn"
+    },
+    {
+      "dst": "fx1.interactive.evidence",
+      "src": "fx1.interactive.chat_turn"
+    },
+    {
+      "dst": "fx1.interactive.evidence_ledger",
       "src": "fx1.interactive.chat_turn"
     },
     {
@@ -2179,7 +2195,15 @@
       "src": "fx1.interactive.concierge"
     },
     {
+      "dst": "fx1.interactive.data_ux",
+      "src": "fx1.interactive.concierge"
+    },
+    {
       "dst": "fx1.interactive.diagnostics_ux",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.evidence_ledger",
       "src": "fx1.interactive.concierge"
     },
     {
@@ -2215,6 +2239,10 @@
       "src": "fx1.interactive.concierge"
     },
     {
+      "dst": "fx1.interactive.runs_ux",
+      "src": "fx1.interactive.concierge"
+    },
+    {
       "dst": "fx1.interactive.session_ux",
       "src": "fx1.interactive.concierge"
     },
@@ -2228,6 +2256,10 @@
     },
     {
       "dst": "fx1.interactive.superpower_glue",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
       "src": "fx1.interactive.concierge"
     },
     {
@@ -2295,6 +2327,22 @@
       "src": "fx1.interactive.contracts"
     },
     {
+      "dst": "fx1.interactive.planner",
+      "src": "fx1.interactive.data_ux"
+    },
+    {
+      "dst": "fx1.interactive.policy",
+      "src": "fx1.interactive.data_ux"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.data_ux"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.data_ux"
+    },
+    {
       "dst": "fx1",
       "src": "fx1.interactive.diagnostics"
     },
@@ -2359,6 +2407,10 @@
       "src": "fx1.interactive.evidence_ledger"
     },
     {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.headless"
+    },
+    {
       "dst": "fx1.interactive.approvals",
       "src": "fx1.interactive.headless"
     },
@@ -2368,6 +2420,10 @@
     },
     {
       "dst": "fx1.interactive.concierge",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.interactive.data_ux",
       "src": "fx1.interactive.headless"
     },
     {
@@ -2424,6 +2480,10 @@
     },
     {
       "dst": "fx1.interactive.model_client",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.models_check",
       "src": "fx1.interactive.model_ux"
     },
     {
@@ -2563,6 +2623,10 @@
       "src": "fx1.interactive.profiles"
     },
     {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.redact"
+    },
+    {
       "dst": "fx1.honesty",
       "src": "fx1.interactive.run_report"
     },
@@ -2577,6 +2641,22 @@
     {
       "dst": "fx1.interactive.policy",
       "src": "fx1.interactive.run_report"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.runs_ux"
+    },
+    {
+      "dst": "fx1.interactive.jobs",
+      "src": "fx1.interactive.runs_ux"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.runs_ux"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.runs_ux"
     },
     {
       "dst": "fx1.interactive.atomicstore",
@@ -2615,6 +2695,10 @@
       "src": "fx1.interactive.shell"
     },
     {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.shell"
+    },
+    {
       "dst": "fx1.harness",
       "src": "fx1.interactive.superpower"
     },
@@ -2644,6 +2728,10 @@
     },
     {
       "dst": "fx1.interactive.jobs",
+      "src": "fx1.interactive.superpower_glue"
+    },
+    {
+      "dst": "fx1.interactive.planner",
       "src": "fx1.interactive.superpower_glue"
     },
     {
@@ -2680,6 +2768,10 @@
     },
     {
       "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.terminal"
+    },
+    {
+      "dst": "fx1.interactive.tty_guard",
       "src": "fx1.interactive.terminal"
     },
     {
@@ -62316,6 +62408,7 @@
     "fx1.interactive.concierge",
     "fx1.interactive.console",
     "fx1.interactive.contracts",
+    "fx1.interactive.data_ux",
     "fx1.interactive.diagnostics",
     "fx1.interactive.diagnostics_ux",
     "fx1.interactive.endpoint",
@@ -62337,6 +62430,7 @@
     "fx1.interactive.redact",
     "fx1.interactive.run_report",
     "fx1.interactive.runctx",
+    "fx1.interactive.runs_ux",
     "fx1.interactive.session_ux",
     "fx1.interactive.sessions",
     "fx1.interactive.shell",
@@ -62345,6 +62439,7 @@
     "fx1.interactive.system_prompt",
     "fx1.interactive.telemetry",
     "fx1.interactive.terminal",
+    "fx1.interactive.tty_guard",
     "fx1.interactive.usage_budget",
     "fx1.interactive.wizard",
     "fx1.modelcard",
@@ -75909,7 +76004,7 @@
     },
     {
       "dst": "fx1.harness",
-      "imports": 7,
+      "imports": 8,
       "src": "fx1.interactive"
     },
     {
@@ -75919,7 +76014,7 @@
     },
     {
       "dst": "fx1.interactive",
-      "imports": 141,
+      "imports": 163,
       "src": "fx1.interactive"
     },
     {
