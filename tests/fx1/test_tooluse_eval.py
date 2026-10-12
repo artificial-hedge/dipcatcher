@@ -119,7 +119,7 @@ def test_n_tasks_validated():
 
 
 def test_registry_reused_live_from_fx1_harness():
-    assert len(REGISTERED_TOOLS) == 31
+    assert len(REGISTERED_TOOLS) == 32
     assert tuple(c.name for c in HARNESS_REGISTRY) == REGISTERED_TOOLS
 
 

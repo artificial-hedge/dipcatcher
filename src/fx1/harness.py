@@ -164,6 +164,13 @@ HARNESS_REGISTRY: tuple[HarnessCommand, ...] = (
         timeout_s=900,
     ),
     _cmd(
+        "score-forecasts",
+        HarnessRole.EVALUATION,
+        "Score user-supplied volatility, quantile, or probability forecasts with proper "
+        "scores and seal a receipt.",
+        timeout_s=300,
+    ),
+    _cmd(
         "northset",
         HarnessRole.EVALUATION,
         "Order-book/candlestick slice: identities, OHLC vol, Kyle/Roll/OFI/VPIN.",

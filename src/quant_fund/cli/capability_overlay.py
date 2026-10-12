@@ -135,6 +135,14 @@ def _inputs(labels: list[str], timing: str) -> InputContract:
     }
 
 
+def _dataset_inputs(labels: list[str], timing: str) -> InputContract:
+    return {
+        "data_labels": list(labels),
+        "requires_dataset": True,
+        "availability_timing": timing,
+    }
+
+
 def _receipt_outputs(scores: list[str]) -> OutputContract:
     return {
         "scores": list(scores),
@@ -390,6 +398,74 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "evidence_class": "SYNTHETIC",
     },
     {
+        "id": "score-forecasts",
+        "version": "1",
+        "purpose": (
+            "Score user-supplied volatility, quantile, or probability forecasts with "
+            "proper scores (QLIKE, pinball, CRPS, Kupiec, Brier, log loss, ECE) and "
+            "write a sealed receipt."
+        ),
+        "tasks": [
+            "volatility_forecast_scoring",
+            "quantile_forecast_scoring",
+            "probability_forecast_scoring",
+            "forecast_calibration_check",
+        ],
+        "aliases": [
+            "score my forecasts",
+            "my volatility forecasts",
+            "forecast calibration",
+            "qlike",
+            "pinball",
+            "brier",
+        ],
+        "command": _command(
+            ["score-forecasts"],
+            "evaluation",
+            read_only=False,
+            writes=["receipts"],
+            timeout_s=300,
+        ),
+        "allowed_args": [
+            "--task",
+            "--data",
+            "--time-col",
+            "--realized-col",
+            "--forecast-col",
+            "--quantile-cols",
+            "--available-time-col",
+            "--out-dir",
+            "--seed",
+            "--receipt-version",
+        ],
+        "arg_hints": {
+            "--task": {"choices": ["volatility", "quantile", "probability"]},
+            "--data": {"path_role": "input"},
+            "--out-dir": {"path_role": "output_dir"},
+            "--seed": {"min": 0, "max": 2147483647},
+            "--receipt-version": _v2(),
+        },
+        "inputs": _dataset_inputs(
+            ["file", "SYNTHETIC"],
+            "forecast issue time (--available-time-col) must be strictly earlier than the "
+            "realized observation time; without it the receipt records that point-in-time "
+            "validity was NOT verified",
+        ),
+        "outputs": _receipt_outputs(
+            ["QLIKE", "MSE", "pinball", "CRPS", "Kupiec", "Brier", "log loss", "ECE"]
+        ),
+        "dependencies": [],
+        "post_checks": [_RECEIPT_CHECK],
+        "limits": _limits(300),
+        "qualification": _qualified(
+            [
+                "tests/unit/research/test_forecast_scoring.py",
+                "tests/unit/cli/test_score_cmds.py",
+            ]
+        ),
+        "evidence_class": "RESEARCH",
+    },
+    {
         "id": "rankic",
         "version": "1",
         "purpose": (
@@ -505,8 +581,8 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "arg_hints": {
             "--defects": _csv("float"),
             "--lanes": _csv("str"),
-            "--n-steps": {"min": 16, "max": 200},
-            "--n-seeds": {"min": 1, "max": 10},
+            "--n-steps": {"min": 16, "max": 200, "default": "200"},
+            "--n-seeds": {"min": 1, "max": 10, "default": "10"},
             "--receipt-version": _v2(),
         },
         "inputs": _inputs(["SYNTHETIC"], "n/a — seeded synthetic streams"),
