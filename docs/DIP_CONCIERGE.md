@@ -91,6 +91,7 @@ Slash commands:
 /superpower <goal> [--sync]     plan + coordinate eligible research families
 /session                        persisted session id, model, and job state
 /resume [id]                    reload a session; interrupted jobs stay stopped
+/budget                         show or set step, family, harness, and duration ceilings
 /superpower help                list the capability catalog
 /research <goal> [--budget-s N] [--max-sources N] [--queries a|b] [--sync]
 /status                         background job progress

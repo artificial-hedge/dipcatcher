@@ -89,6 +89,7 @@ conversation          plain text chats with the active model (tools: flash, web,
 /session              show the persisted session id, model, and job state
 /resume [id]          reload a session; an interrupted job is not restarted
 /evidence             show receipt paths from the last orchestration job
+/budget               show or set step, family, harness, and duration ceilings
 /keys list|set|remove  manage model endpoints (presence-only)
 /harness list|describe|run  registered dipcatcher harness commands (fail-closed)
 /help                 this help
@@ -201,6 +202,7 @@ class Concierge:
         self._job: BackgroundJob | None = None
         self._session_store = session_store
         self._session: dict[str, Any] | None = None
+        self._budget_overrides: dict[str, Any] = {}
         self.resume_notice = ""
 
     # -- output helpers ------------------------------------------------------
@@ -394,6 +396,8 @@ class Concierge:
         self._messages = [
             dict(item) for item in record.get("messages") or [] if isinstance(item, dict)
         ]
+        stored_budget = record.get("budget")
+        self._budget_overrides = dict(stored_budget) if isinstance(stored_budget, dict) else {}
         self._say(f"resumed session {record.get('id')} on model {self.model}")
         return False
 
@@ -434,6 +438,48 @@ class Concierge:
         self._say("\n".join(paths) if paths else "no receipt paths on the last job")
         return False
 
+    def _cmd_budget(self, rest: str) -> bool:
+        """Show the run ceilings, or store one override on this session."""
+        from fx1.interactive.budgets import BudgetError, RunBudget, merge_budget
+
+        tokens = shlex.split(rest)
+        if not tokens:
+            budget = self._run_budget()
+            if budget is None:
+                self._say("budget unavailable")
+                return False
+            public = budget.as_public()
+            self._say(
+                "budget "
+                f"max_steps={public['max_steps']} max_seconds={public['max_seconds']} "
+                f"max_families={public['max_families']} max_harness={public['max_harness']} "
+                f"max_retries={public['max_retries']}; {public['spend_cap_note']}"
+            )
+            return False
+        if len(tokens) != 2:
+            raise ValueError(
+                "usage: /budget [max-steps N | max-seconds N | max-families N | "
+                "max-harness N | max-retries N]"
+            )
+        key = tokens[0].replace("-", "_")
+        if key not in {"max_steps", "max_seconds", "max_families", "max_harness", "max_retries"}:
+            raise ValueError(f"unknown budget field {tokens[0]!r}")
+        try:
+            number: int | float = float(tokens[1]) if key == "max_seconds" else int(tokens[1])
+        except ValueError as exc:
+            raise ValueError(f"{tokens[0]} needs a number") from exc
+        current = dict(self._budget_overrides)
+        current[key] = number
+        try:
+            merge_budget(RunBudget(), current)
+        except BudgetError as exc:
+            raise ValueError(str(exc)) from exc
+        self._budget_overrides = current
+        if isinstance(self._session, dict):
+            self._session["budget"] = dict(current)
+        self._say(f"budget {key}={number}")
+        return False
+
     def _persist_session(self) -> None:
         store = self._session_store
         if store is None:
@@ -454,6 +500,8 @@ class Concierge:
         current.setdefault("resume", "manual" if state == "interrupted" else "none")
         current.setdefault("steps_completed", [])
         self._session["job"] = current
+        if self._budget_overrides:
+            self._session["budget"] = dict(self._budget_overrides)
         store.save(self._session)
 
     def _cmd_keys(self, rest: str) -> bool:
@@ -624,6 +672,11 @@ class Concierge:
         except ImportError:
             return None
         budget = RunBudget()
+        overrides = {str(key): value for key, value in self._budget_overrides.items()}
+        if overrides:
+            from fx1.interactive.budgets import merge_budget
+
+            return merge_budget(budget, overrides)
         budget.validate()
         return budget
 

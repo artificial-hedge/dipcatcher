@@ -67,13 +67,16 @@ class FakeHarness:
         if name == "families":
             goal = ""
             args = extra_args or []
+            limit = 4
             if "--select" in args:
                 goal = args[args.index("--select") + 1].lower()
+            if "--max" in args:
+                limit = int(args[args.index("--max") + 1])
             selected = [
                 {"id": family_id, "executable": True, "qualification": "required"}
                 for family_id in ("volatility", "conformal")
                 if family_id in goal
-            ]
+            ][:limit]
             payload = {
                 "schema": "dipcatcher.family_surface.v1",
                 "selected": selected,
@@ -1027,3 +1030,19 @@ def test_background_job_drain_and_cancel() -> None:
     assert ("working", "step 1") in events
     assert job.result == "done-after-cancel"
     assert job.drain() == []  # drained once
+
+
+def test_budget_command_limits_family_selection(env: Path, tmp_path: Path) -> None:
+    del env
+    harness = FakeHarness()
+    concierge, out = make_concierge(tmp_path, harness=harness)
+    concierge.handle_line("/budget max-families 1")
+    concierge.handle_line("/superpower run the conformal volatility benchmark --sync")
+    text = joined(out)
+    assert "budget max_families=1" in text
+    research = [call for call in harness.calls if call[0] == "research"]
+    assert research
+    only = research[0][1]
+    assert only is not None
+    assert only[0] == "--only"
+    assert "," not in only[1]
