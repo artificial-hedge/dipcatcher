@@ -2,37 +2,61 @@
 
 One JSON file per session, under ``$FX1_SESSION_DIR`` or ``~/.fx1/sessions``.
 Records use schema version 1 and are written atomically with mode 0600.
-Credential-like fields are removed, and secret-shaped strings are redacted,
-before a record is written or returned.
+The directory is ``0700``. A newer schema is never overwritten; schema 0 is
+migrated on read. Credential-like fields are removed, and secret-shaped
+strings are redacted, before a record is written or returned.
+``reserve`` holds one session exclusively so a second process is told it is busy.
 """
 
 from __future__ import annotations
 
+import contextlib
 import copy
 import json
 import os
 import re
 import tempfile
+import threading
 import uuid
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TypeGuard, cast
+
+from fx1.interactive.atomicstore import (
+    FileLock,
+    StoreError,
+    StoreLockTimeout,
+    ensure_private_dir,
+    quarantine,
+)
 
 SESSION_SCHEMA = 1
 
 _MODELS = frozenset({"fx1", "fx1-lite"})
 _JOB_STATES = frozenset({"idle", "running", "interrupted", "finished"})
 _JOB_RESUMES = frozenset({"manual", "none"})
-_SECRET_MARKERS = ("api_key", "authorization", "password", "secret", "token", "key")
 _TOP_LEVEL_RAW = frozenset({"id", "created_at", "updated_at"})
 _SESSION_ID = re.compile(r"^[a-f0-9]{32}$")
+_SK_TOKEN = re.compile(r"sk-[A-Za-z0-9_\-]{6,}")
+_SECRET_NAME_RE = re.compile(
+    r"(?i)(?:^|[^a-z0-9])"
+    r"(?:api[_-]?key|apikey|private[_-]?key|secret|passw(?:or)?d|authorization|"
+    r"credentials?|token|key)"
+    r"(?:[^a-z0-9]|$)"
+)
 _MODE = 0o600
+_LOCK_TIMEOUT_S = 10.0
 _REDACTED = "[redacted]"
+_HELD_PATHS = threading.local()
 
 
 class SessionError(ValueError):
     """A session record could not be stored or read."""
+
+
+class SessionBusy(SessionError):
+    """Another writer holds this session, or this write lost the race."""
 
 
 def _utc_now() -> str:
@@ -59,8 +83,13 @@ def _schema_ok(value: object) -> bool:
 
 
 def _name_is_secret(name: str) -> bool:
-    lowered = name.lower()
-    return any(marker in lowered for marker in _SECRET_MARKERS)
+    """True when *name* has a credential word as its own component.
+
+    ``SERVICE_TOKEN`` matches. ``TOKENIZERS_PARALLELISM`` does not: ``token``
+    is only a prefix of a longer word, and treating it as a secret redacts
+    ordinary chat text such as ``false``.
+    """
+    return _SECRET_NAME_RE.search(name) is not None
 
 
 def _environment_secrets() -> tuple[str, ...]:
@@ -89,11 +118,9 @@ def _contains_env_secret(value: str, secrets: tuple[str, ...]) -> bool:
 
 
 def _redact_text(value: str, secrets: tuple[str, ...]) -> str:
-    if value.startswith("sk-") and len(value) > 8:
-        return _REDACTED
     if _contains_env_secret(value, secrets):
         return _REDACTED
-    return value
+    return _SK_TOKEN.sub(_REDACTED, value)
 
 
 def scrub_secret_text(text: str) -> str:
@@ -110,7 +137,7 @@ def scrub_secret_text(text: str) -> str:
     for secret in secrets:
         if secret in scrubbed:
             scrubbed = scrubbed.replace(secret, _REDACTED)
-    return scrubbed
+    return _SK_TOKEN.sub(_REDACTED, scrubbed)
 
 
 def _keep_literal(key: str, item: Any, *, top_level: bool) -> bool:
@@ -214,7 +241,7 @@ def _copy_message(message: dict[str, Any]) -> dict[str, Any]:
         raise SessionError("message is not storable") from exc
     if not isinstance(cloned, dict):
         raise SessionError("message must be an object")
-    return cast("dict[str, Any]", cloned)
+    return cloned
 
 
 def _require_save_record(record: object) -> str:
@@ -237,6 +264,7 @@ def _prepare_save(record: dict[str, Any], session_id: str) -> dict[str, Any]:
     prepared["schema"] = SESSION_SCHEMA
     prepared["id"] = session_id
     prepared["updated_at"] = _utc_now()
+    prepared["revision"] = _as_revision(record.get("revision")) + 1
     return prepared
 
 
@@ -253,13 +281,46 @@ def _interrupt_job(job: object) -> None:
 def _load_json_object(path: Path) -> dict[str, Any]:
     try:
         text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as exc:
+    except UnicodeError as exc:
+        quarantine(path)
+        raise SessionError("unreadable session") from exc
+    except OSError as exc:
         raise SessionError("unreadable session") from exc
     try:
         parsed = json.loads(text)
     except json.JSONDecodeError as exc:
+        quarantine(path)
         raise SessionError("invalid session JSON") from exc
     return _as_record(parsed)
+
+
+def _upgrade_session(parsed: dict[str, Any]) -> dict[str, Any]:
+    """Migrate schema 0 (or a missing schema) into the current record shape."""
+    schema = parsed.get("schema", 0)
+    if schema == SESSION_SCHEMA:
+        return parsed
+    if not _older_schema(schema):
+        return parsed
+    if not _valid_id(parsed.get("id")) or parsed.get("model") not in _MODELS:
+        return parsed
+    upgraded = dict(parsed)
+    upgraded["schema"] = SESSION_SCHEMA
+    upgraded.setdefault("status", "open")
+    upgraded.setdefault("messages", [])
+    if "job" not in upgraded:
+        upgraded["job"] = {
+            "state": "idle",
+            "id": "",
+            "steps_completed": [],
+            "resume": "none",
+        }
+    return upgraded
+
+
+def _older_schema(schema: object) -> bool:
+    if isinstance(schema, bool) or not isinstance(schema, int):
+        return False
+    return 0 <= schema < SESSION_SCHEMA
 
 
 def _looks_like_session_file(path: Path) -> bool:
@@ -294,10 +355,26 @@ def _record_sort_key(record: Mapping[str, Any]) -> tuple[int, float, str, str]:
 
 
 def _ensure_directory(directory: Path) -> None:
+    if directory.is_symlink():
+        raise SessionError("refusing to follow symlink session directory")
     try:
-        directory.mkdir(parents=True, exist_ok=True)
-    except OSError as exc:
+        ensure_private_dir(directory)
+    except (OSError, StoreError) as exc:
         raise SessionError("unable to create session directory") from exc
+
+
+def _fsync_dir(directory: Path) -> None:
+    if os.name != "posix":
+        return
+    try:
+        fd = os.open(directory, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        with contextlib.suppress(OSError):
+            os.fsync(fd)
+    finally:
+        os.close(fd)
 
 
 def _dump(fd: int, payload: Mapping[str, Any]) -> None:
@@ -313,6 +390,7 @@ def _dump_and_replace(fd: int, tmp_path: Path, path: Path, payload: Mapping[str,
         _dump(fd, payload)
         os.chmod(tmp_path, _MODE)
         os.replace(tmp_path, path)
+        _fsync_dir(path.parent)
     except (OSError, TypeError, ValueError) as exc:
         raise SessionError("unable to save session") from exc
 
@@ -322,6 +400,66 @@ def _unlink_quiet(path: Path) -> None:
         path.unlink()
     except FileNotFoundError:
         return
+
+
+def _lock_path(session_path: Path) -> Path:
+    """Lock sibling of the session directory so the directory stays json-only."""
+    return session_path.parent.parent / ".fx1-session-locks" / session_path.stem
+
+
+@contextlib.contextmanager
+def _exclusive(path: Path, *, timeout_s: float) -> Iterator[None]:
+    """Hold the session lock. Re-entrant for the thread that already holds it."""
+    key = str(path)
+    held: set[str] = getattr(_HELD_PATHS, "paths", None) or set()
+    if key in held:
+        yield
+        return
+    lock = FileLock(_lock_path(path), timeout_s=timeout_s)
+    try:
+        lock.__enter__()
+    except StoreLockTimeout as exc:
+        raise SessionBusy("session is busy") from exc
+    current = set(held)
+    current.add(key)
+    _HELD_PATHS.paths = current
+    try:
+        yield
+    finally:
+        current.discard(key)
+        _HELD_PATHS.paths = current
+        lock.__exit__(None, None, None)
+
+
+def _refuse_newer_schema(path: Path) -> None:
+    if not path.is_file() or path.is_symlink():
+        return
+    try:
+        existing = _load_json_object(path)
+    except SessionError:
+        return
+    schema = existing.get("schema")
+    if isinstance(schema, bool) or not isinstance(schema, int):
+        return
+    if schema > SESSION_SCHEMA:
+        raise SessionError("refusing to overwrite newer session schema")
+
+
+def _refuse_stale(path: Path, record: Mapping[str, Any]) -> None:
+    if not path.is_file() or path.is_symlink():
+        return
+    try:
+        existing = _load_json_object(path)
+    except SessionError:
+        return
+    if _as_revision(existing.get("revision")) != _as_revision(record.get("revision")):
+        raise SessionBusy("session is busy")
+
+
+def _as_revision(value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return 0
+    return value
 
 
 def _chmod_0600(path: Path) -> None:
@@ -352,6 +490,8 @@ class SessionStore:
             self.directory = Path(directory).expanduser()
 
     def _resolved_directory(self) -> Path:
+        if self.directory.is_symlink():
+            raise SessionError("refusing to follow symlink session directory")
         return self.directory.resolve()
 
     def _path_for(self, session_id: str) -> Path:
@@ -364,7 +504,10 @@ class SessionStore:
         return path
 
     def _read_file(self, path: Path, *, expected_id: str | None) -> dict[str, Any]:
-        parsed = _load_json_object(path)
+        if path.is_symlink():
+            quarantine(path)
+            raise SessionError("refusing to follow symlink session file")
+        parsed = _upgrade_session(_load_json_object(path))
         if not _schema_ok(parsed.get("schema")):
             raise SessionError("unsupported session schema")
         session_id = parsed.get("id")
@@ -375,7 +518,7 @@ class SessionStore:
         return _as_record(_redact(parsed))
 
     def _candidate(self, path: Path) -> dict[str, Any] | None:
-        if not _looks_like_session_file(path):
+        if path.is_symlink() or not _looks_like_session_file(path):
             return None
         try:
             record = self._read_file(path, expected_id=None)
@@ -405,6 +548,7 @@ class SessionStore:
             },
             "created_at": now,
             "updated_at": now,
+            "revision": 1,
         }
         stored = _as_record(_redact(record))
         session_id = stored.get("id")
@@ -418,6 +562,12 @@ class SessionStore:
         """Redact and atomically replace the session file."""
         session_id = _require_save_record(record)
         path = self._path_for(session_id)
+        with _exclusive(path, timeout_s=_LOCK_TIMEOUT_S):
+            return self._save_locked(record, session_id, path)
+
+    def _save_locked(self, record: dict[str, Any], session_id: str, path: Path) -> Path:
+        _refuse_newer_schema(path)
+        _refuse_stale(path, record)
         prepared = _prepare_save(record, session_id)
         _atomic_write(path.parent, path, prepared)
         record.clear()
@@ -427,9 +577,18 @@ class SessionStore:
     def load(self, session_id: str) -> dict[str, Any]:
         """Load one session. Missing, corrupt, or foreign files raise."""
         path = self._path_for(session_id)
-        if not path.is_file():
+        if not path.is_file() and not path.is_symlink():
             raise SessionError("missing session")
         return self._read_file(path, expected_id=session_id)
+
+    @contextlib.contextmanager
+    def reserve(self, session_id: str) -> Iterator[dict[str, Any]]:
+        """Exclusively resume *session_id*. A second process gets ``SessionBusy``."""
+        path = self._path_for(session_id)
+        if not path.is_file() and not path.is_symlink():
+            raise SessionError("missing session")
+        with _exclusive(path, timeout_s=0.0):
+            yield self.load(session_id)
 
     def latest(self) -> dict[str, Any] | None:
         """Return the valid session with the newest ``updated_at``."""
@@ -438,7 +597,7 @@ class SessionStore:
             return None
         best: dict[str, Any] | None = None
         best_key: tuple[int, float, str, str] | None = None
-        for path in directory.iterdir():
+        for path in list(directory.iterdir()):
             record = self._candidate(path)
             if record is None:
                 continue
@@ -454,15 +613,34 @@ class SessionStore:
         Idle and finished jobs keep their state. Completed steps are left in
         place. This method does not resume or retry the job.
         """
-        record = self.load(session_id)
-        _interrupt_job(record.get("job"))
-        self.save(record)
-        return record
+        path = self._path_for(session_id)
+        with _exclusive(path, timeout_s=_LOCK_TIMEOUT_S):
+            record = self.load(session_id)
+            _interrupt_job(record.get("job"))
+            self.save(record)
+            return record
 
     def append_turn(self, session_id: str, message: dict[str, Any]) -> dict[str, Any]:
         """Append one redacted message and save the session."""
         if not isinstance(message, dict):
             raise SessionError("message must be an object")
+        path = self._path_for(session_id)
+        with _exclusive(path, timeout_s=_LOCK_TIMEOUT_S):
+            return self._append_locked(session_id, message)
+
+    def diagnose(self) -> tuple[str, ...]:
+        """Quarantine corrupt session files and report problems. Listing does not raise."""
+        directory = self._resolved_directory()
+        if not directory.is_dir():
+            return ()
+        notes: list[str] = []
+        for path in sorted(directory.iterdir()):
+            note = self._diagnose_one(path)
+            if note:
+                notes.append(note)
+        return tuple(notes)
+
+    def _append_locked(self, session_id: str, message: dict[str, Any]) -> dict[str, Any]:
         record = self.load(session_id)
         messages = record.get("messages")
         if not isinstance(messages, list):
@@ -470,3 +648,15 @@ class SessionStore:
         messages.append(_copy_message(message))
         self.save(record)
         return record
+
+    def _diagnose_one(self, path: Path) -> str | None:
+        if path.is_symlink():
+            quarantine(path)
+            return f"{path.name}: refused symlink"
+        if not _looks_like_session_file(path):
+            return None
+        try:
+            self._read_file(path, expected_id=None)
+        except SessionError as exc:
+            return f"{path.name}: {exc}"
+        return None
