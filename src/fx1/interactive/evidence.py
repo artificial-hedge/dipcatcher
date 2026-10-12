@@ -11,6 +11,7 @@ filesystem; the path sets passed by the caller are the run record.
 from __future__ import annotations
 
 import re
+import unicodedata
 
 __all__ = ["EvidenceError", "ground_summary"]
 
@@ -21,7 +22,46 @@ _CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bverification\s+passed\b", re.IGNORECASE),
     re.compile(r"\bverified\s+receipt\b", re.IGNORECASE),
     re.compile(r"\breceipt\s+verified\b", re.IGNORECASE),
+    re.compile(r"\bconfirmed\s+by\s+receipt\b", re.IGNORECASE),
     re.compile(r"\bverified\s*=\s*true\b", re.IGNORECASE),
+    # Bare words last so a longer phrase is consumed first. Lookbehind keeps
+    # "unverified" and "unproven" from matching.
+    re.compile(r"(?<![A-Za-z])proven\b", re.IGNORECASE),
+    re.compile(r"(?<![A-Za-z])verified\b", re.IGNORECASE),
+)
+# Zero-width and homoglyph disguises are folded before the claim scan.
+_CONFUSABLES = str.maketrans(
+    {
+        "\u0430": "a",
+        "\u0410": "a",
+        "\u0435": "e",
+        "\u0415": "e",
+        "\u043e": "o",
+        "\u041e": "o",
+        "\u0440": "p",
+        "\u0420": "p",
+        "\u0441": "c",
+        "\u0421": "c",
+        "\u0443": "y",
+        "\u0423": "y",
+        "\u0445": "x",
+        "\u0425": "x",
+        "\u0456": "i",
+        "\u0406": "i",
+        "\u0455": "s",
+        "\u0501": "d",
+        "\u0475": "v",
+        "\u03bd": "v",
+    }
+)
+_LOOSE_VERIFIED = re.compile(
+    r"(?<![A-Za-z])v[\W_]{0,3}e[\W_]{0,3}r[\W_]{0,3}i[\W_]{0,3}"
+    r"f[\W_]{0,3}i[\W_]{0,3}e[\W_]{0,3}d(?![A-Za-z])",
+    re.IGNORECASE,
+)
+_LOOSE_PROVEN = re.compile(
+    r"(?<![A-Za-z])p[\W_]{0,3}r[\W_]{0,3}o[\W_]{0,3}v[\W_]{0,3}e[\W_]{0,3}n(?![A-Za-z])",
+    re.IGNORECASE,
 )
 
 _STUB = "unverified and partial result"
@@ -68,8 +108,10 @@ def ground_summary(
     An empty summary is returned unchanged. Secret substrings of length 6
     or more are replaced with ``[redacted]``. Verification phrasing is
     rewritten to say the result is unverified and partial unless that line
-    names a path in ``verified_receipts``. Cited tokens that end in
-    ``.json`` or contain ``receipts/`` and are absent from both path sets
+    names a path in ``verified_receipts``. Bare ``verified`` / ``proven``,
+    and zero-width, spaced, or homoglyph disguises of those words, count.
+    Cited tokens that end in ``.json`` or contain ``receipts/`` and are
+    absent from both path sets
     produce a final ``evidence:`` line. Forbidden headline tokens raise
     :class:`EvidenceError` instead of being paraphrased.
     """
@@ -158,15 +200,41 @@ def _replace_claims(line: str) -> str:
     return body + ending
 
 
-def _rewrite_line(line: str, verified: set[str]) -> str:
+def _strip_format(text: str) -> str:
+    return "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
+
+
+def _fold_disguise(text: str) -> str:
+    """Map zero-width, compatibility, and homoglyph disguises onto plain words."""
+    folded = unicodedata.normalize("NFKC", _strip_format(text)).translate(_CONFUSABLES)
+    folded = _LOOSE_VERIFIED.sub("verified", folded)
+    return _LOOSE_PROVEN.sub("proven", folded)
+
+
+def _disguised(text: str) -> bool:
+    if _claims_verification(text):
+        return False
+    return _claims_verification(_fold_disguise(text))
+
+
+def _grounded_claim(line: str, verified: set[str]) -> bool:
+    """True when every cited path is verified. A disguise is never grounded."""
     if not _claims_verification(line):
-        return line
+        return False
     paths = _cited_paths(line)
+    return bool(paths) and all(path in verified for path in paths)
+
+
+def _rewrite_line(line: str, verified: set[str]) -> str:
+    disguised = _disguised(line)
+    if not _claims_verification(line) and not disguised:
+        return line
     # Every cited receipt on the line must be in the verified set. An
     # artifact path alone does not make a verification claim true.
-    if paths and all(path in verified for path in paths):
+    if _grounded_claim(line, verified):
         return line
-    return _replace_claims(line)
+    target = line if _claims_verification(line) else _fold_disguise(line)
+    return _replace_claims(target)
 
 
 def _rewrite_unverified(text: str, verified: set[str]) -> str:

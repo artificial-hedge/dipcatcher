@@ -18,6 +18,7 @@ import os
 import platform
 import re
 import shutil
+import stat
 import sys
 import tempfile
 import textwrap
@@ -32,11 +33,13 @@ import fx1
 from fx1.harness import HARNESS_REGISTRY, HarnessCommand
 from fx1.honesty import FORBIDDEN_HEADLINE_TOKENS
 from fx1.interactive.atomicstore import FILE_MODE, ensure_private_dir, permission_problem
-from fx1.interactive.redact import redact_text
+from fx1.interactive.redact import DEFAULT_REGISTRY, SecretRegistry, is_sensitive_key, redact_text
 from fx1.interactive.runctx import is_valid_id
 from fx1.interactive.telemetry import Telemetry, format_timestamp, sanitize_value
 
 TELEMETRY_TAIL = 100
+_MAX_MEMBER_BYTES = 1024 * 1024
+_MAX_TELEMETRY_FILES = 32
 EXECUTABLE_NAMES: tuple[str, ...] = ("dipcatcher", "quant", "fxi", "fx1")
 PERMISSION_TARGETS: tuple[tuple[str, str], ...] = (
     ("credentials", "credentials.json"),
@@ -107,12 +110,16 @@ def harness_registry_digest() -> str:
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
-def redact_jsonl(text: str) -> str:
+def redact_jsonl(text: str, *, registry: SecretRegistry | None = None) -> str:
     """Rewrite JSONL so each line is sanitized. Unparsed lines keep only their length."""
-    kept = [_redact_jsonl_line(line) for line in text.splitlines() if line.strip()]
+    kept = [_redact_jsonl_line(line, registry) for line in text.splitlines() if line.strip()]
     if not kept:
         return ""
     return "\n".join(kept) + "\n"
+
+
+class DiagnosticsError(OSError):
+    """A bundle could not be written. The message names the errno, not a path."""
 
 
 def collect_diagnostics(
@@ -156,15 +163,16 @@ def collect_diagnostics(
         "telemetry": _telemetry_block(telemetry),
     }
     diag.update(_session_fields(session_id))
-    safe = sanitize_value(diag)
-    if isinstance(safe, dict):
-        return safe
+    safe = sanitize_value(diag, registry=_secret_registry(env))
+    hidden = _hide_home(safe)
+    if isinstance(hidden, dict):
+        return hidden
     return {}
 
 
 def format_report(diag: Mapping[str, Any], *, width: int = 100) -> str:
     """Plain-text rendering of *diag*. No ANSI. Lines are wrapped to *width*."""
-    safe = sanitize_value(diag)
+    safe = _hide_home(sanitize_value(diag))
     body: Mapping[str, Any] = safe if isinstance(safe, Mapping) else {}
     text = "\n".join(_wrap_lines(_report_lines(body), _clamp_width(width)))
     return redact_text(text + "\n")
@@ -182,8 +190,8 @@ def write_bundle(
     line by line), and ``MANIFEST.json`` with sha256 of every other member.
     """
     if os.path.lexists(path):
-        raise FileExistsError(path)
-    _publish_private(path, _zip_bytes(diag, telemetry_files))
+        raise FileExistsError("diagnostics bundle already exists")
+    _publish_or_explain(path, _zip_bytes(diag, telemetry_files))
     return path
 
 
@@ -192,19 +200,19 @@ def _registry_row(command: HarnessCommand) -> tuple[str, str, tuple[str, ...], i
     return (command.name, str(command.role), argv, int(command.timeout_s))
 
 
-def _redact_jsonl_line(raw: str) -> str:
+def _redact_jsonl_line(raw: str, registry: SecretRegistry | None) -> str:
     try:
-        return _render_jsonl(raw)
+        return _render_jsonl(raw, registry)
     except (TypeError, ValueError):
         return _json_text({"event": "telemetry.unparsed", "line_len": len(raw)})
 
 
-def _render_jsonl(raw: str) -> str:
+def _render_jsonl(raw: str, registry: SecretRegistry | None) -> str:
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError:
         return _json_text({"event": "telemetry.unparsed", "line_len": len(raw)})
-    return _json_text(sanitize_value(parsed))
+    return _json_text(sanitize_value(parsed, registry=registry))
 
 
 def _json_text(obj: Any) -> str:
@@ -678,23 +686,31 @@ def _wrap_lines(lines: Sequence[str], width: int) -> list[str]:
 
 
 def _zip_bytes(diag: Mapping[str, Any], telemetry_files: Sequence[Path]) -> bytes:
-    safe = sanitize_value(diag)
+    registry = _secret_registry()
+    safe = _hide_home(sanitize_value(diag, registry=registry))
     body: Mapping[str, Any] = safe if isinstance(safe, Mapping) else {}
-    members = _bundle_members(body, telemetry_files)
+    members = _bundle_members(body, telemetry_files, registry)
     members.append(("MANIFEST.json", _manifest_bytes(members)))
     return _pack(members)
 
 
 def _bundle_members(
-    diag: Mapping[str, Any], telemetry_files: Sequence[Path]
+    diag: Mapping[str, Any],
+    telemetry_files: Sequence[Path],
+    registry: SecretRegistry,
 ) -> list[tuple[str, bytes]]:
     members: list[tuple[str, bytes]] = [
         ("diagnostics.json", _json_bytes(diag)),
         ("report.txt", format_report(diag).encode("utf-8")),
     ]
     used: set[str] = set()
-    for src in telemetry_files:
-        members.append((_arc_name(Path(src), used), _telemetry_member(Path(src))))
+    files = [Path(src) for src in telemetry_files]
+    for src in files[:_MAX_TELEMETRY_FILES]:
+        members.append((_arc_name(src, used), _telemetry_member(src, registry)))
+    if len(files) > _MAX_TELEMETRY_FILES:
+        omitted = len(files) - _MAX_TELEMETRY_FILES
+        stub = _json_bytes({"event": "telemetry.truncated", "omitted": omitted})
+        members.append(("telemetry/truncated.json", stub))
     return members
 
 
@@ -706,12 +722,53 @@ def _manifest_bytes(members: Sequence[tuple[str, bytes]]) -> bytes:
     return _json_bytes({"files": files})
 
 
-def _telemetry_member(path: Path) -> bytes:
+def _telemetry_member(path: Path, registry: SecretRegistry) -> bytes:
+    reason = _reject_member(path)
+    if reason is not None:
+        return _json_bytes({"event": "telemetry.unreadable", "reason": reason})
     try:
-        text = path.read_text(encoding="utf-8", errors="replace")
+        data = _read_member(path)
     except OSError as exc:
         return _json_bytes({"event": "telemetry.unreadable", "reason": type(exc).__name__})
-    return redact_jsonl(text).encode("utf-8")
+    text = redact_jsonl(data.decode("utf-8", errors="replace"), registry=registry)
+    return _hide_home_text(text).encode("utf-8")
+
+
+def _reject_member(path: Path) -> str | None:
+    try:
+        info = path.lstat()
+    except OSError as exc:
+        return type(exc).__name__
+    if stat.S_ISLNK(info.st_mode):
+        return "symlink"
+    if not stat.S_ISREG(info.st_mode):
+        return "not_regular"
+    if info.st_size > _MAX_MEMBER_BYTES:
+        return "too_large"
+    return None
+
+
+def _read_member(path: Path) -> bytes:
+    flags = os.O_RDONLY
+    if os.name == "posix":
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    fd = os.open(path, flags)
+    try:
+        return _read_limited_fd(fd, _MAX_MEMBER_BYTES)
+    finally:
+        os.close(fd)
+
+
+def _read_limited_fd(fd: int, limit: int) -> bytes:
+    chunks: list[bytes] = []
+    remaining = limit
+    while remaining > 0:
+        block = os.read(fd, min(remaining, 1024 * 1024))
+        if not block:
+            break
+        chunks.append(block)
+        remaining -= len(block)
+    return b"".join(chunks)
 
 
 def _arc_name(path: Path, used: set[str]) -> str:
@@ -742,6 +799,80 @@ def _pack(members: Sequence[tuple[str, bytes]]) -> bytes:
             info.external_attr = 0o600 << 16
             archive.writestr(info, data)
     return buffer.getvalue()
+
+
+def _publish_or_explain(path: Path, data: bytes) -> None:
+    try:
+        _publish_private(path, data)
+    except FileExistsError:
+        raise FileExistsError("diagnostics bundle already exists") from None
+    except OSError as exc:
+        raise DiagnosticsError(_write_reason(exc)) from None
+
+
+def _write_reason(exc: OSError) -> str:
+    if exc.errno == errno.ENOSPC:
+        return "diagnostics bundle could not be written: no space left on device"
+    if exc.errno in {errno.EACCES, errno.EPERM}:
+        return "diagnostics bundle could not be written: permission denied"
+    return "diagnostics bundle could not be written"
+
+
+def _register_env(registry: SecretRegistry, env: Mapping[str, str]) -> None:
+    for name, value in env.items():
+        if isinstance(name, str) and isinstance(value, str) and is_sensitive_key(name):
+            registry.register(value)
+
+
+def _secret_registry(environ: Mapping[str, str] | None = None) -> SecretRegistry:
+    registry = SecretRegistry()
+    for value in DEFAULT_REGISTRY.values():
+        registry.register(value)
+    env = os.environ if environ is None else environ
+    _register_env(registry, env)
+    if environ is not None and environ is not os.environ:
+        _register_env(registry, os.environ)
+    return registry
+
+
+def _home_prefix() -> str:
+    # ``HOME`` / ``USERPROFILE`` rather than ``Path.home()``: diagnostics with an
+    # explicit config directory must not touch the account home at all.
+    raw = os.environ.get("HOME") or os.environ.get("USERPROFILE") or ""
+    home = str(Path(raw)) if raw else ""
+    if len(home) < 2 or home in {"/", "\\"}:
+        return ""
+    return home
+
+
+def _hide_home(obj: Any) -> Any:
+    """Rewrite paths under the home directory with a ``~`` prefix.
+
+    ``sys.executable`` and ``shutil.which`` results stay absolute when they
+    live outside the home directory. The on-disk telemetry JSONL is unchanged;
+    only diagnostics output and bundle members are rewritten.
+    """
+    prefix = _home_prefix()
+    if not prefix:
+        return obj
+    return _replace_home(obj, prefix)
+
+
+def _replace_home(obj: Any, home: str) -> Any:
+    if isinstance(obj, str):
+        return obj.replace(home, "~")
+    if isinstance(obj, Mapping):
+        return {key: _replace_home(value, home) for key, value in obj.items()}
+    if isinstance(obj, list):
+        return [_replace_home(item, home) for item in obj]
+    return obj
+
+
+def _hide_home_text(text: str) -> str:
+    prefix = _home_prefix()
+    if not prefix:
+        return text
+    return text.replace(prefix, "~")
 
 
 def _publish_private(path: Path, data: bytes) -> None:
@@ -800,6 +931,7 @@ __all__ = [
     "PERMISSION_TARGETS",
     "PROXY_ENV_VARS",
     "TELEMETRY_TAIL",
+    "DiagnosticsError",
     "collect_diagnostics",
     "format_report",
     "harness_registry_digest",

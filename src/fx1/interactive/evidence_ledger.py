@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import re
 import threading
@@ -19,6 +20,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
+from fx1.interactive.evidence import _fold_disguise
 from fx1.interactive.redact import redact_text
 
 RECEIPT_MARKER = "receipt="
@@ -53,6 +55,14 @@ _JSON_PATH_RE = re.compile(
 )
 _VERIFIED_LANGUAGE_RE = re.compile(
     r"\bverified\b|\bproven\b|confirmed by receipt",
+    re.IGNORECASE,
+)
+_BOM = (b"\xef\xbb\xbf", b"\xff\xfe", b"\xfe\xff", b"\x00\x00\xfe\xff")
+_SCORE_CLAIM = re.compile(
+    r"(?<![A-Za-z0-9_])(?P<name>mean_pinball|pinball|crps|qlike|brier|ece|kupiec|pit)"
+    r"(?P<suffix>(?:[._-][A-Za-z0-9]+)*)"
+    r"\s*(?:=|:|is|of|was|equals)?\s*"
+    r"(?P<num>[-+]?(?:\d+\.\d+(?:[eE][-+]?\d+)?|\d+[eE][-+]?\d+))",
     re.IGNORECASE,
 )
 _DATA_LABEL_LINE = re.compile(r"^DATA_LABEL\s*=\s*(.*)$")
@@ -101,6 +111,7 @@ class EvidenceItem:
     schema: str | None
     detail: str
     step: str | None
+    scores: tuple[tuple[str, float], ...] = ()
 
     def __post_init__(self) -> None:
         _normalize_item(self)
@@ -613,6 +624,7 @@ def _receipt_item(
     sha256: str | None = None,
     seal: str | None = None,
     schema: str | None = None,
+    scores: tuple[tuple[str, float], ...] = (),
 ) -> EvidenceItem:
     return EvidenceItem(
         item_id="E0",
@@ -625,7 +637,105 @@ def _receipt_item(
         schema=schema,
         detail=detail,
         step=None,
+        scores=scores,
     )
+
+
+def _bom_reason(data: bytes) -> str | None:
+    """A leading BOM is not part of the sealed JSON. ``json.loads`` hides it."""
+    if data.startswith(_BOM):
+        return "receipt byte-order mark"
+    return None
+
+
+def _finite_float(value: object) -> float | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    number = float(value)
+    if not math.isfinite(number):
+        return None
+    return number
+
+
+def _flag_problem(node: Mapping[str, Any]) -> str | None:
+    if "research_only" in node and node["research_only"] is not True:
+        return "research_only_not_true"
+    if "live_pnl_claim" in node and node["live_pnl_claim"] is not False:
+        return "live_pnl_claim_not_false"
+    return None
+
+
+def _honesty_list(node: list[Any], depth: int) -> str | None:
+    for value in node:
+        found = _honesty_in(value, depth + 1)
+        if found is not None:
+            return found
+    return None
+
+
+def _honesty_dict(node: Mapping[str, Any], depth: int) -> str | None:
+    flagged = _flag_problem(node)
+    if flagged is not None:
+        return flagged
+    for value in node.values():
+        found = _honesty_in(value, depth + 1)
+        if found is not None:
+            return found
+    return None
+
+
+def _honesty_in(node: object, depth: int) -> str | None:
+    if depth > 8:
+        return None
+    if isinstance(node, dict):
+        return _honesty_dict(node, depth)
+    if isinstance(node, list):
+        return _honesty_list(node, depth)
+    return None
+
+
+def _honesty_problem(data: bytes) -> str | None:
+    """Literal honesty flags the verifier can miss after a reseal."""
+    payload = _json_object(data)
+    if payload is None:
+        return None
+    return _honesty_in(payload, 0)
+
+
+def _apply_honesty(checked: _Checked, data: bytes) -> _Checked:
+    if checked.verdict is not Verdict.VERIFIED:
+        return checked
+    problem = _honesty_problem(data)
+    if problem is None:
+        return checked
+    return _Checked(Verdict.INVALID, problem, checked.seal, checked.schema)
+
+
+def _take_scores(raw: object, found: dict[str, float]) -> None:
+    if not isinstance(raw, dict):
+        return
+    for key, value in raw.items():
+        number = _finite_float(value)
+        if isinstance(key, str) and number is not None:
+            found[key.lower()] = number
+
+
+def _collect_scores(node: object, found: dict[str, float], depth: int) -> None:
+    if depth > 6 or not isinstance(node, dict):
+        return
+    _take_scores(node.get("scores"), found)
+    for key, value in node.items():
+        if isinstance(value, dict) and key != "scores":
+            _collect_scores(value, found, depth + 1)
+
+
+def _scores_from_bytes(data: bytes) -> tuple[tuple[str, float], ...]:
+    payload = _json_object(data)
+    if payload is None:
+        return ()
+    found: dict[str, float] = {}
+    _collect_scores(payload, found, 0)
+    return tuple(sorted(found.items()))
 
 
 def verify_receipt(
@@ -657,8 +767,16 @@ def verify_receipt(
             verdict=Verdict.UNVERIFIABLE,
             detail=read_error or "receipt unreadable",
         )
+    mark = _bom_reason(data)
+    if mark is not None:
+        return _receipt_item(
+            ref=located.ref,
+            verdict=Verdict.INVALID,
+            detail=mark,
+            sha256=hashlib.sha256(data).hexdigest(),
+        )
     label, seal, schema = _claims_from_bytes(data)
-    checked = _apply_verifier(located.path, data, verifier, seal, schema)
+    checked = _apply_honesty(_apply_verifier(located.path, data, verifier, seal, schema), data)
     return _receipt_item(
         ref=located.ref,
         verdict=checked.verdict,
@@ -667,6 +785,7 @@ def verify_receipt(
         sha256=hashlib.sha256(data).hexdigest(),
         seal=checked.seal,
         schema=checked.schema,
+        scores=_scores_from_bytes(data),
     )
 
 
@@ -952,13 +1071,81 @@ def _path_problems(answer: str, items: Sequence[EvidenceItem]) -> list[CitationP
 def _language_problem(answer: str, items: Sequence[EvidenceItem]) -> CitationProblem | None:
     if _any_verified(items):
         return None
-    match = _VERIFIED_LANGUAGE_RE.search(answer)
+    match = _VERIFIED_LANGUAGE_RE.search(_fold_disguise(answer))
     if match is None:
         return None
     return CitationProblem(
         code="verified_language_without_receipt",
         detail=f"answer says {match.group(0)!r} without a verified receipt",
     )
+
+
+def _close_score(left: float, right: float) -> bool:
+    return math.isclose(left, right, rel_tol=1e-3, abs_tol=1e-6)
+
+
+def _claim_number(text: str) -> float | None:
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    if not math.isfinite(number):
+        return None
+    return number
+
+
+def _score_name(match: re.Match[str]) -> str:
+    return (match.group("name") + match.group("suffix")).lower()
+
+
+def _score_pool(answer: str, items: Sequence[EvidenceItem]) -> list[EvidenceItem]:
+    receipts = [item for item in items if item.kind is EvidenceKind.RECEIPT]
+    mentions = [match.group(1) for match in _JSON_PATH_RE.finditer(answer)]
+    if not mentions:
+        return [item for item in receipts if item.verdict is Verdict.VERIFIED]
+    return [
+        item for item in receipts if any(_matches_ref(mention, item.ref) for mention in mentions)
+    ]
+
+
+def _score_supported(name: str, number: float, pool: Sequence[EvidenceItem]) -> bool:
+    for item in pool:
+        if item.verdict is not Verdict.VERIFIED:
+            continue
+        for key, value in item.scores:
+            if key == name and _close_score(value, number):
+                return True
+    return False
+
+
+def _one_score_problem(
+    name: str, number: float, pool: Sequence[EvidenceItem]
+) -> CitationProblem | None:
+    if _score_supported(name, number, pool):
+        return None
+    return CitationProblem(
+        code="score_mismatch",
+        detail=f"score {name}={number} is not in the cited verified receipts",
+    )
+
+
+def _score_problems(answer: str, items: Sequence[EvidenceItem]) -> list[CitationProblem]:
+    problems: list[CitationProblem] = []
+    seen: set[tuple[str, float]] = set()
+    pool = _score_pool(answer, items)
+    for match in _SCORE_CLAIM.finditer(answer):
+        number = _claim_number(match.group("num"))
+        if number is None:
+            continue
+        name = _score_name(match)
+        key = (name, round(number, 12))
+        if key in seen:
+            continue
+        seen.add(key)
+        problem = _one_score_problem(name, number, pool)
+        if problem is not None:
+            problems.append(problem)
+    return problems
 
 
 def _has_synthetic(items: Sequence[EvidenceItem]) -> bool:
@@ -981,13 +1168,16 @@ def check_citations(answer: str, ledger: EvidenceLedger) -> list[CitationProblem
 
     A 64-hex string must equal some item sha256 or seal (case-insensitive)
     and that item must be ``VERIFIED``. Shorter hex is ignored. Path-like
-    ``*.json`` mentions must match a ledger ref. ``verified`` / ``proven`` /
-    ``confirmed by receipt`` with no verified item is
-    ``verified_language_without_receipt``. A SYNTHETIC ledger item requires
-    an explicit uppercase ``SYNTHETIC`` label in the answer.
+    ``*.json`` mentions must match a ledger ref.     ``verified`` / ``proven`` /
+    ``confirmed by receipt`` (including zero-width and homoglyph disguises)
+    with no verified item is ``verified_language_without_receipt``. A proper
+    score number that is not on the cited verified receipt is
+    ``score_mismatch``. A SYNTHETIC ledger item requires an explicit
+    uppercase ``SYNTHETIC`` label in the answer.
     """
-    items = ledger.items()
+    items = _visible_items(ledger)
     problems = _hash_problems(answer, items)
+    problems.extend(_score_problems(answer, items))
     problems.extend(_path_problems(answer, items))
     language = _language_problem(answer, items)
     if language is not None:
@@ -998,19 +1188,45 @@ def check_citations(answer: str, ledger: EvidenceLedger) -> list[CitationProblem
     return problems
 
 
-def _fully_verified(items: Sequence[EvidenceItem], problems: Sequence[CitationProblem]) -> bool:
-    if problems:
+def _stored_verified(item: EvidenceItem) -> bool:
+    return (
+        item.kind is EvidenceKind.RECEIPT and item.verdict is Verdict.VERIFIED and bool(item.sha256)
+    )
+
+
+def _digest_matches(item: EvidenceItem, roots: Sequence[Path]) -> bool:
+    located = _locate(item.ref, roots)
+    if located.verdict is not None or located.path is None:
         return False
-    if not items:
+    data, error = _read_capped(located.path, MAX_RECEIPT_BYTES)
+    if data is None or error is not None:
         return False
-    return all(item.verdict is Verdict.VERIFIED for item in items)
+    return hashlib.sha256(data).hexdigest() == item.sha256
+
+
+def _as_visible(ledger: EvidenceLedger, item: EvidenceItem) -> EvidenceItem:
+    if item.verdict is Verdict.VERIFIED and not ledger.is_current(item):
+        return replace(
+            item,
+            verdict=Verdict.UNVERIFIABLE,
+            detail=_join_note(item.detail, "stale receipt"),
+        )
+    return item
+
+
+def _visible_items(ledger: EvidenceLedger) -> list[EvidenceItem]:
+    return [_as_visible(ledger, item) for item in ledger.items()]
+
+
+def _current_verified(ledger: EvidenceLedger, items: Sequence[EvidenceItem]) -> bool:
+    return bool(items) and all(ledger.is_current(item) for item in items)
 
 
 def _compose_status(ledger: EvidenceLedger, problems: Sequence[CitationProblem]) -> AnswerStatus:
     items = ledger.items()
     if not items:
         return "no-evidence"
-    if _fully_verified(items, problems):
+    if not problems and _current_verified(ledger, items):
         return "verified"
     if ledger.has_verified():
         return "partial"
@@ -1117,6 +1333,30 @@ def _optional_text(value: object, field: str) -> str | None:
     return text or None
 
 
+def _score_table(value: object) -> tuple[tuple[str, float], ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list):
+        raise ValueError("evidence scores must be a list")
+    rows: list[tuple[str, float]] = []
+    for row in value:
+        parsed = _score_pair(row)
+        if parsed is None:
+            raise ValueError("evidence scores must be name/value pairs")
+        rows.append(parsed)
+    return tuple(rows)
+
+
+def _score_pair(row: object) -> tuple[str, float] | None:
+    if not isinstance(row, (list, tuple)) or len(row) != 2:
+        return None
+    name, raw = row
+    number = _finite_float(raw)
+    if not isinstance(name, str) or not name or number is None:
+        return None
+    return name, number
+
+
 def _optional_hex(value: object, field: str) -> str | None:
     if value is None:
         return None
@@ -1143,6 +1383,7 @@ def _item_from_mapping(raw: object) -> EvidenceItem:
         schema=_optional_text(body.get("schema"), "schema"),
         detail=redact_text(_require_str(body.get("detail"), "detail")),
         step=_clean_step(_optional_text(body.get("step"), "step")),
+        scores=_score_table(body.get("scores")),
     )
 
 
@@ -1176,6 +1417,7 @@ def _item_dict(item: EvidenceItem) -> dict[str, Any]:
         "schema": item.schema,
         "detail": item.detail,
         "step": item.step,
+        "scores": [[name, value] for name, value in item.scores],
     }
 
 
@@ -1190,13 +1432,23 @@ class EvidenceLedger:
         self._lock = threading.Lock()
         self._items: list[EvidenceItem] = []
         self._next = 1
+        self._item_roots: dict[str, tuple[Path, ...]] = {}
 
-    def _append(self, item: EvidenceItem) -> EvidenceItem:
+    def _append(self, item: EvidenceItem, *, roots: tuple[Path, ...] | None = None) -> EvidenceItem:
         with self._lock:
             numbered = replace(item, item_id=f"E{self._next}")
             self._next += 1
             self._items.append(numbered)
+            if roots is not None:
+                self._item_roots[numbered.item_id] = roots
             return numbered
+
+    def _roots_for(self, item_id: str) -> tuple[Path, ...] | None:
+        with self._lock:
+            found = self._item_roots.get(item_id)
+        if found is None:
+            return None
+        return tuple(found)
 
     def add_receipt(
         self,
@@ -1209,7 +1461,7 @@ class EvidenceLedger:
         item = verify_receipt(path, roots=roots, verifier=verifier)
         if step is not None:
             item = replace(item, step=_clean_step(step))
-        return self._append(item)
+        return self._append(item, roots=tuple(roots))
 
     def add_web(self, url: str, *, step: str | None = None, detail: str = "") -> EvidenceItem:
         text = _WEB_DETAIL
@@ -1253,11 +1505,25 @@ class EvidenceLedger:
         with self._lock:
             return list(self._items)
 
+    def is_current(self, item: EvidenceItem) -> bool:
+        """True when a verified receipt's bytes still match the digest that was checked.
+
+        A ledger restored from ``from_dict`` has no roots, so it can only
+        report the stored verdict. Receipts added in this process are re-read.
+        """
+        if not _stored_verified(item):
+            return False
+        roots = self._roots_for(item.item_id)
+        if roots is None:
+            return True
+        return _digest_matches(item, roots)
+
     def verified_receipts(self) -> list[EvidenceItem]:
-        return _verified_only(self.items())
+        """Verified receipts whose bytes still match. Stale files are omitted."""
+        return [item for item in self.items() if self.is_current(item)]
 
     def has_verified(self) -> bool:
-        return _any_verified(self.items())
+        return any(self.is_current(item) for item in self.items())
 
     def labels(self) -> set[str]:
         return {item.data_label for item in self.items()}
