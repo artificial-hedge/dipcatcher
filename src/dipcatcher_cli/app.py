@@ -27,7 +27,12 @@ def _chat(args: Sequence[str]) -> None:
         prog="dipcatcher chat",
         description="Chat with fx1 or fx1-lite; /help lists research and session controls.",
     )
-    parser.add_argument("--model", choices=MODELS, default=DEFAULT_MODEL)
+    parser.add_argument("--model", choices=MODELS, default=None)
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Reload the latest saved session. An interrupted job is not restarted.",
+    )
     options = parser.parse_args(args)
     if not _interactive():
         parser.error(
@@ -37,7 +42,11 @@ def _chat(args: Sequence[str]) -> None:
 
     from fx1.interactive.concierge import run_console
 
-    run_console(model=options.model)
+    model = options.model or DEFAULT_MODEL
+    if options.resume:
+        run_console(model=model, resume=True, model_explicit=options.model is not None)
+    else:
+        run_console(model=model)
 
 
 def main(argv: Sequence[str] | None = None) -> None:

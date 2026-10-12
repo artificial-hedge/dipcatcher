@@ -40,6 +40,7 @@ import typer
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive import actions, profiles
 from fx1.interactive.approvals import ApprovalGate, console_ask_fn
+from fx1.interactive.intent import looks_like_orchestration
 from fx1.interactive.orb import OrbAnimator, OrbState, orbs_enabled
 from fx1.interactive.orb import banner as orb_banner
 from fx1.interactive.profiles import DEFAULT_MODEL
@@ -65,6 +66,7 @@ conversation          plain text chats with the active model (tools: flash, web,
 /model                show the active model
 /session              show the persisted session id, model, and job state
 /resume [id]          reload a session; an interrupted job is not restarted
+/evidence             show receipt paths from the last orchestration job
 /keys list|set|remove  manage model endpoints (presence-only)
 /harness list|describe|run  registered dipcatcher harness commands (fail-closed)
 /help                 this help
@@ -200,6 +202,11 @@ class Concierge:
             self.shutdown()
             self._persist_session()
             return True
+        if looks_like_orchestration(text):
+            self._say("routing this to research orchestration (same planner as /superpower).")
+            ended = self._cmd_superpower(text)
+            self._persist_session()
+            return ended
         self._chat_turn(text)
         self._persist_session()
         return False
@@ -356,6 +363,43 @@ class Concierge:
             dict(item) for item in record.get("messages") or [] if isinstance(item, dict)
         ]
         self._say(f"resumed session {record.get('id')} on model {self.model}")
+        return False
+
+    def restore_latest(self, *, preferred_model: str | None = None) -> None:
+        """Load the newest session. A running job is marked interrupted, not restarted."""
+        store = self._session_store
+        if store is None:
+            self.resume_notice = "session store is not configured"
+            return
+        record = store.latest()
+        if not record:
+            self.resume_notice = "no saved session to resume"
+            return
+        job = record.get("job") or {}
+        if job.get("state") == "running":
+            record = store.mark_interrupted(str(record["id"]))
+        self._session = record
+        restored = str(record.get("model") or self.model)
+        chosen = preferred_model or restored
+        profiles.check_model(chosen)
+        self.model = chosen
+        if preferred_model is not None:
+            record["model"] = preferred_model
+        self._messages = [
+            dict(item) for item in record.get("messages") or [] if isinstance(item, dict)
+        ]
+        notice = f"resumed session {record.get('id')} on model {self.model}"
+        if (record.get("job") or {}).get("state") == "interrupted":
+            notice += "; the previous job was not restarted"
+        self.resume_notice = notice
+
+    def _cmd_evidence(self, rest: str) -> bool:
+        del rest
+        result = self._job.result if self._job is not None else None
+        paths: list[str] = []
+        if isinstance(result, SuperpowerResult):
+            paths = [artifact for run in result.runs for artifact in run.artifacts if artifact]
+        self._say("\n".join(paths) if paths else "no receipt paths on the last job")
         return False
 
     def _persist_session(self) -> None:
@@ -1102,6 +1146,8 @@ def _console_concierge(
     model: str,
     input_fn: Callable[[str], str],
     output_fn: Callable[..., None],
+    resume: bool = False,
+    model_explicit: bool = False,
 ) -> Concierge:
     """Production console: persist sessions and mark a crashed run interrupted."""
     session_store = None
@@ -1119,6 +1165,10 @@ def _console_concierge(
         session_store=session_store,
     )
     if session_store is None:
+        return concierge
+    if resume:
+        preferred = model if model_explicit else None
+        concierge.restore_latest(preferred_model=preferred)
         return concierge
     latest = session_store.latest()
     job = (latest or {}).get("job") or {}
@@ -1138,6 +1188,8 @@ def run_console(
     input_fn: Callable[[str], str] = input,
     output_fn: Callable[..., None] = typer.echo,
     poll_timeout_s: float = 0.15,
+    resume: bool = False,
+    model_explicit: bool = False,
 ) -> None:
     """Read chat input with idle progress ticks on POSIX terminals.
 
@@ -1146,7 +1198,13 @@ def run_console(
     concierge = (
         concierge_factory()
         if concierge_factory is not None
-        else _console_concierge(model=model, input_fn=input_fn, output_fn=output_fn)
+        else _console_concierge(
+            model=model,
+            input_fn=input_fn,
+            output_fn=output_fn,
+            resume=resume,
+            model_explicit=model_explicit,
+        )
     )
     model = concierge.model
     endpoint = profiles.resolve_endpoint(model)

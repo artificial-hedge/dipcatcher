@@ -18,7 +18,9 @@ why.
 > full catalog. Selective runs are partial records with `verified=false`.
 > Sessions persist under `~/.fx1/sessions` (or `$FX1_SESSION_DIR`); a session
 > whose job was still running is marked interrupted on the next start and is
-> not auto-restarted. `/use` keeps the conversation and shows the model
+> not auto-restarted. `dipcatcher chat --resume` reloads that session.
+> A plain-text request such as a volatility calibration check uses the same
+> planner as `/superpower`. `/use` keeps the conversation and shows the model
 > change. Owned harness subprocesses can be cancelled. Step and time budgets
 > are hard ceilings and are not a dollar spend cap. Synthesis still has to
 > pass the honesty validator; verification claims are rewritten unless the
