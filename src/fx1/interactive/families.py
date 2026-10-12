@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, cast
 
 
@@ -20,8 +20,10 @@ class FamilyClientError(ValueError):
 
 SURFACE_SCHEMA = "dipcatcher.family_surface.v1"
 
-_FAMILY_ID = re.compile(r"^[a-z][a-z0-9_]*$")
+_FAMILY_ID = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 _STDERR_LIMIT = 500
+_MAX_GOAL = 4096
+_MAX_FAMILIES = 23
 _MISSING = object()
 
 Runner = Callable[[list[str]], tuple[int, str, str]]
@@ -55,6 +57,7 @@ def _require_executable_required(item: Any, *, where: str) -> None:
     """Reject a record the harness should already have filtered out."""
     if not isinstance(item, dict):
         raise FamilyClientError(f"{where} must be an object")
+    _reject_item_schema(item, where)
     if item.get("executable") is not True:
         raise FamilyClientError(f"{where} must have executable true")
     qualification = item.get("qualification")
@@ -62,7 +65,15 @@ def _require_executable_required(item: Any, *, where: str) -> None:
         raise FamilyClientError(f"{where} qualification must be 'required' (got {qualification!r})")
     family_id = item.get("id")
     if not isinstance(family_id, str) or _FAMILY_ID.fullmatch(family_id) is None:
-        raise FamilyClientError(f"{where} id must match {_FAMILY_ID.pattern} (got {family_id!r})")
+        raise FamilyClientError(f"{where} id must match {_FAMILY_ID.pattern}")
+
+
+def _reject_item_schema(item: Mapping[str, Any], where: str) -> None:
+    if "schema" not in item:
+        return
+    schema = item.get("schema")
+    if schema != SURFACE_SCHEMA:
+        raise FamilyClientError(f"{where} schema must be {SURFACE_SCHEMA!r} (got {schema!r})")
 
 
 def _require_select_shape(payload: dict[str, Any]) -> None:
@@ -72,10 +83,67 @@ def _require_select_shape(payload: dict[str, Any]) -> None:
     selected = payload["selected"]
     if not isinstance(selected, list):
         raise FamilyClientError("select payload 'selected' must be a list")
-    if not isinstance(payload["exclusions"], list):
-        raise FamilyClientError("select payload 'exclusions' must be a list")
+    _require_exclusions(payload["exclusions"])
     for index, item in enumerate(selected):
         _require_executable_required(item, where=f"selected[{index}]")
+
+
+def _require_exclusions(exclusions: Any) -> None:
+    if not isinstance(exclusions, list):
+        raise FamilyClientError("select payload 'exclusions' must be a list")
+    for index, item in enumerate(exclusions):
+        _require_exclusion(item, index)
+
+
+def _require_exclusion(item: Any, index: int) -> None:
+    if not isinstance(item, dict):
+        raise FamilyClientError(f"exclusions[{index}] must be an object")
+    family_id = item.get("id")
+    reason = item.get("reason")
+    if not isinstance(family_id, str) or _FAMILY_ID.fullmatch(family_id) is None:
+        raise FamilyClientError(f"exclusions[{index}] id is invalid")
+    if not isinstance(reason, str) or not reason.strip():
+        raise FamilyClientError(f"exclusions[{index}] reason must be non-empty text")
+
+
+def _reject_present_schema(payload: Any) -> None:
+    """A missing schema stays tolerated; a present wrong schema does not."""
+    if not isinstance(payload, dict) or "schema" not in payload:
+        return
+    schema = payload.get("schema")
+    if schema != SURFACE_SCHEMA:
+        raise FamilyClientError(
+            f"family surface schema must be {SURFACE_SCHEMA!r} (got {schema!r})"
+        )
+
+
+def _preview(text: object) -> str:
+    if not isinstance(text, str):
+        return repr(type(text).__name__)
+    if len(text) <= 80:
+        return repr(text)
+    return repr(f"{text[:32]}...({len(text)} chars)")
+
+
+def _require_goal_arg(goal: str) -> None:
+    if not isinstance(goal, str) or "\x00" in goal or not goal.strip():
+        raise FamilyClientError("goal must be non-empty text without NUL")
+    if len(goal) > _MAX_GOAL:
+        raise FamilyClientError(f"goal exceeds {_MAX_GOAL} characters")
+
+
+def _require_max_arg(max_families: int) -> None:
+    if isinstance(max_families, bool) or not isinstance(max_families, int):
+        raise FamilyClientError("max_families must be an integer")
+    if max_families < 0 or max_families > _MAX_FAMILIES:
+        raise FamilyClientError(f"max_families must be an integer in 0..{_MAX_FAMILIES}")
+
+
+def _require_family_arg(family_id: str) -> None:
+    if not isinstance(family_id, str) or _FAMILY_ID.fullmatch(family_id) is None:
+        shown = _preview(family_id)
+        pattern = _FAMILY_ID.pattern
+        raise FamilyClientError(f"family id must match {pattern} (got {shown})")
 
 
 def _family_items(payload: Any) -> list[Any]:
@@ -114,6 +182,8 @@ class FamilyClient:
         A selected record that is not executable and required is a contract
         break: it is rejected, not dropped.
         """
+        _require_goal_arg(goal)
+        _require_max_arg(max_families)
         argv = ["--select", goal, "--max", str(max_families)]
         payload = _require_object(self._payload(argv))
         _require_select_shape(payload)
@@ -121,6 +191,7 @@ class FamilyClient:
 
     def status(self, family_id: str) -> dict[str, Any]:
         """Return the surface record for one family id."""
+        _require_family_arg(family_id)
         payload = _require_object(self._payload(["--id", family_id]))
         got = payload.get("id")
         if "id" not in payload or not isinstance(got, str):
@@ -131,7 +202,9 @@ class FamilyClient:
 
     def list_executable(self) -> list[dict[str, Any]]:
         """Return families the surface marks executable and required."""
-        items = _family_items(self._payload([]))
+        payload = self._payload([])
+        _reject_present_schema(payload)
+        items = _family_items(payload)
         for index, item in enumerate(items):
             _require_executable_required(item, where=f"families[{index}]")
         return cast(list[dict[str, Any]], items)
@@ -159,8 +232,8 @@ def selected_ids(payload: dict[str, Any]) -> list[str]:
         if not isinstance(item, dict):
             raise FamilyClientError(f"selected[{index}] must be an object")
         family_id = item.get("id")
-        if not isinstance(family_id, str):
-            raise FamilyClientError(f"selected[{index}] id must be a string")
+        if not isinstance(family_id, str) or _FAMILY_ID.fullmatch(family_id) is None:
+            raise FamilyClientError(f"selected[{index}] id is invalid")
         ids.append(family_id)
     return list(dict.fromkeys(ids))
 
