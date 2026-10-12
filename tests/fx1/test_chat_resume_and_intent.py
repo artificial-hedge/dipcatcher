@@ -53,6 +53,37 @@ def test_contract_example_is_orchestration() -> None:
     assert not looks_like_orchestration("hello there")
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "check volatility forecasts",
+        "Please run the volatility benchmark",
+        "Can you check whether my volatility forecasts are calibrated?",
+        "I want to understand why my CRPS dropped, so run the calibration check on my forecasts",
+        "Explain CRPS. Then run the volatility benchmark.",
+        "score my conformal forecasts",
+    ],
+)
+def test_requests_to_do_research_route_to_orchestration(text: str) -> None:
+    assert looks_like_orchestration(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "hello there",
+        "How do I run a volatility benchmark?",
+        "What does it mean to evaluate volatility forecasts?",
+        "Why was my CRPS score low on the forecasts?",
+        "Explain how to calibrate conformal forecasts",
+        "Show me how to run a volatility benchmark",
+        "Can I run a benchmark on volatility forecasts?",
+    ],
+)
+def test_questions_about_the_work_stay_on_the_chat_path(text: str) -> None:
+    assert not looks_like_orchestration(text)
+
+
 def test_plain_text_uses_the_superpower_planner(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
