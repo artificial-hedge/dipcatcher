@@ -48,7 +48,12 @@ _OUTPUT_KEYS = frozenset({"scores", "receipt_schema", "receipt_flag", "receipt_s
 _LIMIT_KEYS = frozenset({"max_runtime_s", "max_output_chars"})
 _QUAL_KEYS = frozenset({"status", "evidence", "ruleset", "audited_on"})
 _ARG_REQUIRED = frozenset({"name", "kind", "type", "required", "default", "repeatable", "help"})
-_ARG_OPTIONAL = frozenset({"choices", "min", "max", "item_type", "path_role"})
+_ARG_OPTIONAL = frozenset({"choices", "min", "max", "item_type", "path_role", "bind", "goal_terms"})
+_MAX_BIND_CHOICES = 8
+_MAX_BIND_TERMS = 12
+_MAX_BIND_TERM_LEN = 48
+_MAX_BIND_TERM_TOTAL = 48
+_TERM_RE = re.compile(r"^[a-z0-9]+(?:[ -][a-z0-9]+)*$")
 _POST_REQUIRED = frozenset({"kind"})
 _POST_OPTIONAL = frozenset({"from"})
 
@@ -250,6 +255,7 @@ def _one_arg_problems(arg: object, where: str) -> list[str]:
     problems.extend(_bound_key_problems(arg, where))
     problems.extend(_path_role_problems(arg, where))
     problems.extend(_item_type_problems(arg, where))
+    problems.extend(_bind_field_problems(arg, where))
     return problems
 
 
@@ -445,3 +451,104 @@ def _alias_problems(aliases: object, where: str) -> list[str]:
         for item in aliases
         if not isinstance(item, str) or item != item.lower() or not item.strip()
     ]
+
+
+def _bind_field_problems(arg: Mapping[str, Any], where: str) -> list[str]:
+    if "bind" not in arg and "goal_terms" not in arg:
+        return []
+    bind = arg.get("bind")
+    if bind == "dataset":
+        return _dataset_bind_problems(arg, where)
+    if bind == "goal":
+        return _goal_bind_problems(arg, where)
+    return [f"{where}: bind is invalid"]
+
+
+def _dataset_bind_problems(arg: Mapping[str, Any], where: str) -> list[str]:
+    problems: list[str] = []
+    if "goal_terms" in arg:
+        problems.append(f"{where}: goal_terms is only valid for bind goal")
+    if arg.get("type") != "path" or arg.get("path_role") != "input":
+        problems.append(f"{where}: bind dataset requires an input path")
+    return problems
+
+
+def _goal_bind_problems(arg: Mapping[str, Any], where: str) -> list[str]:
+    choice_problems = _goal_choice_problems(arg.get("choices"), where)
+    if choice_problems:
+        return choice_problems
+    return _goal_term_problems(arg.get("goal_terms"), arg.get("choices"), where)
+
+
+def _goal_choice_problems(choices: object, where: str) -> list[str]:
+    if isinstance(choices, list) and choices and all(isinstance(item, str) for item in choices):
+        return []
+    return [f"{where}: bind goal requires choices"]
+
+
+def _goal_term_problems(raw: object, choices: object, where: str) -> list[str]:
+    shape = _goal_term_shape_problem(raw, choices, where)
+    if shape or not isinstance(raw, dict) or not isinstance(choices, list):
+        return [shape] if shape else []
+    return _goal_term_entry_problems(raw, choices, where)
+
+
+def _goal_term_shape_problem(raw: object, choices: object, where: str) -> str:
+    if not isinstance(raw, dict) or not raw:
+        return f"{where}: goal_terms must be an object"
+    if len(raw) > _MAX_BIND_CHOICES:
+        return f"{where}: goal_terms exceeds {_MAX_BIND_CHOICES} choices"
+    if not isinstance(choices, list) or not set(raw).issubset({str(item) for item in choices}):
+        return f"{where}: goal_terms keys must be a subset of choices"
+    return ""
+
+
+def _goal_term_entry_problems(raw: Mapping[str, Any], choices: list[Any], where: str) -> list[str]:
+    total = 0
+    for choice in choices:
+        if str(choice) not in raw:
+            continue
+        term_problems, count = _one_choice_terms(raw[str(choice)], f"{where}.goal_terms.{choice}")
+        if term_problems:
+            return term_problems
+        total += count
+        if total > _MAX_BIND_TERM_TOTAL:
+            return [f"{where}: goal_terms exceeds {_MAX_BIND_TERM_TOTAL} terms"]
+    return []
+
+
+def _one_choice_terms(raw: object, where: str) -> tuple[list[str], int]:
+    items = _term_items(raw, where)
+    if isinstance(items, str):
+        return [items], 0
+    problems = _term_value_problems(items, where)
+    if problems:
+        return problems, 0
+    return [], len(items)
+
+
+def _term_items(raw: object, where: str) -> list[object] | str:
+    if not isinstance(raw, list) or not raw:
+        return f"{where} must be a non-empty list"
+    if len(raw) > _MAX_BIND_TERMS:
+        return f"{where} exceeds {_MAX_BIND_TERMS} terms"
+    return list(raw)
+
+
+def _term_value_problems(items: list[object], where: str) -> list[str]:
+    terms: list[str] = []
+    for item in items:
+        if not _term_ok(item):
+            return [f"{where} has an invalid term"]
+        terms.append(str(item))
+    if len(set(terms)) != len(terms):
+        return [f"{where} has a duplicate term"]
+    return []
+
+
+def _term_ok(item: object) -> bool:
+    return (
+        isinstance(item, str)
+        and len(item) <= _MAX_BIND_TERM_LEN
+        and _TERM_RE.fullmatch(item) is not None
+    )

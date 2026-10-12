@@ -141,9 +141,16 @@ def test_version_prints_package_version(capsys: pytest.CaptureFixture[str]) -> N
     from fx1 import __version__
 
     main(["version"])
-    main(["--version"])
-    output = capsys.readouterr().out
-    assert output == f"dipcatcher {__version__}\ndipcatcher {__version__}\n"
+    assert capsys.readouterr().out == f"dipcatcher {__version__}\n"
+
+
+def test_version_flag_is_the_lab_apps_bare_version(capsys: pytest.CaptureFixture[str]) -> None:
+    from fx1 import __version__
+
+    with pytest.raises(SystemExit) as stopped:
+        main(["--version"])
+    assert stopped.value.code == 0
+    assert capsys.readouterr().out.strip() == __version__
 
 
 def test_version_rejects_extra_arguments() -> None:

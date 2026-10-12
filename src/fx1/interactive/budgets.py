@@ -8,6 +8,7 @@ spend cap: ``as_public`` always reports ``spend_cap`` as ``None``.
 from __future__ import annotations
 
 import math
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -35,7 +36,7 @@ class BudgetError(ValueError):
 def _reject_non_real(name: str, value: object) -> None:
     if isinstance(value, bool) or not isinstance(value, int | float):
         raise BudgetError(f"{name} must be a real number")
-    if isinstance(value, float) and math.isnan(value):
+    if isinstance(value, float) and not math.isfinite(value):
         raise BudgetError(f"{name} must be a real number")
 
 
@@ -55,6 +56,7 @@ class RunBudget:
     started_at: float = field(default_factory=time.monotonic)
     steps: int = 0
     retries: int = 0
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
 
     def validate(self) -> None:
         """Raise ``BudgetError`` when a ceiling is negative or above its hard max."""
@@ -77,6 +79,8 @@ class RunBudget:
             raise BudgetError(f"max_harness exceeds {_COUNT_CEILING}")
         if self.max_seconds > _SECONDS_CEILING:
             raise BudgetError(f"max_seconds exceeds {_SECONDS_CEILING}")
+        if self.max_retries > _COUNT_CEILING:
+            raise BudgetError(f"max_retries exceeds {_COUNT_CEILING}")
 
     def expired(self, now: float | None = None) -> bool:
         """Return whether elapsed monotonic time has reached ``max_seconds``."""
@@ -85,6 +89,10 @@ class RunBudget:
 
     def charge_step(self) -> None:
         """Record one step, or raise if the step ceiling or the clock is spent."""
+        with self._lock:
+            self._charge_step()
+
+    def _charge_step(self) -> None:
         self.validate()
         blocked: list[str] = []
         if self.steps + 1 > self.max_steps:
@@ -97,6 +105,10 @@ class RunBudget:
 
     def charge_retry(self) -> None:
         """Record one retry, or raise if another retry would pass ``max_retries``."""
+        with self._lock:
+            self._charge_retry()
+
+    def _charge_retry(self) -> None:
         self.validate()
         if self.retries + 1 > self.max_retries:
             raise BudgetError("retry budget exceeded")
@@ -122,13 +134,20 @@ class RunBudget:
         }
 
 
-def merge_budget(base: RunBudget, overrides: dict[str, Any]) -> RunBudget:
+def merge_budget(
+    base: RunBudget, overrides: dict[str, Any], *, allow_raise: bool = True
+) -> RunBudget:
     """Build a new budget from ``base`` ceilings plus allowed overrides.
 
     Only ``max_steps``, ``max_seconds``, ``max_retries``, ``max_families``,
     and ``max_harness`` may be overridden. Unknown keys raise ``BudgetError``.
     Progress counters on the result are zero and the monotonic clock restarts.
     ``validate`` runs before the budget is returned.
+
+    ``allow_raise`` is for an operator ``/budget`` command, which may set any
+    ceiling up to the hard cap. Model and tool overrides must pass
+    ``allow_raise=False`` (see :func:`merge_tool_budget`) so they cannot raise
+    a ceiling the operator already set.
     """
     if not isinstance(overrides, dict):
         raise BudgetError("budget overrides must be a dict")
@@ -136,6 +155,8 @@ def merge_budget(base: RunBudget, overrides: dict[str, Any]) -> RunBudget:
     if unknown:
         rendered = ", ".join(sorted(str(key) for key in unknown))
         raise BudgetError(f"unknown budget override: {rendered}")
+    if not allow_raise:
+        _reject_raise(base, overrides)
     budget = RunBudget(
         max_steps=overrides.get("max_steps", base.max_steps),
         max_seconds=overrides.get("max_seconds", base.max_seconds),
@@ -147,3 +168,28 @@ def merge_budget(base: RunBudget, overrides: dict[str, Any]) -> RunBudget:
     )
     budget.validate()
     return budget
+
+
+def merge_tool_budget(base: RunBudget, overrides: dict[str, Any]) -> RunBudget:
+    """Apply a model or tool override that may only tighten ceilings."""
+    return merge_budget(base, overrides, allow_raise=False)
+
+
+def _ceiling(base: RunBudget) -> dict[str, int | float]:
+    return {
+        "max_steps": base.max_steps,
+        "max_seconds": base.max_seconds,
+        "max_retries": base.max_retries,
+        "max_families": base.max_families,
+        "max_harness": base.max_harness,
+    }
+
+
+def _reject_raise(base: RunBudget, overrides: dict[str, Any]) -> None:
+    current = _ceiling(base)
+    for key, value in overrides.items():
+        limit = current.get(key)
+        if limit is None or isinstance(value, bool) or not isinstance(value, int | float):
+            continue
+        if value > limit:
+            raise BudgetError(f"{key} cannot be raised")

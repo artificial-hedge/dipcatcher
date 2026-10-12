@@ -6,7 +6,9 @@ Two hosted model names each have one endpoint:
 - ``fx1-lite``
 
 The store is ``$FX1_CONFIG_DIR/credentials.json`` (default
-``~/.fx1/credentials.json``), schema version 2, mode 0600. Writes go through
+``~/.fx1/credentials.json``), schema version 2, mode 0600. The config
+directory is tightened to ``0700`` when this process owns it. A symlink at
+the store or its directory is refused and never followed. Writes go through
 :func:`fx1.interactive.atomicstore.update_json` (locked, atomic). ``base_url``
 is the normalized chat-completions URL. ``service_origin`` is the scheme and
 host. Readers still accept version-1 entries (``key`` / ``env_var``, a bare
@@ -128,6 +130,18 @@ def default_base_url() -> str:
     return os.environ.get(ENV_BASE_URL, MOONSHOT_API_URL)
 
 
+def suggest_base_url(environ: Mapping[str, str] | None = None) -> str:
+    """Shared base URL from ``FX1_BASE_URL``, else the Moonshot constant.
+
+    Per-model variables are not consulted. No Artificial Hedge hostname
+    is invented; the only implicit host is :data:`MOONSHOT_API_URL`.
+    """
+    chosen = _env_get(_environ(environ), ENV_BASE_URL)
+    if chosen:
+        return chosen
+    return MOONSHOT_API_URL
+
+
 def fingerprint(api_key: str) -> str:
     """Presence-only fingerprint: the last four characters, never the value."""
     return _secret_fingerprint(api_key)
@@ -185,7 +199,11 @@ def _now_stamp() -> str:
 
 
 def _key_has_junk(key: str) -> bool:
-    return any(ch.isspace() or unicodedata.category(ch) in {"Cc", "Cf"} for ch in key)
+    return any(_key_char_junk(ch) for ch in key)
+
+
+def _key_char_junk(ch: str) -> bool:
+    return ch.isspace() or unicodedata.category(ch) in {"Cc", "Cf"} or ord(ch) > 255
 
 
 def _clean_api_key(api_key: str, model: str) -> str:
@@ -330,8 +348,66 @@ def _heal_permissions(path: Path) -> None:
     _note(path, f"credentials store permissions were repaired to 0600 (was {mode:04o})")
 
 
+def _symlink_problem(path: Path) -> str | None:
+    if path.is_symlink():
+        return "credentials store must not be a symlink"
+    if path.parent.is_symlink():
+        return "credentials directory must not be a symlink"
+    return None
+
+
+def _posix_mode(path: Path) -> int | None:
+    try:
+        return stat.S_IMODE(path.stat().st_mode)
+    except OSError:
+        return None
+
+
+def _owned_by_us(path: Path) -> bool:
+    if os.name != "posix":
+        return False
+    try:
+        return path.stat().st_uid == os.getuid()
+    except OSError:
+        return False
+
+
+def _chmod_owned_dir(parent: Path) -> bool:
+    if not _owned_by_us(parent):
+        return False
+    try:
+        os.chmod(parent, 0o700)
+    except OSError:
+        return False
+    return _posix_mode(parent) == 0o700
+
+
+def _directory_warning(store: Path) -> str | None:
+    try:
+        _prepare_config_dir(store)
+    except ValueError as exc:
+        return str(exc)
+    return None
+
+
+def _prepare_config_dir(store: Path) -> None:
+    problem = _symlink_problem(store)
+    if problem is not None:
+        raise ValueError(problem)
+    parent = store.parent
+    if os.name != "posix" or not parent.is_dir():
+        return
+    mode = _posix_mode(parent)
+    if mode is None or mode & 0o022 == 0:
+        return
+    if not _chmod_owned_dir(parent):
+        raise ValueError("credentials directory is group or world writable")
+    _note(store, "credentials directory permissions were tightened to 0700")
+
+
 def _load(path: Path | None = None) -> dict[str, Any]:
     target = _resolve_path(path)
+    _prepare_config_dir(target)
     if not target.exists():
         return {}
     _heal_permissions(target)
@@ -366,6 +442,7 @@ def _quarantine_corrupt(path: Path) -> None:
 
 def _commit(path: Path | None, mutate: Callable[[dict[str, Any]], dict[str, Any]]) -> Path:
     target = _resolve_path(path)
+    _prepare_config_dir(target)
 
     def apply(current: Any) -> dict[str, Any]:
         profiles = mutate(_profiles_of(current, target))
@@ -661,8 +738,14 @@ def store_health(path: Path | None = None) -> list[str]:
     secret values.
     """
     target = _resolve_path(path)
+    problem = _symlink_problem(target)
+    if problem is not None:
+        return [problem]
     _heal_permissions(target)
     warnings: list[str] = []
+    dir_problem = _directory_warning(target)
+    if dir_problem is not None:
+        warnings.append(dir_problem)
     if target.is_file():
         problem = permission_problem(target)
         if problem is not None:

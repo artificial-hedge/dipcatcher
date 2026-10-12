@@ -336,8 +336,11 @@ def test_windows_notice_and_no_select(isolated: Path, monkeypatch: pytest.Monkey
     assert "background progress updates after you submit a line" in _joined(out)
 
 
-def test_color_banner_contains_an_escape(isolated: Path) -> None:
+def test_color_banner_contains_an_escape(isolated: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     del isolated
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.delenv("FORCE_COLOR", raising=False)
+    monkeypatch.setenv("TERM", "xterm-256color")
     out: list[str] = []
     _run(Fake(), _script([]), out, caps_fn=lambda: _caps(color=True, interactive=True))
     text = _joined(out)

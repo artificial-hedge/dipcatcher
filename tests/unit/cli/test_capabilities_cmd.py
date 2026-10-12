@@ -762,7 +762,7 @@ def test_executable_argv0_is_registered_in_the_harness() -> None:
         assert name in names
 
 
-def test_doctor_temp_cwd_writes_resolved_config_outside_the_repo(tmp_path: Path) -> None:
+def test_doctor_in_an_empty_tree_reports_absence_and_creates_nothing(tmp_path: Path) -> None:
     completed = subprocess.run(
         [
             sys.executable,
@@ -779,21 +779,18 @@ def test_doctor_temp_cwd_writes_resolved_config_outside_the_repo(tmp_path: Path)
         check=False,
         timeout=90,
     )
-    assert completed.returncode in {0, 1}, completed.stderr
+    assert completed.returncode == 1, completed.stderr
+    assert "dir_raw: missing" in completed.stdout
     files = sorted(
         path.relative_to(tmp_path).as_posix() for path in tmp_path.rglob("*") if path.is_file()
     )
-    assert files == ["data/metadata/resolved_config.json"]
-    for part in ("raw", "bronze", "silver", "gold", "metadata"):
-        assert (tmp_path / "data" / part).is_dir()
-    resolved = (tmp_path / "data" / "metadata" / "resolved_config.json").resolve()
-    assert _ROOT.resolve() not in resolved.parents
+    assert files == []
+    assert not (tmp_path / "data").exists()
     assert not (tmp_path / "receipts").exists()
     cap = _by_id()["doctor"]
     assert cap["executable"] is True
     assert cap["qualification"]["status"] == "qualified"
-    assert "resolved_config" in cap["command"]["writes"]
-    assert "data_dirs" in cap["command"]["writes"]
+    assert cap["command"]["writes"] == ["resolved_config"]
 
 
 def test_surface_import_waits_until_a_capability_document_is_built(tmp_path: Path) -> None:

@@ -10,9 +10,14 @@ count toward ``max_steps``. ``post_checks`` stay on the step. Declared
 defaults are used for optional arguments. A required ``output_dir`` is the
 first configured output root, and a required input path is that root only
 when the capability does not require a caller dataset. Required choices are
-filled from goal tokens that name them. A model may propose arguments; each
-proposal is validated and never coerced. Any structural problem in the model
-reply keeps the deterministic plan.
+filled from goal tokens that name them. On a dataset-bound capability with
+attached datasets, arguments whose ``bind`` is ``dataset`` or ``goal`` are
+filled from those datasets and the goal, and ``--out-dir`` comes from
+``roots['output_dir']`` when that root is present. Availability columns and
+any other unbound argument are never guessed. Bound values go through
+:func:`validate_args`. A model may propose arguments; each proposal is
+validated and never coerced. Any structural problem in the model reply keeps
+the deterministic plan.
 
 Alias and task phrases score first. A goal token of length 5 or more that
 belongs to exactly one executable capability also scores, so ``serial``
@@ -20,10 +25,14 @@ selects ``serial-watch`` without the full alias. ``research`` and
 ``research-only`` stay distinct ids even when they share ``argv[0]``.
 
 When the goal refers to user data, or ``datasets`` is non-empty, a
-synthetic-only step is kept only with an explicit SYNTHETIC note, and a
-``needs_dataset`` exclusion is recorded unless a dataset-bound step was
-actually planned. Dataset-bound means ``requires_dataset``, an evidence
-class other than ``SYNTHETIC``, and a data label other than ``SYNTHETIC``.
+synthetic-only step is kept only with an explicit SYNTHETIC note. A planned
+dataset-bound runner drops synthetic lanes that cover the same task unless
+the goal asks for a synthetic, self-test, engine-correctness, or sanity
+check. A ``needs_dataset`` exclusion is recorded unless a dataset-bound step
+was actually planned; with no dataset attached the detail asks for
+``/data attach``. Ambiguous datasets or score tasks record ``needs_input``.
+Dataset-bound means ``requires_dataset``, an evidence class other than
+``SYNTHETIC``, and a data label other than ``SYNTHETIC``.
 Experimental qualification is reported as ``unqualified``. Budget trimming
 drops a suffix of the ordered plan and does not reorder steps.
 """
@@ -43,6 +52,7 @@ from typing import Any
 
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive.contracts import (
+    ArgSpec,
     Capability,
     CapabilityCatalog,
     ContractViolation,
@@ -57,6 +67,7 @@ EXCLUSION_CODES = frozenset(
         "retired",
         "unqualified",
         "needs_dataset",
+        "needs_input",
         "budget",
         "max_steps",
         "invalid_args",
@@ -69,6 +80,12 @@ EXCLUSION_CODES = frozenset(
 SYNTHETIC_NOTE = "SYNTHETIC correctness evidence only — it does not evaluate your data"
 _NO_MATCH = "No suitable capability"
 _NEEDS_DATASET = "no qualified dataset-bound runner matched"
+_ATTACH_DATASET = "attach a CSV/Parquet with /data attach <path>"
+_SCORE_QUESTION = (
+    "Which score: volatility (QLIKE), quantile (pinball/CRPS) or probability (Brier/ECE)?"
+)
+_SCORE_CHOICES = frozenset({"volatility", "quantile", "probability"})
+_SYNTHETIC_REQUESTS = ("synthetic", "self test", "engine correctness", "sanity")
 _STOP = frozenset(
     {
         "about",
@@ -267,12 +284,28 @@ def _deterministic_plan(
 ) -> ExecutionPlan:
     ranked = _rank(goal, catalog)
     user_data = _user_data(goal, datasets)
-    steps, exclusions = _select(ranked, catalog, roots, max_steps, goal=goal, user_data=user_data)
+    steps, exclusions = _select(
+        ranked,
+        catalog,
+        roots,
+        max_steps,
+        goal=goal,
+        user_data=user_data,
+        datasets=datasets,
+    )
     ordered = order_steps(steps, catalog)
     kept, budget_ex = _apply_budget(ordered, budget_s)
     exclusions.extend(budget_ex)
     notes: list[str] = []
-    _apply_honesty(kept, catalog, user_data=user_data, exclusions=exclusions, notes=notes)
+    _apply_honesty(
+        kept,
+        catalog,
+        user_data=user_data,
+        exclusions=exclusions,
+        notes=notes,
+        datasets=datasets,
+        goal=goal,
+    )
     _note_if_empty(kept, notes)
     return _new_plan(
         goal,
@@ -310,7 +343,15 @@ def _refine(
     if model_note is not None:
         notes.append(model_note)
     user_data = _user_data(goal, datasets)
-    _apply_honesty(kept, catalog, user_data=user_data, exclusions=exclusions, notes=notes)
+    _apply_honesty(
+        kept,
+        catalog,
+        user_data=user_data,
+        exclusions=exclusions,
+        notes=notes,
+        datasets=datasets,
+        goal=goal,
+    )
     if not kept and not any(item.code == "no_match" for item in exclusions):
         exclusions.append(Exclusion(None, "no_match", _NO_MATCH))
     _note_if_empty(kept, notes)
@@ -376,14 +417,15 @@ def _select(
     *,
     goal: str,
     user_data: bool,
+    datasets: Sequence[DatasetRef],
 ) -> tuple[list[PlanStep], list[Exclusion]]:
     status = [_status_exclusion(cap) for _, cap, _detail in ranked if not cap.executable]
     runnable = [row for row in ranked if row[1].executable]
     if not runnable and not status:
         return [], [Exclusion(None, "no_match", _NO_MATCH)]
     if user_data:
-        return _select_user_data(runnable, status, catalog, roots, max_steps, goal)
-    steps, problems = _take_steps(runnable, catalog, roots, max_steps, goal)
+        return _select_user_data(runnable, status, catalog, roots, max_steps, goal, datasets)
+    steps, problems = _take_steps(runnable, catalog, roots, max_steps, goal, datasets)
     return steps, [*status, *problems]
 
 
@@ -394,16 +436,57 @@ def _select_user_data(
     roots: Roots,
     max_steps: int,
     goal: str,
+    datasets: Sequence[DatasetRef],
 ) -> tuple[list[PlanStep], list[Exclusion]]:
     bound = [row for row in runnable if _dataset_bound(row[1])]
     other = [row for row in runnable if not _dataset_bound(row[1])]
     if not bound:
-        steps, problems = _take_steps(other, catalog, roots, max_steps, goal)
-        return steps, [*status, *problems]
-    steps, problems = _take_steps(bound, catalog, roots, max_steps, goal)
+        return _prefixed(status, *_take_steps(other, catalog, roots, max_steps, goal, datasets))
+    steps, problems = _take_steps(bound, catalog, roots, max_steps, goal, datasets)
     if steps:
+        return _with_explicit_synthetic(
+            steps, problems, other, status, catalog, roots, max_steps, goal, datasets
+        )
+    return _without_synthetic_fallback(
+        other, status, problems, catalog, roots, max_steps, goal, datasets
+    )
+
+
+def _prefixed(
+    status: Sequence[Exclusion], steps: list[PlanStep], problems: list[Exclusion]
+) -> tuple[list[PlanStep], list[Exclusion]]:
+    return steps, [*status, *problems]
+
+
+def _with_explicit_synthetic(
+    steps: list[PlanStep],
+    problems: list[Exclusion],
+    other: Sequence[Ranked],
+    status: Sequence[Exclusion],
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    max_steps: int,
+    goal: str,
+    datasets: Sequence[DatasetRef],
+) -> tuple[list[PlanStep], list[Exclusion]]:
+    if not _wants_synthetic(goal):
         return steps, [*status, *problems]
-    fallback, more = _take_steps(other, catalog, roots, max_steps, goal)
+    extra = _append_same_task_synthetic(steps, other, catalog, roots, max_steps, goal, datasets)
+    return steps, [*status, *problems, *extra]
+
+
+def _without_synthetic_fallback(
+    other: Sequence[Ranked],
+    status: Sequence[Exclusion],
+    problems: list[Exclusion],
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    max_steps: int,
+    goal: str,
+    datasets: Sequence[DatasetRef],
+) -> tuple[list[PlanStep], list[Exclusion]]:
+    plain = [row for row in other if not _synthetic_only(row[1])]
+    fallback, more = _take_steps(plain, catalog, roots, max_steps, goal, datasets)
     return fallback, [*status, *problems, *more]
 
 
@@ -412,20 +495,37 @@ def _take_steps(
     catalog: CapabilityCatalog,
     roots: Roots,
     max_steps: int,
-    goal: str,
+    goal: str = "",
+    datasets: Sequence[DatasetRef] = (),
 ) -> tuple[list[PlanStep], list[Exclusion]]:
     chosen: list[PlanStep] = []
     seen: set[str] = set()
     exclusions: list[Exclusion] = []
+    _absorb_ranked(rows, chosen, seen, exclusions, catalog, roots, max_steps, goal, datasets)
+    return chosen, exclusions
+
+
+def _absorb_ranked(
+    rows: Sequence[Ranked],
+    chosen: list[PlanStep],
+    seen: set[str],
+    exclusions: list[Exclusion],
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    max_steps: int,
+    goal: str,
+    datasets: Sequence[DatasetRef],
+) -> None:
     for _score, cap, detail in rows:
         if cap.id in seen:
             continue
         rationale = f"selected because the goal matched {detail}"
-        added, problem = _consider(cap, rationale, catalog, roots, chosen, seen, max_steps, goal)
+        added, problem = _consider(
+            cap, rationale, catalog, roots, chosen, seen, max_steps, goal, datasets
+        )
         if problem is not None:
             exclusions.append(problem)
         chosen.extend(added)
-    return chosen, exclusions
 
 
 def _consider(
@@ -436,9 +536,10 @@ def _consider(
     chosen: Sequence[PlanStep],
     seen: set[str],
     max_steps: int,
-    goal: str,
+    goal: str = "",
+    datasets: Sequence[DatasetRef] = (),
 ) -> tuple[list[PlanStep], Exclusion | None]:
-    steps, problem = _try_chain(cap, catalog, roots, detail, goal)
+    steps, problem = _try_chain(cap, catalog, roots, detail, goal, datasets)
     if problem is not None:
         return [], problem
     fresh = [step for step in steps if step.capability_id not in seen]
@@ -456,19 +557,19 @@ def _try_chain(
     catalog: CapabilityCatalog,
     roots: Roots,
     detail: str,
-    goal: str,
+    goal: str = "",
+    datasets: Sequence[DatasetRef] = (),
 ) -> tuple[list[PlanStep], Exclusion | None]:
     ordered: list[str] = []
     if not _linearize(cap.id, catalog, {}, ordered):
         return [], Exclusion(
             cap.id, "dependency_missing", f"{cap.id} dependency is missing or not executable"
         )
-    steps, problem = _default_steps(
-        [item for item in ordered if item != cap.id], catalog, roots, cap.id, goal
-    )
+    deps = [item for item in ordered if item != cap.id]
+    steps, problem = _default_steps(deps, catalog, roots, cap.id, goal, datasets)
     if problem is not None:
         return [], problem
-    built = _step_from_defaults(cap, roots, detail, goal)
+    built = _step_from_defaults(cap, roots, detail, goal, datasets)
     if isinstance(built, Exclusion):
         return [], built
     steps.append(built)
@@ -480,14 +581,15 @@ def _default_steps(
     catalog: CapabilityCatalog,
     roots: Roots,
     parent: str,
-    goal: str,
+    goal: str = "",
+    datasets: Sequence[DatasetRef] = (),
 ) -> tuple[list[PlanStep], Exclusion | None]:
     steps: list[PlanStep] = []
     for dep_id in dep_ids:
         dep = catalog.get(dep_id)
         if dep is None:
             return [], Exclusion(parent, "dependency_missing", f"{parent} dependency is missing")
-        built = _step_from_defaults(dep, roots, f"prerequisite of {parent}", goal)
+        built = _step_from_defaults(dep, roots, f"prerequisite of {parent}", goal, datasets)
         if isinstance(built, Exclusion):
             return [], built
         steps.append(built)
@@ -495,13 +597,23 @@ def _default_steps(
 
 
 def _step_from_defaults(
-    cap: Capability, roots: Roots, rationale: str, goal: str
+    cap: Capability,
+    roots: Roots,
+    rationale: str,
+    goal: str = "",
+    datasets: Sequence[DatasetRef] = (),
 ) -> PlanStep | Exclusion:
+    bound, problem = _prebound(cap, goal, datasets, roots)
+    if problem is not None:
+        return problem
+    provided = _suggested_args(cap, goal, roots)
+    provided.update(bound)
     try:
-        args = validate_args(cap, _suggested_args(cap, goal, roots), roots=roots)
+        args = validate_args(cap, provided, roots=roots)
     except ContractViolation as exc:
         return Exclusion(cap.id, "invalid_args", f"{exc.code}:{exc.arg}")
-    return _new_step(cap, args, _safe_text(rationale, f"selected {cap.id}"))
+    text = _compose_rationale(rationale, cap, args, goal)
+    return _new_step(cap, args, _safe_text(text, f"selected {cap.id}"))
 
 
 def _linearize(
@@ -549,13 +661,39 @@ def _apply_honesty(
     user_data: bool,
     exclusions: list[Exclusion],
     notes: list[str],
+    datasets: Sequence[DatasetRef] = (),
+    goal: str = "",
 ) -> None:
     if not user_data:
         return
     if _any_synthetic(steps, catalog) and SYNTHETIC_NOTE not in notes:
         notes.append(SYNTHETIC_NOTE)
-    if not _any_dataset_bound(steps, catalog):
-        exclusions.append(Exclusion(None, "needs_dataset", _NEEDS_DATASET))
+    if _dataset_gap_recorded(steps, catalog, exclusions):
+        return
+    exclusions.append(Exclusion(None, "needs_dataset", _dataset_request(datasets, goal)))
+
+
+def _dataset_gap_recorded(
+    steps: Sequence[PlanStep], catalog: CapabilityCatalog, exclusions: Sequence[Exclusion]
+) -> bool:
+    if _any_dataset_bound(steps, catalog) or _asked_for_input(exclusions):
+        return True
+    return any(item.code == "needs_dataset" for item in exclusions)
+
+
+def _asked_for_input(exclusions: Sequence[Exclusion]) -> bool:
+    return any(item.code == "needs_input" for item in exclusions)
+
+
+def _dataset_request(datasets: Sequence[DatasetRef], goal: str) -> str:
+    """Fallback when no dataset-bound runner was planned.
+
+    A matched dataset-bound runner that has no file records ``/data attach``
+    itself. This fallback stays the generic gap so a synthetic-only plan can
+    still say that no dataset-bound runner matched.
+    """
+    del datasets, goal
+    return _NEEDS_DATASET
 
 
 def _any_synthetic(steps: Sequence[PlanStep], catalog: CapabilityCatalog) -> bool:
@@ -707,6 +845,8 @@ def _mentions_user_data(goal: str) -> bool:
     folded = f" {_normalize(goal)} "
     if " my data " in folded or " my forecast " in folded or " this dataset " in folded:
         return True
+    if " my " in folded and " forecast " in folded:
+        return True
     lowered = goal.lower()
     if any(re.search(rf"\b{word}\b", lowered) for word in _USER_WORDS):
         return True
@@ -725,6 +865,259 @@ def _synthetic_only(cap: Capability) -> bool:
         return True
     labels = {label.upper() for label in cap.data_labels}
     return bool(labels) and labels <= {"SYNTHETIC"}
+
+
+def _wants_synthetic(goal: str) -> bool:
+    norm = _normalize(goal)
+    return any(_phrase_in(norm, phrase) for phrase in _SYNTHETIC_REQUESTS)
+
+
+def _append_same_task_synthetic(
+    steps: list[PlanStep],
+    other: Sequence[Ranked],
+    catalog: CapabilityCatalog,
+    roots: Roots,
+    max_steps: int,
+    goal: str,
+    datasets: Sequence[DatasetRef],
+) -> list[Exclusion]:
+    terms = _bound_hit_terms(steps, catalog, goal)
+    rows = [row for row in other if _synthetic_only(row[1]) and _covers_terms(row[1], terms)]
+    seen = {step.capability_id for step in steps}
+    problems: list[Exclusion] = []
+    _absorb_ranked(rows, steps, seen, problems, catalog, roots, max_steps, goal, datasets)
+    return problems
+
+
+def _bound_hit_terms(steps: Sequence[PlanStep], catalog: CapabilityCatalog, goal: str) -> set[str]:
+    found: set[str] = set()
+    for step in steps:
+        cap = catalog.get(step.capability_id)
+        if cap is None:
+            continue
+        found.update(_step_hit_terms(cap, step, goal))
+    return found
+
+
+def _step_hit_terms(cap: Capability, step: PlanStep, goal: str) -> set[str]:
+    found: set[str] = set()
+    for spec in cap.args:
+        if spec.bind != "goal" or spec.name not in step.args:
+            continue
+        choice = str(step.args[spec.name])
+        found.update(_hit_terms(goal, spec.goal_terms.get(choice, ())))
+    return found
+
+
+def _covers_terms(cap: Capability, terms: set[str]) -> bool:
+    if not terms:
+        return False
+    blob = _capability_blob(cap)
+    return any(_phrase_in(blob, _normalize(term)) for term in terms)
+
+
+def _capability_blob(cap: Capability) -> str:
+    tasks = [task.replace("_", " ") for task in cap.tasks]
+    return _normalize(" ".join((cap.purpose, *cap.aliases, *tasks)))
+
+
+def _prebound(
+    cap: Capability, goal: str, datasets: Sequence[DatasetRef], roots: Roots
+) -> tuple[dict[str, Any], Exclusion | None]:
+    if not _dataset_bound(cap) or not _has_bind(cap):
+        return {}, None
+    if not datasets:
+        return _missing_dataset(cap, goal)
+    provided, problem = _bind_declared(cap, goal, datasets)
+    if problem is not None:
+        return {}, problem
+    provided.update(_bind_output_dir(cap, roots))
+    return provided, None
+
+
+def _missing_dataset(cap: Capability, goal: str) -> tuple[dict[str, Any], Exclusion | None]:
+    if _mentions_user_data(goal) and _needs_attached_dataset(cap):
+        return {}, Exclusion(cap.id, "needs_dataset", _ATTACH_DATASET)
+    return {}, None
+
+
+def _needs_attached_dataset(cap: Capability) -> bool:
+    return any(spec.bind == "dataset" and spec.required for spec in cap.args)
+
+
+def _has_bind(cap: Capability) -> bool:
+    return any(bool(spec.bind) for spec in cap.args)
+
+
+def _bind_declared(
+    cap: Capability, goal: str, datasets: Sequence[DatasetRef]
+) -> tuple[dict[str, Any], Exclusion | None]:
+    provided: dict[str, Any] = {}
+    for spec in _bind_specs(cap):
+        problem = _bind_one(spec, goal, datasets, cap.id, provided)
+        if problem is not None:
+            return {}, problem
+    return provided, None
+
+
+def _bind_specs(cap: Capability) -> list[ArgSpec]:
+    specs = [spec for spec in cap.args if spec.bind]
+    specs.sort(key=lambda spec: (spec.bind != "dataset", spec.name))
+    return specs
+
+
+def _bind_one(
+    spec: ArgSpec,
+    goal: str,
+    datasets: Sequence[DatasetRef],
+    cap_id: str,
+    provided: dict[str, Any],
+) -> Exclusion | None:
+    if spec.bind == "dataset":
+        return _bind_dataset_arg(spec, goal, datasets, cap_id, provided)
+    if spec.bind == "goal":
+        return _bind_goal_arg(spec, goal, cap_id, provided)
+    return None
+
+
+def _bind_dataset_arg(
+    spec: ArgSpec,
+    goal: str,
+    datasets: Sequence[DatasetRef],
+    cap_id: str,
+    provided: dict[str, Any],
+) -> Exclusion | None:
+    chosen, problem = _choose_dataset(goal, datasets, cap_id)
+    if chosen is None:
+        return problem
+    provided[spec.name] = chosen.path
+    return None
+
+
+def _bind_goal_arg(
+    spec: ArgSpec, goal: str, cap_id: str, provided: dict[str, Any]
+) -> Exclusion | None:
+    choice, problem = _choose_goal(goal, spec, cap_id)
+    if choice is None:
+        return problem
+    provided[spec.name] = choice
+    return None
+
+
+def _choose_dataset(
+    goal: str, datasets: Sequence[DatasetRef], cap_id: str
+) -> tuple[DatasetRef | None, Exclusion | None]:
+    if len(datasets) == 1:
+        return datasets[0], None
+    named = [item for item in datasets if _goal_names_file(goal, item.path)]
+    if len(named) == 1:
+        return named[0], None
+    return None, Exclusion(cap_id, "needs_input", _dataset_question(datasets))
+
+
+def _goal_names_file(goal: str, path: str) -> bool:
+    name = Path(path).name
+    if not name:
+        return False
+    pattern = rf"(?<![\w.-]){re.escape(name)}(?![\w.-])"
+    return re.search(pattern, goal, flags=re.IGNORECASE) is not None
+
+
+def _dataset_question(datasets: Sequence[DatasetRef]) -> str:
+    labels = _dataset_labels(datasets)
+    if len(labels) == 1:
+        return f"Which dataset: {labels[0]}?"
+    if len(labels) == 2:
+        return f"Which dataset: {labels[0]} or {labels[1]}?"
+    head = ", ".join(labels[:-1])
+    return f"Which dataset: {head}, or {labels[-1]}?"
+
+
+def _dataset_labels(datasets: Sequence[DatasetRef]) -> list[str]:
+    names = [Path(item.path).name or item.path for item in datasets]
+    if len(set(names)) == len(names):
+        return names
+    return [item.path for item in datasets]
+
+
+def _choose_goal(goal: str, spec: ArgSpec, cap_id: str) -> tuple[str | None, Exclusion | None]:
+    matched = _matched_choices(goal, spec)
+    if len(matched) == 1:
+        return matched[0], None
+    return None, Exclusion(cap_id, "needs_input", _goal_question(spec))
+
+
+def _matched_choices(goal: str, spec: ArgSpec) -> list[str]:
+    norm = _normalize(goal)
+    return [choice for choice, terms in spec.goal_terms.items() if _terms_hit(norm, terms)]
+
+
+def _terms_hit(norm: str, terms: Sequence[str]) -> bool:
+    return any(_phrase_in(norm, _normalize(term)) for term in terms)
+
+
+def _goal_question(spec: ArgSpec) -> str:
+    if set(spec.goal_terms) == _SCORE_CHOICES:
+        return _SCORE_QUESTION
+    labels = ", ".join(spec.goal_terms)
+    return f"Which {spec.name}: {labels}?"
+
+
+def _bind_output_dir(cap: Capability, roots: Roots) -> dict[str, str]:
+    locations = list(roots.get("output_dir", ()))
+    if not locations:
+        return {}
+    spec = _spec_named(cap, "--out-dir")
+    if spec is None or spec.path_role != "output_dir":
+        return {}
+    return {spec.name: str(locations[0])}
+
+
+def _spec_named(cap: Capability, name: str) -> ArgSpec | None:
+    for spec in cap.args:
+        if spec.name == name:
+            return spec
+    return None
+
+
+def _compose_rationale(base: str, cap: Capability, args: Mapping[str, Any], goal: str) -> str:
+    clause = _binding_clause(cap, args, goal)
+    if not clause:
+        return base
+    return f"{base}. {clause}"
+
+
+def _binding_clause(cap: Capability, args: Mapping[str, Any], goal: str) -> str:
+    parts = [_clause_for(spec, args, goal) for spec in cap.args]
+    return ". ".join(part for part in parts if part)
+
+
+def _clause_for(spec: ArgSpec, args: Mapping[str, Any], goal: str) -> str:
+    if spec.name not in args or not spec.bind:
+        return ""
+    if spec.bind == "dataset":
+        return _dataset_clause(args[spec.name])
+    if spec.bind == "goal":
+        return _goal_clause(spec, args[spec.name], goal)
+    return ""
+
+
+def _dataset_clause(path: object) -> str:
+    text = str(path)
+    if contains_shell_metacharacters(text):
+        return "bound dataset"
+    return f"bound dataset {text}"
+
+
+def _goal_clause(spec: ArgSpec, choice: object, goal: str) -> str:
+    hits = _hit_terms(goal, spec.goal_terms.get(str(choice), ()))
+    why = ", ".join(hits) if hits else str(choice)
+    return f"inferred {choice} because the goal matched {why}"
+
+
+def _hit_terms(goal: str, terms: Sequence[str]) -> list[str]:
+    norm = _normalize(goal)
+    return [term for term in terms if _phrase_in(norm, _normalize(term))]
 
 
 def _status_exclusion(cap: Capability) -> Exclusion:

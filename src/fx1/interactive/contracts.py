@@ -1,10 +1,15 @@
 """Capability-contract client for ``/superpower``.
 
 Loads the lab JSON schema ``dipcatcher.capabilities.v1`` and turns it into
-typed, argv-safe calls. Unknown optional fields are ignored. Missing required
+typed, argv-safe calls. Unknown optional fields outside an argument object
+are ignored. Unknown keys on an argument object are rejected. Missing required
 fields, wrong types, and an ``executable`` capability that is not
 ``qualified`` (or that has no qualification evidence) reject the catalog.
 Retired capabilities are never executable.
+
+``bind`` is an optional planner hint, ``dataset`` or ``goal``. ``goal_terms``
+maps a goal-bound choice to lowercase phrases and must be a subset of
+``choices``. The size bounds match the lab publisher.
 
 ``allowed_args``, when present, is a whitelist. A list of names only
 whitelists. An object whitelists and may tighten ``min``, ``max``, and
@@ -17,6 +22,13 @@ strings. Non-executable rows are never run, so a null timeout or a
 stringified number on those rows does not reject the catalog: missing
 limits become ``0``, and numeric strings are coerced. Integer and float
 arguments may carry string ``choices`` (the lab publishes ``"2"``).
+
+A non-executable entry may publish JSON null for ``command.timeout_s`` and
+for ``limits.max_runtime_s`` / ``max_output_chars``; those nulls are read as
+0. An executable entry must publish real numbers. Capability ids may be the
+lab's space-separated nested command names. Positional argument names may
+contain ``_``. Neither ids nor argument names are interpolated into a shell;
+calls stay argv arrays, and shell metacharacters are still rejected.
 
 The catalog digest is the SHA-256 of the canonical JSON (sorted keys,
 compact separators) of the parsed document, including ignored fields.
@@ -63,18 +75,46 @@ _KINDS = frozenset({"option", "argument"})
 _TYPES = frozenset({"flag", "int", "float", "str", "enum", "path", "csv"})
 _ITEM_TYPES = frozenset({"int", "float", "str", "enum"})
 _PATH_ROLES = frozenset({"config", "input", "output_dir", "any"})
+# Bounds are mirrored by quant_fund.cli.capability_cmds (publisher/client lockstep).
+_BIND_KINDS = frozenset({"dataset", "goal"})
+_ARG_KEYS = frozenset(
+    {
+        "name",
+        "kind",
+        "type",
+        "required",
+        "default",
+        "repeatable",
+        "help",
+        "choices",
+        "min",
+        "max",
+        "item_type",
+        "path_role",
+        "bind",
+        "goal_terms",
+    }
+)
+_MAX_BIND_CHOICES = 8
+_MAX_BIND_TERMS = 12
+_MAX_BIND_TERM_LEN = 48
+_MAX_BIND_TERM_TOTAL = 48
+_TERM_RE = re.compile(r"^[a-z0-9]+(?:[ -][a-z0-9]+)*$")
+_EMPTY_TERMS: Mapping[str, tuple[str, ...]] = MappingProxyType({})
 _NUMERIC_TYPES = frozenset({"int", "float", "csv"})
-_CHOICE_TYPES = frozenset({"str", "enum", "csv"})
-_CHOICE_CARRIERS = _CHOICE_TYPES | frozenset({"int", "float"})
+_CHOICE_TYPES = frozenset({"str", "enum", "csv", "int", "float"})
+_CHOICE_CARRIERS = _CHOICE_TYPES
 _SHELL_CHARS = frozenset(";|&`$()<>\\\n\r\x00")
 _PATH_META = frozenset(";|&`$()<>\n\r\x00")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_ID_RE = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
+# Lab command ids: one token, or nested tokens separated by single spaces
+# (``allocation compare``). Shell metacharacters are not part of this pattern.
+_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*(?: [a-z0-9][a-z0-9-]*)*$")
 _TASK_RE = re.compile(r"^[a-z][a-z0-9_]{0,80}$")
 _ALIAS_RE = re.compile(r"^[a-z0-9][a-z0-9 ._-]{0,80}$")
 _VERSION_RE = re.compile(r"^[A-Za-z0-9._-]{1,32}$")
 _OPTION_NAME = re.compile(r"^--[a-z][a-z0-9-]{0,63}$")
-_ARG_NAME = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
+_ARG_NAME = re.compile(r"^[a-z][a-z0-9_-]{0,63}$")
 _INT_TOKEN = re.compile(r"-?\d+")
 _FLOAT_TOKEN = re.compile(r"-?(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][+-]?\d+)?")
 _MAX_STR = 256
@@ -107,7 +147,11 @@ class ContractViolation(ValueError):
 
 @dataclass(frozen=True)
 class ArgSpec:
-    """One CLI option or positional argument."""
+    """One CLI option or positional argument.
+
+    ``bind`` is ``dataset`` or ``goal`` when the planner may fill the value.
+    ``goal_terms`` maps a goal-bound choice to the phrases that select it.
+    """
 
     name: str
     kind: str
@@ -122,6 +166,8 @@ class ArgSpec:
     repeatable: bool
     help: str
     has_default: bool
+    bind: str | None = None
+    goal_terms: Mapping[str, tuple[str, ...]] = _EMPTY_TERMS
 
 
 @dataclass(frozen=True)
@@ -182,7 +228,7 @@ class CapabilityCatalog:
         parsed = _load_document(doc)
         _check_schema(parsed)
         _check_generated_by(parsed)
-        caps = _parse_capabilities(parsed)
+        caps = _capabilities_from_document(parsed)
         digest = catalog_digest(parsed)
         return cls(capabilities=MappingProxyType(caps), digest=digest, document=parsed)
 
@@ -326,6 +372,7 @@ def build_argv(
     so an already confined absolute path is not rejected on the second pass.
     The vector starts with ``command.argv``, which may differ from the
     capability id. Spec order is preserved. False flags are omitted.
+    Shell metacharacters never appear in the result.
     """
     if not isinstance(validated, Mapping):
         raise ContractViolation("bad_type", "", "validated args must be an object")
@@ -391,6 +438,29 @@ def _check_generated_by(doc: Mapping[str, Any]) -> None:
         raise ContractError("generated_by.n_lab_commands must be a nonnegative integer")
 
 
+def _capabilities_from_document(doc: Mapping[str, Any]) -> dict[str, Capability]:
+    if doc.get("view") == "describe":
+        return _parse_describe(doc)
+    return _parse_capabilities(doc)
+
+
+def _parse_describe(doc: Mapping[str, Any]) -> dict[str, Capability]:
+    error = doc.get("error")
+    if error is not None:
+        raise ContractError(_describe_error_text(error))
+    capability = doc.get("capability")
+    if not isinstance(capability, dict):
+        raise ContractError("describe capability must be an object")
+    cap = _parse_capability(capability, 0)
+    return {cap.id: cap}
+
+
+def _describe_error_text(error: object) -> str:
+    if isinstance(error, str) and error.strip():
+        return error.strip()
+    return "describe failed"
+
+
 def _parse_capabilities(doc: Mapping[str, Any]) -> dict[str, Capability]:
     raw = doc.get("capabilities")
     if not isinstance(raw, list):
@@ -407,15 +477,14 @@ def _parse_capabilities(doc: Mapping[str, Any]) -> dict[str, Capability]:
 def _parse_capability(item: Any, index: int) -> Capability:
     obj = _mapping(item, f"capabilities[{index}]")
     ctx = f"capabilities[{index}]"
-    if obj.get("executable") is False:
-        return _parse_inactive(obj, ctx)
     identity = _parse_identity(obj, ctx)
-    command = _parse_command(obj, ctx)
+    executable = _bool(obj.get("executable"), f"{ctx}.executable")
+    command = _parse_command(obj, ctx, allow_null_budget=not executable)
     inputs = _parse_inputs(obj, ctx)
     outputs = _parse_outputs(obj, ctx)
-    limits = _parse_limits(obj, ctx)
+    limits = _parse_limits(obj, ctx, allow_null_budget=not executable)
     status, evidence = _parse_qualification(obj, ctx)
-    args = _parse_args(obj.get("args"), ctx)
+    args = _parse_args(obj.get("args"), ctx, lenient=not executable)
     allowed = _parse_allowed(obj, args, ctx)
     _check_allowed_covers_required(args, allowed, ctx)
     _check_defaults(args, allowed, ctx)
@@ -446,7 +515,7 @@ def _parse_capability(item: Any, index: int) -> Capability:
         qualification_status=status,
         qualification_evidence=evidence,
         evidence_class=_member(obj.get("evidence_class"), _EVIDENCE, f"{ctx}.evidence_class"),
-        executable=_bool(obj.get("executable"), f"{ctx}.executable"),
+        executable=executable,
         executable_reason=_text(
             obj.get("executable_reason"), f"{ctx}.executable_reason", limit=400
         ),
@@ -454,255 +523,6 @@ def _parse_capability(item: Any, index: int) -> Capability:
     )
     _check_executable_policy(cap)
     return cap
-
-
-def _parse_inactive(obj: Mapping[str, Any], ctx: str) -> Capability:
-    """Parse a row that cannot run. Missing limits and stringly numbers are tolerated."""
-    cap_id = _loose_id(obj.get("id"), f"{ctx}.id")
-    version = _loose_version(obj.get("version"), ctx)
-    purpose = _loose_purpose(obj.get("purpose"))
-    command = _mapping(obj.get("command"), f"{ctx}.command")
-    inputs = _mapping(obj.get("inputs"), f"{ctx}.inputs")
-    outputs = _mapping(obj.get("outputs"), f"{ctx}.outputs")
-    limits = _mapping(obj.get("limits"), f"{ctx}.limits")
-    status, evidence = _parse_qualification(obj, ctx)
-    reason = _text(obj.get("executable_reason"), f"{ctx}.executable_reason", limit=400).strip()
-    if not reason:
-        raise ContractError(f"{cap_id} is not executable and has no executable_reason")
-    cap = Capability(
-        id=cap_id,
-        version=version,
-        purpose=purpose,
-        tasks=_loose_strings(obj.get("tasks"), f"{ctx}.tasks"),
-        aliases=_loose_strings(obj.get("aliases"), f"{ctx}.aliases"),
-        argv=_inactive_argv(command, ctx, cap_id),
-        role=_loose_role(command.get("role")),
-        read_only=command.get("read_only") is True,
-        writes=_loose_strings(command.get("writes"), f"{ctx}.command.writes"),
-        consequential=command.get("consequential") is True,
-        timeout_s=_inactive_number(command.get("timeout_s"), f"{ctx}.command.timeout_s"),
-        args=_inactive_args(obj.get("args"), ctx),
-        data_labels=_loose_strings(inputs.get("data_labels"), f"{ctx}.inputs.data_labels"),
-        requires_dataset=inputs.get("requires_dataset") is True,
-        availability_timing=_loose_timing(inputs.get("availability_timing")),
-        scores=_loose_strings(outputs.get("scores"), f"{ctx}.outputs.scores"),
-        receipt_schema=_loose_short(outputs.get("receipt_schema"), 80),
-        receipt_flag=_loose_strings(outputs.get("receipt_flag"), f"{ctx}.outputs.receipt_flag"),
-        receipt_stdout_marker=_loose_short(outputs.get("receipt_stdout_marker"), 80),
-        dependencies=_loose_strings(obj.get("dependencies"), f"{ctx}.dependencies"),
-        post_checks=_parse_post_checks(obj.get("post_checks"), ctx),
-        max_runtime_s=_inactive_number(limits.get("max_runtime_s"), f"{ctx}.limits.max_runtime_s"),
-        max_output_chars=_inactive_count(
-            limits.get("max_output_chars"), f"{ctx}.limits.max_output_chars"
-        ),
-        qualification_status=status,
-        qualification_evidence=evidence,
-        evidence_class=_member(obj.get("evidence_class"), _EVIDENCE, f"{ctx}.evidence_class"),
-        executable=False,
-        executable_reason=reason,
-        allowed_args=None,
-    )
-    _check_executable_policy(cap)
-    return cap
-
-
-def _loose_id(value: Any, ctx: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise ContractError(f"{ctx} must be a non-empty string")
-    if "\n" in value or "\r" in value or "\x00" in value or len(value) > 120:
-        raise ContractError(f"{ctx} is invalid")
-    return value.strip()
-
-
-def _loose_version(value: Any, ctx: str) -> str:
-    text = _loose_id(value, f"{ctx}.version")
-    if len(text) > 32:
-        raise ContractError(f"{ctx}.version is invalid")
-    return text
-
-
-def _loose_purpose(value: Any) -> str:
-    if not isinstance(value, str) or not value.strip():
-        return "Unqualified capability."
-    text = " ".join(value.split())
-    if len(text) > 500:
-        return text[:500]
-    return text
-
-
-def _loose_role(value: Any) -> str:
-    if isinstance(value, str) and value.strip():
-        return value.strip()[:64]
-    return "unspecified"
-
-
-def _loose_timing(value: Any) -> str:
-    if isinstance(value, str) and value.strip():
-        return " ".join(value.split())[:400]
-    return "unavailable"
-
-
-def _loose_short(value: Any, limit: int) -> str:
-    if not isinstance(value, str):
-        return ""
-    return value[:limit]
-
-
-def _loose_strings(value: Any, ctx: str) -> tuple[str, ...]:
-    if not isinstance(value, list):
-        raise ContractError(f"{ctx} must be a list of strings")
-    found: list[str] = []
-    for item in value:
-        if not isinstance(item, str) or not item.strip():
-            raise ContractError(f"{ctx} must be a list of non-empty strings")
-        if "\x00" in item:
-            raise ContractError(f"{ctx} contains NUL")
-        found.append(item)
-    return tuple(found)
-
-
-def _inactive_argv(command: Mapping[str, Any], ctx: str, cap_id: str) -> tuple[str, ...]:
-    raw = command.get("argv")
-    if raw is None:
-        return (cap_id,)
-    parts = _loose_strings(raw, f"{ctx}.command.argv")
-    _reject_shell_tokens(parts, f"{ctx}.command.argv")
-    return parts
-
-
-def _inactive_number(value: Any, ctx: str) -> float:
-    if value is None:
-        return 0.0
-    number = _coerce_number(value)
-    if number is None or number < 0:
-        raise ContractError(f"{ctx} must be a number or null")
-    return number
-
-
-def _inactive_count(value: Any, ctx: str) -> int:
-    number = _inactive_number(value, ctx)
-    if not number.is_integer():
-        raise ContractError(f"{ctx} must be an integer or null")
-    return int(number)
-
-
-def _inactive_args(raw: Any, ctx: str) -> tuple[ArgSpec, ...]:
-    if not isinstance(raw, list):
-        raise ContractError(f"{ctx}.args must be a list")
-    found: list[ArgSpec] = []
-    seen: set[str] = set()
-    for index, item in enumerate(raw):
-        spec = _inactive_arg(item, f"{ctx}.args[{index}]")
-        if spec.name in seen:
-            continue
-        seen.add(spec.name)
-        found.append(spec)
-    return tuple(found)
-
-
-def _inactive_arg(raw: Any, ctx: str) -> ArgSpec:
-    obj = _mapping(raw, ctx)
-    name = _inactive_name(obj.get("name"), ctx)
-    kind = obj.get("kind") if obj.get("kind") in _KINDS else _guess_kind(name)
-    typ = obj.get("type") if obj.get("type") in _TYPES else "str"
-    default, has_default = _inactive_default(obj.get("default"), str(typ))
-    return ArgSpec(
-        name=name,
-        kind=str(kind),
-        type=str(typ),
-        required=obj.get("required") is True,
-        default=default,
-        choices=_inactive_choices(obj.get("choices")),
-        minimum=_inactive_bound(obj.get("min")),
-        maximum=_inactive_bound(obj.get("max")),
-        item_type=_inactive_item_type(obj.get("item_type"), str(typ)),
-        path_role=_inactive_role(obj.get("path_role"), str(typ)),
-        repeatable=obj.get("repeatable") is True and typ not in {"flag", "csv"},
-        help=_inactive_help(obj.get("help")),
-        has_default=has_default,
-    )
-
-
-def _inactive_name(value: Any, ctx: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise ContractError(f"{ctx}.name must be a non-empty string")
-    if any(char in value for char in "\n\r\x00 \t") or len(value) > 80:
-        raise ContractError(f"{ctx}.name is invalid")
-    return value
-
-
-def _guess_kind(name: str) -> str:
-    if name.startswith("-"):
-        return "option"
-    return "argument"
-
-
-def _inactive_default(value: Any, typ: str) -> tuple[Any, bool]:
-    if value is None:
-        return None, False
-    if typ == "flag":
-        return _inactive_flag(value)
-    if typ in {"int", "float"}:
-        return _inactive_numeric_default(value, typ)
-    if isinstance(value, str):
-        return value, True
-    return None, False
-
-
-def _inactive_flag(value: Any) -> tuple[Any, bool]:
-    if isinstance(value, bool):
-        return value, True
-    if isinstance(value, str) and value.lower() in {"true", "false"}:
-        return value.lower() == "true", True
-    return None, False
-
-
-def _inactive_numeric_default(value: Any, typ: str) -> tuple[Any, bool]:
-    number = _coerce_number(value)
-    if number is None:
-        return None, False
-    if typ == "int":
-        if not number.is_integer():
-            return None, False
-        return int(number), True
-    return number, True
-
-
-def _inactive_bound(value: Any) -> float | None:
-    if value is None:
-        return None
-    return _coerce_number(value)
-
-
-def _inactive_choices(value: Any) -> tuple[str, ...] | None:
-    if not isinstance(value, list) or not value:
-        return None
-    found = [
-        str(item)
-        for item in value
-        if isinstance(item, (str, int, float)) and not isinstance(item, bool)
-    ]
-    if not found:
-        return None
-    return tuple(found)
-
-
-def _inactive_item_type(value: Any, typ: str) -> str | None:
-    if typ != "csv" or value not in _ITEM_TYPES:
-        return None
-    return str(value)
-
-
-def _inactive_role(value: Any, typ: str) -> str | None:
-    if typ != "path" or value not in _PATH_ROLES:
-        return "any" if typ == "path" else None
-    return str(value)
-
-
-def _inactive_help(value: Any) -> str:
-    if not isinstance(value, str):
-        return ""
-    return " ".join(value.split())[:160]
 
 
 def _coerce_number(value: Any) -> float | None:
@@ -738,7 +558,10 @@ def _parse_identity(
 
 
 def _parse_command(
-    obj: Mapping[str, Any], ctx: str
+    obj: Mapping[str, Any],
+    ctx: str,
+    *,
+    allow_null_budget: bool,
 ) -> tuple[tuple[str, ...], str, bool, tuple[str, ...], bool, float]:
     raw = _mapping(obj.get("command"), f"{ctx}.command")
     argv = _str_tuple(raw.get("argv"), f"{ctx}.command.argv", allow_empty=False)
@@ -746,13 +569,16 @@ def _parse_command(
     role = _text(raw.get("role"), f"{ctx}.command.role", limit=64).strip()
     if not role:
         raise ContractError(f"{ctx}.command.role must be non-empty")
+    timeout = _optional_budget(
+        raw.get("timeout_s"), f"{ctx}.command.timeout_s", allow_null=allow_null_budget
+    )
     return (
         argv,
         role,
         _bool(raw.get("read_only"), f"{ctx}.command.read_only"),
         _str_tuple(raw.get("writes"), f"{ctx}.command.writes", allow_empty=True),
         _bool(raw.get("consequential"), f"{ctx}.command.consequential"),
-        _nonneg_number(raw.get("timeout_s"), f"{ctx}.command.timeout_s"),
+        timeout,
     )
 
 
@@ -788,12 +614,21 @@ def _parse_outputs(
     )
 
 
-def _parse_limits(obj: Mapping[str, Any], ctx: str) -> tuple[float, int]:
+def _parse_limits(
+    obj: Mapping[str, Any], ctx: str, *, allow_null_budget: bool
+) -> tuple[float, int]:
     raw = _mapping(obj.get("limits"), f"{ctx}.limits")
-    return (
-        _nonneg_number(raw.get("max_runtime_s"), f"{ctx}.limits.max_runtime_s"),
-        _nonneg_int(raw.get("max_output_chars"), f"{ctx}.limits.max_output_chars"),
+    runtime = _optional_budget(
+        raw.get("max_runtime_s"),
+        f"{ctx}.limits.max_runtime_s",
+        allow_null=allow_null_budget,
     )
+    output_chars = _optional_budget_int(
+        raw.get("max_output_chars"),
+        f"{ctx}.limits.max_output_chars",
+        allow_null=allow_null_budget,
+    )
+    return runtime, output_chars
 
 
 def _parse_qualification(obj: Mapping[str, Any], ctx: str) -> tuple[str, tuple[str, ...]]:
@@ -803,22 +638,25 @@ def _parse_qualification(obj: Mapping[str, Any], ctx: str) -> tuple[str, tuple[s
     return status, evidence
 
 
-def _parse_args(raw: Any, ctx: str) -> tuple[ArgSpec, ...]:
+def _parse_args(raw: Any, ctx: str, *, lenient: bool) -> tuple[ArgSpec, ...]:
     if not isinstance(raw, list):
         raise ContractError(f"{ctx}.args must be a list")
-    args = tuple(_parse_arg(item, f"{ctx}.args[{index}]") for index, item in enumerate(raw))
+    args = tuple(
+        _parse_arg(item, f"{ctx}.args[{index}]", lenient=lenient) for index, item in enumerate(raw)
+    )
     _check_unique_names(args)
     return args
 
 
-def _parse_arg(raw: Any, ctx: str) -> ArgSpec:
+def _parse_arg(raw: Any, ctx: str, *, lenient: bool) -> ArgSpec:
     obj = _mapping(raw, ctx)
+    _reject_unknown_keys(obj, _ARG_KEYS, ctx)
     name = _text(obj.get("name"), f"{ctx}.name", limit=68)
     kind = _member(obj.get("kind"), _KINDS, f"{ctx}.kind")
     typ = _member(obj.get("type"), _TYPES, f"{ctx}.type")
     _check_name_kind(name, kind, ctx)
-    has_default = "default" in obj and obj.get("default") is not None
-    default = obj.get("default") if has_default else None
+    default = _coerce_default(typ, obj.get("default"), ctx, lenient=lenient)
+    has_default = default is not None
     spec = ArgSpec(
         name=name,
         kind=kind,
@@ -826,23 +664,154 @@ def _parse_arg(raw: Any, ctx: str) -> ArgSpec:
         required=_bool(obj.get("required"), f"{ctx}.required"),
         default=default,
         choices=_optional_choices(obj, ctx),
-        minimum=_optional_number(obj, "min", ctx),
-        maximum=_optional_number(obj, "max", ctx),
+        minimum=_optional_number(obj, "min", ctx, lenient=lenient),
+        maximum=_optional_number(obj, "max", ctx, lenient=lenient),
         item_type=_optional_member(obj, "item_type", _ITEM_TYPES, ctx),
         path_role=_optional_member(obj, "path_role", _PATH_ROLES, ctx),
         repeatable=_optional_bool(obj, "repeatable", False, ctx),
         help=_help_text(obj, ctx),
         has_default=has_default,
+        bind=_optional_member(obj, "bind", _BIND_KINDS, ctx),
+        goal_terms=_parse_goal_terms(obj, ctx),
     )
     _check_arg_shape(spec, ctx)
     return spec
 
 
+def _coerce_default(kind: str, raw: Any, ctx: str, *, lenient: bool) -> Any:
+    """Normalize a published default.
+
+    Null and an empty path mean the default is absent. Flag text becomes a
+    bool. Executable numeric defaults must already be numbers; a non-executable
+    row may publish them as text because that row is never executed.
+    """
+    if not isinstance(raw, str):
+        return raw
+    text = raw.strip()
+    if kind == "flag":
+        return _flag_default(text, ctx)
+    if kind == "path" and text == "":
+        return None
+    if lenient and kind in {"int", "float"}:
+        return _lenient_numeric_default(kind, text, raw)
+    return raw
+
+
+def _flag_default(text: str, ctx: str) -> bool:
+    if text.lower() in {"true", "false"}:
+        return text.lower() == "true"
+    raise ContractError(f"{ctx}.default is not a boolean")
+
+
+def _lenient_numeric_default(kind: str, text: str, raw: Any) -> Any:
+    number = _coerce_number(text)
+    if number is None:
+        return raw
+    if kind == "int":
+        if not number.is_integer():
+            return raw
+        return int(number)
+    return number
+
+
 def _check_arg_shape(spec: ArgSpec, ctx: str) -> None:
     _check_bounds_pair(spec.minimum, spec.maximum, ctx)
     _check_type_rules(spec, ctx)
+    _check_binding(spec, ctx)
     if spec.has_default:
         _reject_bad_default(spec, None, ctx)
+
+
+def _reject_unknown_keys(obj: Mapping[str, Any], allowed: frozenset[str], ctx: str) -> None:
+    extra = sorted(key for key in obj if key not in allowed)
+    if extra:
+        raise ContractError(f"{ctx} unknown key {extra[0]}")
+
+
+def _parse_goal_terms(obj: Mapping[str, Any], ctx: str) -> Mapping[str, tuple[str, ...]]:
+    if "goal_terms" not in obj or obj["goal_terms"] is None:
+        return _EMPTY_TERMS
+    raw = obj["goal_terms"]
+    _check_goal_terms_shape(raw, ctx)
+    if not isinstance(raw, Mapping):
+        return _EMPTY_TERMS
+    return _goal_terms_mapping(raw, ctx)
+
+
+def _check_goal_terms_shape(raw: Any, ctx: str) -> None:
+    if not isinstance(raw, Mapping) or not raw:
+        raise ContractError(f"{ctx}.goal_terms must be an object")
+    if len(raw) > _MAX_BIND_CHOICES:
+        raise ContractError(f"{ctx}.goal_terms exceeds {_MAX_BIND_CHOICES} choices")
+
+
+def _goal_terms_mapping(raw: Mapping[str, Any], ctx: str) -> Mapping[str, tuple[str, ...]]:
+    built: dict[str, tuple[str, ...]] = {}
+    total = 0
+    for key, value in raw.items():
+        terms = _parse_term_list(key, value, ctx)
+        total += len(terms)
+        if total > _MAX_BIND_TERM_TOTAL:
+            raise ContractError(f"{ctx}.goal_terms exceeds {_MAX_BIND_TERM_TOTAL} terms")
+        built[str(key)] = terms
+    return MappingProxyType(built)
+
+
+def _parse_term_list(key: Any, value: Any, ctx: str) -> tuple[str, ...]:
+    if not isinstance(key, str) or not key:
+        raise ContractError(f"{ctx}.goal_terms has an invalid choice")
+    where = f"{ctx}.goal_terms.{key}"
+    items = _term_items(value, where)
+    terms = tuple(_one_term(item, where) for item in items)
+    if len(set(terms)) != len(terms):
+        raise ContractError(f"{where} has a duplicate term")
+    return terms
+
+
+def _term_items(value: Any, where: str) -> list[Any]:
+    if not isinstance(value, list) or not value:
+        raise ContractError(f"{where} must be a non-empty list")
+    if len(value) > _MAX_BIND_TERMS:
+        raise ContractError(f"{where} exceeds {_MAX_BIND_TERMS} terms")
+    return list(value)
+
+
+def _one_term(item: Any, where: str) -> str:
+    if isinstance(item, str) and len(item) <= _MAX_BIND_TERM_LEN and _TERM_RE.fullmatch(item):
+        return item
+    raise ContractError(f"{where} has an invalid term")
+
+
+def _check_binding(spec: ArgSpec, ctx: str) -> None:
+    if spec.bind is None:
+        _check_unbound_terms(spec, ctx)
+        return
+    if spec.bind == "dataset":
+        _check_dataset_bind(spec, ctx)
+        return
+    _check_goal_bind(spec, ctx)
+
+
+def _check_unbound_terms(spec: ArgSpec, ctx: str) -> None:
+    if spec.goal_terms:
+        raise ContractError(f"{ctx} goal_terms requires bind goal")
+
+
+def _check_dataset_bind(spec: ArgSpec, ctx: str) -> None:
+    if spec.type != "path" or spec.path_role != "input":
+        raise ContractError(f"{ctx} bind dataset requires an input path")
+    if spec.goal_terms:
+        raise ContractError(f"{ctx} goal_terms is only valid for bind goal")
+
+
+def _check_goal_bind(spec: ArgSpec, ctx: str) -> None:
+    if spec.type not in {"str", "enum"} or not spec.choices:
+        raise ContractError(f"{ctx} bind goal requires choices")
+    if not spec.goal_terms:
+        raise ContractError(f"{ctx} bind goal requires goal_terms")
+    extra = [key for key in spec.goal_terms if key not in spec.choices]
+    if extra:
+        raise ContractError(f"{ctx} goal_terms keys must be a subset of choices")
 
 
 def _check_type_rules(spec: ArgSpec, ctx: str) -> None:
@@ -1736,6 +1705,37 @@ def _optional_member(
     return _member(obj[key], allowed, f"{ctx}.{key}")
 
 
+def _optional_budget(value: Any, ctx: str, *, allow_null: bool) -> float:
+    """Null budgets are 0 only for entries that cannot be executed."""
+    if value is None and allow_null:
+        return 0.0
+    if allow_null:
+        return _lenient_nonneg(value, ctx)
+    return _nonneg_number(value, ctx)
+
+
+def _optional_budget_int(value: Any, ctx: str, *, allow_null: bool) -> int:
+    if value is None and allow_null:
+        return 0
+    if allow_null:
+        return _lenient_count(value, ctx)
+    return _nonneg_int(value, ctx)
+
+
+def _lenient_nonneg(value: Any, ctx: str) -> float:
+    number = _coerce_number(value)
+    if number is None or number < 0:
+        raise ContractError(f"{ctx} must be a number or null")
+    return number
+
+
+def _lenient_count(value: Any, ctx: str) -> int:
+    number = _lenient_nonneg(value, ctx)
+    if not number.is_integer():
+        raise ContractError(f"{ctx} must be an integer or null")
+    return int(number)
+
+
 def _nonneg_number(value: Any, ctx: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ContractError(f"{ctx} must be a number")
@@ -1751,10 +1751,21 @@ def _nonneg_int(value: Any, ctx: str) -> int:
     return value
 
 
-def _optional_number(obj: Mapping[str, Any], key: str, ctx: str) -> float | None:
+def _optional_number(
+    obj: Mapping[str, Any], key: str, ctx: str, *, lenient: bool = False
+) -> float | None:
     if key not in obj or obj[key] is None:
         return None
+    if lenient:
+        return _lenient_bound(obj[key], f"{ctx}.{key}")
     return _any_number(obj[key], f"{ctx}.{key}")
+
+
+def _lenient_bound(value: Any, ctx: str) -> float:
+    number = _coerce_number(value)
+    if number is None:
+        raise ContractError(f"{ctx} must be a number")
+    return number
 
 
 def _any_number(value: Any, ctx: str) -> float:

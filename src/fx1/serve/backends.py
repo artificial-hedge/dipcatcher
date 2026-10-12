@@ -270,7 +270,10 @@ def _apply_byok_destination_policy(request: _ByokRequest) -> None:
 
 
 def _normalized_address(raw: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
-    address = ipaddress.ip_address(raw.split("%", 1)[0])
+    # A zone id or ``%00`` suffix must not inherit the address before ``%``.
+    if "%" in raw:
+        raise ValueError("zone identifiers are not literal addresses")
+    address = ipaddress.ip_address(raw)
     if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
         return address.ipv4_mapped
     return address

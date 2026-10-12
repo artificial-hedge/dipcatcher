@@ -32,7 +32,11 @@ QUALIFICATION_STATUSES = frozenset({"qualified", "experimental", "unqualified", 
 
 
 class ArgHint(TypedDict, total=False):
-    """Per-argument tightening applied on top of Click introspection."""
+    """Per-argument tightening applied on top of Click introspection.
+
+    ``bind`` is ``dataset`` or ``goal``. ``goal_terms`` maps a choice to
+    lowercase phrases; its keys must be a subset of ``choices``.
+    """
 
     type: str
     item_type: str
@@ -42,6 +46,8 @@ class ArgHint(TypedDict, total=False):
     default: str | None
     path_role: str
     required: bool
+    bind: str
+    goal_terms: dict[str, list[str]]
 
 
 class CommandContract(TypedDict):
@@ -105,6 +111,30 @@ def _v2() -> ArgHint:
     return {"default": "2", "choices": ["2"], "min": 2, "max": 2}
 
 
+def _dataset_path() -> ArgHint:
+    return {"path_role": "input", "bind": "dataset"}
+
+
+def _forecast_task() -> ArgHint:
+    """Goal phrases that select ``score-forecasts --task``."""
+    return {
+        "choices": ["volatility", "quantile", "probability"],
+        "bind": "goal",
+        "goal_terms": {
+            "volatility": [
+                "volatility",
+                "volatilities",
+                "variance",
+                "variances",
+                "qlike",
+                "realized variance",
+            ],
+            "quantile": ["quantile", "quantiles", "pinball", "crps", "coverage", "kupiec"],
+            "probability": ["probability", "probabilities", "brier", "ece", "log loss"],
+        },
+    }
+
+
 def _limits(runtime_s: int, output_chars: int = 12000) -> LimitContract:
     return {"max_runtime_s": runtime_s, "max_output_chars": output_chars}
 
@@ -140,6 +170,14 @@ def _inputs(labels: list[str], timing: str) -> InputContract:
     return {
         "data_labels": list(labels),
         "requires_dataset": False,
+        "availability_timing": timing,
+    }
+
+
+def _dataset_inputs(labels: list[str], timing: str) -> InputContract:
+    return {
+        "data_labels": list(labels),
+        "requires_dataset": True,
         "availability_timing": timing,
     }
 
@@ -217,9 +255,10 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "id": "doctor",
         "version": "2",
         "purpose": (
-            "Report local research-tree health and write resolved_config.json under "
-            "the configured data root. Also ensures that root's raw, bronze, silver, "
-            "gold, and metadata directories exist. Does not write receipts/."
+            "Report local research-tree health: lake directories, data manifest, and the "
+            "latest research receipt. Absent directories are reported, never created; "
+            "resolved_config.json is written under the data root only when the tree is "
+            "healthy. Does not write receipts/."
         ),
         "tasks": ["lab_health", "preflight"],
         "aliases": ["doctor", "health", "preflight"],
@@ -227,7 +266,7 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
             ["doctor"],
             "verification",
             read_only=False,
-            writes=["resolved_config", "data_dirs"],
+            writes=["resolved_config"],
             timeout_s=60,
         ),
         "allowed_args": ["--config"],
@@ -340,7 +379,10 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "post_checks": [_RECEIPT_CHECK],
         "limits": _limits(300),
         "qualification": _unqualified(
-            ["tests/unit/research/test_evidence_audit.py"],
+            [
+                "tests/unit/research/test_evidence_audit.py",
+                "tests/unit/cli/test_verify_all_cmd.py",
+            ],
             VERIFY_ALL_UNQUALIFIED_REASON,
         ),
         "evidence_class": "VERIFICATION",
@@ -438,6 +480,74 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "limits": _limits(900),
         "qualification": _qualified(["tests/unit/research/test_calibration_eval.py"]),
         "evidence_class": "SYNTHETIC",
+    },
+    {
+        "id": "score-forecasts",
+        "version": "1",
+        "purpose": (
+            "Score user-supplied volatility, quantile, or probability forecasts with "
+            "proper scores (QLIKE, pinball, CRPS, Kupiec, Brier, log loss, ECE) and "
+            "write a sealed receipt."
+        ),
+        "tasks": [
+            "volatility_forecast_scoring",
+            "quantile_forecast_scoring",
+            "probability_forecast_scoring",
+            "forecast_calibration_check",
+        ],
+        "aliases": [
+            "score my forecasts",
+            "my volatility forecasts",
+            "forecast calibration",
+            "qlike",
+            "pinball",
+            "brier",
+        ],
+        "command": _command(
+            ["score-forecasts"],
+            "evaluation",
+            read_only=False,
+            writes=["receipts"],
+            timeout_s=300,
+        ),
+        "allowed_args": [
+            "--task",
+            "--data",
+            "--time-col",
+            "--realized-col",
+            "--forecast-col",
+            "--quantile-cols",
+            "--available-time-col",
+            "--out-dir",
+            "--seed",
+            "--receipt-version",
+        ],
+        "arg_hints": {
+            "--task": _forecast_task(),
+            "--data": _dataset_path(),
+            "--out-dir": _out_dir(),
+            "--seed": {"min": 0, "max": 2147483647},
+            "--receipt-version": _v2(),
+        },
+        "inputs": _dataset_inputs(
+            ["file", "SYNTHETIC"],
+            "forecast issue time (--available-time-col) must be strictly earlier than the "
+            "realized observation time; without it the receipt records that point-in-time "
+            "validity was NOT verified",
+        ),
+        "outputs": _receipt_outputs(
+            ["QLIKE", "MSE", "pinball", "CRPS", "Kupiec", "Brier", "log loss", "ECE"]
+        ),
+        "dependencies": [],
+        "post_checks": [_RECEIPT_CHECK],
+        "limits": _limits(300),
+        "qualification": _qualified(
+            [
+                "tests/unit/research/test_forecast_scoring.py",
+                "tests/unit/cli/test_score_cmds.py",
+            ]
+        ),
+        "evidence_class": "RESEARCH",
     },
     {
         "id": "rankic",
@@ -557,8 +667,8 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "arg_hints": {
             "--defects": _csv("float"),
             "--lanes": _csv("str"),
-            "--n-steps": {"min": 16, "max": 200},
-            "--n-seeds": {"min": 1, "max": 10},
+            "--n-steps": {"min": 16, "max": 200, "default": "200"},
+            "--n-seeds": {"min": 1, "max": 10, "default": "10"},
             "--receipt-version": _v2(),
             "--out-dir": _out_dir(),
         },
@@ -567,7 +677,12 @@ CURATED_OVERLAY: tuple[OverlayEntry, ...] = (
         "dependencies": [],
         "post_checks": [_RECEIPT_CHECK],
         "limits": _limits(900),
-        "qualification": _qualified(["tests/unit/research/test_lane_power.py"]),
+        "qualification": _qualified(
+            [
+                "tests/unit/research/test_lane_power.py",
+                "tests/unit/cli/test_lane_power_cmd.py",
+            ]
+        ),
         "evidence_class": "SYNTHETIC",
     },
     {

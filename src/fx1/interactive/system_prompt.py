@@ -10,12 +10,14 @@ copy is used. The result stays under 4000 characters and passes
 
 from __future__ import annotations
 
+import os
 import re
 from collections.abc import Collection, Sequence
 from pathlib import Path
 from typing import Literal
 
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
+from fx1.interactive.redact import contains_secret
 
 Mode = Literal["chat", "superpower", "exec"]
 
@@ -33,6 +35,19 @@ Do not claim live trading performance. There is no live broker connectivity in t
 Cite a receipt hash only when a tool returned that hash.
 Refuse requests to weaken validation or to present backtests as live results.
 """
+
+_ALLOWED_MODELS = frozenset({"fx1", "fx1-lite"})
+_ENV_NAMES = (
+    "MOONSHOT_API_KEY",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+    "FX1_API_KEY",
+    "HOME",
+    "USERPROFILE",
+)
+_NOTE_ATTACK = re.compile(
+    r"(?i)\b(?:ignore|disregard)\b.*\b(?:previous|above|prior)\b|\byou are now\b"
+)
 
 _MODE_TEXT: dict[str, str] = {
     "chat": "You are in chat. Answer the operator directly. Use a tool only when it is needed.",
@@ -160,17 +175,15 @@ def _identity(model: str) -> str:
 
 
 def _require_model_id(model: str) -> None:
-    if not isinstance(model, str) or model == "":
-        raise ValueError("model id must be a single-line non-empty string")
-    if _C0_EXCEPT_WS.search(model) or any(char in model for char in "\n\r\t<>"):
-        raise ValueError("model id must be a single-line non-empty string")
+    if model not in _ALLOWED_MODELS:
+        raise ValueError("model id must be fx1 or fx1-lite")
 
 
 def _tool_names(tools: Collection[str]) -> list[str]:
     names: set[str] = set()
     for name in tools:
         cleaned = _one_line(name)
-        if cleaned:
+        if cleaned and not _unsafe_note(cleaned):
             names.add(cleaned)
     return sorted(names)
 
@@ -219,7 +232,7 @@ def _mode_block(mode: str) -> str:
     try:
         body = _MODE_TEXT[mode]
     except KeyError:
-        raise ValueError(f"unknown system prompt mode {mode!r}") from None
+        raise ValueError("unknown system prompt mode") from None
     return "## Mode\n" + body
 
 
@@ -236,9 +249,23 @@ def _notes_block(notes: Sequence[str]) -> str:
 
 def _safe_note(note: object) -> str:
     cleaned = _one_line(note)
-    if cleaned and _passes(cleaned):
+    if cleaned and not _unsafe_note(cleaned) and _passes(cleaned):
         return cleaned
     return ""
+
+
+def _unsafe_note(text: str) -> bool:
+    if contains_secret(text) or _NOTE_ATTACK.search(text):
+        return True
+    return _env_value_in(text)
+
+
+def _env_value_in(text: str) -> bool:
+    for name in _ENV_NAMES:
+        value = os.environ.get(name, "")
+        if len(value) >= 6 and value in text:
+            return True
+    return False
 
 
 def _one_line(value: object) -> str:

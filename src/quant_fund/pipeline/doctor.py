@@ -62,9 +62,9 @@ def doctor(config_path: str | None = None) -> dict[str, object]:
         status["live"] = "REJECTED"
     root = Path(cfg.data.root)
     for part in ("raw", "bronze", "silver", "gold", "metadata"):
-        p = root / part
-        p.mkdir(parents=True, exist_ok=True)
-        status[f"dir_{part}"] = "ok" if p.is_dir() else "missing"
+        # Report absence. Creating the lake here made a failing doctor look healthy
+        # and wrote directories into whatever cwd the operator launched from.
+        status[f"dir_{part}"] = "ok" if (root / part).is_dir() else "missing"
     manifest = root / "metadata" / "data_manifest.json"
     if not manifest.is_file():
         status["data_manifest"] = "missing"

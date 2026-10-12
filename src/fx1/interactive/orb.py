@@ -5,13 +5,15 @@ thought-orb indicators with six hand-tuned states — re-rendered for the
 terminal as Braille pixels (2x4 dots per cell) in a single monochrome ink,
 matching the original's strictly-monochrome discipline.
 
-States and captions follow the original verbs. Rendering is a no-op when
-stdout is not a TTY, when ``NO_COLOR`` is set, or when ``FXI_ORBS=off`` —
-so pipes, tests, and reduced-motion users get clean, static output.
+States and captions follow the original verbs. The animator is a no-op when
+stdout is not a TTY, when ``NO_COLOR`` is set, when ``FXI_ORBS=off``, when
+``TERM`` is ``dumb``, or when ``DIPCATCHER_PLAIN`` is set — pipes, tests,
+and reduced-motion users get clean, static output.
 """
 
 from __future__ import annotations
 
+import contextlib
 import os
 import shutil
 import sys
@@ -19,6 +21,8 @@ import threading
 import time
 from enum import StrEnum
 from typing import TextIO
+
+from fx1.interactive.terminal import plain_requested, stream_lock
 
 # Braille dot bit for (column, row) inside a 2x4 cell — U+2800 base.
 _BRAILLE_BITS: dict[tuple[int, int], int] = {
@@ -33,6 +37,9 @@ _BRAILLE_BITS: dict[tuple[int, int], int] = {
 }
 
 ESC = "\x1b["
+_DECSC = "\x1b7"
+_DECRC = "\x1b8"
+_ERASE_LINE = "\x1b[2K"
 
 INK_LIGHT = "97"  # bright white ink on a dark background
 INK_DARK = "30"  # black ink on a light background
@@ -71,12 +78,21 @@ def caption(state: OrbState) -> str:
 
 
 def orbs_enabled(stream: TextIO = sys.stdout) -> bool:
+    if plain_requested():
+        return False
     if os.environ.get("FXI_ORBS", "").strip().lower() in {"0", "off", "false", "no"}:
         return False
     if os.environ.get("NO_COLOR") is not None:
         return False
     is_tty = getattr(stream, "isatty", None)
     return bool(is_tty and is_tty())
+
+
+def _orb_motion_allowed() -> bool:
+    """Cursor motion is unsafe on a dumb terminal and in plain mode."""
+    if plain_requested():
+        return False
+    return os.environ.get("TERM") != "dumb"
 
 
 def _background_is_dark() -> bool:
@@ -211,41 +227,101 @@ class OrbAnimator:
         self.stream = stream
         self._thread: threading.Thread | None = None
         self._stop = threading.Event()
+        self._painted = threading.Event()
 
     def __enter__(self) -> OrbAnimator:
-        if orbs_enabled(self.stream):
-            self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._stop.clear()
+        self._painted.clear()
+        if orbs_enabled(self.stream) and _orb_motion_allowed():
+            self._thread = threading.Thread(target=self._loop, name="fx1-orb", daemon=True)
             self._thread.start()
         return self
 
     def __exit__(self, *exc: object) -> None:
         self._stop.set()
-        if self._thread is not None:
-            self._thread.join(timeout=1.0)
-            self.stream.write(f"{ESC}8{ESC}J")  # restore cursor, clear the orb block
-            self.stream.flush()
+        thread = self._thread
+        if thread is None:
+            return
+        thread.join(timeout=1.0)
+        if thread.is_alive() or not self._painted.is_set():
+            return
+        self._clear_block()
 
     def _loop(self) -> None:
-        write = self.stream.write
-        flush = self.stream.flush
+        interval = 0.05 if self.fps <= 0 else 1.0 / self.fps
+        lock = stream_lock(self.stream)
+        first = True
         while not self._stop.is_set():
-            write(f"{ESC}7{ESC}8")  # DECSC / DECRC — pin the block start
-            write(render_frame(self.state, preset=self.preset))
-            write("\n")
-            flush()
-            time.sleep(1 / self.fps)
+            frame = render_frame(self.state, preset=self.preset)
+            with lock:
+                if self._stop.is_set():
+                    return
+                self._write_frame(frame, first=first)
+                first = False
+                self._painted.set()
+            if self._stop.wait(interval):
+                return
+
+    def _write_frame(self, frame: str, *, first: bool) -> None:
+        self.stream.write(_DECSC if first else _DECRC)
+        self.stream.write(frame)
+        self.stream.write("\n")
+        self.stream.flush()
+
+    def _clear_block(self) -> None:
+        height = _PRESETS.get(self.preset, (8, 2))[1]
+        parts = [_DECRC]
+        for index in range(height):
+            parts.append(_ERASE_LINE)
+            if index + 1 < height:
+                parts.append(f"{ESC}1B")
+        parts.append(_DECRC)
+        with contextlib.suppress(OSError), stream_lock(self.stream):
+            self.stream.write("".join(parts))
+            self.stream.flush()
 
 
 def banner(model: str, host: str, *, color: bool = True) -> str:
     """Static startup banner: a listening orb beside the harness title."""
-    frame = render_frame(OrbState.LISTENING, preset="inline", color=color)
-    orb_lines = frame.split("\n")
-    width = max(46, shutil.get_terminal_size((60, 24)).columns - 2)
-    inner = width - 2
+    if not _orb_motion_allowed():
+        color = False
+    orb_lines = render_frame(OrbState.LISTENING, preset="inline", color=False).split("\n")
+    orb_w = max((len(line) for line in orb_lines), default=0)
     title = f"dipcatcher · fx-1 interactive — model {model} @ {host}"
-    top = "╭" + "─" * inner + "╮"
-    bottom = "╰" + "─" * inner + "╯"
-    body = [f"│ {orb_lines[0] if len(orb_lines) > 0 else '':<3} {title:<{inner - 5}}│"]
-    for extra in orb_lines[1:]:
-        body.append(f"│ {extra:<{inner - 2}} │")
-    return "\n".join([top, *body, bottom])
+    text_w, inner = _banner_widths(title, orb_w)
+    rows = [_banner_edge("╭", "╮", inner)]
+    rows.extend(_banner_rows(orb_lines, orb_w, title, text_w, color=color))
+    rows.append(_banner_edge("╰", "╯", inner))
+    return "\n".join(rows)
+
+
+def _banner_widths(title: str, orb_w: int) -> tuple[int, int]:
+    columns = max(20, shutil.get_terminal_size((80, 24)).columns)
+    text_w = len(title)
+    room = columns - 2 - orb_w - 2
+    if room > text_w:
+        text_w = room
+    return text_w, orb_w + 2 + text_w
+
+
+def _banner_edge(left: str, right: str, inner: int) -> str:
+    return left + ("─" * inner) + right
+
+
+def _banner_rows(
+    lines: list[str],
+    orb_w: int,
+    title: str,
+    text_w: int,
+    *,
+    color: bool,
+) -> list[str]:
+    ink = _ink()
+    rows: list[str] = []
+    for index, line in enumerate(lines):
+        cell = line.ljust(orb_w)
+        if color:
+            cell = f"{ESC}{ink}m{cell}{ESC}0m"
+        label = title if index == 0 else ""
+        rows.append(f"│{cell}  {label.ljust(text_w)}│")
+    return rows

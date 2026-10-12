@@ -10,9 +10,14 @@ bounded; excess bytes are dropped and the child keeps running.
 for credential isolation. A trailing ``*`` on an allow pattern is a
 case-insensitive prefix match.
 
-Known limits: POSIX teardown signals the process group. A descendant that
-calls ``setsid`` leaves that group and is not tracked. Zombie detection
-reads Linux ``/proc``; other POSIX hosts wait out ``kill_grace_s``.
+Known limits: teardown signals the process group and, on Linux, descendants
+still listed as children of the owned pid (``setsid`` does not change the
+parent). A descendant that has already double-forked into a new session and
+been reparented is not visible, and the result does not claim that pid was
+killed. Reader threads still stop when that descendant keeps the pipe open.
+Zombie detection reads Linux ``/proc``. A direct child that is still alive
+after the kill attempt stays in the registry and the result says the
+cancellation or timeout is pending.
 """
 
 from __future__ import annotations
@@ -20,6 +25,7 @@ from __future__ import annotations
 import atexit
 import contextlib
 import os
+import select
 import signal
 import subprocess
 import sys
@@ -83,6 +89,15 @@ DEFAULT_ENV_ALLOW: tuple[str, ...] = (
 ENV_DENY_EXACT: tuple[str, ...] = (
     "FX1_BASE_URL",
     "GITHUB_TOKEN",
+    # Loader and startup hooks are not secrets, but extra= bypasses the
+    # allow-list. Reintroducing them would execute code in the child.
+    "LD_PRELOAD",
+    "LD_LIBRARY_PATH",
+    "LD_AUDIT",
+    "DYLD_INSERT_LIBRARIES",
+    "DYLD_LIBRARY_PATH",
+    "PYTHONSTARTUP",
+    "BASH_ENV",
 )
 ENV_DENY_PREFIXES: tuple[str, ...] = (
     "MOONSHOT_",
@@ -98,7 +113,16 @@ _DENY_EXACT = frozenset(item.casefold() for item in ENV_DENY_EXACT)
 _DENY_PREFIXES = tuple(item.casefold() for item in ENV_DENY_PREFIXES)
 _DENY_SUFFIXES = tuple(item.casefold() for item in ENV_DENY_SUFFIXES)
 _FORCED_ENV: dict[str, str] = {"PYTHONUNBUFFERED": "1", "DIPCATCHER_CHILD": "1"}
+_THREAD_DEFAULTS: dict[str, str] = {
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "NUMEXPR_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "TOKENIZERS_PARALLELISM": "false",
+}
 _READ_CHUNK = 65536
+_READ_POLL_S = 0.2
+_MAX_DESCENDANTS = 512
 
 Emit = Callable[[str, Mapping[str, Any]], None]
 Killer = Callable[[int], None]
@@ -225,13 +249,16 @@ def scrub_env(
     *extra* is applied after that filter, so correlation ids and other
     non-secret knobs pass even when they are not on the allow-list. A
     sensitive *extra* name is still refused unless it is listed in
-    *allow_secrets* (those names are never copied from *base*).
-    ``DIPCATCHER_CHILD=1`` and ``PYTHONUNBUFFERED=1`` are always set last.
+    *allow_secrets* (those names are never copied from *base*). When the
+    parent did not set them, thread-pin variables default to one thread;
+    *extra* may override those defaults. ``DIPCATCHER_CHILD=1`` and
+    ``PYTHONUNBUFFERED=1`` are always set last.
     """
     patterns = tuple(allow)
     secret_ok = {item.casefold() for item in allow_secrets}
     cleaned: dict[str, str] = {}
     _take_base(cleaned, base, patterns)
+    _fill_thread_defaults(cleaned)
     _take_extra(cleaned, extra, secret_ok)
     cleaned.update(_FORCED_ENV)
     return cleaned
@@ -329,6 +356,13 @@ def _cancelled(cancel_event: threading.Event | None) -> bool:
 def _take_base(cleaned: dict[str, str], base: Mapping[str, str], patterns: tuple[str, ...]) -> None:
     for key, value in base.items():
         if _keep_base(key, patterns):
+            cleaned[key] = value
+
+
+def _fill_thread_defaults(cleaned: dict[str, str]) -> None:
+    present = {key.casefold() for key in cleaned}
+    for key, value in _THREAD_DEFAULTS.items():
+        if key.casefold() not in present:
             cleaned[key] = value
 
 
@@ -483,6 +517,7 @@ def _owned_loop(
     pgid = _lookup_pgid(pid, platform)
     threads: list[threading.Thread] = []
     boxes = (_Capture(), _Capture())
+    stop = threading.Event()
     try:
         return _supervise(
             proc,
@@ -500,9 +535,10 @@ def _owned_loop(
             started,
             threads,
             boxes,
+            stop,
         )
     finally:
-        _cleanup(proc, pid, pgid, threads, limits, killer, platform, registry)
+        _cleanup(proc, pid, pgid, threads, limits, killer, platform, registry, stop)
 
 
 def _supervise(
@@ -521,12 +557,14 @@ def _supervise(
     started: float,
     threads: list[threading.Thread],
     boxes: tuple[_Capture, _Capture],
+    stop: threading.Event,
 ) -> ProcResult:
-    threads.extend(_start_readers(proc, _output_limit(limits), boxes[0], boxes[1]))
+    threads.extend(_start_readers(proc, _output_limit(limits), boxes[0], boxes[1], stop))
     _remember(registry, pid, pgid, summary, step, clock)
     _emit(emit, "proc.spawn", {"pid": pid, "pgid": pgid, "argv": list(summary), "step": step})
     reason = _poll_until_done(proc, limits, cancel_event, clock)
     _ensure_stopped(proc, reason, pgid, limits, killer, platform, emit, summary, step, pid)
+    stop.set()
     _join_readers(threads, _reader_join_timeout(limits))
     return _finish(proc, reason, boxes, summary, limits, started, clock, pid, pgid, emit, step)
 
@@ -540,11 +578,16 @@ def _cleanup(
     killer: Killer | None,
     platform: str,
     registry: ProcessRegistry,
+    stop: threading.Event,
 ) -> None:
     if proc.poll() is None:
         _apply_kill(proc, pgid, limits.kill_grace_s, killer, platform)
+    # Unblock readers before joining. Closing the pipe from this thread
+    # deadlocks a BufferedReader stuck in read(); the stop flag does not.
+    stop.set()
     _join_readers(threads, 0.5)
-    registry.discard(pid)
+    if proc.poll() is not None:
+        registry.discard(pid)
 
 
 def _finish(
@@ -566,7 +609,7 @@ def _finish(
         summary,
         exit_code=_exit_code(proc, reason),
         stdout=stdout,
-        stderr=_annotate(stderr, reason, limits),
+        stderr=_annotate(stderr, reason, limits, proc.poll() is None),
         timed_out=reason == "timeout",
         cancelled=reason == "cancel",
         truncated=out_flag or err_flag,
@@ -648,12 +691,24 @@ def _exit_code(proc: subprocess.Popen[bytes], reason: str | None) -> int:
     return proc.returncode
 
 
-def _annotate(stderr: str, reason: str | None, limits: ProcLimits) -> str:
+def _annotate(stderr: str, reason: str | None, limits: ProcLimits, still_alive: bool) -> str:
     if reason == "timeout":
-        return f"{stderr}\n[timeout] exceeded {limits.timeout_s:g}s; process group terminated\n"
+        return _timeout_note(stderr, limits, still_alive)
     if reason == "cancel":
-        return f"{stderr}\n[cancel] process group terminated\n"
+        return _cancel_note(stderr, still_alive)
     return stderr
+
+
+def _timeout_note(stderr: str, limits: ProcLimits, still_alive: bool) -> str:
+    if still_alive:
+        return f"{stderr}\n[timeout] pending; process still alive after {limits.timeout_s:g}s\n"
+    return f"{stderr}\n[timeout] exceeded {limits.timeout_s:g}s; process group terminated\n"
+
+
+def _cancel_note(stderr: str, still_alive: bool) -> str:
+    if still_alive:
+        return f"{stderr}\n[cancel] pending; process still alive\n"
+    return f"{stderr}\n[cancel] process group terminated\n"
 
 
 def _render(box: _Capture) -> tuple[str, bool]:
@@ -799,38 +854,113 @@ def _taskkill(pid: int) -> None:
 
 
 def _posix_escalate(proc: subprocess.Popen[bytes], pgid: int | None, grace_s: float) -> None:
+    extras = _descendant_pids(proc.pid)
     _signal_group(proc.pid, pgid, signal.SIGTERM)
-    if _wait_proc_group(proc, pgid, grace_s):
+    _signal_pids(extras, signal.SIGTERM)
+    if _tree_quiet(proc, pgid, extras, grace_s):
         return
+    extras = _merge_pids(extras, _descendant_pids(proc.pid))
     _signal_group(proc.pid, pgid, _sigkill())
+    _signal_pids(extras, _sigkill())
     _wait_proc(proc, 1.0)
+    _wait_pids(extras, 1.0)
 
 
 def _posix_kill_ids(pid: int, pgid: int | None, grace_s: float) -> None:
+    extras = _descendant_pids(pid)
     _signal_group(pid, pgid, signal.SIGTERM)
-    if _wait_ids_gone(pid, pgid, grace_s):
+    _signal_pids(extras, signal.SIGTERM)
+    if _ids_quiet(pid, pgid, extras, grace_s):
         return
+    extras = _merge_pids(extras, _descendant_pids(pid))
     _signal_group(pid, pgid, _sigkill())
+    _signal_pids(extras, _sigkill())
 
 
-def _wait_proc_group(proc: subprocess.Popen[bytes], pgid: int | None, grace_s: float) -> bool:
+def _tree_quiet(
+    proc: subprocess.Popen[bytes], pgid: int | None, extras: list[int], grace_s: float
+) -> bool:
     deadline = time.monotonic() + max(0.0, grace_s)
     while True:
-        if proc.poll() is not None and not _group_has_members(pgid):
+        direct_done = proc.poll() is not None and not _group_has_members(pgid)
+        if direct_done and not _any_alive(extras):
             return True
         if time.monotonic() >= deadline:
             return False
         _pause_briefly(deadline)
 
 
-def _wait_ids_gone(pid: int, pgid: int | None, grace_s: float) -> bool:
+def _ids_quiet(pid: int, pgid: int | None, extras: list[int], grace_s: float) -> bool:
     deadline = time.monotonic() + max(0.0, grace_s)
     while True:
-        if _group_quiet(pid, pgid):
+        if _group_quiet(pid, pgid) and not _any_alive(extras):
             return True
         if time.monotonic() >= deadline:
             return False
         _pause_briefly(deadline)
+
+
+def _merge_pids(left: list[int], right: list[int]) -> list[int]:
+    return list(dict.fromkeys([*left, *right]))
+
+
+def _signal_pids(pids: list[int], sig: int) -> None:
+    for pid in pids:
+        _signal_pid(pid, sig)
+
+
+def _wait_pids(pids: list[int], grace_s: float) -> None:
+    deadline = time.monotonic() + max(0.0, grace_s)
+    while True:
+        if not _any_alive(pids):
+            return
+        if time.monotonic() >= deadline:
+            return
+        _pause_briefly(deadline)
+
+
+def _any_alive(pids: list[int]) -> bool:
+    return any(_pid_alive(pid) for pid in pids)
+
+
+def _descendant_pids(root: int) -> list[int]:
+    """Linux children of *root*, including setsid grandchildren still parented here.
+
+    A double-fork that has already been reparented is absent from this list.
+    """
+    if root <= 0 or not Path("/proc").is_dir():
+        return []
+    found: list[int] = []
+    seen: set[int] = set()
+    stack = _direct_children(root)
+    while stack and len(found) < _MAX_DESCENDANTS:
+        pid = stack.pop()
+        if pid in seen or pid <= 0 or pid == os.getpid():
+            continue
+        seen.add(pid)
+        found.append(pid)
+        stack.extend(_direct_children(pid))
+    return found
+
+
+def _direct_children(pid: int) -> list[int]:
+    task_dir = Path(f"/proc/{pid}/task")
+    try:
+        entries = list(task_dir.iterdir())
+    except OSError:
+        return []
+    found: list[int] = []
+    for entry in entries:
+        found.extend(_read_children(entry / "children"))
+    return found
+
+
+def _read_children(path: Path) -> list[int]:
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    return [int(part) for part in text.split() if part.isdigit()]
 
 
 def _group_quiet(pid: int, pgid: int | None) -> bool:
@@ -929,17 +1059,18 @@ def _start_readers(
     limit: int,
     stdout_box: _Capture,
     stderr_box: _Capture,
+    stop: threading.Event,
 ) -> list[threading.Thread]:
     threads = [
         threading.Thread(
             target=_read_pipe,
-            args=(proc.stdout, limit, stdout_box),
+            args=(proc.stdout, limit, stdout_box, stop),
             name="proc-stdout",
             daemon=True,
         ),
         threading.Thread(
             target=_read_pipe,
-            args=(proc.stderr, limit, stderr_box),
+            args=(proc.stderr, limit, stderr_box, stop),
             name="proc-stderr",
             daemon=True,
         ),
@@ -954,19 +1085,25 @@ def _join_readers(threads: list[threading.Thread], timeout: float) -> None:
         thread.join(timeout=timeout)
 
 
-def _read_pipe(stream: IO[bytes] | None, limit: int, box: _Capture) -> None:
+def _read_pipe(stream: IO[bytes] | None, limit: int, box: _Capture, stop: threading.Event) -> None:
     if stream is None:
         return
     kept = bytearray()
     truncated = False
     try:
-        truncated = _consume_into(stream, limit, kept)
+        truncated = _consume_into(stream, limit, kept, stop)
     finally:
         box.store(bytes(kept), truncated)
         _close_quietly(stream)
 
 
-def _consume_into(stream: IO[bytes], limit: int, kept: bytearray) -> bool:
+def _consume_into(stream: IO[bytes], limit: int, kept: bytearray, stop: threading.Event) -> bool:
+    if os.name != "posix" or not _selectable(stream):
+        return _consume_blocking(stream, limit, kept)
+    return _consume_polled(stream, limit, kept, stop)
+
+
+def _consume_blocking(stream: IO[bytes], limit: int, kept: bytearray) -> bool:
     truncated = False
     while True:
         chunk = _read_chunk(stream)
@@ -974,6 +1111,42 @@ def _consume_into(stream: IO[bytes], limit: int, kept: bytearray) -> bool:
             break
         truncated = _absorb(kept, chunk, limit, truncated)
     return truncated
+
+
+def _consume_polled(stream: IO[bytes], limit: int, kept: bytearray, stop: threading.Event) -> bool:
+    truncated = False
+    while True:
+        chunk = _poll_read(stream, stop)
+        if not chunk:
+            break
+        truncated = _absorb(kept, chunk, limit, truncated)
+    return truncated
+
+
+def _selectable(stream: IO[bytes]) -> bool:
+    try:
+        fd = stream.fileno()
+    except (AttributeError, OSError, ValueError):
+        return False
+    return isinstance(fd, int) and fd >= 0
+
+
+def _poll_read(stream: IO[bytes], stop: threading.Event) -> bytes | None:
+    fd = stream.fileno()
+    while True:
+        if _readable(fd, 0.0):
+            return _read_chunk(stream)
+        if stop.is_set():
+            return None
+        _readable(fd, _READ_POLL_S)
+
+
+def _readable(fd: int, timeout: float) -> bool:
+    try:
+        ready, _, _ = select.select([fd], [], [], timeout)
+    except (OSError, ValueError):
+        return False
+    return bool(ready)
 
 
 def _read_chunk(stream: IO[bytes]) -> bytes:

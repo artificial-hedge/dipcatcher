@@ -49,9 +49,13 @@ class StoreLockTimeout(StoreError):
 
 
 def ensure_private_dir(path: Path) -> Path:
-    """Create *path* (and parents); a directory we create is made ``0700``."""
-    if path.is_dir():
-        return path
+    """Create *path* (and parents) and make that directory ``0700`` on POSIX.
+
+    An existing directory is tightened too. A symlink is refused so a planted
+    link cannot redirect private files.
+    """
+    if path.is_symlink():
+        raise StoreError(f"refusing to follow symlink directory {path}")
     path.mkdir(parents=True, exist_ok=True)
     if os.name == "posix":
         with contextlib.suppress(OSError):
@@ -97,13 +101,18 @@ def atomic_write_json(
     path: Path, obj: Any, *, mode: int = FILE_MODE, indent: int | None = 2
 ) -> None:
     """Serialize *obj* deterministically (sorted keys, UTF-8) and write atomically."""
-    text = json.dumps(obj, indent=indent, sort_keys=True, ensure_ascii=False)
+    text = json.dumps(obj, indent=indent, sort_keys=True, ensure_ascii=False, allow_nan=False)
     atomic_write_text(path, text + "\n", mode=mode)
 
 
 def quarantine(path: Path) -> Path | None:
-    """Move a bad file aside as ``<name>.corrupt-<epoch>``; ``None`` if it vanished."""
-    target = path.with_name(f"{path.name}.corrupt-{int(time.time())}")
+    """Move a bad file aside; ``None`` if it vanished.
+
+    The suffix includes pid and a monotonic tick so two quarantines in the
+    same wall-clock second cannot overwrite each other.
+    """
+    token = f"{int(time.time())}-{os.getpid()}-{time.monotonic_ns()}"
+    target = path.with_name(f"{path.name}.corrupt-{token}")
     try:
         os.replace(path, target)
     except OSError:
@@ -122,11 +131,16 @@ def read_json(path: Path, *, quarantine_corrupt: bool = False) -> Any:
     except IsADirectoryError as exc:
         raise StoreCorruptError(path, "is a directory") from exc
     try:
-        return json.loads(raw.decode("utf-8"))
+        return json.loads(raw.decode("utf-8"), parse_constant=_reject_non_json)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         if quarantine_corrupt:
             quarantine(path)
         raise StoreCorruptError(path, f"not valid JSON ({type(exc).__name__})") from exc
+
+
+def _reject_non_json(value: str) -> Any:
+    """``NaN`` / ``Infinity`` are not JSON; surface them as corruption."""
+    raise json.JSONDecodeError(f"invalid JSON constant {value}", value, 0)
 
 
 def permission_problem(path: Path) -> str | None:
@@ -155,10 +169,21 @@ class FileLock:
         self._poll_s = poll_s
         self._fd: int | None = None
 
+    def _prepare_windows_lock(self, fd: int) -> None:
+        # msvcrt locks a byte range and fails when that range is past EOF.
+        try:
+            os.lseek(fd, 0, os.SEEK_SET)
+            if os.fstat(fd).st_size < 1:
+                os.write(fd, b"\0")
+                os.lseek(fd, 0, os.SEEK_SET)
+        except OSError:
+            return
+
     def _try_lock(self, fd: int) -> bool:
         if sys.platform == "win32":
             import msvcrt
 
+            self._prepare_windows_lock(fd)
             try:
                 msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
             except OSError:

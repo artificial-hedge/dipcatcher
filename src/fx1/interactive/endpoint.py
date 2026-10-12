@@ -61,9 +61,11 @@ def normalize_endpoint(raw: str) -> EndpointSpec:
     ends in ``/chat/completions`` keeps the prefix before that suffix. Any
     other path is the prefix and ``/chat/completions`` is appended. Duplicate
     slashes collapse; trailing slashes are removed; scheme and host are
-    lower-cased; path case is preserved.
+    lower-cased; path case is preserved. Percent-encoding, backslashes,
+    dot-segments, and non-canonical hosts are rejected.
     """
     cleaned = _clean_input(raw)
+    _reject_escapes(cleaned)
     parsed = _parse_http_url(cleaned)
     _reject_decorations(cleaned, parsed)
     host = _host_name(parsed)
@@ -100,6 +102,13 @@ def _reject_absurd_length(text: str) -> None:
         raise EndpointError("endpoint must be at most 2048 characters")
 
 
+def _reject_escapes(cleaned: str) -> None:
+    # ``%`` is not decoded. A loopback prefix plus a zone or ``%00`` would
+    # otherwise satisfy the literal-address check.
+    if "%" in cleaned or "\\" in cleaned:
+        raise EndpointError("endpoint must not contain percent-encoding or backslashes")
+
+
 def _parse_http_url(cleaned: str) -> urllib.parse.ParseResult:
     try:
         parsed = urllib.parse.urlparse(cleaned)
@@ -126,8 +135,11 @@ def _host_name(parsed: urllib.parse.ParseResult) -> str:
     lowered = host.lower()
     if not lowered.isascii():
         raise EndpointError("hostname must be ASCII")
-    if any(label.startswith("xn--") for label in lowered.split(".")):
+    labels = lowered.split(".")
+    if any(label.startswith("xn--") for label in labels):
         raise EndpointError("punycode hostnames are not accepted")
+    if any(not label for label in labels):
+        raise EndpointError("hostname must be a canonical ASCII name")
     return lowered
 
 
@@ -145,11 +157,17 @@ def _origin(parsed: urllib.parse.ParseResult, host: str) -> str:
 
 def _split_prefix(path: str) -> tuple[str, bool]:
     collapsed = _collapse_path(path)
+    _reject_dot_segments(collapsed)
     if collapsed in {"", "/"}:
         return _DEFAULT_PREFIX, True
     if collapsed.endswith(_COMPLETION_ROUTE):
         return collapsed[: -len(_COMPLETION_ROUTE)], False
     return collapsed, True
+
+
+def _reject_dot_segments(path: str) -> None:
+    if any(segment in {".", ".."} for segment in path.split("/")):
+        raise EndpointError("endpoint path must not contain dot segments")
 
 
 def _collapse_path(path: str) -> str:

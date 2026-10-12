@@ -1,18 +1,33 @@
 """Durable chat sessions for the dipcatcher harness.
 
 One JSON file per session. Directory resolution is ``$FX1_SESSION_DIR``,
-then ``$FX1_CONFIG_DIR/sessions``, then ``~/.fx1/sessions``.
+then ``$FX1_CONFIG_DIR/sessions``, then ``~/.fx1/sessions``. The directory
+is mode 0700. A symlink directory or session file is refused.
 
-Records use schema version 1. Writes go through ``atomicstore`` (fsync,
-replace, mode 0600, directory 0700) under a per-session ``FileLock``.
-``revision`` starts at 0 when a session is created and increments on each
-successful ``save``. A file whose schema is newer than this build is never
-overwritten. Missing ``revision`` and ``turns`` on older files are filled in
-on load and persisted on the next save.
+Records use schema version 1. Writes go through ``atomicstore`` (fsync of
+the file and its directory, replace, mode 0600) under a per-session
+``FileLock`` that is re-entrant for the holding thread. ``revision`` starts
+at 0 on create and increments on each successful ``save``. A newer schema
+is never overwritten or quarantined. Schema 0 (and a missing schema) is
+migrated in memory on load when the id and model are recognizable, and
+persisted on the next save. Missing ``revision`` and ``turns`` are filled
+in on load.
+
+``reserve`` holds one session exclusively. A second process gets
+``SessionBusy`` immediately. ``diagnose`` quarantines corrupt session files
+and reports them; ``load`` quarantines only when asked, except symlinks,
+which are always moved aside.
+
+Exception hierarchy: ``SessionBusy`` is a ``SessionError`` for a lock held
+by another writer. ``SessionConflict`` is a ``SessionBusy``, so a revision
+mismatch (the lost race) is visible to handlers of either type. A lock
+timeout is only ``SessionBusy``.
 
 Credential-shaped strings and secret-named fields are removed before a
-record is written or returned. Numeric and boolean fields, including usage
-counters such as ``max_tokens`` and ``total_tokens``, are kept.
+record is written or returned. A name is secret only when the credential
+word is its own component (``SERVICE_TOKEN`` is, ``TOKENIZERS_PARALLELISM``
+is not). Numeric and boolean fields, including ``max_tokens`` and
+``total_tokens``, are kept.
 """
 
 from __future__ import annotations
@@ -22,6 +37,7 @@ import copy
 import json
 import os
 import re
+import threading
 import uuid
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from datetime import UTC, datetime
@@ -59,10 +75,17 @@ EXPORT_TOOL_RESULT_CHARS = 500
 _MODELS = frozenset({"fx1", "fx1-lite"})
 _JOB_STATES = frozenset({"idle", "running", "interrupted", "finished"})
 _JOB_RESUMES = frozenset({"manual", "none"})
-_SECRET_MARKERS = ("api_key", "authorization", "password", "secret", "token", "key")
 _TOP_LEVEL_RAW = frozenset({"id", "created_at", "updated_at"})
 _HEX_ID = re.compile(r"^[a-f0-9]{32}$")
+_SK_TOKEN = re.compile(r"sk-[A-Za-z0-9_\-]{6,}")
+_SECRET_NAME_RE = re.compile(
+    r"(?i)(?:^|[^a-z0-9])"
+    r"(?:api[_-]?key|apikey|private[_-]?key|secret|passw(?:or)?d|authorization|"
+    r"credentials?|token|key)"
+    r"(?:[^a-z0-9]|$)"
+)
 _REDACTED = "[redacted]"
+_HELD_PATHS = threading.local()
 
 Clock = Callable[[], datetime]
 Emit = Callable[[str, Mapping[str, Any]], None]
@@ -75,10 +98,20 @@ class SessionError(ValueError):
     """A session record could not be stored or read."""
 
 
-class SessionConflict(SessionError):
+class SessionBusy(SessionError):
+    """Another writer holds this session, or this write lost the race.
+
+    Lock timeouts use this type directly (the message contains ``lock`` and
+    ``busy``). Revision mismatches raise ``SessionConflict``, a subclass, so
+    ``except SessionBusy`` observes the lost race as well.
+    """
+
+
+class SessionConflict(SessionBusy):
     """The file changed after this record was loaded.
 
     ``found`` is the revision on disk, or ``None`` when the file is gone.
+    Also a ``SessionBusy``: the caller lost the write race.
     """
 
     def __init__(self, session_id: str, expected: int, found: int | None) -> None:
@@ -181,8 +214,12 @@ def _stored_revision(raw: Mapping[str, Any]) -> int:
 
 
 def _name_is_secret(name: str) -> bool:
-    lowered = name.lower()
-    return any(marker in lowered for marker in _SECRET_MARKERS)
+    """True when *name* has a credential word as its own component.
+
+    ``SERVICE_TOKEN`` matches. ``TOKENIZERS_PARALLELISM`` does not: ``token``
+    is only a prefix of a longer word, so a value such as ``false`` stays.
+    """
+    return _SECRET_NAME_RE.search(name) is not None
 
 
 def _environment_secrets() -> tuple[str, ...]:
@@ -224,15 +261,13 @@ def scrub_secret_text(text: str) -> str:
     for secret in secrets:
         if secret in scrubbed:
             scrubbed = scrubbed.replace(secret, _REDACTED)
-    return scrubbed
+    return _SK_TOKEN.sub(_REDACTED, scrubbed)
 
 
 def _legacy_string(value: str, secrets: tuple[str, ...]) -> str:
-    if value.startswith("sk-") and len(value) > 8:
-        return _REDACTED
     if _contains_env_secret(value, secrets):
         return _REDACTED
-    return value
+    return _SK_TOKEN.sub(_REDACTED, value)
 
 
 def _drop_field(key: str, item: Any) -> bool:
@@ -466,7 +501,11 @@ def _write_payload(path: Path, payload: Mapping[str, Any]) -> None:
     _ensure_json(payload)
     try:
         atomic_write_json(path, payload)
-    except (OSError, StoreError, TypeError, ValueError) as exc:
+    except StoreError as exc:
+        if "symlink" in str(exc):
+            raise SessionError("refusing to follow symlink session directory") from exc
+        raise SessionError("unable to save session") from exc
+    except (OSError, TypeError, ValueError) as exc:
         raise SessionError("unable to save session") from exc
 
 
@@ -475,13 +514,29 @@ def _quarantine(path: Path, enabled: bool) -> None:
         quarantine_file(path)
 
 
+def _json_error(exc: StoreCorruptError) -> str:
+    if "Unicode" in exc.reason:
+        return "unreadable session"
+    return "invalid session JSON"
+
+
+def _refuse_symlink_file(path: Path) -> None:
+    if not path.is_symlink():
+        return
+    quarantine_file(path)
+    raise SessionError("refusing to follow symlink session file")
+
+
 def _read_object(path: Path, *, quarantine: bool) -> dict[str, Any]:
+    _refuse_symlink_file(path)
     try:
         parsed = read_json(path, quarantine_corrupt=quarantine)
     except FileNotFoundError as exc:
         raise SessionError("missing session") from exc
+    except OSError as exc:
+        raise SessionError("unreadable session") from exc
     except StoreCorruptError as exc:
-        raise SessionError("invalid session JSON") from exc
+        raise SessionError(_json_error(exc)) from exc
     try:
         return _as_dict(parsed, "session record must be an object")
     except SessionError:
@@ -502,10 +557,27 @@ def _reject_schema(raw: Mapping[str, Any], path: Path, *, quarantine: bool) -> N
         raise SessionError("unsupported session schema")
 
 
+def _can_upgrade(raw: Mapping[str, Any]) -> bool:
+    if not _valid_session_id(raw.get("id")):
+        return False
+    return raw.get("model") in _MODELS
+
+
+def _upgrade_legacy(record: dict[str, Any]) -> None:
+    """Fill the schema-0 shape. Existing messages and jobs are kept."""
+    record["schema"] = SESSION_SCHEMA
+    record.setdefault("status", "open")
+    if not isinstance(record.get("messages"), list):
+        record["messages"] = []
+    if isinstance(record.get("job"), dict):
+        return
+    record["job"] = {"state": "idle", "id": "", "steps_completed": [], "resume": "none"}
+
+
 def _migrate_copy(raw: Mapping[str, Any]) -> dict[str, Any]:
     record = dict(raw)
-    if _state_of(record) in {"missing", "older"}:
-        record["schema"] = SESSION_SCHEMA
+    if _state_of(record) in {"missing", "older"} and _can_upgrade(record):
+        _upgrade_legacy(record)
     record["revision"] = _stored_revision(record)
     if not isinstance(record.get("turns"), list):
         record["turns"] = []
@@ -1157,12 +1229,22 @@ class SessionStore:
         """Load one session. Missing, corrupt, or foreign files raise.
 
         ``quarantine`` moves a corrupt or mismatched file aside. A newer
-        schema is never quarantined and never overwritten.
+        schema is never quarantined and never overwritten. A symlink is
+        always moved aside, even when ``quarantine`` is false.
         """
         path = self._path_for(session_id)
-        if not path.is_file():
+        if not path.is_file() and not path.is_symlink():
             raise SessionError("missing session")
         return self._load_unlocked(path, expected_id=session_id, quarantine=quarantine)
+
+    @contextlib.contextmanager
+    def reserve(self, session_id: str) -> Iterator[dict[str, Any]]:
+        """Exclusively resume *session_id*. A second process gets ``SessionBusy``."""
+        path = self._path_for(session_id)
+        if not path.is_file() and not path.is_symlink():
+            raise SessionError("missing session")
+        with self._lock(path, timeout_s=0.0):
+            yield self.load(session_id)
 
     def latest(self) -> dict[str, Any] | None:
         """Return the valid session with the newest ``updated_at``."""
@@ -1285,6 +1367,36 @@ class SessionStore:
             raise SessionError("message must be an object")
         return self._append_message(session_id, message)
 
+    def diagnose(self) -> tuple[str, ...]:
+        """Quarantine corrupt session files and report problems.
+
+        Listing does not raise. A newer schema is reported and left in place.
+        Symlinks and unreadable or invalid JSON are moved aside.
+        """
+        directory = self._resolved_directory()
+        if not directory.is_dir():
+            return ()
+        notes: list[str] = []
+        for path in sorted(directory.iterdir(), key=lambda item: item.name):
+            note = self._diagnose_one(path)
+            if note is not None:
+                notes.append(note)
+        return tuple(notes)
+
+    def _diagnose_one(self, path: Path) -> str | None:
+        if path.is_symlink():
+            quarantine_file(path)
+            return f"{path.name}: refused symlink"
+        if not _looks_like_session_file(path):
+            return None
+        if not _valid_session_id(path.stem):
+            return f"{path.name}: malformed session id"
+        try:
+            self._load_unlocked(path, expected_id=path.stem, quarantine=True)
+        except SessionError as exc:
+            return f"{path.name}: {exc}"
+        return None
+
     def _append_message(self, session_id: str, message: dict[str, Any]) -> dict[str, Any]:
         cloned = _copy_message(message)
 
@@ -1371,6 +1483,8 @@ class SessionStore:
         raw = _read_object(path, quarantine=quarantine)
         _reject_schema(raw, path, quarantine=quarantine)
         migrated = _migrate_copy(raw)
+        if not _schema_ok(migrated.get("schema")):
+            raise SessionError("unsupported session schema")
         _check_identity(migrated, expected_id, path, quarantine=quarantine)
         return _as_dict(_redact(migrated), "session record must be an object")
 
@@ -1391,6 +1505,8 @@ class SessionStore:
         return records, warnings
 
     def _one_file(self, path: Path) -> tuple[dict[str, Any] | None, str | None]:
+        if path.is_symlink():
+            return None, f"skipped {path.name}: refusing to follow symlink session file"
         if not _valid_session_id(path.stem):
             return None, f"skipped {path.name}: malformed session id"
         try:
@@ -1433,6 +1549,8 @@ class SessionStore:
         return current.astimezone(UTC)
 
     def _resolved_directory(self) -> Path:
+        if self.directory.is_symlink():
+            raise SessionError("refusing to follow symlink session directory")
         return self.directory.resolve()
 
     def _path_for(self, session_id: str) -> Path:
@@ -1444,12 +1562,23 @@ class SessionStore:
         return path
 
     @contextlib.contextmanager
-    def _lock(self, path: Path) -> Iterator[None]:
+    def _lock(self, path: Path, *, timeout_s: float | None = None) -> Iterator[None]:
+        """Hold the session lock. Re-entrant for the thread that already holds it."""
+        key = str(path)
+        held = _lock_held()
+        if key in held:
+            yield
+            return
+        timeout = self._lock_timeout_s if timeout_s is None else timeout_s
+        lock = FileLock(path, timeout_s=timeout)
+        _enter_lock(lock)
+        current = set(held)
+        current.add(key)
+        _HELD_PATHS.paths = current
         try:
-            with FileLock(path, timeout_s=self._lock_timeout_s):
-                yield
-        except StoreLockTimeout as exc:
-            raise SessionError("timed out waiting for session lock") from exc
+            yield
+        finally:
+            _exit_lock(lock, current, key)
 
     def _emit(self, name: str, fields: Mapping[str, Any]) -> None:
         if self._emit_fn is None:
@@ -1480,6 +1609,8 @@ def _pick_prefix(cleaned: str, ids: Sequence[str]) -> str:
 
 
 def _peek_revision(path: Path) -> int | None:
+    if path.is_symlink():
+        _refuse_symlink_file(path)
     if not path.exists():
         return None
     if not path.is_file():
@@ -1487,3 +1618,23 @@ def _peek_revision(path: Path) -> int | None:
     raw = _read_object(path, quarantine=False)
     _reject_schema(raw, path, quarantine=False)
     return _stored_revision(raw)
+
+
+def _lock_held() -> set[str]:
+    held: object = getattr(_HELD_PATHS, "paths", None)
+    if not isinstance(held, set):
+        return set()
+    return {item for item in held if isinstance(item, str)}
+
+
+def _enter_lock(lock: FileLock) -> None:
+    try:
+        lock.__enter__()
+    except StoreLockTimeout as exc:
+        raise SessionBusy("session lock is busy") from exc
+
+
+def _exit_lock(lock: FileLock, current: set[str], key: str) -> None:
+    current.discard(key)
+    _HELD_PATHS.paths = current
+    lock.__exit__(None, None, None)

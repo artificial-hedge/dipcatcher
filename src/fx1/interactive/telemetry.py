@@ -21,13 +21,20 @@ from enum import IntEnum
 from pathlib import Path
 from typing import Any
 
-from fx1.interactive.atomicstore import DIR_MODE, FILE_MODE, ensure_private_dir
-from fx1.interactive.redact import SecretRegistry, redact_text, redact_value
+from fx1.interactive.atomicstore import DIR_MODE, FILE_MODE, FileLock, ensure_private_dir
+from fx1.interactive.redact import (
+    DEFAULT_REGISTRY,
+    SecretRegistry,
+    is_sensitive_key,
+    redact_text,
+    redact_value,
+)
 from fx1.interactive.runctx import is_valid_id, require_id
 
 EmitFn = Callable[[str, Mapping[str, Any]], None]
 
 MAX_VALUE_CHARS = 500
+SCHEMA_VERSION = 1
 _MAX_DEPTH = 8
 CONTENT_FIELD_NAMES: frozenset[str] = frozenset(
     {
@@ -40,11 +47,19 @@ CONTENT_FIELD_NAMES: frozenset[str] = frozenset(
         "arguments",
         "stdout",
         "stderr",
+        "error",
+        "errors",
+        "exception",
+        "traceback",
+        "output",
+        "result",
+        "response",
+        "message",
     }
 )
 EVENT_NAME_RE = re.compile(r"^[a-z0-9_]+(\.[a-z0-9_]+)+$")
 _OMITTED_RE = re.compile(r"^\[omitted: \d+ chars\]$")
-_RESERVED = frozenset({"ts", "seq", "level", "event"})
+_RESERVED = frozenset({"ts", "seq", "level", "event", "schema_version"})
 _ID_KINDS: tuple[tuple[str, str], ...] = (
     ("session_id", "s"),
     ("run_id", "r"),
@@ -296,6 +311,21 @@ def _overlay(context: Mapping[str, str], fields: Mapping[str, Any]) -> dict[str,
     return merged
 
 
+def _overlay_registry(
+    base: SecretRegistry | None, environ: Mapping[str, str] | None
+) -> SecretRegistry:
+    """Copy *base* (or the process registry) and add sensitive environment values."""
+    overlay = SecretRegistry()
+    source = DEFAULT_REGISTRY if base is None else base
+    for value in source.values():
+        overlay.register(value)
+    env = os.environ if environ is None else environ
+    for name, value in env.items():
+        if isinstance(name, str) and isinstance(value, str) and is_sensitive_key(name):
+            overlay.register(value)
+    return overlay
+
+
 def _prepare_body(
     context: Mapping[str, str],
     fields: Mapping[str, Any],
@@ -501,12 +531,20 @@ class _Prepared:
     body: dict[str, Any]
 
 
+def _locked_write(path: Path, line: bytes, max_bytes: int, max_files: int) -> None:
+    """Serialize rotation and append across processes. The directory is already real."""
+    with FileLock(path, timeout_s=5.0):
+        _rotate_if_needed(path, len(line), max_bytes, max_files)
+        _append_line(path, line)
+
+
 def _compose(prepared: _Prepared, seq: int) -> dict[str, Any]:
     record: dict[str, Any] = {
         "ts": prepared.ts,
         "seq": seq,
         "level": prepared.level,
         "event": prepared.event,
+        "schema_version": SCHEMA_VERSION,
     }
     for key in sorted(prepared.body):
         record[key] = prepared.body[key]
@@ -527,6 +565,7 @@ class _Sink:
         clock: Clock,
         allow: frozenset[str],
         registry: SecretRegistry | None,
+        environ: Mapping[str, str] | None,
     ) -> None:
         self.directory = directory
         self.filename = filename
@@ -537,6 +576,7 @@ class _Sink:
         self.clock = clock
         self.allow = allow
         self.registry = registry
+        self.environ = environ
         self.lock = threading.Lock()
         self.seq = 0
         self.dropped = 0
@@ -591,6 +631,7 @@ class Telemetry:
             clock=chosen,
             allow=_allow_set(allow_content_fields),
             registry=registry,
+            environ=environ,
         )
 
     def emit(
@@ -688,7 +729,7 @@ class Telemetry:
             self._context,
             payload,
             self._sink.allow,
-            self._sink.registry,
+            _overlay_registry(self._sink.registry, self._sink.environ),
             self._sink.session_id,
         )
         return _Prepared(
@@ -702,8 +743,7 @@ class Telemetry:
         seq = self._sink.seq + 1
         line = _dumps_line(_compose(prepared, seq))
         _ensure_log_dir(self._sink.directory)
-        _rotate_if_needed(self._sink.path, len(line), self._sink.max_bytes, self._sink.max_files)
-        _append_line(self._sink.path, line)
+        _locked_write(self._sink.path, line, self._sink.max_bytes, self._sink.max_files)
         self._sink.seq = seq
 
     def _fail(self, exc: BaseException) -> None:
@@ -720,6 +760,7 @@ __all__ = [
     "CONTENT_FIELD_NAMES",
     "EVENT_NAME_RE",
     "MAX_VALUE_CHARS",
+    "SCHEMA_VERSION",
     "EmitFn",
     "Level",
     "Telemetry",

@@ -468,6 +468,7 @@ def test_non_posix_bundle_skips_chmod(tmp_path: Path, monkeypatch: pytest.Monkey
 
     monkeypatch.setattr(os, "chmod", spy)
     monkeypatch.setattr("fx1.interactive.diagnostics.os", _OsProxy())
+    monkeypatch.setattr("fx1.interactive.atomicstore.os", _OsProxy())
     path = tmp_path / "bundle.zip"
     write_bundle(_base(tmp_path), path)
     assert path.is_file()

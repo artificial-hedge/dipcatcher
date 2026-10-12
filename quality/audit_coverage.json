@@ -20,7 +20,7 @@
       "status": "audited"
     },
     "cli": {
-      "n_modules": 26,
+      "n_modules": 27,
       "status": "audited"
     },
     "combination": {
@@ -197,7 +197,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 1862,
+      "n_modules": 1863,
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
       "status": "partial"
     },
@@ -225,7 +225,7 @@
     },
     "utils": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 9,
+      "n_modules": 10,
       "status": "audited"
     },
     "validation": {

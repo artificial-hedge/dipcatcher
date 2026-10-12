@@ -355,14 +355,16 @@ class UsageTracker:
             return None
         if self._started_at is None:
             return float(limit)
-        elapsed = float(self._monotonic()) - self._started_at
-        return max(0.0, float(limit) - elapsed)
+        return max(0.0, float(limit) - self._elapsed())
 
     def _deadline(self) -> float | None:
         limit = self._budget.max_wall_s
         if limit is None or self._started_at is None:
             return None
-        return self._started_at + float(limit)
+        now = float(self._monotonic())
+        # A backward clock must not advertise more slack than the ceiling.
+        start = self._started_at if now >= self._started_at else now
+        return start + float(limit)
 
     def _elapsed(self) -> float:
         if self._started_at is None:

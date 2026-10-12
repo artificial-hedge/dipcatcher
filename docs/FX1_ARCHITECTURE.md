@@ -40,7 +40,7 @@ layout.
                │                                   │
         ┌──────▼───────────────────────────────────▼──────┐
         │ HARNESS  (fx1.harness → dipcatcher / quant_fund) │
-        │  24 registered lab commands, 4 roles, fail-closed│
+        │  25 registered lab commands, 4 roles, fail-closed│
         │  benches (proper scores) · verify-research ·     │
         │  honesty gates (FORBIDDEN metrics) · PIT data    │
         └──────────────────────────────────────────────────┘

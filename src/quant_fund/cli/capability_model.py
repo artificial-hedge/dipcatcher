@@ -28,6 +28,8 @@ _ARG_ORDER = (
     "max",
     "item_type",
     "path_role",
+    "bind",
+    "goal_terms",
 )
 
 

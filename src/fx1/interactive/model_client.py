@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import contextlib
 import http.client
+import ipaddress
 import json
 import math
 import os
@@ -24,6 +25,7 @@ import socket
 import ssl
 import threading
 import time
+import unicodedata
 import urllib.parse
 import urllib.request
 from collections.abc import Callable, Mapping
@@ -33,14 +35,16 @@ from email.utils import parsedate_to_datetime
 from enum import StrEnum
 from typing import Any, cast
 
+from fx1.interactive.endpoint import EndpointError, normalize_endpoint
 from fx1.interactive.redact import redact_text, redact_value, register_secret
 from fx1.serve.backends import (
     MOONSHOT_API_URL,
     SamplingParams,
     ToolCompletion,
-    hosted_api_url_problem,
     truncate_at_stops,
 )
+
+_KNOWN_MODELS = ("fx1", "fx1-lite")
 
 _ENV_API_KEY = "MOONSHOT_API_KEY"
 _ENV_BASE_URL = "FX1_BASE_URL"
@@ -189,6 +193,7 @@ class ModelError(RuntimeError):
     host: str
     hint: str
     summary: str
+    request_id: str | None
 
     def __init__(
         self,
@@ -201,6 +206,7 @@ class ModelError(RuntimeError):
         host: str,
         hint: str,
         summary: str,
+        request_id: str | None = None,
     ) -> None:
         self.kind = kind
         self.status = status
@@ -210,6 +216,7 @@ class ModelError(RuntimeError):
         self.host = host
         self.summary = redact_text(summary)
         self.hint = redact_text(hint)
+        self.request_id = _public_id(request_id)
         super().__init__(redact_text(f"{model} @ {host}: {self.summary} — {self.hint}"))
 
 
@@ -223,6 +230,7 @@ class ModelIdentity:
     host: str
     system_fingerprint: str | None
     matched: bool | None
+    response_id: str | None = None
 
 
 def _require_nonneg(name: str, value: float) -> None:
@@ -375,14 +383,8 @@ class ModelClient:
         proxies: Callable[[], Mapping[str, str]] | None = None,
         bypass: Callable[[str], bool] | None = None,
     ) -> None:
-        key = _resolve_key(api_key)
-        if not key:
-            raise RuntimeError("MOONSHOT_API_KEY is not set; fx-1 never hardcodes credentials")
-        register_secret(key)
-        url = _resolve_url(api_url)
-        problem = hosted_api_url_problem(url)
-        if problem is not None:
-            raise RuntimeError(f"model endpoint URL {problem}")
+        key = _validated_key(api_key)
+        url = _canonical_url(_resolve_url(api_url))
         self._api_key = key
         self._model = model
         self._api_url = url
@@ -473,12 +475,18 @@ class ModelClient:
             )
         return content
 
-    def ping(self, *, cancel_event: threading.Event | None = None) -> ModelIdentity:
+    def ping(
+        self,
+        *,
+        cancel_event: threading.Event | None = None,
+        deadline: float | None = None,
+    ) -> ModelIdentity:
         """One-token probe used by a model check. Returns the identity of the answer."""
         self.complete(
             [{"role": "user", "content": "ping"}],
             sampling=SamplingParams(max_tokens=1),
             cancel_event=cancel_event,
+            deadline=deadline,
         )
         identity = self.last_identity
         if identity is None:
@@ -486,6 +494,85 @@ class ModelClient:
                 ErrorKind.MALFORMED, summary="malformed completion (missing identity)"
             )
         return identity
+
+    def probe(
+        self,
+        *,
+        cancel_event: threading.Event | None = None,
+        deadline: float | None = None,
+    ) -> ModelIdentity:
+        """Models-route check, then a one-token completion.
+
+        HTTP 404 and 405 on the models route are tolerated (the route may
+        be absent). 401 and 403 stop before any completion. A rate limit
+        on the completion is retried within the configured policy.
+        """
+        self._probe_models(cancel_event, deadline)
+        return self.ping(cancel_event=cancel_event, deadline=deadline)
+
+    def _probe_models(
+        self,
+        cancel_event: threading.Event | None,
+        deadline: float | None,
+    ) -> None:
+        self._guard(cancel_event, deadline)
+        try:
+            status, headers, raw = self._get_models(cancel_event, deadline)
+        except Exception as exc:
+            raise self._coerce(exc) from None
+        self._guard(cancel_event, deadline)
+        if _models_status_ok(status):
+            return
+        raise self._http_error(status, headers, raw)
+
+    def _get_models(
+        self,
+        cancel_event: threading.Event | None,
+        deadline: float | None,
+    ) -> tuple[int, dict[str, str], bytes]:
+        box = _Box()
+        holder: list[tuple[int, dict[str, str], bytes]] = []
+        thread = threading.Thread(
+            target=lambda: self._read_models_into(box, holder),
+            name="fx1-model-http",
+            daemon=True,
+        )
+        thread.start()
+        try:
+            self._wait_until_done(box, cancel_event, deadline)
+        finally:
+            if not box.done.is_set():
+                self._abort(box)
+            thread.join(timeout=_JOIN_S)
+        if box.error is not None:
+            raise box.error
+        if not holder:
+            raise self._error(ErrorKind.MALFORMED, summary="malformed completion (empty attempt)")
+        return holder[0]
+
+    def _read_models_into(
+        self,
+        box: _Box,
+        holder: list[tuple[int, dict[str, str], bytes]],
+    ) -> None:
+        try:
+            holder.append(self._read_models(box))
+        except Exception as exc:
+            box.error = self._coerce(exc)
+        finally:
+            box.done.set()
+
+    def _read_models(self, box: _Box) -> tuple[int, dict[str, str], bytes]:
+        conn = self._open_connection(self._timeout_s)
+        try:
+            conn.connect()
+            self._attach(box, conn)
+            self._ensure_live(box)
+            return _send_get(
+                conn, _models_path(self._path), self._api_key, self._max_response_bytes
+            )
+        finally:
+            _shutdown_conn(conn)
 
     def _run(
         self,
@@ -644,6 +731,9 @@ class ModelClient:
         sampling: SamplingParams,
         require_text: bool,
     ) -> _Outcome:
+        framing = _body_framing_problem(headers)
+        if framing is not None:
+            raise self._malformed(status, framing)
         try:
             payload = _load_json(raw)
         except json.JSONDecodeError:
@@ -680,6 +770,7 @@ class ModelClient:
             retry_after_s=classified.retry_after_s,
             summary=classified.summary,
             hint=classified.hint,
+            request_id=_header_request_id(headers),
         )
 
     def _open_connection(self, timeout: float) -> http.client.HTTPConnection:
@@ -917,6 +1008,7 @@ class ModelClient:
         retry_after_s: float | None = None,
         summary: str,
         hint: str | None = None,
+        request_id: str | None = None,
     ) -> ModelError:
         chosen = hint if hint is not None else _hint_for(kind, self._model, self._host)
         return ModelError(
@@ -928,7 +1020,34 @@ class ModelClient:
             host=self._host,
             hint=chosen,
             summary=summary,
+            request_id=request_id,
         )
+
+
+def _validated_key(api_key: str | None) -> str:
+    key = _resolve_key(api_key)
+    if not key:
+        raise RuntimeError("MOONSHOT_API_KEY is not set; fx-1 never hardcodes credentials")
+    if _key_is_unsafe(key):
+        raise ValueError("API key contains whitespace, control, or non-latin1 characters")
+    register_secret(key)
+    return key
+
+
+def _key_is_unsafe(key: str) -> bool:
+    return any(_key_char_unsafe(ch) for ch in key)
+
+
+def _key_char_unsafe(ch: str) -> bool:
+    return ch.isspace() or unicodedata.category(ch) in {"Cc", "Cf"} or ord(ch) > 255
+
+
+def _canonical_url(url: str) -> str:
+    try:
+        spec = normalize_endpoint(url)
+    except EndpointError as exc:
+        raise RuntimeError(f"model endpoint URL {exc}") from None
+    return spec.completion_url
 
 
 def _resolve_key(api_key: str | None) -> str:
@@ -979,12 +1098,38 @@ def _request_path(url: str) -> str:
     return "/"
 
 
+def _models_path(path: str) -> str:
+    suffix = "/chat/completions"
+    if path.endswith(suffix):
+        base = path[: -len(suffix)]
+        return f"{base}/models"
+    return "/v1/models"
+
+
+def _models_status_ok(status: int) -> bool:
+    return status in (404, 405) or 200 <= status < 300
+
+
 def _default_proxies() -> dict[str, str]:
     return urllib.request.getproxies()
 
 
 def _default_bypass(host: str) -> bool:
+    # Plaintext loopback is the only HTTP destination that may carry a
+    # bearer token. An ambient proxy would see that request, so skip it.
+    if _literal_loopback(host):
+        return True
     return bool(urllib.request.proxy_bypass(host))
+
+
+def _literal_loopback(host: str) -> bool:
+    if not host or "%" in host or host.endswith("."):
+        return False
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return bool(address.is_loopback)
 
 
 def _proxy_url_for(scheme: str, proxies: Mapping[str, str]) -> str | None:
@@ -1334,6 +1479,50 @@ def _send_and_read(
     return status, header_map, raw
 
 
+def _send_get(
+    conn: http.client.HTTPConnection,
+    path: str,
+    api_key: str,
+    max_response_bytes: int,
+) -> tuple[int, dict[str, str], bytes]:
+    headers: dict[str, str] = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    conn.request("GET", path, headers=headers)
+    response = conn.getresponse()
+    try:
+        status = int(response.status)
+        header_map = _header_map(response)
+        raw = _read_response(response, status, max_response_bytes)
+    finally:
+        response.close()
+    return status, header_map, raw
+
+
+def _body_framing_problem(headers: Mapping[str, str]) -> str | None:
+    encoding = _encoding_problem(headers.get("content-encoding", ""))
+    if encoding is not None:
+        return encoding
+    return _type_problem(headers.get("content-type", ""))
+
+
+def _encoding_problem(raw: str) -> str | None:
+    text = raw.strip().lower()
+    if text in {"", "identity"}:
+        return None
+    return "unsupported content-encoding"
+
+
+def _type_problem(raw: str) -> str | None:
+    text = raw.strip().lower()
+    if not text:
+        return None
+    media = text.split(";", 1)[0].strip()
+    if media == "application/json" or media.endswith("+json"):
+        return None
+    return "content-type is not json"
+
+
 def _header_map(response: http.client.HTTPResponse) -> dict[str, str]:
     found: dict[str, str] = {}
     for key, value in response.getheaders():
@@ -1473,15 +1662,45 @@ def _identity_from(
     headers: Mapping[str, str],
 ) -> ModelIdentity:
     served = _served_model(payload)
-    matched = None if served is None else served == requested
+    matched = None if served is None else _models_match(requested, served)
     return ModelIdentity(
         requested=requested,
         served=served,
-        request_id=_header_request_id(headers),
+        request_id=_public_id(_header_request_id(headers)),
         host=host,
         system_fingerprint=_fingerprint_field(payload),
         matched=matched,
+        response_id=_response_id(payload),
     )
+
+
+def _models_match(requested: str, served: str) -> bool:
+    """Exact id, or a YYYYMMDD deployment suffix of that same id.
+
+    ``fx1-lite`` starts with ``fx1-`` but is a different model, so the
+    suffix must be a date and must not name another configured model.
+    """
+    if served == requested:
+        return True
+    prefix = f"{requested}-"
+    if not served.startswith(prefix):
+        return False
+    if _names_other_model(requested, served):
+        return False
+    return _is_date_suffix(served[len(prefix) :])
+
+
+def _names_other_model(requested: str, served: str) -> bool:
+    for other in _KNOWN_MODELS:
+        if other == requested or requested.startswith(f"{other}-"):
+            continue
+        if served == other or served.startswith(f"{other}-"):
+            return True
+    return False
+
+
+def _is_date_suffix(suffix: str) -> bool:
+    return len(suffix) == 8 and suffix.isdigit()
 
 
 def _served_model(payload: object) -> str | None:
@@ -1500,6 +1719,38 @@ def _fingerprint_field(payload: object) -> str | None:
     if isinstance(value, str) and value:
         return value
     return None
+
+
+_ID_LIMIT = 128
+
+
+def _public_id(value: object) -> str | None:
+    """A provider id safe to store: bounded, printable ASCII, not a secret."""
+    text = _id_text(value)
+    if text is None or redact_text(text) != text:
+        return None
+    return text
+
+
+def _id_text(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text or len(text) > _ID_LIMIT:
+        return None
+    if any(_id_char_bad(ch) for ch in text):
+        return None
+    return text
+
+
+def _id_char_bad(ch: str) -> bool:
+    return ch.isspace() or unicodedata.category(ch) in {"Cc", "Cf"} or ord(ch) > 127
+
+
+def _response_id(payload: object) -> str | None:
+    if not isinstance(payload, dict):
+        return None
+    return _public_id(payload.get("id"))
 
 
 def _header_request_id(headers: Mapping[str, str]) -> str | None:

@@ -28,6 +28,13 @@ SURFACE_SCHEMA = "dipcatcher.family_surface.v1"
 RUN_SCHEMA = "dipcatcher.family_run.v1"
 _FAMILY_ID = re.compile(r"^[a-z][a-z0-9_]*$")
 _GOAL_TOKEN = re.compile(r"[a-z][a-z0-9_]*")
+_MAX_FAMILY_ID = 64
+_MAX_GOAL = 4096
+_EXCLUSION_CODE = {
+    "retired": "retired",
+    "unknown": "unknown",
+    "live_optional": "no_runner",
+}
 
 Runner = Callable[..., Any]
 
@@ -337,11 +344,25 @@ def _catalog() -> tuple[frozenset[str], Mapping[str, Any], frozenset[str], froze
 
 
 def _check_id(family_id: str) -> str:
-    if not isinstance(family_id, str) or _FAMILY_ID.fullmatch(family_id) is None:
+    if (
+        not isinstance(family_id, str)
+        or len(family_id) > _MAX_FAMILY_ID
+        or _FAMILY_ID.fullmatch(family_id) is None
+    ):
         raise FamilySurfaceError(
-            f"refusing family id {family_id!r}; ids must match {_FAMILY_ID.pattern}"
+            f"refusing family id {_id_preview(family_id)}; "
+            f"ids must match {_FAMILY_ID.pattern} and be at most {_MAX_FAMILY_ID} characters"
         )
     return family_id
+
+
+def _id_preview(family_id: object) -> str:
+    """Keep a hostile or huge id out of the refusal text."""
+    if not isinstance(family_id, str):
+        return repr(type(family_id).__name__)
+    if len(family_id) <= 80:
+        return repr(family_id)
+    return repr(f"{family_id[:32]}...({len(family_id)} chars)")
 
 
 def qualification_of(family_id: str) -> str:
@@ -426,23 +447,43 @@ def list_executable() -> list[dict[str, Any]]:
     return [family_contract(family_id) for family_id in ids]
 
 
+def _bounded_term(term: str) -> str:
+    """Match ``term`` even when it begins or ends on a non-word character.
+
+    ``\\b`` does not fire between two non-word characters, so a documented
+    trigger such as ``cv+`` never matched its own text.
+    """
+    return rf"(?<!\w){re.escape(term)}(?!\w)"
+
+
 def _score(goal: str, runner: FamilyRunner) -> int:
     lowered = goal.lower()
     score = 0
     for term in runner.trigger_terms:
-        if re.search(rf"\b{re.escape(term)}\b", lowered):
+        if re.search(_bounded_term(term), lowered):
             score += 1
-    if re.search(rf"\b{re.escape(runner.family_id)}\b", lowered):
+    if re.search(_bounded_term(runner.family_id), lowered):
         score += 5
     return score
 
 
-def select_families(goal: str, *, max_families: int = 4) -> dict[str, Any]:
-    """Choose eligible runners for a goal and list every material exclusion."""
+def _require_goal(goal: str) -> str:
+    if not isinstance(goal, str) or "\x00" in goal or not goal.strip():
+        raise FamilySurfaceError("goal must be non-empty text without NUL")
+    if len(goal) > _MAX_GOAL:
+        raise FamilySurfaceError(f"goal exceeds {_MAX_GOAL} characters")
+    return goal
+
+
+def _require_max(max_families: int) -> int:
+    if isinstance(max_families, bool) or not isinstance(max_families, int):
+        raise FamilySurfaceError("max_families must be an integer")
     if max_families < 0:
         raise FamilySurfaceError("max_families must be nonnegative")
-    if not isinstance(goal, str) or not goal.strip():
-        raise FamilySurfaceError("goal must be non-empty text")
+    return max_families
+
+
+def _ranked(goal: str) -> list[tuple[int, str]]:
     order = _order_index()
     scored = [
         (_score(goal, runner), runner.family_id)
@@ -451,27 +492,54 @@ def select_families(goal: str, *, max_families: int = 4) -> dict[str, Any]:
     ]
     scored = [(score, family_id) for score, family_id in scored if score > 0]
     scored.sort(key=lambda item: (-item[0], order.get(item[1], 10_000), item[1]))
-    chosen = [family_id for _score_value, family_id in scored[:max_families]]
+    return scored
+
+
+def _cap_exclusions(overflow: list[tuple[int, str]], cap: int) -> list[dict[str, str]]:
+    return [
+        {
+            "id": family_id,
+            "code": "over_cap",
+            "reason": f"eligible but over the max_families={cap} cap",
+        }
+        for _score_value, family_id in overflow
+    ]
+
+
+def _refusal_exclusion(token: str, contract: Mapping[str, Any]) -> dict[str, str]:
+    qualification = str(contract["qualification"])
+    return {
+        "id": token,
+        "code": _EXCLUSION_CODE.get(qualification, "not_qualified"),
+        "reason": str(contract["refusal"]),
+    }
+
+
+def _token_exclusions(goal: str, chosen: set[str]) -> list[dict[str, str]]:
     exclusions: list[dict[str, str]] = []
-    for _score_value, family_id in scored[max_families:]:
-        exclusions.append(
-            {
-                "id": family_id,
-                "reason": f"eligible but over the max_families={max_families} cap",
-            }
-        )
-    chosen_set = set(chosen)
+    known = _known_ids()
     for token in dict.fromkeys(_GOAL_TOKEN.findall(goal.lower())):
-        if token in chosen_set or token not in _known_ids():
+        if token in chosen or token not in known:
             continue
         contract = family_contract(token)
         if contract["executable"]:
             continue
-        exclusions.append({"id": token, "reason": str(contract["refusal"])})
+        exclusions.append(_refusal_exclusion(token, contract))
+    return exclusions
+
+
+def select_families(goal: str, *, max_families: int = 4) -> dict[str, Any]:
+    """Choose eligible runners for a goal and list every material exclusion."""
+    text = _require_goal(goal)
+    cap = _require_max(max_families)
+    scored = _ranked(text)
+    chosen = [family_id for _score_value, family_id in scored[:cap]]
+    exclusions = _cap_exclusions(scored[cap:], cap)
+    exclusions.extend(_token_exclusions(text, set(chosen)))
     return {
         "schema": SURFACE_SCHEMA,
-        "goal": goal,
-        "max_families": max_families,
+        "goal": text,
+        "max_families": cap,
         "selected": [family_contract(family_id) for family_id in chosen],
         "exclusions": exclusions,
     }
@@ -502,8 +570,8 @@ def _default_load_panel(config: Any) -> PanelBundle:
     from quant_fund.utils.seeds import set_global_seed
 
     set_global_seed(int(config.train.random_seed))
-    source = str(config.data.source)
-    build_gold(config, refresh=source == "synthetic")
+    claimed = _claimed_source(config)
+    build_gold(config, refresh=claimed == "synthetic")
     frame = panel(config)
     benchmark = config.data.benchmark_id
     if "security_id" in frame.columns:
@@ -524,7 +592,9 @@ def _default_load_panel(config: Any) -> PanelBundle:
     northset = ensure_silver(config)
     if "security_id" in northset.columns:
         northset = northset.filter(pl.col("security_id") != benchmark)
-    return PanelBundle(frame=frame, label=label, northset=northset)
+    bundle = PanelBundle(frame=frame, label=label, northset=northset)
+    _assert_manifest(config, claimed)
+    return bundle
 
 
 def _callable(target: str) -> Runner:
@@ -674,10 +744,122 @@ def _write_artifact(directory: Path, payload: dict[str, Any]) -> str:
     return str(target)
 
 
-def _select_runners(
-    family_ids: list[str], budget_s: float | None
-) -> tuple[list[FamilyRunner], int]:
-    """Validate ids and eligibility before any bench runs; return runners and the estimate."""
+def _claimed_source(config: Any) -> str:
+    raw = getattr(getattr(config, "data", None), "source", None)
+    if not isinstance(raw, str) or not raw.strip():
+        raise FamilySurfaceError("config data.source is missing; refusing to label the run")
+    return raw.strip().lower()
+
+
+def _source_labels(frame: Any) -> set[str] | None:
+    columns = getattr(frame, "columns", None)
+    if columns is None or "source" not in columns:
+        return None
+    getter = getattr(frame, "get_column", None)
+    if not callable(getter):
+        return None
+    series = getter("source")
+    unique = getattr(series, "unique", None)
+    if not callable(unique):
+        return None
+    values = unique()
+    to_list = getattr(values, "to_list", None)
+    items = to_list() if callable(to_list) else list(values)
+    return _normalize_sources(items)
+
+
+def _normalize_sources(items: Any) -> set[str]:
+    labels: set[str] = set()
+    for item in items:
+        if item is None:
+            continue
+        text = str(item).strip().lower()
+        if text:
+            labels.add(text)
+    return labels
+
+
+def _merged_sources(bundle: PanelBundle) -> set[str] | None:
+    merged: set[str] = set()
+    saw = False
+    for frame in (bundle.frame, bundle.northset):
+        labels = _source_labels(frame)
+        if labels is None:
+            continue
+        saw = True
+        merged.update(labels)
+    if not saw:
+        return None
+    return merged
+
+
+def _expected_sources(claimed: str) -> set[str]:
+    if claimed == "synthetic":
+        return {"synthetic"}
+    return {claimed}
+
+
+def _refuse_unmarked(claimed: str) -> None:
+    if claimed == "synthetic":
+        return
+    raise FamilySurfaceError(
+        "refusing to label the run as non-synthetic without a panel source column"
+    )
+
+
+def _assert_bundle_honest(claimed: str, bundle: PanelBundle) -> None:
+    merged = _merged_sources(bundle)
+    if merged is None:
+        _refuse_unmarked(claimed)
+        return
+    if merged != _expected_sources(claimed):
+        found = ", ".join(sorted(merged)) or "(empty)"
+        raise FamilySurfaceError(
+            f"config source {claimed!r} does not match panel source [{found}]; "
+            "refusing a mislabeled record"
+        )
+
+
+def _manifest_path(config: Any) -> Path | None:
+    root = getattr(getattr(config, "data", None), "root", None)
+    if root is None:
+        return None
+    return Path(root) / "metadata" / "data_manifest.json"
+
+
+def _read_manifest(path: Path) -> Mapping[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise FamilySurfaceError(
+            "data manifest is unreadable; refusing to label the panel"
+        ) from exc
+    if not isinstance(payload, dict):
+        raise FamilySurfaceError("data manifest is not an object; refusing to label the panel")
+    return payload
+
+
+def _manifest_source(config: Any) -> str:
+    path = _manifest_path(config)
+    if path is None or not path.is_file():
+        raise FamilySurfaceError(
+            "data manifest is missing; refusing to label an unprovenanced panel"
+        )
+    source = _read_manifest(path).get("source")
+    if not isinstance(source, str) or not source.strip():
+        raise FamilySurfaceError("data manifest has no source; refusing to label the panel")
+    return source.strip().lower()
+
+
+def _assert_manifest(config: Any, claimed: str) -> None:
+    manifest = _manifest_source(config)
+    if manifest != claimed:
+        raise FamilySurfaceError(
+            f"data manifest source {manifest!r} does not match config source {claimed!r}"
+        )
+
+
+def _checked_runners(family_ids: list[str]) -> list[FamilyRunner]:
     if not family_ids:
         raise FamilySurfaceError("refusing to run an empty family selection")
     checked = [_check_id(family_id) for family_id in family_ids]
@@ -689,13 +871,64 @@ def _select_runners(
         if not contract["executable"]:
             raise FamilySurfaceError(str(contract["refusal"]))
         selected.append(RUNNERS[family_id])
-    estimated = sum(runner.resource_limit_s for runner in selected)
+    return selected
+
+
+def _refuse_over_budget(estimated: int, budget_s: float | None) -> None:
     if budget_s is not None and estimated > budget_s:
         raise FamilySurfaceError(
             f"estimated resource_limit_s {estimated} exceeds budget_s {budget_s}; "
             "refusing before execution. This is an estimate, not a spend guarantee."
         )
-    return selected, estimated
+
+
+def _load_bundle(
+    selected: list[FamilyRunner],
+    config: Any,
+    load_panel: Callable[[Any], PanelBundle] | None,
+) -> PanelBundle | None:
+    if any(runner.needs != "none" for runner in selected):
+        loader = load_panel or _default_load_panel
+        return loader(config)
+    return None
+
+
+def _execute(
+    selected: list[FamilyRunner],
+    overrides: Mapping[str, Runner],
+    bundle: PanelBundle | None,
+    config: Any,
+) -> dict[str, Any]:
+    results: dict[str, Any] = {}
+    for runner in selected:
+        fn = overrides.get(runner.family_id, _callable(runner.target))
+        cooked = _jsonable(_invoke(runner, fn, bundle, config))
+        _reject_forbidden(runner.family_id, cooked)
+        results[runner.family_id] = cooked
+    return results
+
+
+def _label_run(config: Any, bundle: PanelBundle | None) -> tuple[str, str]:
+    """Evidence class and data source. A panel-less bench is not market evidence."""
+    if bundle is None:
+        return "SYNTHETIC", "SYNTHETIC"
+    claimed = _claimed_source(config)
+    _assert_bundle_honest(claimed, bundle)
+    if claimed == "synthetic":
+        return "SYNTHETIC", "SYNTHETIC"
+    return claimed, claimed
+
+
+def _attach_artifact(payload: dict[str, Any], config: Any, write_artifact: bool) -> None:
+    payload["artifact"] = ""
+    payload["sha256"] = hashlib.sha256(canonical_record_bytes(payload)).hexdigest()
+    if not write_artifact:
+        return
+    directory = _artifact_dir(config)
+    if directory is None:
+        return
+    payload["artifact"] = str(directory / f"{payload['sha256'][:16]}.json")
+    _write_artifact(directory, payload)
 
 
 def run_families(
@@ -708,28 +941,20 @@ def run_families(
     budget_s: float | None = None,
 ) -> dict[str, Any]:
     """Execute only the named eligible runners. Refuses the rest before any bench."""
-    selected, estimated = _select_runners(family_ids, budget_s)
-    needs_panel = any(runner.needs != "none" for runner in selected)
-    bundle: PanelBundle | None = None
-    if needs_panel:
-        loader = load_panel or _default_load_panel
-        bundle = loader(config)
+    selected = _checked_runners(family_ids)
+    estimated = sum(runner.resource_limit_s for runner in selected)
+    _refuse_over_budget(estimated, budget_s)
+    bundle = _load_bundle(selected, config, load_panel)
+    evidence_class, data_source = _label_run(config, bundle)
     started = time.monotonic()
-    results: dict[str, Any] = {}
-    overrides = dict(runners or {})
-    for runner in selected:
-        fn = overrides.get(runner.family_id, _callable(runner.target))
-        cooked = _jsonable(_invoke(runner, fn, bundle, config))
-        _reject_forbidden(runner.family_id, cooked)
-        results[runner.family_id] = cooked
+    results = _execute(selected, dict(runners or {}), bundle, config)
     elapsed = time.monotonic() - started
-    source = str(getattr(getattr(config, "data", None), "source", "unknown"))
     payload: dict[str, Any] = {
         "schema": RUN_SCHEMA,
         "partial": True,
         "verified": False,
-        "evidence_class": "SYNTHETIC" if source == "synthetic" else source,
-        "data_source": source,
+        "evidence_class": evidence_class,
+        "data_source": data_source,
         "family_ids": [runner.family_id for runner in selected],
         "results": results,
         "elapsed_s": elapsed,
@@ -741,11 +966,5 @@ def run_families(
             "verified stays false until verify-research accepts a receipt."
         ),
     }
-    payload["artifact"] = ""
-    payload["sha256"] = hashlib.sha256(canonical_record_bytes(payload)).hexdigest()
-    if write_artifact:
-        directory = _artifact_dir(config)
-        if directory is not None:
-            payload["artifact"] = str(directory / f"{payload['sha256'][:16]}.json")
-            _write_artifact(directory, payload)
+    _attach_artifact(payload, config, write_artifact)
     return payload

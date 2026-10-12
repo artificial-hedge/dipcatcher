@@ -21,6 +21,7 @@ from typing import Any
 import typer
 
 from quant_fund.cli.capability_audit import (
+    _bind_field_problems,
     _coverage_problems,
     _scan_text,
     _structural_problems,
@@ -67,6 +68,20 @@ from quant_fund.cli.capability_overlay import (
 
 _CONSEQUENTIAL_TOKENS = frozenset({"train", "optimize", "paper"})
 _WEAKENING_ARGS = frozenset({"--check-index", "--write", "--claim-live", "--dev"})
+_HINT_KEYS = frozenset(
+    {
+        "type",
+        "item_type",
+        "min",
+        "max",
+        "choices",
+        "default",
+        "path_role",
+        "bind",
+        "goal_terms",
+        "required",
+    }
+)
 _ENTRY_KEYS = frozenset(
     {
         "id",
@@ -572,6 +587,10 @@ def _with_hint(
 ) -> dict[str, Any]:
     if not hint:
         return _order_arg(arg)
+    unknown = _unknown_hint_key(hint, where)
+    if unknown:
+        problems.append(unknown)
+        return _order_arg(arg)
     _apply_type_hint(arg, hint, problems, where)
     _apply_bound_hint(arg, hint, problems, where, "min", higher_is_tighter=True)
     _apply_bound_hint(arg, hint, problems, where, "max", higher_is_tighter=False)
@@ -582,7 +601,50 @@ def _with_hint(
         arg["path_role"] = str(hint["path_role"])
     if "item_type" in hint:
         arg["item_type"] = str(hint["item_type"])
+    _apply_bind_hint(arg, hint, problems, where)
     return _order_arg(arg)
+
+
+def _unknown_hint_key(hint: Mapping[str, Any], where: str) -> str:
+    extra = sorted(key for key in hint if key not in _HINT_KEYS)
+    if not extra:
+        return ""
+    return f"{where}: unknown arg hint key {extra[0]}"
+
+
+def _apply_bind_hint(
+    out: dict[str, Any], hint: Mapping[str, Any], problems: list[str], where: str
+) -> None:
+    if "bind" not in hint and "goal_terms" not in hint:
+        return
+    trial = dict(out)
+    if "bind" in hint:
+        trial["bind"] = hint["bind"]
+    if "goal_terms" in hint:
+        trial["goal_terms"] = hint["goal_terms"]
+    found = _bind_field_problems(trial, where)
+    if found:
+        problems.extend(found)
+        return
+    _store_bind(out, trial)
+
+
+def _store_bind(out: dict[str, Any], trial: Mapping[str, Any]) -> None:
+    out["bind"] = trial["bind"]
+    if "goal_terms" not in trial:
+        return
+    out["goal_terms"] = _ordered_goal_terms(trial["goal_terms"], trial.get("choices"))
+
+
+def _ordered_goal_terms(raw: Mapping[str, Any], choices: object) -> dict[str, list[str]]:
+    order = choices if isinstance(choices, list) else []
+    ordered: dict[str, list[str]] = {}
+    for key in order:
+        token = str(key)
+        if token not in raw:
+            continue
+        ordered[token] = [str(item) for item in raw[token]]
+    return ordered
 
 
 def _apply_type_hint(
@@ -725,6 +787,11 @@ def _unqualified_capability(command: LabCommand) -> dict[str, Any]:
     )
 
 
+def _unpublished_budget() -> tuple[None, None, None]:
+    """Non-executable rows publish null ceilings; the client reads those as 0."""
+    return None, None, None
+
+
 def _from_overlay(
     entry: Mapping[str, Any],
     args: Sequence[Mapping[str, Any]],
@@ -737,6 +804,11 @@ def _from_overlay(
     limits = entry["limits"]
     qual = entry["qualification"]
     argv = tuple(str(part) for part in command["argv"])
+    timeout_s = _optional_int(command.get("timeout_s"))
+    runtime_s = _optional_int(limits.get("max_runtime_s"))
+    output_chars = _optional_int(limits.get("max_output_chars"))
+    if not executable:
+        timeout_s, runtime_s, output_chars = _unpublished_budget()
     return _capability(
         ident=str(entry["id"]),
         version=str(entry["version"]),
@@ -747,7 +819,7 @@ def _from_overlay(
         role=str(command["role"]),
         read_only=bool(command["read_only"]),
         writes=[str(item) for item in command["writes"]],
-        timeout_s=_optional_int(command.get("timeout_s")),
+        timeout_s=timeout_s,
         consequential=bool(command["consequential"]),
         args=args,
         data_labels=[str(item) for item in inputs["data_labels"]],
@@ -759,8 +831,8 @@ def _from_overlay(
         receipt_marker=str(outputs["receipt_stdout_marker"]),
         dependencies=[str(item) for item in entry["dependencies"]],
         post_checks=[dict(item) for item in entry["post_checks"]],
-        max_runtime_s=_optional_int(limits.get("max_runtime_s")),
-        max_output_chars=_optional_int(limits.get("max_output_chars")),
+        max_runtime_s=runtime_s,
+        max_output_chars=output_chars,
         status=str(qual["status"]),
         evidence=[str(item) for item in qual["evidence"]],
         evidence_class=str(entry["evidence_class"]),
@@ -962,7 +1034,10 @@ def _resolve_repo(repo_root: Path | None, *, discover_repo: bool) -> Path | None
         return repo_root
     if not discover_repo:
         return None
-    return find_repo_root()
+    root = find_repo_root()
+    if root is None or not (root / "src" / "quant_fund").is_dir():
+        return None
+    return root
 
 
 def _group_overlay(

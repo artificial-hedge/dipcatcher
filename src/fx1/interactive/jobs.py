@@ -199,6 +199,7 @@ class StepRecord:
     pid_token: str | None = None
     detail: str = ""
     replayed: bool = False
+    extras: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -217,6 +218,7 @@ class JobRecord:
     budget: dict[str, Any] | None = None
     revision: int = 1
     version: str = str(SCHEMA_VERSION)
+    extras: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -735,7 +737,7 @@ def _recency(record: JobRecord) -> tuple[str, str]:
 
 
 def _step_to_dict(step: StepRecord) -> dict[str, Any]:
-    return {
+    payload = {
         "step_id": step.step_id,
         "name": step.name,
         "state": step.state.value,
@@ -752,10 +754,11 @@ def _step_to_dict(step: StepRecord) -> dict[str, Any]:
         "pid_token": step.pid_token,
         "detail": step.detail,
     }
+    return _merge_unknown(payload, step.extras, _STEP_FIELDS)
 
 
 def _job_to_dict(record: JobRecord) -> dict[str, Any]:
-    return {
+    payload = {
         "schema_version": SCHEMA_VERSION,
         "job_id": record.job_id,
         "session_id": record.session_id,
@@ -771,6 +774,7 @@ def _job_to_dict(record: JobRecord) -> dict[str, Any]:
         "budget": record.budget,
         "revision": record.revision,
     }
+    return _merge_unknown(payload, record.extras, _JOB_FIELDS)
 
 
 def _step_from_dict(payload: Any) -> StepRecord:
@@ -792,6 +796,7 @@ def _step_from_dict(payload: Any) -> StepRecord:
         pgid=_opt_int(data["pgid"], "pgid"),
         pid_token=_opt_token(data["pid_token"]),
         detail=_as_str(data["detail"], "detail"),
+        extras=_unknown_fields(data, _STEP_FIELDS),
     )
 
 
@@ -805,7 +810,7 @@ def _loaded_step_id(value: Any) -> str:
 def _job_from_dict(payload: Any) -> JobRecord:
     data = _string_key_dict(payload)
     _require_fields(data, _JOB_FIELDS)
-    if data["schema_version"] != SCHEMA_VERSION:
+    if not _supported_schema(data["schema_version"]):
         raise ValueError("unsupported schema_version")
     steps_raw = data["steps"]
     if not isinstance(steps_raw, list):
@@ -829,11 +834,31 @@ def _job_from_fields(data: dict[str, Any], steps_raw: builtins.list[Any]) -> Job
         budget=_opt_budget(data["budget"]),
         revision=_as_revision(data["revision"]),
         version=str(SCHEMA_VERSION),
+        extras=_unknown_fields(data, _JOB_FIELDS),
     )
 
 
+def _supported_schema(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value == SCHEMA_VERSION
+
+
+def _unknown_fields(data: dict[str, Any], known: frozenset[str]) -> dict[str, Any]:
+    return {key: value for key, value in data.items() if key not in known}
+
+
+def _merge_unknown(
+    payload: dict[str, Any], extras: dict[str, Any], known: frozenset[str]
+) -> dict[str, Any]:
+    for key, value in extras.items():
+        if key not in known:
+            payload[key] = value
+    return payload
+
+
 def _command_env() -> dict[str, str]:
-    env = dict(os.environ)
+    """Environment for ``ps`` / ``tasklist``. Parent secrets stay out of the child."""
+    kept = ("PATH", "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT")
+    env = {key: os.environ[key] for key in kept if os.environ.get(key)}
     env["LC_ALL"] = "C"
     return env
 

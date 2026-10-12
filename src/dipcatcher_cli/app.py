@@ -121,7 +121,7 @@ def _dispatch_launcher(args: Sequence[str]) -> bool:
     if head == [RESUME_COMMAND]:
         _resume(args[1:])
         return True
-    if args == ["--version"] or head == [VERSION_COMMAND]:
+    if head == [VERSION_COMMAND]:
         _version_args(args)
         return True
     if not args and _interactive():
@@ -131,7 +131,7 @@ def _dispatch_launcher(args: Sequence[str]) -> bool:
 
 
 def _version_args(args: Sequence[str]) -> None:
-    if args == ["--version"] or args == [VERSION_COMMAND]:
+    if args == [VERSION_COMMAND]:
         _version()
         return
     print("usage: dipcatcher version", file=sys.stderr)
