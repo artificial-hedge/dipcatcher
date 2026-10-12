@@ -1,16 +1,28 @@
 """Capability-contract client for ``/superpower``.
 
 Loads the lab JSON schema ``dipcatcher.capabilities.v1`` and turns it into
-typed, argv-safe calls. Unknown optional fields are ignored. Missing required
+typed, argv-safe calls. Unknown optional fields outside an argument object
+are ignored. Unknown keys on an argument object are rejected. Missing required
 fields, wrong types, and an ``executable`` capability that is not
 ``qualified`` (or that has no qualification evidence) reject the catalog.
 Retired capabilities are never executable.
+
+``bind`` is an optional planner hint, ``dataset`` or ``goal``. ``goal_terms``
+maps a goal-bound choice to lowercase phrases and must be a subset of
+``choices``. The size bounds match the lab publisher.
 
 ``allowed_args``, when present, is a whitelist. A list of names only
 whitelists. An object whitelists and may tighten ``min``, ``max``, and
 ``choices``; a tightening cannot widen the spec. JSON key ``min``/``max``
 map to :attr:`ArgSpec.minimum` / :attr:`ArgSpec.maximum`. ``has_default``
 is true only when the catalog declares ``default`` (JSON null is rejected).
+
+A non-executable entry may publish JSON null for ``command.timeout_s`` and
+for ``limits.max_runtime_s`` / ``max_output_chars``; those nulls are read as
+0. An executable entry must publish real numbers. Capability ids may be the
+lab's space-separated nested command names. Positional argument names may
+contain ``_``. Neither ids nor argument names are interpolated into a shell;
+calls stay argv arrays, and shell metacharacters are still rejected.
 
 The catalog digest is the SHA-256 of the canonical JSON (sorted keys,
 compact separators) of the parsed document, including ignored fields.
@@ -57,17 +69,45 @@ _KINDS = frozenset({"option", "argument"})
 _TYPES = frozenset({"flag", "int", "float", "str", "enum", "path", "csv"})
 _ITEM_TYPES = frozenset({"int", "float", "str", "enum"})
 _PATH_ROLES = frozenset({"config", "input", "output_dir", "any"})
+# Bounds are mirrored by quant_fund.cli.capability_cmds (publisher/client lockstep).
+_BIND_KINDS = frozenset({"dataset", "goal"})
+_ARG_KEYS = frozenset(
+    {
+        "name",
+        "kind",
+        "type",
+        "required",
+        "default",
+        "repeatable",
+        "help",
+        "choices",
+        "min",
+        "max",
+        "item_type",
+        "path_role",
+        "bind",
+        "goal_terms",
+    }
+)
+_MAX_BIND_CHOICES = 8
+_MAX_BIND_TERMS = 12
+_MAX_BIND_TERM_LEN = 48
+_MAX_BIND_TERM_TOTAL = 48
+_TERM_RE = re.compile(r"^[a-z0-9]+(?:[ -][a-z0-9]+)*$")
+_EMPTY_TERMS: Mapping[str, tuple[str, ...]] = MappingProxyType({})
 _NUMERIC_TYPES = frozenset({"int", "float", "csv"})
 _CHOICE_TYPES = frozenset({"str", "enum", "csv", "int"})
 _SHELL_CHARS = frozenset(";|&`$()<>\\\n\r\x00")
 _PATH_META = frozenset(";|&`$()<>\n\r\x00")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
-_ID_RE = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
+# Lab command ids: one token, or nested tokens separated by single spaces
+# (``allocation compare``). Shell metacharacters are not part of this pattern.
+_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*(?: [a-z0-9][a-z0-9-]*)*$")
 _TASK_RE = re.compile(r"^[a-z][a-z0-9_]{0,80}$")
 _ALIAS_RE = re.compile(r"^[a-z0-9][a-z0-9 ._-]{0,80}$")
 _VERSION_RE = re.compile(r"^[A-Za-z0-9._-]{1,32}$")
 _OPTION_NAME = re.compile(r"^--[a-z][a-z0-9-]{0,63}$")
-_ARG_NAME = re.compile(r"^[a-z][a-z0-9-]{0,63}$")
+_ARG_NAME = re.compile(r"^[a-z][a-z0-9_-]{0,63}$")
 _INT_TOKEN = re.compile(r"-?\d+")
 _FLOAT_TOKEN = re.compile(r"-?(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][+-]?\d+)?")
 _MAX_STR = 256
@@ -100,7 +140,11 @@ class ContractViolation(ValueError):
 
 @dataclass(frozen=True)
 class ArgSpec:
-    """One CLI option or positional argument."""
+    """One CLI option or positional argument.
+
+    ``bind`` is ``dataset`` or ``goal`` when the planner may fill the value.
+    ``goal_terms`` maps a goal-bound choice to the phrases that select it.
+    """
 
     name: str
     kind: str
@@ -115,6 +159,8 @@ class ArgSpec:
     repeatable: bool
     help: str
     has_default: bool
+    bind: str | None = None
+    goal_terms: Mapping[str, tuple[str, ...]] = _EMPTY_TERMS
 
 
 @dataclass(frozen=True)
@@ -175,7 +221,7 @@ class CapabilityCatalog:
         parsed = _load_document(doc)
         _check_schema(parsed)
         _check_generated_by(parsed)
-        caps = _parse_capabilities(parsed)
+        caps = _capabilities_from_document(parsed)
         digest = catalog_digest(parsed)
         return cls(capabilities=MappingProxyType(caps), digest=digest, document=parsed)
 
@@ -307,15 +353,22 @@ def parse_cli_tokens(cap: Capability, tokens: Sequence[str]) -> dict[str, Any]:
     return validate_args(cap, raw)
 
 
-def build_argv(cap: Capability, validated: Mapping[str, Any]) -> list[str]:
+def build_argv(
+    cap: Capability,
+    validated: Mapping[str, Any],
+    *,
+    roots: Mapping[str, Sequence[Path]] | None = None,
+) -> list[str]:
     """Build a deterministic argv, including the receipt flag when required.
 
-    Values are re-validated. Spec order is preserved. False flags are omitted.
-    Shell metacharacters never appear in the result.
+    Values are re-validated. Pass ``roots`` when a value is a path so the
+    same containment check that accepted the plan accepts the argv. Spec
+    order is preserved. False flags are omitted. Shell metacharacters never
+    appear in the result.
     """
     if not isinstance(validated, Mapping):
         raise ContractViolation("bad_type", "", "validated args must be an object")
-    confirmed = validate_args(cap, validated)
+    confirmed = validate_args(cap, validated, roots=roots)
     argv = list(cap.argv)
     for spec in cap.args:
         if spec.name not in confirmed:
@@ -377,6 +430,29 @@ def _check_generated_by(doc: Mapping[str, Any]) -> None:
         raise ContractError("generated_by.n_lab_commands must be a nonnegative integer")
 
 
+def _capabilities_from_document(doc: Mapping[str, Any]) -> dict[str, Capability]:
+    if doc.get("view") == "describe":
+        return _parse_describe(doc)
+    return _parse_capabilities(doc)
+
+
+def _parse_describe(doc: Mapping[str, Any]) -> dict[str, Capability]:
+    error = doc.get("error")
+    if error is not None:
+        raise ContractError(_describe_error_text(error))
+    capability = doc.get("capability")
+    if not isinstance(capability, dict):
+        raise ContractError("describe capability must be an object")
+    cap = _parse_capability(capability, 0)
+    return {cap.id: cap}
+
+
+def _describe_error_text(error: object) -> str:
+    if isinstance(error, str) and error.strip():
+        return error.strip()
+    return "describe failed"
+
+
 def _parse_capabilities(doc: Mapping[str, Any]) -> dict[str, Capability]:
     raw = doc.get("capabilities")
     if not isinstance(raw, list):
@@ -395,10 +471,11 @@ def _parse_capability(item: Any, index: int) -> Capability:
     obj = _mapping(item, f"capabilities[{index}]")
     ctx = f"capabilities[{index}]"
     identity = _parse_identity(obj, ctx)
-    command = _parse_command(obj, ctx)
+    executable = _bool(obj.get("executable"), f"{ctx}.executable")
+    command = _parse_command(obj, ctx, allow_null_budget=not executable)
     inputs = _parse_inputs(obj, ctx)
     outputs = _parse_outputs(obj, ctx)
-    limits = _parse_limits(obj, ctx)
+    limits = _parse_limits(obj, ctx, allow_null_budget=not executable)
     status, evidence = _parse_qualification(obj, ctx)
     args = _parse_args(obj.get("args"), ctx)
     allowed = _parse_allowed(obj, args, ctx)
@@ -431,7 +508,7 @@ def _parse_capability(item: Any, index: int) -> Capability:
         qualification_status=status,
         qualification_evidence=evidence,
         evidence_class=_member(obj.get("evidence_class"), _EVIDENCE, f"{ctx}.evidence_class"),
-        executable=_bool(obj.get("executable"), f"{ctx}.executable"),
+        executable=executable,
         executable_reason=_text(
             obj.get("executable_reason"), f"{ctx}.executable_reason", limit=400
         ),
@@ -459,7 +536,10 @@ def _parse_identity(
 
 
 def _parse_command(
-    obj: Mapping[str, Any], ctx: str
+    obj: Mapping[str, Any],
+    ctx: str,
+    *,
+    allow_null_budget: bool,
 ) -> tuple[tuple[str, ...], str, bool, tuple[str, ...], bool, float]:
     raw = _mapping(obj.get("command"), f"{ctx}.command")
     argv = _str_tuple(raw.get("argv"), f"{ctx}.command.argv", allow_empty=False)
@@ -467,13 +547,16 @@ def _parse_command(
     role = _text(raw.get("role"), f"{ctx}.command.role", limit=64).strip()
     if not role:
         raise ContractError(f"{ctx}.command.role must be non-empty")
+    timeout = _optional_budget(
+        raw.get("timeout_s"), f"{ctx}.command.timeout_s", allow_null=allow_null_budget
+    )
     return (
         argv,
         role,
         _bool(raw.get("read_only"), f"{ctx}.command.read_only"),
         _str_tuple(raw.get("writes"), f"{ctx}.command.writes", allow_empty=True),
         _bool(raw.get("consequential"), f"{ctx}.command.consequential"),
-        _nonneg_number(raw.get("timeout_s"), f"{ctx}.command.timeout_s"),
+        timeout,
     )
 
 
@@ -509,12 +592,21 @@ def _parse_outputs(
     )
 
 
-def _parse_limits(obj: Mapping[str, Any], ctx: str) -> tuple[float, int]:
+def _parse_limits(
+    obj: Mapping[str, Any], ctx: str, *, allow_null_budget: bool
+) -> tuple[float, int]:
     raw = _mapping(obj.get("limits"), f"{ctx}.limits")
-    return (
-        _nonneg_number(raw.get("max_runtime_s"), f"{ctx}.limits.max_runtime_s"),
-        _nonneg_int(raw.get("max_output_chars"), f"{ctx}.limits.max_output_chars"),
+    runtime = _optional_budget(
+        raw.get("max_runtime_s"),
+        f"{ctx}.limits.max_runtime_s",
+        allow_null=allow_null_budget,
     )
+    output_chars = _optional_budget_int(
+        raw.get("max_output_chars"),
+        f"{ctx}.limits.max_output_chars",
+        allow_null=allow_null_budget,
+    )
+    return runtime, output_chars
 
 
 def _parse_qualification(obj: Mapping[str, Any], ctx: str) -> tuple[str, tuple[str, ...]]:
@@ -534,6 +626,7 @@ def _parse_args(raw: Any, ctx: str) -> tuple[ArgSpec, ...]:
 
 def _parse_arg(raw: Any, ctx: str) -> ArgSpec:
     obj = _mapping(raw, ctx)
+    _reject_unknown_keys(obj, _ARG_KEYS, ctx)
     name = _text(obj.get("name"), f"{ctx}.name", limit=68)
     kind = _member(obj.get("kind"), _KINDS, f"{ctx}.kind")
     typ = _member(obj.get("type"), _TYPES, f"{ctx}.type")
@@ -557,6 +650,8 @@ def _parse_arg(raw: Any, ctx: str) -> ArgSpec:
         repeatable=_optional_bool(obj, "repeatable", False, ctx),
         help=_help_text(obj, ctx),
         has_default=has_default,
+        bind=_optional_member(obj, "bind", _BIND_KINDS, ctx),
+        goal_terms=_parse_goal_terms(obj, ctx),
     )
     _check_arg_shape(spec, ctx)
     return spec
@@ -580,14 +675,111 @@ def _coerce_default(kind: str, raw: Any, ctx: str) -> Any:
         if text.lower() in {"true", "false"}:
             return text.lower() == "true"
         raise ContractError(f"{ctx}.default is not a boolean")
+    # Typer publishes ``""`` for an optional path with no default. That is not
+    # a usable path, and it must not become a default the planner can emit.
+    if kind == "path" and text == "":
+        return None
     return raw
 
 
 def _check_arg_shape(spec: ArgSpec, ctx: str) -> None:
     _check_bounds_pair(spec.minimum, spec.maximum, ctx)
     _check_type_rules(spec, ctx)
+    _check_binding(spec, ctx)
     if spec.has_default:
         _reject_bad_default(spec, None, ctx)
+
+
+def _reject_unknown_keys(obj: Mapping[str, Any], allowed: frozenset[str], ctx: str) -> None:
+    extra = sorted(key for key in obj if key not in allowed)
+    if extra:
+        raise ContractError(f"{ctx} unknown key {extra[0]}")
+
+
+def _parse_goal_terms(obj: Mapping[str, Any], ctx: str) -> Mapping[str, tuple[str, ...]]:
+    if "goal_terms" not in obj or obj["goal_terms"] is None:
+        return _EMPTY_TERMS
+    raw = obj["goal_terms"]
+    _check_goal_terms_shape(raw, ctx)
+    if not isinstance(raw, Mapping):
+        return _EMPTY_TERMS
+    return _goal_terms_mapping(raw, ctx)
+
+
+def _check_goal_terms_shape(raw: Any, ctx: str) -> None:
+    if not isinstance(raw, Mapping) or not raw:
+        raise ContractError(f"{ctx}.goal_terms must be an object")
+    if len(raw) > _MAX_BIND_CHOICES:
+        raise ContractError(f"{ctx}.goal_terms exceeds {_MAX_BIND_CHOICES} choices")
+
+
+def _goal_terms_mapping(raw: Mapping[str, Any], ctx: str) -> Mapping[str, tuple[str, ...]]:
+    built: dict[str, tuple[str, ...]] = {}
+    total = 0
+    for key, value in raw.items():
+        terms = _parse_term_list(key, value, ctx)
+        total += len(terms)
+        if total > _MAX_BIND_TERM_TOTAL:
+            raise ContractError(f"{ctx}.goal_terms exceeds {_MAX_BIND_TERM_TOTAL} terms")
+        built[str(key)] = terms
+    return MappingProxyType(built)
+
+
+def _parse_term_list(key: Any, value: Any, ctx: str) -> tuple[str, ...]:
+    if not isinstance(key, str) or not key:
+        raise ContractError(f"{ctx}.goal_terms has an invalid choice")
+    where = f"{ctx}.goal_terms.{key}"
+    items = _term_items(value, where)
+    terms = tuple(_one_term(item, where) for item in items)
+    if len(set(terms)) != len(terms):
+        raise ContractError(f"{where} has a duplicate term")
+    return terms
+
+
+def _term_items(value: Any, where: str) -> list[Any]:
+    if not isinstance(value, list) or not value:
+        raise ContractError(f"{where} must be a non-empty list")
+    if len(value) > _MAX_BIND_TERMS:
+        raise ContractError(f"{where} exceeds {_MAX_BIND_TERMS} terms")
+    return list(value)
+
+
+def _one_term(item: Any, where: str) -> str:
+    if isinstance(item, str) and len(item) <= _MAX_BIND_TERM_LEN and _TERM_RE.fullmatch(item):
+        return item
+    raise ContractError(f"{where} has an invalid term")
+
+
+def _check_binding(spec: ArgSpec, ctx: str) -> None:
+    if spec.bind is None:
+        _check_unbound_terms(spec, ctx)
+        return
+    if spec.bind == "dataset":
+        _check_dataset_bind(spec, ctx)
+        return
+    _check_goal_bind(spec, ctx)
+
+
+def _check_unbound_terms(spec: ArgSpec, ctx: str) -> None:
+    if spec.goal_terms:
+        raise ContractError(f"{ctx} goal_terms requires bind goal")
+
+
+def _check_dataset_bind(spec: ArgSpec, ctx: str) -> None:
+    if spec.type != "path" or spec.path_role != "input":
+        raise ContractError(f"{ctx} bind dataset requires an input path")
+    if spec.goal_terms:
+        raise ContractError(f"{ctx} goal_terms is only valid for bind goal")
+
+
+def _check_goal_bind(spec: ArgSpec, ctx: str) -> None:
+    if spec.type not in {"str", "enum"} or not spec.choices:
+        raise ContractError(f"{ctx} bind goal requires choices")
+    if not spec.goal_terms:
+        raise ContractError(f"{ctx} bind goal requires goal_terms")
+    extra = [key for key in spec.goal_terms if key not in spec.choices]
+    if extra:
+        raise ContractError(f"{ctx} goal_terms keys must be a subset of choices")
 
 
 def _check_type_rules(spec: ArgSpec, ctx: str) -> None:
@@ -1463,6 +1655,19 @@ def _optional_member(
     if key not in obj or obj[key] is None:
         return None
     return _member(obj[key], allowed, f"{ctx}.{key}")
+
+
+def _optional_budget(value: Any, ctx: str, *, allow_null: bool) -> float:
+    """Null budgets are 0 only for entries that cannot be executed."""
+    if value is None and allow_null:
+        return 0.0
+    return _nonneg_number(value, ctx)
+
+
+def _optional_budget_int(value: Any, ctx: str, *, allow_null: bool) -> int:
+    if value is None and allow_null:
+        return 0
+    return _nonneg_int(value, ctx)
 
 
 def _nonneg_number(value: Any, ctx: str) -> float:
