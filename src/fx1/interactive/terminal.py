@@ -72,6 +72,7 @@ _TERMINAL_UNSAFE_RE = re.compile(
     r"|[\x00-\x08\x0b-\x1f\x7f]"
     r"|[\u0080-\u009f]"
     r"|[\u200e\u200f\u202a-\u202e\u2066-\u2069]"
+    r"|[\u00ad\u061c\u180e\u200b-\u200d\u2060\u206a-\u206f\ufeff\ufe0e\ufe0f]"
 )
 _SGR_RE = re.compile(r"\x1b\[[0-9;:]*m")
 _SGR_SLOT_RE = re.compile("\ue000(\\d+)\ue001")
@@ -184,8 +185,9 @@ def sanitize_for_terminal(text: str, *, keep_sgr: bool = False) -> str:
     """Drop terminal controls. Printable text, newlines, and tabs remain.
 
     OSC (including clipboard and title writes), CSI other than SGR, DCS, APC,
-    PM, SOS, C1 controls, and bidi overrides are removed. The result is
-    idempotent. ``keep_sgr`` retains color/intensity SGR and nothing else.
+    PM, SOS, C1 controls, bidi overrides, and zero-width format characters
+    are removed. The result is idempotent. ``keep_sgr`` retains color and
+    intensity SGR and nothing else.
     """
     if text == "":
         return ""
@@ -391,6 +393,8 @@ class ConsoleWriter:
         self._buffer_fn: Callable[[], str] | None = None
         self._status_active = False
         self._status_seen = False
+        self._owns_composer = False
+        self._above_text = ""
         self._last_status = ""
         self._last_status_at = 0.0
 
@@ -451,21 +455,16 @@ class ConsoleWriter:
         """
         clean = " ".join(text.split())
         with self._lock:
-            if self._caps.interactive:
-                shown = _clip_end(self._render_user(clean), self._caps.width)
-                self._out.write("\r\x1b[2K" + shown)
-                self._out.flush()
-                self._status_active = True
-                return
-            self._status_plain_locked(clean)
+            self._write_status_locked(clean)
 
     def clear_status(self) -> None:
         with self._lock:
-            if self._status_active and self._caps.interactive:
+            if self._status_active and self._caps.interactive and not self._owns_composer:
                 self._out.write("\r\x1b[2K")
                 self._out.flush()
             self._status_active = False
             self._status_seen = False
+            self._above_text = ""
             self._last_status = ""
 
     def set_prompt_visible(
@@ -489,6 +488,36 @@ class ConsoleWriter:
             self._out.write(shown)
             self._out.flush()
 
+    def set_composer_owned(self, owned: bool) -> None:
+        """When true, status is drawn above the composer instead of over it."""
+        with self._lock:
+            self._owns_composer = owned
+
+    def release_composer(self) -> None:
+        """Drop composer ownership without erasing the line the user submitted."""
+        with self._lock:
+            self._owns_composer = False
+            self._status_active = False
+            self._above_text = ""
+            self._prompt = None
+            self._buffer_fn = None
+
+    def redraw_composer(self) -> None:
+        with self._lock:
+            if self._prompt is None:
+                return
+            self._paint_composer_locked()
+
+    def repaint(self) -> None:
+        """Redraw status and composer after SIGWINCH. No-op without a prompt."""
+        with self._lock:
+            if self._prompt is None:
+                return
+            if self._status_active and self._above_text:
+                self._paint_status_above_locked(self._above_text)
+                return
+            self._paint_composer_locked()
+
     def discard_line(self) -> None:
         """Erase the physical line and forget prompt plus status.
 
@@ -502,6 +531,41 @@ class ConsoleWriter:
             self._prompt = None
             self._buffer_fn = None
             self._status_active = False
+
+    def _write_status_locked(self, clean: str) -> None:
+        if self._prompt is not None and self._owns_composer and self._caps.interactive:
+            self._paint_status_above_locked(clean)
+            return
+        if self._prompt is not None and self._caps.interactive:
+            return
+        if self._caps.interactive:
+            self._paint_status_inline_locked(clean)
+            return
+        self._status_plain_locked(clean)
+
+    def _paint_status_inline_locked(self, text: str) -> None:
+        shown = _clip_end(self._render_user(text), self._caps.width)
+        self._out.write("\r\x1b[2K" + shown)
+        self._out.flush()
+        self._status_active = True
+
+    def _paint_status_above_locked(self, text: str) -> None:
+        shown = _clip_end(self._render_user(text), max(1, self._caps.width))
+        self._above_text = text
+        if self._status_active:
+            self._out.write("\x1b[1A")
+        self._out.write("\r\x1b[2K" + shown + "\n")
+        self._status_active = True
+        self._paint_composer_locked()
+
+    def _paint_composer_locked(self) -> None:
+        prompt = sanitize_for_terminal(self._prompt or "", keep_sgr=self._caps.color)
+        buffer = sanitize_for_terminal(self._buffer_text(), keep_sgr=self._caps.color)
+        shown = _fit_composer(prompt, buffer, self._caps.width)
+        if self._caps.interactive:
+            self._out.write("\r\x1b[2K")
+        self._out.write(shown)
+        self._out.flush()
 
     def _end_status_locked(self, stream: TextIO) -> None:
         if stream is self._out and self._status_active and self._caps.interactive:
@@ -600,9 +664,24 @@ class InterruptTracker:
 
 def _skip_key_lines(line: str) -> bool:
     """Default history filter: ``/keys`` lines and credential-shaped text."""
-    if line.lstrip().casefold().startswith("/keys"):
+    return any(_private_history_line(part) for part in line.split("\n"))
+
+
+def _private_history_line(part: str) -> bool:
+    if part.lstrip().casefold().startswith("/keys"):
         return True
-    return contains_secret(line)
+    return contains_secret(part)
+
+
+def _history_keep(line: str, skip: Callable[[str], bool]) -> str:
+    """Drop blank lines and lines ``skip`` rejects. Other lines stay, in order."""
+    kept = [part for part in line.split("\n") if part != "" and not skip(part)]
+    return "\n".join(kept)
+
+
+def _readline_flat(line: str) -> str:
+    """Readline history entries cannot carry a raw newline."""
+    return line.replace("\n", " ")
 
 
 class LineReader:
@@ -679,11 +758,11 @@ class LineReader:
         self._writer.refresh_caps()
         caps = self._writer.caps
         polling = self._should_poll(caps, job_active)
+        from fx1.interactive.tty_guard import guard_tty
+
         try:
-            if self._should_edit(caps, polling):
-                with _saved_termios(self._stdin):
-                    return self._read_recorded(caps, prompt, idle, poll_s, polling=polling)
-            return self._read_recorded(caps, prompt, idle, poll_s, polling=polling)
+            with guard_tty(self._stdin, self._writer.out):
+                return _read_guarded(self, caps, prompt, idle, poll_s, polling=polling)
         except KeyboardInterrupt:
             self._writer.discard_line()
             raise
@@ -841,6 +920,10 @@ class LineReader:
     ) -> str:
         if self._input_fn is not None:
             return self._input_fn(prompt)
+        if polling and _cbreak_ready(self._stdin):
+            from fx1.interactive.tty_guard import read_cbreak
+
+            return read_cbreak(self._stdin, self._writer, prompt, idle, poll_s)
         if polling:
             return self._read_polled(prompt, idle, poll_s)
         if editing:
@@ -955,16 +1038,17 @@ class LineReader:
         self._remember(cleaned)
 
     def _remember(self, line: str) -> None:
-        if self._history_max <= 0 or line == "" or self._skip_history(line):
+        kept = _history_keep(line, self._skip_history)
+        if self._history_max <= 0 or kept == "":
             return
-        if self._history and self._history[-1] == line:
+        if self._history and self._history[-1] == kept:
             return
-        self._history.append(line)
+        self._history.append(kept)
         overflow = len(self._history) - self._history_max
         if overflow > 0:
             del self._history[:overflow]
             self._history_base = max(0, self._history_base - overflow)
-        self._readline_add(line)
+        self._readline_add(kept)
 
     def _collect(self, text: str) -> list[str]:
         if self._words is None:
@@ -1036,14 +1120,16 @@ class LineReader:
             return
         clear()
         for line in self._history:
-            add(line)
+            add(_readline_flat(line))
 
     def _readline_add(self, line: str) -> None:
         if not self._rl_ready:
             return
         add = self._add_history
-        if add is not None:
-            add(line)
+        if add is None:
+            return
+        with contextlib.suppress(ValueError, OSError):
+            add(_readline_flat(line))
 
     def _detach_readline(self) -> None:
         if self._completer_set and os.name == "posix":
@@ -1098,6 +1184,45 @@ class _MessageBuilder:
             return True
         self.parts.append(line)
         return False
+
+
+def unicode_stdout(stream: TextIO | None = None) -> bool:
+    """True when ``stream`` (default stdout) can encode a non-ASCII glyph."""
+    return detect_caps(stdout=stream).unicode
+
+
+def _fit_composer(prompt: str, buffer: str, width: int) -> str:
+    if width <= 0:
+        return ""
+    if display_width(prompt) >= width:
+        return _take_prefix(prompt, width)
+    room = width - display_width(prompt)
+    if display_width(buffer) <= room:
+        return prompt + buffer
+    return prompt + _take_suffix(buffer, room)
+
+
+def _cbreak_ready(stream: TextIO) -> bool:
+    from fx1.interactive.tty_guard import cbreak_available
+
+    return cbreak_available(stream)
+
+
+def _read_guarded(
+    reader: LineReader,
+    caps: TermCaps,
+    prompt: str,
+    idle: Callable[[], None] | None,
+    poll_s: float,
+    *,
+    polling: bool,
+) -> str:
+    if reader._should_edit(caps, polling):  # noqa: SLF001
+        with _saved_termios(reader._stdin):  # noqa: SLF001
+            return reader._read_recorded(  # noqa: SLF001
+                caps, prompt, idle, poll_s, polling=polling
+            )
+    return reader._read_recorded(caps, prompt, idle, poll_s, polling=polling)  # noqa: SLF001
 
 
 def _call_job(job_active: Callable[[], bool] | None) -> bool:
@@ -1658,6 +1783,7 @@ __all__ = [
     "format_count",
     "format_duration",
     "plain_requested",
+    "unicode_stdout",
     "readline_is_libedit",
     "readline_tab_binding",
     "render_table",

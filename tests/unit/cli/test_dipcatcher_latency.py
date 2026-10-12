@@ -334,6 +334,9 @@ def _assert_prompt_matches_known(pattern: str) -> None:
     matched = compiled.search("fx1-lite › ")
     assert matched is not None and matched.group(0) == "fx1-lite › "
     assert compiled.search("fx1 › ")
+    assert compiled.search("fx1 > ")
+    assert compiled.search("fx1-lite > ")
+    assert compiled.search("dip > ")
     assert compiled.search(lat.PROMPT)
     assert compiled.search("dipcatcher · fx1 @ unconfigured") is None
 
@@ -348,10 +351,16 @@ def test_chat_argv_omits_importtime_and_prompt_matches_console() -> None:
     assert "importtime" not in argv
     compiled = re.compile(lat.prompt_pattern())
     assert compiled.search(_LEGACY_PROMPT)
+    from fx1.interactive.terminal import TermCaps
+
+    ascii_caps = TermCaps(True, True, True, False, False, 80, 24, False)
     for model in MODELS:
         shown = _engine_prompt(SimpleNamespace(model=model))
         assert compiled.search(shown)
         assert shown.endswith(" › ")
+        ascii_shown = _engine_prompt(SimpleNamespace(model=model), ascii_caps)
+        assert compiled.search(ascii_shown)
+        assert ascii_shown.endswith(" > ")
     assert lat.prompt_pattern() == lat.prompt_pattern_from(lat.contract_markers())
     _assert_prompt_matches_known(lat.FALLBACK_PROMPT_PATTERN)
 
@@ -674,10 +683,13 @@ def test_real_pty_smoke(
     assert cold["n_ok"] == 1
     from fx1.interactive.console import _LEGACY_PROMPT, _engine_prompt
     from fx1.interactive.profiles import DEFAULT_MODEL
+    from fx1.interactive.terminal import TermCaps
 
     compiled = re.compile(cold["prompt_pattern"])
     assert compiled.search(_LEGACY_PROMPT)
     assert compiled.search(_engine_prompt(SimpleNamespace(model=DEFAULT_MODEL)))
+    ascii_caps = TermCaps(True, True, True, False, False, 80, 24, False)
+    assert compiled.search(_engine_prompt(SimpleNamespace(model=DEFAULT_MODEL), ascii_caps))
     assert document["prompt_pattern"] == cold["prompt_pattern"]
     assert cold["max_s"] < 10
     assert "-X" not in cold["command"]

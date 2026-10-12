@@ -22,7 +22,7 @@ import time
 from enum import StrEnum
 from typing import TextIO
 
-from fx1.interactive.terminal import plain_requested, stream_lock
+from fx1.interactive.terminal import plain_requested, stream_lock, unicode_stdout
 
 # Braille dot bit for (column, row) inside a 2x4 cell — U+2800 base.
 _BRAILLE_BITS: dict[tuple[int, int], int] = {
@@ -283,6 +283,8 @@ class OrbAnimator:
 
 def banner(model: str, host: str, *, color: bool = True) -> str:
     """Static startup banner: a listening orb beside the harness title."""
+    if not unicode_stdout():
+        return _ascii_banner(model, host)
     if not _orb_motion_allowed():
         color = False
     orb_lines = render_frame(OrbState.LISTENING, preset="inline", color=False).split("\n")
@@ -293,6 +295,12 @@ def banner(model: str, host: str, *, color: bool = True) -> str:
     rows.extend(_banner_rows(orb_lines, orb_w, title, text_w, color=color))
     rows.append(_banner_edge("╰", "╯", inner))
     return "\n".join(rows)
+
+
+def _ascii_banner(model: str, host: str) -> str:
+    title = f"dipcatcher | fx-1 interactive | model {model} @ {host}"
+    rule = "+" + ("-" * len(title)) + "+"
+    return "\n".join((rule, f"|{title}|", rule))
 
 
 def _banner_widths(title: str, orb_w: int) -> tuple[int, int]:

@@ -43,7 +43,14 @@ from typing import Any
 
 SCHEMA = "dipcatcher.latency.v1"
 PROMPT = "dip › "
-_FALLBACK_MARKERS: tuple[str, ...] = ("fx1-lite › ", "fx1 › ", PROMPT)
+_FALLBACK_MARKERS: tuple[str, ...] = (
+    "fx1-lite › ",
+    "fx1 › ",
+    "fx1-lite > ",
+    "fx1 > ",
+    "dip > ",
+    PROMPT,
+)
 PERCENTILE_METHOD = "nearest_rank"
 DEFAULT_RUNS = 30
 DEFAULT_EVENTS = 200
@@ -162,17 +169,24 @@ _ARMED: dict[str, Any] = {}
 
 
 def contract_markers() -> tuple[str, ...]:
-    """Live prompts: ``console._engine_prompt`` for each model, plus ``_LEGACY_PROMPT``."""
+    """Unicode and ASCII prompts for each model, plus both legacy prompts.
+
+    ``_engine_prompt`` with ``caps`` omitted is the Unicode form. The ASCII
+    form is what the console prints when stdout cannot encode ``›``.
+    """
     from fx1.interactive.console import _LEGACY_PROMPT, _engine_prompt
     from fx1.interactive.profiles import DEFAULT_MODEL, MODELS
+    from fx1.interactive.terminal import TermCaps
 
-    found = [_LEGACY_PROMPT]
-    seen = {_LEGACY_PROMPT}
+    ascii_caps = TermCaps(True, True, True, False, False, 80, 24, False)
+    found = [_LEGACY_PROMPT, "dip > "]
+    seen = set(found)
     for model in (*MODELS, DEFAULT_MODEL):
-        text = _engine_prompt(_ModelStub(model))
-        if text not in seen:
-            seen.add(text)
-            found.append(text)
+        stub = _ModelStub(model)
+        for text in (_engine_prompt(stub), _engine_prompt(stub, ascii_caps)):
+            if text not in seen:
+                seen.add(text)
+                found.append(text)
     return tuple(found)
 
 

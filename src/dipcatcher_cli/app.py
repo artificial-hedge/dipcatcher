@@ -11,6 +11,7 @@ and ``--help`` do not import the chat stack.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from collections.abc import Sequence
 
@@ -33,7 +34,24 @@ LAUNCHER_COMMANDS: frozenset[str] = frozenset(
 )
 
 
+_CHILD_OFF = frozenset({"", "0", "false", "no", "off"})
+
+
+def _harness_child() -> bool:
+    """True when this process was spawned by the concierge harness runner.
+
+    ``DIPCATCHER_CHILD`` is set on every owned subprocess. A child must not
+    open chat, even if it inherited a terminal, or a lab command recurses.
+    """
+    raw = os.environ.get("DIPCATCHER_CHILD")
+    if raw is None:
+        return False
+    return raw.strip().lower() not in _CHILD_OFF
+
+
 def _interactive() -> bool:
+    if _harness_child():
+        return False
     return sys.stdin.isatty() and sys.stdout.isatty()
 
 
@@ -145,7 +163,14 @@ def _forward_lab(args: Sequence[str]) -> None:
 
     if not args or args in (["--help"], ["-h"]):
         _print_launcher_preface()
-    app(args=args or ["--help"], prog_name="dipcatcher")
+    app(args=_lab_argv(args), prog_name="dipcatcher")
+
+
+def _lab_argv(args: Sequence[str]) -> list[str]:
+    """The lab Click app accepts ``--help``, not a bare ``-h``."""
+    if not args or list(args) == ["-h"]:
+        return ["--help"]
+    return list(args)
 
 
 def main(argv: Sequence[str] | None = None) -> None:

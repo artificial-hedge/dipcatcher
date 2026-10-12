@@ -39,6 +39,8 @@ from fx1.interactive.terminal import (
     TermCaps,
     detect_caps,
     format_duration,
+    sanitize_for_terminal,
+    unicode_stdout,
 )
 
 _LEGACY_PROMPT = "dip › "
@@ -49,6 +51,8 @@ _SLASH_COMMANDS: tuple[str, ...] = (
     "/model",
     "/models",
     "/superpower",
+    "/data",
+    "/runs",
     "/research",
     "/status",
     "/cancel",
@@ -138,8 +142,12 @@ def run_console(
     their defaults. ``engine=True`` forces the editor; injected callables
     still supply every byte and color stays off unless ``caps_fn`` says so.
     """
+    _prepare_stdio()
     provider = caps_fn if caps_fn is not None else detect_caps
     caps = provider()
+    if not caps.unicode:
+        _soften_stdio()
+    safe_output = _guard_output(output_fn, caps)
     if _use_engine(engine, input_fn, output_fn, caps):
         _run_engine(
             model,
@@ -147,7 +155,7 @@ def run_console(
             caps_fn=provider,
             concierge_factory=concierge_factory,
             input_fn=input_fn,
-            output_fn=output_fn,
+            output_fn=safe_output,
             poll_timeout_s=poll_timeout_s,
             resume=resume,
             model_explicit=model_explicit,
@@ -163,7 +171,7 @@ def run_console(
         model,
         concierge_factory=concierge_factory,
         input_fn=input_fn,
-        output_fn=output_fn,
+        output_fn=safe_output,
         poll_timeout_s=poll_timeout_s,
         resume=resume,
         model_explicit=model_explicit,
@@ -270,31 +278,79 @@ def _engine_loop(
     input_fn: Callable[[str], str],
 ) -> None:
     progress = _Progress()
+    faults = 0
     while True:
-        try:
-            if _one_turn(
-                concierge,
-                reader,
-                writer,
-                output,
-                tracker,
-                clock,
-                progress,
-                poll_timeout_s,
-                input_fn,
-            ):
-                return
-        except InputCancelled:
-            continue
-        except EOFError:
-            _blank(output)
+        action, faults = _engine_once(
+            concierge,
+            reader,
+            writer,
+            output,
+            tracker,
+            clock,
+            progress,
+            poll_timeout_s,
+            input_fn,
+            faults,
+        )
+        if action == "stop":
             return
-        except KeyboardInterrupt:
-            if _on_prompt_interrupt(concierge, output, tracker):
-                _blank(output)
-                return
-        except Exception as exc:  # noqa: BLE001 — one bad turn must not kill the shell
-            _show_error(output, exc, to_output=True)
+
+
+def _engine_once(
+    concierge: Any,
+    reader: LineReader,
+    writer: ConsoleWriter,
+    output: Callable[..., None],
+    tracker: InterruptTracker,
+    clock: Callable[[], float],
+    progress: _Progress,
+    poll_timeout_s: float,
+    input_fn: Callable[[str], str],
+    faults: int,
+) -> tuple[str, int]:
+    try:
+        ended = _one_turn(
+            concierge,
+            reader,
+            writer,
+            output,
+            tracker,
+            clock,
+            progress,
+            poll_timeout_s,
+            input_fn,
+        )
+    except InputCancelled:
+        return "again", faults
+    except EOFError:
+        _blank(output)
+        return "stop", faults
+    except KeyboardInterrupt:
+        return _interrupt_action(concierge, output, tracker), faults
+    except UnicodeEncodeError:
+        return _encode_action(output, faults)
+    except Exception as exc:  # noqa: BLE001 — one bad turn must not kill the shell
+        _show_error(output, exc, to_output=True)
+        return "again", faults
+    if ended:
+        return "stop", 0
+    return "again", 0
+
+
+def _interrupt_action(
+    concierge: Any, output: Callable[..., None], tracker: InterruptTracker
+) -> str:
+    if _on_prompt_interrupt(concierge, output, tracker):
+        _blank(output)
+        return "stop"
+    return "again"
+
+
+def _encode_action(output: Callable[..., None], faults: int) -> tuple[str, int]:
+    nxt = _encoding_fault(output, faults)
+    if nxt < 0:
+        return "stop", nxt
+    return "again", nxt
 
 
 def _one_turn(
@@ -309,8 +365,10 @@ def _one_turn(
     input_fn: Callable[[str], str],
 ) -> bool:
     writer.clear_status()
+    writer.refresh_caps()
     line = reader.read_message(
-        _engine_prompt(concierge),
+        _engine_prompt(concierge, writer.caps),
+        continuation_prompt=_continuation_prompt(writer.caps),
         idle=_idle(concierge, writer, clock, progress),
         poll_s=poll_timeout_s,
         job_active=_job_active(concierge),
@@ -400,9 +458,11 @@ def _dispatch_with_secret(
 
 
 def _legacy_prompt(pending: bool) -> str:
-    if pending:
+    if not pending:
+        return ""
+    if unicode_stdout():
         return _LEGACY_PROMPT
-    return ""
+    return "dip > "
 
 
 def _legacy_after(concierge: Any, line: str | None, output: Callable[..., None]) -> bool | None:
@@ -444,9 +504,14 @@ def _legacy_banner(concierge: Any, output: Callable[..., None]) -> None:
 
 def _header_lines(model: str, caps: TermCaps) -> list[str]:
     host, source, extra = _endpoint_view(model)
-    if caps.color:
+    if caps.color and caps.unicode:
         return [orb_banner(model, host, color=True), *extra]
-    return [f"dipcatcher · {model} @ {host} · {source}", f"{model} @ {host}", *extra]
+    return [_text_banner(model, host, source, unicode=caps.unicode), f"{model} @ {host}", *extra]
+
+
+def _text_banner(model: str, host: str, source: str, *, unicode: bool) -> str:
+    sep = " · " if unicode else " | "
+    return f"dipcatcher{sep}{model} @ {host}{sep}{source}"
 
 
 def _endpoint_view(model: str) -> tuple[str, str, list[str]]:
@@ -683,6 +748,22 @@ def _history_file(path: Path | None) -> Path:
     return config_dir() / "history"
 
 
+def _guard_output(output: Callable[..., None], caps: TermCaps) -> Callable[..., None]:
+    """Strip hostile terminal controls from concierge lines on the real console.
+
+    Injected ``output_fn`` callables are left unchanged so tests see raw text.
+    Cursor and paste controls are not written through this function.
+    """
+    if output is not typer.echo:
+        return output
+    keep = caps.color
+
+    def emit(text: str = "", *args: Any, **kwargs: Any) -> None:
+        output(sanitize_for_terminal(str(text), keep_sgr=keep), *args, **kwargs)
+
+    return emit
+
+
 def _reader_input(input_fn: Callable[[str], str]) -> Callable[[str], str] | None:
     if input_fn is input:
         return None
@@ -748,8 +829,17 @@ def _model_of(concierge: Any, fallback: str) -> str:
     return fallback
 
 
-def _engine_prompt(concierge: Any) -> str:
-    return f"{_model_of(concierge, DEFAULT_MODEL)} › "
+def _engine_prompt(concierge: Any, caps: TermCaps | None = None) -> str:
+    """Composer prompt. ``caps`` None keeps the Unicode mark (`` › ``)."""
+    unicode = True if caps is None else caps.unicode
+    mark = " › " if unicode else " > "
+    return f"{_model_of(concierge, DEFAULT_MODEL)}{mark}"
+
+
+def _continuation_prompt(caps: TermCaps) -> str:
+    if caps.unicode:
+        return "… "
+    return "... "
 
 
 def _use_engine(
@@ -915,10 +1005,47 @@ def _split_command(line: str) -> list[str] | None:
 
 def _read_secret(reader: LineReader, model: str, output: Callable[..., None]) -> str | None:
     try:
-        return reader.read_secret(f"› {model} API key: ")
+        return reader.read_secret(_secret_prompt(model))
     except (EOFError, KeyboardInterrupt):
         output(f"endpoint setup for {model!r} cancelled; no changes saved")
         return None
+
+
+def _secret_prompt(model: str) -> str:
+    mark = "›" if unicode_stdout() else ">"
+    return f"{mark} {model} API key: "
+
+
+def _encoding_fault(output: Callable[..., None], faults: int) -> int:
+    """Soften stdout and count. ``-1`` means the prompt must stop retrying."""
+    _soften_stdio()
+    nxt = faults + 1
+    if nxt >= 3:
+        output("terminal encoding cannot show the prompt; leaving")
+        return -1
+    return nxt
+
+
+def _prepare_stdio() -> None:
+    """Windows consoles default to a legacy code page; ask for UTF-8."""
+    if sys.platform != "win32":
+        return
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        _reconfigure_stream(stream, encoding="utf-8", errors="replace")
+
+
+def _soften_stdio() -> None:
+    """Unencodable glyphs become ``?`` instead of raising and spinning the prompt."""
+    for stream in (sys.stdout, sys.stderr):
+        _reconfigure_stream(stream, errors="replace")
+
+
+def _reconfigure_stream(stream: object, **kwargs: str) -> None:
+    reconfigure = getattr(stream, "reconfigure", None)
+    if not callable(reconfigure):
+        return
+    with contextlib.suppress(OSError, ValueError, AttributeError):
+        reconfigure(**kwargs)
 
 
 def _polls(caps: TermCaps, input_fn: Callable[[str], str]) -> bool:

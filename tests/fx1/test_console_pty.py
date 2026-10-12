@@ -265,7 +265,7 @@ def _pty(
             )
         finally:
             os._exit(127)
-    deadline = time.monotonic() + 2.6
+    deadline = time.monotonic() + 60
     buf = bytearray()
     cursor = 0
     status: int | None = None
