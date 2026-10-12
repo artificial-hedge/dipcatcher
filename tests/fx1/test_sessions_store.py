@@ -456,9 +456,18 @@ def test_list_orders_newest_and_warns(store: SessionStore) -> None:
     assert any("notes.json" in warning and "malformed" in warning for warning in warnings)
     assert any("left unchanged" in warning for warning in warnings)
     assert any("invalid session JSON" in warning for warning in warnings)
+    corrupt_name = f"{'d' * 32}.json"
+    assert not (store.directory / corrupt_name).is_file()
+    assert any(
+        path.name.startswith(f"{corrupt_name}.corrupt-") for path in store.directory.iterdir()
+    )
+    future_path = store.directory / f"{future}.json"
+    assert json.loads(future_path.read_text(encoding="utf-8"))["schema"] == 9
     limited, again = store.list(limit=1)
     assert [item["id"] for item in limited] == [newer]
-    assert len(again) == len(warnings)
+    assert not any("invalid session JSON" in warning for warning in again)
+    assert any("left unchanged" in warning for warning in again)
+    assert len(again) == len(warnings) - 1
 
 
 def test_list_rejects_negative_and_honors_zero(store: SessionStore) -> None:

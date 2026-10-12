@@ -240,13 +240,17 @@ def test_corrupt_files_warn_on_stderr_and_do_not_crash(
     assert "invalid" not in out
     assert "malformed" not in out
     assert "skipped" not in out
+    corrupt = sessions / f"{'d' * 32}.json"
+    assert not corrupt.is_file()
+    assert any(path.name.startswith(f"{'d' * 32}.json.corrupt-") for path in sessions.iterdir())
     code, out, err = _app(["sessions", "list", "--json"], capsys)
     assert code == 0
     payload = json.loads(out)
     assert [row["id"] for row in payload["sessions"]] == [NEWER]
     assert payload["warnings"]
-    assert "invalid session JSON" in err
-    assert any("invalid session JSON" in warning for warning in payload["warnings"])
+    assert "invalid session JSON" not in err
+    assert all("invalid session JSON" not in warning for warning in payload["warnings"])
+    assert any("malformed" in warning for warning in payload["warnings"])
 
 
 def test_negative_limit_is_usage_error(sessions: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -617,7 +621,9 @@ def test_prune_dry_run_reports_ids_without_deleting(
     assert (sessions / f"{OLDER}.json").is_file()
     assert (sessions / f"{MID}.json").is_file()
     assert (sessions / f"{NEWER}.json").is_file()
-    assert (sessions / f"{'d' * 32}.json").is_file()
+    corrupt = sessions / f"{'d' * 32}.json"
+    assert not corrupt.is_file()
+    assert any(path.name.startswith(f"{corrupt.name}.corrupt-") for path in sessions.iterdir())
 
 
 def test_prune_deletes_and_json_matches_plan(

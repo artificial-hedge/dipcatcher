@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import subprocess
 import sys
 import threading
@@ -25,7 +26,8 @@ from typing import Any
 SCHEMA = "dipcatcher.soak.v1"
 SCOPE = (
     "Short bounded soak on this machine. This is NOT the 24-hour "
-    "mixed-workload soak the product contract (P6) requires."
+    "mixed-workload soak the product contract (P6) requires. "
+    "Crash-restart cycles here are a bounded sample, not that soak."
 )
 WORKLOADS: tuple[str, ...] = (
     "chat_fx1",
@@ -41,6 +43,7 @@ WORKLOADS: tuple[str, ...] = (
     "fault_malformed",
     "session_resume",
     "approval_denial",
+    "crash_restart",
 )
 _TERMINAL = frozenset({"succeeded", "failed", "cancelled", "timed_out"})
 _SECRET_NAME = "SOAK_PLANTED_API_KEY"
@@ -62,6 +65,7 @@ _EXPECTED: dict[str, frozenset[str]] = {
     "fault_malformed": frozenset({"error"}),
     "session_resume": frozenset({"ok"}),
     "approval_denial": frozenset({"ok", "error"}),
+    "crash_restart": frozenset({"ok"}),
 }
 _BENCH_NOTE = (
     "Qualified SYNTHETIC lane-power at the catalog minimum "
@@ -274,6 +278,20 @@ def steady_growth_problem(samples: Sequence[int], pass_length: int, bound: int) 
     return None
 
 
+def trim_request_log(server: Any, *, keep: int = 4) -> None:
+    """Drop old stub request bodies so the steady check is not the request archive.
+
+    The loopback stub keeps every parsed chat body. Each body includes the
+    growing transcript, so the archive is quadratic. The soak only needs the
+    queue to drain; a short tail is enough for ``wait_for_requests``.
+    """
+    if keep < 1:
+        return
+    requests = getattr(server, "_requests", None)
+    if isinstance(requests, list) and len(requests) > keep:
+        del requests[:-keep]
+
+
 def fault_recovered(kind: str, status: str, detail: str = "") -> bool:
     """True when a workload ended in its expected handled state."""
     allowed = _EXPECTED.get(kind)
@@ -285,7 +303,15 @@ def fault_recovered(kind: str, status: str, detail: str = "") -> bool:
         return "lane-power ran" in detail and "SYNTHETIC" in detail
     if kind == "cancel_job":
         return "stopped" in detail and "child observed" in detail
+    if kind == "crash_restart":
+        return _crash_detail_ok(detail)
     return True
+
+
+def _crash_detail_ok(detail: str) -> bool:
+    """A crash cycle restarted nothing and left no live child."""
+    needed = ("interrupted=1", "duplicates=0", "orphans=0")
+    return all(token in detail for token in needed)
 
 
 def lane_power_plan(out_dir: Path) -> str:
@@ -538,6 +564,7 @@ class _Driver:
     def _after_cycle(self, result: CycleResult) -> None:
         if not result.recovered:
             self.failures.append(f"{result.kind}: {result.status}: {result.detail}")
+        trim_request_log(self.server)
         baseline = self._baseline
         if baseline is None:
             return
@@ -760,6 +787,11 @@ class _Driver:
         status = str(self.concierge.last_status)
         return _cycle("approval_denial", status, detail)
 
+    def action_crash_restart(self) -> CycleResult:
+        detail = run_crash_restart(self.options.config_dir, self.options.work_dir)
+        status = "ok" if _crash_detail_ok(detail) else "error"
+        return _cycle("crash_restart", status, detail)
+
     def _cancel_line(self, prompt: str, target: int) -> str:
         box: dict[str, str] = {"status": "error"}
 
@@ -801,11 +833,284 @@ def _bind_actions() -> None:
             "fault_malformed": _Driver.action_malformed,
             "session_resume": _Driver.action_session_resume,
             "approval_denial": _Driver.action_denial,
+            "crash_restart": _Driver.action_crash_restart,
         }
     )
 
 
 _bind_actions()
+
+
+_CRASH_PARENT = r"""
+import sys
+from pathlib import Path
+
+from fx1.interactive.jobs import JobLedger
+from fx1.interactive.procs import ProcLimits, ProcessRegistry, run_owned
+
+config, marker, ready = (Path(arg) for arg in sys.argv[1:4])
+ledger = JobLedger(config / "jobs")
+job = ledger.create(kind="superpower", goal="bounded crash cycle")
+step = ledger.begin_step(
+    job.job_id,
+    name="sleeper",
+    argv=["sleeper"],
+    idempotent=True,
+    idempotency_key="crash-cycle",
+)
+
+
+def _emit(kind: str, fields: object) -> None:
+    if kind != "proc.spawn" or not isinstance(fields, dict):
+        return
+    pid = fields.get("pid")
+    if isinstance(pid, bool) or not isinstance(pid, int):
+        return
+    pgid = fields.get("pgid")
+    gid = pgid if isinstance(pgid, int) and not isinstance(pgid, bool) else None
+    ledger.attach_process(job.job_id, step.step_id, pid=pid, pgid=gid)
+
+
+_SLEEPER = (
+    "import os,sys,time,pathlib\n"
+    "p=pathlib.Path(sys.argv[1])\n"
+    "p.parent.mkdir(parents=True, exist_ok=True)\n"
+    "fd=os.open(p, os.O_APPEND|os.O_CREAT|os.O_WRONLY, 0o600)\n"
+    "os.write(fd, (str(os.getpid())+'\\n').encode())\n"
+    "os.close(fd)\n"
+    "pathlib.Path(sys.argv[2]).write_text('ready', encoding='utf-8')\n"
+    "time.sleep(180)\n"
+)
+run_owned(
+    [sys.executable, "-c", _SLEEPER, str(marker), str(ready)],
+    ProcLimits(timeout_s=180, kill_grace_s=1.0),
+    registry=ProcessRegistry(),
+    emit=_emit,
+)
+"""
+
+_CRASH_RESUME = r"""
+import os
+import sys
+from pathlib import Path
+
+def _live(pid: int) -> bool:
+    path = Path(f"/proc/{pid}/stat")
+    try:
+        raw = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    parts = raw.rpartition(")")[2].split()
+    return bool(parts) and parts[0] not in {"Z", "X"}
+
+config = Path(sys.argv[1])
+marker = Path(sys.argv[2])
+from fx1.interactive.jobs import JobLedger
+
+report = JobLedger(config / "jobs").reconcile()
+text = marker.read_text(encoding="utf-8") if marker.is_file() else ""
+lines = [line for line in text.splitlines() if line.strip().isdigit()]
+live = [int(line) for line in lines if _live(int(line))]
+for pid in live:
+    try:
+        os.kill(pid, 9)
+    except OSError:
+        pass
+dup = 0 if len(lines) == 1 else max(len(lines), 1)
+print(
+    f"interrupted={len(report.interrupted)} duplicates={dup} "
+    f"orphans={len(live)} reported={len(report.orphan_running)}"
+)
+"""
+
+
+def run_crash_restart(config: Path, work: Path) -> str:
+    """SIGKILL a child mid-step, then reconcile. One execution, no live orphan."""
+    token = f"{os.getpid()}-{time.monotonic_ns()}"
+    marker = work / f"crash-marker-{token}"
+    ready = work / f"crash-ready-{token}"
+    err_path = work / f"crash-err-{token}"
+    parent = _spawn_crash(config, marker, ready, err_path)
+    try:
+        return _finish_crash(parent, config, marker, ready, err_path)
+    finally:
+        _reap_crash(parent, marker)
+
+
+def _spawn_crash(config: Path, marker: Path, ready: Path, err_path: Path) -> subprocess.Popen[str]:
+    err = err_path.open("w", encoding="utf-8")
+    try:
+        return subprocess.Popen(
+            [sys.executable, "-c", _CRASH_PARENT, str(config), str(marker), str(ready)],
+            env=_crash_env(config),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=err,
+            text=True,
+            start_new_session=True,
+        )
+    except Exception:
+        err.close()
+        raise
+
+
+def _crash_env(config: Path) -> dict[str, str]:
+    return {
+        "PATH": os.environ.get("PATH", ""),
+        "HOME": str(config),
+        "FX1_CONFIG_DIR": str(config),
+        "PYTHONUNBUFFERED": "1",
+        "NO_COLOR": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "TOKENIZERS_PARALLELISM": "false",
+    }
+
+
+def _finish_crash(
+    parent: subprocess.Popen[str],
+    config: Path,
+    marker: Path,
+    ready: Path,
+    err_path: Path,
+) -> str:
+    if not _wait_flag(ready, parent):
+        return _crash_failure(parent, err_path, "ready timeout")
+    if not _wait_running_job(config / "jobs", parent):
+        return _crash_failure(parent, err_path, "job was not running")
+    _signal_pid(parent.pid, signal.SIGKILL)
+    _wait_exit(parent)
+    return _resume_crash(config, marker, err_path)
+
+
+def _wait_flag(flag: Path, parent: subprocess.Popen[str]) -> bool:
+    return _wait_pred(lambda: flag.is_file(), parent)
+
+
+def _wait_running_job(root: Path, parent: subprocess.Popen[str]) -> bool:
+    return _wait_pred(lambda: _job_has_pid(root), parent)
+
+
+def _wait_pred(pred: Callable[[], bool], parent: subprocess.Popen[str]) -> bool:
+    deadline = time.monotonic() + 60.0
+    while time.monotonic() < deadline:
+        if pred():
+            return True
+        if parent.poll() is not None:
+            return False
+        _pause(deadline)
+    return False
+
+
+def _job_has_pid(root: Path) -> bool:
+    if not root.is_dir():
+        return False
+    return any(_running_with_pid(path) for path in root.glob("j*.json"))
+
+
+def _running_with_pid(path: Path) -> bool:
+    payload = _read_obj(path)
+    if payload.get("state") != "running":
+        return False
+    steps = payload.get("steps")
+    if not isinstance(steps, list):
+        return False
+    return any(_step_pid(step) for step in steps)
+
+
+def _step_pid(step: object) -> bool:
+    if not isinstance(step, dict):
+        return False
+    pid = step.get("pid")
+    return isinstance(pid, int) and not isinstance(pid, bool) and pid > 0
+
+
+def _read_obj(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return {}
+    if isinstance(payload, dict):
+        return payload
+    return {}
+
+
+def _resume_crash(config: Path, marker: Path, err_path: Path) -> str:
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-c", _CRASH_RESUME, str(config), str(marker)],
+            env=_crash_env(config),
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return "resume timeout"
+    if proc.returncode != 0:
+        tail = _clip_text(proc.stderr or _read_text(err_path))
+        return f"resume failed {proc.returncode} {tail}"
+    summary = proc.stdout.strip()
+    return summary or "resume produced no summary"
+
+
+def _crash_failure(parent: subprocess.Popen[str], err_path: Path, reason: str) -> str:
+    _signal_pid(parent.pid, signal.SIGKILL)
+    _wait_exit(parent)
+    return f"{reason} parent={parent.poll()} {_clip_text(_read_text(err_path))}"
+
+
+def _reap_crash(parent: subprocess.Popen[str], marker: Path) -> None:
+    if parent.poll() is None:
+        _signal_pid(parent.pid, signal.SIGKILL)
+    _wait_exit(parent)
+    _kill_marker(marker)
+    err = parent.stderr
+    if err is not None:
+        err.close()
+
+
+def _kill_marker(marker: Path) -> None:
+    for line in _read_text(marker).splitlines():
+        if line.strip().isdigit():
+            _signal_pid(int(line), signal.SIGKILL)
+
+
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def _clip_text(text: str) -> str:
+    flat = " ".join(text.split())
+    if len(flat) > 240:
+        return flat[:237] + "..."
+    return flat
+
+
+def _signal_pid(pid: int | None, sig: int) -> None:
+    if pid is None or pid <= 0:
+        return
+    try:
+        os.kill(pid, sig)
+    except OSError:
+        return
+
+
+def _wait_exit(parent: subprocess.Popen[str]) -> None:
+    try:
+        parent.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        return
+
+
+def _pause(deadline: float) -> None:
+    remaining = deadline - time.monotonic()
+    if remaining > 0:
+        time.sleep(min(0.05, remaining))
 
 
 def _elapsed(clock: Callable[[], float], start: float) -> float:

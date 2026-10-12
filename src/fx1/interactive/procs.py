@@ -14,10 +14,14 @@ Known limits: teardown signals the process group and, on Linux, descendants
 still listed as children of the owned pid (``setsid`` does not change the
 parent). A descendant that has already double-forked into a new session and
 been reparented is not visible, and the result does not claim that pid was
-killed. Reader threads still stop when that descendant keeps the pipe open.
-Zombie detection reads Linux ``/proc``. A direct child that is still alive
-after the kill attempt stays in the registry and the result says the
-cancellation or timeout is pending.
+killed. On Linux the direct child is started through a one-shot exec wrapper
+that arms ``PR_SET_PDEATHSIG`` (``SIGKILL``) so the direct child dies if this
+process is killed, including by ``SIGKILL``. That signal is not inherited by
+grandchildren, so a double-fork plus ``setsid`` escapee still survives both
+parent death and the descendant sweep. Reader threads still stop when that
+descendant keeps the pipe open. Zombie detection reads Linux ``/proc``. A
+direct child that is still alive after the kill attempt stays in the registry
+and the result says the cancellation or timeout is pending.
 """
 
 from __future__ import annotations
@@ -31,6 +35,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.parse
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -321,8 +326,79 @@ def run_owned(
     )
 
 
+# Linux-only. Runs in the child, then execs the real argv. prctl persists
+# across exec, so the owned command dies with this process even on SIGKILL.
+_DEATH_WRAPPER = (
+    "import ctypes,os,signal,sys\n"
+    "ctypes.CDLL(None).prctl(1, signal.SIGKILL)\n"
+    "pid=os.getppid()\n"
+    "os.kill(os.getpid(), signal.SIGKILL) if pid==1 else None\n"
+    "try:\n"
+    " os.execvp(sys.argv[1], sys.argv[1:])\n"
+    "except OSError:\n"
+    " os._exit(127)\n"
+)
+
+
 def _popen(argv: Sequence[str], **kwargs: Any) -> subprocess.Popen[bytes]:
-    return subprocess.Popen(list(argv), **kwargs)  # noqa: S603 - argv is a sequence, no shell
+    command = _death_argv([str(part) for part in argv])
+    return subprocess.Popen(command, **kwargs)  # noqa: S603 - argv is a sequence, no shell
+
+
+def _death_argv(argv: list[str]) -> list[str]:
+    """Prefix a Linux parent-death wrapper. Missing executables stay unwrapped.
+
+    ``Popen`` must still raise for a missing binary so the caller reports
+    spawn exit 127. Other platforms spawn *argv* unchanged.
+    """
+    if sys.platform != "linux" or not argv or not _can_exec(argv[0]):
+        return argv
+    return [sys.executable, "-c", _DEATH_WRAPPER, *argv]
+
+
+def _can_exec(path: str) -> bool:
+    if os.path.isfile(path) and os.access(path, os.X_OK):
+        return True
+    if os.sep in path or (os.altsep is not None and os.altsep in path):
+        return False
+    return _on_path(path)
+
+
+def _on_path(name: str) -> bool:
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        candidate = os.path.join(directory, name) if directory else name
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return True
+    return False
+
+
+def install_terminal_stop(registry: ProcessRegistry | None = None, *, grace_s: float = 2.0) -> bool:
+    """Arm SIGTERM (exit 143) and SIGHUP (exit 129) when they still have the default disposition.
+
+    An existing Python handler, including exec's, is left in place. The handler
+    stops *registry* and raises ``SystemExit`` so a ``finally`` can persist state.
+    """
+    target = _registry_of(registry)
+    armed = _arm_stop("SIGTERM", 143, target, grace_s)
+    return _arm_stop("SIGHUP", 129, target, grace_s) or armed
+
+
+def _arm_stop(name: str, code: int, registry: ProcessRegistry, grace_s: float) -> bool:
+    sig = getattr(signal, name, None)
+    if not isinstance(sig, int) or signal.getsignal(sig) is not signal.SIG_DFL:
+        return False
+    signal.signal(sig, _stop_handler(code, registry, grace_s))
+    return True
+
+
+def _stop_handler(
+    code: int, registry: ProcessRegistry, grace_s: float
+) -> Callable[[int, object], None]:
+    def handler(_signum: int, _frame: object) -> None:
+        registry.terminate_all(grace_s)
+        raise SystemExit(code)
+
+    return handler
 
 
 def _clock_of(clock: Clock | None) -> Clock:
@@ -353,10 +429,13 @@ def _cancelled(cancel_event: threading.Event | None) -> bool:
     return cancel_event is not None and cancel_event.is_set()
 
 
+_PROXY_ENV = frozenset({"http_proxy", "https_proxy", "all_proxy", "ftp_proxy", "socks_proxy"})
+
+
 def _take_base(cleaned: dict[str, str], base: Mapping[str, str], patterns: tuple[str, ...]) -> None:
     for key, value in base.items():
         if _keep_base(key, patterns):
-            cleaned[key] = value
+            _put_env(cleaned, key, value)
 
 
 def _fill_thread_defaults(cleaned: dict[str, str]) -> None:
@@ -373,7 +452,40 @@ def _take_extra(
         return
     for key, value in extra.items():
         if _keep_extra(key, secret_ok):
-            cleaned[key] = value
+            _put_env(cleaned, key, value)
+
+
+def _put_env(cleaned: dict[str, str], key: str, value: str) -> None:
+    stored = _scrubbed_env_value(key, value)
+    if stored is None:
+        return
+    cleaned[key] = stored
+
+
+def _scrubbed_env_value(key: str, value: str) -> str | None:
+    if key.casefold() not in _PROXY_ENV:
+        return value
+    return _proxy_authority(value)
+
+
+def _proxy_authority(value: str) -> str | None:
+    """Scheme, host, and port. Userinfo, path, and query are dropped."""
+    try:
+        parsed = urllib.parse.urlsplit(value.strip())
+        host = parsed.hostname
+        port = parsed.port
+    except ValueError:
+        return None
+    if not parsed.scheme or not host:
+        return None
+    return _proxy_url(parsed.scheme, host, port)
+
+
+def _proxy_url(scheme: str, host: str, port: int | None) -> str:
+    name = f"[{host}]" if ":" in host else host
+    if port is None:
+        return f"{scheme}://{name}"
+    return f"{scheme}://{name}:{port}"
 
 
 def _keep_base(key: str, patterns: tuple[str, ...]) -> bool:

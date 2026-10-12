@@ -119,6 +119,15 @@ def test_registry_without_live_fails() -> None:
     assert SOAK.leak_problems((), SOAK.registry_pids(object()))
 
 
+def test_request_log_trim_keeps_a_short_tail() -> None:
+    server = SimpleNamespace(_requests=list(range(20)))
+    SOAK.trim_request_log(server, keep=4)
+    assert server._requests == [16, 17, 18, 19]
+    SOAK.trim_request_log(server, keep=4)
+    assert server._requests == [16, 17, 18, 19]
+    SOAK.trim_request_log(None)
+
+
 def test_diff_flags_fd_threads_and_alloc() -> None:
     baseline = _sample()
     grown = _sample(

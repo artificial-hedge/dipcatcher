@@ -1259,9 +1259,13 @@ class SessionStore:
         return best
 
     def list(self, limit: int = DEFAULT_LIST_LIMIT) -> tuple[RecordList, StringList]:
-        """Newest-first summaries, plus warnings for files that were skipped."""
+        """Newest-first summaries, plus warnings for files that were skipped.
+
+        Corrupt JSON is quarantined, the same way ``diagnose`` loads a file.
+        A newer schema is reported and left in place.
+        """
         bounded = _non_negative(limit, "limit")
-        records, warnings = self._scan()
+        records, warnings = self._scan(quarantine=True)
         ordered = sorted(records, key=_record_sort_key, reverse=True)
         return [_summary(record) for record in ordered[:bounded]], warnings
 
@@ -1488,7 +1492,7 @@ class SessionStore:
         _check_identity(migrated, expected_id, path, quarantine=quarantine)
         return _as_dict(_redact(migrated), "session record must be an object")
 
-    def _scan(self) -> tuple[RecordList, StringList]:
+    def _scan(self, *, quarantine: bool = False) -> tuple[RecordList, StringList]:
         directory = self._resolved_directory()
         if not directory.is_dir():
             return [], []
@@ -1497,20 +1501,22 @@ class SessionStore:
         for path in sorted(directory.iterdir(), key=lambda item: item.name):
             if not _looks_like_session_file(path):
                 continue
-            record, warning = self._one_file(path)
+            record, warning = self._one_file(path, quarantine=quarantine)
             if warning is not None:
                 warnings.append(warning)
             if record is not None:
                 records.append(record)
         return records, warnings
 
-    def _one_file(self, path: Path) -> tuple[dict[str, Any] | None, str | None]:
+    def _one_file(
+        self, path: Path, *, quarantine: bool = False
+    ) -> tuple[dict[str, Any] | None, str | None]:
         if path.is_symlink():
             return None, f"skipped {path.name}: refusing to follow symlink session file"
         if not _valid_session_id(path.stem):
             return None, f"skipped {path.name}: malformed session id"
         try:
-            record = self._load_unlocked(path, expected_id=path.stem, quarantine=False)
+            record = self._load_unlocked(path, expected_id=path.stem, quarantine=quarantine)
         except SessionError as exc:
             return None, f"skipped {path.name}: {exc}"
         updated = record.get("updated_at")
