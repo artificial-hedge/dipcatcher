@@ -156,15 +156,13 @@ position the honesty ledger already records, correctly.
 
 ## Overview
 
-**dipcatcher** is Artificial Hedge's state-of-the-art harness for orchestrating
-its **fx1** and **fx1-lite** models ([artificialhedge.co](https://artificialhedge.co))
-from the command line. The CLI is designed like Codex CLI: chat-first, with
-about 99% of the interface being a conversation with the active model. The
-`/superpower` slash command plans and runs whichever of dipcatcher's research
-families fit the goal you typed, and explains what it used and why. Type
-`dipcatcher` in a terminal to open the chat. The design and its current status
-(working tree, not yet a release) live in
-[`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md).
+**dipcatcher** is Artificial Hedge's harness for orchestrating its **fx1**
+and **fx1-lite** models ([artificialhedge.co](https://artificialhedge.co))
+from the command line. On a terminal, plain text is a conversation with the
+active model. `/superpower` plans the research capabilities that fit the
+goal and explains the selection. Redirected bare `dipcatcher` prints help
+and does not read stdin. The working-tree status — not a release, and not
+a live-model proof — is [`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md).
 
 Underneath the chat, dipcatcher is receipt-bound quant research on US equities
 and crypto for a small Alpaca account. It is research and simulated paper
@@ -1483,19 +1481,24 @@ the chat is the way in:
 
 ```bash
 make sync
-uv run dipcatcher           # opens the chat in an interactive terminal
+uv run dipcatcher           # terminal: chat. redirected: help, no stdin read
 # inside the chat:
 #   /keys set fx1           masked API key + endpoint URL (or /keys set fx1-lite)
 #   /use fx1-lite           switch model
-#   /superpower <goal>      plan and run the research families that fit
+#   /superpower <goal>      plan the research capabilities that fit
 #   /help, /exit
+uv run dipcatcher exec "ping"          # one turn; exit 5 until an endpoint exists
+uv run dipcatcher models list          # presence only, not a liveness claim
+uv run dipcatcher models check         # offline; does not open a socket
 ```
 
-`dipcatcher chat --model fx1-lite` picks the starting model. Without an
-endpoint the chat still runs slash commands and web research. Redirected
-(non-terminal) `dipcatcher` prints help instead of opening the chat. Details
-and current status: [`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md). The
-typed subcommands below are the non-interactive path, used by scripts and CI:
+`dipcatcher chat --model fx1-lite` picks the starting model and requires a
+terminal. Without an endpoint, slash commands still run and a model turn
+reports that no endpoint is configured. `fxi` opens the same chat; with
+stdin closed it prints the banner and exits. `quant` is the lab CLI
+without the chat preface. Details and current status:
+[`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md). The typed subcommands
+below are the non-interactive lab path, used by scripts and CI:
 
 ```bash
 uv run dipcatcher research --config configs/research.yaml
@@ -1572,7 +1575,7 @@ generated diagrams in [Visual tour](#visual-tour).
 
 | Command | What it does |
 |---|---|
-| `uv run dipcatcher` | In a terminal, opens the chat: plain text talks to `fx1`/`fx1-lite`; `/superpower <goal>` runs the research families that fit. `fxi` opens the same chat. |
+| `uv run dipcatcher` | Terminal: chat with `fx1`/`fx1-lite`. Redirected: help, no stdin read. `fxi` opens the same chat. `dipcatcher exec` is the one-turn script path. |
 | `uv run dipcatcher research --config <cfg>` | Builds a panel, runs the research pipeline, writes a sealed notebook. |
 | `uv run dipcatcher verify-research [path]` | Recomputes a notebook or run directory's receipt hash; fails closed. |
 | `uv run dipcatcher doctor --config <cfg>` | Environment/data/receipt readiness check; exit code is the answer. |
@@ -3097,7 +3100,15 @@ From [`.env.example`](.env.example); secrets are never committed and
 | `MLFLOW_TRACKING_URI` | `./mlruns` | local tracking store |
 | `QUANT_VENDOR_API_KEY` | unset | licensed vendor adapter; unset means fail-closed |
 | `QUANT_API_KEY` | unset | required for non-loopback API access (`X-API-Key`) |
-| `MOONSHOT_API_KEY` | unset | hosted Kimi K3 eval (`make fx1-eval`) |
+| `MOONSHOT_API_KEY` | unset | shared chat key, and hosted Kimi K3 eval (`make fx1-eval`). A stored profile wins. |
+| `FX1_BASE_URL` | Moonshot chat-completions URL | shared completion URL when no stored or per-model URL is set |
+| `FX1_CONFIG_DIR` | `~/.fx1` | credentials, sessions, jobs, logs, runs, history |
+| `FX1_SESSION_DIR` | unset | chat sessions; else `$FX1_CONFIG_DIR/sessions` |
+| `DIPCATCHER_FX1_API_KEY` | unset | fx1 key when no profile is stored |
+| `DIPCATCHER_FX1_BASE_URL` | unset | fx1 completion URL; with a per-model key and no URL, `FX1_BASE_URL` is used |
+| `DIPCATCHER_FX1_LITE_API_KEY` | unset | fx1-lite key when no profile is stored |
+| `DIPCATCHER_FX1_LITE_BASE_URL` | unset | fx1-lite completion URL |
+| `DIPCATCHER_LOG` | `info` | local chat telemetry level: `off`, `error`, `info`, `debug` |
 | `FX1_SIGNING_KEY` | unset | checkpoint signature enforcement for local fx-1 serving |
 | `DIPCATCHER_OBSERVE` | unset | opt-in audit ledger / observability |
 | `DIPCATCHER_OTEL_ENDPOINT` | `http://127.0.0.1:4318/v1/traces` | OTLP traces endpoint |
@@ -3253,9 +3264,11 @@ flowchart TD
 
 ```text
 +---------------------------------------------------------------------+
-|  dipcatcher — the ten commands that matter                          |
+|  dipcatcher — common commands                                       |
 +---------------------------------------------------------------------+
 |  make sync                     frozen env from uv.lock              |
+|  uv run dipcatcher             terminal chat; redirected prints help|
+|  uv run dipcatcher exec "…"    one turn; exit codes in --help       |
 |  uv run dipcatcher research --config configs/research.yaml          |
 |  uv run dipcatcher verify-research                                  |
 |  uv run dipcatcher doctor --config configs/research.yaml            |
