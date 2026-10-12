@@ -47,6 +47,7 @@ from quant_fund.cli.micro_cmds import (
     candle_book,
     kyle_ofi,
 )
+from quant_fund.cli.families_cmds import research_families
 from quant_fund.cli.research_cmds import (
     research,
     execution_sensitivity_cmd,
@@ -187,6 +188,7 @@ __all__ = [
     "candle_book",
     "kyle_ofi",
     "research",
+    "research_families",
     "execution_sensitivity_cmd",
     "verify_all_cmd",
     "verify_identities",
