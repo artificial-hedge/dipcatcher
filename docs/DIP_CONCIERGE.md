@@ -253,6 +253,21 @@ that console as a compatibility floor.
 `/use fx1-lite` keeps the conversation. Observed:
 `active model 'fx1-lite'; conversation kept`.
 
+### Long conversations
+
+The saved session always keeps every message. What is sent to the model is
+fitted to a character ceiling (`FX1_CONTEXT_MAX_CHARS`, default 400000,
+floor 4000) by dropping the oldest whole turns first. A turn is a user
+message with the assistant and tool messages that follow it, so a tool call
+is never separated from its result, and the newest turn is always sent. When
+turns are dropped the system prompt says that the earliest N messages are
+absent, and chat prints one `context:` line per trimming episode. No context
+size is assumed for either model: if a server answers that a prompt is too
+long, the ceiling for that model drops to half of what was just sent and the
+call is retried (up to three times, never when only one turn remains). The
+lowered ceiling lasts for the process. This is a client-side bound, not a
+claim about either model's real window.
+
 ## Slash commands
 
 `/help` prints this list. One line each:
@@ -532,6 +547,7 @@ Offline, with network seams injected:
 - `tests/fx1/test_flash.py` — flash memory.
 - `tests/fx1/test_webresearch.py` — fetch policy and web budgets.
 - `tests/fx1/test_approvals_scoped.py` — once / session / deny.
+- `tests/fx1/test_context_window.py` — outbound fitting, the omission note, and the too-long retry.
 - `tests/fx1/test_docs_drift.py` — `fx1` commands, `make` targets, and `fx1` imports cited from `README.md` and `docs/FX1*.md` exist.
 
 This page's command transcript is from a local run, not from that suite.

@@ -49,6 +49,7 @@ from fx1.interactive import actions, profiles
 from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.chat_tools import ToolEnv, run_registered_harness
 from fx1.interactive.chat_turn import cancel_chat_keyboard, run_chat_turn
+from fx1.interactive.context_window import ContextBudget
 from fx1.interactive.diagnostics_ux import (
     render_diagnostics,
     telemetry_owner,
@@ -343,6 +344,8 @@ class Concierge:
         self._output = output_fn
         self._animated = True if animated is None else animated
         self._messages: list[dict[str, Any]] = []
+        self._context_budget = ContextBudget.from_env()
+        self._context_trim_said = False
         self._job: BackgroundJob | None = None
         self._session_store = session_store
         self._session: dict[str, Any] | None = None

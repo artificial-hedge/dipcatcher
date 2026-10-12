@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,6 +17,7 @@ from typing import Any
 
 from fx1.honesty import public_label, scrub_model_text
 from fx1.interactive import profiles
+from fx1.interactive.context_window import fit_dialogue, omission_note
 from fx1.interactive.model_client import ErrorKind, ModelClient, ModelError, ModelIdentity
 from fx1.interactive.redact import redact_text
 from fx1.interactive.system_prompt import Mode, build_system_prompt
@@ -139,6 +141,16 @@ def render_model_error(exc: ModelError) -> str:
     return f"{exc.model} @ {exc.host}: response withheld by the fx-1 honesty gate"
 
 
+@dataclass(frozen=True)
+class Outbound:
+    """One request body plus what fitting left out of it."""
+
+    messages: list[dict[str, Any]]
+    omitted: int
+    chars: int
+    turns: int
+
+
 def outbound_messages(
     messages: Sequence[Mapping[str, Any]],
     model: str,
@@ -151,8 +163,34 @@ def outbound_messages(
     Every stored system message is hoisted into the prompt notes. The built
     prompt is not written back into the transcript.
     """
-    prompt = build_system_prompt(model, tools=tools, mode=mode, notes=_system_notes(messages))
-    return [{"role": "system", "content": prompt}, *_dialogue(messages)]
+    return build_outbound(messages, model, tools=tools, mode=mode).messages
+
+
+def build_outbound(
+    messages: Sequence[Mapping[str, Any]],
+    model: str,
+    *,
+    tools: Sequence[str] = (),
+    mode: Mode = "chat",
+    max_chars: int | None = None,
+) -> Outbound:
+    """:func:`outbound_messages` that can drop the oldest whole turns to fit ``max_chars``.
+
+    The system prompt names how many leading messages were left out. The stored
+    transcript is untouched.
+    """
+    ceiling = sys.maxsize if max_chars is None else max_chars
+    fitted = fit_dialogue(_dialogue(messages), ceiling)
+    notes = _system_notes(messages)
+    if fitted.omitted:
+        notes.append(omission_note(fitted.omitted))
+    prompt = build_system_prompt(model, tools=tools, mode=mode, notes=notes)
+    return Outbound(
+        messages=[{"role": "system", "content": prompt}, *fitted.messages],
+        omitted=fitted.omitted,
+        chars=fitted.chars,
+        turns=fitted.turns,
+    )
 
 
 def sampling_for(tracker: UsageTracker) -> SamplingParams | None:

@@ -23,11 +23,12 @@ from fx1.interactive.evidence import EvidenceError, ground_summary
 from fx1.interactive.model_client import ErrorKind, ModelError
 from fx1.interactive.model_ux import (
     CallSnapshot,
+    Outbound,
+    build_outbound,
     charge_reported_usage,
     completion_kwargs,
     footer_lines,
     open_backend,
-    outbound_messages,
     read_snapshot,
     render_model_error,
     scrub_transcript,
@@ -129,17 +130,58 @@ def _call_backend(
     cancel: threading.Event,
     tools: list[dict[str, Any]],
 ) -> Any:
-    messages = outbound_messages(host._transcript(), host.model, tools=CHAT_TOOL_NAMES, mode="chat")
     kwargs = completion_kwargs(
         tracker, backend, cancel, pass_deadline=host._pass_deadline, tools=tools
     )
     tracker.charge_step()
-    tracker.charge_model_call()
-    started = host._clock()
-    with host._orb():
-        completion = backend.complete_with_tools(messages, **kwargs)
-    host._pending_snapshot = read_snapshot(backend, started, host._clock)
-    return completion
+    retries = 0
+    while True:
+        outbound = build_outbound(
+            host._transcript(),
+            host.model,
+            tools=CHAT_TOOL_NAMES,
+            mode="chat",
+            max_chars=host._context_budget.limit(host.model),
+        )
+        _announce_trim(host, outbound)
+        tracker.charge_model_call()
+        started = host._clock()
+        try:
+            with host._orb():
+                completion = backend.complete_with_tools(outbound.messages, **kwargs)
+        except ModelError as exc:
+            retries += 1
+            if retries > _CONTEXT_RETRIES or not _shrunk_for_retry(host, exc, outbound):
+                raise
+            continue
+        host._pending_snapshot = read_snapshot(backend, started, host._clock)
+        return completion
+
+
+_CONTEXT_RETRIES = 3
+
+
+def _announce_trim(host: Any, outbound: Outbound) -> None:
+    if not outbound.omitted:
+        host._context_trim_said = False
+        return
+    if host._context_trim_said:
+        return
+    host._context_trim_said = True
+    host._say(
+        f"context: {outbound.omitted} older messages are no longer sent to {host.model} "
+        "so the conversation fits; they stay in the saved session"
+    )
+
+
+def _shrunk_for_retry(host: Any, exc: ModelError, outbound: Outbound) -> bool:
+    """True when a too-long prompt can be retried with fewer earlier turns."""
+    if exc.kind is not ErrorKind.CONTEXT_TOO_LONG or outbound.turns < 2:
+        return False
+    if not host._context_budget.shrink(host.model, outbound.chars):
+        return False
+    host._say(f"context: {host.model} rejected the prompt as too long; retrying with less history")
+    return True
 
 
 _MAX_TOOL_CALLS = 32

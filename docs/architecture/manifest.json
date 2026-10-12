@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13431,
+  "module_count": 13432,
   "module_edges": [
     {
       "dst": "fx1",
@@ -2195,6 +2195,10 @@
       "src": "fx1.interactive.concierge"
     },
     {
+      "dst": "fx1.interactive.context_window",
+      "src": "fx1.interactive.concierge"
+    },
+    {
       "dst": "fx1.interactive.datasets",
       "src": "fx1.interactive.concierge"
     },
@@ -2468,6 +2472,10 @@
     },
     {
       "dst": "fx1.honesty",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.context_window",
       "src": "fx1.interactive.model_ux"
     },
     {
@@ -62379,6 +62387,7 @@
     "fx1.interactive.chat_turn",
     "fx1.interactive.concierge",
     "fx1.interactive.console",
+    "fx1.interactive.context_window",
     "fx1.interactive.contracts",
     "fx1.interactive.datasets",
     "fx1.interactive.diagnostics",
@@ -75984,7 +75993,7 @@
     },
     {
       "dst": "fx1.interactive",
-      "imports": 148,
+      "imports": 150,
       "src": "fx1.interactive"
     },
     {

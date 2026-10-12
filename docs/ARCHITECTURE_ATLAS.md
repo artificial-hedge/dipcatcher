@@ -765,7 +765,7 @@ sequenceDiagram
 | `fx1.honesty_audit` | 1 |
 | `fx1.hypotheses` | 1 |
 | `fx1.hypotheses_audit` | 1 |
-| `fx1.interactive` | 43 |
+| `fx1.interactive` | 44 |
 | `fx1.modelcard` | 1 |
 | `fx1.modelcard_audit` | 1 |
 | `fx1.mrm` | 1 |
@@ -839,7 +839,7 @@ sequenceDiagram
 | `quant_fund.utils` | 10 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13431**
+- Modules scanned: **13432**
 - Packages: **94**
 - Cross-package import edges: **394**
 
