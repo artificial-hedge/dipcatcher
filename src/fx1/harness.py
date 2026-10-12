@@ -20,15 +20,18 @@ Harness roles:
 from __future__ import annotations
 
 import os
-import signal
 import subprocess  # noqa: S404 - runner is injectable; see Harness.run
-import time
-from collections.abc import Callable
+import sys
+import threading
+from collections.abc import Callable, Mapping, Sequence
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from fx1.interactive.procs import ProcessRegistry, ProcResult
 
 
 class HarnessRole(StrEnum):
@@ -186,90 +189,119 @@ class HarnessResult(BaseModel):
     exit_code: int
     stdout: str
     stderr: str
+    timed_out: bool = False
+    cancelled: bool = False
+    truncated: bool = False
+    duration_s: float = 0.0
 
     @property
     def ok(self) -> bool:
         return self.exit_code == 0
 
 
-# Runner signature: (argv, timeout_s) -> (exit_code, stdout, stderr)
+# Runner signature: (argv, timeout_s) -> (exit_code, stdout, stderr).
+# Extended runners set supports_extended and accept the keyword arguments
+# passed by Harness.run; they return ProcResult.
 Runner = Callable[[list[str], int], tuple[int, str, str]]
+_Emit = Callable[[str, Mapping[str, Any]], None]
 
 
-def _subprocess_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
-    proc = subprocess.run(  # noqa: S603 - argv is registry-constrained
-        ["dipcatcher", *argv],
-        capture_output=True,
-        text=True,
-        timeout=timeout_s,
-        check=False,
-    )
-    return proc.returncode, proc.stdout, proc.stderr
+class ExtendedRunner(Protocol):
+    """Runner that accepts cancel, env, and step and returns a ProcResult."""
+
+    supports_extended: bool
+
+    def __call__(
+        self,
+        argv: list[str],
+        timeout_s: int,
+        *,
+        cancel_event: threading.Event | None = None,
+        env_extra: Mapping[str, str] | None = None,
+        step: str | None = None,
+    ) -> ProcResult: ...
 
 
-def _terminate_process(proc: subprocess.Popen[str]) -> None:
-    """Stop a harness child and its group. A failed signal still reports the process."""
-    if proc.poll() is not None:
-        return
-    if os.name == "nt":
-        proc.terminate()
-    else:
-        try:
-            os.killpg(proc.pid, signal.SIGTERM)
-        except (ProcessLookupError, PermissionError):
-            proc.terminate()
-    try:
-        proc.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        if os.name == "nt":
-            proc.kill()
-        else:
-            try:
-                os.killpg(proc.pid, signal.SIGKILL)
-            except (ProcessLookupError, PermissionError):
-                proc.kill()
-        proc.wait(timeout=5)
+class OwnedRunner:
+    """Default runner: ``python -m dipcatcher_cli`` with a scrubbed environment.
+
+    The process runner is imported on the first call so ``import fx1.harness``
+    stays limited to this module.
+    """
+
+    supports_extended: bool = True
+
+    def __init__(
+        self,
+        *,
+        registry: ProcessRegistry | None = None,
+        emit: _Emit | None = None,
+    ) -> None:
+        self._registry = registry
+        self._emit = emit
+
+    def __call__(
+        self,
+        argv: list[str],
+        timeout_s: int,
+        *,
+        cancel_event: threading.Event | None = None,
+        env_extra: Mapping[str, str] | None = None,
+        step: str | None = None,
+    ) -> ProcResult:
+        from fx1.interactive.procs import REGISTRY, ProcLimits, run_owned, scrub_env
+
+        registry = REGISTRY if self._registry is None else self._registry
+        registry.install_atexit()
+        full = [sys.executable, "-m", "dipcatcher_cli", *argv]
+        return run_owned(
+            full,
+            ProcLimits(timeout_s=float(timeout_s)),
+            env=scrub_env(os.environ, extra=env_extra),
+            cancel_event=cancel_event,
+            registry=registry,
+            emit=self._emit,
+            step=step,
+        )
 
 
 def popen_cancellable(
     argv: list[str],
     timeout_s: int,
-    cancel_event: Any | None = None,
+    cancel_event: threading.Event | None = None,
 ) -> tuple[int, str, str]:
-    """Run argv until exit, timeout, or cancel. Callers pass a full argv, not a shell string."""
-    kwargs: dict[str, Any] = {"stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "text": True}
-    if os.name == "nt":
-        kwargs["creationflags"] = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-    else:
-        kwargs["start_new_session"] = True
-    proc = subprocess.Popen(argv, **kwargs)  # noqa: S603 - argv is built by the harness registry
-    deadline = time.monotonic() + timeout_s
-    while proc.poll() is None:
-        if cancel_event is not None and cancel_event.is_set():
-            _terminate_process(proc)
-            out, err = proc.communicate()
-            return 130, out or "", ((err or "") + "\ncancelled").strip()
-        if time.monotonic() >= deadline:
-            _terminate_process(proc)
-            out, err = proc.communicate()
-            raise subprocess.TimeoutExpired(argv, timeout_s, output=out, stderr=err)
-        time.sleep(0.05)
-    out, err = proc.communicate()
-    code = proc.returncode
-    return int(code if code is not None else 1), out or "", err or ""
+    """Run a full argv until exit, timeout, or cancel (compatibility wrapper).
+
+    Backed by the owned runner: own process group, bounded output, whole-tree
+    termination. Cancel returns ``(130, stdout, stderr + "cancelled")``; a
+    deadline raises ``subprocess.TimeoutExpired`` like ``subprocess.run``.
+    """
+    from fx1.interactive.procs import ProcLimits, run_owned
+
+    result = run_owned(
+        [str(part) for part in argv],
+        ProcLimits(timeout_s=float(timeout_s)),
+        env=dict(os.environ),
+        cancel_event=cancel_event,
+    )
+    if result.timed_out:
+        raise subprocess.TimeoutExpired(argv, timeout_s, output=result.stdout, stderr=result.stderr)
+    if result.cancelled:
+        return 130, result.stdout, f"{result.stderr}\ncancelled".strip()
+    return result.exit_code, result.stdout, result.stderr
 
 
 class Harness:
     """The fx-1 side of the dipcatcher harness."""
 
-    def __init__(self, runner: Runner | None = None) -> None:
-        self._runner = runner or _subprocess_runner
-        self._registry = {c.name: c for c in HARNESS_REGISTRY}
+    def __init__(self, runner: Runner | ExtendedRunner | None = None) -> None:
+        self._runner: Runner | ExtendedRunner = runner if runner is not None else OwnedRunner()
+        self._registry = {command.name: command for command in HARNESS_REGISTRY}
 
     def list_commands(self, role: HarnessRole | None = None) -> list[HarnessCommand]:
         commands = list(self._registry.values())
         if role is not None:
-            commands = [c for c in commands if c.role == role]
+            commands = [command for command in commands if command.role == role]
         return commands
 
     def get(self, name: str) -> HarnessCommand:
@@ -286,38 +318,148 @@ class Harness:
         extra_args: list[str] | None = None,
         *,
         config: Path | None = None,
-        cancel_event: Any | None = None,
+        cancel_event: threading.Event | None = None,
+        env_extra: Mapping[str, str] | None = None,
+        step: str | None = None,
     ) -> HarnessResult:
         """Execute a registered harness command, fail-closed on unknown names.
 
         Config paths are contained to the repo ``configs/`` directory, matching
-        the lab API's allowlist posture.
+        the lab API's allowlist posture. Runners without ``supports_extended``
+        are called as ``runner(argv, timeout_s)``. Extended runners also receive
+        cancellation, extra environment, and step. A deadline is a result with
+        exit code 124, not an exception.
         """
         command = self.get(name)
-        argv = list(command.argv)
-        configs_dir = (Path.cwd() / "configs").resolve()
+        argv = _assemble_argv(command, extra_args, config)
+        outcome = self._dispatch(argv, command.timeout_s, cancel_event, env_extra, step)
+        return _coerce(name, outcome)
 
-        def check_contained(raw: str) -> Path:
-            resolved = Path(raw).resolve()
-            if configs_dir not in resolved.parents and resolved != configs_dir:
-                raise ValueError(f"config path {resolved} escapes the configs/ allowlist")
-            return resolved
+    def _dispatch(
+        self,
+        argv: list[str],
+        timeout_s: int,
+        cancel_event: threading.Event | None,
+        env_extra: Mapping[str, str] | None,
+        step: str | None,
+    ) -> ProcResult | tuple[int, str, str]:
+        try:
+            return self._call_runner(argv, timeout_s, cancel_event, env_extra, step)
+        except subprocess.TimeoutExpired as exc:
+            return _timeout_result(exc)
 
-        if config is not None:
-            argv += ["--config", str(check_contained(str(config)))]
-        if extra_args:
-            # --config passed through extra_args must obey the same
-            # containment as the keyword arg — otherwise it is a bypass.
-            for i, arg in enumerate(extra_args):
-                if arg == "--config" and i + 1 < len(extra_args):
-                    check_contained(extra_args[i + 1])
-                elif arg.startswith("--config="):
-                    check_contained(arg.split("=", 1)[1])
-            argv += list(extra_args)
-        if cancel_event is not None and self._runner is _subprocess_runner:
-            code, out, err = popen_cancellable(
-                ["dipcatcher", *argv], command.timeout_s, cancel_event
+    def _call_runner(
+        self,
+        argv: list[str],
+        timeout_s: int,
+        cancel_event: threading.Event | None,
+        env_extra: Mapping[str, str] | None,
+        step: str | None,
+    ) -> ProcResult | tuple[int, str, str]:
+        runner = self._runner
+        if getattr(runner, "supports_extended", False):
+            extended = cast(ExtendedRunner, runner)
+            return extended(
+                argv,
+                timeout_s,
+                cancel_event=cancel_event,
+                env_extra=env_extra,
+                step=step,
             )
-        else:
-            code, out, err = self._runner(argv, command.timeout_s)
+        basic = cast(Runner, runner)
+        return basic(argv, timeout_s)
+
+
+def _assemble_argv(
+    command: HarnessCommand,
+    extra_args: list[str] | None,
+    config: Path | None,
+) -> list[str]:
+    argv = list(command.argv)
+    if config is not None:
+        argv += ["--config", str(_contained_config(config))]
+    if extra_args:
+        _reject_extra_config(extra_args)
+        argv += list(extra_args)
+    return argv
+
+
+def _contained_config(raw: Path | str) -> Path:
+    configs_dir = (Path.cwd() / "configs").resolve()
+    resolved = Path(raw).resolve()
+    if configs_dir not in resolved.parents and resolved != configs_dir:
+        raise ValueError(f"config path {resolved} escapes the configs/ allowlist")
+    return resolved
+
+
+def _reject_extra_config(extra_args: list[str]) -> None:
+    # ``--config`` in extra_args must obey the same containment as the keyword.
+    for index, arg in enumerate(extra_args):
+        if arg == "--config" and index + 1 < len(extra_args):
+            _contained_config(extra_args[index + 1])
+        elif arg.startswith("--config="):
+            _contained_config(arg.split("=", 1)[1])
+
+
+def _coerce(name: str, outcome: ProcResult | tuple[int, str, str]) -> HarnessResult:
+    if isinstance(outcome, tuple):
+        code, out, err = outcome
         return HarnessResult(command=name, exit_code=code, stdout=out, stderr=err)
+    return HarnessResult(
+        command=name,
+        exit_code=outcome.exit_code,
+        stdout=outcome.stdout,
+        stderr=outcome.stderr,
+        timed_out=outcome.timed_out,
+        cancelled=outcome.cancelled,
+        truncated=outcome.truncated,
+        duration_s=outcome.duration_s,
+    )
+
+
+def _timeout_result(exc: subprocess.TimeoutExpired) -> ProcResult:
+    from fx1.interactive.procs import ProcResult as ProcResultCls
+
+    note = "\n[timeout] process exceeded its deadline; terminated\n"
+    return ProcResultCls(
+        argv_summary=_timeout_argv(exc.cmd),
+        exit_code=124,
+        stdout=_as_text(exc.stdout),
+        stderr=_as_text(exc.stderr) + note,
+        timed_out=True,
+        cancelled=False,
+        truncated=False,
+        spawn_error=None,
+        duration_s=0.0,
+        pid=None,
+        pgid=None,
+    )
+
+
+def _timeout_argv(cmd: str | bytes | Sequence[object]) -> list[str]:
+    from fx1.interactive.redact import redact_argv
+
+    return redact_argv(_command_parts(cmd))
+
+
+def _command_parts(cmd: str | bytes | Sequence[object]) -> list[str]:
+    if isinstance(cmd, (str, bytes)):
+        return [os.fsdecode(cmd)]
+    parts: list[str] = []
+    for part in cmd:
+        parts.append(_part_text(part))
+    return parts
+
+
+def _part_text(part: object) -> str:
+    if isinstance(part, (str, bytes)):
+        return os.fsdecode(part)
+    return str(part)
+
+
+def _as_text(payload: str | bytes | None) -> str:
+    if payload is None:
+        return ""
+    if isinstance(payload, bytes):
+        return payload.decode("utf-8", errors="replace")
+    return payload
