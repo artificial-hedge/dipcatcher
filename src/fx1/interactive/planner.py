@@ -33,8 +33,17 @@ was actually planned; with no dataset attached the detail asks for
 ``/data attach``. Ambiguous datasets or score tasks record ``needs_input``.
 Dataset-bound means ``requires_dataset``, an evidence class other than
 ``SYNTHETIC``, and a data label other than ``SYNTHETIC``.
+When the chosen dataset names an issue-time column and the capability
+declares ``--available-time-col``, that flag is set. A column name that is
+not one safe token is left off the argv and recorded in the plan notes.
 Experimental qualification is reported as ``unqualified``. Budget trimming
 drops a suffix of the ordered plan and does not reorder steps.
+
+A goal that asks to change the verifier, place a live trade, or report a
+forbidden headline, or that carries a prompt-injection cue, a newline, a
+terminal escape, or more than 4096 characters, is refused before selection.
+A shell fragment appended to an otherwise valid request is not copied into
+argv; that case stays a normal plan.
 """
 
 from __future__ import annotations
@@ -75,12 +84,35 @@ EXCLUSION_CODES = frozenset(
         "duplicate",
         "no_match",
         "dependency_missing",
+        "unsafe",
     }
+)
+_GOAL_LIMIT = 4096
+_VERIFIER_RE = re.compile(
+    r"\b(?:edit|change|disable|weaken|bypass|skip)\b.{0,48}\bverifier\b"
+    r"|\bso the test passes\b"
+    r"|\bmake the test pass\b",
+    re.IGNORECASE | re.DOTALL,
+)
+_LIVE_TRADE_RE = re.compile(
+    r"\blive\s+trad(?:e|ing)\b|\bplace\s+(?:a\s+)?(?:live\s+)?trade\b|\bsend\s+(?:an\s+)?order\b",
+    re.IGNORECASE,
+)
+_HEADLINE_RE = re.compile(r"\b(?:sharpe|sortino|calmar|pnl|nav)\b", re.IGNORECASE)
+_INJECT_RE = re.compile(
+    r"ignore\s+(?:all\s+|any\s+)?(?:previous|prior)\s+instructions"
+    r"|disregard\s+(?:the\s+)?(?:catalog|instructions)"
+    r"|you\s+are\s+now\b"
+    r"|reveal\s+the\s+system\s+prompt",
+    re.IGNORECASE,
 )
 SYNTHETIC_NOTE = "SYNTHETIC correctness evidence only — it does not evaluate your data"
 _NO_MATCH = "No suitable capability"
 _NEEDS_DATASET = "no qualified dataset-bound runner matched"
 _ATTACH_DATASET = "attach a CSV/Parquet with /data attach <path>"
+_AVAILABLE_TIME_FLAG = "--available-time-col"
+_COLUMN_LIMIT = 128
+_COLUMN_IGNORED = "ignored available_time_col: column name is not a single safe token"
 _SCORE_QUESTION = (
     "Which score: volatility (QLIKE), quantile (pinball/CRPS) or probability (Brier/ECE)?"
 )
@@ -128,11 +160,16 @@ Roots = Mapping[str, Sequence[Path]]
 
 @dataclass(frozen=True)
 class DatasetRef:
-    """A dataset the caller says is already available."""
+    """A dataset the caller says is already available.
+
+    ``available_time_col`` is the forecast issue-time column. Empty means
+    the file has no issue time to check.
+    """
 
     path: str
     kind: str
     label: str
+    available_time_col: str = ""
 
 
 @dataclass(frozen=True)
@@ -199,6 +236,51 @@ class ExecutionPlan:
         return loaded
 
 
+def _refusal_reason(goal: str) -> str | None:
+    """Stable reason when ``goal`` must not be planned, else ``None``."""
+    if not isinstance(goal, str):
+        return None
+    if len(goal) > _GOAL_LIMIT:
+        return "goal exceeds 4096 characters"
+    if "\x1b" in goal or "\x9b" in goal:
+        return "goal contains a terminal control sequence"
+    if "\n" in goal or "\r" in goal:
+        return "goal contains a newline"
+    return _phrase_refusal(goal)
+
+
+def _phrase_refusal(goal: str) -> str | None:
+    if _VERIFIER_RE.search(goal):
+        return "goal asks to change the verifier"
+    if _LIVE_TRADE_RE.search(goal):
+        return "goal asks for a live trade"
+    if _HEADLINE_RE.search(goal):
+        return "goal asks for a forbidden headline metric"
+    if _INJECT_RE.search(goal):
+        return "goal contains a prompt-injection directive"
+    return None
+
+
+def _refused_plan(
+    goal: str,
+    catalog: CapabilityCatalog,
+    reason: str,
+    *,
+    max_steps: int,
+    budget_s: float | None,
+) -> ExecutionPlan:
+    return _new_plan(
+        goal,
+        [],
+        [Exclusion(None, "unsafe", reason)],
+        [reason],
+        source="deterministic",
+        catalog=catalog,
+        max_steps=max_steps,
+        budget_s=budget_s,
+    )
+
+
 def plan_goal(
     goal: str,
     catalog: CapabilityCatalog,
@@ -212,10 +294,14 @@ def plan_goal(
     """Plan ``goal`` from ``catalog``.
 
     ``model_fn`` may replace the deterministic selection. Structural model
-    failures keep that selection and record a note. The returned plan's
-    steps satisfy :func:`validate_plan` for the same limits.
+    failures keep that selection and record a note. A refused goal is not
+    refined. The returned plan's steps satisfy :func:`validate_plan` for
+    the same limits.
     """
     _check_limits(max_steps, budget_s)
+    reason = _refusal_reason(goal)
+    if reason is not None:
+        return _refused_plan(goal, catalog, reason, max_steps=max_steps, budget_s=budget_s)
     root_map: Roots = {} if roots is None else roots
     deterministic = _deterministic_plan(
         goal,
@@ -297,6 +383,7 @@ def _deterministic_plan(
     kept, budget_ex = _apply_budget(ordered, budget_s)
     exclusions.extend(budget_ex)
     notes: list[str] = []
+    kept = _stamp_available_time(kept, datasets, catalog, notes)
     _apply_honesty(
         kept,
         catalog,
@@ -339,6 +426,7 @@ def _refine(
     exclusions.extend(budget_ex)
     exclusions[0:0] = _status_exclusions(fallback)
     notes: list[str] = []
+    kept = _stamp_available_time(kept, datasets, catalog, notes)
     model_note = _model_note(str(raw.get("rationale", "")))
     if model_note is not None:
         notes.append(model_note)
@@ -1078,6 +1166,120 @@ def _spec_named(cap: Capability, name: str) -> ArgSpec | None:
         if spec.name == name:
             return spec
     return None
+
+
+def _stamp_available_time(
+    steps: Sequence[PlanStep],
+    datasets: Sequence[DatasetRef],
+    catalog: CapabilityCatalog,
+    notes: list[str],
+) -> list[PlanStep]:
+    """Set ``--available-time-col`` when the catalog declares it and the name is safe."""
+    if not datasets:
+        return list(steps)
+    return [_stamp_step(step, datasets, catalog, notes) for step in steps]
+
+
+def _stamp_step(
+    step: PlanStep,
+    datasets: Sequence[DatasetRef],
+    catalog: CapabilityCatalog,
+    notes: list[str],
+) -> PlanStep:
+    cap = catalog.get(step.capability_id)
+    spec = None if cap is None else _spec_named(cap, _AVAILABLE_TIME_FLAG)
+    if cap is None or spec is None:
+        return step
+    current = _without_hostile_column(step, cap, spec.name, notes)
+    if spec.name in current.args:
+        return current
+    column = _column_for_step(current, cap, datasets)
+    if column is None:
+        return current
+    safe = _safe_column(column)
+    if safe is None:
+        _append_note(notes, _COLUMN_IGNORED)
+        return current
+    args = dict(current.args)
+    args[spec.name] = safe
+    return _new_step(cap, args, current.rationale)
+
+
+def _without_hostile_column(
+    step: PlanStep, cap: Capability, name: str, notes: list[str]
+) -> PlanStep:
+    existing = step.args.get(name)
+    if not isinstance(existing, str) or not existing or _safe_column(existing) is not None:
+        return step
+    _append_note(notes, _COLUMN_IGNORED)
+    args = {key: value for key, value in step.args.items() if key != name}
+    return _new_step(cap, args, step.rationale)
+
+
+def _column_for_step(step: PlanStep, cap: Capability, datasets: Sequence[DatasetRef]) -> str | None:
+    chosen = _matched_dataset(step, cap, datasets)
+    if chosen is None:
+        return None
+    raw = chosen.available_time_col
+    if not isinstance(raw, str) or not raw:
+        return None
+    return raw
+
+
+def _matched_dataset(
+    step: PlanStep, cap: Capability, datasets: Sequence[DatasetRef]
+) -> DatasetRef | None:
+    for spec in cap.args:
+        found = _dataset_on_arg(step, spec, datasets)
+        if found is not None:
+            return found
+    return None
+
+
+def _dataset_on_arg(
+    step: PlanStep, spec: ArgSpec, datasets: Sequence[DatasetRef]
+) -> DatasetRef | None:
+    if spec.bind != "dataset" or spec.name not in step.args:
+        return None
+    path = str(step.args[spec.name])
+    for item in datasets:
+        if _same_path(item.path, path):
+            return item
+    return None
+
+
+def _same_path(left: str, right: str) -> bool:
+    if left == right:
+        return True
+    try:
+        return Path(left).resolve() == Path(right).resolve()
+    except OSError:
+        return False
+
+
+def _safe_column(raw: str) -> str | None:
+    if _column_rejected(raw):
+        return None
+    return raw
+
+
+def _column_rejected(raw: str) -> bool:
+    if not raw or len(raw) > _COLUMN_LIMIT or raw != raw.strip():
+        return True
+    if raw.startswith("-") or any(char.isspace() for char in raw):
+        return True
+    return _column_controls(raw)
+
+
+def _column_controls(raw: str) -> bool:
+    if "\x00" in raw or "\x1b" in raw or "\x9b" in raw:
+        return True
+    return any(ord(char) < 32 or ord(char) == 127 for char in raw)
+
+
+def _append_note(notes: list[str], note: str) -> None:
+    if note not in notes:
+        notes.append(note)
 
 
 def _compose_rationale(base: str, cap: Capability, args: Mapping[str, Any], goal: str) -> str:
