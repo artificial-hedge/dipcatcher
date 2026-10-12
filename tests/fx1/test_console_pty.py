@@ -133,13 +133,28 @@ def _termios(before: list[object]) -> None:
     sys.stdout.flush()
 
 
+def _stepping_clock():
+    state = {"now": 0.0}
+
+    def tick() -> float:
+        state["now"] += 0.1
+        return state["now"]
+
+    return tick
+
+
 def main() -> None:
     mode = sys.argv[1]
     before = list(termios.tcgetattr(sys.stdin.fileno()))
     code = 0
+    clock = _stepping_clock() if mode == "interrupt" else None
     try:
         _prepare(mode)
-        run_console(concierge_factory=lambda: Scripted(mode), poll_timeout_s=0.05)
+        run_console(
+            concierge_factory=lambda: Scripted(mode),
+            poll_timeout_s=0.05,
+            interrupt_clock=clock,
+        )
     except KeyboardInterrupt:
         code = 0
     except Exception as exc:
