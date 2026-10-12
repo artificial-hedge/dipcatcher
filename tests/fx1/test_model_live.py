@@ -1189,8 +1189,16 @@ def test_world_writable_config_dir_is_tightened_or_refused(
             raise OSError("chmod blocked")
         real_chmod(target, mode)
 
+    real_fchmod = os.fchmod
+
+    def boom_fd(fd: int, mode: int) -> None:
+        if mode == 0o700:
+            raise OSError("chmod blocked")
+        real_fchmod(fd, mode)
+
     monkeypatch.setattr(profiles.os, "chmod", boom)
-    with pytest.raises(ValueError, match="writable") as ei:
+    monkeypatch.setattr(profiles.os, "fchmod", boom_fd)
+    with pytest.raises(ValueError, match="writable|group or world accessible") as ei:
         profiles.set_endpoint("fx1", KEY, "https://h.example/v1", path=blocked / "credentials.json")
     _clean(str(ei.value), KEY)
     assert not (blocked / "credentials.json").exists()
