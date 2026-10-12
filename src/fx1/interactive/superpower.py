@@ -499,9 +499,9 @@ def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
     # 1 — flash retrieval (cheap, first, feeds everything else)
     if "flash_retrieve" in selected and ctx.flash_store is not None:
         try:
-            from fx1.flash.retrieve import context_block, retrieve
+            from fx1.flash.retrieve import context_block, release_private, retrieve
 
-            hits = retrieve(ctx.flash_store, plan.goal, k=4)
+            hits = release_private(retrieve(ctx.flash_store, plan.goal, k=4), ctx.approvals)
             if hits:
                 context_parts.append(context_block(hits))
                 for hit in hits:

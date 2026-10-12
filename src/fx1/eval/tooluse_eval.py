@@ -7,7 +7,7 @@ FinTrace-style trajectory grading over a closed tool registry). Each task
 asks the model to accomplish a finance-research objective that is solvable
 only through a short sequence of registered :mod:`fx1.harness` commands
 (the *golden plan*). The registry is imported directly — the import is
-clean, so the 23-command list is reused live rather than embedded
+clean, so the registered command list is reused live rather than embedded
 (``HARNESS_REGISTRY`` in ``fx1.harness`` mirrors ``quant_fund.cli.main``;
 anything outside it is unreachable by construction, fail-closed).
 
@@ -75,7 +75,7 @@ from fx1.harness import HARNESS_REGISTRY
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
 
 # Reused live from fx1.harness — the registry import is clean (verified at
-# test time), so the 23-command allowlist is never duplicated here.
+# test time), so the harness allowlist is never duplicated here.
 REGISTERED_TOOLS: tuple[str, ...] = tuple(c.name for c in HARNESS_REGISTRY)
 
 ModelFn = Callable[[list[dict[str, str]]], str]

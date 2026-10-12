@@ -26,6 +26,7 @@ fabricates results when a seam is missing — it says so.
 from __future__ import annotations
 
 import json
+import re
 import select
 import shlex
 import sys
@@ -132,6 +133,18 @@ class BackgroundJob:
 # ---------------------------------------------------------------------------
 # The concierge
 # ---------------------------------------------------------------------------
+
+_SECRET_ERROR = re.compile(
+    r"(?i)(?:\bsk-[A-Za-z0-9]+|\bapi[_-]?key\b|\bbearer\b|\bsecret\b)"
+)
+
+
+def _safe_slash_error(exc: Exception) -> str:
+    """Operator-facing slash errors. Do not echo credential-shaped text."""
+    text = str(exc)
+    if _SECRET_ERROR.search(text):
+        return f"{type(exc).__name__}: command failed"
+    return text
 
 
 class Concierge:
@@ -282,8 +295,8 @@ class Concierge:
             return False
         try:
             ended = bool(handler(rest))
-        except ValueError as exc:
-            self._say_error(exc)
+        except (ValueError, KeyError, RuntimeError, OSError) as exc:
+            self._say_error(ValueError(_safe_slash_error(exc)))
             self._persist_session()
             return False
         self._persist_session()
@@ -1034,9 +1047,12 @@ class Concierge:
         except json.JSONDecodeError:
             arguments = {}
         if name == "flash_retrieve":
-            from fx1.flash.retrieve import context_block, retrieve
+            from fx1.flash.retrieve import context_block, release_private, retrieve
 
-            hits = retrieve(self._store, str(arguments.get("query", "")), k=4)
+            hits = release_private(
+                retrieve(self._store, str(arguments.get("query", "")), k=4),
+                self._approvals,
+            )
             if not hits:
                 return "no relevant flash context found"
             for hit in hits:

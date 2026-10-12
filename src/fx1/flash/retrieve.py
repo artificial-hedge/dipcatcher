@@ -19,6 +19,7 @@ import re
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Any
 
 from fx1.flash.store import FlashEntry, FlashStore
 
@@ -200,6 +201,23 @@ def retrieve(
             scored.append(Retrieval(entry=entry, score=score, reasons=reasons))
     scored.sort(key=lambda hit: hit.score, reverse=True)
     return scored[:k]
+
+
+def release_private(retrievals: list[Retrieval], approvals: Any | None) -> list[Retrieval]:
+    """Keep private entries only after an explicit private-data approval.
+
+    With no gate, or a denial, private findings stay on disk and out of the
+    model prompt. Non-private hits are unchanged.
+    """
+    private = [hit for hit in retrievals if hit.entry.private]
+    if not private:
+        return retrievals
+    if approvals is not None and approvals.ask(
+        f"share {len(private)} private flash entries with the model?",
+        kind="private_data",
+    ):
+        return retrievals
+    return [hit for hit in retrievals if not hit.entry.private]
 
 
 def context_block(retrievals: list[Retrieval], *, max_chars: int = 6000) -> str:

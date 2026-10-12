@@ -113,6 +113,32 @@ def test_evidence_lists_job_artifacts(tmp_path: Path, monkeypatch: pytest.Monkey
     assert "receipts/family.json" in "\n".join(out)
 
 
+def test_private_flash_stays_out_of_the_model_prompt(tmp_path: Path) -> None:
+    from fx1.flash.retrieve import context_block, release_private, retrieve
+    from fx1.flash.store import FlashStore
+
+    store = FlashStore(tmp_path / "flash.jsonl")
+    store.add(text="desk volatility limit is confidential", task="volatility", private=True)
+    hits = retrieve(store, "volatility", k=4)
+    assert hits
+    released = release_private(hits, None)
+    assert released == []
+    assert "confidential" not in context_block(released)
+
+
+def test_unknown_model_slash_does_not_echo_a_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("FX1_CONFIG_DIR", str(tmp_path / "cfg"))
+    concierge = Concierge(output_fn=lambda *_args, **_kwargs: None, animated=False)
+    assert concierge.handle_line("/use sk-livesecrettoken") is False
+    assert concierge.handle_line("/use not-a-model") is False
+    err = capsys.readouterr().err
+    assert "sk-livesecrettoken" not in err
+    assert "command failed" in err
+    assert "not-a-model" in err
+
+
 def test_chat_resume_flag_is_forwarded(monkeypatch: pytest.MonkeyPatch) -> None:
     import sys
 
