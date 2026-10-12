@@ -1,0 +1,3330 @@
+{
+  "schema": "dipcatcher.journey.v1",
+  "journeys": [
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J001",
+      "category": "onboarding",
+      "title": "Ask what a pinball loss means before any endpoint exists",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "What does a pinball loss tell me about a return series?",
+          "expect": [
+            "no model endpoint"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/help",
+          "expect": [
+            "Chat"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J002",
+      "category": "onboarding",
+      "title": "Switch the active model to fx1-lite and confirm it",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/use fx1-lite",
+          "expect": [
+            "active model 'fx1-lite'"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1-lite"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J003",
+      "category": "onboarding",
+      "title": "Recover from an unknown slash command and read help",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/not-a-command",
+          "expect": [
+            "unknown command"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/help",
+          "expect": [
+            "/superpower"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J004",
+      "category": "onboarding",
+      "title": "Read the run budget and see that it is not a dollar cap",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/budget",
+          "expect": [
+            "not a dollar cap",
+            "unit price is unknown"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J005",
+      "category": "onboarding",
+      "title": "See that a brand-new chat has no persisted session yet",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/session",
+          "expect": [
+            "no persisted session"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J006",
+      "category": "onboarding",
+      "title": "Set an API key in chat and confirm it is never echoed",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true
+      },
+      "steps": [
+        {
+          "say": "/keys set fx1",
+          "expect": [
+            "stored"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ],
+          "secret": "{{key}}",
+          "url": "{{stub_url}}"
+        },
+        {
+          "say": "/export md",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "session_forbids": [
+          "{{key}}"
+        ],
+        "export_forbids": [
+          "{{key}}"
+        ],
+        "history_forbids": [
+          "{{key}}"
+        ],
+        "telemetry_forbids": [
+          "{{key}}"
+        ],
+        "transcript_forbids": [
+          "{{key}}"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J007",
+      "category": "onboarding",
+      "title": "List endpoint presence before configuring a model",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/keys list",
+          "expect": [
+            "fx1",
+            "unset"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J008",
+      "category": "onboarding",
+      "title": "Open the local diagnostics report from chat",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/diagnostics",
+          "expect": [
+            "forbidden_headline_tokens"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J009",
+      "category": "onboarding",
+      "title": "Leave the chat with /exit",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "idle"
+        }
+      ],
+      "final": {
+        "ended": true
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J010",
+      "category": "onboarding",
+      "title": "Start a fresh session while keeping the active model",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/help",
+          "expect": [
+            "Chat"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/new",
+          "expect": [
+            "new session"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J011",
+      "category": "model-selection",
+      "title": "Ask fx1 for a one-line definition and see the served model footer",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "stub fx1 reply"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J012",
+      "category": "model-selection",
+      "title": "Continue the same conversation after switching to fx1-lite",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1",
+          "fx1-lite"
+        ]
+      },
+      "steps": [
+        {
+          "say": "/use fx1-lite",
+          "expect": [
+            "conversation kept"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "Define CRPS in one sentence.",
+          "expect": [
+            "stub fx1-lite reply"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/models",
+          "expect": [
+            "fx1",
+            "fx1-lite"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J013",
+      "category": "model-selection",
+      "title": "Reject an unknown model id and stay on fx1",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/use nope",
+          "expect": [
+            "unknown model"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J014",
+      "category": "model-selection",
+      "title": "Keep the requested model when the server reports a different served id",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "pinball loss is 0.30",
+            "served_model": "not-fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Who answered this quantile question?",
+          "expect": [
+            "differs from requested",
+            "served not-fx1"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J015",
+      "category": "model-selection",
+      "title": "Show both hosted models before any call has been made",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/models",
+          "expect": [
+            "fx1",
+            "fx1-lite"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J016",
+      "category": "model-selection",
+      "title": "Switch models from the real chat terminal and keep both answers",
+      "critical": false,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1",
+          "fx1-lite"
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define CRPS in one sentence.",
+          "expect": [
+            "stub fx1 reply"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/use fx1-lite",
+          "expect": [
+            "active model 'fx1-lite'"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "stub fx1-lite reply"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J017",
+      "category": "model-selection",
+      "title": "Remove a stored endpoint and see chat stop calling the model",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ]
+      },
+      "steps": [
+        {
+          "say": "/keys remove fx1",
+          "expect": [
+            "removed endpoint"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "no model endpoint"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J018",
+      "category": "model-selection",
+      "title": "Switch to fx1-lite when that model has no endpoint yet",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/use fx1-lite",
+          "expect": [
+            "fx1-lite",
+            "no endpoint configured"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J019",
+      "category": "model-selection",
+      "title": "Check both models offline from chat without contacting a server",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "models-check"
+      ],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/models check",
+          "expect": [
+            "(?i)(not_contacted|nothing was contacted|offline|presence=)"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J020",
+      "category": "model-selection",
+      "title": "Check the configured fx1 endpoint from chat without treating it as a release",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "models-check"
+      ],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ]
+      },
+      "steps": [
+        {
+          "say": "/models check",
+          "expect": [
+            "(?i)(not_contacted|nothing was contacted|offline|presence=|not a release)"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J021",
+      "category": "data-discovery",
+      "title": "Attach a variance-forecast CSV and see its columns",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "data"
+      ],
+      "executes_lab": true,
+      "setup": {
+        "files": [
+          {
+            "path": "data/forecasts.csv",
+            "text": "date,forecast,variance\n2024-01-02,0.010,0.0004\n2024-01-03,0.012,0.0005\n"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "/data attach {{work}}/data/forecasts.csv",
+          "expect": [
+            "columns=date, forecast, variance"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J022",
+      "category": "data-discovery",
+      "title": "Attach a forecast file and see it in the session list",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "data"
+      ],
+      "executes_lab": true,
+      "setup": {
+        "files": [
+          {
+            "path": "data/forecasts.csv",
+            "text": "date,forecast,variance\n2024-01-02,0.010,0.0004\n2024-01-03,0.012,0.0005\n"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "/data attach {{work}}/data/forecasts.csv",
+          "expect": [
+            "columns=date, forecast, variance"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/data list",
+          "expect": [
+            "forecasts"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J023",
+      "category": "data-discovery",
+      "title": "Inspect the attached forecast and read the variance column",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "data"
+      ],
+      "executes_lab": true,
+      "setup": {
+        "files": [
+          {
+            "path": "data/forecasts.csv",
+            "text": "date,forecast,variance\n2024-01-02,0.010,0.0004\n2024-01-03,0.012,0.0005\n"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "/data attach {{work}}/data/forecasts.csv",
+          "expect": [
+            "variance"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/data inspect 1",
+          "expect": [
+            "columns=date, forecast, variance"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J024",
+      "category": "data-discovery",
+      "title": "Remove the attached forecast from the session",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "data"
+      ],
+      "executes_lab": true,
+      "setup": {
+        "files": [
+          {
+            "path": "data/forecasts.csv",
+            "text": "date,forecast,variance\n2024-01-02,0.010,0.0004\n2024-01-03,0.012,0.0005\n"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "/data attach {{work}}/data/forecasts.csv",
+          "expect": [
+            "variance"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/data remove 1",
+          "expect": [
+            "removed"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J025",
+      "category": "data-discovery",
+      "title": "Attach a forecast file and ask which column is the variance series",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "data"
+      ],
+      "executes_lab": true,
+      "setup": {
+        "files": [
+          {
+            "path": "data/forecasts.csv",
+            "text": "date,forecast,variance\n2024-01-02,0.010,0.0004\n2024-01-03,0.012,0.0005\n"
+          }
+        ],
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "Use the variance column.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "/data attach {{work}}/data/forecasts.csv",
+          "expect": [
+            "columns=date, forecast, variance"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "Which column should I treat as the variance series?",
+          "expect": [
+            "variance column"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J026",
+      "category": "data-discovery",
+      "title": "Attach the variance file and confirm the list shows its row count",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "data"
+      ],
+      "executes_lab": true,
+      "setup": {
+        "files": [
+          {
+            "path": "data/forecasts.csv",
+            "text": "date,forecast,variance\n2024-01-02,0.010,0.0004\n2024-01-03,0.012,0.0005\n"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "/data attach {{work}}/data/forecasts.csv",
+          "expect": [
+            "columns=date, forecast, variance"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/data list",
+          "expect": [
+            "forecasts",
+            "rows=2"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J027",
+      "category": "data-discovery",
+      "title": "See which planner capabilities can score a forecast before running any",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/superpower help",
+          "expect": [
+            "available /superpower capabilities",
+            "verify-research"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J028",
+      "category": "data-discovery",
+      "title": "Ask which column holds a variance series before any endpoint exists",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "Which column should hold a variance series?",
+          "expect": [
+            "no model endpoint"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J029",
+      "category": "data-discovery",
+      "title": "Attach a forecast path that is not on disk and stay in the chat",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "data"
+      ],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/data attach {{work}}/data/missing.csv",
+          "expect": [
+            "file does not exist"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J030",
+      "category": "data-discovery",
+      "title": "Attach a forecast file and then remove it by its list index",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "data"
+      ],
+      "executes_lab": true,
+      "setup": {
+        "files": [
+          {
+            "path": "data/forecasts.csv",
+            "text": "date,forecast,variance\n2024-01-02,0.010,0.0004\n2024-01-03,0.012,0.0005\n"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "/data attach {{work}}/data/forecasts.csv",
+          "expect": [
+            "variance"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/data remove 1",
+          "expect": [
+            "removed"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/data list",
+          "expect": [
+            "no datasets"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J031",
+      "category": "research-planning",
+      "title": "List the capabilities the planner may select before spending a run",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/superpower help",
+          "expect": [
+            "available /superpower capabilities",
+            "proper scores"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J032",
+      "category": "research-planning",
+      "title": "See that a bare /superpower asks for a goal instead of guessing",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/superpower",
+          "expect": [
+            "usage: /superpower"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J033",
+      "category": "research-planning",
+      "title": "Cap a planned study at three harness steps",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/budget max-steps 3",
+          "expect": [
+            "budget max_steps=3"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J034",
+      "category": "research-planning",
+      "title": "Reject a budget ceiling that is not a number",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/budget max-steps no",
+          "expect": [
+            "needs a number"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J035",
+      "category": "research-planning",
+      "title": "Ask which proper scoring rule fits a variance series",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "Use QLIKE for a variance series and pinball loss for a quantile series.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "What proper scoring rule fits a variance series?",
+          "expect": [
+            "QLIKE"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J036",
+      "category": "research-planning",
+      "title": "Set a thirty-second ceiling before a study",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/budget max-seconds 30",
+          "expect": [
+            "budget max_seconds=30"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J037",
+      "category": "research-planning",
+      "title": "Confirm the research capability is described with proper scores",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/superpower help",
+          "expect": [
+            "SYNTHETIC"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J038",
+      "category": "research-planning",
+      "title": "Limit a plan to one family before anything runs",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/budget max-families 1",
+          "expect": [
+            "budget max_families=1"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J039",
+      "category": "research-planning",
+      "title": "Ask how to read a PIT histogram for a return series",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "A PIT histogram near uniform supports calibration.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "How should I read a PIT histogram for a return series?",
+          "expect": [
+            "uniform"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J040",
+      "category": "research-planning",
+      "title": "Confirm nothing is running and no receipt exists before a study",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/status",
+          "expect": [
+            "no background job"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/evidence",
+          "expect": [
+            "no receipt"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J041",
+      "category": "execution",
+      "title": "List registered harness commands from chat",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/harness list",
+          "expect": [
+            "verify-research"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J042",
+      "category": "execution",
+      "title": "Read what the doctor command does without running it",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/harness describe doctor",
+          "expect": [
+            "doctor"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J043",
+      "category": "execution",
+      "title": "Refuse a harness name that is not registered",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/harness run not-a-real-command",
+          "expect": [
+            "unknown_command"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J044",
+      "category": "execution",
+      "title": "See that no background job is running",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/status",
+          "expect": [
+            "no background job"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J045",
+      "category": "execution",
+      "title": "Cancel when nothing is running and get an honest answer",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/cancel",
+          "expect": [
+            "no running background job"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J046",
+      "category": "execution",
+      "title": "Retarget research when no job is running",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/redirect a variance-series literature pass",
+          "expect": [
+            "no running background job"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J047",
+      "category": "execution",
+      "title": "Ask for evidence before any job has produced a receipt",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/evidence",
+          "expect": [
+            "no receipt"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J048",
+      "category": "execution",
+      "title": "List research runs when none have been persisted",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "runs"
+      ],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/runs",
+          "expect": [
+            "no jobs"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J049",
+      "category": "execution",
+      "title": "Look up a run id that was never started",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [
+        "runs"
+      ],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/runs missing",
+          "expect": [
+            "no job"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J050",
+      "category": "execution",
+      "title": "Read the harness-step ceiling on the run budget",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/budget",
+          "expect": [
+            "max_harness="
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J051",
+      "category": "follow-ups",
+      "title": "Ask what QLIKE measures for a variance series",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "QLIKE scores a variance series; lower is better.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "What does QLIKE measure for a variance series?",
+          "expect": [
+            "lower is better"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J052",
+      "category": "follow-ups",
+      "title": "Ask for the same QLIKE explanation in one sentence",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "QLIKE scores a variance series; lower is better.",
+            "served_model": "fx1"
+          },
+          {
+            "text": "QLIKE is lower when the variance series is closer.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "What does QLIKE measure for a variance series?",
+          "expect": [
+            "lower is better"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "Please restate that in one sentence.",
+          "expect": [
+            "closer"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J053",
+      "category": "follow-ups",
+      "title": "Save a scoring note to flash memory",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/flash add \"QLIKE is the proper scoring rule for a variance series\" --task variance",
+          "expect": [
+            "saved flash entry"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J054",
+      "category": "follow-ups",
+      "title": "List the saved scoring note",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/flash add \"QLIKE is the proper scoring rule for a variance series\" --task variance",
+          "expect": [
+            "saved flash entry"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/flash list",
+          "expect": [
+            "QLIKE"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J055",
+      "category": "follow-ups",
+      "title": "Search flash for the variance scoring note",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/flash add \"QLIKE variance series proper scoring rule\" --task variance",
+          "expect": [
+            "saved flash entry"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/flash search variance",
+          "expect": [
+            "QLIKE"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J056",
+      "category": "follow-ups",
+      "title": "Switch to fx1-lite and ask which column is the forecast",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1",
+          "fx1-lite"
+        ],
+        "replies": [
+          {
+            "text": "Use the variance column.",
+            "served_model": "fx1-lite"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "/use fx1-lite",
+          "expect": [
+            "fx1-lite"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "Which column name should I treat as the forecast series?",
+          "expect": [
+            "variance column"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J057",
+      "category": "follow-ups",
+      "title": "Paste a credential-shaped note into flash and keep it out of memory",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/flash add \"desk note {{key}}\" --task limits",
+          "expect": [
+            "saved flash entry"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/flash list",
+          "expect": [],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "session_forbids": [
+          "{{key}}"
+        ],
+        "history_forbids": [
+          "{{key}}"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J058",
+      "category": "follow-ups",
+      "title": "Start a new session after switching models and keep fx1-lite",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/use fx1-lite",
+          "expect": [
+            "fx1-lite"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/new",
+          "expect": [
+            "new session"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1-lite"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J059",
+      "category": "follow-ups",
+      "title": "After saving a scoring note, ask the model to use it",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "I will use the saved QLIKE note.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "/flash add \"QLIKE is the proper scoring rule for a variance series\" --task variance",
+          "expect": [
+            "saved flash entry"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "Please use the scoring note I just saved.",
+          "expect": [
+            "QLIKE"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J060",
+      "category": "follow-ups",
+      "title": "List sessions after a turn so the current one is visible",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/help",
+          "expect": [
+            "Chat"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/sessions",
+          "expect": [
+            "turns"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J061",
+      "category": "verification",
+      "title": "Withhold a model answer that headlines a Sharpe number",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "The book Sharpe is 2.14 on this window.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Summarize the risk of this variance series in one sentence.",
+          "expect": [
+            "honesty gate"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "2\\.14"
+          ]
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "transcript_forbids": [
+          "2.14"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J062",
+      "category": "verification",
+      "title": "Do not upgrade model prose that says verified when no receipt exists",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "This forecast is verified. Pinball loss is 0.21.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Is the last pinball number verified?",
+          "expect": [
+            "Pinball loss is 0.21"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/evidence",
+          "expect": [
+            "no receipt"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "evidence status: verified",
+            "VERIFIED"
+          ]
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J063",
+      "category": "verification",
+      "title": "Withhold an unlabeled numeric synthetic claim",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "the synthetic backtest shows 12% a year",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "How did the shard exercise look?",
+          "expect": [
+            "honesty gate"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "12%"
+          ]
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "transcript_forbids": [
+          "12%"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J064",
+      "category": "verification",
+      "title": "Verify a forged receipt from chat and do not call it valid",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": true,
+      "setup": {
+        "files": [
+          {
+            "path": "data/forged_receipt.json",
+            "text": "{\"kind\":\"not-a-notebook\",\"claim\":\"verified\",\"pinball\":0.2}\n"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "/harness run verify-research data/forged_receipt.json",
+          "expect": [
+            "\"valid\": false"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "\"valid\": true"
+          ],
+          "hang_s": 120
+        },
+        {
+          "say": "/evidence",
+          "expect": [
+            "no receipt"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J065",
+      "category": "verification",
+      "title": "Withhold a guaranteed-returns claim",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "These are guaranteed returns from the model.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "What should I tell the investment committee?",
+          "expect": [
+            "honesty gate"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "guaranteed returns"
+          ]
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "transcript_forbids": [
+          "guaranteed returns"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J066",
+      "category": "verification",
+      "title": "Show a SYNTHETIC-labeled pinball result and do not call it a receipt",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "SYNTHETIC correctness check: pinball loss is 0.19 on the shard.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Label the shard exercise.",
+          "expect": [
+            "SYNTHETIC",
+            "0.19"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/evidence",
+          "expect": [
+            "no receipt"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J067",
+      "category": "verification",
+      "title": "Ask for evidence item E1 when the ledger is empty",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/evidence E1",
+          "expect": [
+            "no receipt"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J068",
+      "category": "verification",
+      "title": "Read the verify-research command without treating the description as a pass",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/harness describe verify-research",
+          "expect": [
+            "verify-research"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J069",
+      "category": "verification",
+      "title": "Withhold a model answer that headlines a Sortino number",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "Sortino is 1.80 for the book.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Compare the two variance models in one sentence.",
+          "expect": [
+            "honesty gate"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "1\\.80"
+          ]
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "transcript_forbids": [
+          "1.80"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J070",
+      "category": "verification",
+      "title": "See the forbidden headline tokens in the diagnostics report",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/diagnostics",
+          "expect": [
+            "forbidden_headline_tokens"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J071",
+      "category": "cancellation",
+      "title": "Cancel a background literature pass and see the worker stop",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/research published definitions of QLIKE for a variance series --budget-s 30 --max-sources 1",
+          "expect": [
+            "running in the background"
+          ],
+          "wait": "idle",
+          "hang_s": 90
+        },
+        {
+          "say": "/cancel",
+          "expect": [
+            "cancel requested",
+            "cancelled"
+          ],
+          "wait": "idle",
+          "hang_s": 90
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J072",
+      "category": "cancellation",
+      "title": "Press Ctrl-C during a model turn and get the prompt back",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "pinball loss is 0.11",
+            "served_model": "fx1",
+            "delay_s": 20
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss for a return series.",
+          "expect": [],
+          "wait": "request"
+        },
+        {
+          "signal": "INT",
+          "expect": [
+            "turn cancelled"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "0\\.11"
+          ]
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J073",
+      "category": "cancellation",
+      "title": "Press Ctrl-C twice at the prompt and leave the chat cleanly",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "signal": "INT2",
+          "expect": [
+            "press Ctrl-C again to exit"
+          ],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J074",
+      "category": "cancellation",
+      "title": "Cancel when nothing is running and keep a usable prompt",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/cancel",
+          "expect": [
+            "no running background job"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J075",
+      "category": "cancellation",
+      "title": "Ask for status when no job has been started",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/status",
+          "expect": [
+            "no background job"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J076",
+      "category": "cancellation",
+      "title": "Cancel twice when idle and keep the same honest answer",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/cancel",
+          "expect": [
+            "no running background job"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/cancel",
+          "expect": [
+            "no running background job"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J077",
+      "category": "cancellation",
+      "title": "Press Ctrl-C once at the prompt and stay in the chat",
+      "critical": false,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "signal": "INT",
+          "expect": [
+            "press Ctrl-C again to exit"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J078",
+      "category": "cancellation",
+      "title": "Ask to redirect without providing a new goal",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/redirect",
+          "expect": [
+            "usage: /redirect"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J079",
+      "category": "cancellation",
+      "title": "Find cancel in help before starting a long study",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/help",
+          "expect": [
+            "/cancel"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J080",
+      "category": "cancellation",
+      "title": "Read the budget after an idle cancel",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/cancel",
+          "expect": [
+            "no running background job"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/budget",
+          "expect": [
+            "not a dollar cap"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J081",
+      "category": "recovery",
+      "title": "Kill the chat during a background pass and resume without restarting it",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/research published definitions of QLIKE for a variance series --budget-s 30 --max-sources 1",
+          "expect": [
+            "running in the background"
+          ],
+          "wait": "idle",
+          "hang_s": 90
+        },
+        {
+          "signal": "KILL",
+          "expect": [],
+          "wait": "idle"
+        },
+        {
+          "resume": true,
+          "expect": [
+            "not restarted"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/session",
+          "expect": [
+            "interrupted"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "job_state": "interrupted",
+        "session_exists": true
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J082",
+      "category": "recovery",
+      "title": "Open chat when a session file is corrupt and see it quarantined",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "corrupt_session": true
+      },
+      "steps": [
+        {
+          "say": "/sessions",
+          "expect": [
+            "invalid session JSON"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "corrupt_quarantined": true
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J083",
+      "category": "recovery",
+      "title": "See a redacted 401 and still have a usable prompt",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "status": 401,
+            "message": "rejected {{key}}",
+            "code": "invalid_api_key",
+            "repeat": 2
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "API key was rejected"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "session_forbids": [
+          "{{key}}"
+        ],
+        "telemetry_forbids": [
+          "{{key}}"
+        ],
+        "transcript_forbids": [
+          "{{key}}"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J084",
+      "category": "recovery",
+      "title": "See a clear rate-limit error and return to the prompt",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "status": 429,
+            "message": "slow down",
+            "code": "rate_limit_exceeded",
+            "repeat": 4,
+            "retry_after": 0
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "rate-limiting"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J085",
+      "category": "recovery",
+      "title": "See a clear server failure and return to the prompt",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "status": 500,
+            "message": "boom",
+            "code": "internal",
+            "repeat": 4
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "model server failed"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J086",
+      "category": "recovery",
+      "title": "See a clear timeout error and return to the prompt",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "status": 408,
+            "message": "slow",
+            "code": "timeout",
+            "repeat": 4
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "did not answer"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J087",
+      "category": "recovery",
+      "title": "Resume when no session has been saved",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/resume last",
+          "expect": [
+            "no sessions"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J088",
+      "category": "recovery",
+      "title": "Leave a chat and resume it with the earlier answer still stored",
+      "critical": false,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "QLIKE scores a variance series; lower is better.",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "What does QLIKE measure for a variance series?",
+          "expect": [
+            "lower is better"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        },
+        {
+          "resume": true,
+          "expect": [
+            "resumed session"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "session_exists": true,
+        "session_contains": [
+          "lower is better"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J089",
+      "category": "recovery",
+      "title": "Resume an id that does not match any session",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/help",
+          "expect": [
+            "Chat"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/resume not-a-real-session",
+          "expect": [
+            "no session matches"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/model",
+          "expect": [
+            "active model: fx1"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J090",
+      "category": "recovery",
+      "title": "List sessions on an empty store, then see the new one",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/sessions",
+          "expect": [
+            "no saved sessions"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/sessions",
+          "expect": [
+            "turns"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J091",
+      "category": "export",
+      "title": "Export a transcript after setting a key and keep the key out of every artifact",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true
+      },
+      "steps": [
+        {
+          "say": "/keys set fx1",
+          "expect": [
+            "stored"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ],
+          "secret": "{{key}}",
+          "url": "{{stub_url}}"
+        },
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "stub fx1 reply"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        },
+        {
+          "say": "/export md",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        },
+        {
+          "say": "/export json",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "session_forbids": [
+          "{{key}}"
+        ],
+        "export_forbids": [
+          "{{key}}"
+        ],
+        "history_forbids": [
+          "{{key}}"
+        ],
+        "telemetry_forbids": [
+          "{{key}}"
+        ],
+        "transcript_forbids": [
+          "{{key}}"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J092",
+      "category": "export",
+      "title": "Export after a 401 whose body contains the key and keep the key out of the files",
+      "critical": true,
+      "mode": "pty",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "status": 401,
+            "message": "rejected {{key}}",
+            "code": "invalid_api_key",
+            "repeat": 2
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "API key was rejected"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        },
+        {
+          "say": "/export md",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        },
+        {
+          "say": "/export json",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        },
+        {
+          "say": "/exit",
+          "expect": [],
+          "wait": "exit"
+        }
+      ],
+      "final": {
+        "exit_code": 0,
+        "session_forbids": [
+          "{{key}}"
+        ],
+        "export_forbids": [
+          "{{key}}"
+        ],
+        "history_forbids": [
+          "{{key}}"
+        ],
+        "telemetry_forbids": [
+          "{{key}}"
+        ],
+        "transcript_forbids": [
+          "{{key}}"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J093",
+      "category": "export",
+      "title": "Export markdown that contains the model's pinball sentence",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "stub fx1 reply"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/export md",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {
+        "export_contains": [
+          "stub fx1 reply"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J094",
+      "category": "export",
+      "title": "Refuse to overwrite an export that already exists",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/help",
+          "expect": [
+            "Chat"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/export md",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/export md",
+          "expect": [
+            "refusing to overwrite"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J095",
+      "category": "export",
+      "title": "Export the session as JSON",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "stub fx1 reply"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/export json",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {
+        "export_contains": [
+          "stub fx1 reply"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J096",
+      "category": "export",
+      "title": "Write a diagnostics bundle and refuse to replace it",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/diagnostics --bundle {{work}}/bundle.zip",
+          "expect": [
+            "diagnostics bundle"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/diagnostics --bundle {{work}}/bundle.zip",
+          "expect": [
+            "refusing to overwrite"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J097",
+      "category": "export",
+      "title": "Export JSON that still contains the question that was asked",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "stub fx1 reply"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/export json",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {
+        "export_contains": [
+          "Define pinball loss"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J098",
+      "category": "export",
+      "title": "Read diagnostics after a turn without leaking a fixture key",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "stub fx1 reply"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/diagnostics",
+          "expect": [
+            "honesty"
+          ],
+          "wait": "idle",
+          "forbid": [
+            "{{key}}"
+          ]
+        }
+      ],
+      "final": {}
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J099",
+      "category": "export",
+      "title": "Start a new session and export only the new turn",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {
+        "stub": true,
+        "endpoints": [
+          "fx1"
+        ],
+        "replies": [
+          {
+            "text": "stub fx1 reply",
+            "served_model": "fx1"
+          },
+          {
+            "text": "hello from the new session",
+            "served_model": "fx1"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "say": "Define pinball loss in one sentence.",
+          "expect": [
+            "stub fx1 reply"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/new",
+          "expect": [
+            "new session"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "Say hello.",
+          "expect": [
+            "hello from the new session"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/export md",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {
+        "export_contains": [
+          "hello from the new session"
+        ]
+      }
+    },
+    {
+      "schema": "dipcatcher.journey.v1",
+      "id": "J100",
+      "category": "export",
+      "title": "List sessions after an export and see the saved turn",
+      "critical": false,
+      "mode": "inproc",
+      "requires": [],
+      "executes_lab": false,
+      "setup": {},
+      "steps": [
+        {
+          "say": "/help",
+          "expect": [
+            "Chat"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/export md",
+          "expect": [
+            "exported session"
+          ],
+          "wait": "idle"
+        },
+        {
+          "say": "/sessions",
+          "expect": [
+            "turns"
+          ],
+          "wait": "idle"
+        }
+      ],
+      "final": {}
+    }
+  ]
+}
