@@ -27,22 +27,22 @@ it back out and shrink the registry); a registry entry whose file is gone is
 a stale entry. Every file under a ``QUARANTINED_SUBDIRS`` subtree must be
 registered.
 
-``provenance_gaps`` records receipts that verify but whose self-attested
-``git_revision`` names a commit this repository does not contain (generated
-on unpushed local history). The bytes are pinned and the gap is reported by
-``schema_drift`` as acknowledged, never rewritten to a different commit.
+``schema_drift_acks`` records schema-drift groups that exist in sealed,
+epoch-pinned history (two shapes under one tag). Each entry pins every member
+file of the group by bytes plus a reason; ``schema_drift`` reports the group
+as acknowledged drift only while the live group matches exactly. Retagging a
+sealed receipt to make the drift disappear would forge it.
 """
 
 from __future__ import annotations
 
 import hashlib
-import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, TypeGuard
 
-from quant_fund.utils.receipt import QUARANTINED_SUBDIRS
+from quant_fund.utils.receipt import QUARANTINED_SUBDIRS, load_json_strict
 
 QUARANTINE_SCHEMA = "legacy_quarantine.v2"
 DEFAULT_QUARANTINE_PATH = Path("quality") / "legacy_quarantine.json"
@@ -70,7 +70,7 @@ QUARANTINE_CATEGORIES: Mapping[str, str] = {
 ReceiptStatus = Literal["verified", "quarantined", "invalid"]
 
 _ENTRY_FIELDS = frozenset({"sha256", "errors", "category", "reason"})
-_GAP_FIELDS = frozenset({"sha256", "git_revision", "reason"})
+_DRIFT_ACK_FIELDS = frozenset({"members", "reason"})
 
 
 def _is_hex(value: object, length: int) -> bool:
@@ -91,17 +91,16 @@ class QuarantineEntry:
 
 
 @dataclass(frozen=True)
-class ProvenanceGap:
-    path: str
-    sha256: str
-    git_revision: str
+class SchemaDriftAck:
+    tag: str
+    members: Mapping[str, str]
     reason: str
 
 
 @dataclass(frozen=True)
 class Quarantine:
     files: Mapping[str, QuarantineEntry] = field(default_factory=dict)
-    provenance_gaps: Mapping[str, ProvenanceGap] = field(default_factory=dict)
+    schema_drift_acks: Mapping[str, SchemaDriftAck] = field(default_factory=dict)
     #: sha256 of the registry bytes this view was loaded from (None = empty).
     registry_sha256: str | None = None
 
@@ -110,13 +109,13 @@ EMPTY_QUARANTINE = Quarantine()
 
 
 def _rel_ok(rel: object) -> TypeGuard[str]:
-    return (
-        isinstance(rel, str)
-        and bool(rel)
-        and not rel.startswith("/")
-        and "\\" not in rel
-        and ".." not in rel.split("/")
-    )
+    """A canonical relative POSIX path: no absolute/drive/ADS forms, no empty,
+    ``.`` or ``..`` segments — otherwise an entry could silently never match
+    the file it claims to describe (and escape the stale-entry check)."""
+    if not isinstance(rel, str) or not rel or "\\" in rel or ":" in rel:
+        return False
+    parts = rel.split("/")
+    return all(part not in ("", ".", "..") for part in parts)
 
 
 def _parse_entry(rel: object, entry: object) -> QuarantineEntry:
@@ -147,18 +146,21 @@ def _parse_entry(rel: object, entry: object) -> QuarantineEntry:
     )
 
 
-def _parse_gap(rel: object, gap: object) -> ProvenanceGap:
-    if not _rel_ok(rel):
-        raise ValueError(f"provenance gap path {rel!a} must be a relative POSIX path")
-    if not isinstance(gap, Mapping) or set(gap) != _GAP_FIELDS:
-        raise ValueError(f"provenance gap {rel!a} must carry exactly {sorted(_GAP_FIELDS)}")
-    if not _is_hex(gap["sha256"], 64) or not _is_hex(gap["git_revision"], 40):
-        raise ValueError(f"provenance gap {rel!a}: sha256/git_revision malformed")
-    if not isinstance(gap["reason"], str) or not gap["reason"].strip():
-        raise ValueError(f"provenance gap {rel!a}: reason must be non-empty")
-    return ProvenanceGap(
-        path=rel, sha256=gap["sha256"], git_revision=gap["git_revision"], reason=gap["reason"]
-    )
+def _parse_drift_ack(tag: object, ack: object) -> SchemaDriftAck:
+    if not isinstance(tag, str) or not tag:
+        raise ValueError(f"schema drift ack tag {tag!a} must be a non-empty string")
+    if not isinstance(ack, Mapping) or set(ack) != _DRIFT_ACK_FIELDS:
+        raise ValueError(f"schema drift ack {tag!a} must carry exactly {sorted(_DRIFT_ACK_FIELDS)}")
+    members = ack["members"]
+    if (
+        not isinstance(members, Mapping)
+        or len(members) < 2
+        or not all(_rel_ok(m) and _is_hex(d, 64) for m, d in members.items())
+    ):
+        raise ValueError(f"schema drift ack {tag!a}: members must map >= 2 paths to sha256")
+    if not isinstance(ack["reason"], str) or not ack["reason"].strip():
+        raise ValueError(f"schema drift ack {tag!a}: reason must be non-empty")
+    return SchemaDriftAck(tag=tag, members=dict(members), reason=ack["reason"])
 
 
 def load_quarantine(path: Path | str) -> Quarantine:
@@ -168,23 +170,18 @@ def load_quarantine(path: Path | str) -> Quarantine:
     quarantined, so every shape violation raises instead.
     """
     raw_bytes = Path(path).read_bytes()
-    doc = json.loads(raw_bytes)
+    doc = load_json_strict(raw_bytes)
     if not isinstance(doc, Mapping) or doc.get("schema") != QUARANTINE_SCHEMA:
         raise ValueError(f"quarantine registry must declare schema {QUARANTINE_SCHEMA!r}")
-    if set(doc) - {"schema", "files", "provenance_gaps"}:
+    if set(doc) - {"schema", "files", "schema_drift_acks"}:
         raise ValueError("quarantine registry carries unknown top-level keys")
     files_raw = doc.get("files")
-    gaps_raw = doc.get("provenance_gaps", {})
-    if not isinstance(files_raw, Mapping) or not isinstance(gaps_raw, Mapping):
-        raise ValueError("quarantine registry 'files'/'provenance_gaps' must be objects")
-    files = {rel: _parse_entry(rel, entry) for rel, entry in files_raw.items()}
-    gaps = {rel: _parse_gap(rel, gap) for rel, gap in gaps_raw.items()}
-    overlap = sorted(set(files) & set(gaps))
-    if overlap:
-        raise ValueError(f"provenance gaps {overlap!a} are also quarantined")
+    acks_raw = doc.get("schema_drift_acks", {})
+    if not isinstance(files_raw, Mapping) or not isinstance(acks_raw, Mapping):
+        raise ValueError("quarantine registry 'files'/'schema_drift_acks' must be objects")
     return Quarantine(
-        files=files,
-        provenance_gaps=gaps,
+        files={rel: _parse_entry(rel, entry) for rel, entry in files_raw.items()},
+        schema_drift_acks={tag: _parse_drift_ack(tag, a) for tag, a in acks_raw.items()},
         registry_sha256=hashlib.sha256(raw_bytes).hexdigest(),
     )
 
@@ -232,15 +229,16 @@ def classify_receipt(
 
 
 def stale_quarantine_entries(root: Path, quarantine: Quarantine) -> list[str]:
-    """Registry entries whose file no longer exists under ``root``."""
+    """Registry entries (quarantined files, drift-ack members) gone from ``root``."""
     out = [
         f"quarantine_entry_missing:{rel!a}"
         for rel in sorted(quarantine.files)
         if not (root / rel).is_file()
     ]
     out += [
-        f"provenance_gap_missing:{rel!a}"
-        for rel in sorted(quarantine.provenance_gaps)
+        f"schema_drift_ack_member_missing:{tag!a}:{rel!a}"
+        for tag, ack in sorted(quarantine.schema_drift_acks.items())
+        for rel in sorted(ack.members)
         if not (root / rel).is_file()
     ]
     return out

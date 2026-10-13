@@ -772,7 +772,7 @@ src/quant_fund/realized/hf_rv.py:compute_hf_rv 14
 src/quant_fund/registry/artifact_store.py:ArtifactStore.verify 14
 src/quant_fund/registry/lineage_dag.py:lineage_dag 12
 src/quant_fund/registry/mlflow_store.py:promotion_decision 18
-src/quant_fund/registry/schema_drift.py:schema_drift 11
+src/quant_fund/registry/schema_drift.py:schema_drift 12
 src/quant_fund/reporting/regime_performance.py:regime_performance_markdown 12
 src/quant_fund/reporting/report.py:build_evidence_report 10
 src/quant_fund/reporting/tearsheet.py:tearsheet_markdown 20

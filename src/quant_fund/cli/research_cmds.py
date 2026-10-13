@@ -3756,7 +3756,7 @@ def admit_batch_cmd(
     if not root.is_dir():
         raise typer.BadParameter(f"corpus dir {root} does not exist")
     pins = _load_known_inconsistent(known_inconsistent)
-    from quant_fund.research.corpus_epoch import pinned_head_members
+    from quant_fund.research.corpus_epoch import chain_ancestry, pinned_head_members
     from quant_fund.research.legacy_unsealed import load_quarantine_or_empty
 
     try:
@@ -3771,10 +3771,13 @@ def admit_batch_cmd(
             expected_head=expected_head,
             epoch_acks=corpus_acks,
             base_stamped=None if base_head is None else pinned_head_members(root, base_head),
+            base_epochs=None if base_head is None else chain_ancestry(root, base_head["receipt"]),
         )
     except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    for err in batch["ack_errors"]:
+        typer.echo(f"admission epoch-ack rejected: {err}")
     for rel in batch["already_stamped"]:
         typer.echo(f"admission already-stamped at base (not re-admitted) candidate={rel}")
     for rel in batch["retained_quarantined"]:

@@ -152,7 +152,7 @@ def admission_check(
         doc = json.loads(candidate.read_text())
         if not isinstance(doc, Mapping):
             raise ValueError("receipt root is not an object")
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RecursionError) as exc:
         # Narrowed from `except Exception` (quality ratchet): the parse block
         # reads bytes then json-loads — OSError/ValueError are the only fault
         # modes; exotic errors propagate. Recorded, never swallowed.
@@ -368,16 +368,17 @@ def _partition_quarantined(
     """Split candidates into registry-matched quarantined records (retained,
     never admitted) and everything else (gated as usual)."""
     from quant_fund.research.legacy_unsealed import classify_receipt
-    from quant_fund.research.receipt_v2 import verify_receipt_file
+    from quant_fund.research.receipt_v2 import verify_receipt_bytes
 
     retained: list[str] = []
     gated: list[Path] = []
     for cand in ordered:
         rel = _corpus_rel(cand, corpus_dir)
-        ver = verify_receipt_file(cand)
+        raw = cand.read_bytes()
+        ver = verify_receipt_bytes(raw, cand)
         status, _why = classify_receipt(
             rel,
-            hash_bytes(cand.read_bytes()),
+            hash_bytes(raw),
             valid=bool(ver["valid"]),
             errors=list(ver["errors"]),
             quarantine=quarantine,
@@ -396,7 +397,7 @@ def _batch_shadow(corpus_dir: Path, ordered: list[Path], gated: list[Path]) -> P
     subtrees — the lattice's own membership). Retained quarantined records
     are part of the merged corpus every gated candidate lands in (the
     lattice reads them), so they enter up front."""
-    from quant_fund.utils.receipt import verified_corpus_files
+    from quant_fund.utils.receipt import is_quarantined, verified_corpus_files
 
     changed_names = {c.name for c in ordered}
     shadow = Path(tempfile.mkdtemp(prefix="admit_batch_base_"))
@@ -407,8 +408,12 @@ def _batch_shadow(corpus_dir: Path, ordered: list[Path], gated: list[Path]) -> P
         (shadow / rel_path).parent.mkdir(parents=True, exist_ok=True)
         _link_or_copy(path, shadow / rel_path)
     for cand in ordered:
-        if cand not in gated:
-            _link_or_copy(cand, shadow / cand.name)
+        rel_path = Path(_corpus_rel(cand, corpus_dir))
+        # Keep the relative path: a retained legacy-unsealed/ record stays in
+        # the quarantine subtree the lattice skips, exactly as in the corpus.
+        if cand not in gated and not is_quarantined(corpus_dir / rel_path, corpus_dir):
+            (shadow / rel_path).parent.mkdir(parents=True, exist_ok=True)
+            _link_or_copy(cand, shadow / rel_path)
     return shadow
 
 
@@ -422,6 +427,7 @@ def admit_batch(
     expected_head: Mapping[str, Any] | None = None,
     epoch_acks: list[dict[str, Any]] | None = None,
     base_stamped: Mapping[str, str] | None = None,
+    base_epochs: frozenset[str] | None = None,
 ) -> dict[str, Any]:
     """Gate a set of incoming receipts the way a merge actually lands them.
 
@@ -448,6 +454,13 @@ def admit_batch(
     receipt restored to its pinned bytes) is not new evidence entering the
     corpus: it is listed under ``already_stamped`` and not re-admitted. Only
     the base pin can grant this — the candidate's own branch cannot.
+
+    ``base_epochs`` (the base head epoch and its ancestors) closes the
+    stamp-and-excuse path: every ``mutated`` acknowledgment in
+    ``epoch_acks`` must name an epoch the base chain already contained, so a
+    single change can never both record a mutation of an append-only receipt
+    and acknowledge it. A violation rejects the batch
+    (``epoch_ack_postdates_base``).
 
     A candidate that matches its ``quarantine`` registry entry exactly
     (path, bytes, error set) is retained record, not evidence asking to be
@@ -488,7 +501,14 @@ def admit_batch(
         # contains the earlier ones — whatever verdict they drew.
         _link_or_copy(cand, shadow / cand.name)
 
-    verdicts = [r["verdict"] for r in results]
+    ack_errors = [
+        f"epoch_ack_postdates_base:{a['member']!a}@{a['epoch']!a}"
+        for a in epoch_acks or []
+        if base_epochs is not None
+        and a["transition"] == "mutated"
+        and a["epoch"] not in base_epochs
+    ]
+    verdicts = [r["verdict"] for r in results] + ["reject"] * bool(ack_errors)
     if "reject" in verdicts:
         verdict = "reject"
     elif "quarantine" in verdicts:
@@ -502,6 +522,7 @@ def admit_batch(
         "results": results,
         "retained_quarantined": retained,
         "already_stamped": stamped,
+        "ack_errors": ack_errors,
         "failures": [r["candidate"] for r in results if r["verdict"] != "admit"],
     }
 

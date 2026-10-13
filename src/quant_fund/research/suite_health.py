@@ -35,7 +35,7 @@ from quant_fund.research.legacy_unsealed import (
 )
 from quant_fund.research.receipt_v2 import (
     seal_receipt,
-    verify_receipt_file,
+    verify_receipt_bytes,
     wrap_receipt_v2,
 )
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -60,6 +60,12 @@ def _lazy_epoch_check() -> Any:
         return importlib.import_module("quant_fund.research.corpus_epoch").check_epoch_chain
     except ImportError:
         return None
+
+
+def _encodable(value: object) -> str:
+    """Attacker-controlled strings (lone surrogates such as ``\\ud800``) must
+    not crash the frame or the canonical hash — escape what UTF-8 can't hold."""
+    return str(value).encode("utf-8", "backslashreplace").decode("utf-8")
 
 
 def _epoch_state(
@@ -135,9 +141,11 @@ def suite_health(
     problems: dict[str, list[str]] = {}
 
     for path in files:
-        result = verify_receipt_file(path)
-        rel = path.relative_to(root).as_posix()
+        # One read: the verdict and the digest classified against the
+        # registry must describe the same bytes.
         raw = path.read_bytes()
+        result = verify_receipt_bytes(raw, path)
+        rel = path.relative_to(root).as_posix()
         digests[rel] = hash_bytes(raw)
         status, why = classify_receipt(
             rel,
@@ -151,15 +159,16 @@ def suite_health(
             problems[rel] = why
         try:
             payload: Any = json.loads(raw)
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            # Narrowed from `except Exception` (quality ratchet): receipt parse
-            # faults are JSON/decoding; exotic errors propagate. Payload absent.
+        except (ValueError, RecursionError):
+            # Hostile input (bad JSON/encoding, >4300-digit ints, pathological
+            # nesting) degrades to "no payload"; its verdict above already
+            # records why — one file must never crash the corpus sweep.
             payload = None
         kind = (payload.get("kind") or payload.get("schema")) if isinstance(payload, dict) else None
         if isinstance(payload, dict):
             body = payload.get("payload")
             inner = body if isinstance(body, dict) else payload
-            labels[rel] = str(inner.get("data_label") or "UNKNOWN")
+            labels[rel] = _encodable(inner.get("data_label") or "UNKNOWN")
         else:
             labels[rel] = "UNKNOWN"
         n_findings = 0
@@ -175,7 +184,7 @@ def suite_health(
         rows.append(
             {
                 "file": rel,
-                "kind": str(kind) if kind else None,
+                "kind": _encodable(kind) if kind else None,
                 "valid": result["valid"],
                 "status": status,
                 "n_errors": len(result["errors"]),

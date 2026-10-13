@@ -35,6 +35,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+import math
 import platform
 import sys
 from collections.abc import Callable, Mapping
@@ -849,10 +850,25 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.lane_contracts import lane_contract_errors
 
         errors.extend(lane_contract_errors(payload_body))
+        errors.extend(_evalue_family_errors(payload_body))
         errors.extend(_tape_binding_errors(payload_body))
     errors.extend(_tape_binding_errors(body))
     errors.extend(_kind_consistency_errors(body))
     return _result(path, payload, convention, errors)
+
+
+def _evalue_family_errors(payload: Mapping[str, Any]) -> list[str]:
+    """The e-value-family deep contracts (suite_health, mcs_seq, ...) for an
+    inner ``receipt.v2`` payload — exactly as ``_verify_v1`` dispatches them
+    for a bare body, so wrapping a body in an envelope cannot shed them."""
+    from quant_fund.research.evalue_contracts import (
+        EVALUE_FAMILY_KINDS,
+        evalue_family_contract_errors,
+    )
+
+    if payload.get("kind") not in EVALUE_FAMILY_KINDS:
+        return []
+    return list(evalue_family_contract_errors(payload))
 
 
 def _tape_binding_errors(payload: Mapping[str, Any]) -> list[str]:
@@ -1034,24 +1050,39 @@ def _no_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return obj
 
 
+def _finite_json_float(token: str) -> float:
+    """Number literals that overflow to ±inf (``1e400``) are rejected.
+
+    The canonical seal maps non-finite floats to ``null``, so an overflowing
+    literal and a literal ``null`` would seal identically — two different
+    byte strings, one seal. Like the NaN/Infinity tokens, they never verify.
+    """
+    value = float(token)
+    if not math.isfinite(value):
+        raise ValueError(f"non_finite_json_number:{token[:32]}")
+    return value
+
+
 def verify_receipt_bytes(data: bytes, path: Path | str = Path("<memory>")) -> ReceiptVerification:
     """Parse and verify one immutable receipt byte string.
 
     Duplicate object keys are rejected: ``{"k": 1, "k": 2}`` parses to ``2``
     in Python but would let a byte string carry two readable claims while only
-    one is sealed — the bytes must determine a unique payload.
+    one is sealed — the bytes must determine a unique payload. Number literals
+    that overflow to infinity are rejected for the same reason.
     """
     receipt_path = Path(path)
     try:
         payload: object = json.loads(
             data,
             parse_constant=_reject_json_constant,
+            parse_float=_finite_json_float,
             object_pairs_hook=_no_duplicate_keys,
         )
     except ValueError as exc:
         # ValueError covers JSONDecodeError, the >4300-digit integer limit,
-        # and the duplicate_json_key marker raised by the pairs hook.
-        if str(exc).startswith("duplicate_json_key:"):
+        # and the duplicate_json_key / non_finite_json_number markers.
+        if str(exc).startswith(("duplicate_json_key:", "non_finite_json_number:")):
             return _result(receipt_path, {}, None, [str(exc)])
         return _result(receipt_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
     except (UnicodeError, RecursionError) as exc:

@@ -77,6 +77,15 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "tests/conftest.py",  # suite-level fixtures
     "uv.lock",  # the supply-chain lock
     "quality/gate_signing.pub",  # the pin-signature trust root
+    # Evidence policy: which non-verifying receipts are retained as
+    # quarantined, and which recorded epoch-history incidents are explained.
+    # Either file decides what the strict gates accept, so a change to one is
+    # a gate change — re-pinned and re-signed by the key holder, not merged
+    # silently.
+    "quality/legacy_quarantine.json",
+    "quality/epoch_allowed_removals.json",
+    "src/quant_fund/research/legacy_unsealed.py",
+    "src/quant_fund/research/suite_health.py",
     "quality/witness_signing.pub",  # Rekor witness-signature key
     "quality/rekor_pubkey.pem",  # the public log's verification key — a swapped
     # copy would launder forged SET/checkpoint-note signatures

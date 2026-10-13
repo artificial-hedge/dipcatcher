@@ -50,9 +50,15 @@ def test_registered_artifacts_match_their_pinned_bytes_and_reasons() -> None:
         assert status == "quarantined", f"{rel}: {why}"
 
 
-def test_provenance_gaps_pin_existing_valid_receipts() -> None:
+def test_schema_drift_acks_pin_existing_valid_receipts() -> None:
+    """A drift acknowledgment pins every member of the drifting tag group by
+    bytes, and every member is a receipt that verifies (drift is a corpus
+    shape finding, never a cover for an invalid receipt)."""
     registry = load_quarantine(PIN_PATH)
-    for rel, gap in registry.provenance_gaps.items():
-        path = RECEIPTS / rel
-        assert hashlib.sha256(path.read_bytes()).hexdigest() == gap.sha256, rel
-        assert verify_receipt_file(path)["valid"], f"{rel}: gap entries describe valid receipts"
+    for tag, ack in registry.schema_drift_acks.items():
+        assert len(ack.members) >= 2, tag
+        for rel, digest in ack.members.items():
+            path = RECEIPTS / rel
+            assert hashlib.sha256(path.read_bytes()).hexdigest() == digest, f"{tag}:{rel}"
+            assert verify_receipt_file(path)["valid"], f"{tag}:{rel}"
+            assert rel not in registry.files, f"{tag}:{rel} is also quarantined"

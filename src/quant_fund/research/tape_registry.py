@@ -311,7 +311,8 @@ def tape_binding_errors(body: Mapping[str, Any], *, root: Path | str | None = No
     Ratchet-in: bodies that declare no ``tape_manifest_sha256`` /
     ``dataset_sha256`` stay admissible, and SYNTHETIC/CORPUS lanes are
     exempt. Any declared binding that no committed ``tape_manifest.v1``
-    attests fails closed as ``tape_manifest_unknown``.
+    attests fails closed as ``tape_manifest_unknown``; a declared binding
+    that is not a string fails closed as ``tape_binding_malformed``.
     """
     label = body.get("data_label")
     if isinstance(label, str) and label.upper() in SYNTHETIC_LABELS:
@@ -320,7 +321,12 @@ def tape_binding_errors(body: Mapping[str, Any], *, root: Path | str | None = No
     # the corpus epoch chains (verify-repo), not by a tape manifest.
     if str(body.get("kind")) in {"corpus_inference.v1", "suite_health"}:
         return []
-    bound = [body[key] for key in TAPE_BINDING_KEYS if isinstance(body.get(key), str)]
+    declared = [body[key] for key in TAPE_BINDING_KEYS if body.get(key) is not None]
+    # A binding that is present but not a digest string (list, dict, number)
+    # names no tape at all — fail closed rather than read it as "unbound".
+    if any(not isinstance(value, str) for value in declared):
+        return ["tape_binding_malformed"]
+    bound = declared
     if not bound:
         return []
     registry = load_registry(_repo_root() if root is None else root)

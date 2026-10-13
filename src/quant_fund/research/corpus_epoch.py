@@ -263,7 +263,7 @@ def _epoch_receipts(
             continue
         try:
             doc = json.loads(path.read_text())
-        except (OSError, UnicodeError, ValueError):
+        except (OSError, UnicodeError, ValueError, RecursionError):
             if path.name.startswith("corpus_epoch_"):
                 squatters.append(path.name)
             continue
@@ -581,7 +581,9 @@ def load_epoch_acks(path: Path | str) -> list[dict[str, Any]]:
     an acknowledgment that cannot be matched exactly must not be silently
     dropped or widened.
     """
-    raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    from quant_fund.utils.receipt import load_json_strict
+
+    raw = load_json_strict(Path(path).read_bytes())
     if not isinstance(raw, Mapping) or raw.get("schema") != EPOCH_ACKS_SCHEMA:
         raise ValueError(f"epoch acks must be an object with schema {EPOCH_ACKS_SCHEMA!r}")
     entries = raw.get("acks")
@@ -684,6 +686,23 @@ def pinned_head_members(corpus_dir: Path | str, pinned: Mapping[str, Any]) -> di
     if not verify_receipt_file(path)["valid"] or epoch_contract_errors(body):
         raise ValueError(f"pinned head epoch {name!a} is not a valid sealed epoch")
     return _member_maps(body)
+
+
+def chain_ancestry(corpus_dir: Path | str, head_name: str) -> frozenset[str]:
+    """``head_name`` and every epoch it transitively names as ``prev`` in
+    ``corpus_dir`` (cycle-safe; an unreadable link ends the walk)."""
+    names: set[str] = set()
+    cur: str | None = head_name
+    while cur and cur not in names and "/" not in cur:
+        names.add(cur)
+        try:
+            doc = json.loads((Path(corpus_dir) / cur).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            break
+        body = doc.get("payload") if isinstance(doc.get("payload"), Mapping) else doc
+        prev = body.get("prev_epoch_receipt") if isinstance(body, Mapping) else None
+        cur = prev if isinstance(prev, str) else None
+    return frozenset(names)
 
 
 def update_heads_pin(

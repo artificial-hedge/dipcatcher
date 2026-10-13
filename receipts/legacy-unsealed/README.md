@@ -14,8 +14,10 @@ production gates, not only by tests: `quality/legacy_quarantine.json`
 (the CI `evidence-audit` gate), `verify-all` and `admit-batch` all read it.
 They verify this directory instead of skipping it: an unregistered file here,
 drifted bytes, a drifted error set, a registry entry whose file is gone, or a
-file that now verifies cleanly all fail strict. A quarantined artifact is
-never counted as verified, and it is never harvested into pooled evidence.
+file that now verifies cleanly all fail strict. `suite-health` never counts a
+quarantined artifact as verified and never harvests it into pooled evidence.
+The lattice and `corpus_inference` still read top-level quarantined receipts,
+a known pre-existing gap.
 
 Four of the seven additionally fail `forbidden_metric_keys`: they headline
 Sharpe-style metrics from before the proper-scores honesty contract.

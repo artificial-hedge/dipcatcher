@@ -133,27 +133,14 @@
       "sha256": "da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1"
     }
   },
-  "provenance_gaps": {
-    "coherence_2dd641ab766a536a.json": {
-      "git_revision": "7219a9de1414cea701fa1a3471e4ca8534583f84",
-      "reason": "Sealed receipt.v2 whose self-attested git_revision 7219a9de1414 names a commit absent from this repository (generated 2026-09-28 on local history that was never pushed or was rewritten). 677b01a3 rewrote the field to a different, existing commit and 7151c567 re-sealed; both reverted on 2026-10-13 to the epoch-pinned bytes. Code provenance for this receipt is UNRESOLVABLE from the repository, not fabricated.",
-      "sha256": "dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd"
-    },
-    "evidence_audit_3464d8f8197bf737.json": {
-      "git_revision": "b3b489d52ee8f9e0a6e817bcb320e8a4b3f2b1c6",
-      "reason": "Sealed receipt.v2 whose self-attested git_revision b3b489d52ee8 names a commit absent from this repository (generated 2026-09-28 on local history that was never pushed or was rewritten). 677b01a3 rewrote the field to a different, existing commit and 7151c567 re-sealed; both reverted on 2026-10-13 to the epoch-pinned bytes. Code provenance for this receipt is UNRESOLVABLE from the repository, not fabricated.",
-      "sha256": "77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d"
-    },
-    "evidence_audit_d449e1ca0cc119a6.json": {
-      "git_revision": "35a8ef1b63b31595488141e287ca67cbff5e2727",
-      "reason": "Sealed receipt.v2 whose self-attested git_revision 35a8ef1b63b3 names a commit absent from this repository (generated 2026-09-28 on local history that was never pushed or was rewritten). 677b01a3 rewrote the field to a different, existing commit and 7151c567 re-sealed; both reverted on 2026-10-13 to the epoch-pinned bytes. Code provenance for this receipt is UNRESOLVABLE from the repository, not fabricated.",
-      "sha256": "deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1"
-    },
-    "multih_fleet_eval_5db1cab214e291d7.json": {
-      "git_revision": "ecb77bdd2f96530c6ab4c31fe4c92b93db36382f",
-      "reason": "Sealed receipt.v2 whose self-attested git_revision ecb77bdd2f96 names a commit absent from this repository (generated 2026-09-28 on local history that was never pushed or was rewritten). 677b01a3 rewrote the field to a different, existing commit and 7151c567 re-sealed; both reverted on 2026-10-13 to the epoch-pinned bytes. Code provenance for this receipt is UNRESOLVABLE from the repository, not fabricated.",
-      "sha256": "07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516"
+  "schema": "legacy_quarantine.v2",
+  "schema_drift_acks": {
+    "calibration_audit.v1": {
+      "members": {
+        "calib_real_drill.json": "667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c",
+        "calibration_audit.json": "c9f800216f05073fed4da606f04823cc71bb37909d4242492f5e280cdb64964f"
+      },
+      "reason": "Two claim-block shapes under one tag in sealed, epoch-pinned history: calib_real_drill.json (drill output of scripts/calib_real_drill.py, no claim block) and calibration_audit.json (lane audit with an ok/results claim). Both are calibration_audit.v1 receipts and both verify under that tag's deep contract (evalue_contracts dispatches on it). c036dee9d retagged calib_real_drill.json to calibration_audit.drill.v1 and re-sealed it, which rewrote a stamped receipt and also moved it out of that deep contract; the rewrite was reverted on 2026-10-13 to the bytes corpus_epoch_2bd794275af2b3d8 pins. The drift is recorded history, not a contract weakening."
     }
-  },
-  "schema": "legacy_quarantine.v2"
+  }
 }

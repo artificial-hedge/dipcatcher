@@ -8,6 +8,7 @@ with their own exclusion set and honesty contract.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
@@ -55,3 +56,19 @@ def seal_errors(receipt: Mapping[str, Any], *, exclude: Iterable[str] = ()) -> l
     unsigned = {key: value for key, value in receipt.items() if key not in dropped}
     expected = hash_bytes(canonical_json_bytes(unsigned))
     return [] if receipt.get("receipt_sha256") == expected else ["receipt_sha256"]
+
+
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    obj: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in obj:
+            raise ValueError(f"duplicate_json_key:{key!a}")
+        obj[key] = value
+    return obj
+
+
+def load_json_strict(data: bytes | str) -> Any:
+    """``json.loads`` that rejects duplicate object keys (last-wins would let
+    one byte string carry two readings — fatal for policy files that decide
+    what a gate accepts). Raises ``ValueError``."""
+    return json.loads(data, object_pairs_hook=_reject_duplicate_keys)

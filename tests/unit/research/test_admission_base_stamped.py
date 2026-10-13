@@ -16,6 +16,7 @@ import pytest
 
 from quant_fund.research.admission import admit_batch
 from quant_fund.research.corpus_epoch import (
+    chain_ancestry,
     corpus_epoch,
     load_heads_pin,
     pinned_head_members,
@@ -93,3 +94,47 @@ def test_base_pin_must_authenticate_its_head_epoch(tmp_path: Path) -> None:
     # Path-like receipt names are refused.
     with pytest.raises(ValueError, match="missing"):
         pinned_head_members(corpus, {**entry, "receipt": "../epoch_heads.json"})
+
+
+def _mutation_ack(member: str, epoch: str, frm: str, to: str) -> dict[str, object]:
+    return {
+        "corpus": "receipts/*.json",
+        "member": member,
+        "transition": "mutated",
+        "from_sha256": frm,
+        "to_sha256": to,
+        "epoch": epoch,
+        "reason": "test fixture",
+    }
+
+
+def test_mutation_ack_must_predate_the_base_chain(tmp_path: Path) -> None:
+    """Stamp-and-excuse: a change that records a mutation of an append-only
+    receipt in a NEW epoch and acknowledges it in the same diff is rejected;
+    an ack naming an epoch the base chain already held is accepted."""
+    corpus, pin = _stamped_corpus(tmp_path)
+    base_head = _base_entry(corpus, pin)["receipt"]
+    base = chain_ancestry(corpus, base_head)
+    assert base == frozenset({base_head})
+    old_sha = pinned_head_members(corpus, _base_entry(corpus, pin))["old.json"]
+    # The "PR": rewrite the stamped receipt, stamp the mutation, acknowledge it.
+    _write(corpus / "old.json", _legacy_body("tampered"))
+    new_epoch = write_epoch_receipt(corpus_epoch(corpus), corpus).name
+    new_sha = pinned_head_members(
+        corpus, {"receipt": new_epoch, "sha256": _sha(corpus / new_epoch)}
+    )["old.json"]
+    laundering = [_mutation_ack("old.json", new_epoch, old_sha, new_sha)]
+    batch = admit_batch([corpus / "old.json"], corpus, epoch_acks=laundering, base_epochs=base)
+    assert batch["verdict"] == "reject"
+    assert batch["ack_errors"] == [f"epoch_ack_postdates_base:'old.json'@{new_epoch!a}"]
+    # Positive control: an ack for history the base already recorded passes
+    # this rule (the receipt itself is still gated on its own merits).
+    historical = [_mutation_ack("old.json", base_head, "1" * 64, "2" * 64)]
+    batch = admit_batch([corpus / "old.json"], corpus, epoch_acks=historical, base_epochs=base)
+    assert batch["ack_errors"] == []
+
+
+def _sha(path: Path) -> str:
+    import hashlib
+
+    return hashlib.sha256(path.read_bytes()).hexdigest()

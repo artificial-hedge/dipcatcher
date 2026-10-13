@@ -158,6 +158,14 @@ def _mini_repo(tmp_path: Path, *, sign: bool = True) -> tuple[Path, str | None]:
         p = root / jewel
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(f"# {jewel}\n")
+    # The evidence-policy jewels are parsed by the gates, which fail closed on
+    # a malformed policy file — the fixture carries well-formed empty ones.
+    (root / "quality" / "epoch_allowed_removals.json").write_text(
+        json.dumps({"schema": "epoch_acknowledgments.v1", "acks": []})
+    )
+    (root / "quality" / "legacy_quarantine.json").write_text(
+        json.dumps({"schema": "legacy_quarantine.v2", "files": {}})
+    )
     pin = root / "quality" / "epoch_heads.json"
     pin.write_text(json.dumps({"schema": "epoch_heads.v1", "heads": {}}))
     for corpus_dir, pattern, _req, _upd, _exempt in CORPORA:
