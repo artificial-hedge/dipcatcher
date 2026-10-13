@@ -3,7 +3,7 @@
 from collections.abc import Callable
 
 from fx1.webresearch.engine import ResearchBudget, Researcher
-from fx1.webresearch.search import SearchResult, Searcher
+from fx1.webresearch.search import Searcher, SearchResult
 
 
 class _RecordingSearcher(Searcher):
@@ -11,9 +11,7 @@ class _RecordingSearcher(Searcher):
         self.calls: list[tuple[str, float]] = []
         self.on_search = on_search
 
-    def search(
-        self, query: str, *, max_results: int = 8, timeout_s: float = 10.0
-    ) -> SearchResult:
+    def search(self, query: str, *, max_results: int = 8, timeout_s: float = 10.0) -> SearchResult:
         del max_results
         self.calls.append((query, timeout_s))
         if self.on_search is not None:

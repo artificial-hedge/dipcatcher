@@ -886,7 +886,7 @@ def test_cli_one_shot_preserves_goal_and_seed_query_arguments(
             research_goal,
             42,
             3,
-            ['debt ceiling 2026', 'AI "safety" policy', "O'Reilly dataset"],
+            ["debt ceiling 2026", 'AI "safety" policy', "O'Reilly dataset"],
             True,
         ),
     ) in seen

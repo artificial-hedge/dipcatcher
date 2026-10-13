@@ -391,9 +391,7 @@ def robots_allowed(
     with _robots_lock:
         if origin in _robots_cache:
             cached = _robots_cache[origin]
-            return cached is None or not _robots_disallowed(
-                cached, user_agent, parsed.path or "/"
-            )
+            return cached is None or not _robots_disallowed(cached, user_agent, parsed.path or "/")
     if fetch_fn is None:
 
         def fetch_fn(url: str, **kwargs: Any) -> FetchResult:

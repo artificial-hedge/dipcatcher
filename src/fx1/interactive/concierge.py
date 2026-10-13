@@ -933,6 +933,7 @@ class Concierge:
             max_depth=base.max_depth,
             search_pause_s=base.search_pause_s,
         )
+
         def run_fn(cancel_event: threading.Event, on_event: Callable[[str, str], None]) -> Any:
             return self._researcher.run(
                 goal,

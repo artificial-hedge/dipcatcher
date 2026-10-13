@@ -224,9 +224,7 @@ def test_fetch_page_connects_only_to_validated_ip(
         raise OSError("test socket stopped")
 
     monkeypatch.setattr(socket, "create_connection", connect)
-    result = fetch_page(
-        "https://public.example:8443/report", resolve_fn=_public_resolve
-    )
+    result = fetch_page("https://public.example:8443/report", resolve_fn=_public_resolve)
     assert not result.ok
     assert connected == [("93.184.216.34", 8443)]
 
@@ -355,9 +353,7 @@ def test_robots_cached_rules_are_checked_for_each_path() -> None:
 
     def fetch_fn(url: str, **kwargs: object) -> FetchResult:
         calls.append(url)
-        return FetchResult(
-            url=url, status=200, text="User-agent: *\nDisallow: /private\n"
-        )
+        return FetchResult(url=url, status=200, text="User-agent: *\nDisallow: /private\n")
 
     assert robots_allowed("https://site.example/public", fetch_fn=fetch_fn) is True
     assert robots_allowed("https://site.example/private/key", fetch_fn=fetch_fn) is False

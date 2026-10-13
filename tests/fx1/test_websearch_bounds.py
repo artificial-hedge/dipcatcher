@@ -36,9 +36,7 @@ def test_search_response_has_a_hard_byte_limit() -> None:
     assert result.hits == []
     assert "transport fault" in result.error
     assert len(responses) == 2
-    assert all(
-        response.read_sizes == [DEFAULT_MAX_RESPONSE_BYTES + 1] for response in responses
-    )
+    assert all(response.read_sizes == [DEFAULT_MAX_RESPONSE_BYTES + 1] for response in responses)
 
 
 def test_fallback_uses_only_remaining_search_budget() -> None:
@@ -83,4 +81,3 @@ def test_nonpositive_timeout_does_not_open_network() -> None:
 
     result = DuckDuckGoLiteSearcher(open_fn=open_fn).search("test", timeout_s=0)
     assert result.error == "search time budget exhausted"
-
