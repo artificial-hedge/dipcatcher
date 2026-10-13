@@ -3742,7 +3742,7 @@ counted. Prose that contains such a token is quoted verbatim.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/calib_real_drill.json | 7480b2af38274f5d6e6c4a107e01890a3d49f0524b5920a5b3b946a9f8a5a571 | 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370 | not_checked | absent | inputs_sha256=1c11a0367aa3ca772482ebd4f0e4a60ccc4c88680f185c1c19ffc5c66f081deb | unspecified | absent | true | false |
+| receipts/calib_real_drill.json | 2a3300764a5b916130f64db8c29b05c0a48e2212b43730f75f4970bff2eae354 | c5888e19ae1ec764933abfaef8fb65b600e89b24ed06d753faa2d53f3a21200e | not_checked | absent | inputs_sha256=1c11a0367aa3ca772482ebd4f0e4a60ccc4c88680f185c1c19ffc5c66f081deb | unspecified | absent | true | false |
 
 - `data_label`: yahoo_eod
 - `drill`:
@@ -3790,7 +3790,7 @@ counted. Prose that contains such a token is quoted verbatim.
     - 0.75
     - 0.9
     - 0.95
-- `receipt_sha256`: 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370
+- `receipt_sha256`: c5888e19ae1ec764933abfaef8fb65b600e89b24ed06d753faa2d53f3a21200e
 - `research_only`: true
 - `schema`: calibration_audit.drill.v1
 
@@ -7247,7 +7247,7 @@ counted. Prose that contains such a token is quoted verbatim.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/coherence_2dd641ab766a536a.json | dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd | 2dd641ab766a536a8bc1d7a29cd3527c99cc24c148c9cee879cfc334a9a9f846 | not_checked | 7219a9de1414cea701fa1a3471e4ca8534583f84 | absent | unspecified | absent | absent | false |
+| receipts/coherence_2dd641ab766a536a.json | 796254d8a81ca7d7a46cf0e37cdd8cdca3cdaea5f3d560ea7cb689a927f1f054 | 4c2844836673f2e05b3517da2608f68a3f0f4fd4a79075c24e47190009c5e3f9 | not_checked | 19b8cf1c1267ea08c8999deac365e12b6bb64150 | absent | unspecified | absent | absent | false |
 
 - `code_files`:
   - `coherence.py`: 34426af79063621d753bdb81e35567731206488613bf35d996fb5ed2ed5fc720
@@ -7274,7 +7274,7 @@ counted. Prose that contains such a token is quoted verbatim.
   - `python`: 3.12.14
   - `threadpools`:
 - `generated_at`: 2026-09-28T05:23:29.931907+00:00
-- `git_revision`: 7219a9de1414cea701fa1a3471e4ca8534583f84
+- `git_revision`: 19b8cf1c1267ea08c8999deac365e12b6bb64150
 - `kind`: coherence_eval
 - `params_hash`: d29eea5b4b60b58d8ed4003ac2ef9085d2b1cf2378332c6d659a4cf94d0d1106
 - `payload`:
@@ -7647,7 +7647,7 @@ counted. Prose that contains such a token is quoted verbatim.
     - 0.75
     - 0.9
     - 0.95
-- `receipt_sha256`: 2dd641ab766a536a8bc1d7a29cd3527c99cc24c148c9cee879cfc334a9a9f846
+- `receipt_sha256`: 4c2844836673f2e05b3517da2608f68a3f0f4fd4a79075c24e47190009c5e3f9
 - `schema`: receipt.v2
 - `schema_version`: 2
 - `verdict`: pass
@@ -8176,7 +8176,7 @@ counted. Prose that contains such a token is quoted verbatim.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json | 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9 | f71a5f7c5b6f461c50d1501941a6aea9faede3e0b4775ecd94fb326491c96d8d | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json | 388c3db0c5afb9938843d70d276b7f6475528ee51c30a5bd54a6a98ad0e604b1 | 50e74f7958e3da3d13c0b751c80aa589417edfcbcb2ac66de43148689e06d5d4 | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_index`: null
 - `alarmed`: false
@@ -8205,15 +8205,16 @@ counted. Prose that contains such a token is quoted verbatim.
 - `mode`: fixed
 - `n_inconclusive`: 0
 - `n_obs`: 300
-- `receipt_sha256`: f71a5f7c5b6f461c50d1501941a6aea9faede3e0b4775ecd94fb326491c96d8d
+- `receipt_sha256`: 50e74f7958e3da3d13c0b751c80aa589417edfcbcb2ac66de43148689e06d5d4
 - `research_only`: true
+- `schema`: conformal_monitor.v1
 - `window`: 50
 
 ### `receipts/conformal_real_drill_gaussian_pit.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/conformal_real_drill_gaussian_pit.json | 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e | 7c8520d38190357f3f66c293c74c1666582833d809e854845176022ecafcd701 | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/conformal_real_drill_gaussian_pit.json | b3070f38754e18ce1a4b49cad6c3dc2af4758c697f5fa56cedb0b5d173c5c196 | c720c94a6ebb255eb2e0577c62e40b52390b3acd32d2a64408ce8e45412a5dd8 | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_index`: 55
 - `alarmed`: true
@@ -8242,8 +8243,9 @@ counted. Prose that contains such a token is quoted verbatim.
 - `mode`: fixed
 - `n_inconclusive`: 0
 - `n_obs`: 300
-- `receipt_sha256`: 7c8520d38190357f3f66c293c74c1666582833d809e854845176022ecafcd701
+- `receipt_sha256`: c720c94a6ebb255eb2e0577c62e40b52390b3acd32d2a64408ce8e45412a5dd8
 - `research_only`: true
+- `schema`: conformal_monitor.v1
 - `window`: 50
 
 ### `receipts/contamination_audit.json`
@@ -23341,77 +23343,6 @@ counted. Prose that contains such a token is quoted verbatim.
     - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
     - `value`: 1.0262118132145719e-05
 
-### `receipts/cost_aware_rerun_20261007.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/cost_aware_rerun_20261007.json | 618fadcd1cfa507b2a31f7671f55368c5e80c554647e238996af60759b020f7f | absent | no_embedded_seal | absent | absent | unspecified | false | true | false |
-
-- `claim`: simulated_allocation_solver_reliability_and_matched_validation_selection
-- `conditioning_evidence`: tests/unit/backtest/test_cost_solver_chain.py: scaled-vs-unscaled equivalence (k in 1e-2..1e2, atol 1e-6); equivalent formulations agree (atol 1e-5); status matrix fail-closed (only 'optimal' selectable); market-derived fixture momentum_factor359 flips from optimal_inaccurate(58 iters) to optimal under the conditioning fixes (objective scale 100->1 alone: 41 iters; cost epigraph alone: 118; all: 18).
-- `disclosed_disagreement`: A superseded run (run_20261007) selected momentum_20_cost_aware on validation, but forensic hashing proves it ran the PRE-rewrite 314-line allocator (byte hash 058afffc...), whose looser per-formulation acceptance certified decisions that the fail-closed chain correctly refuses (optimal_inaccurate recorded, never selected). The two runs disagree; the fail-closed chain's refusal is the binding verdict under the acceptance bar, tightened to GAP_TOL_ORIGINAL=1e-10 and never loosened. The earlier 'selected' outcome is NOT claimed as a conditioning-fix success.
-- `file`: cost_aware_rerun_20261007.json
-- `kind`: cost_aware_construction_rerun_verdict
-- `limitations`:
-<!-- verbatim-receipt-text -->
-> Research only; no live-trading, profitability or live-P&L claim (live_pnl_claim=false).
-<!-- /verbatim-receipt-text -->
-  - Simulated net price-return tournament; close-to-close forecast scores do not establish executable net returns.
-  - The 2025 holdout is SPENT and previously inspected; forward_2026H2 is not yet collected.
-  - Input universe has survivorship bias; source and availability are user declarations.
-  - Allocation return/uncertainty inputs are unvalidated proxies.
-  - Conditions 1 and 2 (live qualifying feed / forward record) remain BLOCKED.
-- `promote`: false
-- `protocol`:
-  - `acceptance`: only a genuinely optimal status plus the independent recomputation check (<=1e-7) may supply weights; optimal_inaccurate/suboptimal/feasible/numerical_error/solver_error are diagnostics, never selected
-  - `benchmark_protocol`: configs/real_benchmark_us_wide.json (frozen, unchanged)
-  - `feas_tol_original`: 1e-08
-  - `gap_tol_original`: 1e-10
-  - `solver_chain`:
-    - CLARABEL
-    - OSQP
-    - SCS
-    - HIGHS
-  - `spec`: configs/cost_aware_tournament.json (frozen slate, unchanged)
-  - `tolerance_direction`: tightened vs every historical formulation, never loosened
-- `research_only`: true
-- `runs`:
-  - `run_20261007`:
-    - `code_identity`: PRE-rewrite 314-line repair (objective x100 ladder) - NOT the fail-closed solver chain
-    - `complete`: true
-    - `cost_allocation_sha256`: 058afffc7e6943c74710fedad694db383560331bb174387b0e6e1e551aa3a186
-    - `dir`: research/cost_aware_tournament_20261007
-    - `receipt_sha256`: 7ce7ff05047f563759012b4ae0c9542fa096bc3a2c506330e3f203aa76153825
-    - `test_phase`: REFUSED by the run's own code/runtime lock after external tree wipes changed cost_allocation.py bytes; no test receipt exists
-    - `validation_selected`: momentum_20_cost_aware
-  - `run_20261007r2`:
-    - `all_terminal_liquidations_complete`: false
-    - `code_identity`: committed fail-closed multi-solver chain with conditioning fix
-    - `complete`: false
-    - `cost_allocation_sha256`: 210249552a9f8296434bcb3d394c2a71088b3d80dbaca84b023193649c2243a7
-    - `dir`: research/cost_aware_tournament_20261007r2
-    - `receipt_sha256`: 2e53d9c4abed48e66f6a3350a77a01f35bf6108c23fc143fd43322c99d0af2d4
-    - `test_phase`: REFUSED ('validation was incomplete; no candidate was selected'); fail-closed by design
-    - `validation_selected`: null
-- `schema`: lane_receipt.v1
-- `sealed_at`: 2026-10-07T22:12:00+05:30
-- `snapshot`:
-  - `bars_parquet`: data/file_us_wide/bronze/bars.parquet
-  - `names`: 424
-  - `sha256`: e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117
-- `verdict`: LOUD NEGATIVE. Under the committed fail-closed solver chain the matched validation re-run on the tracked 424-name snapshot with the frozen slate selects NOTHING: selected=null, complete=false. This is the pre-committed acceptable outcome and is recorded without softening: there is no selected candidate and no test receipt. economic_evidence_gate=false; selected_holdout_adjusted_rejection never turned true because no test phase ever ran.
-
-### `receipts/cost_aware_rerun_20261007.json.seal.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/cost_aware_rerun_20261007.json.seal.json | 62cf7f39349bde7690af5f2c15d385a5f2aef910de152eb46bc92b63578b8df1 | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
-
-- `file`: cost_aware_rerun_20261007.json
-- `schema`: prereg_seal.v1
-- `sealed_at`: 2026-10-07T22:12:00+05:30
-- `sha256`: 618fadcd1cfa507b2a31f7671f55368c5e80c554647e238996af60759b020f7f
-
 ### `receipts/cost_calibration_eval_df9b8d7068bf709b.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -29239,7 +29170,7 @@ counted. Prose that contains such a token is quoted verbatim.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json | 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b | c0e3bd0f904afeed9f43a15608ae3985b0a67e8bc1e266353730c181f6c49223 | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json | c3c17b774973bd73ae15cd01a5c2f1f6c644fa8af5494a4f740a4a91ecacd109 | 01c4613989c12af5baf6d6f3c13ae18c056b8cdeffa072c7116638c9bd6b8576 | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alpha`: 0.05
 - `data_label`: yahoo_eod
@@ -29273,15 +29204,16 @@ counted. Prose that contains such a token is quoted verbatim.
   - `delta`: 0.1
   - `final_statistic`: 0.13126228297147766
   - `h`: 5.0
-- `receipt_sha256`: c0e3bd0f904afeed9f43a15608ae3985b0a67e8bc1e266353730c181f6c49223
+- `receipt_sha256`: 01c4613989c12af5baf6d6f3c13ae18c056b8cdeffa072c7116638c9bd6b8576
 - `research_only`: true
+- `schema`: drift_alarm.v1
 - `stream`: gaussian_minus_conf_t_pinball
 
 ### `receipts/drift_real_drill_gaussian_pit.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/drift_real_drill_gaussian_pit.json | 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64 | d5d5401328353481637a40f05465ab52b3f7142de8de7fbf72df0e08219b0107 | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/drift_real_drill_gaussian_pit.json | aa31f59c331e28394a15dd4eaa1eb6567f79445b348d024be359229c50ec4db3 | d1b26101e093137d9f34ae5296d401437dbd560fa4fb395e3285ef9fedd0bde9 | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alpha`: 0.05
 - `data_label`: yahoo_eod
@@ -29315,8 +29247,9 @@ counted. Prose that contains such a token is quoted verbatim.
   - `delta`: 0.1
   - `final_statistic`: 0.13020556880455408
   - `h`: 5.0
-- `receipt_sha256`: d5d5401328353481637a40f05465ab52b3f7142de8de7fbf72df0e08219b0107
+- `receipt_sha256`: d1b26101e093137d9f34ae5296d401437dbd560fa4fb395e3285ef9fedd0bde9
 - `research_only`: true
+- `schema`: drift_alarm.v1
 - `stream`: gaussian_pit
 
 ### `receipts/ds_audit.json`
@@ -30568,7 +30501,7 @@ counted. Prose that contains such a token is quoted verbatim.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/evidence_audit_3464d8f8197bf737.json | 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d | 3464d8f8197bf73712dfdbe29e13668a345d29279659d08ae9bae9bb351f42f0 | not_checked | b3b489d52ee8f9e0a6e817bcb320e8a4b3f2b1c6 | absent | unspecified | absent | absent | false |
+| receipts/evidence_audit_3464d8f8197bf737.json | 90e6e4edd2e7b7120f425e0a342e6c19b59d0a6256686ab58dee29639f896b10 | ca8bca3d1b10f67ac5375b25a12bca6bb4820e7fbfcb148dfc5e51f1f97f6dfd | not_checked | aaa4dc7da2711a7ba98ff928acced2245fd2e140 | absent | unspecified | absent | absent | false |
 
 - `code_files`:
   - `evidence_audit.py`: 7c30b69bbcb62a4682195e77b3d2e1b8f5abb36899543fbd710478a98002ce47
@@ -30595,7 +30528,7 @@ counted. Prose that contains such a token is quoted verbatim.
   - `python`: 3.12.14
   - `threadpools`:
 - `generated_at`: 2026-09-28T06:22:08.701025+00:00
-- `git_revision`: b3b489d52ee8f9e0a6e817bcb320e8a4b3f2b1c6
+- `git_revision`: aaa4dc7da2711a7ba98ff928acced2245fd2e140
 - `kind`: evidence_audit
 - `params_hash`: 310f4d153960b0eefb359a85344a67e97474b12e4cf51a0275440e00aa555918
 - `payload`:
@@ -30644,7 +30577,7 @@ counted. Prose that contains such a token is quoted verbatim.
   - `n_valid`: 3
   - `receipts_dir`: receipts
   - `schema`: evidence_audit.v1
-- `receipt_sha256`: 3464d8f8197bf73712dfdbe29e13668a345d29279659d08ae9bae9bb351f42f0
+- `receipt_sha256`: ca8bca3d1b10f67ac5375b25a12bca6bb4820e7fbfcb148dfc5e51f1f97f6dfd
 - `schema`: receipt.v2
 - `schema_version`: 2
 - `verdict`: pass
@@ -31535,7 +31468,7 @@ counted. Prose that contains such a token is quoted verbatim.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/evidence_audit_d449e1ca0cc119a6.json | deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1 | d449e1ca0cc119a62dbef15f3916494ff65cc018494b36253a6f6f5807173b2b | not_checked | 35a8ef1b63b31595488141e287ca67cbff5e2727 | absent | unspecified | absent | absent | false |
+| receipts/evidence_audit_d449e1ca0cc119a6.json | afd1a482eef7a2cab2774732cfa25fd4b7ec9827a320aeb62c50796ca8942b2b | 8d81dbed34dd63f04329f3604d9a174a375a677e62160489f08d89141b76571c | not_checked | aaa4dc7da2711a7ba98ff928acced2245fd2e140 | absent | unspecified | absent | absent | false |
 
 - `code_files`:
   - `evidence_audit.py`: 7c30b69bbcb62a4682195e77b3d2e1b8f5abb36899543fbd710478a98002ce47
@@ -31562,7 +31495,7 @@ counted. Prose that contains such a token is quoted verbatim.
   - `python`: 3.12.14
   - `threadpools`:
 - `generated_at`: 2026-09-28T06:28:31.032124+00:00
-- `git_revision`: 35a8ef1b63b31595488141e287ca67cbff5e2727
+- `git_revision`: aaa4dc7da2711a7ba98ff928acced2245fd2e140
 - `kind`: evidence_audit
 - `params_hash`: 310f4d153960b0eefb359a85344a67e97474b12e4cf51a0275440e00aa555918
 - `payload`:
@@ -31622,7 +31555,7 @@ counted. Prose that contains such a token is quoted verbatim.
   - `n_valid`: 4
   - `receipts_dir`: receipts
   - `schema`: evidence_audit.v1
-- `receipt_sha256`: d449e1ca0cc119a62dbef15f3916494ff65cc018494b36253a6f6f5807173b2b
+- `receipt_sha256`: 8d81dbed34dd63f04329f3604d9a174a375a677e62160489f08d89141b76571c
 - `schema`: receipt.v2
 - `schema_version`: 2
 - `verdict`: pass
@@ -32558,15 +32491,13 @@ counted. Prose that contains such a token is quoted verbatim.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/fast_replay_p42_conformance_20260928.json | e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6 | 136a459c3ee50ea5b234847c2756c7ef370dbd12aba944859442efdf1f7486bc | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/fast_replay_p42_conformance_20260928.json | 1c4651f3fc361a451e0476f159649ff0970c7791ab9b26f35a78c27ea9514d30 | 903d3a02edfe417e7bb9b38a01b0fc78c5e2939ca6ebdcc8f1b86c8b62cef8a5 | not_checked | absent | absent | unspecified | absent | true | false |
 
-- `receipt`: fast_replay_p42_conformance
-- `generated`: 2026-09-28T00:00:00Z
-- `ultraplan_item`: P4.2
-- `verdict`: vectorized replay path is byte-identical to the reference event loop on the matched-workload class, selected by an explicit fast flag; unsupported workload classes refuse fail-closed
-- `supersedes`: receipts/fast_replay_p42_conformance_20260927.json
-- `supersedes_reason`: code_sha256 pins were bound to 7d2e01e4; fast_replay.py changed under the mark-only-bar fill fix (#215). Re-verified byte-identical on current main under the same rerun suite.
 - `base_commit`: 92c154c8d563058c301dfb0de284dcb5ebe5f61e
+- `disclaimer`:
+<!-- verbatim-receipt-text -->
+> All workloads are SYNTHETIC generated fixtures. This receipt attests engine conformance, not performance; NAV/fee/P&L numbers are not evidence of live-trading results.
+<!-- /verbatim-receipt-text -->
 - `evidence`:
   - tests/property/test_fast_replay_byte_identity.py: hypothesis-generated matched-class workloads (adversarial profile, seeded); equity/fills Arrow-IPC bytes identical, metrics sha256 identical, interpreted fallback identical to numba kernel; reference exceptions reproduce with the same type
   - tests/unit/backtest/test_fast_replay.py: seeded 30-workload fuzz sweep + targeted stale/close-auction/dup/kill/empty/sparse cases + flag behavior (fast=True refusals incl. garch artifact, fast=False pins event loop, auto-dispatch)
@@ -32583,13 +32514,16 @@ counted. Prose that contains such a token is quoted verbatim.
   - risk_overlay (mid-loop target scaling/flattening not replicated)
   - GARCH/realized-GARCH market-overlay artifact present (overlay-date metric counters would read 0 — refused rather than approximate)
   - empty/duplicate-key/non-Datetime/mismatched-unit panels
+- `generated`: 2026-09-28T00:00:00Z
+- `receipt`: fast_replay_p42_conformance
+- `receipt_sha256`: 903d3a02edfe417e7bb9b38a01b0fc78c5e2939ca6ebdcc8f1b86c8b62cef8a5
 - `rerun`: uv run pytest tests/unit/backtest/test_fast_replay.py tests/property/test_fast_replay_byte_identity.py tests/unit/test_perf_equivalence.py -x -q
 - `research_only`: true
-- `disclaimer`:
-<!-- verbatim-receipt-text -->
-> All workloads are SYNTHETIC generated fixtures. This receipt attests engine conformance, not performance; NAV/fee/P&L numbers are not evidence of live-trading results.
-<!-- /verbatim-receipt-text -->
-- `receipt_sha256`: 136a459c3ee50ea5b234847c2756c7ef370dbd12aba944859442efdf1f7486bc
+- `schema`: fast_replay_p42_conformance.v1
+- `supersedes`: receipts/fast_replay_p42_conformance_20260927.json
+- `supersedes_reason`: code_sha256 pins were bound to 7d2e01e4; fast_replay.py changed under the mark-only-bar fill fix (#215). Re-verified byte-identical on current main under the same rerun suite.
+- `ultraplan_item`: P4.2
+- `verdict`: vectorized replay path is byte-identical to the reference event loop on the matched-workload class, selected by an explicit fast flag; unsupported workload classes refuse fail-closed
 
 ### `receipts/fbm_circulant.json`
 
@@ -32675,7 +32609,7 @@ counted. Prose that contains such a token is quoted verbatim.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/fifo_priority_amzn.json | f180b99da62d936a31bf9df79f637141a9b7bd4c4679fc3782739455dafd7e30 | 76025ec9345d42fd63c08d837bd03a1f4cbc11f1219feb59ca63e5624bb6a28b | not_checked | 29ee0b85e4c08d389fdc3133fb0053067be31089 | absent | unspecified | absent | true | absent |
+| receipts/fifo_priority_amzn.json | 13b5f9d473fb7f8a6c0e7ac26b236cfa0505ad0a07ba7c6f1674c7d51906ddd2 | 973b6f22d41add7861ed6d5230a48308597b931484a08502bab79783d6a52b7f | not_checked | 29ee0b85e4c08d389fdc3133fb0053067be31089 | absent | unspecified | absent | true | absent |
 
 - `claim`: fifo_queue_rank_at_fill_real_vs_sim
 - `data_label`: MIXED
@@ -32699,9 +32633,9 @@ counted. Prose that contains such a token is quoted verbatim.
   - `rank_violation_share`: 0.002007226013649137
   - `shadow_share`: 0.06206819701359483
   - `unclean_share`: 0.6603521283708491
-- `receipt_sha256`: 76025ec9345d42fd63c08d837bd03a1f4cbc11f1219feb59ca63e5624bb6a28b
+- `receipt_sha256`: 973b6f22d41add7861ed6d5230a48308597b931484a08502bab79783d6a52b7f
 - `research_only`: true
-- `schema`: 1
+- `schema`: fifo_priority.v1
 - `sim_arms`:
   - `iid`:
     - `max_rank_verified`: 0
@@ -38526,81 +38460,6 @@ counted. Prose that contains such a token is quoted verbatim.
 - `receipt_sha256`: b96983f04ff66a1f9c8be770c415d678a9d3a0c4e17f63668ab184dada1abdea
 - `research_only`: true
 - `schema`: forecast_pipeline_audit.v1
-
-### `receipts/forward_record_preregistration_v1.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/forward_record_preregistration_v1.json | d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3 | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
-
-- `_seal`:
-  - `content_sha256`: b62151e486c97d233bbd2b0d9c071e85ae0a3af6c57253fa99eb0a156ddbd59e
-  - `schema`: prereg_seal.v1
-  - `sealed_at`: 2026-10-07T00:00:00+00:00
-- `admission_rule`:
-  - `material_effect_bps`: 5.0
-  - `primary_test`: one-sided H0: E[D_t] <= 0 vs H1: E[D_t] > 0, alpha=0.05, single fixed analysis
-  - `referee`: frozen validation/agent_referee.py betting referee (post-submission-only)
-  - `required_eligible_paired_sessions`: 1400
-  - `semantics`: anytime-valid admission at every stopping time; no optional-stopping inflation
-- `costs`:
-  - `borrow_bps_per_year`: 50.0
-  - `commission_bps`: 1.0
-  - `financing`: 0.0
-  - `half_spread_bps`: 5.0
-  - `impact_coefficient`: 0.1
-  - `participation_limit`: 0.1
-- `declaration_date`: 2026-10-07
-- `declaration_timezone`: Asia/Calcutta
-- `grid`:
-  - `comparator`: frozen equal-weight
-  - `strategy`: frozen momentum-20
-  - `trials`: single primary comparison; no mid-collection tuning
-- `holdout_statement`:
-  - `holdout_2025`: SPENT
-  - `reason`: The vendor pool already has results for the 2025 holdout and discloses survivorship bias. The 2025 holdout is spent and cannot be reused as new forward evidence.
-- `honesty`:
-  - `broker_connectivity_claim`: false
-  - `live_trading_claim`: false
-  - `note`: Forward record is simulated/shadow evidence only. No live orders, no live P&L, no profitability claim.
-  - `research_only`: true
-  - `synthetic_substitution`: false
-- `not_yet_collected`: true
-- `recorded`:
-  - externally timestamped inputs and decision cutoff
-  - intended signed quantities and simulated orders
-  - fills (including partials), rejects and reasons
-<!-- verbatim-receipt-text -->
-> positions, cash, costs, NAV and net-return accounting
-<!-- /verbatim-receipt-text -->
-  - kill-switch state
-  - software/config/data hashes and broker-state cursor
-  - immutable receipt chain
-- `schema`: forward_record_preregistration.v1
-- `splits`:
-  - `forward`: first accepted decision must occur on a LATER market date than the recorded freeze
-  - `warmup`: all historical bars on/before 2026-09-18 (warmup only, already inspected)
-- `status`: NOT_YET_COLLECTED
-- `universe`:
-  - `kind`: static_complete_universe
-  - `membership_selection_bias`: recorded in selection_basis; fixed-universe experiment
-  - `names`: static 424-name US universe frozen at the warmup boundary
-- `window`:
-  - `end`: null
-  - `label`: forward_2026H2
-  - `note`: Named forward window. It is NOT YET COLLECTED. Freeze and externally timestamp this record BEFORE the first forward close.
-  - `start`: 2026-07-01
-
-### `receipts/forward_record_preregistration_v1.json.seal.json`
-
-| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/forward_record_preregistration_v1.json.seal.json | afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
-
-- `file`: forward_record_preregistration_v1.json
-- `schema`: prereg_seal.v1
-- `sealed_at`: 2026-10-07T00:00:00+00:00
-- `sha256`: d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3
 
 ### `receipts/full_impact.json`
 
@@ -46791,7 +46650,7 @@ counted. Prose that contains such a token is quoted verbatim.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/honest_verdict_b133e8b3992af893.json | 1a003a670945452a5c86d033900bc33429f2981422c8938b1b8e2469fc764f3a | b133e8b3992af8937df8b38e6d89432215769344f3fd58af3251652ceba7c882 | not_checked | absent | inputs_sha256=8d8cdbcb4d70535f3b10e5dfa969b96fffdc18784fd00979e8bd587e7ee9a626 | unspecified | absent | true | false |
+| receipts/honest_verdict_b133e8b3992af893.json | 6d1816036e3676a6352488a5a790de9ab2aaf98d72d4f368f1ad45b741045bbf | 8e213a98bcd27de335e168eec4e02861de8dbf56ec9e41b76b06a36df2009cd0 | not_checked | absent | inputs_sha256=8d8cdbcb4d70535f3b10e5dfa969b96fffdc18784fd00979e8bd587e7ee9a626 | unspecified | absent | true | false |
 
 - `alpha`: 0.05
 - `components`:
@@ -46860,7 +46719,7 @@ counted. Prose that contains such a token is quoted verbatim.
 - `kind`: honest_verdict.v1
 - `n_heads`: 3
 - `n_obs`: 128
-- `receipt_sha256`: b133e8b3992af8937df8b38e6d89432215769344f3fd58af3251652ceba7c882
+- `receipt_sha256`: 8e213a98bcd27de335e168eec4e02861de8dbf56ec9e41b76b06a36df2009cd0
 - `replay`:
   - `argv`:
     - dipcatcher
@@ -46904,6 +46763,7 @@ counted. Prose that contains such a token is quoted verbatim.
       - regime_switch
   - `schema`: honest_verdict_run.v1
   - `status_sha256`: 742d8432903c98fbdfd73bb27ce17dfa0cd276a9f505243bf100ef777bfd1032
+- `schema`: loss_cs.v1
 - `unavailable_lanes`:
 - `verdict`: not_supported
 - `winner`: qar
@@ -46912,7 +46772,7 @@ counted. Prose that contains such a token is quoted verbatim.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/honest_verdict_real_drill.json | f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca | d6bed78a0de6ab91dc043f0158da1a3a22c8e85c139066f75dc9b8f11cbeecd2 | not_checked | absent | inputs_sha256=d11aa6b1651a8811a70ec39a2ed1f914f9456e4040dbbef4cc9435bcaf649218 | unspecified | absent | true | false |
+| receipts/honest_verdict_real_drill.json | 9993757bd5cfb90681cbbbe4b388a6d94b07daa00029a7bd0feec4bec009a7d0 | 3417611e0c03448ea8daece50a248da005d6cad7fda8e2f341ba62e57c5be92a | not_checked | absent | inputs_sha256=d11aa6b1651a8811a70ec39a2ed1f914f9456e4040dbbef4cc9435bcaf649218 | unspecified | absent | true | false |
 
 - `alpha`: 0.05
 - `components`:
@@ -46980,7 +46840,7 @@ counted. Prose that contains such a token is quoted verbatim.
 - `kind`: honest_verdict.v1
 - `n_heads`: 8
 - `n_obs`: 2048
-- `receipt_sha256`: d6bed78a0de6ab91dc043f0158da1a3a22c8e85c139066f75dc9b8f11cbeecd2
+- `receipt_sha256`: 3417611e0c03448ea8daece50a248da005d6cad7fda8e2f341ba62e57c5be92a
 - `research_only`: true
 - `run`:
   - `code_revision`: 92a0cfce8c869665e46e7570fe5913c2ecc7af6f
@@ -47020,6 +46880,7 @@ counted. Prose that contains such a token is quoted verbatim.
       - yahoo_spg
   - `schema`: honest_verdict_run.v1
   - `status_sha256`: 404388e6f46dbf3e3980557f5c4dbdb876104e2075017da481dbf118a15b5b09
+- `schema`: loss_cs.v1
 - `unavailable_lanes`:
 - `verdict`: not_supported
 - `winner`: gaussian
@@ -52888,6 +52749,77 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - 0.00012397308872545248
   - 0.00011681797278370385
 
+### `receipts/legacy-unsealed/cost_aware_rerun_20261007.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/legacy-unsealed/cost_aware_rerun_20261007.json | 618fadcd1cfa507b2a31f7671f55368c5e80c554647e238996af60759b020f7f | absent | no_embedded_seal | absent | absent | unspecified | false | true | false |
+
+- `claim`: simulated_allocation_solver_reliability_and_matched_validation_selection
+- `conditioning_evidence`: tests/unit/backtest/test_cost_solver_chain.py: scaled-vs-unscaled equivalence (k in 1e-2..1e2, atol 1e-6); equivalent formulations agree (atol 1e-5); status matrix fail-closed (only 'optimal' selectable); market-derived fixture momentum_factor359 flips from optimal_inaccurate(58 iters) to optimal under the conditioning fixes (objective scale 100->1 alone: 41 iters; cost epigraph alone: 118; all: 18).
+- `disclosed_disagreement`: A superseded run (run_20261007) selected momentum_20_cost_aware on validation, but forensic hashing proves it ran the PRE-rewrite 314-line allocator (byte hash 058afffc...), whose looser per-formulation acceptance certified decisions that the fail-closed chain correctly refuses (optimal_inaccurate recorded, never selected). The two runs disagree; the fail-closed chain's refusal is the binding verdict under the acceptance bar, tightened to GAP_TOL_ORIGINAL=1e-10 and never loosened. The earlier 'selected' outcome is NOT claimed as a conditioning-fix success.
+- `file`: cost_aware_rerun_20261007.json
+- `kind`: cost_aware_construction_rerun_verdict
+- `limitations`:
+<!-- verbatim-receipt-text -->
+> Research only; no live-trading, profitability or live-P&L claim (live_pnl_claim=false).
+<!-- /verbatim-receipt-text -->
+  - Simulated net price-return tournament; close-to-close forecast scores do not establish executable net returns.
+  - The 2025 holdout is SPENT and previously inspected; forward_2026H2 is not yet collected.
+  - Input universe has survivorship bias; source and availability are user declarations.
+  - Allocation return/uncertainty inputs are unvalidated proxies.
+  - Conditions 1 and 2 (live qualifying feed / forward record) remain BLOCKED.
+- `promote`: false
+- `protocol`:
+  - `acceptance`: only a genuinely optimal status plus the independent recomputation check (<=1e-7) may supply weights; optimal_inaccurate/suboptimal/feasible/numerical_error/solver_error are diagnostics, never selected
+  - `benchmark_protocol`: configs/real_benchmark_us_wide.json (frozen, unchanged)
+  - `feas_tol_original`: 1e-08
+  - `gap_tol_original`: 1e-10
+  - `solver_chain`:
+    - CLARABEL
+    - OSQP
+    - SCS
+    - HIGHS
+  - `spec`: configs/cost_aware_tournament.json (frozen slate, unchanged)
+  - `tolerance_direction`: tightened vs every historical formulation, never loosened
+- `research_only`: true
+- `runs`:
+  - `run_20261007`:
+    - `code_identity`: PRE-rewrite 314-line repair (objective x100 ladder) - NOT the fail-closed solver chain
+    - `complete`: true
+    - `cost_allocation_sha256`: 058afffc7e6943c74710fedad694db383560331bb174387b0e6e1e551aa3a186
+    - `dir`: research/cost_aware_tournament_20261007
+    - `receipt_sha256`: 7ce7ff05047f563759012b4ae0c9542fa096bc3a2c506330e3f203aa76153825
+    - `test_phase`: REFUSED by the run's own code/runtime lock after external tree wipes changed cost_allocation.py bytes; no test receipt exists
+    - `validation_selected`: momentum_20_cost_aware
+  - `run_20261007r2`:
+    - `all_terminal_liquidations_complete`: false
+    - `code_identity`: committed fail-closed multi-solver chain with conditioning fix
+    - `complete`: false
+    - `cost_allocation_sha256`: 210249552a9f8296434bcb3d394c2a71088b3d80dbaca84b023193649c2243a7
+    - `dir`: research/cost_aware_tournament_20261007r2
+    - `receipt_sha256`: 2e53d9c4abed48e66f6a3350a77a01f35bf6108c23fc143fd43322c99d0af2d4
+    - `test_phase`: REFUSED ('validation was incomplete; no candidate was selected'); fail-closed by design
+    - `validation_selected`: null
+- `schema`: lane_receipt.v1
+- `sealed_at`: 2026-10-07T22:12:00+05:30
+- `snapshot`:
+  - `bars_parquet`: data/file_us_wide/bronze/bars.parquet
+  - `names`: 424
+  - `sha256`: e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117
+- `verdict`: LOUD NEGATIVE. Under the committed fail-closed solver chain the matched validation re-run on the tracked 424-name snapshot with the frozen slate selects NOTHING: selected=null, complete=false. This is the pre-committed acceptable outcome and is recorded without softening: there is no selected candidate and no test receipt. economic_evidence_gate=false; selected_holdout_adjusted_rejection never turned true because no test phase ever ran.
+
+### `receipts/legacy-unsealed/cost_aware_rerun_20261007.json.seal.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/legacy-unsealed/cost_aware_rerun_20261007.json.seal.json | 62cf7f39349bde7690af5f2c15d385a5f2aef910de152eb46bc92b63578b8df1 | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
+
+- `file`: cost_aware_rerun_20261007.json
+- `schema`: prereg_seal.v1
+- `sealed_at`: 2026-10-07T22:12:00+05:30
+- `sha256`: 618fadcd1cfa507b2a31f7671f55368c5e80c554647e238996af60759b020f7f
+
 ### `receipts/legacy-unsealed/fast_replay_p42_conformance_20260927.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -52919,6 +52851,81 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 <!-- verbatim-receipt-text -->
 > All workloads are SYNTHETIC generated fixtures. This receipt attests engine conformance, not performance; NAV/fee/P&L numbers are not evidence of live-trading results.
 <!-- /verbatim-receipt-text -->
+
+### `receipts/legacy-unsealed/forward_record_preregistration_v1.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/legacy-unsealed/forward_record_preregistration_v1.json | d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3 | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
+
+- `_seal`:
+  - `content_sha256`: b62151e486c97d233bbd2b0d9c071e85ae0a3af6c57253fa99eb0a156ddbd59e
+  - `schema`: prereg_seal.v1
+  - `sealed_at`: 2026-10-07T00:00:00+00:00
+- `admission_rule`:
+  - `material_effect_bps`: 5.0
+  - `primary_test`: one-sided H0: E[D_t] <= 0 vs H1: E[D_t] > 0, alpha=0.05, single fixed analysis
+  - `referee`: frozen validation/agent_referee.py betting referee (post-submission-only)
+  - `required_eligible_paired_sessions`: 1400
+  - `semantics`: anytime-valid admission at every stopping time; no optional-stopping inflation
+- `costs`:
+  - `borrow_bps_per_year`: 50.0
+  - `commission_bps`: 1.0
+  - `financing`: 0.0
+  - `half_spread_bps`: 5.0
+  - `impact_coefficient`: 0.1
+  - `participation_limit`: 0.1
+- `declaration_date`: 2026-10-07
+- `declaration_timezone`: Asia/Calcutta
+- `grid`:
+  - `comparator`: frozen equal-weight
+  - `strategy`: frozen momentum-20
+  - `trials`: single primary comparison; no mid-collection tuning
+- `holdout_statement`:
+  - `holdout_2025`: SPENT
+  - `reason`: The vendor pool already has results for the 2025 holdout and discloses survivorship bias. The 2025 holdout is spent and cannot be reused as new forward evidence.
+- `honesty`:
+  - `broker_connectivity_claim`: false
+  - `live_trading_claim`: false
+  - `note`: Forward record is simulated/shadow evidence only. No live orders, no live P&L, no profitability claim.
+  - `research_only`: true
+  - `synthetic_substitution`: false
+- `not_yet_collected`: true
+- `recorded`:
+  - externally timestamped inputs and decision cutoff
+  - intended signed quantities and simulated orders
+  - fills (including partials), rejects and reasons
+<!-- verbatim-receipt-text -->
+> positions, cash, costs, NAV and net-return accounting
+<!-- /verbatim-receipt-text -->
+  - kill-switch state
+  - software/config/data hashes and broker-state cursor
+  - immutable receipt chain
+- `schema`: forward_record_preregistration.v1
+- `splits`:
+  - `forward`: first accepted decision must occur on a LATER market date than the recorded freeze
+  - `warmup`: all historical bars on/before 2026-09-18 (warmup only, already inspected)
+- `status`: NOT_YET_COLLECTED
+- `universe`:
+  - `kind`: static_complete_universe
+  - `membership_selection_bias`: recorded in selection_basis; fixed-universe experiment
+  - `names`: static 424-name US universe frozen at the warmup boundary
+- `window`:
+  - `end`: null
+  - `label`: forward_2026H2
+  - `note`: Named forward window. It is NOT YET COLLECTED. Freeze and externally timestamp this record BEFORE the first forward close.
+  - `start`: 2026-07-01
+
+### `receipts/legacy-unsealed/forward_record_preregistration_v1.json.seal.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/legacy-unsealed/forward_record_preregistration_v1.json.seal.json | afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc | absent | no_embedded_seal | absent | absent | unspecified | absent | absent | absent |
+
+- `file`: forward_record_preregistration_v1.json
+- `schema`: prereg_seal.v1
+- `sealed_at`: 2026-10-07T00:00:00+00:00
+- `sha256`: d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3
 
 ### `receipts/level_gap_amzn.json`
 
@@ -54651,7 +54658,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/mcs_real_drill.json | 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53 | f0b72cb3aa796bbff4cc8744e72d6ef40c4539b4e3445e0356ddee5452dc4411 | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/mcs_real_drill.json | e5eefd943a4c1266cf0e98e12051b2627f16c4af3007ecf5d12a03d171727f39 | 3b0780a1bc0d647360fbb2e0e8572f5726eb50509e07c9bf70028e568aa1c009 | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alpha`: 0.05
 - `champion`: null
@@ -54695,8 +54702,9 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `n_eliminated`: 9
 - `n_heads`: 12
 - `n_origins`: 300
-- `receipt_sha256`: f0b72cb3aa796bbff4cc8744e72d6ef40c4539b4e3445e0356ddee5452dc4411
+- `receipt_sha256`: 3b0780a1bc0d647360fbb2e0e8572f5726eb50509e07c9bf70028e568aa1c009
 - `research_only`: true
+- `schema`: mcs_seq.v1
 - `survivors`:
   - fhs_skew
   - hstep_t
@@ -54706,7 +54714,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/mcs_vol_drill.json | 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0 | 682e8ffac5176756f26ac2afb92185b28c3ae4f33c56b9e2cabf4f4f43cbfc5e | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/mcs_vol_drill.json | 4c7d07a14295198ec8fd785926ffcf5c86992479593059d6df3b26e82e809ed9 | 764dc4883a069bf5bb588d55c53c1e26ad737c3273b05edd5b1499244070f26b | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alpha`: 0.05
 - `champion`: null
@@ -54733,8 +54741,9 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `n_eliminated`: 0
 - `n_heads`: 5
 - `n_origins`: 96
-- `receipt_sha256`: 682e8ffac5176756f26ac2afb92185b28c3ae4f33c56b9e2cabf4f4f43cbfc5e
+- `receipt_sha256`: 764dc4883a069bf5bb588d55c53c1e26ad737c3273b05edd5b1499244070f26b
 - `research_only`: true
+- `schema`: mcs_seq.v1
 - `survivors`:
   - dip_garch_t
   - har
@@ -54871,7 +54880,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/mid_dark_amzn.json | da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1 | 14d782f4c6dee695f77dd48ecc798b6bc2c2970534e2ef21003332c10a54eab6 | not_checked | 5b4eaa2696ae8f6c705b4788659023b22ffe2c19 | absent | unspecified | absent | absent | absent |
+| receipts/mid_dark_amzn.json | a877fbf280183a16c110d7f45589f2ce95172d8a775986604154332bf608a8b2 | f07b3a81cbf2680658c17da85f38fb7debd326bd6d836f894ad8dbcc169b0822 | not_checked | 5b4eaa2696ae8f6c705b4788659023b22ffe2c19 | absent | unspecified | absent | true | false |
 
 - `best_cell`:
   - `channels_in_tol`: 3
@@ -55720,7 +55729,8 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `unhit_imp_window`: 200
 - `horizon_events`: 20000
 - `kind`: sim_bench
-- `receipt_sha256`: 14d782f4c6dee695f77dd48ecc798b6bc2c2970534e2ef21003332c10a54eab6
+- `receipt_sha256`: f07b3a81cbf2680658c17da85f38fb7debd326bd6d836f894ad8dbcc169b0822
+- `research_only`: true
 - `schema`: mid_dark.v1
 - `seed`: 7
 - `target_instant_ticks`: 0.887
@@ -56965,7 +56975,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/multih_fleet_eval_5db1cab214e291d7.json | 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516 | 5db1cab214e291d7c691974021048221a38a67eb0ccf3ef6ba155bd0b7f9d593 | not_checked | ecb77bdd2f96530c6ab4c31fe4c92b93db36382f | absent | unspecified | absent | absent | false |
+| receipts/multih_fleet_eval_5db1cab214e291d7.json | e9124993717264e6bb68d982ef42eb4cbc14f0cad1198fce699d5972988afe0e | 168280d18265933fc8e5e19e8605cb4359a19e675104e5eda4bbd8b41a1f9a90 | not_checked | 069a537b91f6d88f6934df3c1504d39467993e11 | absent | unspecified | absent | absent | false |
 
 - `code_files`:
   - `multih_fleet.py`: 59cb6d8a0940c0dd954f4975b6f217acbbd1c261fc780db5e719bbabda6f1b79
@@ -56992,7 +57002,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - `python`: 3.12.14
   - `threadpools`:
 - `generated_at`: 2026-09-28T07:06:53.366878+00:00
-- `git_revision`: ecb77bdd2f96530c6ab4c31fe4c92b93db36382f
+- `git_revision`: 069a537b91f6d88f6934df3c1504d39467993e11
 - `kind`: multih_fleet_eval
 - `params_hash`: 1f318dca919f3831cac47b633f4bf77966d98e1068172f9f8f471a0a2932b77d
 - `payload`:
@@ -72422,7 +72432,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
       - `shard`: ar1_lagged_x
       - `status`: ok
   - `schema`: multih_fleet_eval.v1
-- `receipt_sha256`: 5db1cab214e291d7c691974021048221a38a67eb0ccf3ef6ba155bd0b7f9d593
+- `receipt_sha256`: 168280d18265933fc8e5e19e8605cb4359a19e675104e5eda4bbd8b41a1f9a90
 - `schema`: receipt.v2
 - `schema_version`: 2
 - `verdict`: pass
@@ -80268,57 +80278,28 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/real_benchmark_us_wide_manifest.json | b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69 | 819e12ea1e57c79a64d27662e356a85a5d988dc4304c743030071e514dfbff3d | not_checked | absent | e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117 | real | absent | true | false |
+| receipts/real_benchmark_us_wide_manifest.json | fd998c207d828de3b4486e4c4fa243705bb67b42d28fcd13f8fa550922f00a65 | 0cca4d26b5c33cadb7b1f82945507d8b98bc399c1a8191ecd4480d7e14cf6edf | not_checked | absent | e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117 | real | absent | true | false |
 
-- `schema_version`: 1
-- `created_at`: 2026-09-29T13:58:58.925202+00:00
-- `protocol`:
-  - `dataset_path`: ../../../../Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
-  - `dataset_sha256`: e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117
-  - `source_url`: https://github.com/artificial-hedge/dipcatcher/blob/d5200713c280438cf51649593517de5cd8b95646/data/file_us_wide/bronze/bars.parquet
-  - `usage_basis`: Existing owner-supplied research snapshot. Upstream vendor entitlements and redistribution rights have not been independently verified.
-  - `price_column`: close
-  - `price_adjustment`: Vendor snapshot close; adjustment and corporate-action completeness are unverified. Not a total-return or executable-price claim.
-  - `universe_description`: Existing 424-name file_us_wide vendor pool. Contains surviving securities; this benchmark does not reconstruct the historical listed universe.
-  - `survivorship_bias`: true
-  - `availability_basis`: reconstructed
-  - `holdout_previously_inspected`: true
-  - `train_start`: 2016-01-01
-  - `train_end`: 2021-12-31
-  - `validation_start`: 2022-01-10
-  - `validation_end`: 2023-12-31
-  - `test_start`: 2024-01-10
-  - `test_end`: 2025-09-30
-  - `horizon_sessions`: 1
-  - `embargo_sessions`: 1
-  - `decision_delay_seconds`: 0
-  - `min_train_rows`: 1000
-  - `min_score_dates`: 60
-  - `ridge_alpha`: 1.0
 - `audit`:
-  - `split_counts`:
-    - `train`:
-      - `rows`: 626297
-      - `dates`: 1490
-    - `validation`:
-      - `rows`: 208395
-      - `dates`: 495
-    - `test`:
-      - `rows`: 181451
-      - `dates`: 431
   - `excluded_windows`: 0
+  - `first_session`: 2016-01-04T21:00:00+00:00
+  - `last_session`: 2026-09-18T20:00:00+00:00
   - `late_rows`: 0
   - `n_names`: 424
   - `rows`: 1132803
   - `source_labels`:
     - yahoo
-  - `first_session`: 2016-01-04T21:00:00+00:00
-  - `last_session`: 2026-09-18T20:00:00+00:00
-- `runtime`:
-  - `python`: 3.12.14
-  - `numpy`: 2.5.3
-  - `polars`: 1.44.2
-- `research_only`: true
+  - `split_counts`:
+    - `test`:
+      - `dates`: 431
+      - `rows`: 181451
+    - `train`:
+      - `dates`: 1490
+      - `rows`: 626297
+    - `validation`:
+      - `dates`: 495
+      - `rows`: 208395
+- `created_at`: 2026-09-29T13:58:58.925202+00:00
 - `holdout_status`: previously_inspected
 - `limitations`:
   - Source, usage rights and historical availability are user declarations, not independently verified.
@@ -80326,40 +80307,46 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - Close-to-close forecast scores do not establish executable net returns.
   - Input universe has survivorship bias.
   - Historical availability timestamps were reconstructed.
-- `receipt_sha256`: 819e12ea1e57c79a64d27662e356a85a5d988dc4304c743030071e514dfbff3d
+- `protocol`:
+  - `availability_basis`: reconstructed
+  - `dataset_path`: ../../../../Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+  - `dataset_sha256`: e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117
+  - `decision_delay_seconds`: 0
+  - `embargo_sessions`: 1
+  - `holdout_previously_inspected`: true
+  - `horizon_sessions`: 1
+  - `min_score_dates`: 60
+  - `min_train_rows`: 1000
+  - `price_adjustment`: Vendor snapshot close; adjustment and corporate-action completeness are unverified. Not a total-return or executable-price claim.
+  - `price_column`: close
+  - `ridge_alpha`: 1.0
+  - `source_url`: https://github.com/artificial-hedge/dipcatcher/blob/d5200713c280438cf51649593517de5cd8b95646/data/file_us_wide/bronze/bars.parquet
+  - `survivorship_bias`: true
+  - `test_end`: 2025-09-30
+  - `test_start`: 2024-01-10
+  - `train_end`: 2021-12-31
+  - `train_start`: 2016-01-01
+  - `universe_description`: Existing 424-name file_us_wide vendor pool. Contains surviving securities; this benchmark does not reconstruct the historical listed universe.
+  - `usage_basis`: Existing owner-supplied research snapshot. Upstream vendor entitlements and redistribution rights have not been independently verified.
+  - `validation_end`: 2023-12-31
+  - `validation_start`: 2022-01-10
+- `receipt_sha256`: 0cca4d26b5c33cadb7b1f82945507d8b98bc399c1a8191ecd4480d7e14cf6edf
+- `research_only`: true
+- `runtime`:
+  - `numpy`: 2.5.3
+  - `polars`: 1.44.2
+  - `python`: 3.12.14
+- `schema`: real_benchmark_manifest.v1
+- `schema_version`: 1
 
 ### `receipts/real_benchmark_us_wide_test.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/real_benchmark_us_wide_test.json | df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a | 0b76b80d097306608776f781a99e6dc3aee534a87f8961daa69ae64e7cd46c8c | not_checked | absent | absent | unspecified | false | true | false |
+| receipts/real_benchmark_us_wide_test.json | cc70ed0fb4cd09684dc19018e399b0c98f789d078d23f40683c98ebd8064e56d | 860de4841d0eb9ab8b8923fb15f39821ddfba23046b76c5cb29a1d4f9552a8fb | not_checked | absent | absent | unspecified | false | true | false |
 
-- `phase`: test
-- `created_at`: 2026-09-29T13:59:37.949139+00:00
-- `scores`:
-  - `zero`:
-    - `date_equal_weight_mse`: 0.0003899407444036479
-    - `date_equal_weight_mae`: 0.012870926140241257
-    - `n_rows`: 181451
-    - `n_dates`: 431
-  - `historical_mean`:
-    - `date_equal_weight_mse`: 0.0003897374788546645
-    - `date_equal_weight_mae`: 0.012854571264094788
-    - `n_rows`: 181451
-    - `n_dates`: 431
-  - `rolling_mean_20`:
-    - `date_equal_weight_mse`: 0.0004090936928422287
-    - `date_equal_weight_mae`: 0.013320458128902708
-    - `n_rows`: 181451
-    - `n_dates`: 431
-  - `ridge`:
-    - `date_equal_weight_mse`: 0.0003890317418507178
-    - `date_equal_weight_mae`: 0.012853767095097219
-    - `n_rows`: 181451
-    - `n_dates`: 431
-- `research_only`: true
-- `promote`: false
 - `claim`: fixed_split_forecast_diagnostic
+- `created_at`: 2026-09-29T13:59:37.949139+00:00
 - `holdout_status`: previously_inspected
 - `limitations`:
   - Source, usage rights and historical availability are user declarations, not independently verified.
@@ -80367,40 +80354,41 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - Close-to-close forecast scores do not establish executable net returns.
   - Input universe has survivorship bias.
   - Historical availability timestamps were reconstructed.
-- `receipt_sha256`: 0b76b80d097306608776f781a99e6dc3aee534a87f8961daa69ae64e7cd46c8c
+- `phase`: test
+- `promote`: false
+- `receipt_sha256`: 860de4841d0eb9ab8b8923fb15f39821ddfba23046b76c5cb29a1d4f9552a8fb
+- `research_only`: true
+- `schema`: real_benchmark_scores.v1
+- `scores`:
+  - `historical_mean`:
+    - `date_equal_weight_mae`: 0.012854571264094788
+    - `date_equal_weight_mse`: 0.0003897374788546645
+    - `n_dates`: 431
+    - `n_rows`: 181451
+  - `ridge`:
+    - `date_equal_weight_mae`: 0.012853767095097219
+    - `date_equal_weight_mse`: 0.0003890317418507178
+    - `n_dates`: 431
+    - `n_rows`: 181451
+  - `rolling_mean_20`:
+    - `date_equal_weight_mae`: 0.013320458128902708
+    - `date_equal_weight_mse`: 0.0004090936928422287
+    - `n_dates`: 431
+    - `n_rows`: 181451
+  - `zero`:
+    - `date_equal_weight_mae`: 0.012870926140241257
+    - `date_equal_weight_mse`: 0.0003899407444036479
+    - `n_dates`: 431
+    - `n_rows`: 181451
 
 ### `receipts/real_benchmark_us_wide_validation.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/real_benchmark_us_wide_validation.json | 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3 | 519c05933f3756cfc92503f3dd5147540ab4cade2471238b40a3f3ac47d525b7 | not_checked | absent | absent | unspecified | false | true | false |
+| receipts/real_benchmark_us_wide_validation.json | 8057e0dd3b6daa31bb50184fdb88babb8b3e79e0f8fd6051d6ee45a13bd86746 | 271ddaf4114dcf61980aa4cb91fb60fdcc4cae75ae1c9df6247dd07ffcd12a1c | not_checked | absent | absent | unspecified | false | true | false |
 
-- `phase`: validation
-- `created_at`: 2026-09-29T13:59:17.438767+00:00
-- `scores`:
-  - `zero`:
-    - `date_equal_weight_mse`: 0.0004273770737642132
-    - `date_equal_weight_mae`: 0.014535197485731071
-    - `n_rows`: 208395
-    - `n_dates`: 495
-  - `historical_mean`:
-    - `date_equal_weight_mse`: 0.00042775123473955026
-    - `date_equal_weight_mae`: 0.014541446794625266
-    - `n_rows`: 208395
-    - `n_dates`: 495
-  - `rolling_mean_20`:
-    - `date_equal_weight_mse`: 0.00044714530569201074
-    - `date_equal_weight_mae`: 0.01494506365822247
-    - `n_rows`: 208395
-    - `n_dates`: 495
-  - `ridge`:
-    - `date_equal_weight_mse`: 0.0004301262572191714
-    - `date_equal_weight_mae`: 0.014594179764524259
-    - `n_rows`: 208395
-    - `n_dates`: 495
-- `research_only`: true
-- `promote`: false
 - `claim`: fixed_split_forecast_diagnostic
+- `created_at`: 2026-09-29T13:59:17.438767+00:00
 - `holdout_status`: previously_inspected
 - `limitations`:
   - Source, usage rights and historical availability are user declarations, not independently verified.
@@ -80408,7 +80396,32 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - Close-to-close forecast scores do not establish executable net returns.
   - Input universe has survivorship bias.
   - Historical availability timestamps were reconstructed.
-- `receipt_sha256`: 519c05933f3756cfc92503f3dd5147540ab4cade2471238b40a3f3ac47d525b7
+- `phase`: validation
+- `promote`: false
+- `receipt_sha256`: 271ddaf4114dcf61980aa4cb91fb60fdcc4cae75ae1c9df6247dd07ffcd12a1c
+- `research_only`: true
+- `schema`: real_benchmark_scores.v1
+- `scores`:
+  - `historical_mean`:
+    - `date_equal_weight_mae`: 0.014541446794625266
+    - `date_equal_weight_mse`: 0.00042775123473955026
+    - `n_dates`: 495
+    - `n_rows`: 208395
+  - `ridge`:
+    - `date_equal_weight_mae`: 0.014594179764524259
+    - `date_equal_weight_mse`: 0.0004301262572191714
+    - `n_dates`: 495
+    - `n_rows`: 208395
+  - `rolling_mean_20`:
+    - `date_equal_weight_mae`: 0.01494506365822247
+    - `date_equal_weight_mse`: 0.00044714530569201074
+    - `n_dates`: 495
+    - `n_rows`: 208395
+  - `zero`:
+    - `date_equal_weight_mae`: 0.014535197485731071
+    - `date_equal_weight_mse`: 0.0004273770737642132
+    - `n_dates`: 495
+    - `n_rows`: 208395
 
 ### `receipts/receipt_admission_529da640b520a49d.json`
 
@@ -85170,7 +85183,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/seed_sweep_demo_amzn.json | 7f5be12dde7fe0a377100dd6a2623ecd9b34a9d6d95cd68954c80f5068b9539f | 9eda6f54e96b06421aa86a4d7ba9f113a27f61ba4c368e86d87fb6a430e844d8 | not_checked | 694eaa80d494be7c6edb05f3ff77d660c862f2a8 | absent | unspecified | absent | true | absent |
+| receipts/seed_sweep_demo_amzn.json | 4d789df7b217c7162229157e731e765f4520bafb2406e885045b9e7fc29d7c03 | 467a64e291b3a7b9b52955cd47f273316e5ba773d68d416cc8465d4e0458fe1d | not_checked | 694eaa80d494be7c6edb05f3ff77d660c862f2a8 | absent | unspecified | absent | true | absent |
 
 - `claim`: mcse_verdicts_on_wave22b_divergences
 - `data_label`: MIXED
@@ -85288,9 +85301,9 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
       - `significant_share`: 1.0
       - `verdict_counts`:
         - `significant_divergence`: 3
-- `receipt_sha256`: 9eda6f54e96b06421aa86a4d7ba9f113a27f61ba4c368e86d87fb6a430e844d8
+- `receipt_sha256`: 467a64e291b3a7b9b52955cd47f273316e5ba773d68d416cc8465d4e0458fe1d
 - `research_only`: true
-- `schema`: 1
+- `schema`: seed_sweep_demo.v1
 - `tape`:
   - `date`: 2012-06-21
   - `msg`: AMZN_2012-06-21_34200000_57600000_message_10.csv
@@ -85301,7 +85314,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_140b073ea589b0c7.json | b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e | 140b073ea589b0c79cbd473d3de7480420aa364dc801b010c08b06d0794ea691 | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_140b073ea589b0c7.json | a47866a8ddac483ca48199c4069573322c3064c0e3f98dff05d52f47bc743acd | 2909cf43f574222fd5a275bd48c5c4d613752d5d52198ce6d8211fa792375083 | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -85354,14 +85367,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 1.5692901587608437e-16
 - `pooled_alarmed`: false
 - `pooled_evalue`: 4.22224229209249e-11
-- `receipt_sha256`: 140b073ea589b0c79cbd473d3de7480420aa364dc801b010c08b06d0794ea691
+- `receipt_sha256`: 2909cf43f574222fd5a275bd48c5c4d613752d5d52198ce6d8211fa792375083
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_1e8e1446e506fce1.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_1e8e1446e506fce1.json | 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976 | 1e8e1446e506fce11c3a75b7a776fb8c3110b63d75412675929c9d6f5f112c4b | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_1e8e1446e506fce1.json | f801a0ab5005cc5ad4455d09d8389e2a5c96b98e8fec1e235ccb40010795a0a7 | c3916723676b7d1784ed1a5a5e17aeb58418035638e256928de8363ee44fa28c | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -85414,14 +85428,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 5.230967195869479e-17
 - `pooled_alarmed`: false
 - `pooled_evalue`: 1.4125308551135108e-11
-- `receipt_sha256`: 1e8e1446e506fce11c3a75b7a776fb8c3110b63d75412675929c9d6f5f112c4b
+- `receipt_sha256`: c3916723676b7d1784ed1a5a5e17aeb58418035638e256928de8363ee44fa28c
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_2c14615c26efd19b.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_2c14615c26efd19b.json | b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e | 2c14615c26efd19b49fad1e97fcda3261d53d9c959a3aab3dc5229c06d0d4e95 | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_2c14615c26efd19b.json | 7f1c7f2c277a1ddaf7633f6ea2d83508040c36926dbe8a6d602cba5a09406b3f | 0447029dbcd9467181a8bdcb794ccf0434bfd01ee5900cd4f98a10fedf5d3ddf | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -85474,14 +85489,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 1.5692901587608437e-16
 - `pooled_alarmed`: false
 - `pooled_evalue`: 4.22224229209249e-11
-- `receipt_sha256`: 2c14615c26efd19b49fad1e97fcda3261d53d9c959a3aab3dc5229c06d0d4e95
+- `receipt_sha256`: 0447029dbcd9467181a8bdcb794ccf0434bfd01ee5900cd4f98a10fedf5d3ddf
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_46445c3b227aa15e.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_46445c3b227aa15e.json | 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0 | 46445c3b227aa15e35e334c50a7391b1cb826f77be4c96b62efc2b510b6afb9b | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_46445c3b227aa15e.json | 10f1d47ac18a93c3bcc4eeb23de977e24906c7467c89e61f0bb1f38bea59d789 | fde928affa068816c72a5bd64f1906509849c3905341c9df230f02bec9dd0533 | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -85534,14 +85550,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 1.5692901587608437e-16
 - `pooled_alarmed`: false
 - `pooled_evalue`: 4.22224229209249e-11
-- `receipt_sha256`: 46445c3b227aa15e35e334c50a7391b1cb826f77be4c96b62efc2b510b6afb9b
+- `receipt_sha256`: fde928affa068816c72a5bd64f1906509849c3905341c9df230f02bec9dd0533
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_47297eff3cb55178.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_47297eff3cb55178.json | a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7 | 47297eff3cb551784d2fcc3001913b50f6a1c31639a470c7d7c77bd6ae471a8c | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_47297eff3cb55178.json | aa27f7fa5f71156015d81d8d4669ce9f858b60f9ca33862755cf7618d3d07531 | 617dc8db8bd8aaf442ec7446d15b3dc80320ac1d0c75ad9883af42be5180fe3b | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -85594,14 +85611,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 1.5692901587608437e-16
 - `pooled_alarmed`: false
 - `pooled_evalue`: 4.22224229209249e-11
-- `receipt_sha256`: 47297eff3cb551784d2fcc3001913b50f6a1c31639a470c7d7c77bd6ae471a8c
+- `receipt_sha256`: 617dc8db8bd8aaf442ec7446d15b3dc80320ac1d0c75ad9883af42be5180fe3b
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_4f4a495b59d022fb.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_4f4a495b59d022fb.json | 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9 | 4f4a495b59d022fb7975eb0e8f4e809dbf3f80f0b40d93198d70a2fd9dabfa2f | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_4f4a495b59d022fb.json | 69adc921390e5c530792c99fef2ca895ca206d06261a599ec30f733c36563cbe | e4357ac89e45950f4c821d763ca505b1c39e99893a565aafe7476e590ad521cd | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -85654,14 +85672,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 1.4123611428847591e-15
 - `pooled_alarmed`: false
 - `pooled_evalue`: 1.3965518105791404e-12
-- `receipt_sha256`: 4f4a495b59d022fb7975eb0e8f4e809dbf3f80f0b40d93198d70a2fd9dabfa2f
+- `receipt_sha256`: e4357ac89e45950f4c821d763ca505b1c39e99893a565aafe7476e590ad521cd
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_771602cd1580476c.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_771602cd1580476c.json | 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866 | 771602cd1580476c5d3aea8cd46b7d9226dc73c59b64acb2ceacb194477c77e3 | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_771602cd1580476c.json | 3d96c2f9201b19a8319c216ef8dfc405b470dab5ad943e0947fbddd6aa9f028b | eb88f3c1ded7ada0dce889c959a39c437611510e497c5c1087037aefc5a7ae09 | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -85714,14 +85733,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 5.230967195869479e-17
 - `pooled_alarmed`: false
 - `pooled_evalue`: 1.267130129950862e-10
-- `receipt_sha256`: 771602cd1580476c5d3aea8cd46b7d9226dc73c59b64acb2ceacb194477c77e3
+- `receipt_sha256`: eb88f3c1ded7ada0dce889c959a39c437611510e497c5c1087037aefc5a7ae09
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_78dd891261e2aae9.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_78dd891261e2aae9.json | cafb78f75257cff2a338fe26021e82a4eae4b8049feeb02c7256ccfef805db0f | 78dd891261e2aae98cc73a80328f2a6fb89a21e65b5979065b458007e491c940 | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_78dd891261e2aae9.json | a1e947ec686d2270f1944a3e43429bc08b5497fc56a94ec7f3cb70b2fecb5cb2 | 17223b57479ec33fc5121a135ee047d406ee28158611d4e7096b879e9d7c00fb | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
   - `lag1_pos`: 89
@@ -85763,7 +85783,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 9.77491404566644e-15
 - `pooled_alarmed`: false
 - `pooled_evalue`: 9.169798001218833
-- `receipt_sha256`: 78dd891261e2aae98cc73a80328f2a6fb89a21e65b5979065b458007e491c940
+- `receipt_sha256`: 17223b57479ec33fc5121a135ee047d406ee28158611d4e7096b879e9d7c00fb
 - `replay`:
   - `argv`:
     - dipcatcher
@@ -85778,12 +85798,13 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
       - `path`: data/metadata/replay/serial_watch_e4787cdf189656a3.json
       - `sha256`: 4d9bdab0b8d16e132715d80f057c981674e5324f51c8210188b223ce725576ba
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_85db152db863d25d.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_85db152db863d25d.json | 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1 | 85db152db863d25d5b292aaf2a4e28083d804397191c2c80e3aca15e04f5b527 | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_85db152db863d25d.json | 07e7313171f577aa25deff2b01393372d67923524815179a2db3e852a077f2da | a7b8cdafc7f1d524c121cbd0fd0b4e5670ed055dadbba541385b1695ba077b3c | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -85836,14 +85857,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 1.5692901587608437e-16
 - `pooled_alarmed`: false
 - `pooled_evalue`: 4.22224229209249e-11
-- `receipt_sha256`: 85db152db863d25d5b292aaf2a4e28083d804397191c2c80e3aca15e04f5b527
+- `receipt_sha256`: a7b8cdafc7f1d524c121cbd0fd0b4e5670ed055dadbba541385b1695ba077b3c
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_8977244ef78bfd2f.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_8977244ef78bfd2f.json | 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f | 8977244ef78bfd2f5e8e1f117ead7f1c35d3194c805171c7a74143f42c4ea37b | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_8977244ef78bfd2f.json | d8979df3629350923969ea63a253e813a470f89aa8888fb0edee3e82988ef2d2 | 00fda078ae20a5ec5cc1d8300c4fc0d28dbd0511f0e884b2aa8c9d4dd5226773 | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -85896,14 +85918,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 1.5692901587608437e-16
 - `pooled_alarmed`: false
 - `pooled_evalue`: 4.22224229209249e-11
-- `receipt_sha256`: 8977244ef78bfd2f5e8e1f117ead7f1c35d3194c805171c7a74143f42c4ea37b
+- `receipt_sha256`: 00fda078ae20a5ec5cc1d8300c4fc0d28dbd0511f0e884b2aa8c9d4dd5226773
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_a6fd40311ce0fa04.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_a6fd40311ce0fa04.json | dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490 | a6fd40311ce0fa04bfc56e19e8c3e17bb32d05e1864a2b42839a48da6007a8ff | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_a6fd40311ce0fa04.json | 9537e59239033e375b0445c10e992ee0973d14890839bffc18b27b516bbdc7ee | cc6714d455387b019b34a8bfd4e33a59b2aa539b74f6b185528a2c26935f3a1a | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -85956,14 +85979,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 5.230967195869479e-17
 - `pooled_alarmed`: false
 - `pooled_evalue`: 1.267130129950862e-10
-- `receipt_sha256`: a6fd40311ce0fa04bfc56e19e8c3e17bb32d05e1864a2b42839a48da6007a8ff
+- `receipt_sha256`: cc6714d455387b019b34a8bfd4e33a59b2aa539b74f6b185528a2c26935f3a1a
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_d311f5ea367a66a9.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_d311f5ea367a66a9.json | 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f | d311f5ea367a66a98cca9df522959817d59793240b75ae3a29672ec34ca2a6db | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_d311f5ea367a66a9.json | 69cf9747990c69aa61df5ed5e69fbf2169744f433bd809d64a1c25be6fe9fced | cb1cd880aa8c4223304c089e1755a20a3add43b04114c49fa600bc8e14dc96fc | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -86016,14 +86040,15 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 1.5692901587608437e-16
 - `pooled_alarmed`: false
 - `pooled_evalue`: 4.22224229209249e-11
-- `receipt_sha256`: d311f5ea367a66a98cca9df522959817d59793240b75ae3a29672ec34ca2a6db
+- `receipt_sha256`: cb1cd880aa8c4223304c089e1755a20a3add43b04114c49fa600bc8e14dc96fc
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serial_watch_dbd21a6c99c81e00.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/serial_watch_dbd21a6c99c81e00.json | 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f | dbd21a6c99c81e0060ba02a19a788dfefadded2f612faccc5414daf9721c4916 | not_checked | absent | absent | unspecified | absent | true | false |
+| receipts/serial_watch_dbd21a6c99c81e00.json | 699f1ef1169792355531d586972dbacdcd4aa5e240d174c0837ee35f55b03986 | 946da105651813e889a6d66a528ffb452d006e3db2b56f280974f047adedd777 | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `alarm_origins`:
 - `alarmed_lags`:
@@ -86076,8 +86101,9 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pos`: 1.5692901587608437e-16
 - `pooled_alarmed`: false
 - `pooled_evalue`: 4.22224229209249e-11
-- `receipt_sha256`: dbd21a6c99c81e0060ba02a19a788dfefadded2f612faccc5414daf9721c4916
+- `receipt_sha256`: 946da105651813e889a6d66a528ffb452d006e3db2b56f280974f047adedd777
 - `research_only`: true
+- `schema`: serial_watch.v1
 
 ### `receipts/serve_audit.json`
 
@@ -90653,7 +90679,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/sweep_width_amzn.json | ed310e546e4b4f2c2544f99c24cf010197ae78d3fa753bede0af328dde59ccdd | a52e2a7415bdbdda9ce1f81bc4976478e758a845db7ccc440fd9792a6ae65fb9 | not_checked | b988629becb5cbaf0eb9429138d98137073105c4 | absent | unspecified | absent | true | absent |
+| receipts/sweep_width_amzn.json | a8b5fdadf08dfd194db6f9b290296ceceb4b2ae28e11d45dda65d7f8489d92af | 07fbff38629058e8b8bec70a5352480ed44432e2a68aaf94cbc48797ad44f436 | not_checked | b988629becb5cbaf0eb9429138d98137073105c4 | absent | unspecified | absent | true | absent |
 
 - `claim`: aggressor_sweep_width_real_vs_sim
 - `data_label`: MIXED
@@ -90685,9 +90711,9 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `6`: 1
     - `7`: 1
     - `8`: 1
-- `receipt_sha256`: a52e2a7415bdbdda9ce1f81bc4976478e758a845db7ccc440fd9792a6ae65fb9
+- `receipt_sha256`: 07fbff38629058e8b8bec70a5352480ed44432e2a68aaf94cbc48797ad44f436
 - `research_only`: true
-- `schema`: 1
+- `schema`: sweep_width.v1
 - `sim_arms`:
   - `iid`:
     - `max_width`: 1
@@ -93733,7 +93759,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/verdict_real_drill.json | 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7 | 1e775c9c68c2c4afb30f68e40829c746174bb3297301e619579ddee426d5e66c | not_checked | absent | inputs_sha256=86f74196e0b8b77de389cf70b0312c77753bd74975c1600c35d114a2d5241eb2 | unspecified | absent | true | false |
+| receipts/verdict_real_drill.json | 87c1c8ef39217d84cfdf3fda8fa125b524aae81df81ac6da4f9fa53bd1bbab90 | f290ee783a36631ea1a1ff3e078b5d00ec4369c587c219b2245ceb742b015338 | not_checked | absent | inputs_sha256=86f74196e0b8b77de389cf70b0312c77753bd74975c1600c35d114a2d5241eb2 | unspecified | absent | true | false |
 
 - `alpha`: 0.05
 - `components`:
@@ -93821,7 +93847,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `kind`: honest_verdict.v1
 - `n_heads`: 12
 - `n_obs`: 300
-- `receipt_sha256`: 1e775c9c68c2c4afb30f68e40829c746174bb3297301e619579ddee426d5e66c
+- `receipt_sha256`: f290ee783a36631ea1a1ff3e078b5d00ec4369c587c219b2245ceb742b015338
 - `research_only`: true
 - `run`:
   - `params`:
@@ -93838,6 +93864,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
       - `regime`: yahoo_eod
       - `skew_t`: yahoo_eod
       - `stack`: yahoo_eod
+- `schema`: loss_cs.v1
 - `unavailable_lanes`:
 - `verdict`: not_supported
 - `winner`: gaussian
