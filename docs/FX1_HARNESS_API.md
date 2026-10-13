@@ -1283,7 +1283,10 @@ capacity refusals, fallback-chain attribution, sealed
 restart-failed honesty, the `/v1/evals` spec/run surface, cursor
 fail-closed semantics, scoped auth, terminal webhooks, and the diff
 gate — is pinned by `receipts/fx1_eval_lifecycle_audit.json`
-(`fx1.serve.eval_lifecycle_audit.eval_lifecycle_audit_bench`).
+(`fx1.serve.eval_lifecycle_audit.eval_lifecycle_audit_bench`). The eval-spec
+hot-reload probes (shape editable while unbound, frozen at bind) were added
+later and are pinned by `receipts/fx1_eval_lifecycle_audit_f1852279ef2aca59.json`;
+the original stays at its stamped bytes because receipts are append-only.
 
 ## Ops knobs
 

@@ -1,0 +1,577 @@
+{
+  "acknowledged_chain_history": [
+    "receipts corpus_real_drill.json mutated @corpus_epoch_2bd794275af2b3d8 (d291ddb5e in-place regeneration; prior bytes at b07640432)",
+    "receipts corpus_history_absence_1791a18109fce973.json removed @corpus_epoch_a4cb68008a317f90 (never committed; migrated)",
+    "quality fuzz_drill_b966c0d125b2a999.json, fuzz_drill_cb1a0f56a4e67716.json removed @corpus_epoch_d7ca8a37b299e9e8 (950df4b3a2; later re-added byte-identical; migrated)",
+    "web public/fixtures/receipts/fast_replay_p42_conformance_20260927.json removed @corpus_epoch_326bc689d818d49e (migrated)"
+  ],
+  "admitted_before_first_stamp": {
+    "admitted": [
+      "receipts/fx1_cap_audit.json",
+      "receipts/fx1_ops_audit.json",
+      "receipts/fx1_replay_audit.json",
+      "receipts/fx1_eval_lifecycle_audit_f1852279ef2aca59.json"
+    ],
+    "command": "dipcatcher admit-batch <files> --corpus-dir receipts --strict --known-inconsistent quality/lattice_known_inconsistent.json --quarantine quality/legacy_quarantine.json --heads-pin quality/epoch_heads.json --epoch-acks quality/epoch_allowed_removals.json",
+    "not_admitted": {
+      "receipts/p0_evidence_inventory_v1.json": "admission verdict quarantine (honesty: data_label_missing). Registered as admission_honesty_gap in quality/legacy_quarantine.json, so suite-health reports it quarantined, never verified, and admission retains it rather than admitting it. It is stamped as a quarantined member, like the other registry entries."
+    },
+    "why": "Four receipts reached main after the receipts head corpus_epoch_2bd794275af2b3d8 without being stamped, and this migration adds one more (the preserved audit). Stamping records bytes as corpus members, so each was put through the production admission gate first instead of being stamped on trust."
+  },
+  "base_revision": "00b2eed4f",
+  "date": "2026-10-13",
+  "independent_confirmation": {
+    "elapsed_s": 139.7,
+    "equals_restored_receipt": "receipts/mcs_vol_drill.json",
+    "regenerated_sha256": "9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0",
+    "replay_carrier": "data/manifests/replay/mcs_vol.json"
+  },
+  "new_quarantine_entries": [
+    "receipts/mid_dark_amzn.json (claim_absent)",
+    "receipts/cost_aware_rerun_20261007.json + .seal.json (detached_prereg_seal)",
+    "receipts/forward_record_preregistration_v1.json + .seal.json (detached_prereg_seal)",
+    "receipts/p0_evidence_inventory_v1.json (admission_honesty_gap: verifies, but its payload has no data_label; never stamped, never admitted)"
+  ],
+  "policy": "No receipt was re-sealed, regenerated or edited. Every restored byte string equals the digest corpus_epoch_2bd794275af2b3d8 (the receipts head pinned on main) records. Receipts that cannot verify are quarantined with reasons, not exempted. Recorded chain history is acknowledged per (corpus, member, epoch, digests), never rewritten.",
+  "preserved_receipts": [
+    {
+      "git_revision_field": "ff054a2a1",
+      "path": "receipts/fx1_eval_lifecycle_audit_f1852279ef2aca59.json",
+      "receipt_sha256": "f1852279ef2aca59a5bd17ec4da32310795c499a0a7d358915b7d08f8be933cf",
+      "reproduced": "fx1.serve.eval_lifecycle_audit.eval_lifecycle_audit_bench() at 23649974e reproduces this body exactly except git_revision (136 probes; vs the pinned 132: adds spec_criteria_frozen_409, spec_datasource_frozen_409, spec_datasource_invalid_422, spec_datasource_reloads_unbound, spec_name_edits_when_bound; drops spec_datasource_frozen_422).",
+      "sha256": "16c6e3969091a825443712614b1dd31b0c1224c8196d1fa35596f6fafb4872dd",
+      "source_revision": "766a29ab9",
+      "why": "The newer audit is valid sealed evidence that lost a merge race to the stamp, not a forgery. It enters the corpus as a new member under its seal-prefixed name instead of overwriting a stamped receipt."
+    }
+  ],
+  "registry_migrations": [
+    {
+      "from": "legacy_unsealed.KNOWN_CONTRACT_LEGACY (python; suite-health + unit test)",
+      "to": "quality/legacy_quarantine.json files[cp_real_drill_*] contract_postdates_receipt"
+    },
+    {
+      "from": "legacy_unsealed.KNOWN_TAPE_LEGACY (python; unit test ONLY, suite-health --strict still failed)",
+      "to": "quality/legacy_quarantine.json files[basis_carry_*, crossvenue_basis_*] tape_manifest_unpinned"
+    },
+    {
+      "from": "quality/legacy_quarantine.json legacy_quarantine.v1 (unit test only; production skipped legacy-unsealed/)",
+      "to": "legacy_quarantine.v2 enforced by suite-health --strict, verify-all, admit-batch"
+    },
+    {
+      "from": "quality/epoch_allowed_removals.json flat {name: sha256} (verify-repo only; also suppressed live removals)",
+      "to": "epoch_acknowledgments.v1 ledger, same file, consumed by every chain check"
+    }
+  ],
+  "relocated_files": [
+    {
+      "from": "receipts/legacy-unsealed/cost_aware_rerun_20261007.json",
+      "moved_out_by": "7151c567",
+      "sha256": "618fadcd1cfa507b2a31f7671f55368c5e80c554647e238996af60759b020f7f",
+      "to": "receipts/cost_aware_rerun_20261007.json",
+      "why_restored": "original path: e0e7e6065 committed the preregistration and its prereg_seal.v1 sidecar together at receipts/, and docs/COST_AWARE_CONSTRUCTION.md cites receipts/cost_aware_rerun_20261007.json. 7151c567 moved the pair into legacy-unsealed/, whose category (pre_seal_era) does not describe a detached-sealed 2026-10-07 preregistration. Neither file was ever an epoch member (the receipts head 2bd794275af2b3d8 predates it), so the move broke no pin; it is quarantined in place as detached_prereg_seal."
+    },
+    {
+      "from": "receipts/legacy-unsealed/cost_aware_rerun_20261007.json.seal.json",
+      "moved_out_by": "7151c567",
+      "sha256": "62cf7f39349bde7690af5f2c15d385a5f2aef910de152eb46bc92b63578b8df1",
+      "to": "receipts/cost_aware_rerun_20261007.json.seal.json",
+      "why_restored": "original path: e0e7e6065 committed the preregistration and its prereg_seal.v1 sidecar together at receipts/, and docs/COST_AWARE_CONSTRUCTION.md cites receipts/cost_aware_rerun_20261007.json. 7151c567 moved the pair into legacy-unsealed/, whose category (pre_seal_era) does not describe a detached-sealed 2026-10-07 preregistration. Neither file was ever an epoch member (the receipts head 2bd794275af2b3d8 predates it), so the move broke no pin; it is quarantined in place as detached_prereg_seal."
+    },
+    {
+      "from": "receipts/legacy-unsealed/forward_record_preregistration_v1.json",
+      "moved_out_by": "7151c567",
+      "sha256": "d1f0022744261fbc52aa1296e8f4d859ae1d56705bf4920bbee7d4a75281cad3",
+      "to": "receipts/forward_record_preregistration_v1.json",
+      "why_restored": "original path; the forward_record .seal.json is RFC 3161-anchored at receipts/ (quality/timestamps/anchors.json target)"
+    },
+    {
+      "from": "receipts/legacy-unsealed/forward_record_preregistration_v1.json.seal.json",
+      "moved_out_by": "7151c567",
+      "sha256": "afc88d0767169ff88e22920d492ddc3c2db25c9dbdd00cb391504e81bb29fbcc",
+      "to": "receipts/forward_record_preregistration_v1.json.seal.json",
+      "why_restored": "original path; the forward_record .seal.json is RFC 3161-anchored at receipts/ (quality/timestamps/anchors.json target)"
+    }
+  ],
+  "restored_receipts": [
+    {
+      "mutated_sha256": "796254d8a81ca7d7a46cf0e37cdd8cdca3cdaea5f3d560ea7cb689a927f1f054",
+      "mutating_commits": [
+        "7151c5671",
+        "677b01a3e"
+      ],
+      "path": "receipts/coherence_2dd641ab766a536a.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "388c3db0c5afb9938843d70d276b7f6475528ee51c30a5bd54a6a98ad0e604b1",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "b3070f38754e18ce1a4b49cad6c3dc2af4758c697f5fa56cedb0b5d173c5c196",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/conformal_real_drill_gaussian_pit.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "c3c17b774973bd73ae15cd01a5c2f1f6c644fa8af5494a4f740a4a91ecacd109",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "aa31f59c331e28394a15dd4eaa1eb6567f79445b348d024be359229c50ec4db3",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/drift_real_drill_gaussian_pit.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "90e6e4edd2e7b7120f425e0a342e6c19b59d0a6256686ab58dee29639f896b10",
+      "mutating_commits": [
+        "7151c5671",
+        "677b01a3e"
+      ],
+      "path": "receipts/evidence_audit_3464d8f8197bf737.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "afd1a482eef7a2cab2774732cfa25fd4b7ec9827a320aeb62c50796ca8942b2b",
+      "mutating_commits": [
+        "7151c5671",
+        "677b01a3e"
+      ],
+      "path": "receipts/evidence_audit_d449e1ca0cc119a6.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "1c4651f3fc361a451e0476f159649ff0970c7791ab9b26f35a78c27ea9514d30",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/fast_replay_p42_conformance_20260928.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "13b5f9d473fb7f8a6c0e7ac26b236cfa0505ad0a07ba7c6f1674c7d51906ddd2",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/fifo_priority_amzn.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "f180b99da62d936a31bf9df79f637141a9b7bd4c4679fc3782739455dafd7e30",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "6d1816036e3676a6352488a5a790de9ab2aaf98d72d4f368f1ad45b741045bbf",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/honest_verdict_b133e8b3992af893.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "1a003a670945452a5c86d033900bc33429f2981422c8938b1b8e2469fc764f3a",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "9993757bd5cfb90681cbbbe4b388a6d94b07daa00029a7bd0feec4bec009a7d0",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/honest_verdict_real_drill.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "e5eefd943a4c1266cf0e98e12051b2627f16c4af3007ecf5d12a03d171727f39",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/mcs_real_drill.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "4c7d07a14295198ec8fd785926ffcf5c86992479593059d6df3b26e82e809ed9",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/mcs_vol_drill.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "a877fbf280183a16c110d7f45589f2ce95172d8a775986604154332bf608a8b2",
+      "mutating_commits": [
+        "7151c5671"
+      ],
+      "path": "receipts/mid_dark_amzn.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [
+        "research_only_not_true"
+      ],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1",
+      "restored_verifies": false
+    },
+    {
+      "mutated_sha256": "e9124993717264e6bb68d982ef42eb4cbc14f0cad1198fce699d5972988afe0e",
+      "mutating_commits": [
+        "7151c5671",
+        "677b01a3e"
+      ],
+      "path": "receipts/multih_fleet_eval_5db1cab214e291d7.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "fd998c207d828de3b4486e4c4fa243705bb67b42d28fcd13f8fa550922f00a65",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/real_benchmark_us_wide_manifest.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "cc70ed0fb4cd09684dc19018e399b0c98f789d078d23f40683c98ebd8064e56d",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/real_benchmark_us_wide_test.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "8057e0dd3b6daa31bb50184fdb88babb8b3e79e0f8fd6051d6ee45a13bd86746",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/real_benchmark_us_wide_validation.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "4d789df7b217c7162229157e731e765f4520bafb2406e885045b9e7fc29d7c03",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/seed_sweep_demo_amzn.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "7f5be12dde7fe0a377100dd6a2623ecd9b34a9d6d95cd68954c80f5068b9539f",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "a47866a8ddac483ca48199c4069573322c3064c0e3f98dff05d52f47bc743acd",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_140b073ea589b0c7.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "f801a0ab5005cc5ad4455d09d8389e2a5c96b98e8fec1e235ccb40010795a0a7",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_1e8e1446e506fce1.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "7f1c7f2c277a1ddaf7633f6ea2d83508040c36926dbe8a6d602cba5a09406b3f",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_2c14615c26efd19b.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "10f1d47ac18a93c3bcc4eeb23de977e24906c7467c89e61f0bb1f38bea59d789",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_46445c3b227aa15e.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "aa27f7fa5f71156015d81d8d4669ce9f858b60f9ca33862755cf7618d3d07531",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_47297eff3cb55178.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "69adc921390e5c530792c99fef2ca895ca206d06261a599ec30f733c36563cbe",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_4f4a495b59d022fb.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "3d96c2f9201b19a8319c216ef8dfc405b470dab5ad943e0947fbddd6aa9f028b",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_771602cd1580476c.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "a1e947ec686d2270f1944a3e43429bc08b5497fc56a94ec7f3cb70b2fecb5cb2",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_78dd891261e2aae9.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "cafb78f75257cff2a338fe26021e82a4eae4b8049feeb02c7256ccfef805db0f",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "07e7313171f577aa25deff2b01393372d67923524815179a2db3e852a077f2da",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_85db152db863d25d.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "d8979df3629350923969ea63a253e813a470f89aa8888fb0edee3e82988ef2d2",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_8977244ef78bfd2f.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "9537e59239033e375b0445c10e992ee0973d14890839bffc18b27b516bbdc7ee",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_a6fd40311ce0fa04.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "69cf9747990c69aa61df5ed5e69fbf2169744f433bd809d64a1c25be6fe9fced",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_d311f5ea367a66a9.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "699f1ef1169792355531d586972dbacdcd4aa5e240d174c0837ee35f55b03986",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/serial_watch_dbd21a6c99c81e00.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "a8b5fdadf08dfd194db6f9b290296ceceb4b2ae28e11d45dda65d7f8489d92af",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/sweep_width_amzn.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "ed310e546e4b4f2c2544f99c24cf010197ae78d3fa753bede0af328dde59ccdd",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "87c1c8ef39217d84cfdf3fda8fa125b524aae81df81ac6da4f9fa53bd1bbab90",
+      "mutating_commits": [
+        "7151c5671",
+        "87ff0c06a"
+      ],
+      "path": "receipts/verdict_real_drill.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "7099b7a1bc",
+      "restored_sha256": "63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "2a3300764a5b916130f64db8c29b05c0a48e2212b43730f75f4970bff2eae354",
+      "mutating_commits": [
+        "c036dee9d"
+      ],
+      "note": "Stamped since the genesis receipts epoch d479e96760271bba. c036dee9d retagged it calibration_audit.v1 -> calibration_audit.drill.v1 and re-sealed it: a rewrite of stamped evidence that also moved it out of the calibration_audit.v1 deep contract.",
+      "path": "receipts/calib_real_drill.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "734c9fd8a",
+      "restored_sha256": "667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c",
+      "restored_verifies": true
+    },
+    {
+      "mutated_sha256": "16c6e3969091a825443712614b1dd31b0c1224c8196d1fa35596f6fafb4872dd",
+      "mutating_commits": [
+        "766a29ab9"
+      ],
+      "note": "Not tampering. 766a29ab9 re-sealed the audit with spec hot-reload probes while it was still unstamped; the head that first stamped it (corpus_epoch_2bd794275af2b3d8) was generated from 8312bb5861, which lacked 766a29ab9, because PR #2920 (9c8605527) merged 82 s before stamp PR #2950 (ff37ba911). The pinned bytes are restored to keep the chain append-only; the 766a29ab9 bytes are preserved as receipts/fx1_eval_lifecycle_audit_f1852279ef2aca59.json (see preserved_receipts).",
+      "path": "receipts/fx1_eval_lifecycle_audit.json",
+      "pinned_by_epoch": "corpus_epoch_2bd794275af2b3d8.json",
+      "restored_errors": [],
+      "restored_from_revision": "a44bac650",
+      "restored_sha256": "03851ed9f14a7c2c5b9958f758d3ec5496c50255a671212db7e3f06f4b7388f3",
+      "restored_verifies": true
+    }
+  ],
+  "review_corrections": [
+    "Initial trace ran on a shallow clone: calib_real_drill.json and fx1_eval_lifecycle_audit.json were wrongly treated as unrecoverable and acknowledged as mutations in a new epoch; that unpushed stamp was dropped and both were restored instead (c036dee9d retag+reseal, 766a29ab9 reseal).",
+    "provenance_gaps entries for four receipts were removed: their git_revisions exist as refs/tags/attic/receipt-provenance/* and resolve as not_ancestor notes.",
+    "Second independent review: (1) the first restore commit message called both c036dee9d and 766a29ab9 post-stamp rewrites; only c036dee9d was (766a29ab9 lost a merge race, see restored_receipts note); (2) the calibration_audit.v1 drift ack claimed both members dispatch the deep contract; only calib_real_drill.json does (calibration_audit.json is kind calibration_audit); (3) the mid_dark_amzn quarantine reason omitted that 7151c567 also inserted live_pnl_claim; (4) cost_aware why_restored had been copied from forward_record. All four were corrected before push.",
+    "Third independent review (no blockers): the PR-only gates were skipped in CI whenever make evidence-audit failed, which it does on inherited drift, so the evidence job's later steps now run with !cancelled(); a re-add under another case or Unicode spelling escaped the resurrection rule (names are now folded); an unstamped resurrection was admissible (now member_resurrected_live); the ack gate ignored unknown corpus keys (now epoch_ack_unknown_corpus); the standalone script accepted duplicate keys in epoch files (now epoch_receipt_invalid, as in the library). While re-checking unstamped receipts before stamping, p0_evidence_inventory_v1.json was found to fail admission; an earlier unpushed stamp had included it, and it is now quarantined instead.",
+    "Fourth independent review (no blockers): the quarantine registry could grow in the same change that adds a receipt (now the quarantine-gate PR rule: new entries must pin bytes the base already had, and an admission_honesty_gap entry must be an unstamped base file); epoch-consistency aborted at the local-only data/metadata chain on clean checkouts, leaving 21 corpora unproven (now skipped by the same rule verify-repo uses); the evidence job's 10-minute timeout could not fit every gate (now 25); the honesty-gap pin is checked against the classified bytes themselves; name folding also drops NTFS trailing dots and spaces; the count above said five where it is four."
+  ],
+  "schema": "evidence_migration.v1",
+  "schema_drift_acks": [
+    "calibration_audit.v1: calib_real_drill.json + calibration_audit.json (two claim shapes in sealed history)"
+  ]
+}

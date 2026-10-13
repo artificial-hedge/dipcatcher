@@ -129,8 +129,16 @@
       "errors": [
         "research_only_not_true"
       ],
-      "reason": "SYNTHETIC sim_bench (mid_dark.v1) receipt sealed without research_only/live_pnl_claim declarations; the honesty contract requires research_only: true (research_only_not_true). These are the epoch-pinned bytes; 7151c567 had inserted research_only and re-sealed, which forged a claim into sealed evidence and was reverted on 2026-10-13.",
+      "reason": "SYNTHETIC sim_bench (mid_dark.v1) receipt sealed without research_only/live_pnl_claim declarations; the honesty contract requires research_only: true (research_only_not_true). These are the epoch-pinned bytes; 7151c567 had inserted both research_only: true and live_pnl_claim: false and re-sealed, which forged claims into sealed evidence and was reverted on 2026-10-13.",
       "sha256": "da7afa773a1280ac1bff785c8fa1fbf9b10e2512ac39d3120f528ccc735207e1"
+    },
+    "p0_evidence_inventory_v1.json": {
+      "category": "admission_honesty_gap",
+      "errors": [
+        "data_label_missing"
+      ],
+      "reason": "receipt.v2 evidence-debt inventory written by 19409a7ba (2026-10-07). Seal and contracts verify, but its claim body (payload) declares research_only and live_pnl_claim and no data_label; the envelope's data_label field holds a schema name (p0_evidence_inventory.v1). It entered main after the last receipts stamp without passing admission, which quarantines it (data_label_missing), so it is recorded here instead of being stamped as admitted evidence. Supersede it by regenerating under a new name with a payload data_label; never edit these bytes.",
+      "sha256": "14ec1043293364e48787bc29446dbfb51b0fb55d69e20d0ba1328c905269cab4"
     }
   },
   "schema": "legacy_quarantine.v2",
@@ -140,7 +148,7 @@
         "calib_real_drill.json": "667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c",
         "calibration_audit.json": "c9f800216f05073fed4da606f04823cc71bb37909d4242492f5e280cdb64964f"
       },
-      "reason": "Two claim-block shapes under one tag in sealed, epoch-pinned history: calib_real_drill.json (drill output of scripts/calib_real_drill.py, no claim block) and calibration_audit.json (lane audit with an ok/results claim). Both are calibration_audit.v1 receipts and both verify under that tag's deep contract (evalue_contracts dispatches on it). c036dee9d retagged calib_real_drill.json to calibration_audit.drill.v1 and re-sealed it, which rewrote a stamped receipt and also moved it out of that deep contract; the rewrite was reverted on 2026-10-13 to the bytes corpus_epoch_2bd794275af2b3d8 pins. The drift is recorded history, not a contract weakening."
+      "reason": "Two claim-block shapes share the calibration_audit.v1 tag in sealed, epoch-pinned history: calib_real_drill.json (drill output of scripts/calib_real_drill.py: kind and schema both calibration_audit.v1, no claim block) and calibration_audit.json (lane audit: kind calibration_audit, schema calibration_audit.v1, ok/results claim). evalue_family_contract_errors dispatches on kind first, so only calib_real_drill.json runs the calibration_audit.v1 deep contract; calibration_audit.json is checked by its seal and honesty stamps only. c036dee9d retagged calib_real_drill.json to calibration_audit.drill.v1 and re-sealed it, which rewrote a receipt stamped since the genesis receipts epoch and also moved it out of that deep contract; the rewrite was reverted on 2026-10-13 to the bytes corpus_epoch_2bd794275af2b3d8 pins. The drift is recorded history, not a contract weakening."
     }
   }
 }
