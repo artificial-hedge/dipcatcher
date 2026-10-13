@@ -2746,6 +2746,15 @@ def _make_lifespan(
     return _lifespan
 
 
+def _receipt_body_matches_digest(body: bytes, sha256: str) -> bool:
+    """True when the sealed body's own digest equals the requested hash."""
+    try:
+        stored_sha = json.loads(body).get("receipt_sha256")
+    except (AttributeError, TypeError, ValueError):
+        return False
+    return isinstance(stored_sha, str) and hmac.compare_digest(stored_sha, sha256)
+
+
 def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
     """Receipt-verify + content-addressed fetch routes, kept out of
     ``create_app`` to keep its branch complexity under the repo's ruff cap."""
@@ -2873,11 +2882,7 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
                 "stored receipt failed integrity verification",
                 code="receipt_integrity_failed",
             )
-        try:
-            stored_sha = json.loads(body).get("receipt_sha256")
-        except (AttributeError, TypeError, ValueError):
-            stored_sha = None
-        if not isinstance(stored_sha, str) or not hmac.compare_digest(stored_sha, sha256):
+        if not _receipt_body_matches_digest(body, sha256):
             raise ApiError(
                 409,
                 "stored receipt does not match requested digest",

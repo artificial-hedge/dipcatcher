@@ -351,6 +351,19 @@ def _numeric_disagreement(left: Claim, right: Claim) -> bool:
     return bool(left_facts or right_facts) and left_facts != right_facts
 
 
+def _claims_conflict(left: Claim, right: Claim) -> bool:
+    """True when two claims from different sources contradict."""
+    if left.source_url == right.source_url:
+        return False
+    if _negated(left) != _negated(right):
+        return True
+    left_pol = _polarity(left)
+    right_pol = _polarity(right)
+    if left_pol and right_pol and left_pol != right_pol:
+        return True
+    return bool(_numeric_disagreement(left, right))
+
+
 def group_claims(claims: list[Claim], *, threshold: float = 0.6) -> list[ClaimGroup]:
     """Cluster claims by token overlap and detect contradictions inside each
     cluster: negation, or antonym polarity in opposite directions."""
@@ -371,18 +384,9 @@ def group_claims(claims: list[Claim], *, threshold: float = 0.6) -> list[ClaimGr
     for group in groups:
         for i, left in enumerate(group.claims):
             for right in group.claims[i + 1 :]:
-                if left.source_url == right.source_url:
-                    continue
-                conflict = False
-                if _negated(left) != _negated(right):
-                    conflict = True
-                left_pol = _polarity(left)
-                right_pol = _polarity(right)
-                if left_pol and right_pol and left_pol != right_pol:
-                    conflict = True
-                if _numeric_disagreement(left, right):
-                    conflict = True
-                if conflict and (left.text, right.text) not in group.contradictions:
+                if _claims_conflict(left, right) and (
+                    (left.text, right.text) not in group.contradictions
+                ):
                     group.contradictions.append((left.text, right.text))
     groups = [g for g in groups if g.claims]
     groups.sort(key=lambda g: (-len(g.sources), -len(g.claims)))

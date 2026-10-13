@@ -23,7 +23,7 @@ try:
     from numba import njit
 
     _HAVE_NUMBA = True
-except Exception:  # pragma: no cover - numba is a required dependency
+except ImportError:  # pragma: no cover - numba is a required dependency
     _HAVE_NUMBA = False
 
     def njit(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[no-redef]
@@ -63,7 +63,7 @@ def _garch_fit_cache_key(model: Any, raw: object) -> str | None:
         import arch
 
         fitter_id = id(arch.arch_model)
-    except Exception:
+    except ImportError:
         fitter_id = 0
     return _GARCH_FIT_CACHE.hash_key(
         (

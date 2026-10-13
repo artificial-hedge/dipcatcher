@@ -106,7 +106,18 @@ def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Modu
     import torch
     from torch import nn
 
-    class _Block(nn.Module):
+    # torch ships as an optional extra, so ``mypy --strict`` sees ``nn.Module``
+    # as Any and refuses the subclass. Typechecking uses a real base; runtime
+    # still subclasses ``nn.Module``.
+    if TYPE_CHECKING:
+
+        class _TorchModule:
+            def __init__(self, *args: object, **kwargs: object) -> None: ...
+
+    else:
+        _TorchModule = nn.Module
+
+    class _Block(_TorchModule):
         def __init__(self) -> None:
             super().__init__()
             self.ln1 = nn.LayerNorm(dim)
@@ -137,7 +148,7 @@ def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Modu
             x = x + self.mlp["fc2"](nn.functional.gelu(self.mlp["fc1"](m), approximate="tanh"))
             return x
 
-    class _TinyLM(nn.Module):
+    class _TinyLM(_TorchModule):
         def __init__(self) -> None:
             super().__init__()
             self.tok_emb = nn.Embedding(vocab, dim)

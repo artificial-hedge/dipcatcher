@@ -123,6 +123,56 @@ def _pair_bars(
     return out
 
 
+def _raise_if_stale_carry(stale_held: dict[str, int | None]) -> None:
+    if not stale_held:
+        return
+    details = ", ".join(f"{sid}={age}" for sid, age in stale_held.items())
+    raise StaleValuationError("held carry pair valuation stale beyond limit: " + details)
+
+
+def _clamp_carry_buy_to_cash(
+    delta: float,
+    costs_p: dict[str, Any],
+    costs_s: dict[str, Any],
+    *,
+    so: float,
+    po: float,
+    budget: float,
+    adv_p: float,
+    vol_p: float,
+    adv_s: float,
+    vol_s: float,
+    costs: Any,
+) -> tuple[float, dict[str, Any], dict[str, Any]] | None:
+    """Clamp a spot buy so notional plus both legs' costs fit in ``budget``.
+
+    Sells (``delta <= 0``) are unchanged. Returns ``None`` when the residual
+    buy is below the one-currency lapse threshold.
+    """
+    if delta <= 0:
+        return delta, costs_p, costs_s
+    required = delta * so + float(costs_p["total"]) + float(costs_s["total"])
+    if required <= budget:
+        return delta, costs_p, costs_s
+    lo, hi = 0.0, float(delta)
+    for _ in range(64):
+        mid = (lo + hi) / 2.0
+        cp = total_cost(mid, po, adv_p, vol_p, costs)
+        cs = total_cost(mid, so, adv_s, vol_s, costs)
+        if mid * so + float(cp["total"]) + float(cs["total"]) <= budget:
+            lo = mid
+        else:
+            hi = mid
+    delta = lo
+    if delta * so < 1.0 or delta * po < 1.0:
+        return None
+    return (
+        delta,
+        total_cost(delta, po, adv_p, vol_p, costs),
+        total_cost(delta, so, adv_s, vol_s, costs),
+    )
+
+
 def run_carry_backtest(
     perp_bars: pl.DataFrame,
     spot_bars: pl.DataFrame,
@@ -252,9 +302,7 @@ def run_carry_backtest(
             for sid, u in book.units.items()
             if abs(u) > 1e-12 and mark_ages.get(sid, 10**9) > config.risk_gate.stale_price_bars
         }
-        if stale_held:
-            details = ", ".join(f"{s}={a}" for s, a in stale_held.items())
-            raise StaleValuationError("held carry pair valuation stale beyond limit: " + details)
+        _raise_if_stale_carry(stale_held)
 
         # --- execute pending pair orders at this bar's opens ---
         mark_p = {**prev_perp, **exec_perp}
@@ -314,35 +362,27 @@ def run_carry_backtest(
                 costs_s = total_cost(
                     delta, so, advs_s.get(sid, 1.0), vols_s.get(sid, 0.02), config.costs
                 )
-            if delta > 0:
-                # Both legs' costs are cash debits too. The notional-only
-                # clamp above is merely an upper bound; solve the monotone
-                # spot-notional + pair-cost budget after the other caps.
-                budget = max(0.0, book.cash - cash_buffer_frac * equity)
-                required = delta * so + float(costs_p["total"]) + float(costs_s["total"])
-                if required > budget:
-                    lo, hi = 0.0, float(delta)
-                    for _ in range(64):
-                        mid = (lo + hi) / 2.0
-                        cp = total_cost(
-                            mid, po, advs_p.get(sid, 1.0), vols_p.get(sid, 0.02), config.costs
-                        )
-                        cs = total_cost(
-                            mid, so, advs_s.get(sid, 1.0), vols_s.get(sid, 0.02), config.costs
-                        )
-                        if mid * so + float(cp["total"]) + float(cs["total"]) <= budget:
-                            lo = mid
-                        else:
-                            hi = mid
-                    delta = lo
-                    if delta * so < 1.0 or delta * po < 1.0:
-                        continue
-                    costs_p = total_cost(
-                        delta, po, advs_p.get(sid, 1.0), vols_p.get(sid, 0.02), config.costs
-                    )
-                    costs_s = total_cost(
-                        delta, so, advs_s.get(sid, 1.0), vols_s.get(sid, 0.02), config.costs
-                    )
+            # Both legs' costs are cash debits on a buy. The notional-only
+            # clamp above is merely an upper bound; solve the monotone
+            # spot-notional + pair-cost budget after the other caps. Sells
+            # pass through unchanged.
+            budget = max(0.0, book.cash - cash_buffer_frac * equity)
+            clamped = _clamp_carry_buy_to_cash(
+                delta,
+                costs_p,
+                costs_s,
+                so=so,
+                po=po,
+                budget=budget,
+                adv_p=advs_p.get(sid, 1.0),
+                vol_p=vols_p.get(sid, 0.02),
+                adv_s=advs_s.get(sid, 1.0),
+                vol_s=vols_s.get(sid, 0.02),
+                costs=config.costs,
+            )
+            if clamped is None:
+                continue
+            delta, costs_p, costs_s = clamped
             try:
                 kill.assert_new_orders_allowed()
             except KillSwitchActive:

@@ -115,7 +115,7 @@ def sample(returns: Array) -> tuple[Array, dict[str, float | str]]:
 
 try:
     from numba import njit as _njit
-except Exception:  # pragma: no cover - numba is a required dependency
+except ImportError:  # pragma: no cover - numba is a required dependency
 
     def _njit(*_a: object, **_k: object) -> object:  # type: ignore[no-redef]
         def _deco(fn: object) -> object:

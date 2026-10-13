@@ -913,6 +913,12 @@ def _require_no_risk_overlay(risk_overlay: Any) -> None:
         raise ValueError("fast replay does not support risk_overlay")
 
 
+def _degrade_or_reraise_replay(exc: BaseException) -> None:
+    """Raise ``exc`` unless this kernel failure should fall back to Python."""
+    if isinstance(exc, AttributeError) and not compiler_defect(exc):
+        raise exc
+
+
 def run_backtest_fast(
     bars: pl.DataFrame,
     weights: pl.DataFrame,
@@ -1086,18 +1092,11 @@ def run_backtest_fast(
             # Fail-closed paths reproduced by the kernel — same exceptions
             # the reference raises; propagate, do not fall back.
             raise
-        except (NumbaError, TypeError, RuntimeError):
-            # Narrowed from `except Exception` (quality ratchet). Only numba
-            # machinery failures (compile/type errors on an exotic environment)
-            # land here — degrade to the interpreted loop, which is bit-identical,
-            # rather than failing the run. Exotic errors propagate.
-            kernel_out = None
-        except AttributeError as exc:
-            # Numba 0.68 types np.empty's overload as a plain function
-            # (ol_np_empty.impl has no get_call_template). Same degrade.
-            # Any other AttributeError still propagates.
-            if not compiler_defect(exc):
-                raise
+        except (NumbaError, TypeError, RuntimeError, AttributeError) as exc:
+            # Numba machinery failures degrade to the interpreted loop, which
+            # is bit-identical. AttributeError degrades only for the known
+            # np.empty overload defect; every other one still propagates.
+            _degrade_or_reraise_replay(exc)
             kernel_out = None
     if kernel_out is not None:
         (

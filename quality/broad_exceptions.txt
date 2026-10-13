@@ -16,13 +16,12 @@ src/quant_fund/leakage/ast_scan.py 1
 src/quant_fund/market_sim/book.py 1
 src/quant_fund/metrics/serial.py 1
 src/quant_fund/metrics/watch.py 1
-src/quant_fund/microstructure/hawkes_mv.py 1
 src/quant_fund/models/caviar.py 1
-src/quant_fund/models/covariance.py 1
 src/quant_fund/models/fracdiff.py 1
 src/quant_fund/models/robinhood_plus/compare.py 2
 src/quant_fund/models/robinhood_plus/torch_backend.py 1
-src/quant_fund/models/volatility.py 3
+src/quant_fund/models/vol_per_security.py 2
+src/quant_fund/models/volatility.py 1
 src/quant_fund/native/boundary_audit.py 1
 src/quant_fund/native/causality_scan.py 1
 src/quant_fund/observe/tracing.py 1
@@ -31,6 +30,7 @@ src/quant_fund/paper/loop.py 2
 src/quant_fund/paper/quantile_signals.py 3
 src/quant_fund/paper/sim_live.py 2
 src/quant_fund/parity/__main__.py 1
+src/quant_fund/pipeline/artifact_manifest.py 1
 src/quant_fund/pipeline/flat_audit.py 3
 src/quant_fund/pipeline/forecast_audit.py 2
 src/quant_fund/pit/asof_audit.py 3
@@ -48,6 +48,7 @@ src/quant_fund/research/fleet_eval.py 1
 src/quant_fund/research/identity_sweep.py 1
 src/quant_fund/research/key_rotation.py 1
 src/quant_fund/research/ots_anchor.py 3
+src/quant_fund/research/promotion_receipt.py 1
 src/quant_fund/research/quorum_rotation.py 1
 src/quant_fund/research/reality_sweep.py 1
 src/quant_fund/research/repo_integrity.py 1

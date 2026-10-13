@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13388,
+  "module_count": 13389,
   "module_edges": [
     {
       "dst": "fx1",
@@ -4595,6 +4595,10 @@
       "src": "quant_fund.backtest.fast_replay"
     },
     {
+      "dst": "quant_fund.compute.numba_guard",
+      "src": "quant_fund.backtest.fast_replay"
+    },
+    {
       "dst": "quant_fund.config.models",
       "src": "quant_fund.backtest.fast_replay"
     },
@@ -6277,6 +6281,10 @@
     {
       "dst": "quant_fund.features.metadata",
       "src": "quant_fund.features"
+    },
+    {
+      "dst": "quant_fund.compute.numba_guard",
+      "src": "quant_fund.features._kernels"
     },
     {
       "dst": "quant_fund.features._kernels",
@@ -8675,6 +8683,10 @@
       "src": "quant_fund.microstructure.hawkes_clock_bench"
     },
     {
+      "dst": "quant_fund.compute.numba_guard",
+      "src": "quant_fund.microstructure.hawkes_mv"
+    },
+    {
       "dst": "quant_fund.microstructure.lobster",
       "src": "quant_fund.microstructure.hawkes_mv"
     },
@@ -11045,6 +11057,10 @@
     {
       "dst": "quant_fund.models.discrete",
       "src": "quant_fund.models.count_data"
+    },
+    {
+      "dst": "quant_fund.compute.numba_guard",
+      "src": "quant_fund.models.covariance"
     },
     {
       "dst": "quant_fund.models.quest",
@@ -13575,6 +13591,10 @@
       "src": "quant_fund.models.volatility"
     },
     {
+      "dst": "quant_fund.compute.numba_guard",
+      "src": "quant_fund.models.volatility"
+    },
+    {
       "dst": "quant_fund.models.base",
       "src": "quant_fund.models.volatility"
     },
@@ -15131,10 +15151,6 @@
       "src": "quant_fund.pipeline.train.families"
     },
     {
-      "dst": "quant_fund.models.ranking",
-      "src": "quant_fund.pipeline.train.families"
-    },
-    {
       "dst": "quant_fund.models.regime",
       "src": "quant_fund.pipeline.train.families"
     },
@@ -15144,6 +15160,10 @@
     },
     {
       "dst": "quant_fund.models.robinhood_plus.bench",
+      "src": "quant_fund.pipeline.train.families"
+    },
+    {
+      "dst": "quant_fund.models.robinhood_plus.constants",
       "src": "quant_fund.pipeline.train.families"
     },
     {
@@ -15597,22 +15617,6 @@
     {
       "dst": "quant_fund.proofcore.contracts",
       "src": "quant_fund.proof.cli"
-    },
-    {
-      "dst": "quant_fund.pipeline.artifact_manifest",
-      "src": "quant_fund.proof.promotion_receipt"
-    },
-    {
-      "dst": "quant_fund.registry.mlflow_store",
-      "src": "quant_fund.proof.promotion_receipt"
-    },
-    {
-      "dst": "quant_fund.research.receipt_v2",
-      "src": "quant_fund.proof.promotion_receipt"
-    },
-    {
-      "dst": "quant_fund.utils.hashing",
-      "src": "quant_fund.proof.promotion_receipt"
     },
     {
       "dst": "quant_fund.proofcore.contracts",
@@ -60063,6 +60067,22 @@
       "src": "quant_fund.research.policy_eprocess"
     },
     {
+      "dst": "quant_fund.pipeline.artifact_manifest",
+      "src": "quant_fund.research.promotion_receipt"
+    },
+    {
+      "dst": "quant_fund.registry.mlflow_store",
+      "src": "quant_fund.research.promotion_receipt"
+    },
+    {
+      "dst": "quant_fund.research.receipt_v2",
+      "src": "quant_fund.research.promotion_receipt"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.promotion_receipt"
+    },
+    {
       "dst": "quant_fund.metrics.scoring",
       "src": "quant_fund.research.prospective_sota"
     },
@@ -61864,6 +61884,7 @@
     "quant_fund.compute.cache",
     "quant_fund.compute.cache_audit",
     "quant_fund.compute.map_parity",
+    "quant_fund.compute.numba_guard",
     "quant_fund.compute.parallel",
     "quant_fund.compute.provenance",
     "quant_fund.compute.seed_audit",
@@ -72858,7 +72879,6 @@
     "quant_fund.proof.bundle",
     "quant_fund.proof.cli",
     "quant_fund.proof.estimators",
-    "quant_fund.proof.promotion_receipt",
     "quant_fund.proof.recorder",
     "quant_fund.proof.replay",
     "quant_fund.proof.runner",
@@ -74729,6 +74749,7 @@
     "quant_fund.research.pairs.spread",
     "quant_fund.research.phase1_verify",
     "quant_fund.research.policy_eprocess",
+    "quant_fund.research.promotion_receipt",
     "quant_fund.research.prospective_sota",
     "quant_fund.research.quantile_ladder",
     "quant_fund.research.quantile_mosaic",
@@ -75606,6 +75627,11 @@
       "src": "quant_fund.backtest"
     },
     {
+      "dst": "quant_fund.compute",
+      "imports": 1,
+      "src": "quant_fund.backtest"
+    },
+    {
       "dst": "quant_fund.config",
       "imports": 8,
       "src": "quant_fund.backtest"
@@ -75911,6 +75937,11 @@
       "src": "quant_fund.execution"
     },
     {
+      "dst": "quant_fund.compute",
+      "imports": 1,
+      "src": "quant_fund.features"
+    },
+    {
       "dst": "quant_fund.config",
       "imports": 1,
       "src": "quant_fund.features"
@@ -76211,6 +76242,11 @@
       "src": "quant_fund.metrics"
     },
     {
+      "dst": "quant_fund.compute",
+      "imports": 1,
+      "src": "quant_fund.microstructure"
+    },
+    {
       "dst": "quant_fund.labels",
       "imports": 1,
       "src": "quant_fund.microstructure"
@@ -76247,7 +76283,7 @@
     },
     {
       "dst": "quant_fund.compute",
-      "imports": 1,
+      "imports": 3,
       "src": "quant_fund.models"
     },
     {
@@ -76671,11 +76707,6 @@
       "src": "quant_fund.proof"
     },
     {
-      "dst": "quant_fund.pipeline",
-      "imports": 1,
-      "src": "quant_fund.proof"
-    },
-    {
       "dst": "quant_fund.pit",
       "imports": 1,
       "src": "quant_fund.proof"
@@ -76691,18 +76722,8 @@
       "src": "quant_fund.proof"
     },
     {
-      "dst": "quant_fund.registry",
-      "imports": 1,
-      "src": "quant_fund.proof"
-    },
-    {
-      "dst": "quant_fund.research",
-      "imports": 1,
-      "src": "quant_fund.proof"
-    },
-    {
       "dst": "quant_fund.utils",
-      "imports": 2,
+      "imports": 1,
       "src": "quant_fund.proof"
     },
     {
@@ -76872,7 +76893,7 @@
     },
     {
       "dst": "quant_fund.pipeline",
-      "imports": 13,
+      "imports": 14,
       "src": "quant_fund.research"
     },
     {
@@ -76901,13 +76922,18 @@
       "src": "quant_fund.research"
     },
     {
+      "dst": "quant_fund.registry",
+      "imports": 1,
+      "src": "quant_fund.research"
+    },
+    {
       "dst": "quant_fund.reporting",
       "imports": 1,
       "src": "quant_fund.research"
     },
     {
       "dst": "quant_fund.research",
-      "imports": 598,
+      "imports": 599,
       "src": "quant_fund.research"
     },
     {
@@ -76922,7 +76948,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 144,
+      "imports": 145,
       "src": "quant_fund.research"
     },
     {
