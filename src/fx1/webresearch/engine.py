@@ -29,7 +29,7 @@ from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 
 from fx1.webresearch.fetch import FetchResult, fetch_page, robots_allowed
-from fx1.webresearch.search import DEFAULT_MAX_RESULTS, Searcher, SearchHit
+from fx1.webresearch.search import DEFAULT_MAX_RESULTS, DEFAULT_TIMEOUT_S, Searcher, SearchHit
 
 # Do not split after abbreviation dots ("U.S.", "e.g."): a claim that loses
 # its subject groups and reads worse. Under-splitting is the safer error.
@@ -434,11 +434,10 @@ class Researcher:
         budget = budget or ResearchBudget()
         cancel_event = cancel_event or threading.Event()
         report = ResearchReport(goal=goal, started_at=_now_iso(), budget=budget)
-        report.queries_used = list(queries) if queries else default_queries(goal)
+        queries_used = list(queries) if queries else default_queries(goal)
         deadline = self._now() + budget.max_duration_s
         seen_urls: set[str] = set()
         searches_run = 0
-        queries_used = list(report.queries_used)
         searcher = self._searcher
         if searcher is None:
             from fx1.webresearch.search import DuckDuckGoLiteSearcher
@@ -452,7 +451,7 @@ class Researcher:
         def blocker() -> str | None:
             if cancel_event.is_set():
                 return "cancelled"
-            if self._now() > deadline:
+            if self._now() >= deadline:
                 return "time budget exhausted"
             if searches_run >= budget.max_searches:
                 return "search budget exhausted"
@@ -466,18 +465,22 @@ class Researcher:
                 report.redirected_from.append(active_goal)
                 active_goal = redirect
                 report.goal = redirect
-                fresh = [q for q in default_queries(redirect) if q not in queries_used]
-                queries_used = fresh + queries_used
-                report.queries_used = queries_used
+                queries_used = default_queries(redirect)
                 self._emit(on_progress, "redirect", f"now researching: {redirect}")
                 query_index = 0
                 continue
 
+            remaining_s = max(0.0, deadline - self._now())
             query = queries_used[query_index]
             query_index += 1
             searches_run += 1
+            report.queries_used.append(query)
             self._emit(on_progress, "searching", f"search: {query}")
-            result = searcher.search(query, max_results=budget.max_results_per_search)
+            result = searcher.search(
+                query,
+                max_results=budget.max_results_per_search,
+                timeout_s=min(DEFAULT_TIMEOUT_S, remaining_s),
+            )
             if result.error:
                 report.errors.append(f"search {query!r}: {result.error}")
                 continue
@@ -495,9 +498,7 @@ class Researcher:
                     report.redirected_from.append(active_goal)
                     active_goal = redirect
                     report.goal = redirect
-                    fresh = [q for q in default_queries(redirect) if q not in queries_used]
-                    queries_used = fresh + queries_used
-                    report.queries_used = queries_used
+                    queries_used = default_queries(redirect)
                     self._emit(on_progress, "redirect", f"now researching: {redirect}")
                     query_index = 0
                     break
