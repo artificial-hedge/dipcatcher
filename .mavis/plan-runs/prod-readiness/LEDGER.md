@@ -500,3 +500,43 @@ After WP-4K + WP-4L + WP-4M + WP-4N + WP-4O:
 remaining (`test_serve_audit.py` `${python}` literal `$` issue noted in
 earlier session) is a test-ordering-sensitive env issue that has not
 reproduced in this session's runs; CI's determinism handles it.
+
+#### WP-4P — refresh research-explorer fixtures to match sealed receipts (commits `6dbcb2dde` + `b6ae56fc0`)
+
+- **Bug**: 5 tests in `tests/unit/web_explorer/test_export_fixtures.py` were
+  failing: 4 from fixture drift, 1 from missing entries.
+  - 33 receipts in `web/public/fixtures/receipts/` had drifted from
+    `receipts/*.json` (different `git_revision`, different `receipt_sha256`)
+  - 4 receipts (`cost_aware_rerun_20261007.json`, etc) were listed in the
+    index but no longer existed in `receipts/` (removed in earlier work
+    without the index being regenerated)
+  - 4 stale `web/public/fixtures/receipts/<name>` files orphaned by the
+    missing source receipts
+  - 34 stale `hash_matches` entries in the index pointed at the
+    drifted-fixture hashes
+- **Fix**:
+  - Re-copied the 33 drifted fixtures from `receipts/` to
+    `web/public/fixtures/receipts/`
+  - Dropped the 4 missing source receipts from the index's `receipts[]`
+    and `hash_matches` map
+  - Removed the 4 orphaned fixture files
+  - Re-rewrote the index with the same `indent=1, sort_keys=True, allow_nan=False`
+    format the script uses (avoid 5000-line format drift)
+  - Also chmod'd 3 stray executable fixtures to 0644 (mode drift from
+    a stray `cp` invocation)
+- **Tests**:
+  - `test_receipt_fixtures_are_byte_identical_to_sealed_sources`: 1/1 (was fail)
+  - `test_fixtures_cover_every_sealed_receipt`: 1/1 (was fail)
+  - `test_every_committed_receipt_is_exported`: 1/1 (was fail)
+  - `test_receipts_declare_non_live_evidence`: 1/1 (was fail)
+  - `test_hash_match_table_points_at_committed_files`: 1/1 (was fail)
+  - `test_check_mode_detects_stale_fixtures`: still hangs — the
+    `web/scripts/export_fixtures.py --check` does a `git ls-tree -r` over
+    `HASH_SCAN_ROOTS` (6 dirs, 25K+ files) and per-blob `git cat-file` to
+    build the hash index, which takes 3+ minutes on csi-mount-root
+    (sandbox network FS); CI runs the same script on a faster FS and
+    passes within the default test timeout.
+- **Commits**:
+  - `6dbcb2dde` — fixture refresh
+  - `b6ae56fc0` — drop stray executable bit on 3 fixtures
+- **Branch**: both on `origin/isolated`
