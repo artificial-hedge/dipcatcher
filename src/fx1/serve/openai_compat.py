@@ -2300,12 +2300,14 @@ class OpenAIVectorStoreSearch(_Model):
         if ro.get("ranker", "auto") != "auto":
             raise ValueError("ranking_options.ranker accepts only 'auto'")
         st = ro.get("score_threshold")
-        # the cosine floor gets the file_search tool's bound: a bool is
-        # not a threshold, and out-of-range refuses at validation — the
-        # same verdict the direct-search core applies at call time.
-        if st is not None and (
-            not isinstance(st, (int, float)) or isinstance(st, bool) or not 0.0 <= st <= 1.0
-        ):
+        # The score_threshold *type* check stays here so a bool or
+        # non-numeric input fails at the body layer. The *range* check
+        # ([0, 1]) is intentionally deferred to the search route so the
+        # wire response is the 400 + ``invalid_filters`` contract the
+        # SYNTHETIC audit probes pin (see test_vs_audit.py
+        # ``search_score_threshold_range_400``); pydantic's
+        # ``RequestValidationError`` would otherwise land 422 + ``validation``.
+        if st is not None and (not isinstance(st, (int, float)) or isinstance(st, bool)):
             raise ValueError("score_threshold must be a number in [0, 1]")
         return self
 
