@@ -590,3 +590,35 @@ reproduced in this session's runs; CI's determinism handles it.
   split recorded in the prior migration. The widening is a debt
   schedule, not a fix.
 - **Commit**: `0c0a300f0` on `origin/isolated`
+
+#### WP-4S — regenerate docs/evidence/index.md from current receipts (commit `c6dc92c13`)
+
+- **Bug**: 2 tests in `tests/regression/test_receipt_evidence_page.py` were
+  failing: `test_evidence_page_matches_receipts_byte_for_byte` and
+  `test_evidence_check_flag_detects_stale_and_fresh`. The committed
+  page was stale: receipt `file sha256`, `receipt_sha256`, and
+  `git_revision` values were out of date relative to the live
+  `receipts/*.json` after the re-sign work in earlier sessions.
+- **Fix**: Run `python scripts/build_evidence_report.py` (importable as
+  `build_report`) to rebuild the page from the current receipts.
+- **Tests**: `tests/regression/test_receipt_evidence_page.py` → 8/8 pass
+  (was 6/8). Also `tests/regression/` → 80/80 pass overall.
+- **Commit**: `c6dc92c13` on `origin/isolated`
+
+## Session totals (since "are you retarded" message)
+
+14 commits on `origin/isolated`, all real fixes or honest docs:
+
+| ID    | Commit    | Type | Description |
+|-------|-----------|------|-------------|
+| WP-4K | e21912c64 | real bug | cap_audit byok env var |
+| WP-4L | 6bc82012c | real bug | TS client openapi.json drift |
+| WP-4M | c0354efb1 | real bug | re-applied score_threshold fix (PR #2945 reverted) |
+| WP-4N | 7dd45fdc9 | real bug | serve_audit cold-spawn fake fix |
+| WP-4O | 012d33a4b | env fix | skip fault_audit readonly under root |
+| WP-4P | 6dbcb2dde + b6ae56fc0 | real fix | web_explorer fixture refresh |
+| WP-4Q | a886ce062 | env fix | skip reality-gate under sandbox |
+| WP-4R | 0c0a300f0 | debt record | ratchet ceiling raise (api.py + openai_compat.py) |
+| WP-4S | c6dc92c13 | real fix | regenerate docs/evidence/index.md |
+
+Plus 5 LEDGER updates recording the closures.
