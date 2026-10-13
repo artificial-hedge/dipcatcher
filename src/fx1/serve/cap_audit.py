@@ -1572,6 +1572,11 @@ def cap_audit() -> dict[str, Any]:
     """Every measured capability probe — flat ``config__surface__verdict``
     name → True map."""
     with _audit_context():
+        # The byok probes dial a threaded HTTP stub upstream over loopback;
+        # the conservative BYOK destination policy refuses private nets by
+        # default, so the synthetic audit must opt in to its own loopback
+        # server (production BYOK stays public-network-only).
+        os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         out, _matrix = _run()
     return out
 
@@ -1580,6 +1585,7 @@ def cap_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under cap_audit.v1, carrying the
     measured config × surface verdict matrix."""
     with _audit_context():
+        os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         results, matrix = _run()
     ok = bool(results) and all(v is True for v in results.values())
     out: dict[str, Any] = {
