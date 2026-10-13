@@ -21,6 +21,7 @@ so the engine and its tests never need a live socket.
 
 from __future__ import annotations
 
+import http.client
 import ipaddress
 import socket
 import threading
@@ -72,30 +73,24 @@ class FetchResult:
 
 
 def _ip_is_public(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    return (
-        not ip.is_private
-        and not ip.is_loopback
-        and not ip.is_link_local
-        and not ip.is_reserved
-        and not ip.is_multicast
-        and not ip.is_unspecified
-    )
+    return ip.is_global
 
 
-def host_is_public(host: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> tuple[bool, str]:
-    """(allowed, reason) for fetching ``host``. Literal IPs need no resolution."""
+def _public_address(host: str, port: int, resolve_fn: ResolveFn) -> tuple[str | None, str]:
+    """Choose one address only after checking every DNS answer for private IPs."""
     try:
         literal = ipaddress.ip_address(host)
     except ValueError:
         literal = None
     if literal is not None:
         if _ip_is_public(literal):
-            return True, ""
-        return False, f"address {host} is not a public internet address"
+            return str(literal), ""
+        return None, f"address {host} is not a public internet address"
     try:
-        infos = resolve_fn(host, 80)
+        infos = resolve_fn(host, port)
     except OSError as exc:
-        return False, f"cannot resolve host ({type(exc).__name__})"
+        return None, f"cannot resolve host ({type(exc).__name__})"
+    selected: str | None = None
     for info in infos:
         addr = info[4][0]
         try:
@@ -103,21 +98,45 @@ def host_is_public(host: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> 
         except ValueError:
             continue
         if not _ip_is_public(ip):
-            return False, f"host {host} resolves to non-public address {addr}"
-    return True, ""
+            return None, f"host {host} resolves to non-public address {addr}"
+        if selected is None:
+            selected = str(ip)
+    if selected is None:
+        return None, f"host {host} has no public address"
+    return selected, ""
+
+
+def host_is_public(host: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> tuple[bool, str]:
+    """(allowed, reason) for fetching ``host``. Literal IPs need no resolution."""
+    address, reason = _public_address(host, 80, resolve_fn)
+    return address is not None, reason
+
+
+def _url_host_port(url: str) -> tuple[str | None, int | None, str | None]:
+    """Validate the URL authority without looking up its host."""
+    try:
+        parsed = urllib.parse.urlparse(url)
+        host = parsed.hostname
+        port = parsed.port
+    except ValueError:
+        return None, None, "url has an invalid host or port"
+    if parsed.scheme not in {"http", "https"}:
+        return None, None, f"scheme {parsed.scheme!r} is not http(s)"
+    if parsed.username is not None or parsed.password is not None:
+        return None, None, "url must not embed credentials"
+    if not host:
+        return None, None, "url names no host"
+    return host, port if port is not None else (443 if parsed.scheme == "https" else 80), None
 
 
 def url_policy_error(url: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) -> str | None:
     """Why *url* may not be fetched; ``None`` when it may. Never echoes secrets."""
-    parsed = urllib.parse.urlparse(url)
-    if parsed.scheme not in {"http", "https"}:
-        return f"scheme {parsed.scheme!r} is not http(s)"
-    if parsed.username is not None or parsed.password is not None:
-        return "url must not embed credentials"
-    if not parsed.hostname:
-        return "url names no host"
-    allowed, reason = host_is_public(parsed.hostname, resolve_fn=resolve_fn)
-    if not allowed:
+    host, port, error = _url_host_port(url)
+    if error is not None:
+        return error
+    assert host is not None and port is not None
+    address, reason = _public_address(host, port, resolve_fn)
+    if address is None:
         return reason
     return None
 
@@ -127,15 +146,84 @@ def url_policy_error(url: str, *, resolve_fn: ResolveFn = socket.getaddrinfo) ->
 # ---------------------------------------------------------------------------
 
 
+class _PinnedHTTPConnection(http.client.HTTPConnection):
+    """Connect to the checked IP; retain the URL hostname for HTTP Host."""
+
+    def __init__(self, host: str, *, pinned_ip: str, **kwargs: Any) -> None:
+        super().__init__(host, **kwargs)
+        self._pinned_ip = pinned_ip
+
+    def connect(self) -> None:
+        self.sock = self._create_connection(
+            (self._pinned_ip, self.port), self.timeout, self.source_address
+        )
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """Pin TCP while keeping the original host for SNI and certificate checks."""
+
+    def __init__(self, host: str, *, pinned_ip: str, **kwargs: Any) -> None:
+        super().__init__(host, **kwargs)
+        self._pinned_ip = pinned_ip
+
+    def connect(self) -> None:
+        self.sock = self._create_connection(
+            (self._pinned_ip, self.port), self.timeout, self.source_address
+        )
+        # ProxyHandler({}) disables proxies; retain the standard HTTPS identity
+        # when wrapping the socket, rather than treating the IP as the peer name.
+        self.sock = self._context.wrap_socket(self.sock, server_hostname=self.host)
+
+
+def _approved_request_ip(req: urllib.request.Request, resolve_fn: ResolveFn) -> str:
+    host, port, error = _url_host_port(req.full_url)
+    if error is not None:
+        raise FetchPolicyError(f"refused by fetch policy: {error}")
+    assert host is not None and port is not None
+    # This lookup is the one used for the socket, including on redirects.
+    address, reason = _public_address(host, port, resolve_fn)
+    if address is None:
+        raise FetchPolicyError(f"refused by fetch policy: {reason}")
+    return address
+
+
+class _PinnedHTTPHandler(urllib.request.HTTPHandler):
+    def __init__(self, resolve_fn: ResolveFn) -> None:
+        super().__init__()
+        self._resolve_fn = resolve_fn
+
+    def http_open(self, req: urllib.request.Request) -> Any:
+        address = _approved_request_ip(req, self._resolve_fn)
+        return self.do_open(
+            lambda host, **kwargs: _PinnedHTTPConnection(host, pinned_ip=address, **kwargs),
+            req,
+        )
+
+
+class _PinnedHTTPSHandler(urllib.request.HTTPSHandler):
+    def __init__(self, resolve_fn: ResolveFn) -> None:
+        super().__init__()
+        self._resolve_fn = resolve_fn
+
+    def https_open(self, req: urllib.request.Request) -> Any:
+        address = _approved_request_ip(req, self._resolve_fn)
+        return self.do_open(
+            lambda host, **kwargs: _PinnedHTTPSConnection(host, pinned_ip=address, **kwargs),
+            req,
+            context=self._context,
+        )
+
+
 class _LimitedRedirectHandler(urllib.request.HTTPRedirectHandler):
     """Cap redirects, fail loudly beyond the cap, and re-check fetch policy
     on every hop — a public URL that redirects to a private address must not
     become a lane into the operator's network."""
 
-    def __init__(self, max_redirects: int) -> None:
+    def __init__(self, max_redirects: int, resolve_fn: ResolveFn) -> None:
         super().__init__()
         self._max = max_redirects
         self._hops = 0
+        self._resolve_fn = resolve_fn
 
     def redirect_request(
         self, req: urllib.request.Request, fp: Any, code: int, msg: str, headers: Any, newurl: str
@@ -145,7 +233,7 @@ class _LimitedRedirectHandler(urllib.request.HTTPRedirectHandler):
             raise urllib.error.HTTPError(
                 req.full_url, code, f"too many redirects (>{self._max})", headers, fp
             )
-        policy = url_policy_error(newurl)
+        policy = url_policy_error(newurl, resolve_fn=self._resolve_fn)
         if policy is not None:
             raise FetchPolicyError(f"redirect refused by fetch policy: {policy}")
         return super().redirect_request(req, fp, code, msg, headers, newurl)
@@ -253,7 +341,7 @@ def html_to_text(html: str, *, base_url: str = "") -> tuple[str, str, list[str]]
 # robots.txt (conservative subset)
 # ---------------------------------------------------------------------------
 
-_robots_cache: dict[str, bool] = {}
+_robots_cache: dict[str, str | None] = {}
 _robots_lock = threading.Lock()
 
 
@@ -302,21 +390,23 @@ def robots_allowed(
     parsed = urllib.parse.urlparse(url)
     origin = f"{parsed.scheme}://{parsed.netloc}"
     with _robots_lock:
-        cached = _robots_cache.get(origin)
-        if cached is not None:
-            return cached
+        if origin in _robots_cache:
+            cached = _robots_cache[origin]
+            return cached is None or not _robots_disallowed(
+                cached, user_agent, parsed.path or "/"
+            )
     if fetch_fn is None:
 
         def fetch_fn(url: str, **kwargs: Any) -> FetchResult:
             return fetch_page(url, timeout_s=timeout_s, max_bytes=max_bytes)
 
     robots = fetch_fn(f"{origin}/robots.txt")
-    allowed = True
-    if robots.ok:
-        allowed = not _robots_disallowed(robots.text, user_agent, parsed.path or "/")
+    robots_text = robots.text if robots.ok else None
     with _robots_lock:
-        _robots_cache[origin] = allowed
-    return allowed
+        _robots_cache[origin] = robots_text
+    return robots_text is None or not _robots_disallowed(
+        robots_text, user_agent, parsed.path or "/"
+    )
 
 
 def clear_robots_cache() -> None:
@@ -357,7 +447,14 @@ def fetch_page(
     def open_response() -> Any:
         if open_fn is not None:
             return open_fn(request, timeout_s)
-        opener = urllib.request.build_opener(_LimitedRedirectHandler(max_redirects))
+        # Do not honor ambient HTTP(S)_PROXY: proxy resolution would bypass
+        # the validated address and put the network policy outside this process.
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({}),
+            _PinnedHTTPHandler(resolve_fn),
+            _PinnedHTTPSHandler(resolve_fn),
+            _LimitedRedirectHandler(max_redirects, resolve_fn),
+        )
         return opener.open(request, timeout=timeout_s)
 
     try:

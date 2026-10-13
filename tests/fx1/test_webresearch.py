@@ -6,6 +6,7 @@ snippet in a following <td class='result-snippet'>).
 """
 
 import io
+import socket
 import threading
 import urllib.error
 
@@ -155,8 +156,10 @@ def test_url_policy_blocks_non_http_and_private() -> None:
     assert url_policy_error("http://127.0.0.1/admin") is not None
     assert url_policy_error("http://192.168.1.1/") is not None
     assert url_policy_error("http://10.0.0.5/") is not None
+    assert url_policy_error("http://100.64.0.1/") is not None
     assert url_policy_error("http://[::1]/") is not None
-    assert url_policy_error("https://example.com/page") is None
+    assert url_policy_error("https://example.com:invalid/", resolve_fn=_public_resolve) is not None
+    assert url_policy_error("https://example.com/page", resolve_fn=_public_resolve) is None
 
 
 def test_url_policy_blocks_dns_rebinding_to_private() -> None:
@@ -186,6 +189,77 @@ def test_fetch_page_refuses_private_without_network() -> None:
     assert not result.ok
     assert "refused by fetch policy" in result.error
     assert opened == []
+
+
+def test_fetch_page_rejects_public_then_private_dns_before_connect(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = 0
+    connected: list[tuple[str, int]] = []
+
+    def rebind(host: str, port: int) -> list[tuple]:
+        nonlocal calls
+        calls += 1
+        ip = "93.184.216.34" if calls == 1 else "127.0.0.1"
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, port))]
+
+    def connect(address: tuple[str, int], *args: object, **kwargs: object) -> None:
+        connected.append(address)
+        raise AssertionError("a rebound address must never be connected")
+
+    monkeypatch.setattr(socket, "create_connection", connect)
+    result = fetch_page("https://rebind.example/secret", resolve_fn=rebind)
+    assert not result.ok
+    assert "non-public" in result.error
+    assert connected == []
+
+
+def test_fetch_page_connects_only_to_validated_ip(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connected: list[tuple[str, int]] = []
+
+    def connect(address: tuple[str, int], *args: object, **kwargs: object) -> None:
+        connected.append(address)
+        raise OSError("test socket stopped")
+
+    monkeypatch.setattr(socket, "create_connection", connect)
+    result = fetch_page(
+        "https://public.example:8443/report", resolve_fn=_public_resolve
+    )
+    assert not result.ok
+    assert connected == [("93.184.216.34", 8443)]
+
+
+def test_pinned_https_keeps_hostname_for_tls_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from fx1.webresearch.fetch import _PinnedHTTPSConnection
+
+    connections: list[tuple[str, int]] = []
+    tls_names: list[str] = []
+
+    class FakeContext:
+        def wrap_socket(self, sock: object, *, server_hostname: str) -> object:
+            tls_names.append(server_hostname)
+            return sock
+
+    dummy_socket = object()
+
+    def connect(address: tuple[str, int], *args: object, **kwargs: object) -> object:
+        connections.append(address)
+        return dummy_socket
+
+    monkeypatch.setattr(socket, "create_connection", connect)
+    connection = _PinnedHTTPSConnection(
+        "public.example:8443",
+        pinned_ip="93.184.216.34",
+        context=FakeContext(),
+    )
+    connection.connect()
+    assert connections == [("93.184.216.34", 8443)]
+    assert tls_names == ["public.example"]
+    assert connection.host == "public.example"
 
 
 # ---------------------------------------------------------------------------
@@ -274,6 +348,20 @@ def test_robots_disallow_honored() -> None:
     assert robots_allowed("https://site.example/private/data", fetch_fn=fetch_fn) is False
     clear_robots_cache()
     assert robots_allowed("https://site.example/public", fetch_fn=fetch_fn) is True
+
+
+def test_robots_cached_rules_are_checked_for_each_path() -> None:
+    calls: list[str] = []
+
+    def fetch_fn(url: str, **kwargs: object) -> FetchResult:
+        calls.append(url)
+        return FetchResult(
+            url=url, status=200, text="User-agent: *\nDisallow: /private\n"
+        )
+
+    assert robots_allowed("https://site.example/public", fetch_fn=fetch_fn) is True
+    assert robots_allowed("https://site.example/private/key", fetch_fn=fetch_fn) is False
+    assert calls == ["https://site.example/robots.txt"]
 
 
 def test_robots_cached_per_origin() -> None:

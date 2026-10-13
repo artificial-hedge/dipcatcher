@@ -657,16 +657,25 @@ def stale_artifacts(root: Path) -> list[str]:
     stale: list[str] = []
     for rel, content in artifacts.items():
         path = root / rel
-        if not path.is_file() or path.read_text(encoding="utf-8") != content:
+        if not path.is_file():
+            stale.append(rel)
+            continue
+        try:
+            current = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            stale.append(rel)
+            continue
+        if current != content:
             stale.append(rel)
     atlas = root / ATLAS_DOC
     if atlas.is_file():
         try:
-            expected = splice_blocks(atlas.read_text(encoding="utf-8"), generated_blocks(artifacts))
-        except ValueError:
+            current_atlas = atlas.read_text(encoding="utf-8")
+            expected = splice_blocks(current_atlas, generated_blocks(artifacts))
+        except (UnicodeDecodeError, ValueError):
             stale.append(_rel(ATLAS_DOC))
         else:
-            if atlas.read_text(encoding="utf-8") != expected:
+            if current_atlas != expected:
                 stale.append(_rel(ATLAS_DOC))
     else:
         stale.append(_rel(ATLAS_DOC))

@@ -290,7 +290,7 @@ def superpower_cmd(
     goal_text = " ".join(goal)
     gate = ApprovalGate(ask_fn=(lambda question: True) if approve_consequential else None)
     operator = concierge.Concierge(model=state["model"], approvals=gate)
-    operator._slash(f"/superpower {goal_text}{' --sync' if sync else ''}")  # noqa: SLF001
+    operator.start_superpower(goal_text, sync=sync)
     operator.join_job(timeout_s=operator.run_budget.max_wall_s + 60)
     operator.close("one-shot")
     job = operator.job
@@ -353,14 +353,14 @@ def research_cmd(
     sync: bool = typer.Option(False, "--sync", help="Run inline instead of in the background."),
 ) -> None:
     """Deep background web research: search, read, cross-check, report."""
-    goal_text = " ".join(goal)
-    extra = [f"--budget-s {budget_s}", f"--max-sources {max_sources}"]
-    if queries:
-        extra.append(f"--queries {queries}")
-    if sync:
-        extra.append("--sync")
     operator = concierge.Concierge(model=state["model"])
-    operator._slash(f"/research {goal_text} {' '.join(extra)}")  # noqa: SLF001
+    operator.start_research(
+        " ".join(goal),
+        budget_s=budget_s,
+        max_sources=max_sources,
+        queries=[query for query in queries.split("|") if query] if queries else None,
+        sync=sync,
+    )
     operator.join_job(timeout_s=budget_s + 30)
     operator.close("one-shot")
 

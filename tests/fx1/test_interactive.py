@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from fx1.interactive import actions, orb, profiles, shell, wizard
+from fx1.interactive import actions, concierge, orb, profiles, shell, wizard
 from fx1.interactive.app import app as fxi_app
 from fx1.serve.backends import MOONSHOT_API_URL, HostedK3Backend
 
@@ -807,7 +807,7 @@ def test_cli_superpower_one_shot_denies_consequential_by_default(
             kwargs.setdefault("persist", False)
             super().__init__(*args, **kwargs)  # type: ignore[arg-type]
 
-        def _slash(self, text: str) -> bool:
+        def start_superpower(self, goal: str, *, sync: bool = False) -> bool:
             return False
 
     monkeypatch.setattr(concierge_module, "Concierge", Recorder)
@@ -822,3 +822,71 @@ def test_cli_superpower_one_shot_denies_consequential_by_default(
     assert result.exit_code == 0
     gate = seen[1]
     assert gate is not None and gate.ask("run train?") is True  # explicit scoped policy
+
+
+def test_cli_one_shot_preserves_goal_and_seed_query_arguments(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: list[tuple[str, object]] = []
+
+    class RecordingConcierge:
+        def __init__(self, *, model: str, approvals: object = None) -> None:
+            seen.append(("model", model))
+            self.run_budget = type("Budget", (), {"max_wall_s": 300})()
+            self.job = None
+
+        def start_superpower(self, goal: str, *, sync: bool = False) -> bool:
+            seen.append(("superpower", (goal, sync)))
+            return False
+
+        def start_research(
+            self,
+            goal: str,
+            *,
+            budget_s: int | None = None,
+            max_sources: int | None = None,
+            queries: list[str] | None = None,
+            sync: bool = False,
+        ) -> bool:
+            seen.append(("research", (goal, budget_s, max_sources, queries, sync)))
+            return False
+
+        def join_job(self, timeout_s: float | None = None) -> None:
+            seen.append(("timeout", timeout_s))
+
+        def close(self, reason: str) -> None:
+            seen.append(("close", reason))
+
+    monkeypatch.setattr(concierge, "Concierge", RecordingConcierge)
+    superpower_goal = 'Compare "quoted assets", O\'Reilly, and --sync literally'
+    result = RUNNER.invoke(fxi_app, ["superpower", "--sync", superpower_goal])
+    assert result.exit_code == 0, result.output
+    assert ("superpower", (superpower_goal, True)) in seen
+
+    research_goal = 'Investigate "credit risk" and O\'Reilly --sync'
+    seed_queries = 'debt ceiling 2026|AI "safety" policy|O\'Reilly dataset'
+    result = RUNNER.invoke(
+        fxi_app,
+        [
+            "research",
+            "--queries",
+            seed_queries,
+            "--budget-s",
+            "42",
+            "--max-sources",
+            "3",
+            "--sync",
+            research_goal,
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert (
+        "research",
+        (
+            research_goal,
+            42,
+            3,
+            ['debt ceiling 2026', 'AI "safety" policy', "O'Reilly dataset"],
+            True,
+        ),
+    ) in seen

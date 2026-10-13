@@ -125,7 +125,7 @@ if TYPE_CHECKING:
     from fastapi.testclient import TestClient
 
     from fx1.serve.backends import SamplingParams
-    from fx1.serve.client import Transport
+    from fx1.serve.client import HarnessClient, Transport
 
 __all__ = ["client_audit", "client_audit_bench"]
 
@@ -343,7 +343,7 @@ def _client(
                 os.environ[k] = v
 
 
-def _tc_transport(client: TestClient) -> Any:
+def _tc_transport(client: TestClient) -> Transport:
     """Adapt HarnessClient's transport contract to a TestClient."""
 
     def send(
@@ -377,7 +377,7 @@ def _remote(client: TestClient, api_key: str | None = None, **kw: Any) -> Any:
     return HarnessClient(_BASE, api_key=api_key, transport=_tc_transport(client), **kw)
 
 
-def _mk(transport: Any, **kw: Any) -> Any:
+def _mk(transport: Transport, **kw: Any) -> HarnessClient:
     """A HarnessClient on a scripted/fake transport."""
     from fx1.serve.client import HarnessClient
 
@@ -484,7 +484,9 @@ def _error_map_probes() -> dict[str, bool]:  # NOSONAR(S3776) — status table f
     """Every status class → its declared exception, synthetic + e2e."""
     out: dict[str, bool] = {}
 
-    def mapped(status: int, body: bytes = _ERR_BODY, headers: dict[str, str] | None = None):
+    def mapped(
+        status: int, body: bytes = _ERR_BODY, headers: dict[str, str] | None = None
+    ) -> tuple[BaseException | None, list[tuple[str, str]]]:
         tr, calls = _scripted((status, headers or {}, body))
         exc = _exc(lambda: _mk(tr).commands())
         return exc, calls
@@ -618,7 +620,9 @@ def _retry_probes() -> dict[str, bool]:  # NOSONAR(S3776) — retry matrix fans 
     bare503: _Step = (503, {}, _ERR_BODY)
     fault = HarnessTransportError("dial failed")
 
-    def client_for(*steps, **kw):
+    def client_for(
+        *steps: _Step | BaseException, **kw: Any
+    ) -> tuple[HarnessClient, list[tuple[str, str]], list[float]]:
         tr, calls = _scripted(*steps)
         sleeps: list[float] = []
         c = _mk(tr, sleep=lambda s: sleeps.append(s), **kw)
@@ -905,7 +909,13 @@ def _transport_fault_probes() -> dict[str, bool]:  # NOSONAR(S3776)
     # a custom transport that raises a foreign (non-HarnessTransportError)
     # exception leaks it raw — the transport injection owns its own
     # taxonomy; pinned so callers know the seam's contract.
-    def oserror_send(method, url, payload, headers, timeout_s):  # NOSONAR(S1172)
+    def oserror_send(  # NOSONAR(S1172)
+        method: str,
+        url: str,
+        payload: dict[str, Any] | bytes | None,
+        headers: dict[str, str],
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
         raise OSError("foreign fault")
 
     exc = _exc(lambda: _mk(oserror_send, max_retries=2).commands())
@@ -1115,7 +1125,13 @@ def _idem_probes() -> dict[str, bool]:  # NOSONAR(S3776)
     real_send = _tc_transport(client)
     state = {"n": 0}
 
-    def flaky(method, url, payload, headers, timeout_s):
+    def flaky(
+        method: str,
+        url: str,
+        payload: dict[str, Any] | bytes | None,
+        headers: dict[str, str],
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
         state["n"] += 1
         res = real_send(method, url, payload, headers, timeout_s)
         if state["n"] == 1:
@@ -1251,7 +1267,13 @@ def _cli_probes() -> dict[str, bool]:  # NOSONAR(S3776) — CLI legs each pin ex
     # unreachable remote → HarnessTransportError → same shape.
     import fx1.serve.client as _cm  # noqa: PLC0415
 
-    def _dial(method, url, payload, headers, timeout_s):  # NOSONAR(S1172)
+    def _dial(  # NOSONAR(S1172)
+        method: str,
+        url: str,
+        payload: dict[str, Any] | bytes | None,
+        headers: dict[str, str],
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
         raise _cm.HarnessTransportError("dial failed")
 
     dead_c = _mk(_dial)

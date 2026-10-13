@@ -759,6 +759,10 @@ class Concierge:
             return False
         sync = "--sync" in tokens
         goal = " ".join(t for t in tokens if t != "--sync")
+        return self.start_superpower(goal, sync=sync)
+
+    def start_superpower(self, goal: str, *, sync: bool = False) -> bool:
+        """Run an already-parsed goal without interpreting it as slash-command syntax."""
         if not goal.strip():
             raise ValueError("usage: /superpower <goal> [--sync]")
         if not self._job_slot_available():
@@ -891,6 +895,26 @@ class Concierge:
 
     def _cmd_research(self, rest: str) -> bool:
         goal, options = self._parse_research_options(rest)
+        return self.start_research(
+            goal,
+            budget_s=options.get("budget_s"),
+            max_sources=options.get("max_sources"),
+            queries=options.get("queries"),
+            sync=options.get("sync", False),
+        )
+
+    def start_research(
+        self,
+        goal: str,
+        *,
+        budget_s: int | None = None,
+        max_sources: int | None = None,
+        queries: list[str] | None = None,
+        sync: bool = False,
+    ) -> bool:
+        """Run an already-parsed goal and query list without shell tokenization."""
+        if not goal.strip():
+            raise ValueError("usage: /research <goal> ...")
         if not self._job_slot_available():
             return False
         from fx1.webresearch.engine import ResearchBudget
@@ -898,17 +922,17 @@ class Concierge:
         base = self._research_budget
         budget = ResearchBudget(
             max_duration_s=min(
-                options.get("budget_s", base.max_duration_s), self._run_budget.max_wall_s
+                budget_s if budget_s is not None else base.max_duration_s,
+                self._run_budget.max_wall_s,
             ),
             max_sources=min(
-                options.get("max_sources", base.max_sources), self._run_budget.max_web_sources
+                max_sources if max_sources is not None else base.max_sources,
+                self._run_budget.max_web_sources,
             ),
             max_searches=base.max_searches,
             max_depth=base.max_depth,
             search_pause_s=base.search_pause_s,
         )
-        queries = options.get("queries")
-
         def run_fn(cancel_event: threading.Event, on_event: Callable[[str, str], None]) -> Any:
             return self._researcher.run(
                 goal,
@@ -921,7 +945,7 @@ class Concierge:
         job_id = self._new_job_id("research")
         self._journal_call("job_started", job_id, "research", goal, ["web_research"])
         job = BackgroundJob(label="research", run_fn=run_fn, job_id=job_id, goal=goal)
-        if options.get("sync"):
+        if sync:
             job.start()
             job.done_event.wait()
             self._job = job
