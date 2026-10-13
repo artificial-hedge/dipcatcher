@@ -388,7 +388,10 @@ admission-gate: ## CI gate: sequentially admit each diff-changed corpus receipt 
 	@changed=$$(git diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' 2>/dev/null \
 		| grep '^receipts/[^/]*\.json$$' || true); \
 	if [ -n "$$changed" ]; then \
+		mkdir -p "$${RUNNER_TEMP:-/tmp}"; base_pin="$${RUNNER_TEMP:-/tmp}/admission_base_epoch_heads.json"; \
+		git show $(ADMISSION_BASE):quality/epoch_heads.json > "$$base_pin" || exit 1; \
 		uv run dipcatcher admit-batch $$changed --corpus-dir receipts --strict \
+			--base-heads-pin "$$base_pin" \
 			--known-inconsistent quality/lattice_known_inconsistent.json \
 			--quarantine quality/legacy_quarantine.json --heads-pin quality/epoch_heads.json \
 			--epoch-acks quality/epoch_allowed_removals.json \

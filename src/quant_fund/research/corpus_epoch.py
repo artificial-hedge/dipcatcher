@@ -663,6 +663,29 @@ def acks_for_corpus(acks: list[dict[str, Any]], corpus_key: str) -> list[dict[st
     return [a for a in acks if a["corpus"] == corpus_key]
 
 
+def pinned_head_members(corpus_dir: Path | str, pinned: Mapping[str, Any]) -> dict[str, str]:
+    """``{member: sha256}`` stamped by the head epoch a heads-pin entry names.
+
+    Fails closed (``ValueError``) unless the named epoch receipt exists in
+    ``corpus_dir``, its bytes hash to the pinned digest, and it verifies as a
+    sealed ``corpus_epoch.v1`` — a pin is only an authority over bytes it
+    actually authenticates.
+    """
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    name = str(pinned.get("receipt") or "")
+    path = Path(corpus_dir) / name
+    if not name or "/" in name or not path.is_file():
+        raise ValueError(f"pinned head epoch {name!a} is missing from {corpus_dir}")
+    if hash_bytes(path.read_bytes()) != pinned.get("sha256"):
+        raise ValueError(f"pinned head epoch {name!a} does not match the pinned digest")
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    body = doc.get("payload") if isinstance(doc.get("payload"), Mapping) else doc
+    if not verify_receipt_file(path)["valid"] or epoch_contract_errors(body):
+        raise ValueError(f"pinned head epoch {name!a} is not a valid sealed epoch")
+    return _member_maps(body)
+
+
 def update_heads_pin(
     pin_path: Path | str,
     corpus_dir: Path | str,

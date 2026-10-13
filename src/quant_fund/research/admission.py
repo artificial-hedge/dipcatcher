@@ -339,6 +339,29 @@ def admission_check(
     }
 
 
+def _corpus_rel(cand: Path, corpus_dir: Path) -> str:
+    try:
+        return cand.resolve().relative_to(corpus_dir.resolve()).as_posix()
+    except ValueError:
+        return cand.name
+
+
+def _partition_base_stamped(
+    ordered: list[Path], corpus_dir: Path, base_stamped: Mapping[str, str]
+) -> tuple[list[str], list[Path]]:
+    """Split off candidates whose bytes the base's pinned head epoch already
+    stamped — corpus members, not arrivals — from everything else."""
+    stamped: list[str] = []
+    fresh: list[Path] = []
+    for cand in ordered:
+        rel = _corpus_rel(cand, corpus_dir)
+        if base_stamped.get(rel) == hash_bytes(cand.read_bytes()):
+            stamped.append(rel)
+        else:
+            fresh.append(cand)
+    return stamped, fresh
+
+
 def _partition_quarantined(
     ordered: list[Path], corpus_dir: Path, quarantine: Quarantine
 ) -> tuple[list[str], list[Path]]:
@@ -350,10 +373,7 @@ def _partition_quarantined(
     retained: list[str] = []
     gated: list[Path] = []
     for cand in ordered:
-        try:
-            rel = cand.resolve().relative_to(corpus_dir.resolve()).as_posix()
-        except ValueError:
-            rel = cand.name
+        rel = _corpus_rel(cand, corpus_dir)
         ver = verify_receipt_file(cand)
         status, _why = classify_receipt(
             rel,
@@ -401,6 +421,7 @@ def admit_batch(
     quarantine: Quarantine = EMPTY_QUARANTINE,
     expected_head: Mapping[str, Any] | None = None,
     epoch_acks: list[dict[str, Any]] | None = None,
+    base_stamped: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Gate a set of incoming receipts the way a merge actually lands them.
 
@@ -421,6 +442,13 @@ def admit_batch(
     merged state) with ``expected_head``/``epoch_acks``, because a shadow
     lacks the batch's stamped members by construction.
 
+    ``base_stamped`` is the member map of the head epoch the *base* branch's
+    heads pin authenticates (``corpus_epoch.pinned_head_members``). A
+    candidate whose bytes equal what the base already stamped (e.g. a
+    receipt restored to its pinned bytes) is not new evidence entering the
+    corpus: it is listed under ``already_stamped`` and not re-admitted. Only
+    the base pin can grant this — the candidate's own branch cannot.
+
     A candidate that matches its ``quarantine`` registry entry exactly
     (path, bytes, error set) is retained record, not evidence asking to be
     admitted: it is listed under ``retained_quarantined`` and never receives
@@ -438,7 +466,8 @@ def admit_batch(
         if not cand.is_file():
             raise ValueError(f"candidate receipt {cand} does not exist")
 
-    retained, gated = _partition_quarantined(ordered, corpus_dir, quarantine)
+    stamped, fresh = _partition_base_stamped(ordered, corpus_dir, base_stamped or {})
+    retained, gated = _partition_quarantined(fresh, corpus_dir, quarantine)
     shadow = _batch_shadow(corpus_dir, ordered, gated)
 
     results: list[dict[str, Any]] = []
@@ -472,6 +501,7 @@ def admit_batch(
         "n_gated": len(gated),
         "results": results,
         "retained_quarantined": retained,
+        "already_stamped": stamped,
         "failures": [r["candidate"] for r in results if r["verdict"] != "admit"],
     }
 

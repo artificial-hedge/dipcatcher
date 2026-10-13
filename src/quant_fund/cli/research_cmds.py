@@ -3733,6 +3733,13 @@ def admit_batch_cmd(
     epoch_acks: Path | None = typer.Option(
         None, "--epoch-acks", help="Epoch-history acknowledgment ledger (epoch_acknowledgments.v1)."
     ),
+    base_heads_pin: Path | None = typer.Option(
+        None,
+        "--base-heads-pin",
+        help="The BASE branch's epoch-heads pin (e.g. `git show BASE:quality/epoch_heads.json`). "
+        "Candidates whose bytes the base's pinned head epoch already stamped are corpus "
+        "members, not arrivals: listed as already_stamped and not re-admitted.",
+    ),
 ) -> None:
     """Batch admission gate for a diff of receipts.
 
@@ -3749,10 +3756,12 @@ def admit_batch_cmd(
     if not root.is_dir():
         raise typer.BadParameter(f"corpus dir {root} does not exist")
     pins = _load_known_inconsistent(known_inconsistent)
+    from quant_fund.research.corpus_epoch import pinned_head_members
     from quant_fund.research.legacy_unsealed import load_quarantine_or_empty
 
     try:
         expected_head, corpus_acks = _load_epoch_policy(root, heads_pin, epoch_acks)
+        base_head, _ = _load_epoch_policy(root, base_heads_pin, None)
         batch = admit_batch(
             receipts,
             root,
@@ -3761,10 +3770,13 @@ def admit_batch_cmd(
             quarantine=load_quarantine_or_empty(quarantine_path),
             expected_head=expected_head,
             epoch_acks=corpus_acks,
+            base_stamped=None if base_head is None else pinned_head_members(root, base_head),
         )
     except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    for rel in batch["already_stamped"]:
+        typer.echo(f"admission already-stamped at base (not re-admitted) candidate={rel}")
     for rel in batch["retained_quarantined"]:
         typer.echo(f"admission retained-quarantined (not admitted) candidate={rel}")
     for result in batch["results"]:
@@ -3777,6 +3789,7 @@ def admit_batch_cmd(
         typer.echo(f"receipt={path}")
     typer.echo(
         f"admit-batch candidates={batch['n_candidates']} gated={batch['n_gated']} "
+        f"already_stamped={len(batch['already_stamped'])} "
         f"retained_quarantined={len(batch['retained_quarantined'])} verdict={batch['verdict']}"
     )
     if strict and batch["verdict"] != "admit":
