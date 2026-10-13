@@ -14,6 +14,7 @@ decision enforced one layer up).
 
 from __future__ import annotations
 
+import math
 import time
 import urllib.error
 import urllib.parse
@@ -30,6 +31,7 @@ DDG_HTML_URL = "https://html.duckduckgo.com/html/"
 _DDG_SEARCH_HOSTS = frozenset({"lite.duckduckgo.com", "html.duckduckgo.com"})
 DEFAULT_TIMEOUT_S = 10.0
 DEFAULT_MAX_RESULTS = 8
+DEFAULT_MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 
 
 @dataclass
@@ -159,6 +161,14 @@ class Searcher:
         raise NotImplementedError
 
 
+def _read_bounded(response: Any) -> bytes:
+    """Read at most one byte beyond the search-result limit."""
+    body = bytes(response.read(DEFAULT_MAX_RESPONSE_BYTES + 1))
+    if len(body) > DEFAULT_MAX_RESPONSE_BYTES:
+        raise ValueError("search response exceeds byte limit")
+    return body
+
+
 class DuckDuckGoLiteSearcher(Searcher):
     """Keyless DDG via the lite endpoint, HTML fallback to the html endpoint."""
 
@@ -183,10 +193,10 @@ class DuckDuckGoLiteSearcher(Searcher):
         request = urllib.request.Request(url, headers={"User-Agent": self._user_agent})
         if self._open_fn is not None:
             with self._open_fn(request, timeout_s) as response:
-                return bytes(response.read())
+                return _read_bounded(response)
         # Scheme and host are allowlisted immediately above.
         with urllib.request.urlopen(request, timeout=timeout_s) as response:  # nosec B310
-            return bytes(response.read())
+            return _read_bounded(response)
 
     def search(
         self,
@@ -196,16 +206,28 @@ class DuckDuckGoLiteSearcher(Searcher):
         timeout_s: float = DEFAULT_TIMEOUT_S,
     ) -> SearchResult:
         started = self._now()
+        result = SearchResult(query=query)
+        if not math.isfinite(timeout_s) or timeout_s <= 0:
+            result.error = "search time budget exhausted"
+            return result
+        deadline = started + timeout_s
         if self._pause_s:
             wait = self._pause_s - (self._now() - self._last_search_at)
             if wait > 0:
+                if wait >= deadline - self._now():
+                    result.error = "search time budget exhausted"
+                    result.elapsed_s = round(self._now() - started, 3)
+                    return result
                 time.sleep(wait)
         self._last_search_at = self._now()
-        result = SearchResult(query=query)
         encoded = urllib.parse.urlencode({"q": query})
         for engine, endpoint in (("ddg-lite", DDG_LITE_URL), ("ddg-html", DDG_HTML_URL)):
+            remaining_s = deadline - self._now()
+            if remaining_s <= 0:
+                result.error = "search time budget exhausted"
+                break
             try:
-                body = self._get(f"{endpoint}?{encoded}", timeout_s)
+                body = self._get(f"{endpoint}?{encoded}", remaining_s)
             except (urllib.error.URLError, OSError, TimeoutError, ValueError) as exc:
                 result.error = f"search transport fault ({type(exc).__name__})"
                 continue
