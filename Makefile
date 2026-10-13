@@ -325,6 +325,8 @@ epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch h
 	  dir=$${spec%%:*}; glob=$${spec##*:}; \
 	  head=$$(git show "$$EPOCH_BASE:quality/epoch_heads.json" 2>/dev/null | uv run python -c "import json,sys; print(json.load(sys.stdin)['heads'].get('$$dir/$$glob',{}).get('receipt',''))"); \
 	  if [ -z "$$head" ]; then echo "epoch-consistency skip $$dir: no base head"; continue; fi; \
+	  case "$$dir" in data/metadata) if ! ls "$$dir"/corpus_epoch_*.json >/dev/null 2>&1; then \
+	    echo "epoch-consistency skip $$dir: local-only chain, no epoch receipts in this checkout"; continue; fi;; esac; \
 	  proof="$${RUNNER_TEMP:-/tmp}/consistency_$$(echo $$dir | tr '/.' '__').json"; \
 	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --from-epoch "$$head" --out "$$proof" >/dev/null || exit 1; \
 	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --check "$$proof" || exit 1; \
@@ -384,12 +386,20 @@ replay-sweep: ## CI gate: replay every replayable carrier; fail on divergence or
 		--out "$${RUNNER_TEMP:-/tmp}/replay_coverage.json"
 
 ADMISSION_BASE ?= origin/main
-admission-gate: ## CI gate: sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
-	@changed=$$(git diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' 2>/dev/null \
-		| grep '^receipts/[^/]*\.json$$' || true); \
+admission-gate: ## CI gate: ack-ledger vs base chains, then sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
+	@git rev-parse --verify --quiet "$(ADMISSION_BASE)^{commit}" >/dev/null \
+		|| { echo "admission-gate: ADMISSION_BASE=$(ADMISSION_BASE) is not a commit"; exit 1; }; \
+	mkdir -p "$${RUNNER_TEMP:-/tmp}"; base_pin="$${RUNNER_TEMP:-/tmp}/admission_base_epoch_heads.json"; \
+	base_acks="$${RUNNER_TEMP:-/tmp}/admission_base_epoch_acks.json"; \
+	git show $(ADMISSION_BASE):quality/epoch_heads.json > "$$base_pin" || exit 1; \
+	git show $(ADMISSION_BASE):quality/epoch_allowed_removals.json > "$$base_acks" 2>/dev/null || : > "$$base_acks"; \
+	uv run dipcatcher epoch-ack-gate --base-heads-pin "$$base_pin" --base-epoch-acks "$$base_acks" \
+		--epoch-acks quality/epoch_allowed_removals.json || exit 1; \
+	uv run dipcatcher quarantine-gate --base-ref "$(ADMISSION_BASE)" --base-heads-pin "$$base_pin" || exit 1; \
+	diff="$${RUNNER_TEMP:-/tmp}/admission_diff.txt"; \
+	git diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' > "$$diff" || exit 1; \
+	changed=$$(grep '^receipts/[^/]*\.json$$' "$$diff") || [ $$? -eq 1 ] || exit 1; \
 	if [ -n "$$changed" ]; then \
-		mkdir -p "$${RUNNER_TEMP:-/tmp}"; base_pin="$${RUNNER_TEMP:-/tmp}/admission_base_epoch_heads.json"; \
-		git show $(ADMISSION_BASE):quality/epoch_heads.json > "$$base_pin" || exit 1; \
 		uv run dipcatcher admit-batch $$changed --corpus-dir receipts --strict \
 			--base-heads-pin "$$base_pin" \
 			--known-inconsistent quality/lattice_known_inconsistent.json \

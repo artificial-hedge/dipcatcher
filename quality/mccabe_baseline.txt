@@ -900,7 +900,7 @@ src/quant_fund/research/coherence.py:run_coherence 16
 src/quant_fund/research/compare.py:RunComparison.to_markdown 14
 src/quant_fund/research/concordance.py:concordance_consistency_errors 15
 src/quant_fund/research/concordance.py:run_concordance 23
-src/quant_fund/research/corpus_epoch.py:check_epoch_chain 41
+src/quant_fund/research/corpus_epoch.py:check_epoch_chain 37
 src/quant_fund/research/corpus_epoch.py:corpus_epoch 12
 src/quant_fund/research/corpus_epoch.py:epoch_contract_errors 34
 src/quant_fund/research/corpus_epoch.py:load_heads_pin 10

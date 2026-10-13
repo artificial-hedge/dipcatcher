@@ -460,6 +460,141 @@ def _load_repo_epoch_acks(root: Path) -> tuple[list[dict[str, Any]], list[str], 
     return acks, [], [f"epoch_ack_unknown_corpus:{k!a}" for k in unknown]
 
 
+def append_only_chain_keys() -> frozenset[str]:
+    """Heads-pin keys of the chains ``CORPORA`` declares append-only."""
+    return frozenset(epoch_heads_key(c[0], c[1]) for c in CORPORA if not c[3])
+
+
+def ack_ledger_gate(
+    root: Path | str,
+    *,
+    base_heads_pin: Path | str,
+    base_ledger: Path | str | None,
+    ledger: Path | str | None = None,
+) -> dict[str, Any]:
+    """PR gate: the acknowledgment ledger may grow only to explain history
+    the base branch's chains already recorded (``ack_ledger_base_errors``),
+    and every entry must name a chain ``CORPORA`` knows.
+
+    The base pin authenticates each referenced chain (``chain_ancestry``
+    reproduces its ``chain_root`` from the epoch files in ``root``, which the
+    consistency proofs keep byte-identical to the base). A base ledger that
+    is absent or not ``epoch_acknowledgments.v1`` reads as empty — strictly
+    more demanding, never less. A malformed head ledger fails closed."""
+    from quant_fund.research.corpus_epoch import (
+        ack_ledger_base_errors,
+        chain_ancestry,
+        load_epoch_acks,
+        load_heads_pin,
+    )
+    from quant_fund.utils.hashing import canonical_json_bytes
+
+    root = Path(root)
+    acks = load_epoch_acks(Path(ledger) if ledger is not None else root / EPOCH_ACKS_PATH)
+    try:
+        base_acks = load_epoch_acks(base_ledger) if base_ledger is not None else []
+    except (OSError, ValueError):
+        base_acks = []
+    base_heads = load_heads_pin(base_heads_pin)
+    append_only = append_only_chain_keys()
+    dirs = {epoch_heads_key(c[0], c[1]): c[0] for c in CORPORA}
+    # An entry naming a chain the policy table doesn't know can never be
+    # checked against a base — and a standalone auditor run with that exact
+    # --corpus-dir spelling would still honour it. Closed world: fail.
+    errors = [
+        f"epoch_ack_unknown_corpus:{k!a}" for k in sorted({a["corpus"] for a in acks} - set(dirs))
+    ]
+    base_set = {canonical_json_bytes(dict(a)) for a in base_acks}
+    referenced = sorted(
+        {a["corpus"] for a in acks if canonical_json_bytes(dict(a)) not in base_set} & append_only
+    )
+    chains: dict[str, frozenset[str]] = {}
+    for key in referenced:
+        entry = base_heads.get(key)
+        if entry is None:
+            continue
+        try:
+            chains[key] = chain_ancestry(root / dirs[key], entry)
+        except ValueError as exc:
+            errors.append(f"epoch_ack_base_chain_unauthenticated:{key!a}:{exc}")
+    errors += ack_ledger_base_errors(acks, base_acks, chains, append_only)
+    return {
+        "ok": not errors,
+        "errors": errors,
+        "n_acks": len(acks),
+        "n_base_acks": len(base_acks),
+        "chains_checked": sorted(chains),
+    }
+
+
+def _git_bytes(root: Path, *args: str) -> bytes:
+    import subprocess
+
+    proc = subprocess.run(["git", *args], cwd=root, capture_output=True, check=False)
+    if proc.returncode != 0:
+        raise ValueError(f"git {' '.join(args)} failed: {proc.stderr.decode(errors='replace')}")
+    return proc.stdout
+
+
+def _base_registry(root: Path, base_ref: str, registry: str) -> Any:
+    """BASE's registry; absent or pre-v2 reads as empty (stricter)."""
+    import tempfile
+
+    from quant_fund.research.legacy_unsealed import EMPTY_QUARANTINE, load_quarantine
+
+    try:
+        raw = _git_bytes(root, "show", f"{base_ref}:{registry}")
+    except ValueError:
+        return EMPTY_QUARANTINE
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "base_quarantine.json"
+        path.write_bytes(raw)
+        try:
+            return load_quarantine(path)
+        except ValueError:
+            return EMPTY_QUARANTINE
+
+
+def quarantine_registry_gate(
+    root: Path | str,
+    *,
+    base_ref: str,
+    base_heads_pin: Path | str,
+    registry: str = "quality/legacy_quarantine.json",
+    corpus: str = "receipts",
+) -> dict[str, Any]:
+    """PR gate for ``legacy_unsealed.registry_base_errors``: base files come
+    from ``git`` at ``base_ref``, the base stamp from the base pin's head
+    epoch (authenticated by ``pinned_head_members``). Fails closed on a
+    malformed head registry, an unreadable base ref or an unauthenticated
+    base head."""
+    from quant_fund.research.corpus_epoch import (
+        load_heads_pin,
+        pinned_head_members,
+    )
+    from quant_fund.research.legacy_unsealed import load_quarantine, registry_base_errors
+
+    root = Path(root)
+    head = load_quarantine(root / registry)
+    base = _base_registry(root, base_ref, registry)
+    entry = load_heads_pin(base_heads_pin).get(epoch_heads_key(corpus, "*.json"))
+    base_stamped = pinned_head_members(root / corpus, entry) if entry is not None else {}
+    names = {rel.rsplit("/", 1)[-1] for rel in head.files}
+    listing = _git_bytes(root, "ls-tree", "-r", "-z", "--name-only", base_ref, "--", corpus)
+    base_files: dict[str, str] = {}
+    for path in filter(None, listing.decode().split("\0")):
+        if path.rsplit("/", 1)[-1] in names:
+            blob = _git_bytes(root, "cat-file", "blob", f"{base_ref}:{path}")
+            base_files[path.removeprefix(f"{corpus}/")] = hash_bytes(blob)
+    errors = registry_base_errors(head, base, base_files, base_stamped)
+    return {
+        "ok": not errors,
+        "errors": errors,
+        "n_entries": len(head.files),
+        "n_base_entries": len(base.files),
+    }
+
+
 def _uncovered_errors(cdir: Path, rel: str, pattern: str) -> list[str]:
     """Coverage-closure verdict for a file no pattern or exemption claims."""
     sidecar = _detached_digest_status(cdir, rel, pattern)

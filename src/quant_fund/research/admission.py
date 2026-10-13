@@ -30,40 +30,19 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
-from quant_fund.research.legacy_unsealed import EMPTY_QUARANTINE, Quarantine
+from quant_fund.research.legacy_unsealed import (
+    EMPTY_QUARANTINE,
+    Quarantine,
+    honesty_stamp_errors,
+)
 from quant_fund.utils.hashing import hash_bytes
 
 ADMISSION_SCHEMA = "receipt_admission.v1"
 
 
-def _candidate_body(doc: Mapping[str, Any]) -> Mapping[str, Any]:
-    """The claim-bearing body: v2 inner payload when present, else the doc."""
-    inner = doc.get("payload")
-    return inner if isinstance(inner, Mapping) else doc
-
-
 def _honesty_errors(doc: Mapping[str, Any]) -> tuple[list[str], list[str]]:
     """(reject_errors, quarantine_errors) over the sealed honesty stamps."""
-    reject: list[str] = []
-    quarantine: list[str] = []
-    bodies = [doc]
-    inner = doc.get("payload")
-    if isinstance(inner, Mapping):
-        bodies.append(inner)
-    for body in bodies:
-        if body.get("live_pnl_claim") is True:
-            reject.append("live_pnl_claim_true")
-        if body.get("research_only") is False:
-            reject.append("research_only_false")
-    claim = _candidate_body(doc)
-    if claim.get("research_only") is not True:
-        quarantine.append("research_only_missing")
-    if claim.get("live_pnl_claim") is not False:
-        quarantine.append("live_pnl_claim_missing")
-    label = claim.get("data_label")
-    if not (isinstance(label, str) and label.strip()):
-        quarantine.append("data_label_missing")
-    return reject, quarantine
+    return honesty_stamp_errors(doc)
 
 
 def _link_or_copy(src: Path, dst: Path) -> None:
@@ -382,6 +361,7 @@ def _partition_quarantined(
             valid=bool(ver["valid"]),
             errors=list(ver["errors"]),
             quarantine=quarantine,
+            raw=raw,
         )
         if status == "quarantined":
             retained.append(rel)
@@ -455,12 +435,17 @@ def admit_batch(
     corpus: it is listed under ``already_stamped`` and not re-admitted. Only
     the base pin can grant this — the candidate's own branch cannot.
 
-    ``base_epochs`` (the base head epoch and its ancestors) closes the
-    stamp-and-excuse path: every ``mutated`` acknowledgment in
-    ``epoch_acks`` must name an epoch the base chain already contained, so a
-    single change can never both record a mutation of an append-only receipt
-    and acknowledge it. A violation rejects the batch
-    (``epoch_ack_postdates_base``).
+    ``base_epochs`` (``corpus_epoch.chain_ancestry`` over the base pin)
+    closes the stamp-and-excuse path: every acknowledgment in ``epoch_acks``
+    — removal or mutation — must name an epoch the base chain already
+    contained, so a single change can never both record a removal or rewrite
+    of an append-only receipt and acknowledge it. A violation rejects the
+    batch (``epoch_ack_postdates_base``); the same rule runs repo-wide, on
+    every PR, as ``repo_integrity.ack_ledger_gate``.
+
+    When no candidate is gated (only restorations / retained quarantine),
+    the real corpus's chain is still checked once at batch level
+    (``chain_errors``, quarantine-class like the per-candidate check).
 
     A candidate that matches its ``quarantine`` registry entry exactly
     (path, bytes, error set) is retained record, not evidence asking to be
@@ -501,20 +486,16 @@ def admit_batch(
         # contains the earlier ones — whatever verdict they drew.
         _link_or_copy(cand, shadow / cand.name)
 
-    ack_errors = [
-        f"epoch_ack_postdates_base:{a['member']!a}@{a['epoch']!a}"
-        for a in epoch_acks or []
-        if base_epochs is not None
-        and a["transition"] == "mutated"
-        and a["epoch"] not in base_epochs
-    ]
-    verdicts = [r["verdict"] for r in results] + ["reject"] * bool(ack_errors)
-    if "reject" in verdicts:
-        verdict = "reject"
-    elif "quarantine" in verdicts:
-        verdict = "quarantine"
-    else:
-        verdict = "admit"
+    ack_errors = _batch_ack_errors(epoch_acks or [], base_epochs)
+    # Per-candidate checks bind the chain only when something is gated; a
+    # batch of restorations alone must still not land on a broken chain.
+    chain_errors = [] if gated else _batch_chain_errors(corpus_dir, expected_head, epoch_acks)
+    verdicts = (
+        [r["verdict"] for r in results]
+        + ["reject"] * bool(ack_errors)
+        + ["quarantine"] * bool(chain_errors)
+    )
+    verdict = next((v for v in ("reject", "quarantine") if v in verdicts), "admit")
     return {
         "verdict": verdict,
         "n_candidates": len(ordered),
@@ -523,8 +504,35 @@ def admit_batch(
         "retained_quarantined": retained,
         "already_stamped": stamped,
         "ack_errors": ack_errors,
+        "chain_errors": chain_errors,
         "failures": [r["candidate"] for r in results if r["verdict"] != "admit"],
     }
+
+
+def _batch_ack_errors(
+    epoch_acks: list[dict[str, Any]], base_epochs: frozenset[str] | None
+) -> list[str]:
+    """``corpus_epoch.ack_ledger_base_errors`` scoped to this corpus's acks
+    (admission's corpus is append-only); no base chain, no rule."""
+    if base_epochs is None:
+        return []
+    from quant_fund.research.corpus_epoch import ack_ledger_base_errors
+
+    keys = frozenset(str(a["corpus"]) for a in epoch_acks)
+    return ack_ledger_base_errors(epoch_acks, [], dict.fromkeys(keys, base_epochs), keys)
+
+
+def _batch_chain_errors(
+    corpus_dir: Path,
+    expected_head: Mapping[str, Any] | None,
+    epoch_acks: list[dict[str, Any]] | None,
+) -> list[str]:
+    """Hard epoch-chain errors of the real corpus (``admission_check``'s rule:
+    an unstamped corpus is benign unless a heads pin says a chain exists)."""
+    from quant_fund.research.corpus_epoch import check_epoch_chain
+
+    errors = check_epoch_chain(corpus_dir, acks=epoch_acks, expected_head=expected_head)["errors"]
+    return [e for e in errors if e != "no_epoch_receipts" or expected_head is not None]
 
 
 def admission_contract_errors(payload: Mapping[str, Any]) -> list[str]:

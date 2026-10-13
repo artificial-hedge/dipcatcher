@@ -682,7 +682,9 @@ jobs:
 
   evidence-audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Every gate below runs even when an earlier one is red (see the
+    # !cancelled() note), so budget for all of them.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
@@ -691,28 +693,36 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
+        id: sync
         run: uv sync --frozen --all-groups
       - name: Re-verify every committed receipt (strict)
         run: make evidence-audit
+      # Each evidence gate reports on its own: a red step above must not
+      # skip the PR-only rules below (chain extension, ack ledger and
+      # quarantine registry vs base, admission), or they silently stop
+      # running while main is red. They still need a successful sync.
       - name: Evidence bundle round-trip — export, then audit with the standalone script
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: |
           make evidence-bundle BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
           make bundle-verify BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
       - name: Fetch PR base for chain-extension proofs
-        if: github.event_name == 'pull_request'
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' && github.event_name == 'pull_request' }}
         run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
       - name: Chain-consistency proofs — a PR may extend, never rewrite
-        if: github.event_name == 'pull_request'
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' && github.event_name == 'pull_request' }}
         run: EPOCH_BASE=FETCH_HEAD make epoch-consistency
       - name: Cross-receipt consistency lattice
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: make lattice-check
       - name: Fetch PR base for the admission diff
-        if: github.event_name == 'pull_request'
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' && github.event_name == 'pull_request' }}
         run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
       - name: Admission gate on diff-changed receipts
-        if: github.event_name == 'pull_request'
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' && github.event_name == 'pull_request' }}
         run: make admission-gate ADMISSION_BASE=FETCH_HEAD
       - name: Replay carriers (byte-exact artifact reproduction)
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: make replay-sweep
 
   pretrade-risk:

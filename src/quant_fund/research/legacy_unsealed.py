@@ -65,7 +65,17 @@ QUARANTINE_CATEGORIES: Mapping[str, str] = {
         "sealed without a declaration the current honesty contract requires; adding it "
         "after the seal would forge the receipt"
     ),
+    # The one category whose bytes *verify*: seal and contracts hold, but the
+    # receipt entered the corpus without passing admission, whose honesty
+    # stamps it lacks. ``errors`` records the admission honesty codes, not
+    # verify-receipt errors.
+    "admission_honesty_gap": (
+        "verifies, but entered the corpus without passing admission: a required honesty "
+        "stamp on the claim body is absent, and adding it after the seal would forge it"
+    ),
 }
+
+HONESTY_GAP = "admission_honesty_gap"
 
 ReceiptStatus = Literal["verified", "quarantined", "invalid"]
 
@@ -207,18 +217,24 @@ def classify_receipt(
     valid: bool,
     errors: Sequence[str],
     quarantine: Quarantine,
+    raw: bytes | None = None,
 ) -> tuple[ReceiptStatus, list[str]]:
     """``(status, problems)`` for one receipt's ``verify-receipt`` outcome.
 
     ``problems`` is empty for ``verified``/``quarantined`` and names why the
     receipt is ``invalid`` otherwise (the verifier errors, plus a
     ``quarantine_*`` reason when a registry entry exists but does not match).
+    ``raw`` (the classified bytes) is required to keep an
+    ``admission_honesty_gap`` entry quarantined: its error set is re-derived
+    from the honesty stamps, never trusted from the registry.
     """
     entry = quarantine.files.get(rel)
     if entry is None:
         if in_quarantined_subdir(rel):
             return "invalid", ["quarantine_unregistered", *errors]
         return ("verified", []) if valid else ("invalid", list(errors))
+    if entry.category == HONESTY_GAP:
+        return _classify_honesty_gap(entry, file_sha256, valid=valid, errors=errors, raw=raw)
     if valid:
         return "invalid", ["quarantine_entry_verifies"]
     if file_sha256 != entry.sha256:
@@ -226,6 +242,118 @@ def classify_receipt(
     if tuple(sorted(set(errors))) != entry.errors:
         return "invalid", ["quarantine_errors_drift", *errors]
     return "quarantined", []
+
+
+def _claim_body(doc: Mapping[str, Any]) -> Mapping[str, Any]:
+    """The claim-bearing body: v2 inner payload when present, else the doc."""
+    inner = doc.get("payload")
+    return inner if isinstance(inner, Mapping) else doc
+
+
+def honesty_stamp_errors(doc: Mapping[str, Any]) -> tuple[list[str], list[str]]:
+    """Admission's honesty stamps: ``(reject_errors, quarantine_errors)``.
+
+    Reject: any body asserting ``live_pnl_claim: true`` or
+    ``research_only: false``. Quarantine: the claim body lacks
+    ``research_only: true``, ``live_pnl_claim: false`` or a non-empty
+    ``data_label``. Shared by ``admission`` and the registry so the two can
+    never disagree on what a gap is."""
+    reject: list[str] = []
+    quarantine: list[str] = []
+    bodies = [doc]
+    inner = doc.get("payload")
+    if isinstance(inner, Mapping):
+        bodies.append(inner)
+    for body in bodies:
+        if body.get("live_pnl_claim") is True:
+            reject.append("live_pnl_claim_true")
+        if body.get("research_only") is False:
+            reject.append("research_only_false")
+    claim = _claim_body(doc)
+    if claim.get("research_only") is not True:
+        quarantine.append("research_only_missing")
+    if claim.get("live_pnl_claim") is not False:
+        quarantine.append("live_pnl_claim_missing")
+    label = claim.get("data_label")
+    if not (isinstance(label, str) and label.strip()):
+        quarantine.append("data_label_missing")
+    return reject, quarantine
+
+
+def _classify_honesty_gap(
+    entry: QuarantineEntry,
+    file_sha256: str,
+    *,
+    valid: bool,
+    errors: Sequence[str],
+    raw: bytes | None,
+) -> tuple[ReceiptStatus, list[str]]:
+    """An ``admission_honesty_gap`` entry stays quarantined only while the
+    bytes verify, match the pin, carry no reject-class stamp, and still lack
+    exactly the recorded honesty stamps. Once nothing is missing the entry is
+    stale (``quarantine_entry_admissible``) — fail closed either way."""
+    if not valid:
+        return "invalid", ["quarantine_category_mismatch", *errors]
+    # The verdict is re-derived from ``raw``, so the pin must bind ``raw``
+    # itself — not a digest the caller computed from a separate read.
+    if file_sha256 != entry.sha256 or (
+        raw is not None and hashlib.sha256(raw).hexdigest() != entry.sha256
+    ):
+        return "invalid", ["quarantine_bytes_drift"]
+    try:
+        doc = load_json_strict(raw) if raw is not None else None
+    except (ValueError, RecursionError, UnicodeError):
+        doc = None
+    if not isinstance(doc, Mapping):
+        return "invalid", ["quarantine_honesty_unreadable"]
+    reject, gaps = honesty_stamp_errors(doc)
+    if reject:
+        return "invalid", ["quarantine_honesty_reject", *reject]
+    if not gaps:
+        return "invalid", ["quarantine_entry_admissible"]
+    if tuple(sorted(set(gaps))) != entry.errors:
+        return "invalid", ["quarantine_errors_drift", *gaps]
+    return "quarantined", []
+
+
+def registry_base_errors(
+    head: Quarantine,
+    base: Quarantine,
+    base_files: Mapping[str, str],
+    base_stamped: Mapping[str, str],
+) -> list[str]:
+    """PR rule: the registry may grow only to retain bytes the base already had.
+
+    ``base_files`` maps corpus-relative paths at BASE to their sha256 (at
+    least every path sharing a basename with a registry entry);
+    ``base_stamped`` is the base head epoch's member map. An entry carried
+    over from ``base`` unchanged (same bytes, category and errors) is
+    reviewed history. Any other entry must pin bytes that existed at base —
+    stamped by its head, or present under the same basename (a relocation) —
+    so a change can never add a receipt and excuse it in the same breath.
+    An ``admission_honesty_gap`` entry is narrower still: the same path and
+    bytes must already be on base and NOT stamped there, so the category can
+    only hold a never-admitted arrival, never selectively demote a stamped
+    receipt that verifies."""
+    stamped = set(base_stamped.values())
+    errors: list[str] = []
+    for rel, entry in sorted(head.files.items()):
+        held = base.files.get(rel)
+        if held is not None and (held.sha256, held.category, held.errors) == (
+            entry.sha256,
+            entry.category,
+            entry.errors,
+        ):
+            continue
+        name = rel.rsplit("/", 1)[-1]
+        named = {d for r, d in base_files.items() if r.rsplit("/", 1)[-1] == name}
+        if entry.sha256 not in stamped | named:
+            errors.append(f"quarantine_entry_postdates_base:{rel!a}")
+        elif entry.category == HONESTY_GAP and (
+            base_files.get(rel) != entry.sha256 or rel in base_stamped
+        ):
+            errors.append(f"quarantine_honesty_gap_not_unadmitted_at_base:{rel!a}")
+    return errors
 
 
 def stale_quarantine_entries(root: Path, quarantine: Quarantine) -> list[str]:

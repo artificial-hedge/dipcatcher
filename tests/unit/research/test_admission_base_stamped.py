@@ -111,10 +111,11 @@ def _mutation_ack(member: str, epoch: str, frm: str, to: str) -> dict[str, objec
 def test_mutation_ack_must_predate_the_base_chain(tmp_path: Path) -> None:
     """Stamp-and-excuse: a change that records a mutation of an append-only
     receipt in a NEW epoch and acknowledges it in the same diff is rejected;
-    an ack naming an epoch the base chain already held is accepted."""
+    an ack naming an epoch the base chain already held is accepted. (Removal
+    acks follow the same rule: ``test_epoch_ack_base_rules``.)"""
     corpus, pin = _stamped_corpus(tmp_path)
     base_head = _base_entry(corpus, pin)["receipt"]
-    base = chain_ancestry(corpus, base_head)
+    base = chain_ancestry(corpus, _base_entry(corpus, pin))
     assert base == frozenset({base_head})
     old_sha = pinned_head_members(corpus, _base_entry(corpus, pin))["old.json"]
     # The "PR": rewrite the stamped receipt, stamp the mutation, acknowledge it.
@@ -126,7 +127,9 @@ def test_mutation_ack_must_predate_the_base_chain(tmp_path: Path) -> None:
     laundering = [_mutation_ack("old.json", new_epoch, old_sha, new_sha)]
     batch = admit_batch([corpus / "old.json"], corpus, epoch_acks=laundering, base_epochs=base)
     assert batch["verdict"] == "reject"
-    assert batch["ack_errors"] == [f"epoch_ack_postdates_base:'old.json'@{new_epoch!a}"]
+    assert batch["ack_errors"] == [
+        f"epoch_ack_postdates_base:'receipts/*.json':'old.json'@{new_epoch!a}"
+    ]
     # Positive control: an ack for history the base already recorded passes
     # this rule (the receipt itself is still gated on its own merits).
     historical = [_mutation_ack("old.json", base_head, "1" * 64, "2" * 64)]

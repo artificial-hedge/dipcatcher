@@ -153,6 +153,7 @@ def suite_health(
             valid=bool(result["valid"]),
             errors=list(result["errors"]),
             quarantine=quarantine,
+            raw=raw,
         )
         statuses[rel] = status
         if why:

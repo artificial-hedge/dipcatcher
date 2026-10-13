@@ -19,6 +19,12 @@ quarantined artifact as verified and never harvests it into pooled evidence.
 The lattice and `corpus_inference` still read top-level quarantined receipts,
 a known pre-existing gap.
 
+The registry is listed as a crown jewel, but jewel enforcement is not yet
+effective: `make evidence-audit` stops at inherited chain drift before
+`crown-jewels --check`, and the signed pins need `GATE_SIGNING_KEY` (see
+`docs/EVIDENCE_INTEGRITY.md`, "Residual boundaries"). Until the key holder
+re-stamps and re-signs, review of this file is the control.
+
 Four of the seven additionally fail `forbidden_metric_keys`: they headline
 Sharpe-style metrics from before the proper-scores honesty contract.
 `basis_reversion_screen`, `dip_bench_crypto` and `fast_replay_p42_conformance`

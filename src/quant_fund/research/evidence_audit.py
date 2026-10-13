@@ -88,6 +88,7 @@ def audit_receipts_dir(
             valid=bool(result["valid"]),
             errors=list(result["errors"]),
             quarantine=quarantine,
+            raw=path.read_bytes(),
         )
         try:
             seal = json.loads(path.read_text()).get("receipt_sha256")

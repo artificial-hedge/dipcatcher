@@ -38,6 +38,7 @@ from __future__ import annotations
 import json
 import unicodedata
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -660,6 +661,118 @@ def _unmatched_ack_errors(
     return [f"epoch_ack_unmatched:{m!a}@{e!a}" for m, e in sorted(set(ack_index) - used)]
 
 
+@dataclass
+class _AckState:
+    """Shared bookkeeping for transition findings in one chain walk."""
+
+    index: Mapping[tuple[str, str], Mapping[str, Any]]
+    used: set[tuple[str, str]]
+    errors: list[str]
+    acknowledged: list[str]
+
+    def record(
+        self, label: str, member: str, epoch: str, transition: str, frm: str, to: str | None
+    ) -> None:
+        """File ``label`` as acknowledged iff an ack names exactly this transition."""
+        explained = _ack_explains(self.index.get((member, epoch)), transition, frm, to)
+        if explained:
+            self.used.add((member, epoch))
+        (self.acknowledged if explained else self.errors).append(label)
+
+
+def _check_transition(
+    root: Path,
+    prev: Mapping[str, Any],
+    cur_name: str,
+    cur: Mapping[str, Any],
+    acks: _AckState,
+    allow_member_updates: bool,
+) -> None:
+    """Membership findings for one ``prev -> cur`` link: membership must be
+    non-decreasing and the declared deltas honest. Members under a
+    corpus-scoped exempt prefix churn by rule (self-authenticating files like
+    Rekor witness proofs replace per checkpoint rewrite) — their
+    epoch-to-epoch presence delta is bookkeeping, not evidence loss."""
+    prev_members = {k: v for k, v in _member_maps(prev).items() if not _exempt_member(root, k)}
+    cur_members = {k: v for k, v in _member_maps(cur).items() if not _exempt_member(root, k)}
+    actual_removed = set(prev_members) - set(cur_members)
+    for gone in sorted(actual_removed):
+        label = f"member_removed:{gone!a}@{cur_name!a}"
+        acks.record(label, gone, cur_name, "removed", prev_members[gone], None)
+    declared_removed = {
+        n for n in (cur.get("members_removed") or []) if not _exempt_member(root, n)
+    }
+    if declared_removed != actual_removed:
+        acks.errors.append(f"members_removed_dishonest:{cur_name!a}")
+    declared_added = {n for n in (cur.get("members_added") or []) if not _exempt_member(root, n)}
+    if declared_added != set(cur_members) - set(prev_members):
+        acks.errors.append(f"members_added_dishonest:{cur_name!a}")
+    if allow_member_updates:
+        return
+    # Mutated members: same name, different digest.
+    for kept in sorted(k for k in set(prev_members) & set(cur_members)):
+        if prev_members[kept] != cur_members[kept]:
+            label = f"member_mutated:{kept!a}@{cur_name!a}"
+            acks.record(label, kept, cur_name, "mutated", prev_members[kept], cur_members[kept])
+
+
+def _fold(name: str) -> str:
+    """Name identity on case-insensitive / normalizing filesystems (the
+    Windows fleet host): ``a.json``, ``A.json``, an NFD spelling and (NTFS)
+    ``a.json.`` or ``a.json `` can open the same file, so history treats them
+    as one name. Over-folding is safe: only a fold-equal name with
+    *different* bytes is ever flagged."""
+    folded = unicodedata.normalize("NFC", name).casefold()
+    return "/".join(part.rstrip(". ") for part in folded.split("/"))
+
+
+def _resurrections(
+    root: Path, by_name: Mapping[str, Mapping[str, Any]], child_of: Mapping[str, str], genesis: str
+) -> tuple[list[tuple[str, str, str, str]], dict[str, str]]:
+    """``(member, epoch, last_sha, new_sha)`` for append-only names that were
+    removed and later re-added with different bytes, plus the last stamped
+    digest of every name the chain ever held (keyed by ``_fold``).
+
+    Removal-then-re-add is a mutation spread over two epochs: an acknowledged
+    removal must not launder a rewrite of a stamped name — nor may a re-add
+    under another case or normalization of that name. Re-adding the same
+    bytes is not flagged (restoring evidence is not a rewrite). Walks from the
+    single genesis along ``child_of``; forks are reported elsewhere."""
+    last: dict[str, str] = {}
+    prev: dict[str, str] = {}
+    found: list[tuple[str, str, str, str]] = []
+    cur: str | None = genesis
+    seen: set[str] = set()
+    while cur is not None and cur not in seen:
+        seen.add(cur)
+        members = {
+            k: v for k, v in _member_maps(by_name[cur]).items() if not _exempt_member(root, k)
+        }
+        found += [
+            (k, cur, last[_fold(k)], members[k])
+            for k in sorted(set(members) - set(prev))
+            if _fold(k) in last and last[_fold(k)] != members[k]
+        ]
+        last.update({_fold(k): v for k, v in members.items()})
+        prev = members
+        cur = child_of.get(cur)
+    return found, last
+
+
+def _live_resurrection_errors(
+    live: Mapping[str, str], unstamped: list[str], history: Mapping[str, str]
+) -> list[str]:
+    """Unstamped live members reusing a name (``_fold``-equal) the chain
+    already stamped with other bytes. Not acknowledgeable — like all live
+    drift — and, on an append-only chain, never stampable through a PR
+    either: new evidence takes a new name."""
+    return [
+        f"member_resurrected_live:{name!a}"
+        for name in unstamped
+        if _fold(name) in history and history[_fold(name)] != live[name]
+    ]
+
+
 def acks_for_corpus(acks: list[dict[str, Any]], corpus_key: str) -> list[dict[str, Any]]:
     """The ledger entries scoped to one (dir, pattern) chain key."""
     return [a for a in acks if a["corpus"] == corpus_key]
@@ -688,21 +801,80 @@ def pinned_head_members(corpus_dir: Path | str, pinned: Mapping[str, Any]) -> di
     return _member_maps(body)
 
 
-def chain_ancestry(corpus_dir: Path | str, head_name: str) -> frozenset[str]:
-    """``head_name`` and every epoch it transitively names as ``prev`` in
-    ``corpus_dir`` (cycle-safe; an unreadable link ends the walk)."""
-    names: set[str] = set()
-    cur: str | None = head_name
-    while cur and cur not in names and "/" not in cur:
-        names.add(cur)
-        try:
-            doc = json.loads((Path(corpus_dir) / cur).read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            break
-        body = doc.get("payload") if isinstance(doc.get("payload"), Mapping) else doc
-        prev = body.get("prev_epoch_receipt") if isinstance(body, Mapping) else None
-        cur = prev if isinstance(prev, str) else None
-    return frozenset(names)
+def _epoch_link(corpus_dir: Path, name: str) -> tuple[str, str | None]:
+    """``(file_sha256, prev_epoch_receipt)`` for one epoch file; ``ValueError``
+    when it is missing, path-like or unparseable."""
+    path = corpus_dir / name
+    if not name or "/" in name or "\\" in name or not path.is_file():
+        raise ValueError(f"chain epoch {name!a} is missing from {corpus_dir}")
+    raw = path.read_bytes()
+    try:
+        doc = json.loads(raw)
+    except (ValueError, RecursionError) as exc:
+        raise ValueError(f"chain epoch {name!a} is not parseable JSON") from exc
+    body = doc.get("payload") if isinstance(doc, Mapping) else None
+    body = body if isinstance(body, Mapping) else doc
+    prev = body.get("prev_epoch_receipt") if isinstance(body, Mapping) else None
+    return hash_bytes(raw), prev if isinstance(prev, str) else None
+
+
+def chain_ancestry(corpus_dir: Path | str, pinned: Mapping[str, Any]) -> frozenset[str]:
+    """Epoch names in the chain a heads-pin entry commits to: the pinned head
+    and every epoch it transitively names as ``prev``.
+
+    Authenticated, not walked on trust: the head's bytes must match the
+    pinned ``sha256`` and the genesis→head sequence of ``(name, file_sha)``
+    must reproduce the pinned ``chain_root`` (and ``n_epochs``). Any gap,
+    cycle, unreadable link or root mismatch raises ``ValueError`` — a caller
+    that grants authority to "epochs the base already held" must never be
+    handed a set an attacker shaped by editing older epoch files."""
+    from quant_fund.research.epoch_merkle import chain_tree_root
+
+    root = Path(corpus_dir)
+    head = str(pinned.get("receipt") or "")
+    chain: list[tuple[str, str]] = []
+    cur: str | None = head
+    while cur is not None:
+        if any(cur == n for n, _ in chain):
+            raise ValueError(f"chain epoch {cur!a} repeats (cycle)")
+        sha, prev = _epoch_link(root, cur)
+        chain.append((cur, sha))
+        cur = prev
+    chain.reverse()
+    if chain[-1][1] != pinned.get("sha256"):
+        raise ValueError(f"pinned head epoch {head!a} does not match the pinned digest")
+    exp_root = pinned.get("chain_root")
+    if not isinstance(exp_root, str) or chain_tree_root(chain) != exp_root:
+        raise ValueError(f"chain ending at {head!a} does not reproduce the pinned chain_root")
+    exp_n = pinned.get("n_epochs")
+    if isinstance(exp_n, int) and exp_n != len(chain):
+        raise ValueError(f"chain ending at {head!a} has {len(chain)} epochs, pin says {exp_n}")
+    return frozenset(n for n, _ in chain)
+
+
+def ack_ledger_base_errors(
+    acks: list[dict[str, Any]],
+    base_acks: list[dict[str, Any]],
+    base_chains: Mapping[str, frozenset[str]],
+    append_only: frozenset[str],
+) -> list[str]:
+    """PR rule for the acknowledgment ledger on append-only chains.
+
+    An entry the base ledger did not already hold may only explain history
+    the *base* chain recorded (its ``epoch`` is in ``base_chains[corpus]``,
+    from ``chain_ancestry`` over the base pin). Otherwise one diff could stamp
+    a removal or rewrite of stamped evidence in a new epoch and excuse it in
+    the same breath — every transition type, not only mutations. Mutable
+    chains (``allow_member_updates``) are outside this rule: their removals
+    are ordinary, stamped and acknowledged together."""
+    base = {canonical_json_bytes(dict(a)) for a in base_acks}
+    return [
+        f"epoch_ack_postdates_base:{a['corpus']!a}:{a['member']!a}@{a['epoch']!a}"
+        for a in acks
+        if a["corpus"] in append_only
+        and canonical_json_bytes(dict(a)) not in base
+        and a["epoch"] not in base_chains.get(a["corpus"], frozenset())
+    ]
 
 
 def update_heads_pin(
@@ -891,47 +1063,18 @@ def check_epoch_chain(
     # corpus-scoped exempt prefix churn by rule (self-authenticating files
     # like Rekor witness proofs replace per checkpoint rewrite) — their
     # epoch-to-epoch presence delta is bookkeeping, not evidence loss.
+    ack_state = _AckState(ack_index, ack_used, errors, acknowledged)
     for prev_name, cur_name in child_of.items():
-        prev_members = {
-            k: v for k, v in _member_maps(by_name[prev_name]).items() if not _exempt_member(root, k)
-        }
-        cur_members = {
-            k: v for k, v in _member_maps(by_name[cur_name]).items() if not _exempt_member(root, k)
-        }
-        for gone in sorted(set(prev_members) - set(cur_members)):
-            label = f"member_removed:{gone!a}@{cur_name!a}"
-            ack = ack_index.get((gone, cur_name))
-            if _ack_explains(ack, "removed", prev_members[gone], None):
-                ack_used.add((gone, cur_name))
-            (acknowledged if (gone, cur_name) in ack_used else errors).append(label)
-        declared_removed = {
-            n
-            for n in (by_name[cur_name].get("members_removed") or [])
-            if not _exempt_member(root, n)
-        }
-        actual_removed = set(prev_members) - set(cur_members)
-        if declared_removed != actual_removed:
-            errors.append(f"members_removed_dishonest:{cur_name!a}")
-        declared_added = {
-            n for n in (by_name[cur_name].get("members_added") or []) if not _exempt_member(root, n)
-        }
-        actual_added = set(cur_members) - set(prev_members)
-        if declared_added != actual_added:
-            errors.append(f"members_added_dishonest:{cur_name!a}")
-        # Mutated members: same name, different digest.
-        mutated = (
-            []
-            if allow_member_updates
-            else sorted(
-                k for k in set(prev_members) & set(cur_members) if prev_members[k] != cur_members[k]
-            )
+        _check_transition(
+            root, by_name[prev_name], cur_name, by_name[cur_name], ack_state, allow_member_updates
         )
-        for kept in mutated:
-            ack = ack_index.get((kept, cur_name))
-            if _ack_explains(ack, "mutated", prev_members[kept], cur_members[kept]):
-                ack_used.add((kept, cur_name))
-            label = f"member_mutated:{kept!a}@{cur_name!a}"
-            (acknowledged if (kept, cur_name) in ack_used else errors).append(label)
+    history: dict[str, str] = {}
+    if not allow_member_updates and len(genesis) == 1:
+        found, history = _resurrections(root, by_name, child_of, genesis[0])
+        for name, epoch, last_sha, new_sha in found:
+            ack_state.record(
+                f"member_resurrected:{name!a}@{epoch!a}", name, epoch, "mutated", last_sha, new_sha
+            )
 
     # Head vs live corpus: stamped membership must hold exactly; files added
     # after the head stamp are unstamped (normal), not violations.
@@ -957,6 +1100,7 @@ def check_epoch_chain(
             if name in live and live[name] != sha:
                 errors.append(f"head_member_digest_drift:{name!a}")
         unstamped = sorted(set(live) - stamped - set(by_name))
+        errors += _live_resurrection_errors(live, unstamped, history)
         if require_stamped:
             errors.extend(f"unstamped_member:{name!a}" for name in unstamped)
     elif len(heads) > 1:

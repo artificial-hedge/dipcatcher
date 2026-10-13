@@ -2911,6 +2911,87 @@ def verify_repo_cmd(
     typer.echo("repo integrity: all gates intact")
 
 
+@app.command("epoch-ack-gate")
+def epoch_ack_gate_cmd(
+    base_heads_pin: Path = typer.Option(
+        ...,
+        "--base-heads-pin",
+        help="The BASE branch's epoch-heads pin (`git show BASE:quality/epoch_heads.json`).",
+    ),
+    base_epoch_acks: Path | None = typer.Option(
+        None,
+        "--base-epoch-acks",
+        help="The BASE branch's acknowledgment ledger (`git show BASE:<ledger>`); absent or "
+        "pre-v1 reads as empty, which is stricter.",
+    ),
+    root: Path = typer.Option(Path("."), "--root", help="Repo root."),
+    epoch_acks: Path = typer.Option(
+        Path("quality/epoch_allowed_removals.json"),
+        "--epoch-acks",
+        help="This branch's acknowledgment ledger.",
+    ),
+) -> None:
+    """PR gate: a new acknowledgment for an append-only chain (receipts,
+    verifier, fleet evidence, dataset manifests) must explain a removal or
+    rewrite the BASE chain already recorded — never one stamped in the same
+    change. Each referenced base chain is authenticated against the base
+    pin's ``chain_root``. Fails closed on a malformed ledger or pin.
+    """
+    from quant_fund.research.repo_integrity import ack_ledger_gate
+
+    try:
+        result = ack_ledger_gate(
+            root,
+            base_heads_pin=base_heads_pin,
+            base_ledger=base_epoch_acks,
+            ledger=epoch_acks,
+        )
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    for err in result["errors"]:
+        typer.echo(f"epoch-ack-gate error: {err}")
+    typer.echo(
+        f"epoch-ack-gate acks={result['n_acks']} base_acks={result['n_base_acks']} "
+        f"chains={','.join(result['chains_checked']) or '-'} ok={result['ok']}"
+    )
+    if not result["ok"]:
+        raise typer.Exit(code=1)
+
+
+@app.command("quarantine-gate")
+def quarantine_gate_cmd(
+    base_ref: str = typer.Option(..., "--base-ref", help="BASE commit (e.g. FETCH_HEAD)."),
+    base_heads_pin: Path = typer.Option(
+        ...,
+        "--base-heads-pin",
+        help="The BASE branch's epoch-heads pin (`git show BASE:quality/epoch_heads.json`).",
+    ),
+    root: Path = typer.Option(Path("."), "--root", help="Repo root."),
+) -> None:
+    """PR gate: the quarantine registry may grow only to retain bytes the
+    BASE branch already had (stamped by its head, or present under the same
+    name), never to excuse a receipt this change adds. An
+    ``admission_honesty_gap`` entry must name an unstamped base file with
+    identical bytes.
+    """
+    from quant_fund.research.repo_integrity import quarantine_registry_gate
+
+    try:
+        result = quarantine_registry_gate(root, base_ref=base_ref, base_heads_pin=base_heads_pin)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    for err in result["errors"]:
+        typer.echo(f"quarantine-gate error: {err}")
+    typer.echo(
+        f"quarantine-gate entries={result['n_entries']} base_entries={result['n_base_entries']} "
+        f"ok={result['ok']}"
+    )
+    if not result["ok"]:
+        raise typer.Exit(code=1)
+
+
 @app.command("evidence-export")
 def evidence_export_cmd(
     root: Path = typer.Option(Path("."), "--root", help="Repo root to export from."),
@@ -3771,13 +3852,15 @@ def admit_batch_cmd(
             expected_head=expected_head,
             epoch_acks=corpus_acks,
             base_stamped=None if base_head is None else pinned_head_members(root, base_head),
-            base_epochs=None if base_head is None else chain_ancestry(root, base_head["receipt"]),
+            base_epochs=None if base_head is None else chain_ancestry(root, base_head),
         )
     except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     for err in batch["ack_errors"]:
         typer.echo(f"admission epoch-ack rejected: {err}")
+    for err in batch["chain_errors"]:
+        typer.echo(f"admission epoch-chain error: {err}")
     for rel in batch["already_stamped"]:
         typer.echo(f"admission already-stamped at base (not re-admitted) candidate={rel}")
     for rel in batch["retained_quarantined"]:

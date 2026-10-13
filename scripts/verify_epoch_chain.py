@@ -398,7 +398,7 @@ def _epoch_receipts(
             continue
         try:
             doc = json.loads(path.read_bytes())
-        except (OSError, UnicodeError, ValueError):
+        except (OSError, UnicodeError, ValueError, RecursionError):
             if path.name.startswith("corpus_epoch_"):
                 squatters.append(path.name)
             continue
@@ -558,6 +558,41 @@ def _checkpoint_heads(
 # ---------------------------------------------------------------- chain
 
 
+def _fold(name: str) -> str:
+    """Mirror of ``corpus_epoch._fold``: name identity on case-insensitive /
+    normalizing filesystems (NTFS also drops trailing dots and spaces)."""
+    folded = unicodedata.normalize("NFC", name).casefold()
+    return "/".join(part.rstrip(". ") for part in folded.split("/"))
+
+
+def _resurrections(
+    root: Path, by_name: Mapping[str, Mapping[str, Any]], child_of: Mapping[str, str], genesis: str
+) -> tuple[list[tuple[str, str, str, str]], dict[str, str]]:
+    """Mirror of ``corpus_epoch._resurrections``: append-only names removed
+    and later re-added (under any ``_fold``-equal spelling) with different
+    bytes, plus the last stamped digest of every name ever held. Same-byte
+    re-adds are restorations, not flagged."""
+    last: dict[str, str] = {}
+    prev: dict[str, str] = {}
+    found: list[tuple[str, str, str, str]] = []
+    cur: str | None = genesis
+    seen: set[str] = set()
+    while cur is not None and cur not in seen:
+        seen.add(cur)
+        members = {
+            k: v for k, v in _member_maps(by_name[cur]).items() if not _exempt_member(root, k)
+        }
+        found += [
+            (k, cur, last[_fold(k)], members[k])
+            for k in sorted(set(members) - set(prev))
+            if _fold(k) in last and last[_fold(k)] != members[k]
+        ]
+        last.update({_fold(k): v for k, v in members.items()})
+        prev = members
+        cur = child_of.get(cur)
+    return found, last
+
+
 def check_chain(
     corpus_dir: Path,
     *,
@@ -605,7 +640,7 @@ def check_chain(
     sealed: dict[str, Mapping[str, Any]] = {}
     for path, body, envelope in epochs:
         errs = _seal_errors(envelope)
-        if errs or _epoch_contract_errors(body):
+        if errs or _epoch_contract_errors(body) or not _strict_json_ok(path.read_bytes()):
             errors.append(f"epoch_receipt_invalid:{path.name!a}")
             continue
         sealed[path.name] = body
@@ -678,6 +713,22 @@ def check_chain(
                 acknowledged.append(label)
             else:
                 errors.append(label)
+    history: dict[str, str] = {}
+    if not allow_member_updates and len(genesis) == 1:
+        found, history = _resurrections(root, by_name, child_of, genesis[0])
+        for name, epoch, last_sha, new_sha in found:
+            label = f"member_resurrected:{name!a}@{epoch!a}"
+            ack = ack_index.get((name, epoch))
+            if (
+                ack is not None
+                and ack["transition"] == "mutated"
+                and ack["from_sha256"] == last_sha
+                and ack["to_sha256"] == new_sha
+            ):
+                ack_used.add((name, epoch))
+                acknowledged.append(label)
+            else:
+                errors.append(label)
 
     heads = set(by_name) - set(child_of)
     head_name: str | None = None
@@ -696,6 +747,11 @@ def check_chain(
             if name in live and live[name] != sha:
                 errors.append(f"head_member_digest_drift:{name!a}")
         unstamped = sorted(set(live) - stamped - set(by_name))
+        errors.extend(
+            f"member_resurrected_live:{name!a}"
+            for name in unstamped
+            if _fold(name) in history and history[_fold(name)] != live[name]
+        )
         if require_stamped:
             errors.extend(f"unstamped_member:{name!a}" for name in unstamped)
     elif len(heads) > 1:
@@ -739,13 +795,51 @@ def _hex64(value: object) -> bool:
     )
 
 
+def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Duplicate object keys make one byte string carry two readings (JSON
+    is last-wins) — fatal for a ledger that decides what a gate excuses."""
+    obj: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in obj:
+            raise ValueError(f"duplicate_json_key:{key!a}")
+        obj[key] = value
+    return obj
+
+
+def _reject_non_finite(token: str) -> float:
+    value = float(token)
+    if value != value or value in (float("inf"), float("-inf")):
+        raise ValueError("non_finite_json_number")
+    return value
+
+
+def _reject_constant(token: str) -> Any:
+    raise ValueError(f"non_finite_json_number:{token}")
+
+
+def _strict_json_ok(raw: bytes) -> bool:
+    """The library's leaf parse (``receipt_v2_leaf``) refuses duplicate
+    keys and non-finite numbers before trusting a seal: one byte string must
+    have exactly one reading. Same refusal here, so both verifiers agree."""
+    try:
+        json.loads(
+            raw,
+            object_pairs_hook=_reject_duplicate_keys,
+            parse_float=_reject_non_finite,
+            parse_constant=_reject_constant,
+        )
+    except (ValueError, RecursionError):
+        return False
+    return True
+
+
 def load_acks(path: Path | None, key: str) -> list[Mapping[str, Any]]:
     """Strict epoch_acknowledgments.v1 parse (independent of the library):
     any malformed entry raises — a ledger that cannot be matched exactly is
     never read as "no acks". Returns the entries scoped to chain ``key``."""
     if path is None:
         return []
-    raw = json.loads(path.read_bytes())
+    raw = json.loads(path.read_bytes(), object_pairs_hook=_reject_duplicate_keys)
     if (
         not isinstance(raw, Mapping)
         or raw.get("schema") != "epoch_acknowledgments.v1"
