@@ -22,18 +22,14 @@ def test_invalid_utf8_is_reported_stale(
     artifacts = {manifest_relative: '{"ok": true}\n'}
     monkeypatch.setattr(diagrams, "verify_diagram_bindings", lambda _root: [])
     monkeypatch.setattr(diagrams, "generated_artifacts", lambda _root: artifacts)
-    monkeypatch.setattr(
-        diagrams, "generated_blocks", lambda _artifacts: {"example": "body"}
-    )
+    monkeypatch.setattr(diagrams, "generated_blocks", lambda _artifacts: {"example": "body"})
 
     manifest = tmp_path / manifest_relative
     manifest.parent.mkdir(parents=True)
     manifest.write_text(artifacts[manifest_relative], encoding="utf-8")
     atlas = tmp_path / diagrams.ATLAS_DOC
     atlas.write_text(
-        "<!-- BEGIN GENERATED: example -->\n"
-        "body\n"
-        "<!-- END GENERATED: example -->",
+        "<!-- BEGIN GENERATED: example -->\nbody\n<!-- END GENERATED: example -->",
         encoding="utf-8",
     )
     (tmp_path / corrupt_relative).write_bytes(b"invalid UTF-8: " + bytes([0xFF]))

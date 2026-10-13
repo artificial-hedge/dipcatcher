@@ -60,7 +60,9 @@ class IngestCheckpoint:
             batch = Batch(batch_id=rec["batch_id"], rows=rec["rows"])
             _validate_batch(batch)
             if batch.batch_id in self._committed:
-                raise IngestJournalError(f"duplicate batch_id in ingest journal: {batch.batch_id!r}")
+                raise IngestJournalError(
+                    f"duplicate batch_id in ingest journal: {batch.batch_id!r}"
+                )
             self._committed[batch.batch_id] = batch.rows
 
     def _parse_line(self, raw: str) -> dict[str, Any]:

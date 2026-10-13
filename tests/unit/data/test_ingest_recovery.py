@@ -67,9 +67,7 @@ def test_corrupt_journal_fails_closed(tmp_path) -> None:
 
 def _sealed_record(batch_id: object, rows: object, **extra: object) -> str:
     body = {"batch_id": batch_id, "rows": rows, **extra}
-    return json.dumps(
-        {**body, "sha256": hash_bytes(canonical_json_bytes(body))}, sort_keys=True
-    )
+    return json.dumps({**body, "sha256": hash_bytes(canonical_json_bytes(body))}, sort_keys=True)
 
 
 def test_reingest_with_conflicting_row_count_fails_closed(tmp_path) -> None:
