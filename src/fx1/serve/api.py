@@ -118,7 +118,7 @@ from fx1.serve.backends import (
     BYOK_MODEL_ENV,
     LOCAL_SERVE_CMD_ENV,
     LOCAL_SERVE_URL_ENV,
-    BackendNotConfiguredError,
+    BackendNotConfiguredError as BackendNotConfiguredError,
     EmbeddingBackend,
     SamplingParams,
     StreamingBackend,
@@ -128,7 +128,7 @@ from fx1.serve.backends import (
     truncate_chunks,
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
-from fx1.serve.contract import API_VERSION
+from fx1.serve.contract import API_VERSION as API_VERSION
 from fx1.serve.evals import (
     EVAL_SAMPLING,
     EVAL_SUITES,
