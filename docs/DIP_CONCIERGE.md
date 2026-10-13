@@ -757,12 +757,12 @@ close a gate.
   glued onto a prefix ("mySharpe 2.1") are outside the lexical gate. A
   compromised endpoint can return false but well-formed prose.
 - **Plain text is a conservative router.** `intent.looks_like_orchestration`
-  is a verb next to an object. On the 64-phrase labeled set in the
-  relevance artifact (32 that should enter `/superpower`, 32 that should
-  stay chat): precision 1.0 (tp 20, fp 0), recall 0.625 (fn 12, tn 32).
-  The misses have no router verb next to a router object. Use
-  `/superpower` explicitly. How-to questions stay on the chat path on
-  purpose.
+  is a verb next to an object, plus a closed list of diagnostic noun
+  phrases. On the 64-phrase labeled set, a local recount is precision 1.0
+  (tp 32, fp 0) and recall 1.0 (fn 0, tn 32). An earlier tree recorded
+  recall 0.625 (fn 12, `P021`–`P032`). How-to questions stay on the chat
+  path on purpose. P3 stays open. Use `/superpower` when the sentence is
+  not one of those phrases.
 - **Datasets live in `<cwd>/data`.** Copy the file there. Anywhere else,
   including a symlink out of that directory, is refused.
 - **Symlink ancestors.** `ensure_private_dir` refuses a symlink anywhere

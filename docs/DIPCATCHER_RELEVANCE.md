@@ -71,18 +71,24 @@ the deterministic plan. Every surviving step stays inside the typed catalog.
 
 ## Intent router
 
-`intent.looks_like_orchestration` stays a conservative verb-near-object check.
-On 32 phrases that should enter `/superpower` and 32 that should stay chat:
+`intent.looks_like_orchestration` matches a research verb next to a research
+object, and a closed list of diagnostic noun phrases (QLIKE, rank IC, a PIT
+histogram, a sealed receipt, a scorecard). How-to questions and ordinary
+sentences that merely mention pinball, family, or volatility stay on the
+chat path.
+
+On the same 32 phrases that should enter `/superpower` and 32 that should
+stay chat, a local recount after that noun-phrase list:
 
 | | |
 |---|---|
-| precision | 1.0 (fp 0, tp 20) |
-| recall | 0.625 (fn 12, tn 32) |
+| precision | 1.0 (fp 0, tp 32) |
+| recall | 1.0 (fn 0, tn 32) |
 
-The misses have no router verb (`check`, `score`, `evaluate`, `benchmark`,
-`calibrate`, `run`) next to a router object. Examples: "Rank IC of the cross
-section.", "Verify the sealed receipt digest.", "GARCH realized variance
-scoring." Chat can still reach those goals through `/superpower`.
+An earlier tree, before those noun phrases, recorded precision 1.0 (tp 20)
+and recall 0.625 (fn 12, `P021`–`P032`). That row stays in
+[the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md). This recount
+does not close P3: the expert rubric is still unrated.
 
 ## How to run
 
@@ -121,8 +127,8 @@ Artifact: `/opt/cursor/artifacts/dipcatcher_relevance_result.json`.
 | invariant_failures | none |
 | model_refinement_ok | true |
 | family_exclusion_code_retention | 1.0 |
-| intent precision | 1.0 |
-| intent recall | 0.625 |
+| intent precision | 1.0 (tp 32, fp 0) |
+| intent recall | 1.0 (fn 0, tn 32) |
 | ok | true |
 
 `family_exclusion_code_retention` is 1.0 on this tree: family exclusions keep

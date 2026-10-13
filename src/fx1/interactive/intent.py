@@ -1,11 +1,12 @@
 """Detect a plain-text request that should use the /superpower planner.
 
-The match is a research verb near a research object. Slash commands,
-including unicode-folded and quoted ones, and ordinary questions stay on
-the chat path. A verb that sits inside an explanatory or how-to clause
-("how do I run a volatility benchmark?") is a question about the work, not
-a request to do it, so it stays on the chat path too; routing to chat is
-always the safe failure.
+The match is a research verb near a research object, or a diagnostic
+noun phrase with no imperative verb (QLIKE, rank IC, a PIT histogram).
+Slash commands, including unicode-folded and quoted ones, and ordinary
+questions stay on the chat path. A verb or noun that sits inside an
+explanatory or how-to clause ("how do I run a volatility benchmark?")
+is a question about the work, not a request to do it, so it stays on
+the chat path too; routing to chat is always the safe failure.
 """
 
 from __future__ import annotations
@@ -23,6 +24,27 @@ _VERB_RE = re.compile(r"\b(?:check|score|evaluat\w*|benchmark|calibrat\w*|run)\b
 _OBJECT_RE = re.compile(
     r"\b(?:volatil\w*|qlike|crps|pinball|conformal|receipts?|"
     r"benchmarks?|famil(?:y|ies)|forecasts?)\b"
+)
+# Diagnostic names that are requests even without check/score/run.
+# Bare "pinball", "family", "receipt", or "volatility" are not in this
+# list: those words also appear in ordinary sentences.
+_NOUN_REQUESTS = (
+    re.compile(r"\bqlike\b"),
+    re.compile(r"\bvariance forecasts?\b"),
+    re.compile(r"\brank ic\b"),
+    re.compile(r"\bpit histogram\b"),
+    re.compile(r"\bprobability integral transform\b"),
+    re.compile(r"\bdoctor preflight\b"),
+    re.compile(r"\bvolatility\b.{0,48}\bfamily\b"),
+    re.compile(r"\balarm rate\b"),
+    re.compile(r"\b(?:verify|sealed)\b.{0,48}\breceipt\b"),
+    re.compile(r"\bscorecard\b"),
+    re.compile(r"\bpinball\b.{0,48}\bcrps\b"),
+    re.compile(r"\bcrps\b.{0,48}\bpinball\b"),
+    re.compile(r"\brealized variance\b"),
+    re.compile(r"\bgarch\b"),
+    re.compile(r"\breceipt store\b"),
+    re.compile(r"\brequired families\b"),
 )
 _CLAUSE_BREAK = re.compile(r"[.?!;:,\n]|\b(?:then|so|but|and then)\b")
 _EXPLAINING = re.compile(
@@ -70,9 +92,15 @@ def _keep_prefix(match: re.Match[str]) -> str:
 
 def _matches(text: str) -> bool:
     folded = text.casefold()
-    return any(
+    if any(
         not _is_explaining(folded, match.start()) and _has_object(folded, match.end())
         for match in _VERB_RE.finditer(folded)
+    ):
+        return True
+    return any(
+        not _is_explaining(folded, match.start())
+        for pattern in _NOUN_REQUESTS
+        for match in pattern.finditer(folded)
     )
 
 

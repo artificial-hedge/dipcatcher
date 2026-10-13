@@ -84,6 +84,42 @@ def test_questions_about_the_work_stay_on_the_chat_path(text: str) -> None:
     assert not looks_like_orchestration(text)
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "QLIKE on the variance forecasts please.",
+        "Rank IC of the cross section.",
+        "PIT histogram for the holdout.",
+        "Serial dependence of the probability integral transform.",
+        "Doctor preflight on the research tree.",
+        "Selective volatility family only.",
+        "Alarm rate of the sequential lanes.",
+        "Verify the sealed receipt digest.",
+        "Full scorecard of required families.",
+        "Pinball and CRPS on the quantile file.",
+        "GARCH realized variance scoring.",
+        "Health of the lab receipt store.",
+    ],
+)
+def test_diagnostic_noun_phrases_route_to_orchestration(text: str) -> None:
+    assert looks_like_orchestration(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I like pinball",
+        "the family is visiting tomorrow",
+        "the receipt is a hash, not a request",
+        "volatility is a noun in this sentence",
+        "what is a scorecard?",
+        "how do I read a PIT histogram?",
+    ],
+)
+def test_ordinary_mentions_of_research_words_stay_chat(text: str) -> None:
+    assert not looks_like_orchestration(text)
+
+
 def test_plain_text_uses_the_superpower_planner(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
