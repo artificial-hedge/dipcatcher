@@ -325,8 +325,8 @@ epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch h
 	  dir=$${spec%%:*}; glob=$${spec##*:}; \
 	  head=$$(git show "$$EPOCH_BASE:quality/epoch_heads.json" 2>/dev/null | uv run python -c "import json,sys; print(json.load(sys.stdin)['heads'].get('$$dir/$$glob',{}).get('receipt',''))"); \
 	  if [ -z "$$head" ]; then echo "epoch-consistency skip $$dir: no base head"; continue; fi; \
-	  case "$$dir" in data/metadata) if ! ls "$$dir"/corpus_epoch_*.json >/dev/null 2>&1; then \
-	    echo "epoch-consistency skip $$dir: local-only chain, no epoch receipts in this checkout"; continue; fi;; esac; \
+	  if ! git cat-file -e "$$EPOCH_BASE:$$dir/$$head" 2>/dev/null; then \
+	    echo "epoch-consistency skip $$dir: the base pin names $$head, which the base tree does not commit (no base chain to extend)"; continue; fi; \
 	  proof="$${RUNNER_TEMP:-/tmp}/consistency_$$(echo $$dir | tr '/.' '__').json"; \
 	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --from-epoch "$$head" --out "$$proof" >/dev/null || exit 1; \
 	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --check "$$proof" || exit 1; \

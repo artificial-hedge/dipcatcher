@@ -151,9 +151,13 @@ Residual boundaries, as of 2026-10-13 (measured on this PR's committed tree, aft
   `live_pnl_claim: false`). They predate that bar and stay stamped
   members. `p0_evidence_inventory_v1.json` is quarantined not because
   its content is worse but because it was never stamped or admitted.
-- **`data/metadata` consistency is proven only where its epochs exist.**
-  Its epoch receipts are gitignored, so `epoch-consistency` skips that
-  chain in a clean checkout, by the same rule `verify-repo` uses.
+- **`data/metadata` has no committed base chain to prove against.** The
+  base pin names head `corpus_epoch_7dc5e67df8042167.json`, which is
+  gitignored and absent from main (two older epochs of that chain are
+  tracked). `epoch-consistency` skips a chain only when the base tree does
+  not commit the base pin's head, and says so; deleting a head the base
+  does commit still fails the proof. Before, the loop aborted there and
+  left the 21 corpora after it unproven.
 - **The PR-only gates do not cover direct pushes to `main`.**
   `epoch-consistency`, `epoch-ack-gate`, `quarantine-gate` and the
   admission diff run on `pull_request` events. A direct push still has to pass the
