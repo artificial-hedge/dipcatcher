@@ -30,6 +30,7 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
+from quant_fund.research.legacy_unsealed import EMPTY_QUARANTINE, Quarantine
 from quant_fund.utils.hashing import hash_bytes
 
 ADMISSION_SCHEMA = "receipt_admission.v1"
@@ -109,8 +110,17 @@ def admission_check(
     q: float = 0.05,
     known_inconsistent: Mapping[str, str] | None = None,
     tombstone_dir: Path | str | None = None,
+    epoch_dir: Path | str | None = None,
+    expected_head: Mapping[str, Any] | None = None,
+    epoch_acks: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Gate a candidate receipt against an existing corpus.
+
+    ``epoch_dir`` is the durable corpus whose epoch chain the admission binds
+    to (default ``corpus_dir``); ``admit_batch`` passes the real corpus while
+    ``corpus_dir`` is a shadow, because an intermediate shadow is missing the
+    batch's stamped members by construction. The chain is checked with the
+    same heads pin and acknowledgment ledger as ``corpus-epoch --check``.
 
     Fails closed: a missing candidate or unreadable corpus dir raises;
     per-check findings are recorded rather than swallowed.
@@ -225,13 +235,20 @@ def admission_check(
     except ImportError:
         checks.append({"name": "epoch_chain", "ok": True, "skipped": "corpus_epoch_unavailable"})
     else:
-        chain_result = check_epoch_chain(corpus_dir)
+        chain_result = check_epoch_chain(
+            Path(epoch_dir) if epoch_dir is not None else corpus_dir,
+            acks=epoch_acks,
+            expected_head=expected_head,
+        )
         chain_errors = list(chain_result["errors"])
         # An unstamped corpus ("no_epoch_receipts") is benign — the gate
-        # works fine before the first epoch stamp exists. Only a *broken
-        # stamped chain* (fork, member_removed/mutated, dishonest delta)
-        # is a quarantine-class finding.
-        hard_chain_errors = [e for e in chain_errors if e != "no_epoch_receipts"]
+        # works fine before the first epoch stamp exists — unless a heads pin
+        # says a chain exists. Only a *broken stamped chain* (fork,
+        # member_removed/mutated, dishonest delta) is a quarantine-class
+        # finding.
+        hard_chain_errors = [
+            e for e in chain_errors if e != "no_epoch_receipts" or expected_head is not None
+        ]
         head_name = chain_result.get("head")
         epoch_head = head_name if isinstance(head_name, str) else None
         root_value = chain_result.get("head_epoch_root")
@@ -241,6 +258,7 @@ def admission_check(
                 "name": "epoch_chain",
                 "ok": not hard_chain_errors,
                 "errors": chain_errors,
+                "acknowledged": list(chain_result.get("acknowledged", [])),
                 "unstamped": list(chain_result["unstamped"]),
             }
         )
@@ -321,12 +339,68 @@ def admission_check(
     }
 
 
+def _partition_quarantined(
+    ordered: list[Path], corpus_dir: Path, quarantine: Quarantine
+) -> tuple[list[str], list[Path]]:
+    """Split candidates into registry-matched quarantined records (retained,
+    never admitted) and everything else (gated as usual)."""
+    from quant_fund.research.legacy_unsealed import classify_receipt
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    retained: list[str] = []
+    gated: list[Path] = []
+    for cand in ordered:
+        try:
+            rel = cand.resolve().relative_to(corpus_dir.resolve()).as_posix()
+        except ValueError:
+            rel = cand.name
+        ver = verify_receipt_file(cand)
+        status, _why = classify_receipt(
+            rel,
+            hash_bytes(cand.read_bytes()),
+            valid=bool(ver["valid"]),
+            errors=list(ver["errors"]),
+            quarantine=quarantine,
+        )
+        if status == "quarantined":
+            retained.append(rel)
+        else:
+            gated.append(cand)
+    return retained, gated
+
+
+def _batch_shadow(corpus_dir: Path, ordered: list[Path], gated: list[Path]) -> Path:
+    """Corpus minus the batch, plus the batch's retained quarantined records.
+
+    Mirrors every verifiable receipt (recursively, minus quarantined
+    subtrees — the lattice's own membership). Retained quarantined records
+    are part of the merged corpus every gated candidate lands in (the
+    lattice reads them), so they enter up front."""
+    from quant_fund.utils.receipt import verified_corpus_files
+
+    changed_names = {c.name for c in ordered}
+    shadow = Path(tempfile.mkdtemp(prefix="admit_batch_base_"))
+    for path in verified_corpus_files(corpus_dir):
+        rel_path = path.relative_to(corpus_dir)
+        if len(rel_path.parts) == 1 and path.name in changed_names:
+            continue
+        (shadow / rel_path).parent.mkdir(parents=True, exist_ok=True)
+        _link_or_copy(path, shadow / rel_path)
+    for cand in ordered:
+        if cand not in gated:
+            _link_or_copy(cand, shadow / cand.name)
+    return shadow
+
+
 def admit_batch(
     candidates: Iterable[Path | str],
     corpus_dir: Path | str = Path("receipts"),
     *,
     q: float = 0.05,
     known_inconsistent: Mapping[str, str] | None = None,
+    quarantine: Quarantine = EMPTY_QUARANTINE,
+    expected_head: Mapping[str, Any] | None = None,
+    epoch_acks: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Gate a set of incoming receipts the way a merge actually lands them.
 
@@ -341,9 +415,17 @@ def admit_batch(
     intra-diff contradictions are attributed to the file that introduces
     them and no commit sneaks a contradiction in inside a batch.
 
-    Only top-level ``*.json`` members of the corpus are gated: quarantined
-    subtrees (``legacy-unsealed/``) and non-receipt files are not corpus
-    members and are skipped — they carry their own byte-pins elsewhere.
+    The shadow mirrors every verifiable corpus receipt (recursively, minus
+    quarantined subtrees — the lattice's own membership). The epoch-chain
+    check is NOT run on the shadow: it binds to the real ``corpus_dir`` (the
+    merged state) with ``expected_head``/``epoch_acks``, because a shadow
+    lacks the batch's stamped members by construction.
+
+    A candidate that matches its ``quarantine`` registry entry exactly
+    (path, bytes, error set) is retained record, not evidence asking to be
+    admitted: it is listed under ``retained_quarantined`` and never receives
+    an ``admit`` verdict. Any other non-verifying candidate is gated, and
+    rejected, as usual.
 
     Fails closed: a missing candidate, a candidate inside the corpus under a
     *different* name, or an unreadable corpus dir raises.
@@ -356,20 +438,20 @@ def admit_batch(
         if not cand.is_file():
             raise ValueError(f"candidate receipt {cand} does not exist")
 
-    changed_names = {c.name for c in ordered}
-    shadow = Path(tempfile.mkdtemp(prefix="admit_batch_base_"))
-    for path in sorted(corpus_dir.glob("*.json")):
-        if path.is_file() and path.name not in changed_names:
-            _link_or_copy(path, shadow / path.name)
+    retained, gated = _partition_quarantined(ordered, corpus_dir, quarantine)
+    shadow = _batch_shadow(corpus_dir, ordered, gated)
 
     results: list[dict[str, Any]] = []
-    for cand in ordered:
+    for cand in gated:
         result = admission_check(
             cand,
             shadow,
             q=q,
             known_inconsistent=known_inconsistent,
             tombstone_dir=corpus_dir,
+            epoch_dir=corpus_dir,
+            expected_head=expected_head,
+            epoch_acks=epoch_acks,
         )
         results.append(result)
         # Post-merge coexistence: a merged diff lands all of its files
@@ -387,7 +469,9 @@ def admit_batch(
     return {
         "verdict": verdict,
         "n_candidates": len(ordered),
+        "n_gated": len(gated),
         "results": results,
+        "retained_quarantined": retained,
         "failures": [r["candidate"] for r in results if r["verdict"] != "admit"],
     }
 

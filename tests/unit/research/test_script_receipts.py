@@ -422,12 +422,20 @@ def test_every_committed_receipt_schema_is_contract_covered() -> None:
     uncovered: list[str] = []
     untyped: list[str] = []
     for path in sorted(RECEIPTS.glob("*.json")):
-        raw = json.loads(path.read_text()).get("schema")
+        doc = json.loads(path.read_text())
+        raw = doc.get("schema")
         if raw in ("receipt.v2", None):
             continue  # v2 inners dispatch by kind fingerprint
         if not isinstance(raw, str):
-            untyped.append(f"{path.name}:{raw!r}")
-            continue
+            # A sealed receipt whose ``schema`` is a version integer (e.g.
+            # ``"schema": 1``) dispatches on its ``kind`` tag. Its bytes are
+            # sealed and epoch-pinned — the fix belongs in the producer, never
+            # in a post-hoc edit of the receipt (87ff0c06 did that; reverted).
+            kind = doc.get("kind")
+            if not isinstance(kind, str):
+                untyped.append(f"{path.name}:{raw!r}")
+                continue
+            raw = kind
         schema = raw
         if (
             schema in SCRIPT_RECEIPT_CONTRACTS

@@ -41,6 +41,9 @@ from quant_fund.utils.hashing import hash_bytes
 
 REPO_INTEGRITY_SCHEMA = "repo_integrity.v1"
 
+# Epoch-history acknowledgment ledger (epoch_acknowledgments.v1).
+EPOCH_ACKS_PATH = "quality/epoch_allowed_removals.json"
+
 # (corpus_dir, member glob, require_stamped, allow_member_updates,
 #  coverage_exempt globs) — the same policy the evidence-audit Makefile
 # target enforces; keep in sync.
@@ -156,19 +159,14 @@ def verify_repo(
     """
     root = Path(root)
     pin_path = root / heads_pin if not Path(heads_pin).is_absolute() else Path(heads_pin)
-    # Committed removal acknowledgments — moving a stamped member (e.g. to
-    # legacy-unsealed/) or a transient corpus blip is recorded history, not
-    # an error, when name->sha256 is declared here. The file is itself a
-    # corpus member: silently editing it still trips the epoch gate.
-    allowed_removals: dict[str, str] = {}
-    ar_path = root / "quality/epoch_allowed_removals.json"
-    if ar_path.is_file():
-        try:
-            raw_ar = json.loads(ar_path.read_text())
-            if isinstance(raw_ar, dict):
-                allowed_removals = {str(k): str(v) for k, v in raw_ar.items() if isinstance(v, str)}
-        except (OSError, json.JSONDecodeError):
-            allowed_removals = {}
+    # Committed epoch-history acknowledgments (epoch_acknowledgments.v1):
+    # each entry explains one removal/mutation already recorded in a sealed
+    # epoch of one named chain. The file is itself a quality corpus member —
+    # silently editing it trips the quality chain — and a malformed ledger
+    # fails every epoch gate closed instead of being read as "no acks".
+    from quant_fund.research.corpus_epoch import acks_for_corpus
+
+    epoch_acks, acks_error, unknown_ack_corpora = _load_repo_epoch_acks(root)
     gates: dict[str, dict[str, Any]] = {}
 
     if evidence_only:
@@ -312,9 +310,12 @@ def verify_repo(
             expected_head=expected,
             require_stamped=require_stamped,
             allow_member_updates=allow_updates,
-            allowed_removals=allowed_removals,
+            acks=acks_for_corpus(epoch_acks, epoch_heads_key(corpus_dir, pattern)),
         )
-        errs = pin_errors + list(res["errors"])
+        errs = pin_errors + list(res["errors"]) + acks_error
+        # The ledger lives in quality/: an entry naming a chain this policy
+        # table doesn't know can never match — a closed-world miss.
+        errs += unknown_ack_corpora if corpus_dir == "quality" else []
         # Coverage closure at the corpus policy level: every file in the
         # dir must be a pattern member, an epoch record, a declared
         # exemption, or on the corpus's allowlist — a non-matching file
@@ -342,8 +343,12 @@ def verify_repo(
                 or any(fnmatch(rel, g) for g in exempt)
             ):
                 continue
-            errs.append(f"uncovered_member:{rel!a}")
-        gates[f"epoch:{corpus_dir}"] = {"ok": not errs, "errors": errs}
+            errs += _uncovered_errors(cdir, rel, pattern)
+        gates[f"epoch:{corpus_dir}"] = {
+            "ok": not errs,
+            "errors": errs,
+            "acknowledged": list(res["acknowledged"]),
+        }
 
     if evidence_only:
         # The manifest is the exporter's claim about itself — schema,
@@ -433,6 +438,65 @@ def verify_repo(
     }
 
     return {"gates": gates, "ok": all(g["ok"] for g in gates.values())}
+
+
+def _load_repo_epoch_acks(root: Path) -> tuple[list[dict[str, Any]], list[str], list[str]]:
+    """(ledger entries, malformed-ledger errors, unknown-corpus errors).
+
+    A malformed ledger fails every epoch gate closed instead of reading as
+    "no acks"; an entry naming a chain absent from ``CORPORA`` can never
+    match and is reported against the quality gate (the ledger's home)."""
+    from quant_fund.research.corpus_epoch import load_epoch_acks
+
+    ar_path = root / EPOCH_ACKS_PATH
+    if not ar_path.is_file():
+        return [], [], []
+    try:
+        acks = load_epoch_acks(ar_path)
+    except (OSError, ValueError) as exc:
+        return [], [f"epoch_acks_malformed:{EPOCH_ACKS_PATH}:{exc}"], []
+    known = {epoch_heads_key(c[0], c[1]) for c in CORPORA}
+    unknown = sorted({a["corpus"] for a in acks} - known)
+    return acks, [], [f"epoch_ack_unknown_corpus:{k!a}" for k in unknown]
+
+
+def _uncovered_errors(cdir: Path, rel: str, pattern: str) -> list[str]:
+    """Coverage-closure verdict for a file no pattern or exemption claims."""
+    sidecar = _detached_digest_status(cdir, rel, pattern)
+    if sidecar == "ok":
+        return []
+    if sidecar == "mismatch":
+        return [f"sidecar_digest_mismatch:{rel!a}"]
+    return [f"uncovered_member:{rel!a}"]
+
+
+def _detached_digest_status(cdir: Path, rel: str, pattern: str) -> str | None:
+    """Classify ``<member>.sha256`` detached-digest sidecars for coverage.
+
+    A sidecar is covered only by *verification*, never by exemption: its
+    sibling must be a pattern member (so its bytes are chained) and the
+    sidecar must hold exactly that member's sha256 (optionally followed by
+    whitespace / ``  <name>``, the ``sha256sum`` shape). ``None`` means the
+    file is not a sidecar at all and falls through to ``uncovered_member``.
+    """
+    from fnmatch import fnmatch
+
+    if not rel.endswith(".sha256"):
+        return None
+    sibling_rel = rel[: -len(".sha256")]
+    sibling = cdir / sibling_rel
+    if not fnmatch(sibling_rel, pattern) or not sibling.is_file() or sibling.is_symlink():
+        return None
+    try:
+        claimed = (cdir / rel).read_text(encoding="ascii").split()
+    except (OSError, UnicodeDecodeError):
+        return "mismatch"
+    expected = hash_bytes(sibling.read_bytes())
+    if not claimed or claimed[0] != expected or len(claimed) > 2:
+        return "mismatch"
+    if len(claimed) == 2 and claimed[1].lstrip("*") != Path(sibling_rel).name:
+        return "mismatch"
+    return "ok"
 
 
 # Gates every attestation must carry — the neutral/absent states are legal

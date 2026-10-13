@@ -1011,6 +1011,77 @@ def lane_power(
     typer.echo(f"receipt={path}")
 
 
+def _load_known_inconsistent(path: Path | None) -> dict[str, str] | None:
+    """``--known-inconsistent`` pins (filename -> 64-hex sha256); bad file → BadParameter."""
+    if path is None:
+        return None
+    if not path.is_file():
+        raise typer.BadParameter(f"known-inconsistent file {path} does not exist")
+    try:
+        raw_pins = json.loads(path.read_text())
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(f"known-inconsistent is not JSON: {exc}") from exc
+    if not isinstance(raw_pins, dict) or not all(
+        isinstance(k, str) and isinstance(v, str) and len(v) == 64 for k, v in raw_pins.items()
+    ):
+        raise typer.BadParameter(
+            "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
+        )
+    return dict(raw_pins)
+
+
+def _echo_suite_health_summary(receipt: dict[str, Any], path: Path) -> None:
+    """Receipt validity, quarantine coverage and acknowledged chain incidents."""
+    quarantine_state = receipt["quarantine"]
+    typer.echo(
+        f"receipts={receipt['n_receipts']} verified={receipt['n_ok']} "
+        f"quarantined={receipt['n_quarantined']} invalid={receipt['n_invalid']} "
+        f"verified_fraction={quarantine_state['verified_fraction']} "
+        f"pooled_evalue={receipt['pooled_evalue']}"
+    )
+    for category, count in quarantine_state["by_category"].items():
+        typer.echo(f"quarantined[{category}]={count}")
+    epoch_state = receipt.get("corpus_epoch") or {}
+    for incident in epoch_state.get("acknowledged") or []:
+        typer.echo(f"corpus_epoch acknowledged: {incident}")
+    typer.echo(f"receipt={path}")
+
+
+def _suite_health_strict_failures(receipt: dict[str, Any]) -> list[str]:
+    """Strict-gate failures: invalid receipts, stale quarantine entries, and a
+    broken epoch chain — reported separately, never merged into one count."""
+    bad = [f"{rel}: {why}" for rel, why in receipt["invalid"].items()]
+    bad += [f"quarantine: {err}" for err in receipt["quarantine"]["stale_entries"]]
+    epoch_state = receipt.get("corpus_epoch") or {}
+    if epoch_state.get("chain_ok") is False:
+        bad += [f"corpus_epoch: {err}" for err in epoch_state.get("errors") or []]
+    return bad
+
+
+def _load_epoch_policy(
+    corpus_dir: Path, heads_pin: Path | None, epoch_acks: Path | None, pattern: str = "*.json"
+) -> tuple[dict[str, Any] | None, list[dict[str, Any]] | None]:
+    """(pinned head entry, this chain's acks) — the one loader every gate that
+    checks a corpus chain shares, so no entry point reads the pin or the
+    acknowledgment ledger differently. Raises ``ValueError`` on a missing pin
+    entry or malformed ledger (callers surface it as a bad parameter)."""
+    from quant_fund.research.corpus_epoch import (
+        acks_for_corpus,
+        epoch_heads_key,
+        load_epoch_acks,
+        load_heads_pin,
+    )
+
+    key = epoch_heads_key(corpus_dir, pattern)
+    expected_head: dict[str, Any] | None = None
+    if heads_pin is not None:
+        expected_head = load_heads_pin(heads_pin).get(key)
+        if expected_head is None:
+            raise ValueError(f"heads-pin {heads_pin} has no entry for {key}")
+    acks = acks_for_corpus(load_epoch_acks(epoch_acks), key) if epoch_acks is not None else None
+    return expected_head, acks
+
+
 @app.command("suite-health")
 def suite_health_cmd(
     receipts_dir: Path = typer.Option(
@@ -1026,8 +1097,31 @@ def suite_health_cmd(
     strict: bool = typer.Option(
         False,
         "--strict",
-        help="Exit 1 unless every failing receipt is a byte-pinned legacy "
-        "unsealed artifact (CI evidence-audit gate).",
+        help="Exit 1 unless every non-verifying receipt is quarantined in the "
+        "registry (path + bytes + exact errors), no registry entry is stale, and "
+        "the epoch chain is intact (CI evidence-audit gate).",
+    ),
+    quarantine_path: Path = typer.Option(
+        Path("quality/legacy_quarantine.json"),
+        "--quarantine",
+        help="legacy_quarantine.v2 registry of retained receipts that do not verify. "
+        "Absent file = empty registry (every failure is invalid).",
+    ),
+    heads_pin: Path | None = typer.Option(
+        None,
+        "--heads-pin",
+        help="Committed epoch-heads pin; the receipts chain must be the pinned head "
+        "or its descendant (same check as corpus-epoch --check --heads-pin).",
+    ),
+    epoch_acks: Path | None = typer.Option(
+        None,
+        "--epoch-acks",
+        help="Epoch-history acknowledgment ledger (epoch_acknowledgments.v1).",
+    ),
+    require_stamped: bool = typer.Option(
+        False,
+        "--require-stamped",
+        help="Unstamped receipts are chain errors, not informational.",
     ),
 ) -> None:
     """Re-verify every receipt in a directory + pool evidence → sealed summary.
@@ -1036,12 +1130,24 @@ def suite_health_cmd(
     verify-receipt pass (seal + kind contract), harvestable p-values /
     e-values are pooled under arbitrary dependence, and a corrupt artifact
     withholds the pooled claim — never asserted over partial evidence.
+    Receipt validity (verified / quarantined / invalid) and corpus validity
+    (epoch chain under the pin + acknowledgment ledger) are reported apart.
     """
+    from quant_fund.research.legacy_unsealed import load_quarantine_or_empty
     from quant_fund.research.suite_health import suite_health, write_suite_health_receipt
 
     try:
-        frame, receipt = suite_health(receipts_dir, alpha=alpha)
-    except ValueError as exc:
+        quarantine = load_quarantine_or_empty(quarantine_path)
+        expected_head, corpus_acks = _load_epoch_policy(receipts_dir, heads_pin, epoch_acks)
+        _frame, receipt = suite_health(
+            receipts_dir,
+            alpha=alpha,
+            quarantine=quarantine,
+            expected_head=expected_head,
+            epoch_acks=corpus_acks,
+            require_stamped=require_stamped,
+        )
+    except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     try:
         path = write_suite_health_receipt(receipt, out_dir, receipt_version=receipt_version)
@@ -1053,33 +1159,9 @@ def suite_health_cmd(
             data_source=receipt["data_label"],
         )
     )
-    typer.echo(
-        f"receipts={receipt['n_receipts']} ok={receipt['n_ok']} "
-        f"failed={receipt['n_failed']} pooled_evalue={receipt['pooled_evalue']}"
-    )
-    typer.echo(f"receipt={path}")
+    _echo_suite_health_summary(receipt, path)
     if strict:
-        import polars as pl
-
-        from quant_fund.research.legacy_unsealed import (
-            is_known_contract_legacy,
-            is_known_unsealed,
-        )
-        from quant_fund.schemas.receipt_v2_leaf import verify_receipt_file
-
-        bad: list[str] = []
-        for row in frame.filter(~pl.col("valid")).iter_rows(named=True):
-            p = receipts_dir / str(row["file"])
-            result = verify_receipt_file(p)
-            if not (
-                is_known_unsealed(p, result["errors"])
-                or is_known_contract_legacy(p, result["errors"])
-            ):
-                bad.append(f"{row['file']}: {result['errors']}")
-        epoch_state = receipt.get("corpus_epoch")
-        if isinstance(epoch_state, dict) and epoch_state.get("chain_ok") is False:
-            for err in epoch_state.get("errors") or []:
-                bad.append(f"corpus_epoch: {err}")
+        bad = _suite_health_strict_failures(receipt)
         if bad:
             typer.echo("STRICT FAILURE — unverifiable receipts:", err=True)
             for line in bad:
@@ -1735,11 +1817,13 @@ def corpus_epoch(
         help="Verify the committed epoch chain against the live corpus "
         "(single fork-free chain, monotone membership, head == live root).",
     ),
-    allowed_removals: Path | None = typer.Option(
+    epoch_acks: Path | None = typer.Option(
         None,
-        "--allowed-removals",
-        help="JSON map of receipt filename -> sha256 whose removal is acknowledged "
-        "(e.g. moved to legacy-unsealed/).",
+        "--epoch-acks",
+        help="With --check: epoch-history acknowledgment ledger "
+        "(epoch_acknowledgments.v1, e.g. quality/epoch_allowed_removals.json). Each "
+        "entry explains one removal/mutation already recorded in a sealed epoch; "
+        "acknowledged incidents are printed, unmatched entries are errors.",
     ),
     out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
     receipt_version: int = typer.Option(
@@ -1819,22 +1903,16 @@ def corpus_epoch(
                 f"{sorted(existing)} — pass --glob to disambiguate"
             )
         glob = existing.pop() if existing else "*.json"
-    allowed: dict[str, str] | None = None
-    if allowed_removals is not None:
-        if not allowed_removals.is_file():
-            raise typer.BadParameter(f"allowed-removals file {allowed_removals} does not exist")
+    corpus_acks: list[dict[str, Any]] | None = None
+    if epoch_acks is not None:
+        from quant_fund.research.corpus_epoch import acks_for_corpus, load_epoch_acks
+
+        if not epoch_acks.is_file():
+            raise typer.BadParameter(f"epoch-acks file {epoch_acks} does not exist")
         try:
-            raw_allowed = json.loads(allowed_removals.read_text())
+            corpus_acks = acks_for_corpus(load_epoch_acks(epoch_acks), epoch_heads_key(root, glob))
         except (OSError, ValueError) as exc:
-            raise typer.BadParameter(f"allowed-removals is not JSON: {exc}") from exc
-        if not isinstance(raw_allowed, dict) or not all(
-            isinstance(k, str) and isinstance(v, str) and len(v) == 64
-            for k, v in raw_allowed.items()
-        ):
-            raise typer.BadParameter(
-                "allowed-removals must be a JSON object mapping filename -> 64-hex sha256"
-            )
-        allowed = dict(raw_allowed)
+            raise typer.BadParameter(f"epoch-acks is not a valid ledger: {exc}") from exc
     expected_head: dict[str, str] | None = None
     if heads_pin is not None:
         if not heads_pin.is_file():
@@ -1850,7 +1928,7 @@ def corpus_epoch(
     if check:
         result = check_epoch_chain(
             root,
-            allowed_removals=allowed,
+            acks=corpus_acks,
             pattern=glob,
             expected_head=expected_head,
             require_stamped=require_stamped,
@@ -1860,6 +1938,8 @@ def corpus_epoch(
         if not require_stamped:
             for name in result["unstamped"]:
                 typer.echo(f"epoch-chain info: unstamped member {name}")
+        for incident in result["acknowledged"]:
+            typer.echo(f"epoch-chain acknowledged: {incident}")
         if result["errors"]:
             for err in result["errors"]:
                 typer.echo(f"epoch-chain error: {err}")
@@ -3565,6 +3645,12 @@ def admit(
         "--strict",
         help="Exit nonzero unless the verdict is 'admit'.",
     ),
+    heads_pin: Path | None = typer.Option(
+        None, "--heads-pin", help="Committed epoch-heads pin the corpus chain must honour."
+    ),
+    epoch_acks: Path | None = typer.Option(
+        None, "--epoch-acks", help="Epoch-history acknowledgment ledger (epoch_acknowledgments.v1)."
+    ),
 ) -> None:
     """Receipt admission gate: may this receipt join the evidence corpus?
 
@@ -3581,22 +3667,19 @@ def admit(
         raise typer.BadParameter(f"candidate receipt {candidate} does not exist")
     if not root.is_dir():
         raise typer.BadParameter(f"corpus dir {root} does not exist")
-    pins: dict[str, str] | None = None
-    if known_inconsistent is not None:
-        if not known_inconsistent.is_file():
-            raise typer.BadParameter(f"known-inconsistent file {known_inconsistent} does not exist")
-        try:
-            raw_pins = json.loads(known_inconsistent.read_text())
-        except (OSError, ValueError) as exc:
-            raise typer.BadParameter(f"known-inconsistent is not JSON: {exc}") from exc
-        if not isinstance(raw_pins, dict) or not all(
-            isinstance(k, str) and isinstance(v, str) and len(v) == 64 for k, v in raw_pins.items()
-        ):
-            raise typer.BadParameter(
-                "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
-            )
-        pins = dict(raw_pins)
-    result = admission_check(candidate, root, q=q, known_inconsistent=pins)
+    pins = _load_known_inconsistent(known_inconsistent)
+    try:
+        expected_head, corpus_acks = _load_epoch_policy(root, heads_pin, epoch_acks)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    result = admission_check(
+        candidate,
+        root,
+        q=q,
+        known_inconsistent=pins,
+        expected_head=expected_head,
+        epoch_acks=corpus_acks,
+    )
     try:
         path = write_admission_receipt(result, out_dir, receipt_version=receipt_version)
     except ValueError as exc:
@@ -3636,7 +3719,19 @@ def admit_batch_cmd(
     strict: bool = typer.Option(
         False,
         "--strict",
-        help="Exit nonzero unless every candidate's verdict is 'admit'.",
+        help="Exit nonzero unless every gated candidate's verdict is 'admit'.",
+    ),
+    quarantine_path: Path = typer.Option(
+        Path("quality/legacy_quarantine.json"),
+        "--quarantine",
+        help="legacy_quarantine.v2 registry: candidates matching an entry exactly are "
+        "retained record, listed and never admitted. Absent file = empty registry.",
+    ),
+    heads_pin: Path | None = typer.Option(
+        None, "--heads-pin", help="Committed epoch-heads pin the corpus chain must honour."
+    ),
+    epoch_acks: Path | None = typer.Option(
+        None, "--epoch-acks", help="Epoch-history acknowledgment ledger (epoch_acknowledgments.v1)."
     ),
 ) -> None:
     """Batch admission gate for a diff of receipts.
@@ -3653,26 +3748,25 @@ def admit_batch_cmd(
     root = Path(corpus_dir)
     if not root.is_dir():
         raise typer.BadParameter(f"corpus dir {root} does not exist")
-    pins: dict[str, str] | None = None
-    if known_inconsistent is not None:
-        if not known_inconsistent.is_file():
-            raise typer.BadParameter(f"known-inconsistent file {known_inconsistent} does not exist")
-        try:
-            raw_pins = json.loads(known_inconsistent.read_text())
-        except (OSError, ValueError) as exc:
-            raise typer.BadParameter(f"known-inconsistent is not JSON: {exc}") from exc
-        if not isinstance(raw_pins, dict) or not all(
-            isinstance(k, str) and isinstance(v, str) and len(v) == 64 for k, v in raw_pins.items()
-        ):
-            raise typer.BadParameter(
-                "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
-            )
-        pins = dict(raw_pins)
+    pins = _load_known_inconsistent(known_inconsistent)
+    from quant_fund.research.legacy_unsealed import load_quarantine_or_empty
+
     try:
-        batch = admit_batch(receipts, root, q=q, known_inconsistent=pins)
-    except ValueError as exc:
+        expected_head, corpus_acks = _load_epoch_policy(root, heads_pin, epoch_acks)
+        batch = admit_batch(
+            receipts,
+            root,
+            q=q,
+            known_inconsistent=pins,
+            quarantine=load_quarantine_or_empty(quarantine_path),
+            expected_head=expected_head,
+            epoch_acks=corpus_acks,
+        )
+    except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    for rel in batch["retained_quarantined"]:
+        typer.echo(f"admission retained-quarantined (not admitted) candidate={rel}")
     for result in batch["results"]:
         path = write_admission_receipt(result, out_dir, receipt_version=receipt_version)
         failed = [c["name"] for c in result["checks"] if not c["ok"]]
@@ -3681,7 +3775,10 @@ def admit_batch_cmd(
             f"verdict={result['verdict']}" + (f" failed_checks={failed}" if failed else "")
         )
         typer.echo(f"receipt={path}")
-    typer.echo(f"admit-batch candidates={batch['n_candidates']} verdict={batch['verdict']}")
+    typer.echo(
+        f"admit-batch candidates={batch['n_candidates']} gated={batch['n_gated']} "
+        f"retained_quarantined={len(batch['retained_quarantined'])} verdict={batch['verdict']}"
+    )
     if strict and batch["verdict"] != "admit":
         raise typer.Exit(code=1)
 

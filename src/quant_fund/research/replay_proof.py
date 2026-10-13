@@ -550,6 +550,20 @@ def run_replay(
     return seal_receipt(body)
 
 
+def _unrun_exit_code_errors(spawn_error: object, timed_out: object, exit_code: object) -> list[str]:
+    """A lane that never ran (spawn refused/failed) or was killed has no exit
+    code — a body pairing either with one is fabricated."""
+    errors: list[str] = []
+    if spawn_error is not None:
+        if not isinstance(spawn_error, str) or not spawn_error.strip():
+            errors.append("spawn_error")
+        if exit_code is not None:
+            errors.append("exit_code")
+    if timed_out is True and exit_code is not None:
+        errors.append("exit_code")
+    return errors
+
+
 def replay_proof_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     """Internal consistency for a ``replay_proof.v1`` body — fail closed.
 
@@ -558,6 +572,13 @@ def replay_proof_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     ``all_match ⟺ (exit_code == 0 AND every artifact match)`` /
     ``verdict == ("pass" iff all_match)`` equivalences. A body that lies
     about its own arithmetic fails verification even under a fresh seal.
+
+    Dispatched by the production verifier (``verify_receipt_file``) through
+    ``lane_contracts.lane_contract_errors`` on ``schema == "replay_proof.v1"``
+    or ``kind == "replay_proof"`` — for a bare v1 body and for the inner
+    payload of a ``receipt.v2`` envelope alike — so a forged ``pass`` body
+    cannot verify on its seal alone. (Consistency only: a body fabricated
+    consistently end to end still needs a re-run to refute.)
     """
     if not isinstance(payload, Mapping):
         return ["payload_not_object"]
@@ -697,6 +718,8 @@ def replay_proof_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     timed_out = payload.get("timed_out")
     if not isinstance(timed_out, bool):
         errors.append("timed_out")
+    spawn_error = payload.get("spawn_error")
+    errors.extend(_unrun_exit_code_errors(spawn_error, timed_out, exit_code))
     all_match = payload.get("all_match")
     if not isinstance(all_match, bool):
         errors.append("all_match")
@@ -704,6 +727,7 @@ def replay_proof_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         want_all = (
             exit_code == 0
             and timed_out is False
+            and spawn_error is None
             and bool(artifact_matches)
             and all(artifact_matches)
             and (input_tapes is None or inputs_ok_claimed is True)

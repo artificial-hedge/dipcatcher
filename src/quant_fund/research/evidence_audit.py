@@ -34,7 +34,13 @@ from pathlib import Path
 from typing import Any
 
 from quant_fund.research.fleet_eval import _atomic_write_text
-from quant_fund.research.legacy_unsealed import is_known_contract_legacy
+from quant_fund.research.legacy_unsealed import (
+    DEFAULT_QUARANTINE_PATH,
+    EMPTY_QUARANTINE,
+    Quarantine,
+    classify_receipt,
+    load_quarantine_or_empty,
+)
 from quant_fund.research.receipt_v2 import (
     build_receipt_v2,
     seal_receipt,
@@ -61,17 +67,28 @@ def _filename_digest_status(path: Path, seal: object) -> bool | None:
     return seal[:16] == match.group(1)
 
 
-def audit_receipts_dir(receipts_dir: Path | str) -> list[dict[str, Any]]:
+def audit_receipts_dir(
+    receipts_dir: Path | str, *, quarantine: Quarantine = EMPTY_QUARANTINE
+) -> list[dict[str, Any]]:
     """Verify every ``*.json`` under ``receipts_dir`` recursively — matching
     the epoch chain's member semantics, so a receipt in a subdirectory is
     audited rather than invisible. Quarantined subdirs (``legacy-unsealed``)
-    are governed by ``quality/legacy_quarantine.json`` instead. Never raises
-    per-file: an unreadable or unparseable file is a row with
-    ``valid=False``."""
+    are governed by ``quality/legacy_quarantine.json`` (checked by
+    ``suite-health --strict``). Never raises per-file: an unreadable or
+    unparseable file is a row with ``valid=False``."""
     directory = Path(receipts_dir)
     rows: list[dict[str, Any]] = []
     for path in verified_corpus_files(directory):
         result = verify_receipt_file(path)
+        rel = path.relative_to(directory).as_posix()
+        file_sha256 = _file_sha256(path)
+        status, _why = classify_receipt(
+            rel,
+            file_sha256,
+            valid=bool(result["valid"]),
+            errors=list(result["errors"]),
+            quarantine=quarantine,
+        )
         try:
             seal = json.loads(path.read_text()).get("receipt_sha256")
         except (OSError, UnicodeError, json.JSONDecodeError):
@@ -79,8 +96,8 @@ def audit_receipts_dir(receipts_dir: Path | str) -> list[dict[str, Any]]:
         sealed = isinstance(seal, str) and len(seal) == 64
         rows.append(
             {
-                "file": path.relative_to(directory).as_posix(),
-                "file_sha256": _file_sha256(path),
+                "file": rel,
+                "file_sha256": file_sha256,
                 "schema": result["schema"],
                 "kind": result["kind"],
                 "verdict": result["verdict"],
@@ -89,11 +106,10 @@ def audit_receipts_dir(receipts_dir: Path | str) -> list[dict[str, Any]]:
                 "digest_convention": result["digest_convention"],
                 "filename_digest_ok": _filename_digest_status(path, seal),
                 "errors": list(result["errors"]),
-                # byte-pinned legacy contracts predating their lane's schema —
-                # exempt from sealed_receipt_invalid (KNOWN_CONTRACT_LEGACY
-                # sha256-pins both file and error set; any other failure or a
-                # tampered byte still surfaces).
-                "contract_legacy": is_known_contract_legacy(path, result["errors"]),
+                # Registered in the quarantine (path + bytes + exact error
+                # set): retained record, reported but not a fresh finding. Any
+                # drift from the registry entry leaves this False.
+                "quarantined": status == "quarantined",
             }
         )
     return rows
@@ -108,7 +124,12 @@ def evidence_audit_findings(
     if not rows:
         findings.append("no_receipts_found")
     for row in rows:
-        if row["sealed"] and not row["valid"] and not row.get("contract_legacy"):
+        if (
+            row["sealed"]
+            and not row["valid"]
+            and not row.get("quarantined")
+            and not row.get("contract_legacy")
+        ):
             findings.append(f"{row['file']}:sealed_receipt_invalid")
         if any(e.startswith("receipt_unreadable") for e in row["errors"]):
             findings.append(f"{row['file']}:unparseable")
@@ -153,7 +174,12 @@ def run_evidence_audit(
     directory = Path(receipts_dir)
     if not directory.is_dir():
         raise ValueError(f"receipts directory not found: {directory}")
-    rows = audit_receipts_dir(directory)
+    quarantine = (
+        load_quarantine_or_empty(Path(root) / DEFAULT_QUARANTINE_PATH)
+        if root is not None
+        else EMPTY_QUARANTINE
+    )
+    rows = audit_receipts_dir(directory, quarantine=quarantine)
 
     # duplicate-seal detection needs the seal itself — re-verify cheaply via
     # the JSON bodies already on disk (verify_receipt_file does not echo it).
@@ -274,6 +300,7 @@ def evidence_audit_consistency_errors(body: object) -> list[str]:
             and r.get("sealed")
             and not r.get("valid")
             and not r.get("contract_legacy")
+            and not r.get("quarantined")
         ]
         embedded = {str(f) for f in findings}
         for want_finding in expected:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -82,13 +83,26 @@ def test_deleted_member_detected(corpus_dir: Path) -> None:
     assert any("member_removed:" in e and "'a.json'" in e for e in errors)
 
 
-def test_allowed_removal_pin(corpus_dir: Path) -> None:
+def _ack(member: str, epoch: Path, frm: str, to: str | None, transition: str) -> dict[str, Any]:
+    return {
+        "corpus": "c/*.json",
+        "member": member,
+        "transition": transition,
+        "from_sha256": frm,
+        "to_sha256": to,
+        "epoch": epoch.name,
+        "reason": "test fixture",
+    }
+
+
+def test_acknowledged_removal_is_reported_not_failed(corpus_dir: Path) -> None:
     _stamp(corpus_dir)
     digest = member_digests(corpus_dir)["a.json"]
     (corpus_dir / "a.json").unlink()
-    _stamp(corpus_dir)
-    errors = check_epoch_chain(corpus_dir, allowed_removals={"a.json": digest})["errors"]
-    assert not any("member_removed:" in e and "'a.json'" in e for e in errors)
+    epoch = _stamp(corpus_dir)
+    result = check_epoch_chain(corpus_dir, acks=[_ack("a.json", epoch, digest, None, "removed")])
+    assert not any("'a.json'" in e for e in result["errors"])
+    assert result["acknowledged"] == [f"member_removed:'a.json'@{epoch.name!a}"]
 
 
 def test_mutated_member_detected(corpus_dir: Path) -> None:
@@ -386,7 +400,7 @@ def test_allow_member_updates_for_mutable_corpora(tmp_path: Path) -> None:
     _receipt(corpus, "manifest.json", "v3")
     drift = check_epoch_chain(corpus, allow_member_updates=True)
     assert "head_member_digest_drift:'manifest.json'" in drift["errors"]
-    # Removals still error in mutable mode (use allowed_removals pins).
+    # Removals still error in mutable mode (only an epoch-bound ack explains one).
     (corpus / "pin.json").unlink()
     removed = check_epoch_chain(corpus, allow_member_updates=True)
     assert any("pin.json" in e for e in removed["errors"])

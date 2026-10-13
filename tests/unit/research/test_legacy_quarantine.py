@@ -1,46 +1,58 @@
-"""Legacy quarantine pin: every retired artifact fails verification exactly the
-way the pin records — no drifting reason, no silent "fix" that would move a
-pre-contract receipt back into the verified set.
+"""Quarantine registry pin: every retained artifact fails verification exactly
+the way the registry records — no drifting reason, no silent "fix" that would
+move a pre-contract receipt back into the verified set, and nothing under the
+quarantine subtree escapes registration.
 """
 
 from __future__ import annotations
 
 import hashlib
-import json
 from pathlib import Path
 
+from quant_fund.research.legacy_unsealed import (
+    QUARANTINE_CATEGORIES,
+    classify_receipt,
+    load_quarantine,
+)
 from quant_fund.research.receipt_v2 import verify_receipt_file
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-LEGACY_DIR = REPO_ROOT / "receipts" / "legacy-unsealed"
+RECEIPTS = REPO_ROOT / "receipts"
+LEGACY_DIR = RECEIPTS / "legacy-unsealed"
 PIN_PATH = REPO_ROOT / "quality" / "legacy_quarantine.json"
 
 
-def _pin() -> dict[str, dict[str, object]]:
-    doc = json.loads(PIN_PATH.read_text())
-    assert doc.get("schema") == "legacy_quarantine.v1"
-    files = doc.get("files")
-    assert isinstance(files, dict) and files, "legacy_quarantine.json must pin files"
-    return files
-
-
 def test_quarantine_pin_covers_exactly_the_retired_set() -> None:
-    on_disk = {p.name for p in LEGACY_DIR.glob("*.json") if p.is_file()}
-    assert on_disk == set(_pin()), (
-        "legacy-unsealed/ contents and the pin disagree — a retired artifact "
+    registry = load_quarantine(PIN_PATH)
+    on_disk = {f"legacy-unsealed/{p.name}" for p in LEGACY_DIR.glob("*.json") if p.is_file()}
+    registered = {rel for rel in registry.files if rel.startswith("legacy-unsealed/")}
+    assert on_disk == registered, (
+        "legacy-unsealed/ contents and the registry disagree — a retired artifact "
         "was added/removed without updating quality/legacy_quarantine.json"
     )
 
 
-def test_retired_artifacts_match_their_pinned_bytes_and_reasons() -> None:
-    for name, entry in _pin().items():
-        path = LEGACY_DIR / name
+def test_registered_artifacts_match_their_pinned_bytes_and_reasons() -> None:
+    registry = load_quarantine(PIN_PATH)
+    assert registry.files, "legacy_quarantine.json must pin files"
+    for rel, entry in registry.files.items():
+        path = RECEIPTS / rel
+        assert entry.category in QUARANTINE_CATEGORIES
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        assert digest == entry["sha256"], f"{name}: bytes drifted from the quarantine pin"
+        assert digest == entry.sha256, f"{rel}: bytes drifted from the quarantine pin"
         result = verify_receipt_file(path)
         # A quarantined artifact must never verify cleanly — if it did, it
-        # belongs in receipts/, not here.
-        assert not result["valid"], f"{name}: retired artifact unexpectedly verifies"
-        assert sorted(result["errors"]) == sorted(entry["errors"]), (
-            f"{name}: verify errors drifted from the recorded quarantine reason"
+        # belongs back in the verified set and the entry must be removed.
+        assert not result["valid"], f"{rel}: quarantined artifact unexpectedly verifies"
+        status, why = classify_receipt(
+            rel, digest, valid=False, errors=list(result["errors"]), quarantine=registry
         )
+        assert status == "quarantined", f"{rel}: {why}"
+
+
+def test_provenance_gaps_pin_existing_valid_receipts() -> None:
+    registry = load_quarantine(PIN_PATH)
+    for rel, gap in registry.provenance_gaps.items():
+        path = RECEIPTS / rel
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == gap.sha256, rel
+        assert verify_receipt_file(path)["valid"], f"{rel}: gap entries describe valid receipts"

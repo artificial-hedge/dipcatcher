@@ -1,10 +1,13 @@
-"""Every committed receipt in ``receipts/`` must pass ``verify-receipt``.
+"""Every committed receipt in ``receipts/`` must verify or be quarantined.
 
-Append-only evidence is only evidence when it verifies. ``receipts/legacy-
-unsealed/`` holds the pre-seal-era artifacts quarantined as *unverifiable*;
-anything in ``receipts/`` root is claimed live and must seal-verify.
-``KNOWN_UNSEALED`` is a shrink-only ratchet for the legacy receipts that have
-not migrated yet — a new unsealed receipt in ``receipts/`` fails this test.
+Append-only evidence is only evidence when it verifies. Retained receipts
+that cannot verify (pre-seal era, detached preregistration seals, contracts
+that postdate the bytes, unpinned tapes, absent honesty declarations) are
+listed in ``quality/legacy_quarantine.json`` with byte pins, exact error sets
+and reasons. This test runs the *production* path — ``suite_health`` with
+the committed registry, heads pin and epoch acknowledgment ledger — so unit
+acceptance cannot drift from ``suite-health --strict`` again (the tape-legacy
+allowlist used to exist only here while the CI gate still failed).
 """
 
 from __future__ import annotations
@@ -13,42 +16,43 @@ import json
 from pathlib import Path
 from typing import Any
 
-from quant_fund.research.legacy_unsealed import (
-    KNOWN_UNSEALED,
-    is_known_contract_legacy,
-    is_known_tape_legacy,
-    is_known_unsealed,
+from quant_fund.research.corpus_epoch import (
+    acks_for_corpus,
+    epoch_heads_key,
+    load_epoch_acks,
+    load_heads_pin,
 )
-from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
+from quant_fund.research.legacy_unsealed import load_quarantine
+from quant_fund.research.receipt_v2 import verify_receipt_payload
+from quant_fund.research.suite_health import suite_health
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 RECEIPTS = REPO_ROOT / "receipts"
-
-# KNOWN_UNSEALED / KNOWN_CONTRACT_LEGACY live in
-# quant_fund.research.legacy_unsealed — byte-pinned shrink-only ratchets
-# shared with `suite-health --strict`. A new unverifiable receipt in
-# receipts/ fails this test; the maps may only ever shrink.
+QUARANTINE = REPO_ROOT / "quality" / "legacy_quarantine.json"
+HEADS_PIN = REPO_ROOT / "quality" / "epoch_heads.json"
+EPOCH_ACKS = REPO_ROOT / "quality" / "epoch_allowed_removals.json"
 
 
-def test_committed_receipts_verify_or_are_known_legacy() -> None:
-    unsealed: list[str] = []
-    failures: list[str] = []
-    for path in sorted(RECEIPTS.glob("*.json")):
-        result = verify_receipt_file(path)
-        if result["valid"]:
-            continue
-        if is_known_unsealed(path, result["errors"]):
-            unsealed.append(path.name)
-            continue
-        if is_known_contract_legacy(path, result["errors"]):
-            continue
-        if is_known_tape_legacy(path, result["errors"]):
-            continue
-        failures.append(f"{path.name}: {result['errors']}")
-    assert failures == [], "committed receipts fail verification:\n" + "\n".join(failures)
-    assert not set(KNOWN_UNSEALED) - set(unsealed), (
-        "KNOWN_UNSEALED has entries no longer unsealed in receipts/ — shrink the set"
+def test_committed_receipts_verify_or_are_quarantined() -> None:
+    key = epoch_heads_key("receipts", "*.json")
+    frame, receipt = suite_health(
+        RECEIPTS,
+        quarantine=load_quarantine(QUARANTINE),
+        expected_head=load_heads_pin(HEADS_PIN)[key],
+        epoch_acks=acks_for_corpus(load_epoch_acks(EPOCH_ACKS), key),
     )
+    assert receipt["invalid"] == {}, (
+        "committed receipts fail verification and are not quarantined:\n"
+        + "\n".join(f"{k}: {v}" for k, v in receipt["invalid"].items())
+    )
+    assert receipt["quarantine"]["stale_entries"] == []
+    # Every registry entry is in use — the registry only ever describes
+    # files that exist and still fail exactly as recorded.
+    assert receipt["n_quarantined"] == receipt["quarantine"]["n_registered"]
+    assert receipt["n_ok"] + receipt["n_quarantined"] == receipt["n_receipts"] == frame.height
+    epoch_state = receipt["corpus_epoch"]
+    assert epoch_state["pinned"] is True
+    assert epoch_state["chain_ok"], epoch_state["errors"]
 
 
 def _sealed_committed() -> list[tuple[str, dict[str, Any]]]:

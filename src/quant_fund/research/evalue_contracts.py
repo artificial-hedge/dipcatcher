@@ -635,6 +635,29 @@ def _monitor_run_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def _suite_health_quarantine_errors(p: Mapping[str, Any], n_failed: object) -> list[str]:
+    """Quarantine accounting (optional for pre-registry receipts, checked when
+    present): every non-verified receipt is exactly one of quarantined
+    (registered, byte-pinned) or invalid, and the invalid map names them."""
+    if "n_quarantined" not in p and "n_invalid" not in p:
+        return []
+    n_q = p.get("n_quarantined")
+    n_inv = p.get("n_invalid")
+    if not (isinstance(n_q, int) and not isinstance(n_q, bool) and n_q >= 0):
+        return ["n_quarantined_not_nonnegative_int"]
+    if not (isinstance(n_inv, int) and not isinstance(n_inv, bool) and n_inv >= 0):
+        return ["n_invalid_not_nonnegative_int"]
+    errors: list[str] = []
+    if isinstance(n_failed, int) and n_q + n_inv != n_failed:
+        errors.append("quarantined_plus_invalid_neq_failed")
+    invalid_map = p.get("invalid")
+    if not isinstance(invalid_map, Mapping):
+        errors.append("invalid_map_missing")
+    elif len(invalid_map) != n_inv:
+        errors.append("invalid_map_count_mismatch")
+    return errors
+
+
 def _suite_health_errors(p: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
     params_sh = p.get("params")
@@ -683,6 +706,7 @@ def _suite_health_errors(p: Mapping[str, Any]) -> list[str]:
             errors.append("ok_plus_failed_neq_receipts")
         if n_files is not None and n_receipts != n_files:
             errors.append("n_receipts_neq_n_files")
+    errors += _suite_health_quarantine_errors(p, n_failed)
     if not isinstance(p.get("corpus_lane_available"), bool):
         errors.append("corpus_lane_available_not_bool")
     epoch_state = p.get("corpus_epoch")

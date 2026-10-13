@@ -59,7 +59,9 @@ def _carrier(tmp_path: Path, receipt: Path, name: str, claims_equal: bool = True
         "reproduces": [
             {
                 "receipt": receipt.name,
-                "committed_sha256": "ab" * 32,
+                # Bound to the live receipt's real bytes: the sweep refuses to
+                # count a carrier as reproducing a receipt it cannot match.
+                "committed_sha256": hash_bytes(receipt.read_bytes()),
                 "claims_equal": claims_equal,
             }
         ],

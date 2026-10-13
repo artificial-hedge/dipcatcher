@@ -92,53 +92,79 @@ def test_label_aggregates_inputs(tmp_path: Path) -> None:
     assert rep2["data_label"] == "MIXED"
 
 
-def test_strict_cli_gate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """--strict exits nonzero on a corrupt receipt, zero on sealed/legacy."""
+def test_strict_cli_gate(tmp_path: Path) -> None:
+    """--strict exits nonzero on a corrupt receipt, zero on sealed corpora and
+    on a receipt quarantined in the registry with exact bytes + errors."""
     import hashlib
 
     from typer.testing import CliRunner
 
     from quant_fund.cli.main import app as cli
-    from quant_fund.research.legacy_unsealed import KNOWN_UNSEALED
 
     runner = CliRunner()
     out = tmp_path / "out"
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    registry = tmp_path / "quarantine.json"
 
-    # all-sealed corpus → strict passes
-    _sealed(tmp_path, "ok.json")
-    res = runner.invoke(
-        cli, ["suite-health", "--receipts-dir", str(tmp_path), "--out-dir", str(out), "--strict"]
-    )
+    def run() -> object:
+        return runner.invoke(
+            cli,
+            [
+                "suite-health",
+                "--receipts-dir",
+                str(corpus),
+                "--out-dir",
+                str(out),
+                "--strict",
+                "--quarantine",
+                str(registry),
+            ],
+        )
+
+    # all-sealed corpus, no registry file → strict passes
+    _sealed(corpus, "ok.json")
+    res = run()
     assert res.exit_code == 0, res.output
 
     # corrupt sealed receipt → strict fails
-    bad = json.loads((tmp_path / "ok.json").read_text())
+    bad = json.loads((corpus / "ok.json").read_text())
     bad["data_label"] = "tampered"
-    (tmp_path / "ok.json").write_text(json.dumps(bad))
-    res = runner.invoke(
-        cli, ["suite-health", "--receipts-dir", str(tmp_path), "--out-dir", str(out), "--strict"]
-    )
+    (corpus / "ok.json").write_text(json.dumps(bad))
+    res = run()
     assert res.exit_code == 1
     assert "STRICT FAILURE" in res.output
 
-    # byte-pinned legacy unsealed receipt → tolerated under strict; the
-    # committed allowlist drained once every receipt sealed, so pin a
-    # synthesized entry (the pin binds bytes, not membership by name).
-    (tmp_path / "ok.json").unlink()
+    # unsealed legacy receipt registered with exact bytes + errors → tolerated
+    # as quarantined (and reported as such, never as verified)
+    (corpus / "ok.json").unlink()
+    _sealed(corpus, "fine.json")
     body = b'{"kind": "legacy", "note": "pre-seal"}'
-    (tmp_path / "legacy_pinned.json").write_bytes(body)
-    monkeypatch.setitem(KNOWN_UNSEALED, "legacy_pinned.json", hashlib.sha256(body).hexdigest())
-    res = runner.invoke(
-        cli, ["suite-health", "--receipts-dir", str(tmp_path), "--out-dir", str(out), "--strict"]
+    (corpus / "legacy_pinned.json").write_bytes(body)
+    entry = {
+        "sha256": hashlib.sha256(body).hexdigest(),
+        "errors": ["receipt_sha256_missing_or_invalid"],
+        "category": "pre_seal_era",
+        "reason": "test fixture",
+    }
+    registry.write_text(
+        json.dumps({"schema": "legacy_quarantine.v2", "files": {"legacy_pinned.json": entry}})
     )
+    res = run()
     assert res.exit_code == 0, res.output
+    assert "verified=1 quarantined=1 invalid=0" in res.output
 
     # same name, wrong bytes → the pin covers content, not the filename
-    (tmp_path / "legacy_pinned.json").write_bytes(b'{"kind": "legacy", "note": "tampered"}')
-    res = runner.invoke(
-        cli, ["suite-health", "--receipts-dir", str(tmp_path), "--out-dir", str(out), "--strict"]
-    )
+    (corpus / "legacy_pinned.json").write_bytes(b'{"kind": "legacy", "note": "tampered"}')
+    res = run()
     assert res.exit_code == 1
+    assert "quarantine_bytes_drift" in res.output
+
+    # registered file deleted → stale registry entry fails strict
+    (corpus / "legacy_pinned.json").unlink()
+    res = run()
+    assert res.exit_code == 1
+    assert "quarantine_entry_missing" in res.output
 
 
 def test_suite_health_receipt_v2_round_trip(tmp_path: Path) -> None:

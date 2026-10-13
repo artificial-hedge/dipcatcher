@@ -24,13 +24,21 @@ import polars as pl
 
 from quant_fund.research.emerge import emerge_mean
 from quant_fund.research.fleet_eval import _atomic_write_text
+from quant_fund.research.legacy_unsealed import (
+    EMPTY_QUARANTINE,
+    Quarantine,
+    ReceiptStatus,
+    classify_receipt,
+    corpus_receipt_files,
+    quarantine_summary,
+    stale_quarantine_entries,
+)
 from quant_fund.research.receipt_v2 import (
     seal_receipt,
     verify_receipt_file,
     wrap_receipt_v2,
 )
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
-from quant_fund.utils.receipt import verified_corpus_files
 from quant_fund.utils.reproducibility import git_revision
 
 SUITE_HEALTH_SCHEMA = "suite_health.v1"
@@ -54,18 +62,56 @@ def _lazy_epoch_check() -> Any:
         return None
 
 
+def _epoch_state(
+    root: Path,
+    expected_head: Mapping[str, Any] | None,
+    epoch_acks: list[dict[str, Any]] | None,
+    require_stamped: bool,
+) -> dict[str, Any]:
+    """Epoch-chain attestation: the health receipt pins the membership-chain
+    state it ran under (same pin + ledger as ``corpus-epoch --check``), so a
+    stamped-then-tampered corpus is visible in the audit record itself."""
+    epoch_check = _lazy_epoch_check()
+    if epoch_check is None:
+        return {"available": False}
+    chain = epoch_check(
+        root, acks=epoch_acks, expected_head=expected_head, require_stamped=require_stamped
+    )
+    # "no_epoch_receipts" = unstamped corpus — benign only when no head pin
+    # claims a chain exists; a broken stamped chain is the violation.
+    hard = [e for e in chain["errors"] if e != "no_epoch_receipts" or expected_head is not None]
+    return {
+        "available": True,
+        "head": chain.get("head"),
+        "head_epoch_root": chain.get("head_epoch_root"),
+        "errors": list(chain["errors"]),
+        "acknowledged": list(chain.get("acknowledged", [])),
+        "pinned": expected_head is not None,
+        "n_unstamped": len(chain["unstamped"]),
+        "chain_ok": not hard,
+    }
+
+
 def suite_health(
     receipts_dir: Path | str = "receipts",
     *,
     alpha: float = 0.05,
+    quarantine: Quarantine = EMPTY_QUARANTINE,
+    expected_head: Mapping[str, Any] | None = None,
+    epoch_acks: list[dict[str, Any]] | None = None,
+    require_stamped: bool = False,
 ) -> tuple[pl.DataFrame, dict[str, Any]]:
     """Re-verify and summarize every receipt under ``receipts_dir``.
 
     Returns (per-receipt frame, ``suite_health.v1`` receipt). The frame has
-    one row per file: path, schema/kind, seal verdict, error list, and any
-    harvested evidence. The receipt pools harvested e-values under
-    arbitrary dependence and withholds the pooled claim when any receipt
-    failed verification.
+    one row per file: path, schema/kind, seal verdict, ``status``
+    (``verified`` / ``quarantined`` / ``invalid`` per the ``quarantine``
+    registry), error count, and any harvested evidence. Receipt validity and
+    corpus validity are reported separately: per-file statuses, then the
+    epoch-chain state (checked with the same heads pin, acknowledgment
+    ledger and stamping policy as ``corpus-epoch --check``). Evidence is
+    harvested from verified receipts only, and the pooled claim is withheld
+    when any receipt failed verification, quarantined or not.
     """
     if not (0.0 < alpha < 1.0):
         raise ValueError(f"alpha must be in (0,1), got {alpha}")
@@ -73,8 +119,9 @@ def suite_health(
     if not root.is_dir():
         raise ValueError(f"receipts dir not found: {root}")
     # Recursive to match the epoch chain's member semantics — a receipt in a
-    # subdirectory is still corpus evidence; quarantined subdirs are skipped.
-    files = verified_corpus_files(root)
+    # subdirectory is still corpus evidence, and the quarantine subtree is
+    # verified against its registry rather than skipped unseen.
+    files = corpus_receipt_files(root)
     if not files:
         raise ValueError(f"no receipts under {root}")
 
@@ -84,17 +131,29 @@ def suite_health(
     labels: dict[str, str] = {}
     digests: dict[str, str] = {}
     findings_total = 0
+    statuses: dict[str, ReceiptStatus] = {}
+    problems: dict[str, list[str]] = {}
 
     for path in files:
         result = verify_receipt_file(path)
         rel = path.relative_to(root).as_posix()
+        raw = path.read_bytes()
+        digests[rel] = hash_bytes(raw)
+        status, why = classify_receipt(
+            rel,
+            digests[rel],
+            valid=bool(result["valid"]),
+            errors=list(result["errors"]),
+            quarantine=quarantine,
+        )
+        statuses[rel] = status
+        if why:
+            problems[rel] = why
         try:
-            raw = path.read_bytes()
-            digests[rel] = hash_bytes(raw)
             payload: Any = json.loads(raw)
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-            # Narrowed from `except Exception` (quality ratchet): receipt read/parse
-            # faults are IO/JSON; exotic errors propagate. Payload treated as absent.
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            # Narrowed from `except Exception` (quality ratchet): receipt parse
+            # faults are JSON/decoding; exotic errors propagate. Payload absent.
             payload = None
         kind = (payload.get("kind") or payload.get("schema")) if isinstance(payload, dict) else None
         if isinstance(payload, dict):
@@ -104,7 +163,9 @@ def suite_health(
         else:
             labels[rel] = "UNKNOWN"
         n_findings = 0
-        if corpus_mod is not None and isinstance(payload, dict):
+        # Only verified receipts contribute evidence — a quarantined or
+        # invalid receipt's claims are retained record, not measurements.
+        if corpus_mod is not None and isinstance(payload, dict) and status == "verified":
             for f in corpus_mod.harvest_findings(payload, rel):
                 n_findings += 1
                 e = f.get("evalue")
@@ -116,6 +177,7 @@ def suite_health(
                 "file": rel,
                 "kind": str(kind) if kind else None,
                 "valid": result["valid"],
+                "status": status,
                 "n_errors": len(result["errors"]),
                 "n_findings": n_findings,
             }
@@ -129,8 +191,10 @@ def suite_health(
         data_label = "MIXED"
     else:
         data_label = "UNKNOWN"
-    n_ok = int(frame["valid"].sum())
+    n_ok = sum(1 for st in statuses.values() if st == "verified")
     n_failed = frame.height - n_ok
+    n_quarantined = sum(1 for st in statuses.values() if st == "quarantined")
+    stale_entries = stale_quarantine_entries(root, quarantine)
     # pooled evidence: arithmetic mean of harvested e-values — valid under
     # arbitrary dependence (Vovk & Wang). Withheld if any receipt fails:
     # a corrupt artifact poisons the corpus, so the suite stays silent.
@@ -140,21 +204,7 @@ def suite_health(
     # Epoch-chain attestation: the health receipt pins the membership-chain
     # state it ran under, so a stamped-then-tampered corpus is visible in the
     # audit record itself, not only via `corpus-epoch --check`.
-    epoch_check = _lazy_epoch_check()
-    if epoch_check is None:
-        epoch_state: dict[str, Any] = {"available": False}
-    else:
-        chain = epoch_check(root)
-        epoch_state = {
-            "available": True,
-            "head": chain.get("head"),
-            "head_epoch_root": chain.get("head_epoch_root"),
-            "errors": list(chain["errors"]),
-            "n_unstamped": len(chain["unstamped"]),
-            # "no_epoch_receipts" = unstamped corpus — benign; a stamped chain
-            # that is broken is the integrity violation.
-            "chain_ok": not [e for e in chain["errors"] if e != "no_epoch_receipts"],
-        }
+    epoch_state = _epoch_state(root, expected_head, epoch_acks, require_stamped)
 
     receipt: dict[str, Any] = {
         "schema": SUITE_HEALTH_SCHEMA,
@@ -182,6 +232,15 @@ def suite_health(
         "n_receipts": frame.height,
         "n_ok": n_ok,
         "n_failed": n_failed,
+        # n_failed = quarantined (registered, byte-pinned, retained record)
+        # + invalid (anything else — the strict gate fails on these).
+        "n_quarantined": n_quarantined,
+        "n_invalid": n_failed - n_quarantined,
+        "invalid": {rel: why for rel, why in sorted(problems.items())},
+        "quarantine": {
+            **quarantine_summary(statuses, quarantine),
+            "stale_entries": stale_entries,
+        },
         "corpus_epoch": epoch_state,
         "corpus_lane_available": corpus_mod is not None,
         "n_findings_harvested": findings_total,

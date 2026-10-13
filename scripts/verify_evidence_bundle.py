@@ -42,7 +42,30 @@ from verify_epoch_chain import (  # noqa: E402
     _exempt_member,
     _sha256,
     check_chain,
+    load_acks,
 )
+
+
+def _sidecar_status(cdir: Path, inner: str, pattern: str) -> str | None:
+    """``<member>.sha256`` detached digests are covered only when they verify:
+    the sibling is a chained pattern member and the sidecar holds exactly its
+    sha256 (``sha256sum`` shape allowed). ``None`` = not a sidecar."""
+    if not inner.endswith(".sha256"):
+        return None
+    sibling_rel = inner[: -len(".sha256")]
+    sibling = cdir / sibling_rel
+    if not fnmatch.fnmatch(sibling_rel, pattern) or not sibling.is_file() or sibling.is_symlink():
+        return None
+    try:
+        claimed = (cdir / inner).read_text(encoding="ascii").split()
+    except (OSError, UnicodeDecodeError):
+        return "mismatch"
+    if not claimed or claimed[0] != _sha256(sibling.read_bytes()) or len(claimed) > 2:
+        return "mismatch"
+    if len(claimed) == 2 and claimed[1].lstrip("*") != Path(sibling_rel).name:
+        return "mismatch"
+    return "ok"
+
 
 EVIDENCE_SPEC: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     ("receipts", "*.json", True, False, ("legacy-unsealed/README.md",)),
@@ -128,14 +151,17 @@ def main() -> int:
     pin_heads, head_errs = _load_heads(root, args.checkpoint, args.pubkey)
     errors += head_errs
 
-    # Retired members the chain is allowed to forget (name → last sha256);
-    # the file travels with the quality corpus, same as the lib loads it.
-    allowed_removals: dict[str, str] = {}
+    # Epoch-history acknowledgments (epoch_acknowledgments.v1): each entry
+    # explains one removal/mutation recorded in a sealed epoch; the ledger
+    # travels with the quality corpus, same as the lib loads it. Malformed
+    # → every chain fails closed rather than reading as "no acks".
     ar_path = root / "quality" / "epoch_allowed_removals.json"
+    acks_error: str | None = None
     if ar_path.is_file():
-        raw_ar = json.loads(ar_path.read_bytes())
-        if isinstance(raw_ar, dict):
-            allowed_removals = {str(k): str(v) for k, v in raw_ar.items() if isinstance(v, str)}
+        try:
+            load_acks(ar_path, "")
+        except (OSError, ValueError) as exc:
+            acks_error = f"epoch_acks_malformed:{exc}"
 
     corpus_dirs = sorted((c[0] for c in EVIDENCE_SPEC), key=len, reverse=True)
 
@@ -161,7 +187,11 @@ def main() -> int:
         if not fnmatch.fnmatch(inner, spec[1]) and not any(
             fnmatch.fnmatch(inner, e) for e in spec[4]
         ):
-            errors.append(f"uncovered_member:{rel}")
+            sidecar = _sidecar_status(root / owner, inner, spec[1])
+            if sidecar == "mismatch":
+                errors.append(f"sidecar_digest_mismatch:{rel}")
+            elif sidecar is None:
+                errors.append(f"uncovered_member:{rel}")
 
     for corpus_dir, glob, require_stamped, allow_updates, _exempt in EVIDENCE_SPEC:
         cdir = root / corpus_dir
@@ -179,10 +209,12 @@ def main() -> int:
         expected_head = pin_heads.get(key)
         if pin_heads and expected_head is None:
             errors.append(f"heads_pin_key_missing:{key!r}")
+        if acks_error is not None:
+            errors.append(f"{corpus_dir}:{acks_error}")
         result = check_chain(
             cdir,
             pattern=glob,
-            allowed_removals=allowed_removals,
+            acks=load_acks(ar_path, key) if ar_path.is_file() and acks_error is None else [],
             expected_head=expected_head,
             require_stamped=require_stamped,
             allow_member_updates=allow_updates,

@@ -23,7 +23,8 @@ Usage:
     # Mutable corpora / strict corpora:
     --allow-member-updates   digest drift between epochs is bookkeeping
     --require-stamped        unstamped arrivals are errors, not pending
-    --allowed-removals FILE  {member_name: sha256} removal allowances
+    --epoch-acks FILE        epoch_acknowledgments.v1 ledger: each entry explains
+                             one removal/mutation recorded in a sealed epoch
 
 Exit 0 clean, 1 errors, 2 usage. Prints one error per line, then the
 verdict, matching ``verify-repo`` output shape.
@@ -561,7 +562,7 @@ def check_chain(
     corpus_dir: Path,
     *,
     pattern: str,
-    allowed_removals: Mapping[str, str],
+    acks: list[Mapping[str, Any]],
     expected_head: Mapping[str, str] | None,
     require_stamped: bool,
     allow_member_updates: bool,
@@ -570,7 +571,10 @@ def check_chain(
     legs included."""
     root = Path(corpus_dir)
     errors: list[str] = []
+    acknowledged: list[str] = []
     unstamped: list[str] = []
+    ack_index = {(str(a["member"]), str(a["epoch"])): a for a in acks}
+    ack_used: set[tuple[str, str]] = set()
 
     exp_name: str | None = None
     if expected_head is not None:
@@ -628,7 +632,6 @@ def check_chain(
     if len(genesis) > 1:
         errors.append(f"epoch_multiple_genesis:{','.join(sorted(ascii(g) for g in genesis))}")
 
-    allowed = dict(allowed_removals)
     for prev_name, cur_name in child_of.items():
         prev_members = {
             k: v for k, v in _member_maps(by_name[prev_name]).items() if not _exempt_member(root, k)
@@ -637,8 +640,17 @@ def check_chain(
             k: v for k, v in _member_maps(by_name[cur_name]).items() if not _exempt_member(root, k)
         }
         for gone in sorted(set(prev_members) - set(cur_members)):
-            if allowed.get(gone) != prev_members[gone]:
-                errors.append(f"member_removed:{gone!a}@{cur_name!a}")
+            label = f"member_removed:{gone!a}@{cur_name!a}"
+            ack = ack_index.get((gone, cur_name))
+            if (
+                ack is not None
+                and ack["transition"] == "removed"
+                and ack["from_sha256"] == prev_members[gone]
+            ):
+                ack_used.add((gone, cur_name))
+                acknowledged.append(label)
+            else:
+                errors.append(label)
         declared_removed = {
             n
             for n in (by_name[cur_name].get("members_removed") or [])
@@ -651,9 +663,21 @@ def check_chain(
         }
         if declared_added != set(cur_members) - set(prev_members):
             errors.append(f"members_added_dishonest:{cur_name!a}")
-        for kept in set(prev_members) & set(cur_members):
-            if prev_members[kept] != cur_members[kept] and not allow_member_updates:
-                errors.append(f"member_mutated:{kept!a}@{cur_name!a}")
+        for kept in sorted(set(prev_members) & set(cur_members)):
+            if prev_members[kept] == cur_members[kept] or allow_member_updates:
+                continue
+            label = f"member_mutated:{kept!a}@{cur_name!a}"
+            ack = ack_index.get((kept, cur_name))
+            if (
+                ack is not None
+                and ack["transition"] == "mutated"
+                and ack["from_sha256"] == prev_members[kept]
+                and ack["to_sha256"] == cur_members[kept]
+            ):
+                ack_used.add((kept, cur_name))
+                acknowledged.append(label)
+            else:
+                errors.append(label)
 
     heads = set(by_name) - set(child_of)
     head_name: str | None = None
@@ -666,9 +690,8 @@ def check_chain(
         errors += _portable_name_errors(live)
         head_members = {k: v for k, v in _member_maps(head).items() if not _exempt_member(root, k)}
         stamped = set(head_members)
-        for name in stamped - set(live):
-            if allowed.get(name) != head_members[name]:
-                errors.append(f"head_member_missing_live:{name!a}")
+        for name in sorted(stamped - set(live)):
+            errors.append(f"head_member_missing_live:{name!a}")
         for name, sha in head_members.items():
             if name in live and live[name] != sha:
                 errors.append(f"head_member_digest_drift:{name!a}")
@@ -692,19 +715,78 @@ def check_chain(
             cur = prev if isinstance(prev, str) else None
         if not ancestor:
             errors.append(f"epoch_head_rollback:{exp_name!a}")
-    return {"errors": errors, "unstamped": unstamped, "head": head_name}
+    for member, epoch in sorted(set(ack_index) - ack_used):
+        errors.append(f"epoch_ack_unmatched:{member!a}@{epoch!a}")
+    return {
+        "errors": errors,
+        "acknowledged": acknowledged,
+        "unstamped": unstamped,
+        "head": head_name,
+    }
 
 
 # ------------------------------------------------------------------ cli
 
 
-def _load_allowed(path: Path | None) -> dict[str, str]:
+_ACK_FIELDS = frozenset(
+    {"corpus", "member", "transition", "from_sha256", "to_sha256", "epoch", "reason"}
+)
+
+
+def _hex64(value: object) -> bool:
+    return (
+        isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+    )
+
+
+def load_acks(path: Path | None, key: str) -> list[Mapping[str, Any]]:
+    """Strict epoch_acknowledgments.v1 parse (independent of the library):
+    any malformed entry raises — a ledger that cannot be matched exactly is
+    never read as "no acks". Returns the entries scoped to chain ``key``."""
     if path is None:
-        return {}
+        return []
     raw = json.loads(path.read_bytes())
-    if not isinstance(raw, Mapping):
-        return {}
-    return {str(k): str(v) for k, v in raw.items() if isinstance(v, str)}
+    if (
+        not isinstance(raw, Mapping)
+        or raw.get("schema") != "epoch_acknowledgments.v1"
+        or set(raw) != {"schema", "acks"}
+        or not isinstance(raw["acks"], list)
+    ):
+        raise ValueError("epoch acks: expected {schema: epoch_acknowledgments.v1, acks: [...]}")
+    seen: set[tuple[str, str, str]] = set()
+    out: list[Mapping[str, Any]] = []
+    for i, a in enumerate(raw["acks"]):
+        if not isinstance(a, Mapping) or set(a) != _ACK_FIELDS:
+            raise ValueError(f"epoch ack #{i}: wrong field set")
+        epoch = a["epoch"]
+        ok = (
+            isinstance(a["corpus"], str)
+            and "/" in a["corpus"]
+            and isinstance(a["member"], str)
+            and bool(a["member"])
+            and a["transition"] in ("removed", "mutated")
+            and isinstance(epoch, str)
+            and epoch.startswith("corpus_epoch_")
+            and epoch.endswith(".json")
+            and len(epoch) == 34
+            and _hex64(a["from_sha256"])
+            and isinstance(a["reason"], str)
+            and bool(a["reason"].strip())
+            and (
+                a["to_sha256"] is None
+                if a["transition"] == "removed"
+                else _hex64(a["to_sha256"]) and a["to_sha256"] != a["from_sha256"]
+            )
+        )
+        if not ok:
+            raise ValueError(f"epoch ack #{i}: malformed")
+        ident = (a["corpus"], a["member"], epoch)
+        if ident in seen:
+            raise ValueError(f"epoch ack #{i}: duplicate")
+        seen.add(ident)
+        if a["corpus"] == key:
+            out.append(a)
+    return out
 
 
 def main() -> int:
@@ -726,7 +808,7 @@ def main() -> int:
         help="gate_quorum.v1 registry for v2 checkpoints (default: --pubkey only)",
     )
     ap.add_argument("--key", type=str, default=None, help="pin key e.g. 'quality/*.json'")
-    ap.add_argument("--allowed-removals", type=Path, default=None)
+    ap.add_argument("--epoch-acks", type=Path, default=None)
     ap.add_argument("--require-stamped", action="store_true")
     ap.add_argument("--allow-member-updates", action="store_true")
     args = ap.parse_args()
@@ -768,10 +850,15 @@ def main() -> int:
     if pin_heads and expected_head is None:
         pre_errors.append(f"heads_pin_key_missing:{key!a}")
 
+    try:
+        acks = load_acks(args.epoch_acks, key)
+    except (OSError, ValueError) as exc:
+        print(f"epoch acks invalid: {exc}", file=sys.stderr)
+        return 2
     result = check_chain(
         args.corpus_dir,
         pattern=args.pattern,
-        allowed_removals=_load_allowed(args.allowed_removals),
+        acks=acks,
         expected_head=expected_head,
         require_stamped=args.require_stamped,
         allow_member_updates=args.allow_member_updates,
@@ -785,6 +872,8 @@ def main() -> int:
         print(f"  {e}")
     for u in result["unstamped"]:
         print(f"  unstamped:{u!a}")
+    for incident in result["acknowledged"]:
+        print(f"  acknowledged:{incident}")
     if errors:
         print("FAIL")
         return 1

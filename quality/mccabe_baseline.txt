@@ -186,7 +186,6 @@ src/quant_fund/cli/research_cmds.py:epoch_position_cmd 10
 src/quant_fund/cli/research_cmds.py:execution_sensitivity_cmd 10
 src/quant_fund/cli/research_cmds.py:online_fdr_cmd 12
 src/quant_fund/cli/research_cmds.py:research 16
-src/quant_fund/cli/research_cmds.py:suite_health_cmd 10
 src/quant_fund/cli/research_cmds.py:xvenue_basis_cmd 15
 src/quant_fund/config/models.py:KronosConfig.valid_kronos_settings 14
 src/quant_fund/config/models.py:NorthsetConfig.valid_northset_settings 25
@@ -773,7 +772,7 @@ src/quant_fund/realized/hf_rv.py:compute_hf_rv 14
 src/quant_fund/registry/artifact_store.py:ArtifactStore.verify 14
 src/quant_fund/registry/lineage_dag.py:lineage_dag 12
 src/quant_fund/registry/mlflow_store.py:promotion_decision 18
-src/quant_fund/registry/schema_drift.py:schema_drift 12
+src/quant_fund/registry/schema_drift.py:schema_drift 11
 src/quant_fund/reporting/regime_performance.py:regime_performance_markdown 12
 src/quant_fund/reporting/report.py:build_evidence_report 10
 src/quant_fund/reporting/tearsheet.py:tearsheet_markdown 20
@@ -901,7 +900,7 @@ src/quant_fund/research/coherence.py:run_coherence 16
 src/quant_fund/research/compare.py:RunComparison.to_markdown 14
 src/quant_fund/research/concordance.py:concordance_consistency_errors 15
 src/quant_fund/research/concordance.py:run_concordance 23
-src/quant_fund/research/corpus_epoch.py:check_epoch_chain 42
+src/quant_fund/research/corpus_epoch.py:check_epoch_chain 41
 src/quant_fund/research/corpus_epoch.py:corpus_epoch 12
 src/quant_fund/research/corpus_epoch.py:epoch_contract_errors 34
 src/quant_fund/research/corpus_epoch.py:load_heads_pin 10
@@ -1034,7 +1033,7 @@ src/quant_fund/research/replay_proof.py:run_replay 31
 src/quant_fund/research/replay_sweep.py:replay_coverage_contract_errors 24
 src/quant_fund/research/replay_sweep.py:run_replay_sweep 10
 src/quant_fund/research/repo_integrity.py:repo_integrity_contract_errors 30
-src/quant_fund/research/repo_integrity.py:verify_repo 35
+src/quant_fund/research/repo_integrity.py:verify_repo 32
 src/quant_fund/research/script_receipts.py:band_search_contract_errors 11
 src/quant_fund/research/script_receipts.py:deps_hygiene_contract_errors 17
 src/quant_fund/research/script_receipts.py:dip_bench_contract_errors 13

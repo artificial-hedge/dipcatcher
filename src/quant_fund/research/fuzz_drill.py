@@ -23,6 +23,7 @@ Provenance evidence only; never a market or P&L claim.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import random
 import shutil
@@ -223,9 +224,23 @@ def _mutations(clone: Path, rng: random.Random) -> list[tuple[str, str, Any]]:
                     if p.name not in ("epoch_allowed_removals.json", "epoch_heads.json")
                 ]
             )
+            victim_sha = hashlib.sha256(victim.read_bytes()).hexdigest()
             victim.unlink()
             doc = json.loads(allowed.read_text())
-            doc[victim.name] = "0" * 64  # forged allowance for the removal
+            # Forged, well-formed acknowledgment for an unstamped live
+            # removal: it names the victim's real digest but an epoch that
+            # never recorded the removal, so it must explain nothing.
+            doc.setdefault("acks", []).append(
+                {
+                    "corpus": "quality/*.json",
+                    "member": victim.name,
+                    "transition": "removed",
+                    "from_sha256": victim_sha,
+                    "to_sha256": None,
+                    "epoch": "corpus_epoch_" + victim_sha[:16] + ".json",
+                    "reason": "laundered",
+                }
+            )
             allowed.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
             return f"laundered:{victim.name}"
 

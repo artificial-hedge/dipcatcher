@@ -76,15 +76,29 @@ def test_receipt_paths_recurse_minus_quarantine(tmp_path: Path) -> None:
 
 
 def test_suite_health_counts_subdir_receipts(tmp_path: Path) -> None:
+    """Subdir receipts are corpus evidence, and the quarantine subtree is
+    verified against the registry instead of skipped unseen: an unregistered
+    file there is invalid even when it would verify on its own."""
     from quant_fund.research.suite_health import suite_health
+    from quant_fund.utils.receipt import seal_receipt
 
-    _write(tmp_path / "a.json", _receipt("x", 0.1))
-    _write(tmp_path / "drills" / "b.json", _receipt("x", 0.2))
-    _write(tmp_path / "legacy-unsealed" / "old.json", _receipt("x", 0.3))
+    _write(tmp_path / "a.json", seal_receipt(_receipt("x", 0.1)))
+    _write(tmp_path / "drills" / "b.json", seal_receipt(_receipt("x", 0.2)))
+    _write(tmp_path / "legacy-unsealed" / "old.json", seal_receipt(_receipt("x", 0.3)))
     frame, receipt = suite_health(tmp_path)
-    assert frame.height == 2
-    assert receipt["n_receipts"] == 2
-    assert set(receipt["params"]["input_labels"]) == {"a.json", "drills/b.json"}
+    assert frame.height == 3
+    assert receipt["n_receipts"] == 3
+    assert set(receipt["params"]["input_labels"]) == {
+        "a.json",
+        "drills/b.json",
+        "legacy-unsealed/old.json",
+    }
+    statuses = dict(zip(frame["file"], frame["status"], strict=True))
+    assert statuses["a.json"] == statuses["drills/b.json"] == "verified"
+    assert statuses["legacy-unsealed/old.json"] == "invalid"
+    # verifies on its own, but nothing may sit in the quarantine subtree
+    # without a registry entry
+    assert receipt["invalid"]["legacy-unsealed/old.json"] == ["quarantine_unregistered"]
 
 
 def test_verified_corpus_files_respects_pattern(tmp_path: Path) -> None:
