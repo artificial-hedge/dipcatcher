@@ -953,7 +953,7 @@ def verify_research_artifact(path: Path) -> dict[str, Any]:
 # ``promotion.v1`` decision with its input metrics and gate results, and the
 # approving identity. Every binding is re-derived from the files on disk
 # here — this side of the contract shares no code with the composition side
-# (``quant_fund.proof.promotion_receipt``) on purpose.
+# (``quant_fund.research.promotion_receipt``) on purpose.
 #
 # Dispatch is content-fingerprinted (never schema/kind-claimed) and purely
 # additive: documents without the promotion payload shape keep taking the
@@ -983,7 +983,7 @@ PROMOTION_REQUIRED_GATES = (
 PROMOTION_DISHONEST_APPROVER_NAMES = frozenset(
     {"", "unknown", "anonymous", "none", "null", "n/a", "na", "tbd", "unspecified", "someone"}
 )
-# Stage-aware completeness, mirrored independently of proof.promotion_receipt:
+# Stage-aware completeness, mirrored independently of research.promotion_receipt:
 # a training-time evidence report whose only warning is the stage-expected
 # ``promotion_receipt_missing`` is resolved by the receipt under verification.
 # Every other warning keeps the report blocking.

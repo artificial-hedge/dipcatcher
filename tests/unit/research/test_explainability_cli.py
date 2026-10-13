@@ -12,6 +12,7 @@ and it fails closed when a bound report changes.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -23,6 +24,16 @@ from quant_fund.research.allocation_cli import allocation_app
 from quant_fund.research.explainability_cli import _data_label, explainability_app
 
 runner = CliRunner()
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Collapse rich error boxes so ANSI splits inside flag names still match."""
+    stripped = _ANSI.sub("", text)
+    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
+    return " ".join(stripped.split())
+
 
 _FEATURES = ["mom_20", "reversal_1", "vol_20", "signal_core", "noise_a", "noise_b"]
 _SIGNAL = "signal_core"
@@ -251,7 +262,7 @@ def test_report_requires_a_label_source(tmp_path: Path) -> None:
         ["report", "--model-path", str(model_path), "--features", str(features)],
     )
     assert neither.exit_code != 0
-    assert "--labels or --label-col" in neither.output
+    assert "--labels or --label-col" in _plain(neither.output)
 
     both = runner.invoke(
         explainability_app,

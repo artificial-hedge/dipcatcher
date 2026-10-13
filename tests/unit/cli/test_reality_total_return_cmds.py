@@ -19,6 +19,7 @@ code rather than a traceback or a silent pass.
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -31,6 +32,16 @@ from quant_fund.data.adapters.stooq import session_close
 from quant_fund.reality.cli import FETCH_UNAVAILABLE_EXIT
 
 runner = CliRunner()
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Collapse rich help so ANSI splits inside ``--bars`` still match."""
+    stripped = _ANSI.sub("", text)
+    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
+    return " ".join(stripped.split())
+
 
 _SWEEP_SPEC = Path(
     "research/reality/studies/reality-us-liquid-daily-2026-09-27/preregistration.json"
@@ -56,8 +67,9 @@ def test_reality_help_lists_the_new_lanes() -> None:
 def test_total_return_help() -> None:
     result = runner.invoke(app, ["total-return", "--help"])
     assert result.exit_code == 0, result.output
+    plain = _plain(result.output)
     for flag in ("--bars", "--chart", "--security-id", "--yahoo-symbol", "--out", "--raw-prices"):
-        assert flag in result.output
+        assert flag in plain
 
 
 def _bars(days: int = 6, *, start: datetime | None = None) -> pl.DataFrame:
