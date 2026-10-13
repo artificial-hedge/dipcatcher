@@ -24,6 +24,7 @@ from __future__ import annotations
 import http.client
 import ipaddress
 import socket
+import ssl
 import threading
 import urllib.error
 import urllib.parse
@@ -151,10 +152,15 @@ class _PinnedHTTPConnection(http.client.HTTPConnection):
     def __init__(self, host: str, *, pinned_ip: str, **kwargs: Any) -> None:
         super().__init__(host, **kwargs)
         self._pinned_ip = pinned_ip
+        self._bind_address = _bind_address(kwargs.get("source_address"))
 
     def connect(self) -> None:
-        self.sock = self._create_connection(
-            (self._pinned_ip, self.port), self.timeout, self.source_address
+        # socket.create_connection, not HTTPConnection._create_connection:
+        # the private alias is absent from the strict stubs, and a second
+        # resolver lookup would reopen the DNS-rebinding window.
+        port = 0 if self.port is None else self.port
+        self.sock = socket.create_connection(
+            (self._pinned_ip, port), _connect_timeout(self.timeout), self._bind_address
         )
 
 
@@ -164,14 +170,44 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
     def __init__(self, host: str, *, pinned_ip: str, **kwargs: Any) -> None:
         super().__init__(host, **kwargs)
         self._pinned_ip = pinned_ip
+        self._bind_address = _bind_address(kwargs.get("source_address"))
+        context = kwargs.get("context")
+        self._tls_context: ssl.SSLContext = (
+            context if isinstance(context, ssl.SSLContext) else ssl.create_default_context()
+        )
 
     def connect(self) -> None:
-        self.sock = self._create_connection(
-            (self._pinned_ip, self.port), self.timeout, self.source_address
+        port = 0 if self.port is None else self.port
+        raw = socket.create_connection(
+            (self._pinned_ip, port), _connect_timeout(self.timeout), self._bind_address
         )
         # ProxyHandler({}) disables proxies; retain the standard HTTPS identity
         # when wrapping the socket, rather than treating the IP as the peer name.
-        self.sock = self._context.wrap_socket(self.sock, server_hostname=self.host)
+        self.sock = self._tls_context.wrap_socket(raw, server_hostname=self.host)
+
+
+def _bind_address(value: object) -> tuple[str, int] | tuple[str, int, int, int] | None:
+    if not isinstance(value, tuple) or not value or not isinstance(value[0], str):
+        return None
+    if len(value) == 2 and isinstance(value[1], int):
+        return value
+    if (
+        len(value) == 4
+        and isinstance(value[1], int)
+        and isinstance(value[2], int)
+        and isinstance(value[3], int)
+    ):
+        return value
+    return None
+
+
+def _connect_timeout(value: object) -> float | None:
+    """Match ``socket.create_connection``'s default-timeout sentinel."""
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    return socket.getdefaulttimeout()
 
 
 def _approved_request_ip(req: urllib.request.Request, resolve_fn: ResolveFn) -> str:
@@ -206,10 +242,15 @@ class _PinnedHTTPSHandler(urllib.request.HTTPSHandler):
 
     def https_open(self, req: urllib.request.Request) -> Any:
         address = _approved_request_ip(req, self._resolve_fn)
+        # HTTPSHandler stores the TLS context on a private attribute the stubs
+        # do not declare. Read it once and pass the typed context through.
+        context = getattr(self, "_context", None)
+        if not isinstance(context, ssl.SSLContext):
+            context = ssl.create_default_context()
         return self.do_open(
             lambda host, **kwargs: _PinnedHTTPSConnection(host, pinned_ip=address, **kwargs),
             req,
-            context=self._context,
+            context=context,
         )
 
 

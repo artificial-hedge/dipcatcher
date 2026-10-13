@@ -79,7 +79,10 @@ class DownloaderTests(unittest.TestCase):
         self.assertIn("OrderLifecycle.cfg", calls[0])
         self.assertIn("OrderLifecycleLiveness.cfg", calls[1])
         request = self.curl_calls.read_text()
-        self.assertIn("releases/assets/184694200", request)
+        self.assertIn(
+            "https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar",
+            request,
+        )
         self.assertIn("Accept: application/octet-stream", request)
         self.assertIn("--proto =https --proto-redir =https", request)
         self.assertEqual(list(self.root.rglob("*.download.*")), [])
