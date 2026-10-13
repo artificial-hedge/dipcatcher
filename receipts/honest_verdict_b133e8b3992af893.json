@@ -80,7 +80,7 @@
   "live_pnl_claim": false,
   "n_heads": 3,
   "n_obs": 128,
-  "receipt_sha256": "8e213a98bcd27de335e168eec4e02861de8dbf56ec9e41b76b06a36df2009cd0",
+  "receipt_sha256": "b133e8b3992af8937df8b38e6d89432215769344f3fd58af3251652ceba7c882",
   "replay": {
     "argv": [
       "dipcatcher",
@@ -133,7 +133,6 @@
     "schema": "honest_verdict_run.v1",
     "status_sha256": "742d8432903c98fbdfd73bb27ce17dfa0cd276a9f505243bf100ef777bfd1032"
   },
-  "schema": "loss_cs.v1",
   "unavailable_lanes": [],
   "verdict": "not_supported",
   "winner": "qar"
