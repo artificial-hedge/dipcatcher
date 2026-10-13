@@ -1,7 +1,11 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13382,
+  "module_count": 13388,
   "module_edges": [
+    {
+      "dst": "fx1",
+      "src": "dipcatcher_cli.app"
+    },
     {
       "dst": "fx1.interactive.concierge",
       "src": "dipcatcher_cli.app"
@@ -2011,11 +2015,23 @@
       "src": "fx1.interactive.app"
     },
     {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.app"
+    },
+    {
       "dst": "fx1.interactive.concierge",
       "src": "fx1.interactive.app"
     },
     {
+      "dst": "fx1.interactive.endpoint",
+      "src": "fx1.interactive.app"
+    },
+    {
       "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.interactive.session",
       "src": "fx1.interactive.app"
     },
     {
@@ -2028,6 +2044,10 @@
     },
     {
       "dst": "fx1.interactive.wizard",
+      "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.serve.backends",
       "src": "fx1.interactive.app"
     },
     {
@@ -2059,11 +2079,31 @@
       "src": "fx1.interactive.concierge"
     },
     {
+      "dst": "fx1.interactive.budget",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.endpoint",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.families",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.lineio",
+      "src": "fx1.interactive.concierge"
+    },
+    {
       "dst": "fx1.interactive.orb",
       "src": "fx1.interactive.concierge"
     },
     {
       "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.session",
       "src": "fx1.interactive.concierge"
     },
     {
@@ -2079,8 +2119,16 @@
       "src": "fx1.interactive.concierge"
     },
     {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.lineio"
+    },
+    {
       "dst": "fx1.serve.backends",
       "src": "fx1.interactive.profiles"
+    },
+    {
+      "dst": "fx1",
+      "src": "fx1.interactive.session"
     },
     {
       "dst": "fx1.interactive.actions",
@@ -2108,6 +2156,14 @@
     },
     {
       "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.interactive.budget",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.interactive.families",
       "src": "fx1.interactive.superpower"
     },
     {
@@ -4883,6 +4939,14 @@
       "src": "quant_fund.cli.data_cmds"
     },
     {
+      "dst": "quant_fund.cli.app",
+      "src": "quant_fund.cli.families_cmds"
+    },
+    {
+      "dst": "quant_fund.research.catalog.registry",
+      "src": "quant_fund.cli.families_cmds"
+    },
+    {
       "dst": "quant_fund.backtest.engine",
       "src": "quant_fund.cli.forecast_cmds"
     },
@@ -4956,6 +5020,10 @@
     },
     {
       "dst": "quant_fund.cli.data_cmds",
+      "src": "quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.cli.families_cmds",
       "src": "quant_fund.cli.main"
     },
     {
@@ -61578,9 +61646,14 @@
     "fx1.interactive.actions",
     "fx1.interactive.app",
     "fx1.interactive.approvals",
+    "fx1.interactive.budget",
     "fx1.interactive.concierge",
+    "fx1.interactive.endpoint",
+    "fx1.interactive.families",
+    "fx1.interactive.lineio",
     "fx1.interactive.orb",
     "fx1.interactive.profiles",
+    "fx1.interactive.session",
     "fx1.interactive.shell",
     "fx1.interactive.superpower",
     "fx1.interactive.wizard",
@@ -61768,6 +61841,7 @@
     "quant_fund.cli.benchmark_cmds",
     "quant_fund.cli.book_cmds",
     "quant_fund.cli.data_cmds",
+    "quant_fund.cli.families_cmds",
     "quant_fund.cli.forecast_cmds",
     "quant_fund.cli.lake_cmds",
     "quant_fund.cli.main",
@@ -74777,6 +74851,11 @@
   ],
   "package_edges": [
     {
+      "dst": "fx1",
+      "imports": 1,
+      "src": "dipcatcher_cli"
+    },
+    {
       "dst": "fx1.interactive",
       "imports": 2,
       "src": "dipcatcher_cli"
@@ -75108,7 +75187,7 @@
     },
     {
       "dst": "fx1",
-      "imports": 1,
+      "imports": 2,
       "src": "fx1.interactive"
     },
     {
@@ -75133,12 +75212,12 @@
     },
     {
       "dst": "fx1.interactive",
-      "imports": 30,
+      "imports": 41,
       "src": "fx1.interactive"
     },
     {
       "dst": "fx1.serve",
-      "imports": 3,
+      "imports": 4,
       "src": "fx1.interactive"
     },
     {
@@ -75598,7 +75677,7 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 38,
+      "imports": 40,
       "src": "quant_fund.cli"
     },
     {
@@ -75693,7 +75772,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 71,
+      "imports": 72,
       "src": "quant_fund.cli"
     },
     {
