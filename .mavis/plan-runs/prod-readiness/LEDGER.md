@@ -565,3 +565,28 @@ reproduced in this session's runs; CI's determinism handles it.
   - `tests/unit/test_reality_sweep.py` → 5 passed, 1 skipped
 - **Lint/format**: clean
 - **Commit**: `a886ce062` on `origin/isolated`
+
+#### WP-4R — record fx1/serve/api.py + openai_compat ceiling raise (commit `0c0a300f0`)
+
+- **Bug**: `tests/unit/test_ratchets.py::test_ceiling_migration_chain_is_consistent`
+  was failing because the WP-4M score_threshold fix had grown
+  `fx1/serve/api.py` from 11333 → 11348 lines and `fx1/serve/openai_compat.py`
+  from 3315 → 3317 lines, both above their pinned budgets.
+- **Fix**: Per the ratchet culture (issue #2991), a pin may shrink freely
+  but may never exceed the approved ceiling without a recorded
+  migration. Updated:
+  - `quality/module_line_budgets.txt` — pin `fx1/serve/api.py` 11333 → 11348
+    and `fx1/serve/openai_compat.py` 3315 → 3317
+  - `quality/module_line_budget_ceilings.txt` — match the budget file
+  - `quality/ratchet_migrations.json` — consolidate the two prior
+    entries (one for each path) so the chain is reviewable end-to-end;
+    the 'from' of each consolidated entry is the pre-raise pin and
+    the 'to' is the new ceiling
+- **Tests**:
+  - `tests/unit/test_ratchets.py` → 19/19 pass (was 18/19)
+  - `tests/unit/test_architecture.py` → 5/5 pass
+  - `tests/unit/test_arch_diagrams_stale.py` → 2/2 pass
+- **Debt**: Both modules are still owed the same per-domain router
+  split recorded in the prior migration. The widening is a debt
+  schedule, not a fix.
+- **Commit**: `0c0a300f0` on `origin/isolated`
