@@ -1,7 +1,7 @@
 """Tests for mean_field_games.py — Cardaliaguet–Lehalle trade-crowding MFG.
 
 All tests are **SYNTHETIC**: deterministic seeds, grid parameters fixed.
-No market data, no live-trading claims.
+No market data.
 """
 
 from __future__ import annotations

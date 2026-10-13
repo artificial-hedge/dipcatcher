@@ -184,7 +184,7 @@ is itself a finding and must be recorded as such. Everything in this sweep is
 **retrospective analytics** — simulated books through `run_backtest` on
 collected Binance USDT spot bars with the lane's modeled costs, risk gate and
 kill switch — carried as `live_pnl_claim=false`. **Binance USDT spot majors
-only; not market evidence; not a live-trading claim.** The Sharpe/return/
+only; not market evidence.** The Sharpe/return/
 drawdown figures here are book-reporting analytics under this label; they are
 not research scorecards (which remain proper-scores-only).
 
@@ -261,7 +261,7 @@ window cell is published below, losers included; nothing is dropped.
 ## Chop-regime robustness sweep — RESULTS (run 2026-10-07T16:51–16:53+05:30)
 
 **Retrospective analytics, `live_pnl_claim=false`. Binance USDT spot majors
-only; not market evidence; not a live-trading claim.** Every pre-registered
+only; not market evidence.** Every pre-registered
 mechanism × every pre-registered window is published; losers included,
 nothing dropped. `sharpe_simulated` / total return / max drawdown / fills via
 `run_backtest`, identical bars per window.
@@ -312,7 +312,7 @@ SR 1.97 / +2,905.7%, matching the flagship row in this doc. The fully-resolved
 config is pinned in `research/chop_robustness_benchconfig_20261007/resolved_config.json`.
 
 **Retrospective analytics, `live_pnl_claim=false`. Binance USDT spot majors
-only; not market evidence; not a live-trading claim.** All 16
+only; not market evidence.** All 16
 pre-registered cells, losers included:
 
 | window | base | `vol_scale_002` | `breadth_gross` | `trend_gate_010` |

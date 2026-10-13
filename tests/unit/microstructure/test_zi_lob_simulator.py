@@ -3,8 +3,8 @@
 Zero-intelligence LOB simulator + classical market-making baselines (AS 2008,
 GLFT 2012) + emergent microstructure diagnostics. Foundation for the Moret &
 Lillo (2026, arXiv:2609.11614) RL market-maker lane. Everything is **labeled
-SYNTHETIC** correctness validation — never market evidence, no live-trading
-claim. Simulator-internal mark-to-market accounting is namespaced
+SYNTHETIC** correctness validation — never market evidence.
+Simulator-internal mark-to-market accounting is namespaced
 ``sim_internal_*`` and asserted here to never leak as a headline metric.
 
 Fast: the expensive session/impact bundles are computed once in module-scoped

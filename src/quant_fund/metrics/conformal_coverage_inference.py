@@ -87,7 +87,7 @@ cannot fit the paired blocks all raise ValueError rather than returning
 silent fallbacks.
 
 Honesty: everything here is an inferential object (proper coverage-error
-diagnostics) — no Sharpe/Sortino/P&L content, no live-trading capability.
+diagnostics) — no Sharpe/Sortino/P&L content.
 All Monte-Carlo evidence in the accompanying tests uses seeded SYNTHETIC
 streams with documented tolerances and is a correctness check of the ported
 theory, never market evidence.

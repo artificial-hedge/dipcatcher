@@ -66,8 +66,7 @@ Composition (nothing here modifies the composed modules):
 
 Honesty: every output is a SYNTHETIC correctness diagnostic on a synthetic
 engine, never market evidence. All P&L-like keys are namespaced
-``sim_internal_*``, must never be headlined, and there is no broker
-connectivity or live-trading claim anywhere in this module. Rewards are the
+``sim_internal_*`` and must never be headlined. Rewards are the
 simulator-internal training signal of paper Eq. 5 (a *shaped* objective), not
 a performance metric. Tiny-budget tests assert plumbing, determinism, and
 learning mechanics, NOT paper-scale results; ``multilevel_mm_benchmark`` is
@@ -1700,7 +1699,6 @@ def run_multilevel_mm_session(
 
     Returns a SYNTHETIC diagnostic bundle; ``sim_internal_*`` keys are
     simulator-internal accounting, NEVER headline metrics or market evidence.
-    No live-trading claim.
     """
     n_given = sum(x is not None for x in (agent, allocation_policy, policy))
     if n_given != 1:
@@ -1821,7 +1819,7 @@ def run_multilevel_mm_session(
         "inventory_path": ex.inv_path,
         "inventory_path_times": ex.inv_times,
         # Simulator-internal accounting. Diagnostic only: never a headline
-        # metric, never market evidence, no live-trading claim.
+        # metric, never market evidence.
         "sim_internal_mtm_pnl_path": ex.mtm_path,
         "sim_internal_mtm_pnl_final": float(final_mtm),
         "sim_internal_reward_path": ex.rewards,
@@ -2137,7 +2135,7 @@ def evaluate_multilevel_mm(
         "kind": "multilevel_mm_vs_classic_evaluation",
         "note": (
             "simulator-internal synthetic policy comparison; never headline "
-            "metrics, never market evidence, no live-trading claim"
+            "metrics, never market evidence"
         ),
         "arms": arm_set,
         "n_seeds": ns,

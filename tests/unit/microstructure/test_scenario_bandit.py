@@ -6,7 +6,7 @@ refresh — plus :class:`ScenarioRegimeFlow` schedule replay in
 ``zi_lob_simulator``.
 
 Everything is **labeled SYNTHETIC** correctness validation at tiny budgets —
-never market evidence, no live-trading claim. The RL fine-tune integration
+never market evidence. The RL fine-tune integration
 tests are torch-gated (``nn`` extra); the plan/pool/bandit core is pure
 numpy and runs without torch.
 """

@@ -1,6 +1,6 @@
 """NYSE/Nasdaq calendar: holidays, unscheduled closures, early closes, DST.
 
-Research/infrastructure only — no live broker / vendor MD.
+Research/infrastructure only.
 """
 
 from __future__ import annotations

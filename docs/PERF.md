@@ -507,7 +507,7 @@ by the metrics/pipeline owner, not by this lane.
 The optimization the previous note flagged as "blocked on the metrics owner" is
 **delivered** by `vol-scope` (metrics owner). Honesty: correctness/performance
 only on seeded SYNTHETIC inputs; PROPER SCORES only (CRPS); no Sharpe/P&L/NAV
-and no live-trading claim. `fit_student_t` underpins proper scores
+`fit_student_t` underpins proper scores
 (CRPS/pinball/QLIKE/PIT), so the change is guarded by a committed golden
 equivalence proof.
 

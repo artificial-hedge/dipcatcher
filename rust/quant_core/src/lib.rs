@@ -1,7 +1,6 @@
 //! Optional native kernels for the dipcatcher research harness.
 //!
-//! Safe Rust only: this crate contains no `unsafe` blocks. Order routing and
-//! live-trading paths are intentionally absent.
+//! Safe Rust only: this crate contains no `unsafe` blocks.
 
 mod book;
 mod hashing;

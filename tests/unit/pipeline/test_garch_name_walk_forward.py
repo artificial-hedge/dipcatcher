@@ -1,6 +1,6 @@
 """Day Wave 114: name-level GARCH walk-forward QLIKE/density.
 
-Research/infrastructure only — no live broker / vendor MD / live_pnl_claim.
+Research/infrastructure only.
 Name-level scores do not replace the date-level market overlay.
 """
 

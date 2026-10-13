@@ -21,8 +21,7 @@ Representative sites:
 - `monitoring/kill_switch.py` — any state other than `ENABLED` (including
   *unknown*) blocks new orders; `may_flatten` requires
   `human_authorized=True` even when `allow_auto_flatten` is set.
-- `config/models.py` — `allow_live: true` always raises
-  ("no live broker adapter in this repository"); unknown `data.source`,
+- `config/models.py` — `allow_live: true` always raises; unknown `data.source`,
   unimplemented `optimizer.covariance` names, and unsafe
   `paper.ledger_subdir` paths all fail at validation.
 - `data/ingest.py` `make_provider`, `pipeline/dataset.py` `panel`,

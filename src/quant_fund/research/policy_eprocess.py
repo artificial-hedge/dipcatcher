@@ -18,7 +18,7 @@ anytime-valid dominance alarm at ``E[x] > 0.5``.
 Honesty: ``pnl`` here is the *simulator-internal* mark-to-market diagnostic
 (``sim_internal_mtm_pnl_final``) of the synthetic ZI-LOB engine — the
 receipt records it only under ``sim_internal_*`` names, marks the evidence
-``SYNTHETIC``, and makes no live-trading or market claim.
+``SYNTHETIC``.
 """
 
 from __future__ import annotations

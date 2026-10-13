@@ -39,9 +39,7 @@ honesty check to make a run pass — fix the code or report the blocker.
    `tests/fx1/test_honesty_inheritance.py` confirm.
 2. SYNTHETIC results are correctness tests, always labeled SYNTHETIC, and
    never market evidence.
-3. **No live-trading claims.** This is research infrastructure: no broker
-   connectivity, no order placement, nothing presented as live performance.
-4. `receipts/` and all signed state are immutable evidence — never edit,
+3. `receipts/` and all signed state are immutable evidence — never edit,
    never delete; every research claim should be reproducible from a
    receipt hash.
 

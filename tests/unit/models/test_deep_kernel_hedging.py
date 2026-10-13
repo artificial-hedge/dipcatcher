@@ -14,7 +14,7 @@ Uryasev (2000, CVaR representation); Buehler, Gonon, Teichmann & Wood
 
 All data here is SYNTHETIC (seeded GBM and regime-switch paths from
 ``deep_hedging``'s simulators) — correctness evidence for the algorithm,
-never market evidence; no live-trading claims. Torch tests skip cleanly
+never market evidence. Torch tests skip cleanly
 when the nn extra is absent; the numpy lane (signature features, hedging
 Gram, representer solve, RFF solve, exact/RFF kernel hedges) runs without
 torch.

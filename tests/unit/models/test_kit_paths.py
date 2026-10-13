@@ -8,7 +8,7 @@ candle encoding, dual classifier-free guidance of Eq. 9); Peebles & Xie
 
 All data here is SYNTHETIC (seeded two-regime candle streams and hand-built
 latents) — correctness evidence for the algorithm, never market evidence;
-no live-trading claims. Torch tests skip cleanly when the nn extra is
+Torch tests skip cleanly when the nn extra is
 absent.
 """
 

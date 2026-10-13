@@ -105,7 +105,7 @@ Honesty: every output is a SYNTHETIC correctness diagnostic on a synthetic
 engine, never market evidence. All P&L-like keys (terminal MTM, the
 penalized terminal score ``H_T``, arm losses) are namespaced
 ``sim_internal_*``, must never be headlined, and there is no broker
-connectivity or live-trading claim anywhere in this module. Tiny-budget
+connectivity anywhere in this module. Tiny-budget
 tests assert plumbing, schedule fidelity, bandit-update math, and
 determinism — NOT that fine-tuning beats the Algorithm-B controller at
 paper scale (that comparison is the documented-optional bench battery).

@@ -22,8 +22,6 @@ receipt. This document is the outsider-auditable artifact; `.dsh-24x7/PROOF.md`
   return RankIC, realized-volatility MAE/R². **Result: partial** — challengers
   win daily path RankIC and vol MAE at both frequencies; `kronos_small`
   wins 4h path and return RankIC (§4.3).
-- **Non-claim:** no live-trading, execution, capacity, or P&L statement.
-
 ## 2. Universe and data
 
 | cell | bars | assets | bar source |

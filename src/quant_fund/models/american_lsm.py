@@ -77,7 +77,7 @@ Numerics
   across calls on the same platform.
 
 SYNTHETIC research only — correctness benchmarks against known answers (BS
-closed form, BAW approximation); no market evidence, no live-trading claims.
+closed form, BAW approximation); no market evidence.
 """
 
 from __future__ import annotations

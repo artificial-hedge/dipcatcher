@@ -3,7 +3,7 @@
 Inter-event / inter-execution duration analysis on the ZI-LOB sim under iid
 and calm/bursty regime arms (Goh & Barabási 2008 burstiness, exponential KS,
 Weibull log-log shape). Everything is **labeled SYNTHETIC** correctness
-validation — never market evidence, no live-trading claim.
+validation — never market evidence.
 """
 
 from __future__ import annotations

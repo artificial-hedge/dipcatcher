@@ -27,8 +27,7 @@ flips to ``fail`` if the behavior regresses:
 
 Receipt: ``forecast_data_audit()`` returns the unsealed body;
 ``forecast_data_audit_bench()`` seals it with ``receipt_sha256`` over the
-canonical JSON bytes. Synthetic fixtures only; no market evidence, no live
-claims.
+canonical JSON bytes. Synthetic fixtures only; no market evidence.
 """
 
 from __future__ import annotations

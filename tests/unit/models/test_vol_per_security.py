@@ -9,7 +9,7 @@ deterministic-seed reproducibility.
 
 Honesty: every panel here is seeded SYNTHETIC data — a correctness fixture,
 never market evidence.  Only proper scores appear (QLIKE, pinball); no
-Sharpe/Sortino/Calmar/P&L/NAV, no live-trading or profitability claims.
+Sharpe/Sortino/Calmar/P&L/NAV.
 """
 
 from __future__ import annotations

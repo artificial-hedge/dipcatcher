@@ -1,6 +1,6 @@
 """Wave 37: calendars session_days / next|previous session / next_open edges.
 
-Research/infrastructure only — no live broker / vendor MD.
+Research/infrastructure only.
 """
 
 from __future__ import annotations

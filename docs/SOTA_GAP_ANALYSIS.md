@@ -1011,7 +1011,7 @@
 - Legacy broker state without history remains readable through explicit counter baselines; modern state fails closed on malformed history or count mismatches.
 - Ledger schema validation covers receipt-history shape and count consistency, with an uninterrupted-vs-two-leg regression.
 - Ranker benchmark Diebold–Mariano contrasts align IC losses by common date keys rather than positional truncation, avoiding invalid comparisons when feature sets have different missing-date patterns.
-- All evidence remains simulated/paper-only; no live broker connectivity or live-performance claim is introduced.
+- All evidence remains simulated/paper-only.
 
 ## Day Wave 92 — deterministic and append-safe paper resume
 
@@ -1358,7 +1358,7 @@ versioned as the v2 supervised input contract.
   core imports. Missing receipts return structured `503` readiness with an
   explicit `checks.research_receipt=false`; regression covered by
   `test_readiness_is_fail_closed_for_missing_research_receipt`. This is a
-  research-runtime integrity check only and does not authorize live capital.
+  research-runtime integrity check only.
 
 ## Day Wave 25 DONE (2026-09-16) — soft battery_ok forge fail-closed (day_grind DayWave23)
 

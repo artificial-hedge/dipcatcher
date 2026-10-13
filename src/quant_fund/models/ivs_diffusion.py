@@ -69,8 +69,8 @@ all arbitrage checks run in forward IV->price space.
 Honesty: every result is computed on SYNTHETIC seeded streams (SVI-driven
 surfaces with a known law) -- correctness evidence for the algorithm, never
 market evidence. Metrics are proper scores (energy score) and hedging-error
-diagnostics; no Sharpe/Sortino/Calmar/P&L/NAV headline, no live-trading
-claims. Deterministic given ``seed`` on CPU (GPU determinism not claimed).
+diagnostics; no Sharpe/Sortino/Calmar/P&L/NAV headline.
+Deterministic given ``seed`` on CPU (GPU determinism not claimed).
 Torch is the optional ``nn`` extra imported lazily via :func:`_torch`, so the
 module imports cleanly without it and only training/finetuning raises
 ``ImportError``; ALL sampling/evaluation runs in numpy on extracted float64

@@ -10,7 +10,7 @@ difference fails the audit and the seal.
 Probe surfaces:
 
 - golden exists, parses, and is itself normalized (sorted keys)
-- every golden path present in the live spec, and no live path missing
+- every golden path present in the live spec
   from the golden (additive drift is flagged, not silently accepted)
 - methods per path match exactly
 - parameter names + required flags match per operation

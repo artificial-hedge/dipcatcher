@@ -10,7 +10,7 @@ fine-tuning runner, the scenario-mixture evaluation harness, and the
 torch-free numpy contrast policies.
 
 Everything is **labeled SYNTHETIC** correctness validation at TINY budgets —
-never market evidence, no live-trading claim. The C51 agent / session /
+never market evidence. The C51 agent / session /
 training plumbing itself is owned and covered by wave-16's
 ``test_rl_market_maker.py``; the tests here cover only the wave-17 surface,
 plus cross-cutting invariants (event-stream causality, honesty namespacing,

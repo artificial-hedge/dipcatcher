@@ -721,7 +721,7 @@ def rankic(
 
     Per-date Spearman rank-IC between each challenger transform and h-step
     forward returns, summarized with a Newey-West mean-IC t-stat. Proper-score
-    framing only — never a P&L or live-trading claim.
+ framing only — never a P&L.
     """
     from quant_fund.research.cross_sectional import (
         format_rankic_table,
@@ -4235,7 +4235,7 @@ def concordance(
 
     Does the ranking a lane picks agree with the ranking an independent
     elimination procedure produces? Reports Kendall tau, Jaccard overlap and the
-    DM-eliminated set — selection diagnostics only, never a live-trading claim.
+    DM-eliminated set — selection diagnostics only.
     """
     from quant_fund.research.concordance import (
         format_concordance_table,

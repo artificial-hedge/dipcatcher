@@ -6,8 +6,7 @@ Frozen before any strategy result was computed. The machine-readable copy is
 risk-gate config that differs from that file, and it must record every grid
 cell, including cells that lose.
 
-This is a research diagnostic. It is not a live-trading claim, not a
-promotion, and not a broker test.
+This is a research diagnostic.
 
 ## Why these books
 

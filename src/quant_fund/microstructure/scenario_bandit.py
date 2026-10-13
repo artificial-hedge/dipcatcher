@@ -44,7 +44,7 @@ Paper formulation implemented here (arXiv:2609.11614 Sec. 9):
 
 Honesty (AGENTS.md contract): seeded SYNTHETIC flows only — no real order
 flow, no headline performance ratios; ``sim_internal_*`` diagnostics only,
-never market evidence; no live-trading claim.
+never market evidence.
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 """Candle + order-book microstructure helpers used by Northset.
 
 Fuses OHLCV bars with L2 snapshots for research features and benches.
-Always ``research_only`` / ``live_pnl_claim=false``. Not a live trading path.
+Always ``research_only`` / ``live_pnl_claim=false``.
 The catalog family and CLI name is Northset (ADR-021).
 
 ``bench_candle_order_book`` is lazy — importing it eagerly cycles through

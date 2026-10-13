@@ -40,7 +40,7 @@ DEFAULT_REF = "master"
 SOURCE_NAME = "dolthub_stocks"
 REVISION_ID = "DOLTHUB_AS_TRADED"
 API_ROOT = "https://www.dolthub.com/api/v1alpha1"
-USER_AGENT = "dipcatcher-research/1.0 (dolthub as-traded cache; not a live trading system)"
+USER_AGENT = "dipcatcher-research/1.0 (dolthub as-traded cache)"
 US_CLOSE = ZoneInfo("America/New_York")
 # DoltHub's hosted SQL deadline is ~54s. Week windows stay well under it.
 _WINDOW_DAYS = 7

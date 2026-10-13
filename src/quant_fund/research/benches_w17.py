@@ -266,7 +266,7 @@ def bench_greek_neutral() -> dict[str, float]:
     Honesty: the Sharpe-like objective values are ``sim_internal_*`` keys and
     stay OUT of the blob; only ``gnp_*`` exposure / flag keys are emitted.
     Seeded SYNTHETIC; exposure calibration diagnostics only, never market
-    evidence, no live-trading claim.
+    evidence.
     """
     try:
         # Local import: the module imports cleanly without torch, but every

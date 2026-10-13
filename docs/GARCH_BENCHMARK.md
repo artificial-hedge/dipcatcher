@@ -56,7 +56,7 @@ market data**: the S&P 500 adjusted-close series bundled with `arch`
   seeded distributions, fallback-to-rolling on any failure (counted).
 - Inference: HAC Diebold–Mariano vs rolling/EWMA/HAR-proxy with Bonferroni ×3.
 - The same `sota_proven: false` constraint applies: one historical index,
-  no live trading, daily-frequency target, and a proxy HAR. This is real-data
+  a daily-frequency target, and a proxy HAR. This is real-data
   evidence about these specific estimators — not a broad SOTA certificate.
 
 ## Per-security keyed scope (v2 note, 2026-10-07)

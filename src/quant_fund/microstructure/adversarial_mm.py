@@ -24,7 +24,7 @@ Game structure (paper Sec. 8-9):
 
 Everything here is a SYNTHETIC diagnostic over the ZI-LOB simulator —
 ``sim_internal_*`` keys only, never a headline metric, never market
-evidence, no live-trading claim.
+evidence.
 """
 
 from __future__ import annotations

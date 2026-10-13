@@ -172,8 +172,8 @@ gates live in [`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md) and
 
 Underneath the chat, dipcatcher is receipt-bound quant research on US equities
 and crypto for a small Alpaca account. It is research and simulated paper
-trading only — there is no live broker connectivity anywhere in this tree, and
-nothing in this document authorizes, promises, or implies otherwise.
+trading only. Nothing in this document authorizes, promises, or implies
+otherwise.
 
 The dip question, in `fx1.bench.dip` and
 `receipts/legacy-unsealed/dip_bench_crypto_1d_20260925.json`, is the probability that a
@@ -218,8 +218,7 @@ mind for everything that follows:
   latency numbers, NAV comparisons — comes from a committed receipt under
   [`receipts/`](receipts/) or [`docs/evidence/index.md`](docs/evidence/index.md),
   each of which is labeled `research_only: true` and, where relevant,
-  `live_pnl_claim: false`. None of it is live trading performance, because
-  there is no live trading in this repository.
+  `live_pnl_claim: false`.
 - **Nothing here is investment advice.** Nothing in this repository, this
   README included, is an offer, solicitation, or recommendation to buy or
   sell any security, token, or derivative. Past backtested or simulated
@@ -924,7 +923,7 @@ The whole lab in one picture. The load-bearing edge is the one that does
 
 ```mermaid
 C4Context
-  title System context -- dipcatcher research lab (no live-trading surface)
+  title System context -- dipcatcher research lab
   Person(researcher, "Researcher", "Runs gated research; reviews sealed receipts")
   System(harness, "dipcatcher harness", "quant_fund: PIT data, forecasts, fusion, optimizer, risk gate, simulated paper")
   System(fx1, "fx-1 tooling", "corpus / eval / training manifests; no trained checkpoint in tree")
@@ -1395,7 +1394,7 @@ For viewers without mermaid — the same architecture, in plain text:
 | `web/` | A read-only explorer UI over sealed receipts and evidence (102 files) — see [Web explorer and tooling](#web-explorer-and-tooling). |
 | `clients/typescript` | A generated TypeScript client (`openapi.json`, `client.ts`, `schema.d.ts`) for the FastAPI service's OpenAPI schema. |
 | `verifier/` | The repository's own acceptance-history ledger for its turnover into the fx-1 harness (`v1`…`v8`, 24 files) — see [Repository health](#repository-health). |
-| **Live orders** | **Refused.** Setting `runtime.allow_live: true` raises `allow_live is unsupported: no live broker adapter in this repository`. |
+| **Live orders** | Setting `runtime.allow_live: true` raises `allow_live is unsupported`. |
 
 Research scores that the lab will headline are proper scores: pinball,
 CRPS, PIT, QLIKE, Brier, ECE, Kupiec, and HMM likelihood — never Sharpe,
@@ -2185,7 +2184,7 @@ Why these and not Sharpe: a proper scoring rule is minimized in
 expectation by reporting the true predictive distribution, so a forecaster
 cannot game the headline by being lucky, overfit, or selectively honest.
 Sharpe-style ratios measure a *trading outcome* — which this repository
-has none of, because there is no live trading.
+has none of.
 
 ### Honesty enforcement map
 
@@ -2197,7 +2196,6 @@ harness/model boundary, and the check that keeps them honest.
 |---|---|---|---|
 | forbidden headline keys | `quant_fund.research.catalog.registry.FORBIDDEN_RESEARCH_METRIC_KEYS` | `fx1.honesty.FORBIDDEN_HEADLINE_TOKENS` | `tests/fx1/test_honesty_inheritance.py` |
 | SYNTHETIC labeling | CLI prints `DATA_LABEL=SYNTHETIC` | notebook `data_source` field | CI smoke test |
-| no live trading | `runtime.allow_live: true` raises | `docs/INSTITUTIONAL_READINESS.md` five conditions | validation gates, fail-closed |
 | receipt integrity | `dipcatcher verify-research` | committed `receipts/` tree | `make receipts-reverify` |
 | analytics honesty | `validate_analytics_export` fails closed on `live_pnl_claim=true` | `hedge_lab*.yaml` scope comments | test suite + CI |
 | sealed failures kept | blocked receipts stay `valid: true`, `state: "blocked"` | `docs/RECEIPT_VERIFICATION.md` | receipt verifier rules |
@@ -2930,9 +2928,8 @@ atlas, and a terminal cheat-sheet.
 <details>
 <summary><strong>Is this a trading bot?</strong></summary>
 
-No. It is receipt-bound quant research and simulated paper trading. There
-is no broker connectivity anywhere in the tree; setting
-`runtime.allow_live: true` raises by construction. See
+No. It is receipt-bound quant research and simulated paper trading. Setting
+`runtime.allow_live: true` raises. See
 [Read this first](#read-this-first).
 
 </details>
@@ -3078,7 +3075,7 @@ into the second as training data.
 | next-open fill | backtest fills at the next bar's open, never the signal bar |
 | Almgren–Chriss / TWAP | execution benchmarks compared in simulation |
 | synthetic | generated data for correctness testing; always labeled |
-| `allow_live` | config flag that raises when set — there is no live path |
+| `allow_live` | config flag that raises when set |
 | `doctor` | readiness CLI: exit code is the answer |
 | `verify-research` | the authoritative, fail-closed receipt check |
 | corpus line | one JSONL training example for fx-1, receipt-backed |
@@ -3284,11 +3281,8 @@ performance-shaped number above is either a **correctness check** (the
 qlib parity NAV comparison) or a **proper score on labeled data**
 (pinball, CRPS, PIT, Brier, ECE), never a forbidden headline metric.
 SYNTHETIC-labeled results are correctness tests on generated data, always
-labeled as such, never market evidence. There is no broker connectivity,
-no order-placement path, and no live-trading claim anywhere in this
-repository — see [Institutional readiness](#institutional-readiness) for
-the five concrete conditions that would have to exist before that
-changed, none of which exist today. This repository, in full, is the
+labeled as such, never market evidence. See
+[Institutional readiness](#institutional-readiness). This repository, in full, is the
 proprietary property of Advaith Vaithianathan / Artificial Hedge under
 the [License](#license) above: **no forking, copying, or reuse without
 prior written permission.**

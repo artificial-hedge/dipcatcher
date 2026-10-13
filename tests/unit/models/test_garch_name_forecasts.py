@@ -1,6 +1,6 @@
 """Day Wave 112: causal per-security GARCH namespace.
 
-Research/infrastructure only — no live broker / vendor MD / live_pnl_claim.
+Research/infrastructure only.
 Name-level forecasts do not replace vol_20 or the date-level market overlay.
 """
 

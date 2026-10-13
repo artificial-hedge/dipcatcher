@@ -1,4 +1,4 @@
-"""Assemble a research stress report. No live-trading output."""
+"""Assemble a research stress report."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ from quant_fund.stress.strategy import ResearchStrategy, portfolio_returns
 Array = NDArray[np.float64]
 
 DISCLAIMER = (
-    "Research simulation only. This report is not a live-trading result, does not "
+    "Research simulation only. This report does not "
     "submit orders, and is not evidence of a market edge. Synthetic scenarios are "
     "labelled synthetic. Published scalars are factor shocks, not redistributed vendor tapes."
 )

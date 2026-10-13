@@ -6,7 +6,7 @@ tree. It does not rerun trials. A cell says `not in artifact` when the
 cited file has no such field. `null` means the field is present and
 empty. Numbers are copied from those files. Nothing here is estimated.
 
-Research diagnostics only. Not a live-trading claim and not a promotion.
+Research diagnostics only. Not a promotion.
 DSR and PBO are overfitting diagnostics. A bar copied from a
 preregistration is the bar already stored there.
 

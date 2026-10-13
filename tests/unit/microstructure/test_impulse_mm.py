@@ -4,8 +4,8 @@ Bivariate Hawkes MO intensity (recursive O(1) form + binned convolution),
 the Gueant-style Riccati-ODE solver in ``(t, q, lambda+, lambda-)`` (backward
 finite-difference shooting), the ``HawkesFlow`` ``RegimeState`` adapter, and
 the sealed ``hawkes_mm.v1`` bench receipt. Everything is **labeled
-SYNTHETIC** correctness validation — never market evidence, no live-trading
-claim. ``sim_internal_*`` keys are simulator-internal diagnostics asserted
+SYNTHETIC** correctness validation — never market evidence.
+``sim_internal_*`` keys are simulator-internal diagnostics asserted
 here to never leak as headline metrics.
 
 Fast: the two solver runs and the session bundle are module-scoped fixtures.

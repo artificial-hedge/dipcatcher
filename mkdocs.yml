@@ -6,7 +6,7 @@ repo_name: artificial-hedge/dipcatcher
 edit_uri: edit/main/docs/
 docs_dir: docs
 site_dir: site
-copyright: dipcatcher research documentation. Live trading is not implemented.
+copyright: dipcatcher research documentation.
 
 # Kept in the repo. Omitted from the published site because they headline
 # Sharpe, holdout returns, or P&L. Listed from docs/archive.md.

@@ -178,7 +178,6 @@ sigma, fail-closed on missing intraday.
 - The resulting HF-RV-fed overlay will be evaluated using **proper scores**:
   pinball, CRPS, QLIKE, Brier, ECE, Kupiec, HMM likelihood.
 - **No** Sharpe / Sortino / Calmar / P&L / NAV headlines.
-- **No** live-trading claims.
 - **No** synthetic data labeled as live.
 - Receipts are immutable; the HF-RV result hash is part of the receipt
   ledger.

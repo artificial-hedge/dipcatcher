@@ -75,7 +75,7 @@ batches ship with explicitly unverified runtime behavior); or (3) an explicit
 scope change from the requester. Until one of these holds, the honest
 standing answer is unchanged: **31 of 1,000,000 — 999,969 remain, and the
 overall request is unfinished.** This is source accounting only; it creates
-no market evidence, no live-trading claim, and no research receipt.
+no market evidence.
 
 ## Batch 2 — 2026-10-02
 

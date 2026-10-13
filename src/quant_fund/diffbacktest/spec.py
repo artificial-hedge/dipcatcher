@@ -1,6 +1,6 @@
 """Tolerances, parameter boxes, and honesty labels for the differentiable backtest.
 
-Research tooling only. Nothing here is a live-trading claim or a sealed
+Research tooling only. Nothing here is a sealed
 research-catalog score. See ``docs/DIFFBACKTEST.md``.
 """
 

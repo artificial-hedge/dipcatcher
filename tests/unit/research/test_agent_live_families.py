@@ -1,8 +1,7 @@
 """Runtime family de-emission: RETIRED optional families never emitted.
 
 Synthetic catalog states via monkeypatch — correctness tests only. They
-assert emission policy, never market evidence, and carry no live-trading or
-profitability claim.
+assert emission policy, never market evidence.
 """
 
 from __future__ import annotations
