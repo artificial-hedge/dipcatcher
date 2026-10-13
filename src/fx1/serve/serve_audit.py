@@ -298,13 +298,25 @@ def serve_audit() -> dict[str, Any]:
             )
             captured2["urls"] = []
 
+            _models_seen: list[bool] = []
+
             def fake_urlopen_cold(req: Any, **kw: Any) -> _Resp2:
                 # The engine reads as down only until a proc exists — the
                 # spawn template must actually run (a concurrent-ready fake
                 # would let the lock's re-check skip spawning entirely).
+                # ``_proc`` is published only after ``_wait_for_engine``
+                # returns, so the ``_proc is None`` check would never flip
+                # during the wait loop. Track the /v1/models probe
+                # directly: ``_ensure_engine`` calls ``_engine_up`` twice
+                # before spawning (once outside the lock, once inside) and
+                # then calls it from the wait loop after spawn. The first
+                # two probes must see the engine as down so spawn fires;
+                # every probe after that sees it up.
                 url = req.full_url if hasattr(req, "full_url") else str(req)
-                if url.endswith("/v1/models") and spawned._proc is None:
-                    raise urllib.error.URLError("connection refused")
+                if url.endswith("/v1/models"):
+                    _models_seen.append(True)
+                    if len(_models_seen) <= 2:
+                        raise urllib.error.URLError("connection refused")
                 return fake_urlopen2(req, **kw)
 
             with (
