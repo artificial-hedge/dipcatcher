@@ -99,8 +99,7 @@ def _public_address(host: str, port: int, resolve_fn: ResolveFn) -> tuple[str | 
             continue
         if not _ip_is_public(ip):
             return None, f"host {host} resolves to non-public address {addr}"
-        if selected is None:
-            selected = str(ip)
+        selected = selected or str(ip)
     if selected is None:
         return None, f"host {host} has no public address"
     return selected, ""
