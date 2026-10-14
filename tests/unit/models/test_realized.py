@@ -158,3 +158,50 @@ class TestBands:
         w1 = rv_confidence_band(r1)["upper"] - rv_confidence_band(r1)["lower"]
         w2 = rv_confidence_band(r2)["upper"] - rv_confidence_band(r2)["lower"]
         assert w2 < w1
+
+
+def test_lee_mykland_window_matches_direct_bipower() -> None:
+    """The vectorized window is the same bipower sum the scalar loop used."""
+    r = _bm_increments(n=64, sigma=1.0, seed=21)
+    out = lee_mykland_jumps(r, alpha=0.999)
+    n = r.size
+    k = max(2, int(np.floor(np.sqrt(n))))
+    t = k + 3
+    seg = r[t - k : t]
+    direct = float(np.sum(np.abs(seg[1:]) * np.abs(seg[:-1])))
+    sigma2 = direct * np.pi / (2.0 * (k - 1))
+    stat = abs(float(r[t])) / np.sqrt(max(sigma2, 1e-16))
+    assert out["stat"][t] == pytest.approx(stat, rel=0, abs=1e-12)
+
+
+def test_kernel_lags_match_direct_dots() -> None:
+    r = _bm_increments(n=80, seed=22)
+    bandwidth = 6
+    direct = 0.0
+    rv = realized_variance(r)
+    for h in range(1, bandwidth + 1):
+        x = h / (bandwidth + 1.0)
+        weight = 1.0 - 6.0 * x * x + 6.0 * x**3 if x <= 0.5 else 2.0 * (1.0 - x) ** 3
+        direct += weight * float(r[h:] @ r[:-h])
+    assert realized_kernel(r, bandwidth=bandwidth) == pytest.approx(
+        rv + 2.0 * direct, rel=0, abs=1e-10
+    )
+
+
+def test_preaveraged_blocks_match_direct_dots() -> None:
+    r = _bm_increments(n=40, seed=23)
+    theta = 0.4
+    n = r.size
+    k_n = max(3, int(round(theta * np.sqrt(n))))
+    weights = np.minimum(np.arange(1, k_n) / k_n, 1.0 - np.arange(1, k_n) / k_n)
+    m = n - k_n + 1
+    direct = np.array([float(weights @ r[t + 1 : t + k_n]) for t in range(m)])
+    # Re-enter through the public estimator's building block by comparing the
+    # modulated sum, which is what the estimator squares.
+    from quant_fund.models.realized import preaveraged_rv as impl
+
+    got = impl(r, theta=theta)
+    psi2 = 1.0 / 12.0
+    mrv = (n / m) * float(direct @ direct) / (psi2 * k_n)
+    expected = mrv - realized_variance(r) / (2.0 * theta**2 * psi2 * n)
+    assert got == pytest.approx(expected, rel=0, abs=1e-10)

@@ -110,11 +110,17 @@ def lee_mykland_jumps(r: Array, alpha: float = 0.999) -> dict[str, Array]:
     v = _as_returns(r, min_len=20)
     n = v.size
     k = max(2, int(math.floor(math.sqrt(n))))
+    # Products |r_{j+1}| |r_j| live at index j. The window that used to be
+    # ``v[t-k:t]`` contributes products j = t-k .. t-2, i.e. ``prod[t-k:t-1]``.
+    abs_v = np.abs(v)
+    prod = abs_v[1:] * abs_v[:-1]
+    cumulative = np.empty(prod.size + 1, dtype=np.float64)
+    cumulative[0] = 0.0
+    np.cumsum(prod, out=cumulative[1:])
+    idx = np.arange(k, n)
+    bipower = cumulative[idx - 1] - cumulative[idx - k]
     sigma2 = np.full(n, np.nan)
-    for t in range(k, n):
-        seg = v[t - k : t]
-        bp = np.sum(np.abs(seg[1:]) * np.abs(seg[:-1]))
-        sigma2[t] = bp * math.pi / (2.0 * (k - 1))  # per-step bipower IV
+    sigma2[idx] = bipower * (math.pi / (2.0 * (k - 1)))
     stat = np.abs(v) / np.sqrt(np.maximum(sigma2, 1e-16))
     stat = np.where(np.isfinite(stat), stat, 0.0)
     c_n = math.sqrt(2.0 * math.log(n)) - (math.log(math.pi) + math.log(math.log(n))) / (
@@ -176,9 +182,9 @@ def realized_kernel(r: Array, bandwidth: int | None = None) -> float:
     adj = 0.0
     for h in range(1, bandwidth + 1):
         x = h / (bandwidth + 1.0)
-        w = 1.0 - 6.0 * x * x + 6.0 * x**3 if x <= 0.5 else 2.0 * (1.0 - x) ** 3
+        weight = 1.0 - 6.0 * x * x + 6.0 * x**3 if x <= 0.5 else 2.0 * (1.0 - x) ** 3
         gamma = float(v[h:] @ v[:-h])
-        adj += w * gamma
+        adj += weight * gamma
     return rv + 2.0 * adj
 
 
@@ -197,9 +203,14 @@ def preaveraged_rv(r: Array, theta: float = 0.4) -> float:
     if m <= 1:
         raise ValueError("series too short for pre-averaging window")
     psi1, psi2 = 1.0, 1.0 / 12.0
-    jg = np.arange(1, k_n) / k_n
-    w = np.minimum(jg, 1.0 - jg)
-    rbar = np.array([float(w @ v[t + 1 : t + k_n]) for t in range(m)])
+    jg = np.arange(1, k_n, dtype=np.float64) / k_n
+    weights = np.minimum(jg, 1.0 - jg)
+    # ``weights @ v[t+1:t+k_n]`` is the valid correlation of ``v`` with
+    # ``weights`` at offset ``t+1``. Offset 0 would include ``v[0]``.
+    correlated = np.correlate(np.ascontiguousarray(v, dtype=np.float64), weights, mode="valid")
+    rbar = correlated[1 : m + 1]
+    if rbar.size != m:
+        raise ValueError("pre-averaging window did not cover the return path")
     mrv = (n / m) * float(rbar @ rbar) / (psi2 * k_n)
     return float(mrv - psi1 * realized_variance(v) / (2.0 * theta**2 * psi2 * n))
 
