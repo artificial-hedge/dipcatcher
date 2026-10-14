@@ -611,6 +611,25 @@ stack head evaluate that row once per fit and tile it on `predict`.
 `ScaledStudentTDistribution` caches `stdtrit` knots the same way. The MLE
 objective is unchanged.
 
+## Ensemble absolute-sum identity (2026-10-14)
+
+SYNTHETIC / lab only. `live_pnl_claim=false`. Same process,
+`OMP_NUM_THREADS=1`, `numpy` Generator seed `20261007`. The broadcast is the
+previous `n×n` mean of absolute deviations; the identity is
+`2 * sum_i (2i-n-1) x_(i)` on the sorted sample (diagonal included).
+
+| call | n | median ms |
+|---|---:|---:|
+| broadcast `mean\|X-X'\|` | 4096 | 46.309 |
+| order-statistic identity | 4096 | 0.026 |
+| identity only | 20000 | 0.106 |
+
+Absolute difference at n=4096 on that draw was 0. The n=20000 broadcast was
+not timed: it allocates a `20000²` float64 matrix. Integer fixtures in
+`tests/unit/utils/test_absdiff.py` are exact, so a wrong weight fails closed.
+`crps_empirical`, `crps_ensemble`, the vintage ensemble audit, and the
+within-sample terms of energy distance share this sum.
+
 Equivalence: `tests/unit/research/test_crps_closed_form.py` (independent
 `scipy.stats.t` reference) and `tests/unit/models/test_skew_t.py` (λ=0
 unit-variance Student-t, plus Brent inversion of a separately coded

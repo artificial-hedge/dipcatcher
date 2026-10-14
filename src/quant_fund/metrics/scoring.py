@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 from scipy.special import betaln, erf, gammaln, stdtr
 
 from quant_fund.metrics.probability import pit_ks
+from quant_fund.utils.absdiff import ensemble_crps
 from quant_fund.utils.numeric import midrank
 from quant_fund.utils.series import as_named_1d, require_same_length
 
@@ -440,7 +441,9 @@ def crps_empirical(y: float | Array, sample: Array) -> float:
 
     ``y`` may be a scalar or length-1 array; ``sample`` must be 1d with n≥1.
     Empty / all-non-finite sample → NaN. Multi-row ``y`` → ValueError (use a
-    loop or extend later). Not a live capital claim.
+    loop or extend later). The double sum is the order-statistic identity in
+    ``ensemble_crps`` — the same sum, not an :math:`n \times n` matrix.
+    Not a live capital claim.
     """
     y_arr = np.asarray(y, dtype=float).reshape(-1)
     if y_arr.size != 1:
@@ -450,11 +453,7 @@ def crps_empirical(y: float | Array, sample: Array) -> float:
     x = x[np.isfinite(x)]
     if x.size == 0 or not np.isfinite(y0):
         return float("nan")
-    term1 = float(np.mean(np.abs(x - y0)))
-    # Pairwise |Xi-Xj| via broadcasting; O(n²) — fine for research ensembles
-    pairwise = np.abs(x[:, None] - x[None, :])
-    term2 = float(np.mean(pairwise)) / 2.0
-    return term1 - term2
+    return ensemble_crps(y0, x)
 
 
 def qlike(realized_var: Array, forecast_var: Array, floor: float = 1e-12) -> float:

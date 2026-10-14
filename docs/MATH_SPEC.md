@@ -110,6 +110,10 @@ Given draws \(X_1,\ldots,X_n\) from the predictive and a single observation \(y\
 \]
 
 Implemented as `crps_empirical` (research-only; empty / all-non-finite sample → NaN).
+The double sum is the order-statistic identity
+:math:`2\sum_{i=1}^{n}(2i-n-1)x_{(i)}` (1-based, diagonal included) — the same
+sum as the :math:`n\times n` expansion, evaluated in :math:`O(n\log n)` after a
+sort. `crps_ensemble` and the vintage ensemble audit use that identity too.
 
 ## Closed-form Student-t CRPS
 
