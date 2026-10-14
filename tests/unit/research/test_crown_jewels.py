@@ -11,6 +11,7 @@ from quant_fund.research.crown_jewels import (
     DEFAULT_JEWELS,
     crown_jewel_digests,
     crown_jewels_errors,
+    distribution_lineage_digest,
     load_crown_jewels_pin,
     write_crown_jewels_pin,
 )
@@ -79,3 +80,19 @@ def test_pin_is_json_sorted_and_atomic(repo: Path) -> None:
     assert list(doc["files"]) == sorted(doc["files"])
     digests = crown_jewel_digests(repo)
     assert digests["pyproject.toml"] != digests["uv.lock"]
+
+
+def test_distribution_lineage_digest_binds_pin_and_jewels(repo: Path) -> None:
+    pin = write_crown_jewels_pin(repo, repo / "quality" / "crown_jewels.json")
+    (repo / "quality" / "epoch_heads.json").write_text('{"heads": {}}\n')
+    lineage = distribution_lineage_digest(repo)
+    assert lineage["schema"] == "distribution_lineage.v1"
+    assert lineage["jewels_intact"] is True
+    assert len(lineage["digest"]) == 64
+    assert lineage["crown_jewels_pin_sha256"] is not None
+    (repo / "pyproject.toml").write_text("# tampered\n")
+    mutated = distribution_lineage_digest(repo)
+    assert mutated["jewels_intact"] is False
+    assert mutated["digest"] != lineage["digest"]
+    pin.unlink()
+    assert distribution_lineage_digest(repo)["crown_jewels_pin_present"] is False
