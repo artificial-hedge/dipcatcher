@@ -74,7 +74,7 @@ limit of k_m as m → ∞ is the kernel studied by Kidger & Foster (2020, §2).
 
 Honesty: outputs are path features (signatures, logsignatures, areas,
 kernel values) — geometry/rough-path quantities only. No Sharpe/Sortino/
-P&L content; no live-trading claims (AGENTS.md honesty contract).
+P&L content (AGENTS.md honesty contract).
 
 Conventions: numpy core, fail-closed edges (ValueError on non-2-D paths,
 fewer than 2 points, non-finite entries, or order outside its supported

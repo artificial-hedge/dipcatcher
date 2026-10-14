@@ -110,7 +110,7 @@ they are correctness material, never market evidence. The conformal coverage
 guarantee is marginal and requires exchangeability; the paper's own Sec. 5
 shows distribution shift can still break coverage, so coverage is always
 reported next to the tolerance-adjusted acceptable level C_a. Research
-diagnostics only; no live-trading claims.
+diagnostics only.
 """
 
 from __future__ import annotations

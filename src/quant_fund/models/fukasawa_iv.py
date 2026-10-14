@@ -73,8 +73,8 @@ Three asymptotic regimes (each separately exercisable below):
 Honesty
 -------
 Everything here is SYNTHETIC Monte-Carlo correctness material on
-model-generated paths with known law -- never market evidence, no
-live-trading claim, and no Sharpe/Sortino/Calmar/P&L-style headline is
+model-generated paths with known law -- never market evidence, and no
+Sharpe/Sortino/Calmar/P&L-style headline is
 produced anywhere (there is no PnL in this module; the only prices are
 European puts inside the representation check). ``conditional_qv`` is a
 Monte-Carlo plug-in of paper eq. 53: it estimates E[A | S_T = K] at MC

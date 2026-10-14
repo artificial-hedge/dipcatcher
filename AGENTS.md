@@ -46,9 +46,7 @@ make sync          # uv sync --frozen --all-groups --all-extras (uv.lock is
    `tests/fx1/test_honesty_inheritance.py` blocks drift.
 2. SYNTHETIC results are correctness tests, always labeled, never market
    evidence.
-3. No live-trading claims — no broker connectivity; see
-   `docs/INSTITUTIONAL_READINESS.md` for the five minimum-evidence conditions.
-4. Receipts are immutable evidence (`receipts/`, `verify-research`). Every
+3. Receipts are immutable evidence (`receipts/`, `verify-research`). Every
    research claim should be reproducible from a receipt hash.
 
 ## Conventions

@@ -1056,8 +1056,8 @@ def _stream_probes() -> dict[
     stub = _StubBackend()
     client, _ = _client({"hosted_k3": stub})
     remote = _remote(client)
-    chunks = remote.stream_complete(_MSGS, backend="hosted_k3")
-    out["e2e_stream_returns_list"] = isinstance(chunks, list) and chunks == ["tok-a", "tok-b"]
+    streamed = remote.stream_complete(_MSGS, backend="hosted_k3")
+    out["e2e_stream_returns_list"] = isinstance(streamed, list) and streamed == ["tok-a", "tok-b"]
 
     # keepalived post-commit failure → in-band error frame → mapped, code
     # intact (defect-fix pin).

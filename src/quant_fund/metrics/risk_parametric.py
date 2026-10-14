@@ -107,7 +107,7 @@ def _t_neg_log_likelihood(theta: Array, v: Array) -> float:
     the Nelder-Mead trajectory and ``res.x`` are unchanged), so this is a pure
     speedup with NO change to the fit's convergence tolerance or result.  These
     fits underpin proper scores (CRPS/pinball/QLIKE), so fidelity is preserved
-    exactly.  Not a live-trading or P&L claim.
+    exactly. Not a P&L claim.
     """
     nu, mu, log_s = theta
     if nu <= 2.01 or log_s < -20.0 or log_s > 5.0:

@@ -17,7 +17,6 @@ from quant_fund.models.alpha import HistoricalMeanAlpha
 from quant_fund.models.base import artifact_identity, load_joblib_artifact
 from quant_fund.models.deep_rl import PolicyGradientRanker, run_policy_gradient_panel
 from quant_fund.models.quantile_bandit import QuantileThompson
-from quant_fund.models.ranking import available_features
 from quant_fund.models.regime import GaussianHMMRegime, SingleStateRegime, VolThresholdRegime
 from quant_fund.models.rl import (
     LinearThompsonRanker,
@@ -25,6 +24,7 @@ from quant_fund.models.rl import (
     run_linucb_panel,
     run_thompson_panel,
 )
+from quant_fund.models.robinhood_plus.constants import AMOUNT_COL, PRICE_COLS, VOLUME_COL
 from quant_fund.models.tail import DrawdownClassifier, GaussianTail, HistoricalTail
 from quant_fund.pipeline.artifact_manifest import (
     UNSUPERVISED_LABEL,
@@ -495,7 +495,17 @@ def train_robinhood_plus(
     engine.fit(np.zeros((2, 1)), np.zeros(2))
     path = Path(config.data.root) / "metadata" / f"robinhood_plus_{model_name}.joblib"
     df = panel(config)
-    engine_features = available_features(list(df.columns), None)
+    # The engine consumes K-line columns, not the ranking feature registry.
+    # An empty intersection with DEFAULT_FEATURES is not an identity.
+    required = (*PRICE_COLS, VOLUME_COL)
+    missing = [name for name in required if name not in df.columns]
+    if missing:
+        raise ValueError(
+            "robinhood+ training requires K-line columns "
+            + ", ".join(missing)
+            + "; refusing an empty feature identity"
+        )
+    engine_features = [name for name in (*required, AMOUNT_COL) if name in df.columns]
     save_training_artifact(
         engine,
         path,
@@ -557,7 +567,7 @@ def train_family(config: AppConfig, family: str, model_name: str | None = None) 
             result["artifact_identity_error"] = str(exc)
         # Dataset identity is verified, never assumed: an artifact whose
         # manifest carries no (or an unverified) identity is recorded loudly
-        # here and blocks promotion downstream (see proof.promotion_receipt).
+        # here and blocks promotion downstream (see research.promotion_receipt).
         try:
             identity = verify_artifact_manifest(Path(artifact_path))
             result["dataset_identity"] = identity.model_dump(mode="json")

@@ -68,10 +68,9 @@ Composition — this module reuses, never reimplements:
   propagation* (a different observable), so no duplication.
 
 Honesty: every observable is a SYNTHETIC correctness diagnostic on a
-zero-intelligence simulator, never market evidence; there is no broker
-connectivity and no live-trading claim; no mark-to-market or PnL is produced
-at all (the paper's diagnostics are state variables — volatility, collapse,
-resilience — not returns). Fail-closed throughout: degenerate/short/invalid
+zero-intelligence simulator, never market evidence (the paper's diagnostics
+are state variables — volatility, collapse, resilience — not returns).
+Fail-closed throughout: degenerate/short/invalid
 inputs raise rather than silently degrade, and all randomness runs through
 the simulator's seeded numpy Generator, so identical seeds give bit-identical
 paths.

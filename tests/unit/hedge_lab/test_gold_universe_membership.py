@@ -1,6 +1,6 @@
 """Day Wave 108/109: gold/CS consume PIT universe membership.
 
-Research/infrastructure only — no live broker / vendor MD / live_pnl_claim.
+Research/infrastructure only.
 """
 
 from __future__ import annotations

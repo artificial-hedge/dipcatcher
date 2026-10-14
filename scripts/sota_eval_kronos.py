@@ -1133,7 +1133,7 @@ def merge_parts(args: argparse.Namespace) -> int:
         "live_pnl_claim": False,
         "disclaimer": (
             "Causal walk-forward evaluation on public Binance klines with proper "
-            "scores only. Not a live-trading or deployability claim."
+            "scores only. Not a deployability claim."
         ),
     }
     _write_result(
@@ -1588,7 +1588,7 @@ def main() -> int:
         "live_pnl_claim": False,
         "disclaimer": (
             "Causal walk-forward evaluation on public Binance klines with proper "
-            "scores only. Not a live-trading or deployability claim."
+            "scores only. Not a deployability claim."
         ),
     }
     _write_result(

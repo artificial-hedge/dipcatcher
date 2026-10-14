@@ -145,7 +145,7 @@ formula). README entry-points section gains `fxi`.
 - Fail-closed: missing key → clear error naming the profile and env var, never
   a silent fallthrough (mirrors `backends.py`).
 - Honesty contract: the CLI adds no metrics of its own; eval/chat output flows
-  through existing enforced paths. No live-trading claims.
+  through existing enforced paths.
 
 ## Testing
 

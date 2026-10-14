@@ -1,6 +1,6 @@
 """Crypto (24/7 UTC) and FX (Sun 17:00 ET → Fri 17:00 ET) calendars.
 
-Research/infrastructure only — no live broker / vendor MD.
+Research/infrastructure only.
 """
 
 from __future__ import annotations

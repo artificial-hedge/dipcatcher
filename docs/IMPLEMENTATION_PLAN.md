@@ -115,7 +115,6 @@ deferred.
 ## Outstanding limitations (living)
 
 - No vendor market-data adapter (CSV/Parquet + synthetic only) — SKIP overnight.
-- No live broker adapter / real fills — SKIP overnight.
 - Parallel causal dates (`w_prev` sequential) — SKIP (unsafe to parallelize).
 - Causal 25d wall still ~0.29–0.35s above Wave 5 best on this machine after prefix path.
 - Fundamentals / options / macro features require PIT release timestamps; not faked.

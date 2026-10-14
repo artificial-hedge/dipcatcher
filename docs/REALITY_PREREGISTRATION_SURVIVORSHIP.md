@@ -5,8 +5,7 @@ Frozen before any strategy result was computed. The machine-readable copy is
 ledger, cost, or risk-gate config that differs from that file, and it must
 record every grid cell, including cells that lose.
 
-This is a research diagnostic. It is not a live-trading claim, not a
-promotion, and not a broker test. Reality-filter thresholds are not edited.
+This is a research diagnostic. Reality-filter thresholds are not edited.
 Round-1 ledger rows, the round-1 receipt, the round-1 audit, and sealed
 Phase-1 receipts are not rewritten.
 

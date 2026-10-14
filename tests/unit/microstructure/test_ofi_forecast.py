@@ -3,7 +3,7 @@
 Event-level OFI on the ZI-LOB simulator paired with subsequent k-event mid
 changes, OLS with Newey–West SEs, calm-vs-trend MarkovRegimeFlow arms, and
 the sealed ``ofi_forecast.v1`` receipt. All labeled SYNTHETIC correctness
-validation — never market evidence, no live-trading claim.
+validation — never market evidence.
 """
 
 from __future__ import annotations

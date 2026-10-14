@@ -160,7 +160,7 @@ def build_golden() -> dict[str, Any]:
             "description": (
                 "GOLDEN BASELINE for fit_student_t numerical-equivalence proof (T8). "
                 "Seeded SYNTHETIC inputs; proper scores only (CRPS); no market "
-                "evidence and no live-trading/P&L claim."
+                "evidence."
             ),
             "quantile_levels": list(QUANTILE_LEVELS),
             "field_tolerance": tolerance,

@@ -6,8 +6,7 @@ Frozen before any strategy result was computed. The machine-readable copy is
 risk-gate config that differs from that file, and it must record every grid
 cell, including cells that lose.
 
-This is a research diagnostic. It is not a live-trading claim, not a
-promotion, and not a broker test.
+This is a research diagnostic.
 
 ## Why these books
 
@@ -101,8 +100,7 @@ that supplemental figure.
 ## Forward-record pre-registration (hash-sealed) — `forward_2026H2`
 
 **Declaration date: 2026-10-07.** This block is frozen **before** the forward
-window runs. It is a research/shadow pre-registration, not a live-trading
-claim, not a promotion, and not a broker test. `live_pnl_claim=false`.
+window runs. It is a research/shadow pre-registration. `live_pnl_claim=false`.
 
 **The window is NOT YET COLLECTED.** No forward decision or outcome has been
 recorded under this pre-registration. The **2025 holdout is SPENT** (the vendor

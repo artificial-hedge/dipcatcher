@@ -1,4 +1,4 @@
-"""Prospective, locally timestamped shadow record; no live broker connectivity."""
+"""Prospective, locally timestamped shadow record."""
 
 from __future__ import annotations
 

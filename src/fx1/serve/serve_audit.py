@@ -56,6 +56,23 @@ __all__ = ["serve_audit", "serve_audit_bench"]
 
 
 def serve_audit() -> dict[str, Any]:
+    """Run the serve probes with ``FX1_SIGNING_KEY`` isolated to this call.
+
+    A prior probe that raised after setting the key must not make the
+    unsigned-default check look like a signed release. The caller's key,
+    if any, is restored on the way out — including when a probe raises.
+    """
+    saved_signing_key = os.environ.pop("FX1_SIGNING_KEY", None)
+    try:
+        return _serve_audit_body()
+    finally:
+        if saved_signing_key is None:
+            os.environ.pop("FX1_SIGNING_KEY", None)
+        else:
+            os.environ["FX1_SIGNING_KEY"] = saved_signing_key
+
+
+def _serve_audit_body() -> dict[str, Any]:
     import json
     import tempfile
     from pathlib import Path
@@ -297,17 +314,28 @@ def serve_audit() -> dict[str, Any]:
                 serve_cmd='${python} -c "import time; time.sleep(30)"',
             )
             captured2["urls"] = []
+            import subprocess  # noqa: PLC0415
+
+            spawned_n = [0]
+            real_popen = subprocess.Popen
+
+            def marking_popen(*a: Any, **kw: Any) -> Any:
+                # Count the spawn itself. ``_proc`` stays unpublished until
+                # ``_wait_for_engine`` returns, so a fake keyed off ``_proc``
+                # never reports the engine up and the sleeper exits 0.
+                spawned_n[0] += 1
+                return real_popen(*a, **kw)
 
             def fake_urlopen_cold(req: Any, **kw: Any) -> _Resp2:
-                # The engine reads as down only until a proc exists — the
-                # spawn template must actually run (a concurrent-ready fake
-                # would let the lock's re-check skip spawning entirely).
+                # Down until Popen runs, so both pre-spawn probes still miss
+                # and the lock's re-check cannot skip the spawn.
                 url = req.full_url if hasattr(req, "full_url") else str(req)
-                if url.endswith("/v1/models") and spawned._proc is None:
+                if url.endswith("/v1/models") and spawned_n[0] == 0:
                     raise urllib.error.URLError("connection refused")
                 return fake_urlopen2(req, **kw)
 
             with (
+                patch.object(subprocess, "Popen", marking_popen),
                 patch.object(urllib.request, "urlopen", fake_urlopen_cold),
                 patch.object(_be_mod, "_openai_urlopen", fake_urlopen_cold),
             ):

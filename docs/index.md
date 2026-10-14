@@ -19,7 +19,7 @@ Research results are proper scores:
 - Kupiec
 - HMM likelihood
 
-A research claim is reproducible from an immutable receipt. `dipcatcher verify-research` checks the seals — config hash, dataset bytes, git revision, package versions, and the benchmark catalog — and rejects a forged live-trading claim. Receipts live under `receipts/` and `data/metadata/research/`.
+A research claim is reproducible from an immutable receipt. `dipcatcher verify-research` checks the seals — config hash, dataset bytes, git revision, package versions, and the benchmark catalog — and rejects a forged. Receipts live under `receipts/` and `data/metadata/research/`.
 
 Sharpe, Sortino, Calmar, P&L, and NAV are excluded from research headlines. The token list is `FORBIDDEN_RESEARCH_METRIC_KEYS` in `quant_fund.research.catalog`, mirrored by `fx1.honesty.FORBIDDEN_HEADLINE_TOKENS`.
 

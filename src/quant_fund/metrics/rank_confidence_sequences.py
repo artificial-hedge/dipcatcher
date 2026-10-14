@@ -665,7 +665,7 @@ def rank_confidence_sequence(
     e-Bonferroni). ``sampling`` selects the offset of their Eq. (3)
     ("superpopulation" for i.i.d. items, "finite" for a complete benchmark in
     pre-randomized order). Research diagnostic on model scores — never
-    market evidence, never a live-trading claim.
+    market evidence.
     """
     x = _check_score_matrix(scores)
     mode = str(sampling)

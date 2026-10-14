@@ -28,8 +28,7 @@ them):
 
 Honesty: every output is a SYNTHETIC correctness diagnostic, never market
 evidence. Mark-to-market accounting is simulator-internal (``sim_internal_*``
-keys), must never be headlined, and there is no broker connectivity or
-live-trading claim anywhere in this module.
+keys), and must never be headlined.
 
 References:
 - Cont, Stoikov, Talreja (2010). A stochastic model for order book dynamics.
@@ -3028,7 +3027,7 @@ def run_mm_session(
     Returns a **SYNTHETIC** diagnostic bundle. ``sim_internal_mtm_pnl_path``
     is the simulator-internal mark-to-market path (cash + inventory*mid); it
     is a correctness diagnostic for this synthetic engine, NEVER a headline
-    metric and never market evidence. No live-trading claim.
+    metric and never market evidence.
     """
     if not callable(policy):
         raise TypeError("policy must be callable")
@@ -3197,7 +3196,7 @@ def run_mm_session(
         "inventory_path": inv_path,
         "inventory_path_times": inv_times,
         # Simulator-internal mark-to-market accounting. Diagnostic only:
-        # never a headline metric, never market evidence, no live-trading claim.
+        # never a headline metric, never market evidence.
         "sim_internal_mtm_pnl_path": mtm_path,
         "sim_internal_mtm_pnl_final": float(final_mtm),
         "mean_queue_ahead_at_fill": float(np.mean(queue_ahead_fills))

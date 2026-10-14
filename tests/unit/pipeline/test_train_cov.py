@@ -1389,7 +1389,15 @@ def test_train_policy_gradient_no_evaluable_dates_fail_closed(
 def test_train_robinhood_plus_persists_engine_card(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: _stub_panel())
+    panel = _stub_panel().with_columns(
+        pl.lit(100.0).alias("open_split_adjusted"),
+        pl.col("high").alias("high_split_adjusted"),
+        pl.col("low").alias("low_split_adjusted"),
+        pl.lit(100.0).alias("close_split_adjusted"),
+        pl.lit(1_000.0).alias("volume"),
+    )
+    monkeypatch.setattr("quant_fund.pipeline.train.families.panel", lambda *a, **k: panel)
+    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: panel)
     monkeypatch.setattr(
         "quant_fund.models.robinhood_plus.bench.bench_robinhood_plus",
         lambda frame, config: {"mean_ic": 0.07, "n_ok": 3, "ic_n_dates": 2},
@@ -1406,6 +1414,9 @@ def test_train_robinhood_plus_persists_engine_card(
 
     with pytest.raises(ValueError, match="unknown robinhood_plus model"):
         train_robinhood_plus(cfg, "not_a_decoder")
+    monkeypatch.setattr("quant_fund.pipeline.train.panel", lambda *a, **k: _stub_panel())
+    with pytest.raises(ValueError, match="K-line columns"):
+        train_robinhood_plus(cfg, "hierarchical_markov")
 
 
 # --- train_family --------------------------------------------------------------

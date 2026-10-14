@@ -7,7 +7,7 @@ import json
 import typer
 
 qm_app = typer.Typer(
-    help="quant-models engines (BSM, HRP, GEX decide). Research only; no live broker."
+    help="quant-models engines (BSM, HRP, GEX decide). Research only."
 )
 
 

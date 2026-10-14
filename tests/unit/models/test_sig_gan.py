@@ -7,8 +7,8 @@ arXiv:1810.10971 — signature-moment MMD); Perez Arribas, Salvi & Szpruch
 (2020, arXiv:2006.00218 — Sig-SDE expected-signature calibration).
 
 All data here is SYNTHETIC (seeded GBM/OU fixtures) — algorithmic
-correctness evidence, never market evidence; no Sharpe/P&L headline, no
-live-trading claims. Torch tests skip cleanly when the nn extra is absent;
+correctness evidence, never market evidence; no Sharpe/P&L headline.
+Torch tests skip cleanly when the nn extra is absent;
 the numpy fallback and every metric are exercised torch-free.
 """
 

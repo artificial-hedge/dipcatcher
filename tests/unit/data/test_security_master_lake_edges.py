@@ -1,6 +1,6 @@
 """Wave 38: FrameSecurityMaster + Lake edge fixtures — empty/missing fail-closed.
 
-Research/infrastructure only — no live broker / vendor MD.
+Research/infrastructure only.
 """
 
 from __future__ import annotations

@@ -1,7 +1,7 @@
 """Wave 34: ParquetMarketProvider edge fixtures — missing path/cols, empty, PIT fail-closed.
 
 Does not duplicate test_data_pit file_adapter happy/duplicate/OHLCV/impossible-order cases.
-Research/infrastructure only — no live broker / vendor MD.
+Research/infrastructure only.
 """
 
 from __future__ import annotations

@@ -6,8 +6,7 @@ categorical distributional RL layer over the lane B4-i zero-intelligence LOB
 (2017), arXiv:1707.06887 (fixed atom support, Algorithm 1 categorical
 projection, cross-entropy loss), van Hasselt, Guez, Silver (2016),
 arXiv:1509.06461 (double-Q target action selection) and Mnih et al. (2015)
-(periodic hard target sync). No market data is touched anywhere; there is no
-live-trading claim.
+(periodic hard target sync). No market data is touched anywhere.
 
 Three groups:
 

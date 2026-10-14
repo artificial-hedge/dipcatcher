@@ -67,8 +67,8 @@ Honesty: everything here is SYNTHETIC correctness tooling. Tests and the
 the same parametric family and on violations planted by construction -
 they demonstrate that the formulas, calibrators, and detectors behave as
 the cited literature specifies, never that real market surfaces are
-arbitrage-free or that anything earns money. No market evidence, no P&L,
-no live-trading claims (AGENTS.md honesty contract). The interpolation
+arbitrage-free or that anything earns money. No market evidence, no P&L
+(AGENTS.md honesty contract). The interpolation
 fallback exists so calibration degrades gracefully on non-SVI-shaped
 smiles; its linear wing extension can violate the Lee bound and is
 flagged, not hidden.

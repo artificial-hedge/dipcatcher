@@ -17,7 +17,7 @@ regime-switch generator.
 
 All data here is SYNTHETIC (simulated regime-switch heteroskedastic
 streams) — correctness evidence for the mechanism, never market evidence;
-no live-trading claims. Scores are proper (NLPD/log score) only. Torch
+Scores are proper (NLPD/log score) only. Torch
 tests skip cleanly when the nn extra is absent; the numpy core (gate math,
 kernel, mixture density, quadrature) always runs.
 """

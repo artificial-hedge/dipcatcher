@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 from sklearn.linear_model import LinearRegression
 
 from quant_fund.compute.cache import FitCache
+from quant_fund.compute.numba_guard import call_kernel
 from quant_fund.models.base import JoblibMixin, ModelMeta
 from quant_fund.models.ranking import _finite
 from quant_fund.models.vol_scope import (
@@ -22,7 +23,7 @@ try:
     from numba import njit
 
     _HAVE_NUMBA = True
-except Exception:  # pragma: no cover - numba is a required dependency
+except ImportError:  # pragma: no cover - numba is a required dependency
     _HAVE_NUMBA = False
 
     def njit(*_args: Any, **_kwargs: Any) -> Any:  # type: ignore[no-redef]
@@ -62,7 +63,7 @@ def _garch_fit_cache_key(model: Any, raw: object) -> str | None:
         import arch
 
         fitter_id = id(arch.arch_model)
-    except Exception:
+    except ImportError:
         fitter_id = 0
     return _GARCH_FIT_CACHE.hash_key(
         (
@@ -145,7 +146,7 @@ def ewma_variance(log_returns: NDArray[np.float64], lam: float = 0.94) -> NDArra
     if r.size == 0:
         raise ValueError("log_returns must be non-empty")
     if _HAVE_NUMBA:
-        return np.asarray(_ewma_variance_nb(r, float(lam)), dtype=np.float64)
+        return np.asarray(call_kernel(_ewma_variance_nb, r, float(lam)), dtype=np.float64)
     var = np.empty_like(r)
     var[0] = r[0] ** 2
     for t in range(1, r.size):

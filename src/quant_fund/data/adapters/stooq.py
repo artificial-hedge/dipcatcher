@@ -29,7 +29,7 @@ from quant_fund.utils.atomicio import atomic_write_parquet
 SOURCE = "stooq"
 REVISION = "STOOQ_VENDOR_ADJ"
 STOQ_URL = "https://stooq.com/q/d/l/?s={ticker}&i=d"
-USER_AGENT = "dipcatcher-research/1.0 (local file tape; not a live trading system)"
+USER_AGENT = "dipcatcher-research/1.0 (local file tape)"
 
 US_CLOSE = ZoneInfo("America/New_York")
 UK_CLOSE = ZoneInfo("Europe/London")

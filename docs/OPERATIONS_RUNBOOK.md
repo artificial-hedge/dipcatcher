@@ -114,8 +114,7 @@ publication, preserve the run directory and resume from the last valid
 
 ## Deployment
 
-There is **no live-trading deployment** — no broker connectivity exists
-(see [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md)). "Deployment"
+See [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md). "Deployment"
 here means three research/simulation surfaces:
 
 1. **Research harness (local or container).** `make sync` installs the locked

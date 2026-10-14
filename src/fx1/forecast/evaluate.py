@@ -223,7 +223,7 @@ def _signal_diagnostics(
         "orders_submitted": False,
         "note": (
             "Turnover and assumed cost of a placeholder score-to-signal map. "
-            "No performance or live-trading claim."
+            "No performance figure."
         ),
     }
 

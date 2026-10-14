@@ -9,7 +9,7 @@ deterministic-seed reproducibility.
 
 Honesty: every panel here is seeded SYNTHETIC data — a correctness fixture,
 never market evidence.  Only proper scores appear (QLIKE, pinball); no
-Sharpe/Sortino/Calmar/P&L/NAV, no live-trading or profitability claims.
+Sharpe/Sortino/Calmar/P&L/NAV.
 """
 
 from __future__ import annotations
@@ -424,9 +424,13 @@ def test_per_security_artifact_admits_only_per_security_consumers() -> None:
 def test_pooled_artifact_rejects_per_security_consumers_symmetrically() -> None:
     from quant_fund.models.volatility import GARCHVol
 
-    pooled = GARCHVol()
+    pooled = GARCHVol(series_scope="date_level_equal_weight_cross_section")
     with pytest.raises(ValueError, match="consumable only by date_level_portfolio"):
         pooled.assert_consumer_scope("per_security")
+    # The default univariate series is not a pooled overlay.
+    default = GARCHVol()
+    with pytest.raises(ValueError, match="univariate_return_series"):
+        default.assert_consumer_scope("per_security")
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,6 @@
 # Agent-based limit-order-book simulator
 
-This is a research simulator. Orders never leave the process. There is no
-broker, no order router, and no live trading path. Every report is a
+This is a research simulator. Orders never leave the process. Every report is a
 **simulation diagnostic** on a **SYNTHETIC** tape (`research_only`,
 `live_pnl_claim=false`, `evidence_class=SIMULATION_DIAGNOSTIC`). It is not
 a research-catalog score and it is not evidence about a traded book.

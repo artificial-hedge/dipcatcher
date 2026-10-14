@@ -19,8 +19,8 @@ Each command is a thin typed wrapper over the same library function the
 ``python -m`` entry point calls, so the two surfaces cannot drift. The
 ``python -m`` mains and their subprocess contract tests are untouched.
 
-Honesty contract: these lanes print JSON evidence documents. Nothing here is a
-live-trading claim; a promotion decision is a research verdict over proper
+Honesty contract: these lanes print JSON evidence documents.
+A promotion decision is a research verdict over proper
 scores, and every command echoes the DATA_LABEL of the inputs it was given.
 """
 

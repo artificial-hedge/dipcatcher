@@ -42,7 +42,7 @@ SOURCE_NAME = "hf_ohlcv_1m"
 # "vendor-adjusted" or "raw splits removed".
 REVISION_ID = "HF_OHLCV_1M_UNDECLARED_ADJ"
 ET = ZoneInfo("America/New_York")
-USER_AGENT = "dipcatcher-research/1.0 (hf ohlcv-1m cache; not a live trading system)"
+USER_AGENT = "dipcatcher-research/1.0 (hf ohlcv-1m cache)"
 
 VENDOR_COLUMNS = ("timestamp", "open", "high", "low", "close", "volume", "ticker")
 # Regular session minute starts: 09:30 inclusive through 15:59 inclusive.

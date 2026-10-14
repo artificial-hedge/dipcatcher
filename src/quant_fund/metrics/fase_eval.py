@@ -82,7 +82,7 @@ Deliberate deviations (documented, not hidden)
 
 Honesty: every score here is a proper score or an honest error measure
 (MAE/RMSE/MASE/CRPS and rank aggregates). No Sharpe/Sortino/Calmar/P&L/NAV is
-produced; nothing in this module is a live-trading claim. All randomness
+produced. All randomness
 (MLP init, minibatch sampling) flows through a single seeded numpy
 Generator, so repeated calls are bit-identical. Tests are SYNTHETIC
 correctness checks only — never market evidence.

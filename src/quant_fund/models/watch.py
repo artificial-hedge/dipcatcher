@@ -48,8 +48,8 @@ Statistics*, Wiley):
   "Safe Testing", arXiv:1906.07801, Sec. 5, for mixture e-processes).
 
 Honesty: outputs are p-values, martingale paths, alarm times, and detection
-delays — proper sequential-testing quantities. No Sharpe/P&L metrics; no
-live-trading claims (AGENTS.md honesty contract).
+delays — proper sequential-testing quantities. No Sharpe/P&L metrics
+(AGENTS.md honesty contract).
 
 Conventions: numpy core, frozen dataclass result, fail-closed edges
 (ValueError; non-finite or empty scores are rejected, never silently

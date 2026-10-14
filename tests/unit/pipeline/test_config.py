@@ -52,7 +52,7 @@ def test_config_inheritance_cannot_escape_root(tmp_path: Path) -> None:
 def test_live_requires_flag() -> None:
     # A3 #1 / F2.1 (PROOFCORE W5): the previous try/except-pass body swallowed
     # its own AssertionError and could never fail. This is the only unit test
-    # guarding AGENTS.md rule 3 (no live trading) by name — it must bite.
+    # live mode without the flag must still fail closed.
     with pytest.raises(ValidationError):
         AppConfig.model_validate({"runtime": {"mode": "live", "allow_live": False}})
 
@@ -334,15 +334,15 @@ def test_data_config_rejects_invalid_source_dimensions() -> None:
 
 
 def test_allow_live_without_live_mode_fail_closed() -> None:
-    """allow_live=true in research/paper/etc must fail closed (no live broker)."""
+    """allow_live=true in research/paper/etc must fail closed."""
     for mode in ("research", "backtest", "paper", "shadow"):
         with pytest.raises(ValueError, match="allow_live requires runtime.mode: live"):
             AppConfig.model_validate({"runtime": {"mode": mode, "allow_live": True}})
 
 
 def test_allow_live_with_live_mode_fail_closed_no_broker() -> None:
-    """Even mode=live + allow_live=true fails: no live broker adapter in repo."""
-    with pytest.raises(ValueError, match="no live broker adapter"):
+    """Even mode=live + allow_live=true fails."""
+    with pytest.raises(ValueError, match="allow_live is unsupported"):
         AppConfig.model_validate({"runtime": {"mode": "live", "allow_live": True}})
 
 

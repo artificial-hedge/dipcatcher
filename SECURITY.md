@@ -17,11 +17,8 @@ harness. Security-relevant surfaces:
   verification. Keys live only in the environment or in files outside the
   repository; only public keys (`quality/gate_signing.pub`) are tracked.
 
-This is **research infrastructure only**. There is no live-trading path: no
-broker connectivity, no order placement, no account balances, no P&L
-execution. Everything downstream of a decision is simulated or SYNTHETIC
-(and labeled as such); a security report that assumes a live trading
-account is out of scope by definition.
+This is **research infrastructure only**. Everything downstream of a
+decision is simulated or SYNTHETIC (and labeled as such).
 
 ## Supported versions
 
@@ -54,8 +51,6 @@ Sigstore and `gh attestation verify` cover signatures and SLSA provenance.
   honesty gates, and invalid receipts all *block* rather than warn.
 - Network access is opt-in (explicit `collect`, explicit API serve), never
   part of default ingest or training paths.
-- This repository has no broker connectivity and no order-placement path.
-  Reports that assume a live trading account are out of scope.
 
 ## Reporting a vulnerability
 
@@ -91,9 +86,6 @@ hit unexpected personal data and report it.
   an impact on dipcatcher or fx-1 as built from this repository.
 - Scanner results that are content hashes, receipt ids, or the synthetic
   canary in `tests/fx1/test_sources.py` (`test_probe_never_leaks_secret_values`).
-- Requests for live-trading, broker, or order-placement behavior. This
-  project does not ship that.
-
 ## Supply chain
 
 - Python dependencies are locked (`uv.lock`), npm projects each have a

@@ -89,8 +89,7 @@ algorithmic-correctness evidence, never market evidence. The Sharpe-like
 training objective and mean-return quantities are simulator-internal
 training signals reported only under ``sim_internal_*`` keys (never
 headlined); the headline-eligible diagnostics are risk-sensitivity (delta
-exposure) quantities. No live-trading claims — no broker connectivity
-exists in this repo.
+exposure) quantities.
 
 Documented simplifications vs the paper: static per-contract signals ``X_i``
 (a tanh-bounded parameter per straddle) instead of their LSTM ``X_{i,t} =
@@ -881,8 +880,8 @@ def evaluate_portfolio(
     objective and mean portfolio return are simulator-internal training
     signals and are namespaced ``sim_internal_*`` (never headline metrics,
     AGENTS.md honesty contract). ``variant`` optionally adds the realized
-    ``penalty_value``. SYNTHETIC diagnostics, never market evidence; no
-    live-trading claims. Fail-closed on zero gross allocation (exposures
+    ``penalty_value``. SYNTHETIC diagnostics, never market evidence.
+    Fail-closed on zero gross allocation (exposures
     undefined) and degenerate return variance.
     """
     _check_marks(marks)

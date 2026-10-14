@@ -7,8 +7,8 @@ variance); Black & Scholes (1973) / Merton (1973, delta baseline); Hamilton
 (1989, regime switching); Davis & Norman (1990, proportional costs).
 
 All data here is SYNTHETIC (simulated GBM / regime-switch paths) —
-correctness evidence for the algorithm, never market evidence; no
-live-trading claims. Torch tests skip cleanly when the nn extra is absent.
+correctness evidence for the algorithm, never market evidence.
+Torch tests skip cleanly when the nn extra is absent.
 """
 
 from __future__ import annotations

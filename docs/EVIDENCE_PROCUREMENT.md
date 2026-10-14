@@ -5,8 +5,7 @@ This is a checklist of exactly what to buy or authorize, from which *class* of
 provider, and the pass/fail tests each item must clear before it counts as
 evidence for the five minimum-evidence conditions in
 [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md). Every row has an
-owner and an objective pass criterion. Nothing here is a live-trading claim;
-it is the evidence needed *before* any live claim could ever be considered.
+owner and an objective pass criterion.
 
 > **Honesty rule that governs this whole document.** A module existing, an
 > adapter compiling, or a SYNTHETIC fixture passing is **never** evidence. Only

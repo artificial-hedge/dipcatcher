@@ -32,7 +32,7 @@ def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
     )
     typer.echo(
         "ls: dipcatcher ls hunt|book|race|confirm "
-        "(frozen Lightspeed engines; research_only, no live broker)"
+        "(frozen Lightspeed engines; research_only)"
     )
     cfg = _cfg(config)
     ns = cfg.northset
@@ -212,7 +212,7 @@ def membership_coverage_cmd(
 
     For each anchor date, finds the first panel session on or after that day
     and prints the fraction of index members with at least one real bar.
-    Research diagnostic only — not a live-trading claim.
+    Research diagnostic only.
     """
     import json
 

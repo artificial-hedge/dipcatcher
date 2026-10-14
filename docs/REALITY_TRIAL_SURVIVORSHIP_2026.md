@@ -2,8 +2,8 @@
 
 Research diagnostic. Annualized ratio means a Sharpe ratio:
 per-period mean over sample standard deviation, times the square
-root of the periods-per-year count. It is not a promotion and not
-a live-trading claim. Reality-filter thresholds were not edited.
+root of the periods-per-year count. It is not a promotion.
+Reality-filter thresholds were not edited.
 Round-1 ledger rows were not rewritten.
 
 Verdict: `deflated`.

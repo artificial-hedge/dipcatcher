@@ -29,7 +29,7 @@ Measurements:
   unknown), not treated as unfilled.
 
 Honesty: every output is a labeled SYNTHETIC correctness diagnostic, never
-market evidence; no live-trading claim, no PnL headlining. Fail-closed:
+market evidence. Fail-closed:
 empty trade/submission streams raise instead of fabricating rates.
 """
 

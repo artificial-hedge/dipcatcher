@@ -108,7 +108,7 @@ _EXPECTED_KIND = {
 def test_lane_help(cmd: str) -> None:
     result = runner.invoke(app, [cmd, "--help"])
     assert result.exit_code == 0, result.output
-    assert "--out-dir" in result.output
+    assert "--out-dir" in _plain(result.output)
 
 
 @pytest.mark.parametrize("cmd", sorted(_LANE_ARGS))

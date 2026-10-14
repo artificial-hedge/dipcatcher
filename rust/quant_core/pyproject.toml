@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "quant_core"
 version = "0.1.0"
-description = "Optional PyO3 kernels for dipcatcher. Not a live-trading component."
+description = "Optional PyO3 kernels for dipcatcher."
 requires-python = ">=3.12"
 classifiers = ["Programming Language :: Rust"]
 

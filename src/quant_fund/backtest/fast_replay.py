@@ -44,6 +44,7 @@ from quant_fund.backtest.engine import (
     _validate_bar_panel,
     run_backtest,
 )
+from quant_fund.compute.numba_guard import compiler_defect
 from quant_fund.config.models import AppConfig, CostConfig, FillConvention, RiskGateConfig
 from quant_fund.execution.spread_calibration import is_calibrated_spread_estimator
 from quant_fund.monitoring.kill_switch import KillSwitch
@@ -912,6 +913,12 @@ def _require_no_risk_overlay(risk_overlay: Any) -> None:
         raise ValueError("fast replay does not support risk_overlay")
 
 
+def _degrade_or_reraise_replay(exc: BaseException) -> None:
+    """Raise ``exc`` unless this kernel failure should fall back to Python."""
+    if isinstance(exc, AttributeError) and not compiler_defect(exc):
+        raise exc
+
+
 def run_backtest_fast(
     bars: pl.DataFrame,
     weights: pl.DataFrame,
@@ -1085,11 +1092,11 @@ def run_backtest_fast(
             # Fail-closed paths reproduced by the kernel — same exceptions
             # the reference raises; propagate, do not fall back.
             raise
-        except (NumbaError, TypeError, RuntimeError):
-            # Narrowed from `except Exception` (quality ratchet). Only numba
-            # machinery failures (compile/type errors on an exotic environment)
-            # land here — degrade to the interpreted loop, which is bit-identical,
-            # rather than failing the run. Exotic errors propagate.
+        except (NumbaError, TypeError, RuntimeError, AttributeError) as exc:
+            # Numba machinery failures degrade to the interpreted loop, which
+            # is bit-identical. AttributeError degrades only for the known
+            # np.empty overload defect; every other one still propagates.
+            _degrade_or_reraise_replay(exc)
             kernel_out = None
     if kernel_out is not None:
         (

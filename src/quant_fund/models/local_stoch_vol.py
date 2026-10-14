@@ -1,8 +1,7 @@
 """Dupire (1994) local volatility + stochastic-local-volatility (SLV) Monte Carlo.
 
 SYNTHETIC research module: every surface here is model-generated (closed-form
-SABR/Heston or Monte Carlo), never market data. No live-trading or market
-evidence claim is made or implied.
+SABR/Heston or Monte Carlo), never market data.
 
 Pieces
 ------

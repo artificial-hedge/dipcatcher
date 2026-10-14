@@ -35,8 +35,7 @@ payload, ``receipt_sha256 = sha256(canonical_json_bytes(payload))`` computed
 before the field is attached — the repo-wide seal convention.
 
 Honesty: every output is a SYNTHETIC correctness diagnostic on simulated
-placement, never market evidence. No broker connectivity, no live-trading
-claim, no headline PnL anywhere in this module.
+placement, never market evidence. No headline PnL anywhere in this module.
 """
 
 from __future__ import annotations

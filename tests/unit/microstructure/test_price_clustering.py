@@ -3,7 +3,7 @@
 Mod-m residue clustering of limit-order placement, reachable-normalized so it
 works on integer tick levels (the ZI-LOB sim) and on real prices snapped to a
 tick grid. Everything is **labeled SYNTHETIC** correctness validation —
-never market evidence, no live-trading claim.
+never market evidence.
 """
 
 from __future__ import annotations

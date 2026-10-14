@@ -302,6 +302,7 @@ flowchart LR
   quant_fund_api -->|8| quant_fund_utils
   quant_fund_audit -->|2| quant_fund_research
   quant_fund_audit -->|3| quant_fund_utils
+  quant_fund_backtest -->|1| quant_fund_compute
   quant_fund_backtest -->|8| quant_fund_config
   quant_fund_backtest -->|8| quant_fund_execution
   quant_fund_backtest -->|6| quant_fund_metrics
@@ -355,6 +356,7 @@ flowchart LR
   quant_fund_execution -->|1| quant_fund_portfolio
   quant_fund_execution -->|3| quant_fund_schemas
   quant_fund_execution -->|2| quant_fund_utils
+  quant_fund_features -->|1| quant_fund_compute
   quant_fund_features -->|1| quant_fund_config
   quant_fund_features -->|2| quant_fund_data
   quant_fund_features -->|1| quant_fund_schemas
@@ -404,13 +406,14 @@ flowchart LR
   quant_fund_metrics -->|1| quant_fund_portfolio
   quant_fund_metrics -->|23| quant_fund_utils
   quant_fund_metrics -->|1| quant_fund_validation
+  quant_fund_microstructure -->|1| quant_fund_compute
   quant_fund_microstructure -->|1| quant_fund_labels
   quant_fund_microstructure -->|2| quant_fund_metrics
   quant_fund_microstructure -->|5| quant_fund_models
   quant_fund_microstructure -->|3| quant_fund_northset
   quant_fund_microstructure -->|8| quant_fund_schemas
   quant_fund_microstructure -->|322| quant_fund_utils
-  quant_fund_models -->|1| quant_fund_compute
+  quant_fund_models -->|3| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
   quant_fund_models -->|58| quant_fund_metrics
@@ -484,12 +487,9 @@ flowchart LR
   quant_fund_proof -->|1| quant_fund_config
   quant_fund_proof -->|2| quant_fund_leakage
   quant_fund_proof -->|1| quant_fund_metrics
-  quant_fund_proof -->|1| quant_fund_pipeline
   quant_fund_proof -->|1| quant_fund_pit
   quant_fund_proof -->|12| quant_fund_proofcore
-  quant_fund_proof -->|1| quant_fund_registry
-  quant_fund_proof -->|1| quant_fund_research
-  quant_fund_proof -->|2| quant_fund_utils
+  quant_fund_proof -->|1| quant_fund_utils
   quant_fund_public -->|1| quant_fund_backtest
   quant_fund_public -->|2| quant_fund_config
   quant_fund_public -->|1| quant_fund_data
@@ -519,16 +519,17 @@ flowchart LR
   quant_fund_research -->|19| quant_fund_microstructure
   quant_fund_research -->|10226| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
-  quant_fund_research -->|13| quant_fund_pipeline
+  quant_fund_research -->|14| quant_fund_pipeline
   quant_fund_research -->|6| quant_fund_portfolio
   quant_fund_research -->|2| quant_fund_proof
   quant_fund_research -->|4| quant_fund_proofcore
   quant_fund_research -->|1| quant_fund_quant_models
   quant_fund_research -->|3| quant_fund_reality
+  quant_fund_research -->|1| quant_fund_registry
   quant_fund_research -->|1| quant_fund_reporting
   quant_fund_research -->|1| quant_fund_robustness
   quant_fund_research -->|3| quant_fund_schemas
-  quant_fund_research -->|146| quant_fund_utils
+  quant_fund_research -->|147| quant_fund_utils
   quant_fund_research -->|11| quant_fund_validation
   quant_fund_risk -->|6| quant_fund_metrics
   quant_fund_risk -->|2| quant_fund_models
@@ -717,8 +718,7 @@ sequenceDiagram
    backtest engine. Rejects are counted, not silently dropped.
 5. **Kill switch.** Only `ENABLED` permits orders; unknown states block;
    flatten requires explicit human authorization (`monitoring/kill_switch.py`).
-6. **No live path.** `runtime.allow_live: true` raises at config validation —
-   no live broker adapter ships in this repository.
+6. **`allow_live: true` raises at config validation.**
 7. **Receipts are immutable evidence.** `run_research` writes
    `runs/<run_id>.{json,md}` atomically and binds `immutable_json_sha256`
    over the canonical payload; `verify_research_artifact` recomputes the
@@ -788,15 +788,15 @@ sequenceDiagram
 | `quant_fund.backtest` | 16 |
 | `quant_fund.calendars` | 8 |
 | `quant_fund.cli` | 18 |
-| `quant_fund.combination` | 8 |
-| `quant_fund.compute` | 7 |
+| `quant_fund.combination` | 18 |
+| `quant_fund.compute` | 8 |
 | `quant_fund.config` | 7 |
 | `quant_fund.data` | 45 |
-| `quant_fund.decay` | 7 |
+| `quant_fund.decay` | 16 |
 | `quant_fund.diffbacktest` | 8 |
 | `quant_fund.execution` | 15 |
 | `quant_fund.features` | 9 |
-| `quant_fund.flowbars` | 9 |
+| `quant_fund.flowbars` | 18 |
 | `quant_fund.formal` | 8 |
 | `quant_fund.fusion` | 7 |
 | `quant_fund.hedge_lab` | 16 |
@@ -820,7 +820,7 @@ sequenceDiagram
 | `quant_fund.pit` | 8 |
 | `quant_fund.portfolio` | 14 |
 | `quant_fund.pretrade` | 9 |
-| `quant_fund.proof` | 10 |
+| `quant_fund.proof` | 9 |
 | `quant_fund.proofcore` | 7 |
 | `quant_fund.public` | 1 |
 | `quant_fund.quant_models` | 17 |
@@ -828,7 +828,7 @@ sequenceDiagram
 | `quant_fund.realized` | 2 |
 | `quant_fund.registry` | 7 |
 | `quant_fund.reporting` | 6 |
-| `quant_fund.research` | 1861 |
+| `quant_fund.research` | 1862 |
 | `quant_fund.risk` | 7 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 9 |
@@ -837,9 +837,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13388**
+- Modules scanned: **13417**
 - Packages: **94**
-- Cross-package import edges: **392**
+- Cross-package import edges: **393**
 
 <!-- END GENERATED: coverage -->
 
