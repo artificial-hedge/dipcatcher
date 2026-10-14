@@ -31,8 +31,7 @@ def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
         "(session soft-verify dispatcher; research_only, no Sharpe)"
     )
     typer.echo(
-        "ls: dipcatcher ls hunt|book|race|confirm "
-        "(frozen Lightspeed engines; research_only)"
+        "ls: dipcatcher ls hunt|book|race|confirm (frozen Lightspeed engines; research_only)"
     )
     cfg = _cfg(config)
     ns = cfg.northset
