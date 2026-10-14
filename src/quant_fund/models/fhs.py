@@ -98,12 +98,17 @@ class FhsSkewDistribution(JoblibMixin):
             raise ValueError("one-step sigma forecast is degenerate")
         self.sigma_end_ = float(np.sqrt(s2_end))
         p = self.params_
-        q = np.array(
-            [
-                self.mu_ + self.sigma_end_ * skew_t_ppf(t, p["nu"], p["lam"], p["mu"], p["sigma"])
-                for t in self.taus
-            ]
+        knots = np.asarray(
+            skew_t_ppf(
+                np.asarray(self.taus, dtype=float),
+                p["nu"],
+                p["lam"],
+                p["mu"],
+                p["sigma"],
+            ),
+            dtype=float,
         )
+        q = self.mu_ + self.sigma_end_ * knots
         self.q_ = rearrange_quantiles(q.reshape(1, -1))[0]
         return self
 

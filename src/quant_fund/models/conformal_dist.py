@@ -58,8 +58,9 @@ class ConformalTDistribution(JoblibMixin):
         cut = (2 * yy.size) // 3
         y_base, y_cal = yy[:cut], yy[cut:]
         params = skew_t_fit(y_base)
-        q_base = np.array(
-            [skew_t_ppf(t, params["nu"], params["lam"], params["mu"], params["sigma"]) for t in tt]
+        q_base = np.asarray(
+            skew_t_ppf(tt, params["nu"], params["lam"], params["mu"], params["sigma"]),
+            dtype=float,
         )
         n = int(y_cal.size)
         shifts = np.empty(tt.size)

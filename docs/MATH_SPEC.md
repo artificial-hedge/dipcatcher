@@ -132,8 +132,10 @@ Raftery CRPS). Let \(z=(y-\mu)/\sigma\) and \(f_\nu\)/\(F_\nu\) the standard-t p
 Lab helpers: `crps_student_t` (elementwise) / `mean_crps_student_t`. Contract:
 \(\nu\le 2\) or non-finite → honest NaN (stricter than the finite-mean \(\nu>1\)
 domain — fail-closed with finite variance); non-positive/non-finite \(\sigma\) → NaN;
-empty → []/NaN; length mismatch → ValueError. Research-diagnostic only — never a
-live capital claim.
+empty → []/NaN; length mismatch → ValueError. \(F_\nu\) is `scipy.special.stdtr`
+and \(f_\nu\) is the closed-form Student-t density (the same primitives
+`scipy.stats.t` uses). A constant \(\nu\) evaluates the beta ratio once.
+Research-diagnostic only — never a live capital claim.
 
 Distribution bench (`_distribution_horizon_scores`) reports research-only
 `crps_scaled_student_t_closed` **beside** quantile Riemann `crps_scaled_student_t`

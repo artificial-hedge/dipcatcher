@@ -590,3 +590,29 @@ degenerate-cell caveat is binding and is recorded in the `fit_student_t`
 docstring: a degenerate-cell `nu` must never be quoted as an estimate in any
 receipt, report, or headline.
 
+## Score-kernel pass (2026-10-14) — Student-t CRPS and Hansen quantiles
+
+SYNTHETIC / lab micro-benchmarks only. `live_pnl_claim=false`. No Sharpe,
+P&L, or NAV.
+
+Same process, seeded inputs (`numpy` Generator seed `20261007` for CRPS;
+fixed Hansen parameters `ν=7`, `λ=0.3`, `μ=0.1`, `σ=1.2`). One warmup call,
+then the median of the timed repetitions.
+
+| Call | before | after | median speedup | max abs diff |
+|---|---:|---:|---:|---:|
+| `crps_student_t`, n=5000, scalar ν=5, 40 reps | 1.215 ms (`scipy.stats.t` pdf/cdf) | 0.920 ms (`stdtr` + closed-form density, beta ratio once) | 1.32× | 4.44e-16 |
+| Hansen quantile row, 19 taus, Brent `xtol=1e-10` vs closed form | 3.651 ms median of 8 | 0.017 ms median of 200 | 216× | 2.50e-11 |
+
+Wall time moves with load (an earlier same-process CRPS pair was 1.413 ms → 0.993 ms, 1.42×). The max-abs columns are the contract.
+
+`SkewTDistribution`, filtered historical simulation, conformal-t, and the
+stack head evaluate that row once per fit and tile it on `predict`.
+`ScaledStudentTDistribution` caches `stdtrit` knots the same way. The MLE
+objective is unchanged.
+
+Equivalence: `tests/unit/research/test_crps_closed_form.py` (independent
+`scipy.stats.t` reference) and `tests/unit/models/test_skew_t.py` (λ=0
+unit-variance Student-t, plus Brent inversion of a separately coded
+`scipy.stats.t` splice).
+

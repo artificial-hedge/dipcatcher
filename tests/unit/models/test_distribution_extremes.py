@@ -145,6 +145,24 @@ def test_scaled_student_t_empty_short_ordered() -> None:
     _assert_ordered(short.predict(np.array([0.01, 0.03])))
 
 
+def test_scaled_student_t_reuses_quantile_knots() -> None:
+    """Knots match ``scipy.stats.t.ppf`` and stay cached across predict calls."""
+    from scipy.stats import t as student_t
+
+    rng = np.random.default_rng(4)
+    y = rng.standard_t(5.0, size=80) * 0.02
+    sc = np.full(80, 0.02)
+    m = ScaledStudentTDistribution(TAUS).fit(y, sc)
+    assert m._z is not None
+    expect = student_t.ppf(np.asarray(TAUS, dtype=float), m.nu)
+    assert m._z == pytest.approx(expect, rel=1e-12, abs=1e-12)
+    first = m.predict(np.array([0.02, 0.04])).copy()
+    m._z[0] = float(m._z[0]) + 0.5
+    second = m.predict(np.array([0.02, 0.04]))
+    assert second[0, 0] != pytest.approx(first[0, 0])
+    assert second[0, 1] == pytest.approx(first[0, 1])
+
+
 def test_scaled_student_t_nonfinite_and_unfitted() -> None:
     y = np.array([0.0, np.nan, 0.01, -0.02, np.inf, 0.03, -0.01, 0.02])
     sc = np.array([0.02, 0.02, np.nan, 0.02, 0.02, 0.03, 0.02, 0.02])

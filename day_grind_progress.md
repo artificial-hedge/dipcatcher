@@ -1,7 +1,14 @@
 # Day grind progress
 
 ## INFLIGHT
-(none — Day Wave 140 GREEN)
+(none — Student-t score kernel + Hansen quantile closed form GREEN on the touch set)
+
+
+## Score path — Student-t CRPS kernel and Hansen quantile (2026-10-14)
+- GREEN: `crps_student_t` evaluates \(F_\nu\) with `stdtr` and \(f_\nu\) with the closed-form density. A constant \(\nu\) computes the beta ratio once. Proper-score values match an independent `scipy.stats.t` reference. Not a Sharpe/P&L/NAV claim.
+- GREEN: `skew_t_ppf` is the closed-form inverse of the Hansen (1994) splice (λ=0 is unit-variance Student-t; Brent inversion of `scipy.stats.t.cdf` agrees). `SkewTDistribution` / FHS / conformal / stack call it once per fit. `ScaledStudentTDistribution` caches `stdtrit` knots. Predict tiles those knots.
+- Research/infrastructure only. Source stays readable: receipts and the license are the anti-forgery controls, not obfuscation.
+- Same-process SYNTHETIC medians: CRPS n=5000 1.215 ms → 0.920 ms (max abs 4.44e-16); 19-tau Hansen row 3.651 ms → 0.017 ms (max abs 2.50e-11 vs Brent). See `docs/PERF.md`.
 
 
 ## Day Wave 140 — named analytical nonlinear Ledoit–Wolf path (2026-09-19)
