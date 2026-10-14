@@ -23,7 +23,9 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
-Array = NDArray[np.float64]
+from typing import TypeAlias
+
+Array: TypeAlias = NDArray[np.float64]
 
 
 def _sorted_losses(losses: Array, min_obs: int = 5) -> Array:
