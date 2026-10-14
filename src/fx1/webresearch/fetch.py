@@ -172,8 +172,10 @@ class _PinnedHTTPSConnection(http.client.HTTPSConnection):
         self._pinned_ip = pinned_ip
         self._bind_address = _bind_address(kwargs.get("source_address"))
         context = kwargs.get("context")
-        self._tls_context: ssl.SSLContext = (
-            context if isinstance(context, ssl.SSLContext) else ssl.create_default_context()
+        # Production uses ``ssl.SSLContext``; tests inject a minimal stub with
+        # ``wrap_socket`` so TLS hostname identity is observable offline.
+        self._tls_context: ssl.SSLContext | Any = (
+            ssl.create_default_context() if context is None else context
         )
 
     def connect(self) -> None:

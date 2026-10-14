@@ -276,3 +276,41 @@ def crown_jewels_errors(
         elif hash_bytes(path.read_bytes()) != expected:
             errors.append(f"jewel_mutated:{name}")
     return sorted(errors)
+
+
+DISTRIBUTION_LINEAGE_SCHEMA = "distribution_lineage.v1"
+_EPOCH_HEADS_PATH = Path("quality/epoch_heads.json")
+_REPO_INTEGRITY_PATH = Path("quality/repo_integrity.json")
+
+
+def distribution_lineage_digest(root: Path | str = ".") -> dict[str, Any]:
+    """Bind a checkout to the signed integrity substrate at runtime.
+
+    The digest is not secret — it is a compact, hard-to-forge fingerprint of
+    whether this tree still matches the committed crown-jewel pins, epoch
+    head ledger, and repo-integrity attestation. A shallow fork that drops
+    ``quality/`` or rewrites gate files without re-minting every downstream
+    receipt diverges on the next ``doctor`` call.
+    """
+    base = Path(root)
+    pin = base / DEFAULT_PIN_PATH
+    payload: dict[str, Any] = {
+        "schema": DISTRIBUTION_LINEAGE_SCHEMA,
+        "crown_jewels_pin_present": pin.is_file(),
+        "jewels_intact": crown_jewels_errors(base) == [],
+    }
+    for label, rel in (
+        ("crown_jewels_pin_sha256", DEFAULT_PIN_PATH),
+        ("epoch_heads_sha256", _EPOCH_HEADS_PATH),
+        ("repo_integrity_sha256", _REPO_INTEGRITY_PATH),
+    ):
+        path = base / rel
+        payload[label] = hash_bytes(path.read_bytes()) if path.is_file() else None
+    bind_parts = [
+        f"{key}={payload[key]}"
+        for key in sorted(payload)
+        if key.endswith("_sha256") and payload[key] is not None
+    ]
+    bind_parts.append(f"jewels_intact={payload['jewels_intact']}")
+    payload["digest"] = hash_bytes("\n".join(bind_parts).encode("utf-8"))
+    return payload
