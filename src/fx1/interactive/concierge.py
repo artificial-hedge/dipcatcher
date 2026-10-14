@@ -93,6 +93,11 @@ conversation          plain text chats with the active model (tools: flash, web,
 /exit                 leave (Ctrl-C twice also exits; once cancels the running job)
 """
 
+# Console loop: faster polls while a background job is active so progress and
+# cancellation stay snappy; idle polls stay cheap for the CPU.
+_ACTIVE_JOB_POLL_S = 0.04
+_MAX_PROGRESS_EVENTS_PER_TICK = 48
+
 _BUDGET_DIMENSIONS: dict[str, str] = {
     "wall": "max_wall_s",
     "harness": "max_harness_steps",
@@ -162,9 +167,11 @@ class BackgroundJob:
             self.thread.join(timeout_s)
         return self.done_event.is_set()
 
-    def drain(self) -> list[tuple[str, str]]:
+    def drain(self, limit: int | None = None) -> list[tuple[str, str]]:
+        """Pop queued progress events; optional *limit* caps work per console tick."""
         out: list[tuple[str, str]] = []
-        while self.events:
+        cap = limit if limit is not None else len(self.events)
+        while self.events and len(out) < cap:
             out.append(self.events.popleft())
         return out
 
@@ -363,7 +370,7 @@ class Concierge:
         typed lines so the conversation stays responsive during research."""
         if self._job is None:
             return
-        for event, detail in self._job.drain():
+        for event, detail in self._job.drain(limit=_MAX_PROGRESS_EVENTS_PER_TICK):
             self._say(f"[{self._job.label}] {event}: {detail}")
         if self._job.done_event.is_set() and not self._job.announced:
             self._job.announced = True
@@ -1527,6 +1534,13 @@ def _dispatch_line(concierge: Concierge, line: str, output_fn: Callable[..., Non
     return False
 
 
+def _console_poll_timeout(concierge: Concierge, idle_timeout_s: float) -> float:
+    job = concierge.job
+    if job is not None and job.running:
+        return _ACTIVE_JOB_POLL_S
+    return idle_timeout_s
+
+
 def run_console(
     model: str = DEFAULT_MODEL,
     *,
@@ -1568,7 +1582,8 @@ def run_console(
     try:
         while True:
             try:
-                line = reader.read("dip › " if prompt_pending else "", poll_timeout_s)
+                timeout_s = _console_poll_timeout(concierge, poll_timeout_s)
+                line = reader.read("dip › " if prompt_pending else "", timeout_s)
             except EOFError:
                 output_fn("")
                 concierge.shutdown()

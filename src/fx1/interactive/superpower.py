@@ -224,10 +224,32 @@ CAPABILITIES: dict[str, dict[str, Any]] = {
 
 ModelFn = Callable[[str], str]
 
+# Precompiled word-boundary matchers — planner scoring runs on every /superpower
+# turn and must not re-parse trigger strings or rebuild regex objects per call.
+_TRIGGER_PATTERNS: dict[str, tuple[re.Pattern[str], ...]] = {
+    cap_id: tuple(re.compile(rf"\b{re.escape(term)}\b") for term in terms)
+    for cap_id, terms in _TRIGGERS.items()
+}
+_WEB_TRIGGER_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(rf"\b{re.escape(term)}\b") for term in _WEB_TRIGGERS
+)
+
 
 def _score_goal(goal: str, terms: tuple[str, ...]) -> int:
+    """Score *goal* against raw *terms* (registry overrides in tests)."""
     lowered = goal.lower()
     return sum(1 for term in terms if re.search(rf"\b{re.escape(term)}\b", lowered))
+
+
+def _score_goal_indexed(goal: str, patterns: tuple[re.Pattern[str], ...]) -> int:
+    lowered = goal.lower()
+    return sum(1 for pattern in patterns if pattern.search(lowered))
+
+
+def _score_capability(goal: str, cap_id: str, registry_terms: tuple[str, ...] | None) -> int:
+    if registry_terms is not None:
+        return _score_goal(goal, registry_terms)
+    return _score_goal_indexed(goal, _TRIGGER_PATTERNS.get(cap_id, ()))
 
 
 @dataclass
@@ -317,7 +339,7 @@ def _scored_harness_ids(
     for cap_id, meta in registry.items():
         if meta.get("kind") != KIND_HARNESS:
             continue
-        score = _score_goal(goal, _TRIGGERS.get(cap_id, ()))
+        score = _score_capability(goal, cap_id, None)
         if score:
             scored.append((score, cap_id))
     scored.sort(key=lambda pair: pair[0], reverse=True)
@@ -376,7 +398,13 @@ def _deterministic_selection(
     for cap_id in harness_ids:
         meta = registry[cap_id]
         terms = _TRIGGERS.get(cap_id, ())
-        matched = [t for t in terms if re.search(rf"\b{re.escape(t)}\b", lowered)]
+        patterns = _TRIGGER_PATTERNS.get(cap_id, ())
+        if len(patterns) == len(terms):
+            matched = [
+                term for term, pat in zip(terms, patterns, strict=True) if pat.search(lowered)
+            ]
+        else:
+            matched = [t for t in terms if re.search(rf"\b{re.escape(t)}\b", lowered)]
         selected.append(
             PlannedCapability(
                 cap_id,
@@ -384,7 +412,7 @@ def _deterministic_selection(
                 f"{meta.get('description', '')}",
             )
         )
-    if _score_goal(goal, _WEB_TRIGGERS) or not harness_ids:
+    if _score_goal_indexed(goal, _WEB_TRIGGER_PATTERNS) or not harness_ids:
         selected.append(
             PlannedCapability(
                 "web_research",
