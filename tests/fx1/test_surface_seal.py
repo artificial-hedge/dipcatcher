@@ -11,7 +11,12 @@ from fx1.interactive.superpower import (
     CAPABILITIES,
     interactive_surface_digest,
 )
-from fx1.interactive.surface_seal import build_surface_seal, surface_digest, surface_payload
+from fx1.interactive.surface_seal import (
+    build_surface_seal,
+    surface_digest,
+    surface_payload,
+    surface_weave,
+)
 
 
 def test_surface_payload_covers_every_harness_command() -> None:
@@ -44,3 +49,20 @@ def test_surface_digest_is_stable_hex() -> None:
         ensure_ascii=True,
     )
     assert surface_digest(raw=raw) == digest
+
+
+def test_surface_weave_is_stable_secondary_fingerprint() -> None:
+    payload = surface_payload(
+        capabilities=CAPABILITIES,
+        triggers=_TRIGGERS,
+        web_triggers=_WEB_TRIGGERS,
+    )
+    weave = surface_weave(payload)
+    assert len(weave) == 64
+    seal = build_surface_seal(
+        capabilities=CAPABILITIES,
+        triggers=_TRIGGERS,
+        web_triggers=_WEB_TRIGGERS,
+    )
+    assert seal["weave"] == weave
+    assert weave != seal["digest"]

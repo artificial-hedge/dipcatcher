@@ -9,11 +9,11 @@ name: Platform Matrix
 # ceiling is 3.14, the newest stable CPython; wheel coverage for locked deps on
 # cp314 is verified here rather than assumed.
 #
-# Sharding: each (os, python) combo is split into NUM_SHARDS jobs. A shard
-# job re-runs `pytest --collect-only -q` (which prints "<path>: <count>" per
-# file) and greedy-assigns files by test count. The assignment is deterministic
-# because the inventory is LC_ALL=C sorted. These file shards avoid launching
-# nested xdist workers within every platform job.
+# Sharding: each (os, python) combo is split into NUM_SHARDS jobs. A dedicated
+# inventory job runs ``pytest --collect-only`` once per (os, python); shard jobs
+# download that inventory and greedy-assign files by test count. The assignment
+# is deterministic because the inventory is LC_ALL=C sorted. These file shards
+# avoid launching nested xdist workers within every platform job.
 
 on:
   pull_request:
@@ -22,7 +22,7 @@ on:
     branches: [main]
     # This workflow stays on push — it is the Tier-A cross-platform
     # compatibility proof, so a code push must exercise it. Doc-only churn
-    # must not: 36 jobs (3 OS x 3 Python x 4 shards) is the single largest
+    # must not: 45 jobs (9 inventory + 36 shards) is the single largest
     # queue contributor, and a Markdown edit cannot change wheel availability.
     paths-ignore:
       - "**/*.md"
@@ -32,9 +32,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   # Do NOT cancel in-flight runs — this is the Tier-A cross-platform proof
-  # (36 jobs). With 36 jobs per push, cancel-in-progress cancelled the previous
-  # push before it could finish and neither push ever produced a verdict. The
-  # group key still serialises; runs drain instead of superseding each other.
+  # (36 shard jobs). With many jobs per push, cancel-in-progress cancelled the
+  # previous push before it could finish and neither push ever produced a
+  # verdict. The group key still serialises; runs drain instead of superseding
+  # each other.
   cancel-in-progress: false
 
 permissions:
@@ -64,8 +65,81 @@ env:
   HYPOTHESIS_PROFILE: ci
 
 jobs:
+  inventory:
+    name: ${{ matrix.os }} / py${{ matrix.python }} / inventory
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # historical receipt tests resolve archived source commits
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install macOS OpenMP runtime for locked LightGBM wheel
+        if: runner.os == 'macOS'
+        run: |
+          brew install libomp
+          test -f "$(brew --prefix libomp)/lib/libomp.dylib"
+      - name: Verify Windows GCC for native C parity
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $command = Get-Command gcc -ErrorAction SilentlyContinue
+          $compiler = if ($command) { $command.Source } else { 'C:\msys64\mingw64\bin\gcc.exe' }
+          if (-not (Test-Path $compiler)) {
+            throw 'GCC is unavailable; native C parity cannot run on Windows'
+          }
+          Add-Content -Path $env:GITHUB_PATH -Value (Split-Path -Parent $compiler)
+          & $compiler --version
+      - name: Sync locked environment
+        run: uv sync --frozen --all-groups --all-extras
+      - name: Build test-file inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          collect_out="$RUNNER_TEMP/matrix-collect.txt"
+          collect_err="$RUNNER_TEMP/matrix-collect.err"
+          set +e
+          uv run pytest --collect-only -q -m "not network" >"$collect_out" 2>"$collect_err"
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::pytest --collect-only exited $rc"
+            echo "----- collect stderr (tail) -----"
+            tail -60 "$collect_err" || true
+            echo "----- collect stdout (tail) -----"
+            tail -30 "$collect_out" || true
+            exit "$rc"
+          fi
+          inventory="$RUNNER_TEMP/matrix-inventory.txt"
+          grep -E '^tests/.*: [0-9]+$' "$collect_out" \
+            | LC_ALL=C sort -t: -k2 -nr > "$inventory"
+          files=$(wc -l < "$inventory" | tr -d ' ')
+          tests=$(awk -F': ' '{s += $NF} END {print s}' "$inventory")
+          echo "inventory: $files files, $tests tests"
+          if [ "$files" -lt 650 ] || [ "$tests" -lt 5500 ]; then
+            echo "::error::pytest collect inventory unexpectedly small ($files files, $tests tests); output format or test selection may have changed"
+            exit 1
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: matrix-inventory-${{ matrix.os }}-py${{ matrix.python }}
+          path: ${{ runner.temp }}/matrix-inventory.txt
+          retention-days: 2
+          if-no-files-found: error
+
   test:
     name: ${{ matrix.os }} / py${{ matrix.python }} / shard${{ matrix.shard }}
+    needs: inventory
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
@@ -102,38 +176,19 @@ jobs:
           & $compiler --version
       - name: Sync locked environment
         run: uv sync --frozen --all-groups --all-extras
+      - uses: actions/download-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: matrix-inventory-${{ matrix.os }}-py${{ matrix.python }}
+          path: ${{ runner.temp }}
       - name: Select balanced test-file shard
         shell: bash
         run: |
           set -euo pipefail
-          collect_out="$RUNNER_TEMP/matrix-collect.txt"
-          collect_err="$RUNNER_TEMP/matrix-collect.err"
-          set +e
-          uv run pytest --collect-only -q -m "not network" >"$collect_out" 2>"$collect_err"
-          rc=$?
-          set -e
-          if [ "$rc" -ne 0 ]; then
-            echo "::error::pytest --collect-only exited $rc"
-            echo "----- collect stderr (tail) -----"
-            tail -60 "$collect_err" || true
-            echo "----- collect stdout (tail) -----"
-            tail -30 "$collect_out" || true
-            exit "$rc"
-          fi
           inventory="$RUNNER_TEMP/matrix-inventory.txt"
-          grep -E '^tests/.*: [0-9]+$' "$collect_out" \
-            | LC_ALL=C sort -t: -k2 -nr > "$inventory"
-          files=$(wc -l < "$inventory" | tr -d ' ')
-          tests=$(awk -F': ' '{s += $NF} END {print s}' "$inventory")
-          echo "inventory: $files files, $tests tests"
-          if [ "$files" -lt 650 ] || [ "$tests" -lt 5500 ]; then
-            echo "::error::pytest collect inventory unexpectedly small ($files files, $tests tests); output format or test selection may have changed"
+          if [ ! -s "$inventory" ]; then
+            echo "::error::missing downloaded inventory at $inventory"
             exit 1
           fi
-          # Greedy list-scheduling over count-descending inventory: each file
-          # goes to the currently lightest shard. Assignment is a pure
-          # function of the sorted inventory, so all 4 shard jobs of a combo
-          # agree on the partition.
           shard_file="$RUNNER_TEMP/matrix-shard.txt"
           awk -F': ' -v k="$NUM_SHARDS" -v want="${{ matrix.shard }}" '
             {

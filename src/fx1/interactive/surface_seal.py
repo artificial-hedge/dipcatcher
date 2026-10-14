@@ -10,6 +10,7 @@ Provenance only; not a market or performance claim.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from typing import Any
 
@@ -75,6 +76,25 @@ def surface_digest(payload: dict[str, Any] | None = None, *, raw: str | None = N
     return hash_bytes(raw.encode("utf-8"))
 
 
+def surface_weave(payload: dict[str, Any]) -> str:
+    """Layered BLAKE2b weave — secondary fork fingerprint, independent of :func:`surface_digest`."""
+    canonical = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("utf-8")
+    harness_blob = json.dumps(
+        payload.get("harness", []), sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    trigger_blob = json.dumps(
+        payload.get("triggers", []), sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    layers = (
+        hashlib.blake2b(canonical, digest_size=32, person=b"fx1-surf-reg").hexdigest(),
+        hashlib.blake2b(harness_blob, digest_size=32, person=b"fx1-surf-trg").hexdigest(),
+        hashlib.blake2b(trigger_blob, digest_size=32, person=b"fx1-surf-web").hexdigest(),
+    )
+    return hash_bytes("\n".join(layers).encode("utf-8"))
+
+
 def build_surface_seal(
     *,
     capabilities: dict[str, dict[str, Any]],
@@ -87,4 +107,10 @@ def build_surface_seal(
         web_triggers=web_triggers,
     )
     digest = surface_digest(payload)
-    return {"schema": SURFACE_SEAL_SCHEMA, "digest": digest, "workflow": WORKFLOW_SCHEMA}
+    weave = surface_weave(payload)
+    return {
+        "schema": SURFACE_SEAL_SCHEMA,
+        "digest": digest,
+        "weave": weave,
+        "workflow": WORKFLOW_SCHEMA,
+    }

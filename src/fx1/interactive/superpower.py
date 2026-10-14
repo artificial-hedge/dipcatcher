@@ -48,7 +48,7 @@ from fx1.interactive.families import (
     resolve_families,
 )
 from fx1.interactive.surface_seal import build_surface_seal
-from fx1.interactive.trigger_lexicon import TriggerLexicon
+from fx1.interactive.trigger_lexicon import GoalFold, TriggerLexicon
 from fx1.interactive.workflow import (
     StageKind,
     StageNode,
@@ -303,12 +303,13 @@ def plan_goal(
     if max_harness < 0:
         raise ValueError("max_harness must be nonnegative")
     registry = capabilities or CAPABILITIES
-    harness_ids = _scored_harness_ids(goal, registry, max_harness)
+    fold = _TRIGGER_LEXICON.fold(goal)
+    harness_ids = _scored_harness_ids(fold, registry, max_harness)
     gate = _FamilyGate.evaluate(goal, catalog, harness_ids)
     harness_ids = [cap_id for cap_id in harness_ids if cap_id not in gate.blocked]
     plan = SuperpowerPlan(
         goal=goal,
-        capabilities=_deterministic_selection(goal, registry, harness_ids),
+        capabilities=_deterministic_selection(fold, registry, harness_ids),
         source="deterministic",
         families=gate.families,
         exclusions=gate.exclusions,
@@ -321,12 +322,12 @@ def plan_goal(
 
 
 def _scored_harness_ids(
-    goal: str, registry: dict[str, dict[str, Any]], max_harness: int
+    fold: GoalFold, registry: dict[str, dict[str, Any]], max_harness: int
 ) -> list[str]:
     harness_ids = tuple(
         cap_id for cap_id, meta in registry.items() if meta.get("kind") == KIND_HARNESS
     )
-    return _TRIGGER_LEXICON.rank_harness(goal.lower(), harness_ids, max_harness=max_harness)
+    return _TRIGGER_LEXICON.rank_harness_folded(fold, harness_ids, max_harness=max_harness)
 
 
 @dataclass
@@ -372,16 +373,15 @@ class _FamilyGate:
 
 
 def _deterministic_selection(
-    goal: str, registry: dict[str, dict[str, Any]], harness_ids: list[str]
+    fold: GoalFold, registry: dict[str, dict[str, Any]], harness_ids: list[str]
 ) -> list[PlannedCapability]:
     selected: list[PlannedCapability] = [
         PlannedCapability("flash_retrieve", "memory is cheap and may already hold this research"),
     ]
-    lowered = goal.lower()
     for cap_id in harness_ids:
         meta = registry[cap_id]
         terms = _TRIGGERS.get(cap_id, ())
-        matched = _TRIGGER_LEXICON.matched(lowered, terms)
+        matched = fold.matched_terms(terms)
         selected.append(
             PlannedCapability(
                 cap_id,
@@ -389,7 +389,7 @@ def _deterministic_selection(
                 f"{meta.get('description', '')}",
             )
         )
-    if _TRIGGER_LEXICON.any_web_trigger(lowered, _WEB_TRIGGERS) or not harness_ids:
+    if _TRIGGER_LEXICON.any_web_trigger_folded(fold, _WEB_TRIGGERS) or not harness_ids:
         selected.append(
             PlannedCapability(
                 "web_research",

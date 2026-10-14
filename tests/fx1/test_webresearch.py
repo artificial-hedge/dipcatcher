@@ -252,8 +252,8 @@ def test_pinned_https_keeps_hostname_for_tls_identity(
     connection = _PinnedHTTPSConnection(
         "public.example:8443",
         pinned_ip="93.184.216.34",
-        context=FakeContext(),
     )
+    connection._tls_context = FakeContext()  # noqa: SLF001 — inject TLS seam for offline test
     connection.connect()
     assert connections == [("93.184.216.34", 8443)]
     assert tls_names == ["public.example"]

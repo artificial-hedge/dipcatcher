@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from fx1.interactive.superpower import _TRIGGERS, _WEB_TRIGGERS, _score_goal, plan_goal
-from fx1.interactive.trigger_lexicon import TriggerLexicon
+from fx1.interactive.trigger_lexicon import GoalFold, TriggerLexicon
 
 
 def _legacy_score(goal: str, terms: tuple[str, ...]) -> int:
@@ -33,6 +33,15 @@ def test_web_trigger_parity() -> None:
     goal = "look up recent literature on conformal prediction"
     assert lex.any_web_trigger(goal.lower(), _WEB_TRIGGERS)
     assert _score_goal(goal, _WEB_TRIGGERS) > 0
+
+
+def test_goal_fold_reuses_token_index_for_ranking() -> None:
+    lex = TriggerLexicon(_TRIGGERS)
+    fold = GoalFold.fold("verify receipts and run doctor health check")
+    harness_ids = tuple(_TRIGGERS)
+    ranked = lex.rank_harness_folded(fold, harness_ids, max_harness=4)
+    assert ranked
+    assert lex.rank_harness(fold.lowered, harness_ids, max_harness=4) == ranked
 
 
 def test_plan_still_selects_research_and_web() -> None:

@@ -71,10 +71,11 @@ def build_superpower_schedule(
 ) -> tuple[StageNode, ...]:
     """Expand a deduplicated plan id list into ordered stage nodes."""
     selected = list(dict.fromkeys(selected_ids))
+    selected_set = frozenset(selected)
     nodes: list[StageNode] = []
-    if "flash_retrieve" in selected:
+    if "flash_retrieve" in selected_set:
         nodes.append(StageNode(StageKind.FLASH_RETRIEVE))
-    if "web_research" in selected:
+    if "web_research" in selected_set:
         nodes.append(StageNode(StageKind.WEB_RESEARCH))
     harness_nodes: list[StageNode] = []
     for cap_id in selected:
@@ -82,9 +83,9 @@ def build_superpower_schedule(
         if meta and meta.get("kind") == "harness":
             harness_nodes.append(StageNode(StageKind.HARNESS, cap_id=cap_id))
     nodes.extend(coalesce_parallel_harness_waves(harness_nodes, capabilities))
-    if "flash_save" in selected:
+    if "flash_save" in selected_set:
         nodes.append(StageNode(StageKind.FLASH_SAVE))
-    if "synthesize" in selected:
+    if "synthesize" in selected_set:
         nodes.append(StageNode(StageKind.SYNTHESIZE))
     return tuple(nodes)
 
