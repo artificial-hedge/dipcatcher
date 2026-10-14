@@ -22,12 +22,12 @@
   "date": "2026-10-13",
   "honesty_bar_count": {
     "measured_at": "f8548ab20 (receipts head corpus_epoch_588a35edec9d3f5b, 399 stamped members, 17 registered)",
-    "method": "members = pinned_head_members('receipts', load_heads_pin('quality/epoch_heads.json')['receipts/*.json']); registered = load_quarantine('quality/legacy_quarantine.json').files; for each name in members - registered that verify_receipt_file accepts, run legacy_unsealed.honesty_stamp_errors on the parsed document: 'lacking' counts any reject or quarantine code, 'only_live_pnl_claim' counts quarantine == ['live_pnl_claim_missing'] with no reject code.",
+    "method": "members = pinned_head_members('receipts', load_heads_pin('quality/epoch_heads.json')['receipts/*.json']); registered = load_quarantine('quality/legacy_quarantine.json').files; for each name in members - registered that verify_receipt_file accepts, run legacy_unsealed.honesty_stamp_errors on the parsed document: 'lacking' counts any reject or quarantine code, 'lacking_only_the_live_pnl_claim_false_stamp' counts quarantine == ['live_pnl_claim_missing'] with no reject code, i.e. receipts whose only missing stamp is live_pnl_claim: false.",
     "result": {
       "claim_receipts": 338,
       "claim_receipts_lacking_a_required_stamp": 170,
       "epoch_receipts": 44,
-      "lacking_only_live_pnl_claim_false": 143,
+      "lacking_only_the_live_pnl_claim_false_stamp": 143,
       "verified_unregistered": 382
     }
   },
