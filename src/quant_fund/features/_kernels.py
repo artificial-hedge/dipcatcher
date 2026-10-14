@@ -8,11 +8,23 @@ accumulators, not a global cumsum; Goertzel in the published order).
 from __future__ import annotations
 
 import math
+from typing import Any, cast
 
 import numpy as np
 from numba import njit
 
 from quant_fund.compute.numba_guard import call_kernel
+
+
+def _bind_python_body(public: Any, kernel: Any) -> None:
+    """Publish ``kernel``'s undecorated body as ``public.py_func``.
+
+    ``call_kernel`` is the runtime path (compiled, or the Python body when
+    Numba's overload dispatcher is broken). Parity tests call ``py_func``
+    directly so that path stays reachable after the wrapper.
+    """
+    body = getattr(kernel, "py_func", None)
+    public.py_func = kernel if body is None else body
 
 
 @njit(cache=True)
@@ -131,19 +143,25 @@ def _goertzel_powers_nb(demeaned: np.ndarray, periods: np.ndarray) -> np.ndarray
 
 def reset_bounds(weights: np.ndarray, threshold: float) -> np.ndarray:
     """Bar-start indices. Numba when it compiles; the same loop otherwise."""
-    return call_kernel(_reset_bounds_nb, weights, threshold)
+    return cast(np.ndarray, call_kernel(_reset_bounds_nb, weights, threshold))
 
 
 def imbalance_bounds(values: np.ndarray, alpha: float, e_ticks: float, e_init: float) -> np.ndarray:
     """Tick- or dollar-imbalance bar starts. Numba when it compiles."""
-    return call_kernel(_imbalance_bounds_nb, values, alpha, e_ticks, e_init)
+    return cast(np.ndarray, call_kernel(_imbalance_bounds_nb, values, alpha, e_ticks, e_init))
 
 
 def run_bounds(signs: np.ndarray, alpha: float, e_ticks: float) -> np.ndarray:
     """Tick-run bar starts. Numba when it compiles; the same loop otherwise."""
-    return call_kernel(_run_bounds_nb, signs, alpha, e_ticks)
+    return cast(np.ndarray, call_kernel(_run_bounds_nb, signs, alpha, e_ticks))
 
 
 def goertzel_powers(demeaned: np.ndarray, periods: np.ndarray) -> np.ndarray:
     """Normalized Goertzel power at each period. ``periods`` are float bars."""
-    return call_kernel(_goertzel_powers_nb, demeaned, periods)
+    return cast(np.ndarray, call_kernel(_goertzel_powers_nb, demeaned, periods))
+
+
+_bind_python_body(reset_bounds, _reset_bounds_nb)
+_bind_python_body(imbalance_bounds, _imbalance_bounds_nb)
+_bind_python_body(run_bounds, _run_bounds_nb)
+_bind_python_body(goertzel_powers, _goertzel_powers_nb)

@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13417,
+  "module_count": 13421,
   "module_edges": [
     {
       "dst": "fx1",
@@ -2167,6 +2167,30 @@
       "src": "fx1.interactive.superpower"
     },
     {
+      "dst": "fx1.interactive.surface_seal",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.interactive.trigger_lexicon",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.interactive.workflow",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.surface_seal"
+    },
+    {
+      "dst": "fx1.interactive.workflow",
+      "src": "fx1.interactive.surface_seal"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "fx1.interactive.surface_seal"
+    },
+    {
       "dst": "fx1.interactive.actions",
       "src": "fx1.interactive.wizard"
     },
@@ -2181,6 +2205,10 @@
     {
       "dst": "fx1.interactive.profiles",
       "src": "fx1.interactive.wizard"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.workflow"
     },
     {
       "dst": "fx1.modelcard",
@@ -4309,6 +4337,14 @@
     {
       "dst": "quant_fund.audit.verify",
       "src": "quant_fund.audit.cli"
+    },
+    {
+      "dst": "quant_fund.audit.merkle",
+      "src": "quant_fund.audit.kernel_lineage"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.audit.kernel_lineage"
     },
     {
       "dst": "quant_fund.audit.canonical",
@@ -61736,7 +61772,10 @@
     "fx1.interactive.session",
     "fx1.interactive.shell",
     "fx1.interactive.superpower",
+    "fx1.interactive.surface_seal",
+    "fx1.interactive.trigger_lexicon",
     "fx1.interactive.wizard",
+    "fx1.interactive.workflow",
     "fx1.modelcard",
     "fx1.modelcard_audit",
     "fx1.mrm",
@@ -61884,6 +61923,7 @@
     "quant_fund.audit.canonical",
     "quant_fund.audit.cli",
     "quant_fund.audit.errors",
+    "quant_fund.audit.kernel_lineage",
     "quant_fund.audit.ledger",
     "quant_fund.audit.merkle",
     "quant_fund.audit.record",
@@ -75311,7 +75351,7 @@
     },
     {
       "dst": "fx1.harness",
-      "imports": 3,
+      "imports": 5,
       "src": "fx1.interactive"
     },
     {
@@ -75321,7 +75361,7 @@
     },
     {
       "dst": "fx1.interactive",
-      "imports": 41,
+      "imports": 45,
       "src": "fx1.interactive"
     },
     {
@@ -75331,6 +75371,11 @@
     },
     {
       "dst": "fx1.webresearch",
+      "imports": 1,
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "quant_fund.utils",
       "imports": 1,
       "src": "fx1.interactive"
     },
@@ -75696,7 +75741,7 @@
     },
     {
       "dst": "quant_fund.audit",
-      "imports": 30,
+      "imports": 31,
       "src": "quant_fund.audit"
     },
     {
@@ -75706,7 +75751,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 3,
+      "imports": 4,
       "src": "quant_fund.audit"
     },
     {

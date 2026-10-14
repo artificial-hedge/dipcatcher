@@ -161,10 +161,11 @@ flowchart LR
   fx1_interactive -->|2| fx1
   fx1_interactive -->|1| fx1_doctor
   fx1_interactive -->|7| fx1_flash
-  fx1_interactive -->|3| fx1_harness
+  fx1_interactive -->|5| fx1_harness
   fx1_interactive -->|2| fx1_honesty
   fx1_interactive -->|4| fx1_serve
   fx1_interactive -->|1| fx1_webresearch
+  fx1_interactive -->|1| quant_fund_utils
   fx1_modelcard_audit -->|1| fx1_modelcard
   fx1_modelcard_audit -->|2| quant_fund_utils
   fx1_mrm -->|1| fx1_modelcard
@@ -233,7 +234,7 @@ flowchart LR
   quant_fund_api -->|2| quant_fund_schemas
   quant_fund_api -->|8| quant_fund_utils
   quant_fund_audit -->|2| quant_fund_research
-  quant_fund_audit -->|3| quant_fund_utils
+  quant_fund_audit -->|4| quant_fund_utils
   quant_fund_backtest -->|1| quant_fund_compute
   quant_fund_backtest -->|8| quant_fund_config
   quant_fund_backtest -->|8| quant_fund_execution

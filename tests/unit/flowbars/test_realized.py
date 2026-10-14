@@ -90,3 +90,50 @@ def test_invalid_inputs() -> None:
         realized_variance(np.array([1.0, -1.0, 1.0]))
     with pytest.raises(ValueError):
         realized_variance(np.array([1.0, 2.0]))
+
+
+def _scalar_kernel(prices: np.ndarray, h: int) -> float:
+    returns = np.diff(np.log(prices))
+    total = float(np.sum(returns * returns))
+    for j in range(1, h + 1):
+        x = min(max(j / h, 0.0), 1.0)
+        weight = float(np.sin(0.5 * np.pi * (1.0 - x)) ** 2)
+        total += 2.0 * weight * float(np.sum(returns[j:] * returns[:-j]))
+    return total
+
+
+def test_kernel_matches_scalar_lag_loop() -> None:
+    prices = _gbm(64, GRID_VOL, seed=9)
+    h = 5
+    assert realized_kernel(prices, bandwidth=h) == pytest.approx(
+        _scalar_kernel(prices, h), rel=0, abs=1e-10
+    )
+
+
+def test_fft_kernel_matches_scalar_lags() -> None:
+    """Bandwidth above the direct-lag cutoff must stay on the same sum."""
+    prices = _gbm(240, GRID_VOL, seed=11)
+    h = 80
+    assert realized_kernel(prices, bandwidth=h) == pytest.approx(
+        _scalar_kernel(prices, h), rel=0, abs=1e-8
+    )
+
+
+def test_bootstrap_p_matches_scalar_draws() -> None:
+    prices = _gbm(48, GRID_VOL, seed=10, n_jumps=3, jump_size=6.0)
+    returns = np.diff(np.log(prices))
+    rv = realized_variance(prices)
+    bv = bipower_variation(prices)
+    ratio = rv / bv
+    n = len(returns)
+    n_boot = 40
+    rng = np.random.default_rng(0)
+    count = 0
+    for _ in range(n_boot):
+        draw = rng.standard_normal(n) * np.sqrt(rv / n)
+        rv_b = float(np.sum(draw * draw))
+        bv_b = float((np.pi / 2.0) * np.sum(np.abs(draw[1:]) * np.abs(draw[:-1])))
+        if bv_b > 0.0 and rv_b / bv_b >= ratio:
+            count += 1
+    expected = (count + 1) / (n_boot + 1)
+    assert bns_ratio_test(prices, n_boot=n_boot, seed=0)["p"] == pytest.approx(expected)

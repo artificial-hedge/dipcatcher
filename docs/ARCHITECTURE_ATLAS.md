@@ -229,10 +229,11 @@ flowchart LR
   fx1_interactive -->|2| fx1
   fx1_interactive -->|1| fx1_doctor
   fx1_interactive -->|7| fx1_flash
-  fx1_interactive -->|3| fx1_harness
+  fx1_interactive -->|5| fx1_harness
   fx1_interactive -->|2| fx1_honesty
   fx1_interactive -->|4| fx1_serve
   fx1_interactive -->|1| fx1_webresearch
+  fx1_interactive -->|1| quant_fund_utils
   fx1_modelcard_audit -->|1| fx1_modelcard
   fx1_modelcard_audit -->|2| quant_fund_utils
   fx1_mrm -->|1| fx1_modelcard
@@ -301,7 +302,7 @@ flowchart LR
   quant_fund_api -->|2| quant_fund_schemas
   quant_fund_api -->|8| quant_fund_utils
   quant_fund_audit -->|2| quant_fund_research
-  quant_fund_audit -->|3| quant_fund_utils
+  quant_fund_audit -->|4| quant_fund_utils
   quant_fund_backtest -->|1| quant_fund_compute
   quant_fund_backtest -->|8| quant_fund_config
   quant_fund_backtest -->|8| quant_fund_execution
@@ -763,7 +764,7 @@ sequenceDiagram
 | `fx1.honesty_audit` | 1 |
 | `fx1.hypotheses` | 1 |
 | `fx1.hypotheses_audit` | 1 |
-| `fx1.interactive` | 15 |
+| `fx1.interactive` | 18 |
 | `fx1.modelcard` | 1 |
 | `fx1.modelcard_audit` | 1 |
 | `fx1.mrm` | 1 |
@@ -784,7 +785,7 @@ sequenceDiagram
 | `fx1.webresearch` | 4 |
 | `quant_fund` | 1 |
 | `quant_fund.api` | 7 |
-| `quant_fund.audit` | 11 |
+| `quant_fund.audit` | 12 |
 | `quant_fund.backtest` | 16 |
 | `quant_fund.calendars` | 8 |
 | `quant_fund.cli` | 18 |
@@ -837,9 +838,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13417**
+- Modules scanned: **13421**
 - Packages: **94**
-- Cross-package import edges: **393**
+- Cross-package import edges: **394**
 
 <!-- END GENERATED: coverage -->
 

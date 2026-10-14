@@ -26,6 +26,14 @@
     "regenerated_sha256": "9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0",
     "replay_carrier": "data/manifests/replay/mcs_vol.json"
   },
+  "integration_with_main": {
+    "crown_jewels": "main re-pinned the jewel file (its drift fell to the single entry day_grind_progress.md). main's pin file was taken as is; only the 13 jewels this repair changed or added were re-pinned onto it (9 edited, 4 new). day_grind_progress.md is not part of this repair.",
+    "date": "2026-10-14",
+    "generated_docs": "docs/ARCHITECTURE_ATLAS.md and docs/architecture/* regenerated from the merged tree with scripts/gen_arch_diagrams.py.",
+    "main_head": "88d7b3a3d",
+    "quality_chain": "main stamped quality epoch 253 (corpus_epoch_5ec47b7c56c8fd59.json) while this repair stamped a different epoch 253 (corpus_epoch_28aa9457599b8753.json) off the same parent, which would have forked the chain. This repair's epoch had never been published, so it was dropped and quality was restamped as epoch 254 on top of main's; main's epoch is untouched.",
+    "unchanged": "receipts chain (main touched no receipts), the five acknowledgments, the quarantine registry, and the 36 restored receipts. Code corpora (src, tests, scripts, docs, ...) are still not restamped: main's own tip still reports drift or removals on them that this repair did not cause."
+  },
   "new_quarantine_entries": [
     "receipts/mid_dark_amzn.json (claim_absent)",
     "receipts/cost_aware_rerun_20261007.json + .seal.json (detached_prereg_seal)",
@@ -568,7 +576,8 @@
     "provenance_gaps entries for four receipts were removed: their git_revisions exist as refs/tags/attic/receipt-provenance/* and resolve as not_ancestor notes.",
     "Second independent review: (1) the first restore commit message called both c036dee9d and 766a29ab9 post-stamp rewrites; only c036dee9d was (766a29ab9 lost a merge race, see restored_receipts note); (2) the calibration_audit.v1 drift ack claimed both members dispatch the deep contract; only calib_real_drill.json does (calibration_audit.json is kind calibration_audit); (3) the mid_dark_amzn quarantine reason omitted that 7151c567 also inserted live_pnl_claim; (4) cost_aware why_restored had been copied from forward_record. All four were corrected before push.",
     "Third independent review (no blockers): the PR-only gates were skipped in CI whenever make evidence-audit failed, which it does on inherited drift, so the evidence job's later steps now run with !cancelled(); a re-add under another case or Unicode spelling escaped the resurrection rule (names are now folded); an unstamped resurrection was admissible (now member_resurrected_live); the ack gate ignored unknown corpus keys (now epoch_ack_unknown_corpus); the standalone script accepted duplicate keys in epoch files (now epoch_receipt_invalid, as in the library). While re-checking unstamped receipts before stamping, p0_evidence_inventory_v1.json was found to fail admission; an earlier unpushed stamp had included it, and it is now quarantined instead.",
-    "Fourth independent review (no blockers): the quarantine registry could grow in the same change that adds a receipt (now the quarantine-gate PR rule: new entries must pin bytes the base already had, and an admission_honesty_gap entry must be an unstamped base file); epoch-consistency aborted at the local-only data/metadata chain on clean checkouts, leaving 21 corpora unproven (now skipped by the same rule verify-repo uses); the evidence job's 10-minute timeout could not fit every gate (now 25); the honesty-gap pin is checked against the classified bytes themselves; name folding also drops NTFS trailing dots and spaces; the count above said five where it is four."
+    "Fourth independent review (no blockers): the quarantine registry could grow in the same change that adds a receipt (now the quarantine-gate PR rule: new entries must pin bytes the base already had, and an admission_honesty_gap entry must be an unstamped base file); epoch-consistency aborted at the local-only data/metadata chain on clean checkouts, leaving 21 corpora unproven (now skipped by the same rule verify-repo uses); the evidence job's 10-minute timeout could not fit every gate (now 25); the honesty-gap pin is checked against the classified bytes themselves; name folding also drops NTFS trailing dots and spaces; the count above said five where it is four.",
+    "After the first merge, the recorded jewel-drift baseline (38 entries, identical to the then-base) was superseded: main re-pinned the jewels, so the same claim is now measured against main's tip (1 entry). The docs were updated to say so."
   ],
   "schema": "evidence_migration.v1",
   "schema_drift_acks": [

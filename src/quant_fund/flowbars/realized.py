@@ -31,6 +31,8 @@ Composition: pure numpy; deterministic; no new dependencies.
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -85,29 +87,92 @@ def medianrv(prices: FloatArray) -> float:
     return float(beta * (n / (n - 2.0)) * np.sum(med * med))
 
 
-def _tukey_hanning_weight(j: int, h: int) -> float:
-    """Tukey–Hanning weight k(j/h) = sin²(π/2 · (1 − j/h)₊)."""
-    x = min(max(j / h, 0.0), 1.0)
-    return float(np.sin(0.5 * np.pi * (1.0 - x)) ** 2)
+def _tukey_hanning_weights(h: int) -> FloatArray:
+    """Tukey–Hanning weights k(j/h) = sin²(π/2 · (1 − j/h)₊) for j = 1..h."""
+    lags = np.arange(1, h + 1, dtype=np.float64)
+    x = np.clip(lags / h, 0.0, 1.0)
+    return np.sin(0.5 * np.pi * (1.0 - x)) ** 2
+
+
+# Direct inner products stay cheaper while only a few lags are required.
+# Past this, a zero-padded FFT autocorrelation is O(n log n). The default
+# bandwidth is ``h ~ n^{4/5}``, which is that regime.
+_DIRECT_LAG_LIMIT = 64
+
+
+def _direct_autocovariances(series: FloatArray, max_lag: int) -> FloatArray:
+    out = np.empty(max_lag + 1, dtype=np.float64)
+    out[0] = np.dot(series, series)
+    for lag in range(1, max_lag + 1):
+        out[lag] = np.dot(series[lag:], series[:-lag])
+    return out
+
+
+def _fft_autocovariances(series: FloatArray, max_lag: int) -> FloatArray:
+    """Linear (not circular) autocorrelation via a pad of length at least ``2n-1``."""
+    n = int(series.size)
+    size = 1 << (2 * n - 1).bit_length()
+    spectrum = np.fft.rfft(series, size)
+    corr = np.fft.irfft(spectrum * np.conjugate(spectrum), size)
+    return np.asarray(np.real(corr[: max_lag + 1]), dtype=np.float64)
+
+
+def _autocovariances(returns: FloatArray, max_lag: int) -> FloatArray:
+    """Lag 0..``max_lag`` realized autocovariances, ``gamma_j = sum_t r_t r_{t-j}``."""
+    if max_lag < 0:
+        raise ValueError("max_lag must be non-negative")
+    series = np.ascontiguousarray(returns, dtype=np.float64)
+    if int(series.size) <= max_lag:
+        raise ValueError("max_lag must be shorter than the return series")
+    if max_lag <= _DIRECT_LAG_LIMIT:
+        return _direct_autocovariances(series, max_lag)
+    return _fft_autocovariances(series, max_lag)
 
 
 def realized_kernel(prices: FloatArray, bandwidth: int | None = None, c: float = 3.0) -> float:
     """Realized kernel with Tukey–Hanning weights, bandwidth h = c·n^{4/5}.
 
-    RK = γ₀ + 2 Σ_{j=1}^{n−1} k(j/h) γ_j where γ_j = Σ_t r_t r_{t−j} is the
-    j-th realized autocovariance.
+    RK = γ₀ + 2 Σ_{j=1}^{h} k(j/h) γ_j where γ_j = Σ_t r_t r_{t−j} is the
+    j-th realized autocovariance. Short bandwidths use direct inner
+    products. The default bandwidth ``h ~ n^{4/5}`` uses a padded FFT,
+    which is the same sum up to roundoff well inside the estimator's
+    sampling error.
     """
-    r = _log_returns(prices)
-    n = len(r)
+    returns = _log_returns(prices)
+    n = len(returns)
     if bandwidth is None:
         bandwidth = max(1, int(c * n**0.8))
-    h = min(bandwidth, n - 1)
-    gamma0 = float(np.sum(r * r))
-    total = gamma0
-    for j in range(1, h + 1):
-        gamma_j = float(np.sum(r[j:] * r[:-j]))
-        total += 2.0 * _tukey_hanning_weight(j, h) * gamma_j
-    return float(total)
+    h = min(int(bandwidth), n - 1)
+    # A non-positive bandwidth has no lags. The kernel is then γ₀, which is
+    # the realized variance of the same log-returns.
+    if h < 1:
+        return float(np.dot(returns, returns))
+    gammas = _autocovariances(returns, h)
+    return float(gammas[0] + 2.0 * np.dot(_tukey_hanning_weights(h), gammas[1:]))
+
+
+def _gaussian_bootstrap(n: int, var_hat: float, n_boot: int, seed: int) -> FloatArray:
+    """``n_boot`` i.i.d. Gaussian paths, one ``standard_normal(n)`` draw each.
+
+    Drawing a path at a time keeps the Generator stream identical to the
+    scalar bootstrap. The quadratic variation of those paths is then one
+    array reduction.
+    """
+    rng = np.random.default_rng(seed)
+    draws = np.empty((int(n_boot), int(n)), dtype=np.float64)
+    scale = math.sqrt(var_hat) if var_hat > 0.0 else 0.0
+    for i in range(int(n_boot)):
+        draws[i] = rng.standard_normal(n)
+    draws *= scale
+    return draws
+
+
+def _bootstrap_quadratic(draws: FloatArray) -> tuple[FloatArray, FloatArray]:
+    """Per-path realized variance and the bipower sum ``Σ |r_t| |r_{t-1}|``."""
+    rv_b = np.sum(draws * draws, axis=1)
+    abs_r = np.abs(draws)
+    bipower_sum = np.sum(abs_r[:, 1:] * abs_r[:, :-1], axis=1)
+    return rv_b, bipower_sum
 
 
 def bns_ratio_test(
@@ -123,22 +188,17 @@ def bns_ratio_test(
     returns with variance matched to RV/n (no-jump world). One-sided
     p-value: fraction of bootstrap ratios ≥ observed.
     """
-    r = _log_returns(prices)
+    returns = _log_returns(prices)
     rv = realized_variance(prices)
     bv = bipower_variation(prices)
     if bv <= 0:
         return {"ratio": float("inf"), "p": 0.0}
-    n = len(r)
+    n = len(returns)
     ratio = rv / bv
-    rng = np.random.default_rng(seed)
-    var_hat = rv / n
-    count = 0
-    for _ in range(n_boot):
-        rb = rng.standard_normal(n) * np.sqrt(var_hat)
-        rv_b = float(np.sum(rb * rb))
-        bv_b = float((np.pi / 2.0) * np.sum(np.abs(rb[1:]) * np.abs(rb[:-1])))
-        if bv_b > 0 and rv_b / bv_b >= ratio:
-            count += 1
+    draws = _gaussian_bootstrap(n, rv / n, n_boot, seed)
+    rv_b, bipower_sum = _bootstrap_quadratic(draws)
+    bv_b = (np.pi / 2.0) * bipower_sum
+    count = int(np.count_nonzero((bv_b > 0.0) & (rv_b >= ratio * bv_b)))
     return {"ratio": float(ratio), "p": float((count + 1) / (n_boot + 1))}
 
 
@@ -154,19 +214,15 @@ def huang_tauchen_z(
     (no jumps) is simulated with i.i.d. Gaussian returns variance-matched to
     RV/n; one-sided p-value from the bootstrap distribution.
     """
-    r = _log_returns(prices)
+    returns = _log_returns(prices)
     rv = realized_variance(prices)
     bv = bipower_variation(prices)
-    n = len(r)
+    n = len(returns)
     stat = rv - bv
-    rng = np.random.default_rng(seed)
-    var_hat = rv / n
-    count = 0
-    for _ in range(n_boot):
-        rb = rng.standard_normal(n) * np.sqrt(var_hat)
-        stat_b = float(np.sum(rb * rb) - (np.pi / 2.0) * np.sum(np.abs(rb[1:]) * np.abs(rb[:-1])))
-        if stat_b >= stat:
-            count += 1
+    draws = _gaussian_bootstrap(n, rv / n, n_boot, seed)
+    rv_b, bipower_sum = _bootstrap_quadratic(draws)
+    stat_b = rv_b - (np.pi / 2.0) * bipower_sum
+    count = int(np.count_nonzero(stat_b >= stat))
     return {"stat": float(stat), "p": float((count + 1) / (n_boot + 1))}
 
 

@@ -10,7 +10,7 @@ is the undecorated function, so the fallback is the same recurrence.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 _COMPILER_ATTR = "get_call_template"
 
@@ -34,7 +34,7 @@ def python_twin(kernel: Callable[..., Any]) -> Callable[..., Any]:
     twin = getattr(kernel, "py_func", None)
     if twin is None:
         return kernel
-    return twin
+    return cast(Callable[..., Any], twin)
 
 
 def call_kernel(kernel: Callable[..., Any], /, *args: object) -> Any:

@@ -124,7 +124,7 @@ OTS-anchored. An auditor should therefore always pass `--pin` (or
 inside the Ed25519-signed checkpoint) — bare `--proof` mode authenticates
 shape, not custody.
 
-Residual boundaries, as of 2026-10-13 (measured on this PR's committed tree, after `stamp-epochs` of the receipts and quality chains; not assumed):
+Residual boundaries, as of 2026-10-14 (measured on this repair merged with `main` at 88d7b3a3d, after stamping the receipts and quality chains; not assumed):
 
 - **`make evidence-audit` is red on inherited drift, and stops early.**
   After the receipts and quality chains, it checks `.github/workflows`,
@@ -140,11 +140,15 @@ Residual boundaries, as of 2026-10-13 (measured on this PR's committed tree, aft
   `mcs_vol` carrier needs about 140 s against the 120 s default timeout,
   and the corpus carrier's pinned artifact embeds `generated_at_commit`,
   so it cannot reproduce byte-for-byte.
-- **Crown-jewel enforcement is not yet effective.** The jewel pin has
-  inherited drift, and `gate_pins.sig` cannot be refreshed without
-  `GATE_SIGNING_KEY`. Adding a policy file to `DEFAULT_JEWELS` records
-  intent; enforcement starts only when the key holder re-stamps the
-  drifted chains, re-pins and re-signs.
+- **Crown-jewel enforcement is partial.** `main` re-pinned the jewels
+  (88d7b3a3d), and with this repair's re-pin `dipcatcher crown-jewels
+  --check` reports one drifted entry, `day_grind_progress.md`, which this
+  repair does not touch. `make evidence-audit` still stops at the
+  workflows chain before it reaches that command, and the signature over
+  the pins (`gate_pins.sig`) is stale (`pin_drift` on `crown_jewels.json`
+  and `epoch_heads.json`); it cannot be refreshed without
+  `GATE_SIGNING_KEY`. Until the key holder re-signs, the pins are checked
+  only when `crown-jewels --check` is run directly.
 - **Admission's honesty bar covers arrivals, not stamped history.** Of
   the 334 stamped receipts that verify and are not in the registry, 170
   lack at least one stamp admission now requires (143 lack only

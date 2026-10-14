@@ -645,8 +645,7 @@ def receipt_payload(comparison: RunComparison) -> dict[str, Any]:
         "research_only": True,
         "live_pnl_claim": False,
         "disclaimer": (
-            "Paired run comparison on stored research receipts. Diagnostic "
-            "only — proper scores."
+            "Paired run comparison on stored research receipts. Diagnostic only — proper scores."
         ),
         "report": comparison.to_dict(),
     }

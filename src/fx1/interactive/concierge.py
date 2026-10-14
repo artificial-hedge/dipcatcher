@@ -163,9 +163,13 @@ class BackgroundJob:
         return self.done_event.is_set()
 
     def drain(self) -> list[tuple[str, str]]:
+        """Drain queued progress events, coalescing consecutive duplicates."""
         out: list[tuple[str, str]] = []
         while self.events:
-            out.append(self.events.popleft())
+            event, detail = self.events.popleft()
+            if out and out[-1] == (event, detail):
+                continue
+            out.append((event, detail))
         return out
 
 

@@ -29,7 +29,7 @@ _LIMITATIONS: tuple[str, ...] = (
     "A black-box or gradient search that flips the decision is an empirical upper bound on the minimal perturbation. A search that does not flip is not a certificate.",
     "The worst-case mean inside a Wasserstein ball is exact for any reference law. The mean-to-scale ratio is the Gelbrich disk minimum: tight for a univariate Gaussian, and only a lower bound otherwise.",
     "Exact-on-path enumerations cover one finite array. They are not a general theorem about other paths.",
- "SYNTHETIC results are correctness checks. They are not market evidence."
+    "SYNTHETIC results are correctness checks. They are not market evidence.",
 )
 
 

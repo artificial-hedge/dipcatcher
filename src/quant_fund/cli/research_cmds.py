@@ -719,9 +719,9 @@ def rankic(
 ) -> None:
     """Cross-sectional rank-IC bench on SYNTHETIC planted-signal panels (P3.4).
 
-    Per-date Spearman rank-IC between each challenger transform and h-step
-    forward returns, summarized with a Newey-West mean-IC t-stat. Proper-score
- framing only — never a P&L.
+       Per-date Spearman rank-IC between each challenger transform and h-step
+       forward returns, summarized with a Newey-West mean-IC t-stat. Proper-score
+    framing only — never a P&L.
     """
     from quant_fund.research.cross_sectional import (
         format_rankic_table,
