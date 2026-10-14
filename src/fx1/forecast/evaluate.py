@@ -222,8 +222,7 @@ def _signal_diagnostics(
         "placeholder_mapping": PLACEHOLDER_NOT_A_STRATEGY,
         "orders_submitted": False,
         "note": (
-            "Turnover and assumed cost of a placeholder score-to-signal map. "
-            "No performance figure."
+            "Turnover and assumed cost of a placeholder score-to-signal map. No performance figure."
         ),
     }
 
