@@ -61,4 +61,16 @@ def collect_status(root: Path | None = None) -> dict[str, object]:
         status["eval_bank_tasks"] = len(DEFAULT_BANK)
     except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
         status["eval_bank_tasks"] = "unavailable"
+    try:
+        from fx1.harness import HARNESS_REGISTRY
+        from quant_fund.research.crown_jewels import distribution_lineage_digest
+        from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+        lineage = distribution_lineage_digest(root)
+        status["distribution_lineage"] = lineage["digest"]
+        status["distribution_jewels_intact"] = lineage["jewels_intact"]
+        harness_names = sorted(command.name for command in HARNESS_REGISTRY)
+        status["harness_registry_digest"] = hash_bytes(canonical_json_bytes(harness_names))
+    except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
+        status["distribution_lineage"] = "unavailable"
     return status

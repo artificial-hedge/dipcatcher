@@ -686,6 +686,49 @@ def _check_budget(ctx: SuperpowerContext, result: SuperpowerResult) -> str | Non
     return None
 
 
+def _dispatch_harness_stage(
+    node: StageNode,
+    ctx: SuperpowerContext,
+    result: SuperpowerResult,
+    parts: list[str],
+) -> None:
+    if node.cap_id is None:
+        return
+    wave = node.harness_wave if node.harness_wave else (node.cap_id,)
+    if len(wave) <= 1:
+        meta = CAPABILITIES.get(node.cap_id)
+        if meta and meta.get("kind") == KIND_HARNESS:
+            _stage_harness(node.cap_id, meta, ctx, result, parts)
+        return
+    parts_lock = threading.Lock()
+    runs_lock = threading.Lock()
+
+    def run_one(cap_id: str) -> None:
+        meta = CAPABILITIES.get(cap_id)
+        if not meta or meta.get("kind") != KIND_HARNESS:
+            return
+        local_parts: list[str] = []
+        _stage_harness(
+            cap_id,
+            meta,
+            ctx,
+            result,
+            local_parts,
+            parts_lock=parts_lock,
+            runs_lock=runs_lock,
+        )
+        if local_parts:
+            with parts_lock:
+                parts.extend(local_parts)
+
+    _emit(ctx, "harness", f"running parallel verification wave: {', '.join(wave)}")
+    run_parallel_harness_wave(
+        wave,
+        run_one=run_one,
+        cancel_requested=lambda: _cancelled(ctx),
+    )
+
+
 def _dispatch_stage(
     node: StageNode,
     *,
@@ -695,57 +738,20 @@ def _dispatch_stage(
     parts: list[str],
     selected: list[str],
 ) -> None:
-    if node.kind is StageKind.FLASH_RETRIEVE:
-        if ctx.flash_store is not None:
-            _stage_flash_retrieve(plan, ctx, ctx.flash_store, result, parts)
-        return
-    if node.kind is StageKind.WEB_RESEARCH:
-        if ctx.researcher is not None:
-            _stage_web_research(plan, ctx, ctx.researcher, result, parts)
-        return
-    if node.kind is StageKind.HARNESS:
-        if node.cap_id is None:
-            return
-        wave = node.harness_wave if node.harness_wave else (node.cap_id,)
-        if len(wave) <= 1:
-            meta = CAPABILITIES.get(node.cap_id)
-            if meta and meta.get("kind") == KIND_HARNESS:
-                _stage_harness(node.cap_id, meta, ctx, result, parts)
-            return
-        parts_lock = threading.Lock()
-        runs_lock = threading.Lock()
-
-        def run_one(cap_id: str) -> None:
-            meta = CAPABILITIES.get(cap_id)
-            if not meta or meta.get("kind") != KIND_HARNESS:
-                return
-            local_parts: list[str] = []
-            _stage_harness(
-                cap_id,
-                meta,
-                ctx,
-                result,
-                local_parts,
-                parts_lock=parts_lock,
-                runs_lock=runs_lock,
-            )
-            if local_parts:
-                with parts_lock:
-                    parts.extend(local_parts)
-
-        _emit(ctx, "harness", f"running parallel verification wave: {', '.join(wave)}")
-        run_parallel_harness_wave(
-            wave,
-            run_one=run_one,
-            cancel_requested=lambda: _cancelled(ctx),
-        )
-        return
-    if node.kind is StageKind.FLASH_SAVE:
-        if ctx.save_to_flash and ctx.flash_store is not None:
-            _stage_flash_save(plan, selected, ctx, ctx.flash_store, result)
-        return
-    if node.kind is StageKind.SYNTHESIZE:
-        _stage_synthesis(plan, ctx, result, parts)
+    match node.kind:
+        case StageKind.FLASH_RETRIEVE:
+            if ctx.flash_store is not None:
+                _stage_flash_retrieve(plan, ctx, ctx.flash_store, result, parts)
+        case StageKind.WEB_RESEARCH:
+            if ctx.researcher is not None:
+                _stage_web_research(plan, ctx, ctx.researcher, result, parts)
+        case StageKind.HARNESS:
+            _dispatch_harness_stage(node, ctx, result, parts)
+        case StageKind.FLASH_SAVE:
+            if ctx.save_to_flash and ctx.flash_store is not None:
+                _stage_flash_save(plan, selected, ctx, ctx.flash_store, result)
+        case StageKind.SYNTHESIZE:
+            _stage_synthesis(plan, ctx, result, parts)
 
 
 def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
