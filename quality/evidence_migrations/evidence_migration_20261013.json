@@ -20,6 +20,17 @@
   },
   "base_revision": "00b2eed4f",
   "date": "2026-10-13",
+  "honesty_bar_count": {
+    "measured_at": "f8548ab20 (receipts head corpus_epoch_588a35edec9d3f5b, 399 stamped members, 17 registered)",
+    "method": "members = pinned_head_members('receipts', load_heads_pin('quality/epoch_heads.json')['receipts/*.json']); registered = load_quarantine('quality/legacy_quarantine.json').files; for each name in members - registered that verify_receipt_file accepts, run legacy_unsealed.honesty_stamp_errors on the parsed document: 'lacking' counts any reject or quarantine code, 'only_live_pnl_claim' counts quarantine == ['live_pnl_claim_missing'] with no reject code.",
+    "result": {
+      "claim_receipts": 338,
+      "claim_receipts_lacking_a_required_stamp": 170,
+      "epoch_receipts": 44,
+      "lacking_only_live_pnl_claim_false": 143,
+      "verified_unregistered": 382
+    }
+  },
   "independent_confirmation": {
     "elapsed_s": 139.7,
     "equals_restored_receipt": "receipts/mcs_vol_drill.json",
@@ -100,6 +111,17 @@
       "why_restored": "original path; the forward_record .seal.json is RFC 3161-anchored at receipts/ (quality/timestamps/anchors.json target)"
     }
   ],
+  "replay_integration": {
+    "carrier": "data/manifests/replay/corpus.json",
+    "cause": "scripts/corpus_real_drill.py output embeds generated_at_commit; the manifest pins the artifact sha c05393795df5af21... made at one commit, so no other commit can reproduce it byte-for-byte.",
+    "measured": {
+      "f8548ab20_default_timeout_120": "pass=0 fail=2 skipped=14 (mcs_vol needs 139.7 s)",
+      "f8548ab20_timeout_600": "pass=1 fail=1 skipped=14, corpus carrier fail: receipt reproduces (sha 25230923d0716434...), artifact does not",
+      "main_b0e48dd60_timeout_600": "pass=1 fail=0 skipped=15, corpus carrier skipped: inputs_not_verified"
+    },
+    "not_done_here": "A producer change plus a re-pinned manifest would rewrite pinned evidence; left to the lane owner with review. Neither the pin nor the comparison was relaxed.",
+    "status": "not met for one carrier"
+  },
   "restored_receipts": [
     {
       "mutated_sha256": "796254d8a81ca7d7a46cf0e37cdd8cdca3cdaea5f3d560ea7cb689a927f1f054",
@@ -579,13 +601,15 @@
     "Fourth independent review (no blockers): the quarantine registry could grow in the same change that adds a receipt (now the quarantine-gate PR rule: new entries must pin bytes the base already had, and an admission_honesty_gap entry must be an unstamped base file); epoch-consistency aborted at the local-only data/metadata chain on clean checkouts, leaving 21 corpora unproven (now skipped by the same rule verify-repo uses); the evidence job's 10-minute timeout could not fit every gate (now 25); the honesty-gap pin is checked against the classified bytes themselves; name folding also drops NTFS trailing dots and spaces; the count above said five where it is four.",
     "After the first merge, the recorded jewel-drift baseline (38 entries, identical to the then-base) was superseded: main re-pinned the jewels, so the same claim is now measured against main's tip (1 entry). The docs were updated to say so.",
     "Fifth independent review (MiniMax-M3 over the full diff and gate logs; every claim was re-run locally before acting): the base-comparison gates (epoch-consistency, epoch-ack-gate, quarantine-gate and the admission diff) ran only on pull requests although commits land directly on main, so they now also run on push events against the pre-push tip (github.event.before), and docs and docstrings call them base gates; the standalone verify_epoch_chain.py crashed with KeyError on a corpus with no valid epoch receipt (now no_epoch_receipts / no_valid_epoch_receipts, exit 1, with a regression test); integration_with_main said the code-corpus drift was all main's, but this repair's own edits add to it; the docs' honesty-bar count was recounted against the receipts head (of the 382 verified, unregistered members the head stamps, 338 are claim receipts beside 44 epoch receipts; 170 of the 338 lack a required stamp, 143 of them only live_pnl_claim: false). Claims that did not reproduce were not acted on: evidence_audit already passes the raw bytes; the corpus_real_drill ack matches git show b07640432; the p0 honesty-gap pin matches its bytes; forks already fail epoch_fork; the .dsh-24x7 require-stamped policy agrees between CORPORA and the Makefile. Baselining main's McCabe excess in superpower.py was declined: that would widen a baseline for debt this repair did not add.",
-    "Sixth independent review (MiniMax-M3 judge, CI, honesty and devil's-advocate passes; every claim re-run locally before acting): epoch-consistency read the base heads pin through a pipe whose failure the loop ignored, so a base whose pin was missing or unreadable skipped all 28 chains and passed (reproduced with probe base commits in a scratch object store); it now fails closed, as admission-gate already did, with a regression test that fails on the old target; the docs now say how the honesty-bar figures are counted and that the head's 382 verified, unregistered members include 44 epoch receipts. Claims that did not reproduce were not acted on: GitHub's push payload gives the previous tip as before on a force-push (the all-zero SHA only when the push creates the ref), and a failed base fetch fails the step under the default bash -e shell, so a force-push cannot skip the base gates silently; a merge-commit push still compares against main's pre-push tip; the push-event gates cannot turn main's evidence job red, because it already fails at make evidence-audit on main's last completed push run (3267, 029211639)."
+    "Sixth independent review (MiniMax-M3 judge, CI, honesty and devil's-advocate passes; every claim re-run locally before acting): epoch-consistency read the base heads pin through a pipe whose failure the loop ignored, so a base whose pin was missing or unreadable skipped all 28 chains and passed (reproduced with probe base commits in a scratch object store); it now fails closed, as admission-gate already did, with a regression test that fails on the old target; the docs now say how the honesty-bar figures are counted and that the head's 382 verified, unregistered members include 44 epoch receipts. Claims that did not reproduce were not acted on: GitHub's push payload gives the previous tip as before on a force-push (the all-zero SHA only when the push creates the ref), and a failed base fetch fails the step under the default bash -e shell, so a force-push cannot skip the base gates silently; a merge-commit push still compares against main's pre-push tip; the push-event gates cannot turn main's evidence job red, because it already fails at make evidence-audit on main's last completed push run (CI run 3267 on 029211639, https://github.com/artificial-hedge/dipcatcher/actions/runs/38400998192, evidence-audit failed at 'Re-verify every committed receipt (strict)'); this is read from GitHub's run record, not a measurement of the push itself.",
+    "Seventh independent review (MiniMax-M3 merge audit, regression triage, gate reading, honesty and go/no-go passes at f8548ab20; every undecidable item was decided by command): the replay_sweep_long gate had been reported as inherited, but on main (b0e48dd60, clean worktree) it passes (carriers=16 pass=1 fail=0 skipped=15) because the corpus carrier is skipped as inputs_not_verified; this repair restored the receipts that carrier replays, so it now runs and fails (pass=1 fail=1 skipped=14): the receipt reproduces byte-for-byte, the pinned artifact does not, because the producer embeds generated_at_commit. That is this push's change to the gate's verdict and a residual blocker on the replay leg, recorded under replay_integration. Also fixed: the docs now name verify-repo's pin_signatures gate as the source of pin_drift, state how the honesty-bar figures are counted (honesty_bar_count), and cite the CI run behind the evidence-audit claim. Merge-audit items the reviewer could not decide were decided by command (second_integration_with_main.checks). The two static-check failures on the merged tree are main's: mypy src/fx1 (tiny_lm.py, e3b5a1fcc) and arch-guard (doctor.py:66, 61db5caa4); both files are identical to origin/main and are left to their lane."
   ],
   "schema": "evidence_migration.v1",
   "schema_drift_acks": [
     "calibration_audit.v1: calib_real_drill.json + calibration_audit.json (two claim shapes in sealed history)"
   ],
   "second_integration_with_main": {
+    "checks": "git diff --name-only 88d7b3a3d b0e48dd60 lists the six files; git diff --name-only 88d7b3a3d b0e48dd60 -- quality receipts lists nothing, so keeping this branch's pin files discarded no main change; for the five files this branch never touched the merged bytes equal origin/main's; the merged crown_jewels.py equals git merge-file over (88d7b3a3d, this branch, origin/main) with no conflict; git diff b0e48dd60 43c089f29 -- src/quant_fund/research/crown_jewels.py shows only this branch's four DEFAULT_JEWELS entries and docstring.",
     "crown_jewels": "main changed three jewels at b0e48dd60 without re-pinning them (concierge.py, superpower.py, crown_jewels.py); day_grind_progress.md had already drifted. Only the jewels this repair changed were re-pinned: Makefile, scripts/verify_epoch_chain.py, src/quant_fund/research/repo_integrity.py and src/quant_fund/research/crown_jewels.py. The last also carries main's distribution_lineage_digest, a read-only function reviewed before pinning. Remaining drift is main's: day_grind_progress.md, concierge.py, superpower.py.",
     "date": "2026-10-14",
     "main_head": "b0e48dd60",
