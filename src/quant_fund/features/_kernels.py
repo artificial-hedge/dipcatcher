@@ -8,6 +8,7 @@ accumulators, not a global cumsum; Goertzel in the published order).
 from __future__ import annotations
 
 import math
+from typing import cast
 
 import numpy as np
 from numba import njit
@@ -131,19 +132,19 @@ def _goertzel_powers_nb(demeaned: np.ndarray, periods: np.ndarray) -> np.ndarray
 
 def reset_bounds(weights: np.ndarray, threshold: float) -> np.ndarray:
     """Bar-start indices. Numba when it compiles; the same loop otherwise."""
-    return call_kernel(_reset_bounds_nb, weights, threshold)
+    return cast(np.ndarray, call_kernel(_reset_bounds_nb, weights, threshold))
 
 
 def imbalance_bounds(values: np.ndarray, alpha: float, e_ticks: float, e_init: float) -> np.ndarray:
     """Tick- or dollar-imbalance bar starts. Numba when it compiles."""
-    return call_kernel(_imbalance_bounds_nb, values, alpha, e_ticks, e_init)
+    return cast(np.ndarray, call_kernel(_imbalance_bounds_nb, values, alpha, e_ticks, e_init))
 
 
 def run_bounds(signs: np.ndarray, alpha: float, e_ticks: float) -> np.ndarray:
     """Tick-run bar starts. Numba when it compiles; the same loop otherwise."""
-    return call_kernel(_run_bounds_nb, signs, alpha, e_ticks)
+    return cast(np.ndarray, call_kernel(_run_bounds_nb, signs, alpha, e_ticks))
 
 
 def goertzel_powers(demeaned: np.ndarray, periods: np.ndarray) -> np.ndarray:
     """Normalized Goertzel power at each period. ``periods`` are float bars."""
-    return call_kernel(_goertzel_powers_nb, demeaned, periods)
+    return cast(np.ndarray, call_kernel(_goertzel_powers_nb, demeaned, periods))
