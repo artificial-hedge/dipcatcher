@@ -125,6 +125,13 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "scripts/verify_epoch_chain.py",  # standalone full-chain auditor —
     # same class: a silent patch to the independent oracle defeats the
     # divergence-detection layer
+    # --- fx-1 orchestration: fail-closed harness bridge + dynamic workflow ---
+    "src/fx1/harness.py",
+    "src/fx1/interactive/concierge.py",
+    "src/fx1/interactive/superpower.py",
+    "src/fx1/interactive/workflow.py",
+    "src/fx1/interactive/trigger_lexicon.py",
+    "src/fx1/interactive/surface_seal.py",
 )
 
 

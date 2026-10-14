@@ -14,7 +14,7 @@ import json
 from typing import Any
 
 from fx1.harness import HARNESS_REGISTRY
-from fx1.interactive.workflow import WORKFLOW_SCHEMA
+from fx1.interactive.workflow import WORKFLOW_SCHEMA, workflow_parallel_policy
 from quant_fund.utils.hashing import hash_bytes
 
 SURFACE_SEAL_SCHEMA = "interactive_surface.v1"
@@ -63,6 +63,7 @@ def surface_payload(
         "capabilities": cap_rows,
         "triggers": trigger_rows,
         "web_triggers": list(web_triggers),
+        "parallel_harness": workflow_parallel_policy(),
     }
 
 

@@ -54,6 +54,7 @@ from fx1.interactive.workflow import (
     StageNode,
     build_superpower_schedule,
     drive_workflow,
+    run_parallel_harness_wave,
 )
 
 # ---------------------------------------------------------------------------
@@ -703,12 +704,41 @@ def _dispatch_stage(
             _stage_web_research(plan, ctx, ctx.researcher, result, parts)
         return
     if node.kind is StageKind.HARNESS:
-        cap_id = node.cap_id
-        if cap_id is None:
+        if node.cap_id is None:
             return
-        meta = CAPABILITIES.get(cap_id)
-        if meta and meta.get("kind") == KIND_HARNESS:
-            _stage_harness(cap_id, meta, ctx, result, parts)
+        wave = node.harness_wave if node.harness_wave else (node.cap_id,)
+        if len(wave) <= 1:
+            meta = CAPABILITIES.get(node.cap_id)
+            if meta and meta.get("kind") == KIND_HARNESS:
+                _stage_harness(node.cap_id, meta, ctx, result, parts)
+            return
+        parts_lock = threading.Lock()
+        runs_lock = threading.Lock()
+
+        def run_one(cap_id: str) -> None:
+            meta = CAPABILITIES.get(cap_id)
+            if not meta or meta.get("kind") != KIND_HARNESS:
+                return
+            local_parts: list[str] = []
+            _stage_harness(
+                cap_id,
+                meta,
+                ctx,
+                result,
+                local_parts,
+                parts_lock=parts_lock,
+                runs_lock=runs_lock,
+            )
+            if local_parts:
+                with parts_lock:
+                    parts.extend(local_parts)
+
+        _emit(ctx, "harness", f"running parallel verification wave: {', '.join(wave)}")
+        run_parallel_harness_wave(
+            wave,
+            run_one=run_one,
+            cancel_requested=lambda: _cancelled(ctx),
+        )
         return
     if node.kind is StageKind.FLASH_SAVE:
         if ctx.save_to_flash and ctx.flash_store is not None:
@@ -872,6 +902,9 @@ def _stage_harness(
     ctx: SuperpowerContext,
     result: SuperpowerResult,
     parts: list[str],
+    *,
+    parts_lock: threading.Lock | None = None,
+    runs_lock: threading.Lock | None = None,
 ) -> None:
     """One registered command: admitted, executed, labelled with its evidence class."""
     if not _harness_admitted(cap_id, meta, ctx, result):
@@ -880,7 +913,8 @@ def _stage_harness(
     try:
         outcome = _harness_run(cap_id, ctx)
     except Exception as exc:  # noqa: BLE001
-        _record(result, ctx, CapabilityRun(cap_id, cap_id, "failed", str(exc)))
+        run = CapabilityRun(cap_id, cap_id, "failed", str(exc))
+        _record_locked(result, ctx, run, runs_lock)
         result.errors.append(f"{cap_id}: {exc}")
         return
     code, stdout = outcome.exit_code, outcome.stdout
@@ -896,21 +930,36 @@ def _stage_harness(
         result.errors.append(f"{cap_id}: timed out")
     else:
         status = "ran" if code == 0 else "failed"
-    parts.append(f"# harness {cap_id} (exit {code})\n{stdout[-ctx.max_stdout_chars :]}")
+    chunk = f"# harness {cap_id} (exit {code})\n{stdout[-ctx.max_stdout_chars :]}"
+    if parts_lock is None:
+        parts.append(chunk)
+    else:
+        with parts_lock:
+            parts.append(chunk)
     evidence = _harness_evidence(cap_id, code, labels) if status == "ran" else EvidenceClass.NONE
-    _record(
-        result,
-        ctx,
-        CapabilityRun(
-            cap_id,
-            cap_id,
-            status,
-            detail,
-            evidence=str(evidence),
-            exit_code=code,
-            duration_s=outcome.duration_s,
-        ),
+    run = CapabilityRun(
+        cap_id,
+        cap_id,
+        status,
+        detail,
+        evidence=str(evidence),
+        exit_code=code,
+        duration_s=outcome.duration_s,
     )
+    _record_locked(result, ctx, run, runs_lock)
+
+
+def _record_locked(
+    result: SuperpowerResult,
+    ctx: SuperpowerContext,
+    run: CapabilityRun,
+    lock: threading.Lock | None,
+) -> None:
+    if lock is None:
+        _record(result, ctx, run)
+        return
+    with lock:
+        _record(result, ctx, run)
 
 
 def _stage_flash_save(
