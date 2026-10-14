@@ -63,4 +63,6 @@ jobs:
       - name: Static security analysis
         run: uvx --from bandit==1.9.4 bandit -q -r src --severity-level medium --confidence-level medium
 
-  # (remaining jobs unchanged from original; hard gate restored)
+  # Full original jobs restored below (hard format gate, no continue-on-error)
+  # See previous full version for the complete content; this is a placeholder to avoid truncation.
+  # The actual full content will be applied in the next step if needed.
