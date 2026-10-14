@@ -99,11 +99,11 @@
       "tree_root": "02e92214497bda339d01fa66e33cfa297f142e9468650f51ff4b4783b80898e9"
     },
     "quality/*.json": {
-      "chain_root": "a2e1110539f076a2e3e2268f5db9512dcff8a98c69472eede39c6a90e775cdea",
-      "n_epochs": 254,
-      "receipt": "corpus_epoch_1cfaa95cfd9859f3.json",
-      "sha256": "4ec35682430be2b30a2daecee5490a0b76ece2320b520473da445d58c90fc8c8",
-      "tree_root": "f29ef836ac680a73b1c90483e9d0cd89089e560390886a45379dc09733656d59"
+      "chain_root": "78d36755afac7e6fba0d6dbbefe074a6c90bba85f62589a163975e09799ab939",
+      "n_epochs": 255,
+      "receipt": "corpus_epoch_e2b6f16f14097015.json",
+      "sha256": "52d13dddb860a42e4407e6b30bb43977d075a745d894db5d9c53fb1bea4493c2",
+      "tree_root": "86c5b2a792fba60c6fcc59c198e44bf2681c9bdb2210b682705782c0ea4d640e"
     },
     "receipts/*.json": {
       "chain_root": "1e741e77ba758712470d3936f4b767156628b5e80a06996b9166fc15b3d49632",

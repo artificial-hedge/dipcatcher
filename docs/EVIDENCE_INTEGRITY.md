@@ -126,7 +126,9 @@ OTS-anchored. An auditor should therefore always pass `--pin` (or
 inside the Ed25519-signed checkpoint) — bare `--proof` mode authenticates
 shape, not custody.
 
-Residual boundaries, as of 2026-10-14 (measured on this repair merged with `main` at 88d7b3a3d, after stamping the receipts and quality chains; not assumed):
+Residual boundaries, as of 2026-10-14 (measured on this repair merged
+with `main` at b0e48dd60, after stamping the receipts and quality chains;
+not assumed):
 
 - **`make evidence-audit` is red on inherited drift, and stops early.**
   After the receipts and quality chains, it checks `.github/workflows`,
@@ -143,18 +145,23 @@ Residual boundaries, as of 2026-10-14 (measured on this repair merged with `main
   push to `main` even while this step is red. The base-comparison steps
   compare against the PR's base branch or, for a direct push, the tip
   `main` had before the push (`github.event.before`). The replay sweep is
-  itself red today: the `mcs_vol` carrier needs about 140 s against the 120 s default timeout,
-  and the corpus carrier's pinned artifact embeds `generated_at_commit`,
-  so it cannot reproduce byte-for-byte.
-- **Crown-jewel enforcement is partial.** `main` re-pinned the jewels
-  (88d7b3a3d), and with this repair's re-pin `dipcatcher crown-jewels
-  --check` reports one drifted entry, `day_grind_progress.md`, which this
-  repair does not touch. `make evidence-audit` still stops at the
-  workflows chain before it reaches that command, and the signature over
-  the pins (`gate_pins.sig`) is stale (`pin_drift` on `crown_jewels.json`
-  and `epoch_heads.json`); it cannot be refreshed without
-  `GATE_SIGNING_KEY`. Until the key holder re-signs, the pins are checked
-  only when `crown-jewels --check` is run directly.
+  itself red today: the `mcs_vol` carrier needs about 140 s against the
+  120 s default timeout, and the corpus carrier's pinned artifact embeds
+  `generated_at_commit`, so it cannot reproduce byte-for-byte.
+- **Crown-jewel enforcement is partial.** `main` re-pinned the jewels at
+  88d7b3a3d, leaving `day_grind_progress.md` drifted, then changed three
+  more at b0e48dd60 without re-pinning them. This repair re-pins only the
+  jewels it changed. One of them, `crown_jewels.py`, also carries
+  `main`'s `distribution_lineage_digest`, a read-only function that was
+  reviewed before it was pinned. `dipcatcher crown-jewels --check` then
+  reports three drifted entries, all `main`'s: `day_grind_progress.md`,
+  `src/fx1/interactive/concierge.py` and
+  `src/fx1/interactive/superpower.py`. `make evidence-audit` still stops
+  at the workflows chain before it reaches that command, and the
+  signature over the pins (`gate_pins.sig`) is stale (`pin_drift` on
+  `crown_jewels.json` and `epoch_heads.json`); it cannot be refreshed
+  without `GATE_SIGNING_KEY`. Until the key holder re-signs, the pins are
+  checked only when `crown-jewels --check` is run directly.
 - **Admission's honesty bar covers arrivals, not stamped history.** The
   receipts head (`corpus_epoch_588a35edec9d3f5b`) stamps 382 members that
   verify and are not in the registry: 44 epoch receipts and 338 claim

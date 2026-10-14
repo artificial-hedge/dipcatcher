@@ -584,5 +584,13 @@
   "schema": "evidence_migration.v1",
   "schema_drift_acks": [
     "calibration_audit.v1: calib_real_drill.json + calibration_audit.json (two claim shapes in sealed history)"
-  ]
+  ],
+  "second_integration_with_main": {
+    "crown_jewels": "main changed three jewels at b0e48dd60 without re-pinning them (concierge.py, superpower.py, crown_jewels.py); day_grind_progress.md had already drifted. Only the jewels this repair changed were re-pinned: Makefile, scripts/verify_epoch_chain.py, src/quant_fund/research/repo_integrity.py and src/quant_fund/research/crown_jewels.py. The last also carries main's distribution_lineage_digest, a read-only function reviewed before pinning. Remaining drift is main's: day_grind_progress.md, concierge.py, superpower.py.",
+    "date": "2026-10-14",
+    "main_head": "b0e48dd60",
+    "merge_bases": "88d7b3a3d and 029211639: main merged a line descended from this repair's original base (00b2eed4f), so the merge was criss-cross.",
+    "quality_chain": "main changed nothing under quality/ or receipts/ since 88d7b3a3d, so the quality chain is stamped on top of this repair's epoch 254 with no fork.",
+    "resolution": "main's tree delta since 88d7b3a3d, which this branch already held, is six files (src/fx1/doctor.py, src/fx1/interactive/concierge.py, src/fx1/interactive/superpower.py, src/fx1/webresearch/fetch.py, src/quant_fund/research/crown_jewels.py, tests/unit/research/test_crown_jewels.py). The merged tree equals this branch plus exactly that delta: main's version of the five files this branch never touched, and a clean three-way merge of crown_jewels.py against 88d7b3a3d. The conflicts on quality/crown_jewels.json and quality/epoch_heads.json came from the virtual merge base; main had not changed either file, so this branch's versions were kept."
+  }
 }
