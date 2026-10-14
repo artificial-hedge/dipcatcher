@@ -1,7 +1,9 @@
 """Pre-trade engine: snapshot checks, latched kill switch, signed decisions.
 
-Shadow mode is the supported deployment. ``check`` returns a bitset and does
-not route orders. Wiring this into a live broker is intentionally not provided.
+``check`` returns a bitset and does not route orders. The shadow adapter only
+observes a simulated broker. ``quant_fund.live`` is the armed gateway: it
+submits only after ``decide`` allows the order. This module still does not
+open a socket or choose a venue.
 """
 
 from __future__ import annotations
@@ -181,6 +183,12 @@ class PretradeEngine:
             self.book.name_limit = 0.0
             self.book.pdt_tight = 1
 
+    def set_settled_cash(self, cash: float) -> None:
+        """Replace the settled-cash buying-power balance from a broker snapshot."""
+        if not math.isfinite(cash) or cash < 0.0:
+            raise ValueError("settled cash must be finite and non-negative")
+        self.book.settled = float(cash)
+
     def recompute_exposure(self) -> None:
         gross = 0.0
         net = 0.0
@@ -211,7 +219,7 @@ class PretradeEngine:
         if rolled and self.book.nav == self.book.nav and self.book.nav > 0.0:
             self.book.session_start = self.book.nav
             self._recompute_floors()
-        if dt.weekday() >= 5:
+        if dt.weekday() >= 5 and not self.config.session.weekends_open:
             self.book.session_open = 0
             self.book.open_ns = self.book.day_lo
             self.book.close_ns = self.book.day_lo

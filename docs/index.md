@@ -4,7 +4,7 @@
 
 Underneath the chat, `quant_fund` is the research harness: the data engine, the evaluation bench, and the receipt verifier. **fx-1** (`src/fx1`) is a sub-project in this repository. It contains the corpus builder, the eval bank, and training plumbing, plus a training plan. No trained checkpoint is in the tree. The declared base constant is `moonshotai/Kimi-K3`. This site documents the harness and that plan.
 
-The lab builds a point-in-time market-state object, scores forecasts with proper scoring rules, and keeps every claim tied to a sealed receipt. Simulated paper and shadow runs exercise those same gates. Live broker connectivity is not implemented.
+The lab builds a point-in-time market-state object, scores forecasts with proper scoring rules, and keeps every claim tied to a sealed receipt. Simulated paper and shadow runs exercise those same gates. The armed order gateway can submit broker orders after an explicit arm; a fill is not a research result and not a profit claim. See [Live order gateway](LIVE_TRADING.md).
 
 ## Honesty and receipts
 
@@ -42,6 +42,7 @@ SYNTHETIC evidence cannot take a champion or live alias. The full rules are in [
 - [Getting started](getting-started.md) — install, doctor, a SYNTHETIC research smoke, and this site
 - [Examples gallery](examples.md) — runnable scripts, each labeled SYNTHETIC or tracked snapshot
 - [Evidence](evidence/index.md) — numbers copied from sealed receipts
+- [Live order gateway](LIVE_TRADING.md) — armed orders, loopback and Alpaca, pre-trade gate
 - [Architecture](ARCHITECTURE.md) — package layout and the decision clock
 - [Data contracts](DATA_CONTRACTS.md) — point-in-time fields and lake tables
 - [Validation](VALIDATION.md) — walk-forward, purge, embargo, CPCV

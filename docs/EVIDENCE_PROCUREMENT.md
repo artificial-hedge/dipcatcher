@@ -107,10 +107,13 @@ verdict is `QUALIFYING` — every field present and consistent, nothing rejected
 | 2.1 | A **brokerage account + API credentials** with authenticated order submission and fill/execution reporting | A regulated broker/dealer with a documented order+fill API and drop-copy/executions feed | Compliance + Trading | Credentials enable authenticated order and *execution* (fill) queries, not just order status. |
 | 2.2 | A reconciliation entitlement: historical execution drop-copy or a fills export to reconcile against | Same broker | Trading | Fills can be independently re-pulled and matched. |
 
-> Until 2.1 is authorized and connected **outside** this repo, condition 2 is
-> **BLOCKED**. This lane ships the **paper/simulated** reconciliation surface
-> only and sends **no live orders** (configuring a live endpoint raises
-> `LiveEndpointRefused`). It makes **no** live-connectivity or live-P&L claim.
+> Until 2.1 is authorized and a real drop-copy passes §2b, condition 2 is
+> **BLOCKED**. The paper/simulated surface still sends no live orders
+> (configuring a live endpoint there raises `LiveEndpointRefused`).
+> `quant_fund.live` is a separate armed gateway
+> ([LIVE_TRADING.md](LIVE_TRADING.md)). It can submit when an operator arms it
+> and supplies broker credentials. That gateway is not condition-2 evidence,
+> and it makes no live-P&L claim.
 
 ### 2b. Broker order/fill-reconciliation acceptance tests (condition 2)
 

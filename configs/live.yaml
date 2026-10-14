@@ -1,0 +1,13 @@
+# Armed order gateway. Default venue is the in-process loopback, which cannot
+# reach a broker. Switch venue to alpaca-paper or alpaca-live only in a copy of
+# this file that you do not commit with credentials. Credentials come from the
+# environment (ALPACA_API_KEY_ID / ALPACA_API_SECRET_KEY, or the APCA_* names).
+# A fill is broker accounting. It is not a research result and not a profit claim.
+schema_version: 1
+venue: loopback
+starting_cash: 100000
+calendar: us_rth
+pretrade_config: configs/pretrade_risk.yaml
+state_dir: data/live/default
+cash_tolerance: 0.01
+position_tolerance: 0.000000001

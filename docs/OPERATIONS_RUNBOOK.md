@@ -114,9 +114,11 @@ publication, preserve the run directory and resume from the last valid
 
 ## Deployment
 
-There is **no live-trading deployment** — no broker connectivity exists
-(see [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md)). "Deployment"
-here means three research/simulation surfaces:
+Research promotion still does not authorize live capital. The order gateway
+is a fourth, opt-in surface and it stays disarmed until `dipcatcher live arm`
+([LIVE_TRADING.md](LIVE_TRADING.md),
+[INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md)). "Deployment" here
+means these surfaces:
 
 1. **Research harness (local or container).** `make sync` installs the locked
    environment. `Dockerfile` builds the research API image (non-root uid
@@ -133,6 +135,11 @@ here means three research/simulation surfaces:
    [FX1_DEPLOY.md](FX1_DEPLOY.md) "Installing release artifacts".
 3. **Windows remote research/SOTA fleet** (`D:\dipcatcher`) — see
    "Windows remote-fleet operations" below.
+4. **Armed order gateway** (`dipcatcher live`). Default venue is in-process
+   loopback. Alpaca paper and Alpaca live send orders only after arming,
+   pre-trade allow, and environment credentials. A fill is broker accounting,
+   not a research result. `live kill` latches this gateway; it does not cancel
+   orders already accepted by the broker. Use `live cancel` and `live flatten`.
 
 Deploy gates: `make lint`, `make typecheck`, `make test`,
 `make evidence-audit`, plus for the fx-1 service `fx1 harness selftest` and
