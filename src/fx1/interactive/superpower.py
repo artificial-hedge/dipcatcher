@@ -47,6 +47,14 @@ from fx1.interactive.families import (
     families_prompt_block,
     resolve_families,
 )
+from fx1.interactive.surface_seal import build_surface_seal
+from fx1.interactive.trigger_lexicon import TriggerLexicon
+from fx1.interactive.workflow import (
+    StageKind,
+    StageNode,
+    build_superpower_schedule,
+    drive_workflow,
+)
 
 # ---------------------------------------------------------------------------
 # Capability registry
@@ -155,6 +163,8 @@ _WEB_TRIGGERS = (
     "compare publicly",
 )
 
+_TRIGGER_LEXICON = TriggerLexicon(_TRIGGERS)
+
 _HARNESS_CAPABILITIES: dict[str, dict[str, Any]] = {
     command.name: {
         "id": command.name,
@@ -226,8 +236,7 @@ ModelFn = Callable[[str], str]
 
 
 def _score_goal(goal: str, terms: tuple[str, ...]) -> int:
-    lowered = goal.lower()
-    return sum(1 for term in terms if re.search(rf"\b{re.escape(term)}\b", lowered))
+    return _TRIGGER_LEXICON.score(goal.lower(), terms)
 
 
 @dataclass
@@ -313,15 +322,10 @@ def plan_goal(
 def _scored_harness_ids(
     goal: str, registry: dict[str, dict[str, Any]], max_harness: int
 ) -> list[str]:
-    scored: list[tuple[int, str]] = []
-    for cap_id, meta in registry.items():
-        if meta.get("kind") != KIND_HARNESS:
-            continue
-        score = _score_goal(goal, _TRIGGERS.get(cap_id, ()))
-        if score:
-            scored.append((score, cap_id))
-    scored.sort(key=lambda pair: pair[0], reverse=True)
-    return [cap_id for _, cap_id in scored[:max_harness]]
+    harness_ids = tuple(
+        cap_id for cap_id, meta in registry.items() if meta.get("kind") == KIND_HARNESS
+    )
+    return _TRIGGER_LEXICON.rank_harness(goal.lower(), harness_ids, max_harness=max_harness)
 
 
 @dataclass
@@ -376,7 +380,7 @@ def _deterministic_selection(
     for cap_id in harness_ids:
         meta = registry[cap_id]
         terms = _TRIGGERS.get(cap_id, ())
-        matched = [t for t in terms if re.search(rf"\b{re.escape(t)}\b", lowered)]
+        matched = _TRIGGER_LEXICON.matched(lowered, terms)
         selected.append(
             PlannedCapability(
                 cap_id,
@@ -384,7 +388,7 @@ def _deterministic_selection(
                 f"{meta.get('description', '')}",
             )
         )
-    if _score_goal(goal, _WEB_TRIGGERS) or not harness_ids:
+    if _TRIGGER_LEXICON.any_web_trigger(lowered, _WEB_TRIGGERS) or not harness_ids:
         selected.append(
             PlannedCapability(
                 "web_research",
@@ -681,23 +685,63 @@ def _check_budget(ctx: SuperpowerContext, result: SuperpowerResult) -> str | Non
     return None
 
 
+def _dispatch_stage(
+    node: StageNode,
+    *,
+    plan: SuperpowerPlan,
+    ctx: SuperpowerContext,
+    result: SuperpowerResult,
+    parts: list[str],
+    selected: list[str],
+) -> None:
+    if node.kind is StageKind.FLASH_RETRIEVE:
+        if ctx.flash_store is not None:
+            _stage_flash_retrieve(plan, ctx, ctx.flash_store, result, parts)
+        return
+    if node.kind is StageKind.WEB_RESEARCH:
+        if ctx.researcher is not None:
+            _stage_web_research(plan, ctx, ctx.researcher, result, parts)
+        return
+    if node.kind is StageKind.HARNESS:
+        cap_id = node.cap_id
+        if cap_id is None:
+            return
+        meta = CAPABILITIES.get(cap_id)
+        if meta and meta.get("kind") == KIND_HARNESS:
+            _stage_harness(cap_id, meta, ctx, result, parts)
+        return
+    if node.kind is StageKind.FLASH_SAVE:
+        if ctx.save_to_flash and ctx.flash_store is not None:
+            _stage_flash_save(plan, selected, ctx, ctx.flash_store, result)
+        return
+    if node.kind is StageKind.SYNTHESIZE:
+        _stage_synthesis(plan, ctx, result, parts)
+
+
 def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
     """Coordinate the plan in dependency order: memory → web → harness → save → synthesis."""
     result = SuperpowerResult(goal=plan.goal, plan=plan)
     selected = list(dict.fromkeys(plan.ids()))
     context_parts: list[str] = []
-    if "flash_retrieve" in selected and ctx.flash_store is not None:
-        _stage_flash_retrieve(plan, ctx, ctx.flash_store, result, context_parts)
-    if "web_research" in selected and ctx.researcher is not None:
-        _stage_web_research(plan, ctx, ctx.researcher, result, context_parts)
-    for cap_id in selected:
-        meta = CAPABILITIES.get(cap_id)
-        if meta and meta.get("kind") == KIND_HARNESS:
-            _stage_harness(cap_id, meta, ctx, result, context_parts)
-    if "flash_save" in selected and ctx.save_to_flash and ctx.flash_store is not None:
-        _stage_flash_save(plan, selected, ctx, ctx.flash_store, result)
-    if "synthesize" in selected:
-        _stage_synthesis(plan, ctx, result, context_parts)
+    schedule = build_superpower_schedule(selected, CAPABILITIES)
+    handlers = {
+        StageKind.FLASH_RETRIEVE: _dispatch_stage,
+        StageKind.WEB_RESEARCH: _dispatch_stage,
+        StageKind.HARNESS: _dispatch_stage,
+        StageKind.FLASH_SAVE: _dispatch_stage,
+        StageKind.SYNTHESIZE: _dispatch_stage,
+    }
+
+    drive_workflow(
+        schedule,
+        plan=plan,
+        ctx=ctx,
+        result=result,
+        parts=context_parts,
+        selected=selected,
+        handlers=handlers,
+        should_abort=lambda: False,
+    )
     if ctx.budget_ledger is not None:
         with contextlib.suppress(Exception):
             result.budget_snapshot = dict(ctx.budget_ledger.snapshot())
@@ -1027,6 +1071,17 @@ def _synthesis_prompt(
     )
 
 
+def interactive_surface_digest() -> str:
+    """Stable digest of harness + capability + trigger surface (anti-fork guard)."""
+    return str(
+        build_surface_seal(
+            capabilities=CAPABILITIES,
+            triggers=_TRIGGERS,
+            web_triggers=_WEB_TRIGGERS,
+        )["digest"]
+    )
+
+
 def describe_capabilities(catalog: FamilyCatalog | None = None) -> str:
     lines = ["available /superpower capabilities:", ""]
     for cap_id, meta in sorted(CAPABILITIES.items()):
@@ -1039,4 +1094,5 @@ def describe_capabilities(catalog: FamilyCatalog | None = None) -> str:
         )
     if catalog is not None:
         lines += ["", catalog.describe()]
+    lines += ["", f"interactive surface seal: {interactive_surface_digest()}"]
     return "\n".join(lines)
