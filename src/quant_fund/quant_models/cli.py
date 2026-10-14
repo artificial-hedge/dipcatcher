@@ -6,9 +6,7 @@ import json
 
 import typer
 
-qm_app = typer.Typer(
-    help="quant-models engines (BSM, HRP, GEX decide). Research only."
-)
+qm_app = typer.Typer(help="quant-models engines (BSM, HRP, GEX decide). Research only.")
 
 
 @qm_app.command("bs-price")
