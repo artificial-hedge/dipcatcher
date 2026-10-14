@@ -467,37 +467,70 @@ class AlpacaBroker:
         url = self.base + path
         if not url.startswith(self.base + "/"):
             raise LiveGateError("refusing a broker URL outside the venue host")
-        raw_body = None if body is None else json.dumps(body, separators=(",", ":")).encode("utf-8")
-        headers = {
-            "APCA-API-KEY-ID": key,
-            "APCA-API-SECRET-KEY": secret,
-            "Accept": "application/json",
-            "User-Agent": "dipcatcher-live/1",
-        }
-        if raw_body is not None:
-            headers["Content-Type"] = "application/json"
+        raw_body = _json_body(body)
+        headers = _alpaca_headers(key, secret, has_body=raw_body is not None)
         status, payload = self._transport(method, url, headers, raw_body, self._timeout)
-        if status == 404 and allow_missing:
-            return None, True
-        text = _redact(payload.decode("utf-8", errors="replace"), (key, secret))
-        if status == 204 or not text.strip():
-            if 200 <= status < 300:
-                return {}, False
-            raise BrokerRejected(f"broker HTTP {status}")
-        try:
-            parsed = json.loads(text)
-        except json.JSONDecodeError as exc:
-            raise BrokerRejected(f"broker HTTP {status} returned non-JSON") from exc
-        if status >= 400:
-            message = ""
-            if isinstance(parsed, dict):
-                message = str(parsed.get("message") or parsed.get("error") or "")
-            message = _redact(message, (key, secret))[:300]
-            detail = f": {message}" if message else ""
-            raise BrokerRejected(f"broker HTTP {status}{detail}")
-        return parsed, False
+        return _parse_broker_response(status, payload, (key, secret), allow_missing=allow_missing)
 
 
 def _decimal(value: float) -> str:
     text = format(float(value), ".10f").rstrip("0").rstrip(".")
     return text or "0"
+
+
+def _json_body(body: dict[str, Any] | None) -> bytes | None:
+    if body is None:
+        return None
+    return json.dumps(body, separators=(",", ":")).encode("utf-8")
+
+
+def _alpaca_headers(key: str, secret: str, *, has_body: bool) -> dict[str, str]:
+    headers = {
+        "APCA-API-KEY-ID": key,
+        "APCA-API-SECRET-KEY": secret,
+        "Accept": "application/json",
+        "User-Agent": "dipcatcher-live/1",
+    }
+    if has_body:
+        headers["Content-Type"] = "application/json"
+    return headers
+
+
+def _parse_broker_response(
+    status: int,
+    payload: bytes,
+    secrets: tuple[str, str],
+    *,
+    allow_missing: bool,
+) -> tuple[Any, bool]:
+    if status == 404 and allow_missing:
+        return None, True
+    text = _redact(payload.decode("utf-8", errors="replace"), secrets)
+    if status == 204 or not text.strip():
+        return _empty_response(status)
+    return _parse_json_response(status, text, secrets)
+
+
+def _empty_response(status: int) -> tuple[Any, bool]:
+    if 200 <= status < 300:
+        return {}, False
+    raise BrokerRejected(f"broker HTTP {status}")
+
+
+def _parse_json_response(status: int, text: str, secrets: tuple[str, str]) -> tuple[Any, bool]:
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise BrokerRejected(f"broker HTTP {status} returned non-JSON") from exc
+    if status >= 400:
+        raise BrokerRejected(_broker_error(status, parsed, secrets))
+    return parsed, False
+
+
+def _broker_error(status: int, parsed: Any, secrets: tuple[str, str]) -> str:
+    message = ""
+    if isinstance(parsed, dict):
+        message = str(parsed.get("message") or parsed.get("error") or "")
+    message = _redact(message, secrets)[:300]
+    detail = f": {message}" if message else ""
+    return f"broker HTTP {status}{detail}"

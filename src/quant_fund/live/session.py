@@ -711,64 +711,53 @@ class LiveSession:
 
     def _load_state(self, stored: dict[str, Any] | None) -> None:
         if stored is None:
-            self.orders = []
-            self.marks = {}
-            self.kill_state = {"latched": False, "actor": "", "reason": ""}
-            self._baseline_from_broker = self.venue == "loopback"
-            self.ledger = LiveLedger(
-                baseline_cash=float(self.config.starting_cash),
-                cash_tolerance=self.config.cash_tolerance,
-                position_tolerance=self.config.position_tolerance,
-            )
-            if self.venue == "loopback" and not isinstance(self.broker, LoopbackBroker):
-                raise LiveGateError("loopback venue requires the loopback broker")
-            if isinstance(self.broker, LoopbackBroker):
-                self.broker.cash = float(self.config.starting_cash)
+            self._load_fresh()
             return
-        if stored.get("schema") != _STATE_SCHEMA:
-            raise LiveGateError("session state schema is not supported")
-        if stored.get("venue") != self.venue:
-            raise LiveGateError("session state venue does not match the live config")
-        if (
-            stored.get("live_pnl_claim") is not False
-            or stored.get("research_evidence") is not False
-        ):
-            raise LiveGateError("session state must not claim research evidence or live profit")
-        orders = stored.get("orders")
-        fills = stored.get("fills")
-        marks = stored.get("marks")
-        kill = stored.get("kill")
-        if (
-            not isinstance(orders, list)
-            or not isinstance(fills, list)
-            or not isinstance(marks, dict)
-        ):
-            raise LiveGateError("session state is missing orders, fills, or marks")
-        if not isinstance(kill, dict):
-            raise LiveGateError("session state is missing the kill switch")
+        self._load_stored(stored)
+
+    def _load_fresh(self) -> None:
+        self.orders = []
+        self.marks = {}
+        self.kill_state = {"latched": False, "actor": "", "reason": ""}
+        self._baseline_from_broker = self.venue == "loopback"
+        self.ledger = self._new_ledger(float(self.config.starting_cash), {})
+        if self.venue == "loopback" and not isinstance(self.broker, LoopbackBroker):
+            raise LiveGateError("loopback venue requires the loopback broker")
+        if isinstance(self.broker, LoopbackBroker):
+            self.broker.cash = float(self.config.starting_cash)
+
+    def _load_stored(self, stored: dict[str, Any]) -> None:
+        _require_state_identity(stored, self.venue)
+        orders, fills, marks, kill = _state_collections(stored)
         self.orders = [_order_row(item) for item in orders]
         self.marks = {
             str(symbol): _positive(float(price), "stored mark") for symbol, price in marks.items()
         }
-        latched = bool(kill.get("latched"))
-        actor = str(kill.get("actor") or "")
-        reason = str(kill.get("reason") or "")
-        if latched and (not actor.strip() or not reason.strip()):
-            raise LiveGateError("a latched kill switch needs an actor and a reason")
-        self.kill_state = {"latched": latched, "actor": actor, "reason": reason}
-        baseline_cash = float(stored.get("baseline_cash", self.config.starting_cash))
+        self.kill_state = _kill_from_state(kill)
         baseline_positions = stored.get("baseline_positions") or {}
         if not isinstance(baseline_positions, dict):
             raise LiveGateError("baseline positions are malformed")
         self._baseline_from_broker = bool(
             stored.get("baseline_from_broker", self.venue == "loopback")
         )
-        self.ledger = LiveLedger(
-            baseline_cash=baseline_cash,
-            baseline_positions={str(k): float(v) for k, v in baseline_positions.items()},
+        self.ledger = self._new_ledger(
+            float(stored.get("baseline_cash", self.config.starting_cash)),
+            {str(key): float(value) for key, value in baseline_positions.items()},
+        )
+        self._replay(fills)
+        if isinstance(self.broker, LoopbackBroker):
+            self.broker.cash = self.ledger.computed_cash
+            self.broker.positions = self.ledger.computed_positions
+
+    def _new_ledger(self, cash: float, positions: dict[str, float]) -> LiveLedger:
+        return LiveLedger(
+            baseline_cash=cash,
+            baseline_positions=positions,
             cash_tolerance=self.config.cash_tolerance,
             position_tolerance=self.config.position_tolerance,
         )
+
+    def _replay(self, fills: list[Any]) -> None:
         for row in self.orders:
             self.ledger.note_order(
                 str(row["client_order_id"]), expects_fill=bool(row["expects_fill"])
@@ -777,9 +766,6 @@ class LiveSession:
             if not isinstance(item, dict):
                 raise LiveGateError("stored fill is malformed")
             self.ledger.record_fill(ledger_fill_from_dict(item))
-        if isinstance(self.broker, LoopbackBroker):
-            self.broker.cash = self.ledger.computed_cash
-            self.broker.positions = self.ledger.computed_positions
 
     def _persist(self) -> None:
         payload: dict[str, Any] = {
@@ -901,6 +887,40 @@ def _verify_audit(path: Path) -> str:
             raise LiveGateError("audit log line was modified")
         head = digest
     return head
+
+
+def _require_state_identity(stored: dict[str, Any], venue: str) -> None:
+    if stored.get("schema") != _STATE_SCHEMA:
+        raise LiveGateError("session state schema is not supported")
+    if stored.get("venue") != venue:
+        raise LiveGateError("session state venue does not match the live config")
+    profit = stored.get("live_pnl_claim") is not False
+    evidence = stored.get("research_evidence") is not False
+    if profit or evidence:
+        raise LiveGateError("session state must not claim research evidence or live profit")
+
+
+def _state_collections(
+    stored: dict[str, Any],
+) -> tuple[list[Any], list[Any], dict[str, Any], dict[str, Any]]:
+    orders = stored.get("orders")
+    fills = stored.get("fills")
+    marks = stored.get("marks")
+    kill = stored.get("kill")
+    if not isinstance(orders, list) or not isinstance(fills, list) or not isinstance(marks, dict):
+        raise LiveGateError("session state is missing orders, fills, or marks")
+    if not isinstance(kill, dict):
+        raise LiveGateError("session state is missing the kill switch")
+    return orders, fills, marks, kill
+
+
+def _kill_from_state(kill: dict[str, Any]) -> dict[str, Any]:
+    latched = bool(kill.get("latched"))
+    actor = str(kill.get("actor") or "")
+    reason = str(kill.get("reason") or "")
+    if latched and (not actor.strip() or not reason.strip()):
+        raise LiveGateError("a latched kill switch needs an actor and a reason")
+    return {"latched": latched, "actor": actor, "reason": reason}
 
 
 def _order_row(raw: object) -> dict[str, Any]:
