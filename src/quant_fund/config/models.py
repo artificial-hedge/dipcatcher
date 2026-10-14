@@ -91,8 +91,12 @@ class RuntimeConfig(StrictConfigModel):
         if self.allow_live:
             if self.mode is not RuntimeMode.LIVE:
                 raise ValueError("allow_live requires runtime.mode: live")
-            # SimulatedBroker is paper-only; no live broker adapter ships here.
-            raise ValueError("allow_live is unsupported: no live broker adapter in this repository")
+            # Research, paper, and backtest never route orders. Operator routing
+            # is the separate ``dipcatcher live`` desk and cannot be enabled here.
+            raise ValueError(
+                "allow_live is unsupported on the research runtime; "
+                "route orders only through the dipcatcher live command"
+            )
         return self
 
 

@@ -54,8 +54,11 @@ Sigstore and `gh attestation verify` cover signatures and SLSA provenance.
   honesty gates, and invalid receipts all *block* rather than warn.
 - Network access is opt-in (explicit `collect`, explicit API serve), never
   part of default ingest or training paths.
-- This repository has no broker connectivity and no order-placement path.
-  Reports that assume a live trading account are out of scope.
+- Research commands do not place orders. `runtime.allow_live` still raises.
+  `dipcatcher live` can route orders to the operator's own Alpaca account
+  after a local authorization file; broker keys come from the environment,
+  never from the tree. That route is not an institutional live-trading claim.
+  Reports that treat a routing log as a track record are out of scope.
 
 ## Reporting a vulnerability
 

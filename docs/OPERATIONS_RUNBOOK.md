@@ -114,8 +114,11 @@ publication, preserve the run directory and resume from the last valid
 
 ## Deployment
 
-There is **no live-trading deployment** — no broker connectivity exists
-(see [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md)). "Deployment"
+Research deployment is not an institutional live-trading deployment
+(see [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md)). Operator
+order routing is the separate `dipcatcher live` desk
+([LIVE_TRADING.md](LIVE_TRADING.md)): arm it on purpose, and latch
+`dipcatcher live kill` before debugging a broker incident. "Deployment"
 here means three research/simulation surfaces:
 
 1. **Research harness (local or container).** `make sync` installs the locked

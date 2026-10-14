@@ -30,10 +30,12 @@ Use these names consistently:
 | `fxi`, `quant`, `fx1` executables | Existing compatibility and expert entry points. The product should not require users to learn all three. |
 
 This release targets dependable research orchestration. Research software
-readiness, each model's release readiness, and live-trading eligibility are
-separate decisions. Preserve the constraints in
+readiness, each model's release readiness, and institutional live-trading
+eligibility are separate decisions. Preserve the constraints in
 [Institutional readiness](INSTITUTIONAL_READINESS.md): proper-score research
-headlines, explicit SYNTHETIC labeling, immutable receipts, and no live claims.
+headlines, explicit SYNTHETIC labeling, immutable receipts, and no research
+live-performance claims. Operator order routing is specified in
+[LIVE_TRADING.md](LIVE_TRADING.md) and is not a research headline.
 
 ## What exists and what must change
 

@@ -67,6 +67,8 @@ data/reality_sweep_survivorship/
 research/reality/audit/.lock
 # Generated SYNTHETIC demo dataset — regenerate via `make demo-data`.
 data/demo/
+# Operator order-routing state: arm file, kill latch, audit. Never commit.
+data/live/
 research/reality/survivorship/audit/.lock
 # Content-addressed lake objects (regenerate; do not commit market data).
 data/lake/

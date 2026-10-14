@@ -714,8 +714,8 @@ sequenceDiagram
    backtest engine. Rejects are counted, not silently dropped.
 5. **Kill switch.** Only `ENABLED` permits orders; unknown states block;
    flatten requires explicit human authorization (`monitoring/kill_switch.py`).
-6. **No live path.** `runtime.allow_live: true` raises at config validation —
-   no live broker adapter ships in this repository.
+6. **Research runtime stays fail-closed.** `runtime.allow_live: true` raises
+   at config validation. Operator orders go through `dipcatcher live` only.
 7. **Receipts are immutable evidence.** `run_research` writes
    `runs/<run_id>.{json,md}` atomically and binds `immutable_json_sha256`
    over the canonical payload; `verify_research_artifact` recomputes the

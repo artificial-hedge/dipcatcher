@@ -3,7 +3,8 @@
 Standalone shadow checks for orders a simulated broker or paper loop would
 send. The engine does not submit, cancel, or amend anything. It is not
 imported by `quant_fund.execution.simulated_broker` or `quant_fund.paper.loop`.
-Connecting it to a live route is a separate decision and is not implemented.
+`quant_fund.live.desk` calls this engine before an operator order is sent.
+Shadow mode is unchanged and still does not block the simulated broker.
 
 This is an operational control. It is not a research score and it does not
 report P&L.

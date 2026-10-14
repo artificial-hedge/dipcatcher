@@ -1,0 +1,13 @@
+{
+  "schema": "live_authorization.v1",
+  "environment": "paper",
+  "broker": "alpaca",
+  "account_id": "REPLACE-WITH-ACCOUNT",
+  "operator": "REPLACE_WITH_YOUR_NAME",
+  "acknowledge": "I authorize dipcatcher to route orders for this account",
+  "symbol_allowlist": ["AAPL"],
+  "max_order_notional": 1000,
+  "max_orders_per_day": 10,
+  "created_at": "2026-10-13T00:00:00+00:00",
+  "expires_at": "2026-12-01T00:00:00+00:00"
+}

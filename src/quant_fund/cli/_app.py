@@ -16,6 +16,7 @@ from quant_fund.cli.benchmark_cmds import (
     ranker_probability_app,
     real_benchmark_app,
 )
+from quant_fund.cli.live_cmds import live_app
 
 # SOTA / forward-evidence operator surface. Restored on this branch after the
 # mount was found missing; independently re-added upstream by 8eb627ff2. Kept
@@ -75,7 +76,10 @@ def format_fdr_families(hypotheses: Sequence[object]) -> str:
 
 
 app = typer.Typer(
-    help="Dipcatcher — Artificial Hedge's proprietary research lab. Default mode is research, never live."
+    help=(
+        "Dipcatcher — Artificial Hedge's research lab. Research commands never route "
+        "orders. The live command routes operator-authorized broker orders."
+    )
 )
 
 # The fx-1 interactive front door is the `fxi` console script (pyproject.toml:
@@ -120,6 +124,7 @@ app.add_typer(sota_app, name="sota")
 app.add_typer(real_benchmark_app, name="real-benchmark")
 app.add_typer(net_tournament_app, name="net-tournament")
 app.add_typer(ranker_probability_app, name="ranker-probability")
+app.add_typer(live_app, name="live")
 
 
 def _cfg(config: Path) -> AppConfig:
