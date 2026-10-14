@@ -472,7 +472,7 @@ def ack_ledger_gate(
     base_ledger: Path | str | None,
     ledger: Path | str | None = None,
 ) -> dict[str, Any]:
-    """PR gate: the acknowledgment ledger may grow only to explain history
+    """Base gate: the acknowledgment ledger may grow only to explain history
     the base branch's chains already recorded (``ack_ledger_base_errors``),
     and every entry must name a chain ``CORPORA`` knows.
 
@@ -563,7 +563,7 @@ def quarantine_registry_gate(
     registry: str = "quality/legacy_quarantine.json",
     corpus: str = "receipts",
 ) -> dict[str, Any]:
-    """PR gate for ``legacy_unsealed.registry_base_errors``: base files come
+    """Base gate for ``legacy_unsealed.registry_base_errors``: base files come
     from ``git`` at ``base_ref``, the base stamp from the base pin's head
     epoch (authenticated by ``pinned_head_members``). Fails closed on a
     malformed head registry, an unreadable base ref or an unauthenticated

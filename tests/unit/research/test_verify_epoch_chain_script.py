@@ -234,6 +234,41 @@ def test_usage_errors(tmp_path: Path) -> None:
     assert _run("--corpus-dir", str(corpus), "--checkpoint", "x").returncode == 2
 
 
+@pytest.mark.parametrize(
+    ("epoch_bytes", "label"),
+    [
+        (b"[1, 2, 3]", "no_epoch_receipts"),  # squats the prefix, yields no epoch
+        (
+            json.dumps(
+                {
+                    "kind": "corpus_epoch.v1",
+                    "schema": "corpus_epoch.v1",
+                    "members": [],
+                    "receipt_sha256": "0" * 64,
+                }
+            ).encode(),
+            "no_valid_epoch_receipts",  # an epoch payload whose seal fails
+        ),
+    ],
+)
+def test_corpus_without_a_valid_epoch_fails_without_crashing(
+    tmp_path: Path, epoch_bytes: bytes, label: str
+) -> None:
+    """The early-return paths (nothing to walk) must report, not raise: a
+    traceback exits non-zero too, but prints no verdict an auditor can read."""
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    _member(corpus, "a.json", '{"a": 1}')
+    (corpus / "corpus_epoch_0000000000000000.json").write_bytes(epoch_bytes)
+    proc = _run("--corpus-dir", str(corpus))
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    assert "Traceback" not in proc.stderr, proc.stderr
+    assert "FAIL" in proc.stdout
+    script = _script_errors(corpus)
+    assert label in script
+    assert label in _lib_errors(corpus)
+
+
 # --- v2 quorum checkpoints --------------------------------------------------
 
 

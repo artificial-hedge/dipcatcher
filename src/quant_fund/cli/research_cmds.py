@@ -2931,7 +2931,7 @@ def epoch_ack_gate_cmd(
         help="This branch's acknowledgment ledger.",
     ),
 ) -> None:
-    """PR gate: a new acknowledgment for an append-only chain (receipts,
+    """Base gate: a new acknowledgment for an append-only chain (receipts,
     verifier, fleet evidence, dataset manifests) must explain a removal or
     rewrite the BASE chain already recorded — never one stamped in the same
     change. Each referenced base chain is authenticated against the base
@@ -2969,7 +2969,7 @@ def quarantine_gate_cmd(
     ),
     root: Path = typer.Option(Path("."), "--root", help="Repo root."),
 ) -> None:
-    """PR gate: the quarantine registry may grow only to retain bytes the
+    """Base gate: the quarantine registry may grow only to retain bytes the
     BASE branch already had (stamped by its head, or present under the same
     name), never to excuse a receipt this change adds. An
     ``admission_honesty_gap`` entry must name an unstamped base file with

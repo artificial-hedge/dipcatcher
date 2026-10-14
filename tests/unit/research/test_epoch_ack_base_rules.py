@@ -5,7 +5,8 @@
   acknowledged removal must not launder a rewrite.
 * Ledger vs base: a new acknowledgment for an append-only chain may only
   explain history the BASE chain already recorded, for every transition
-  type (``ack_ledger_gate``, run on every PR by ``make admission-gate``).
+  type (``ack_ledger_gate``, run on every pull request and push to ``main``
+  by ``make admission-gate``).
 * ``chain_ancestry`` is authenticated against the pin's ``chain_root``, so
   the set of "epochs the base already held" cannot be shaped by editing
   older epoch files.
@@ -17,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -622,3 +624,66 @@ def test_quarantine_gate_refuses_a_receipt_registered_in_its_own_change(
     register("late.json", "admission_honesty_gap", ["data_label_missing"])
     out = gate()
     assert out.exit_code == 0, out.output
+
+
+@pytest.mark.parametrize(
+    "pin",
+    [None, b"not json", b'{"heads": []}', b'{"heads": {"receipts/*.json": {"receipt": null}}}'],
+    ids=["absent", "not_json", "heads_not_a_mapping", "head_not_a_name"],
+)
+def test_epoch_consistency_fails_closed_on_an_unreadable_base_pin(
+    tmp_path: Path, pin: bytes | None
+) -> None:
+    """`make epoch-consistency` once skipped every chain, and passed, when the
+    base's heads pin was absent or malformed. The probe base is HEAD with the
+    pin removed or replaced, written to a scratch object store so the repo's
+    own is untouched."""
+    common = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    objects = tmp_path / "objects"
+    objects.mkdir()
+    store = {
+        **os.environ,
+        "GIT_OBJECT_DIRECTORY": str(objects),
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES": f"{common}/objects",
+    }
+    probe = {
+        **store,
+        "GIT_INDEX_FILE": str(tmp_path / "index"),
+        "GIT_AUTHOR_NAME": "t",
+        "GIT_AUTHOR_EMAIL": "t@t",
+        "GIT_COMMITTER_NAME": "t",
+        "GIT_COMMITTER_EMAIL": "t@t",
+    }
+
+    def git(*args: str, stdin: bytes | None = None) -> str:
+        proc = subprocess.run(
+            ["git", *args], cwd=REPO_ROOT, env=probe, input=stdin, capture_output=True, check=True
+        )
+        return proc.stdout.decode().strip()
+
+    git("read-tree", "HEAD")
+    if pin is None:
+        git("update-index", "--force-remove", "quality/epoch_heads.json")
+    else:
+        blob = git("hash-object", "-w", "--stdin", stdin=pin)
+        git("update-index", "--cacheinfo", f"100644,{blob},quality/epoch_heads.json")
+    base = git("commit-tree", git("write-tree"), "-p", "HEAD", "-m", "probe base")
+    proc = subprocess.run(
+        ["make", "epoch-consistency"],
+        cwd=REPO_ROOT,
+        env={**store, "EPOCH_BASE": base, "RUNNER_TEMP": str(tmp_path / "tmp")},
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=300,
+    )
+    out = proc.stdout + proc.stderr
+    assert proc.returncode != 0, out
+    assert "skip" not in proc.stdout, out
+    assert "epoch-consistency: " in proc.stdout, out

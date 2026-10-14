@@ -633,7 +633,7 @@ def check_chain(
         if exp_name is not None:
             errors.append(f"epoch_head_rollback:{exp_name!a}")
         errors.append("no_epoch_receipts")
-        return {"errors": errors, "unstamped": [], "head": None}
+        return {"errors": errors, "acknowledged": acknowledged, "unstamped": [], "head": None}
 
     # Seal-verify every epoch envelope before trusting its claims. The v2
     # receipt seals the *envelope*; the v1 receipt seals the flat body.
@@ -646,7 +646,12 @@ def check_chain(
         sealed[path.name] = body
     if not sealed:
         errors.append("no_valid_epoch_receipts")
-        return {"errors": errors, "unstamped": unstamped, "head": None}
+        return {
+            "errors": errors,
+            "acknowledged": acknowledged,
+            "unstamped": unstamped,
+            "head": None,
+        }
 
     by_name = sealed
     child_of: dict[str, str] = {}

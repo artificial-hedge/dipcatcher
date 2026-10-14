@@ -698,29 +698,46 @@ jobs:
       - name: Re-verify every committed receipt (strict)
         run: make evidence-audit
       # Each evidence gate reports on its own: a red step above must not
-      # skip the PR-only rules below (chain extension, ack ledger and
-      # quarantine registry vs base, admission), or they silently stop
+      # skip the base-comparison rules below (chain extension, ack ledger
+      # and quarantine registry vs base, admission), or they silently stop
       # running while main is red. They still need a successful sync.
       - name: Evidence bundle round-trip — export, then audit with the standalone script
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: |
           make evidence-bundle BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
           make bundle-verify BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
-      - name: Fetch PR base for chain-extension proofs
-        if: ${{ !cancelled() && steps.sync.outcome == 'success' && github.event_name == 'pull_request' }}
-        run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
-      - name: Chain-consistency proofs — a PR may extend, never rewrite
-        if: ${{ !cancelled() && steps.sync.outcome == 'success' && github.event_name == 'pull_request' }}
-        run: EPOCH_BASE=FETCH_HEAD make epoch-consistency
+      # The base a change must extend: the PR's base branch or, for a direct
+      # push to main (this repo's normal path), the tip main had before the
+      # push. Without a push base the rules below would never run here.
+      - name: Resolve the base this change must extend
+        id: base
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' && (github.event_name == 'pull_request' || github.event_name == 'push') }}
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.base_ref }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then ref="$PR_BASE"; else ref="$PUSH_BEFORE"; fi
+          case "$ref" in
+            "" | 0000000000000000000000000000000000000000)
+              echo "no base commit for this $EVENT event; base-comparison gates skipped"
+              exit 0 ;;
+          esac
+          git fetch --depth=1 origin "$ref"
+          echo "sha=$(git rev-parse FETCH_HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Chain-consistency proofs — a change may extend, never rewrite
+        if: ${{ !cancelled() && steps.base.outputs.sha != '' }}
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: EPOCH_BASE="$BASE_SHA" make epoch-consistency
       - name: Cross-receipt consistency lattice
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: make lattice-check
-      - name: Fetch PR base for the admission diff
-        if: ${{ !cancelled() && steps.sync.outcome == 'success' && github.event_name == 'pull_request' }}
-        run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
-      - name: Admission gate on diff-changed receipts
-        if: ${{ !cancelled() && steps.sync.outcome == 'success' && github.event_name == 'pull_request' }}
-        run: make admission-gate ADMISSION_BASE=FETCH_HEAD
+      - name: Admission gate on changed receipts, ack ledger and quarantine registry vs base
+        if: ${{ !cancelled() && steps.base.outputs.sha != '' }}
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: make admission-gate ADMISSION_BASE="$BASE_SHA"
       - name: Replay carriers (byte-exact artifact reproduction)
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: make replay-sweep

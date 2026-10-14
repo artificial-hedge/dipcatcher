@@ -32,8 +32,8 @@ detects, and the boundary where detection stops.
 | Receipt fuzz | `receipt_fuzz.v1` | `dipcatcher fuzz-receipts --seed N` | Forge-and-reseal: mutates one claim leaf inside each committed receipt, then re-seals *honestly* (sha256 seals are integrity, not authenticity — a self-consistent forgery is free to mint). Maps the verification boundary: escapes = claim fields that are seal-bound but not contract re-derived (mostly `*_real_drill` result fields whose source streams aren't committed — they are *attested*, not *verified*). Deliberately a measurement lane, not a gate — the `replay_proof` lane closes the gap by pinning inputs and re-executing |
 | Key rotation | `rotation_*.json` (`key_rotation.v1`) | `dipcatcher verify-rotations` | Key substitution without authorization: each link is dual-signed — the outgoing key proves *authorization*, the incoming proves *possession* — and the first link's `old_pubkey` must re-verify a real spine signature (`unanchored_genesis` otherwise). The spine walks a **keyring** — live key + every authorized retired key — so records verify under their era's key (`signature_key_unknown` for a never-authorized signer). Live `gate_signing.pub` must equal the chain terminus |
 | Custody | `custody_proof.v1` (one JSON doc) | `dipcatcher custody --member X --out bundle.json`; `custody --check bundle.json --member-file F`; `custody --member X --timeline` | Per-member provenance with **zero repo access**: the bundle embeds the member's earliest-chain pinning epoch (proof of first committed state), the epoch→head hop files raw (digests re-derived on verify), inclusion merkle path, signed pins, checkpoint, both witness pubkeys, every committed Rekor proof, and the RFC 3161 timestamp dir — materialized into a synthetic root so the existing file verifiers run unmodified. Eight layers: member→inclusion→chain→pins→signature→checkpoint→witness→timestamps. `--timeline` enumerates a member's committed digests across epochs (byte-evolution lineage for mutable corpora) |
-| Quarantine registry | `quality/legacy_quarantine.json` (`legacy_quarantine.v2`) | `suite-health --strict --quarantine …` | Retained receipts that cannot verify (pre-seal era, detached preregistration seals, contracts that postdate the bytes, unpinned tapes, absent honesty declarations). Each is pinned by path, bytes, exact `verify-receipt` error set, category and reason. One category, `admission_honesty_gap`, holds receipts that verify but entered the corpus without passing admission: its error set is admission's honesty codes, re-derived from the bytes on every check, and the entry fails closed (`quarantine_entry_admissible`) once nothing is missing. PR rule (`dipcatcher quarantine-gate`, run by `make admission-gate`): an entry the base registry did not hold must pin bytes the base already had (stamped by its head, or present under the same name), so a change can never add a receipt and register it in the same diff; an `admission_honesty_gap` entry must name an unstamped base file with identical bytes, so a stamped receipt cannot be selectively demoted. Such receipts are reported as `quarantined`. `suite-health` never counts them as verified or harvests them into pooled evidence, and admission never admits them. Known gap, pre-existing: `receipt_lattice` and `corpus_inference` still read claims from top-level quarantined receipts. An unregistered failure, registry drift, a stale entry, an entry that now verifies, or an unregistered file under `legacy-unsealed/` fails strict. Production gates and tests read the same registry. `schema_drift_acks` pins every member of a tag group whose two claim shapes are sealed history, so `schema_drift` reports that group as acknowledged drift instead of accepting a retag-and-reseal. Both the registry and the ledger below are crown jewels: changing either is a gate change |
-| Epoch acknowledgments | `quality/epoch_allowed_removals.json` (`epoch_acknowledgments.v1`) | `--epoch-acks` on `corpus-epoch --check`, `suite-health`, `admit`/`admit-batch`; loaded by `verify-repo` and the standalone auditors | An append-only chain can neither forget nor rewrite a recorded removal or mutation. Each entry explains exactly one transition already recorded in a sealed epoch: corpus key, member, `removed`/`mutated`, from/to digests, epoch and reason. Acknowledged incidents are printed on every check. An entry that matches nothing is `epoch_ack_unmatched`. Live drift (`head_member_missing_live`, `head_member_digest_drift`) is never acknowledgeable: stamp first, then explain. On append-only chains a name removed and later re-added with different bytes, under any case or Unicode-normalized spelling, is `member_resurrected` (a mutation spread over two epochs; acknowledgeable only as the exact `mutated` transition). Before it is stamped, the same re-add is `member_resurrected_live`, which is never acknowledgeable: new evidence takes a new name. PR rule (`dipcatcher epoch-ack-gate`, run by `make admission-gate` on every pull request): every entry must name a chain in the corpus policy table (`epoch_ack_unknown_corpus` otherwise), and an entry the base ledger did not hold, for an append-only chain, must name an epoch of the base chain, authenticated by `chain_ancestry` against the base pin's `chain_root`. A base ledger that is absent or pre-v1 reads as empty |
+| Quarantine registry | `quality/legacy_quarantine.json` (`legacy_quarantine.v2`) | `suite-health --strict --quarantine …` | Retained receipts that cannot verify (pre-seal era, detached preregistration seals, contracts that postdate the bytes, unpinned tapes, absent honesty declarations). Each is pinned by path, bytes, exact `verify-receipt` error set, category and reason. One category, `admission_honesty_gap`, holds receipts that verify but entered the corpus without passing admission: its error set is admission's honesty codes, re-derived from the bytes on every check, and the entry fails closed (`quarantine_entry_admissible`) once nothing is missing. Base rule (`dipcatcher quarantine-gate`, run by `make admission-gate` on every pull request and every push to `main`, against the PR base or the pre-push tip): an entry the base registry did not hold must pin bytes the base already had (stamped by its head, or present under the same name), so a change can never add a receipt and register it in the same diff; an `admission_honesty_gap` entry must name an unstamped base file with identical bytes, so a stamped receipt cannot be selectively demoted. Such receipts are reported as `quarantined`. `suite-health` never counts them as verified or harvests them into pooled evidence, and admission never admits them. Known gap, pre-existing: `receipt_lattice` and `corpus_inference` still read claims from top-level quarantined receipts. An unregistered failure, registry drift, a stale entry, an entry that now verifies, or an unregistered file under `legacy-unsealed/` fails strict. Production gates and tests read the same registry. `schema_drift_acks` pins every member of a tag group whose two claim shapes are sealed history, so `schema_drift` reports that group as acknowledged drift instead of accepting a retag-and-reseal. Both the registry and the ledger below are crown jewels: changing either is a gate change |
+| Epoch acknowledgments | `quality/epoch_allowed_removals.json` (`epoch_acknowledgments.v1`) | `--epoch-acks` on `corpus-epoch --check`, `suite-health`, `admit`/`admit-batch`; loaded by `verify-repo` and the standalone auditors | An append-only chain can neither forget nor rewrite a recorded removal or mutation. Each entry explains exactly one transition already recorded in a sealed epoch: corpus key, member, `removed`/`mutated`, from/to digests, epoch and reason. Acknowledged incidents are printed on every check. An entry that matches nothing is `epoch_ack_unmatched`. Live drift (`head_member_missing_live`, `head_member_digest_drift`) is never acknowledgeable: stamp first, then explain. On append-only chains a name removed and later re-added with different bytes, under any case or Unicode-normalized spelling, is `member_resurrected` (a mutation spread over two epochs; acknowledgeable only as the exact `mutated` transition). Before it is stamped, the same re-add is `member_resurrected_live`, which is never acknowledgeable: new evidence takes a new name. Base rule (`dipcatcher epoch-ack-gate`, run by `make admission-gate` on every pull request and every push to `main`, against the PR base or the pre-push tip): every entry must name a chain in the corpus policy table (`epoch_ack_unknown_corpus` otherwise), and an entry the base ledger did not hold, for an append-only chain, must name an epoch of the base chain, authenticated by `chain_ancestry` against the base pin's `chain_root`. A base ledger that is absent or pre-v1 reads as empty |
 | Admission | `receipt_admission.v1` | `dipcatcher admit-batch --strict --quarantine … --heads-pin … --epoch-acks …` | A new receipt that breaks lattice/FDR on entry. The epoch check binds to the real merged corpus under the heads pin and ledger, not to the intermediate shadow. Registry-matched quarantined candidates are listed as retained and never admitted. Candidates whose bytes the *base* branch's pinned head epoch already stamped (`--base-heads-pin`, e.g. a receipt restored to its stamped bytes) are corpus members, so they are listed as already-stamped rather than re-admitted. Only the base pin can grant this, and it must authenticate its head epoch. With the base pin, every acknowledgment (removal or mutation) must name an epoch of the base chain, authenticated against the base pin's `chain_root` (`epoch_ack_postdates_base` otherwise), so one change can never both record a removal or rewrite of an append-only receipt and excuse it. When no candidate is gated, the merged corpus's chain is still checked once (`chain_errors`) |
 | Retraction | `receipt_tombstone.v1` (`tombstone_<sha16>.json`) | `dipcatcher tombstone <receipt> --reason ...` | The corpus is append-only — a wrong/superseded receipt can't be deleted (epoch flags removal, lattice flags drift), so it is retracted: a sealed record pinned to the target's bytes excludes its claims from the lattice (`retracted:` block), honors partial `scope` per claim path, and fails closed if the target drifts (`tombstone_target_drift`) or the tombstone is unsealed |
 | Release attestation | `release_attestation.v1` (one JSON doc) | `dipcatcher attest-release --artifact W [--witness]` / `verify-release A --artifact W` | Extends the proof to bytes that live *outside* the repo (wheels, sdists, exported bundles): an Ed25519-signed binding of each artifact's sha256+size to the live pin-state digests (`attestation_stale` when they've drifted — staleness ≠ forgery). With `--witness` the attestation is anchored in Rekor and the self-verifying proof travels **inside** the payload — both pubkeys embedded, the witness key authenticated by the logged entry itself — so the attestation alone convinces an auditor with no repo access |
@@ -107,7 +107,9 @@ Receipt seals are sha256, not signatures — but the *pins* are: when
 file, re-pinning, and re-stamping still cannot produce a valid signature
 without the private key (held outside the repo). For unsigned trees the
 boundary is **git review**: pins and epochs are small, reviewable diffs in
-every PR, and `verify-repo` receipts pin the pin files' digests into the
+every commit (reviewed before merge on a pull request, but only after
+landing on a direct push to `main`; see the residual boundaries below), and
+`verify-repo` receipts pin the pin files' digests into the
 receipts corpus so their history is itself chained. Either way, silent
 tamper is impossible — any rewrite leaves a committed, hash-linked trail or
 a broken signature.
@@ -130,14 +132,18 @@ Residual boundaries, as of 2026-10-14 (measured on this repair merged with `main
   After the receipts and quality chains, it checks `.github/workflows`,
   `configs`, `artifacts`, `data/metadata` and the code corpora (`src`,
   `tests`, `scripts`, `docs`, ...). Those chains carry post-stamp drift
-  that predates this repair. Make stops at the first failing command, so
-  `crown-jewels --check`, `verify-witness`, `verify-repo` and the drills
-  after it do not run. The CI `evidence-audit` job runs its later steps
-  (bundle round-trip, chain-consistency proofs, lattice, `admission-gate`
-  with `epoch-ack-gate` and `quarantine-gate`, replay sweep) with
-  `!cancelled()` after a successful sync, so those report on every PR
-  even while this step is red. The replay sweep is itself red today: the
-  `mcs_vol` carrier needs about 140 s against the 120 s default timeout,
+  that predates this repair, and this repair's own edits to files in them
+  add to it until they are reviewed and restamped. Make stops at the
+  first failing command, so `crown-jewels --check`, `verify-witness`,
+  `verify-repo` and the drills after it do not run. The CI
+  `evidence-audit` job runs its later steps (bundle round-trip,
+  chain-consistency proofs, lattice, `admission-gate` with
+  `epoch-ack-gate` and `quarantine-gate`, replay sweep) with `!cancelled()`
+  after a successful sync, so those report on every pull request and every
+  push to `main` even while this step is red. The base-comparison steps
+  compare against the PR's base branch or, for a direct push, the tip
+  `main` had before the push (`github.event.before`). The replay sweep is
+  itself red today: the `mcs_vol` carrier needs about 140 s against the 120 s default timeout,
   and the corpus carrier's pinned artifact embeds `generated_at_commit`,
   so it cannot reproduce byte-for-byte.
 - **Crown-jewel enforcement is partial.** `main` re-pinned the jewels
@@ -149,24 +155,35 @@ Residual boundaries, as of 2026-10-14 (measured on this repair merged with `main
   and `epoch_heads.json`); it cannot be refreshed without
   `GATE_SIGNING_KEY`. Until the key holder re-signs, the pins are checked
   only when `crown-jewels --check` is run directly.
-- **Admission's honesty bar covers arrivals, not stamped history.** Of
-  the 334 stamped receipts that verify and are not in the registry, 170
-  lack at least one stamp admission now requires (143 lack only
-  `live_pnl_claim: false`). They predate that bar and stay stamped
-  members. `p0_evidence_inventory_v1.json` is quarantined not because
-  its content is worse but because it was never stamped or admitted.
+- **Admission's honesty bar covers arrivals, not stamped history.** The
+  receipts head (`corpus_epoch_588a35edec9d3f5b`) stamps 382 members that
+  verify and are not in the registry: 44 epoch receipts and 338 claim
+  receipts. Run through `honesty_stamp_errors`
+  (`quant_fund.research.legacy_unsealed`, the check admission uses), 170
+  of the 338 lack at least one stamp admission now requires, and 143 of
+  those lack only `live_pnl_claim: false`. They predate that bar and stay
+  stamped members.
+  `p0_evidence_inventory_v1.json` is quarantined not because its content
+  is worse but because it was never stamped or admitted.
 - **`data/metadata` has no committed base chain to prove against.** The
   base pin names head `corpus_epoch_7dc5e67df8042167.json`, which is
   gitignored and absent from main (two older epochs of that chain are
   tracked). `epoch-consistency` skips a chain only when the base tree does
   not commit the base pin's head, and says so; deleting a head the base
   does commit still fails the proof. Before, the loop aborted there and
-  left the 21 corpora after it unproven.
-- **The PR-only gates do not cover direct pushes to `main`.**
-  `epoch-consistency`, `epoch-ack-gate`, `quarantine-gate` and the
-  admission diff run on `pull_request` events. A direct push still has to pass the
-  `evidence-audit` chain checks, but nothing compares it to a base. Branch
-  protection that requires PRs closes this; the repo does not enforce it.
+  left the 21 corpora after it unproven. A base whose heads pin is
+  missing or unreadable fails the gate; it used to skip every chain and
+  pass.
+- **A bad direct push to `main` is reported, not prevented.** Direct
+  commits to `main` are this repo's normal path, so `epoch-consistency`,
+  `epoch-ack-gate`, `quarantine-gate` and the admission diff also run on
+  `push` events, against the pre-push tip. They turn the run red after
+  the push has landed; nothing rejects the push unless branch protection
+  requires the check. If the pre-push tip cannot be fetched (for example
+  after a force-push), the base step fails and the run is red. Only a
+  push that creates `main` has no pre-push tip; the step says so and the
+  base steps are skipped. Scheduled and manual runs have no change to
+  compare and do not run them.
 - **`schema_drift` needs full history.** Its phantom-revision check
   resolves `git_revision` fields through `refs/tags/attic/receipt-provenance/*`.
   It runs on the real corpus in the CI `test` job, which checks out with

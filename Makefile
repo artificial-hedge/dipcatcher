@@ -319,11 +319,15 @@ fuzz-drill: ## Metamorphic self-fuzz: seeded mutations classified must-fail vs m
 fuzz-receipts: ## Forge-and-reseal drill: mutates one claim per committed receipt, re-seals honestly — maps which claims contracts re-derive vs which stay self-attested
 	uv run dipcatcher fuzz-receipts --seed 7
 
-epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
+epoch-consistency: ## Base gate: prove every epoch chain extends the base head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
 	@if [ -z "$${EPOCH_BASE:-}" ]; then echo "epoch-consistency: no EPOCH_BASE — skipped"; exit 0; fi; \
+	mkdir -p "$${RUNNER_TEMP:-/tmp}"; base_pin="$${RUNNER_TEMP:-/tmp}/epoch_consistency_base_heads.json"; \
+	git show "$$EPOCH_BASE:quality/epoch_heads.json" > "$$base_pin" \
+		|| { echo "epoch-consistency: $$EPOCH_BASE has no quality/epoch_heads.json to prove against"; exit 1; }; \
 	for spec in "receipts:*.json" "verifier:*.md" "quality:*.json" ".github/workflows:*.yml" "configs:*" "artifacts:*" ".dsh-24x7:*" "data/metadata:*" "src:*" "tests:*" "scripts:*" "docs:*" "research:*" "replay:*" "reports:*" "notebooks:*" "examples:*" "clients:*" "typings:*" "spec:*" "docker:*" "deploy:*" "third_party:*" "rust:*" "web:*" ".box-soft-verify:*" ".cursor:*" ".github:*"; do \
 	  dir=$${spec%%:*}; glob=$${spec##*:}; \
-	  head=$$(git show "$$EPOCH_BASE:quality/epoch_heads.json" 2>/dev/null | uv run python -c "import json,sys; print(json.load(sys.stdin)['heads'].get('$$dir/$$glob',{}).get('receipt',''))"); \
+	  head=$$(uv run python -c "import json,sys; e=json.load(open(sys.argv[1]))['heads'].get(sys.argv[2]); r='' if e is None else e['receipt']; print(r) if isinstance(r, str) else sys.exit('not a file name')" "$$base_pin" "$$dir/$$glob") \
+	    || { echo "epoch-consistency: the base heads pin ($$EPOCH_BASE) is unreadable at $$dir/$$glob"; exit 1; }; \
 	  if [ -z "$$head" ]; then echo "epoch-consistency skip $$dir: no base head"; continue; fi; \
 	  if ! git cat-file -e "$$EPOCH_BASE:$$dir/$$head" 2>/dev/null; then \
 	    echo "epoch-consistency skip $$dir: the base pin names $$head, which the base tree does not commit (no base chain to extend)"; continue; fi; \
