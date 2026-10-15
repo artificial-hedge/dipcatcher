@@ -15,6 +15,9 @@ CHAT_COMMAND = "chat"
 VERSION_FLAGS: frozenset[str] = frozenset({"--version", "-V"})
 # Commands this launcher handles itself; everything else goes to the lab app.
 LAUNCHER_COMMANDS: frozenset[str] = frozenset({CHAT_COMMAND})
+# Keep chat argparse free of fx1.interactive imports (profiles pulls serve URLs).
+_CHAT_MODELS: tuple[str, ...] = ("fx1", "fx1-lite")
+_DEFAULT_CHAT_MODEL = "fx1"
 
 
 def _interactive() -> bool:
@@ -28,8 +31,6 @@ def _version_line() -> str:
 
 
 def _chat(args: Sequence[str]) -> None:
-    from fx1.interactive.profiles import DEFAULT_MODEL, MODELS
-
     parser = argparse.ArgumentParser(
         prog="dipcatcher chat",
         description="Chat with fx1 or fx1-lite; /help lists research and session controls.",
@@ -39,7 +40,7 @@ def _chat(args: Sequence[str]) -> None:
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--model", choices=MODELS, default=DEFAULT_MODEL)
+    parser.add_argument("--model", choices=_CHAT_MODELS, default=_DEFAULT_CHAT_MODEL)
     parser.add_argument(
         "--resume",
         metavar="SESSION",
