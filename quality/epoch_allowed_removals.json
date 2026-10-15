@@ -260,6 +260,15 @@
       "reason": "Script path removed/relocated at corpus_epoch_55b9336a9b3bc833.json; acknowledged for evidence-audit epoch-acks.",
       "to_sha256": null,
       "transition": "removed"
+    },
+    {
+      "corpus": "data/metadata/*",
+      "epoch": "corpus_epoch_e73c101a7ab5d51b.json",
+      "from_sha256": "375ba1ea5473e0c275bb77f995fdb22a64290de93a918e1313c7250e372f9ab2",
+      "member": "resolved_config.json",
+      "reason": "Gitignored derived config (data/metadata/**). It was stamped from a working tree that still had the file, so a clean CI checkout failed head_member_missing_live. The bytes were never committed. corpus_epoch_e73c101a7ab5d51b drops it; member_digests now skips gitignored untracked files.",
+      "to_sha256": null,
+      "transition": "removed"
     }
   ],
   "schema": "epoch_acknowledgments.v1"

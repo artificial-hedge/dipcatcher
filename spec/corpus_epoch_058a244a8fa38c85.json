@@ -1,0 +1,51 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "cbe53c37c7aa2e752a4211d5b3820a39649a22992a76ef28dbd222720340e0d6",
+  "inputs_sha256": "61966577a1ca5c9a3986c46b88ead7bc4b4130128eecd7e77485750811a21417",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "b9063fca3758a88d89d48ba3a22424471027c1b3dfc7db69eba03912ea0c5bb6",
+  "members": [
+    {
+      "name": "corpus_epoch_1082ec3a7e7ac439.json",
+      "sha256": "8b2ce09f0381bf73f9d46e295def707f53a70eba22f7035b2776bf56dd39067f"
+    },
+    {
+      "name": "corpus_epoch_e800f329be176332.json",
+      "sha256": "1cffd9137165ccc89cf05128f94460a6ad2db8a9ed555fa9d84da11abb3b13b0"
+    },
+    {
+      "name": "tla/OrderLifecycle.cfg",
+      "sha256": "66a6f98faf7313a4b311f228266dd75077f48592a6ad1118b2ac26ddf8c6323d"
+    },
+    {
+      "name": "tla/OrderLifecycle.tla",
+      "sha256": "a578c79bd8e56242abb332b325f1b550f9da823228b5021e02c0094038ba7187"
+    },
+    {
+      "name": "tla/OrderLifecycleLiveness.cfg",
+      "sha256": "c7bb5af13ee4be33fa98441dca4ff172610f5ae01d284dd40faaf80cc074f8a4"
+    },
+    {
+      "name": "tla/README.md",
+      "sha256": "b29f3bf20d43548f9ff236bf4377c7708b86c891baf470485118c523b01fea81"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_e800f329be176332.json",
+    "tla/README.md"
+  ],
+  "members_removed": [],
+  "n_members": 6,
+  "params": {
+    "head_sha": "15063c40708cd01d0bbe2be013ca1f5622f6c53c",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_e800f329be176332.json",
+  "prev_epoch_sha256": "6b818ce0da358271b29d6b08c8cbb7fca464134a7a7ff2f4758f9f4dd12420cb",
+  "receipt_sha256": "058a244a8fa38c85f530c18c963fb46248652c9fc3019ef79e820a19f8206585",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
