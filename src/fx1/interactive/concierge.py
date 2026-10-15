@@ -1493,11 +1493,18 @@ def _print_startup(
     if endpoint_problem is not None:
         output_fn(endpoint_problem)
     elif endpoint is None:
-        output_fn(f"No endpoint configured. Run /keys set {model} to add your API key and URL.")
+        output_fn(
+            f"No endpoint configured. Run /keys set {model} to add your API key and URL, "
+            "or /doctor for a readiness checklist."
+        )
     try:
         interrupted = session_mod.reconcile_interrupted(exclude_session_id=concierge.session_id)
-    except Exception:  # noqa: BLE001 — a damaged journal dir must not block startup
+    except Exception as exc:  # noqa: BLE001 — a damaged journal dir must not block startup
         interrupted = []
+        output_fn(
+            f"note: could not reconcile prior session journals ({type(exc).__name__}: {exc}); "
+            "new work continues — /sessions may be incomplete until the journal is repaired"
+        )
     if interrupted:
         ids = ", ".join(sorted({sid for sid, _ in interrupted}))
         output_fn(
