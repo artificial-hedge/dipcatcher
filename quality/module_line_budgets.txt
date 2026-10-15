@@ -16,7 +16,7 @@ fx1/serve/vs_audit.py 2291
 quant_fund/cli/research_cmds.py 4466
 quant_fund/microstructure/multilevel_mm.py 2225
 quant_fund/microstructure/zi_lob_simulator.py 3459
-quant_fund/research/agent.py 5839
+quant_fund/research/agent.py 5836
 quant_fund/research/catalog/registry.py 13283
 
 quant_fund/research/catalog/retired_families.py 7591
