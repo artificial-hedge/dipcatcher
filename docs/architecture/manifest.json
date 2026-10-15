@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13421,
+  "module_count": 13422,
   "module_edges": [
     {
       "dst": "fx1",
@@ -488,6 +488,14 @@
     },
     {
       "dst": "fx1.eval",
+      "src": "fx1.doctor"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.doctor"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
       "src": "fx1.doctor"
     },
     {
@@ -7663,6 +7671,10 @@
       "src": "quant_fund.metrics.scoring"
     },
     {
+      "dst": "quant_fund.utils.absdiff",
+      "src": "quant_fund.metrics.scoring"
+    },
+    {
       "dst": "quant_fund.utils.numeric",
       "src": "quant_fund.metrics.scoring"
     },
@@ -7705,6 +7717,14 @@
     {
       "dst": "quant_fund.metrics.inference",
       "src": "quant_fund.metrics.snooping"
+    },
+    {
+      "dst": "quant_fund.utils.absdiff",
+      "src": "quant_fund.metrics.twcrps"
+    },
+    {
+      "dst": "quant_fund.utils.absdiff",
+      "src": "quant_fund.metrics.twosample"
     },
     {
       "dst": "quant_fund.utils.numeric",
@@ -61567,6 +61587,10 @@
       "src": "quant_fund.validation.regime_eval"
     },
     {
+      "dst": "quant_fund.utils.absdiff",
+      "src": "quant_fund.validation.vintage_eval"
+    },
+    {
       "dst": "quant_fund.config.models",
       "src": "quant_fund.validation.walk_forward"
     },
@@ -74976,6 +75000,7 @@
     "quant_fund.stress.strategy",
     "quant_fund.stress.vendor_cache",
     "quant_fund.utils",
+    "quant_fund.utils.absdiff",
     "quant_fund.utils.atomicio",
     "quant_fund.utils.hashing",
     "quant_fund.utils.logging",
@@ -75166,6 +75191,16 @@
     },
     {
       "dst": "fx1.eval",
+      "imports": 1,
+      "src": "fx1.doctor"
+    },
+    {
+      "dst": "fx1.harness",
+      "imports": 1,
+      "src": "fx1.doctor"
+    },
+    {
+      "dst": "quant_fund.utils",
       "imports": 1,
       "src": "fx1.doctor"
     },
@@ -76371,7 +76406,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 23,
+      "imports": 26,
       "src": "quant_fund.metrics"
     },
     {
@@ -77261,7 +77296,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 2,
+      "imports": 3,
       "src": "quant_fund.validation"
     },
     {
