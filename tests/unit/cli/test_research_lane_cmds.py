@@ -193,7 +193,7 @@ def test_multih_fleet_rejects_non_integer_horizons(tmp_path: Path) -> None:
         ],
     )
     assert result.exit_code != 0
-    assert "--horizons" in result.output
+    assert "--horizons" in _plain(result.output)
 
 
 def test_multih_fleet_rejects_zero_horizon(tmp_path: Path) -> None:

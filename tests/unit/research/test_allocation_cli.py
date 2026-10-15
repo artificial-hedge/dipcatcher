@@ -11,6 +11,7 @@ without a target).
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -22,6 +23,16 @@ from quant_fund.research.allocation_cli import _data_label, allocation_app
 from quant_fund.research.catalog.registry import FORBIDDEN_RESEARCH_METRIC_KEYS
 
 runner = CliRunner()
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Collapse rich errors so ANSI splits inside ``--flag`` still match."""
+    stripped = _ANSI.sub("", text)
+    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
+    return " ".join(stripped.split())
+
 
 _SMALL = ["--n-assets", "4", "--n-periods", "240", "--window", "60", "--step", "10"]
 
@@ -261,4 +272,4 @@ def test_synthetic_panel_rejects_degenerate_sizes(tmp_path: Path) -> None:
         ["walk-forward", "--engine", "risk_parity", "--n-assets", "1", "--n-periods", "100"],
     )
     assert result.exit_code != 0
-    assert "--n-assets must be >= 2" in result.output
+    assert "--n-assets must be >= 2" in _plain(result.output)

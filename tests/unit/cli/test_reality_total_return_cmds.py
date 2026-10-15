@@ -53,8 +53,9 @@ _SURVIVORSHIP_SPEC = Path("research/reality/survivorship/preregistration.json")
 def test_reality_subcommand_help(sub: str) -> None:
     result = runner.invoke(app, ["reality", sub, "--help"])
     assert result.exit_code == 0, result.output
-    assert "--spec" in result.output
-    assert "--cache-dir" in result.output
+    plain = _plain(result.output)
+    assert "--spec" in plain
+    assert "--cache-dir" in plain
 
 
 def test_reality_help_lists_the_new_lanes() -> None:

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -28,6 +29,16 @@ from typer.testing import CliRunner
 from quant_fund.cli.main import app
 
 runner = CliRunner()
+
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    """Collapse rich errors so ANSI splits inside ``--flag`` still match."""
+    stripped = _ANSI.sub("", text)
+    stripped = stripped.replace("│", " ").replace("╭", " ").replace("╰", " ").replace("─", " ")
+    return " ".join(stripped.split())
+
 
 _NAMES = ("A", "B", "C")
 _N_DAYS = 240
@@ -217,7 +228,7 @@ def test_real_benchmark_rejects_a_bad_receipt_version(tmp_path: Path) -> None:
         ],
     )
     assert result.exit_code != 0
-    assert "--receipt-version must be 1 or 2" in result.output
+    assert "--receipt-version must be 1 or 2" in _plain(result.output)
 
 
 def test_net_tournament_freeze_then_run(
@@ -374,4 +385,4 @@ def test_ranker_probability_rejects_a_bad_receipt_version(tmp_path: Path) -> Non
         ],
     )
     assert result.exit_code != 0
-    assert "--receipt-version must be 1 or 2" in result.output
+    assert "--receipt-version must be 1 or 2" in _plain(result.output)
