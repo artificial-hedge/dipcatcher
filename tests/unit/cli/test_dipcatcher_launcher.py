@@ -99,6 +99,32 @@ def test_chat_help_is_available_without_terminal(
     assert "fx1-lite" in capsys.readouterr().out
 
 
+def test_chat_help_does_not_import_serve_backends_or_concierge(tmp_path: Path) -> None:
+    env = {**os.environ, "PYTHONPATH": str(ROOT / "src"), "NO_COLOR": "1"}
+    env["FX1_CONFIG_DIR"] = str(tmp_path / "unused-config")
+    script = """
+import sys
+from dipcatcher_cli.app import main
+try:
+    main(["chat", "--help"])
+except SystemExit as exc:
+    assert exc.code == 0
+assert "fx1.serve.backends" not in sys.modules
+assert "fx1.interactive.concierge" not in sys.modules
+assert "fx1.interactive.actions" not in sys.modules
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert not Path(env["FX1_CONFIG_DIR"]).exists()
+
+
 def test_invalid_model_is_rejected_before_chat(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -195,6 +221,31 @@ def test_oneshot_superpower_capabilities_subprocess(tmp_path: Path) -> None:
     assert launched.returncode == 0, launched.stderr
     assert "available /superpower capabilities" in launched.stdout
     assert "web_research" in launched.stdout
+
+
+def test_slash_argv_is_explained_not_forwarded_to_the_lab(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _terminal(monkeypatch, stdin=False, stdout=False)
+    with pytest.raises(SystemExit) as stopped:
+        main(["/superpower", "assess conformal coverage"])
+    assert stopped.value.code == 2
+    err = capsys.readouterr().err
+    assert "chat slash command" in err
+    assert "dipcatcher" in err
+
+
+def test_unknown_lab_command_suggests_a_close_match(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _terminal(monkeypatch, stdin=False, stdout=False)
+    with pytest.raises(SystemExit) as stopped:
+        main(["reseach"])
+    assert stopped.value.code == 2
+    captured = capsys.readouterr()
+    text = captured.out + captured.err
+    assert "No such command" in text or "Did you mean" in text
+    assert "research" in text
 
 
 def test_help_does_not_import_interactive_model_code_or_read_stdin(tmp_path: Path) -> None:

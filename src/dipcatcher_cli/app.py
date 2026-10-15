@@ -9,6 +9,8 @@ Concierge one-shots (``superpower``, ``sessions``, ``resume``, ``keys``,
 ``dipcatcher superpower …`` is the same path as ``fxi superpower …``. Names
 in this set must not collide with lab Typer commands (``research``,
 ``doctor``, ``eval``, …).
+Slash commands belong in the chat; a stray ``/superpower`` on the shell is
+explained rather than forwarded to the lab as an unknown subcommand.
 """
 
 from __future__ import annotations
@@ -53,6 +55,7 @@ def _chat(args: Sequence[str]) -> None:
         prog="dipcatcher chat",
         description="Chat with fx1 or fx1-lite; /help lists research and session controls.",
         epilog=(
+            "In chat: /superpower <goal>, /research, /status, /keys, /doctor, /exit.\n"
             "Session journal: $FX1_CONFIG_DIR/sessions/*.jsonl · "
             "Ctrl-C once cancels the running job, twice exits."
         ),
@@ -98,6 +101,15 @@ def _oneshot(args: Sequence[str]) -> None:
     fxi_app(args=list(args), prog_name="dipcatcher")
 
 
+def _slash_argv_message(command: str) -> str:
+    name = command.split()[0]
+    return (
+        f"{name} is a chat slash command, not a lab subcommand.\n"
+        "Open an interactive terminal and run `dipcatcher`, then type the slash command.\n"
+        'Scripts: `dipcatcher superpower --sync "..."` or `dipcatcher research --help`.'
+    )
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     """Open chat in a terminal; retain the existing lab command/exit contracts.
 
@@ -122,6 +134,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     if rest and rest[0] in ONESHOT_COMMANDS:
         _oneshot(args)
         return
+    if args and args[0].startswith("/") and not args[0].startswith("//"):
+        print(_slash_argv_message(args[0]), file=sys.stderr)
+        raise SystemExit(2)
 
     # Import the lab only on the automation/help path. No library imports this
     # outer launcher; quant_fund continues to have no dependency on the UI.
