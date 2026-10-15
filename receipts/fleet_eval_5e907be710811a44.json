@@ -37,7 +37,7 @@
   "n_eval": 64,
   "n_rows": 10,
   "n_train": 128,
-  "receipt_sha256": "5e907be710811a448c7268f805138bf0e59efffecdb21b7a467678681f85c9e4",
+  "receipt_sha256": "ab613c423b36627d94e4069044143bc02b9c676029c981812771153798f21442",
   "replay": {
     "argv": [
       "dipcatcher",

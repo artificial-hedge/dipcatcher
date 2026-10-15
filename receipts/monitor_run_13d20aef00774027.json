@@ -46,7 +46,7 @@
       0.1
     ]
   },
-  "receipt_sha256": "13d20aef00774027a9772ced8a4a118c875cec064b33ed826e7b78311b411e83",
+  "receipt_sha256": "e69a3aed9568e30d31960e7d213af03a3ba81299a58ff8db4d53792747a1952f",
   "replay": {
     "argv": [
       "dipcatcher",

@@ -19,7 +19,7 @@
   "n_error_rows": 0,
   "n_origins": 10,
   "n_rows": 6,
-  "receipt_sha256": "f3bf2afc2f159acea32293b04760b07db7584dd45d460d1b4c295711b31d4aea",
+  "receipt_sha256": "dc16af46c3f2975bcfd50b083869a589a146ca169a32cdeb094bab0b9da18d40",
   "replay": {
     "argv": [
       "dipcatcher",

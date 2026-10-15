@@ -24,7 +24,7 @@
   "kind": "capacity_overlay_eval",
   "live_pnl_claim": false,
   "n_rows": 4,
-  "receipt_sha256": "3622d0c059d42009e9870101afb35c232ac27d58456fa915dc482db6679c3116",
+  "receipt_sha256": "5cf0042e91c7953cce6a6d46bc0fd312ab2e9eb463ddcb772d3fcfd9c22ee653",
   "replay": {
     "argv": [
       "dipcatcher",

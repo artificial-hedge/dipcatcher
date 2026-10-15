@@ -43,7 +43,7 @@
       "signal_sha256": "83beddccaef4913fc22b82476f2a47e5296220c67b65502a6985a96a7947a54a"
     }
   },
-  "receipt_sha256": "8d740c0ddf6d5c5436264a719179b2ea00d66d4a6b5e2d68dd662e7590defb71",
+  "receipt_sha256": "addd924f107eedd8c20d041710923dee3f29235960ad13871566fbf4b8a50fc7",
   "replay": {
     "argv": [
       "dipcatcher",

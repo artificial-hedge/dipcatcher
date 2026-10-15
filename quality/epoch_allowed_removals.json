@@ -44,6 +44,123 @@
       "reason": "Web-explorer fixture copy of receipts/legacy-unsealed/fast_replay_p42_conformance_20260927.json (identical digest; a quarantined pre-seal receipt) removed from the published fixtures at the epoch stamped from 4f427a8a3b. Migrated on 2026-10-13 from the pre-existing flat allowed-removals map, which acknowledged exactly this name and digest.",
       "to_sha256": null,
       "transition": "removed"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_05bbdbfc2bab9f19.json",
+      "from_sha256": "57ad3394513fe58e48127141858a990580fade56ae4755ad0a3b868aa2568f2b",
+      "member": "capacity_eval_3622d0c059d42009.json",
+      "reason": "Replay artifact path+digest refresh (faafaf040); seal updated in follow-up.",
+      "to_sha256": "4f9f7af188507dc602ae782b2743ee62a992f5d99eede4b4478e8101493df128",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_05bbdbfc2bab9f19.json",
+      "from_sha256": "c95ce361609bdb00912147e0f87548fdbd2c0221ad27b8c1a4d0ba558b9330e1",
+      "member": "fleet_eval_5e907be710811a44.json",
+      "reason": "Replay artifact path+digest refresh (faafaf040); seal updated in follow-up.",
+      "to_sha256": "b5444f12bf0e774c547dc6720517453bce98aa6c2ac2dbb84731bc0f6ad664af",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_05bbdbfc2bab9f19.json",
+      "from_sha256": "1a003a670945452a5c86d033900bc33429f2981422c8938b1b8e2469fc764f3a",
+      "member": "honest_verdict_b133e8b3992af893.json",
+      "reason": "Replay artifact path+digest refresh (faafaf040); seal updated in follow-up.",
+      "to_sha256": "70c391cb69796d05353b9c03c53bf8aa05c14465f919be9d790b08aa0c265ce7",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_05bbdbfc2bab9f19.json",
+      "from_sha256": "3ce1cd7f59c301be6b4710326ab905313725317bee3669ae8e755f6d422bc12d",
+      "member": "monitor_run_13d20aef00774027.json",
+      "reason": "Replay artifact path+digest refresh (faafaf040); seal updated in follow-up.",
+      "to_sha256": "2d804ee35deee30e8e14a35d3c2361bbfe6e0482967fdf8e88a2a322132f2f03",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_05bbdbfc2bab9f19.json",
+      "from_sha256": "e48fce1ae4cebf94e417773bdef20c9ed7b0822397505c6a51e8843a8da06c81",
+      "member": "rankic_eval_8d740c0ddf6d5c54.json",
+      "reason": "Replay artifact path+digest refresh (faafaf040); seal updated in follow-up.",
+      "to_sha256": "bb6859f2b8f4d18dcf90fd388bc2f804c911210fdefafe9d58466154a67636a6",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_05bbdbfc2bab9f19.json",
+      "from_sha256": "b9b70f7186d75054e91ee734b87b8aeeba22d66af713806a8d5410a9bc603ee3",
+      "member": "vol_bench_f3bf2afc2f159ace.json",
+      "reason": "Replay artifact path+digest refresh (faafaf040); seal updated in follow-up.",
+      "to_sha256": "6bbb8b5ec1745ef5dcd186c5037211374c29dcd3078214e5b86a4a4682740241",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_6f6d75cd3751c48d.json",
+      "from_sha256": "4f9f7af188507dc602ae782b2743ee62a992f5d99eede4b4478e8101493df128",
+      "member": "capacity_eval_3622d0c059d42009.json",
+      "reason": "Reseal receipt_sha256 after replay binding update; head bytes match lane replay pins.",
+      "to_sha256": "b867f73565dd828e6ae2c2f7091b04915126622b11e5ae7854e7675cce9b048f",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_6f6d75cd3751c48d.json",
+      "from_sha256": "b5444f12bf0e774c547dc6720517453bce98aa6c2ac2dbb84731bc0f6ad664af",
+      "member": "fleet_eval_5e907be710811a44.json",
+      "reason": "Reseal receipt_sha256 after replay binding update; head bytes match lane replay pins.",
+      "to_sha256": "adbe15a247e23fd26cc874a509d3448881536aef586be335bbad7b44ba97812f",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_6f6d75cd3751c48d.json",
+      "from_sha256": "70c391cb69796d05353b9c03c53bf8aa05c14465f919be9d790b08aa0c265ce7",
+      "member": "honest_verdict_b133e8b3992af893.json",
+      "reason": "Reseal receipt_sha256 after replay binding update; head bytes match lane replay pins.",
+      "to_sha256": "ed1736ed83c33d0c44775292c3e4979aaf11bb5bd2d18cfeb7df3baa78575a84",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_6f6d75cd3751c48d.json",
+      "from_sha256": "2d804ee35deee30e8e14a35d3c2361bbfe6e0482967fdf8e88a2a322132f2f03",
+      "member": "monitor_run_13d20aef00774027.json",
+      "reason": "Reseal receipt_sha256 after replay binding update; head bytes match lane replay pins.",
+      "to_sha256": "82c474e25984e9418b6709f81dd34e55457c512c6eef7d3b3275c249e2e82b38",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_6f6d75cd3751c48d.json",
+      "from_sha256": "bb6859f2b8f4d18dcf90fd388bc2f804c911210fdefafe9d58466154a67636a6",
+      "member": "rankic_eval_8d740c0ddf6d5c54.json",
+      "reason": "Reseal receipt_sha256 after replay binding update; head bytes match lane replay pins.",
+      "to_sha256": "3f1aba6b04d9b7757852334f213059ef971bffe5100e2bbda807eeba28014f06",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_6f6d75cd3751c48d.json",
+      "from_sha256": "6bbb8b5ec1745ef5dcd186c5037211374c29dcd3078214e5b86a4a4682740241",
+      "member": "vol_bench_f3bf2afc2f159ace.json",
+      "reason": "Reseal receipt_sha256 after replay binding update; head bytes match lane replay pins.",
+      "to_sha256": "dfca0a6263a360b3b89cb8588bbb3e03224f37e069cf2764f4caa24b6a2cd453",
+      "transition": "mutated"
+    },
+    {
+      "corpus": "quality/*.json",
+      "epoch": "corpus_epoch_792426f656af6eb2.json",
+      "from_sha256": "4a428c8f6834cbbd495e55115f50a398bfec7b3b6a1f04ba4061951288a60a7e",
+      "member": "corpus_epoch_cd4b7ee4ad32d328.json",
+      "reason": "Drop forked quality epoch tip (parallel stamp from faafaf040); canonical chain follows e31cd642\u2192cf04.",
+      "to_sha256": null,
+      "transition": "removed"
     }
   ],
   "schema": "epoch_acknowledgments.v1"
