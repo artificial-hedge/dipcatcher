@@ -3025,20 +3025,10 @@ def sign_pins_cmd(
         "(two lines, or `PRIV\\nPUB`). Falls back to GATE_SIGNING_KEY env.",
     ),
 ) -> None:
-    """Ed25519-sign the integrity pins (epoch_heads.json + crown_jewels.json).
-
-    Writes ``gate_pins.sig`` (repo root, outside every chained corpus) and
-    ``quality/gate_signing.pub``. The private seed is never persisted —
-    supply it via --key-file or the GATE_SIGNING_KEY env var
-    ("<priv_hex>:<pub_hex>" or a file path). Run after `make stamp-epochs`
-    so the signature covers the fresh pin bytes.
-    """
+    """Ed25519-sign integrity pins; require GATE_SIGNING_KEY or --key-file."""
     import os
 
-    from quant_fund.research.gate_signatures import (
-        key_id,
-        sign_pins,
-    )
+    from quant_fund.research.gate_signatures import key_id, sign_pins
 
     raw: str | None = None
     if key_file is not None:
@@ -3047,9 +3037,7 @@ def sign_pins_cmd(
         env = os.environ.get("GATE_SIGNING_KEY", "").strip()
         if env:
             raw = Path(env).read_text().strip() if Path(env).is_file() else env
-    # Fail closed: minting an ephemeral key here would overwrite the committed
-    # trust root (quality/gate_signing.pub) and silently break every verifier
-    # that pins that pubkey. Key material is mandatory.
+    # Fail closed: never mint an ephemeral key over quality/gate_signing.pub.
     if raw is None:
         typer.echo(
             "sign-pins: no key material — supply --key-file or GATE_SIGNING_KEY "
@@ -3061,8 +3049,6 @@ def sign_pins_cmd(
         typer.echo("sign-pins: key material must be '<priv_hex>:<pub_hex>' or two lines")
         raise typer.Exit(code=2)
     priv, pub = fields
-    # Refuse to rotate the trust root by accident: the supplied public key must
-    # match the committed pubkey when one is already present.
     committed_pub = root / "quality" / "gate_signing.pub"
     if committed_pub.is_file():
         expected = committed_pub.read_text().strip()
