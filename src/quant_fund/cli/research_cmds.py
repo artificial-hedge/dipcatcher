@@ -3036,7 +3036,6 @@ def sign_pins_cmd(
     import os
 
     from quant_fund.research.gate_signatures import (
-        generate_keypair,
         key_id,
         sign_pins,
     )
@@ -3048,18 +3047,31 @@ def sign_pins_cmd(
         env = os.environ.get("GATE_SIGNING_KEY", "").strip()
         if env:
             raw = Path(env).read_text().strip() if Path(env).is_file() else env
+    # Fail closed: minting an ephemeral key here would overwrite the committed
+    # trust root (quality/gate_signing.pub) and silently break every verifier
+    # that pins that pubkey. Key material is mandatory.
     if raw is None:
-        priv, pub = generate_keypair()
         typer.echo(
-            "generated an ephemeral keypair (no key supplied) — "
-            "the signature only attests to this key's holder"
+            "sign-pins: no key material — supply --key-file or GATE_SIGNING_KEY "
+            "(refusing to mint an ephemeral key over the committed trust root)"
         )
-    else:
-        fields = [line.strip() for line in raw.replace(":", "\n").splitlines() if line.strip()]
-        if len(fields) != 2:
-            typer.echo("sign-pins: key material must be '<priv_hex>:<pub_hex>' or two lines")
+        raise typer.Exit(code=2)
+    fields = [line.strip() for line in raw.replace(":", "\n").splitlines() if line.strip()]
+    if len(fields) != 2:
+        typer.echo("sign-pins: key material must be '<priv_hex>:<pub_hex>' or two lines")
+        raise typer.Exit(code=2)
+    priv, pub = fields
+    # Refuse to rotate the trust root by accident: the supplied public key must
+    # match the committed pubkey when one is already present.
+    committed_pub = root / "quality" / "gate_signing.pub"
+    if committed_pub.is_file():
+        expected = committed_pub.read_text().strip()
+        if expected and pub != expected:
+            typer.echo(
+                "sign-pins: supplied public key does not match "
+                f"{committed_pub.as_posix()} — use rotate-key to change the trust root"
+            )
             raise typer.Exit(code=2)
-        priv, pub = fields
     sig_path = sign_pins(root, priv, pub)
     typer.echo(f"signature={sig_path} key_id={key_id(pub)}")
 

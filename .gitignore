@@ -115,6 +115,9 @@ leakage-report.json
 /tests/tests/
 /scripts/scripts/
 
+# Corpus-epoch stamp mutexes — host-local, never evidence.
+**/.epoch_stamp.lock
+
 # ---------------------------------------------------------------------------
 # L8 hygiene (2026-10-08) — cache scratch + TRACKED-FILE CARVE-OUTS.
 # Invariant: an ignore rule must never hide tracked evidence or inputs. Two
