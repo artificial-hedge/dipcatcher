@@ -58,8 +58,22 @@ def _chat(args: Sequence[str]) -> None:
     run_console(model=options.model, resume=options.resume)
 
 
+def _print_launcher_help() -> None:
+    """Short chat-first banner before the lab Typer help tree."""
+    print("Start a conversation: dipcatcher (interactive terminal)")
+    print("Choose a model: dipcatcher chat --model fx1-lite")
+    print("Resume a session: dipcatcher chat --resume <id>")
+    print("In chat: /help, /superpower, /status, /use <model>, /doctor")
+    print("Version: dipcatcher --version")
+    print("Lab / scripts: dipcatcher <command> --help\n")
+
+
 def main(argv: Sequence[str] | None = None) -> None:
-    """Open chat in a terminal; retain the existing lab command/exit contracts."""
+    """Open chat in a terminal; retain the existing lab command/exit contracts.
+
+    Lab/help paths propagate Typer's ``SystemExit`` so scripts and tests see
+    the same exit codes as calling ``quant_fund.cli.main.app`` directly.
+    """
     args = list(sys.argv[1:] if argv is None else argv)
     if len(args) == 1 and args[0] in VERSION_FLAGS:
         print(_version_line())
@@ -76,8 +90,5 @@ def main(argv: Sequence[str] | None = None) -> None:
     from quant_fund.cli.main import app
 
     if not args or args in (["--help"], ["-h"]):
-        print("Start a conversation: dipcatcher (interactive terminal)")
-        print("Choose a model: dipcatcher chat --model fx1-lite")
-        print("In chat: /help, /superpower, /status, /use <model>, /doctor")
-        print("Version: dipcatcher --version\n")
+        _print_launcher_help()
     app(args=args or ["--help"], prog_name="dipcatcher")
