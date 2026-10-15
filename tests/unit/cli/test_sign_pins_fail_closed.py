@@ -36,9 +36,7 @@ def test_sign_pins_refuses_pubkey_mismatch(tmp_path: Path) -> None:
     assert pub != committed
     key_file = tmp_path / "key.txt"
     key_file.write_text(f"{priv}\n{pub}\n")
-    result = runner.invoke(
-        app, ["sign-pins", "--root", str(tmp_path), "--key-file", str(key_file)]
-    )
+    result = runner.invoke(app, ["sign-pins", "--root", str(tmp_path), "--key-file", str(key_file)])
     assert result.exit_code == 2
     assert "does not match" in result.output
     assert "rotate-key" in result.output
