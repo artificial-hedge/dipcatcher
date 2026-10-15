@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -599,3 +600,22 @@ def test_script_membership_parity(tmp_path: Path) -> None:
     (gh / "tpl.md").write_text("t")
     for d in (corpus, gh):
         assert sv._member_digests(d, "*") == member_digests(d, pattern="*")
+
+
+def test_member_digests_skip_gitignored_untracked_files(tmp_path: Path) -> None:
+    """A gitignored untracked file is not corpus evidence.
+
+    ``data/metadata/resolved_config.json`` is ignored derived state. Stamping
+    it made CI's clean checkout fail ``head_member_missing_live`` while a
+    machine that still had the file passed. Tracked files stay members.
+    """
+    from scripts import verify_epoch_chain as sv
+
+    subprocess.run(["git", "init", str(tmp_path)], check=True, capture_output=True)
+    corpus = tmp_path / "data" / "metadata"
+    corpus.mkdir(parents=True)
+    (tmp_path / ".gitignore").write_text("data/metadata/local.json\n")
+    (corpus / "kept.json").write_text("{}\n")
+    (corpus / "local.json").write_text("{}\n")
+    assert set(member_digests(corpus)) == {"kept.json"}
+    assert sv._member_digests(corpus, "*.json") == member_digests(corpus)

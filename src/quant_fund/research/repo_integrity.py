@@ -53,14 +53,25 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     # notes. Arrivals are errors until the epoch restamp commits them.
     ("receipts", "*.json", True, False, ("legacy-unsealed/README.md",)),
     ("verifier", "*.md", True, False, ()),
-    # quality's non-.json residents are jewel-pinned keys/certs or
-    # self-authenticating TSA anchors — pinned elsewhere, exempt here.
+    # quality's non-.json residents are jewel-pinned keys/certs,
+    # self-authenticating TSA anchors, or narrative dossiers beside a
+    # chained census JSON (``mccabe_refactor_dossier.md``). The measured
+    # census stays a ``*.json`` member. Markdown is not a gate input.
     (
         "quality",
         "*.json",
         True,
         True,
-        ("*.pub", "*.pem", "*.crt", "*.tsr", "*.txt", "timestamps/*", "timestamps/ots/*"),
+        (
+            "*.pub",
+            "*.pem",
+            "*.crt",
+            "*.tsr",
+            "*.txt",
+            "*.md",
+            "timestamps/*",
+            "timestamps/ots/*",
+        ),
     ),
     # Closed world: a `.yaml` workflow beside `*.yml` members would run on
     # GitHub while dodging the epoch chain — uncovered is an error.
@@ -329,14 +340,20 @@ def verify_repo(
             EXEMPT_BASENAMES,
             EXEMPT_RELPATHS,
             _exempt_member,
+            gitignored_relpaths,
         )
 
-        for f in sorted(cdir.rglob("*")):
-            if not f.is_file() or f.name.startswith("corpus_epoch_"):
+        present = [
+            f.relative_to(cdir).as_posix()
+            for f in sorted(cdir.rglob("*"))
+            if f.is_file() and not f.name.startswith("corpus_epoch_")
+        ]
+        ignored = gitignored_relpaths(cdir, present)
+        for rel in present:
+            if rel in ignored:
                 continue
-            rel = f.relative_to(cdir).as_posix()
             if (
-                f.name in EXEMPT_BASENAMES
+                Path(rel).name in EXEMPT_BASENAMES
                 or rel in EXEMPT_RELPATHS
                 or _exempt_member(cdir, rel)
                 or fnmatch(rel, pattern)

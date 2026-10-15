@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
 import sys
 import unicodedata
 from collections.abc import Mapping
@@ -207,19 +208,40 @@ def _exempt_member(root: Path, relname: str) -> bool:
     )
 
 
+def _gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
+    """Mirror ``corpus_epoch.gitignored_relpaths`` — tracked files stay members."""
+    if not rels:
+        return set()
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), "check-ignore", "-z", "--stdin"],
+            input="\0".join(rels) + "\0",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return set()
+    if proc.returncode not in (0, 1):
+        return set()
+    return {name for name in proc.stdout.split("\0") if name}
+
+
 def _member_digests(corpus_dir: Path, pattern: str) -> dict[str, str]:
     """``{rel-path: sha256-of-bytes}`` — recursive over ``rglob(pattern)``."""
     root = Path(corpus_dir)
     if not root.is_dir():
         raise ValueError(f"corpus dir {root} does not exist")
-    return {
-        path.relative_to(root).as_posix(): _sha256(path.read_bytes())
+    candidates = [
+        path.relative_to(root).as_posix()
         for path in sorted(root.rglob(pattern))
         if path.is_file()
         and path.name not in EXEMPT_BASENAMES
         and path.relative_to(root).as_posix() not in EXEMPT_RELPATHS
         and not _exempt_member(root, path.relative_to(root).as_posix())
-    }
+    ]
+    ignored = _gitignored_relpaths(root, candidates)
+    return {rel: _sha256((root / rel).read_bytes()) for rel in candidates if rel not in ignored}
 
 
 def _nfc_errors(members: Mapping[str, str]) -> list[str]:

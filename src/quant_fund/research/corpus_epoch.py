@@ -129,6 +129,34 @@ def _machine_local(relname: str) -> bool:
     return any(part in EXEMPT_DIRNAMES or part.endswith(EXEMPT_DIR_SUFFIXES) for part in parts[:-1])
 
 
+def gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
+    """Corpus-relative paths ``git check-ignore`` drops.
+
+    Tracked files are never ignored. Outside a worktree, or when git is
+    unavailable, nothing is ignored — membership stays the directory
+    listing (exported bundles, unit fixtures). ``.gitignore`` is a crown
+    jewel, so a pattern that hides a path is a pin mutation.
+    """
+    if not rels:
+        return set()
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), "check-ignore", "-z", "--stdin"],
+            input="\0".join(rels) + "\0",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return set()
+    # 0 = some ignored, 1 = none, anything else = not a worktree.
+    if proc.returncode not in (0, 1):
+        return set()
+    return {name for name in proc.stdout.split("\0") if name}
+
+
 def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:
     """``{rel-path: sha256-of-bytes}`` for every file matching ``pattern``.
 
@@ -137,22 +165,26 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
     On a flat dir the keys equal the plain filenames, so existing chains are
     unchanged. ``corpus_epoch_*.json`` receipts are members like any other —
     epochs stamp each other, which is what lets the chain detect a stamped
-    epoch's own deletion or mutation. ``EXEMPT_BASENAMES`` and
+    epoch's own deletion or mutation.     ``EXEMPT_BASENAMES`` and
     ``EXEMPT_RELPATHS`` are skipped: they are chain bookkeeping, not corpus
     content. Exempt rel-paths are exact corpus-relative paths — a basename
     exemption would let a real member hide under a shared filename.
+    Gitignored untracked files are skipped too (tracked files are not):
+    a clean checkout must see the same members as the machine that stamped.
     """
     root = Path(corpus_dir)
     if not root.is_dir():
         raise ValueError(f"corpus dir {root} does not exist")
-    return {
-        path.relative_to(root).as_posix(): hash_bytes(path.read_bytes())
+    candidates = [
+        path.relative_to(root).as_posix()
         for path in sorted(root.rglob(pattern))
         if path.is_file()
         and path.name not in EXEMPT_BASENAMES
         and path.relative_to(root).as_posix() not in EXEMPT_RELPATHS
         and not _exempt_member(root, path.relative_to(root).as_posix())
-    }
+    ]
+    ignored = gitignored_relpaths(root, candidates)
+    return {rel: hash_bytes((root / rel).read_bytes()) for rel in candidates if rel not in ignored}
 
 
 def _exempt_member(root: Path, relname: str) -> bool:
