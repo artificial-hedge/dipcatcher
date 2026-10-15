@@ -267,10 +267,13 @@ def test_ewma_forecast_matches_the_documented_recursion() -> None:
     model = PerSecurityVol("ewma", lam=0.94, min_obs=20).fit(panel)
     history = panel.key_returns("S00")
     lam = 0.94
+    # ``ewma_variance`` stores the forecast that has not yet consumed return t
+    # (``var[t]`` uses ``r[t-1]``). The per-key one-step forecast takes one
+    # more RiskMetrics step with the last observed return.
     var = history[0] ** 2
     for value in history[1:-1]:
         var = lam * var + (1.0 - lam) * value**2
-    expected = lam * var + (1.0 - lam) * history[-2] ** 2
+    expected = lam * var + (1.0 - lam) * history[-1] ** 2
     assert np.allclose(model.forecast("S00")["variance"][0], expected)
 
 
