@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13422,
+  "module_count": 13424,
   "module_edges": [
     {
       "dst": "fx1",
@@ -492,6 +492,10 @@
     },
     {
       "dst": "fx1.harness",
+      "src": "fx1.doctor"
+    },
+    {
+      "dst": "fx1.interactive.superpower",
       "src": "fx1.doctor"
     },
     {
@@ -2651,6 +2655,10 @@
       "src": "fx1.serve"
     },
     {
+      "dst": "fx1.serve.api",
+      "src": "fx1.serve._api_cli"
+    },
+    {
       "dst": "fx1.serve.openai_compat",
       "src": "fx1.serve.anthropic_compat"
     },
@@ -2688,6 +2696,10 @@
     },
     {
       "dst": "fx1.reward",
+      "src": "fx1.serve.api"
+    },
+    {
+      "dst": "fx1.serve._api_cli",
       "src": "fx1.serve.api"
     },
     {
@@ -5099,6 +5111,10 @@
       "src": "quant_fund.cli.main"
     },
     {
+      "dst": "quant_fund.cli.research_eval_cmds",
+      "src": "quant_fund.cli.main"
+    },
+    {
       "dst": "quant_fund.cli.support",
       "src": "quant_fund.cli.main"
     },
@@ -5303,10 +5319,6 @@
       "src": "quant_fund.cli.research_cmds"
     },
     {
-      "dst": "quant_fund.research.compare",
-      "src": "quant_fund.cli.research_cmds"
-    },
-    {
       "dst": "quant_fund.research.concordance",
       "src": "quant_fund.cli.research_cmds"
     },
@@ -5359,10 +5371,6 @@
       "src": "quant_fund.cli.research_cmds"
     },
     {
-      "dst": "quant_fund.research.expert_mixture",
-      "src": "quant_fund.cli.research_cmds"
-    },
-    {
       "dst": "quant_fund.research.fleet_eval",
       "src": "quant_fund.cli.research_cmds"
     },
@@ -5408,10 +5416,6 @@
     },
     {
       "dst": "quant_fund.research.monitor_run",
-      "src": "quant_fund.cli.research_cmds"
-    },
-    {
-      "dst": "quant_fund.research.multih_fleet",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -5509,6 +5513,30 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.cli.app",
+      "src": "quant_fund.cli.research_eval_cmds"
+    },
+    {
+      "dst": "quant_fund.cli.support",
+      "src": "quant_fund.cli.research_eval_cmds"
+    },
+    {
+      "dst": "quant_fund.research.compare",
+      "src": "quant_fund.cli.research_eval_cmds"
+    },
+    {
+      "dst": "quant_fund.research.expert_mixture",
+      "src": "quant_fund.cli.research_eval_cmds"
+    },
+    {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.cli.research_eval_cmds"
+    },
+    {
+      "dst": "quant_fund.research.multih_fleet",
+      "src": "quant_fund.cli.research_eval_cmds"
     },
     {
       "dst": "quant_fund.cli.support",
@@ -61857,6 +61885,7 @@
     "fx1.sdk_audit",
     "fx1.selftest",
     "fx1.serve",
+    "fx1.serve._api_cli",
     "fx1.serve.anthropic_compat",
     "fx1.serve.anthropic_sdk_audit",
     "fx1.serve.api",
@@ -61993,6 +62022,7 @@
     "quant_fund.cli.ops_cmds",
     "quant_fund.cli.report_cmds",
     "quant_fund.cli.research_cmds",
+    "quant_fund.cli.research_eval_cmds",
     "quant_fund.cli.sota_cmds",
     "quant_fund.cli.support",
     "quant_fund.cli.train_cmds",
@@ -75200,6 +75230,11 @@
       "src": "fx1.doctor"
     },
     {
+      "dst": "fx1.interactive",
+      "imports": 1,
+      "src": "fx1.doctor"
+    },
+    {
       "dst": "quant_fund.utils",
       "imports": 1,
       "src": "fx1.doctor"
@@ -75626,7 +75661,7 @@
     },
     {
       "dst": "fx1.serve",
-      "imports": 178,
+      "imports": 180,
       "src": "fx1.serve"
     },
     {
@@ -75871,7 +75906,7 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 40,
+      "imports": 43,
       "src": "quant_fund.cli"
     },
     {
@@ -75966,7 +76001,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 72,
+      "imports": 73,
       "src": "quant_fund.cli"
     },
     {

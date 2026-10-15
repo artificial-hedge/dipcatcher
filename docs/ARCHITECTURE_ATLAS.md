@@ -198,6 +198,7 @@ flowchart LR
   fx1_doctor -->|1| fx1_data
   fx1_doctor -->|1| fx1_eval
   fx1_doctor -->|1| fx1_harness
+  fx1_doctor -->|1| fx1_interactive
   fx1_doctor -->|1| quant_fund_utils
   fx1_doctor_audit -->|1| fx1_doctor
   fx1_doctor_audit -->|2| quant_fund_utils
@@ -337,7 +338,7 @@ flowchart LR
   quant_fund_cli -->|1| quant_fund_quant_models
   quant_fund_cli -->|1| quant_fund_reality
   quant_fund_cli -->|3| quant_fund_reporting
-  quant_fund_cli -->|72| quant_fund_research
+  quant_fund_cli -->|73| quant_fund_research
   quant_fund_cli -->|3| quant_fund_schemas
   quant_fund_cli -->|1| quant_fund_stress
   quant_fund_cli -->|13| quant_fund_utils
@@ -781,7 +782,7 @@ sequenceDiagram
 | `fx1.sdk` | 1 |
 | `fx1.sdk_audit` | 1 |
 | `fx1.selftest` | 1 |
-| `fx1.serve` | 59 |
+| `fx1.serve` | 60 |
 | `fx1.tail_audit` | 1 |
 | `fx1.train` | 14 |
 | `fx1.webresearch` | 4 |
@@ -790,7 +791,7 @@ sequenceDiagram
 | `quant_fund.audit` | 12 |
 | `quant_fund.backtest` | 16 |
 | `quant_fund.calendars` | 8 |
-| `quant_fund.cli` | 18 |
+| `quant_fund.cli` | 19 |
 | `quant_fund.combination` | 18 |
 | `quant_fund.compute` | 8 |
 | `quant_fund.config` | 7 |
@@ -840,9 +841,9 @@ sequenceDiagram
 | `quant_fund.utils` | 10 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13422**
+- Modules scanned: **13424**
 - Packages: **94**
-- Cross-package import edges: **396**
+- Cross-package import edges: **397**
 
 <!-- END GENERATED: coverage -->
 
