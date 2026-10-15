@@ -24,7 +24,7 @@
   "kind": "capacity_overlay_eval",
   "live_pnl_claim": false,
   "n_rows": 4,
-  "receipt_sha256": "3622d0c059d42009e9870101afb35c232ac27d58456fa915dc482db6679c3116",
+  "receipt_sha256": "5cf0042e91c7953cce6a6d46bc0fd312ab2e9eb463ddcb772d3fcfd9c22ee653",
   "replay": {
     "argv": [
       "dipcatcher",
@@ -45,8 +45,8 @@
     ],
     "artifacts": [
       {
-        "path": "data/metadata/replay/capacity_eval_ad7dd6aef6c94d20.json",
-        "sha256": "044638ce5091d330368059531cd2ce3d0001c8694a915750af9a56a6c928b4d8"
+        "path": "data/metadata/replay/capacity_eval_f990aaadaa5b647b.json",
+        "sha256": "7d5d3502ad6587d67ce442364468121b4feb59941f148645bbcb92071dc706cb"
       }
     ]
   },

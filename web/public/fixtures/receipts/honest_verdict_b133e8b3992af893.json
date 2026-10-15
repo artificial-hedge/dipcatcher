@@ -80,7 +80,7 @@
   "live_pnl_claim": false,
   "n_heads": 3,
   "n_obs": 128,
-  "receipt_sha256": "b133e8b3992af8937df8b38e6d89432215769344f3fd58af3251652ceba7c882",
+  "receipt_sha256": "9d631fa6aace437a30f89e18290282cf8ca9ad063c8892256429a377731ff123",
   "replay": {
     "argv": [
       "dipcatcher",
@@ -102,8 +102,8 @@
     ],
     "artifacts": [
       {
-        "path": "data/metadata/replay/honest_verdict_9a043a885f02042b.json",
-        "sha256": "9725bced9cbbf03beea8c4f111e61e3c076d8875441fa2c0757fae11d0770549"
+        "path": "data/metadata/replay/honest_verdict_9b5abef8567f72c2.json",
+        "sha256": "03d694e7d3219eef15e0be570f2bc1782da31695dce285e247a22f23cdaa9715"
       }
     ]
   },

@@ -43,7 +43,7 @@
       "signal_sha256": "83beddccaef4913fc22b82476f2a47e5296220c67b65502a6985a96a7947a54a"
     }
   },
-  "receipt_sha256": "8d740c0ddf6d5c5436264a719179b2ea00d66d4a6b5e2d68dd662e7590defb71",
+  "receipt_sha256": "addd924f107eedd8c20d041710923dee3f29235960ad13871566fbf4b8a50fc7",
   "replay": {
     "argv": [
       "dipcatcher",
@@ -65,8 +65,8 @@
     ],
     "artifacts": [
       {
-        "path": "data/metadata/replay/rankic_eval_02738b0fa12b6676.json",
-        "sha256": "211c506b2840a3a5ed65759db4a90b63b460a3f28850761e6eac99806c55d298"
+        "path": "data/metadata/replay/rankic_eval_507c328d7ea41c76.json",
+        "sha256": "3671585a73edeab75c50c4a1eed874b7af4842e0a0156f223d39b7c4e6804100"
       }
     ]
   },

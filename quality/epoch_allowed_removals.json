@@ -161,6 +161,15 @@
       "reason": "Drop forked quality epoch tip (parallel stamp from faafaf040); canonical chain follows e31cd642\u2192cf04.",
       "to_sha256": null,
       "transition": "removed"
+    },
+    {
+      "corpus": "tests/*",
+      "epoch": "corpus_epoch_446ddadac2efb9d5.json",
+      "from_sha256": "cc3fccef8156e6e0369fd6a66da799e78fbadb656cb2350306d4840caab730fe",
+      "member": "corpus_epoch_05724f90cfec84f6.json",
+      "reason": "Removed orphaned fork tip that branched from corpus_epoch_fd8b09ac86c69256.json alongside the canonical heads-pin chain through corpus_epoch_68f3489ea52c4bcf.json. Clears epoch_fork / epoch_multiple_heads on verify-repo and evidence-audit.",
+      "to_sha256": null,
+      "transition": "removed"
     }
   ],
   "schema": "epoch_acknowledgments.v1"
