@@ -1867,7 +1867,7 @@ def test_train_calibration_auto_selects_lowest_brier(
             np.linspace(0.05, 0.95, 12),
             (np.linspace(0.05, 0.95, 12) > 0.5).astype(float),
         )
-        calibrator.save(path)
+        _save_with_identity(config, calibrator, path)
         brier = {"isotonic": 0.11, "platt": 0.09}[model_name]
         return {"path": str(path), "metrics": {"oos_brier": brier}}
 
