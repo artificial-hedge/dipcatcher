@@ -374,6 +374,7 @@ def test_doctor_reports_session_budget_and_catalog(
     assert status["family_catalog"] == "not loaded yet"
     assert status["background_job"] == "none"
     assert "sessions" in status["session_journal"]
+    assert any("/keys set" in action for action in status["next_actions"])
     out.clear()
     concierge.handle_line("/families")
     concierge.handle_line("/doctor")

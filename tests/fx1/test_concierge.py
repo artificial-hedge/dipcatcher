@@ -151,9 +151,50 @@ def test_help_and_exit(env: Path, tmp_path: Path) -> None:
     assert concierge.handle_line("quit") is True
 
 
-def test_unknown_command_reports_error(env: Path, tmp_path: Path) -> None:
+def test_unknown_command_reports_error(
+    env: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     concierge, _ = make_concierge(tmp_path)
     assert concierge.handle_line("/definitely-not-a-command") is False  # survives
+    assert "unknown command /definitely-not-a-command" in capsys.readouterr().err
+
+
+def test_unknown_slash_command_suggests_close_match(
+    env: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    concierge, _ = make_concierge(tmp_path)
+    assert concierge.handle_line("/superpwoer verify receipts") is False
+    err = capsys.readouterr().err
+    assert "unknown command /superpwoer" in err
+    assert "did you mean /superpower" in err
+
+
+@pytest.mark.parametrize("line", ["/quit", "/QUIT", "/?"])
+def test_slash_aliases_and_casefold(env: Path, tmp_path: Path, line: str) -> None:
+    concierge, out = make_concierge(tmp_path)
+    if line.lower() == "/?":
+        assert concierge.handle_line(line) is False
+        assert "/superpower" in joined(out)
+        return
+    assert concierge.handle_line(line) is True
+
+
+def test_keys_unknown_model_is_a_usage_error(
+    env: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    concierge, _ = make_concierge(tmp_path)
+    assert concierge.handle_line("/keys test gpt-4") is False
+    assert "unknown model 'gpt-4'" in capsys.readouterr().err
+
+
+def test_harness_unknown_command_is_a_usage_error(
+    env: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    concierge, _ = make_concierge(tmp_path)
+    assert concierge.handle_line("/harness run not-a-real-command") is False
+    err = capsys.readouterr().err
+    assert "not a registered harness command" in err
+    assert "/harness list" in err
 
 
 def test_model_command(env: Path, tmp_path: Path) -> None:

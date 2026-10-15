@@ -42,6 +42,7 @@ import time
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from difflib import get_close_matches
 from typing import Any
 
 import typer
@@ -105,6 +106,53 @@ _BUDGET_DIMENSIONS: dict[str, str] = {
     "sources": "max_web_sources",
     "tokens": "max_prompt_tokens",
 }
+
+# Codex-style aliases: the canonical names stay in HELP_TEXT.
+_SLASH_ALIASES: dict[str, str] = {
+    "quit": "exit",
+    "?": "help",
+}
+
+
+def _slash_commands() -> tuple[str, ...]:
+    """Registered ``/`` commands derived from ``_cmd_*`` handlers."""
+    return tuple(
+        sorted(
+            name[len("_cmd_") :].replace("_", "-")
+            for name in dir(Concierge)
+            if name.startswith("_cmd_")
+        )
+    )
+
+
+def _suggest_slash(command: str) -> str:
+    matches = get_close_matches(command, _slash_commands(), n=3, cutoff=0.55)
+    if not matches:
+        return "try /help"
+    listed = ", ".join(f"/{name}" for name in matches)
+    return f"did you mean {listed}?  /help lists every command"
+
+
+def _doctor_next_actions(status: dict[str, Any], model: str) -> list[str]:
+    """Actionable follow-ups for ``/doctor`` — presence-only, no secrets."""
+    actions: list[str] = []
+    active_unset = True
+    models = status.get("models")
+    if isinstance(models, list):
+        for row in models:
+            if isinstance(row, dict) and row.get("model") == model:
+                active_unset = row.get("status") == "unset"
+                break
+    if active_unset:
+        actions.append(f"/keys set {model}  (store API key + endpoint URL; input is masked)")
+        actions.append(f"/keys test {model}  (identity probe once an endpoint is stored)")
+    else:
+        actions.append(f"/keys test {model}  (confirm requested vs served model identity)")
+        actions.append("/superpower <goal> [--sync]  (plan + run eligible capabilities)")
+    if status.get("family_catalog") == "not loaded yet":
+        actions.append("/families  (load the research-family catalog the planner consults)")
+    actions.append("/help")
+    return actions
 
 
 # ---------------------------------------------------------------------------
@@ -361,7 +409,7 @@ class Concierge:
         if not text:
             return False
         if text.startswith("/"):
-            if not text.startswith("/keys"):
+            if not text.lower().startswith("/keys"):
                 self._journal_turn("user", text)
             return self._slash(text)
         if text.lower() in {"exit", "quit"}:
@@ -460,14 +508,15 @@ class Concierge:
 
     def _slash(self, text: str) -> bool:
         command, _, rest = text[1:].partition(" ")
+        command = _SLASH_ALIASES.get(command.lower(), command.lower())
         handler = getattr(self, f"_cmd_{command.replace('-', '_')}", None)
         if handler is None:
-            self._say_error(ValueError(f"unknown command /{command}; try /help"))
+            self._say_error(ValueError(f"unknown command /{command}; {_suggest_slash(command)}"))
             return False
         try:
             return bool(handler(rest))
-        except ValueError as exc:
-            self._say_error(exc)
+        except (ValueError, KeyError) as exc:
+            self._say_error(ValueError(str(exc)))
             return False
 
     def _cmd_help(self, rest: str) -> bool:
@@ -545,12 +594,18 @@ class Concierge:
             return False
         if sub == "test" and len(tokens) in {1, 2}:
             model = tokens[1] if len(tokens) == 2 else self.model
-            profiles.check_model(model)
+            try:
+                profiles.check_model(model)
+            except KeyError as exc:
+                raise ValueError(str(exc)) from None
             self._keys_test(model)
             return False
         if sub == "set" and len(tokens) in {1, 2}:
             model = tokens[1] if len(tokens) == 2 else self.model
-            profiles.check_model(model)
+            try:
+                profiles.check_model(model)
+            except KeyError as exc:
+                raise ValueError(str(exc)) from None
             import getpass
 
             try:
@@ -616,7 +671,7 @@ class Concierge:
 
         command = next((c for c in HARNESS_REGISTRY if c.name == name), None)
         if command is None:
-            raise KeyError(f"{name!r} is not a registered harness command")
+            raise ValueError(f"{name!r} is not a registered harness command; /harness list")
         consequential = command.role.value == "model_training" or command.name in {
             "train",
             "optimize",
@@ -658,6 +713,7 @@ class Concierge:
         )
         catalog = self._catalog_cache.get("catalog")
         status["family_catalog"] = catalog.describe() if catalog else "not loaded yet"
+        status["next_actions"] = _doctor_next_actions(status, self.model)
         self._say(actions.status_json(status))
         return False
 
@@ -1378,7 +1434,7 @@ class Concierge:
             ]
             try:
                 stdout = self._run_harness(harness_name, args_list)
-            except KeyError as exc:
+            except (KeyError, ValueError) as exc:
                 return f"harness refused: {exc}"
             return stdout[-6000:] or "(command produced no output)"
         return f"unknown tool {name!r}"
