@@ -29,7 +29,6 @@ from quant_fund.metrics.inference import (
 from quant_fund.metrics.overfitting import overfitting_diagnostics
 from quant_fund.northset.benches import bench_northset
 from quant_fund.pipeline.dataset import build_gold, ensure_silver, panel
-from quant_fund.research.research_flags import research_required_only
 from quant_fund.reporting.report import latest_report_dir, write_report
 from quant_fund.research.benches import (
     bench_alpha,
@@ -2354,6 +2353,7 @@ from quant_fund.research.catalog import (
     tail_es_battery_keys_present,
     tail_var_battery_keys_present,
 )
+from quant_fund.research.research_flags import research_required_only
 from quant_fund.utils.hashing import canonical_frame_fingerprint, hash_bytes, hash_file
 from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
 from quant_fund.utils.seeds import set_global_seed

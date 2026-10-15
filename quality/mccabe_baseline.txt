@@ -784,6 +784,7 @@ src/quant_fund/research/agent.py:_hypotheses_conformal_bounds 14
 src/quant_fund/research/agent.py:_hypotheses_northset 41
 src/quant_fund/research/agent.py:_hypotheses_rankers_and_rewards 16
 src/quant_fund/research/agent.py:_ranker_data_snooping 11
+src/quant_fund/research/agent.py:run_research 10
 src/quant_fund/research/allocation/engines.py:fit_weights 12
 src/quant_fund/research/allocation/engines.py:risk_parity_weights 12
 src/quant_fund/research/auditor_bundle.py:bundle_contract_errors 12
