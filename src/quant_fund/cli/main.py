@@ -73,9 +73,11 @@ from quant_fund.cli.research_cmds import (
     tape_verify_cmd,
     coherence,
     concordance,
-    multih_fleet_cmd,
-    expert_mixture_cmd,
+)
+from quant_fund.cli.research_eval_cmds import (
     compare,
+    expert_mixture_cmd,
+    multih_fleet_cmd,
 )
 from quant_fund.cli.book_cmds import (
     session_book_cmd,

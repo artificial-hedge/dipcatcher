@@ -11326,15 +11326,8 @@ def create_app(
 
 app = create_app()
 
-
 if __name__ == "__main__":
-    # `python -m fx1.serve.api` — loopback guard matches the research API.
-    import uvicorn
+    # `python -m fx1.serve.api` — loopback guard lives in `_api_cli`.
+    from fx1.serve._api_cli import main
 
-    host = os.environ.get("FX1_API_HOST", "127.0.0.1")
-    port = int(os.environ.get("FX1_API_PORT", "8011"))
-    if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get(_API_KEY_ENV):
-        raise SystemExit(
-            "non-loopback binding requires FX1_API_KEY; refusing unauthenticated exposure"
-        )
-    uvicorn.run(app, host=host, port=port, reload=False, server_header=False)
+    raise SystemExit(main())
