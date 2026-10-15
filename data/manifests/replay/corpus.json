@@ -3,7 +3,6 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/corpus_real_drill.py",
-  "receipt_sha256": "0318c81d28c53ce333c2c97f35eac3c9cf0323d370cbc99d7450a70767f786a2",
   "replay": {
     "argv": [
       "scripts/corpus_real_drill.py",
@@ -17,7 +16,7 @@
     "artifacts": [
       {
         "path": "data/metadata/replay/corpus_real_drill.json",
-        "sha256": "c05393795df5af2153068456ff5d3665c75a496f7f50cdd9b114a584748cc3f6"
+        "sha256": "1a748b1c79e276734b03b38927d02e09f57487371dd61e1ac4f35bad1e724274"
       }
     ],
     "input_tapes": [
@@ -27,7 +26,7 @@
       },
       {
         "path": "receipts/capacity_eval_3622d0c059d42009.json",
-        "sha256": "57ad3394513fe58e48127141858a990580fade56ae4755ad0a3b868aa2568f2b"
+        "sha256": "4f9f7af188507dc602ae782b2743ee62a992f5d99eede4b4478e8101493df128"
       },
       {
         "path": "receipts/capacity_eval_cd0854242ed8a9ec.json",
@@ -107,7 +106,7 @@
       },
       {
         "path": "receipts/fleet_eval_5e907be710811a44.json",
-        "sha256": "c95ce361609bdb00912147e0f87548fdbd2c0221ad27b8c1a4d0ba558b9330e1"
+        "sha256": "b5444f12bf0e774c547dc6720517453bce98aa6c2ac2dbb84731bc0f6ad664af"
       },
       {
         "path": "receipts/fleet_race_real_drill.json",
@@ -115,7 +114,7 @@
       },
       {
         "path": "receipts/honest_verdict_b133e8b3992af893.json",
-        "sha256": "1a003a670945452a5c86d033900bc33429f2981422c8938b1b8e2469fc764f3a"
+        "sha256": "70c391cb69796d05353b9c03c53bf8aa05c14465f919be9d790b08aa0c265ce7"
       },
       {
         "path": "receipts/honest_verdict_real_drill.json",
@@ -155,7 +154,7 @@
       },
       {
         "path": "receipts/monitor_run_13d20aef00774027.json",
-        "sha256": "3ce1cd7f59c301be6b4710326ab905313725317bee3669ae8e755f6d422bc12d"
+        "sha256": "2d804ee35deee30e8e14a35d3c2361bbfe6e0482967fdf8e88a2a322132f2f03"
       },
       {
         "path": "receipts/monitor_run_drill_clean.json",
@@ -183,7 +182,7 @@
       },
       {
         "path": "receipts/rankic_eval_8d740c0ddf6d5c54.json",
-        "sha256": "e48fce1ae4cebf94e417773bdef20c9ed7b0822397505c6a51e8843a8da06c81"
+        "sha256": "bb6859f2b8f4d18dcf90fd388bc2f804c911210fdefafe9d58466154a67636a6"
       },
       {
         "path": "receipts/rankic_eval_9ebdad7da83e7348.json",
@@ -303,7 +302,7 @@
       },
       {
         "path": "receipts/vol_bench_f3bf2afc2f159ace.json",
-        "sha256": "b9b70f7186d75054e91ee734b87b8aeeba22d66af713806a8d5410a9bc603ee3"
+        "sha256": "6bbb8b5ec1745ef5dcd186c5037211374c29dcd3078214e5b86a4a4682740241"
       },
       {
         "path": "data/manifests/replay_corpus_members.json",
@@ -320,5 +319,6 @@
     }
   ],
   "research_only": true,
-  "schema": "replay_manifest.v1"
+  "schema": "replay_manifest.v1",
+  "receipt_sha256": "e21ffbad756a04f8490b4a07f5971645ef230476184f3115bf9aab9c467cbedb"
 }

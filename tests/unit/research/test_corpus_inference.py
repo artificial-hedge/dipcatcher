@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -197,3 +199,23 @@ def test_membership_missing_member_fails_closed(tmp_path: Path) -> None:
     assert rep["n_parse_errors"] == 1
     assert rep["parse_errors"][0]["file"] == "ghost.json"
     assert rep["parse_errors"][0]["error"] == "member_missing_from_dir"
+
+
+def test_corpus_real_drill_is_stable_across_checkouts(tmp_path: Path) -> None:
+    """The drill drops checkout stamps so a later commit can match the pin."""
+    receipts = tmp_path / "receipts"
+    receipts.mkdir()
+    _write(receipts, "a.json", {"kind": "k", "dm_p": 0.01, "data_label": "SYNTHETIC"})
+    script = Path(__file__).resolve().parents[3] / "scripts" / "corpus_real_drill.py"
+    outs = [tmp_path / "one.json", tmp_path / "two.json"]
+    for out in outs:
+        subprocess.run(
+            [sys.executable, str(script), "--receipts", str(receipts), "--out", str(out)],
+            check=True,
+            cwd=tmp_path,
+        )
+    assert outs[0].read_bytes() == outs[1].read_bytes()
+    sealed = json.loads(outs[0].read_text())
+    assert "generated_at_commit" not in sealed
+    assert "code_revision" not in sealed
+    assert sealed["n_receipts"] == 1
