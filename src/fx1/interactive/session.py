@@ -49,7 +49,11 @@ _ROLE_LABELS = {"user": "you", "assistant": "dip", "system": "sys"}
 
 _BEARER_RE = re.compile(r"Bearer\s+\S+", re.IGNORECASE)
 _PREFIX_RE = re.compile(r"\b(?:sk-|sk_|key-)[A-Za-z0-9_\-+/=]{8,}")
-_MOONSHOT_RE = re.compile(r"MOONSHOT_API_KEY=\S+")
+_ENV_ASSIGN_RE = re.compile(
+    r"\b(?:MOONSHOT_API_KEY|FX1_API_KEY|FX1_BYOK_API_KEY|FX1_LOCAL_API_KEY"
+    r"|FX1_SIGNING_KEY)=\S+",
+    re.IGNORECASE,
+)
 _BLOB_RE = re.compile(r"[A-Za-z0-9_\-+/=]{32,}")
 
 
@@ -132,7 +136,7 @@ def _mask_any(value: Any) -> str:
 
 def _secret_spans(text: str) -> list[tuple[int, int]]:
     spans: list[tuple[int, int]] = []
-    for pattern in (_BEARER_RE, _PREFIX_RE, _MOONSHOT_RE):
+    for pattern in (_BEARER_RE, _PREFIX_RE, _ENV_ASSIGN_RE):
         spans.extend((match.start(), match.end()) for match in pattern.finditer(text))
     for match in _BLOB_RE.finditer(text):
         token = match.group()
@@ -171,10 +175,10 @@ def redact(value: Any) -> Any:
     Dict keys named ``api_key``, ``apikey``, ``authorization``, ``token``,
     ``secret``, or ``password`` (any case) are replaced wholesale. Other
     strings lose bearer tokens, ``sk-`` / ``sk_`` / ``key-`` tokens, inline
-    ``MOONSHOT_API_KEY=...`` assignments, and digit-bearing runs of 32 or
-    more token characters. The replacement keeps the last four characters:
-    ``[REDACTED …wxyz]``. Ordinary prose, URLs without credentials, and short
-    ids pass through unchanged.
+    ``MOONSHOT_API_KEY=...`` / ``FX1_*_KEY=...`` assignments, and digit-bearing
+    runs of 32 or more token characters. The replacement keeps the last four
+    characters: ``[REDACTED …wxyz]``. Ordinary prose, URLs without credentials,
+    and short ids pass through unchanged.
     """
     if isinstance(value, str):
         return _redact_text(value)
@@ -605,6 +609,7 @@ def list_sessions(directory: Path | None = None, *, limit: int = 20) -> list[Ses
 
 
 def _resolve_session(session_id_or_prefix: str, directory: Path | None) -> Path | None:
+    _validate_session_id(session_id_or_prefix)
     root = _coerce_directory(directory)
     if not root.is_dir():
         return None

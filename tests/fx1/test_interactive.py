@@ -545,6 +545,20 @@ def test_shell_unknown_command_hint(
     assert "unknown command" in err and "help" in err
 
 
+def test_shell_bang_refused_when_redirected(
+    isolated_store: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(shell.sys.stdin, "isatty", lambda: False)
+    monkeypatch.setattr(shell.sys.stdout, "isatty", lambda: False)
+
+    def _must_not_run(*args: object, **kwargs: object) -> None:
+        raise AssertionError("shell hatch must not spawn on a pipe")
+
+    monkeypatch.setattr(shell.subprocess, "run", _must_not_run)
+    shell.FxiShell().do_shell("echo should-not-run")
+    assert "refused on a redirected stream" in capsys.readouterr().err
+
+
 # ---------------------------------------------------------------------------
 # fxi Typer app
 # ---------------------------------------------------------------------------

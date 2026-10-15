@@ -190,6 +190,14 @@ def test_rejects_unsafe_session_ids(session_id: str, tmp_path: Path) -> None:
     assert not (tmp_path.parent / "escape.jsonl").exists()
 
 
+@pytest.mark.parametrize("session_id", ["", ".", "..", "../escape", "a/b", "a\\b"])
+def test_resume_lookup_rejects_path_tokens(session_id: str, tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="invalid session id"):
+        load_session(session_id, directory=tmp_path)
+    with pytest.raises(ValueError, match="invalid session id"):
+        load_header(session_id, directory=tmp_path)
+
+
 def test_record_events_roundtrip_keeps_seq(tmp_path: Path) -> None:
     journal = _journal(tmp_path, "round")
     first = journal.turn("user", "hello")
@@ -286,6 +294,9 @@ def test_typed_recorders_kinds_and_data(tmp_path: Path) -> None:
         ("token sk_abcdefghijklmnopqrstuvwxyz", "token [REDACTED …wxyz]"),
         ("token key-abcdefghijklmnopqrstuvwxyz", "token [REDACTED …wxyz]"),
         ("export MOONSHOT_API_KEY=abcdefghijklmnop", "export [REDACTED …mnop]"),
+        ("export FX1_API_KEY=abcdefghijklmnop", "export [REDACTED …mnop]"),
+        ("FX1_BYOK_API_KEY=abcdefghijklmnop", "[REDACTED …mnop]"),
+        ("FX1_SIGNING_KEY=abcdefghijklmnop", "[REDACTED …mnop]"),
         ("bearer AAAAaaaaBBBBbbbb", "[REDACTED …bbbb]"),
         ("sk-abcdefgh", "[REDACTED …efgh]"),
         ("Bearer aaaaaaaabbbb sk-ccccccccdddd", "[REDACTED …bbbb] [REDACTED …dddd]"),

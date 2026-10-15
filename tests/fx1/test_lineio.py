@@ -200,6 +200,7 @@ def test_history_roundtrip_filters_and_keeps_nonconsecutive(tmp_path: Path) -> N
     history.append("alpha")
     history.append("/keys set fx1")
     history.append("  /keys set fx1  ")
+    history.append("/KEYS set fx1-lite")
     history.append("Authorization: Bearer supersecret")
     history.append("sk-abcdefghijklmnop")
     history.append("MOONSHOT_API_KEY=abc")
@@ -240,6 +241,9 @@ def test_history_roundtrip_filters_and_keeps_nonconsecutive(tmp_path: Path) -> N
         ("MOONSHOT_API_KEY", False),
         ("MOONSHOT_API_KEY=", True),
         ("export MOONSHOT_API_KEY=secret", True),
+        ("FX1_API_KEY=secret", True),
+        ("export FX1_BYOK_API_KEY=secret", True),
+        ("fx1_signing_key=secret", True),
         ("a" * 32, False),
         ("a" * 31, False),
         ("a" * 31 + "1", True),

@@ -30,7 +30,13 @@ _FILE_MODE = stat.S_IRUSR | stat.S_IWUSR
 _DIR_MODE = stat.S_IRWXU
 _WINDOWS_POLL_S = 0.02
 _HISTORY_NAME = "history"
-_MOONSHOT_MARK = "MOONSHOT_API_KEY="
+_ENV_KEY_MARKS: tuple[str, ...] = (
+    "MOONSHOT_API_KEY=",
+    "FX1_API_KEY=",
+    "FX1_BYOK_API_KEY=",
+    "FX1_LOCAL_API_KEY=",
+    "FX1_SIGNING_KEY=",
+)
 _BEARER_RE = re.compile(r"Bearer\s+\S+", re.IGNORECASE)
 _PREFIX_RE = re.compile(r"\b(?:sk-|sk_|key-)\S{8,}")
 _BLOB_RE = re.compile(r"[A-Za-z0-9]{32,}")
@@ -108,8 +114,9 @@ class History:
     :meth:`save`. Never stores empty lines, consecutive duplicates, lines
     starting with ``/keys``, or lines matching secret patterns (``Bearer``
     plus a token, ``sk-`` / ``sk_`` / ``key-`` plus 8 characters,
-    ``MOONSHOT_API_KEY=``, or a 32+ character alphanumeric blob that contains
-    a digit). ``errors`` records :meth:`save` failures; save never raises.
+    ``MOONSHOT_API_KEY=`` / ``FX1_*_KEY=``, or a 32+ character alphanumeric
+    blob that contains a digit). ``errors`` records :meth:`save` failures;
+    save never raises.
     """
 
     def __init__(self, path: Path | None = None, *, max_entries: int = 1000) -> None:
@@ -368,7 +375,8 @@ def _format_window(seconds: float) -> str:
 def _line_is_sensitive(line: str) -> bool:
     if _BEARER_RE.search(line) or _PREFIX_RE.search(line):
         return True
-    if _MOONSHOT_MARK in line:
+    upper = line.upper()
+    if any(mark in upper for mark in _ENV_KEY_MARKS):
         return True
     return _has_secret_blob(line)
 
@@ -390,7 +398,7 @@ def _normalize(line: str) -> str:
 
 
 def _rejected(text: str, previous: str | None) -> bool:
-    if not text or text.startswith("/keys") or _line_is_sensitive(text):
+    if not text or text.lower().startswith("/keys") or _line_is_sensitive(text):
         return True
     return previous is not None and text == previous
 

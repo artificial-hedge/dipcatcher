@@ -13,6 +13,7 @@ import cmd
 import getpass
 import shlex
 import subprocess
+import sys
 from collections.abc import Callable
 from pathlib import Path
 
@@ -269,6 +270,11 @@ class FxiShell(cmd.Cmd):
     def do_shell(self, arg: str) -> None:
         if not arg.strip():
             self._say_error(ValueError("usage: !<shell command>"))
+            return
+        if not sys.stdin.isatty() or not sys.stdout.isatty():
+            self._say_error(
+                ValueError("! is an interactive operator hatch; refused on a redirected stream")
+            )
             return
         subprocess.run(arg, shell=True, check=False)  # noqa: S602  # nosec B602 — explicit operator escape hatch
 
