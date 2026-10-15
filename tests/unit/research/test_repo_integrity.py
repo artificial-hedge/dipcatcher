@@ -278,9 +278,15 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # Tool-local state with no security surface — deliberately NOT corpora.
 # data/ is absent from this list only because data/metadata IS a corpus.
-# .mavis = planner scratch; attic = deliberately retired trees; packaging =
-# install-formula helpers (Homebrew). None of these are claim surfaces.
-NON_CORPUS_TOP_DIRS = frozenset({".freebuff", ".serena", ".mavis", "attic", "packaging"})
+NON_CORPUS_TOP_DIRS = frozenset(
+    {
+        ".freebuff",
+        ".mavis",  # local Mavis plan-run scratch (tool state, not evidence)
+        ".serena",
+        "attic",  # archived notes only (README); not part of any corpus chain
+        "packaging",  # homebrew formula templates; distributed via tap, not runtime
+    }
+)
 
 # The pinned set of tracked root-level files. Root files sit above every
 # corpus dir, so the epoch chains can't see them — a new root file lands
@@ -302,6 +308,7 @@ ROOT_FILES = frozenset(
         "CITATION.cff",
         "CODE_OF_CONDUCT.md",
         "CONTRIBUTING.md",
+        "Executive Summary.pdf",
         "Dockerfile",
         "HONESTY_RATING.md",
         "INFLIGHT",
@@ -314,8 +321,10 @@ ROOT_FILES = frozenset(
         "conftest.py",
         "day_grind_progress.md",
         "docker-compose.yml",
+        "FULL_COVERAGE.md",
         "fx1_seed_corpus.jsonl",
         "gate_pins.sig",
+        "install.sh",
         "mkdocs.yml",
         "pyproject.toml",
         "uv.lock",

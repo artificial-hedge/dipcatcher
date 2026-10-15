@@ -102,8 +102,8 @@
     ],
     "artifacts": [
       {
-        "path": "data/metadata/replay/honest_verdict_9a043a885f02042b.json",
-        "sha256": "9725bced9cbbf03beea8c4f111e61e3c076d8875441fa2c0757fae11d0770549"
+        "path": "data/metadata/replay/honest_verdict_9b5abef8567f72c2.json",
+        "sha256": "03d694e7d3219eef15e0be570f2bc1782da31695dce285e247a22f23cdaa9715"
       }
     ]
   },

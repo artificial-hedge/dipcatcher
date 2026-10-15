@@ -54,9 +54,12 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "CITATION.cff",  # attribution metadata
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",  # contributor rules
+    "Executive Summary.pdf",  # product overview (tracked input)
+    "FULL_COVERAGE.md",  # full-offline coverage lane contract
     "Dockerfile",  # the container definition — a build-env tamper surface
     "HONESTY_RATING.md",  # the public honesty ledger
     "INFLIGHT",  # work ledger
+    "install.sh",  # curl installer for fxi/dipcatcher — supply-chain surface
     "LICENSE",  # the legal terms — a swapped license text is unreviewed relicensing
     "README.md",  # the front door — install instructions are a hijack surface
     "MATH_SPEC.md",  # fx-1 math contract (tracked input)
