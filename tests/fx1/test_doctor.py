@@ -19,6 +19,7 @@ def test_doctor_reports_version_and_base_model(tmp_path: Path) -> None:
     assert set(extras) >= {"torch", "safetensors"}
     assert extras["torch"] in {"present", "missing"}
     assert extras["safetensors"] in {"present", "missing"}
+    assert "distribution_lineage" in status
 
 
 def test_doctor_missing_dirs_reported_not_raised(tmp_path: Path) -> None:

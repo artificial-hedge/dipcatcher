@@ -389,8 +389,13 @@ class Concierge:
         if not resolved:
             return None
         api_key, base_url = resolved
+        factory = self._backend_factory
+        if factory is None:
+            from fx1.serve.backends import HostedK3Backend
+
+            factory = HostedK3Backend
         try:
-            return self._backend_factory(api_key=api_key, model=target, api_url=base_url)
+            return factory(api_key=api_key, model=target, api_url=base_url)
         except Exception as exc:  # noqa: BLE001
             self._say_error(RuntimeError(format_guidance(explain_backend_error(exc, model=target))))
             return None

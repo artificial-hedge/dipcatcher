@@ -60,7 +60,7 @@ def test_quant_fund_imports_fx1_only_for_version() -> None:
 # The fx1 surface ships /verify-receipt endpoints + receipt-seal audit
 # probes by design — they must reach the verifier module, which is the
 # harness's public verify API. Everything else under research/ stays
-# forbidden.
+# forbidden. Doctor fingerprints quality pins via schemas.crown_jewels_leaf.
 _FX1_RECEIPT_VERIFY = "quant_fund.research.receipt_v2"
 
 

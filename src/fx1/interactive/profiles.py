@@ -27,8 +27,6 @@ from pathlib import Path
 from typing import cast
 from urllib.parse import urlparse
 
-from fx1.serve.backends import MOONSHOT_API_URL, hosted_api_url_problem
-
 MODELS: tuple[str, ...] = ("fx1", "fx1-lite")
 DEFAULT_MODEL = "fx1"
 
@@ -51,6 +49,8 @@ def store_path() -> Path:
 
 
 def default_base_url() -> str:
+    from fx1.serve.backends import MOONSHOT_API_URL
+
     return os.environ.get(ENV_BASE_URL, MOONSHOT_API_URL)
 
 
@@ -118,6 +118,8 @@ def set_endpoint(
     api_key = api_key.strip()
     if not api_key:
         raise ValueError(f"empty API key for model {model!r}")
+    from fx1.serve.backends import hosted_api_url_problem
+
     base = (base_url or "").strip() or default_base_url()
     problem = hosted_api_url_problem(base)
     if problem is not None:
@@ -178,12 +180,16 @@ def resolve_endpoint(
     if entry:
         normalized = _normalize(entry)
         if normalized["api_key"]:
+            from fx1.serve.backends import hosted_api_url_problem
+
             problem = hosted_api_url_problem(normalized["base_url"])
             if problem is not None:
                 raise ValueError(f"invalid stored base URL: {problem}")
             return normalized["api_key"], normalized["base_url"]
     api_key = env.get(ENV_API_KEY)
     if api_key:
+        from fx1.serve.backends import MOONSHOT_API_URL, hosted_api_url_problem
+
         base_url = env.get(ENV_BASE_URL, MOONSHOT_API_URL)
         problem = hosted_api_url_problem(base_url)
         if problem is not None:

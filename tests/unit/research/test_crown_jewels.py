@@ -96,3 +96,13 @@ def test_distribution_lineage_digest_binds_pin_and_jewels(repo: Path) -> None:
     assert mutated["digest"] != lineage["digest"]
     pin.unlink()
     assert distribution_lineage_digest(repo)["crown_jewels_pin_present"] is False
+
+
+def test_schemas_leaf_matches_research_digest(repo: Path) -> None:
+    """fx1.doctor must reach this digest without importing research.*."""
+    from quant_fund.schemas.crown_jewels_leaf import (
+        distribution_lineage_digest as leaf_digest,
+    )
+
+    write_crown_jewels_pin(repo, repo / "quality" / "crown_jewels.json")
+    assert leaf_digest(repo) == distribution_lineage_digest(repo)

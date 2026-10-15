@@ -197,6 +197,16 @@ def test_harness_unknown_command_is_a_usage_error(
     assert "/harness list" in err
 
 
+def test_unknown_command_suggests_a_close_slash_name(
+    env: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    concierge, _ = make_concierge(tmp_path)
+    assert concierge.handle_line("/hel") is False
+    err = capsys.readouterr().err
+    assert "unknown command /hel" in err
+    assert "did you mean /help" in err
+
+
 def test_model_command(env: Path, tmp_path: Path) -> None:
     concierge, out = make_concierge(tmp_path)
     concierge.handle_line("/model")

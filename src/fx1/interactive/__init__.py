@@ -11,10 +11,14 @@ The orchestration surface lives alongside the classic shell:
 - ``superpower`` — capability registry, planner, coordinator.
 - ``approvals`` — fail-closed gates for consequential actions and
   private-data sharing.
+
+Submodules are imported on access so ``dipcatcher chat --help`` and
+``from fx1.interactive.profiles import MODELS`` do not load the serve stack.
 """
 
-from fx1.interactive import actions, approvals, concierge, orb, profiles, shell, superpower, wizard
-from fx1.interactive.app import app, main
+from __future__ import annotations
+
+from typing import Any
 
 __all__ = [
     "actions",
@@ -28,3 +32,17 @@ __all__ = [
     "superpower",
     "wizard",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in {"app", "main"}:
+        from fx1.interactive.app import app, main
+
+        return app if name == "app" else main
+    if name in __all__:
+        return __import__(f"fx1.interactive.{name}", fromlist=[name])
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *__all__})
