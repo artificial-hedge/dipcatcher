@@ -47,8 +47,8 @@ def _extra_presence() -> dict[str, str]:
     }
 
 
-def _jewel_file_matches(root: Path, name: object, expected: object) -> bool:
-    """True when one crown-jewel entry is a regular file with the pinned digest."""
+def _jewel_matches(root: Path, name: object, expected: object) -> bool:
+    """True when one crown-jewels pin entry names a regular file with that digest."""
     if not isinstance(name, str) or not isinstance(expected, str):
         return False
     path = root / name
@@ -64,26 +64,18 @@ def _jewel_file_matches(root: Path, name: object, expected: object) -> bool:
 
 def _jewels_intact(root: Path, pin: Path) -> bool:
     """True when every file listed in the crown-jewels pin matches its digest."""
-    files = _crown_jewel_files(pin)
-    if files is None:
-        return False
-    return all(_jewel_file_matches(root, name, expected) for name, expected in files.items())
-
-
-def _crown_jewel_files(pin: Path) -> dict[str, object] | None:
-    """The pin's file map, or None when the pin is missing or not crown_jewels.v1."""
     if not pin.is_file():
-        return None
+        return False
     try:
         raw: Any = json.loads(pin.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError):
-        return None
+        return False
     if not isinstance(raw, dict) or raw.get("schema") != "crown_jewels.v1":
-        return None
+        return False
     files = raw.get("files")
     if not isinstance(files, dict) or not files:
-        return None
-    return files
+        return False
+    return all(_jewel_matches(root, name, expected) for name, expected in files.items())
 
 
 def _distribution_lineage(root: Path) -> dict[str, object]:

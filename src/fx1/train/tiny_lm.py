@@ -106,13 +106,14 @@ def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Modu
     import torch
     from torch import nn
 
-    # torch ships as an optional extra, so ``mypy --strict`` sees ``nn.Module``
-    # as Any and refuses the subclass. Typechecking uses a real base; runtime
-    # still subclasses ``nn.Module``.
+    # torch ships as an optional extra. Under TYPE_CHECKING, subclass a real
+    # ``nn.Module`` so ``ModuleList`` / return annotations stay sound; at
+    # runtime still subclass the live ``nn.Module``.
     if TYPE_CHECKING:
 
-        class _TorchModule:
-            def __init__(self, *args: object, **kwargs: object) -> None: ...
+        class _TorchModule(torch.nn.Module):
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                super().__init__(*args, **kwargs)
 
     else:
         _TorchModule = nn.Module
@@ -236,7 +237,7 @@ def train_tiny_lm(
         logits = model(window[:, :-1])
         loss = nn.functional.cross_entropy(logits[0], window[0, 1:])
         opt.zero_grad()
-        loss.backward()
+        loss.backward()  # type: ignore[no-untyped-call]
         opt.step()
         final_loss = float(loss.item())
         done += 1
