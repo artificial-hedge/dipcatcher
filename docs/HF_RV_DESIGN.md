@@ -126,31 +126,23 @@ sigma, fail-closed on missing intraday.
 
 ## 6. Test surface
 
-### Synthetic intraday
+### Synthetic / PIT / fail-closed / authority
 
-- `tests/unit/test_hf_rv_synthetic.py` — Brownian motion + sparse jumps,
-  expect `rv_5min ≈ σ^2 * window` and `n_jumps` matching the injected count.
-- Jump detection accuracy: at SNR=10, ≥ 95% true-positive rate; at SNR=1,
-  ≤ 5% false-positive rate (Lee–Mykland operating characteristics).
-- BPV consistency: `RV - BPV ≥ 0` on synthesized jumpy series.
+Landed coverage lives in `tests/unit/test_hf_rv.py` (plus scaffolding in
+`tests/test_hf_rv_scaffolding.py`). The intended cases remain:
 
-### PIT contamination
-
-- `tests/unit/test_hf_rv_pit.py` — feed a bar with
-  `available_time > asof`, expect drop + receipt stamp. Feed null
-  `available_time`, expect `HFRVResult(honest=False)`.
-
-### Fail-closed for missing intraday
-
-- `tests/unit/test_hf_rv_fail_closed.py` — empty bars, single-bar
-  windows, 100% holes, expect `HFRVResult(honest=False)` and no
-  `market_risk_overlay=hf_rv` stamp.
-
-### Source authority
-
-- `tests/unit/test_hf_rv_source_authority.py` — CLS + Binance both
-  available → CLS wins, receipt records `primary=cls, secondary=binance`.
-- Source missing → `hf_rv_source_missing` stamp + `honest=False`.
+- Synthetic intraday: Brownian motion + sparse jumps; expect
+  `rv_5min ≈ σ^2 * window` and `n_jumps` matching the injected count.
+  Jump detection at SNR=10 ≥ 95% TPR; at SNR=1 ≤ 5% FPR. BPV consistency:
+  `RV - BPV ≥ 0` on synthesized jumpy series.
+- PIT contamination: a bar with `available_time > asof` is dropped and
+  receipt-stamped; null `available_time` yields `HFRVResult(honest=False)`.
+- Fail-closed for missing intraday: empty bars, single-bar windows, 100%
+  holes → `HFRVResult(honest=False)` and no `market_risk_overlay=hf_rv`
+  stamp.
+- Source authority: CLS + Binance both available → CLS wins, receipt
+  records `primary=cls, secondary=binance`. Source missing →
+  `hf_rv_source_missing` stamp + `honest=False`.
 
 ## 7. Open questions
 
@@ -171,7 +163,8 @@ sigma, fail-closed on missing intraday.
    co-RV we'd need a 2-bar frame with aligned `event_time`. Deferred.
 5. **Receipt schema** — `HFRVResult` is a Python dataclass, but receipts
    are JSON. Do we serialize via `dataclasses.asdict` or define a
-   stable JSON schema? Recommend the latter, in `quality/hf_rv_receipt.json`.
+   stable JSON schema? Recommend the latter, as a pinned schema under
+   `quality/` once the HF-RV lane lands a sealed receipt.
 
 ## 8. Honest reporting (per AGENTS.md)
 

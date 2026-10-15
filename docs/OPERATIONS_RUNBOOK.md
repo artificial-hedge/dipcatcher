@@ -140,10 +140,11 @@ Deploy gates: `make lint`, `make typecheck`, `make test`,
 **Known gate status (2026-10-08):**
 
 - `fx1 harness selftest` is **GREEN** (re-verified 2026-10-08 after the
-  `quant_fund.schemas.receipt` facade fix — call-time delegators replaced
-  stubs that shadowed the PEP 562 lazy binding and returned `None` to every
-  caller): `uv run fx1 harness selftest` exits `0`, 16/16 checks including
-  `job_receipt_verifies: ok:true`. Exit `0` remains the deploy criterion.
+  `quant_fund.schemas.receipt_v2_leaf` facade fix — call-time delegators
+  replaced stubs that shadowed the PEP 562 lazy binding and returned `None`
+  to every caller): `uv run fx1 harness selftest` exits `0`, 16/16 checks
+  including `job_receipt_verifies: ok:true`. Exit `0` remains the deploy
+  criterion.
 - `make test` under pytest-xdist `-n auto` reproducibly segfaults in native
   code on the memory/disk-pressured lab box (resource-pressure fault is the
   leading theory; see `INFLIGHT` w1714). Targeted `-n0` runs are the current

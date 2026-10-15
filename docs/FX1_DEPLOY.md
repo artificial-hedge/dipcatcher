@@ -332,10 +332,10 @@ EXIT:0
 
 Postmortem note: `job_receipt_verifies` previously failed deterministically
 (`harness API returned 500: Internal Server Error`) because facade stubs in
-`quant_fund.schemas.receipt` shadowed the PEP 562 lazy binding and returned
-`None` to every caller; they were replaced with call-time delegators
-(function-scope import keeps the arch boundary). Exit `0` remains the deploy
-criterion.
+the schemas receipt leaf (`quant_fund.schemas.receipt_v2_leaf`) shadowed a
+PEP 562 lazy binding and returned `None` to every caller; they were replaced
+with call-time delegators (function-scope import keeps the arch boundary).
+Exit `0` remains the deploy criterion.
 
 ## Installing release artifacts (fxi installer)
 

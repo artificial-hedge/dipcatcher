@@ -6,7 +6,7 @@
     },
     "audit": {
       "doc": "docs/AUDIT_OBSERVABILITY.md",
-      "n_modules": 11,
+      "n_modules": 12,
       "status": "audited"
     },
     "backtest": {
@@ -20,16 +20,16 @@
       "status": "audited"
     },
     "cli": {
-      "n_modules": 17,
+      "n_modules": 18,
       "status": "audited"
     },
     "combination": {
-      "n_modules": 8,
+      "n_modules": 18,
       "reason": "New directory; census only, no audit yet.",
       "status": "partial"
     },
     "compute": {
-      "n_modules": 7,
+      "n_modules": 8,
       "status": "audited"
     },
     "config": {
@@ -43,7 +43,7 @@
       "status": "audited"
     },
     "decay": {
-      "n_modules": 7,
+      "n_modules": 16,
       "reason": "New directory; census only, no audit yet.",
       "status": "partial"
     },
@@ -61,7 +61,7 @@
       "status": "audited"
     },
     "flowbars": {
-      "n_modules": 9,
+      "n_modules": 18,
       "reason": "New directory; census only, no audit yet.",
       "status": "partial"
     },
@@ -165,7 +165,7 @@
     },
     "proof": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 10,
+      "n_modules": 9,
       "status": "audited"
     },
     "proofcore": {
@@ -197,7 +197,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 1861,
+      "n_modules": 1862,
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
       "status": "partial"
     },
@@ -225,7 +225,7 @@
     },
     "utils": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 9,
+      "n_modules": 10,
       "status": "audited"
     },
     "validation": {
