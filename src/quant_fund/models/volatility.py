@@ -226,7 +226,7 @@ class GARCHVol(JoblibMixin):
         min_obs: int = 50,
         mean: str = "Constant",
         power: float = 2.0,
-        series_scope: str = POOLED_DATE_LEVEL_SCOPE,
+        series_scope: str = UNIVARIATE_RETURN_SERIES_SCOPE,
     ) -> None:
         if (
             isinstance(p, bool)
