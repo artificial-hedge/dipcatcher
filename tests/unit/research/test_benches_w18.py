@@ -218,11 +218,14 @@ def test_gslice_beats_prior_and_trains(gslice: dict[str, float]) -> None:
     # GP-prior baseline on the strictly proper energy score (pinned seed 7;
     # +0.15 measured margin, asserted directionally), and flow-matching
     # training reduced the loss.
-    assert gslice["gslice_synth_energy_score_gain"] > 0.0
-    assert gslice["gslice_synth_energy_score_mean"] < gslice["gslice_synth_energy_score_prior"]
+    assert gslice["synthetic_gslice_synth_energy_score_gain"] > 0.0
+    assert (
+        gslice["gslice_synth_energy_score_mean"]
+        < gslice["synthetic_gslice_synth_energy_score_prior"]
+    )
     assert gslice["gslice_synth_energy_score_mean"] > 0.0
-    assert gslice["gslice_synth_loss_drop"] > 0.0
-    assert gslice["gslice_synth_final_loss"] > 0.0
+    assert gslice["synthetic_gslice_synth_loss_drop"] > 0.0
+    assert gslice["synthetic_gslice_synth_final_loss"] > 0.0
     # Marginal band coverage is monotone in the level with positive widths.
     assert 0.0 < gslice["gslice_synth_coverage_50"] < gslice["gslice_synth_coverage_80"]
     assert gslice["gslice_synth_coverage_80"] < gslice["gslice_synth_coverage_95"] <= 1.0
@@ -291,13 +294,13 @@ def test_fase_eval_protocol(fase_eval: dict[str, float]) -> None:
 def test_kit_paths_pipeline(kit_paths: dict[str, float]) -> None:
     # KiT candle pipeline: exact invertibility and zero OHLCV-consistency
     # violations under the structural decoder, with finite proper scores.
-    assert kit_paths["SYNTHETIC_roundtrip_max_abs_err"] < 1e-9
-    assert kit_paths["SYNTHETIC_scaler_roundtrip_max_abs_err"] < 1e-6
-    assert kit_paths["SYNTHETIC_violation_rate"] == 0.0
-    assert kit_paths["SYNTHETIC_energy_score"] > 0.0
-    assert kit_paths["SYNTHETIC_crps_marginal_mean"] > 0.0
-    assert 0.0 <= kit_paths["SYNTHETIC_coverage_ret"] <= 1.0
-    assert kit_paths["SYNTHETIC_n_samples"] == 64.0
+    assert kit_paths["synthetic_roundtrip_max_abs_err"] < 1e-9
+    assert kit_paths["synthetic_scaler_roundtrip_max_abs_err"] < 1e-6
+    assert kit_paths["synthetic_violation_rate"] == 0.0
+    assert kit_paths["synthetic_energy_score"] > 0.0
+    assert kit_paths["synthetic_crps_marginal_mean"] > 0.0
+    assert 0.0 <= kit_paths["synthetic_coverage_ret"] <= 1.0
+    assert kit_paths["synthetic_n_samples"] == 64.0
 
 
 def test_numpy_benches_are_deterministic(

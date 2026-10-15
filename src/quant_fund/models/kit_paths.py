@@ -107,7 +107,7 @@ here is SYNTHETIC or model-produced -- correctness evidence, never market
 evidence. Path realism is reported through PROPER scores (energy score,
 CRPS, pinball, coverage/width) plus candle-consistency violation rates;
 there is no Sharpe/Sortino/Calmar/P&L/NAV headline anywhere in this module,
-and ``bench_kit_paths`` keys are prefixed ``SYNTHETIC_`` accordingly.
+and ``bench_kit_paths`` keys are prefixed ``synthetic_`` accordingly.
 Fail-closed: invalid candles
 (non-positive prices, H < max(O, C) beyond float tolerance, L > min(O, C),
 negative volume), non-finite or shape-mismatched inputs, degenerate
