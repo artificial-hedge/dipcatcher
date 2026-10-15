@@ -141,7 +141,9 @@ jobs:
     name: ${{ matrix.os }} / py${{ matrix.python }} / shard${{ matrix.shard }}
     needs: inventory
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    # 45m cancelled pytest mid-shard on 39a052e47 (macos py3.12 shard1
+    # ran 16:48:46Z–17:34:18Z). Match the ci.yml test job budget.
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
