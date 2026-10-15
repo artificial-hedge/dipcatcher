@@ -45,6 +45,7 @@ HEAVY_MODULES = (
 
 # Wall-clock ceilings for a fresh interpreter. See module docstring.
 _DIPCATCHER_HELP_S = 1.5
+_DIPCATCHER_VERSION_S = 0.6
 _FX1_HELP_S = 1.0
 _SUBPROCESS_TIMEOUT_S = 30
 
@@ -95,6 +96,8 @@ def test_package_and_cli_imports_skip_heavy_modules() -> None:
     ("args", "budget_s", "needle"),
     [
         (["-m", "quant_fund.cli.main", "--help"], _DIPCATCHER_HELP_S, "Usage"),
+        (["-m", "dipcatcher_cli", "--help"], _DIPCATCHER_HELP_S, "Usage"),
+        (["-m", "dipcatcher_cli", "--version"], _DIPCATCHER_VERSION_S, "dipcatcher"),
         (["-m", "fx1.cli", "--help"], _FX1_HELP_S, "Usage"),
         (["-m", "quant_fund.cli.main", "train"], _DIPCATCHER_HELP_S, "Specify a family"),
         (["-m", "fx1.cli", "doctor"], _FX1_HELP_S, "{"),

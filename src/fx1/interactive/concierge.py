@@ -70,7 +70,6 @@ from fx1.interactive.superpower import (
     plan_goal,
     run_plan,
 )
-from fx1.serve.backends import HostedK3Backend
 
 HELP_TEXT = """\
 conversation          plain text chats with the active model (tools: flash, web, harness)
@@ -236,7 +235,11 @@ class Concierge:
         self._researcher = researcher if researcher is not None else Researcher()
         self._research_budget = research_budget or ResearchBudget()
         self._harness = harness
-        self._backend_factory = backend_factory or HostedK3Backend
+        if backend_factory is None:
+            from fx1.serve.backends import HostedK3Backend
+
+            backend_factory = HostedK3Backend
+        self._backend_factory = backend_factory
         self._input = input_fn
         self._output = output_fn
         self._animated = True if animated is None else animated

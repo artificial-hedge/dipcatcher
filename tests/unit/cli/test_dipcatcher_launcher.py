@@ -71,6 +71,7 @@ def test_bare_redirected_invocation_prints_help_without_chat(
     assert stopped.value.code == 0
     output = capsys.readouterr().out
     assert "Start a conversation: dipcatcher" in output
+    assert "/help" in output
     assert "Usage:" in output
     assert "research" in output
 

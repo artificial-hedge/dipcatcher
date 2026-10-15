@@ -33,6 +33,11 @@ def _chat(args: Sequence[str]) -> None:
     parser = argparse.ArgumentParser(
         prog="dipcatcher chat",
         description="Chat with fx1 or fx1-lite; /help lists research and session controls.",
+        epilog=(
+            "Session journal: $FX1_CONFIG_DIR/sessions/*.jsonl · "
+            "Ctrl-C once cancels the running job, twice exits."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--model", choices=MODELS, default=DEFAULT_MODEL)
     parser.add_argument(
@@ -73,5 +78,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     if not args or args in (["--help"], ["-h"]):
         print("Start a conversation: dipcatcher (interactive terminal)")
         print("Choose a model: dipcatcher chat --model fx1-lite")
+        print("In chat: /help, /superpower, /status, /use <model>")
         print("Version: dipcatcher --version\n")
     app(args=args or ["--help"], prog_name="dipcatcher")
