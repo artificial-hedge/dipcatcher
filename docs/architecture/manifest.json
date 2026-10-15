@@ -1,17 +1,17 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13424,
+  "module_count": 13426,
   "module_edges": [
     {
       "dst": "fx1",
       "src": "dipcatcher_cli.app"
     },
     {
-      "dst": "fx1.interactive.concierge",
+      "dst": "fx1.interactive.app",
       "src": "dipcatcher_cli.app"
     },
     {
-      "dst": "fx1.interactive.profiles",
+      "dst": "fx1.interactive.concierge",
       "src": "dipcatcher_cli.app"
     },
     {
@@ -4799,6 +4799,10 @@
       "src": "quant_fund.cli._app"
     },
     {
+      "dst": "quant_fund.cli.option_highlight",
+      "src": "quant_fund.cli._app"
+    },
+    {
       "dst": "quant_fund.cli.sota_cmds",
       "src": "quant_fund.cli._app"
     },
@@ -7123,15 +7127,7 @@
       "src": "quant_fund.leakage"
     },
     {
-      "dst": "quant_fund.leakage.report",
-      "src": "quant_fund.leakage"
-    },
-    {
       "dst": "quant_fund.leakage.rules",
-      "src": "quant_fund.leakage"
-    },
-    {
-      "dst": "quant_fund.leakage.watchdog",
       "src": "quant_fund.leakage"
     },
     {
@@ -15687,10 +15683,6 @@
       "src": "quant_fund.pretrade.state"
     },
     {
-      "dst": "quant_fund.proofcore.contracts",
-      "src": "quant_fund.proof"
-    },
-    {
       "dst": "quant_fund.metrics.returns",
       "src": "quant_fund.proof.bundle"
     },
@@ -15817,10 +15809,6 @@
     {
       "dst": "quant_fund.proofcore.contracts",
       "src": "quant_fund.proof.verify"
-    },
-    {
-      "dst": "quant_fund.proofcore.contracts",
-      "src": "quant_fund.proofcore"
     },
     {
       "dst": "quant_fund.proofcore.contracts",
@@ -17372,6 +17360,10 @@
     },
     {
       "dst": "quant_fund.research.catalog.registry",
+      "src": "quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.research.research_flags",
       "src": "quant_fund.research.agent"
     },
     {
@@ -62020,6 +62012,7 @@
     "quant_fund.cli.main",
     "quant_fund.cli.micro_cmds",
     "quant_fund.cli.ops_cmds",
+    "quant_fund.cli.option_highlight",
     "quant_fund.cli.report_cmds",
     "quant_fund.cli.research_cmds",
     "quant_fund.cli.research_eval_cmds",
@@ -74952,6 +74945,7 @@
     "quant_fund.research.research100",
     "quant_fund.research.research100_benchmark",
     "quant_fund.research.research100_cli",
+    "quant_fund.research.research_flags",
     "quant_fund.research.script_receipts",
     "quant_fund.research.selective_inference",
     "quant_fund.research.serial_watch",
@@ -75906,7 +75900,7 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 43,
+      "imports": 44,
       "src": "quant_fund.cli"
     },
     {
@@ -76331,7 +76325,7 @@
     },
     {
       "dst": "quant_fund.leakage",
-      "imports": 10,
+      "imports": 8,
       "src": "quant_fund.leakage"
     },
     {
@@ -76926,7 +76920,7 @@
     },
     {
       "dst": "quant_fund.proofcore",
-      "imports": 12,
+      "imports": 11,
       "src": "quant_fund.proof"
     },
     {
@@ -76936,7 +76930,7 @@
     },
     {
       "dst": "quant_fund.proofcore",
-      "imports": 7,
+      "imports": 6,
       "src": "quant_fund.proofcore"
     },
     {
@@ -77146,7 +77140,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 604,
+      "imports": 605,
       "src": "quant_fund.research"
     },
     {
