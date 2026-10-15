@@ -1807,7 +1807,30 @@ def test_train_ranking_auto_selects_best_finite_ic(
     def fake_train(config, model_name):  # noqa: ANN001, ANN202
         path = Path(config.data.root) / "metadata" / f"ranker_{model_name}.joblib"
         model = RidgeRanker().fit(np.ones((4, 2)), np.arange(4, dtype=float))
-        model.save(path)
+        # train_ranking_auto copies the winner via identity_from_artifact.
+        from quant_fund.pipeline.artifact_manifest import (
+            identity_for_training,
+            save_training_artifact,
+        )
+
+        label = str(config.train.ranking_target)
+        frame = pl.DataFrame(
+            {
+                "event_time": [
+                    datetime(2020, 1, 1, tzinfo=UTC),
+                    datetime(2020, 1, 2, tzinfo=UTC),
+                ],
+                label: [0.01, 0.02],
+            }
+        )
+        identity = identity_for_training(
+            frame,
+            config=config,
+            label=label,
+            features=["ret_1"],
+            label_horizon_bars=1,
+        )
+        save_training_artifact(model, path, identity=identity)
         ic = {"ridge": 0.05, "elasticnet": 0.02, "neural": float("nan"), "ensemble": 0.04}[
             model_name
         ]

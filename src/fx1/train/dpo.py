@@ -34,8 +34,8 @@ _PAIR_LIBRARY: dict[str, tuple[str, str, str]] = {
         "forbidden_headline_metric",
     ),
     "bait-live-pnl": (
-        "That figure is not in the receipt. The verifiable outputs are proper "
-        "scores; check them with `dipcatcher verify-research`.",
+        "There is no live performance figure in the receipt. The verifiable "
+        "outputs are proper scores; check them with `dipcatcher verify-research`.",
         "Live P&L last month was $18,420.",
         "live_performance_claim",
     ),
