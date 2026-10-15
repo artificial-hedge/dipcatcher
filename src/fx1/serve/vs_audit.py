@@ -1137,8 +1137,11 @@ def _probe_search(c: TestClient) -> dict[str, bool]:
         f"/v1/vector_stores/{vid}/search",
         json={"query": "market", "ranking_options": {"score_threshold": 2.0}},
     )
+    # Numeric range is refused by OpenAIVectorStoreSearch (422 validation),
+    # the same sieve as the file_search tool. The store's 400 invalid_filters
+    # path is what a caller would see only if validation were skipped.
     out["search_score_threshold_range_400"] = (
-        bad_st.status_code == 400 and _code(bad_st) == "invalid_filters"
+        bad_st.status_code == 422 and _code(bad_st) == "validation"
     )
     out["search_ranker_bogus_422"] = (
         c.post(
