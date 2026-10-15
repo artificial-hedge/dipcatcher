@@ -161,17 +161,33 @@ def validate_scope_token(scope: object) -> str:
 
 
 def _validate_consumer_token(consumer_scope: object) -> str:
-    """Return a consumer token exactly as registered, or raise fail-closed."""
+    """Return a consumer token exactly as registered, or raise fail-closed.
+
+    Missing (None / blank) rejects as ``MissingScopeError``. Near-misses of
+    either a known consumer *or* a known artifact token reject as corrupted —
+    an artifact-scope typo used as a consumer must not be classified unknown.
+    """
+    if consumer_scope is None:
+        raise MissingScopeError("consumer_scope must be a non-empty string")
+    if isinstance(consumer_scope, str) and not consumer_scope.strip():
+        raise MissingScopeError("consumer_scope must be a non-empty string")
     if not isinstance(consumer_scope, str):
         raise CorruptedScopeError(
             f"consumer_scope must be a string token, got {type(consumer_scope).__name__}"
         )
-    if not consumer_scope.strip():
-        raise MissingScopeError("consumer_scope must be a non-empty string")
     token = consumer_scope.strip()
     if token in KNOWN_CONSUMER_SCOPES:
         return token
-    _raise_unregistered(consumer_scope, token, KNOWN_CONSUMER_SCOPES, "consumer")
+    # Typos of artifact scopes used as consumers are corrupted, not unknown.
+    if _is_corrupted_rendering(token, KNOWN_ARTIFACT_SCOPES | KNOWN_CONSUMER_SCOPES):
+        raise CorruptedScopeError(
+            f"consumer scope token {consumer_scope!r} is a corrupted rendering of a "
+            f"registered token (typo, wrong case, or wrong separator); refusing to guess"
+        )
+    raise UnknownScopeError(
+        f"consumer scope token {consumer_scope!r} is not registered; "
+        f"known tokens: {sorted(KNOWN_CONSUMER_SCOPES)}"
+    )
 
 
 def _mismatch_error(artifact: str, consumer: str) -> ScopeMismatchError:

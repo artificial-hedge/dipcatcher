@@ -176,7 +176,9 @@ def test_artifact_scope_of_and_require_helpers() -> None:
 
 
 def test_garchvol_delegates_to_the_symmetric_contract() -> None:
-    pooled = GARCHVol()
+    # Default GARCHVol is the legacy univariate namespace; date-level overlays
+    # must stamp the pooled scope explicitly (see docs/VOL_SCOPE_CONTRACT.md).
+    pooled = GARCHVol(series_scope=POOLED_DATE_LEVEL_SCOPE)
     assert pooled.series_scope == POOLED_DATE_LEVEL_SCOPE
     pooled.assert_consumer_scope(DATE_LEVEL_PORTFOLIO_CONSUMER)
     with pytest.raises(ValueError, match="consumer_scope"):
@@ -214,7 +216,7 @@ def test_garchvol_rejects_corrupted_and_unknown_artifact_scopes() -> None:
 def test_pooled_artifacts_cannot_reach_per_security_risk_consumers_end_to_end() -> None:
     """Real pooled model -> real per-security risk consumer boundary."""
     rng = np.random.default_rng(20261007)
-    model = GARCHVol()
+    model = GARCHVol(series_scope=POOLED_DATE_LEVEL_SCOPE)
     model.fit_returns(np.asarray(rng.normal(0.0, 0.01, size=400)))
     with pytest.raises(ScopeMismatchError):
         require_per_security(model)
