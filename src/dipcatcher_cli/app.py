@@ -3,6 +3,12 @@
 Explicit lab commands pass through unchanged, including calls made by the
 model's registered harness subprocess runner. Bare redirected invocation shows
 help without reading input, credentials, or starting a conversation.
+
+Concierge one-shots (``superpower``, ``sessions``, ``resume``, ``keys``,
+``flash``, ``setup``) are owned here so the product name matches the docs:
+``dipcatcher superpower …`` is the same path as ``fxi superpower …``. Names
+in this set must not collide with lab Typer commands (``research``,
+``doctor``, ``eval``, …).
 """
 
 from __future__ import annotations
@@ -13,8 +19,13 @@ from collections.abc import Sequence
 
 CHAT_COMMAND = "chat"
 VERSION_FLAGS: frozenset[str] = frozenset({"--version", "-V"})
+_MODEL_FLAGS: frozenset[str] = frozenset({"--model", "--profile", "-p"})
+# One-shot orchestration lives in ``fx1.interactive.app`` (also ``fxi``).
+ONESHOT_COMMANDS: frozenset[str] = frozenset(
+    {"superpower", "sessions", "resume", "keys", "flash", "setup"}
+)
 # Commands this launcher handles itself; everything else goes to the lab app.
-LAUNCHER_COMMANDS: frozenset[str] = frozenset({CHAT_COMMAND})
+LAUNCHER_COMMANDS: frozenset[str] = frozenset({CHAT_COMMAND}) | ONESHOT_COMMANDS
 # Keep chat argparse free of fx1.interactive imports (profiles pulls serve URLs).
 _CHAT_MODELS: tuple[str, ...] = ("fx1", "fx1-lite")
 _DEFAULT_CHAT_MODEL = "fx1"
@@ -28,6 +39,13 @@ def _version_line() -> str:
     import fx1
 
     return f"dipcatcher {fx1.__version__} (fx-1 harness; models fx1, fx1-lite)"
+
+
+def _split_leading_model(args: Sequence[str]) -> tuple[str | None, list[str]]:
+    """Peel a leading ``--model/--profile/-p`` flag used by both chat and fxi."""
+    if len(args) >= 2 and args[0] in _MODEL_FLAGS:
+        return args[1], list(args[2:])
+    return None, list(args)
 
 
 def _chat(args: Sequence[str]) -> None:
@@ -51,7 +69,8 @@ def _chat(args: Sequence[str]) -> None:
     if not _interactive():
         parser.error(
             "chat requires an interactive terminal on stdin and stdout; "
-            "use explicit lab commands or fxi one-shot commands for scripts"
+            "use explicit lab commands or one-shot commands "
+            "(dipcatcher superpower, dipcatcher sessions) for scripts"
         )
 
     from fx1.interactive.concierge import run_console
@@ -64,9 +83,19 @@ def _print_launcher_help() -> None:
     print("Start a conversation: dipcatcher (interactive terminal)")
     print("Choose a model: dipcatcher chat --model fx1-lite")
     print("Resume a session: dipcatcher chat --resume <id>")
+    print('One-shot research: dipcatcher superpower "<goal>" --sync')
+    print("Sessions: dipcatcher sessions   |  dipcatcher resume <id>")
+    print("Endpoints: dipcatcher keys list  |  dipcatcher keys set fx1")
     print("In chat: /help, /superpower, /status, /use <model>, /doctor")
     print("Version: dipcatcher --version")
     print("Lab / scripts: dipcatcher <command> --help\n")
+
+
+def _oneshot(args: Sequence[str]) -> None:
+    """Run a concierge one-shot through the fxi Typer app under this prog name."""
+    from fx1.interactive.app import app as fxi_app
+
+    fxi_app(args=list(args), prog_name="dipcatcher")
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -79,11 +108,19 @@ def main(argv: Sequence[str] | None = None) -> None:
     if len(args) == 1 and args[0] in VERSION_FLAGS:
         print(_version_line())
         return
-    if args[:1] == [CHAT_COMMAND]:
-        _chat(args[1:])
+
+    model, rest = _split_leading_model(args)
+    if rest[:1] == [CHAT_COMMAND]:
+        chat_args = list(rest[1:])
+        if model is not None:
+            chat_args = ["--model", model, *chat_args]
+        _chat(chat_args)
         return
-    if not args and _interactive():
-        _chat([])
+    if not rest and _interactive():
+        _chat([] if model is None else ["--model", model])
+        return
+    if rest and rest[0] in ONESHOT_COMMANDS:
+        _oneshot(args)
         return
 
     # Import the lab only on the automation/help path. No library imports this

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from dipcatcher_cli.app import main
+from dipcatcher_cli.app import CHAT_COMMAND, LAUNCHER_COMMANDS, ONESHOT_COMMANDS, main
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -73,6 +73,8 @@ def test_bare_redirected_invocation_prints_help_without_chat(
     assert "Start a conversation: dipcatcher" in output
     assert "/help" in output
     assert "Resume a session: dipcatcher chat --resume" in output
+    assert "dipcatcher superpower" in output
+    assert "/superpower" in output
     assert "Usage:" in output
     assert "research" in output
 
@@ -138,6 +140,61 @@ def test_lab_commands_preserve_output_and_exit_code(args: list[str], tmp_path: P
         legacy.stderr,
     )
     assert not Path(env["FX1_CONFIG_DIR"]).exists()
+
+
+def test_oneshot_commands_do_not_collide_with_lab_roots() -> None:
+    from quant_fund.cli.main import app
+
+    lab_roots = {command.name or command.callback.__name__ for command in app.registered_commands}
+    lab_groups = {group.name for group in app.registered_groups}
+    overlap = (ONESHOT_COMMANDS | {CHAT_COMMAND}) & (lab_roots | lab_groups)
+    assert not overlap
+    assert ONESHOT_COMMANDS <= LAUNCHER_COMMANDS
+    assert CHAT_COMMAND in LAUNCHER_COMMANDS
+
+
+def test_superpower_oneshot_routes_to_fxi_app(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[list[str]] = []
+    monkeypatch.setattr("dipcatcher_cli.app._oneshot", lambda args: seen.append(list(args)))
+    _terminal(monkeypatch, stdin=False, stdout=False)
+    main(["superpower", "--capabilities"])
+    assert seen == [["superpower", "--capabilities"]]
+
+
+def test_leading_model_flag_reaches_oneshot(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[list[str]] = []
+    monkeypatch.setattr("dipcatcher_cli.app._oneshot", lambda args: seen.append(list(args)))
+    _terminal(monkeypatch, stdin=False, stdout=False)
+    main(["--model", "fx1-lite", "sessions", "--limit", "3"])
+    assert seen == [["--model", "fx1-lite", "sessions", "--limit", "3"]]
+
+
+def test_leading_model_flag_reaches_chat(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fx1.interactive import concierge
+
+    seen: list[tuple[str, str | None]] = []
+    monkeypatch.setattr(
+        concierge, "run_console", lambda *, model, resume=None: seen.append((model, resume))
+    )
+    _terminal(monkeypatch, stdin=True, stdout=True)
+    main(["--model", "fx1-lite", "chat", "--resume", "20261015T"])
+    assert seen == [("fx1-lite", "20261015T")]
+
+
+def test_oneshot_superpower_capabilities_subprocess(tmp_path: Path) -> None:
+    env = {**os.environ, "PYTHONPATH": str(ROOT / "src"), "NO_COLOR": "1", "TERM": "dumb"}
+    env["FX1_CONFIG_DIR"] = str(tmp_path / "unused-config")
+    launched = subprocess.run(
+        [sys.executable, "-m", "dipcatcher_cli", "superpower", "--capabilities"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert launched.returncode == 0, launched.stderr
+    assert "available /superpower capabilities" in launched.stdout
+    assert "web_research" in launched.stdout
 
 
 def test_help_does_not_import_interactive_model_code_or_read_stdin(tmp_path: Path) -> None:

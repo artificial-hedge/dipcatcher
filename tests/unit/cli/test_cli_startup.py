@@ -101,6 +101,8 @@ def test_package_and_cli_imports_skip_heavy_modules() -> None:
         (["-m", "fx1.cli", "--help"], _FX1_HELP_S, "Usage"),
         (["-m", "quant_fund.cli.main", "train"], _DIPCATCHER_HELP_S, "Specify a family"),
         (["-m", "fx1.cli", "doctor"], _FX1_HELP_S, "{"),
+        (["-m", "dipcatcher_cli", "--help"], _DIPCATCHER_HELP_S, "Start a conversation"),
+        (["-m", "dipcatcher_cli", "--version"], _FX1_HELP_S, "dipcatcher"),
     ],
 )
 def test_cli_first_output_stays_under_budget(args: list[str], budget_s: float, needle: str) -> None:

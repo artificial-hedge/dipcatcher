@@ -322,15 +322,17 @@ optional staleness window, refresh state, and usage counts.
 ## One-shot mode (scripting)
 
 ```sh
+dipcatcher superpower "assess conformal coverage regressions" --sync
+dipcatcher superpower "train the ranking family" --sync --approve-consequential
+dipcatcher sessions --limit 5
+dipcatcher resume <session-id>
+dipcatcher keys test fx1-lite
+dipcatcher flash search "ecb rates"
+# fxi remains compatible for the same one-shots:
 fxi superpower "assess conformal coverage regressions" --sync
-fxi superpower "train the ranking family" --sync --approve-consequential   # explicit scoped policy
 fxi research "ECB rate path expectations" --budget-s 120 --max-sources 5 --sync
 fxi flash add "finding" --task t --tags a,b --uncertainty low
-fxi flash search "ecb rates"
 fxi flash refresh <id>
-fxi keys test fx1-lite        # identity probe; exit 1 on failure
-fxi sessions --limit 5        # journal listing
-fxi resume <session-id>       # read-only transcript
 dipcatcher --version
 dipcatcher research-families --text   # the family catalog the planner consults
 ```
