@@ -71,12 +71,19 @@ def _finite_blob(mapped: dict[str, float]) -> dict[str, float]:
     return {}
 
 
+# ``live_pnl_claim`` is an honesty flag. The catalog accepts it only when the
+# value is literally False. The ARL lane stamps 0.0 inside a float dict; that
+# 0.0 is not False, and the underscore token ``pnl`` then fails the family
+# blob closed. Drop the flag here so the scorecard keeps proper scores only.
+_NON_SCORE_KEYS = frozenset({"runtime_seconds", "live_pnl_claim"})
+
+
 def _isinstance_floats(raw: Mapping[str, object]) -> dict[str, float]:
-    """Float-coerce a lane blob, dropping str stamps and runtime telemetry."""
+    """Float-coerce a lane blob, dropping str stamps and non-score flags."""
     return {
         k: float(v)
         for k, v in raw.items()
-        if isinstance(v, (int, float)) and not isinstance(v, bool) and k != "runtime_seconds"
+        if isinstance(v, (int, float)) and not isinstance(v, bool) and k not in _NON_SCORE_KEYS
     }
 
 
@@ -136,7 +143,7 @@ def bench_arl_mm() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_arl_core_bench(seed=_ARL_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+    except (ImportError, ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
         return {}
 
 
