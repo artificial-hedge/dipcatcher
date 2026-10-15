@@ -47,33 +47,43 @@ def _extra_presence() -> dict[str, str]:
     }
 
 
-def _jewels_intact(root: Path, pin: Path) -> bool:
-    """True when every file listed in the crown-jewels pin matches its digest."""
-    if not pin.is_file():
+def _jewel_file_matches(root: Path, name: object, expected: object) -> bool:
+    """True when one crown-jewel entry is a regular file with the pinned digest."""
+    if not isinstance(name, str) or not isinstance(expected, str):
         return False
-    try:
-        raw: Any = json.loads(pin.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return False
-    if not isinstance(raw, dict) or raw.get("schema") != "crown_jewels.v1":
-        return False
-    files = raw.get("files")
-    if not isinstance(files, dict) or not files:
+    path = root / name
+    if path.is_symlink() or not path.is_file():
         return False
     from quant_fund.utils.hashing import hash_bytes
 
-    for name, expected in files.items():
-        if not isinstance(name, str) or not isinstance(expected, str):
-            return False
-        path = root / name
-        if path.is_symlink() or not path.is_file():
-            return False
-        try:
-            if hash_bytes(path.read_bytes()) != expected:
-                return False
-        except OSError:
-            return False
-    return True
+    try:
+        return hash_bytes(path.read_bytes()) == expected
+    except OSError:
+        return False
+
+
+def _jewels_intact(root: Path, pin: Path) -> bool:
+    """True when every file listed in the crown-jewels pin matches its digest."""
+    files = _crown_jewel_files(pin)
+    if files is None:
+        return False
+    return all(_jewel_file_matches(root, name, expected) for name, expected in files.items())
+
+
+def _crown_jewel_files(pin: Path) -> dict[str, object] | None:
+    """The pin's file map, or None when the pin is missing or not crown_jewels.v1."""
+    if not pin.is_file():
+        return None
+    try:
+        raw: Any = json.loads(pin.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(raw, dict) or raw.get("schema") != "crown_jewels.v1":
+        return None
+    files = raw.get("files")
+    if not isinstance(files, dict) or not files:
+        return None
+    return files
 
 
 def _distribution_lineage(root: Path) -> dict[str, object]:
