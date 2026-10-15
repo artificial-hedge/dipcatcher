@@ -50,7 +50,7 @@ make proof-integrity      # current signer/recorder tests
 make proof-verify         # bundle verifier tests; no historical replay claim
 make leakage-scan         # warn mode this wave (adjudicated)
 make reality-gate         # score trials; a non-empty pending research/reality/trials.jsonl is scored when the db is absent (decided studies archive to research/reality/studies/); an absent db and empty/absent ledger skips
-make receipts-reverify    # fail-closed audit; heterogeneous receipt verifiers pending
+make receipts-reverify    # suite-health --strict: verify, or exact quarantine pin
 ```
 
 ## Honesty contract
@@ -70,8 +70,10 @@ bundles as unverified and rejects `--verification` until a bound result schema
 and ingestion path are implemented. Reality reports are research diagnostics,
 not promotion evidence.
 
-The existing `receipts/*.json` use several schemas. The current
-`receipts-reverify` command reports unsupported receipts as failures and is
-not a blocking CI gate until each class has a matching verifier.
+The existing `receipts/*.json` use several schemas. Receipts that cannot
+verify are retained only when `quality/legacy_quarantine.json` pins their
+path, bytes, and exact `verify-receipt` errors. `make receipts-reverify`
+is that strict gate: a quarantined file is not evidence, and any other
+verification failure fails the build.
 
 See `MIGRATION.md` for the additive rollout phases.

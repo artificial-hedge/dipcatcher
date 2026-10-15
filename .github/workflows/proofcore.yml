@@ -131,10 +131,11 @@ jobs:
             echo "::notice title=reality-filter::$(grep -m1 '^REALITY_FILTER_SKIP:' "${RUNNER_TEMP:-/tmp}/reality-gate.log")"
           fi
 
-  # §12 A3 #4 committed-receipt audit: every receipts/*.json re-verifies
-  # under its schema-appropriate verifier (sealed/v2 -> verify-receipt,
-  # older research-catalog -> verify-research). Green only once
-  # legacy-unsealed/ holds the unverifiable pre-seal artifacts.
+  # §12 A3 #4 committed-receipt audit. `make receipts-reverify` is
+  # suite-health --strict: verify-receipt on every receipt, then the
+  # legacy_quarantine.v2 registry (path + bytes + exact errors). A
+  # quarantined file is retained record, not evidence. Green means zero
+  # invalid receipts, not "every file verifies".
   receipts-reverify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -173,7 +174,7 @@ jobs:
   # (not in fx1.yml, which this wave does not edit) as a ratchet floor.
   fx1-coverage:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
@@ -182,7 +183,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups
+        # goldenpath loads weights.safetensors via the nn extra (torch pulls
+        # safetensors). The fx1 workflow syncs --all-extras for the same reason.
+        run: uv sync --frozen --all-groups --all-extras
       - name: fx1 coverage ratchet
         # Ratcheted 2026-09-28: suite measures 88% locally. Floor 80 keeps
         # ~4pp headroom under the expected (lower) CI reading while closing

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 import time
 from dataclasses import replace
 from typing import Any
@@ -328,7 +329,11 @@ def test_resolve_families_stays_fast_on_a_live_sized_catalog() -> None:
     started = time.perf_counter()
     selections = [resolve_families(goal, catalog) for goal in goals]
     elapsed = time.perf_counter() - started
-    assert elapsed < 1.0
+    # Bare path stays under a second. Coverage tracing (the proofcore
+    # fx1-coverage job) measured 3.9s for this same loop; a quadratic
+    # resolver is still far above either cap.
+    budget = 8.0 if "coverage" in sys.modules else 1.0
+    assert elapsed < budget
     first = selections[0]
     assert [mention.name for mention in first.eligible] == ["family_0000", "family_0009"]
     assert first.unknown[0].name == "missing_0"

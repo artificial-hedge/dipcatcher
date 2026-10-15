@@ -269,8 +269,10 @@ reality-gate: ## Reality-filter gate: score trials; absent DB or empty export sk
 	uv run quant reality trial-report --ledger $(PROOFCORE_LEDGER) && \
 	uv run quant reality ledger-gate --ledger $(PROOFCORE_LEDGER)
 
-receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verifiers pending (~20min, one subprocess per receipt)
-	uv run python -m quant_fund.proofcore.ci receipts-reverify receipts
+receipts-reverify: ## Fail-closed audit: suite-health --strict (verify or exact quarantine pin)
+	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/receipts-reverify" \
+		--quarantine quality/legacy_quarantine.json --heads-pin quality/epoch_heads.json \
+		--epoch-acks quality/epoch_allowed_removals.json --require-stamped
 
 receipt-integrity-scan: ## Fast in-process self-seal digest scan over committed receipts (seconds, not minutes)
 	uv run python scripts/receipt_integrity_scan.py receipts
@@ -386,7 +388,7 @@ lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsis
 		--out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
 
 replay-sweep: ## CI gate: replay every replayable carrier; fail on divergence or all-skip
-	uv run dipcatcher replay-all --strict \
+	uv run dipcatcher replay-all --strict --timeout 300 \
 		--out "$${RUNNER_TEMP:-/tmp}/replay_coverage.json"
 
 ADMISSION_BASE ?= origin/main
