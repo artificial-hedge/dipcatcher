@@ -185,15 +185,15 @@ not assumed):
   stamped members.
   `p0_evidence_inventory_v1.json` is quarantined not because its content
   is worse but because it was never stamped or admitted.
-- **`data/metadata` has no committed base chain to prove against.** The
-  base pin names head `corpus_epoch_7dc5e67df8042167.json`, which is
-  gitignored and absent from main (two older epochs of that chain are
-  tracked). `epoch-consistency` skips a chain only when the base tree does
-  not commit the base pin's head, and says so; deleting a head the base
-  does commit still fails the proof. Before, the loop aborted there and
-  left the 21 corpora after it unproven. A base whose heads pin is
-  missing or unreadable fails the gate; it used to skip every chain and
-  pass.
+- **`data/metadata` epoch receipts are tracked via `!data/metadata/corpus_epoch_*.json`.**
+  An earlier pin named a gitignored head (`corpus_epoch_7dc5e67df8042167.json`)
+  and the only tracked ancestors were orphaned (`prev` never committed), so
+  `evidence-audit` could not pass. 2026-10-15 reset that corpus to a fresh
+  committed genesis of the live members and un-ignored `corpus_epoch_*.json`
+  so `make stamp-epochs` heads stay reviewable. `epoch-consistency` still
+  skips a chain only when the base tree does not commit the base pin's head;
+  deleting a head the base does commit still fails the proof. A base whose
+  heads pin is missing or unreadable fails the gate.
 - **A bad direct push to `main` is reported, not prevented.** Direct
   commits to `main` are this repo's normal path, so `epoch-consistency`,
   `epoch-ack-gate`, `quarantine-gate` and the admission diff also run on

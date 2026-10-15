@@ -1,82 +1,14 @@
 {
   "data_label": "CORPUS",
-  "epoch_root_sha256": "13567042db8a4f921a2297968bf418eeffa14efe18c6a20d7aac58ac3212735b",
+  "epoch_root_sha256": "e19d12a20aa0dda6c8717444f7779160f25976ee09789f568bcd5488364d03e6",
   "inputs_sha256": "e15b4dbb78f1dffc2d683ed2a68b040cf3d4f825151fed914aafdf4aabef9204",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
-  "member_tree_root": "6eaded70229d94bcc093afe63340fd27b201a1f83804d82e3eeaa85109c0dc18",
+  "member_tree_root": "7160639240a4256d4888bc0e040a6c26850e9bb3edd22e4af5722d623f6499de",
   "members": [
     {
       "name": ".gitkeep",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    },
-    {
-      "name": "corpus_epoch_04d8ad4f6ac237ab.json",
-      "sha256": "a0185590023830fe2a5778df0ea318a4b27d87393e701239b5c94ce00f9d0d3a"
-    },
-    {
-      "name": "corpus_epoch_168aaa4fcdf4dbc1.json",
-      "sha256": "f4e74936d617dd1598642698e2dd9f01168d9b4567ed618c4473a865aea1aecf"
-    },
-    {
-      "name": "corpus_epoch_37b8b8445efafdfc.json",
-      "sha256": "0948a3398b90ed895996c2e5300e3e774711271669d99a210a6ef5fad2ab0ad4"
-    },
-    {
-      "name": "corpus_epoch_40d136b338802d53.json",
-      "sha256": "17025fb726991f67951dcb2f19b799b01583670e6d4d4247c4192ee489811fed"
-    },
-    {
-      "name": "corpus_epoch_40d1752161f289c3.json",
-      "sha256": "4a98ed454383794cd0e07a30d8cecfcc29b67677ef08e00aa0acd8f4e7729c7b"
-    },
-    {
-      "name": "corpus_epoch_41440524979109a2.json",
-      "sha256": "6b68b252db728a293ffe107a5498180f8f0ef56354a8c1d31aa8ec1364958550"
-    },
-    {
-      "name": "corpus_epoch_45a810e9447f88b8.json",
-      "sha256": "725ccbe2933f43c2ae497700debb16ef4e9487586f422cfec8d829f3ba0c011b"
-    },
-    {
-      "name": "corpus_epoch_84cb6b0e1e09357d.json",
-      "sha256": "d62e93bd1b4a9755d36df3eda6ba6d2e115d653bb1199d71af91c421bf1c2e35"
-    },
-    {
-      "name": "corpus_epoch_8e10040f63da710b.json",
-      "sha256": "b8fa165e7ffaad10ab34a4b67ab2412802a6df8f9de871e48b5073394d9c1484"
-    },
-    {
-      "name": "corpus_epoch_9c3282bc1b94cc45.json",
-      "sha256": "9f05dcd0c1a4fa3440e1f000a77db82ad0e89c25cb817ec3cd11b3ab1f2734cf"
-    },
-    {
-      "name": "corpus_epoch_a1199701236877bc.json",
-      "sha256": "f857b077bd0b478918adf6d4033c96b18a1a7b76575050c7b88afa6826fc2b2b"
-    },
-    {
-      "name": "corpus_epoch_a590ddeebcb1f4e6.json",
-      "sha256": "eec218655b0e823deaecf9254fadd5b5e2b7aa2c44d71359192bdae06859061b"
-    },
-    {
-      "name": "corpus_epoch_aba3ba4667cec97f.json",
-      "sha256": "8baa64cac338be2d3a311466e812f2024bbf9f452fc8d7ff98659e48edb5ab63"
-    },
-    {
-      "name": "corpus_epoch_c202a4bc3961ab8c.json",
-      "sha256": "309c7366349f8010324803dc2afd3a9958b1b038e31678f1d90d45957245090b"
-    },
-    {
-      "name": "corpus_epoch_ca86051d283766c5.json",
-      "sha256": "bbe331d689adc6a465bc70586bca026515fce296151c31cbc84c04a6a3d6e9c2"
-    },
-    {
-      "name": "corpus_epoch_e0580bbed4486027.json",
-      "sha256": "4f369114da4a2b80b93665f5316f7ab973beb18b4ed048ca56e3e3e5502aed00"
-    },
-    {
-      "name": "corpus_epoch_fe89a34240da06f5.json",
-      "sha256": "68c815e43e588a67cbdf00dbd25f5b456ddb325e923e09070c35f629f87efbe9"
     },
     {
       "name": "cost_aware_tournament/us_wide_20260925/manifest.json",
@@ -89,10 +21,6 @@
     {
       "name": "cost_aware_tournament/us_wide_20260925/validation.json.gz",
       "sha256": "67c1a4738e479fb3c54a95d422e1e32e9a276c7dc63d1c876f554e0fc50f4273"
-    },
-    {
-      "name": "data_manifest.json",
-      "sha256": "5ba7efb725ef1198c983d62a0f091f4af4d4ab5a3ad51f54e8d5ec774c9d5f46"
     },
     {
       "name": "net_tournament/us_wide_20260925/manifest.json",
@@ -188,19 +116,45 @@
     }
   ],
   "members_added": [
-    "corpus_epoch_45a810e9447f88b8.json"
+    ".gitkeep",
+    "cost_aware_tournament/us_wide_20260925/manifest.json",
+    "cost_aware_tournament/us_wide_20260925/validation.attempt.json",
+    "cost_aware_tournament/us_wide_20260925/validation.json.gz",
+    "net_tournament/us_wide_20260925/manifest.json",
+    "net_tournament/us_wide_20260925/test.attempt.json",
+    "net_tournament/us_wide_20260925/test.json.gz",
+    "net_tournament/us_wide_20260925/validation.attempt.json",
+    "net_tournament/us_wide_20260925/validation.json.gz",
+    "real_benchmark/us_wide_20260925/manifest.json",
+    "real_benchmark/us_wide_20260925/test.json",
+    "real_benchmark/us_wide_20260925/validation.json",
+    "reports/deps_hygiene_20260928/MANIFEST.json",
+    "reports/deps_hygiene_20260928/bandit_report.json",
+    "reports/deps_hygiene_20260928/bandit_strict.txt",
+    "reports/deps_hygiene_20260928/deptry_src.txt",
+    "reports/deps_hygiene_20260928/environment.txt",
+    "reports/deps_hygiene_20260928/export_all.txt",
+    "reports/deps_hygiene_20260928/gitleaks_report.json",
+    "reports/deps_hygiene_20260928/licenses_all.json",
+    "reports/deps_hygiene_20260928/pip_audit.json",
+    "reports/deps_hygiene_20260928/uv_audit.json",
+    "research/PHASE1_CODE_RESEAL.md",
+    "research/PHASE1_PROVENANCE_CORRECTION.md",
+    "research/phase1_20260925.md",
+    "research/phase1_evidence_index.json",
+    "resolved_config.json"
   ],
   "members_removed": [],
-  "n_members": 45,
+  "n_members": 27,
   "params": {
-    "head_sha": "047754f5f342780dffc2a6b5207198fdc767d3d5",
+    "head_sha": "b168ca499d56fbae939154c02086a7a4cd95368e",
     "pattern": "*"
   },
-  "prev_epoch_receipt": "corpus_epoch_45a810e9447f88b8.json",
-  "prev_epoch_sha256": "1e2277b950c0c73ad609784259cf4877431c76a25ba62bbfa7f8f5534f4d86d5",
-  "receipt_sha256": "c3933c09965aa0085777d154cfb00e855d3583202d5b508fe1f7422087da72f9",
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "c99ec5c22770b0c2a9b343d4a501d5343bde644def92a157bdc6828c06997eea",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,
-  "verdict": "advancing"
+  "verdict": "genesis"
 }

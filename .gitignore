@@ -144,8 +144,9 @@ research/*/qpanel_cache/
 # by .gitattributes); only the regenerable dumps around it stay ignored. The
 # research/ carve-outs are exact-file on purpose — `research/latest.{json,md}`
 # and `research/runs/` are regenerated continuously and must stay invisible.
-!data/metadata/corpus_epoch_1833207f020fdbd6.json
-!data/metadata/corpus_epoch_c3933c09965aa008.json
+# Corpus-epoch receipts for data/metadata must stay force-trackable: the pin
+# in quality/epoch_heads.json is meaningless if the head receipt is gitignored.
+!data/metadata/corpus_epoch_*.json
 !data/metadata/cost_aware_tournament/
 !data/metadata/cost_aware_tournament/**
 !data/metadata/net_tournament/
