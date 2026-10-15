@@ -1951,39 +1951,7 @@
       "src": "fx1.hypotheses_audit"
     },
     {
-      "dst": "fx1.interactive.actions",
-      "src": "fx1.interactive"
-    },
-    {
       "dst": "fx1.interactive.app",
-      "src": "fx1.interactive"
-    },
-    {
-      "dst": "fx1.interactive.approvals",
-      "src": "fx1.interactive"
-    },
-    {
-      "dst": "fx1.interactive.concierge",
-      "src": "fx1.interactive"
-    },
-    {
-      "dst": "fx1.interactive.orb",
-      "src": "fx1.interactive"
-    },
-    {
-      "dst": "fx1.interactive.profiles",
-      "src": "fx1.interactive"
-    },
-    {
-      "dst": "fx1.interactive.shell",
-      "src": "fx1.interactive"
-    },
-    {
-      "dst": "fx1.interactive.superpower",
-      "src": "fx1.interactive"
-    },
-    {
-      "dst": "fx1.interactive.wizard",
       "src": "fx1.interactive"
     },
     {
@@ -75425,7 +75393,7 @@
     },
     {
       "dst": "fx1.interactive",
-      "imports": 45,
+      "imports": 37,
       "src": "fx1.interactive"
     },
     {
