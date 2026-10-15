@@ -13,10 +13,12 @@ import json
 import os
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 
-from quant_fund.proofcore.contracts import TrialLedgerRow
+if TYPE_CHECKING:
+    from quant_fund.proofcore.contracts import TrialLedgerRow
 
 proofcore_app = typer.Typer(
     help="PROOFCORE provenance ledger (duckdb): log bundles, query, export.",
