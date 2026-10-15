@@ -368,7 +368,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups
+        # Match the test job and AGENTS.md: research smoke pulls soft_blobs /
+        # ARL MM paths that need the optional torch `nn` extra.
+        run: uv sync --frozen --all-groups --all-extras
       - name: Collect paper and analytics tests
         run: uv run pytest --collect-only -q -m smoke
       - name: Synthetic research smoke

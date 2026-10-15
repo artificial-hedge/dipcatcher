@@ -278,7 +278,9 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # Tool-local state with no security surface — deliberately NOT corpora.
 # data/ is absent from this list only because data/metadata IS a corpus.
-NON_CORPUS_TOP_DIRS = frozenset({".freebuff", ".serena"})
+# .mavis = planner scratch; attic = deliberately retired trees; packaging =
+# install-formula helpers (Homebrew). None of these are claim surfaces.
+NON_CORPUS_TOP_DIRS = frozenset({".freebuff", ".serena", ".mavis", "attic", "packaging"})
 
 # The pinned set of tracked root-level files. Root files sit above every
 # corpus dir, so the epoch chains can't see them — a new root file lands
