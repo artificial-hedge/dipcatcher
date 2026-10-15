@@ -16,6 +16,7 @@ from quant_fund.cli.benchmark_cmds import (
     ranker_probability_app,
     real_benchmark_app,
 )
+from quant_fund.cli.option_highlight import install_stable_option_highlighting
 
 # SOTA / forward-evidence operator surface. Restored on this branch after the
 # mount was found missing; independently re-added upstream by 8eb627ff2. Kept
@@ -44,6 +45,9 @@ from quant_fund.stress.cli import stress_app
 
 if TYPE_CHECKING:
     from quant_fund.config.models import AppConfig
+
+# Before any command renders help. Typer's stock highlighter splits "--flag".
+install_stable_option_highlighting()
 
 
 def format_data_label(*, synthetic: bool, data_source: str) -> str:
