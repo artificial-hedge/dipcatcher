@@ -8,7 +8,10 @@ pieces are reported so an operator can fix the environment.
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 import fx1
@@ -24,6 +27,33 @@ def _count_receipts(path: Path) -> int | None:
     if not path.is_dir():
         return None
     return sum(1 for _ in path.rglob("*.json"))
+
+
+def _distribution_lineage_digest(root: Path) -> dict[str, object] | None:
+    """Read distribution lineage in a harness subprocess (fx1 must not import research)."""
+    script = (
+        "import json, sys\n"
+        "from pathlib import Path\n"
+        "from quant_fund.research.crown_jewels import distribution_lineage_digest\n"
+        "print(json.dumps(distribution_lineage_digest(Path(sys.argv[1]))))\n"
+    )
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-c", script, str(root)],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if completed.returncode != 0 or not completed.stdout.strip():
+        return None
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError:
+        return None
+    return payload if isinstance(payload, dict) else None
 
 
 def collect_status(root: Path | None = None) -> dict[str, object]:
@@ -63,12 +93,12 @@ def collect_status(root: Path | None = None) -> dict[str, object]:
         status["eval_bank_tasks"] = "unavailable"
     try:
         from fx1.harness import HARNESS_REGISTRY
-        from quant_fund.research.crown_jewels import distribution_lineage_digest
         from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
-        lineage = distribution_lineage_digest(root)
-        status["distribution_lineage"] = lineage["digest"]
-        status["distribution_jewels_intact"] = lineage["jewels_intact"]
+        lineage = _distribution_lineage_digest(root)
+        if lineage is not None:
+            status["distribution_lineage"] = lineage.get("digest", "unavailable")
+            status["distribution_jewels_intact"] = lineage.get("jewels_intact")
         harness_names = sorted(command.name for command in HARNESS_REGISTRY)
         status["harness_registry_digest"] = hash_bytes(canonical_json_bytes(harness_names))
     except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
