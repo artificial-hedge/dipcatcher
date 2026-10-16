@@ -145,6 +145,23 @@ def public_serve_url_env(model_id: str) -> str:
     return f"FX1_LOCAL_SERVE_URL_{model_id.upper().replace('-', '_')}"
 
 
+def _matches_public_checkpoint_pin(root: Path, alias: str) -> bool:
+    """Accept only the operator's immutable, per-alias checkpoint path."""
+    configured = os.environ.get(public_checkpoint_env(alias))
+    if not configured:
+        return False
+    try:
+        requested = Path(os.path.abspath(root))
+        pinned = Path(os.path.abspath(configured))
+        return (
+            _no_link_ancestors(requested)
+            and _no_link_ancestors(pinned)
+            and requested.resolve(strict=True) == pinned.resolve(strict=True)
+        )
+    except (OSError, RuntimeError, ValueError):
+        return False
+
+
 def _trusted_public_serve_url(url: str) -> bool:
     """Public weight probes trust only a same-host engine endpoint."""
     try:
@@ -268,6 +285,10 @@ def _public_local_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
             "public local_fx1 requires an Ed25519-signed release with a "
             "model card binding fx1 or fx1-lite, a public-serving license "
             "tier, and a weights SHA-256 pin"
+        )
+    if not _matches_public_checkpoint_pin(root, alias):
+        raise BackendNotConfiguredError(
+            f"public {alias} requires the checkpoint bound by {public_checkpoint_env(alias)}"
         )
     serve_url = os.environ.get(public_serve_url_env(alias))
     if not serve_url or not _trusted_public_serve_url(serve_url):

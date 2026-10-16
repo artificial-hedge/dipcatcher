@@ -224,9 +224,11 @@ def test_public_resolver_requires_signed_local_weights(monkeypatch: pytest.Monke
         resolve("local_fx1", checkpoint_dir="somewhere")
     assert len(calls) == 1
     monkeypatch.setenv("FX1_RELEASE_VERIFY_KEY", "a" * 64)
+    monkeypatch.setenv("FX1_CHECKPOINT_DIR_FX1", "somewhere")
     monkeypatch.setenv("FX1_LOCAL_SERVE_URL_FX1", "http://127.0.0.1:8123/v1")
     monkeypatch.setattr(release_gate, "_public_checkpoint_alias", lambda root: "fx1")
     monkeypatch.setattr(release_gate, "_verified_public_release", lambda root: True)
+    monkeypatch.setattr(release_gate, "_matches_public_checkpoint_pin", lambda root, alias: True)
     with pytest.raises(BackendNotConfiguredError, match="configured checkpoint_dir"):
         resolve("local_fx1")
     resolve("local_fx1", checkpoint_dir="somewhere", model="fx1", require_signature=False)
@@ -393,7 +395,7 @@ def test_public_alias_requires_its_own_signed_weights(
         public_release_resolver,
         public_serve_url_env,
     )
-    from fx1.serve.signing import sign_release_ed25519
+    from fx1.serve.signing import sign_release_ed25519, verify_release_ed25519
 
     checkpoint = tmp_path / alias
     checkpoint.mkdir()
@@ -449,6 +451,30 @@ def test_public_alias_requires_its_own_signed_weights(
     assert backend._url.endswith("127.0.0.1:8123/v1/chat/completions")
     assert backend._serve_cmd == ""
     assert len(full_verifications) == 1
+
+    alternate = tmp_path / f"{alias}-alternate"
+    alternate.mkdir()
+    _card().model_copy(update={"public_model_id": alias, "license_tier": "maas"}).save(
+        alternate / "modelcard.json"
+    )
+    alternate_weights = alternate / "weights.safetensors"
+    alternate_weights.write_bytes(f"other-release-{alias}".encode())
+    (alternate / "weights.manifest.json").write_text(
+        json.dumps({"weights_sha256": hashlib.sha256(alternate_weights.read_bytes()).hexdigest()}),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("FX1_RELEASE_SIGNING_KEY", seed.hex())
+    sign_release_ed25519(alternate)
+    monkeypatch.delenv("FX1_RELEASE_SIGNING_KEY")
+    assert verify_release_ed25519(alternate)
+    with pytest.raises(RuntimeError, match="requires the checkpoint bound by"):
+        public_release_resolver(get_backend)("local_fx1", checkpoint_dir=alternate, model=alias)
+    assert len(full_verifications) == 1
+    monkeypatch.delenv(public_checkpoint_env(alias))
+    with pytest.raises(RuntimeError, match="requires the checkpoint bound by"):
+        public_release_resolver(get_backend)("local_fx1", checkpoint_dir=checkpoint, model=alias)
+    monkeypatch.setenv(public_checkpoint_env(alias), str(checkpoint))
+
     other = "fx1-lite" if alias == "fx1" else "fx1"
     with pytest.raises(RuntimeError, match=f"binds '{alias}'"):
         public_release_resolver(get_backend)("local_fx1", checkpoint_dir=checkpoint, model=other)
@@ -519,6 +545,7 @@ def test_signed_public_alias_completes_through_local_engine(
     )
     monkeypatch.setenv("FX1_RELEASE_IMMUTABLE_IMAGE", "1")
     monkeypatch.setattr(release_gate, "_read_only_mount", lambda path: True)
+    monkeypatch.setenv(release_gate.public_checkpoint_env(alias), str(tmp_path))
 
     engine = LocalWeightsEngine(tmp_path)
     assert engine.served_model == alias
@@ -573,7 +600,9 @@ def test_signed_ship_ineligible_alias_is_not_advertised(
 
 
 @pytest.mark.parametrize("alias", ["fx1", "fx1-lite"])
-def test_public_eval_run_binds_the_named_alias(monkeypatch: pytest.MonkeyPatch, alias: str) -> None:
+def test_public_eval_run_binds_the_named_alias(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, alias: str
+) -> None:
     from fastapi.testclient import TestClient
 
     from fx1.serve import release_gate
@@ -587,7 +616,8 @@ def test_public_eval_run_binds_the_named_alias(monkeypatch: pytest.MonkeyPatch, 
         called.set()
         return object()
 
-    checkpoint = f"/signed/{alias}"
+    checkpoint = str(tmp_path / alias)
+    Path(checkpoint).mkdir()
     monkeypatch.setenv("FX1_API_KEY", "test-key")
     monkeypatch.setenv("FX1_RELEASE_VERIFY_KEY", "a" * 64)
     monkeypatch.setenv(release_gate.public_checkpoint_env(alias), checkpoint)
