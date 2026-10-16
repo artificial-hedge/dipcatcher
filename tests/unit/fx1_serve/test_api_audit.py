@@ -30,7 +30,7 @@ def test_all_probes_hold() -> None:
         assert ok is True, f"probe {name} failed"
 
 
-def _api_audit_bench_ok() -> dict[str, Any]:
+def _api_audit_bench_ok() -> dict[str, object]:
     """Run ``api_audit_bench``; retry once if a probe flipped under suite load.
 
     The full ``tests/fx1`` + ``tests/unit/fx1_serve`` coverage job can leave
