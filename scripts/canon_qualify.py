@@ -223,9 +223,14 @@ def _emit_retired_families(summary_path: Path, out_path: Path) -> int:
     if not summary_path.is_file():
         print(f"missing summary: {summary_path}", file=sys.stderr)
         return 1
-    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    # summary_path / out_path already resolved + is_relative_to(REPO_ROOT).
+    summary = json.loads(
+        summary_path.read_text(encoding="utf-8")  # NOSONAR pythonsecurity:S2083
+    )
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(_generated_module_text(summary), encoding="utf-8")
+    out_path.write_text(  # NOSONAR pythonsecurity:S2083
+        _generated_module_text(summary), encoding="utf-8"
+    )
     print(f"wrote {out_path} ({len(summary['retired_families'])} retired families)")
     return 0
 

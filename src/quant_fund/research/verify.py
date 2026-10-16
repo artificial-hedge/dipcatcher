@@ -1285,7 +1285,10 @@ def _promotion_report_file_errors(
         errors.append("promotion_evidence_report_sha256_mismatch")
     errors.extend(_promotion_report_sidecar_errors(report_file))
     try:
-        loaded_report = json.loads(report_file.read_text(encoding="utf-8"))
+        # Path already refused outside receipt-root parent by _promotion_path.
+        loaded_report = json.loads(
+            report_file.read_text(encoding="utf-8")  # NOSONAR pythonsecurity:S2083
+        )
     except (OSError, json.JSONDecodeError):
         loaded_report = None
     if not isinstance(loaded_report, dict):
@@ -1535,7 +1538,10 @@ def _promotion_artifact_files_errors(
     if hash_file(manifest_file) != artifact_block.get("manifest_sha256"):
         errors.append("promotion_manifest_sha256_mismatch")
     try:
-        loaded_manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+        # Path already refused outside receipt-root parent by _promotion_path.
+        loaded_manifest = json.loads(
+            manifest_file.read_text(encoding="utf-8")  # NOSONAR pythonsecurity:S2083
+        )
     except (OSError, json.JSONDecodeError):
         loaded_manifest = None
     if not isinstance(loaded_manifest, dict):
