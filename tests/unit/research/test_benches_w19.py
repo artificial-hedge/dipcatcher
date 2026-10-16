@@ -181,12 +181,17 @@ def test_fukasawa_iv_convergence_regimes(fukasawa_iv: dict[str, float]) -> None:
     blob = fukasawa_iv
     # The bench prefixes every seeded score with synthetic_.
     assert blob["synthetic_deterministic_vol_abs_resid"] < 1e-3
-    assert blob["synthetic_small_volvol_abs_resid_a25"] < blob["synthetic_small_volvol_abs_resid_a50"]
-    assert blob["synthetic_small_volvol_scaled_resid_a25"] < blob[
-        "synthetic_small_volvol_scaled_resid_a50"
-    ]
+    assert (
+        blob["synthetic_small_volvol_abs_resid_a25"] < blob["synthetic_small_volvol_abs_resid_a50"]
+    )
+    assert (
+        blob["synthetic_small_volvol_scaled_resid_a25"]
+        < blob["synthetic_small_volvol_scaled_resid_a50"]
+    )
     assert blob["synthetic_fast_mr_scaled_resid_n16"] < blob["synthetic_fast_mr_scaled_resid_n4"]
-    assert blob["synthetic_short_mat_scaled_resid_t08"] < blob["synthetic_short_mat_scaled_resid_t02"]
+    assert (
+        blob["synthetic_short_mat_scaled_resid_t08"] < blob["synthetic_short_mat_scaled_resid_t02"]
+    )
     assert blob["synthetic_normalization_gap"] < 0.05
     assert blob["synthetic"] == 1.0
 

@@ -51,6 +51,22 @@ def test_genesis_epoch(corpus_dir: Path) -> None:
     assert epoch_contract_errors(receipt) == []
 
 
+def test_member_digest_names_match_case_sensitive_sort(tmp_path: Path) -> None:
+    """Epoch receipts require ``sorted(names)``. Windows Path order does not.
+
+    ``README.md`` sorts before ``momentum_…`` in case-sensitive POSIX order
+    and after it under Windows' case-insensitive path order. A stamp made
+    on the fleet host has to match a stamp made on the Linux CI runner.
+    """
+    (tmp_path / "README.md").write_text("readme", encoding="utf-8")
+    (tmp_path / "momentum_original39.npz").write_bytes(b"npz")
+    names = list(member_digests(tmp_path, pattern="*"))
+    assert names == ["README.md", "momentum_original39.npz"]
+    receipt = corpus_epoch(tmp_path, pattern="*")
+    assert epoch_contract_errors(receipt) == []
+    assert [m["name"] for m in receipt["members"]] == names
+
+
 def test_epoch_root_deterministic_and_order_free() -> None:
     m1 = {"a": "ab" * 32, "b": "cd" * 32}
     m2 = {"b": "cd" * 32, "a": "ab" * 32}

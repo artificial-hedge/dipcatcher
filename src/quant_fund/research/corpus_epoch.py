@@ -36,6 +36,8 @@ Verdicts: ``genesis`` (no previous epoch), ``advancing`` (monotone growth),
 from __future__ import annotations
 
 import json
+import os
+import sys
 import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -175,14 +177,19 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
     root = Path(corpus_dir)
     if not root.is_dir():
         raise ValueError(f"corpus dir {root} does not exist")
-    candidates = [
-        path.relative_to(root).as_posix()
-        for path in sorted(root.rglob(pattern))
-        if path.is_file()
-        and path.name not in EXEMPT_BASENAMES
-        and path.relative_to(root).as_posix() not in EXEMPT_RELPATHS
-        and not _exempt_member(root, path.relative_to(root).as_posix())
-    ]
+    # Sort the POSIX names, not the Path objects. Windows compares paths
+    # case-insensitively, so Path order puts ``momentum_…`` before
+    # ``README.md``. The epoch contract requires ``sorted(names)`` — the
+    # case-sensitive order a Linux stamp already produces.
+    named: list[str] = []
+    for path in root.rglob(pattern):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(root).as_posix()
+        if path.name in EXEMPT_BASENAMES or rel in EXEMPT_RELPATHS or _exempt_member(root, rel):
+            continue
+        named.append(rel)
+    candidates = sorted(named)
     ignored = gitignored_relpaths(root, candidates)
     return {rel: hash_bytes((root / rel).read_bytes()) for rel in candidates if rel not in ignored}
 
@@ -321,22 +328,41 @@ def _acquire_stamp_lock(root: Path) -> Any:
     Two concurrent stamps that both observe the same head would each write
     ``prev = head`` — a chain fork (``epoch_multiple_heads``) created by
     correct software. The lock serializes the whole stamp; a contended lock
-    fails closed instead of forking. Advisory (fcntl flock): a process that
-    never takes the lock is unaffected, which is fine — the chain checker
-    still catches any fork.
+    fails closed instead of forking. POSIX uses ``fcntl.flock``; Windows
+    uses ``msvcrt.locking`` over one byte of the lock file. A process that
+    never takes the lock is unaffected — the chain checker still catches a fork.
     """
+    lock_path = root / ".epoch_stamp.lock"
+    # sys.platform, not os.name: mypy drops the other branch. Both locks are
+    # per open-file description, so a second handle in this process fails.
+    if sys.platform == "win32":
+        import msvcrt
+
+        handle = lock_path.open("a+b")
+        try:
+            if handle.seek(0, os.SEEK_END) == 0:
+                handle.write(b"\0")
+                handle.flush()
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        except OSError as exc:
+            handle.close()
+            raise EpochStampLocked(
+                f"another corpus-epoch stamp is in flight on {root} (lock: {lock_path})"
+            ) from exc
+        return handle
+
     import fcntl
 
-    lock_path = root / ".epoch_stamp.lock"
-    fd = lock_path.open("a")
+    handle = lock_path.open("a")
     try:
-        fcntl.flock(fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError as exc:
-        fd.close()
+        handle.close()
         raise EpochStampLocked(
             f"another corpus-epoch stamp is in flight on {root} (lock: {lock_path})"
         ) from exc
-    return fd
+    return handle
 
 
 def corpus_epoch(
