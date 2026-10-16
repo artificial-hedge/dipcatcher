@@ -18,13 +18,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# PRs only build. Push to main uploads a Pages artifact and deploys when
-# GitHub Pages is enabled (Settings → Pages → Source = GitHub Actions).
-# Proof: GET /repos/.../pages → 404 (has_pages=false); pages create → 403.
-# deploy-pages then returns HttpError 404. Soft-fail was tried then reverted
-# (0222fa0f6) because it hid the check; instead we probe Pages and only call
-# deploy-pages when the site exists, so the check stays green without faking
-# a successful publish.
+# PRs only build. Push to main uploads a Pages artifact and deploys it.
+# The repository owner must set Settings → Pages → Source to GitHub Actions
+# before the deploy job can publish. GET /repos/.../pages is 404
+# (has_pages=false) and creating Pages returns 403 for this integration, so
+# deploy-pages fails with HttpError 404. That failure stays on the check.
 permissions:
   contents: read
 
@@ -67,23 +65,6 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - name: Detect GitHub Pages site
-        id: pages
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          code=$(curl -sS -o /dev/null -w '%{http_code}' \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pages" || true)
-          echo "http_code=${code}" >> "$GITHUB_OUTPUT"
-          if [ "${code}" = "200" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=GitHub Pages::Pages API returned HTTP ${code} (has_pages=false). Skipping deploy-pages until Settings → Pages → Source = GitHub Actions."
-          fi
       - name: Deploy to GitHub Pages
         id: deployment
-        if: steps.pages.outputs.enabled == 'true'
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
