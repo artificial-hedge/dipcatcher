@@ -157,6 +157,26 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
     }
 
 
+def _preflight_checkpoint_signers(
+    root_path: Path, signers: list[tuple[str, str]]
+) -> tuple[dict[str, str], int] | None:
+    """Validate the trust root and signer pairs before any checkpoint writes."""
+    if not signers:
+        raise ValueError("no signer key material")
+    quorum = load_quorum_registry(root_path)
+    if (root_path / DEFAULT_QUORUM_PATH).exists():
+        if quorum is None:
+            raise ValueError("malformed quorum registry")
+        validate_quorum_signers(root_path, signers)
+    else:
+        private_hex, public_hex = signers[0]
+        validate_signer_pair(private_hex, public_hex)
+        committed_pub = root_path / DEFAULT_PUBKEY_PATH
+        if not committed_pub.is_file() or committed_pub.read_text().strip() != public_hex:
+            raise ValueError("signer does not match committed public key")
+    return quorum
+
+
 def write_checkpoint(
     root: str | Path,
     signers: list[tuple[str, str]],
@@ -174,20 +194,8 @@ def write_checkpoint(
     """
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-    if not signers:
-        raise ValueError("no signer key material")
     root_path = Path(root)
-    quorum = load_quorum_registry(root_path)
-    if (root_path / DEFAULT_QUORUM_PATH).exists():
-        if quorum is None:
-            raise ValueError("malformed quorum registry")
-        validate_quorum_signers(root_path, signers)
-    else:
-        _private_hex, public_hex = signers[0]
-        validate_signer_pair(_private_hex, public_hex)
-        committed_pub = root_path / DEFAULT_PUBKEY_PATH
-        if not committed_pub.is_file() or committed_pub.read_text().strip() != public_hex:
-            raise ValueError("signer does not match committed public key")
+    quorum = _preflight_checkpoint_signers(root_path, signers)
     prev_file = root_path / path
     # Archive the superseded checkpoint before overwrite — append-only, keyed
     # by its digest so the prev_sha256 chain can be walked offline.
