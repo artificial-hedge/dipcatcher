@@ -330,6 +330,27 @@ def test_model_crash_falls_back_to_deterministic() -> None:
 # ---------------------------------------------------------------------------
 
 
+def test_synthesis_prompt_excludes_private_flash_findings(store: FlashStore) -> None:
+    for i in range(4):
+        store.add(text=f"inflation PRIVATE_SENTINEL_{i}", task="inflation", private=True)
+    public = store.add(text="inflation public summary", task="inflation")
+    prompts: list[str] = []
+
+    def model_fn(prompt: str) -> str:
+        prompts.append(prompt)
+        return "Public context summarized."
+
+    result = run_plan(
+        _plan("inflation", ["flash_retrieve", "synthesize"]),
+        SuperpowerContext(model_fn=model_fn, flash_store=store),
+    )
+    assert prompts
+    assert "PRIVATE_SENTINEL" not in str(prompts)
+    assert "inflation public summary" in prompts[0]
+    assert store.get(public.id).uses == 1
+    assert result.runs[0].detail == "1 relevant memory entries retrieved"
+
+
 @pytest.mark.parametrize("command", list(_REQUIRED_HARNESS_INPUTS))
 def test_handcrafted_plan_skips_harness_command_without_required_input(command: str) -> None:
     harness = FakeHarness()

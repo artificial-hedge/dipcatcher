@@ -873,7 +873,7 @@ def _stage_flash_retrieve(
     try:
         from fx1.flash.retrieve import context_block, retrieve
 
-        hits = retrieve(store, plan.goal, k=4)
+        hits = retrieve(store, plan.goal, k=4, include_private=False)
         if hits:
             parts.append(context_block(hits))
             for hit in hits:

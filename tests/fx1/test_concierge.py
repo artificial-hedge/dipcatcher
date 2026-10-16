@@ -397,6 +397,40 @@ def test_chat_tool_loop_executes_flash_retrieve(
     assert store.get(entry.id).uses == 1
 
 
+def test_chat_flash_retrieve_never_sends_private_findings_to_backend(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    store = FlashStore(tmp_path / "flash" / "entries.jsonl")
+    for i in range(4):
+        store.add(text=f"inflation PRIVATE_SENTINEL_{i}", task="inflation", private=True)
+    public = store.add(text="inflation public summary", task="inflation")
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "flash_retrieve", {"query": "inflation"}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="Found public context.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge = Concierge(
+        store=store,
+        researcher=FakeResearcher(),
+        harness=FakeHarness(),
+        backend_factory=lambda **kwargs: backend,
+        output_fn=lambda *args: None,
+        animated=False,
+    )
+    concierge.handle_line("what do we know about inflation?")
+    second_call_messages = backend.tool_calls_seen[1]
+    assert "PRIVATE_SENTINEL" not in str(backend.tool_calls_seen)
+    tool_msg = [message for message in second_call_messages if message.get("role") == "tool"][0]
+    assert "inflation public summary" in tool_msg["content"]
+    assert store.get(public.id).uses == 1
+
+
 def test_chat_harness_tool_denied_without_approval(
     env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

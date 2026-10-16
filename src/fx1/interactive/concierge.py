@@ -1601,7 +1601,9 @@ class Concierge:
         if name == "flash_retrieve":
             from fx1.flash.retrieve import context_block, retrieve
 
-            hits = retrieve(self._store, str(arguments.get("query", "")), k=4)
+            hits = retrieve(
+                self._store, str(arguments.get("query", "")), k=4, include_private=False
+            )
             if not hits:
                 return "no relevant flash context found"
             for hit in hits:
