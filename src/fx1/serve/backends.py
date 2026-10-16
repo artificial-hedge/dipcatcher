@@ -1714,9 +1714,7 @@ class LocalFx1Backend(_UsageTracker):
             # dedicated in-repo engine instead: a free port per instance.
             port = _free_tcp_port()
             self._url = _chat_completions_url(f"http://127.0.0.1:{port}/v1")
-            self._serve_cmd = (
-                f"$python -m fx1.serve.local_engine --checkpoint-dir $checkpoint_dir --port {port}"
-            )
+            self._serve_cmd = f"$python -m fx1.serve.local_engine --port {port}"
         self._model = (
             model if model is not None else (os.environ.get(LOCAL_MODEL_ENV) or self.card.version)
         )

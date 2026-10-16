@@ -559,7 +559,6 @@ def serve(engine: LocalWeightsEngine, host: str, port: int, *, watch_orphan: boo
 def main(argv: list[str] | None = None) -> int:
     """``python -m fx1.serve.local_engine`` — the FX1_LOCAL_SERVE_CMD target."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--checkpoint-dir", type=Path, default=None)
     parser.add_argument("--host", default=_DEFAULT_HOST)
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument(
@@ -569,11 +568,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     require_loopback_engine_bind(args.host)
+    # The parent backend pins this environment variable when it spawns us.
+    # A CLI path override would let untrusted agent-supplied arguments select
+    # another directory for signature verification and weight loading.
     env_dir = os.environ.get("FX1_CHECKPOINT_DIR", "")
-    root = args.checkpoint_dir if args.checkpoint_dir is not None else Path(env_dir)
-    if args.checkpoint_dir is None and not env_dir:
-        parser.error("a checkpoint dir is required (--checkpoint-dir or FX1_CHECKPOINT_DIR)")
-    engine = LocalWeightsEngine(root)
+    if not env_dir:
+        parser.error("FX1_CHECKPOINT_DIR is required")
+    engine = LocalWeightsEngine(Path(env_dir))
     print(
         f"fx1 local weights engine: serving {engine.served_model} "
         f"({engine.model.n_params} params, sha256 {engine.weights_sha256[:16]}…) "

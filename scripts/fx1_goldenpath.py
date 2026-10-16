@@ -586,8 +586,7 @@ def run_goldenpath(
         server_env["FX1_CHECKPOINT_DIR"] = str(ckpt_dir)
         server_env["FX1_LOCAL_SERVE_URL"] = f"http://127.0.0.1:{engine_port}/v1"
         server_env["FX1_LOCAL_SERVE_CMD"] = (
-            "$python -m fx1.serve.local_engine "
-            f"--checkpoint-dir $checkpoint_dir --port {engine_port}"
+            f"$python -m fx1.serve.local_engine --port {engine_port}"
         )
 
     saved_local = {k: os.environ.get(k) for k in _ENV_KEYS}

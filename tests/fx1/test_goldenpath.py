@@ -28,7 +28,7 @@ _CKPT = _ROOT / "artifacts" / "fx1_tiny_lm"
 
 @pytest.mark.parametrize("prefix", ["", "  \t"])
 @pytest.mark.parametrize("quote", ["", '"'])
-def test_local_engine_command_quotes_template_values(
+def test_custom_engine_command_quotes_template_values(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, prefix: str, quote: str
 ) -> None:
     """Placeholders stay one argument with or without quotes on both platforms."""
@@ -37,7 +37,7 @@ def test_local_engine_command_quotes_template_values(
     backend = object.__new__(LocalFx1Backend)
     backend._root = tmp_path / "checkpoint with spaces"
     backend._serve_cmd = prefix + (
-        f"{quote}$python{quote} -m fx1.serve.local_engine "
+        f"{quote}$python{quote} -m external.engine "
         f"--checkpoint-dir {quote}$checkpoint_dir{quote} --port 8080"
     )
     monkeypatch.setenv("FX1_RELEASE_SIGNING_KEY", "private-release-seed")
@@ -55,7 +55,7 @@ def test_local_engine_command_quotes_template_values(
     assert captured["argv"] == [
         sys.executable,
         "-m",
-        "fx1.serve.local_engine",
+        "external.engine",
         "--checkpoint-dir",
         str(backend._root),
         "--port",

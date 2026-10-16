@@ -631,6 +631,65 @@ def test_backend_factory_fail_closed(tmp_path: Path):
     assert isinstance(backend, LocalFx1Backend)
 
 
+def test_local_engine_gets_checkpoint_only_from_parent_env(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from fx1.serve.local_engine import main as local_engine_main
+
+    monkeypatch.delenv("FX1_CHECKPOINT_DIR", raising=False)
+    monkeypatch.delenv("FX1_LOCAL_SERVE_URL", raising=False)
+    monkeypatch.delenv("FX1_LOCAL_SERVE_CMD", raising=False)
+    with pytest.raises(SystemExit) as exc:
+        local_engine_main(["--port", "8080", "--checkpoint-dir", str(tmp_path)])
+    assert exc.value.code == 2
+    assert "unrecognized arguments: --checkpoint-dir" in capsys.readouterr().err
+
+    with pytest.raises(SystemExit) as exc:
+        local_engine_main(["--port", "8080"])
+    assert exc.value.code == 2
+    assert "FX1_CHECKPOINT_DIR is required" in capsys.readouterr().err
+
+    _card().save(tmp_path / "modelcard.json")
+    (tmp_path / "weights.safetensors").write_bytes(b"weights")
+    (tmp_path / "weights.manifest.json").write_text(
+        json.dumps({"weights_sha256": hashlib.sha256(b"weights").hexdigest()}),
+        encoding="utf-8",
+    )
+    backend = LocalFx1Backend(tmp_path, require_signature=False)
+    assert "--checkpoint-dir" not in backend._serve_cmd
+    captured: dict[str, object] = {}
+    sentinel = object()
+
+    def fake_popen(argv: list[str], **kwargs: object) -> object:
+        captured["argv"] = argv
+        captured["env"] = kwargs["env"]
+        return sentinel
+
+    monkeypatch.setattr("fx1.serve.backends.subprocess.Popen", fake_popen)
+    assert backend._spawn_engine() is sentinel
+    assert "--checkpoint-dir" not in captured["argv"]
+    assert captured["env"]["FX1_CHECKPOINT_DIR"] == str(tmp_path)
+
+    opened: list[Path] = []
+
+    class StubModel:
+        n_params = 1
+
+    class StubEngine:
+        served_model = "fx1"
+        weights_sha256 = "a" * 64
+        model = StubModel()
+
+        def __init__(self, root: Path) -> None:
+            opened.append(root)
+
+    monkeypatch.setenv("FX1_CHECKPOINT_DIR", str(tmp_path))
+    monkeypatch.setattr("fx1.serve.local_engine.LocalWeightsEngine", StubEngine)
+    monkeypatch.setattr("fx1.serve.local_engine.serve", lambda *a, **k: 0)
+    assert local_engine_main(["--port", "8080"]) == 0
+    assert opened == [tmp_path]
+
+
 def test_local_backend_requires_manifest_pin_and_matching_served_model(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

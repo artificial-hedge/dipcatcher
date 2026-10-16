@@ -34,6 +34,7 @@ Sealed ``api_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import math
 import os
 import threading
 import time
@@ -723,8 +724,11 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     keep_env = os.environ.get("FX1_API_SSE_KEEPALIVE_S")
     os.environ["FX1_API_SSE_KEEPALIVE_S"] = "7.5"
     try:
-        out["stream_keepalive_env_config"] = (
-            api_mod.create_app(public_release=False).state.sse_keepalive_s == 7.5
+        out["stream_keepalive_env_config"] = math.isclose(
+            api_mod.create_app(public_release=False).state.sse_keepalive_s,
+            7.5,
+            rel_tol=0.0,
+            abs_tol=1e-12,
         )
     finally:
         if keep_env is None:
