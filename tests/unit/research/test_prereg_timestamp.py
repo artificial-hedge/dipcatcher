@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import subprocess
 from datetime import UTC, datetime, timedelta
@@ -33,6 +34,8 @@ def _run(executable: Path, *args: str) -> None:
 def synthetic_tsa(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path | str]:
     executable = _openssl()
     if executable is None:
+        if os.environ.get("CI", "").lower() in {"true", "1"}:
+            pytest.fail("OpenSSL is required to verify preregistration timestamps in CI")
         pytest.skip("OpenSSL is unavailable; production verifier must fail closed")
     root = tmp_path_factory.mktemp("synthetic-prereg-tsa")
     manifest = root / "prereg.json"
