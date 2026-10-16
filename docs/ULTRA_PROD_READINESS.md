@@ -153,9 +153,9 @@ Tracked-file census (`git ls-files`, 22,280 files total):
 
 | Path | Tracked | Verdict |
 |---|---|---|
-| `.dsh-24x7/` | **911** (128 MB) | Genuine scratch: `lane-simlive` 206, `eval-shards` 89, `native` 66, ~14 `lane-*` dirs × 25, `mega-arena` 16. Fleet run dumps and one-off probes (`fix_clobbers.py`, `probe_drift.py`, `win_fix2.ps1`). **Untrack.** |
-| `.box-soft-verify/` | 18 | Tool state. **Untrack.** |
-| `.cursor/`, `.serena/`, `.freebuff/` | ~7 | Editor/agent state. **Untrack.** |
+| `.dsh-24x7/` | **911** (128 MB) | Historical census. **The blanket untracking verdict is superseded by Correction 3 below:** this tree includes pinned SOTA evidence and is an integrity corpus. |
+| `.box-soft-verify/` | 18 | Historical census. Its integrity-corpus membership also needs reconciliation before untracking. |
+| `.cursor/`, `.serena/`, `.freebuff/` | ~7 | Historical census. `.cursor/` is an integrity corpus; classify before untracking. |
 | `.github/workflows/*.json` | 32 | **CORRECTION — not litter. Legitimate epoch evidence.** See below. |
 | `tests/tests/` | 0 `.py` | **CORRECTION — not a stray mirror, not a problem.** See below. |
 
@@ -164,6 +164,8 @@ Tracked-file census (`git ls-files`, 22,280 files total):
 **Operational consequence, and it is load-bearing: editing any `.yml` under `.github/workflows/` invalidates its pinned member sha256.** Any workflow change must be followed by `make stamp-epochs` → `make sign-pins` → `make anchor-pins`, in that order, before `make epoch-consistency` can pass. Do not move or delete these files. This was caught while implementing Phase 0 — the workflow edits *will* leave the tree failing epoch verification until re-stamped, and that is the intended handoff state, not a regression.
 
 **Correction 2 — `tests/tests/` is a known sftp-clobber artifact, already handled.** `.gitignore:96-103` documents the root cause: the off-machine `put -r src /D:/dipcatcher/src` re-creates nested clobber directories named like "src inside src", "tests inside tests", and "scripts inside scripts", and all three are already ignored (`/tests/tests/`). `pyproject.toml:358` `testpaths` correctly excludes it. On disk it is four empty directories. **Nothing to fix** — and deleting it is pointless because the clobber recreates it.
+
+**Correction 3 — blanket scratch removal would break evidence gates (2026-10-16).** The dedicated worktree currently tracks 912 `.dsh-24x7/` files, including 66 `native/` inputs and receipts (2.27 MB) and 16 `mega-arena/` inputs and receipts (5.93 MB). `.github/workflows/reproduce_sota.yml` checks out and reads these committed paths; removing them would fail the native reproduction job. `src/quant_fund/research/repo_integrity.py` and `Makefile` declare `.dsh-24x7/`, `.box-soft-verify/`, and `.cursor/` as epoch corpora. Evidence export and independent bundle verification require `.dsh-24x7/`; `quality/epoch_heads.json` and historical checkpoints bind its head. Existing receipts and inventories name `.dsh-24x7/native/MERGED_d1_native.json`. This corpus is append-only. The acknowledgment gate accepts a new removal acknowledgment only for an epoch already authenticated on the base branch, so a removal, acknowledgment, and new epoch in one ordinary PR would still fail. These files cannot be treated as disposable scratch just because a later ignore rule hides new arrivals. A governed migration needs a per-file census, preserved evidence bytes and paths (or a hash-verified fetch), updated readers and policy, a valid base-chain transition, new signed and anchored pins and checkpoint, and a clean fresh-checkout plus bundle proof. Keep the old receipts immutable.
 
 Also: **231 local branches**, many stale `devin/*`, `kimi/*`, `codex/*` agent branches.
 
@@ -276,7 +278,7 @@ Sequenced first because receipts bind revision: rebasing 300+ commits after re-s
 1. **Reconcile the divergence.** `origin/main` has 14 commits absent locally; local has 314 absent from origin. Local carries the entire INFLIGHT/verifier/epoch-pin history; origin carries the "external kimi-code gate-remediation chain". Determine which is the true spine **before** touching either. Then:
    - `make stamp-epochs` → `make sign-pins` → `make anchor-pins` in that order (`AGENTS.md` is explicit; every `stamp-epochs` stales the anchors).
    - `make epoch-consistency EPOCH_BASE=<ref>` as the gate.
-2. **Untrack operational scratch.** Add `.dsh-24x7/`, `.box-soft-verify/`, `.cursor/`, `.serena/`, `.freebuff/` to `.gitignore` **and** `git rm -r --cached` them. Correct `AGENTS.md`, which currently asserts `.dsh-24x7` is gitignored when only two subpaths are. 936 tracked files leave the tree.
+2. **Reconcile operational scratch and evidence.** The ignore rules now prevent new scratch from being added, but the old blanket `git rm -r --cached` plan is unsafe (Correction 3). First inventory pinned corpus members and workflow inputs, choose a byte-preserving tracked evidence location or hash-verified artifact store, update readers and epoch policy, then sign and anchor the migration. Only remove files proven to be scratch from the index; keep local durable fleet state on disk.
 3. **Prune branches.** 231 local branches; delete merged and stale agent branches (`devin/*`, `kimi/*`, `codex/*`, `cursor/*`, `copilot/*`).
 4. **Delete the empty `tests/tests/`** shell so the dropped mirror cannot re-enter collection. `testpaths` already excludes it; this makes that durable.
 5. **De-colonize `INFLIGHT`.** 4,154 lines, newest 50 entries are mythology family names. Move the retired-family ledger into a dedicated verifier-side log (planned path under `verifier/`, not yet created) and keep `INFLIGHT` for live state. `day_grind_progress.md` (139 KB) and `.test_durations` (777 KB) get the same treatment — move to artifacts, keep a pointer.
@@ -285,7 +287,7 @@ Sequenced first because receipts bind revision: rebasing 300+ commits after re-s
 
 ```bash
 git rev-list --left-right --count origin/main...HEAD   # → 0 0
-git ls-files | grep -cE '^(\.dsh-24x7|\.cursor|\.serena|\.freebuff|\.box-soft-verify)/'  # → 0
+git ls-files -i -c --exclude-standard             # → reviewed evidence exceptions only until signed migration
 make epoch-consistency EPOCH_BASE=origin/main          # → pass
 ```
 
@@ -590,7 +592,7 @@ Total across all push-triggered workflows: **96 jobs / 16 workflows**, down from
 
 > **This is not sufficient, and the plan should not pretend otherwise.** A code push still requests 96 jobs against a 20-job concurrency cap — roughly five waves — so CI will *still* queue at high push cadence. The config edits remove the self-cancelling behaviour and reclaim the doc-push waste; the binding constraint is **push cadence**, and the fix for that is the merge queue in Phase 0 step 4, which is a repository-setting change that cannot be made from the tree.
 
-**Phase 2 step 2 (partial) — scratch no longer re-trackable.** `.gitignore` now covers `.dsh-24x7/`, `.cursor/`, `.serena/`, `.freebuff/`, `.box-soft-verify/`, `.playwright-mcp/`, `.hypothesis/`, verified with `git check-ignore`. `AGENTS.md` corrected: it claimed `.dsh-24x7` was gitignored when only two subpaths were; it now states the rule *and* the 911 already-tracked files that `.gitignore` cannot untrack.
+**Phase 2 step 2 (partial) — new scratch is ignored.** `.gitignore` now covers `.dsh-24x7/`, `.cursor/`, `.serena/`, `.freebuff/`, `.box-soft-verify/`, `.playwright-mcp/`, `.hypothesis/`, verified with `git check-ignore`. Existing tracked members remain in the index. Correction 3 supersedes the proposed blanket untracking step: several are evidence inputs or epoch members and need an explicit signed migration.
 
 **Phases 6 + 8 — fx-1 status and honesty ledger.** `README.md` (+116/−3), `HONESTY_RATING.md` (+49), `docs/FX1.md` (+22), `docs/FX1_API_STABILITY.md` (+9):
 
@@ -856,7 +858,7 @@ The combined scorecard row 6 remains blocked: the `evidence-audit` workflow corp
 
 | Item | Reason |
 |---|---|
-| Untrack the 911 `.dsh-24x7` files | A 911-file deletion on the already-314-commit-diverged local spine would deepen the fork before the owner rules on which side is canonical. Prepared for the reconciliation commit. |
+| Untrack `.dsh-24x7` wholesale | This would remove committed SOTA reproduction inputs and an epoch corpus; a byte-preserving evidence migration and signed chain are required first (Correction 3). |
 | `stamp-epochs` / `sign-pins` / `anchor-pins` | Requires `GATE_SIGNING_KEY`; must run in strict order after the history decision, since every `stamp-epochs` stales existing anchors. |
 | Tag a version matching `fx1.__version__`, release, push | Irreversible and externally visible. Owner decision after the release gates pass. |
 | Merge/rebase the 314/14 divergence | Rewrites history and invalidates receipt pins. Owner decision on the canonical spine. |

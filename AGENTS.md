@@ -84,12 +84,13 @@ load-bearing — jobs break silently otherwise.
   The legacy `spawn_*.ps1` one-offs stay for reference; prefer the launcher.
 - **Durable paths.** Long-running artifacts live under `.dsh-24x7\` (gitignored,
   durable remotely); model weights under `data\models\`; bars under
-  `data\raw\sources\`. Do not write fleet state into temp dirs. **Caveat: 911
-  files under `.dsh-24x7/` were committed before the ignore rule existed and are
-  still tracked.** `.gitignore` stops *re-adding* scratch; it does not untrack
-  what is already in the index. Untracking is an explicit
-  `git rm -r --cached .dsh-24x7` bundled into the history-reconciliation commit
-  (`docs/ULTRA_PROD_READINESS.md`, Phase 2) — do not do it piecemeal.
+  `data\raw\sources\`. Do not write fleet state into temp dirs. **Caveat: 912
+  files under `.dsh-24x7/` are still tracked despite the ignore rule.** Some
+  are pinned evidence: the SOTA reproduction workflow reads committed `native/`
+  and `mega-arena/` inputs, and the integrity gate chains this directory as a
+  corpus. `.gitignore` only prevents new scratch from being added. Do not run a
+  blanket `git rm --cached`; first preserve the evidence bytes and references
+  through an explicit signed migration (`docs/ULTRA_PROD_READINESS.md`, Phase 2).
 - **Thread pinning.** Jobs set `OMP_NUM_THREADS=1`, `MKL_NUM_THREADS=1`,
   `TOKENIZERS_PARALLELISM=false` in their `env` block — the manifest schema
   carries this; keep it when authoring new jobs.
