@@ -1,10 +1,10 @@
 {
   "data_label": "CORPUS",
-  "epoch_root_sha256": "95f2e9a0469ebbab38b2d79fe50658fe157b73ff62229129cf747f26b39a10f2",
+  "epoch_root_sha256": "69e655f3ff5b093dac3a6aa863ee4a52335a4b9b13b0e3ec33c1929670878632",
   "inputs_sha256": "2beef7afe03e95f8812df2dfc9365d41078d06218e4fc4775711b0553f6afa38",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
-  "member_tree_root": "98f3aa57eec348a078be47a082570e876a0f7931fe94b504da43c5aaa45db268",
+  "member_tree_root": "f413aabfbe2321832553555de67cfacb1fef8e0f49f3da7ded4beb3a8e3645ff",
   "members": [
     {
       "name": "ALLOCATION_PACK.md",
@@ -639,6 +639,10 @@
       "sha256": "c259edaa9fd8ca1f5fb4d9ecc5261abfc42cd3a82997276389c621a5cdbacfa3"
     },
     {
+      "name": "corpus_epoch_77632c193b3c7381.json",
+      "sha256": "e41c5c5c748c26b5a49479e74c9a0d9ccc06c9e7adcced28c2e5a97e7a2466d7"
+    },
+    {
       "name": "corpus_epoch_7890d50a5a4f10a9.json",
       "sha256": "76883e42818eef08a54e77907d2467853eba7f6ecfd1db46e807a56f6549202b"
     },
@@ -657,10 +661,6 @@
     {
       "name": "corpus_epoch_a3a4abd2535b0e17.json",
       "sha256": "92df9d41af909d79aa2381e4d0968209f7d8a7693a809ef720a24c3b43a17f67"
-    },
-    {
-      "name": "corpus_epoch_bf34205674030d20.json",
-      "sha256": "e297fe6338ab7451ae64ff0d42cd616b9dfd1752a7595ddd5629f725942c4bdf"
     },
     {
       "name": "corpus_epoch_d6aef508fe5f4fdd.json",
@@ -936,7 +936,7 @@
     },
     {
       "name": "proofcore/proofcore.yml",
-      "sha256": "98a141ccb3ee92e5976b402d2d3f6bb266ce6fe9140211c7ee4d22ae12531af6"
+      "sha256": "078d21f872f956c3ed4c15d3b78f8606666c45249af4fa55d4f31d74a62a16fc"
     },
     {
       "name": "receipts/ranker_probability_wide_20260927.json",
@@ -968,20 +968,22 @@
     }
   ],
   "members_added": [
-    "corpus_epoch_a3a4abd2535b0e17.json",
+    "corpus_epoch_77632c193b3c7381.json"
+  ],
+  "members_removed": [
+    "corpus_epoch_6b3d85be9a477735.json",
     "corpus_epoch_bf34205674030d20.json"
   ],
-  "members_removed": [],
   "n_members": 240,
   "params": {
-    "head_sha": "4edc9b8a9e944400df3bb93aea02a785575cd5de",
+    "head_sha": "9b4e00b46e10a653d132b608a5047a96238847c0",
     "pattern": "*"
   },
-  "prev_epoch_receipt": "corpus_epoch_bf34205674030d20.json",
-  "prev_epoch_sha256": "37aeb75dd2f24eb1253dbe9f517f6b5c1d0f6d50d56f6d90d0ebda1b4f7822c2",
-  "receipt_sha256": "6b3d85be9a4777352cdb4cb54316753f8065b897bcf497febfce455ae472f4b9",
+  "prev_epoch_receipt": "corpus_epoch_77632c193b3c7381.json",
+  "prev_epoch_sha256": "fae7044cde5a280494c117cb12d5cbdb6538427bce89ede83877158b80761d36",
+  "receipt_sha256": "56ab5b59290569cecb946cb632dabb87db2711753e21f7ce288b220aaa78d82e",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,
-  "verdict": "advancing"
+  "verdict": "shrinking"
 }

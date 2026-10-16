@@ -269,6 +269,24 @@
       "reason": "Gitignored derived config (data/metadata/**). It was stamped from a working tree that still had the file, so a clean CI checkout failed head_member_missing_live. The bytes were never committed. corpus_epoch_e73c101a7ab5d51b drops it; member_digests now skips gitignored untracked files.",
       "to_sha256": null,
       "transition": "removed"
+    },
+    {
+      "corpus": "docs/*",
+      "epoch": "corpus_epoch_56ab5b59290569ce.json",
+      "from_sha256": "e297fe6338ab7451ae64ff0d42cd616b9dfd1752a7595ddd5629f725942c4bdf",
+      "member": "corpus_epoch_bf34205674030d20.json",
+      "reason": "Parallel docs stamps forked at corpus_epoch_5ec65ddd85b8b6f9.json. The pinned line matches the live tree. This side-line receipt is removed so the chain has one head. The bytes remain in git history.",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "docs/*",
+      "epoch": "corpus_epoch_56ab5b59290569ce.json",
+      "from_sha256": "322f79a5d6cfdb0947d0c210784bd38934477a01e4b80a142cd725ec03ec4aad",
+      "member": "corpus_epoch_6b3d85be9a477735.json",
+      "reason": "Continuation of the unpinned docs fork. Removed with that side line so check_epoch_chain sees one head. The bytes remain in git history.",
+      "to_sha256": null,
+      "transition": "removed"
     }
   ],
   "schema": "epoch_acknowledgments.v1"
