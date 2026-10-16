@@ -68,6 +68,17 @@ REASON_PARTIALLY_TEMPLATE = (
 )
 
 
+def _write_utf8_lf(path: Path, text: str) -> None:
+    """Write UTF-8 with LF newlines.
+
+    ``Path.write_text`` on Windows translates ``\\n`` to ``\\r\\n`` unless
+    ``newline`` is ``\\n``. Committed audit artifacts are LF. ``--check``
+    reads them back with universal newlines, so a CRLF write still looks
+    fresh and can be committed by accident.
+    """
+    path.write_text(text, encoding="utf-8", newline="\n")  # NOSONAR pythonsecurity:S2083
+
+
 def _summary_text(audit: dict[str, Any]) -> str:
     """Human-readable console echo of the headline counts."""
     counts = audit["counts"]
@@ -228,9 +239,7 @@ def _emit_retired_families(summary_path: Path, out_path: Path) -> int:
         summary_path.read_text(encoding="utf-8")  # NOSONAR pythonsecurity:S2083
     )
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(  # NOSONAR pythonsecurity:S2083
-        _generated_module_text(summary), encoding="utf-8"
-    )
+    _write_utf8_lf(out_path, _generated_module_text(summary))
     print(f"wrote {out_path} ({len(summary['retired_families'])} retired families)")
     return 0
 
@@ -284,8 +293,8 @@ def main(argv: list[str] | None = None) -> int:
 
     dump_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
-    dump_path.write_text(dump_text, encoding="utf-8")
-    summary_path.write_text(summary_text, encoding="utf-8")
+    _write_utf8_lf(dump_path, dump_text)
+    _write_utf8_lf(summary_path, summary_text)
     print(f"wrote {dump_path} ({len(dump_text)} bytes)")
     print(f"wrote {summary_path} ({len(summary_text)} bytes)")
     print(_summary_text(audit))

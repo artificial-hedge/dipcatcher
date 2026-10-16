@@ -291,25 +291,28 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
           mkdir -p combined
-          i=0
-          # Each shard's controller already combined worker data into .coverage.
-          # Combining those files again with the worker fragments would
-          # double-count. Fall back to fragments only when .coverage is absent.
-          for part in coverage-parts/*/; do
-            if [ -f "${part}.coverage" ]; then
-              i=$((i + 1))
-              cp "${part}.coverage" "combined/.coverage.shard${i}"
+          # download-artifact v8 writes one match flat into path and several
+          # matches into path/<artifact-name>/. A flat extract is a single
+          # shard. The 81% floor in pyproject must not pass on partial data.
+          # Pytest uploads dipcatcher-coverage-3.12-{1,2,3,4} for Python 3.12.
+          # Copy only each shard's controller .coverage. Worker fragments
+          # would double-count beside it.
+          if [ -f coverage-parts/.coverage ]; then
+            echo "coverage download was a single flat artifact; shards 1 2 3 4 are required" >&2
+            exit 1
+          fi
+          missing=()
+          for shard in 1 2 3 4; do
+            part="coverage-parts/dipcatcher-coverage-3.12-${shard}"
+            if [ ! -f "${part}/.coverage" ]; then
+              missing+=("${shard}")
               continue
             fi
-            for data in "${part}".coverage.*; do
-              if [ -f "$data" ]; then
-                i=$((i + 1))
-                cp "$data" "combined/.coverage.shard${i}"
-              fi
-            done
+            cp "${part}/.coverage" "combined/.coverage.shard${shard}"
           done
-          if [ "$i" -eq 0 ]; then
-            echo "no coverage data files were downloaded" >&2
+          if [ "${#missing[@]}" -ne 0 ]; then
+            echo "missing coverage shards: ${missing[*]}" >&2
+            find coverage-parts -maxdepth 2 \( -type d -o -type f \) | sort >&2
             exit 1
           fi
           cd combined

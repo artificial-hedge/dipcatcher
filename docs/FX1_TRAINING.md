@@ -1,7 +1,8 @@
 # fx-1 Training Plan — compute, ladder, and gates
 
-This page is the plan. No trained checkpoint is in this repository, and no
-training run has been launched from it.
+This page is the plan. No release checkpoint is in this repository, and no
+training run has been launched from it. `artifacts/fx1_tiny_lm/` is a
+fixture, not the output of this plan.
 
 ## Hardware reality (K3 base)
 

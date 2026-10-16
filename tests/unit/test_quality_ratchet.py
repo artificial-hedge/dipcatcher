@@ -28,8 +28,9 @@ mccabe_entries = MCCABE["_entries"]
 # Initial set of strict-clean modules. Add to the allowlist; never remove these.
 STRICT_MODULE_FLOOR = 668
 STRICT_BASELINE_SHA256 = "452034ec90dbc11dc2a8ca78f22d950c591ae0fd67b3ecbfabe08d5906f7cdcd"
-# validate_ledger_schema. verify_research_artifact was 196 before the split.
-MCCABE_CEILING = 74
+# create_app and run_rl_mm_session. validate_ledger_schema was 74 before the split.
+# verify_research_artifact was 196 before its split.
+MCCABE_CEILING = 71
 # Soft threshold + floor count for the per-function C901 ratchet. The
 # floor may rise as debt is paid down via --write; it must not fall below
 # this commit's recorded size without an intentional baseline rewrite.

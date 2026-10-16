@@ -644,6 +644,7 @@ def _atomic_write_text(path: Path, content: str) -> None:
             suffix=".tmp",
             mode="w",
             encoding="utf-8",
+            newline="\n",
             delete=False,
         ) as temporary:
             temporary_path = Path(temporary.name)

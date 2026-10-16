@@ -2018,11 +2018,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         hr.status_code == 200 and _cap[-1].get("timeout_s") == 4.0
     )
 
-    # X-Fx1-Receipt-Sha256 — every gated response self-describes the seal of
-    # its completion-log record: the header equals the receipt_sha256 of the
-    # document GET /harness/completions/{id}/receipt exports, so the wire is
-    # evidence-pinned without a second fetch. Idempotent replays echo the
-    # original seal; SSE responses carry it as a header.
+    # X-Fx1-Receipt-Sha256 equals the completion-log seal, including replays and SSE.
     rc = bapp.post(
         "/v1/chat/completions",
         json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
@@ -2105,22 +2101,25 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["byok_override_idem_contract"] = (
         i1.status_code == 200 and i2.json().get("replayed") is True and i3.status_code == 409
     )
-    # Use a one-token bucket: at 20 rps, TestClient overhead can refill the
-    # entire burst before the 23rd request on a busy CI worker.
+    # Freeze the bucket clock so a slow runner cannot refill tokens mid-burst.
     limited2 = api_mod.create_app(
         public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
-        rate_limit_rps=1.0,
+        rate_limit_rps=20.0,
     )
     lc2 = _TC2(limited2)
-    statuses = [lc2.get("/harness/version").status_code for _ in range(5)]
-    time.sleep(1.05)
-    m = lc2.get("/metrics")
+    _mono, _box = time.monotonic, [time.monotonic()]
+    time.monotonic = lambda: _box[0]
+    try:
+        statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
+        _box[0] += 1.0
+        m = lc2.get("/metrics")
+    finally:
+        time.monotonic = _mono
+    n_limited = statuses.count(429)
     out["rate_limit_metrics_counts"] = (
-        statuses.count(429) >= 2
-        and m.status_code == 200
-        and m.json()["rate_limited_total"] == statuses.count(429)
+        n_limited >= 2 and m.status_code == 200 and m.json()["rate_limited_total"] == n_limited
     )
     os.environ["FX1_API_RATE_LIMIT_RPS"] = "3"
     try:

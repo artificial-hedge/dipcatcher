@@ -14,7 +14,7 @@ import pytest
 from fx1.eval import DEFAULT_BANK, run_suite
 from fx1.modelcard import EvalDelta, ModelCard
 from fx1.serve import get_backend
-from fx1.serve.backends import HostedK3Backend, LocalFx1Backend
+from fx1.serve.backends import BackendNotConfiguredError, HostedK3Backend, LocalFx1Backend
 
 
 def test_bank_composition():
@@ -143,6 +143,24 @@ def test_hosted_backend_checks_tool_and_stream_model(
     monkeypatch.setattr(backends, "_openai_urlopen", lambda *a, **k: io.BytesIO(stream))
     with pytest.raises(RuntimeError, match="response model.*does not match requested model"):
         list(backend.stream([{"role": "user", "content": "ping"}]))
+
+
+def test_local_fx1_complete_without_engine_is_not_configured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A card with no weights and no engine config cannot complete.
+
+    A directory that contains ``weights.safetensors`` is a different path:
+    the backend spawns ``fx1.serve.local_engine`` instead of attaching to
+    ``FX1_LOCAL_SERVE_URL``.
+    """
+    monkeypatch.delenv("FX1_LOCAL_SERVE_URL", raising=False)
+    monkeypatch.delenv("FX1_LOCAL_SERVE_CMD", raising=False)
+    monkeypatch.delenv("FX1_SIGNING_KEY", raising=False)
+    _card().save(tmp_path / "modelcard.json")
+    backend = LocalFx1Backend(tmp_path)
+    with pytest.raises(BackendNotConfiguredError, match="FX1_LOCAL_SERVE_URL"):
+        backend.complete([{"role": "user", "content": "hi"}])
 
 
 def test_local_backend_fail_closed(tmp_path: Path):

@@ -315,10 +315,16 @@ def _signal_direct(proc: subprocess.Popen[str], *, kill: bool) -> None:
 
 
 def _signal_posix(proc: subprocess.Popen[str], *, kill: bool) -> None:
-    # These APIs are available on POSIX but absent from Windows type stubs.
-    sig = signal.SIGKILL if kill else signal.SIGTERM  # type: ignore[attr-defined]
+    # Windows stubs omit SIGKILL, killpg, and getpgid. Callers skip this
+    # function when os.name is not posix.
+    sig = getattr(signal, "SIGKILL", signal.SIGTERM) if kill else signal.SIGTERM
+    killpg = getattr(os, "killpg", None)
+    getpgid = getattr(os, "getpgid", None)
+    if killpg is None or getpgid is None:
+        _signal_direct(proc, kill=kill)
+        return
     try:
-        os.killpg(os.getpgid(proc.pid), sig)  # type: ignore[attr-defined]
+        killpg(getpgid(proc.pid), sig)
     except OSError:
         _signal_direct(proc, kill=kill)
 

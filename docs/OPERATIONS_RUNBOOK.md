@@ -20,20 +20,26 @@ uv run dipcatcher doctor --config configs/research.yaml
 uv run dipcatcher verify-research
 ```
 
-Do not proceed when `data_manifest` or `research_receipt` is not `ok`,
+Do not proceed when `data_manifest` or `research_receipt` is `invalid`,
 `live_allowed` is true in an unexpected profile, or research verification reports errors.
+A fresh checkout is missing both files, so this check exits 1 until a receipt
+exists. Run `uv run python examples/01_receipt_round_trip.py` first. That is
+the required-family SYNTHETIC smoke. Unset, `dipcatcher research` runs the
+full optional battery.
 
 ## Reproducible research
 
 Use the configured source and retain the generated receipt:
 
 ```bash
-uv run dipcatcher research --config configs/research.yaml
-uv run dipcatcher verify-research
+uv run python examples/01_receipt_round_trip.py
 ```
 
+That example is the bounded 23-family check (`DIPCATCHER_RESEARCH_REQUIRED_ONLY=1`).
 The receipt binds configuration, dataset content, Git/worktree state, runtime
 packages, point-in-time status, and the versioned 23-family benchmark catalog.
+`uv run dipcatcher research --config configs/research.yaml` without that
+environment variable runs the full optional battery.
 Synthetic output is diagnostic evidence only; it is not a live-performance
 claim.
 
