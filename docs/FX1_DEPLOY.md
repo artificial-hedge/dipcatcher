@@ -60,7 +60,7 @@ explicit `public_release` choice; an omitted mode raises at construction.
 
 For `local_fx1`, a checkpoint with `weights.manifest.json` attaches only
 to an engine whose `/v1/models` entry for the requested model advertises
-the same `fx1.weights_sha256`. A missing model entry, missing pin, malformed
+the same `weights_sha256` value under `fx1`. A missing model entry, missing pin, malformed
 response, or mismatched pin refuses the request; the backend rechecks the
 pin before subsequent requests. Raw third-party checkpoint layouts without
 a weights manifest retain a liveness-only attach path and do not establish

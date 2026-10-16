@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13427,
+  "module_count": 13435,
   "module_edges": [
     {
       "dst": "fx1",
@@ -68,6 +68,10 @@
     },
     {
       "dst": "fx1.bench.run",
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.cli_sign",
       "src": "fx1.cli"
     },
     {
@@ -203,10 +207,6 @@
       "src": "fx1.cli"
     },
     {
-      "dst": "fx1.serve.signing",
-      "src": "fx1.cli"
-    },
-    {
       "dst": "fx1.train",
       "src": "fx1.cli"
     },
@@ -253,6 +253,14 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "fx1.cli_audit"
+    },
+    {
+      "dst": "fx1.serve",
+      "src": "fx1.cli_sign"
+    },
+    {
+      "dst": "fx1.serve.signing",
+      "src": "fx1.cli_sign"
     },
     {
       "dst": "fx1.data.corpus",
@@ -693,6 +701,18 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "fx1.eval.core_audit"
+    },
+    {
+      "dst": "fx1.eval.compare",
+      "src": "fx1.eval.evidence_contract"
+    },
+    {
+      "dst": "fx1.eval.suite",
+      "src": "fx1.eval.evidence_contract"
+    },
+    {
+      "dst": "fx1.modelcard",
+      "src": "fx1.eval.evidence_contract"
     },
     {
       "dst": "fx1.eval.ext_bench_banks",
@@ -2695,6 +2715,10 @@
       "src": "fx1.serve.api"
     },
     {
+      "dst": "fx1.serve.api_metrics",
+      "src": "fx1.serve.api"
+    },
+    {
       "dst": "fx1.serve.backends",
       "src": "fx1.serve.api"
     },
@@ -2771,6 +2795,10 @@
       "src": "fx1.serve.api_audit"
     },
     {
+      "dst": "fx1.serve.api_audit_finetune",
+      "src": "fx1.serve.api_audit"
+    },
+    {
       "dst": "fx1.serve.backends",
       "src": "fx1.serve.api_audit"
     },
@@ -2784,10 +2812,6 @@
     },
     {
       "dst": "fx1.serve.contract",
-      "src": "fx1.serve.api_audit"
-    },
-    {
-      "dst": "fx1.serve.finetune",
       "src": "fx1.serve.api_audit"
     },
     {
@@ -2805,6 +2829,14 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "fx1.serve.api_audit"
+    },
+    {
+      "dst": "fx1.serve.finetune",
+      "src": "fx1.serve.api_audit_finetune"
+    },
+    {
+      "dst": "fx1.serve.webhooks",
+      "src": "fx1.serve.api_audit_finetune"
     },
     {
       "dst": "fx1.serve.signing",
@@ -2856,6 +2888,10 @@
     },
     {
       "dst": "fx1.modelcard",
+      "src": "fx1.serve.backends"
+    },
+    {
+      "dst": "fx1.serve.local_engine_process",
       "src": "fx1.serve.backends"
     },
     {
@@ -3507,12 +3543,16 @@
       "src": "fx1.serve.openai_compat"
     },
     {
-      "dst": "fx1.serve.receipt_store",
+      "dst": "fx1.serve.openai_request_options",
       "src": "fx1.serve.openai_compat"
     },
     {
       "dst": "fx1.serve.webhooks",
       "src": "fx1.serve.openai_compat"
+    },
+    {
+      "dst": "fx1.serve.receipt_store",
+      "src": "fx1.serve.openai_request_options"
     },
     {
       "dst": "fx1",
@@ -3692,6 +3732,10 @@
     },
     {
       "dst": "fx1.serve.backends",
+      "src": "fx1.serve.release_gate"
+    },
+    {
+      "dst": "fx1.serve.local_engine_process",
       "src": "fx1.serve.release_gate"
     },
     {
@@ -5287,6 +5331,10 @@
       "src": "quant_fund.cli.research_cmds"
     },
     {
+      "dst": "quant_fund.cli.research_quorum_key_cmd",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
       "dst": "quant_fund.cli.support",
       "src": "quant_fund.cli.research_cmds"
     },
@@ -5557,6 +5605,14 @@
     {
       "dst": "quant_fund.research.multih_fleet",
       "src": "quant_fund.cli.research_eval_cmds"
+    },
+    {
+      "dst": "quant_fund.cli.app",
+      "src": "quant_fund.cli.research_quorum_key_cmd"
+    },
+    {
+      "dst": "quant_fund.research.gate_signatures",
+      "src": "quant_fund.cli.research_quorum_key_cmd"
     },
     {
       "dst": "quant_fund.cli.support",
@@ -61660,6 +61716,7 @@
     "fx1.capabilities",
     "fx1.cli",
     "fx1.cli_audit",
+    "fx1.cli_sign",
     "fx1.data",
     "fx1.data.corpus",
     "fx1.data.corpus_audit",
@@ -61693,6 +61750,7 @@
     "fx1.eval.contamination",
     "fx1.eval.contamination_audit",
     "fx1.eval.core_audit",
+    "fx1.eval.evidence_contract",
     "fx1.eval.ext_bench",
     "fx1.eval.ext_bench_banks",
     "fx1.eval.masking",
@@ -61910,6 +61968,8 @@
     "fx1.serve.anthropic_sdk_audit",
     "fx1.serve.api",
     "fx1.serve.api_audit",
+    "fx1.serve.api_audit_finetune",
+    "fx1.serve.api_metrics",
     "fx1.serve.attestation",
     "fx1.serve.attestation_audit",
     "fx1.serve.auth_audit",
@@ -61938,10 +61998,12 @@
     "fx1.serve.journal_audit",
     "fx1.serve.keys",
     "fx1.serve.local_engine",
+    "fx1.serve.local_engine_process",
     "fx1.serve.models_audit",
     "fx1.serve.oai_sdk_audit",
     "fx1.serve.observe_audit",
     "fx1.serve.openai_compat",
+    "fx1.serve.openai_request_options",
     "fx1.serve.ops_audit",
     "fx1.serve.ops_receipt",
     "fx1.serve.parity_audit",
@@ -62045,6 +62107,7 @@
     "quant_fund.cli.report_cmds",
     "quant_fund.cli.research_cmds",
     "quant_fund.cli.research_eval_cmds",
+    "quant_fund.cli.research_quorum_key_cmd",
     "quant_fund.cli.sota_cmds",
     "quant_fund.cli.support",
     "quant_fund.cli.train_cmds",
@@ -74953,6 +75016,7 @@
     "quant_fund.research.pairs.spread",
     "quant_fund.research.phase1_verify",
     "quant_fund.research.policy_eprocess",
+    "quant_fund.research.prereg_timestamp",
     "quant_fund.research.promotion_receipt",
     "quant_fund.research.prospective_sota",
     "quant_fund.research.quantile_ladder",
@@ -75118,6 +75182,11 @@
       "src": "fx1.cli"
     },
     {
+      "dst": "fx1.cli_sign",
+      "imports": 1,
+      "src": "fx1.cli"
+    },
+    {
       "dst": "fx1.data",
       "imports": 7,
       "src": "fx1.cli"
@@ -75179,7 +75248,7 @@
     },
     {
       "dst": "fx1.serve",
-      "imports": 10,
+      "imports": 9,
       "src": "fx1.cli"
     },
     {
@@ -75216,6 +75285,11 @@
       "dst": "quant_fund.utils",
       "imports": 2,
       "src": "fx1.cli_audit"
+    },
+    {
+      "dst": "fx1.serve",
+      "imports": 2,
+      "src": "fx1.cli_sign"
     },
     {
       "dst": "fx1.data",
@@ -75279,7 +75353,7 @@
     },
     {
       "dst": "fx1.eval",
-      "imports": 52,
+      "imports": 54,
       "src": "fx1.eval"
     },
     {
@@ -75290,6 +75364,11 @@
     {
       "dst": "fx1.honesty",
       "imports": 10,
+      "src": "fx1.eval"
+    },
+    {
+      "dst": "fx1.modelcard",
+      "imports": 1,
       "src": "fx1.eval"
     },
     {
@@ -75684,7 +75763,7 @@
     },
     {
       "dst": "fx1.serve",
-      "imports": 187,
+      "imports": 193,
       "src": "fx1.serve"
     },
     {
@@ -75929,7 +76008,7 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 44,
+      "imports": 46,
       "src": "quant_fund.cli"
     },
     {
@@ -76024,7 +76103,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 73,
+      "imports": 74,
       "src": "quant_fund.cli"
     },
     {

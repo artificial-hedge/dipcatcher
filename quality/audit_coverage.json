@@ -20,7 +20,7 @@
       "status": "audited"
     },
     "cli": {
-      "n_modules": 20,
+      "n_modules": 21,
       "status": "audited"
     },
     "combination": {
@@ -197,7 +197,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 1863,
+      "n_modules": 1864,
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
       "status": "partial"
     },
@@ -259,6 +259,9 @@
     },
     "backtest/event_sim/simulator.py": {
       "status": "audited"
+    },
+    "cli/research_quorum_key_cmd.py": {
+      "status": "pending"
     },
     "microstructure/aftermath_flow_bench.py": {
       "status": "audited"
@@ -5550,6 +5553,9 @@
     },
     "research/benches_w999.py": {
       "status": "audited"
+    },
+    "research/prereg_timestamp.py": {
+      "status": "pending"
     }
   },
   "schema_version": "audit-coverage/v1",

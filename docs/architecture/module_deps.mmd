@@ -62,6 +62,7 @@ flowchart LR
     fx1_capabilities["fx1.capabilities"]
     fx1_cli["fx1.cli"]
     fx1_cli_audit["fx1.cli_audit"]
+    fx1_cli_sign["fx1.cli_sign"]
     fx1_data["fx1.data"]
     fx1_doctor["fx1.doctor"]
     fx1_doctor_audit["fx1.doctor_audit"]
@@ -104,6 +105,7 @@ flowchart LR
   fx1_bench -->|5| quant_fund_utils
   fx1_cli -->|1| fx1
   fx1_cli -->|2| fx1_bench
+  fx1_cli -->|1| fx1_cli_sign
   fx1_cli -->|7| fx1_data
   fx1_cli -->|1| fx1_doctor
   fx1_cli -->|5| fx1_eval
@@ -116,7 +118,7 @@ flowchart LR
   fx1_cli -->|1| fx1_sbom
   fx1_cli -->|1| fx1_sdk
   fx1_cli -->|1| fx1_selftest
-  fx1_cli -->|10| fx1_serve
+  fx1_cli -->|9| fx1_serve
   fx1_cli -->|3| fx1_train
   fx1_cli_audit -->|1| fx1_bench
   fx1_cli_audit -->|1| fx1_cli
@@ -124,6 +126,7 @@ flowchart LR
   fx1_cli_audit -->|1| fx1_sdk
   fx1_cli_audit -->|3| fx1_serve
   fx1_cli_audit -->|2| quant_fund_utils
+  fx1_cli_sign -->|2| fx1_serve
   fx1_data -->|3| fx1_honesty
   fx1_data -->|13| quant_fund_utils
   fx1_doctor -->|1| fx1
@@ -137,6 +140,7 @@ flowchart LR
   fx1_eval -->|1| fx1_data
   fx1_eval -->|1| fx1_harness
   fx1_eval -->|10| fx1_honesty
+  fx1_eval -->|1| fx1_modelcard
   fx1_eval -->|4| quant_fund_metrics
   fx1_eval -->|2| quant_fund_models
   fx1_eval -->|18| quant_fund_utils
@@ -270,7 +274,7 @@ flowchart LR
   quant_fund_cli -->|1| quant_fund_quant_models
   quant_fund_cli -->|1| quant_fund_reality
   quant_fund_cli -->|3| quant_fund_reporting
-  quant_fund_cli -->|73| quant_fund_research
+  quant_fund_cli -->|74| quant_fund_research
   quant_fund_cli -->|3| quant_fund_schemas
   quant_fund_cli -->|1| quant_fund_stress
   quant_fund_cli -->|13| quant_fund_utils
