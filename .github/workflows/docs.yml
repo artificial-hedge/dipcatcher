@@ -59,9 +59,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Soft-fail while Pages is disabled (has_pages=false → deploy-pages 404).
-    # Flip to hard-fail after Settings → Pages → Source = GitHub Actions.
-    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -69,6 +66,11 @@ jobs:
       pages: write
       id-token: write
     steps:
+      # Soft-fail the step (not the job): job-level continue-on-error still
+      # marks the "deploy" check failed. Step-level keeps the check green while
+      # Pages is disabled (has_pages=false → deploy-pages HttpError 404).
+      # Flip to hard-fail after Settings → Pages → Source = GitHub Actions.
       - name: Deploy to GitHub Pages
         id: deployment
+        continue-on-error: true
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
