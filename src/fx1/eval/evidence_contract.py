@@ -15,9 +15,10 @@ from typing import Annotated, Any, Literal
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 from fx1.eval.compare import ComparisonResult, compare_runs
+from fx1.eval.ed25519_public import is_canonical_prime_order_public_key
 from fx1.eval.suite import EvalTask, score_task
 from fx1.modelcard import EvalDelta, ModelCard
 
@@ -28,6 +29,10 @@ MAX_CASES = 512
 MIN_HONESTY_CASES = 10
 MIN_DOMAIN_CASES = 30
 MIN_GENERAL_CASES = 30
+# Python's backtracking regex engine has no execution budget. This offline
+# checker accepts literal forbidden phrases only, so scoring untrusted bank
+# definitions stays bounded by the artifact and response size limits.
+_REGEX_METACHARACTERS = frozenset(r"\.^$*+?{}[]|()")
 Sha256Hex = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
 PublicKeyHex = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]
 
@@ -38,6 +43,23 @@ class EvalEvidenceError(ValueError):
 
 class HeldoutTask(EvalTask):
     model_config = ConfigDict(extra="forbid")
+
+    @field_validator("forbidden_patterns", mode="before")
+    @classmethod
+    def _literal_patterns_before_base_compiles(cls, patterns: Any) -> Any:
+        if (
+            not isinstance(patterns, list)
+            or len(patterns) > 16
+            or any(
+                not isinstance(pattern, str)
+                or len(pattern) > 256
+                or not pattern.strip()
+                or any(char in _REGEX_METACHARACTERS or not char.isprintable() for char in pattern)
+                for pattern in patterns
+            )
+        ):
+            raise ValueError("bank forbidden patterns must be bounded literal printable phrases")
+        return patterns
 
 
 def _check_task_definition(task: HeldoutTask) -> None:
@@ -56,8 +78,8 @@ def _check_task_definition(task: HeldoutTask) -> None:
         )
     ):
         raise ValueError("bank task requires bounded user/assistant messages ending in user")
-    if not task.required_tokens and not task.forbidden_patterns:
-        raise ValueError("bank task must have a scoring criterion")
+    if not task.required_tokens:
+        raise ValueError("bank task requires a positive scoring token")
     if task.kind == "honesty" and not task.enforce_honesty:
         raise ValueError("honesty tasks must enforce the honesty contract")
     if (
@@ -67,6 +89,12 @@ def _check_task_definition(task: HeldoutTask) -> None:
         or any(len(pattern) > 256 for pattern in task.forbidden_patterns)
     ):
         raise ValueError("bank scoring criteria exceed their limits")
+    if any(
+        not pattern.strip()
+        or any(char in _REGEX_METACHARACTERS or not char.isprintable() for char in pattern)
+        for pattern in task.forbidden_patterns
+    ):
+        raise ValueError("bank forbidden patterns must be literal printable phrases")
 
 
 class HeldoutBankManifest(BaseModel):
@@ -172,7 +200,7 @@ def _parse[T: BaseModel](data: bytes, model: type[T], *, limit: int) -> T:
             parse_constant=_reject_constant,
         )
         return model.model_validate(obj)
-    except (UnicodeError, json.JSONDecodeError, ValidationError, TypeError) as exc:
+    except (UnicodeError, json.JSONDecodeError, ValidationError, TypeError, RecursionError) as exc:
         raise EvalEvidenceError(f"invalid {model.__name__} artifact") from exc
 
 
@@ -189,7 +217,10 @@ def _public_key(hex_key: str, label: str) -> Ed25519PublicKey:
     try:
         if len(hex_key) != 64:
             raise ValueError("wrong Ed25519 key length")
-        return Ed25519PublicKey.from_public_bytes(bytes.fromhex(hex_key))
+        key_bytes = bytes.fromhex(hex_key)
+        if not is_canonical_prime_order_public_key(key_bytes):
+            raise ValueError("Ed25519 key is not a canonical prime-order point")
+        return Ed25519PublicKey.from_public_bytes(key_bytes)
     except ValueError as exc:
         raise EvalEvidenceError(f"invalid {label}") from exc
 

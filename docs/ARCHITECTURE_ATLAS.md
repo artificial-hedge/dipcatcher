@@ -761,7 +761,7 @@ sequenceDiagram
 | `fx1.data` | 20 |
 | `fx1.doctor` | 1 |
 | `fx1.doctor_audit` | 1 |
-| `fx1.eval` | 29 |
+| `fx1.eval` | 30 |
 | `fx1.ext_bench_audit` | 1 |
 | `fx1.extensions` | 94 |
 | `fx1.flash` | 4 |
@@ -847,7 +847,7 @@ sequenceDiagram
 | `quant_fund.utils` | 10 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13435**
+- Modules scanned: **13436**
 - Packages: **95**
 - Cross-package import edges: **401**
 

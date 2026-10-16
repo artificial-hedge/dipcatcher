@@ -152,6 +152,27 @@ def test_synthetic_signed_case_bundle_only_proves_consistency(tmp_path: Path) ->
 
 
 @pytest.mark.parametrize(
+    "bad_key",
+    [b"\x01" + b"\x00" * 31, (2**255 - 18).to_bytes(32, "little")],
+)
+def test_synthetic_universal_ed25519_signature_is_rejected(bad_key: bytes) -> None:
+    args, _ = _synthetic_case_fixture()
+    start = json.loads(args["run_start_bytes"])
+    start["evaluator_public_key_hex"] = bad_key.hex()
+    args["run_start_bytes"] = _json(start)
+    args["expected_start_sha256"] = _sha(args["run_start_bytes"])
+    bundle = json.loads(args["bundle_bytes"])
+    bundle["run_start_sha256"] = args["expected_start_sha256"]
+    args["bundle_bytes"] = _json(bundle)
+    # R is the base point and S is one. OpenSSL accepts this signature under
+    # the identity public point for arbitrary messages without a private key.
+    args["bundle_signature_hex"] = (b"\x58" + b"\x66" * 31 + b"\x01" + b"\x00" * 31).hex()
+    args["evaluator_key_hex"] = bad_key.hex()
+    with pytest.raises(EvalEvidenceError, match="invalid evaluator public key"):
+        audit_signed_case_consistency(**args)
+
+
+@pytest.mark.parametrize(
     ("change", "error"),
     [
         ("signature", "signature does not cover"),
@@ -227,9 +248,11 @@ def test_synthetic_toy_bank_cannot_meet_structural_floor() -> None:
 @pytest.mark.parametrize(
     ("change", "error"),
     [
-        ("vacuous", "scoring criterion"),
+        ("vacuous", "positive scoring token"),
         ("system_prompt", "user/assistant messages"),
         ("disabled_honesty", "must enforce"),
+        ("catastrophic_regex", "literal printable phrases"),
+        ("impossible_regex", "literal printable phrases"),
     ],
 )
 def test_synthetic_bank_rejects_weak_task_definitions(change: str, error: str) -> None:
@@ -239,7 +262,36 @@ def test_synthetic_bank_rejects_weak_task_definitions(change: str, error: str) -
         bank["tasks"][0]["required_tokens"] = []
     elif change == "system_prompt":
         bank["tasks"][0]["messages"][0]["role"] = "system"
+    elif change == "catastrophic_regex":
+        bank["tasks"][0]["forbidden_patterns"] = ["^(a+)+$"]
+    elif change == "impossible_regex":
+        bank["tasks"][0]["forbidden_patterns"] = ["(?!)"]
     else:
         bank["tasks"][0]["enforce_honesty"] = False
     with pytest.raises(ValidationError, match=error):
         HeldoutBankManifest.model_validate(bank)
+
+
+def test_synthetic_bank_allows_literal_forbidden_phrase() -> None:
+    args, _ = _synthetic_case_fixture()
+    bank = json.loads(args["bank_bytes"])
+    bank["tasks"][0]["forbidden_patterns"] = ["guaranteed returns"]
+    HeldoutBankManifest.model_validate(bank)
+
+
+def test_synthetic_nested_regex_is_refused_before_base_compiles() -> None:
+    args, _ = _synthetic_case_fixture()
+    bank = json.loads(args["bank_bytes"])
+    bank["tasks"][0]["forbidden_patterns"] = ["(" * 800 + "a" + ")" * 800]
+    args["bank_bytes"] = _json(bank)
+    args["expected_bank_sha256"] = _sha(args["bank_bytes"])
+    with pytest.raises(EvalEvidenceError, match="invalid HeldoutBankManifest artifact"):
+        audit_signed_case_consistency(**args)
+
+
+def test_synthetic_deep_json_is_a_bounded_artifact_error() -> None:
+    args, _ = _synthetic_case_fixture()
+    args["bank_bytes"] = b"[" * 2000 + b"0" + b"]" * 2000
+    args["expected_bank_sha256"] = _sha(args["bank_bytes"])
+    with pytest.raises(EvalEvidenceError, match="invalid HeldoutBankManifest artifact"):
+        audit_signed_case_consistency(**args)

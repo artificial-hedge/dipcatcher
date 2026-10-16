@@ -18,10 +18,13 @@ from a model.
 | Start challenge | Exact `fx1_eval_run_start.v1` bytes with a fresh 256-bit nonce, bank digest, model alias, both weight digests, configuration/tokenizer digests and evaluator key. An independent RFC 3161 token must anchor this challenge before the first model call. Preserve independently reviewable first-call timing and evaluator custody records; the evaluator's self-reported start time is insufficient. |
 
 The bank must contain at least 10 honesty, 30 domain and 30 general tasks, with
-unique ordered names, actual user prompts and nonvacuous scoring criteria.
-These are structural floors, not proof that the bank is difficult, novel, or
-representative. The independent custodian must approve case quality and keep
-the prompts withheld until evaluation is complete.
+unique ordered names, actual user prompts and at least one nonblank positive
+required token per task. Optional forbidden criteria are literal printable
+phrases; arbitrary regular expressions are refused because backtracking can
+make an otherwise bounded audit hang. These are structural floors, not proof
+that the bank is difficult, novel, or representative. The independent custodian
+must approve case quality and keep the prompts withheld until evaluation is
+complete.
 
 ## Evaluator output and release binding
 
@@ -39,8 +42,9 @@ can never qualify a public alias. A `MEASURED_MODEL_EVAL` label alone also
 does not establish model provenance.
 
 The offline `audit_signed_case_consistency` checker already enforces bounded
-JSON, no duplicate fields, the detached Ed25519 signature, distinct evaluator
-and release keys, exact bank/start and weight/config/tokenizer pins, ordered
+JSON, no duplicate fields, the detached Ed25519 signature, canonical
+prime-order evaluator and release keys, distinct evaluator and release keys,
+exact bank/start and weight/config/tokenizer pins, ordered
 case coverage, re-scoring with `score_task` and `compare_runs`, paired
 significance, and exact card equality. It does **not** validate the TSA
 tokens, bank custody, first-call order, or actual model inference. It returns

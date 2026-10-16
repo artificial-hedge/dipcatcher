@@ -894,3 +894,17 @@ The remaining drift is inside generated numeric data, not the output writer. For
 **Required to clear this blocker:** obtain an authoritative runtime and complete dependency/source/input specification that actually reproduces each remaining **current** artifact path and SHA-256 from its committed receipt, then generate positive replay proofs and run the exact-byte gate on the required release runners. Merely supplying a saved artifact cannot pass the gate: `run_replay` removes declared outputs before executing the producer. If the current pins cannot be reproduced, the owner must issue new payload-consistent receipts and proofs, preserve the old receipts as immutable evidence, and explicitly resolve how retracted receipts remain covered by the fail-closed committed-replay gate. The existing tombstone mechanism excludes claims from lattice inference but does **not** exclude them from this test. Any replacement pin/epoch chain then needs the owner-held quorum signing, anchor, and checkpoint ceremony. The worktree has no positive proof for either current pin, no current pinned artifact, and no signer key; this gate must remain red until authoritative evidence exists. The old macOS proof environment cannot justify skipping current pins on other platforms because those current pins have no positive origin proof.
 
 The owner can provide the two pinned paths above and the producing source revision, Python/dependency versions, platform, and inputs. On that runtime, run `dipcatcher replay receipts/<receipt-name>.json` for each receipt; the command writes sealed `receipts/replay_proof_<digest16>.json` only after executing the producer, and a pass requires all pinned bytes to match. The committed `quality/gate_quorum.json` has threshold 1 and key ID `bc3bcff676056adf`. After any legitimate new receipt/epoch state is settled and the source tree is frozen, the Windows owner runs `& .\scripts\owner_pin_ceremony.ps1 -KeyFile 'D:\keys\gate-quorum.txt'`, using the registered pair held outside the repository. The helper verifies the seed/public pair and registry quorum before any tracked pin changes, then updates crown-jewel hashes, extends epochs in Makefile order, signs and anchors both pins, signs the checkpoint, and verifies the repository and checkpoint chain. Its CLI calls use `uv run --frozen`, which preserves `uv.lock` after the pin is written. Add `-AnchorCheckpoint` to that invocation for a checkpoint timestamp. Receipt bytes stay immutable. The Makefile's POSIX shell loop is not the Windows PowerShell path.
+
+The separate `data/manifests/replay/mcs_vol.json` carrier has a third exact-byte
+replay drift. Its pinned `data/metadata/replay/mcs_vol_drill.json` SHA-256 is
+`9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0`.
+A local 2026-10-16 replay at commit `18b8847cf` exited successfully in 216
+seconds without a timeout, but produced SHA-256
+`ff48dc013ca998ae1a5235878716670dc33e28e6135d9b533556289495dffcb5`
+and a different scientific result: `realized_garch` was
+eliminated at origin 28, leaving four survivors, whereas the committed
+`receipts/mcs_vol_drill.json` has no eliminations and five survivors. The
+owner must supply this original artifact and its producing runtime, inputs,
+numerical dependencies, and positive origin evidence too. Treat the carrier
+as unresolved until the exact producer reproduces its pin or a governed,
+signed evidence migration explains the substantive result change.

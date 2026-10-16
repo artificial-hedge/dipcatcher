@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13435,
+  "module_count": 13436,
   "module_edges": [
     {
       "dst": "fx1",
@@ -704,6 +704,10 @@
     },
     {
       "dst": "fx1.eval.compare",
+      "src": "fx1.eval.evidence_contract"
+    },
+    {
+      "dst": "fx1.eval.ed25519_public",
       "src": "fx1.eval.evidence_contract"
     },
     {
@@ -61750,6 +61754,7 @@
     "fx1.eval.contamination",
     "fx1.eval.contamination_audit",
     "fx1.eval.core_audit",
+    "fx1.eval.ed25519_public",
     "fx1.eval.evidence_contract",
     "fx1.eval.ext_bench",
     "fx1.eval.ext_bench_banks",
@@ -75353,7 +75358,7 @@
     },
     {
       "dst": "fx1.eval",
-      "imports": 54,
+      "imports": 55,
       "src": "fx1.eval"
     },
     {
