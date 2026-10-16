@@ -127,7 +127,7 @@ Verified with `verify_timestamps('.')`:
 
 The freeze is now committed to by an external TSA signature, chain-verified against the repo's pinned FreeTSA CA and signer certs, and `fresh` against current bytes. **A history rewriter can no longer backdate it.** (Only the file's sha256 was posted to the TSA — never its contents.)
 
-Remaining Phase-4 work: start prospective collection, resolve the `window.start` label ambiguity in prose, and repoint the three docs (§Phase 4).
+Remaining Phase-4 work: start prospective collection. ADR-0009 and the readiness docs now resolve the `window.start` label and record the external anchor (§Phase 4).
 
 ### 2.3 History has forked — F3
 
@@ -318,12 +318,12 @@ Code cannot close the five institutional conditions. What code *can* do is stop 
      print(verify_timestamps('.'))"
    ```
    Result: `ok=true`, `chain_verified`, `fresh=true`, `errors=[]`. The freeze is now externally timestamped. **Only the file's sha256 was transmitted to the TSA, never its contents.** No v2 receipt is required — the defect was the missing anchor, not the window parameterization.
-2. **Resolve the `window.start` label ambiguity (open).** `window.start = 2026-07-01` is the calendar span of `forward_2026H2`, not the collection start; the operative rule is `splits.forward` (first decision after the 2026-10-07 freeze). State this explicitly wherever the window is cited so it cannot be read as "collection began 2026-07-01".
-3. **Repoint the readiness narrative (open).** `INSTITUTIONAL_READINESS.md:27,71`, `EVIDENCE_PROCUREMENT.md:41`, and `FORWARD_SHADOW_POWER.md:47` cite `forward_2026H2` as the path to condition 3. They should state that the freeze is externally anchored as of 2026-10-08 and that collection has not begun.
-4. **Add a decision record** (`docs/adr/`) stating: conditions 1 and 2 are procurement/authorization, owned outside engineering; the earliest honest condition-3 date is the first prospective close after the 2026-10-08 anchor; the 2025 holdout is SPENT and must never be retuned.
+2. **Resolve the `window.start` label ambiguity — DONE 2026-10-08.** `window.start = 2026-07-01` is the calendar span of `forward_2026H2`, not the collection start. The operative `splits.forward` rule and the later external anchor are explained in [ADR-0009](adr/0009-forward-record-freeze-and-eligibility.md) and [REALITY_PREREGISTRATION.md](REALITY_PREREGISTRATION.md).
+3. **Repoint the readiness narrative — DONE 2026-10-08.** [INSTITUTIONAL_READINESS.md](INSTITUTIONAL_READINESS.md), [EVIDENCE_PROCUREMENT.md](EVIDENCE_PROCUREMENT.md), and [FORWARD_SHADOW_POWER.md](FORWARD_SHADOW_POWER.md) state that the freeze was externally anchored on 2026-10-08 and collection has not begun.
+4. **Record the decision — DONE.** [ADR-0009](adr/0009-forward-record-freeze-and-eligibility.md) records the external anchor, eligibility rule, external ownership of conditions 1 and 2, and the SPENT 2025 holdout. Condition 3 cannot claim a prospective close before the 2026-10-08 anchor.
 5. **Start prospective collection (open — and date-bound).** Append-only, hash-chained, externally anchored at each close. This is the only path to Tier C condition 3. Every week of delay is a week of window permanently unavailable; this item is wall-clock-bound, not effort-bound, so it should start before the code work finishes.
 
-**Exit gate:** v1 anchor `chain_verified` + `fresh` ✅; label ambiguity resolved; three docs repointed; ADR filed; first prospective close recorded.
+**Exit gate:** v1 anchor `chain_verified` + `fresh` ✅; label ambiguity resolved ✅; three docs repointed ✅; ADR filed ✅; first prospective close still open.
 
 ---
 

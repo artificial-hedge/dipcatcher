@@ -67,6 +67,13 @@ wrongly imply July–October 2026 closes are eligible forward evidence.
 4. **Collection remains open.** `status` stays `NOT_YET_COLLECTED`. Anchoring the
    freeze does not collect anything.
 
+5. **Keep the remaining institutional gates separate.** Conditions 1 and 2
+   require licensed-data procurement and broker authorization outside
+   engineering. The inspected 2025 holdout is SPENT and must not be retuned or
+   reused as prospective evidence. A condition-3 close must be a new decision
+   after both the recorded freeze and the 2026-10-08 external anchor; none has
+   been collected.
+
 ## Consequences
 
 - The freeze instant is now asserted by an external authority. A history rewriter
