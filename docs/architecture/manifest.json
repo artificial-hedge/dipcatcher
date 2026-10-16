@@ -59435,6 +59435,10 @@
       "src": "quant_fund.research.explainability"
     },
     {
+      "dst": "quant_fund.compute.numba_guard",
+      "src": "quant_fund.research.explainability.attribution"
+    },
+    {
       "dst": "quant_fund.research.explainability.scoring",
       "src": "quant_fund.research.explainability.attribution"
     },
@@ -77029,6 +77033,11 @@
     {
       "dst": "quant_fund.backtest",
       "imports": 5,
+      "src": "quant_fund.research"
+    },
+    {
+      "dst": "quant_fund.compute",
+      "imports": 1,
       "src": "quant_fund.research"
     },
     {

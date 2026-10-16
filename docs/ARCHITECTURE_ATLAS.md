@@ -516,6 +516,7 @@ flowchart LR
   quant_fund_research -->|1| quant_fund
   quant_fund_research -->|6| quant_fund_audit
   quant_fund_research -->|5| quant_fund_backtest
+  quant_fund_research -->|1| quant_fund_compute
   quant_fund_research -->|14| quant_fund_config
   quant_fund_research -->|7| quant_fund_data
   quant_fund_research -->|9| quant_fund_execution
@@ -843,7 +844,7 @@ sequenceDiagram
 
 - Modules scanned: **13426**
 - Packages: **94**
-- Cross-package import edges: **397**
+- Cross-package import edges: **398**
 
 <!-- END GENERATED: coverage -->
 
