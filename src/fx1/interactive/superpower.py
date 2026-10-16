@@ -884,9 +884,11 @@ def _stage_flash_retrieve(
         run = CapabilityRun(
             "flash_retrieve", name, "ran", detail, evidence=EvidenceClass.MEMORY.value
         )
-    except Exception as exc:  # noqa: BLE001 — memory must not block the run
-        run = CapabilityRun("flash_retrieve", name, "failed", str(exc))
-        result.errors.append(f"flash_retrieve: {exc}")
+    except Exception:  # noqa: BLE001 — memory must not block the run
+        # Store exceptions can contain private paths or finding text. The run
+        # detail is sent to the synthesis model and persisted in the journal.
+        run = CapabilityRun("flash_retrieve", name, "failed", "flash retrieval failed")
+        result.errors.append("flash_retrieve: flash retrieval failed")
     _record(result, ctx, run)
 
 
@@ -1226,9 +1228,9 @@ def _stage_flash_save(
             artifacts=[entry.id],
             evidence=EvidenceClass.MEMORY.value,
         )
-    except Exception as exc:  # noqa: BLE001
-        run = CapabilityRun("flash_save", name, "failed", str(exc))
-        result.errors.append(f"flash_save: {exc}")
+    except Exception:  # noqa: BLE001
+        run = CapabilityRun("flash_save", name, "failed", "flash save failed")
+        result.errors.append("flash_save: flash save failed")
     _record(result, ctx, run)
 
 

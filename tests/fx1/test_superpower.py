@@ -351,6 +351,39 @@ def test_synthesis_prompt_excludes_private_flash_findings(store: FlashStore) -> 
     assert result.runs[0].detail == "1 relevant memory entries retrieved"
 
 
+@pytest.mark.parametrize(
+    ("stage", "store_method"),
+    [("flash_retrieve", "all"), ("flash_save", "add")],
+)
+def test_flash_storage_errors_do_not_reach_synthesis_model(
+    store: FlashStore, monkeypatch: pytest.MonkeyPatch, stage: str, store_method: str
+) -> None:
+    sentinel = "PRIVATE_STORAGE_PATH_AND_FINDING"
+
+    def fail(*args: object, **kwargs: object) -> None:
+        raise OSError(sentinel)
+
+    monkeypatch.setattr(store, store_method, fail)
+    prompts: list[str] = []
+
+    def model_fn(prompt: str) -> str:
+        prompts.append(prompt)
+        return "This run is partial because flash storage failed."
+
+    result = run_plan(
+        _plan("check data", [stage, "synthesize"]),
+        SuperpowerContext(model_fn=model_fn, flash_store=store),
+    )
+
+    assert prompts
+    assert result.partial
+    assert {run.id: run for run in result.runs}[stage].status == "failed"
+    assert sentinel not in prompts[0]
+    assert sentinel not in result.explain()
+    assert sentinel not in str(result.errors)
+    assert sentinel not in result.summary
+
+
 @pytest.mark.parametrize("command", list(_REQUIRED_HARNESS_INPUTS))
 def test_handcrafted_plan_skips_harness_command_without_required_input(command: str) -> None:
     harness = FakeHarness()
