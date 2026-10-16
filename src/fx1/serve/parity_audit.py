@@ -133,6 +133,26 @@ class _NonStreamingBackend:
         return None
 
 
+def _logprobs_payload(logprobs: bool | None, top_logprobs: int | None) -> dict[str, Any] | None:
+    """Return the one canned score payload shared by both parity backends."""
+    if not logprobs:
+        return None
+    return {
+        "content": [
+            {
+                "token": "x",
+                "logprob": -0.5,
+                "bytes": [120],
+                "top_logprobs": (
+                    [{"token": "x", "logprob": -0.5, "bytes": [120]}]
+                    if top_logprobs is not None
+                    else []
+                ),
+            }
+        ]
+    }
+
+
 class _ParityToolBackend(_ParityBackend):
     """Tool-capable parity backend — answers canned function calls,
     plus a canned logprobs payload when the request asks for scores.
@@ -156,22 +176,6 @@ class _ParityToolBackend(_ParityBackend):
     ) -> ToolCompletion:
         from fx1.serve.backends import ToolCompletion  # noqa: PLC0415
 
-        lp: dict[str, Any] | None = None
-        if logprobs:
-            lp = {
-                "content": [
-                    {
-                        "token": "x",
-                        "logprob": -0.5,
-                        "bytes": [120],
-                        "top_logprobs": (
-                            [{"token": "x", "logprob": -0.5, "bytes": [120]}]
-                            if top_logprobs is not None
-                            else []
-                        ),
-                    }
-                ]
-            }
         return ToolCompletion(
             content=None,
             tool_calls=tuple(
@@ -183,7 +187,7 @@ class _ParityToolBackend(_ParityBackend):
                 for k in range(self.n_calls)
             ),
             finish_reason="tool_calls",
-            logprobs=lp,
+            logprobs=_logprobs_payload(logprobs, top_logprobs),
         )
 
 
@@ -204,27 +208,11 @@ class _ParityLpBackend(_ParityBackend):
     ) -> ToolCompletion:
         from fx1.serve.backends import ToolCompletion  # noqa: PLC0415
 
-        lp: dict[str, Any] | None = None
-        if logprobs:
-            lp = {
-                "content": [
-                    {
-                        "token": "x",
-                        "logprob": -0.5,
-                        "bytes": [120],
-                        "top_logprobs": (
-                            [{"token": "x", "logprob": -0.5, "bytes": [120]}]
-                            if top_logprobs is not None
-                            else []
-                        ),
-                    }
-                ]
-            }
         return ToolCompletion(
             content=self.complete(messages),
             tool_calls=None,
             finish_reason="stop",
-            logprobs=lp,
+            logprobs=_logprobs_payload(logprobs, top_logprobs),
         )
 
 
