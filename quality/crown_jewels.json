@@ -79,7 +79,7 @@
     "src/quant_fund/research/repo_integrity.py": "939f96a03d228adc4c2d592af32475162beca040a42ecae98a1bd7e6416c348c",
     "src/quant_fund/research/selective_inference.py": "3842f8f97db1aec28e2eac25b1839998285e8398e33b0fd40ce7b16e0b10f56a",
     "src/quant_fund/research/suite_health.py": "3d8302c5ce67b0d89265962854ce98875af034b359861e7892054a9013da9dd5",
-    "src/quant_fund/research/tamper_drill.py": "39ea5edec298b8d26f3c7614379046082b48de2a6b8735592efc0ae90cf31047",
+    "src/quant_fund/research/tamper_drill.py": "b7a38aeffe8a700b38a796b2ae8837a234cfef11b51b13e9a962ece003e85263",
     "src/quant_fund/research/timestamp_anchor.py": "2a504facaea79184b87af5b9ce0dbd816060ad14ebd0991080bb65fee9e45905",
     "src/quant_fund/research/witness_scan.py": "a664fd4b49c94539d725379a2fe58b0d08fcbcfd9284f331123ec70b6394ebea",
     "src/quant_fund/utils/atomicio.py": "26b3c04a3c55cf7777989edb91dea774656ea97af86699bc214e7de7c7823ca1",

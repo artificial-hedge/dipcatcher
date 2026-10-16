@@ -1226,8 +1226,9 @@ def _stream_probes() -> dict[str, bool]:
                 terminal_seen = True
         except json.JSONDecodeError:
             pass
+    # iter_text chunks are not SSE frames; only the joined stream is.
     out["job_events_sse_frames_end_terminal"] = (
-        "event: job" in joined and terminal_seen and all("\n\n" in f or f == "" for f in frames)
+        "event: job" in joined and terminal_seen and "\n\n" in joined
     )
     # every frame body parses as the job snapshot — no partial lines
     out["job_events_frames_complete_json"] = (

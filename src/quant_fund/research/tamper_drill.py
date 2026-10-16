@@ -40,13 +40,41 @@ def _clone_members() -> tuple[str, ...]:
     return tuple(dict.fromkeys([c[0] for c in CORPORA] + ["gate_pins.sig"]))
 
 
+def _gitignored_children(repo: Path):
+    """copytree ignore: drop gitignored names so a non-worktree clone matches the epoch."""
+
+    def ignore(directory: str, names: list[str]) -> set[str]:
+        from quant_fund.research.corpus_epoch import gitignored_relpaths
+
+        base = Path(directory)
+        rels: list[str] = []
+        kept: list[str] = []
+        for name in names:
+            try:
+                rels.append((base / name).resolve().relative_to(repo.resolve()).as_posix())
+                kept.append(name)
+            except ValueError:
+                continue
+        ignored = gitignored_relpaths(repo, rels)
+        return {name for name, rel in zip(kept, rels, strict=True) if rel in ignored}
+
+    return ignore
+
+
 def _clone_state(root: Path, clone: Path) -> None:
     for rel in _clone_members():
         src = root / rel
         if src.is_dir():
             # Parent/child corpora overlap (e.g. .github re-enters
             # .github/workflows already cloned) — merge, don't fail.
-            shutil.copytree(src, clone / rel, dirs_exist_ok=True)
+            # The clone is not a git worktree, so gitignored files copied
+            # here would look like unstamped epoch members.
+            shutil.copytree(
+                src,
+                clone / rel,
+                dirs_exist_ok=True,
+                ignore=_gitignored_children(root),
+            )
         elif src.is_file():
             (clone / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, clone / rel)

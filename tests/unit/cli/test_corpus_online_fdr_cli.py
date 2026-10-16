@@ -193,7 +193,8 @@ def test_corpus_missing_dir_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     # line-break. Match with [\s│\n]+ between words.
     import re as _re
 
-    assert _re.search(r"does[\s│\n]+not[\s│\n]+exist", result.output), result.output
+    plain = _re.sub(r"\x1b\[[0-9;]*m", "", result.output)
+    assert _re.search(r"does[\s│\n]+not[\s│\n]+exist", plain), plain
 
 
 def test_online_fdr_per_finding_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -378,4 +379,5 @@ def test_online_fdr_missing_dir_fails(tmp_path: Path, monkeypatch: pytest.Monkey
     assert result.exit_code != 0
     import re as _re
 
-    assert _re.search(r"does[\s│\n]+not[\s│\n]+exist", result.output), result.output
+    plain = _re.sub(r"\x1b\[[0-9;]*m", "", result.output)
+    assert _re.search(r"does[\s│\n]+not[\s│\n]+exist", plain), plain
