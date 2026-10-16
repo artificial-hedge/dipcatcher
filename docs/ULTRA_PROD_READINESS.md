@@ -4,9 +4,9 @@
 **Scope:** what must be true before the research CLI, publicly served `fx1` and `fx1-lite`, and live trading can together be called production-ready, in what order, with what gate.
 **Method:** every claim below is measured from this repo at the SHA above. Commands are reproducible. Where a claim comes from a self-report rather than a measurement, it is labelled *(self-reported)*.
 
-**Historical snapshot.** The divergence, workflow triggers, and some open-item counts below have changed since the measured SHAs. See the dated CI status in [README.md](../README.md#continuous-integration) and rerun each exit gate at the candidate revision.
+**Historical snapshot.** The divergence, workflow triggers, and some open-item counts below have changed since the measured SHAs. See the dated CI status in the root README's Continuous integration section and rerun each exit gate at the candidate revision.
 
-**Current evidence blocker (2026-10-16):** two committed proofcore replay receipts fail exact artifact verification. See [§11](#11-committed-replay-provenance-blocker--2026-10-16).
+**Current evidence blocker (2026-10-16):** two committed proofcore replay receipts fail exact artifact verification. See [§11](#11-committed-replay-provenance-blocker-2026-10-16).
 
 **Current release target (2026-10-16):** all three surfaces above. The phases below began as an internal research-platform plan and remain necessary groundwork; completing them alone does not complete the public-model or live-trading release. Public models still need real trained weights for both names, measured evaluation and license evidence, signed checkpoint verification, and deployment gates. Live trading remains blocked on licensed PIT data, authenticated broker/fill reconciliation, venue measurements, a non-synthetic forward record, and separate written authorization.
 
