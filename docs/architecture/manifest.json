@@ -60755,6 +60755,10 @@
       "src": "quant_fund.research.tail_watch"
     },
     {
+      "dst": "quant_fund.research.corpus_epoch",
+      "src": "quant_fund.research.tamper_drill"
+    },
+    {
       "dst": "quant_fund.research.gate_signatures",
       "src": "quant_fund.research.tamper_drill"
     },
@@ -77117,7 +77121,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 605,
+      "imports": 606,
       "src": "quant_fund.research"
     },
     {
