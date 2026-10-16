@@ -18,9 +18,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# PRs only build. Push to main uploads a Pages artifact and deploys it.
-# The repository owner must set Settings → Pages → Source to GitHub Actions
-# before the deploy job can publish.
+# PRs only build. Push to main uploads a Pages artifact and deploys it when
+# GitHub Pages is enabled (Settings → Pages → Source = GitHub Actions).
+# Proof 2026-10-16: GET /repos/artificial-hedge/dipcatcher/pages → 404 and
+# has_pages=false; deploy-pages then fails with HttpError 404. Enabling Pages
+# requires repo admin (gh integration returns 403 on pages create). Until then
+# the deploy job soft-fails so the docs *build* gate stays the required signal.
 permissions:
   contents: read
 
@@ -42,7 +45,7 @@ jobs:
       - name: Lockfile consistency
         run: uv lock --check
       - name: Sync documentation environment
-        run: uv sync --frozen --only-group docs
+        run: uv sync --frozen --only-group docs --no-build
       - name: Build strict site
         run: uv run --only-group docs --frozen mkdocs build --strict
       - name: Upload Pages artifact
@@ -56,6 +59,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Soft-fail while Pages is disabled (has_pages=false → deploy-pages 404).
+    # Flip to hard-fail after Settings → Pages → Source = GitHub Actions.
+    continue-on-error: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
