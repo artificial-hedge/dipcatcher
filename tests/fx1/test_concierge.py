@@ -420,6 +420,9 @@ def test_chat_harness_tool_denied_without_approval(
     concierge.handle_line("train the ranking family")
     assert harness.calls == []  # consequential command never ran
     assert "not approved" in joined(out)
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "approval denied" in tool_msg["content"]
+    assert "command was not run" in tool_msg["content"]
 
 
 def test_chat_harness_tool_runs_registered_command(
@@ -441,6 +444,150 @@ def test_chat_harness_tool_runs_registered_command(
     concierge.handle_line("check lab health")
     assert harness.calls == [("doctor", [])]
     assert "DATA_LABEL=SYNTHETIC" in joined(out)
+
+
+def test_chat_harness_tool_withholds_stdout_after_nonzero_exit(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+
+    class FailedHarness(FakeHarness):
+        def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
+            self.calls.append((name, extra_args))
+            return FakeHarnessResult(2, "DATA_LABEL=SYNTHETIC\npartial score", "")
+
+    harness = FailedHarness()
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "harness_run", {"name": "doctor"}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="The command failed.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend, harness=harness)
+    concierge.handle_line("check lab health")
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "failed (exit 2)" in tool_msg["content"]
+    assert "output withheld" in tool_msg["content"]
+    assert "partial score" not in tool_msg["content"]
+    assert "failed (exit 2)" in joined(out)
+
+
+@pytest.mark.parametrize(
+    ("interrupted_flag", "expected_status"),
+    [("cancelled", "cancelled"), ("timed_out", "timed out")],
+)
+def test_chat_harness_tool_withholds_stdout_after_interruption(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    interrupted_flag: str,
+    expected_status: str,
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+
+    class InterruptedHarness(FakeHarness):
+        def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
+            self.calls.append((name, extra_args))
+            result = FakeHarnessResult(0, "partial score", "")
+            setattr(result, interrupted_flag, True)
+            return result
+
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "harness_run", {"name": "doctor"}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(
+                content="The check was interrupted.", tool_calls=None, finish_reason="stop"
+            ),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend, harness=InterruptedHarness())
+    concierge.handle_line("check lab health")
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert expected_status in tool_msg["content"]
+    assert "output withheld" in tool_msg["content"]
+    assert "partial score" not in tool_msg["content"]
+    assert expected_status in joined(out)
+
+
+def test_chat_harness_tool_reports_success_with_empty_output(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+
+    class EmptyHarness(FakeHarness):
+        def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
+            self.calls.append((name, extra_args))
+            return FakeHarnessResult(0, "", "")
+
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "harness_run", {"name": "doctor"}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="The check completed.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, _ = make_concierge(tmp_path, backend=backend, harness=EmptyHarness())
+    concierge.handle_line("check lab health")
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "completed (exit 0)" in tool_msg["content"]
+    assert "no output" in tool_msg["content"]
+
+
+@pytest.mark.parametrize("args", [None, 2, ["--flag", 2], {"option": "value"}])
+def test_chat_harness_tool_refuses_malformed_args(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, args: Any
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    harness = FakeHarness()
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "harness_run", {"name": "doctor", "args": args}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="Invalid arguments.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, _ = make_concierge(tmp_path, backend=backend, harness=harness)
+    concierge.handle_line("check lab health")
+    assert harness.calls == []
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "args must be an array of strings" in tool_msg["content"]
+
+
+@pytest.mark.parametrize("raw_args", ["{", "[]"])
+def test_chat_tool_refuses_malformed_json_before_flash_write(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, raw_args: str
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    call = {
+        "id": "c1",
+        "type": "function",
+        "function": {"name": "flash_save", "arguments": raw_args},
+    }
+    backend = FakeBackend(
+        [
+            ToolCompletion(content=None, tool_calls=(call,), finish_reason="tool_calls"),
+            ToolCompletion(content="Invalid arguments.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, _ = make_concierge(tmp_path, backend=backend)
+    concierge.handle_line("save this finding")
+    assert concierge._store.all() == []  # noqa: SLF001
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "arguments must be a JSON object" in tool_msg["content"]
 
 
 def test_chat_harness_tool_refuses_unregistered(

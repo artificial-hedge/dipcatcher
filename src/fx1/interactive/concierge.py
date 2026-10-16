@@ -267,6 +267,25 @@ def _accepts_keyword(fn: Callable[..., Any], name: str) -> bool:
     return name in params or any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
 
 
+def _parse_tool_call(call: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    fn = call.get("function")
+    if not isinstance(fn, dict):
+        raise ValueError("function must be an object")
+    name = fn.get("name")
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("function name must be a nonempty string")
+    raw = fn.get("arguments")
+    if not isinstance(raw, str):
+        raise ValueError("arguments must be a JSON object")
+    try:
+        arguments = json.loads(raw)
+    except json.JSONDecodeError:
+        raise ValueError("arguments must be a JSON object") from None
+    if not isinstance(arguments, dict):
+        raise ValueError("arguments must be a JSON object")
+    return name, arguments
+
+
 def _complete_superpower_attempt(
     backend: Any,
     prompt: str,
@@ -762,21 +781,37 @@ class Concierge:
             f"run harness command {name!r} (consequential)?", kind="consequential"
         ):
             self._say(f"[harness] {name}: not approved — skipped")
-            return ""
+            return f"harness {name!r}: approval denied; command was not run"
         harness = self._harness if self._harness is not None else Harness()
         result = harness.run(name, extra_args)
+        exit_code = int(result.exit_code)
+        cancelled = bool(getattr(result, "cancelled", False))
+        timed_out = bool(getattr(result, "timed_out", False))
         self._journal_event(
             "harness_run",
             command=name,
             args=list(extra_args),
-            exit_code=int(result.exit_code),
-            cancelled=bool(getattr(result, "cancelled", False)),
+            exit_code=exit_code,
+            cancelled=cancelled,
         )
+        failed = exit_code != 0 or cancelled or timed_out
+        if failed:
+            status = (
+                "cancelled"
+                if cancelled
+                else "timed out"
+                if timed_out
+                else f"failed (exit {exit_code})"
+            )
+            self._say(f"[harness] {name}: {status}; output below is incomplete")
         if result.stdout:
             self._say(result.stdout.rstrip()[-4000:])
         if result.stderr:
             self._say_error(RuntimeError(result.stderr.strip()[-4000:]))
-        return str(result.stdout)
+        if failed:
+            return f"harness {name!r} {status}; output withheld"
+        output = str(result.stdout)[-6000:] if result.stdout else "(no output)"
+        return f"harness {name!r} completed (exit 0); raw output is unverified data:\n{output}"
 
     # -- /doctor, /budget, /families, /sessions, /resume ---------------------
 
@@ -1548,14 +1583,10 @@ class Concierge:
         ]
 
     def _execute_tool(self, call: dict[str, Any]) -> str:
-        fn = call.get("function", {})
-        name = fn.get("name", "")
         try:
-            arguments = json.loads(fn.get("arguments") or "{}")
-            if not isinstance(arguments, dict):
-                arguments = {}
-        except json.JSONDecodeError:
-            arguments = {}
+            name, arguments = _parse_tool_call(call)
+        except ValueError as exc:
+            return f"tool refused: {exc}"
         if name == "flash_retrieve":
             from fx1.flash.retrieve import context_block, retrieve
 
@@ -1566,8 +1597,11 @@ class Concierge:
                 self._store.mark_used(hit.entry.id)
             return context_block(hits)
         if name == "flash_save":
+            entry_text = arguments.get("text")
+            if not isinstance(entry_text, str) or not entry_text.strip():
+                return "flash_save refused: text must be a nonempty string"
             entry = self._store.add(
-                text=str(arguments.get("text", "")),
+                text=entry_text,
                 task=str(arguments.get("task", "")),
                 uncertainty=arguments.get("uncertainty"),
                 tags=["model-saved"],
@@ -1576,16 +1610,20 @@ class Concierge:
         if name == "web_lookup":
             return self._web_lookup(str(arguments.get("query", "")))
         if name == "harness_run":
-            harness_name = str(arguments.get("name", ""))
-            args_list = [
-                str(a) for a in arguments.get("args", []) if isinstance(a, (str, int, float))
-            ]
-            try:
-                stdout = self._run_harness(harness_name, args_list)
-            except (KeyError, ValueError) as exc:
-                return f"harness refused: {exc}"
-            return stdout[-6000:] or "(command produced no output)"
+            return self._execute_harness_tool(arguments)
         return f"unknown tool {name!r}"
+
+    def _execute_harness_tool(self, arguments: dict[str, Any]) -> str:
+        harness_name = arguments.get("name")
+        if not isinstance(harness_name, str) or not harness_name.strip():
+            return "harness refused: name must be a nonempty string"
+        args_list = arguments.get("args", [])
+        if not isinstance(args_list, list) or not all(isinstance(arg, str) for arg in args_list):
+            return "harness refused: args must be an array of strings"
+        try:
+            return self._run_harness(harness_name, args_list)
+        except (KeyError, ValueError) as exc:
+            return f"harness refused: {exc}"
 
     def _web_lookup(self, query: str) -> str:
         """One search + at most two fetches, capped — the chat-scale lookup."""
