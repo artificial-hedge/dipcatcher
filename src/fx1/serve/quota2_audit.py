@@ -185,8 +185,8 @@ _H_ANTH_REMAINING = "anthropic-ratelimit-requests-remaining"
 _H_ANTH_RESET = "anthropic-ratelimit-requests-reset"
 _RATE_WINDOW_CONST = "_RATE_WINDOW_S"
 _REAL_WINDOW_S = 60.0
-_TINY_WINDOW_S = 0.05
-_WINDOW_RECOVER_S = 0.08
+_TINY_WINDOW_S = 2.0
+_WINDOW_RECOVER_S = 2.2
 
 _U6 = {"prompt_tokens": 2, "completion_tokens": 4, "total_tokens": 6}
 
