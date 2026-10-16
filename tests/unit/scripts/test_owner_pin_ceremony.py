@@ -24,6 +24,7 @@ def _invoke(
     fail_command: str = "",
     key_file: Path | None = None,
     anchor_checkpoint: bool = False,
+    fake_common_git_dir: Path | None = None,
 ):
     shim = tmp_path / "uv.cmd"
     shim.write_bytes(
@@ -32,6 +33,8 @@ def _invoke(
         b'if "%FAKE_UV_FAIL_COMMAND%"=="%4" exit /b 29\r\nexit /b 0\r\n'
     )
     log = tmp_path / "uv.log"
+    if fake_common_git_dir is not None:
+        (tmp_path / "git.cmd").write_bytes(b'@echo off\r\necho %FAKE_GIT_COMMON_DIR%\r\n')
     key = key_file or tmp_path / "owner-key.txt"
     if key_file is None:
         key.write_text("private-key-material-never-print", encoding="ascii")
@@ -40,6 +43,8 @@ def _invoke(
     env["FAKE_UV_LOG"] = str(log)
     env["FAKE_UV_FAIL_CORPUS"] = fail_corpus or "__no_failure__"
     env["FAKE_UV_FAIL_COMMAND"] = fail_command or "__no_failure__"
+    if fake_common_git_dir is not None:
+        env["FAKE_GIT_COMMON_DIR"] = str(fake_common_git_dir)
     command = [
         str(POWERSHELL),
         "-NoProfile",
@@ -91,10 +96,11 @@ def _makefile_specs() -> list[tuple[str, str | None]]:
 def test_windows_ceremony_matches_makefile_sequence(tmp_path: Path) -> None:
     result, commands = _invoke(tmp_path)
     assert result.returncode == 0, result.stderr
-    assert commands[0] == "run --frozen dipcatcher crown-jewels --write"
+    assert commands[0].startswith("run --frozen dipcatcher quorum-check-key --key-file ")
+    assert commands[1] == "run --frozen dipcatcher crown-jewels --write"
 
     specs = _makefile_specs()
-    stamp_commands = commands[1 : 1 + len(specs)]
+    stamp_commands = commands[2 : 2 + len(specs)]
     assert len(stamp_commands) == len(specs)
     for command, (directory, pattern) in zip(stamp_commands, specs, strict=True):
         parts = command.replace('"', "").split()
@@ -104,7 +110,7 @@ def test_windows_ceremony_matches_makefile_sequence(tmp_path: Path) -> None:
         expected.extend(("--out-dir", directory, "--heads-pin", "quality/epoch_heads.json"))
         assert parts == expected
 
-    tail = commands[1 + len(specs) :]
+    tail = commands[2 + len(specs) :]
     assert len(tail) == 7
     assert tail[0].startswith("run --frozen dipcatcher quorum-sign --key-file ")
     assert tail[1] == "run --frozen dipcatcher anchor-timestamp --file quality/epoch_heads.json"
@@ -121,8 +127,17 @@ def test_windows_ceremony_matches_makefile_sequence(tmp_path: Path) -> None:
 def test_windows_ceremony_stops_at_failed_stamp(tmp_path: Path) -> None:
     result, commands = _invoke(tmp_path, fail_corpus="verifier")
     assert result.returncode != 0
-    assert len(commands) == 3  # crown jewels, receipts, then failing verifier
+    assert len(commands) == 4  # preflight, crown jewels, receipts, then verifier
     assert "Stamp verifier failed with exit code 23" in result.stderr
+    assert "private-key-material-never-print" not in result.stdout + result.stderr
+
+
+def test_windows_ceremony_stops_before_pins_on_invalid_signer(tmp_path: Path) -> None:
+    result, commands = _invoke(tmp_path, fail_command="quorum-check-key")
+    assert result.returncode != 0
+    assert len(commands) == 1
+    assert commands[0].startswith("run --frozen dipcatcher quorum-check-key --key-file ")
+    assert "Validate quorum signer failed with exit code 29" in result.stderr
     assert "private-key-material-never-print" not in result.stdout + result.stderr
 
 
@@ -149,6 +164,20 @@ def test_windows_ceremony_rejects_repo_key_file(tmp_path: Path) -> None:
     assert result.returncode != 0
     assert "KeyFile must be kept outside the repository" in result.stderr
     assert commands == []
+
+
+def test_windows_ceremony_rejects_key_in_primary_checkout(tmp_path: Path) -> None:
+    primary = tmp_path / "primary"
+    (primary / ".git").mkdir(parents=True)
+    key = primary / "owner-key.txt"
+    key.write_text("private-key-material-never-print", encoding="ascii")
+    result, commands = _invoke(
+        tmp_path, key_file=key, fake_common_git_dir=primary / ".git"
+    )
+    assert result.returncode != 0
+    assert "KeyFile must be kept outside the repository" in result.stderr
+    assert commands == []
+    assert "private-key-material-never-print" not in result.stdout + result.stderr
 
 
 def test_windows_ceremony_rejects_symlinked_key_parent(tmp_path: Path) -> None:

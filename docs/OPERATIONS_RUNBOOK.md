@@ -310,9 +310,11 @@ pair (`<priv_hex>:<pub_hex>` or two lines) in a key file **outside this repo**:
 
 Choose one invocation; the second line is an alternative, not a follow-up.
 The owner must restrict the key file's ACL to the signer account; the helper
-checks that the file and its parent path are outside the repo and contain no
-reparse points, but it does not manage key custody.
-The helper first refreshes `quality/crown_jewels.json`, then runs the exact
+checks that the file and its parent path are outside the worktree and shared
+primary checkout and contain no reparse points, but it does not manage key custody.
+The helper checks that the supplied private seed derives a registered public
+key and that the files meet the committed quorum before any tracked pin is
+changed. It then refreshes `quality/crown_jewels.json` and runs the exact
 `make stamp-epochs` corpus sequence, quorum-signs both pins, anchors them,
 signs the checkpoint, and checks `crown-jewels`, `verify-repo`, and
 `checkpoint-chain`. It stops on the first nonzero exit and never prints key

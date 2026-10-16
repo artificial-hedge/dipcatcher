@@ -3140,6 +3140,29 @@ def quorum_rotate_cmd(
     typer.echo(f"rotation={out}")
 
 
+@app.command("quorum-check-key")
+def quorum_check_key_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+    key_file: list[Path] = typer.Option(
+        ..., "--key-file", help="Registered signer pair file. Repeatable for M-of-N."
+    ),
+) -> None:
+    """Check signer files against the committed quorum without writing pins."""
+    from quant_fund.research.gate_signatures import validate_quorum_signers
+
+    try:
+        raws = [file.read_text().strip() for file in key_file]
+        signers = [pair for raw in raws for pair in _load_signer_pairs(raw)]
+        count, threshold = validate_quorum_signers(root, signers)
+    except (OSError, UnicodeError) as exc:
+        typer.echo("quorum-check-key: cannot read signer file")
+        raise typer.Exit(code=2) from exc
+    except ValueError as exc:
+        typer.echo(f"quorum-check-key: {exc}")
+        raise typer.Exit(code=2) from exc
+    typer.echo(f"quorum-check-key: eligible {count}/{threshold}")
+
+
 @app.command("quorum-sign")
 def quorum_sign_cmd(
     root: Path = typer.Option(Path("."), "--root"),

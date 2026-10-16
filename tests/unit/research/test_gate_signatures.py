@@ -51,11 +51,12 @@ def test_signature_forgery_fails(tmp_path: Path) -> None:
     priv, pub = generate_keypair()
     sign_pins(root, priv, pub)
     # Attacker rewrites the pin AND the declared digest, but cannot sign.
-    (root / "quality/crown_jewels.json").write_text('{"forged": true}\n')
+    forged = b'{"forged": true}\n'
+    (root / "quality/crown_jewels.json").write_bytes(forged)
     sig_body = json.loads((root / "gate_pins.sig").read_text())
     from quant_fund.utils.hashing import hash_bytes
 
-    sig_body["payload"]["files"]["quality/crown_jewels.json"] = hash_bytes(b'{"forged": true}\n')
+    sig_body["payload"]["files"]["quality/crown_jewels.json"] = hash_bytes(forged)
     (root / "gate_pins.sig").write_text(json.dumps(sig_body, indent=2, sort_keys=True))
     res = verify_pin_signatures(root)
     assert res["ok"] is False
@@ -148,6 +149,34 @@ def test_quorum_rejects_unregistered_signer(tmp_path: Path) -> None:
     outsider = generate_keypair()
     with pytest.raises(ValueError, match="not in quorum registry"):
         sign_pins_quorum(root, [*keys[:1], outsider])
+
+
+def test_quorum_rejects_mismatched_seed_before_writing(tmp_path: Path) -> None:
+    import pytest
+
+    from quant_fund.research.gate_signatures import (
+        sign_pins_quorum,
+        validate_quorum_signers,
+    )
+
+    root, keys = _quorum_repo(tmp_path)
+    wrong_pair = (keys[2][0], keys[1][1])
+    with pytest.raises(ValueError, match="private seed does not match public key"):
+        validate_quorum_signers(root, [keys[0], wrong_pair])
+    with pytest.raises(ValueError, match="private seed does not match public key"):
+        sign_pins_quorum(root, [keys[0], wrong_pair])
+    assert not (root / "gate_pins.sig").exists()
+
+
+def test_quorum_rejects_duplicate_signer_before_writing(tmp_path: Path) -> None:
+    import pytest
+
+    from quant_fund.research.gate_signatures import sign_pins_quorum
+
+    root, keys = _quorum_repo(tmp_path)
+    with pytest.raises(ValueError, match="duplicate signer"):
+        sign_pins_quorum(root, [keys[0], keys[0]])
+    assert not (root / "gate_pins.sig").exists()
 
 
 def test_quorum_downgrade_to_v1_fails_closed(tmp_path: Path) -> None:

@@ -366,6 +366,50 @@ def load_quorum_registry(root: str | Path) -> tuple[dict[str, str], int] | None:
     )
 
 
+def validate_quorum_signers(
+    root: str | Path,
+    signers: list[tuple[str, str]],
+    *,
+    registry_path: Path = DEFAULT_QUORUM_PATH,
+) -> tuple[int, int]:
+    """Check registered, distinct seed/public pairs without changing pin state."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+    reg_file = Path(root) / registry_path
+    if not reg_file.exists():
+        raise ValueError("no quorum registry — run quorum-init first")
+    try:
+        registry = json.loads(reg_file.read_text())
+    except (OSError, ValueError) as exc:
+        raise ValueError("malformed quorum registry") from exc
+    errors = quorum_registry_errors(registry)
+    if errors:
+        raise ValueError(f"malformed quorum registry: {errors}")
+    threshold = int(registry["threshold"])
+    registered = {str(e["key_id"]): str(e["pubkey"]) for e in registry["keys"]}
+    seen: set[str] = set()
+    for private_hex, public_hex in signers:
+        try:
+            if len(public_hex) != 64:
+                raise ValueError
+            kid = key_id(public_hex)
+            private_key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_hex))
+        except ValueError as exc:
+            raise ValueError("signer material malformed") from exc
+        if registered.get(kid) != public_hex:
+            raise ValueError(f"signer not in quorum registry: {kid}")
+        actual_public = private_key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+        if actual_public.hex() != public_hex:
+            raise ValueError(f"signer private seed does not match public key: {kid}")
+        if kid in seen:
+            raise ValueError(f"duplicate signer: {kid}")
+        seen.add(kid)
+    if len(seen) < threshold:
+        raise ValueError(f"quorum unattainable: {len(seen)} signers < threshold {threshold}")
+    return len(seen), threshold
+
+
 def sign_pins_quorum(
     root: str | Path,
     signers: list[tuple[str, str]],
@@ -384,26 +428,14 @@ def sign_pins_quorum(
     from quant_fund.utils.atomicio import atomic_write_text
 
     root_path = Path(root)
-    reg_file = root_path / registry_path
-    if not reg_file.exists():
-        raise ValueError("no quorum registry — run quorum-init first")
-    registry = json.loads(reg_file.read_text())
-    errors = quorum_registry_errors(registry)
-    if errors:
-        raise ValueError(f"malformed quorum registry: {errors}")
-    threshold = int(registry["threshold"])
-    registered = {str(e["key_id"]): str(e["pubkey"]) for e in registry["keys"]}
+    validate_quorum_signers(root_path, signers, registry_path=registry_path)
     manifest = _pin_manifest(root_path)
     msg = canonical_json_bytes(manifest)
     signatures = []
     for priv_hex, pub_hex in signers:
         kid = key_id(pub_hex)
-        if kid not in registered or registered[kid] != pub_hex:
-            raise ValueError(f"signer not in quorum registry: {kid}")
         sig = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(priv_hex)).sign(msg)
         signatures.append({"key_id": kid, "signature": sig.hex()})
-    if len(signatures) < threshold:
-        raise ValueError(f"quorum unattainable: {len(signatures)} signers < threshold {threshold}")
     body = {
         "schema": QUORUM_SIG_SCHEMA,
         "algorithm": "ed25519",
