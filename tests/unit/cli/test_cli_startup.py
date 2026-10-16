@@ -75,6 +75,31 @@ def _run(args: list[str]) -> subprocess.CompletedProcess[str]:
     return completed
 
 
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["-m", "quant_fund.cli.main", "--help"],
+        ["-m", "quant_fund.cli.main", "kyle-ofi", "--help"],
+        ["-m", "dipcatcher_cli", "--help"],
+    ],
+)
+def test_help_survives_narrow_console_encoding(args: list[str]) -> None:
+    env = _env()
+    env["PYTHONIOENCODING"] = "cp1252:strict"
+    completed = subprocess.run(
+        [sys.executable, *args],
+        cwd=_ROOT,
+        env=env,
+        capture_output=True,
+        encoding="cp1252",
+        timeout=_SUBPROCESS_TIMEOUT_S,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "Usage" in completed.stdout
+    assert "UnicodeEncodeError" not in completed.stderr
+
+
 def test_package_and_cli_imports_skip_heavy_modules() -> None:
     script = (
         "import json, sys\n"

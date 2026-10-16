@@ -226,6 +226,7 @@ def _client(
         if not real_backends:
             kwargs["backend_resolver"] = resolver or _SpyResolver()
         app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=fake_runner),
             state_dir=isolated / "state",
             receipts_dir=receipts,

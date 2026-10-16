@@ -7,6 +7,7 @@ Subprocess cases use ``sys.executable -c`` through
 from __future__ import annotations
 
 import signal
+import subprocess
 import sys
 import threading
 import time
@@ -19,6 +20,7 @@ from fx1.harness import (
     HarnessResult,
     HarnessRole,
     RunnerOutcome,
+    _signal_windows_tree,
     _subprocess_runner,
     default_runner_available,
     make_subprocess_runner,
@@ -189,6 +191,51 @@ def test_cancel_returns_partial_stdout() -> None:
     assert result.timed_out is False
     assert result.ok is False
     assert "started" in result.stdout
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows taskkill process-tree contract")
+def test_windows_cancel_stops_descendant(tmp_path: Path) -> None:
+    marker = tmp_path / "descendant-survived.txt"
+    child = (
+        "import time; from pathlib import Path; "
+        f"time.sleep(2); Path({str(marker)!r}).write_text('orphan')"
+    )
+    parent = (
+        "import subprocess, sys, time; "
+        f"subprocess.Popen([sys.executable, '-c', {child!r}]); "
+        "print('child started', flush=True); time.sleep(30)"
+    )
+    event = threading.Event()
+    timer = threading.Timer(1.0, event.set)
+    timer.daemon = True
+    timer.start()
+    try:
+        result = _run_script(parent, timeout_s=8, cancel_event=event, grace_s=0.5)
+    finally:
+        timer.cancel()
+
+    assert result.cancelled is True
+    assert "child started" in result.stdout
+    time.sleep(2.5)
+    assert not marker.exists()
+
+
+def test_windows_tree_termination_failure_is_reported(monkeypatch: pytest.MonkeyPatch) -> None:
+    killed: list[bool] = []
+
+    class Child:
+        pid = 123
+
+        def kill(self) -> None:
+            killed.append(True)
+
+    monkeypatch.setattr(
+        "fx1.harness.subprocess.run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(args, 1),
+    )
+    with pytest.raises(RuntimeError, match="process-tree termination failed"):
+        _signal_windows_tree(Child())  # type: ignore[arg-type]
+    assert killed == [True]
 
 
 def test_deadline_marks_timed_out() -> None:

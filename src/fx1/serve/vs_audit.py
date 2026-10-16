@@ -240,6 +240,7 @@ def _client(**kw: Any) -> TestClient:
     from fx1.harness import Harness
 
     app = api_mod.create_app(
+        public_release=False,
         harness=Harness(runner=_runner),
         backend_resolver=lambda *a, **k: _B(),
         **kw,

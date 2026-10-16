@@ -38,8 +38,9 @@ to misread as a shipped artifact. Read it before the [fx-1](#fx-1) section.
 - **What does not exist.** **No fine-tuned fx-1 checkpoint is published.** No
   fine-tuned weights, no downloadable artifact, no HF repo, no hosted endpoint.
   `docs/FX1_TRAINING.md` states it plainly: no training run has been launched
-  from the ladder. `LocalFx1Backend.complete()` raises `NotImplementedError`
-  (`src/fx1/serve/backends.py`), so local generation is not implemented either.
+  from the ladder. `LocalFx1Backend.complete()` delegates generation to a
+  configured OpenAI-compatible local engine (`src/fx1/serve/backends.py`), but
+  there are no released fx-1 weights for it to serve.
 - **`fx1.__version__ = "0.4.0"` tracks the harness API, not a model release.**
   It is the semver of the `fx1` package surface — see
   [`docs/FX1_API_STABILITY.md`](docs/FX1_API_STABILITY.md) — and `pyproject.toml`
@@ -156,9 +157,11 @@ position the honesty ledger already records, correctly.
 
 ## Overview
 
-**dipcatcher** is Artificial Hedge's state-of-the-art harness for orchestrating
-its **fx1** and **fx1-lite** models ([artificialhedge.co](https://artificialhedge.co))
-from the command line. The CLI is designed like Codex CLI: chat-first, with
+**dipcatcher** is Artificial Hedge's harness for orchestrating research and
+the planned **fx1** and **fx1-lite** model interfaces
+([artificialhedge.co](https://artificialhedge.co)) from the command line.
+Neither model has verified public release weights or a deployed endpoint yet.
+The CLI is designed like Codex CLI: chat-first, with
 about 99% of the interface being a conversation with the active model. The
 `/superpower` slash command plans and runs whichever of dipcatcher's research
 families fit the goal you typed, and explains what it used and why. Type
@@ -1575,7 +1578,7 @@ generated diagrams in [Visual tour](#visual-tour).
 
 | Command | What it does |
 |---|---|
-| `uv run dipcatcher` | In a terminal, opens the chat: plain text talks to `fx1`/`fx1-lite`; `/superpower <goal>` runs the research families that fit. `fxi` opens the same chat. |
+| `uv run dipcatcher` | In a terminal, opens the chat: plain text uses the configured model endpoint (the `fx1`/`fx1-lite` names await public release); `/superpower <goal>` runs the research families that fit. `fxi` opens the same chat. |
 | `uv run dipcatcher research --config <cfg>` | Builds a panel, runs the research pipeline, writes a sealed notebook. |
 | `uv run dipcatcher verify-research [path]` | Recomputes a notebook or run directory's receipt hash; fails closed. |
 | `uv run dipcatcher doctor --config <cfg>` | Environment/data/receipt readiness check; exit code is the answer. |
@@ -2394,8 +2397,9 @@ post-hoc filter.
   and an on-record base-model eval are both present. It does **not**
   launch a training job.
 - `LocalFx1Backend` refuses a directory that lacks a model card cleared by
-  the ship gate. `complete()` raises `NotImplementedError` until a
-  distilled student exists (`src/fx1/serve/backends.py`).
+  the ship gate. `complete()` delegates to a configured OpenAI-compatible
+  local engine; no fine-tuned fx-1 release checkpoint exists yet
+  (`src/fx1/serve/backends.py`).
 - The **honesty contract inherits across the harness/model boundary by
   construction, not by convention**:
   `fx1.honesty.FORBIDDEN_HEADLINE_TOKENS` mirrors
@@ -2581,7 +2585,7 @@ third-party badge.
 | `make proof-verify` | Bundle hash, sidecar, signature, and metric verification tests; replay remains closed |
 | `make leakage-scan` | Leakage hunter — WARN MODE this wave (adjudicated: advisory only) |
 | `make reality-gate` | Reality-filter gate: score trials; absent DB or empty export skips |
-| `make receipts-reverify` | Fail-closed audit; schema-specific committed receipt verifiers pending |
+| `make receipts-reverify` | Strict suite-health audit: committed receipts must verify or match an exact quarantine pin |
 | `make evidence-audit` | CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact |
 | `make lattice-check` | CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts |
 | `make market-sim-test` | Matching engine and agent-market tests |
@@ -2591,23 +2595,25 @@ Total: **45** self-documented targets — run `make help` for the live list.
 
 ### Continuous integration
 
-> **CI status — measured 2026-10-08: the pipeline is dark, not green.**
-> The badges at the top of this file are the workflow *definitions* rendering,
-> not a current verdict. As of 2026-10-08, `gh run list` shows **0 successful
-> runs in 400 consecutive attempts** (last 100: 85 `cancelled`, 15 `queued`, 0
-> success). Nothing in this repository has been verified by a returning CI
-> verdict in that window — including the 81% coverage floor, the strict-typing
-> claim, receipt verification, and the SBOM, all of which are *defined and
-> enforced in configuration* but have not been observed green.
+> **CI status — measured 2026-10-16: no production baseline yet.** The
+> October 8 zero-success census in
+> [`docs/ULTRA_PROD_READINESS.md`](docs/ULTRA_PROD_READINESS.md) is a historical
+> snapshot. The [October 16 `main` run](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454409) has reached real job verdicts, including
+> successful lint and packaging, but its evidence audit fails on stale quorum
+> signatures for two integrity pins. The [proofcore run](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454422) also fails three
+> committed replay comparisons. The [fx1 run](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454430) passed; the [full platform matrix](https://github.com/artificial-hedge/dipcatcher/actions/runs/38917454610)
+> was queued at the time of this check. The required green CI/matrix baseline
+> and signed release are still open. Check GitHub Actions runs for
+> the latest verdict before making a release claim.
 >
-> The cause is orchestration, not flaky tests: ~80+ jobs per push across 22
-> workflow files, burst merge cadence, and `cancel-in-progress: true` on the
-> gate workflows, so each new push cancels the run in flight. Measured
-> findings, mechanism, and the remediation plan are in
-> [`docs/ULTRA_PROD_READINESS.md`](docs/ULTRA_PROD_READINESS.md) (Phase 0).
-> Until that gate returns verdicts, treat every CI-enforced claim in this
-> README as *specified but unconfirmed*. Local `make lint` is green as of
-> 2026-10-08 (`ruff check src tests` → "All checks passed!").
+> **Enforcement status — measured 2026-10-16:** `main` has no classic branch
+> protection (`GET /branches/main/protection/required_status_checks` returns
+> `404 Branch not protected`). The two active repository rulesets enforce only
+> branch creation/deletion restrictions. The `merge_group` workflow triggers
+> are prepared, but no required status checks or merge queue currently protect
+> `main`; an administrator must configure them before CI can block a merge.
+> The exact proposed contexts and queue settings are in
+> [the CI enforcement proposal](docs/CI_ENFORCEMENT_PROPOSAL.md).
 
 **22** workflow files under [`.github/workflows/`](.github/workflows/).
 CI runs the PR-gate test matrix on Python **3.12 and 3.13**; the separate
@@ -2616,8 +2622,8 @@ schedule and on `workflow_dispatch`.
 
 | Workflow file | Declared name | Trigger | What it gates |
 |---|---|---|---|
-| `ci.yml` | CI | push to main, PR to main (+ legacy branch), schedule | Lint, typecheck, sharded test matrix (Python 3.12/3.13), coverage, wheel/sdist build+install smoke. |
-| `.github/workflows/fx1.yml` | fx1 | push to main / fx-1/**, PR | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
+| `ci.yml` | CI | push to main, PR to main (+ legacy branch), merge queue, schedule | Lint, typecheck, sharded test matrix (Python 3.12/3.13), coverage, wheel/sdist build+install smoke. |
+| `.github/workflows/fx1.yml` | fx1 | push to main / fx-1/**, PR, merge queue | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
 | `codeql.yml` | CodeQL | push to main, PR, schedule | Static security analysis (CodeQL). |
 | `scorecard.yml` | Scorecard | branch_protection_rule change, weekly schedule, push to main | OpenSSF Scorecard supply-chain posture. |
 | `secret-scan.yml` | Secret scan | push to main, PR | Repository secret scanning. |
@@ -2625,10 +2631,10 @@ schedule and on `workflow_dispatch`.
 | `docs.yml` | docs | push to main, PR | Builds the MkDocs site in strict mode. |
 | `atlas.yml` | atlas | push to main, PR | Regenerates and diff-checks the architecture diagrams and atlas doc. |
 | `arch_guards.yml` | arch-guards | push to main, PR, manual | Enforces import-layer boundaries (`configs/arch_boundaries.toml`). |
-| `release.yml` | Release | push of tag `v*.*.*` | Release build/publish pipeline. |
-| `matrix.yml` | Platform Matrix | PR/push to main, manual | Extended OS x Python matrix: ubuntu/macos/windows x 3.12/3.13/3.14. |
+| `release.yml` | Release | push of tag `v*.*.*` | Checks the tag against the package version and requires same-commit CI and full matrix proof, then builds and smoke-tests the wheel, signs distributions, and attests/uploads artifacts; publishing is not configured. |
+| `matrix.yml` | Platform Matrix | nightly, manual | Extended OS x Python matrix: ubuntu/macos/windows x 3.12/3.13/3.14. |
 | `perf-baseline.yml` | Perf baseline gate | push to main, weekly schedule, PR | Compares hot-path timings against the stored baseline (1.5x gate). |
-| `proofcore.yml` | proofcore | push to main, PR | PROOFCORE contracts, provenance DB, layering gate. |
+| `proofcore.yml` | proofcore | push to main, PR, merge queue | PROOFCORE contracts, provenance DB, layering gate. |
 | `property-nightly.yml` | Adversarial properties (nightly) | daily schedule, manual | Nightly extended Hypothesis property run. |
 | `adversarial-properties.yml` | Adversarial properties | push to main, PR | Adversarial property-based tests (PR-sized). |
 | `simtest.yml` | Deterministic simulation | PR to main, manual (seed input) | Bounded deterministic-simulation swarm. |
@@ -2956,8 +2962,8 @@ see [Honesty enforcement map](#honesty-enforcement-map).
 <summary><strong>Where are the fx-1 model weights?</strong></summary>
 
 Nowhere in this tree. No training run has been launched from this
-repository; `LocalFx1Backend.complete()` raises `NotImplementedError`
-until a distilled student exists. See [fx-1](#fx-1).
+repository. `LocalFx1Backend.complete()` can delegate to a configured local
+engine, but there are no released fx-1 weights to serve. See [fx-1](#fx-1).
 
 </details>
 
@@ -3099,7 +3105,12 @@ From [`.env.example`](.env.example); secrets are never committed and
 | `QUANT_VENDOR_API_KEY` | unset | licensed vendor adapter; unset means fail-closed |
 | `QUANT_API_KEY` | unset | required for non-loopback API access (`X-API-Key`) |
 | `MOONSHOT_API_KEY` | unset | hosted Kimi K3 eval (`make fx1-eval`) |
-| `FX1_SIGNING_KEY` | unset | checkpoint signature enforcement for local fx-1 serving |
+| `FX1_SIGNING_KEY` | unset | internal HMAC checkpoint signing and verification |
+| `FX1_RELEASE_SIGNING_KEY` | unset | Ed25519 private signing seed on the release build host |
+| `FX1_RELEASE_VERIFY_KEY` | unset | trusted Ed25519 public key required for public local fx-1 serving |
+| `FX1_RELEASE_IMMUTABLE_IMAGE` | unset | `1` only for a globally immutable OS read-only public checkpoint image |
+| `FX1_CHECKPOINT_DIR_FX1` / `_FX1_LITE` | unset | separately signed checkpoints for the two public model names |
+| `FX1_LOCAL_SERVE_URL_FX1` / `_FX1_LITE` | unset | persistent trusted loopback engines for those checkpoints |
 | `DIPCATCHER_OBSERVE` | unset | opt-in audit ledger / observability |
 | `DIPCATCHER_OTEL_ENDPOINT` | `http://127.0.0.1:4318/v1/traces` | OTLP traces endpoint |
 | `DIPCATCHER_METRICS_PORT` | `9464` | metrics port |

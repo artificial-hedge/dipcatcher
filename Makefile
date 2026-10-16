@@ -318,7 +318,7 @@ checkpoint-chain: ## Walk the full checkpoint spine — every archived link veri
 verify-rotations: ## Verify the gate-key rotation chain — dual-signed links, spine-anchored genesis, live key is terminus
 	uv run dipcatcher verify-rotations
 
-rotate-key: ## Record an authorized gate-key rotation (needs GATE_SIGNING_KEY + GATE_SIGNING_KEY_NEW); then re-sign pins + checkpoint
+rotate-key: ## Rotate the legacy single-key trust root (needs GATE_SIGNING_KEY + GATE_SIGNING_KEY_NEW); quorum registry uses quorum-rotate
 	uv run dipcatcher rotate-key
 
 tamper-drill: ## Self-attack: clone the integrity state, land every probe mutation, require verify-repo flags each
@@ -360,8 +360,8 @@ stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching any 
 	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --out-dir "$$spec" --heads-pin quality/epoch_heads.json || exit 1; \
 	done
 
-sign-pins: ## Ed25519-sign the integrity pins (needs GATE_SIGNING_KEY or --key-file); run LAST, after stamp-epochs
-	uv run dipcatcher sign-pins
+sign-pins: ## Quorum-sign integrity pins (needs GATE_QUORUM_KEYS); run after stamp-epochs
+	uv run dipcatcher quorum-sign
 
 anchor-pins: ## RFC 3161 timestamp-anchor both pin files via FreeTSA (network); run after sign-pins, at quiet points only — every stamp-epochs stales the anchors
 	uv run dipcatcher anchor-timestamp --file quality/epoch_heads.json

@@ -213,6 +213,7 @@ def _sdk_client(
             os.environ["FX1_API_KEY"] = env_key
         resolver = (lambda *a, **k: _NoTokensBackend()) if no_tokens else (lambda *a, **k: stub)
         app = api_mod.create_app(
+            public_release=False,
             backend_resolver=resolver,
             # None falls back to the env/default, so passing it through
             # unconditionally keeps the None-case identical to omitting it

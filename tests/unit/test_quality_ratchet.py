@@ -156,7 +156,7 @@ def test_no_bare_except_and_exception_ceiling() -> None:
     bare = 0
     broad = 0
     for path in (ROOT / "src" / "quant_fund").rglob("*.py"):
-        for line in path.read_text().splitlines():
+        for line in path.read_text(encoding="utf-8").splitlines():
             if re.match(r"\s*except\s*:", line):
                 bare += 1
             elif re.match(r"\s*except\s+Exception\b", line):

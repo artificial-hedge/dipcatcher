@@ -60,6 +60,17 @@ class Output(OutputModel):
     source_bytes: int
 
 
+_WINDOWS_DEVICE_NAMES = frozenset(
+    {"CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"}
+    | {f"{prefix}{digit}" for prefix in ("COM", "LPT") for digit in "123456789¹²³"}
+)
+
+
+def _windows_device_name(part: str) -> bool:
+    """Recognize device basenames without Python-version-dependent reserved rules."""
+    return part.partition(".")[0].rstrip(" ").upper() in _WINDOWS_DEVICE_NAMES
+
+
 def _path_issues(name: str) -> list[str]:
     issues: list[str] = []
     normalized = name.replace("\\", "/")
@@ -75,7 +86,7 @@ def _path_issues(name: str) -> list[str]:
         issues.append("control_character")
     components = [part for part in normalized.split("/") if part]
     if any(
-        PureWindowsPath(part).is_reserved()
+        _windows_device_name(part)
         or part.endswith((".", " "))
         or any(character in '<>:"|?*' for character in part)
         for part in components

@@ -581,12 +581,19 @@ def harness_serve(
     import uvicorn
 
     from fx1.serve.api import create_app
+    from fx1.serve.release_gate import ALLOW_TEST_FIXTURE_ENV
 
     if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("FX1_API_KEY"):
         typer.echo(
             "non-loopback binding requires FX1_API_KEY; refusing unauthenticated exposure",
             err=True,
         )
+        raise typer.Exit(code=2)
+    if (
+        host not in {"127.0.0.1", "::1", "localhost"}
+        and os.environ.get(ALLOW_TEST_FIXTURE_ENV) == "1"
+    ):
+        typer.echo("test fixture opt-in may bind only to loopback", err=True)
         raise typer.Exit(code=2)
     try:
         harness_api = create_app(
@@ -602,6 +609,7 @@ def harness_serve(
             receipts_dir=receipts_dir,
             store_max=store_max,
             state_dir=state_dir,
+            public_release=host not in {"127.0.0.1", "::1", "localhost"},
         )
     except ValueError as exc:
         typer.echo(str(exc), err=True)
@@ -5235,11 +5243,12 @@ def contamination_audit(
 @app.command("sign")
 def sign_checkpoint(
     checkpoint_dir: Path = typer.Argument(...),
+    public: bool = typer.Option(False, "--public", help="Sign for public serving with Ed25519."),
 ) -> None:
     """Sign an fx-1 release (attestation ladder tier 1)."""
-    from fx1.serve import sign_release
+    from fx1.serve.signing import sign_release, sign_release_ed25519
 
-    sig = sign_release(checkpoint_dir)
+    sig = sign_release_ed25519(checkpoint_dir) if public else sign_release(checkpoint_dir)
     typer.echo(f"signed: {sig}")
 
 

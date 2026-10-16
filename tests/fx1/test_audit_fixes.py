@@ -780,7 +780,9 @@ def test_hosted_backend_pins_temperature(monkeypatch):
 
     class _Resp:
         def read(self):
-            return json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+            return json.dumps(
+                {"model": "kimi-k3", "choices": [{"message": {"content": "ok"}}]}
+            ).encode()
 
         def __enter__(self):
             return self

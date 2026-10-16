@@ -43,6 +43,7 @@ class _FailBackend(_EchoBackend):
 def _app(backend: Any, keepalive_s: float = 0.05) -> TestClient:
     return TestClient(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=lambda *a, **k: backend,
             sse_keepalive_s=keepalive_s,
         )
@@ -182,6 +183,7 @@ def test_grace_window_fault_stays_json() -> None:
     wire gets the same JSON error envelope as the synchronous path."""
     fast_fail = TestClient(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=lambda *a, **k: _FailBackend(),
             sse_keepalive_s=60.0,
         )

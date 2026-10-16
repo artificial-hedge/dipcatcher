@@ -190,8 +190,9 @@ cannot serve as this record.
 3. **Authorize** a broker account + API (Section 2a) for real order/fill
    reconciliation. Condition 2 stays blocked until then.
 4. **Measure** the target venue (Section 3) with dated, sourced numbers.
-5. **Freeze and externally timestamp** the `forward_2026H2` pre-registration
-   (Section 0) before 2026-07-01, then collect the forward record honestly.
+5. **Collect** the `forward_2026H2` record against the pre-registration
+   already externally anchored on 2026-10-08 (Section 0). The first eligible
+   decision must be on a market date after the recorded 2026-10-07 freeze.
 6. **Only then** compose a signed promotion receipt + explicit live
    authorization (Section 4).
 

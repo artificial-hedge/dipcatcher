@@ -93,7 +93,7 @@ def _client(
             os.environ.pop(_API_KEY_ENV, None)
         else:
             os.environ[_API_KEY_ENV] = api_key
-        app = api_mod.create_app(harness=Harness(runner=fake_runner))
+        app = api_mod.create_app(public_release=False, harness=Harness(runner=fake_runner))
         return TestClient(app, raise_server_exceptions=False), api_mod
     finally:
         for k, v in saved.items():
@@ -250,7 +250,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         idem_resolves["n"] += 1
         return _idem_backend
 
-    idem_api = api_mod.create_app(backend_resolver=_counting_resolver)
+    idem_api = api_mod.create_app(public_release=False, backend_resolver=_counting_resolver)
     ic = _IdemTC(idem_api)
     cbody = {"backend": "byok", "messages": [{"role": "user", "content": "ping"}]}
     c1 = ic.post("/harness/complete", json=cbody, headers={"Idempotency-Key": "ck1"})
@@ -397,7 +397,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # behind the socket is adversarial.
     from fastapi.testclient import TestClient as _TC2
 
-    dirty = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _DirtyBackend()))
+    dirty = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _DirtyBackend())
+    )
     out["complete_honesty_gate_502"] = (
         dirty.post(
             "/harness/complete",
@@ -433,7 +435,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         resolves[0] += 1
         return clean
 
-    batch_client = _TC2(api_mod.create_app(backend_resolver=_resolve_once))
+    batch_client = _TC2(api_mod.create_app(public_release=False, backend_resolver=_resolve_once))
     r = batch_client.post(
         "/harness/complete/batch",
         json={
@@ -488,7 +490,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 return "total Sharpe 4.2 on NAV"  # forbidden headline
             return super().complete(messages)
 
-    partial_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _PartialBackend()))
+    partial_client = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _PartialBackend())
+    )
     r2 = partial_client.post(
         "/harness/complete/batch",
         json={
@@ -520,6 +524,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # no receipt store -> the synthetic citation below is advisory, not 422.
     stream_client = _TC2(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=lambda *a, **k: _StreamBackend(),
             receipts_dir="/nonexistent-stream-store",
         )
@@ -570,7 +575,11 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         ) -> Any:
             yield "total Sharpe 4.2 on NAV"
 
-    dirty_stream = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _DirtyStreamBackend()))
+    dirty_stream = _TC2(
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _DirtyStreamBackend()
+        )
+    )
     rd = dirty_stream.post(
         "/harness/complete/stream",
         json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
@@ -607,6 +616,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     ka_client = _TC2(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=lambda *a, **k: _SlowStreamBackend(),
             sse_keepalive_s=0.05,
         )
@@ -633,6 +643,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     ka_fail = _TC2(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=lambda *a, **k: _SlowFailBackend(),
             sse_keepalive_s=0.05,
         )
@@ -658,6 +669,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # refusals are still JSON errors, completions still plain SSE.
     ka_dirty = _TC2(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=lambda *a, **k: _DirtyStreamBackend(),
             sse_keepalive_s=5.0,
         )
@@ -673,6 +685,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
     ka_fast = _TC2(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=lambda *a, **k: _StreamBackend(),
             sse_keepalive_s=5.0,
         )
@@ -690,6 +703,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # Disabled → fully synchronous; misconfig fails closed.
     off_client = _TC2(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=lambda *a, **k: _DirtyStreamBackend(),
             sse_keepalive_s=0,
         )
@@ -702,14 +716,16 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         == 502
     )
     try:
-        api_mod.create_app(sse_keepalive_s=-1.0)
+        api_mod.create_app(public_release=False, sse_keepalive_s=-1.0)
         out["stream_keepalive_negative_rejected"] = False
     except ValueError:
         out["stream_keepalive_negative_rejected"] = True
     keep_env = os.environ.get("FX1_API_SSE_KEEPALIVE_S")
     os.environ["FX1_API_SSE_KEEPALIVE_S"] = "7.5"
     try:
-        out["stream_keepalive_env_config"] = api_mod.create_app().state.sse_keepalive_s == 7.5
+        out["stream_keepalive_env_config"] = (
+            api_mod.create_app(public_release=False).state.sse_keepalive_s == 7.5
+        )
     finally:
         if keep_env is None:
             os.environ.pop("FX1_API_SSE_KEEPALIVE_S", None)
@@ -720,6 +736,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     from fx1.harness import Harness as _Harness  # noqa: PLC0415
 
     drain_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
     )
@@ -798,6 +815,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         return (0, "ran:" + " ".join(a), "")
 
     wait_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=_slow_runner),
         backend_resolver=lambda *a, **k: _CleanBackend(),
     )
@@ -852,6 +870,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         == 400
     )
     tiny_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         idem_max=2,
@@ -872,13 +891,14 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         is False
     )
     try:
-        api_mod.create_app(idem_max=0)
+        api_mod.create_app(public_release=False, idem_max=0)
         out["idem_max_validated"] = False
     except ValueError:
         out["idem_max_validated"] = True
 
     # --- async jobs ------------------------------------------------------------
     jobs_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
     )
@@ -962,6 +982,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
     # store bound: evicting the oldest job drops its idem mapping
     tiny_jobs = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         job_max=2,
@@ -973,7 +994,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         and tc3.get(f"/harness/jobs/{ids[2]}").status_code == 200
     )
     try:
-        api_mod.create_app(job_max=0)
+        api_mod.create_app(public_release=False, job_max=0)
         out["job_max_validated"] = False
     except ValueError:
         out["job_max_validated"] = True
@@ -982,6 +1003,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # (slots == workers, so jobs only stay queued when a worker is busy
     # without holding one) -> both jobs queue deterministically.
     qapp = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=_slow_runner),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         max_inflight=2,
@@ -1060,6 +1082,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             pass
 
     cb_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         max_inflight=2,
@@ -1280,11 +1303,12 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # --- rate limiting: per-client-host token bucket ----------------------------
     out["rate_limit_default_off"] = all(client.get("/health").status_code == 200 for _ in range(8))
     try:
-        api_mod.create_app(rate_limit_rps=-1)
+        api_mod.create_app(public_release=False, rate_limit_rps=-1)
         out["rate_limit_negative_rejected"] = False
     except ValueError:
         out["rate_limit_negative_rejected"] = True
     limited = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         rate_limit_rps=5.0,
@@ -1303,6 +1327,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["rate_limit_recovers"] = lc.get("/harness/version").status_code == 200
     # X-RateLimit-* headers on every response while the limiter is active
     limited3 = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         rate_limit_rps=10.0,
@@ -1334,6 +1359,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # with a 1 rps bucket, /version takes the only token, /health still 200s
     # (no bucket touch, no limiter headers), and the next /version 429s.
     lim_pub = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         rate_limit_rps=1.0,
@@ -1414,6 +1440,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
     out["cors_off_by_default"] = "access-control-allow-origin" not in pre_off.headers
     cors_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         cors_origins="https://fx1.example.com, https://ops.internal:8443",
@@ -1449,7 +1476,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         actual_resp.headers.get("access-control-allow-origin") == "https://fx1.example.com"
     )
     try:
-        api_mod.create_app(cors_origins="*")
+        api_mod.create_app(public_release=False, cors_origins="*")
         out["cors_wildcard_refused"] = False
     except ValueError:
         out["cors_wildcard_refused"] = True
@@ -1475,6 +1502,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     _flaky = _FlakyBackend()
     brk_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda name, *a, **k: _flaky if name == "byok" else _CleanBackend(),
         breaker_threshold=2,
@@ -1523,6 +1551,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     closed = brk.check("x") == 0 and brk.state("x")[0] is False
     out["breaker_half_open_recovers"] = opened and probe1 == 0.0 and probe2 > 0 and closed
     off_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         breaker_threshold=0,
@@ -1535,6 +1564,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # honesty-gate refusals are model output, not backend health — they
     # must never trip the circuit.
     dirty_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _DirtyBackend(),
         breaker_threshold=2,
@@ -1571,7 +1601,10 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     _boom = _BoomBackend()
     chain_app = _TC2(
         api_mod.create_app(
-            backend_resolver=lambda name, *a, **k: _boom if name == "hosted_k3" else _CleanBackend()
+            public_release=False,
+            backend_resolver=lambda name, *a, **k: (
+                _boom if name == "hosted_k3" else _CleanBackend()
+            ),
         )
     )
     r_chain = chain_app.post(
@@ -1607,7 +1640,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             return _CleanBackend()
         raise RuntimeError("primary unconfigured")
 
-    res_app = _TC2(api_mod.create_app(backend_resolver=_resolve_dies))
+    res_app = _TC2(api_mod.create_app(public_release=False, backend_resolver=_resolve_dies))
     r_res = res_app.post(
         "/harness/complete",
         json={
@@ -1628,9 +1661,10 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     _clean_spy = _CleanBackend()
     ref_app = _TC2(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=lambda name, *a, **k: (
                 _DirtyBackend() if name == "hosted_k3" else _clean_spy
-            )
+            ),
         )
     )
     r_ref = ref_app.post(
@@ -1659,7 +1693,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["fallback_client_error_aborts"] = r_bad.status_code == 422
     # every link dead → the last retriable verdict surfaces, with the full
     # chain sealed on the record.
-    dead_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _BoomBackend()))
+    dead_app = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _BoomBackend())
+    )
     r_dead = dead_app.post(
         "/harness/complete",
         json={
@@ -1682,6 +1718,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # breaker never blocks a healthy fallback.
     open_app = _TC2(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=lambda name, *a, **k: (
                 _boom if name == "hosted_k3" else _CleanBackend()
             ),
@@ -1764,7 +1801,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             return _StreamBackend()
         raise RuntimeError("primary unconfigured")
 
-    stream_app = _TC2(api_mod.create_app(backend_resolver=_resolve_dies_stream))
+    stream_app = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=_resolve_dies_stream)
+    )
     r_stream_fb = stream_app.post(
         "/harness/complete/stream",
         json={
@@ -1793,7 +1832,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             return _flaky2
         return _CleanBackend()
 
-    bapp = _TC2(api_mod.create_app(backend_resolver=_cap_resolver))
+    bapp = _TC2(api_mod.create_app(public_release=False, backend_resolver=_cap_resolver))
     ovr = {"base_url": "https://llm.example.com/v1", "api_key": "sk-live-x", "model": "m1"}
     ok = bapp.post(
         "/harness/complete",
@@ -1835,7 +1874,11 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         ).status_code
         == 422
     )
-    disabled = _TC2(api_mod.create_app(backend_resolver=_cap_resolver, byok_override=False))
+    disabled = _TC2(
+        api_mod.create_app(
+            public_release=False, backend_resolver=_cap_resolver, byok_override=False
+        )
+    )
     dresp = disabled.post(
         "/harness/complete",
         json={
@@ -1850,7 +1893,11 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     caps_byok = bapp.get("/harness/capabilities").json()["features"]
     out["capabilities_reports_byok_override"] = (
         caps_byok["byok_override"] is True
-        and _TC2(api_mod.create_app(backend_resolver=_cap_resolver, byok_override=False))
+        and _TC2(
+            api_mod.create_app(
+                public_release=False, backend_resolver=_cap_resolver, byok_override=False
+            )
+        )
         .get("/harness/capabilities")
         .json()["features"]["byok_override"]
         is False
@@ -2016,6 +2063,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # breaker key while the healthy override (and the env default) pass.
     bapp_brk = _TC2(
         api_mod.create_app(
+            public_release=False,
             backend_resolver=_cap_resolver,
             breaker_threshold=2,
             breaker_cooldown_s=60.0,
@@ -2039,7 +2087,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
     # Idempotency still works with an override on the body — same body
     # replays, a different key inside byok gets the 409.
-    idem_byok = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    idem_byok = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _CleanBackend())
+    )
     k_body = {
         "backend": "byok",
         "messages": [{"role": "user", "content": "x"}],
@@ -2055,15 +2105,17 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["byok_override_idem_contract"] = (
         i1.status_code == 200 and i2.json().get("replayed") is True and i3.status_code == 409
     )
-    # limiter counts denials; a public-path request also draws a token
+    # Use a one-token bucket: at 20 rps, TestClient overhead can refill the
+    # entire burst before the 23rd request on a busy CI worker.
     limited2 = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
-        rate_limit_rps=20.0,
+        rate_limit_rps=1.0,
     )
     lc2 = _TC2(limited2)
-    statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
-    time.sleep(0.15)
+    statuses = [lc2.get("/harness/version").status_code for _ in range(5)]
+    time.sleep(1.05)
     m = lc2.get("/metrics")
     out["rate_limit_metrics_counts"] = (
         statuses.count(429) >= 2
@@ -2073,6 +2125,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     os.environ["FX1_API_RATE_LIMIT_RPS"] = "3"
     try:
         env_app = api_mod.create_app(
+            public_release=False,
             harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
             backend_resolver=lambda *a, **k: _CleanBackend(),
         )
@@ -2085,6 +2138,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     # --- job event stream: SSE status feed until terminal -------------------
     ev_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         max_inflight=1,
@@ -2127,6 +2181,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     # --- batch submit: per-item outcomes, per-item idempotency ---------------
     b_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         max_inflight=4,
@@ -2188,6 +2243,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         body_key2["replayed"] is True and body_key2["job_id"] == body_key["job_id"]
     )
     cap_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         max_inflight=1,
@@ -2224,6 +2280,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     # --- gzip response compression --------------------------------------------
     g_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
     )
@@ -2245,6 +2302,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         and len(g_plain.content) > 4096
     )
     g_off_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         gzip_min_bytes=0,
@@ -2253,6 +2311,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["gzip_zero_disables"] = "content-encoding" not in g_off.headers
     try:
         api_mod.create_app(
+            public_release=False,
             harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
             backend_resolver=lambda *a, **k: _CleanBackend(),
             gzip_min_bytes=-1,
@@ -2264,6 +2323,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # --- job lifecycle hygiene --------------------------------------------------
     big = "x" * (1 << 21)
     chatty_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, big, "e" * (1 << 21))),
         backend_resolver=lambda *a, **k: _CleanBackend(),
     )
@@ -2283,6 +2343,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         and len(rec["result"]["stderr"].encode()) <= 1 << 20
     )
     small_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "tiny", "warn")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
     )
@@ -2303,6 +2364,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # shutdown: TestClient __exit__ runs the lifespan teardown — queued jobs
     # must flip to cancelled (never silently die) and the drain latch set.
     drain_app = api_mod.create_app(
+        public_release=False,
         harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         max_inflight=1,
@@ -2348,7 +2410,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         rdir = _Pt(td)
         sha = good["receipt_sha256"]
         (rdir / "probe_receipt.json").write_text(_json.dumps(good))
-        rclient = _TC2(api_mod.create_app(receipts_dir=rdir))
+        rclient = _TC2(api_mod.create_app(public_release=False, receipts_dir=rdir))
         lst = rclient.get("/receipts")
         out["receipts_index_lists"] = (
             lst.status_code == 200
@@ -2390,7 +2452,11 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         # server cannot produce: unknown or malformed hashes are 422 across
         # sync, batch, and stream — checked before the breaker/backend call.
         cite = _TC2(
-            api_mod.create_app(receipts_dir=rdir, backend_resolver=lambda *a, **k: _CleanBackend())
+            api_mod.create_app(
+                public_release=False,
+                receipts_dir=rdir,
+                backend_resolver=lambda *a, **k: _CleanBackend(),
+            )
         )
         out["cite_resolves_200"] = (
             cite.post(
@@ -2499,6 +2565,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # No store mounted -> citations stay advisory (nothing to check against).
     nostore = _TC2(
         api_mod.create_app(
+            public_release=False,
             receipts_dir="/nonexistent-receipts-dir-zzz",
             backend_resolver=lambda *a, **k: _CleanBackend(),
         )
@@ -2514,7 +2581,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         ).status_code
         == 200
     )
-    gone = _TC2(api_mod.create_app(receipts_dir="/nonexistent-receipts-dir-zzz"))
+    gone = _TC2(
+        api_mod.create_app(public_release=False, receipts_dir="/nonexistent-receipts-dir-zzz")
+    )
     out["receipt_fetch_store_unavailable"] = (
         gone.get("/receipts/" + "a" * 64).status_code == 503
         and gone.get("/receipts").status_code == 503
@@ -2545,7 +2614,11 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     saved_api_key = os.environ.get(_API_KEY_ENV)
     os.environ[_API_KEY_ENV] = "k3y-material"
     try:
-        keys_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+        keys_client = _TC2(
+            api_mod.create_app(
+                public_release=False, backend_resolver=lambda *a, **k: _CleanBackend()
+            )
+        )
     finally:
         if saved_api_key is None:
             os.environ.pop(_API_KEY_ENV, None)
@@ -2845,7 +2918,11 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     saved_api_key2 = os.environ.get(_API_KEY_ENV)
     os.environ[_API_KEY_ENV] = "k3y-material"
     try:
-        tok_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _MeterBackend()))
+        tok_app = _TC2(
+            api_mod.create_app(
+                public_release=False, backend_resolver=lambda *a, **k: _MeterBackend()
+            )
+        )
     finally:
         if saved_api_key2 is None:
             os.environ.pop(_API_KEY_ENV, None)
@@ -2963,7 +3040,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         and sej.get("key") is None
         and sej.get("scopes") == ["read", "write", "admin"]
     )
-    noenv_self = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    noenv_self = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _CleanBackend())
+    )
     sn = noenv_self.get("/harness/self")
     out["self_loopback_none"] = (
         sn.status_code == 200
@@ -2971,7 +3050,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         and sn.json().get("metered") is False
     )
     # no env key + empty store → loopback dev (admin); minting turns auth on
-    noenv_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    noenv_client = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _CleanBackend())
+    )
     minted = noenv_client.post("/harness/keys", json={})
     m_raw = minted.json()["key"] if minted.status_code == 201 else ""
     out["key_bootstrap_loopback_201"] = minted.status_code == 201
@@ -3180,7 +3261,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
     # the FIRST mint on a no-env deployment carries admin so the operator
     # keeps a control plane after provisioning turns auth on
-    noenv2 = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    noenv2 = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _CleanBackend())
+    )
     admin_minted = noenv2.post("/harness/keys", json={"admin": True})
     out["key_admin_loopback_manages"] = (
         admin_minted.status_code == 201
@@ -3298,7 +3381,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         out["capabilities_shape"] = False
         out["capabilities_features"] = False
         out["capabilities_roles_cover_registry"] = False
-    cap_app = api_mod.create_app(max_inflight=7, job_max=33, idem_max=17, rate_limit_rps=50.0)
+    cap_app = api_mod.create_app(
+        public_release=False, max_inflight=7, job_max=33, idem_max=17, rate_limit_rps=50.0
+    )
     cap2 = _CapTC(cap_app).get("/harness/capabilities").json()
     out["capabilities_limits_reflect_config"] = (
         cap2["limits"]["max_inflight"] == 7.0
@@ -3306,7 +3391,11 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         and cap2["limits"]["idem_max"] == 17.0
         and cap2["limits"]["rate_limit_rps"] == 50.0
     )
-    cap3 = _CapTC(api_mod.create_app(rate_limit_rps=0.0)).get("/harness/capabilities").json()
+    cap3 = (
+        _CapTC(api_mod.create_app(public_release=False, rate_limit_rps=0.0))
+        .get("/harness/capabilities")
+        .json()
+    )
     out["capabilities_limiter_disabled_reports_zero"] = cap3["limits"]["rate_limit_rps"] == 0.0
     out["api_version_header_on_every_response"] = (
         client.get("/health").headers.get("x-fx1-api-version") == api_mod.API_VERSION
@@ -3342,7 +3431,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
     out["error_code_honesty_gate"] = rd.json()["code"] == "honesty_gate"
     out["stream_error_code_inband"] = err_frames[0]["code"] == "backend_failure"
-    cap_app = api_mod.create_app(max_inflight=1)
+    cap_app = api_mod.create_app(public_release=False, max_inflight=1)
     cap_client = _TC2(cap_app)
     cap_app.state.inflight_slots.acquire()
     try:
@@ -3458,7 +3547,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             return super().complete(messages)
 
     ube = _UsageBackend()
-    uapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: ube))
+    uapp = _TC2(api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: ube))
     u_ok = uapp.post(
         "/harness/complete", json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]}
     )
@@ -3545,7 +3634,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
             checkpoint=str(spec.work_dir / "ckpt"),
         )
 
-    ft = _TC3(api_mod.create_app(ft_runner=_runner))
+    ft = _TC3(api_mod.create_app(public_release=False, ft_runner=_runner))
 
     def _upload(content: bytes, purpose: str = "fine-tune") -> Any:
         return ft.post(
@@ -3688,7 +3777,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     def _boom(spec: Any, *, emit: Any, should_cancel: Any) -> FTJobOutcome:
         raise RuntimeError("no gpu")
 
-    ftf = _TC3(api_mod.create_app(ft_runner=_boom))
+    ftf = _TC3(api_mod.create_app(public_release=False, ft_runner=_boom))
     bf = ftf.post(
         _PATH_FT_JOBS,
         json={
@@ -3722,7 +3811,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
             time.sleep(0.02)
         return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
 
-    ftc = _TC3(api_mod.create_app(ft_runner=_gate_runner))
+    ftc = _TC3(api_mod.create_app(public_release=False, ft_runner=_gate_runner))
     cf = ftc.post(
         "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
     )
@@ -3771,7 +3860,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         p_gate2.set()
         return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
 
-    ftp_app = api_mod.create_app(ft_runner=_pause_runner, max_inflight=1)
+    ftp_app = api_mod.create_app(public_release=False, ft_runner=_pause_runner, max_inflight=1)
     ftp = _TC3(ftp_app)
     pfid = ftp.post(
         "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
@@ -3895,7 +3984,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
             time.sleep(0.02)
         return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
 
-    ftn = _TC3(api_mod.create_app(ft_runner=_nogate_runner))
+    ftn = _TC3(api_mod.create_app(public_release=False, ft_runner=_nogate_runner))
     nfid = ftn.post(
         "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
     ).json()["id"]
@@ -3936,7 +4025,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         resolved.append((name, k.get("checkpoint_dir") or (a[0] if a else None)))
         raise RuntimeError("no engine — resolution reached")
 
-    ft2 = _TC3(api_mod.create_app(backend_resolver=_spy, ft_runner=_runner))
+    ft2 = _TC3(api_mod.create_app(public_release=False, backend_resolver=_spy, ft_runner=_runner))
     fid2 = ft2.post(
         "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
     ).json()["id"]
@@ -4166,7 +4255,7 @@ def _probe_backend_probes(  # NOSONAR
     def _unconfigured(*a: Any, **k: Any) -> Any:
         raise RuntimeError("BYOK backend is not configured")
 
-    unconf = _TC2(api_mod.create_app(backend_resolver=_unconfigured))
+    unconf = _TC2(api_mod.create_app(public_release=False, backend_resolver=_unconfigured))
     p_none = unconf.post("/harness/backends/byok/probe", json={})
     out["probe_unconfigured_verdict"] = (
         p_none.status_code == 200
@@ -4340,7 +4429,9 @@ def _probe_backend_probes(  # NOSONAR
             yield "llo"
             self.last_usage = {"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}
 
-    sapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _StreamUsage()))
+    sapp = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _StreamUsage())
+    )
     s_ok = sapp.post(
         "/harness/complete/stream",
         json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
@@ -4409,7 +4500,7 @@ def _probe_backend_probes(  # NOSONAR
     # verdict so a scrape reads deep health without spending a live call.
     b_u = uapp.get("/harness/backends").json()["byok"]["last_probe"]
     b_d = dirty.get("/harness/backends").json()["byok"]["last_probe"]
-    fresh = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: None))
+    fresh = _TC2(api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: None))
     out["backends_last_probe"] = (
         b_u is not None
         and b_u["ok"] is True
@@ -4538,7 +4629,8 @@ def _probe_backend_probes(  # NOSONAR
     u_ok = _UsageBackend()
     u_app = _TC2(
         api_mod.create_app(
-            backend_resolver=lambda name, *a, **k: u_ok if name == "byok" else _DeadBackend()
+            public_release=False,
+            backend_resolver=lambda name, *a, **k: u_ok if name == "byok" else _DeadBackend(),
         )
     )
     for _i in range(2):
@@ -4627,7 +4719,8 @@ def _probe_backend_probes(  # NOSONAR
 
     jr = _TC2(
         api_mod.create_app(
-            harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), ""))
+            public_release=False,
+            harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         )
     )
     j_id = jr.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
@@ -4688,7 +4781,7 @@ def _probe_backend_probes(  # NOSONAR
             yield "clean:x"
 
     spy = _SamplingSpy()
-    sp_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: spy))
+    sp_app = _TC2(api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: spy))
     sp_res = sp_app.post(
         "/harness/complete",
         json={
@@ -4850,7 +4943,9 @@ def _probe_backend_probes(  # NOSONAR
             return "clean:yes"
 
     eval_backend = _EvalBackend()
-    eval_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: eval_backend))
+    eval_app = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: eval_backend)
+    )
     ev_sub = eval_app.post(
         "/harness/evals", json={"suite": "tooluse", "backend": "byok", "seed": 0}
     )
@@ -4975,7 +5070,9 @@ def _probe_backend_probes(  # NOSONAR
     # (slots == workers) — a slot-free sleeper leaves the submission's
     # semaphore acquire free while its _exec sits queued behind the sleeper.
     hold_ev = _threading.Event()
-    qapp_ev = api_mod.create_app(backend_resolver=lambda *a, **k: eval_backend, max_inflight=1)
+    qapp_ev = api_mod.create_app(
+        public_release=False, backend_resolver=lambda *a, **k: eval_backend, max_inflight=1
+    )
     qc2 = _TC2(qapp_ev)
     qapp_ev.state.jobs_executor.submit(lambda: hold_ev.wait(timeout=20))
     be_id = qc2.post("/harness/evals", json={"suite": "tooluse", "backend": "byok"}).json()[
@@ -5234,7 +5331,11 @@ def _probe_backend_probes(  # NOSONAR
             gate_ev.wait(timeout=30)
             return "clean:yes"
 
-    gate_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _BlockEvalBackend()))
+    gate_app = _TC2(
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _BlockEvalBackend()
+        )
+    )
     g1 = gate_app.post("/harness/evals", json={"suite": "tooluse", "backend": "byok"}).json()[
         "eval_id"
     ]
@@ -5259,7 +5360,7 @@ def _probe_backend_probes(  # NOSONAR
     def _judge_resolver(name: str, *a: Any, **k: Any) -> Any:
         return _JudgeEvalBackend() if name == "hosted_k3" else eval_backend
 
-    judge_app = _TC2(api_mod.create_app(backend_resolver=_judge_resolver))
+    judge_app = _TC2(api_mod.create_app(public_release=False, backend_resolver=_judge_resolver))
     jsub = judge_app.post(
         "/harness/evals",
         json={
@@ -5384,7 +5485,9 @@ def _probe_backend_probes(  # NOSONAR
         )
         # cancelling a queued eval is a terminal transition — it fires too
         hold_ev2 = _threading.Event()
-        capp = api_mod.create_app(backend_resolver=lambda *a, **k: eval_backend, max_inflight=1)
+        capp = api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: eval_backend, max_inflight=1
+        )
         qc3 = _TC2(capp)
         capp.state.jobs_executor.submit(lambda: hold_ev2.wait(timeout=20))
         q_cb = qc3.post(
@@ -5468,7 +5571,9 @@ def _probe_backend_probes(  # NOSONAR
             self.seen = sampling
             return super().complete(messages, sampling=sampling)
 
-    oi_clean = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+    oi_clean = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _OiBackend())
+    )
     r = oi_clean.get("/v1/models")
     out["openai_models_200"] = (
         r.status_code == 200
@@ -5824,15 +5929,25 @@ def _probe_backend_probes(  # NOSONAR
             raise RuntimeError("malformed embeddings payload: data is dict, not list")
 
     oi_tool = _OiToolBackend()
-    oi_tools = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_tool))
+    oi_tools = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: oi_tool)
+    )
     # three calls a turn — probes ``max_tool_calls`` truncation
     oi_tool3 = _OiToolBackend(n_calls=3)
-    oi_tool3_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_tool3))
+    oi_tool3_app = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: oi_tool3)
+    )
     oi_lp_b = _OiLpBackend()
-    oi_lp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_lp_b))
+    oi_lp = _TC2(api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: oi_lp_b))
     oi_emb_b = _OiEmbedBackend()
-    oi_emb = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_emb_b))
-    oi_emb_bad = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiEmbedBadBackend()))
+    oi_emb = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: oi_emb_b)
+    )
+    oi_emb_bad = _TC2(
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _OiEmbedBadBackend()
+        )
+    )
     tool_spec = {
         "type": "function",
         "function": {
@@ -6506,7 +6621,9 @@ def _probe_backend_probes(  # NOSONAR
     # declared params reach the provider + stamp the audit record;
     # usage on n>1 is the honest sum of n actual calls.
     usage_be = _OiUsage()
-    oi_usage = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: usage_be))
+    oi_usage = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: usage_be)
+    )
     r = oi_usage.post(
         "/v1/chat/completions",
         json={
@@ -6788,7 +6905,9 @@ def _probe_backend_probes(  # NOSONAR
     )
 
     # the gate fires over the OpenAI surface
-    oi_dirty = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiDirty()))
+    oi_dirty = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _OiDirty())
+    )
     r = oi_dirty.post(
         "/v1/chat/completions",
         json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
@@ -6804,7 +6923,9 @@ def _probe_backend_probes(  # NOSONAR
     _saved_key = os.environ.get(_API_KEY_ENV)
     os.environ[_API_KEY_ENV] = "probe-key"
     try:
-        keyed = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+        keyed = _TC2(
+            api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _OiBackend())
+        )
     finally:
         if _saved_key is None:
             os.environ.pop(_API_KEY_ENV, None)
@@ -6853,7 +6974,9 @@ def _probe_backend_probes(  # NOSONAR
     )
 
     # capacity admission applies to the OpenAI surface too
-    oi_drained = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1)
+    oi_drained = api_mod.create_app(
+        public_release=False, backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1
+    )
     oi_drained.state.inflight_slots.acquire()
     try:
         r = _TC2(oi_drained).post(
@@ -7073,7 +7196,11 @@ def _probe_backend_probes(  # NOSONAR
         ) -> str:
             return self._content
 
-    oi_json = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson('{"score": 0.9}')))
+    oi_json = _TC2(
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _OiJson('{"score": 0.9}')
+        )
+    )
     _rf_obj = {"type": "json_object"}
     r = oi_json.post(
         "/v1/chat/completions",
@@ -7086,7 +7213,9 @@ def _probe_backend_probes(  # NOSONAR
     out["openai_json_object_pass"] = (
         r.status_code == 200 and r.json()["choices"][0]["message"]["content"] == '{"score": 0.9}'
     )
-    oi_broken = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson("oops")))
+    oi_broken = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _OiJson("oops"))
+    )
     r = oi_broken.post(
         "/v1/chat/completions",
         json={
@@ -7099,7 +7228,9 @@ def _probe_backend_probes(  # NOSONAR
         r.status_code == 502 and r.json()["error"]["code"] == "format_violation"
     )
     # json_object means a JSON object — a bare array is still a violation
-    oi_arr = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson("[1, 2]")))
+    oi_arr = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _OiJson("[1, 2]"))
+    )
     r = oi_arr.post(
         "/v1/chat/completions",
         json={
@@ -7127,7 +7258,9 @@ def _probe_backend_probes(  # NOSONAR
     )
     out["openai_json_schema_pass"] = r.status_code == 200
     oi_bad_schema_out = _TC2(
-        api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson('{"score": "hi"}'))
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _OiJson('{"score": "hi"}')
+        )
     )
     r = oi_bad_schema_out.post(
         "/v1/chat/completions",
@@ -7517,7 +7650,9 @@ def _probe_backend_probes(  # NOSONAR
         == 400
     )
     # capacity admission applies to the Responses surface too
-    rd_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1)
+    rd_app = api_mod.create_app(
+        public_release=False, backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1
+    )
     rd_app.state.inflight_slots.acquire()
     try:
         r = _TC2(rd_app).post("/v1/responses", json={"model": "fx1", "input": "h"})
@@ -7782,7 +7917,9 @@ def _probe_backend_probes(  # NOSONAR
     # executor — store caps, submit-time line validation, per-line gated
     # execution through the live route cores, output files, cooperative
     # cancel, expiry projection, and the shared /v1 idempotency space.
-    fb = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+    fb = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _OiBackend())
+    )
     _bf_lines = [
         {
             "custom_id": "a",
@@ -7871,7 +8008,11 @@ def _probe_backend_probes(  # NOSONAR
         ).status_code
         == 400
     )
-    tiny = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), file_bytes_max=4))
+    tiny = _TC2(
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _OiBackend(), file_bytes_max=4
+        )
+    )
     out["file_upload_oversize_413"] = (
         tiny.post(
             "/v1/files",
@@ -7904,7 +8045,11 @@ def _probe_backend_probes(  # NOSONAR
         and fb.get(f"/v1/files/{fid}").status_code == 404
     )
     # LRU bound: file_max=1 evicts the first upload
-    lru = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), file_max=1))
+    lru = _TC2(
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _OiBackend(), file_max=1
+        )
+    )
     fid1 = _upload(lru)["id"]
     fid2 = _upload(lru)["id"]
     out["file_lru_evicts_oldest"] = (
@@ -8137,7 +8282,9 @@ def _probe_backend_probes(  # NOSONAR
             gate_ev.wait(10)
             return super().complete(messages, sampling=sampling)
 
-    gapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _GateBackend()))
+    gapp = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _GateBackend())
+    )
     gid = _upload(gapp)["id"]
     gcb = gapp.post(
         "/v1/batches",
@@ -8155,7 +8302,9 @@ def _probe_backend_probes(  # NOSONAR
         and gterm["output_file_id"] is not None
     )
     # expiry projection: a record past expires_at reports 'expired'
-    exp_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend())
+    exp_app = api_mod.create_app(
+        public_release=False, backend_resolver=lambda *a, **k: _OiBackend()
+    )
     past = api_mod._BatchRecord(  # noqa: SLF001
         batch_id="batch_past",
         input_file_id="file-x",
@@ -8236,7 +8385,9 @@ def _probe_backend_probes(  # NOSONAR
     )
     out["batch_webhook_secret_never_serializes"] = "callback_secret" not in _bh
     # Lazy expiry also fires — exactly once across reads.
-    exp_cb_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend())
+    exp_cb_app = api_mod.create_app(
+        public_release=False, backend_resolver=lambda *a, **k: _OiBackend()
+    )
     past_cb = api_mod._BatchRecord(  # noqa: SLF001
         batch_id="batch_past_cb",
         input_file_id="file-x",
@@ -8281,7 +8432,9 @@ def _probe_backend_probes(  # NOSONAR
     )
     # over-capacity admission: a batch submit under a held inflight slot
     # is the same 503 over_capacity as the sync surface
-    cap_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1)
+    cap_app = api_mod.create_app(
+        public_release=False, backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1
+    )
     cap = _TC2(cap_app)
     cap_fid = _upload(cap)["id"]
     cap_app.state.inflight_slots.acquire()
@@ -8305,7 +8458,7 @@ def _probe_backend_probes(  # NOSONAR
         be._model = f"routed-{name}"
         return be
 
-    happ = _TC2(api_mod.create_app(backend_resolver=_hdr_resolver))
+    happ = _TC2(api_mod.create_app(public_release=False, backend_resolver=_hdr_resolver))
     hid = _upload(happ)["id"]
     hcb = happ.post(
         "/v1/batches",
@@ -8533,7 +8686,9 @@ def _probe_backend_probes(  # NOSONAR
     # records stay cancelled
     _sd = _Path(_tempfile.mkdtemp(prefix="fx1-ul-"))
     du1 = _TC2(
-        api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), state_dir=str(_sd))
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _OiBackend(), state_dir=str(_sd)
+        )
     )
     uup = du1.post(
         _PATH_UPLOADS,
@@ -8555,7 +8710,9 @@ def _probe_backend_probes(  # NOSONAR
         },
     ).json()
     du2 = _TC2(
-        api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), state_dir=str(_sd))
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _OiBackend(), state_dir=str(_sd)
+        )
     )
     ddone = du2.post(
         f"/v1/uploads/{uup}/complete",
@@ -8808,7 +8965,11 @@ def _probe_backend_probes(  # NOSONAR
         fb.get(f"/v1/chat/completions/{ic_id}/messages").status_code == 404
     )
     # LRU bound: store_max=2 evicts the oldest entry
-    ev_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), store_max=2))
+    ev_app = _TC2(
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _OiBackend(), store_max=2
+        )
+    )
     ev_ids = [
         ev_app.post(
             "/v1/chat/completions",
@@ -8894,7 +9055,9 @@ def _probe_backend_probes(  # NOSONAR
             _ChainBackend.seen.append(list(messages))
             return super().complete(messages, sampling=sampling)
 
-    ch = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _ChainBackend()))
+    ch = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _ChainBackend())
+    )
     ch1 = ch.post("/v1/responses", json={"model": "fx1", "input": "chain-one"})
     ch2 = ch.post(
         "/v1/responses",
@@ -9023,7 +9186,9 @@ def _probe_backend_probes(  # NOSONAR
             time.sleep(0.3)
             return super().complete(messages, sampling=sampling)
 
-    ch_slow = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _SlowBackend()))
+    ch_slow = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _SlowBackend())
+    )
     sbg = ch_slow.post(
         "/v1/responses", json={"model": "fx1", "input": "bg-slow", "background": True}
     ).json()
@@ -9242,7 +9407,9 @@ def _probe_backend_probes(  # NOSONAR
             time.sleep(0.8)
             return super().complete(messages, sampling=sampling)
 
-    rp_app = api_mod.create_app(backend_resolver=lambda *a, **k: _ReplaySlowBackend())
+    rp_app = api_mod.create_app(
+        public_release=False, backend_resolver=lambda *a, **k: _ReplaySlowBackend()
+    )
     rp_app.state.sse_keepalive_s = 0.05
     rp_follow = _TC2(rp_app)
     rfa = rp_follow.post(
@@ -9279,7 +9446,11 @@ def _probe_backend_probes(  # NOSONAR
         ) -> str:
             raise RuntimeError("replay boom")
 
-    rp_boom = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _ReplayBoomBackend()))
+    rp_boom = _TC2(
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _ReplayBoomBackend()
+        )
+    )
     rfb = rp_boom.post(
         "/v1/responses", json={"model": "fx1", "input": "rfb", "background": True}
     ).json()
@@ -9302,7 +9473,9 @@ def _probe_backend_probes(  # NOSONAR
     # previous_response_id: a conv_* carries an accumulated item stream;
     # a response anchored to it runs on the conv context and appends its
     # own turn back.
-    cv = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _ChainBackend()))
+    cv = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _ChainBackend())
+    )
     cv0 = cv.post(
         _CONVERSATIONS_URL,
         json={
@@ -9943,7 +10116,7 @@ def _probe_backend_probes(  # NOSONAR
         == 400
     )
     # --- expires_after / last_active_at / standing expiry -------------
-    exp_app = api_mod.create_app()
+    exp_app = api_mod.create_app(public_release=False)
     fbx = _TC2(exp_app)
     vs_exp = fbx.post(
         "/v1/vector_stores",
@@ -10206,7 +10379,9 @@ def _probe_backend_probes(  # NOSONAR
     # tool_calls turn re-mints as a tool_use block with parsed input;
     # tool_result history translates to OpenAI tool turns
     at_backend = _OiToolBackend()
-    tool_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: at_backend))
+    tool_app = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: at_backend)
+    )
     at = tool_app.post(
         _MESSAGES_PATH,
         json={
@@ -10396,7 +10571,9 @@ def _probe_backend_probes(  # NOSONAR
                 raise RuntimeError("item boom")
             return super().complete(messages, sampling=sampling)
 
-    ab_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _AbatchBackend()))
+    ab_app = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _AbatchBackend())
+    )
 
     def _wait_abatch(client: Any, batch_id: str) -> dict[str, Any]:
         b: dict[str, Any] = {}
@@ -10563,7 +10740,11 @@ def _probe_backend_probes(  # NOSONAR
             ab_gate_ev.wait(10)
             return super().complete(messages, sampling=sampling)
 
-    ab_gapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _AbatchGateBackend()))
+    ab_gapp = _TC2(
+        api_mod.create_app(
+            public_release=False, backend_resolver=lambda *a, **k: _AbatchGateBackend()
+        )
+    )
     abg = ab_gapp.post(f"{_MESSAGES_PATH}/batches", json={"requests": ab_reqs})
     abg_id = abg.json()["id"]
     abg_mid = ab_gapp.get(f"{_MESSAGES_PATH}/batches/{abg_id}").json()
@@ -10596,7 +10777,9 @@ def _probe_backend_probes(  # NOSONAR
     )
     # expiry projection: a record past expires_at ends 'expired' with
     # unfinished items landing expired rows on read
-    ab_exp_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend())
+    ab_exp_app = api_mod.create_app(
+        public_release=False, backend_resolver=lambda *a, **k: _OiBackend()
+    )
     ab_past = api_mod._AnthropicBatchRecord(  # noqa: SLF001
         batch_id="msgbatch_past",
         created_at=1,
@@ -10625,7 +10808,9 @@ def _probe_backend_probes(  # NOSONAR
             _CountBackend.last_msgs = messages
             return 42
 
-    ct_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CountBackend()))
+    ct_app = _TC2(
+        api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _CountBackend())
+    )
     ct_ok = ct_app.post(
         f"{_MESSAGES_PATH}/count_tokens",
         json={
@@ -10795,7 +10980,9 @@ def _probe_backend_probes(  # NOSONAR
     saved_api_key = os.environ.get(_API_KEY_ENV)
     os.environ[_API_KEY_ENV] = "k3y-material"
     try:
-        a_sec = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+        a_sec = _TC2(
+            api_mod.create_app(public_release=False, backend_resolver=lambda *a, **k: _OiBackend())
+        )
     finally:
         if saved_api_key is None:
             os.environ.pop(_API_KEY_ENV, None)

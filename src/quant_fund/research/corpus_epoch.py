@@ -143,20 +143,48 @@ def gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
         return set()
     import subprocess
 
+    if os.name == "nt":
+        # Git for Windows hangs on the NUL-delimited stdin protocol, while
+        # Python text pipes translate LF to CRLF. Use a byte newline stream;
+        # names with line breaks stay members so the portability gate rejects
+        # them instead of letting an ignore rule hide them.
+        if any("\r" in name or "\n" in name for name in rels):
+            return set()
+        try:
+            proc_bytes = subprocess.run(
+                ["git", "-c", "core.quotePath=false", "-C", str(root), "check-ignore", "--stdin"],
+                input=("\n".join(rels) + "\n").encode("utf-8", "surrogateescape"),
+                capture_output=True,
+                timeout=30,
+                check=False,
+            )
+        except OSError:
+            return set()
+        if proc_bytes.returncode not in (0, 1):
+            return set()
+        return {
+            name.decode("utf-8", "surrogateescape")
+            for name in proc_bytes.stdout.split(b"\n")
+            if name
+        }
+
     try:
-        proc = subprocess.run(
+        proc_text = subprocess.run(
             ["git", "-C", str(root), "check-ignore", "-z", "--stdin"],
             input="\0".join(rels) + "\0",
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="surrogateescape",
+            timeout=30,
             check=False,
         )
     except OSError:
         return set()
     # 0 = some ignored, 1 = none, anything else = not a worktree.
-    if proc.returncode not in (0, 1):
+    if proc_text.returncode not in (0, 1):
         return set()
-    return {name for name in proc.stdout.split("\0") if name}
+    return {name for name in proc_text.stdout.split("\0") if name}
 
 
 def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:

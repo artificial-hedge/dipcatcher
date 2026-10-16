@@ -83,12 +83,11 @@ src/fx1/serve/api.py:_mount_key_lifecycle 23
 src/fx1/serve/api.py:_mount_receipt_routes 16
 src/fx1/serve/api.py:_resolve_auth 12
 src/fx1/serve/api.py:_submit_job 14
-src/fx1/serve/api.py:create_app 71
-src/fx1/serve/api.py:create_app._resolve_request_backend 11
+src/fx1/serve/api.py:create_app 70
+src/fx1/serve/api.py:create_app._resolve_request_backend 10
 src/fx1/serve/api.py:create_app.harness_api_auth 12
 src/fx1/serve/api_audit.py:_probe_backend_probes 115
 src/fx1/serve/api_audit.py:_probe_finetune 46
-src/fx1/serve/backends.py:LocalFx1Backend.__init__ 12
 src/fx1/serve/backends.py:SamplingParams.body_fields 14
 src/fx1/serve/backends.py:_openai_chat_complete 10
 src/fx1/serve/backends.py:_openai_chat_complete_tools 19

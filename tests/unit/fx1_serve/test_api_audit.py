@@ -15,7 +15,7 @@ def _client() -> TestClient:
     def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
         return 0, "ok", ""
 
-    return TestClient(api_mod.create_app(harness=Harness(runner=fake_runner)))
+    return TestClient(api_mod.create_app(public_release=False, harness=Harness(runner=fake_runner)))
 
 
 @pytest.fixture(autouse=True)

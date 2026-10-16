@@ -41,7 +41,14 @@ def atomic_write_bytes(path: Path | str, data: bytes) -> Path:
     fd, temporary = tempfile.mkstemp(prefix=f".{dest.name}.", dir=dest.parent)
     temporary_path = Path(temporary)
     try:
-        with os.fdopen(fd, "wb") as handle:
+        try:
+            handle = os.fdopen(fd, "wb")
+        except BaseException:
+            # fdopen did not take ownership of the raw descriptor. Close it
+            # before removing the temporary file (required on Windows).
+            os.close(fd)
+            raise
+        with handle:
             handle.write(data)
             handle.flush()
             os.fsync(handle.fileno())
@@ -78,15 +85,17 @@ def atomic_write_parquet(frame: pl.DataFrame, path: Path | str) -> Path:
 def publish_text_once(path: Path, content: str) -> None:
     """Publish a complete immutable text artifact without replacing an existing one.
 
-    Re-publishing identical content is a no-op; differing content at an
-    existing path (or a symlink) raises ``FileExistsError`` — sealed evidence
-    must never be silently swapped.
+    Publish the exact UTF-8 bytes on every platform: text-mode newline
+    translation would change receipt hashes on Windows. Re-publishing
+    identical bytes is a no-op; differing bytes at an existing path (or a
+    symlink) raise ``FileExistsError`` — sealed evidence must never be swapped.
     """
+    content_bytes = content.encode("utf-8")
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.is_symlink():
         raise FileExistsError(f"receipt path is a symlink: {path}")
     if path.exists():
-        if path.read_text(encoding="utf-8") != content:
+        if path.read_bytes() != content_bytes:
             raise FileExistsError(f"receipt already exists with different content: {path}")
         return
     temporary_path: Path | None = None
@@ -95,18 +104,17 @@ def publish_text_once(path: Path, content: str) -> None:
             dir=path.parent,
             prefix=f".{path.name}.",
             suffix=".tmp",
-            mode="w",
-            encoding="utf-8",
+            mode="wb",
             delete=False,
         ) as temporary:
             temporary_path = Path(temporary.name)
-            temporary.write(content)
+            temporary.write(content_bytes)
             temporary.flush()
             os.fsync(temporary.fileno())
         try:
             os.link(temporary_path, path)
         except FileExistsError:
-            if path.is_symlink() or path.read_text(encoding="utf-8") != content:
+            if path.is_symlink() or path.read_bytes() != content_bytes:
                 raise FileExistsError(
                     f"receipt already exists with different content: {path}"
                 ) from None

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import os
 
-from fx1.serve.api import _API_KEY_ENV, app
+from fx1.serve.api import _API_KEY_ENV, create_app
+from fx1.serve.release_gate import ALLOW_TEST_FIXTURE_ENV
 
 
 def main() -> int:
@@ -17,5 +18,9 @@ def main() -> int:
         raise SystemExit(
             "non-loopback binding requires FX1_API_KEY; refusing unauthenticated exposure"
         )
+    public_release = host not in {"127.0.0.1", "::1", "localhost"}
+    if public_release and os.environ.get(ALLOW_TEST_FIXTURE_ENV) == "1":
+        raise SystemExit(f"non-loopback binding refuses {ALLOW_TEST_FIXTURE_ENV}=1")
+    app = create_app(public_release=public_release)
     uvicorn.run(app, host=host, port=port, reload=False, server_header=False)
     return 0

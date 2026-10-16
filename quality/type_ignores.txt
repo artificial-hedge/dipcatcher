@@ -4,6 +4,8 @@
 # Prefer a real type fix over adding a suppression.
 src/fx1/data/sources/adapters.py 2
 src/fx1/data/sources/ds_audit.py 1
+src/fx1/flash/store.py 1
+src/fx1/harness.py 2
 src/fx1/serve/api_audit.py 2
 src/fx1/serve/journal_audit.py 12
 src/fx1/train/tiny_lm.py 1

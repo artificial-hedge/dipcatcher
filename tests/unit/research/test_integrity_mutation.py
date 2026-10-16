@@ -335,7 +335,12 @@ def test_jewel_mutated_deleted_symlinked_all_fail(tmp_path: Path) -> None:
     errors = crown_jewels_errors(root)
     assert "jewel_missing:Makefile" in errors
     (root / "evil.txt").write_text("attacker content")
-    (root / "Makefile").symlink_to("evil.txt")
+    try:
+        (root / "Makefile").symlink_to("evil.txt")
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 1314:
+            pytest.skip("Windows symlink privilege unavailable")
+        raise
     errors = crown_jewels_errors(root)
     assert "jewel_symlink:Makefile" in errors
 
@@ -676,6 +681,8 @@ def test_deleted_tsa_cacert_degrades_but_jewel_gate_catches(tmp_path: Path) -> N
     """Deleting the committed CA makes chain_unchecked (honest degrade, not
     silent verify) — the cert files are crown jewels, so the swap/delete is
     caught one layer up."""
+    if not ta._openssl_available():
+        pytest.skip("openssl not on PATH")
     root = _mint_real_anchor(tmp_path)
     (root / TIMESTAMPS_DIR / ta.CACERT_NAME).unlink()
     res = verify_timestamps(root)

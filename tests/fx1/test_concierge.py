@@ -6,8 +6,11 @@ approval gating, and message bookkeeping are all observable.
 """
 
 import io
+import json
+import os
 import threading
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 import pytest
@@ -63,6 +66,24 @@ class FakeHarness:
 
     def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
         self.calls.append((name, extra_args))
+        if name == "research-families":
+            return FakeHarnessResult(
+                0,
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "catalog_version": 2,
+                        "receipt_schema_version": 2,
+                        "required": ["conformal", "volatility"],
+                        "live_optional": [],
+                        "retired_count": 0,
+                        "retired_sample": [],
+                        "order": ["conformal", "volatility"],
+                        "generated_at": "2026-10-16T00:00:00Z",
+                        "runner": {"execution_constraint": False, "note": "configured scorecard"},
+                    }
+                ),
+            )
         return FakeHarnessResult(0, f"DATA_LABEL=SYNTHETIC\n{name} ran\n", "")
 
 
@@ -105,7 +126,11 @@ class FakeResearcher:
 
 @pytest.fixture()
 def env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
-    monkeypatch.setenv("FX1_CONFIG_DIR", str(tmp_path / "fx1-config"))
+    config_dir = tmp_path / "fx1-config"
+    if os.name == "nt":
+        config_dir.mkdir()
+        profiles._restrict_windows_acl(config_dir, directory=True)
+    monkeypatch.setenv("FX1_CONFIG_DIR", str(config_dir))
     monkeypatch.delenv("MOONSHOT_API_KEY", raising=False)
     monkeypatch.delenv("FX1_BASE_URL", raising=False)
     monkeypatch.setenv("NO_COLOR", "1")
@@ -739,6 +764,21 @@ def test_redirect_retargets_running_research(env: Path, tmp_path: Path) -> None:
     concierge.join_job(timeout_s=5)
 
 
+def test_redirect_refuses_other_background_jobs(env: Path, tmp_path: Path) -> None:
+    researcher = FakeResearcher()
+    concierge, out = make_concierge(tmp_path, researcher=researcher)
+    release = threading.Event()
+    job = BackgroundJob(label="superpower", run_fn=lambda *_: release.wait(5)).start()
+    concierge._job = job  # noqa: SLF001
+    try:
+        concierge.handle_line("/redirect another goal")
+        assert researcher.redirects == []
+        assert "no running background research job to redirect" in joined(out)
+    finally:
+        release.set()
+        assert job.join(1)
+
+
 def test_status_without_job(env: Path, tmp_path: Path) -> None:
     concierge, out = make_concierge(tmp_path)
     concierge.handle_line("/status")
@@ -754,6 +794,71 @@ def test_background_job_error_announced(env: Path, tmp_path: Path) -> None:
     concierge.handle_line("/research anything --sync")
     assert "failed" in joined(out)
     assert "exploded" in joined(out)
+
+
+class StalledResearcher:
+    """A transport that does not observe the job's cancellation event."""
+
+    def __init__(self) -> None:
+        self.started = threading.Event()
+        self.release = threading.Event()
+        self.stopped = threading.Event()
+
+    def run(self, goal: str, **kwargs: Any) -> ResearchReport:
+        from fx1.webresearch.engine import ResearchProgress
+
+        self.started.set()
+        self.release.wait(5)
+        callback = kwargs.get("on_progress")
+        if callback is not None:
+            callback(ResearchProgress(event="late", detail="late event"))
+        self.stopped.set()
+        return ResearchReport(goal=goal)
+
+
+def test_research_sync_wall_budget_bounds_stalled_transport(env: Path, tmp_path: Path) -> None:
+    from fx1.interactive.budget import RunBudget
+
+    researcher = StalledResearcher()
+    concierge, out = make_concierge(tmp_path, researcher=researcher)
+    concierge._run_budget = RunBudget(max_wall_s=0.1)  # noqa: SLF001
+    try:
+        concierge.handle_line("/research slow search --sync")
+        assert researcher.started.is_set()
+        assert concierge.job is not None and not concierge.job.running
+        assert concierge.job.cancel_event.is_set()
+        assert "[research] failed: BudgetExceeded: budget exceeded: wall" in joined(out)
+    finally:
+        researcher.release.set()
+        assert researcher.stopped.wait(1)
+    concierge.tick()
+    assert "late event" not in joined(out)
+
+
+def test_research_cancel_returns_while_transport_is_stalled(env: Path, tmp_path: Path) -> None:
+    researcher = StalledResearcher()
+    concierge, out = make_concierge(tmp_path, researcher=researcher)
+    try:
+        concierge.handle_line("/research slow search")
+        assert researcher.started.wait(1)
+        concierge.handle_line("/cancel")
+        concierge.join_job(timeout_s=1)
+        assert concierge.job is not None and not concierge.job.running
+        assert concierge.job.result.cancelled is True
+        assert "cancelled before a complete report was available" in joined(out)
+    finally:
+        researcher.release.set()
+        assert researcher.stopped.wait(1)
+    concierge.tick()
+    assert "late event" not in joined(out)
+
+
+@pytest.mark.parametrize("option", ["budget_s", "max_sources"])
+def test_research_rejects_nonpositive_limits(env: Path, tmp_path: Path, option: str) -> None:
+    concierge, _ = make_concierge(tmp_path)
+    with pytest.raises(ValueError, match="must be positive"):
+        concierge.start_research("goal", **{option: 0})
+    assert concierge.job is None
 
 
 # ---------------------------------------------------------------------------
@@ -785,10 +890,9 @@ def test_superpower_sync_offline_pipeline(env: Path, tmp_path: Path) -> None:
     assert "plan for: run the conformal volatility benchmark" in text
     assert "planner: deterministic" in text
     assert "[ran] research" in text  # harness ran and was explained
-    # the family catalog is consulted (read-only) before the research bench runs;
-    # the fake harness cannot serve it, so eligibility is reported fail-closed
+    # The family catalog is consulted before the research bench runs.
     assert harness.calls == [("research-families", None), ("research", None)]
-    assert "family catalog unavailable" in text
+    assert "family catalog unavailable" not in text
     # planner coordinated: a pure lab-benchmark goal does not trigger web research
     assert researcher.goals == []
     # offline synthesis is honest about the missing model
@@ -936,11 +1040,12 @@ def test_run_console_prints_one_prompt_per_line_across_idle_polls(
     assert "active model: fx1" in joined(out)
 
 
-def test_run_console_windows_uses_blocking_input_without_select(
+def test_run_console_windows_without_msvcrt_uses_blocking_input_without_select(
     env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(concierge_module.sys, "platform", "win32")
     monkeypatch.setattr(concierge_module.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setitem(concierge_module.sys.modules, "msvcrt", None)
 
     def unexpected_select(*args: Any) -> Any:
         pytest.fail("Windows console stdin cannot be polled with select")
@@ -961,6 +1066,32 @@ def test_run_console_windows_uses_blocking_input_without_select(
     assert prompts == ["dip › ", "dip › "]
     assert "active model: fx1" in joined(out)
     assert "background progress updates after you submit a line" in joined(startup)
+
+
+def test_run_console_windows_tty_polls_msvcrt(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(concierge_module.sys, "platform", "win32")
+    monkeypatch.setattr(concierge_module.sys.stdin, "isatty", lambda: True)
+    pending = list("/model\r/exit\r")
+    msvcrt = ModuleType("msvcrt")
+    msvcrt.kbhit = lambda: bool(pending)  # type: ignore[attr-defined]
+    msvcrt.getwch = lambda: pending.pop(0)  # type: ignore[attr-defined]
+    monkeypatch.setitem(concierge_module.sys.modules, "msvcrt", msvcrt)
+
+    def unexpected_input(prompt: str) -> str:
+        pytest.fail(f"Windows TTY should poll msvcrt, not call input({prompt!r})")
+
+    concierge, out = make_concierge(tmp_path)
+    startup: list[str] = []
+    run_console(
+        concierge_factory=lambda: concierge,
+        input_fn=unexpected_input,
+        output_fn=startup.append,
+    )
+
+    assert "active model: fx1" in joined(out)
+    assert "background progress updates while you type" in joined(startup)
 
 
 @pytest.mark.parametrize("configured", [False, True])

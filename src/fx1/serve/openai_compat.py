@@ -57,6 +57,7 @@ __all__ = [
     "OPENAI_ERR_TYPES",
     "OPENAI_UNSUPPORTED",
     "OPENAI_MODEL_IDS",
+    "PUBLIC_MODEL_IDS",
     "OPENAI_RESPONSE_FORMATS",
     "RESPONSE_ITEM_TYPES_REFUSED",
     "RESPONSE_PART_TYPES",
@@ -172,6 +173,7 @@ OPENAI_RESPONSE_FORMATS = frozenset({"text", "json_object", "json_schema"})
 
 # The GET /v1/models inventory — `fx1` is the alias for the default link.
 OPENAI_MODEL_IDS = ("fx1", "hosted_k3", "local_fx1", "byok")
+PUBLIC_MODEL_IDS = ("fx1", "fx1-lite")
 
 # Fields a caller may send that the gated pipeline cannot honor. Naming the
 # field beats silently dropping it — honest compat over fake compat.
@@ -561,6 +563,7 @@ def openai_models(
     created: int | None = None,
     extra_ids: Iterable[str] = (),
     created_by_id: Mapping[str, int] | None = None,
+    model_ids: Iterable[str] | None = None,
 ) -> OpenAIModelList:
     """The model inventory — `fx1` plus the backend names `model` may
     carry. ``created`` defaults to call time for the built-ins;
@@ -568,11 +571,12 @@ def openai_models(
     recorded creation time."""
     ts = int(time.time()) if created is None else created
     stamps = created_by_id or {}
-    extra = [m for m in dict.fromkeys(extra_ids) if m not in OPENAI_MODEL_IDS]
+    builtins = tuple(OPENAI_MODEL_IDS if model_ids is None else model_ids)
+    extra = [m for m in dict.fromkeys(extra_ids) if m not in builtins]
     return OpenAIModelList(
         data=[
             OpenAIModel(id=m, created=int(stamps.get(m, ts)) if m in stamps else ts)
-            for m in (*OPENAI_MODEL_IDS, *sorted(extra))
+            for m in (*builtins, *sorted(extra))
         ]
     )
 
@@ -583,6 +587,7 @@ def openai_model(
     created: int | None = None,
     extra_ids: Iterable[str] = (),
     created_by_id: Mapping[str, int] | None = None,
+    model_ids: Iterable[str] | None = None,
 ) -> OpenAIModel:
     """One model card — ``GET /v1/models/{id}`` retrieve semantics.
 
@@ -592,7 +597,8 @@ def openai_model(
     ``created_by_id`` stamps an extra card with its own recorded
     creation time instead of the serve boot stamp.
     """
-    if model_id not in OPENAI_MODEL_IDS and model_id not in frozenset(extra_ids):
+    builtins = OPENAI_MODEL_IDS if model_ids is None else tuple(model_ids)
+    if model_id not in builtins and model_id not in frozenset(extra_ids):
         raise OpenAICompatError(
             f"The model '{model_id}' does not exist", status=404, code="model_not_found"
         )
@@ -814,6 +820,46 @@ def _resolve_openai_link(
     return backend, fallbacks, checkpoint_dir, byok, None
 
 
+def _resolve_public_release_link(
+    model: str,
+    ext: OpenAIFx1 | None,
+    hdrs: dict[str, str],
+    *,
+    ft_resolver: Callable[[str], str | None] | None = None,
+    require_known_model: bool = False,
+    public_release: bool = False,
+) -> tuple[str, list[str], str | None, ByokOverride | None, str | None]:
+    """Route public aliases only to their own signed local checkpoint."""
+    if public_release and model in PUBLIC_MODEL_IDS:
+        explicit = (ext.backend if ext is not None else None) or hdrs.get("x-fx1-backend")
+        if (
+            explicit not in (None, "local_fx1")
+            or any(name.startswith("x-fx1-byok-") for name in hdrs)
+            or (ext is not None and ext.byok is not None)
+        ):
+            raise OpenAICompatError(
+                f"public model {model!r} requires its signed local_fx1 release",
+                status=422,
+            )
+        if (
+            (ext is not None and (ext.checkpoint_dir is not None or ext.fallbacks))
+            or hdrs.get("x-fx1-checkpoint-dir")
+            or hdrs.get("x-fx1-fallbacks")
+        ):
+            raise OpenAICompatError(
+                f"public model {model!r} does not accept checkpoint or fallback overrides",
+                status=422,
+            )
+        return "local_fx1", [], None, None, model
+    return _resolve_openai_link(
+        model,
+        ext,
+        hdrs,
+        ft_resolver=ft_resolver,
+        require_known_model=require_known_model,
+    )
+
+
 def _resolve_timeout(ext_timeout: float | None, hdrs: dict[str, str]) -> float | None:
     """Per-request backend timeout: ``fx1.timeout_s`` > ``X-Fx1-Timeout``
     header (seconds). A malformed header is a fail-closed 400 — never a
@@ -860,6 +906,7 @@ def openai_to_kwargs(
     headers: Mapping[str, str] | None = None,
     *,
     ft_resolver: Callable[[str], str | None] | None = None,
+    public_release: bool = False,
 ) -> dict[str, Any]:
     """Translate an OpenAI request into ``complete`` kwargs.
 
@@ -877,8 +924,13 @@ def openai_to_kwargs(
     """
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok, served_model = _resolve_openai_link(
-        body.model, ext, hdrs, ft_resolver=ft_resolver, require_known_model=True
+    backend, fallbacks, checkpoint_dir, byok, served_model = _resolve_public_release_link(
+        body.model,
+        ext,
+        hdrs,
+        ft_resolver=ft_resolver,
+        require_known_model=True,
+        public_release=public_release,
     )
     return {
         "backend": backend,
@@ -1807,6 +1859,7 @@ def response_to_kwargs(
     headers: Mapping[str, str] | None = None,
     *,
     ft_resolver: Callable[[str], str | None] | None = None,
+    public_release: bool = False,
 ) -> dict[str, Any]:
     """Translate a Responses request into ``complete`` kwargs — the same
     backend-resolution order and the same extension/headers as the chat
@@ -1815,8 +1868,13 @@ def response_to_kwargs(
     ``user`` or ``safety_identifier``."""
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok, served_model = _resolve_openai_link(
-        body.model, ext, hdrs, ft_resolver=ft_resolver, require_known_model=True
+    backend, fallbacks, checkpoint_dir, byok, served_model = _resolve_public_release_link(
+        body.model,
+        ext,
+        hdrs,
+        ft_resolver=ft_resolver,
+        require_known_model=True,
+        public_release=public_release,
     )
     effort = (body.reasoning or {}).get("effort")
     return {
@@ -2765,12 +2823,17 @@ def embeddings_to_kwargs(
     headers: Mapping[str, str] | None = None,
     *,
     ft_resolver: Callable[[str], str | None] | None = None,
+    public_release: bool = False,
 ) -> dict[str, Any]:
     """Translate an embeddings request into call kwargs — same link
     resolution as chat (``fx1.backend`` > header > model > hosted_k3);
     keys: ``backend``, ``fallbacks``, ``byok``, ``checkpoint_dir``,
     ``timeout_s`` plus the forwarded fields ``model``, ``input``,
     ``encoding_format``, ``dimensions``, ``user``."""
+    if public_release and body.model in PUBLIC_MODEL_IDS:
+        raise OpenAICompatError(
+            f"public model {body.model!r} has no verified embeddings channel", status=501
+        )
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
     # ``model`` here is the upstream embedding deployment name — free-form

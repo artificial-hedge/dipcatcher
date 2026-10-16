@@ -94,7 +94,12 @@ def test_resolve_file_rejects_symlink_escaping_workspace(
     outside = tmp_path.parent / "outside_secret.csv"
     outside.write_text("secret", encoding="utf-8")
     try:
-        (tmp_path / "link.csv").symlink_to(outside)
+        try:
+            (tmp_path / "link.csv").symlink_to(outside)
+        except OSError as exc:
+            if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+                pytest.skip("Windows symlink privilege is unavailable")
+            raise
         with pytest.raises(ValueError, match="inside the workspace"):
             ctx.resolve_file("link.csv", suffixes=(".csv",))
     finally:

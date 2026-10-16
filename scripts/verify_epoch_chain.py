@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import unicodedata
@@ -212,19 +213,45 @@ def _gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
     """Mirror ``corpus_epoch.gitignored_relpaths`` — tracked files stay members."""
     if not rels:
         return set()
+    if os.name == "nt":
+        # Git for Windows hangs on NUL-delimited stdin; a byte newline stream
+        # avoids Python's CRLF translation. Unsafe names stay members so the
+        # independent portability check can reject them.
+        if any("\r" in name or "\n" in name for name in rels):
+            return set()
+        try:
+            proc_bytes = subprocess.run(
+                ["git", "-c", "core.quotePath=false", "-C", str(root), "check-ignore", "--stdin"],
+                input=("\n".join(rels) + "\n").encode("utf-8", "surrogateescape"),
+                capture_output=True,
+                timeout=30,
+                check=False,
+            )
+        except OSError:
+            return set()
+        if proc_bytes.returncode not in (0, 1):
+            return set()
+        return {
+            name.decode("utf-8", "surrogateescape")
+            for name in proc_bytes.stdout.split(b"\n")
+            if name
+        }
     try:
-        proc = subprocess.run(
+        proc_text = subprocess.run(
             ["git", "-C", str(root), "check-ignore", "-z", "--stdin"],
             input="\0".join(rels) + "\0",
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="surrogateescape",
+            timeout=30,
             check=False,
         )
     except OSError:
         return set()
-    if proc.returncode not in (0, 1):
+    if proc_text.returncode not in (0, 1):
         return set()
-    return {name for name in proc.stdout.split("\0") if name}
+    return {name for name in proc_text.stdout.split("\0") if name}
 
 
 def _member_digests(corpus_dir: Path, pattern: str) -> dict[str, str]:

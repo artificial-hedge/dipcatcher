@@ -490,7 +490,7 @@ def _client(
         if ft_runner is not _PIPELINE:
             kwargs["ft_runner"] = ft_runner
         kwargs.update(app_kwargs)
-        app = api_mod.create_app(**kwargs)
+        app = api_mod.create_app(public_release=False, **kwargs)
         resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
         client = TestClient(app, raise_server_exceptions=False)
         resources.callback(client.close)

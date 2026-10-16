@@ -205,11 +205,15 @@ class LifecycleMachine(RuleBasedStateMachine):
             assert order.filled <= order.qty + 1e-8
 
 
-test_accounting_state_machine = run_state_machine_as_test(
-    AccountingMachine,
-    settings=settings(max_examples=12, stateful_step_count=8, deadline=None),
-)
-test_lifecycle_state_machine = run_state_machine_as_test(
-    LifecycleMachine,
-    settings=settings(max_examples=10, stateful_step_count=8, deadline=None),
-)
+def test_accounting_state_machine() -> None:
+    run_state_machine_as_test(
+        AccountingMachine,
+        settings=settings(max_examples=12, stateful_step_count=8, deadline=None),
+    )
+
+
+def test_lifecycle_state_machine() -> None:
+    run_state_machine_as_test(
+        LifecycleMachine,
+        settings=settings(max_examples=10, stateful_step_count=8, deadline=None),
+    )

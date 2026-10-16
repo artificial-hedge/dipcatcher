@@ -1,16 +1,22 @@
 # ULTRA PLAN — Production readiness for dipcatcher / fx-1
 
 **Status:** draft for owner ruling · **Created:** 2026-10-08 · **Measured at:** local `HEAD f70c140b5e`, `origin/main 3b246fffa5`, macOS 27.0.0
-**Scope:** what must be true before this repo can be called production-ready, in what order, with what gate.
+**Scope:** what must be true before the research CLI, publicly served `fx1` and `fx1-lite`, and live trading can together be called production-ready, in what order, with what gate.
 **Method:** every claim below is measured from this repo at the SHA above. Commands are reproducible. Where a claim comes from a self-report rather than a measurement, it is labelled *(self-reported)*.
+
+**Historical snapshot.** The divergence, workflow triggers, and some open-item counts below have changed since the measured SHAs. See the dated CI status in [README.md](../README.md#continuous-integration) and rerun each exit gate at the candidate revision.
+
+**Current evidence blocker (2026-10-16):** two committed proofcore replay receipts fail exact artifact verification. See [§11](#11-committed-replay-provenance-blocker--2026-10-16).
+
+**Current release target (2026-10-16):** all three surfaces above. The phases below began as an internal research-platform plan and remain necessary groundwork; completing them alone does not complete the public-model or live-trading release. Public models still need real trained weights for both names, measured evaluation and license evidence, signed checkpoint verification, and deployment gates. Live trading remains blocked on licensed PIT data, authenticated broker/fill reconciliation, venue measurements, a non-synthetic forward record, and separate written authorization.
 
 ---
 
 ## 0. Verdict
 
-dipcatcher is **not far from production. It is far from *verified*.**
+dipcatcher is **not production-ready across the three required surfaces**. The research CLI still needs a green, enforced release baseline and reconciled provenance. Neither public model has released evaluated weights or approved deployment evidence. Live trading needs external data, broker integration, venue measurements, authorization, and the frozen **1,400 eligible paired-session** forward record. At 252 eligible sessions per year, that record alone is about **5.6 years** of collection; it cannot be closed by repository work.
 
-The engineering is genuinely strong — 245k LOC across 13.4k modules, a 116k-LOC test suite, `mypy --strict` total, sealed receipts, a real honesty contract. The problem is not capability. It is that **nothing has been verified in 400 consecutive CI attempts**, and one sealed evidence artifact is parameterized in a way that can never become valid forward evidence.
+The engineering and test inventory below are substantial, but they do not establish these missing outcomes. The 400-run CI census and other findings in this section are the **2026-10-08 snapshot**, not current release verdicts; rerun the exit gates at the candidate revision.
 
 Three findings decide the readiness question:
 
@@ -23,21 +29,21 @@ Three findings decide the readiness question:
 
 Everything in Phases 0–2 is about making the rest of the repo *falsifiable*. Until F1 is fixed, every other claim in this repo — the 81% coverage floor, strict typing on 668 modules, receipt verification, the SBOM — is asserted but unproven, because the machine that would refute them is dark.
 
-**The honest ceiling:** dipcatcher can become production-ready as a **research and evaluation platform for internal analysts**. It cannot become production-ready for **live trading** — that is blocked on procurement and authorization, not on code, per `docs/INSTITUTIONAL_READINESS.md`. This plan is explicit about which one it is achieving.
+**Current verdict:** research CLI readiness can be established with repository gates and release checks. Public `fx1`/`fx1-lite` serving and live trading remain release blockers until their model, evidence, entitlement, broker, and authorization inputs exist and pass the stated gates. No internal-only milestone satisfies the all-surface production target.
 
 ---
 
 ## 1. What "production-ready" means here
 
-Three tiers. Mixing them is how a research repo accidentally implies it trades.
+Three required surfaces. Readiness is conjunctive: each row must clear its own gates before the all-surface claim is made.
 
-| Tier | Definition | Reachable by code? | Target |
+| Surface | Definition | Reachable by code alone? | Current gate |
 |---|---|---|---|
-| **A — Research platform** | Internal analysts can trust a receipt: green gates, reproducible from one SHA, docs match code, no live claims | **Yes** | Phase 0–5, ~2–3 weeks |
-| **B — Distributed platform** | A + signed releases, third-party security review, install path, onboarding | **Mostly** | Phase 6–7, ~4–6 weeks |
-| **C — Live trading** | Authorized vendor PIT data, authenticated broker reconciliation, venue cost measurements, non-synthetic forward record, signed promotion receipt | **No** | Blocked: procurement + authorization |
+| **A — Research CLI** | Installable `dipcatcher` chat and lab commands, honest receipts, green gates, reproducible from one release SHA | **Mostly** | Phases 0–7 and release evidence |
+| **B — Public `fx1` and `fx1-lite`** | Approved Kimi-derived weights for both names, measured model gates, serving identity, signed releases, authenticated deployment, and license rights | **No** | Trained artifacts, measurements, permission, and deployment evidence absent |
+| **C — Live trading** | Authorized vendor PIT data, authenticated broker reconciliation, venue measurements, non-synthetic forward record, signed promotion receipt, and written live authorization | **No** | Procurement, integration, evidence, and authorization blocked |
 
-This plan delivers **Tier A completely** and **Tier B substantially**. It does not attempt Tier C, and Phase 4 exists only to keep Tier C honest while it stays blocked.
+The numbered phases are repository and research-platform prerequisites. They do not, by themselves, promote a model or authorize live capital. Public model release and live trading require the separate evidence and approval gates above.
 
 ---
 
@@ -251,13 +257,13 @@ gh run list --limit 20 --json conclusion --jq \
 
 1. Merge Phase 0 onto `main`. Wait for the first green `ci.yml`. **Record the SHA** — this becomes `PROD_BASELINE`, the revision every Tier-A claim is stamped against.
 2. `make coverage` and `make proofcore-coverage` locally on `PROD_BASELINE`; publish the result as a workflow artifact so the floor's trend is visible.
-3. Tag `v0.4.0-rc.1` and let `release.yml` execute for the first time in repo history. This retires the H5 penalty *(self-reported M6: "signing/SBOM/SLSA never exercised — no tags, no releases")* and m3's *"H5 capped this factor: 24 = 60%"*.
+3. After the required CI and full-matrix runs pass, tag `v<fx1.__version__>` at the exact green `main` commit and let `release.yml` execute for the first time in repo history. The release preflight requires an exact tag/package version match; the current package version is `0.4.0`, so `v0.4.0-rc.1` requires a version bump on the tagged commit. A successful signed, SBOM'd, attested tag build retires the H5 penalty *(self-reported M6: "signing/SBOM/SLSA never exercised — no tags, no releases")* and m3's *"H5 capped this factor: 24 = 60%"*.
 4. Verify the outputs with the repo's own tooling:
    ```bash
    uv run python scripts/verify_release_artifacts.py dist/
    gh attestation verify dist/*.whl --repo artificial-hedge/dipcatcher
    ```
-5. Decide explicitly whether `rc.1` is a real release. `release.yml` uploads artifacts and **does not publish to PyPI or create a GitHub Release**. For Tier A that is sufficient and honest; record the decision in `CHANGELOG.md` rather than leaving it ambiguous.
+5. Decide explicitly whether the versioned tag is a real release. `release.yml` uploads artifacts and **does not publish to PyPI or create a GitHub Release**. For Tier A that is sufficient and honest; record the decision in `CHANGELOG.md` rather than leaving it ambiguous.
 
 **Exit gate:** one green CI SHA + one successful signed, SBOM'd, attested tag build.
 
@@ -409,7 +415,7 @@ Machine-checkable. Each row is a command that returns pass/fail. Re-run on every
 | 3 | History integrity | `git rev-list --left-right --count origin/main...HEAD` | `0  0` |
 | 4 | Epoch chain | `make epoch-consistency EPOCH_BASE=origin/main` | pass |
 | 5 | Tree hygiene | `git ls-files \| grep -cE '^(\.dsh-24x7\|\.cursor\|\.serena\|\.freebuff\|\.box-soft-verify)/'` | `0` |
-| 6 | Receipts | `make receipts-reverify && make evidence-audit` | **FAIL (exit 2)** — 2/10 fixed, 8 need schema-specific verifiers |
+| 6 | Receipts | `make receipts-reverify && make evidence-audit` | Pass required; receipt stage passed on 2026-10-16, aggregate blocked by workflow epoch drift |
 | 7 | Lint/format | `make lint` | pass |
 | 8 | Types | `make typecheck` + `uv run mypy src/fx1` | pass |
 | 9 | Coverage floor | `make coverage` | ≥ 81%, trend published |
@@ -764,9 +770,15 @@ The work was sound. One defect was found and fixed in review: the export `LIVE_O
 
 **Note on validation cost:** running `mypy --strict` over the whole `src/quant_fund` (~13k modules) is what exhausted the agent's budget. Scoping mypy to the changed package (`mypy --strict src/quant_fund/research/catalog`, 23 files) returns in seconds and is sufficient to validate this kind of change. Worth adopting as the default review loop.
 
-### Still open
+### Earlier audit and current receipt-gate update
 
-- **Scorecard row 6 (`make receipts-reverify`) — FAILS, exit 2, after ~20 minutes.** The gate ran to completion: **10 failures across 393 files in `receipts/`.** Both problems are now diagnosed.
+**Recheck on 2026-10-16 in the dedicated worktree (base `afb0d8c63`):** the exact `dipcatcher suite-health --strict` receipt stage passed in 8.3 seconds with `--quarantine quality/legacy_quarantine.json --heads-pin quality/epoch_heads.json --epoch-acks quality/epoch_allowed_removals.json --require-stamped`: 404 corpus JSON files, 387 verified, 17 byte-and-error-pinned quarantined, 0 invalid. The receipts epoch chain passed with its acknowledged history. `test_committed_receipts_verify_or_are_quarantined` also passed. Quarantined historical records remain excluded from pooled evidence (`pooled_evalue=None`); a passing strict gate does not turn them into verified findings.
+
+The fast self-seal scan now reports 395 eligible files: 391 canonical seals, 2 valid alternate JSON conventions, 0 mismatches, and 2 files without a `receipt_sha256` seal. It excludes 7 `legacy-unsealed/` records and 2 detached seal sidecars, which the full suite accounts for through the quarantine registry. `calib_real_drill.json` verifies with a canonical seal; commit `32a0dd7f9` restored its stamped bytes after the temporary retag. The old mismatch described below is no longer present. The scan now fails on an empty corpus and ambiguous or nonfinite JSON, with tests.
+
+The combined scorecard row 6 remains blocked: the `evidence-audit` workflow corpus check reports `head_member_digest_drift` for `ci.yml`, `fx1.yml`, `matrix.yml`, `proofcore.yml`, and `release.yml` after this worktree's changes. Its pinned epochs require the owner-held signing and anchor ceremony after the release revision is settled. The historical audit notes below describe the earlier failure state, not the current receipt verdict.
+
+- **Historical scorecard row 6 (`make receipts-reverify`) — failed, exit 2, after ~20 minutes in the earlier audit.** The old gate ran to completion: **10 failures across 393 files in `receipts/`.** Both problems were diagnosed; the current strict suite-health path and quarantine registry are summarized above.
 
   **Cost.** The gate shells out once per receipt:
   ```python
@@ -834,7 +846,7 @@ The work was sound. One defect was found and fixed in review: the export `LIVE_O
 
   Ten tests pin the behaviour (`tests/unit/test_receipt_integrity_scan.py`), including that a silent body edit breaks the seal, that sidecars are never collected as receipts, that the `ensure_ascii=True` convention is treated as **intact rather than corrupt**, that genuine drift still fails under *both* conventions, and that scanning the real `receipts/` is deterministic.
 
-  **Current verdict: FAIL — 384 ok, 2 ok-alt-convention, 1 mismatch, 2 no-selfseal.** The single mismatch (`calib_real_drill.json`) is the actionable item. Either write the four schema verifiers or demote row 6 to "known-pending" — but do not leave it looking green-capable.
+  **Historical self-seal verdict: FAIL — 384 ok, 2 ok-alt-convention, 1 mismatch, 2 no-selfseal.** The mismatch was resolved by restoring the originally stamped bytes. The distinct schema and tape provenance gaps are retained in the exact quarantine registry; they are not counted as verified research evidence.
 
 - **A drift the guards caught — and a fix.** Editing `.github/workflows/proofcore.yml` broke `test_staged_workflow_matches_activated_copy`: `docs/proofcore/proofcore.yml` is a reference copy that must stay byte-identical to the active workflow below its 3-line activation header, and the workflow edit was not mirrored. Caught by running the suite and fixed by mirroring; all 22 tests in `tests/unit/test_proofcore_ci.py` now pass. **Worth noting: this guard did its job** — and it means any workflow edit under `.github/workflows/` should mirror into `docs/proofcore/proofcore.yml` if that is the affected file.
 - **Epoch re-stamp.** `.github/workflows/` fails epoch verification until `make stamp-epochs` → `make sign-pins` → `make anchor-pins` runs. Needs `GATE_SIGNING_KEY`.
@@ -846,7 +858,7 @@ The work was sound. One defect was found and fixed in review: the export `LIVE_O
 |---|---|
 | Untrack the 911 `.dsh-24x7` files | A 911-file deletion on the already-314-commit-diverged local spine would deepen the fork before the owner rules on which side is canonical. Prepared for the reconciliation commit. |
 | `stamp-epochs` / `sign-pins` / `anchor-pins` | Requires `GATE_SIGNING_KEY`; must run in strict order after the history decision, since every `stamp-epochs` stales existing anchors. |
-| Tag `v0.4.0-rc.1`, release, push | Irreversible and externally visible. Owner decision. |
+| Tag a version matching `fx1.__version__`, release, push | Irreversible and externally visible. Owner decision after the release gates pass. |
 | Merge/rebase the 314/14 divergence | Rewrites history and invalidates receipt pins. Owner decision on the canonical spine. |
 | Prune 231 local branches | Mostly `devin/*`, `kimi/*`, `codex/*`; safe but belongs with the reconciliation. |
 | Remove `tests/tests/` | **Not a defect** — known sftp-clobber artifact, already ignored (`.gitignore:102`), recreated by the clobber. |
@@ -861,3 +873,22 @@ The work was sound. One defect was found and fixed in review: the export `LIVE_O
 6. **"fx-1 has no weights on disk" was wrong.** `artifacts/fx1_tiny_lm/weights.safetensors` (127 KB) **is tracked in git.** Its own modelcard calls it a *"fixture-scale byte-level LM (~31k params) … not an fx-1 release candidate"* whose `eval_delta` values are *"synthetic ship-gate placeholders, not measured evals."* No capability is over-claimed, but the flat "no weights" wording was false and README's former "No model weights are in the tree" was worse. §2.6 now states the narrower, correct position. **Worth owner attention:** that card carries bare numbers (`0.5 → 0.51`) that read like scores even though they are disclaimed.
 7. **`git tag` went 0 → 4 mid-audit** — the four are `attic/receipt-provenance/*` anchors, not releases, so `git tag -l 'v*'` is still `0`. This is a live demonstration of the missing drift checker: a number in the docs went stale inside a single working session because another lane was writing.
 8. **A committed receipt fails verification.** `dipcatcher verify-research` reports `families_unknown: copula_specification, selective_inference, spa_test`. Verified **pre-existing** — those names appear nowhere in `src/` or `receipts/`, and are not in `OPTIONAL`, `REQUIRED`, or `RETIRED`. The fail-closed contract is behaving correctly, but scorecard row 6 does not currently pass.
+
+---
+
+## 11. Committed replay provenance blocker — 2026-10-16
+
+`tests/unit/research/test_replay_proof.py::test_committed_lane_replays` reruns each committed receipt's declared argv in a clean root and requires its output artifact SHA-256 to equal the receipt's pin. Windows text-mode newline translation caused four failures: `fleet_eval_ab613c423b36627d.json`, `honest_verdict_9d631fa6aace437a.json`, `monitor_run_e69a3aed9568e30d.json`, and `rankic_eval_addd924f107eedd8.json`. `publish_text_once` now writes and compares exact UTF-8 bytes; clean Windows AMD64 replays of all four produce the current pinned paths and SHA-256 hashes. Two cases still fail with `exit_code == 0` and `all_match == false`, including with Python 3.12.14 and the historical proof's NumPy/SciPy/Polars versions:
+
+| Receipt | Current pinned artifact path / SHA-256 | Locally produced path / SHA-256 |
+|---|---|---|
+| `capacity_eval_5cf0042e91c7953c.json` | `data/metadata/replay/capacity_eval_f990aaadaa5b647b.json` / `7d5d3502ad6587d67ce442364468121b4feb59941f148645bbcb92071dc706cb` | `data/metadata/replay/capacity_eval_e6e7c306b2e6bcf7.json` / `e21e672dfa42210d37412113c2fe7fb8c9c22c76c6ff38c64d8eecbe34262e16` |
+| `vol_bench_dc16af46c3f2975b.json` | `data/metadata/replay/vol_bench_c770505112aeabce.json` / `deaafdde472fe5a553c6345ef608c7b69ce3b52e334945607cb710d55693fab8` | `data/metadata/replay/vol_bench_85da831313a506f1.json` / `29fe554e2b1ec1f477c22828973894296eca4f5257b18e9350241c1baf9b44df` |
+
+Commit `faafaf04040e9dc87b27154c157dc5b54655a401` changed artifact paths and hashes in six replay receipts (including these two), without adding corresponding artifact bytes or positive replay proofs. Later commits re-sealed and renamed the receipts. The earlier positive proofs for the remaining lanes (`replay_proof_f5fe541481bbf231.json`, `replay_proof_701ae84c3d9813e0.json`) attest the **old** pins on macOS arm64; neither attests the current pins. A SHA-256 scan of all 49,624 reachable Git blobs found neither remaining current pinned artifact, and `data/metadata/replay/` is absent locally. The receipt scientific payloads (`books`/`shards`, `dataset_sha256`, `inputs_sha256`, and results) were identical before and after the pin-only change.
+
+The remaining drift is inside generated numeric data, not the output writer. For capacity, both synthetic weight-array hashes match the receipt, while the uniform ADV hash is pinned as `8ecaf67526c80a674e9fd3b972398e12d551a8391e381a39b829e5de918eb790` and Windows produces `d66aae3b64284315824fe3e16e5a0cddcb87f3f0c0ae25012c88965b644a8bae`; the concentrated ADV hash also differs. For vol-bench, all three `garch_vol` input-array hashes match, while `rough_vol` returns, realized variance, and Parkinson hashes differ (pinned returns `28df1304f4bd66ff73589805060717b4fca43788f35b241639b158e34ae25b76`; Windows `72a2716277003a93f4aaf0b0b6dff43bf3fdc86576a9675fb6c08845ec054dcf`). Both local runs consequently change `dataset_sha256`, `inputs_sha256`, results, and artifact paths. The results differ only at floating-point scale, and NumPy/SciPy/Polars match the older proof's versions, so platform numerical kernels are a plausible cause; the missing current pinned arrays and positive origin proofs prevent proving that explanation or deriving an exact-byte portability fix. The relevant capacity and rough-vol producer algorithms have not changed since the older proofs. Scientific producer changes based only on target hashes would fabricate a result, so no such change was made.
+
+**Required to clear this blocker:** obtain an authoritative runtime and complete dependency/source/input specification that actually reproduces each remaining **current** artifact path and SHA-256 from its committed receipt, then generate positive replay proofs and run the exact-byte gate on the required release runners. Merely supplying a saved artifact cannot pass the gate: `run_replay` removes declared outputs before executing the producer. If the current pins cannot be reproduced, the owner must issue new payload-consistent receipts and proofs, preserve the old receipts as immutable evidence, and explicitly resolve how retracted receipts remain covered by the fail-closed committed-replay gate. The existing tombstone mechanism excludes claims from lattice inference but does **not** exclude them from this test. Any replacement pin/epoch chain then needs the owner-held quorum signing, anchor, and checkpoint ceremony. The worktree has no positive proof for either current pin, no current pinned artifact, and no signer key; this gate must remain red until authoritative evidence exists. The old macOS proof environment cannot justify skipping current pins on other platforms because those current pins have no positive origin proof.
+
+The owner can provide the two pinned paths above and the producing source revision, Python/dependency versions, platform, and inputs. On that runtime, run `dipcatcher replay receipts/<receipt-name>.json` for each receipt; the command writes sealed `receipts/replay_proof_<digest16>.json` only after executing the producer, and a pass requires all pinned bytes to match. The committed `quality/gate_quorum.json` has threshold 1 and key ID `bc3bcff676056adf`. After any legitimate new receipt/epoch state is settled and the source tree is frozen, the Windows owner runs `& .\scripts\owner_pin_ceremony.ps1 -KeyFile 'D:\keys\gate-quorum.txt'`, using the registered pair held outside the repository. The helper updates crown-jewel hashes, extends epochs in Makefile order, signs and anchors both pins, signs the checkpoint, then verifies the repository and checkpoint chain. Its CLI calls use `uv run --frozen`, which preserves `uv.lock` after the pin is written. Add `-AnchorCheckpoint` to that invocation for a checkpoint timestamp. Receipt bytes stay immutable. The Makefile's POSIX shell loop is not the Windows PowerShell path.

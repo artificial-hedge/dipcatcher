@@ -358,6 +358,7 @@ def write_modelcard(
             honesty_gate_candidate=True,
         ),
         known_limits=known_limits,
+        fixture_only=eval_delta is None,
     ).save(card_path)
     return card_path
 

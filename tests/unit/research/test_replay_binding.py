@@ -238,7 +238,12 @@ def test_reproduced_path_escape_fails(tmp_path: Path, kind: str) -> None:
     else:
         if not hasattr(os, "symlink"):
             pytest.skip("no symlink support")
-        (root / "receipts" / "link.json").symlink_to(outside)
+        try:
+            (root / "receipts" / "link.json").symlink_to(outside)
+        except OSError as exc:
+            if os.name == "nt" and getattr(exc, "winerror", None) == 1314:
+                pytest.skip("Windows symlink privilege unavailable")
+            raise
         declared = "receipts/link.json"
     _write_carrier(root, reproduces=[_entry(declared, _sha(data))])
     row = _assert_binding_fail(_sweep(root), f"reproduced_receipt_path_invalid:{declared}")

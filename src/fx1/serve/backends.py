@@ -491,6 +491,7 @@ def _openai_chat_complete(
     label: str,
     sampling: SamplingParams | None = None,
     byok: bool = False,
+    response_model: str | None = None,
 ) -> tuple[str, dict[str, int] | None]:
     """POST one OpenAI-compatible chat completion; map errors to RuntimeError.
 
@@ -530,6 +531,7 @@ def _openai_chat_complete(
         raise RuntimeError(f"malformed {label} completion payload: not JSON") from exc
     except UnicodeError as exc:
         raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+    _check_optional_response_model(payload, requested=response_model, label=label)
     try:
         content = payload["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:
@@ -541,6 +543,20 @@ def _openai_chat_complete(
             f"malformed {label} completion payload: content is {type(content).__name__}, not str"
         )
     return content, _extract_usage(payload)
+
+
+def _require_response_model(payload: Any, *, requested: str, label: str) -> None:
+    """A completion must identify the exact model sent in its request."""
+    served = payload.get("model") if isinstance(payload, dict) else None
+    if served != requested:
+        raise RuntimeError(
+            f"{label} response model {served!r} does not match requested model {requested!r}"
+        )
+
+
+def _check_optional_response_model(payload: Any, *, requested: str | None, label: str) -> None:
+    if requested is not None:
+        _require_response_model(payload, requested=requested, label=label)
 
 
 def _openai_tokenize_count(
@@ -658,6 +674,7 @@ def _openai_chat_complete_tools(
     logprobs: bool | None = None,
     top_logprobs: int | None = None,
     byok: bool = False,
+    response_model: str | None = None,
 ) -> tuple[ToolCompletion, dict[str, int] | None]:
     """POST one OpenAI-compatible chat completion carrying ``tools``.
 
@@ -710,6 +727,7 @@ def _openai_chat_complete_tools(
         raise RuntimeError(f"malformed {label} completion payload: not JSON") from exc
     except UnicodeError as exc:
         raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+    _check_optional_response_model(payload, requested=response_model, label=label)
     try:
         choice = payload["choices"][0]
         message = choice["message"]
@@ -765,6 +783,7 @@ def _openai_chat_stream(
     usage_out: list[dict[str, int]] | None = None,
     sampling: SamplingParams | None = None,
     byok: bool = False,
+    response_model: str | None = None,
 ) -> Iterator[str]:
     """POST one streaming OpenAI-compatible chat completion.
 
@@ -809,6 +828,7 @@ def _openai_chat_stream(
                     raise RuntimeError(
                         f"malformed {label} stream chunk: not JSON ({data[:48]!r})"
                     ) from exc
+                _check_optional_response_model(chunk, requested=response_model, label=label)
                 u = _extract_usage(chunk)
                 if u is not None and usage_out is not None:
                     usage_out.clear()
@@ -1118,7 +1138,10 @@ class HostedK3Backend(_UsageTracker):
         messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
+        timeout_s: float | None = None,
     ) -> str:
+        if timeout_s is not None and timeout_s <= 0:
+            raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
         # temperature defaults to 0 — eval/teacher runs must be
         # deterministic; unpinned sampling makes eval results
         # unreproducible across replays.
@@ -1139,7 +1162,12 @@ class HostedK3Backend(_UsageTracker):
             method="POST",
         )
         try:
-            with _openai_urlopen(request, timeout_s=self._timeout_s) as response:
+            with _openai_urlopen(
+                request,
+                timeout_s=min(self._timeout_s, timeout_s)
+                if timeout_s is not None
+                else self._timeout_s,
+            ) as response:
                 payload = json.loads(response.read().decode())
         except urllib.error.HTTPError as exc:
             raise RuntimeError(f"hosted_k3 endpoint returned HTTP {exc.code}") from exc
@@ -1156,6 +1184,7 @@ class HostedK3Backend(_UsageTracker):
             raise RuntimeError(
                 f"hosted_k3 endpoint transport fault ({type(exc).__name__})"
             ) from exc
+        _require_response_model(payload, requested=self._model, label="hosted_k3")
         content = payload["choices"][0]["message"]["content"]
         if not isinstance(content, str):
             raise RuntimeError(
@@ -1242,6 +1271,7 @@ class HostedK3Backend(_UsageTracker):
             sampling=sampling,
             logprobs=logprobs,
             top_logprobs=top_logprobs,
+            response_model=self._model,
         )
         self._record_usage(usage)
         return result
@@ -1263,6 +1293,7 @@ class HostedK3Backend(_UsageTracker):
             label="hosted_k3",
             usage_out=box,
             sampling=sampling,
+            response_model=self._model,
         ):
             yield tok
         if box:
@@ -1557,6 +1588,26 @@ def _free_tcp_port() -> int:
         sock.close()
 
 
+def _checkpoint_weights_sha(root: Path) -> str | None:
+    manifest_path = root / "weights.manifest.json"
+    if not manifest_path.is_file():
+        if (root / "weights.safetensors").is_file():
+            raise RuntimeError("local fx-1 weights require a SHA-256 manifest")
+        return None  # Raw third-party checkpoint layouts have no fx-1 manifest.
+    try:
+        manifest_obj = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise RuntimeError("cannot read local fx-1 weights manifest") from exc
+    sha = manifest_obj.get("weights_sha256") if isinstance(manifest_obj, dict) else None
+    if (
+        not isinstance(sha, str)
+        or len(sha) != 64
+        or any(char not in string.hexdigits for char in sha)
+    ):
+        raise RuntimeError("local fx-1 weights manifest has no valid SHA-256 pin")
+    return sha.lower()
+
+
 class LocalFx1Backend(_UsageTracker):
     """A local fx-1 checkpoint served by a local OpenAI-compatible engine.
 
@@ -1608,16 +1659,30 @@ class LocalFx1Backend(_UsageTracker):
                 f"{self.card.version} failed the ship gate "
                 "(honesty/domain/general deltas); refusing to serve"
             )
-        if require_signature is None:
-            require_signature = bool(os.environ.get("FX1_SIGNING_KEY"))
-        if require_signature:
-            from fx1.serve.signing import verify_release
+        from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
 
-            if not verify_release(root):
+        require_nonfixture_or_test_opt_in(self.card)
+        if require_signature is None:
+            from fx1.serve.signing import PUBLIC_VERIFY_KEY_ENV
+
+            require_signature = bool(
+                os.environ.get("FX1_SIGNING_KEY") or os.environ.get(PUBLIC_VERIFY_KEY_ENV)
+            )
+        if require_signature:
+            from fx1.serve.signing import (
+                PUBLIC_VERIFY_KEY_ENV,
+                verify_release,
+                verify_release_ed25519,
+            )
+
+            verifier = (
+                verify_release_ed25519 if os.environ.get(PUBLIC_VERIFY_KEY_ENV) else verify_release
+            )
+            if not verifier(root):
                 raise RuntimeError(
                     "checkpoint release signature missing or invalid; "
-                    "fx-1 serves only signed releases when FX1_SIGNING_KEY "
-                    "is configured"
+                    "fx-1 serves only verified signed releases when signature "
+                    "verification is required"
                 )
         self._root = root
         # The weights sha this checkpoint's manifest pins — compared against
@@ -1625,16 +1690,7 @@ class LocalFx1Backend(_UsageTracker):
         # ``_verify_served_weights``). None when the dir has no readable
         # manifest (e.g. a raw vLLM checkpoint layout) — then there is
         # nothing to verify against and attach stays a liveness probe.
-        self._expected_weights_sha: str | None = None
-        manifest_path = root / "weights.manifest.json"
-        if manifest_path.is_file():
-            try:
-                manifest_obj = json.loads(manifest_path.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                manifest_obj = {}
-            sha = manifest_obj.get("weights_sha256") if isinstance(manifest_obj, dict) else None
-            if isinstance(sha, str):
-                self._expected_weights_sha = sha
+        self._expected_weights_sha = _checkpoint_weights_sha(root)
         self._verified_attach = False
         url = serve_url if serve_url is not None else os.environ.get(LOCAL_SERVE_URL_ENV, "")
         if url:
@@ -1702,46 +1758,56 @@ class LocalFx1Backend(_UsageTracker):
             return False
 
     def _verify_served_weights(self) -> None:
-        """Refuse to attach when the live engine serves different weights.
+        """Require the requested model to prove the checkpoint's weights pin.
 
         A port answering ``/v1/models`` could be *any* engine — including
-        one holding another checkpoint. When the engine advertises the
-        fx-1 weights pin (as ``LocalWeightsEngine.describe`` does), it
-        must equal the sha256 this backend's checkpoint manifest pins;
-        otherwise the attach would silently serve the wrong model.
-        Engines that don't advertise the key can't be verified — attach
-        proceeds, same contract as before.
+        one holding another checkpoint. A manifest-bearing checkpoint only
+        attaches when the requested model advertises its exact SHA-256 pin.
         """
-        if self._expected_weights_sha is None or not self._url:
+        if self._expected_weights_sha is None:
             self._verified_attach = True
             return
+        if not self._url:
+            raise BackendNotConfiguredError("local fx-1 engine URL is not configured")
         parsed = urllib.parse.urlparse(self._url)
         probe = f"{parsed.scheme}://{parsed.netloc}/v1/models"
+        headers = {"Authorization": f"Bearer {self._api_key}"} if self._api_key else {}
+        request = urllib.request.Request(probe, headers=headers)
         try:
-            with urllib.request.urlopen(probe, timeout=2) as resp:  # noqa: S310 — declared local engine  # nosec B310
+            with _openai_urlopen(request, timeout_s=2) as resp:
                 payload = json.loads(resp.read())
-        except (urllib.error.URLError, OSError, ValueError):
-            return  # not up / not parseable — liveness is _engine_up's job
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            raise RuntimeError("local fx-1 engine identity probe failed") from exc
         data = payload.get("data") if isinstance(payload, dict) else None
-        for item in data or []:
-            fx1_meta = item.get("fx1") if isinstance(item, dict) else None
-            served_sha = fx1_meta.get("weights_sha256") if isinstance(fx1_meta, dict) else None
-            if served_sha is not None and served_sha != self._expected_weights_sha:
-                raise RuntimeError(
-                    f"local fx-1 engine at {probe} advertises weights_sha256 "
-                    f"{str(served_sha)[:16]}… but this backend's checkpoint "
-                    f"manifest pins {self._expected_weights_sha[:16]}… — "
-                    "refusing to attach to weights it did not verify"
-                )
+        matches = (
+            [item for item in data if isinstance(item, dict) and item.get("id") == self._model]
+            if isinstance(data, list)
+            else []
+        )
+        if len(matches) != 1:
+            raise RuntimeError("local fx-1 engine did not identify the requested model")
+        fx1_meta = matches[0].get("fx1")
+        served_sha = fx1_meta.get("weights_sha256") if isinstance(fx1_meta, dict) else None
+        if served_sha != self._expected_weights_sha:
+            raise RuntimeError("local fx-1 engine did not prove the checkpoint weights SHA-256")
         self._verified_attach = True
+
+    def _ensure_attached_engine(self) -> None:
+        if not self._engine_up():
+            if self._expected_weights_sha is not None:
+                raise BackendNotConfiguredError(
+                    "local fx-1 engine is unavailable for weights verification"
+                )
+            return
+        self._verify_served_weights()
 
     def _ensure_engine(self) -> None:
         """Spawn the engine from the serve template, once, and wait for it."""
         if self._proc is not None or self._verified_attach:
+            self._recheck_weights_if_pinned()
             return
         if not self._serve_cmd:
-            if self._engine_up():
-                self._verify_served_weights()
+            self._ensure_attached_engine()
             return  # attach-only: the wire call itself is the liveness check
         if self._engine_up():
             self._verify_served_weights()
@@ -1769,16 +1835,50 @@ class LocalFx1Backend(_UsageTracker):
                 exc.add_note(f"local fx-1 engine cleanup also failed: {cleanup_exc!r}")
             raise
 
+    def _recheck_weights_if_pinned(self) -> None:
+        if self._expected_weights_sha is not None:
+            self._verify_served_weights()
+
     def _spawn_engine(self) -> subprocess.Popen[bytes]:
         """Start the declared command; the caller owns the returned child."""
-        argv = shlex.split(
-            string.Template(self._serve_cmd).substitute(
-                checkpoint_dir=str(self._root), python=shlex.quote(sys.executable)
-            )
-        )
+        command = self._serve_cmd.lstrip()
+        if not command:
+            raise RuntimeError("local fx-1 engine command is empty")
+        if os.name == "nt":
+            # Parse the template before inserting values. POSIX shlex consumes
+            # backslashes in Windows paths; CommandLineToArgvW preserves them.
+            import ctypes
+            from ctypes import wintypes
+
+            shell32 = ctypes.WinDLL("shell32", use_last_error=True)
+            parse = shell32.CommandLineToArgvW
+            parse.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(ctypes.c_int)]
+            parse.restype = ctypes.POINTER(wintypes.LPWSTR)
+            count = ctypes.c_int()
+            parsed = parse(command, ctypes.byref(count))
+            if not parsed:
+                raise OSError(ctypes.get_last_error(), "cannot parse local engine command")
+            try:
+                template_argv = [str(parsed[index]) for index in range(count.value)]
+            finally:
+                kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+                free = kernel32.LocalFree
+                free.argtypes = [ctypes.c_void_p]
+                free.restype = ctypes.c_void_p
+                free(ctypes.cast(parsed, ctypes.c_void_p))
+        else:
+            template_argv = shlex.split(command)
+        argv = [
+            string.Template(arg).substitute(checkpoint_dir=str(self._root), python=sys.executable)
+            for arg in template_argv
+        ]
+        if not argv or not argv[0]:
+            raise RuntimeError("local fx-1 engine command is empty")
         env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
+        env.pop("FX1_RELEASE_SIGNING_KEY", None)
+        env.pop("FX1_SIGNING_KEY", None)
         try:
-            return subprocess.Popen(  # noqa: S603 — argv list, no shell  # nosec B603
+            return subprocess.Popen(  # noqa: S603 — declared command, no shell  # nosec B603
                 argv, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
         except OSError as exc:
@@ -1826,6 +1926,7 @@ class LocalFx1Backend(_UsageTracker):
             api_key=self._api_key or None,
             label="local_fx1",
             sampling=sampling,
+            response_model=self._model if self._expected_weights_sha is not None else None,
         )
         self._record_usage(usage)
         return content
@@ -1865,6 +1966,7 @@ class LocalFx1Backend(_UsageTracker):
             sampling=sampling,
             logprobs=logprobs,
             top_logprobs=top_logprobs,
+            response_model=self._model if self._expected_weights_sha is not None else None,
         )
         self._record_usage(usage)
         return result
@@ -1887,6 +1989,7 @@ class LocalFx1Backend(_UsageTracker):
             label="local_fx1",
             usage_out=box,
             sampling=sampling,
+            response_model=self._model if self._expected_weights_sha is not None else None,
         ):
             yield tok
         if box:

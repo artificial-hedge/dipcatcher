@@ -32,6 +32,7 @@ from fx1.operations.base import (
     OutputModel,
     canonical_json,
 )
+from fx1.operations.inspect_zip import _path_issues
 from fx1.operations.registry import execute_operation, get_operation, invoke_operation_tool
 
 JSONL = "plugins.read_jsonl"
@@ -93,8 +94,9 @@ def test_open_binary_suffix_spelling_must_match_allowlist(
 ) -> None:
     _write(workspace, name, b"a,b\n1,2\n")
     # '.csv' names a hidden dotfile with no suffix; '.json' is outside (".csv",).
+    expected = "Windows devices" if os.name == "nt" and name.endswith(" ") else "file extension"
     with (
-        pytest.raises(ValueError, match="file extension"),
+        pytest.raises(ValueError, match=expected),
         context.open_binary(name, suffixes=(".csv",)),
     ):
         pass
@@ -119,10 +121,14 @@ def test_open_binary_missing_file_and_missing_parent_fail_closed(
 def test_open_binary_rejects_directory_leaf(context: OperationContext, workspace: Path) -> None:
     (workspace / "adir.csv").mkdir()
     with (
-        pytest.raises(ValueError, match="regular file"),
+        pytest.raises((ValueError, PermissionError)) as exc,
         context.open_binary("adir.csv", suffixes=(".csv",)),
     ):
         pass
+    if isinstance(exc.value, PermissionError):
+        assert os.name == "nt"
+    else:
+        assert "regular file" in str(exc.value)
 
 
 @pytest.mark.skipif(os.name != "posix", reason="POSIX descriptor traversal")
@@ -547,9 +553,9 @@ def test_csv_ragged_rows_unclosed_quotes_and_nuls(workspace: Path) -> None:
     _write(workspace, "quote.csv", b'a,b\n"unclosed,2\n')
     with pytest.raises(ValueError, match="invalid CSV"):
         _result(CSV, {"path": "quote.csv"}, workspace)
-    _write(workspace, "nul.csv", b"a,b\n\x001,2\n")
+    _write(workspace, "embedded_nul.csv", b"a,b\n\x001,2\n")
     with pytest.raises(ValueError, match="NUL"):
-        _result(CSV, {"path": "nul.csv"}, workspace)
+        _result(CSV, {"path": "embedded_nul.csv"}, workspace)
 
 
 def test_csv_returns_verbatim_strings_without_interpretation(workspace: Path) -> None:
@@ -677,6 +683,13 @@ def _zip_bytes(members: list[tuple[str, bytes, int]]) -> bytes:
             info.create_system = 3
             archive.writestr(info, data)
     return buffer.getvalue()
+
+
+@pytest.mark.parametrize(
+    "name", ["CON.txt", "nul.csv", "AUX .txt", "COM1.txt", "lpt9", "COM¹.log", "CONOUT$"]
+)
+def test_zip_windows_device_names_are_ambiguous(name: str) -> None:
+    assert "windows_ambiguous_name" in _path_issues(name)
 
 
 def test_zip_path_issue_taxonomy(workspace: Path) -> None:

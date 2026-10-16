@@ -187,6 +187,7 @@ def _make_app(
         else:
             os.environ[_API_KEY_ENV] = api_key
         app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=runner or _fast_runner),
             backend_resolver=lambda name, *a, **k: backends[name](),
             state_dir=create_kw.pop("state_dir", isolated / "state"),
