@@ -154,10 +154,13 @@ def _mini_repo(tmp_path: Path, *, sign: bool = True) -> tuple[Path, str | None]:
     """Minimal tree satisfying every verify_repo gate, optionally signed."""
     root = tmp_path / "repo"
     root.mkdir(parents=True)
+    signer = generate_keypair() if sign else None
     for jewel in DEFAULT_JEWELS:
         p = root / jewel
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(f"# {jewel}\n")
+        p.write_text(
+            signer[1] + "\n" if jewel == "quality/gate_signing.pub" and signer else f"# {jewel}\n"
+        )
     # The evidence-policy jewels are parsed by the gates, which fail closed on
     # a malformed policy file — the fixture carries well-formed empty ones.
     (root / "quality" / "epoch_allowed_removals.json").write_text(
@@ -182,7 +185,8 @@ def _mini_repo(tmp_path: Path, *, sign: bool = True) -> tuple[Path, str | None]:
     update_heads_pin(pin, "quality", "*.json", ep)
     priv = None
     if sign:
-        priv, pub = generate_keypair()
+        assert signer is not None
+        priv, pub = signer
         sign_pins(root, priv, pub)
         write_crown_jewels_pin(root)  # pubkey is a jewel — repin after signing
         ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
@@ -416,9 +420,24 @@ def test_attacker_keypair_resign_boundary(tmp_path: Path) -> None:
     what "valid" means. What actually catches it: gate_signing.pub is a
     crown jewel, so the swap trips jewel_mutated, and the new pubkey would
     have to ride in the same commit under git review."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    from quant_fund.research.gate_signatures import key_id
+
     root, _priv = _mini_repo(tmp_path, sign=True)
     evil_priv, evil_pub = generate_keypair()
-    sign_pins(root, evil_priv, evil_pub)  # attacker resigns + swaps pubkey
+    # The production writer now refuses a trust-root swap; model an attacker
+    # with direct file-write access to preserve the verifier boundary test.
+    sig_file = root / "gate_pins.sig"
+    body = json.loads(sig_file.read_text())
+    body["key_id"] = key_id(evil_pub)
+    body["signature"] = (
+        Ed25519PrivateKey.from_private_bytes(bytes.fromhex(evil_priv))
+        .sign(canonical_json_bytes(body["payload"]))
+        .hex()
+    )
+    (root / "quality/gate_signing.pub").write_text(evil_pub + "\n")
+    sig_file.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n")
     res = verify_pin_signatures(root)
     assert res["ok"] is True  # sig gate alone cannot see a full key swap
     assert "jewel_mutated:quality/gate_signing.pub" in crown_jewels_errors(root)

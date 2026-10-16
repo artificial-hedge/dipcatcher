@@ -77,6 +77,13 @@ def sign_pins(
     root_path = Path(root)
     if (root_path / DEFAULT_QUORUM_PATH).exists():
         raise ValueError("quorum registry present — use quorum-sign")
+    validate_signer_pair(private_seed_hex, pubkey_hex)
+    pub_file = root_path / DEFAULT_PUBKEY_PATH
+    if pub_file.exists() or pub_file.is_symlink():
+        if not pub_file.is_file() or pub_file.is_symlink():
+            raise ValueError("committed public key is not a regular file")
+        if pub_file.read_text().strip() != pubkey_hex:
+            raise ValueError("supplied public key does not match committed public key")
     manifest = _pin_manifest(root_path)
     key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_seed_hex))
     sig = key.sign(canonical_json_bytes(manifest))
@@ -87,10 +94,8 @@ def sign_pins(
         "payload": manifest,
         "signature": sig.hex(),
     }
-    atomic_write_text(
-        root_path / DEFAULT_PUBKEY_PATH,
-        pubkey_hex + "\n",
-    )
+    if not pub_file.exists():
+        atomic_write_text(pub_file, pubkey_hex + "\n")
     sig_path = root_path / DEFAULT_SIG_PATH
     atomic_write_text(sig_path, json.dumps(body, indent=2, sort_keys=True) + "\n")
     return sig_path

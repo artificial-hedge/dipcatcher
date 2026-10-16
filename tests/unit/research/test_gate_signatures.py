@@ -65,12 +65,60 @@ def test_signature_forgery_fails(tmp_path: Path) -> None:
 
 def test_wrong_pubkey_fails(tmp_path: Path) -> None:
     root = _repo(tmp_path)
-    priv, _pub = generate_keypair()
+    priv, pub = generate_keypair()
     _, other_pub = generate_keypair()
-    sign_pins(root, priv, other_pub)
+    sign_pins(root, priv, pub)
+    (root / "quality/gate_signing.pub").write_text(other_pub + "\n")
     res = verify_pin_signatures(root)
     assert res["ok"] is False
-    assert "signature_invalid" in res["errors"] or "key_id_mismatch" in res["errors"]
+    assert "key_id_mismatch" in res["errors"]
+
+
+def test_legacy_sign_pins_refuses_mismatched_seed_without_writing(tmp_path: Path) -> None:
+    import pytest
+
+    root = _repo(tmp_path)
+    private_hex, _public_hex = generate_keypair()
+    _other_private_hex, other_public_hex = generate_keypair()
+    with pytest.raises(ValueError, match="private seed does not match public key"):
+        sign_pins(root, private_hex, other_public_hex)
+    assert not (root / "quality/gate_signing.pub").exists()
+    assert not (root / "gate_pins.sig").exists()
+
+
+def test_legacy_sign_pins_refuses_replacing_committed_public_key(tmp_path: Path) -> None:
+    import pytest
+
+    root = _repo(tmp_path)
+    private_hex, public_hex = generate_keypair()
+    sign_pins(root, private_hex, public_hex)
+    public_file = root / "quality/gate_signing.pub"
+    signature_file = root / "gate_pins.sig"
+    committed_public = public_file.read_bytes()
+    committed_signature = signature_file.read_bytes()
+    other_private_hex, other_public_hex = generate_keypair()
+    with pytest.raises(ValueError, match="does not match committed public key"):
+        sign_pins(root, other_private_hex, other_public_hex)
+    assert public_file.read_bytes() == committed_public
+    assert signature_file.read_bytes() == committed_signature
+
+
+def test_legacy_sign_pins_reuses_committed_public_key(tmp_path: Path, monkeypatch) -> None:
+    from quant_fund.utils import atomicio
+
+    root = _repo(tmp_path)
+    private_hex, public_hex = generate_keypair()
+    sign_pins(root, private_hex, public_hex)
+    public_file = root / "quality/gate_signing.pub"
+    original_write = atomicio.atomic_write_text
+
+    def write_without_replacing_public(path: Path, data: str) -> None:
+        assert path != public_file
+        original_write(path, data)
+
+    monkeypatch.setattr(atomicio, "atomic_write_text", write_without_replacing_public)
+    sign_pins(root, private_hex, public_hex)
+    assert verify_pin_signatures(root)["ok"] is True
 
 
 def test_sig_without_pubkey_fails(tmp_path: Path) -> None:
