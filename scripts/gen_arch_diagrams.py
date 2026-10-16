@@ -638,12 +638,12 @@ def write_all(root: Path) -> list[str]:
     for rel, content in artifacts.items():
         path = root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
+        path.write_bytes(content.encode("utf-8"))
         written.append(rel)
     atlas = root / ATLAS_DOC
     if atlas.is_file():
         text = splice_blocks(atlas.read_text(encoding="utf-8"), generated_blocks(artifacts))
-        atlas.write_text(text, encoding="utf-8")
+        atlas.write_bytes(text.encode("utf-8"))
         written.append(_rel(ATLAS_DOC))
     return written
 
@@ -661,7 +661,7 @@ def stale_artifacts(root: Path) -> list[str]:
             stale.append(rel)
             continue
         try:
-            current = path.read_text(encoding="utf-8")
+            current = path.read_bytes().decode("utf-8")
         except UnicodeDecodeError:
             stale.append(rel)
             continue
@@ -670,7 +670,7 @@ def stale_artifacts(root: Path) -> list[str]:
     atlas = root / ATLAS_DOC
     if atlas.is_file():
         try:
-            current_atlas = atlas.read_text(encoding="utf-8")
+            current_atlas = atlas.read_bytes().decode("utf-8")
             expected = splice_blocks(current_atlas, generated_blocks(artifacts))
         except (UnicodeDecodeError, ValueError):
             stale.append(_rel(ATLAS_DOC))

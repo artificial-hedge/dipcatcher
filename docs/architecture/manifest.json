@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13426,
+  "module_count": 13427,
   "module_edges": [
     {
       "dst": "fx1",
@@ -196,6 +196,14 @@
     },
     {
       "dst": "fx1.serve.ops_receipt",
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.serve.release_gate",
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.serve.signing",
       "src": "fx1.cli"
     },
     {
@@ -2031,6 +2039,10 @@
       "src": "fx1.interactive.app"
     },
     {
+      "dst": "fx1.webresearch.engine",
+      "src": "fx1.interactive.app"
+    },
+    {
       "dst": "fx1.flash.refresh",
       "src": "fx1.interactive.concierge"
     },
@@ -2140,6 +2152,10 @@
     },
     {
       "dst": "fx1.interactive.budget",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.interactive.endpoint",
       "src": "fx1.interactive.superpower"
     },
     {
@@ -2627,6 +2643,10 @@
       "src": "fx1.serve._api_cli"
     },
     {
+      "dst": "fx1.serve.release_gate",
+      "src": "fx1.serve._api_cli"
+    },
+    {
       "dst": "fx1.serve.openai_compat",
       "src": "fx1.serve.anthropic_compat"
     },
@@ -2712,6 +2732,10 @@
     },
     {
       "dst": "fx1.serve.receipt_store",
+      "src": "fx1.serve.api"
+    },
+    {
+      "dst": "fx1.serve.release_gate",
       "src": "fx1.serve.api"
     },
     {
@@ -2832,6 +2856,10 @@
     },
     {
       "dst": "fx1.modelcard",
+      "src": "fx1.serve.backends"
+    },
+    {
+      "dst": "fx1.serve.release_gate",
       "src": "fx1.serve.backends"
     },
     {
@@ -3387,6 +3415,14 @@
       "src": "fx1.serve.local_engine"
     },
     {
+      "dst": "fx1.serve.release_gate",
+      "src": "fx1.serve.local_engine"
+    },
+    {
+      "dst": "fx1.serve.signing",
+      "src": "fx1.serve.local_engine"
+    },
+    {
       "dst": "fx1.harness",
       "src": "fx1.serve.models_audit"
     },
@@ -3649,6 +3685,18 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "fx1.serve.quota_audit"
+    },
+    {
+      "dst": "fx1.modelcard",
+      "src": "fx1.serve.release_gate"
+    },
+    {
+      "dst": "fx1.serve.backends",
+      "src": "fx1.serve.release_gate"
+    },
+    {
+      "dst": "fx1.serve.signing",
+      "src": "fx1.serve.release_gate"
     },
     {
       "dst": "fx1.harness",
@@ -14068,6 +14116,10 @@
     },
     {
       "dst": "quant_fund.execution.order_recon",
+      "src": "quant_fund.paper.broker_adapter"
+    },
+    {
+      "dst": "quant_fund.utils.atomicio",
       "src": "quant_fund.paper.broker_adapter"
     },
     {
@@ -61897,6 +61949,7 @@
     "fx1.serve.quota2_audit",
     "fx1.serve.quota_audit",
     "fx1.serve.receipt_store",
+    "fx1.serve.release_gate",
     "fx1.serve.replay_audit",
     "fx1.serve.retrieval_audit",
     "fx1.serve.serve_audit",
@@ -75126,7 +75179,7 @@
     },
     {
       "dst": "fx1.serve",
-      "imports": 8,
+      "imports": 10,
       "src": "fx1.cli"
     },
     {
@@ -75401,7 +75454,7 @@
     },
     {
       "dst": "fx1.interactive",
-      "imports": 37,
+      "imports": 38,
       "src": "fx1.interactive"
     },
     {
@@ -75411,7 +75464,7 @@
     },
     {
       "dst": "fx1.webresearch",
-      "imports": 1,
+      "imports": 2,
       "src": "fx1.interactive"
     },
     {
@@ -75616,7 +75669,7 @@
     },
     {
       "dst": "fx1.modelcard",
-      "imports": 6,
+      "imports": 7,
       "src": "fx1.serve"
     },
     {
@@ -75631,7 +75684,7 @@
     },
     {
       "dst": "fx1.serve",
-      "imports": 180,
+      "imports": 187,
       "src": "fx1.serve"
     },
     {
@@ -76666,7 +76719,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 7,
+      "imports": 8,
       "src": "quant_fund.paper"
     },
     {

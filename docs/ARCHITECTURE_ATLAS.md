@@ -184,7 +184,7 @@ flowchart LR
   fx1_cli -->|1| fx1_sbom
   fx1_cli -->|1| fx1_sdk
   fx1_cli -->|1| fx1_selftest
-  fx1_cli -->|8| fx1_serve
+  fx1_cli -->|10| fx1_serve
   fx1_cli -->|3| fx1_train
   fx1_cli_audit -->|1| fx1_bench
   fx1_cli_audit -->|1| fx1_cli
@@ -235,7 +235,7 @@ flowchart LR
   fx1_interactive -->|5| fx1_harness
   fx1_interactive -->|2| fx1_honesty
   fx1_interactive -->|4| fx1_serve
-  fx1_interactive -->|1| fx1_webresearch
+  fx1_interactive -->|2| fx1_webresearch
   fx1_interactive -->|1| quant_fund_utils
   fx1_modelcard_audit -->|1| fx1_modelcard
   fx1_modelcard_audit -->|2| quant_fund_utils
@@ -275,7 +275,7 @@ flowchart LR
   fx1_serve -->|3| fx1_eval
   fx1_serve -->|32| fx1_harness
   fx1_serve -->|3| fx1_honesty
-  fx1_serve -->|6| fx1_modelcard
+  fx1_serve -->|7| fx1_modelcard
   fx1_serve -->|1| fx1_reward
   fx1_serve -->|14| fx1_sdk
   fx1_serve -->|4| fx1_train
@@ -452,7 +452,7 @@ flowchart LR
   quant_fund_paper -->|2| quant_fund_portfolio
   quant_fund_paper -->|4| quant_fund_research
   quant_fund_paper -->|1| quant_fund_schemas
-  quant_fund_paper -->|7| quant_fund_utils
+  quant_fund_paper -->|8| quant_fund_utils
   quant_fund_parity -->|4| quant_fund_config
   quant_fund_parity -->|2| quant_fund_execution
   quant_fund_parity -->|1| quant_fund_schemas
@@ -783,7 +783,7 @@ sequenceDiagram
 | `fx1.sdk` | 1 |
 | `fx1.sdk_audit` | 1 |
 | `fx1.selftest` | 1 |
-| `fx1.serve` | 60 |
+| `fx1.serve` | 61 |
 | `fx1.tail_audit` | 1 |
 | `fx1.train` | 14 |
 | `fx1.webresearch` | 4 |
@@ -842,7 +842,7 @@ sequenceDiagram
 | `quant_fund.utils` | 10 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13426**
+- Modules scanned: **13427**
 - Packages: **94**
 - Cross-package import edges: **398**
 
