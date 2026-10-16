@@ -1449,7 +1449,7 @@ class Concierge:
                     }
                 )
                 for call in completion.tool_calls:
-                    result_text = self._execute_tool(call)
+                    result_text = self._execute_tool_result(call)
                     self._messages.append(
                         {
                             "role": "tool",
@@ -1582,6 +1582,17 @@ class Concierge:
             },
         ]
 
+    def _execute_tool_result(self, call: dict[str, Any]) -> str:
+        try:
+            return self._execute_tool(call)
+        except (OperationCancelled, Fx1HonestyError):
+            raise
+        except Exception as exc:  # noqa: BLE001 — keep local tool failures in the tool transcript
+            self._journal_event("tool_error", error_type=type(exc).__name__)
+            result = "tool execution failed; outcome unknown"
+            self._say(result)
+            return result
+
     def _execute_tool(self, call: dict[str, Any]) -> str:
         try:
             name, arguments = _parse_tool_call(call)
@@ -1597,21 +1608,30 @@ class Concierge:
                 self._store.mark_used(hit.entry.id)
             return context_block(hits)
         if name == "flash_save":
-            entry_text = arguments.get("text")
-            if not isinstance(entry_text, str) or not entry_text.strip():
-                return "flash_save refused: text must be a nonempty string"
-            entry = self._store.add(
-                text=entry_text,
-                task=str(arguments.get("task", "")),
-                uncertainty=arguments.get("uncertainty"),
-                tags=["model-saved"],
-            )
-            return f"saved flash entry {entry.id}"
+            return self._save_flash_tool(arguments)
         if name == "web_lookup":
             return self._web_lookup(str(arguments.get("query", "")))
         if name == "harness_run":
             return self._execute_harness_tool(arguments)
         return f"unknown tool {name!r}"
+
+    def _save_flash_tool(self, arguments: dict[str, Any]) -> str:
+        entry_text = arguments.get("text")
+        if not isinstance(entry_text, str) or not entry_text.strip():
+            return "flash_save refused: text must be a nonempty string"
+        task = arguments.get("task", "")
+        if not isinstance(task, str):
+            return "flash_save refused: task must be a string"
+        uncertainty = arguments.get("uncertainty")
+        if "uncertainty" in arguments and uncertainty not in ("low", "medium", "high"):
+            return "flash_save refused: uncertainty must be low, medium, or high"
+        entry = self._store.add(
+            text=entry_text,
+            task=task,
+            uncertainty=uncertainty,
+            tags=["model-saved"],
+        )
+        return f"saved flash entry {entry.id}"
 
     def _execute_harness_tool(self, arguments: dict[str, Any]) -> str:
         harness_name = arguments.get("name")

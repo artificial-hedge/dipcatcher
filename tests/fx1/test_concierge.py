@@ -590,6 +590,107 @@ def test_chat_tool_refuses_malformed_json_before_flash_write(
     assert "arguments must be a JSON object" in tool_msg["content"]
 
 
+@pytest.mark.parametrize(
+    ("arguments", "reason"),
+    [
+        ({"text": "valid note", "task": {"unexpected": "object"}}, "task must be a string"),
+        ({"text": "valid note", "uncertainty": "critical"}, "uncertainty must be"),
+    ],
+)
+def test_chat_flash_save_refuses_invalid_optional_fields(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    arguments: dict[str, Any],
+    reason: str,
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "flash_save", arguments),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="Invalid arguments.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend)
+    concierge.handle_line("save this finding")
+    assert concierge._store.all() == []  # noqa: SLF001
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert reason in tool_msg["content"]
+    assert "Invalid arguments." in joined(out)
+
+
+def test_chat_tool_store_failure_reports_unknown_outcome_without_model_error(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "flash_save", {"text": "a finding"}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(
+                content="Save failed; I will retry later.", tool_calls=None, finish_reason="stop"
+            ),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend)
+
+    def fail_write(**fields: Any) -> None:
+        del fields
+        raise OSError("private storage path details")
+
+    monkeypatch.setattr(concierge._store, "add", fail_write)  # noqa: SLF001
+    concierge.handle_line("save this finding")
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "tool execution failed" in tool_msg["content"]
+    assert "outcome unknown" in tool_msg["content"]
+    assert "private storage path details" not in tool_msg["content"]
+    assert "Save failed; I will retry later." in joined(out)
+    assert "model endpoint error" not in joined(out)
+
+
+@pytest.mark.parametrize(
+    ("error_name", "expected_phrase"),
+    [
+        ("Fx1HonestyError", "withheld by the fx-1 honesty gate"),
+        ("OperationCancelled", "model turn cancelled before completion"),
+    ],
+)
+def test_chat_tool_boundary_preserves_honesty_and_cancellation(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    error_name: str,
+    expected_phrase: str,
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "flash_save", {"text": "a finding"}),),
+                finish_reason="tool_calls",
+            )
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend)
+
+    def abort_tool(call: dict[str, Any]) -> str:
+        del call
+        raise getattr(concierge_module, error_name)("tool interrupted")
+
+    monkeypatch.setattr(concierge, "_execute_tool", abort_tool)
+    concierge.handle_line("save this finding")
+    assert expected_phrase in joined(out)
+    assert len(backend.tool_calls_seen) == 1
+
+
 def test_chat_harness_tool_refuses_unregistered(
     env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
