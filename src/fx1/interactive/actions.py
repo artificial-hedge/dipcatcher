@@ -87,7 +87,7 @@ def chat(
     output_fn: Callable[..., None] = typer.echo,
     animated: bool | None = None,
 ) -> int:
-    """One-shot (``prompt`` given) or multi-turn chat with a hosted fx-1 model.
+    """One-shot (``prompt`` given) or multi-turn chat with a configured endpoint.
 
     Fail-closed when no endpoint resolves for *model*; network errors inside
     the loop are reported and the turn is dropped, never fatal to the shell.

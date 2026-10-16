@@ -1,10 +1,12 @@
 """Model-endpoint store for ``fxi``.
 
-fx-1 ships two hosted model names; each profile here is one model's
-endpoint — the API key and base URL used to talk to it:
+fx-1 recognizes two planned model identifiers; a profile supplies the API
+key and base URL used to talk to a configured endpoint:
 
-- ``fx1``      — the full fx-1 model.
-- ``fx1-lite`` — the light fx-1 model.
+- ``fx1``      — intended full model identifier.
+- ``fx1-lite`` — intended light model identifier.
+
+These identifiers do not establish released weights or a hosted deployment.
 
 Values live in ``$FX1_CONFIG_DIR/credentials.json`` (default
 ``~/.fx1/credentials.json``), with POSIX mode 0600 or a protected Windows
