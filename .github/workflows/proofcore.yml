@@ -174,11 +174,11 @@ jobs:
   # (not in fx1.yml, which this wave does not edit) as a ratchet floor.
   fx1-coverage:
     runs-on: ubuntu-latest
-    # tests/fx1 plus tests/unit/fx1_serve. The serve batteries are slow;
-    # 45 minutes was the fx1-lane-only budget. Union measured 91.19% on
-    # 2026-10-16; two api_audit receipt tests flaked under suite pressure
-    # (ConnectionReset teardown) — retry in the tests + thread pinning here.
-    timeout-minutes: 90
+    # tests/fx1 plus tests/unit/fx1_serve. The serve batteries are slow.
+    # On 2157a965a the suite was still running at 93% when the 90 minute
+    # job limit killed pytest. 120 minutes covers that tail. The 80% floor
+    # is unchanged.
+    timeout-minutes: 120
     env:
       OMP_NUM_THREADS: "1"
       MKL_NUM_THREADS: "1"

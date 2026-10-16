@@ -29,11 +29,11 @@
       "tree_root": "ebaaed39deb5d60a8cc2f9389260e290e852c7a5a533d21a92a42694716884af"
     },
     ".github/workflows/*.yml": {
-      "chain_root": "5b0885eadebd29853f7bdd38b4667fb37069c5b68aeb1e7137e5b60a06be0cd7",
-      "n_epochs": 46,
-      "receipt": "corpus_epoch_1d0da6bf9c48a6c7.json",
-      "sha256": "850b92812b2e3cd2d7327837cb04cf545f009a017141a34b3e5361a33f56ae8a",
-      "tree_root": "f098310daf245176df8a5202382a965e23fd2959e2e861bbf16f886d6bb8d6a0"
+      "chain_root": "ccf28e7fbd5529f891fb78ff016f0cf35c12a6c79182e0311d1e9d9c15e9df8b",
+      "n_epochs": 47,
+      "receipt": "corpus_epoch_a087121161826194.json",
+      "sha256": "8afabd7e8d457aecc67009f6914ed3d63557f40141c919bba56988795eb1989d",
+      "tree_root": "bac8c7ecc5870de53d02f653de054d298a032467a3a97db36048eff52ad8e027"
     },
     "artifacts/*": {
       "chain_root": "2628429ece5cdf88360ee6ea7ba00d8bc8900fc08f5151f4fa648223fa902266",
@@ -78,11 +78,11 @@
       "tree_root": "3a78090acc2b055eb172a28e9c0e8b0e04398ed7bc97f5c5447d5059370e8236"
     },
     "docs/*": {
-      "chain_root": "a71a632f4e035006c206ca75173d1491e5fea97a289563bb5541c45657c4eb01",
-      "n_epochs": 20,
-      "receipt": "corpus_epoch_8406b80ec7470502.json",
-      "sha256": "9c246c65024f754195782c3952b3c6d237099f703f0dbbe90f136efc9a5321f0",
-      "tree_root": "79c5df06ce7b7e15e00dea14089ba1d09270acd7551ae94a14056b0d31050852"
+      "chain_root": "e783bb5b88c9449a31a6010339e4bb4f939d0d119d02350144b0656f8c282f44",
+      "n_epochs": 21,
+      "receipt": "corpus_epoch_92a365d69690a3ff.json",
+      "sha256": "a1dab93d5c4171f7efd3b9b75e63aa8d1d47edb5f318fd90a3b88452074c38f9",
+      "tree_root": "41927b41ce421f92db292beef5ce4b3f747a60fbf15159bbf58817c3b0b2e5a9"
     },
     "examples/*": {
       "chain_root": "2d6ff5b3801acb9eb1b8f4f50e068405d9bb0c97c355f7d0871e371df0717df0",
