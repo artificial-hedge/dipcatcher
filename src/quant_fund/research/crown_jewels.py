@@ -65,6 +65,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "MATH_SPEC.md",  # fx-1 math contract (tracked input)
     "RESEARCH_REFERENCES.md",  # fx-1 bibliography (tracked input)
     "SECURITY.md",  # disclosure policy
+    "sonar-project.properties",  # Sonar analysis scope — dropping src would hide findings
     "day_grind_progress.md",  # progress tracker
     "docker-compose.yml",  # local service definitions
     # --- gate-defining files ---

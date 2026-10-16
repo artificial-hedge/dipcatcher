@@ -319,6 +319,7 @@ ROOT_FILES = frozenset(
         "RESEARCH_REFERENCES.md",
         "SECURITY.md",
         "conftest.py",
+        "sonar-project.properties",
         "day_grind_progress.md",
         "docker-compose.yml",
         "FULL_COVERAGE.md",

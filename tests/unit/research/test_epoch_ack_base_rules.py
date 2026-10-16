@@ -565,7 +565,11 @@ def test_readd_with_ntfs_trailing_dot_is_resurrection(tmp_path: Path) -> None:
     acks = [_ack(key, "a.json", removal, "removed", v1, None)]
     _write(corpus / "a.json.", "v2-rewritten")
     errors = check_epoch_chain(corpus, acks=acks, pattern="*")["errors"]
-    assert errors == ["member_resurrected_live:'a.json.'"]
+    # Linux keeps the trailing dot as its own name. NTFS strips it, so the
+    # rewrite lands on a.json and the live resurrection is reported there.
+    live = set(member_digests(corpus, pattern="*"))
+    resurrected = "a.json." if "a.json." in live else "a.json"
+    assert errors == [f"member_resurrected_live:{resurrected!a}"]
     script_errors, _ = _script(corpus, _ledger(tmp_path / "acks.json", acks), "--pattern", "*")
     assert script_errors == errors
 

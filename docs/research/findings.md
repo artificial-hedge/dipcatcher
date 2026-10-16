@@ -69,9 +69,12 @@ does not score them.
 - `receipts/contract_probe.json`: contract_probe.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_absence_exemplar.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_audit.json`: corpus_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_05bbdbfc2bab9f19.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_0a2e8964712cfb0a.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_0af2a2d5723b14ae.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_1384f0d99dac82aa.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_1d1a6cfdadf37c0c.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_24763ba760350636.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_2b5db388ddee23aa.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_2bd794275af2b3d8.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_2ca91405e468cc6b.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -89,6 +92,7 @@ does not score them.
 - `receipts/corpus_epoch_6340cdebc9a6efe1.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_63761c8b4e63992b.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_6cf185cfb5466dd7.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_6f6d75cd3751c48d.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_6f8420fc2959f4e7.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_6fb596b0230e9f17.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_721e9b4fb855e1a1.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -278,9 +282,9 @@ does not score them.
 - `receipts/mid_jump_amzn.json`: mid_jump.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/middleware_audit.json`: middleware_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/modelcard_audit.json`: modelcard_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/monitor_run_e69a3aed9568e30d.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/monitor_run_drill_clean.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/monitor_run_drill_defect.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/monitor_run_e69a3aed9568e30d.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/monitor_run_real_drill.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/mortal_repost.json`: mortal_repost.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/mrm_audit.json`: mrm_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -312,8 +316,8 @@ does not score them.
 - `receipts/queue_priority.json`: queue_priority.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/quote_floor.json`: quote_floor.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/quote_place_amzn.json`: quote_place.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/rankic_eval_addd924f107eedd8.json`: cross_sectional_rankic.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/rankic_eval_9ebdad7da83e7348.json`: cross_sectional_rankic.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/rankic_eval_addd924f107eedd8.json`: cross_sectional_rankic.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/real_benchmark_us_wide_manifest.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/real_benchmark_us_wide_test.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/real_benchmark_us_wide_validation.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
