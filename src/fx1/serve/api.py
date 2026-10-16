@@ -3099,7 +3099,12 @@ def _mount_job_routes(
                     last = snap
                     yield f"event: job\ndata: {snap}\n\n"
                 now = time.monotonic()
-                if cur.status in _TERMINAL_JOB_STATUS or now >= deadline:
+                # The worker mutates this same job record. Reading
+                # ``cur.status`` after the yield can observe a terminal
+                # transition that the frame just sent did not contain,
+                # and returning here would drop that frame.
+                emitted = json.loads(snap).get("status")
+                if emitted in _TERMINAL_JOB_STATUS or now >= deadline:
                     return
                 if now >= next_keep:
                     yield ": keepalive\n\n"
