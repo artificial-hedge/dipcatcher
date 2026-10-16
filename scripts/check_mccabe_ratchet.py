@@ -35,7 +35,7 @@ BASELINE = ROOT / "quality" / "mccabe_baseline.txt"
 SOFT_THRESHOLD = 10
 # Mirrors [tool.ruff.lint.mccabe] max-complexity in pyproject.toml. Recorded
 # in the census so the evidence states the ceiling it was measured against.
-CEILING = 74
+CEILING = 71
 SCOPE = ["src"]
 _RUFF_MSG = re.compile(r"^(.+) is too complex \((\d+) > (\d+)\)$")
 

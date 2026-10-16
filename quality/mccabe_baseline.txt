@@ -392,7 +392,8 @@ src/quant_fund/microstructure/zi_lob_simulator.py:RateRegimeSpec.__post_init__ 1
 src/quant_fund/microstructure/zi_lob_simulator.py:ZILobConfig.__post_init__ 37
 src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._cancel_event 35
 src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._hit_flee 10
-src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._limit_order_event 74
+src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._lo_place_ref_anchored 36
+src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._lo_place_touch_anchored 31
 src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator._repost_level 12
 src/quant_fund/microstructure/zi_lob_simulator.py:ZILobSimulator.step 13
 src/quant_fund/microstructure/zi_lob_simulator.py:metaorder_impact_slope 11
@@ -720,8 +721,9 @@ src/quant_fund/paper/forward_shadow.py:_close_packet 15
 src/quant_fund/paper/forward_shadow.py:_open_packet 12
 src/quant_fund/paper/forward_shadow.py:_plan_close 11
 src/quant_fund/paper/forward_shadow.py:prepare 17
+src/quant_fund/paper/ledger.py:_validate_ledger_broker_state 23
+src/quant_fund/paper/ledger.py:_validate_ledger_meta 11
 src/quant_fund/paper/ledger.py:promotion_dry_run 20
-src/quant_fund/paper/ledger.py:validate_ledger_schema 74
 src/quant_fund/paper/ledger.py:validate_promotion_dry_run_receipt 28
 src/quant_fund/paper/quantile_signals.py:QuantilePolicy.__post_init__ 18
 src/quant_fund/paper/quantile_signals.py:load_deep_bars 10

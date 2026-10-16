@@ -2218,7 +2218,7 @@ class ZILobSimulator:
             p_buy = min(1.0, max(0.0, p_buy + self._cfg.p_buy_drift * self._t))
         return mu, p_buy
 
-    def _limit_order_event(self) -> None:
+    def _lo_prepare_placement(self) -> tuple[int, int | None, int | None, bool]:
         lam, band = self._cfg.lam, self._cfg.band
         bid_rate = lam * band
         ask_rate = lam * band
@@ -2252,6 +2252,9 @@ class ZILobSimulator:
                 (want_buy and hit_side == "sell") or (not want_buy and hit_side == "buy")
             ):
                 dist = min(dist, self._cfg.hit_narrow_dist)
+        return dist, ba, bb, want_buy
+
+    def _lo_place_mid_dark(self, ba: int | None, bb: int | None, want_buy: bool) -> bool:
         # Midpoint dark peg: the event's units rest hidden at the mid
         # instead of entering the visible book (only when a mid exists —
         # spread >= 2 ticks). Consumes one extra uniform only when on.
@@ -2282,150 +2285,161 @@ class ZILobSimulator:
                 self.n_dark_placed += 1
             self.n_lo_arrivals += 1
             self.n_lo_units += k
-            return
-        if self._cfg.anchor == "ref":
-            # Absolute-space anchoring: LOs deposit around a slow reference level
-            # so cumulative liquidity grows with distance from the reference and
-            # a metaorder climbing away from it meets a deepening static profile
-            # (volume-diffusion / square-root regime). Crossing placements are
-            # dropped — that aggressiveness is already in the market-order flow.
-            ref = int(round(self._ref_ema))
-            k = self._draw_size(self._lo_size_cdf)
-            # Mixture head (join/improve/stack): the pick consumes ONE
-            # extra uniform and only when a mixture knob is on — both at
-            # 0 keeps the ref path bit-identical.
-            mix_on = (
-                self._cfg.place_join_frac > 0.0
-                or self._cfg.lo_improve_frac > 0.0
-                or self._cfg.crown_stack_frac > 0.0
-            )
-            u_mix = self._rng.random() if mix_on else 1.0
-            want_join = u_mix < self._cfg.place_join_frac
-            want_imp = (
-                not want_join and u_mix < self._cfg.place_join_frac + self._cfg.lo_improve_frac
-            )
-            want_crown = (
-                not want_join
-                and not want_imp
-                and u_mix
-                < self._cfg.place_join_frac + self._cfg.lo_improve_frac + self._cfg.crown_stack_frac
-            )
-            if want_buy:
-                chase = self._unhit_chase("buy")
-                if chase is None:
-                    chase = self._vac_chase("buy")
-                chased = chase is not None
-                repost_l = self._repost_level("buy")
-                if repost_l is not None:
-                    level = repost_l
-                elif chase is not None:
-                    level = chase
-                elif want_join and bb is not None:
-                    level = bb
-                elif want_crown and bb is not None:
-                    cand = (
-                        bb
-                        - self._cfg.crown_offset
-                        - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
-                    )
-                    if (
-                        self._cfg.crown_cap <= 0
-                        or len(self._bids.get(cand, ())) < self._cfg.crown_cap
-                    ):
-                        level = cand
-                        if self._cfg.crown_size_pmf is not None:
-                            k = self._draw_size(self._crown_size_cdf)
-                        self.n_lo_crown += 1
-                    else:
-                        level = ref - dist
-                elif want_imp and ba is not None and bb is not None and ba - bb > 1:
-                    level = bb + 1 + int(self._rng.random() * (ba - bb - 1))
-                else:
-                    level = ref - dist
-                zone_b = self._cfg.zone_embargo
-                if zone_b > 0 and level > ref - zone_b:
-                    level = ref - zone_b
-                if repost_l is None:
-                    level = self._step_unhit("buy", level)
-                if repost_l is None and self._is_cooled("buy", level):
-                    self.n_lo_suppressed += 1
-                    return
-                if repost_l is None and self._hit_starved("buy", level):
-                    self.n_lo_suppressed += 1
-                    return
-                if ba is None or level < ba:
-                    if bb is not None and level == bb:
-                        self.n_lo_join += 1
-                    elif bb is not None and level > bb:
-                        self.n_lo_improve += 1
-                    for _ in range(k):
-                        if self._touch_capped("buy", level):
-                            self.n_lo_capped += 1
-                            break
-                        self._rest(
-                            "buy",
-                            level,
-                            "repost" if repost_l is not None else ("chase" if chased else "zi"),
-                        )
-                    self.n_lo_arrivals += 1
-                    self.n_lo_units += k
-                return
-            chase = self._unhit_chase("sell")
+            return True
+        return False
+
+    def _lo_place_ref_anchored(
+        self,
+        dist: int,
+        ba: int | None,
+        bb: int | None,
+        want_buy: bool,
+    ) -> None:
+        # Absolute-space anchoring: LOs deposit around a slow reference level
+        # so cumulative liquidity grows with distance from the reference and
+        # a metaorder climbing away from it meets a deepening static profile
+        # (volume-diffusion / square-root regime). Crossing placements are
+        # dropped — that aggressiveness is already in the market-order flow.
+        ref = int(round(self._ref_ema))
+        k = self._draw_size(self._lo_size_cdf)
+        # Mixture head (join/improve/stack): the pick consumes ONE
+        # extra uniform and only when a mixture knob is on — both at
+        # 0 keeps the ref path bit-identical.
+        mix_on = (
+            self._cfg.place_join_frac > 0.0
+            or self._cfg.lo_improve_frac > 0.0
+            or self._cfg.crown_stack_frac > 0.0
+        )
+        u_mix = self._rng.random() if mix_on else 1.0
+        want_join = u_mix < self._cfg.place_join_frac
+        want_imp = not want_join and u_mix < self._cfg.place_join_frac + self._cfg.lo_improve_frac
+        want_crown = (
+            not want_join
+            and not want_imp
+            and u_mix
+            < self._cfg.place_join_frac + self._cfg.lo_improve_frac + self._cfg.crown_stack_frac
+        )
+        if want_buy:
+            chase = self._unhit_chase("buy")
             if chase is None:
-                chase = self._vac_chase("sell")
+                chase = self._vac_chase("buy")
             chased = chase is not None
-            repost_l = self._repost_level("sell")
+            repost_l = self._repost_level("buy")
             if repost_l is not None:
                 level = repost_l
             elif chase is not None:
                 level = chase
-            elif want_join and ba is not None:
-                level = ba
-            elif want_crown and ba is not None:
+            elif want_join and bb is not None:
+                level = bb
+            elif want_crown and bb is not None:
                 cand = (
-                    ba
-                    + self._cfg.crown_offset
-                    + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                    bb
+                    - self._cfg.crown_offset
+                    - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
                 )
-                if self._cfg.crown_cap <= 0 or len(self._asks.get(cand, ())) < self._cfg.crown_cap:
+                if self._cfg.crown_cap <= 0 or len(self._bids.get(cand, ())) < self._cfg.crown_cap:
                     level = cand
                     if self._cfg.crown_size_pmf is not None:
                         k = self._draw_size(self._crown_size_cdf)
                     self.n_lo_crown += 1
                 else:
-                    level = ref + dist
+                    level = ref - dist
             elif want_imp and ba is not None and bb is not None and ba - bb > 1:
-                level = ba - 1 - int(self._rng.random() * (ba - bb - 1))
+                level = bb + 1 + int(self._rng.random() * (ba - bb - 1))
             else:
-                level = ref + dist
-            zone_s = self._cfg.zone_embargo
-            if zone_s > 0 and level < ref + zone_s:
-                level = ref + zone_s
+                level = ref - dist
+            zone_b = self._cfg.zone_embargo
+            if zone_b > 0 and level > ref - zone_b:
+                level = ref - zone_b
             if repost_l is None:
-                level = self._step_unhit("sell", level)
-            if repost_l is None and self._is_cooled("sell", level):
+                level = self._step_unhit("buy", level)
+            if repost_l is None and self._is_cooled("buy", level):
                 self.n_lo_suppressed += 1
                 return
-            if repost_l is None and self._hit_starved("sell", level):
+            if repost_l is None and self._hit_starved("buy", level):
                 self.n_lo_suppressed += 1
                 return
-            if bb is None or level > bb:
-                if ba is not None and level == ba:
+            if ba is None or level < ba:
+                if bb is not None and level == bb:
                     self.n_lo_join += 1
-                elif ba is not None and level < ba:
+                elif bb is not None and level > bb:
                     self.n_lo_improve += 1
                 for _ in range(k):
-                    if self._touch_capped("sell", level):
+                    if self._touch_capped("buy", level):
                         self.n_lo_capped += 1
                         break
                     self._rest(
-                        "sell",
+                        "buy",
                         level,
                         "repost" if repost_l is not None else ("chase" if chased else "zi"),
                     )
                 self.n_lo_arrivals += 1
                 self.n_lo_units += k
             return
+        chase = self._unhit_chase("sell")
+        if chase is None:
+            chase = self._vac_chase("sell")
+        chased = chase is not None
+        repost_l = self._repost_level("sell")
+        if repost_l is not None:
+            level = repost_l
+        elif chase is not None:
+            level = chase
+        elif want_join and ba is not None:
+            level = ba
+        elif want_crown and ba is not None:
+            cand = (
+                ba
+                + self._cfg.crown_offset
+                + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+            )
+            if self._cfg.crown_cap <= 0 or len(self._asks.get(cand, ())) < self._cfg.crown_cap:
+                level = cand
+                if self._cfg.crown_size_pmf is not None:
+                    k = self._draw_size(self._crown_size_cdf)
+                self.n_lo_crown += 1
+            else:
+                level = ref + dist
+        elif want_imp and ba is not None and bb is not None and ba - bb > 1:
+            level = ba - 1 - int(self._rng.random() * (ba - bb - 1))
+        else:
+            level = ref + dist
+        zone_s = self._cfg.zone_embargo
+        if zone_s > 0 and level < ref + zone_s:
+            level = ref + zone_s
+        if repost_l is None:
+            level = self._step_unhit("sell", level)
+        if repost_l is None and self._is_cooled("sell", level):
+            self.n_lo_suppressed += 1
+            return
+        if repost_l is None and self._hit_starved("sell", level):
+            self.n_lo_suppressed += 1
+            return
+        if bb is None or level > bb:
+            if ba is not None and level == ba:
+                self.n_lo_join += 1
+            elif ba is not None and level < ba:
+                self.n_lo_improve += 1
+            for _ in range(k):
+                if self._touch_capped("sell", level):
+                    self.n_lo_capped += 1
+                    break
+                self._rest(
+                    "sell",
+                    level,
+                    "repost" if repost_l is not None else ("chase" if chased else "zi"),
+                )
+            self.n_lo_arrivals += 1
+            self.n_lo_units += k
+        return
+
+    def _lo_place_touch_anchored(
+        self,
+        dist: int,
+        ba: int | None,
+        bb: int | None,
+        want_buy: bool,
+    ) -> None:
         # Touch anchoring (Moret & Lillo market-making setting): band follows the
         # best opposite quote; fall back to the reference level when a side is
         # empty so the book can always recover.
@@ -2543,6 +2557,15 @@ class ZILobSimulator:
                 )
         self.n_lo_arrivals += 1
         self.n_lo_units += k
+
+    def _limit_order_event(self) -> None:
+        dist, ba, bb, want_buy = self._lo_prepare_placement()
+        if self._lo_place_mid_dark(ba, bb, want_buy):
+            return
+        if self._cfg.anchor == "ref":
+            self._lo_place_ref_anchored(dist, ba, bb, want_buy)
+            return
+        self._lo_place_touch_anchored(dist, ba, bb, want_buy)
 
     def _cancel_event(self) -> None:
         bid_d, ask_d = self.bid_depth, self.ask_depth

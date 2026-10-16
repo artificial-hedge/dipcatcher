@@ -622,31 +622,14 @@ def validate_promotion_dry_run_receipt(promo: dict[str, Any]) -> list[str]:
     return errors
 
 
-def validate_ledger_schema(
-    run_dir: Path | str,
-    *,
-    expect_version: int | None = None,
-) -> dict[str, Any]:
-    """Validate on-disk paper ledger against SCHEMA_VERSION expectations.
-
-    Returns a report: ``ok``, ``errors``, ``warnings``, ``present``, ``schema_version``.
-    Does not raise — callers decide fail-closed policy. Research/infra helper only.
-    """
-    root = Path(run_dir)
-    errors: list[str] = []
-    warnings: list[str] = []
-    present: dict[str, bool] = {}
+def _validate_ledger_meta(
+    root: Path,
+    errors: list[str],
+    warnings: list[str],
+    present: dict[str, bool],
+    expect_version: int | None,
+) -> tuple[int | None, dict[str, Any]]:
     schema_version: int | None = None
-    row_counts: dict[str, int | None] = {
-        "orders": None,
-        "equity": None,
-        "shadow_equity": None,
-        "positions": None,
-        "cash_ledger": None,
-    }
-    cursor_step: int | None = None
-    cursor_consistent = True
-
     meta_path = root / "meta.json"
     present["meta.json"] = meta_path.is_file()
     meta: dict[str, Any] = {}
@@ -679,8 +662,18 @@ def validate_ledger_schema(
                 errors.append("meta_live_pnl_claim_must_be_false_or_absent")
     else:
         errors.append("meta.json_missing")
+    return schema_version, meta
 
-    state = {}
+
+def _validate_ledger_broker_state(
+    root: Path,
+    errors: list[str],
+    warnings: list[str],
+    present: dict[str, bool],
+    meta: dict[str, Any],
+) -> tuple[dict[str, Any], int | None]:
+    cursor_step: int | None = None
+    state: dict[str, Any] = {}
     state_path = root / "broker_state.json"
     present["broker_state.json"] = state_path.is_file()
     if state_path.is_file():
@@ -750,10 +743,18 @@ def validate_ledger_schema(
                             errors.append("broker_state_champion_history_fill_count_mismatch")
     else:
         warnings.append("broker_state.json_missing")
+    return state, cursor_step
 
+
+def _validate_ledger_equity(
+    root: Path,
+    errors: list[str],
+    present: dict[str, bool],
+    row_counts: dict[str, int | None],
+) -> int | None:
     equity_path = root / "equity.parquet"
     present["equity.parquet"] = equity_path.is_file()
-    equity_rows = None
+    equity_rows: int | None = None
     if equity_path.is_file():
         try:
             eq = pl.read_parquet(equity_path)
@@ -771,7 +772,15 @@ def validate_ledger_schema(
             row_counts["equity"] = eq.height
         except Exception as exc:  # noqa: BLE001 — report, don't crash validator
             errors.append(f"equity_unreadable:{type(exc).__name__}:{exc}")
+    return equity_rows
 
+
+def _validate_ledger_shadow_equity(
+    root: Path,
+    errors: list[str],
+    present: dict[str, bool],
+    row_counts: dict[str, int | None],
+) -> None:
     shadow_path = root / "shadow_equity.parquet"
     present["shadow_equity.parquet"] = shadow_path.is_file()
     if shadow_path.is_file():
@@ -784,6 +793,13 @@ def validate_ledger_schema(
         except Exception as exc:  # noqa: BLE001
             errors.append(f"shadow_equity_unreadable:{type(exc).__name__}:{exc}")
 
+
+def _validate_ledger_positions(
+    root: Path,
+    errors: list[str],
+    present: dict[str, bool],
+    row_counts: dict[str, int | None],
+) -> None:
     positions_path = root / "positions.parquet"
     present["positions.parquet"] = positions_path.is_file()
     if positions_path.is_file():
@@ -793,6 +809,13 @@ def validate_ledger_schema(
         except Exception as exc:  # noqa: BLE001
             errors.append(f"positions_unreadable:{type(exc).__name__}:{exc}")
 
+
+def _validate_ledger_positive_step_equity(
+    state: dict[str, Any],
+    present: dict[str, bool],
+    equity_rows: int | None,
+    errors: list[str],
+) -> None:
     # Positive broker cursors must have matching durable champion equity rows.
     # Otherwise resume could skip observations that have no auditable NAV history.
     state_step = state.get("step") if isinstance(state, dict) else None
@@ -808,6 +831,14 @@ def validate_ledger_schema(
                 f"broker_state_step_equity_count_mismatch:step={state_step}:rows={equity_rows}"
             )
 
+
+def _validate_ledger_orders(
+    root: Path,
+    errors: list[str],
+    warnings: list[str],
+    present: dict[str, bool],
+    row_counts: dict[str, int | None],
+) -> None:
     orders_path = root / "orders.parquet"
     present["orders.parquet"] = orders_path.is_file()
     if orders_path.is_file():
@@ -823,6 +854,13 @@ def validate_ledger_schema(
     else:
         warnings.append("orders.parquet_missing")
 
+
+def _validate_ledger_cash(
+    root: Path,
+    errors: list[str],
+    present: dict[str, bool],
+    row_counts: dict[str, int | None],
+) -> None:
     cash_path = root / "cash_ledger.parquet"
     present["cash_ledger.parquet"] = cash_path.is_file()
     if cash_path.is_file():
@@ -843,6 +881,13 @@ def validate_ledger_schema(
         except Exception as exc:  # noqa: BLE001
             errors.append(f"cash_ledger_unreadable:{type(exc).__name__}:{exc}")
 
+
+def _validate_ledger_promotion(
+    root: Path,
+    errors: list[str],
+    present: dict[str, bool],
+    meta: dict[str, Any],
+) -> None:
     promo_path = root / "promotion_dry_run.json"
     present["promotion_dry_run.json"] = promo_path.is_file()
     if promo_path.is_file():
@@ -856,6 +901,14 @@ def validate_ledger_schema(
                 errors.append("promotion_run_id_mismatch")
             errors.extend(promo_errors)
 
+
+def _validate_ledger_cursor_consistency(
+    present: dict[str, bool],
+    row_counts: dict[str, int | None],
+    cursor_step: int | None,
+    errors: list[str],
+) -> bool:
+    cursor_consistent = True
     durable_equity_rows = row_counts["equity"]
     if (
         durable_equity_rows is not None
@@ -872,7 +925,16 @@ def validate_ledger_schema(
             cursor_consistent = False
             relation = "ahead" if cursor_step > durable_equity_rows else "behind"
             errors.append(f"broker_state_step_{relation}_of_equity")
+    return cursor_consistent
 
+
+def _validate_ledger_analytics(
+    root: Path,
+    errors: list[str],
+    warnings: list[str],
+    present: dict[str, bool],
+    meta: dict[str, Any],
+) -> None:
     analytics_path = root / "analytics_export.json"
     present["analytics_export.json"] = analytics_path.is_file()
     if analytics_path.is_file():
@@ -901,6 +963,41 @@ def validate_ledger_schema(
     else:
         warnings.append("analytics_export.json_missing")
 
+
+def validate_ledger_schema(
+    run_dir: Path | str,
+    *,
+    expect_version: int | None = None,
+) -> dict[str, Any]:
+    """Validate on-disk paper ledger against SCHEMA_VERSION expectations.
+
+    Returns a report: ``ok``, ``errors``, ``warnings``, ``present``, ``schema_version``.
+    Does not raise — callers decide fail-closed policy. Research/infra helper only.
+    """
+    root = Path(run_dir)
+    errors: list[str] = []
+    warnings: list[str] = []
+    present: dict[str, bool] = {}
+    row_counts: dict[str, int | None] = {
+        "orders": None,
+        "equity": None,
+        "shadow_equity": None,
+        "positions": None,
+        "cash_ledger": None,
+    }
+    schema_version, meta = _validate_ledger_meta(root, errors, warnings, present, expect_version)
+    state, cursor_step = _validate_ledger_broker_state(root, errors, warnings, present, meta)
+    equity_rows = _validate_ledger_equity(root, errors, present, row_counts)
+    _validate_ledger_shadow_equity(root, errors, present, row_counts)
+    _validate_ledger_positions(root, errors, present, row_counts)
+    _validate_ledger_positive_step_equity(state, present, equity_rows, errors)
+    _validate_ledger_orders(root, errors, warnings, present, row_counts)
+    _validate_ledger_cash(root, errors, present, row_counts)
+    _validate_ledger_promotion(root, errors, present, meta)
+    cursor_consistent = _validate_ledger_cursor_consistency(
+        present, row_counts, cursor_step, errors
+    )
+    _validate_ledger_analytics(root, errors, warnings, present, meta)
     return {
         "ok": len(errors) == 0,
         "errors": errors,
