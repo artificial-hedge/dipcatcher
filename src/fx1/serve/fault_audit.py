@@ -158,10 +158,11 @@ def _journal_file(root: str | Path, name: str) -> Path:
 
 def _corrupt_tail(root: str | Path, name: str) -> None:
     """Chop the last journal line mid-record (torn-write shape)."""
+    # _journal_file resolves + refuses paths whose parent is not *root*.
     path = _journal_file(root, name)
     data = path.read_bytes()
     cut = data.rindex(b"\n", 0, len(data) - 1)
-    path.write_bytes(data[: cut + 20])
+    path.write_bytes(data[: cut + 20])  # NOSONAR pythonsecurity:S2083 — path gated by _journal_file
 
 
 def _corrupt_line(root: str | Path, name: str, idx: int) -> None:

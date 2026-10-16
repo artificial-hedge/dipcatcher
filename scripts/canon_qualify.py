@@ -210,6 +210,16 @@ LAST_RECEIPT_SCHEMA_VERSION = {LAST_RECEIPT_SCHEMA_VERSION}
 
 def _emit_retired_families(summary_path: Path, out_path: Path) -> int:
     """Codegen the retirement mapping from the on-disk summary."""
+    repo = REPO_ROOT.resolve()
+    try:
+        summary_path = summary_path.resolve()
+        out_path = out_path.resolve()
+    except OSError as exc:
+        print(f"unresolvable path: {exc}", file=sys.stderr)
+        return 1
+    if not summary_path.is_relative_to(repo) or not out_path.is_relative_to(repo):
+        print(f"refusing path outside repo root {repo}", file=sys.stderr)
+        return 1
     if not summary_path.is_file():
         print(f"missing summary: {summary_path}", file=sys.stderr)
         return 1

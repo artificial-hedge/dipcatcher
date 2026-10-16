@@ -997,11 +997,24 @@ def _promotion_looks_like_promotion_receipt(notebook: dict[str, Any]) -> bool:
 
 
 def _promotion_path(root: Path, raw: object) -> Path | None:
-    """Resolve a receipt-bound file path; relative paths anchor on the receipt."""
+    """Resolve a receipt-bound file path; relative paths anchor on the receipt.
+
+    Absolute paths are allowed when they stay under the receipt root's parent
+    (sibling artifacts next to ``promotion_receipts/``). Paths that resolve
+    outside that anchor are refused (Sonar S2083 path-traversal).
+    """
     if not isinstance(raw, str) or not raw.strip():
         return None
     candidate = Path(raw)
-    return candidate if candidate.is_absolute() else root / candidate
+    joined = candidate if candidate.is_absolute() else root / candidate
+    try:
+        resolved = joined.resolve()
+        anchor = root.resolve().parent
+    except OSError:
+        return None
+    if not resolved.is_relative_to(anchor):
+        return None
+    return joined
 
 
 def _promotion_iso_timestamp(value: object) -> bool:
