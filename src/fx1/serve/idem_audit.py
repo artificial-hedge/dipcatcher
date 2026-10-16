@@ -193,6 +193,12 @@ def _make_app(
             receipts_dir=create_kw.pop("receipts_dir", isolated / "receipts"),
             ft_dir=create_kw.pop("ft_dir", isolated / "ft"),
             ft_runner=create_kw.pop("ft_runner", _ft_stub),
+            # Keepalive comments are not part of the pinned SSE. The default
+            # 15s grace injects `: keepalive` into a slow first stream only,
+            # so the replay is not byte-identical on a busy runner. This
+            # battery measures the idempotency contract; stream_audit owns
+            # keepalive timing.
+            sse_keepalive_s=create_kw.pop("sse_keepalive_s", 0),
             **create_kw,
         )
         resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
