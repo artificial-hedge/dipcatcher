@@ -174,7 +174,9 @@ jobs:
   # (not in fx1.yml, which this wave does not edit) as a ratchet floor.
   fx1-coverage:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # tests/fx1 plus tests/unit/fx1_serve. The serve batteries are slow;
+    # 45 minutes was the fx1-lane-only budget.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
@@ -187,7 +189,9 @@ jobs:
         # safetensors). The fx1 workflow syncs --all-extras for the same reason.
         run: uv sync --frozen --all-groups --all-extras
       - name: fx1 coverage ratchet
-        # Ratcheted 2026-09-28: suite measures 88% locally. Floor 80 keeps
-        # ~4pp headroom under the expected (lower) CI reading while closing
-        # most of the drift window. Raise, never lower.
-        run: uv run pytest tests/fx1 -q --cov=fx1 --cov-fail-under=80 --cov-report=term-missing
+        # Floor stays 80. `--cov=fx1` counts every module in the package.
+        # tests/fx1 alone measured 36.76% on 2026-10-15: *_audit.py and the
+        # serve surface it never imports are about half the statements and
+        # sat near 0%. tests/unit/fx1_serve executes those modules. The
+        # union of the two suites is above 80%. Raise, never lower.
+        run: uv run pytest tests/fx1 tests/unit/fx1_serve -q --cov=fx1 --cov-fail-under=80 --cov-report=term-missing
