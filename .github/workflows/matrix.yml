@@ -101,7 +101,16 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value (Split-Path -Parent $compiler)
           & $compiler --version
       - name: Sync locked environment
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        # cp314 has no wheels for some locked packages (hmmlearn; watchdog on
+        # macOS). --no-build is right on 3.12/3.13, where wheels exist and
+        # Sonar githubactions:S8541 applies. 3.14 must build those sdists.
+        shell: bash
+        run: |
+          if [ "${{ matrix.python }}" = "3.14" ]; then
+            uv sync --frozen --all-groups --all-extras
+          else
+            uv sync --frozen --all-groups --all-extras --no-build
+          fi
       - name: Build test-file inventory
         shell: bash
         run: |
@@ -177,7 +186,14 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value (Split-Path -Parent $compiler)
           & $compiler --version
       - name: Sync locked environment
-        run: uv sync --frozen --all-groups --all-extras --no-build
+        # Same cp314 wheel gap as the inventory job.
+        shell: bash
+        run: |
+          if [ "${{ matrix.python }}" = "3.14" ]; then
+            uv sync --frozen --all-groups --all-extras
+          else
+            uv sync --frozen --all-groups --all-extras --no-build
+          fi
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: matrix-inventory-${{ matrix.os }}-py${{ matrix.python }}
