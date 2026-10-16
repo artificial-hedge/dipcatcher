@@ -216,12 +216,18 @@ def _validate_time_axis(keys: NDArray[Any], times: NDArray[Any]) -> None:
 
 
 def _finite_history(history: Array, min_obs: int) -> Array:
-    """Finite trailing returns; insufficient history fails the key honestly."""
+    """Trailing returns must be entirely finite.
+
+    A non-finite hole fails the key. Dropping those points and forecasting
+    the remainder would publish a variance for a broken tape. A short finite
+    history fails the same way, as ``insufficient_observations``.
+    """
     values = np.asarray(history, dtype=float).reshape(-1)
-    finite = values[np.isfinite(values)]
-    if finite.size < min_obs:
-        raise PerKeyVolError(f"insufficient_observations:{finite.size}<{min_obs}")
-    return finite
+    if values.size < min_obs:
+        raise PerKeyVolError(f"insufficient_observations:{values.size}<{min_obs}")
+    if not np.all(np.isfinite(values)):
+        raise PerKeyVolError("non_finite_returns")
+    return values
 
 
 def _failure_reason(exc: Exception) -> str:

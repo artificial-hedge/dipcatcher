@@ -259,14 +259,15 @@ def test_ivs_diffusion_noarb_and_hedge(ivs_diffusion: dict[str, float]) -> None:
     # error sharply vs resampling, and the no-arb post-training penalty
     # slashes static-arbitrage violation rates below the stream's own.
     blob = ivs_diffusion
-    assert blob["es_gain_vs_resample"] > 0.0
-    assert blob["es_model"] < blob["es_resample"]
-    assert blob["hedge_rmse_model"] < blob["hedge_rmse_resample"]
-    assert blob["hedge_es_tail_model"] < blob["hedge_es_tail_resample"]
-    assert blob["arb_rate_finetuned"] < blob["arb_rate_generated"]
-    assert blob["arb_rate_finetuned"] < blob["arb_rate_data"]
-    assert blob["ft_probe_rate_after"] < blob["ft_probe_rate_before"]
-    assert blob["n_stream"] > 0.0
+    # The bench prefixes every seeded score with synthetic_.
+    assert blob["synthetic_es_gain_vs_resample"] > 0.0
+    assert blob["synthetic_es_model"] < blob["synthetic_es_resample"]
+    assert blob["synthetic_hedge_rmse_model"] < blob["synthetic_hedge_rmse_resample"]
+    assert blob["synthetic_hedge_es_tail_model"] < blob["synthetic_hedge_es_tail_resample"]
+    assert blob["synthetic_arb_rate_finetuned"] < blob["synthetic_arb_rate_generated"]
+    assert blob["synthetic_arb_rate_finetuned"] < blob["synthetic_arb_rate_data"]
+    assert blob["synthetic_ft_probe_rate_after"] < blob["synthetic_ft_probe_rate_before"]
+    assert blob["synthetic_n_stream"] > 0.0
 
 
 def test_numpy_benches_are_deterministic(

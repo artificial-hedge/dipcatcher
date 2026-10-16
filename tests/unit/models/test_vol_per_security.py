@@ -343,7 +343,9 @@ def test_statuses_are_reported_per_key() -> None:
     panel = _synthetic_keyed_panel(keys=("G1", "B1"), key_lengths={"G1": 120, "B1": 3})
     model = PerSecurityVol("ewma", min_obs=20).fit(panel)
     batch = model.forecast_keys()
-    assert batch.status == ("ok", "failed:insufficient_observations:3<20")
+    # key_names() is sorted, so B1 precedes G1.
+    assert batch.keys == ("B1", "G1")
+    assert batch.status == ("failed:insufficient_observations:3<20", "ok")
 
 
 # ---------------------------------------------------------------------------
