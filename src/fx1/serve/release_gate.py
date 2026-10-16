@@ -12,7 +12,8 @@ from types import MappingProxyType
 from typing import Any, Final, cast
 
 from fx1.modelcard import ModelCard
-from fx1.serve.backends import BackendNotConfiguredError, _checkpoint_weights_sha
+from fx1.serve.backends import BackendNotConfiguredError
+from fx1.serve.local_engine_process import checkpoint_weights_sha
 from fx1.serve.signing import (
     MANIFEST_FILENAME,
     PUBLIC_SIGNING_KEY_ENV,
@@ -219,7 +220,7 @@ def _public_checkpoint_alias(root: Path) -> str | None:
         ):
             return None
         release = ReleaseManifest.model_validate_json((root / MANIFEST_FILENAME).read_bytes())
-        pin = _checkpoint_weights_sha(root)
+        pin = checkpoint_weights_sha(root)
         if pin is None or release.artifacts.get("weights.safetensors") != pin:
             return None
         return card.public_model_id

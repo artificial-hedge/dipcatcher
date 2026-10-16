@@ -52,6 +52,8 @@ tokenizer pins; and an evaluator key separate from the release signer. A
 complete verifier must re-score the cases, check paired significance and
 exact card equality, and bind the verdict to the signed release inventory.
 The public default bank in this tree remains a synthetic honesty smoke test.
+The required owner artifacts and verifier contract are listed in
+[FX1_PUBLIC_EVAL_EVIDENCE.md](FX1_PUBLIC_EVAL_EVIDENCE.md).
 
 ## Corpus status
 
