@@ -1,8 +1,10 @@
 # dipcatcher CLI — chat-first orchestration for fx1 and fx1-lite
 
-dipcatcher is Artificial Hedge's state-of-the-art harness for orchestrating
-its **fx1** and **fx1-lite** models ([artificialhedge.co](https://artificialhedge.co))
-from the command line. The CLI is designed like Codex CLI: you open it, you
+dipcatcher is Artificial Hedge's harness for orchestrating research and its
+planned **fx1** and **fx1-lite** model interfaces
+([artificialhedge.co](https://artificialhedge.co)) from the command line.
+Neither model has verified public release weights or deployment evidence in
+this checkout. The CLI is designed like Codex CLI: you open it, you
 talk to it, and it does the work. Plain text is a conversation with the
 active model; everything else is a slash command. `/superpower` is how the
 conversation reaches dipcatcher's research families — it picks the

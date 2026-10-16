@@ -10,6 +10,10 @@ webhooks, drain, deploy gates, failure modes), `docs/FX1_CLIENTS.md`
 shapes, credentials, provider quirks). Runnable walkthroughs:
 `examples/fx1_quickstart_sdk.py` and `examples/fx1_quickstart_http.py`.
 
+This contract describes the implemented API, not public availability of
+`fx1` or `fx1-lite`. Neither alias has a verified release checkpoint in this
+checkout; an unconfigured alias is not advertised by `/v1/models` or served.
+
 ## Consumption modes
 
 | Mode | Entry point | Use when |

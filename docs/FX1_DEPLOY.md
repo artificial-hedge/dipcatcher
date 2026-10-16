@@ -5,8 +5,14 @@ process launch, durable state, managed-key bootstrap and rotation,
 webhook verification, graceful shutdown, the deploy gates, usage
 accounting, and the failure-mode table. The wire contract itself lives in
 `docs/FX1_HARNESS_API.md`; the client-side legs in `docs/FX1_CLIENTS.md`;
-the BYOK provider details in `docs/FX1_BYOK_RUNBOOK.md`. A zero-config
-walkthrough of every step below runs in `examples/fx1_quickstart_http.py`.
+the BYOK provider details in `docs/FX1_BYOK_RUNBOOK.md`. A loopback API
+walkthrough runs in `examples/fx1_quickstart_http.py`.
+
+**Release status (2026-10-16):** This is an operator procedure, not a record
+of a public model deployment. This checkout has no verified release checkpoint
+for either `fx1` or `fx1-lite`; its tracked tiny LM is a synthetic correctness
+fixture. The selftest below uses a stub engine on loopback and does not clear
+the model evaluation, license, signed checkpoint, or deployment gates.
 
 ## Process launch
 

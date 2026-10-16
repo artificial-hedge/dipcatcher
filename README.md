@@ -2250,15 +2250,14 @@ README:
 
 ### Readiness tiers — which "production-ready" is meant
 
-"Production-ready" is not one thing, and conflating the three is how a research
-repository accidentally implies that it trades. This repository targets **Tier
-A** and is honest about the distance to the other two.
+The release target requires all three surfaces below. Each needs its own
+evidence before dipcatcher can be called production-ready as a whole.
 
 | Tier | What it means | Reachable by code? | Status here |
 |---|---|---|---|
-| **A — Research platform** | Internal analysts can trust a receipt: gates return verdicts, claims reproduce from one SHA, docs match code, no live claims. | **Yes** | Where this repo is working. Not yet *verified* — see the CI status note below. |
-| **B — Distributed platform** | Tier A plus signed releases, third-party security review, a real install path, and onboarding. | **Mostly** | Not reached. `git tag -l 'v*' | wc -l` → **0**: SBOM/Sigstore/SLSA are defined but never exercised. No `pip install` route exists. |
-| **C — Live trading** | Authorized licensed PIT data, authenticated broker reconciliation, venue cost measurements, a non-synthetic forward record, a signed promotion receipt. | **No** | **Blocked, and it is not a code problem.** Conditions 1 and 2 require a purchased entitlement and a broker authorization. |
+| **A — Research CLI** | Internal analysts can trust a receipt: gates return verdicts, claims reproduce from one SHA, docs match code, no live claims. | **Mostly** | Not cleared: current replay proofs and a same-SHA green release baseline remain open. See the CI status note below. |
+| **B — Public fx1 and fx1-lite** | Tier A plus evaluated and signed fine-tuned weights for both aliases, license rights, authenticated serving, signed release artifacts, and deployment acceptance. | **No** | Not reached: neither alias has verified public release weights or a deployed endpoint evidenced here. The tiny LM is a synthetic correctness fixture. |
+| **C — Live trading** | Authorized licensed PIT data, authenticated broker reconciliation, venue cost measurements, a non-synthetic forward record, a signed promotion receipt, and written live authorization. | **No** | Blocked: no qualifying feed, live broker adapter, venue evidence, eligible forward record, or live authorization. |
 
 Tier C is gated by the five minimum-evidence conditions in
 [`docs/INSTITUTIONAL_READINESS.md`](docs/INSTITUTIONAL_READINESS.md), reproduced
@@ -2268,7 +2267,7 @@ sentence that prevents most of the possible misreadings:
 > A working fail-closed adapter, a compiling module, or a passing SYNTHETIC
 > fixture is **not** evidence and never marks a condition ready.
 
-No amount of code closes conditions 1 and 2. `quant_fund.data.qualifying`
+Code alone cannot close conditions 1 and 2. `quant_fund.data.qualifying`
 enforces the condition-1 PIT rules and fails closed to `UNAVAILABLE` with **no
 synthetic substitution**; `quant_fund.execution.order_recon` and
 `quant_fund.paper.broker_adapter` are the condition-2 *reference shape* only,

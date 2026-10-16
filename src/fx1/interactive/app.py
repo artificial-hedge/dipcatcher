@@ -1,7 +1,8 @@
 """``fxi`` — the interactive front door for fx-1.
 
-fx-1 ships two hosted model names — ``fx1`` and ``fx1-lite`` — and each has
-one endpoint here: an API key plus a base URL, stored in
+fx-1 recognizes two planned model identifiers — ``fx1`` and ``fx1-lite``.
+Neither has released weights or a hosted endpoint evidenced by this checkout.
+Users can configure an API key plus a base URL for each identifier, stored in
 ``~/.fx1/credentials.json`` (mode 0600) and injected into the harness as
 ``MOONSHOT_API_KEY`` + ``FX1_BASE_URL``.
 
@@ -28,8 +29,8 @@ app = typer.Typer(
     help=(
         "Interactive CLI for fx-1. Bare `fxi` opens the concierge — chat, "
         "/superpower orchestration, background web research, and flash "
-        "context. Store fx1 / fx1-lite model endpoints (API key + base URL) "
-        "and use them across the dipcatcher harness."
+        "context. Configure fx1 / fx1-lite endpoints (API key + base URL) "
+        "for model turns; these identifiers do not imply released weights."
     ),
     add_completion=False,
     context_settings={"help_option_names": ["-h", "--help"]},
@@ -66,7 +67,7 @@ def callback(
         "--model",
         "--profile",
         "-p",
-        help="Active model for this invocation: fx1 | fx1-lite.",
+        help="Active model identifier: fx1 | fx1-lite (endpoint required for model turns).",
     ),
     version: bool | None = typer.Option(
         None,

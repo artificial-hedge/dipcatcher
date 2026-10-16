@@ -8,6 +8,10 @@ live in `examples/fx1_quickstart_sdk.py` and `examples/fx1_quickstart_http.py`.
 The wire semantics (error taxonomy, idempotency, SSE frames) are in
 `docs/FX1_HARNESS_API.md`; the ops runbook in `docs/FX1_DEPLOY.md`.
 
+These examples show the implemented client interfaces. They do not establish
+a public `fx1` or `fx1-lite` release; both aliases still need verified model
+checkpoints and deployment acceptance before public model service.
+
 ## The legs
 
 | Leg | Entry point | State |
