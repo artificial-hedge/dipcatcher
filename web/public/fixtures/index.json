@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-16T04:12:35.683318+00:00",
+ "generated_at": "2026-10-16T04:16:25.217750+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
   "01268826f737dc0fc1fc7e28555ce3aeb54760c7d759a29bf6ad7c8be3c59e64": "configs/corpus_epoch_3c319fb43ab0351e.json",
@@ -107,7 +107,7 @@
   "3d94c3ed069123be4b774613a3e35d114698ab6000ce195fa97187e2a5596bb1": "receipts/fx1_api_audit.json",
   "3d98298e540b6ab7fa14c9b8452feb06c7b5c28a2b09a55ea8a9c4b6710acb39": "receipts/hit_starve_amzn.json",
   "3e3473c359007fb425361a8a618d1e7b3de5edc23e1a0937ab241d2831c95dc0": "receipts/corpus_epoch_6340cdebc9a6efe1.json",
-  "3f1aba6b04d9b7757852334f213059ef971bffe5100e2bbda807eeba28014f06": "receipts/rankic_eval_8d740c0ddf6d5c54.json",
+  "3f1aba6b04d9b7757852334f213059ef971bffe5100e2bbda807eeba28014f06": "receipts/rankic_eval_addd924f107eedd8.json",
   "409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1": "receipts/monitor_run_real_drill.json",
   "436c3737e93cd19673ae6e6127e69f47498efbeacdfc25e8447a9abdc1b7512a": "receipts/asof_audit.json",
   "43753aa2492ac472d22f2e221fa155d2c1393ed13201a1d9028231e15a4d68f7": "receipts/zone_map.json",
@@ -228,7 +228,7 @@
   "8151e7dc1cbbedb112d8fdc3cd3e0f52aca58ef4d23ad698d2229a02060a705e": "receipts/cancel_lead_amzn.json",
   "816f8bd60cab106505a1adb153803ee48579ce6615a85ccd3e5d27785f2f3b77": "receipts/hawkes_clock_bench.json",
   "8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8": "receipts/legacy-unsealed/fast_replay_p42_conformance_20260927.json",
-  "82c474e25984e9418b6709f81dd34e55457c512c6eef7d3b3275c249e2e82b38": "receipts/monitor_run_13d20aef00774027.json",
+  "82c474e25984e9418b6709f81dd34e55457c512c6eef7d3b3275c249e2e82b38": "receipts/monitor_run_e69a3aed9568e30d.json",
   "8305fd598f154fe8c465ad718ece1fffe297c47471096a86543b69adfd02709d": "receipts/release_chase_amzn.json",
   "83ad54e2add374fc7fa0333072c4ef745f6a1ed4112f36d14cefb9b23262192d": "receipts/post_trade_drift_amzn.json",
   "83e7056ae0ff285d88efa7654af1f9b59fceeba3f296fa06c9c4e9cefd5a2b11": "configs/corpus_epoch_e31afb270445933f.json",
@@ -297,7 +297,7 @@
   "aa201319a975a4a347405a1e824db3a47084b4b8a140b0d087a46d85593ad02f": "receipts/replay_coverage_e72b56ffaf7abe4b.json",
   "ab2a078fc13c3bebf659ea962fb21ab18e826508f0abad2fc83e1210ba3c8463": "receipts/spread_response_amzn.json",
   "ad949f2ebda26df715cc45e1d6efef08c10e6deeac503580bc6668b61bf10ee6": "receipts/wave23_map_amzn.json",
-  "adbe15a247e23fd26cc874a509d3448881536aef586be335bbad7b44ba97812f": "receipts/fleet_eval_5e907be710811a44.json",
+  "adbe15a247e23fd26cc874a509d3448881536aef586be335bbad7b44ba97812f": "receipts/fleet_eval_ab613c423b36627d.json",
   "adfab5e558bdaa8b54abb8376b1d4f33c11f605d9215146ccea3b82d163b0c7f": "receipts/price_clustering_synth.json",
   "aea10d964151ed5af028e1f308b42c23378dfe6da86bcb5d6392174bb21d4bc7": "receipts/sbom_audit.json",
   "af272bd9ef0a1845d901080caa9c3a27257a3ae341848cdffadd8f03475c0427": "receipts/trade_decomp_amzn.json",
@@ -315,7 +315,7 @@
   "b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69": "receipts/real_benchmark_us_wide_manifest.json",
   "b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e": "receipts/serial_watch_140b073ea589b0c7.json",
   "b7f6dc1c01a736a198ec1b10d2aa4e645eaa12c42aba06d749e210f612bc9f6b": "receipts/replay_proof_e1fa8dd41197ef11.json",
-  "b867f73565dd828e6ae2c2f7091b04915126622b11e5ae7854e7675cce9b048f": "receipts/capacity_eval_3622d0c059d42009.json",
+  "b867f73565dd828e6ae2c2f7091b04915126622b11e5ae7854e7675cce9b048f": "receipts/capacity_eval_5cf0042e91c7953c.json",
   "b8728dbb705d8ae62e1339a4d7482070f7f827209c20c342b31ce6a9980a585d": "receipts/lob_resilience_amzn.json",
   "b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e": "receipts/serial_watch_2c14615c26efd19b.json",
   "b947be50a8b9288521a245481f4e6a93d8e40c49433d28347ab039c252483d05": "configs/corpus_epoch_dcf0d8e9d5337c24.json",
@@ -378,7 +378,7 @@
   "df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a": "receipts/real_benchmark_us_wide_test.json",
   "df42ab245b4f82d535fb52d4a4068414b4b11537e152ec63b0e3ab6823e40af9": "receipts/crown_join.json",
   "df91141443b114f39d4dba23cb499de6c4c8961eb6d1d6b1b60ca6d751dd66c2": "receipts/lo_response_amzn.json",
-  "dfca0a6263a360b3b89cb8588bbb3e03224f37e069cf2764f4caa24b6a2cd453": "receipts/vol_bench_f3bf2afc2f159ace.json",
+  "dfca0a6263a360b3b89cb8588bbb3e03224f37e069cf2764f4caa24b6a2cd453": "receipts/vol_bench_dc16af46c3f2975b.json",
   "e00ad05cbcc7e60916ebd9c9e12b704b29de788acbd82ee544be3df2375e66da": "receipts/lineage_dag.json",
   "e00c12cab97d2180454ea35025dfc4cca63b6dc9105df8847f2d7d024ae22083": "configs/corpus_epoch_36c6f35b81954a0b.json",
   "e0498594b7ae8e371c24761c7e5f7b3a97fb24e708e645d4abcfbfcda71bab86": "receipts/dip_run_audit.json",
@@ -390,6 +390,7 @@
   "e31a42fa72953f9b740dde1e2179b8525b6dd49c00c28fec4ebc8e160687c25a": "receipts/train_receipt_audit.json",
   "e334cb33cf73a06b99bbfc834825e409e849ec860b8533a093dfefbdac2e0932": "receipts/lob_exec_amzn.json",
   "e4671f251df3cf35c7ec50adbc59803a8d733f1759380edea714a532c6ec49ac": "receipts/fx1_e2e_audit.json",
+  "e56186a565a691366e12b909f362ecdadab6b7b4db97f0ce00ae41317994f9be": "receipts/corpus_epoch_24763ba760350636.json",
   "e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df": "receipts/monitor_run_drill_defect.json",
   "e6d80527e2bb993d7450087db961d6229561fe1a87c0e8b68d3920ca50315c4b": "receipts/impact_instant_amzn.json",
   "e71e77a4d8169d731bdc48c27765c24c3db59f1240437e55fc1f9edb928c90af": "receipts/fx1_parity_audit.json",
@@ -401,7 +402,7 @@
   "e9fcb9c72331341fe60237cb457fa8456dcbdb340e87060fbb9318a7265b4df0": "receipts/instant_decomp_amzn.json",
   "ea042e48135698a878772ae2388c88d86ac11c666d385fe91e9f7ae52ddf84d2": "receipts/modelcard_audit.json",
   "ec0836e7b4d24834d0b68a43c5676ea213049fce8200966dc15d98d30a0a4488": "receipts/improve_flow_bench.json",
-  "ed1736ed83c33d0c44775292c3e4979aaf11bb5bd2d18cfeb7df3baa78575a84": "receipts/honest_verdict_b133e8b3992af893.json",
+  "ed1736ed83c33d0c44775292c3e4979aaf11bb5bd2d18cfeb7df3baa78575a84": "receipts/honest_verdict_9d631fa6aace437a.json",
   "ed310e546e4b4f2c2544f99c24cf010197ae78d3fa753bede0af328dde59ccdd": "receipts/sweep_width_amzn.json",
   "ee0a91338bcd0ae61416ccea0c83165548f67a39df58b05c981216afde8f6102": "receipts/fx1_vs_audit.json",
   "ee556605f12d88c494b6ead3a02099f569dfef7875cc21ca7ea5657983aea180": "receipts/zone_embargo.json",
@@ -707,8 +708,8 @@
   {
    "created_at": null,
    "evidence_level": null,
-   "file": "receipts/capacity_eval_3622d0c059d42009.json",
-   "id": "capacity_eval_3622d0c059d42009",
+   "file": "receipts/capacity_eval_5cf0042e91c7953c.json",
+   "id": "capacity_eval_5cf0042e91c7953c",
    "live_pnl_claim": false,
    "n_hash_matches": 0,
    "n_hashes": 8,
@@ -943,6 +944,17 @@
    "live_pnl_claim": false,
    "n_hash_matches": 86,
    "n_hashes": 91,
+   "research_only": true,
+   "schema": "corpus_epoch.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/corpus_epoch_1d1a6cfdadf37c0c.json",
+   "id": "corpus_epoch_1d1a6cfdadf37c0c",
+   "live_pnl_claim": false,
+   "n_hash_matches": 403,
+   "n_hashes": 407,
    "research_only": true,
    "schema": "corpus_epoch.v1"
   },
@@ -2060,8 +2072,8 @@
   {
    "created_at": null,
    "evidence_level": null,
-   "file": "receipts/fleet_eval_5e907be710811a44.json",
-   "id": "fleet_eval_5e907be710811a44",
+   "file": "receipts/fleet_eval_ab613c423b36627d.json",
+   "id": "fleet_eval_ab613c423b36627d",
    "live_pnl_claim": false,
    "n_hash_matches": 0,
    "n_hashes": 8,
@@ -2676,8 +2688,8 @@
   {
    "created_at": null,
    "evidence_level": null,
-   "file": "receipts/honest_verdict_b133e8b3992af893.json",
-   "id": "honest_verdict_b133e8b3992af893",
+   "file": "receipts/honest_verdict_9d631fa6aace437a.json",
+   "id": "honest_verdict_9d631fa6aace437a",
    "live_pnl_claim": false,
    "n_hash_matches": 0,
    "n_hashes": 5,
@@ -3237,17 +3249,6 @@
   {
    "created_at": null,
    "evidence_level": null,
-   "file": "receipts/monitor_run_13d20aef00774027.json",
-   "id": "monitor_run_13d20aef00774027",
-   "live_pnl_claim": false,
-   "n_hash_matches": 0,
-   "n_hashes": 4,
-   "research_only": true,
-   "schema": "monitor_run.v1"
-  },
-  {
-   "created_at": null,
-   "evidence_level": null,
    "file": "receipts/monitor_run_drill_clean.json",
    "id": "monitor_run_drill_clean",
    "live_pnl_claim": false,
@@ -3264,6 +3265,17 @@
    "live_pnl_claim": false,
    "n_hash_matches": 0,
    "n_hashes": 2,
+   "research_only": true,
+   "schema": "monitor_run.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/monitor_run_e69a3aed9568e30d.json",
+   "id": "monitor_run_e69a3aed9568e30d",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 4,
    "research_only": true,
    "schema": "monitor_run.v1"
   },
@@ -3609,17 +3621,6 @@
    "schema": "quote_place.v1"
   },
   {
-   "created_at": null,
-   "evidence_level": null,
-   "file": "receipts/rankic_eval_8d740c0ddf6d5c54.json",
-   "id": "rankic_eval_8d740c0ddf6d5c54",
-   "live_pnl_claim": false,
-   "n_hash_matches": 0,
-   "n_hashes": 10,
-   "research_only": true,
-   "schema": "cross_sectional_rankic.v1"
-  },
-  {
    "created_at": "2026-09-27T21:18:24.498923+00:00",
    "evidence_level": null,
    "file": "receipts/rankic_eval_9ebdad7da83e7348.json",
@@ -3627,6 +3628,17 @@
    "live_pnl_claim": false,
    "n_hash_matches": 0,
    "n_hashes": 22,
+   "research_only": true,
+   "schema": "cross_sectional_rankic.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/rankic_eval_addd924f107eedd8.json",
+   "id": "rankic_eval_addd924f107eedd8",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 10,
    "research_only": true,
    "schema": "cross_sectional_rankic.v1"
   },
@@ -4656,8 +4668,8 @@
   {
    "created_at": null,
    "evidence_level": null,
-   "file": "receipts/vol_bench_f3bf2afc2f159ace.json",
-   "id": "vol_bench_f3bf2afc2f159ace",
+   "file": "receipts/vol_bench_dc16af46c3f2975b.json",
+   "id": "vol_bench_dc16af46c3f2975b",
    "live_pnl_claim": false,
    "n_hash_matches": 0,
    "n_hashes": 10,
@@ -4797,7 +4809,7 @@
    "schema": "zone_ttl.v1"
   }
  ],
- "repo_revision": "1457ee3a5c1564d624eddc827739cb33ab121beb",
+ "repo_revision": "2b72e0501897571117175c41916052b8aa078b95",
  "strategies": [
   {
    "data_source": "UNVERIFIED",
