@@ -46,7 +46,7 @@
     "scripts/verify_epoch_chain.py": "d25ddbcadbb693edba4a9e4f0a6999ed90dfa9422cb14ef88dbedb0a097c6c01",
     "scripts/verify_ots_auditor.py": "b786b3e5770ef285b5ee26fca8db20a5248f9a4c8240339fa308883b53c56a24",
     "sonar-project.properties": "c6545c098b789fa0779cac2224dbb1b4c61e0f7d0bb49cc4f95eaa39bbaa89ca",
-    "src/fx1/harness.py": "1f4a86cd0ae7e28fdbc9a32325646d5440a3b276ca25f254e1d7a0100314350e",
+    "src/fx1/harness.py": "8a0dcd45ed33c61347b6d77a5b8c41190e99f055fde1e52238614c8babc8180f",
     "src/fx1/interactive/concierge.py": "d615b431581bb2273770358a2604eb7db9478867c4f9c6d3d064286520263836",
     "src/fx1/interactive/superpower.py": "3a1401416c8557b6a1f9c4e998a56aa7844fc9825276bd83047fbf9c1e7bedec",
     "src/fx1/interactive/surface_seal.py": "d4229afb2d39c6206fdd1b812af14ba35f57f50cd0ead7da117b0b377bd45ceb",
@@ -82,7 +82,7 @@
     "src/quant_fund/research/tamper_drill.py": "b7a38aeffe8a700b38a796b2ae8837a234cfef11b51b13e9a962ece003e85263",
     "src/quant_fund/research/timestamp_anchor.py": "2a504facaea79184b87af5b9ce0dbd816060ad14ebd0991080bb65fee9e45905",
     "src/quant_fund/research/witness_scan.py": "a664fd4b49c94539d725379a2fe58b0d08fcbcfd9284f331123ec70b6394ebea",
-    "src/quant_fund/utils/atomicio.py": "26b3c04a3c55cf7777989edb91dea774656ea97af86699bc214e7de7c7823ca1",
+    "src/quant_fund/utils/atomicio.py": "3eb68514f764e039803b28a520bb4efed5aae3d0b310ce6dd53261fbfa0d0882",
     "src/quant_fund/utils/hashing.py": "99d4720d78c3079f189c0f367b55e1631ac4ccf25f4c76e5682aaa241b6f5da0",
     "tests/conftest.py": "c871e86ceca28c1ee645fa7f944d3937920a4cccac6ff6b1a4f8bc884ca25fac",
     "uv.lock": "28ea54e0965391b4dd24983bf750172768410d604f26de49a0dcf6ab8503ad1a"
