@@ -43,7 +43,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups
+        run: uv sync --frozen --all-groups --no-build
       - name: Offline proof verification
         run: uv run dipcatcher verify-witness
       - name: Live consistency against the public log

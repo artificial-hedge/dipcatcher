@@ -39,7 +39,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups
+        run: uv sync --frozen --all-groups --no-build
       - name: Architecture diagrams fresh
         run: uv run --frozen python scripts/gen_arch_diagrams.py --check
       - name: Atlas unit tests

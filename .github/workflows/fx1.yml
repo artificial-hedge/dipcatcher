@@ -46,7 +46,7 @@ jobs:
         # Goldenpath loads the fixture checkpoint via safetensors (nn extra).
         # Without --all-extras, weights_direct_ran fails and the lane is red
         # even though the harness itself is healthy.
-        run: uv sync --frozen --all-groups --all-extras
+        run: uv sync --frozen --all-groups --all-extras --no-build
       # Gates are invoked through their Make targets so the CI gate and
       # `make fx1-test` / `make fx1-lint` cannot drift (same commands, same
       # flags, same testpaths).
