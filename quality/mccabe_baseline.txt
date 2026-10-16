@@ -27,7 +27,6 @@ src/fx1/forecast/features.py:resample_ohlcv 15
 src/fx1/forecast/runner.py:_predict_walk_forward 10
 src/fx1/forecast/schema.py:validate_forecast_schema 17
 src/fx1/harness_bench.py:run_bench 14
-src/fx1/interactive/concierge.py:Concierge._execute_tool 10
 src/fx1/interactive/wizard.py:enter 10
 src/fx1/operations/audit_bar_integrity.py:execute 16
 src/fx1/operations/audit_cross_field_contracts.py:execute 15
