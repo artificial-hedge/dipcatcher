@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-15T15:49:11.623076+00:00",
+ "generated_at": "2026-10-16T01:43:38.325926+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
   "01268826f737dc0fc1fc7e28555ce3aeb54760c7d759a29bf6ad7c8be3c59e64": "configs/corpus_epoch_3c319fb43ab0351e.json",
@@ -255,6 +255,7 @@
   "913e276befeaecd002582c8125ebddc96c85996764b57b91a956b5f7b32173e0": "receipts/fx1_contract_audit.json",
   "917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57": "receipts/corpus_epoch_63761c8b4e63992b.json",
   "91bfc70fb7cd64be078a327fae0df159395301ce2d42d954157c6749628bf6ce": "receipts/stale_quote_amzn.json",
+  "92945f207101c1c87d8fddfefe8d00a8e1599bb54ab7deabcec3a537f563e891": "receipts/corpus_epoch_6f6d75cd3751c48d.json",
   "9410e500ad2602dc085c5146640d7bf7219a9626c8bccd32ea47a71829f03392": "receipts/deep_book_bench.json",
   "94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e": "receipts/conformal_real_drill_gaussian_pit.json",
   "98590cf3583cb8e138ee24c43324da205e4bf04df29a91467b0f69ac5fc8deda": "receipts/reload_gate.json",
@@ -942,6 +943,17 @@
    "live_pnl_claim": false,
    "n_hash_matches": 86,
    "n_hashes": 91,
+   "research_only": true,
+   "schema": "corpus_epoch.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/corpus_epoch_24763ba760350636.json",
+   "id": "corpus_epoch_24763ba760350636",
+   "live_pnl_claim": false,
+   "n_hash_matches": 402,
+   "n_hashes": 406,
    "research_only": true,
    "schema": "corpus_epoch.v1"
   },
@@ -4785,7 +4797,7 @@
    "schema": "zone_ttl.v1"
   }
  ],
- "repo_revision": "1a1d68edad2f013e4c0191154a49d4304f63f61f",
+ "repo_revision": "4287612cbc54b7f0ec78751686a19df35fce791d",
  "strategies": [
   {
    "data_source": "UNVERIFIED",
