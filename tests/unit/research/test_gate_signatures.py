@@ -181,11 +181,47 @@ def test_quorum_rejects_duplicate_signer_before_writing(tmp_path: Path) -> None:
 
 def test_quorum_downgrade_to_v1_fails_closed(tmp_path: Path) -> None:
     """A lone-key signature cannot masquerade under a committed registry."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    from quant_fund.research.gate_signatures import GATE_SIGNATURES_SCHEMA
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
     root, keys = _quorum_repo(tmp_path)
-    sign_pins(root, *keys[0])  # writes v1 file + gate_signing.pub
+    private_hex, public_hex = keys[0]
+    payload = {"files": {rel: hash_bytes((root / rel).read_bytes()) for rel in SIGNED_FILES}}
+    signature = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_hex)).sign(
+        canonical_json_bytes(payload)
+    )
+    (root / "gate_pins.sig").write_text(
+        json.dumps(
+            {
+                "schema": GATE_SIGNATURES_SCHEMA,
+                "algorithm": "ed25519",
+                "key_id": key_id(public_hex),
+                "payload": payload,
+                "signature": signature.hex(),
+            }
+        )
+    )
     res = verify_pin_signatures(root)
     assert not res["ok"]
     assert res["errors"] == ["quorum_sig_missing"]
+
+
+def test_legacy_sign_pins_refuses_present_or_malformed_quorum(tmp_path: Path) -> None:
+    import pytest
+
+    root, keys = _quorum_repo(tmp_path)
+    with pytest.raises(ValueError, match="quorum registry present"):
+        sign_pins(root, *keys[0])
+    assert not (root / "gate_pins.sig").exists()
+    assert not (root / "quality/gate_signing.pub").exists()
+
+    (root / "quality/gate_quorum.json").write_text("{corrupt")
+    with pytest.raises(ValueError, match="quorum registry present"):
+        sign_pins(root, *keys[0])
+    assert not (root / "gate_pins.sig").exists()
+    assert not (root / "quality/gate_signing.pub").exists()
 
 
 def test_quorum_unknown_signer_entry(tmp_path: Path) -> None:

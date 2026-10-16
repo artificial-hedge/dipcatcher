@@ -71,3 +71,18 @@ def test_quorum_key_preflight_is_read_only_and_rejects_mismatched_seed(tmp_path:
     assert not (root / "quality" / "crown_jewels.json").exists()
     assert not (root / "quality" / "epoch_heads.json").exists()
     assert not (root / "gate_pins.sig").exists()
+
+
+def test_legacy_sign_pins_cli_refuses_quorum_registry(tmp_path: Path) -> None:
+    root = tmp_path / "repo"
+    (root / "quality").mkdir(parents=True)
+    private_hex, public_hex = generate_keypair()
+    init_quorum(root, [public_hex], threshold=1)
+    key_file = tmp_path / "owner-key.txt"
+    key_file.write_text(f"{private_hex}:{public_hex}\n", encoding="ascii")
+    result = runner.invoke(app, ["sign-pins", "--root", str(root), "--key-file", str(key_file)])
+    assert result.exit_code == 2
+    assert "quorum registry present" in result.output
+    assert private_hex not in result.output
+    assert not (root / "gate_pins.sig").exists()
+    assert not (root / "quality/gate_signing.pub").exists()

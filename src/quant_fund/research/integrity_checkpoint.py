@@ -34,6 +34,8 @@ from quant_fund.research.gate_signatures import (
     DEFAULT_QUORUM_PATH,
     key_id,
     load_quorum_registry,
+    validate_quorum_signers,
+    validate_signer_pair,
 )
 from quant_fund.research.timestamp_anchor import stamp_timestamp, verify_timestamps
 from quant_fund.utils.atomicio import atomic_write_text
@@ -175,6 +177,17 @@ def write_checkpoint(
     if not signers:
         raise ValueError("no signer key material")
     root_path = Path(root)
+    quorum = load_quorum_registry(root_path)
+    if (root_path / DEFAULT_QUORUM_PATH).exists():
+        if quorum is None:
+            raise ValueError("malformed quorum registry")
+        validate_quorum_signers(root_path, signers)
+    else:
+        _private_hex, public_hex = signers[0]
+        validate_signer_pair(_private_hex, public_hex)
+        committed_pub = root_path / DEFAULT_PUBKEY_PATH
+        if not committed_pub.is_file() or committed_pub.read_text().strip() != public_hex:
+            raise ValueError("signer does not match committed public key")
     prev_file = root_path / path
     # Archive the superseded checkpoint before overwrite — append-only, keyed
     # by its digest so the prev_sha256 chain can be walked offline.
@@ -188,7 +201,6 @@ def write_checkpoint(
             atomic_write_text(archived, prev_bytes.decode())
     state = checkpoint_state(root_path)
     msg = canonical_json_bytes(state)
-    quorum = load_quorum_registry(root_path)
     if quorum is not None:
         registered, threshold = quorum
         signatures: list[dict[str, str]] = []

@@ -75,6 +75,8 @@ def sign_pins(
     from quant_fund.utils.atomicio import atomic_write_text
 
     root_path = Path(root)
+    if (root_path / DEFAULT_QUORUM_PATH).exists():
+        raise ValueError("quorum registry present — use quorum-sign")
     manifest = _pin_manifest(root_path)
     key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_seed_hex))
     sig = key.sign(canonical_json_bytes(manifest))
@@ -366,6 +368,24 @@ def load_quorum_registry(root: str | Path) -> tuple[dict[str, str], int] | None:
     )
 
 
+def validate_signer_pair(private_hex: str, public_hex: str) -> str:
+    """Return the public key ID only when a seed derives that exact public key."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+    try:
+        if len(public_hex) != 64:
+            raise ValueError
+        kid = key_id(public_hex)
+        private_key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_hex))
+    except ValueError as exc:
+        raise ValueError("signer material malformed") from exc
+    actual_public = private_key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    if actual_public.hex() != public_hex:
+        raise ValueError(f"signer private seed does not match public key: {kid}")
+    return kid
+
+
 def validate_quorum_signers(
     root: str | Path,
     signers: list[tuple[str, str]],
@@ -373,9 +393,6 @@ def validate_quorum_signers(
     registry_path: Path = DEFAULT_QUORUM_PATH,
 ) -> tuple[int, int]:
     """Check registered, distinct seed/public pairs without changing pin state."""
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
-
     reg_file = Path(root) / registry_path
     if not reg_file.exists():
         raise ValueError("no quorum registry — run quorum-init first")
@@ -390,18 +407,9 @@ def validate_quorum_signers(
     registered = {str(e["key_id"]): str(e["pubkey"]) for e in registry["keys"]}
     seen: set[str] = set()
     for private_hex, public_hex in signers:
-        try:
-            if len(public_hex) != 64:
-                raise ValueError
-            kid = key_id(public_hex)
-            private_key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_hex))
-        except ValueError as exc:
-            raise ValueError("signer material malformed") from exc
+        kid = validate_signer_pair(private_hex, public_hex)
         if registered.get(kid) != public_hex:
             raise ValueError(f"signer not in quorum registry: {kid}")
-        actual_public = private_key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
-        if actual_public.hex() != public_hex:
-            raise ValueError(f"signer private seed does not match public key: {kid}")
         if kid in seen:
             raise ValueError(f"duplicate signer: {kid}")
         seen.add(kid)
