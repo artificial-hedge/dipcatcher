@@ -112,6 +112,8 @@ from fx1.serve.anthropic_compat import (
     anthropic_sse,
     anthropic_to_openai,
 )
+from fx1.serve.api_metrics import BackendCompletionStats as BackendCompletionStats
+from fx1.serve.api_metrics import MetricsResponse, _Metrics
 from fx1.serve.backends import (
     BYOK_API_KEY_ENV,
     BYOK_BASE_URL_ENV,
@@ -1741,39 +1743,6 @@ class ReceiptVerifyBatchResponse(_Model):
     results: list[ReceiptVerifyBatchItem]
 
 
-class BackendCompletionStats(_Model):
-    """Per-backend completion accounting: outcome counts, a cumulative
-    latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``), and
-    backend-reported token sums. ``usage_calls`` counts calls that carried
-    a usage dict — a silent provider shows zero tokens AND zero calls."""
-
-    ok: int = 0
-    error: int = 0
-    latency_count: int = 0
-    latency_sum_ms: float = 0.0
-    latency_buckets: dict[str, int] = {}
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    total_tokens: int = 0
-    usage_calls: int = 0
-
-
-class MetricsResponse(_Model):
-    """Point-in-time ops snapshot: totals since process start."""
-
-    uptime_s: float
-    requests_total: int
-    errors_total: int
-    by_status: dict[str, int]
-    inflight: int
-    inflight_watermark: int
-    max_inflight: int
-    draining: bool
-    rate_limited_total: int = 0
-    # completion calls only — per backend name as requested on the wire
-    complete: dict[str, BackendCompletionStats] = {}
-
-
 class DrainResponse(_Model):
     """Result of latching drain mode: state + live in-flight count."""
 
@@ -1860,142 +1829,6 @@ class JobStatusResponse(_Model):
     _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
     callback_error: str | None = None
     callback_attempts: int = 0
-
-
-_LAT_BUCKETS_MS = (100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0, 10000.0, 30000.0, 60000.0)
-
-
-class _Metrics:
-    """Request counters + inflight gauge + per-backend completion
-    histograms, shared via app.state."""
-
-    def __init__(self, max_inflight: int) -> None:
-        self.started = time.monotonic()
-        self.max_inflight = max_inflight
-        self._cond = threading.Condition()
-        self._requests_total = 0
-        self._errors_total = 0
-        self._by_status: dict[int, int] = {}
-        self._inflight = 0
-        self._watermark = 0
-        self._rate_limited_total = 0
-        # backend -> {"ok","error","count","sum","buckets" (cumulative),
-        #              "*_tokens","usage_calls"}
-        self._complete: dict[str, dict[str, Any]] = {}
-        self.draining = threading.Event()
-
-    def record_complete(
-        self,
-        backend: str,
-        ok: bool,
-        latency_ms: float,
-        usage: dict[str, int] | None = None,
-    ) -> None:
-        """One attempted model call: outcome + latency into the backend's
-        cumulative histogram, plus backend-reported token sums when the
-        endpoint supplies them. Called only when the backend was invoked —
-        breaker rejections and pre-call validation aren't model work.
-        ``usage_calls`` counts calls that reported usage at all, so a
-        silent provider is distinguishable from a zero bill."""
-        with self._cond:
-            st = self._complete.setdefault(
-                backend,
-                {
-                    "ok": 0,
-                    "error": 0,
-                    "count": 0,
-                    "sum": 0.0,
-                    # one entry per edge + a final +Inf slot
-                    "buckets": [0] * (len(_LAT_BUCKETS_MS) + 1),
-                    "prompt_tokens": 0,
-                    "completion_tokens": 0,
-                    "total_tokens": 0,
-                    "usage_calls": 0,
-                },
-            )
-            st["ok" if ok else "error"] += 1
-            st["count"] += 1
-            st["sum"] += latency_ms
-            for i, edge in enumerate(_LAT_BUCKETS_MS):
-                if latency_ms <= edge:
-                    st["buckets"][i] += 1
-            st["buckets"][-1] += 1
-            if usage:
-                st["usage_calls"] += 1
-                for k in ("prompt_tokens", "completion_tokens", "total_tokens"):
-                    v = usage.get(k)
-                    if isinstance(v, int) and not isinstance(v, bool):
-                        st[k] += v
-
-    def record_rate_limited(self) -> None:
-        with self._cond:
-            self._rate_limited_total += 1
-
-    def record(self, status: int) -> None:
-        with self._cond:
-            self._requests_total += 1
-            self._by_status[status] = self._by_status.get(status, 0) + 1
-            if status >= 400:
-                self._errors_total += 1
-
-    def acquire(self) -> None:
-        with self._cond:
-            self._inflight += 1
-            self._watermark = max(self._watermark, self._inflight)
-
-    def release(self) -> None:
-        with self._cond:
-            self._inflight -= 1
-            self._cond.notify_all()
-
-    def wait_idle(self, timeout_s: float) -> bool:
-        """Block until inflight reaches zero or the timeout lapses — the
-        drain-lifecycle wait channel. True when the pool actually emptied."""
-        deadline = time.monotonic() + timeout_s
-        with self._cond:
-            while self._inflight > 0:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    return False
-                self._cond.wait(remaining)
-            return True
-
-    def snapshot(self) -> MetricsResponse:
-        with self._cond:
-            return MetricsResponse(
-                uptime_s=round(time.monotonic() - self.started, 3),
-                requests_total=self._requests_total,
-                errors_total=self._errors_total,
-                by_status={str(k): v for k, v in sorted(self._by_status.items())},
-                inflight=self._inflight,
-                inflight_watermark=self._watermark,
-                max_inflight=self.max_inflight,
-                draining=self.draining.is_set(),
-                rate_limited_total=self._rate_limited_total,
-                complete={
-                    b: BackendCompletionStats(
-                        ok=st["ok"],
-                        error=st["error"],
-                        latency_count=st["count"],
-                        latency_sum_ms=round(st["sum"], 3),
-                        latency_buckets={
-                            **_lat_bucket_labels(st["buckets"]),
-                        },
-                        prompt_tokens=st["prompt_tokens"],
-                        completion_tokens=st["completion_tokens"],
-                        total_tokens=st["total_tokens"],
-                        usage_calls=st["usage_calls"],
-                    )
-                    for b, st in sorted(self._complete.items())
-                },
-            )
-
-
-def _lat_bucket_labels(counts: list[int]) -> dict[str, int]:
-    """Cumulative bucket counts keyed by le-label, ``+Inf`` last — the
-    Prometheus histogram convention, kept identical on the JSON snapshot."""
-    labels = [f"{edge:g}" for edge in _LAT_BUCKETS_MS] + ["+Inf"]
-    return dict(zip(labels, counts, strict=True))
 
 
 def _env_int_bound(name: str, default: int, given: int | None) -> int:

@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 import threading
 import time
 import uuid
@@ -46,7 +45,18 @@ from pydantic import (
 )
 
 from fx1.serve.backends import byok_base_url_problem
-from fx1.serve.receipt_store import SHA256_HEX
+from fx1.serve.openai_request_options import (
+    OpenAICompatError,
+)
+from fx1.serve.openai_request_options import (
+    history_tool_call_shape as _history_tool_call_shape,
+)
+from fx1.serve.openai_request_options import (
+    resolve_receipt_hashes as _resolve_receipt_hashes,
+)
+from fx1.serve.openai_request_options import (
+    resolve_timeout as _resolve_timeout,
+)
 from fx1.serve.webhooks import check_callback_url
 
 if TYPE_CHECKING:
@@ -143,21 +153,6 @@ __all__ = [
 
 class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
-
-class OpenAICompatError(ValueError):
-    """A rejection at the OpenAI translation layer.
-
-    ``status`` is the HTTP status the wire maps the rejection to; on the
-    SDK surface the exception itself is the verdict (a ``ValueError``, the
-    SDK's request-error class). ``code`` lands in the OpenAI error
-    envelope's ``code`` field when the wire emits it.
-    """
-
-    def __init__(self, message: str, *, status: int = 400, code: str = "invalid_request") -> None:
-        super().__init__(message)
-        self.status = status
-        self.code = code
 
 
 # Backend names an OpenAI `model` field or `X-Fx1-Backend` header may carry.
@@ -609,27 +604,6 @@ def openai_model(
     return OpenAIModel(id=model_id, created=ts)
 
 
-def _history_tool_call_shape(raw: Any, i: int, j: int) -> dict[str, Any]:
-    """One entry of an assistant message's ``tool_calls`` history —
-    validated before it rides the wire so a malformed replay is a 400,
-    not upstream confusion."""
-    fn = raw.get("function") if isinstance(raw, dict) else None
-    args = fn.get("arguments") if isinstance(fn, dict) else None
-    if (
-        not isinstance(raw, dict)
-        or not isinstance(raw.get("id"), str)
-        or raw.get("type") != "function"
-        or not isinstance(fn, dict)
-        or not isinstance(fn.get("name"), str)
-        or not isinstance(args, str)
-    ):
-        raise OpenAICompatError(
-            f"messages[{i}].tool_calls[{j}]: needs "
-            "{id, type: 'function', function: {name, arguments}}"
-        )
-    return raw
-
-
 def openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, Any]]:
     """Flatten OpenAI messages to harness message dicts.
 
@@ -858,47 +832,6 @@ def _resolve_public_release_link(
         ft_resolver=ft_resolver,
         require_known_model=require_known_model,
     )
-
-
-def _resolve_timeout(ext_timeout: float | None, hdrs: dict[str, str]) -> float | None:
-    """Per-request backend timeout: ``fx1.timeout_s`` > ``X-Fx1-Timeout``
-    header (seconds). A malformed header is a fail-closed 400 — never a
-    silent default."""
-    if ext_timeout is not None:
-        return ext_timeout
-    raw = hdrs.get("x-fx1-timeout")
-    if raw is None:
-        return None
-    try:
-        val = float(raw)
-    except ValueError as exc:
-        raise OpenAICompatError("X-Fx1-Timeout must be seconds as a number") from exc
-    if not math.isfinite(val) or val <= 0.0 or val > 3600.0:
-        raise OpenAICompatError("X-Fx1-Timeout must be in (0, 3600] seconds")
-    return val
-
-
-def _resolve_receipt_hashes(ext_hashes: list[str] | None, hdrs: dict[str, str]) -> list[str] | None:
-    """Evidence citations: ``fx1.receipt_hashes`` > ``X-Fx1-Receipt-Hashes``
-    header (comma-separated sha256 digests — the knob for clients that
-    can't edit the JSON body, same channel as ``X-Fx1-Fallbacks``). A
-    malformed digest is a fail-closed 400; resolvability stays with the
-    mounted store's check downstream."""
-    if ext_hashes:
-        if any(SHA256_HEX.fullmatch(h) is None for h in ext_hashes):
-            # the body channel enforces the same digest shape as the
-            # header — a garbage citation must never reach the Evidence
-            # footer unchallenged (it stays advisory only when it is a
-            # well-formed digest the store cannot resolve).
-            raise OpenAICompatError("fx1.receipt_hashes entries must be sha256 digests")
-        return list(ext_hashes)
-    raw = hdrs.get("x-fx1-receipt-hashes")
-    if raw is None:
-        return None
-    out = [h.strip() for h in raw.split(",") if h.strip()]
-    if any(SHA256_HEX.fullmatch(h) is None for h in out):
-        raise OpenAICompatError("X-Fx1-Receipt-Hashes must be comma-separated sha256 digests")
-    return out or None
 
 
 def openai_to_kwargs(
