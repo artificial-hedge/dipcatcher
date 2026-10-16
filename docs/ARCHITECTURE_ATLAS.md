@@ -55,7 +55,7 @@ markers. The freshness gate runs in `.github/workflows/atlas.yml` and in
 | `quant_fund.monitoring` | Drift, kill switch, dashboard | `kill_switch.py`, `drift.py` | only `ENABLED` admits orders; flatten needs explicit human authorization |
 | `quant_fund.api` | FastAPI service | `app.py` | config paths allowlisted; loopback or `X-API-Key`; `/backtest` bounded to 30 decision dates |
 | `quant_fund.hedge_lab` / `lightspeed` / `hmm` / `quant_models` / `northset` / `microstructure` / `metrics` / `risk` / `registry` / `reporting` / `proofcore` | Research benches, frozen challenger engines, estimators, scoring rules | see module table in `manifest.json` | research-only labels; `proofcore` imports stdlib+pydantic only |
-| `fx1.data` / `eval` / `serve` / `train` / `bench` | fx-1 corpus, eval, serving, training scaffold | `corpus.py`, `bank.py`, `backends.py`, `pipeline.py` | `FORBIDDEN_HEADLINE_TOKENS` mirrors lab catalog; `LocalFx1Backend.complete()` is unimplemented until a distilled student exists |
+| `fx1.data` / `eval` / `serve` / `train` / `bench` | fx-1 corpus, eval, serving, training scaffold | `corpus.py`, `bank.py`, `backends.py`, `pipeline.py` | `FORBIDDEN_HEADLINE_TOKENS` mirrors lab catalog; `LocalFx1Backend.complete()` attaches to an external engine and raises `BackendNotConfiguredError` when none is configured |
 
 ## Module dependency graph
 

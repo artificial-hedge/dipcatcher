@@ -1,7 +1,9 @@
 # fx-1 Data Contract — industry-grade corpus pipeline
 
 Every byte that would enter an fx-1 training run passes through this
-pipeline. No trained checkpoint is in this repository.
+pipeline. No release checkpoint is in this repository. The tracked
+`artifacts/fx1_tiny_lm/` weights are a fixture, not a training output of
+this pipeline.
 
 ## Sources (all provenance-hashed)
 

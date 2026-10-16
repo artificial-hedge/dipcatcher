@@ -3,8 +3,9 @@
 ## The inversion in one paragraph
 
 fx-1 (`src/fx1`) is an in-tree sub-project: corpus construction, an eval
-bank, training plumbing, and a training plan. No trained checkpoint is in
-this repository. dipcatcher is the harness: the chat-first CLI that
+bank, training plumbing, and a training plan. No release checkpoint is in
+this repository. The tracked `artifacts/fx1_tiny_lm/` weights are a fixture,
+not a release. dipcatcher is the harness: the chat-first CLI that
 orchestrates fx1 and fx1-lite ([the dipcatcher CLI](DIP_CONCIERGE.md)), over
 the data engine, evaluation bench, and verification layer. The package is organized so a future training
 run would inherit its integrity from the harness gates, then expose that
@@ -56,13 +57,16 @@ the plan the package encodes.
 2. **Training run** → blocked until quality gates, contamination scan, frozen
    split, and a passing base eval exist; emits an immutable receipt.
    `build_training_manifest` writes that receipt. It does not launch training.
-3. **Checkpoint** → none is in the tree. The ship gate would require a model
+3. **Checkpoint** → no release checkpoint is in the tree. A ~31k-parameter
+   fixture lives at `artifacts/fx1_tiny_lm/` and is not a release candidate.
+   The ship gate would require a model
    card whose eval deltas beat the base statistically (bootstrap CI +
    McNemar) and whose honesty gate passed natively, plus a signed release
    and optional TEE/zkML attestation.
 4. **Served answer** → the serve path is specified to validate honesty and
    attach provenance. Refusal behavior is specified as DPO pairs and
-   red-team cases. Local generation is unimplemented.
+   red-team cases. Local completion attaches to an external engine; there is
+   no in-process generator.
 5. **Regulatory dossier** → `fx1 mrm` compiles the available evidence into the
    five-activity structure.
 

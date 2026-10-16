@@ -59,6 +59,7 @@ def test_atomic_write_failure_leaves_prior_content(
 def test_publish_text_once_idempotent_and_fail_closed(tmp_path: Path) -> None:
     dest = tmp_path / "sealed.json"
     publish_text_once(dest, '{"sealed": true}\n')
+    assert b"\r" not in dest.read_bytes()
     publish_text_once(dest, '{"sealed": true}\n')  # identical re-publish is a no-op
     with pytest.raises(FileExistsError, match="different content"):
         publish_text_once(dest, '{"sealed": false}\n')

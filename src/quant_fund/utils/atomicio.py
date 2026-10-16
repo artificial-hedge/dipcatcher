@@ -97,6 +97,7 @@ def publish_text_once(path: Path, content: str) -> None:
             suffix=".tmp",
             mode="w",
             encoding="utf-8",
+            newline="\n",
             delete=False,
         ) as temporary:
             temporary_path = Path(temporary.name)
