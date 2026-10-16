@@ -34,7 +34,7 @@ def _invoke(
     )
     log = tmp_path / "uv.log"
     if fake_common_git_dir is not None:
-        (tmp_path / "git.cmd").write_bytes(b'@echo off\r\necho %FAKE_GIT_COMMON_DIR%\r\n')
+        (tmp_path / "git.cmd").write_bytes(b"@echo off\r\necho %FAKE_GIT_COMMON_DIR%\r\n")
     key = key_file or tmp_path / "owner-key.txt"
     if key_file is None:
         key.write_text("private-key-material-never-print", encoding="ascii")
@@ -171,9 +171,7 @@ def test_windows_ceremony_rejects_key_in_primary_checkout(tmp_path: Path) -> Non
     (primary / ".git").mkdir(parents=True)
     key = primary / "owner-key.txt"
     key.write_text("private-key-material-never-print", encoding="ascii")
-    result, commands = _invoke(
-        tmp_path, key_file=key, fake_common_git_dir=primary / ".git"
-    )
+    result, commands = _invoke(tmp_path, key_file=key, fake_common_git_dir=primary / ".git")
     assert result.returncode != 0
     assert "KeyFile must be kept outside the repository" in result.stderr
     assert commands == []
