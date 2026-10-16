@@ -17,8 +17,8 @@
 #
 # Not investment advice. No live-trading claim.
 #
-# The production FastAPI app booted on loopback the same way
-# `fx1 harness serve` does it, then driven end-to-end with
+# The FastAPI harness app runs in explicit internal mode on loopback with a
+# synthetic backend, then is driven end-to-end with
 # `HarnessClient`: bootstrap credential → mint a scoped managed key →
 # gated completion + seeded eval → sealed receipts verified → key usage
 # → revoke → drain. `examples/fx1_quickstart_sdk.py` is the in-process
@@ -154,6 +154,7 @@ def main() -> None:
         app = create_app(
             backend_resolver=lambda *a, **k: stub,
             receipts_dir=receipts_dir,
+            public_release=False,
         )
         server, thread, port = _serve(app)
         base_url = f"http://127.0.0.1:{port}"
