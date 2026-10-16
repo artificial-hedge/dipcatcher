@@ -1118,6 +1118,10 @@ def _durability_probes() -> dict[str, Any]:
         out["post_crash_submits_fine"] = resub.status_code == 202
         _wait(client4, resub.json()["eval_id"])
         gate.set()
+        # The blocked eval is still inside complete() until the gate opens.
+        # On Windows, leaving the temp dir while that thread journals
+        # evals.jsonl raises WinError 32. Wait until the write has finished.
+        _wait(client3, cid)
 
     # SDK twin binds the same journals
     with tempfile.TemporaryDirectory() as td:

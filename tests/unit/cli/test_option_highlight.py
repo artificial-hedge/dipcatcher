@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 from rich.console import Console
 from rich.text import Text
@@ -67,6 +68,6 @@ def test_github_actions_color_keeps_reality_help_flags() -> None:
         capture_output=True,
         text=True,
         env=env,
-        cwd="/workspace",
+        cwd=str(Path(__file__).resolve().parents[3]),
     )
     assert completed.returncode == 0, completed.stdout + completed.stderr
