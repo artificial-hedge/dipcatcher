@@ -2224,8 +2224,6 @@ class ZILobSimulator:
         ask_rate = lam * band
         total = bid_rate + ask_rate
         u = float(self._rng.random()) * total
-        # Placement distance d ∈ [1, band] drawn from P(d) ∝ d**density_exponent
-        # via the precomputed CDF (uniform when density_exponent == 0).
         dist = int(np.searchsorted(self._dist_cdf, float(self._rng.random()), side="left")) + 1
         if dist > band:
             dist = band
@@ -2233,8 +2231,7 @@ class ZILobSimulator:
             dist = self._cfg.min_quote_dist
         ba, bb = self.best_ask_level, self.best_bid_level
         want_buy = u < bid_rate * (1.0 + self._tilt) if self._tilt != 0.0 else u < bid_rate
-        # Post-fill narrowing: while the marker is live, placements on the
-        # unhit side clamp to near-touch distance (accommodation channel).
+        # Post-fill narrowing clamps the unhit side to near-touch while the marker is live.
         if self._hit_retreat is not None:
             (
                 hit_side,
@@ -2255,9 +2252,7 @@ class ZILobSimulator:
         return dist, ba, bb, want_buy
 
     def _lo_place_mid_dark(self, ba: int | None, bb: int | None, want_buy: bool) -> bool:
-        # Midpoint dark peg: the event's units rest hidden at the mid
-        # instead of entering the visible book (only when a mid exists —
-        # spread >= 2 ticks). Consumes one extra uniform only when on.
+        # Midpoint dark peg rests hidden at the mid; one extra uniform only when a mid exists.
         md = self._cfg.mid_dark_frac
         if (
             md > 0.0
@@ -2288,23 +2283,12 @@ class ZILobSimulator:
             return True
         return False
 
-    def _lo_place_ref_anchored(
-        self,
-        dist: int,
-        ba: int | None,
-        bb: int | None,
-        want_buy: bool,
-    ) -> None:
-        # Absolute-space anchoring: LOs deposit around a slow reference level
-        # so cumulative liquidity grows with distance from the reference and
-        # a metaorder climbing away from it meets a deepening static profile
-        # (volume-diffusion / square-root regime). Crossing placements are
-        # dropped — that aggressiveness is already in the market-order flow.
+    def _lo_place_ref_anchored(self, placed: tuple[int, int | None, int | None, bool]) -> None:
+        # Ref anchoring deposits around a slow reference; crossing placements are dropped.
+        dist, ba, bb, want_buy = placed
         ref = int(round(self._ref_ema))
         k = self._draw_size(self._lo_size_cdf)
-        # Mixture head (join/improve/stack): the pick consumes ONE
-        # extra uniform and only when a mixture knob is on — both at
-        # 0 keeps the ref path bit-identical.
+        # Mixture head consumes one extra uniform only when a mixture knob is on.
         mix_on = (
             self._cfg.place_join_frac > 0.0
             or self._cfg.lo_improve_frac > 0.0
@@ -2433,16 +2417,9 @@ class ZILobSimulator:
             self.n_lo_units += k
         return
 
-    def _lo_place_touch_anchored(
-        self,
-        dist: int,
-        ba: int | None,
-        bb: int | None,
-        want_buy: bool,
-    ) -> None:
-        # Touch anchoring (Moret & Lillo market-making setting): band follows the
-        # best opposite quote; fall back to the reference level when a side is
-        # empty so the book can always recover.
+    def _lo_place_touch_anchored(self, placed: tuple[int, int | None, int | None, bool]) -> None:
+        # Touch anchoring follows the best opposite quote, else the reference level.
+        dist, ba, bb, want_buy = placed
         k = self._draw_size(self._lo_size_cdf)
         off = int(self._cfg.lo_offset)
         if self._hawkes is not None and self._cfg.lo_offset_gain > 0.0:
@@ -2563,9 +2540,9 @@ class ZILobSimulator:
         if self._lo_place_mid_dark(ba, bb, want_buy):
             return
         if self._cfg.anchor == "ref":
-            self._lo_place_ref_anchored(dist, ba, bb, want_buy)
+            self._lo_place_ref_anchored((dist, ba, bb, want_buy))
             return
-        self._lo_place_touch_anchored(dist, ba, bb, want_buy)
+        self._lo_place_touch_anchored((dist, ba, bb, want_buy))
 
     def _cancel_event(self) -> None:
         bid_d, ask_d = self.bid_depth, self.ask_depth

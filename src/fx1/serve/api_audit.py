@@ -1971,11 +1971,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         hr.status_code == 200 and _cap[-1].get("timeout_s") == 4.0
     )
 
-    # X-Fx1-Receipt-Sha256 — every gated response self-describes the seal of
-    # its completion-log record: the header equals the receipt_sha256 of the
-    # document GET /harness/completions/{id}/receipt exports, so the wire is
-    # evidence-pinned without a second fetch. Idempotent replays echo the
-    # original seal; SSE responses carry it as a header.
+    # X-Fx1-Receipt-Sha256 equals the completion-log seal, including replays and SSE.
     rc = bapp.post(
         "/v1/chat/completions",
         json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
@@ -2055,20 +2051,24 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["byok_override_idem_contract"] = (
         i1.status_code == 200 and i2.json().get("replayed") is True and i3.status_code == 409
     )
-    # limiter counts denials; a public-path request also draws a token
+    # Freeze the bucket clock so a slow runner cannot refill tokens mid-burst.
     limited2 = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         rate_limit_rps=20.0,
     )
     lc2 = _TC2(limited2)
-    statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
-    time.sleep(0.15)
-    m = lc2.get("/metrics")
+    _mono, _box = time.monotonic, [time.monotonic()]
+    time.monotonic = lambda: _box[0]  # type: ignore[method-assign]
+    try:
+        statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
+        _box[0] += 1.0
+        m = lc2.get("/metrics")
+    finally:
+        time.monotonic = _mono  # type: ignore[method-assign]
+    denied = statuses.count(429)
     out["rate_limit_metrics_counts"] = (
-        statuses.count(429) >= 2
-        and m.status_code == 200
-        and m.json()["rate_limited_total"] == statuses.count(429)
+        denied >= 2 and m.status_code == 200 and m.json()["rate_limited_total"] == denied
     )
     os.environ["FX1_API_RATE_LIMIT_RPS"] = "3"
     try:
