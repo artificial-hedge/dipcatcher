@@ -2066,9 +2066,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         m = lc2.get("/metrics")
     finally:
         time.monotonic = _mono  # type: ignore[method-assign]
-    denied = statuses.count(429)
+    n_limited = statuses.count(429)
     out["rate_limit_metrics_counts"] = (
-        denied >= 2 and m.status_code == 200 and m.json()["rate_limited_total"] == denied
+        n_limited >= 2 and m.status_code == 200 and m.json()["rate_limited_total"] == n_limited
     )
     os.environ["FX1_API_RATE_LIMIT_RPS"] = "3"
     try:
