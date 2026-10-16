@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
 from quant_fund.research.prereg_timestamp import (
     PreregTimestampError,
@@ -265,3 +269,169 @@ def test_other_valid_tsa_under_same_ca_cannot_claim_token(
     )
     with pytest.raises(PreregTimestampError, match="chain or purpose"):
         _verify(synthetic_tsa, tsa_cert_path=cert)
+
+
+def _der_sequence(body: bytes) -> bytes:
+    if len(body) < 128:
+        length = bytes([len(body)])
+    else:
+        width = (len(body).bit_length() + 7) // 8
+        length = bytes([0x80 | width]) + len(body).to_bytes(width, "big")
+    return b"\x30" + length + body
+
+
+def test_expired_now_tsa_cert_valid_at_signed_generation_time(
+    synthetic_tsa: dict[str, Path | str], tmp_path: Path
+) -> None:
+    """SYNTHETIC re-signed token proves historical validity is evaluated at genTime."""
+    executable = synthetic_tsa["openssl"]
+    now = datetime.now(UTC).replace(microsecond=0)
+    historical = now - timedelta(days=3)
+    ca_key_path = synthetic_tsa["root"] / "ca.key"
+    tsa_key_path = synthetic_tsa["root"] / "tsa.key"
+    ca_key = serialization.load_pem_private_key(ca_key_path.read_bytes(), password=None)
+    tsa_key = serialization.load_pem_private_key(tsa_key_path.read_bytes(), password=None)
+    ca_name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "synthetic historical CA")])
+    tsa_name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "synthetic prereg TSA")])
+    ca_cert = (
+        x509.CertificateBuilder()
+        .subject_name(ca_name)
+        .issuer_name(ca_name)
+        .public_key(ca_key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - timedelta(days=10))
+        .not_valid_after(now + timedelta(days=10))
+        .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+        .add_extension(
+            x509.KeyUsage(
+                digital_signature=False,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=False,
+                key_cert_sign=True,
+                crl_sign=True,
+                encipher_only=None,
+                decipher_only=None,
+            ),
+            critical=True,
+        )
+        .sign(ca_key, hashes.SHA256())
+    )
+    tsa_cert = (
+        x509.CertificateBuilder()
+        .subject_name(tsa_name)
+        .issuer_name(ca_name)
+        .public_key(tsa_key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - timedelta(days=5))
+        .not_valid_after(now - timedelta(days=1))
+        .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.TIME_STAMPING]), critical=True)
+        .add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=False,
+                key_cert_sign=False,
+                crl_sign=False,
+                encipher_only=None,
+                decipher_only=None,
+            ),
+            critical=True,
+        )
+        .sign(ca_key, hashes.SHA256())
+    )
+    historical_ca = tmp_path / "historical-ca.pem"
+    historical_tsa = tmp_path / "historical-tsa.pem"
+    historical_ca.write_bytes(ca_cert.public_bytes(serialization.Encoding.PEM))
+    historical_tsa.write_bytes(tsa_cert.public_bytes(serialization.Encoding.PEM))
+
+    # The freshly minted fixture token supplies a valid TSTInfo structure.
+    # This local mechanics test replaces its UTC time and signs the new bytes
+    # with a leaf that was valid then but is expired at the present wall time.
+    original_cms = tmp_path / "original.cms"
+    original_info = tmp_path / "original-tstinfo.der"
+    _run(
+        executable,
+        "ts",
+        "-reply",
+        "-in",
+        str(synthetic_tsa["token"]),
+        "-token_out",
+        "-out",
+        str(original_cms),
+    )
+    _run(
+        executable,
+        "cms",
+        "-verify",
+        "-noverify",
+        "-binary",
+        "-inform",
+        "DER",
+        "-in",
+        str(original_cms),
+        "-out",
+        str(original_info),
+    )
+    info = original_info.read_bytes()
+    times = list(re.finditer(rb"\d{14}Z", info))
+    assert len(times) == 1
+    old_time = times[0].group()
+    new_time = historical.strftime("%Y%m%d%H%M%SZ").encode("ascii")
+    historical_info = tmp_path / "historical-tstinfo.der"
+    historical_info.write_bytes(info.replace(old_time, new_time, 1))
+
+    cms = tmp_path / "historical.cms"
+    _run(
+        executable,
+        "cms",
+        "-sign",
+        "-binary",
+        "-nodetach",
+        "-cades",
+        "-econtent_type",
+        "1.2.840.113549.1.9.16.1.4",
+        "-outform",
+        "DER",
+        "-in",
+        str(historical_info),
+        "-signer",
+        str(historical_tsa),
+        "-inkey",
+        str(tsa_key_path),
+        "-certfile",
+        str(historical_ca),
+        "-out",
+        str(cms),
+    )
+    response = tmp_path / "historical.tsr"
+    response.write_bytes(_der_sequence(b"\x30\x03\x02\x01\x00" + cms.read_bytes()))
+    now_valid = subprocess.run(
+        [
+            str(executable),
+            "verify",
+            "-purpose",
+            "timestampsign",
+            "-CAfile",
+            str(historical_ca),
+            "-no-CApath",
+            "-no-CAstore",
+            str(historical_tsa),
+        ],
+        capture_output=True,
+        check=False,
+        timeout=30,
+    )
+    assert now_valid.returncode != 0  # The same chain is expired today.
+    verified = _verify(
+        synthetic_tsa,
+        token_path=response,
+        ca_cert_path=historical_ca,
+        tsa_cert_path=historical_tsa,
+        trusted_ca_sha256=hashlib.sha256(historical_ca.read_bytes()).hexdigest(),
+    )
+    assert verified.gen_time == historical

@@ -1,16 +1,21 @@
 """Strict RFC 3161 timestamp verification for preregistered evidence.
 
 The caller supplies independently approved hashes for the TSA CA and the
-OpenSSL executable. A timestamp is returned only after OpenSSL validates the
-CMS signature against the supplied TSA leaf, its timestamp-signing purpose,
-its trusted chain, and the exact SHA-256
-message imprint. The signed TSTInfo is then parsed for its UTC ``genTime``.
+OpenSSL executable. The parser first extracts a provisional UTC ``genTime``
+and SHA-256 imprint from TSTInfo. OpenSSL then verifies the timestamp response,
+the supplied TSA leaf's signature, purpose, and chain at that time, and the
+exact manifest imprint. The verified CMS content must equal the parsed
+TSTInfo bytes before a timestamp is returned.
 This proves that the manifest bytes existed by that time; it cannot prove
 that an evaluator kept a bank secret or ran a model after that time.
+Certificate validity is checked at the signed generation time. This helper
+does not check revocation or establish that a compromised TSA key could not
+have signed a backdated token; external TSA custody remains required.
 """
 
 from __future__ import annotations
 
+import calendar
 import hashlib
 import re
 import stat
@@ -165,6 +170,12 @@ def _run_openssl(executable: Path, *args: str) -> None:
         raise PreregTimestampError("OpenSSL timestamp chain or purpose verification failed")
 
 
+def _verification_epochs(gen_time: datetime) -> tuple[str, ...]:
+    """Conservatively cover fractional genTime, rejecting boundary-valid tokens."""
+    second = calendar.timegm(gen_time.utctimetuple())
+    return (str(second), str(second + 1)) if gen_time.microsecond else (str(second),)
+
+
 def verify_prereg_timestamp(
     manifest_path: Path,
     token_path: Path,
@@ -203,6 +214,11 @@ def verify_prereg_timestamp(
     manifest_sha256 = hashlib.sha256(manifest).hexdigest()
     cms_der = _signed_token_der(token)
     signed_tst_info = _signed_tst_info(token)
+    # Untrusted DER selects the verification epoch, but cannot confer trust:
+    # the identical TSTInfo must subsequently pass both OpenSSL checks.
+    gen_time, imprint = _signed_time_and_imprint(token)
+    if imprint != bytes.fromhex(manifest_sha256):
+        raise PreregTimestampError("timestamp imprint differs from exact prereg manifest")
     with tempfile.TemporaryDirectory(prefix="prereg-timestamp-") as scratch:
         temp = Path(scratch)
         token_copy = temp / "token.tsr"
@@ -214,57 +230,62 @@ def verify_prereg_timestamp(
         cms_copy.write_bytes(cms_der)
         ca_copy.write_bytes(ca_cert)
         tsa_copy.write_bytes(tsa_cert)
-        _run_openssl(
-            executable,
-            "ts",
-            "-verify",
-            "-digest",
-            manifest_sha256,
-            "-in",
-            str(token_copy),
-            "-CAfile",
-            str(ca_copy),
-            "-untrusted",
-            str(tsa_copy),
-        )
-        _run_openssl(
-            executable,
-            "verify",
-            "-purpose",
-            "timestampsign",
-            "-CAfile",
-            str(ca_copy),
-            "-no-CApath",
-            "-no-CAstore",
-            str(tsa_copy),
-        )
-        _run_openssl(
-            executable,
-            "cms",
-            "-verify",
-            "-inform",
-            "DER",
-            "-in",
-            str(cms_copy),
-            "-nointern",
-            "-certfile",
-            str(tsa_copy),
-            "-CAfile",
-            str(ca_copy),
-            "-no-CApath",
-            "-no-CAstore",
-            "-purpose",
-            "timestampsign",
-            "-binary",
-            "-out",
-            str(verified_content),
-        )
-        if verified_content.read_bytes() != signed_tst_info:
-            raise PreregTimestampError("CMS signature did not cover the parsed timestamp TSTInfo")
-
-    gen_time, imprint = _signed_time_and_imprint(token)
-    if imprint != bytes.fromhex(manifest_sha256):
-        raise PreregTimestampError("timestamp imprint differs from exact prereg manifest")
+        for attime in _verification_epochs(gen_time):
+            _run_openssl(
+                executable,
+                "ts",
+                "-verify",
+                "-digest",
+                manifest_sha256,
+                "-in",
+                str(token_copy),
+                "-CAfile",
+                str(ca_copy),
+                "-untrusted",
+                str(tsa_copy),
+                "-attime",
+                attime,
+            )
+            _run_openssl(
+                executable,
+                "verify",
+                "-purpose",
+                "timestampsign",
+                "-CAfile",
+                str(ca_copy),
+                "-no-CApath",
+                "-no-CAstore",
+                "-attime",
+                attime,
+                str(tsa_copy),
+            )
+            _run_openssl(
+                executable,
+                "cms",
+                "-verify",
+                "-inform",
+                "DER",
+                "-in",
+                str(cms_copy),
+                "-nointern",
+                "-certfile",
+                str(tsa_copy),
+                "-CAfile",
+                str(ca_copy),
+                "-no-CApath",
+                "-no-CAstore",
+                "-purpose",
+                "timestampsign",
+                "-binary",
+                "-attime",
+                attime,
+                "-out",
+                str(verified_content),
+            )
+            if verified_content.read_bytes() != signed_tst_info:
+                raise PreregTimestampError(
+                    "CMS signature did not cover the parsed timestamp TSTInfo"
+                )
     return VerifiedPreregTimestamp(
         gen_time=gen_time,
         manifest_sha256=manifest_sha256,
