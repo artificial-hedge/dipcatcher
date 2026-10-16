@@ -67,6 +67,28 @@ a weights manifest retain a liveness-only attach path and do not establish
 model identity. A public fx-1 release therefore needs a pinned checkpoint,
 measured ship-gate evidence, and a detached Ed25519 checkpoint signature.
 The canonical CLI enables this signed-local policy on non-loopback binds.
+
+**Public-evaluation stop:** The fixed evaluator trust registry is empty and
+the serving gate refuses both public model listing and direct backend
+resolution, even with an otherwise valid signed checkpoint and ship-eligible
+card. `ModelCard.eval_delta` contains asserted numbers; the runtime does not
+independently recompute them from measured, case-level evidence. A
+`known_limits` sentence is not evidence. The existing `fx1_ft_eval.v1` receipt
+is explicitly `SYNTHETIC` and lacks candidate-weight binding and raw paired
+responses. The public `DEFAULT_BANK` is an honesty smoke test, not an
+independent held-out capability evaluation.
+
+To lift this stop, an independent custodian must hold a preregistered bank
+outside the model-development inputs, with a chain-verified timestamped bank
+commitment preceding an independently anchored evaluation-start challenge.
+The evaluator must sign complete ordered
+base and candidate case responses, exact checkpoint hashes, inference
+configuration and tokenizer identity under a key distinct from the release
+signer. A future verifier must check the trusted bank and chronology, release
+inventory binding, full case coverage, scores and paired significance, and
+exact equality with the card's `eval_delta`. Merely enrolling a bank digest or
+signing the card cannot enable public serving.
+
 Bind `FX1_CHECKPOINT_DIR_FX1` and `FX1_CHECKPOINT_DIR_FX1_LITE` separately,
 along with `FX1_LOCAL_SERVE_URL_FX1` and `FX1_LOCAL_SERVE_URL_FX1_LITE`.
 Each URL must target a persistent engine at `http://127.0.0.1:<port>/v1`

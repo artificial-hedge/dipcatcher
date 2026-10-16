@@ -6,9 +6,10 @@ import os
 import stat
 import threading
 import urllib.parse
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Any, cast
+from types import MappingProxyType
+from typing import Any, Final, cast
 
 from fx1.modelcard import ModelCard
 from fx1.serve.backends import BackendNotConfiguredError, _checkpoint_weights_sha
@@ -24,6 +25,10 @@ ALLOW_TEST_FIXTURE_ENV = "FX1_ALLOW_TEST_FIXTURE"
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
 PUBLIC_MODEL_IDS = ("fx1", "fx1-lite")
 IMMUTABLE_IMAGE_ENV = "FX1_RELEASE_IMMUTABLE_IMAGE"
+# Only a code-reviewed release can enroll independent evaluator trust roots.
+# No held-out bank, verified preregistration anchor, or evaluator key has been
+# provided. Enrollment alone must not lift the gate without a complete verifier.
+PUBLIC_EVAL_TRUST_REGISTRY: Final[Mapping[str, str]] = MappingProxyType({})
 _VERIFIED_PUBLIC_RELEASES: dict[
     tuple[str, str], tuple[tuple[str, int, int, int, int, int, int], ...]
 ] = {}
@@ -102,6 +107,17 @@ def _no_link_ancestors(path: Path) -> bool:
     return True
 
 
+def _independent_public_eval_verified(_root: Path) -> bool:
+    """Refuse public models until measured, preregistered evidence is verified."""
+    if not PUBLIC_EVAL_TRUST_REGISTRY:
+        return False
+    # A registry entry is only a trust root, never proof of evaluation.
+    # The case-level verifier and trusted chronology are not implemented. When
+    # they are, verify the signed release inventory first and bind the verdict
+    # to that exact inventory before caching it.
+    return False
+
+
 def _verified_public_release(root: Path) -> bool:
     """Hash once on an OS read-only volume; refuse any later metadata drift."""
     try:
@@ -112,6 +128,8 @@ def _verified_public_release(root: Path) -> bool:
             return False
         root = root.resolve(strict=True)
         if not _read_only_mount(root):
+            return False
+        if not _independent_public_eval_verified(root):
             return False
         key = (str(root), os.environ.get(PUBLIC_VERIFY_KEY_ENV, ""))
         before = _inventory_stat(root)
@@ -303,8 +321,11 @@ def _public_local_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
         )
     if not _verified_public_release(root):
         raise BackendNotConfiguredError(
-            "public local_fx1 requires a valid Ed25519 signature on an OS read-only "
-            "checkpoint volume; changed inventory is refused until process restart"
+            "public local_fx1 requires a valid Ed25519 release on an OS read-only "
+            "checkpoint volume and independently verified measured evaluation "
+            "against a preregistered held-out bank; no evaluator trust root or "
+            "case-level verifier is enrolled; changed inventory is refused until "
+            "process restart"
         )
     # The release was verified against a read-only volume above. The backend
     # still probes the live engine's weights SHA on every call; avoid hashing

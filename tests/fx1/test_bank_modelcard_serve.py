@@ -422,6 +422,9 @@ def test_public_alias_requires_its_own_signed_weights(
     assert configured_public_models() == ()
     monkeypatch.setenv("FX1_RELEASE_IMMUTABLE_IMAGE", "1")
     monkeypatch.setattr(release_gate, "_read_only_mount", lambda path: True)
+    # Synthetic fixture tests serving mechanics after a hypothetical verified
+    # verdict; production has no switch that bypasses the public evidence gate.
+    monkeypatch.setattr(release_gate, "_independent_public_eval_verified", lambda root: True)
     real_verify = release_gate.verify_release_ed25519
     full_verifications: list[Path] = []
 
@@ -545,6 +548,8 @@ def test_signed_public_alias_completes_through_local_engine(
     )
     monkeypatch.setenv("FX1_RELEASE_IMMUTABLE_IMAGE", "1")
     monkeypatch.setattr(release_gate, "_read_only_mount", lambda path: True)
+    # This fixture is a mechanics test, not measured public release evidence.
+    monkeypatch.setattr(release_gate, "_independent_public_eval_verified", lambda root: True)
     monkeypatch.setenv(release_gate.public_checkpoint_env(alias), str(tmp_path))
 
     engine = LocalWeightsEngine(tmp_path)
@@ -562,6 +567,57 @@ def test_signed_public_alias_completes_through_local_engine(
     finally:
         server.shutdown()
         server.server_close()
+
+
+@pytest.mark.parametrize("alias", ["fx1", "fx1-lite"])
+def test_valid_signed_public_card_is_refused_without_independent_eval(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, alias: str
+) -> None:
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    from fx1.serve import release_gate
+    from fx1.serve.release_gate import configured_public_models, public_release_resolver
+    from fx1.serve.signing import sign_release_ed25519, verify_release_ed25519
+
+    checkpoint = tmp_path / alias
+    checkpoint.mkdir()
+    _card(public_model_id=alias, license_tier="maas").save(checkpoint / "modelcard.json")
+    weights = b"synthetic-weights-for-gate-test"
+    (checkpoint / "weights.safetensors").write_bytes(weights)
+    (checkpoint / "weights.manifest.json").write_text(
+        json.dumps({"weights_sha256": hashlib.sha256(weights).hexdigest()}),
+        encoding="utf-8",
+    )
+    seed = b"\x45" * 32
+    monkeypatch.setenv("FX1_RELEASE_SIGNING_KEY", seed.hex())
+    sign_release_ed25519(checkpoint)
+    monkeypatch.delenv("FX1_RELEASE_SIGNING_KEY")
+    monkeypatch.setenv(
+        "FX1_RELEASE_VERIFY_KEY",
+        Ed25519PrivateKey.from_private_bytes(seed).public_key().public_bytes_raw().hex(),
+    )
+    assert verify_release_ed25519(checkpoint)
+    monkeypatch.setenv("FX1_RELEASE_IMMUTABLE_IMAGE", "1")
+    monkeypatch.setenv(release_gate.public_checkpoint_env(alias), str(checkpoint))
+    monkeypatch.setenv(release_gate.public_serve_url_env(alias), "http://127.0.0.1:8123/v1")
+    monkeypatch.delenv("FX1_ALLOW_TEST_FIXTURE", raising=False)
+    monkeypatch.setattr(release_gate, "_read_only_mount", lambda path: True)
+
+    assert release_gate.PUBLIC_EVAL_TRUST_REGISTRY == {}
+    assert configured_public_models() == ()
+    with pytest.raises(
+        BackendNotConfiguredError, match="independently verified measured evaluation"
+    ):
+        public_release_resolver(get_backend)("local_fx1", checkpoint_dir=checkpoint, model=alias)
+
+    # A self-declared registry value cannot serve as a substitute for the
+    # missing independent case-level verifier and trusted chronology.
+    monkeypatch.setattr(release_gate, "PUBLIC_EVAL_TRUST_REGISTRY", {alias: "synthetic-self-pin"})
+    assert configured_public_models() == ()
+    with pytest.raises(
+        BackendNotConfiguredError, match="independently verified measured evaluation"
+    ):
+        public_release_resolver(get_backend)("local_fx1", checkpoint_dir=checkpoint, model=alias)
 
 
 def test_signed_ship_ineligible_alias_is_not_advertised(
