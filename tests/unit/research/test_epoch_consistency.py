@@ -119,6 +119,29 @@ def test_consistency_to_must_be_head(tmp_path: Path) -> None:
     assert "to_not_chain_head" in errors
 
 
+def test_consistency_yml_chain_has_no_member_pin(tmp_path: Path) -> None:
+    """``*.yml`` never selects ``corpus_epoch_*.json``, so the successor
+    cannot pin the predecessor. The hop still verifies on file bytes and
+    the prev link. A lying pin, if one is present, still fails."""
+    c = tmp_path / "workflows"
+    c.mkdir()
+    (c / "ci.yml").write_text("name: ci\n")
+    write_epoch_receipt(corpus_epoch(c, pattern="*.yml"), c)
+    (c / "docs.yml").write_text("name: docs\n")
+    write_epoch_receipt(corpus_epoch(c, pattern="*.yml"), c)
+    index = chain_index(c, pattern="*.yml")
+    proof = consistency_proof(c, _genesis(index), pattern="*.yml")
+    assert proof["n_hops"] == 2
+    assert verify_consistency(proof, c) == []
+    succ = proof["hops"][1]["name"]
+    path, payload, _ = index[succ]
+    assert all(m["name"] != proof["hops"][0]["name"] for m in payload["members"])
+    payload["members"].append({"name": proof["hops"][0]["name"], "sha256": "0" * 64})
+    path.write_text(json.dumps(payload))
+    errors = verify_consistency(proof, c)
+    assert f"hop_member_digest_mismatch:{succ}" in errors
+
+
 def test_consistency_member_digest_binding(tmp_path: Path) -> None:
     """The successor's member map must pin the predecessor's file bytes —
     linkage alone could point at a file that isn't the recorded hop."""

@@ -51,7 +51,7 @@ does not score them.
 - `receipts/cancel_gradient_bench.json`: cancel_gradient_bench.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cancel_lead_amzn.json`: cancel_lead.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/capability_audit.json`: capability_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/capacity_eval_3622d0c059d42009.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/capacity_eval_5cf0042e91c7953c.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/capacity_eval_cd0854242ed8a9ec.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/causality_scan.json`: causality_scan.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/churn_reseed.json`: churn_reseed.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -171,7 +171,7 @@ does not score them.
 - `receipts/fifo_priority_amzn.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/flee_wide.json`: flee_wide.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`: fleet_eval.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/fleet_eval_5e907be710811a44.json`: fleet_eval.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/fleet_eval_ab613c423b36627d.json`: fleet_eval.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fleet_race_real_drill.json`: fleet_race.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/floor_compose.json`: floor_compose.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/floor_pins.json`: floor_pins.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -227,7 +227,7 @@ does not score them.
 - `receipts/hit_starve_amzn.json`: hit_starve.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/hmm_stability.json`: hmm_stability.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/hmm_verify.json`: hmm_verify.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/honest_verdict_b133e8b3992af893.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/honest_verdict_9d631fa6aace437a.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/honest_verdict_real_drill.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/honesty_audit.json`: honesty_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/hypotheses_audit.json`: hypotheses_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -278,7 +278,7 @@ does not score them.
 - `receipts/mid_jump_amzn.json`: mid_jump.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/middleware_audit.json`: middleware_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/modelcard_audit.json`: modelcard_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/monitor_run_13d20aef00774027.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/monitor_run_e69a3aed9568e30d.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/monitor_run_drill_clean.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/monitor_run_drill_defect.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/monitor_run_real_drill.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -312,7 +312,7 @@ does not score them.
 - `receipts/queue_priority.json`: queue_priority.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/quote_floor.json`: quote_floor.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/quote_place_amzn.json`: quote_place.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/rankic_eval_8d740c0ddf6d5c54.json`: cross_sectional_rankic.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/rankic_eval_addd924f107eedd8.json`: cross_sectional_rankic.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/rankic_eval_9ebdad7da83e7348.json`: cross_sectional_rankic.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/real_benchmark_us_wide_manifest.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/real_benchmark_us_wide_test.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
@@ -407,7 +407,7 @@ does not score them.
 - `receipts/vine_audit.json`: vine_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/vine_dominance.json`: vine_dominance.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/vine_panel.json`: vine_panel.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/vol_bench_f3bf2afc2f159ace.json`: vol_bench.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/vol_bench_dc16af46c3f2975b.json`: vol_bench.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/vol_of_vol.json`: vol_of_vol.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/vol_signature_amzn.json`: vol_signature.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/vpin_amzn.json`: vpin.v1; no reality_gate, backtest_overfitting block, or candidate band search

@@ -67,7 +67,7 @@ import hashlib
 import json
 import sys
 import unicodedata
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 LEAF_PREFIX = b"\x00"
@@ -894,8 +894,12 @@ def audit_consistency_live(
         if prev is not None:
             if doc.get("prev_epoch_receipt") != prev["name"]:
                 errors.append(f"hop_link_broken:{hop['name']}")
+            # Mirror epoch_consistency: a glob that excludes the epoch JSON
+            # (*.yml, *.md) has no member pin. A pin that is present must match.
             member_sha = _epoch_members(doc).get(prev["name"])
-            if member_sha != prev["sha256"]:
+            pattern_s = str(pattern) if isinstance(pattern, str) else "*.json"
+            pinned = PurePosixPath(str(prev["name"])).match(pattern_s) or member_sha is not None
+            if pinned and member_sha != prev["sha256"]:
                 errors.append(f"hop_member_digest_mismatch:{hop['name']}")
         prev = hop
     if hops:

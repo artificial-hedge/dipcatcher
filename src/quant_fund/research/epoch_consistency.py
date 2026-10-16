@@ -13,8 +13,10 @@ intermediate receipt verbatim, at which point it *is* the real history.
 Proof shape: the ordered hop list ``[{name, sha256}]`` from the held head to
 the current head. Verification re-reads the receipt files and checks per hop:
 the successor's ``prev_epoch_receipt`` names the predecessor, the
-successor's member map pins the predecessor's file digest, and each file's
-bytes hash to the listed digest — so linkage and content both bind.
+successor's member map pins the predecessor's file digest when the corpus
+glob selects that receipt, and each file's bytes hash to the listed digest
+— so linkage and content both bind. A glob such as ``*.yml`` never selects
+``corpus_epoch_*.json``, so those chains have no member pin to check.
 
 Provenance evidence only; never a market or P&L claim.
 """
@@ -22,13 +24,23 @@ Provenance evidence only; never a market or P&L claim.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from quant_fund.research.corpus_epoch import _epoch_receipts
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 CONSISTENCY_SCHEMA = "epoch_consistency.v1"
+
+
+def _pattern_selects_member(name: str, pattern: str) -> bool:
+    """Whether ``member_digests`` would include ``name`` under ``pattern``.
+
+    ``PurePosixPath.match`` follows the same rules as ``Path.rglob`` for a
+    relative name. Epoch receipts are JSON, so a ``*.yml`` or ``*.md`` chain
+    cannot pin the predecessor inside its member map.
+    """
+    return PurePosixPath(name).match(pattern)
 
 
 def _digest_hex(value: Any) -> bool:
@@ -140,8 +152,11 @@ def verify_consistency(
         if prev is not None:
             if payload.get("prev_epoch_receipt") != prev["name"]:
                 errors.append(f"hop_link_broken:{hop['name']}")
-            # The successor's member map must pin the predecessor's bytes —
-            # linkage alone could point at a file that isn't this hop.
+            # The successor's member map must pin the predecessor's bytes
+            # when the corpus glob selects that receipt. Linkage alone could
+            # point at a file that isn't this hop. A glob that excludes the
+            # epoch JSON (``*.yml``, ``*.md``) has no such pin; a pin that is
+            # present anyway must still match.
             member_sha = next(
                 (
                     m.get("sha256")
@@ -150,7 +165,9 @@ def verify_consistency(
                 ),
                 None,
             )
-            if member_sha != prev["sha256"]:
+            pattern = str(proof.get("pattern") or "*.json")
+            pinned = _pattern_selects_member(str(prev["name"]), pattern) or member_sha is not None
+            if pinned and member_sha != prev["sha256"]:
                 errors.append(f"hop_member_digest_mismatch:{hop['name']}")
         prev = hop
     # The `to` endpoint must be a live chain head — proof of extension to a

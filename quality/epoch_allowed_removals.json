@@ -287,6 +287,60 @@
       "reason": "Continuation of the unpinned docs fork. Removed with that side line so check_epoch_chain sees one head. The bytes remain in git history.",
       "to_sha256": null,
       "transition": "removed"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_1d1a6cfdadf37c0c.json",
+      "from_sha256": "b867f73565dd828e6ae2c2f7091b04915126622b11e5ae7854e7675cce9b048f",
+      "member": "capacity_eval_3622d0c059d42009.json",
+      "reason": "Seal-prefix rename to capacity_eval_5cf0042e91c7953c.json at corpus_epoch_1d1a6cfdadf37c0c.json. 84d3d31b7 refreshed receipt_sha256 in place after artifact-binding drift, so the filename no longer matched the seal. Bytes are unchanged by the rename; the new name is the seal prefix.",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_1d1a6cfdadf37c0c.json",
+      "from_sha256": "adbe15a247e23fd26cc874a509d3448881536aef586be335bbad7b44ba97812f",
+      "member": "fleet_eval_5e907be710811a44.json",
+      "reason": "Seal-prefix rename to fleet_eval_ab613c423b36627d.json at corpus_epoch_1d1a6cfdadf37c0c.json. 84d3d31b7 refreshed receipt_sha256 in place after artifact-binding drift, so the filename no longer matched the seal. Bytes are unchanged by the rename; the new name is the seal prefix.",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_1d1a6cfdadf37c0c.json",
+      "from_sha256": "ed1736ed83c33d0c44775292c3e4979aaf11bb5bd2d18cfeb7df3baa78575a84",
+      "member": "honest_verdict_b133e8b3992af893.json",
+      "reason": "Seal-prefix rename to honest_verdict_9d631fa6aace437a.json at corpus_epoch_1d1a6cfdadf37c0c.json. 84d3d31b7 refreshed receipt_sha256 in place after artifact-binding drift, so the filename no longer matched the seal. Bytes are unchanged by the rename; the new name is the seal prefix.",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_1d1a6cfdadf37c0c.json",
+      "from_sha256": "82c474e25984e9418b6709f81dd34e55457c512c6eef7d3b3275c249e2e82b38",
+      "member": "monitor_run_13d20aef00774027.json",
+      "reason": "Seal-prefix rename to monitor_run_e69a3aed9568e30d.json at corpus_epoch_1d1a6cfdadf37c0c.json. 84d3d31b7 refreshed receipt_sha256 in place after artifact-binding drift, so the filename no longer matched the seal. Bytes are unchanged by the rename; the new name is the seal prefix.",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_1d1a6cfdadf37c0c.json",
+      "from_sha256": "3f1aba6b04d9b7757852334f213059ef971bffe5100e2bbda807eeba28014f06",
+      "member": "rankic_eval_8d740c0ddf6d5c54.json",
+      "reason": "Seal-prefix rename to rankic_eval_addd924f107eedd8.json at corpus_epoch_1d1a6cfdadf37c0c.json. 84d3d31b7 refreshed receipt_sha256 in place after artifact-binding drift, so the filename no longer matched the seal. Bytes are unchanged by the rename; the new name is the seal prefix.",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "receipts/*.json",
+      "epoch": "corpus_epoch_1d1a6cfdadf37c0c.json",
+      "from_sha256": "dfca0a6263a360b3b89cb8588bbb3e03224f37e069cf2764f4caa24b6a2cd453",
+      "member": "vol_bench_f3bf2afc2f159ace.json",
+      "reason": "Seal-prefix rename to vol_bench_dc16af46c3f2975b.json at corpus_epoch_1d1a6cfdadf37c0c.json. 84d3d31b7 refreshed receipt_sha256 in place after artifact-binding drift, so the filename no longer matched the seal. Bytes are unchanged by the rename; the new name is the seal prefix.",
+      "to_sha256": null,
+      "transition": "removed"
     }
   ],
   "schema": "epoch_acknowledgments.v1"
