@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from fx1.eval.ed25519_public import is_canonical_prime_order_public_key
+from fx1.ed25519_public import is_canonical_prime_order_public_key
 
 _P = 2**255 - 19
 

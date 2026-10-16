@@ -380,6 +380,30 @@ def test_public_release_verifies_with_public_key_only(
         LocalFx1Backend(tmp_path)
 
 
+@pytest.mark.parametrize(
+    "bad_key",
+    [b"\x01" + b"\x00" * 31, (2**255 - 18).to_bytes(32, "little")],
+)
+def test_public_release_rejects_universal_ed25519_signature(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bad_key: bytes
+) -> None:
+    from fx1.serve.signing import (
+        PUBLIC_SIGNATURE_FILENAME,
+        sign_release_ed25519,
+        verify_release_ed25519,
+    )
+
+    _card().save(tmp_path / "modelcard.json")
+    (tmp_path / "adapter.bin").write_bytes(b"weights")
+    monkeypatch.setenv("FX1_RELEASE_SIGNING_KEY", (b"\x11" * 32).hex())
+    sign_release_ed25519(tmp_path)
+    monkeypatch.delenv("FX1_RELEASE_SIGNING_KEY")
+    monkeypatch.setenv("FX1_RELEASE_VERIFY_KEY", bad_key.hex())
+    forged_signature = b"\x58" + b"\x66" * 31 + b"\x01" + b"\x00" * 31
+    (tmp_path / PUBLIC_SIGNATURE_FILENAME).write_text(forged_signature.hex(), encoding="ascii")
+    assert not verify_release_ed25519(tmp_path)
+
+
 @pytest.mark.parametrize("alias", ["fx1", "fx1-lite"])
 def test_public_alias_requires_its_own_signed_weights(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, alias: str

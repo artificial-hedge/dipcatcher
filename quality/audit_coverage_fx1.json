@@ -12,7 +12,7 @@
     },
     "eval": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 30,
+      "n_modules": 29,
       "status": "audited"
     },
     "extensions": {
@@ -75,10 +75,10 @@
     "doctor_audit.py": {
       "status": "audited"
     },
-    "eval/evidence_contract.py": {
+    "ed25519_public.py": {
       "status": "pending"
     },
-    "eval/ed25519_public.py": {
+    "eval/evidence_contract.py": {
       "status": "pending"
     },
     "ext_bench_audit.py": {

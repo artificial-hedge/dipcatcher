@@ -703,11 +703,11 @@
       "src": "fx1.eval.core_audit"
     },
     {
-      "dst": "fx1.eval.compare",
+      "dst": "fx1.ed25519_public",
       "src": "fx1.eval.evidence_contract"
     },
     {
-      "dst": "fx1.eval.ed25519_public",
+      "dst": "fx1.eval.compare",
       "src": "fx1.eval.evidence_contract"
     },
     {
@@ -3829,6 +3829,10 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "fx1.serve.serve_audit"
+    },
+    {
+      "dst": "fx1.ed25519_public",
+      "src": "fx1.serve.signing"
     },
     {
       "dst": "fx1.serve.api",
@@ -61743,6 +61747,7 @@
     "fx1.data.traces",
     "fx1.doctor",
     "fx1.doctor_audit",
+    "fx1.ed25519_public",
     "fx1.eval",
     "fx1.eval.bank",
     "fx1.eval.bank_audit",
@@ -61754,7 +61759,6 @@
     "fx1.eval.contamination",
     "fx1.eval.contamination_audit",
     "fx1.eval.core_audit",
-    "fx1.eval.ed25519_public",
     "fx1.eval.evidence_contract",
     "fx1.eval.ext_bench",
     "fx1.eval.ext_bench_banks",
@@ -75357,8 +75361,13 @@
       "src": "fx1.eval"
     },
     {
+      "dst": "fx1.ed25519_public",
+      "imports": 1,
+      "src": "fx1.eval"
+    },
+    {
       "dst": "fx1.eval",
-      "imports": 55,
+      "imports": 54,
       "src": "fx1.eval"
     },
     {
@@ -75734,6 +75743,11 @@
     {
       "dst": "fx1.cli",
       "imports": 3,
+      "src": "fx1.serve"
+    },
+    {
+      "dst": "fx1.ed25519_public",
+      "imports": 1,
       "src": "fx1.serve"
     },
     {

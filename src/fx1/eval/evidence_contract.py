@@ -17,8 +17,8 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
+from fx1.ed25519_public import is_canonical_prime_order_public_key
 from fx1.eval.compare import ComparisonResult, compare_runs
-from fx1.eval.ed25519_public import is_canonical_prime_order_public_key
 from fx1.eval.suite import EvalTask, score_task
 from fx1.modelcard import EvalDelta, ModelCard
 

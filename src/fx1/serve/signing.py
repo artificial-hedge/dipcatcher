@@ -189,6 +189,8 @@ def verify_release_ed25519(checkpoint_dir: str | Path) -> bool:
     from cryptography.exceptions import InvalidSignature
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
+    from fx1.ed25519_public import is_canonical_prime_order_public_key
+
     root = Path(checkpoint_dir)
     manifest_path = root / MANIFEST_FILENAME
     sig_path = root / PUBLIC_SIGNATURE_FILENAME
@@ -198,7 +200,10 @@ def verify_release_ed25519(checkpoint_dir: str | Path) -> bool:
     if not public_hex:
         raise RuntimeError(f"{PUBLIC_VERIFY_KEY_ENV} is not set")
     try:
-        public_key = Ed25519PublicKey.from_public_bytes(bytes.fromhex(public_hex))
+        public_bytes = bytes.fromhex(public_hex)
+        if not is_canonical_prime_order_public_key(public_bytes):
+            return False
+        public_key = Ed25519PublicKey.from_public_bytes(public_bytes)
         manifest_bytes = _read_metadata(manifest_path, _MAX_MANIFEST_BYTES)
         signature = bytes.fromhex(_read_metadata(sig_path, _MAX_SIGNATURE_BYTES).decode("ascii"))
         public_key.verify(signature, manifest_bytes)
