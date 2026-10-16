@@ -224,13 +224,22 @@ proofcore-test: ## PROOFCORE tests: W5 contracts/provenance/CI/layering + W6 sch
 		tests/property/test_replay_determinism.py -q
 
 proofcore-coverage: ## Per-package coverage floors (A3 #2): pit/proof/reality/proofcore 90, leakage 85
-	# Subset run over the PROOFCORE test lanes; the global 80% floor still
-	# applies to the full `make coverage` lane and is NOT re-asserted here
-	# --cov-fail-under=0 defers to the per-package gates below, which read
-	# [tool.proofcore.coverage-floors] from pyproject.toml).
+	# Keyword sweep plus the proofcore-test file list. The sweep alone misses
+	# wave-2 modules whose tests are not named pit/proof/leakage/reality/
+	# proofcore: estimators (0/12), the io guard (0/23), and most of runner,
+	# replay, and scheduler. The second run appends coverage. Floors stay
+	# where they are. The global 80% floor still belongs to `make coverage`.
 	uv run pytest -m "not network" -q \
 		-k "pit or proof or leakage or reality or proofcore" \
 		--cov --cov-report= --cov-fail-under=0
+	uv run pytest -m "not network" -q \
+		tests/unit/test_proofcore_*.py tests/end_to_end/test_proofcore_smoke.py \
+		tests/unit/test_scheduler.py tests/unit/test_proven_runner.py \
+		tests/unit/test_estimators.py tests/unit/test_replay_engine.py \
+		tests/unit/test_io_guard.py tests/unit/test_cscv_combo_guard.py \
+		tests/unit/test_fingerprint_fallback.py tests/unit/test_wave2_e2e.py \
+		tests/property/test_replay_determinism.py \
+		--cov --cov-append --cov-report= --cov-fail-under=0
 	uv run python -m quant_fund.proofcore.ci coverage-gate
 
 proof-integrity: ## Current proof signer/recorder integrity checks
