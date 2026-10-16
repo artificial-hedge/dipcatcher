@@ -644,6 +644,58 @@ def test_valid_signed_public_card_is_refused_without_independent_eval(
         public_release_resolver(get_backend)("local_fx1", checkpoint_dir=checkpoint, model=alias)
 
 
+def test_public_eval_never_reads_an_unauthenticated_release(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fx1.serve import release_gate
+
+    (tmp_path / "payload").write_bytes(b"unsigned evaluator input")
+    monkeypatch.setenv(release_gate.IMMUTABLE_IMAGE_ENV, "1")
+    monkeypatch.setenv(release_gate.PUBLIC_VERIFY_KEY_ENV, "a" * 64)
+    monkeypatch.setattr(release_gate, "_read_only_mount", lambda path: True)
+    calls: list[str] = []
+
+    def reject_signature(root: Path) -> bool:
+        calls.append("release signature")
+        return False
+
+    def inspect_eval(root: Path) -> bool:
+        calls.append("evaluation")
+        return True
+
+    monkeypatch.setattr(release_gate, "verify_release_ed25519", reject_signature)
+    monkeypatch.setattr(release_gate, "_independent_public_eval_verified", inspect_eval)
+    assert not release_gate._verified_public_release(tmp_path)
+    assert calls == ["release signature"]
+
+
+def test_public_eval_inventory_drift_during_verification_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fx1.serve import release_gate
+
+    payload = tmp_path / "payload"
+    payload.write_bytes(b"signed payload")
+    monkeypatch.setenv(release_gate.IMMUTABLE_IMAGE_ENV, "1")
+    monkeypatch.setenv(release_gate.PUBLIC_VERIFY_KEY_ENV, "a" * 64)
+    monkeypatch.setattr(release_gate, "_read_only_mount", lambda path: True)
+    calls: list[str] = []
+
+    def accept_signature(root: Path) -> bool:
+        calls.append("release signature")
+        return True
+
+    def change_eval_input(root: Path) -> bool:
+        calls.append("evaluation")
+        payload.write_bytes(b"changed after signature verification")
+        return True
+
+    monkeypatch.setattr(release_gate, "verify_release_ed25519", accept_signature)
+    monkeypatch.setattr(release_gate, "_independent_public_eval_verified", change_eval_input)
+    assert not release_gate._verified_public_release(tmp_path)
+    assert calls == ["release signature", "evaluation"]
+
+
 def test_signed_ship_ineligible_alias_is_not_advertised(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

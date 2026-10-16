@@ -267,7 +267,7 @@ class PaperBrokerAdapter:
         if duplicate_orders:
             errors.append("duplicate_orders")
         counters = replayed["ledger"]["counters"]
-        for anomaly in ("orphan_fills", "out_of_order_fills"):
+        for anomaly in ("duplicate_fills", "orphan_fills", "out_of_order_fills"):
             if counters[anomaly]:
                 errors.append(anomaly)
         report = SeamReport(

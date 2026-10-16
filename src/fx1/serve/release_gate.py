@@ -113,9 +113,9 @@ def _independent_public_eval_verified(_root: Path) -> bool:
     if not PUBLIC_EVAL_TRUST_REGISTRY:
         return False
     # A registry entry is only a trust root, never proof of evaluation.
-    # The case-level verifier and trusted chronology are not implemented. When
-    # they are, verify the signed release inventory first and bind the verdict
-    # to that exact inventory before caching it.
+    # The caller authenticates the signed release inventory first. Case-level
+    # model provenance and trusted chronology are not implemented, so no
+    # registry value alone can establish an eligible evaluation.
     return False
 
 
@@ -130,8 +130,6 @@ def _verified_public_release(root: Path) -> bool:
         root = root.resolve(strict=True)
         if not _read_only_mount(root):
             return False
-        if not _independent_public_eval_verified(root):
-            return False
         key = (str(root), os.environ.get(PUBLIC_VERIFY_KEY_ENV, ""))
         before = _inventory_stat(root)
         with _VERIFIED_LOCK:
@@ -139,6 +137,13 @@ def _verified_public_release(root: Path) -> bool:
         if cached is not None:
             return cached == before
         if not verify_release_ed25519(root):
+            return False
+        if _inventory_stat(root) != before:
+            return False
+        # No evaluator artifact may be read until its complete containing
+        # release has been authenticated. The eligibility checker remains
+        # closed until independent provenance and chronology can be verified.
+        if not _independent_public_eval_verified(root):
             return False
         after = _inventory_stat(root)
         if after != before:

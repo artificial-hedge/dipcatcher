@@ -275,7 +275,10 @@ def monitor(
     json_out: bool = typer.Option(False, "--json", help="Emit JSON instead of markdown."),
     out: Path | None = typer.Option(None, "--out", help="Write output to this path."),
 ) -> None:
-    """Ops snapshot over the latest paper run: limits, staleness, kill state."""
+    """Ops snapshot over the latest paper run: limits, staleness, kill state.
+
+    Exit codes: 0 healthy, 1 warning, 2 breach, 3 insufficient data.
+    """
     import json
 
     import polars as pl
@@ -342,6 +345,8 @@ def monitor(
         raise typer.Exit(2)
     if status == "warn":
         raise typer.Exit(1)
+    if status == "insufficient_data":
+        raise typer.Exit(3)
 
 
 @app.command("sim-live")

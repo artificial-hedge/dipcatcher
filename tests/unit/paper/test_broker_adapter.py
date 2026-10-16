@@ -180,6 +180,24 @@ def test_orphan_fill_is_preserved_and_blocks_resume(tmp_path) -> None:
         PaperBrokerAdapter.resume(path)
 
 
+def test_duplicate_fill_in_checkpoint_blocks_resume(tmp_path) -> None:
+    """A duplicated persisted fill must not turn into a green seam report."""
+    path = tmp_path / "state.json"
+    run = PaperBrokerAdapter(state_path=path, starting_cash=1000.0)
+    run.submit(_order("o1"))
+    run.apply_fill(_fill("f1", "o1", qty=10.0, price=10.0))
+    run.checkpoint()
+    state = json.loads(path.read_text(encoding="utf-8"))
+    state["fills"].append(dict(state["fills"][0]))
+    path.write_text(json.dumps(state), encoding="utf-8")
+
+    report = run.seam_report()
+    assert report["ok"] is False
+    assert "duplicate_fills" in report["errors"]
+    with pytest.raises(OrderLedgerError, match="duplicate_fills"):
+        PaperBrokerAdapter.resume(path)
+
+
 def test_nonfinite_nav_cannot_publish_checkpoint(tmp_path) -> None:
     path = tmp_path / "state.json"
     run = PaperBrokerAdapter(state_path=path)
