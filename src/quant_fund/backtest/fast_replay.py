@@ -40,6 +40,7 @@ from quant_fund.backtest.engine import (
     StaleValuationError,
     _fast_replay_is_complete,
     _fast_replay_panel_supported,
+    _require_finite_initial_nav,
     _target_weight_map,
     _validate_bar_panel,
     run_backtest,
@@ -932,6 +933,7 @@ def run_backtest_fast(
     Fails closed — ``ValueError`` — on any workload outside the class the
     vectorized path reproduces bit-identically; it never approximates.
     """
+    _require_finite_initial_nav(initial_nav)
     if config.execution.allow_close_auction:
         raise ValueError("fast replay does not support allow_close_auction")
     if is_calibrated_spread_estimator(config.costs.spread_estimator):

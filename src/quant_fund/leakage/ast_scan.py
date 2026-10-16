@@ -19,6 +19,7 @@ the tripwire.
 from __future__ import annotations
 
 import ast
+import contextvars
 import fnmatch
 import hashlib
 import io
@@ -385,16 +386,42 @@ def _is_negative_shift_period(expr: ast.AST, assigns: _ScopeAssigns, use_line: i
     return folded is not None and folded < 0
 
 
-def _merged_assigns(tree: ast.AST, scope: ast.AST) -> dict[str, list[tuple[int, ast.AST]]]:
+_ScopeMap = dict[str, list[tuple[int, ast.AST]]]
+# Installed by ``scan_file`` for one file, then reset. Absent outside that
+# call, so a direct checker invocation still walks. Callers only read the maps.
+_scope_assign_cache: contextvars.ContextVar[dict[int, _ScopeMap] | None] = contextvars.ContextVar(
+    "leakage_scope_assign_cache", default=None
+)
+_merged_assign_cache: contextvars.ContextVar[dict[tuple[int, int], _ScopeMap] | None] = (
+    contextvars.ContextVar("leakage_merged_assign_cache", default=None)
+)
+
+
+def _merged_assigns(tree: ast.AST, scope: ast.AST) -> _ScopeMap:
     """Module-level + enclosing-scope assignment candidates.
 
     Module constants (``HALF = 10``) must resolve inside functions; scope
     names are appended so use-line-aware resolution picks the live binding.
+
+    ``scan_file`` caches the maps. Without the cache every call site re-walked
+    the whole module (LH006 and LH010), which took about a minute on
+    ``research/agent.py`` and exceeded the leakage-scan job timeout.
     """
-    assigns = _scope_assignments(tree)
-    for name, entries in _scope_assignments(scope).items():
-        assigns.setdefault(name, []).extend(entries)
-    return assigns
+    cache = _merged_assign_cache.get()
+    key = (id(tree), id(scope))
+    if cache is not None:
+        hit = cache.get(key)
+        if hit is not None:
+            return hit
+    module = _cached_scope_assignments(tree)
+    local = module if scope is tree else _cached_scope_assignments(scope)
+    # Copy the lists. Extending the cached scope map would poison later merges.
+    merged: _ScopeMap = {name: list(entries) for name, entries in module.items()}
+    for name, entries in local.items():
+        merged.setdefault(name, []).extend(entries)
+    if cache is not None:
+        cache[key] = merged
+    return merged
 
 
 def _check_lh001(tree: ast.AST, path_str: str) -> list[_Finding]:
@@ -806,6 +833,19 @@ def _scope_assignments(func: ast.AST) -> _ScopeAssigns:
     return assigns
 
 
+def _cached_scope_assignments(node: ast.AST) -> _ScopeAssigns:
+    """One scope walk per node while ``scan_file`` holds the cache."""
+    cache = _scope_assign_cache.get()
+    if cache is None:
+        return _scope_assignments(node)
+    key = id(node)
+    hit = cache.get(key)
+    if hit is None:
+        hit = _scope_assignments(node)
+        cache[key] = hit
+    return hit
+
+
 def _resolve_expr(
     expr: ast.AST, assigns: _ScopeAssigns, use_line: int = 0, depth: int = 0
 ) -> ast.AST:
@@ -1018,10 +1058,15 @@ def _check_lh009(tree: ast.AST, path_str: str) -> list[_Finding]:
 def _check_lh010(tree: ast.AST, path_str: str) -> list[_Finding]:
     out: list[_Finding] = []
     parents = _build_parent_map(tree)
+    unparsed: dict[int, str] = {}
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
         name = _call_name(node)
+        # Only these three calls can be a backward fill. Resolving every
+        # other call re-walked the module and dominated leakage-scan.
+        if name not in ("bfill", "fill_null", "fillna"):
+            continue
         _, funcs = _enclosing_scopes(node, parents)
         scope: ast.AST = funcs[-1] if funcs else tree
         assigns = _merged_assigns(tree, scope)
@@ -1036,10 +1081,13 @@ def _check_lh010(tree: ast.AST, path_str: str) -> list[_Finding]:
         )
         if not (is_bfill or is_backward_fill or is_pandas_bfill):
             continue
-        try:
-            segment = ast.unparse(scope)
-        except Exception:
-            segment = ""
+        segment = unparsed.get(id(scope))
+        if segment is None:
+            try:
+                segment = ast.unparse(scope)
+            except Exception:
+                segment = ""
+            unparsed[id(scope)] = segment
         if '"event_time"' in segment or "'event_time'" in segment or "event_time" in segment:
             out.append(
                 _Finding(
@@ -1425,19 +1473,25 @@ def scan_file(path: Path, *, rules: set[str] | None = None) -> list[_Finding]:
         return [
             _Finding("LH012", int(line), 0, f"unparseable file: {exc.__class__.__name__}: {exc}")
         ]
-    for rule_id, checker in _CHECKERS.items():
-        if rule_id not in enabled:
-            continue
-        if _is_allowlisted(rule_id, path_str):
-            continue
-        raw = checker(tree, path_str)
-        findings.extend(_drop_function_allowlisted(rule_id, path_str, tree, raw))
-    if "LH013" in enabled and not _is_allowlisted("LH013", path_str):
-        findings.extend(_check_lh013(tree, path_str, source))
-    if "LH014" in enabled and not _is_allowlisted("LH014", path_str):
-        findings.extend(_check_lh014(tree, path_str, findings))
-    findings.sort(key=lambda f: (f.line, f.col, f.rule_id))
-    return findings
+    scope_token = _scope_assign_cache.set({})
+    merged_token = _merged_assign_cache.set({})
+    try:
+        for rule_id, checker in _CHECKERS.items():
+            if rule_id not in enabled:
+                continue
+            if _is_allowlisted(rule_id, path_str):
+                continue
+            raw = checker(tree, path_str)
+            findings.extend(_drop_function_allowlisted(rule_id, path_str, tree, raw))
+        if "LH013" in enabled and not _is_allowlisted("LH013", path_str):
+            findings.extend(_check_lh013(tree, path_str, source))
+        if "LH014" in enabled and not _is_allowlisted("LH014", path_str):
+            findings.extend(_check_lh014(tree, path_str, findings))
+        findings.sort(key=lambda f: (f.line, f.col, f.rule_id))
+        return findings
+    finally:
+        _scope_assign_cache.reset(scope_token)
+        _merged_assign_cache.reset(merged_token)
 
 
 def collect_py_files(paths: list[Path]) -> list[Path]:

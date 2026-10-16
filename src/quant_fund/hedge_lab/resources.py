@@ -85,7 +85,7 @@ def physical_memory() -> tuple[int, int]:
     phys = int(os.sysconf("SC_PHYS_PAGES")) if hasattr(os, "sysconf") else 0
     total = page * phys
     available = _proc_meminfo_available()
-    if available is None:
+    if available is None and hasattr(os, "sysconf"):
         try:
             available = int(os.sysconf("SC_AVPHYS_PAGES")) * page
         except (AttributeError, ValueError, OSError):
