@@ -16,12 +16,9 @@ import http.client
 import ipaddress
 import json
 import os
-import shlex
 import socket
 import ssl
-import string
 import subprocess
-import sys
 import threading
 import time
 import urllib.error
@@ -33,6 +30,8 @@ from pathlib import Path
 from typing import Any, Protocol, cast, runtime_checkable
 
 from fx1.modelcard import ModelCard
+from fx1.serve.local_engine_process import checkpoint_weights_sha as _checkpoint_weights_sha
+from fx1.serve.local_engine_process import spawn_local_engine
 
 MOONSHOT_API_URL = "https://api.moonshot.ai/v1/chat/completions"
 
@@ -1588,26 +1587,6 @@ def _free_tcp_port() -> int:
         sock.close()
 
 
-def _checkpoint_weights_sha(root: Path) -> str | None:
-    manifest_path = root / "weights.manifest.json"
-    if not manifest_path.is_file():
-        if (root / "weights.safetensors").is_file():
-            raise RuntimeError("local fx-1 weights require a SHA-256 manifest")
-        return None  # Raw third-party checkpoint layouts have no fx-1 manifest.
-    try:
-        manifest_obj = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        raise RuntimeError("cannot read local fx-1 weights manifest") from exc
-    sha = manifest_obj.get("weights_sha256") if isinstance(manifest_obj, dict) else None
-    if (
-        not isinstance(sha, str)
-        or len(sha) != 64
-        or any(char not in string.hexdigits for char in sha)
-    ):
-        raise RuntimeError("local fx-1 weights manifest has no valid SHA-256 pin")
-    return sha.lower()
-
-
 class LocalFx1Backend(_UsageTracker):
     """A local fx-1 checkpoint served by a local OpenAI-compatible engine.
 
@@ -1839,53 +1818,7 @@ class LocalFx1Backend(_UsageTracker):
 
     def _spawn_engine(self) -> subprocess.Popen[bytes]:
         """Start the declared command; the caller owns the returned child."""
-        command = self._serve_cmd.lstrip()
-        if not command:
-            raise RuntimeError("local fx-1 engine command is empty")
-        if os.name == "nt":
-            # Parse the template before inserting values. POSIX shlex consumes
-            # backslashes in Windows paths; CommandLineToArgvW preserves them.
-            import ctypes
-            from ctypes import wintypes
-
-            # Linux typeshed omits these Windows-only ctypes members even
-            # inside this runtime-only branch.
-            ctypes_win = cast(Any, ctypes)
-            shell32 = ctypes_win.WinDLL("shell32", use_last_error=True)
-            parse = shell32.CommandLineToArgvW
-            parse.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(ctypes.c_int)]
-            parse.restype = ctypes.POINTER(wintypes.LPWSTR)
-            count = ctypes.c_int()
-            parsed = parse(command, ctypes.byref(count))
-            if not parsed:
-                raise OSError(ctypes_win.get_last_error(), "cannot parse local engine command")
-            try:
-                template_argv = [str(parsed[index]) for index in range(count.value)]
-            finally:
-                kernel32 = ctypes_win.WinDLL("kernel32", use_last_error=True)
-                free = kernel32.LocalFree
-                free.argtypes = [ctypes.c_void_p]
-                free.restype = ctypes.c_void_p
-                free(ctypes.cast(parsed, ctypes.c_void_p))
-        else:
-            template_argv = shlex.split(command)
-        argv = [
-            string.Template(arg).substitute(checkpoint_dir=str(self._root), python=sys.executable)
-            for arg in template_argv
-        ]
-        if not argv or not argv[0]:
-            raise RuntimeError("local fx-1 engine command is empty")
-        env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
-        env.pop("FX1_RELEASE_SIGNING_KEY", None)
-        env.pop("FX1_SIGNING_KEY", None)
-        try:
-            return subprocess.Popen(  # noqa: S603 — declared command, no shell  # nosec B603
-                argv, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-        except OSError as exc:
-            raise RuntimeError(
-                f"failed to spawn local fx-1 engine {self._serve_cmd!r}: {exc}"
-            ) from exc
+        return spawn_local_engine(self._serve_cmd, self._root)
 
     def _wait_for_engine(self, proc: subprocess.Popen[bytes]) -> None:
         """Verify startup, retaining the child's exit status before cleanup."""
