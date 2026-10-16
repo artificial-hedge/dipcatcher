@@ -53,6 +53,10 @@ make reality-gate         # score trials; a non-empty pending research/reality/t
 make receipts-reverify    # suite-health --strict: verify, or exact quarantine pin
 ```
 
+On Windows, run `uv run python scripts/reality_gate.py` from the repository root.
+It executes the same reality gate without GNU make; `--db`, `--ledger`, and
+`--committed-ledger` override the three paths used by the Makefile target.
+
 ## Honesty contract
 
 PROOFCORE follows the AGENTS.md honesty rules. The standalone verifier checks
