@@ -5,7 +5,10 @@ from __future__ import annotations
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from fx1.ed25519_public import is_canonical_prime_order_public_key
+from quant_fund.utils.ed25519_public import (
+    is_canonical_prime_order_public_key,
+    require_canonical_prime_order_public_key,
+)
 
 _P = 2**255 - 19
 
@@ -26,12 +29,16 @@ _TORSION_ENCODINGS = (
 @pytest.mark.parametrize("seed_byte", (0x11, 0x21, 0x51, 0xA3))
 def test_synthetic_generated_public_keys_are_accepted(seed_byte: int) -> None:
     private = Ed25519PrivateKey.from_private_bytes(bytes([seed_byte]) * 32)
-    assert is_canonical_prime_order_public_key(private.public_key().public_bytes_raw())
+    encoded = private.public_key().public_bytes_raw()
+    assert is_canonical_prime_order_public_key(encoded)
+    assert require_canonical_prime_order_public_key(encoded) is encoded
 
 
 @pytest.mark.parametrize("encoded_hex", _TORSION_ENCODINGS)
 def test_synthetic_every_canonical_torsion_point_is_rejected(encoded_hex: str) -> None:
     assert not is_canonical_prime_order_public_key(bytes.fromhex(encoded_hex))
+    with pytest.raises(ValueError, match="invalid Ed25519 public key"):
+        require_canonical_prime_order_public_key(bytes.fromhex(encoded_hex))
 
 
 def test_synthetic_noncanonical_and_malformed_encodings_are_rejected() -> None:

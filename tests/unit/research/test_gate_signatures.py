@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from quant_fund.research.gate_signatures import (
     SIGNED_FILES,
     generate_keypair,
@@ -153,6 +155,51 @@ def test_quorum_round_trip(tmp_path: Path) -> None:
     sign_pins_quorum(root, keys[:2])
     res = verify_pin_signatures(root)
     assert res["ok"] and res["signed"] and res["quorum"] == "2/2"
+
+
+@pytest.mark.parametrize(
+    "pub_hex",
+    ["01" + "00" * 31, (2**255 - 18).to_bytes(32, "little").hex()],
+)
+def test_synthetic_identity_key_cannot_forge_quorum(tmp_path: Path, pub_hex: str) -> None:
+    from quant_fund.research.gate_signatures import (
+        QUORUM_REGISTRY_SCHEMA,
+        QUORUM_SIG_SCHEMA,
+        manifest_bytes,
+    )
+
+    root = _repo(tmp_path)
+    kid = key_id(pub_hex)
+    registry = {
+        "schema": QUORUM_REGISTRY_SCHEMA,
+        "threshold": 1,
+        "keys": [{"key_id": kid, "pubkey": pub_hex}],
+    }
+    (root / "quality/gate_quorum.json").write_text(json.dumps(registry))
+    # R is the Ed25519 base point and S is one. The identity public point
+    # accepts this signature for any payload without a private key.
+    forged_signature = (b"\x58" + b"\x66" * 31 + b"\x01" + b"\x00" * 31).hex()
+    body = {
+        "schema": QUORUM_SIG_SCHEMA,
+        "algorithm": "ed25519",
+        "payload": json.loads(manifest_bytes(root)),
+        "signatures": [{"key_id": kid, "signature": forged_signature}],
+    }
+    (root / "gate_pins.sig").write_text(json.dumps(body))
+    assert verify_pin_signatures(root)["ok"] is False
+
+
+@pytest.mark.parametrize(
+    "pub_hex",
+    ["01" + "00" * 31, (2**255 - 18).to_bytes(32, "little").hex()],
+)
+def test_synthetic_identity_key_cannot_enter_quorum_registry(tmp_path: Path, pub_hex: str) -> None:
+    from quant_fund.research.gate_signatures import init_quorum
+
+    root = _repo(tmp_path)
+    with pytest.raises(ValueError, match="invalid|malformed"):
+        init_quorum(root, [pub_hex], threshold=1)
+    assert not (root / "quality/gate_quorum.json").exists()
 
 
 def test_quorum_met_with_surplus_sig(tmp_path: Path) -> None:

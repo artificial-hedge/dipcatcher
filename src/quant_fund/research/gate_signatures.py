@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from quant_fund.utils.ed25519_public import require_canonical_prime_order_public_key
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 GATE_SIGNATURES_SCHEMA = "gate_signatures.v1"
@@ -131,7 +132,8 @@ def verify_pin_signatures(
         return {"ok": False, "signed": True, "errors": ["signature_file_missing"]}
     pubkey_hex = pub_file.read_text().strip()
     try:
-        pubkey = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pubkey_hex))
+        pubkey_bytes = require_canonical_prime_order_public_key(bytes.fromhex(pubkey_hex))
+        pubkey = Ed25519PublicKey.from_public_bytes(pubkey_bytes)
     except ValueError:
         return {"ok": False, "signed": True, "errors": ["pubkey_malformed"]}
     try:
@@ -265,12 +267,12 @@ def init_quorum(
     """
     from quant_fund.utils.atomicio import atomic_write_bytes
 
-    if threshold < 1 or threshold > len(pubkeys):
+    if isinstance(threshold, bool) or threshold < 1 or threshold > len(pubkeys):
         raise ValueError("threshold must be in [1, n_keys]")
     seen: set[str] = set()
     keys = []
     for i, pub in enumerate(pubkeys):
-        bytes.fromhex(pub)  # raises on malformed
+        require_canonical_prime_order_public_key(bytes.fromhex(pub))
         kid = key_id(pub)
         if kid in seen:
             raise ValueError(f"duplicate pubkey: {kid}")
@@ -312,6 +314,7 @@ def quorum_registry_errors(registry: object) -> list[str]:
         keys = []
     if (
         not isinstance(threshold, int)
+        or isinstance(threshold, bool)
         or threshold < 1
         or (isinstance(keys, list) and keys and threshold > len(keys))
     ):
@@ -327,7 +330,7 @@ def quorum_registry_errors(registry: object) -> list[str]:
             errors.append("registry_key_malformed")
             continue
         try:
-            bytes.fromhex(pub)
+            require_canonical_prime_order_public_key(bytes.fromhex(pub))
         except ValueError:
             errors.append("registry_key_malformed")
             continue

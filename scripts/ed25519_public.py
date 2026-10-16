@@ -1,12 +1,8 @@
-"""Validate Ed25519 public keys before treating signatures as evidence.
+"""Standalone mirror of quant_fund.utils.ed25519_public.
 
-Some Ed25519 verifiers accept signatures under small-order public points. In
-particular, the identity point admits a signature that verifies for any
-message without knowledge of a private key. Decode the point canonically and
-require membership in the prime-order subgroup before using the verifier.
-
-This is deliberately small, pure Python, and bounded: a 32-byte input and a
-fixed 253-bit scalar multiplication. It is not a signature implementation.
+The auditor scripts cannot import the implementation they audit. Keep this
+small, pure-Python predicate in lockstep with the library through the parity
+test in test_standalone_ed25519_public.py.
 """
 
 from __future__ import annotations
@@ -16,7 +12,6 @@ _L = 2**252 + 27742317777372353535851937790883648493
 _D = (-121665 * pow(121666, _P - 2, _P)) % _P
 _SQRT_M1 = pow(2, (_P - 1) // 4, _P)
 
-# Extended Edwards coordinates (X:Y:Z:T), with x=X/Z, y=Y/Z, T=XY/Z.
 type _Point = tuple[int, int, int, int]
 _IDENTITY: _Point = (0, 1, 1, 0)
 
@@ -28,7 +23,7 @@ def _decode(encoded: bytes) -> _Point | None:
     sign = value >> 255
     y = value & ((1 << 255) - 1)
     if y >= _P:
-        return None  # A field element must have its canonical encoding.
+        return None
 
     y_squared = y * y % _P
     denominator = (_D * y_squared + 1) % _P
@@ -77,13 +72,7 @@ def _is_identity(point: _Point) -> bool:
 
 
 def is_canonical_prime_order_public_key(encoded: bytes) -> bool:
-    """Require a canonical, nonidentity Ed25519 point of order dividing ``L``.
-
-    ``L`` is the prime order of the base point. The check rejects every
-    nonidentity torsion point and every point with a torsion component, as
-    well as noncanonical encodings. It does not replace signature verification
-    or independent enrollment of the evaluator's key.
-    """
+    """Require a canonical, nonidentity point in the prime-order subgroup."""
     point = _decode(encoded)
     return (
         point is not None

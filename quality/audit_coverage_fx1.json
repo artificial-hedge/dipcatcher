@@ -75,9 +75,6 @@
     "doctor_audit.py": {
       "status": "audited"
     },
-    "ed25519_public.py": {
-      "status": "pending"
-    },
     "eval/evidence_contract.py": {
       "status": "pending"
     },

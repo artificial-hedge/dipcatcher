@@ -66,6 +66,40 @@ def test_honest_rotation_verifies(tmp_path: Path) -> None:
     assert res["lineage"][0]["reason"] == "test"
 
 
+def test_synthetic_identity_key_cannot_countersign_rotation(tmp_path: Path) -> None:
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    from quant_fund.research.gate_signatures import key_id
+    from quant_fund.utils.hashing import canonical_json_bytes
+
+    root, priv, pub = _repo(tmp_path)
+    write_checkpoint(root, [(priv, pub)])
+    identity = bytes.fromhex("01" + "00" * 31)
+    payload = {
+        "at": "2026-01-01T00:00:00+00:00",
+        "reason": "SYNTHETIC identity forgery",
+        "old_key_id": key_id(pub),
+        "new_key_id": key_id(identity.hex()),
+        "old_pubkey": pub,
+        "new_pubkey": identity.hex(),
+    }
+    old_sig = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(priv)).sign(
+        canonical_json_bytes(payload)
+    )
+    body = {
+        "schema": "key_rotation.v1",
+        "payload": payload,
+        "old_signature": old_sig.hex(),
+        "new_signature": (identity + bytes(32)).hex(),
+    }
+    (root / "quality/rotation_identity.json").write_text(json.dumps(body))
+    (root / "quality/gate_signing.pub").write_text(identity.hex() + "\n")
+
+    result = verify_rotations(root)
+    assert result["ok"] is False
+    assert "rotation_signature_invalid:new" in result["errors"]
+
+
 def test_spine_survives_rotation_via_keyring(tmp_path: Path) -> None:
     """Old checkpoints stay valid after the live key rotates — the spine
     verifies each record under its era's authorized key."""

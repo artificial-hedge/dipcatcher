@@ -39,6 +39,7 @@ from quant_fund.research.gate_signatures import (
 )
 from quant_fund.research.timestamp_anchor import stamp_timestamp, verify_timestamps
 from quant_fund.utils.atomicio import atomic_write_text
+from quant_fund.utils.ed25519_public import require_canonical_prime_order_public_key
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 CHECKPOINT_SCHEMA = "integrity_checkpoint.v1"
@@ -351,9 +352,12 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
                         errors.append("signature_malformed")
                         continue
                     try:
-                        Ed25519PublicKey.from_public_bytes(
+                        pub_bytes = require_canonical_prime_order_public_key(
                             bytes.fromhex(registered[str(kid)])
-                        ).verify(bytes.fromhex(sig_hex), canonical_json_bytes(payload))
+                        )
+                        Ed25519PublicKey.from_public_bytes(pub_bytes).verify(
+                            bytes.fromhex(sig_hex), canonical_json_bytes(payload)
+                        )
                         valid.add(str(kid))
                     except (InvalidSignature, ValueError):
                         errors.append("signature_invalid")
@@ -367,7 +371,8 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
             return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_missing"]}
         pubkey_hex = pub_file.read_text().strip()
         try:
-            pubkey = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pubkey_hex))
+            pubkey_bytes = require_canonical_prime_order_public_key(bytes.fromhex(pubkey_hex))
+            pubkey = Ed25519PublicKey.from_public_bytes(pubkey_bytes)
         except ValueError:
             return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_malformed"]}
         if body.get("key_id") != key_id(pubkey_hex):

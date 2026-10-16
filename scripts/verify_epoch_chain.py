@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Standalone epoch-chain auditor — no repo imports, stdlib only.
+"""Standalone epoch-chain auditor — no quant_fund imports.
 
 Reimplements ``quant_fund.research.corpus_epoch.check_epoch_chain`` from
 scratch so a third-party auditor can verify a corpus's committed epoch
 chain — seal authenticity, prev links, fork/genesis/head topology, delta
 honesty, and head-vs-live-tree consistency — without running (or trusting)
-the repository's own code. The verdict vocabulary mirrors the library so
+the repository's own code. It uses a sibling pure-Python Ed25519 point
+checker and ``cryptography`` for signatures. The verdict vocabulary mirrors the library so
 the two implementations can be diffed: a divergence is itself a finding.
 
 Usage:
@@ -39,11 +40,12 @@ import os
 import subprocess
 import sys
 import unicodedata
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
 EPOCH_SCHEMA = "corpus_epoch.v1"
+POINT_CHECKER_SHA256 = "0421eb1970e19ccb6489a0b9e2d428684abbd19591839f5d1d61ca1a25143433"
 GENESIS_PREV = "0" * 64
 HEADS_PIN_BASENAME = "epoch_heads.json"
 
@@ -99,6 +101,30 @@ _NODE_PREFIX = b"\x01"
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _point_checker_ok() -> bool:
+    """Bind the sibling checker before its code can be imported."""
+    try:
+        raw = Path(__file__).with_name("ed25519_public.py").read_bytes()
+    except OSError:
+        return False
+    return _sha256(raw) == POINT_CHECKER_SHA256
+
+
+def _load_point_checker() -> Callable[[bytes], bool] | None:
+    """Execute exactly the checked source bytes, never a cached module."""
+    path = Path(__file__).with_name("ed25519_public.py")
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return None
+    if _sha256(raw) != POINT_CHECKER_SHA256:
+        return None
+    namespace: dict[str, Any] = {"__name__": "_standalone_ed25519_public"}
+    exec(compile(raw, str(path), "exec"), namespace)  # noqa: S102 - hash-pinned bytes
+    checker = namespace.get("is_canonical_prime_order_public_key")
+    return checker if callable(checker) else None
 
 
 def _canonicalize(value: Any) -> Any:
@@ -478,8 +504,14 @@ def _ed25519_verify(pub_hex: str, sig_hex: str, msg: bytes) -> bool | None:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     except ImportError:
         return None
+    checker = _load_point_checker()
+    if checker is None:
+        return False
     try:
-        pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex.strip()))
+        public_bytes = bytes.fromhex(pub_hex.strip())
+        if not checker(public_bytes):
+            return False
+        pub = Ed25519PublicKey.from_public_bytes(public_bytes)
         pub.verify(bytes.fromhex(sig_hex), msg)
     except (InvalidSignature, ValueError, TypeError):
         return False
@@ -962,6 +994,10 @@ def main() -> int:
     ap.add_argument("--require-stamped", action="store_true")
     ap.add_argument("--allow-member-updates", action="store_true")
     args = ap.parse_args()
+
+    if not _point_checker_ok():
+        print("  ed25519_point_checker_mismatch\nFAIL")
+        return 1
 
     if args.checkpoint is not None and args.pubkey is None:
         print("--checkpoint requires --pubkey", file=sys.stderr)

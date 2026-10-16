@@ -189,7 +189,7 @@ def verify_release_ed25519(checkpoint_dir: str | Path) -> bool:
     from cryptography.exceptions import InvalidSignature
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-    from fx1.ed25519_public import is_canonical_prime_order_public_key
+    from quant_fund.utils.ed25519_public import is_canonical_prime_order_public_key
 
     root = Path(checkpoint_dir)
     manifest_path = root / MANIFEST_FILENAME

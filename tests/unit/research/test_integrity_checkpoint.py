@@ -80,6 +80,25 @@ def test_forged_checkpoint_fails(tmp_path: Path) -> None:
     assert "signature_invalid" in res["errors"]
 
 
+def test_synthetic_identity_key_cannot_authenticate_checkpoint(tmp_path: Path) -> None:
+    root, priv, pub = _repo(tmp_path)
+    write_checkpoint(root, [(priv, pub)])
+    identity = bytes.fromhex("01" + "00" * 31)
+    universal_sig = (identity + bytes(32)).hex()
+    from quant_fund.research.gate_signatures import key_id
+
+    (root / "quality/gate_signing.pub").write_text(identity.hex() + "\n")
+    checkpoint = root / "quality/checkpoint.json"
+    body = json.loads(checkpoint.read_text())
+    body["key_id"] = key_id(identity.hex())
+    body["signature"] = universal_sig
+    checkpoint.write_text(json.dumps(body))
+
+    result = verify_checkpoint(root)
+    assert result["ok"] is False
+    assert "pubkey_malformed" in result["errors"]
+
+
 def test_malformed_checkpoint_fails(tmp_path: Path) -> None:
     root, _priv, _pub = _repo(tmp_path)
     (root / "quality/checkpoint.json").write_text("{not json")

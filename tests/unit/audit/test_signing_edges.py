@@ -19,6 +19,10 @@ from quant_fund.audit.signing import (
     verify_sigstore_bundle,
 )
 
+_SYNTHETIC_IDENTITY_KEY = b"\x01" + b"\x00" * 31
+_SYNTHETIC_NONCANONICAL_IDENTITY_KEY = (2**255 - 18).to_bytes(32, "little")
+_SYNTHETIC_UNIVERSAL_SIGNATURE = bytes.fromhex("58" + "66" * 31) + (1).to_bytes(32, "little")
+
 
 class TestEd25519:
     def test_generate_sign_verify_roundtrip(self) -> None:
@@ -95,6 +99,23 @@ class TestEd25519:
         short.write_text("ab" * 16, encoding="utf-8")
         with pytest.raises(AuditError, match="32 bytes"):
             load_public_key_hex(short)
+
+    @pytest.mark.parametrize(
+        "public_key",
+        [_SYNTHETIC_IDENTITY_KEY, _SYNTHETIC_NONCANONICAL_IDENTITY_KEY],
+        ids=["identity", "noncanonical-identity"],
+    )
+    def test_rejects_synthetic_identity_forgery(self, tmp_path: Path, public_key: bytes) -> None:
+        # SYNTHETIC: R=B, S=1 satisfies the Ed25519 equation for an identity
+        # public point and any payload. Neither encoding can establish trust.
+        signature_hex = _SYNTHETIC_UNIVERSAL_SIGNATURE.hex()
+        for payload in (b"tree-head", b"unrelated tree-head"):
+            assert verify_ed25519(payload, signature_hex, public_key) is False
+
+        path = tmp_path / "identity.pub"
+        path.write_text(public_key.hex() + "\n", encoding="ascii")
+        with pytest.raises(AuditError, match="canonical and prime order"):
+            load_public_key_hex(path)
 
 
 class TestSigstoreRefusals:
