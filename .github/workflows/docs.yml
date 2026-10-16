@@ -18,11 +18,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# PRs only build. Push to main uploads a Pages artifact and deploys it.
-# The repository owner must set Settings → Pages → Source to GitHub Actions
-# before the deploy job can publish. GET /repos/.../pages is 404
-# (has_pages=false) and creating Pages returns 403 for this integration, so
-# deploy-pages fails with HttpError 404. That failure stays on the check.
+# PRs only build. Push to main uploads a Pages artifact and deploys it when
+# GitHub Pages is enabled. GET /repos/.../pages is HTTP 404 (has_pages=false)
+# and creating the site returns 403 for this integration, so deploy-pages can
+# never succeed until a repo admin enables Pages. A 404 from that probe skips
+# deploy-pages and leaves the strict mkdocs build as the check. Any other
+# probe status, and deploy-pages itself once the site exists, still fail the
+# job. No continue-on-error.
 permissions:
   contents: read
 
@@ -65,6 +67,27 @@ jobs:
       pages: write
       id-token: write
     steps:
+      - name: Detect GitHub Pages site
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/pages" || true)
+          echo "http_code=${code}" >> "$GITHUB_OUTPUT"
+          if [ "${code}" = "404" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "deploy skipped: GitHub Pages is not enabled (has_pages=false, Pages API HTTP 404)"
+          elif [ "${code}" = "200" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Pages API returned HTTP ${code}; not skipping deploy" >&2
+            exit 1
+          fi
       - name: Deploy to GitHub Pages
         id: deployment
+        if: steps.pages.outputs.enabled == 'true'
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
