@@ -86,7 +86,7 @@ src/fx1/serve/api.py:create_app 70
 src/fx1/serve/api.py:create_app._resolve_request_backend 10
 src/fx1/serve/api.py:create_app.harness_api_auth 12
 src/fx1/serve/api_audit.py:_probe_backend_probes 115
-src/fx1/serve/api_audit.py:_probe_finetune 46
+src/fx1/serve/api_audit_finetune.py:probe_finetune 46
 src/fx1/serve/backends.py:SamplingParams.body_fields 14
 src/fx1/serve/backends.py:_openai_chat_complete 10
 src/fx1/serve/backends.py:_openai_chat_complete_tools 19
