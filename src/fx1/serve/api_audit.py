@@ -2059,13 +2059,13 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
     lc2 = _TC2(limited2)
     _mono, _box = time.monotonic, [time.monotonic()]
-    time.monotonic = lambda: _box[0]  # type: ignore[method-assign]
+    time.monotonic = lambda: _box[0]
     try:
         statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
         _box[0] += 1.0
         m = lc2.get("/metrics")
     finally:
-        time.monotonic = _mono  # type: ignore[method-assign]
+        time.monotonic = _mono
     n_limited = statuses.count(429)
     out["rate_limit_metrics_counts"] = (
         n_limited >= 2 and m.status_code == 200 and m.json()["rate_limited_total"] == n_limited

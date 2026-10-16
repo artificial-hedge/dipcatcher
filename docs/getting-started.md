@@ -25,16 +25,15 @@ That runs `uv sync --frozen --all-groups --all-extras`. `uv.lock` is authoritati
 uv run dipcatcher doctor --config configs/research.yaml
 ```
 
-Proceed when `data_manifest` is `ok` and `live_allowed` is false for the research profile. The operations detail is in the [runbook](OPERATIONS_RUNBOOK.md).
+A fresh checkout has no `data/metadata/data_manifest.json` and no `data/metadata/research/latest.json`. `doctor` then exits 1 with `data_manifest=missing` and `research_receipt=missing`. That is the empty tree, not a broken install. `live_allowed` stays false on the research profile. A receipt that fails verification is `invalid`; fix the inputs, and do not weaken the verifier. The operations detail is in the [runbook](OPERATIONS_RUNBOOK.md).
 
 ## SYNTHETIC research smoke
 
 ```bash
-uv run dipcatcher research --config configs/research.yaml
-uv run dipcatcher verify-research
+uv run python examples/01_receipt_round_trip.py
 ```
 
-The default research config is labeled **SYNTHETIC**. The run checks that the engine, scorecard, and receipt verifier agree. It is a correctness test. It is not market evidence and it does not authorize promotion.
+Unset, `dipcatcher research` runs the full wired optional battery, which is thousands of benches. The example sets `DIPCATCHER_RESEARCH_REQUIRED_ONLY=1`, seals a **SYNTHETIC** required-family receipt, verifies it, and rejects a one-byte edit. It is a correctness test. It is not market evidence and it does not authorize promotion.
 
 Real-file and public-source workflows are separate. Read [Data source labels](DATA_SOURCE_LABELS.md) before publishing a score, and [Receipt verification](RECEIPT_VERIFICATION.md) before citing one.
 

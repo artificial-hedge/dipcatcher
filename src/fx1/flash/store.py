@@ -38,6 +38,21 @@ FILE_NAME = "entries.jsonl"
 _NO_DIRECTORY_FD = -1
 _SUPPORTS_DIRECTORY_FD = os.open in os.supports_dir_fd and os.stat in os.supports_dir_fd
 
+
+def _fchmod(fd: int, mode: int) -> None:
+    """Set an fd mode when ``os.fchmod`` exists.
+
+    Some Windows builds support directory fds and still have no ``os.fchmod``.
+    A direct call raises AttributeError on every flash write there. The mode
+    argument of ``os.open`` is ignored on Windows, so skipping leaves the
+    default ACL instead of failing the store.
+    """
+    chmod = getattr(os, "fchmod", None)
+    if chmod is None:
+        return
+    chmod(fd, mode)
+
+
 Uncertainty = Literal["low", "medium", "high"]
 
 
@@ -141,7 +156,7 @@ class FlashStore:
         flags |= getattr(os, "O_NOFOLLOW", 0)
         directory_fd = os.open(parent, flags)
         if create:
-            os.fchmod(directory_fd, 0o700)
+            _fchmod(directory_fd, 0o700)
         return directory_fd
 
     def _open_file(self, *, write: bool) -> int | None:
@@ -182,7 +197,7 @@ class FlashStore:
                 os.close(file_fd)
                 raise ValueError("flash store path must be a regular file")
             if write:
-                os.fchmod(file_fd, 0o600)
+                _fchmod(file_fd, 0o600)
             return file_fd
         finally:
             if directory_fd != _NO_DIRECTORY_FD:

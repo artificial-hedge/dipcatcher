@@ -8,8 +8,8 @@
     "baseline_corpus": {
       "modules": 10388,
       "non_qualifying_template": 7529,
-      "nonblank_lines": 470551,
-      "physical_lines": 591669,
+      "nonblank_lines": 470554,
+      "physical_lines": 591672,
       "qualifying": 2859
     },
     "families": {
@@ -20,8 +20,8 @@
     "live_tree": {
       "modules": 10388,
       "non_qualifying_template": 7529,
-      "nonblank_lines": 470551,
-      "physical_lines": 591669,
+      "nonblank_lines": 470554,
+      "physical_lines": 591672,
       "qualifying": 2859
     },
     "quarantine": {
@@ -46,7 +46,7 @@
   "full_dump": {
     "bytes": 24521779,
     "path": ".dsh-24x7/canon_qualification_audit.json",
-    "sha256": "db7964aae4cbac9efdd1c13924a21b4c32879a4ab8910bee0e116380c588515a"
+    "sha256": "bf840d1705d53d5a8dfd823a4979be74fcf423142a6bf82cc929f122ac92d15f"
   },
   "live_candidate_families": [
     "a1_homotopy",
@@ -2739,7 +2739,7 @@
     "zone_dbm",
     "zone_map"
   ],
-  "models_tree_sha256": "f60c9391d9e1c4a4f1fa3006a79c7a43c2580a28f13254a05dcd0ba1753222be",
+  "models_tree_sha256": "99b756b221a35d8df71ab843907b61913804d7d6a35fa35b948cce0fe2bb799a",
   "retired_families": [
     "a1_degrees",
     "a_infinity2",
