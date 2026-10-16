@@ -45,7 +45,7 @@
     "scripts/verify_corpus_proof.py": "cb313cd5f3878a688a89d4bf17ad0b6e4da86cf177712b653174fd41b2c674ba",
     "scripts/verify_epoch_chain.py": "d25ddbcadbb693edba4a9e4f0a6999ed90dfa9422cb14ef88dbedb0a097c6c01",
     "scripts/verify_ots_auditor.py": "b786b3e5770ef285b5ee26fca8db20a5248f9a4c8240339fa308883b53c56a24",
-    "sonar-project.properties": "b12a9ef59c07788169a8e3f9c6cab020eb46594c257bafb7235fad835c018350",
+    "sonar-project.properties": "c6545c098b789fa0779cac2224dbb1b4c61e0f7d0bb49cc4f95eaa39bbaa89ca",
     "src/fx1/harness.py": "1f4a86cd0ae7e28fdbc9a32325646d5440a3b276ca25f254e1d7a0100314350e",
     "src/fx1/interactive/concierge.py": "d615b431581bb2273770358a2604eb7db9478867c4f9c6d3d064286520263836",
     "src/fx1/interactive/superpower.py": "3a1401416c8557b6a1f9c4e998a56aa7844fc9825276bd83047fbf9c1e7bedec",
