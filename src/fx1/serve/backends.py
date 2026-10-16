@@ -1850,18 +1850,21 @@ class LocalFx1Backend(_UsageTracker):
             import ctypes
             from ctypes import wintypes
 
-            shell32 = ctypes.WinDLL("shell32", use_last_error=True)
+            # Linux typeshed omits these Windows-only ctypes members even
+            # inside this runtime-only branch.
+            ctypes_win = cast(Any, ctypes)
+            shell32 = ctypes_win.WinDLL("shell32", use_last_error=True)
             parse = shell32.CommandLineToArgvW
             parse.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(ctypes.c_int)]
             parse.restype = ctypes.POINTER(wintypes.LPWSTR)
             count = ctypes.c_int()
             parsed = parse(command, ctypes.byref(count))
             if not parsed:
-                raise OSError(ctypes.get_last_error(), "cannot parse local engine command")
+                raise OSError(ctypes_win.get_last_error(), "cannot parse local engine command")
             try:
                 template_argv = [str(parsed[index]) for index in range(count.value)]
             finally:
-                kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+                kernel32 = ctypes_win.WinDLL("kernel32", use_last_error=True)
                 free = kernel32.LocalFree
                 free.argtypes = [ctypes.c_void_p]
                 free.restype = ctypes.c_void_p

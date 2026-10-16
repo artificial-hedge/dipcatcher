@@ -38,7 +38,8 @@ def _read_only_mount(root: Path) -> bool:
     import ctypes
 
     volume = ctypes.create_unicode_buffer(32768)
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    # Linux typeshed omits WinDLL even inside this Windows-only branch.
+    kernel32 = cast(Any, ctypes).WinDLL("kernel32", use_last_error=True)
     get_path = kernel32.GetVolumePathNameW
     get_path.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
     get_path.restype = ctypes.c_int
