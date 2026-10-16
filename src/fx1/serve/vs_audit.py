@@ -2258,14 +2258,11 @@ def vs_audit_bench(
         "claim": {"results": r, "ok": ok},
         "interpretation": (
             "The /v1/vector_stores surface holds end to end: create "
-            "validates and attaches initial file_ids all-or-nothing with "
-            "no partial store behind a refusal, update replaces "
+            "validates and attaches initial file_ids all-or-nothing with no partial store behind a refusal, update replaces "
             "name/metadata wholesale, attach indexes synchronously and "
-            "lands only completed/failed records with honest "
-            "indexed_chunks/truncated/last_error, detach drops the "
+            "lands only completed/failed records with honest indexed_chunks/truncated/last_error, detach drops the "
             "membership and its chunks while the file-* record survives, "
-            "file_batches count per-file verdicts honestly and freeze "
-            "them against later detaches, cancel refuses with the "
+            "file_batches count per-file verdicts honestly and freeze them against later detaches, cancel refuses with the "
             "terminal status instead of faking a mid-flight window, "
             "search runs the deterministic lexical scorer with real "
             "filters/ranking bounds, chunking honors auto and static "

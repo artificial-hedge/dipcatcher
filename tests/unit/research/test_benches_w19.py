@@ -179,12 +179,15 @@ def test_fukasawa_iv_convergence_regimes(fukasawa_iv: dict[str, float]) -> None:
     # parameter is pushed (halving vol-of-vol, n 4->16 mean-reversion,
     # T 0.02->0.08 maturity); the eq. 53 normalization identity holds.
     blob = fukasawa_iv
-    assert blob["deterministic_vol_abs_resid"] < 1e-3
-    assert blob["small_volvol_abs_resid_a25"] < blob["small_volvol_abs_resid_a50"]
-    assert blob["small_volvol_scaled_resid_a25"] < blob["small_volvol_scaled_resid_a50"]
-    assert blob["fast_mr_scaled_resid_n16"] < blob["fast_mr_scaled_resid_n4"]
-    assert blob["short_mat_scaled_resid_t08"] < blob["short_mat_scaled_resid_t02"]
-    assert blob["normalization_gap"] < 0.05
+    # The bench prefixes every seeded score with synthetic_.
+    assert blob["synthetic_deterministic_vol_abs_resid"] < 1e-3
+    assert blob["synthetic_small_volvol_abs_resid_a25"] < blob["synthetic_small_volvol_abs_resid_a50"]
+    assert blob["synthetic_small_volvol_scaled_resid_a25"] < blob[
+        "synthetic_small_volvol_scaled_resid_a50"
+    ]
+    assert blob["synthetic_fast_mr_scaled_resid_n16"] < blob["synthetic_fast_mr_scaled_resid_n4"]
+    assert blob["synthetic_short_mat_scaled_resid_t08"] < blob["synthetic_short_mat_scaled_resid_t02"]
+    assert blob["synthetic_normalization_gap"] < 0.05
     assert blob["synthetic"] == 1.0
 
 
@@ -278,9 +281,13 @@ def test_numpy_benches_are_deterministic(
     dcp: dict[str, float],
 ) -> None:
     # Seeded from module constants, so a fresh call must reproduce the
-    # fixture bit-for-bit.
+    # fixture bit-for-bit. Wall-clock runtime is not part of that contract.
     assert bench_langevin_impact() == langevin_impact
     assert bench_event_time_flow() == event_time_flow
-    assert bench_fukasawa_iv() == fukasawa_iv
+    fresh_iv = bench_fukasawa_iv()
+    fresh_iv.pop("synthetic_runtime_seconds", None)
+    pinned_iv = dict(fukasawa_iv)
+    pinned_iv.pop("synthetic_runtime_seconds", None)
+    assert fresh_iv == pinned_iv
     assert bench_rccp() == rccp
     assert bench_dcp() == dcp
