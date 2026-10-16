@@ -221,7 +221,8 @@ def _gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
             return set()
         try:
             proc_bytes = subprocess.run(
-                ["git", "-c", "core.quotePath=false", "-C", str(root), "check-ignore", "--stdin"],
+                ["git", "-c", "core.quotePath=false", "check-ignore", "--stdin"],
+                cwd=root,
                 input=("\n".join(rels) + "\n").encode("utf-8", "surrogateescape"),
                 capture_output=True,
                 timeout=30,
@@ -238,7 +239,8 @@ def _gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
         }
     try:
         proc_text = subprocess.run(
-            ["git", "-C", str(root), "check-ignore", "-z", "--stdin"],
+            ["git", "check-ignore", "-z", "--stdin"],
+            cwd=root,
             input="\0".join(rels) + "\0",
             capture_output=True,
             text=True,

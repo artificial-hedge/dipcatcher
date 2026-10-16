@@ -108,8 +108,32 @@ def verify_tag_version(ref: str, root: Path) -> str:
     return package_version
 
 
+_API_SEGMENT = re.compile(r"[A-Za-z0-9_.-]+\Z")
+
+
+def _repo_parts(repo: str) -> tuple[str, str]:
+    parts = repo.split("/")
+    if len(parts) != 2 or any(
+        part in {".", ".."} or _API_SEGMENT.fullmatch(part) is None for part in parts
+    ):
+        raise ReleaseGateError("GITHUB_REPOSITORY must be owner/repo")
+    return parts[0], parts[1]
+
+
 def _api(repo: str, path: str, token: str) -> dict[str, Any]:
-    url = f"https://api.github.com/repos/{repo}/{path}"
+    owner, name = _repo_parts(repo)
+    route, _separator, query = path.partition("?")
+    route_parts = route.split("/")
+    if (
+        any(part in {"", ".", ".."} or _API_SEGMENT.fullmatch(part) is None for part in route_parts)
+        or "#" in query
+        or any(ord(char) < 32 for char in query)
+    ):
+        raise ReleaseGateError("GitHub API path must be repository-relative")
+    encoded_path = "/repos/" + "/".join(
+        urllib.parse.quote(part, safe="") for part in (owner, name, *route_parts)
+    )
+    url = urllib.parse.urlunsplit(("https", "api.github.com", encoded_path, query, ""))
     request = urllib.request.Request(
         url,
         headers={
@@ -181,8 +205,7 @@ def _jobs(repo: str, token: str, workflow: str, run_id: int) -> list[dict[str, A
 def verify_release(repo: str, sha: str, token: str) -> list[str]:
     """Return audit references if the tag has all required same-SHA evidence."""
 
-    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
-        raise ReleaseGateError("GITHUB_REPOSITORY must be owner/repo")
+    _repo_parts(repo)
     if not re.fullmatch(r"[0-9a-f]{40}", sha):
         raise ReleaseGateError("GITHUB_SHA must be a commit SHA")
     if not token:

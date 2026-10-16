@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import parse_qs
+from urllib.request import Request
 
 import pytest
 import yaml
@@ -83,6 +85,54 @@ def test_main_checks_tag_before_any_api_call(monkeypatch: pytest.MonkeyPatch) ->
         lambda *_args: pytest.fail("remote evidence checked before tag version"),
     )
     assert gate.main() == 1
+
+
+@pytest.mark.parametrize("repo", ["../dipcatcher", "owner/..", "./repo", "owner/."])
+def test_api_rejects_repository_dot_segments_before_request(
+    monkeypatch: pytest.MonkeyPatch, repo: str
+) -> None:
+    monkeypatch.setattr(
+        gate.urllib.request,
+        "urlopen",
+        lambda *_args, **_kwargs: pytest.fail("invalid repository reached the network"),
+    )
+    with pytest.raises(gate.ReleaseGateError, match="GITHUB_REPOSITORY"):
+        gate._api(repo, f"compare/{_SHA}...main", "token")
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "../compare",
+        "actions/../runs",
+        "/actions/runs",
+        "actions/%2e%2e/runs",
+        "actions/runs?x=1#frag",
+    ],
+)
+def test_api_rejects_traversal_in_route_before_request(
+    monkeypatch: pytest.MonkeyPatch, path: str
+) -> None:
+    monkeypatch.setattr(
+        gate.urllib.request,
+        "urlopen",
+        lambda *_args, **_kwargs: pytest.fail("invalid route reached the network"),
+    )
+    with pytest.raises(gate.ReleaseGateError, match="repository-relative"):
+        gate._api(_REPO, path, "token")
+
+
+def test_api_calls_only_fixed_github_origin(monkeypatch: pytest.MonkeyPatch) -> None:
+    urls: list[str] = []
+
+    def fake_urlopen(request: Request, *, timeout: int) -> BytesIO:
+        assert timeout == 30
+        urls.append(request.full_url)
+        return BytesIO(b'{"status":"ahead"}')
+
+    monkeypatch.setattr(gate.urllib.request, "urlopen", fake_urlopen)
+    assert gate._api(_REPO, f"compare/{_SHA}...main", "token") == {"status": "ahead"}
+    assert urls == [f"https://api.github.com/repos/{_REPO}/compare/{_SHA}...main"]
 
 
 def _matrix_job_names() -> set[str]:
