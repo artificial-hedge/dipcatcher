@@ -131,9 +131,10 @@ here means three research/simulation surfaces:
    the image and waits for its healthcheck.
 2. **fx-1 harness service.** `uv run fx1 harness serve --host … --port …`;
    launch, `--state-dir` durability, managed keys, drain, and the
-   failure-mode table live in [FX1_DEPLOY.md](FX1_DEPLOY.md). Release
-   artifacts install through the hardened `install.sh`; the **recommended
-   release practice is the `FXI_WHEEL_SHA256` checksum pin** (verified before
+   failure-mode table live in [FX1_DEPLOY.md](FX1_DEPLOY.md). No GitHub
+   Release wheel is published. `install.sh` installs a wheel only when you
+   pass `--wheel` or `FXI_INSTALL_URL`; the **recommended release practice
+   is the `FXI_WHEEL_SHA256` checksum pin** (verified before
    pip install, fail-closed on mismatch, warn on unpinned downloads) — see
    [FX1_DEPLOY.md](FX1_DEPLOY.md) "Installing release artifacts".
 3. **Windows remote research/SOTA fleet** (`D:\dipcatcher`) — see

@@ -339,6 +339,11 @@ Exit `0` remains the deploy criterion.
 
 ## Installing release artifacts (fxi installer)
 
+No GitHub Release wheel is published (`git tag -l 'v*'` is empty, and
+`release.yml` does not create a Release). This checkout installs with
+`uv sync --frozen --all-groups --all-extras`. `install.sh` installs a wheel
+only when you pass `--wheel` or `FXI_INSTALL_URL`.
+
 Host provisioning goes through the hardened `install.sh` (POSIX sh, safe to
 pipe: `--help` is a self-contained heredoc because under `curl | sh` the
 script body is not re-readable from `$0`):

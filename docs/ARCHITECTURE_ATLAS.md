@@ -792,7 +792,7 @@ sequenceDiagram
 | `quant_fund.audit` | 12 |
 | `quant_fund.backtest` | 16 |
 | `quant_fund.calendars` | 8 |
-| `quant_fund.cli` | 20 |
+| `quant_fund.cli` | 21 |
 | `quant_fund.combination` | 18 |
 | `quant_fund.compute` | 8 |
 | `quant_fund.config` | 7 |
@@ -842,7 +842,7 @@ sequenceDiagram
 | `quant_fund.utils` | 10 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13426**
+- Modules scanned: **13427**
 - Packages: **94**
 - Cross-package import edges: **398**
 

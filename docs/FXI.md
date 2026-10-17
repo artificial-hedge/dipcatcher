@@ -68,6 +68,11 @@ disabled for non-TTY output, when `NO_COLOR` is set, or when
 
 ### curl
 
+There is no `v*` release tag, and `release.yml` does not create a GitHub
+Release, so this curl path has no wheel to install. Install this checkout
+with `uv sync --frozen --all-groups --all-extras`. The block below is the
+installer contract for a wheel you supply with `--wheel` or `FXI_INSTALL_URL`.
+
 ```sh
 curl -fsSL https://raw.githubusercontent.com/artificial-hedge/dipcatcher/main/install.sh | sh
 ```

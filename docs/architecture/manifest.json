@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13426,
+  "module_count": 13427,
   "module_edges": [
     {
       "dst": "fx1",
@@ -4769,6 +4769,10 @@
     {
       "dst": "quant_fund.cli.main",
       "src": "quant_fund.cli"
+    },
+    {
+      "dst": "quant_fund.cli.main",
+      "src": "quant_fund.cli.__main__"
     },
     {
       "dst": "quant_fund.cli.benchmark_cmds",
@@ -61984,6 +61988,7 @@
     "quant_fund.calendars.sessions",
     "quant_fund.calendars.us_equities",
     "quant_fund.cli",
+    "quant_fund.cli.__main__",
     "quant_fund.cli._app",
     "quant_fund.cli.app",
     "quant_fund.cli.audit_cmds",
@@ -75884,7 +75889,7 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 44,
+      "imports": 45,
       "src": "quant_fund.cli"
     },
     {

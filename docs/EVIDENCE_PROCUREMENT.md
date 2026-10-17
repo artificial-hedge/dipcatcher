@@ -171,9 +171,9 @@ admitted by the frozen referee. See
 ## 5. Condition 3 — non-synthetic forward/shadow record
 
 This is the one condition that is **collected over time** rather than bought.
-It cannot be shortcut: the `forward_2026H2` window (Section 0) must be frozen
-and externally timestamped **before** it runs, then collected for at least the
-predeclared number of eligible paired sessions (see
+It cannot be shortcut: the `forward_2026H2` window (Section 0) was frozen and
+RFC 3161-anchored on 2026-10-08, before any close. It still has to be collected
+for at least the predeclared number of eligible paired sessions (see
 [FORWARD_SHADOW_POWER.md](FORWARD_SHADOW_POWER.md) — 1,400 eligible paired
 sessions at the +5 bps/day planning effect). The 2025 window is **SPENT** and
 cannot serve as this record.
@@ -190,8 +190,8 @@ cannot serve as this record.
 3. **Authorize** a broker account + API (Section 2a) for real order/fill
    reconciliation. Condition 2 stays blocked until then.
 4. **Measure** the target venue (Section 3) with dated, sourced numbers.
-5. **Freeze and externally timestamp** the `forward_2026H2` pre-registration
-   (Section 0) before 2026-07-01, then collect the forward record honestly.
+5. **Collect** the `forward_2026H2` record. Its pre-registration was RFC
+   3161-anchored on 2026-10-08 (Section 0); 2026-07-01 is only the span label.
 6. **Only then** compose a signed promotion receipt + explicit live
    authorization (Section 4).
 
