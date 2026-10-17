@@ -110,7 +110,6 @@ src/fx1/serve/files_audit.py:_probe_concurrency 10
 src/fx1/serve/finetune.py:FTJobStore.__init__ 16
 src/fx1/serve/finetune.py:default_ft_runner 23
 src/fx1/serve/finetune.py:default_ft_runner._runner 22
-src/fx1/serve/jobs_audit.py:_wait_stream_probes 11
 src/fx1/serve/journal_audit.py:journal_audit 13
 src/fx1/serve/keys.py:ApiKeyStore.update 12
 src/fx1/serve/models_audit.py:_probe_concurrency 18
