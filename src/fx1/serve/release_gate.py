@@ -108,6 +108,19 @@ def _no_link_ancestors(path: Path) -> bool:
     return True
 
 
+def _canonical_public_path(root: Path) -> Path | None:
+    """Resolve one path without erasing a link followed by ``..``."""
+    if ".." in root.parts:
+        return None
+    try:
+        candidate = Path(os.path.abspath(root))
+        if not _no_link_ancestors(candidate):
+            return None
+        return candidate.resolve(strict=True)
+    except (OSError, RuntimeError, ValueError):
+        return None
+
+
 def _independent_public_eval_verified(_root: Path) -> bool:
     """Refuse public models until measured, preregistered evidence is verified."""
     if not PUBLIC_EVAL_TRUST_REGISTRY:
@@ -123,10 +136,9 @@ def _public_release_root(root: Path) -> Path | None:
     """Resolve only a nonredirected checkpoint on a read-only volume."""
     if os.environ.get(IMMUTABLE_IMAGE_ENV) != "1":
         return None
-    candidate = Path(os.path.abspath(root))
-    if not _no_link_ancestors(candidate):
+    candidate = _canonical_public_path(root)
+    if candidate is None:
         return None
-    candidate = candidate.resolve(strict=True)
     return candidate if _read_only_mount(candidate) else None
 
 
@@ -181,16 +193,21 @@ def _matches_public_checkpoint_pin(root: Path, alias: str) -> bool:
     configured = os.environ.get(public_checkpoint_env(alias))
     if not configured:
         return False
-    try:
-        requested = Path(os.path.abspath(root))
-        pinned = Path(os.path.abspath(configured))
-        return (
-            _no_link_ancestors(requested)
-            and _no_link_ancestors(pinned)
-            and requested.resolve(strict=True) == pinned.resolve(strict=True)
+    requested = _canonical_public_path(root)
+    pinned = _canonical_public_path(Path(configured))
+    return requested is not None and requested == pinned
+
+
+def _pinned_public_path(checkpoint_dir: str | Path) -> Path:
+    """Validate both the request path and an operator pin before reading a card."""
+    root = _canonical_public_path(Path(checkpoint_dir))
+    if root is None:
+        raise BackendNotConfiguredError("public local_fx1 requires a nonredirected checkpoint path")
+    if not any(_matches_public_checkpoint_pin(root, model_id) for model_id in PUBLIC_MODEL_IDS):
+        raise BackendNotConfiguredError(
+            "public local_fx1 requires the checkpoint bound by an operator public alias"
         )
-    except (OSError, RuntimeError, ValueError):
-        return False
+    return root
 
 
 def _trusted_public_serve_url(url: str) -> bool:
@@ -248,12 +265,13 @@ def configured_public_models() -> tuple[str, ...]:
     for alias in PUBLIC_MODEL_IDS:
         path = os.environ.get(public_checkpoint_env(alias))
         url = os.environ.get(public_serve_url_env(alias))
+        root = _canonical_public_path(Path(path)) if path else None
         if (
-            path
+            root is not None
             and url
             and _trusted_public_serve_url(url)
-            and _public_checkpoint_alias(Path(path)) == alias
-            and _verified_public_release(Path(path))
+            and _public_checkpoint_alias(root) == alias
+            and _verified_public_release(root)
         ):
             available.append(alias)
     return tuple(available)
@@ -309,7 +327,7 @@ def _public_local_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     checkpoint_dir = kwargs.get("checkpoint_dir")
     if not isinstance(checkpoint_dir, (str, Path)) or not checkpoint_dir:
         raise BackendNotConfiguredError("public local_fx1 requires a configured checkpoint_dir")
-    root = Path(checkpoint_dir)
+    root = _pinned_public_path(checkpoint_dir)
     alias = _public_checkpoint_alias(root)
     if alias is None:
         raise BackendNotConfiguredError(
@@ -317,7 +335,7 @@ def _public_local_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
             "model card binding fx1 or fx1-lite, a public-serving license "
             "tier, and a weights SHA-256 pin"
         )
-    if not _matches_public_checkpoint_pin(root, alias):
+    if not _matches_public_checkpoint_pin(Path(checkpoint_dir), alias):
         raise BackendNotConfiguredError(
             f"public {alias} requires the checkpoint bound by {public_checkpoint_env(alias)}"
         )
@@ -345,6 +363,7 @@ def _public_local_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     # K3-sized artifacts a second time in its constructor.
     return {
         **kwargs,
+        "checkpoint_dir": str(root),
         "model": alias,
         "serve_url": serve_url,
         "serve_cmd": "",

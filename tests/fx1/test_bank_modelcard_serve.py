@@ -3,6 +3,7 @@
 import hashlib
 import io
 import json
+import os
 import shutil
 import threading
 import urllib.error
@@ -205,7 +206,9 @@ def test_public_serve_refuses_fixture_test_opt_in() -> None:
     assert "test fixture opt-in may bind only to loopback" in result.output
 
 
-def test_public_resolver_requires_signed_local_weights(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_public_resolver_requires_signed_local_weights(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     from fx1.serve import release_gate
     from fx1.serve.backends import BackendNotConfiguredError
     from fx1.serve.release_gate import public_release_resolver
@@ -217,6 +220,8 @@ def test_public_resolver_requires_signed_local_weights(monkeypatch: pytest.Monke
         return object()
 
     resolve = public_release_resolver(delegate)
+    checkpoint = tmp_path / "signed"
+    checkpoint.mkdir()
     monkeypatch.delenv("FX1_RELEASE_VERIFY_KEY", raising=False)
     resolve("hosted_k3", model="fx1")
     assert calls == [("hosted_k3", {"model": "fx1"})]
@@ -224,18 +229,18 @@ def test_public_resolver_requires_signed_local_weights(monkeypatch: pytest.Monke
         resolve("local_fx1", checkpoint_dir="somewhere")
     assert len(calls) == 1
     monkeypatch.setenv("FX1_RELEASE_VERIFY_KEY", "a" * 64)
-    monkeypatch.setenv("FX1_CHECKPOINT_DIR_FX1", "somewhere")
+    monkeypatch.setenv("FX1_CHECKPOINT_DIR_FX1", str(checkpoint))
     monkeypatch.setenv("FX1_LOCAL_SERVE_URL_FX1", "http://127.0.0.1:8123/v1")
     monkeypatch.setattr(release_gate, "_public_checkpoint_alias", lambda root: "fx1")
     monkeypatch.setattr(release_gate, "_verified_public_release", lambda root: True)
     monkeypatch.setattr(release_gate, "_matches_public_checkpoint_pin", lambda root, alias: True)
     with pytest.raises(BackendNotConfiguredError, match="configured checkpoint_dir"):
         resolve("local_fx1")
-    resolve("local_fx1", checkpoint_dir="somewhere", model="fx1", require_signature=False)
+    resolve("local_fx1", checkpoint_dir=checkpoint, model="fx1", require_signature=False)
     assert calls[-1] == (
         "local_fx1",
         {
-            "checkpoint_dir": "somewhere",
+            "checkpoint_dir": str(checkpoint.resolve()),
             "model": "fx1",
             "serve_url": "http://127.0.0.1:8123/v1",
             "serve_cmd": "",
@@ -243,10 +248,10 @@ def test_public_resolver_requires_signed_local_weights(monkeypatch: pytest.Monke
         },
     )
     with pytest.raises(BackendNotConfiguredError, match="binds 'fx1'"):
-        resolve("local_fx1", checkpoint_dir="somewhere", model="fx1-lite")
+        resolve("local_fx1", checkpoint_dir=checkpoint, model="fx1-lite")
     monkeypatch.setenv("FX1_ALLOW_TEST_FIXTURE", "1")
     with pytest.raises(BackendNotConfiguredError, match="refuses FX1_ALLOW_TEST_FIXTURE"):
-        resolve("local_fx1", checkpoint_dir="somewhere")
+        resolve("local_fx1", checkpoint_dir=checkpoint)
 
 
 def test_module_cli_enables_public_policy_on_nonloopback(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -694,6 +699,70 @@ def test_public_eval_inventory_drift_during_verification_is_refused(
     monkeypatch.setattr(release_gate, "_independent_public_eval_verified", change_eval_input)
     assert not release_gate._verified_public_release(tmp_path)
     assert calls == ["release signature", "evaluation"]
+
+
+def test_public_alias_rejects_parent_path_before_card_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fx1.serve import release_gate
+    from fx1.serve.release_gate import configured_public_models, public_release_resolver
+
+    checkpoint = tmp_path / "signed"
+    checkpoint.mkdir()
+    target = tmp_path / "outside"
+    target.mkdir()
+    link = tmp_path / "link"
+    try:
+        link.symlink_to(target, target_is_directory=True)
+    except (NotImplementedError, OSError):
+        # Parent traversal is rejected lexically on hosts without symlink rights too.
+        link.mkdir()
+    unsafe = link / ".." / checkpoint.name
+    monkeypatch.setenv("FX1_RELEASE_VERIFY_KEY", "a" * 64)
+    monkeypatch.setenv(release_gate.public_checkpoint_env("fx1"), str(unsafe))
+    monkeypatch.setenv(release_gate.public_serve_url_env("fx1"), "http://127.0.0.1:8123/v1")
+    monkeypatch.setattr(
+        release_gate,
+        "_public_checkpoint_alias",
+        lambda root: pytest.fail("rejected path must not read its model card"),
+    )
+    monkeypatch.setattr(release_gate, "_verified_public_release", lambda root: True)
+
+    assert configured_public_models() == ()
+    with pytest.raises(BackendNotConfiguredError, match="nonredirected checkpoint path"):
+        public_release_resolver(lambda kind, **kwargs: object())(
+            "local_fx1", checkpoint_dir=unsafe, model="fx1"
+        )
+    with pytest.raises(BackendNotConfiguredError, match="bound by an operator public alias"):
+        public_release_resolver(lambda kind, **kwargs: object())(
+            "local_fx1", checkpoint_dir=checkpoint, model="fx1"
+        )
+
+
+def test_public_alias_passes_canonical_checkpoint_to_backend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fx1.serve import release_gate
+    from fx1.serve.release_gate import public_release_resolver
+
+    checkpoint = tmp_path / "signed"
+    checkpoint.mkdir()
+    supplied = str(checkpoint) + os.sep
+    monkeypatch.setenv("FX1_RELEASE_VERIFY_KEY", "a" * 64)
+    monkeypatch.setenv(release_gate.public_checkpoint_env("fx1"), str(checkpoint))
+    monkeypatch.setenv(release_gate.public_serve_url_env("fx1"), "http://127.0.0.1:8123/v1")
+    monkeypatch.setattr(release_gate, "_public_checkpoint_alias", lambda root: "fx1")
+    monkeypatch.setattr(release_gate, "_verified_public_release", lambda root: True)
+    seen: list[dict[str, object]] = []
+
+    def delegate(kind: str, **kwargs: object) -> object:
+        assert kind == "local_fx1"
+        seen.append(kwargs)
+        return object()
+
+    public_release_resolver(delegate)("local_fx1", checkpoint_dir=supplied, model="fx1")
+    assert supplied != str(checkpoint.resolve())
+    assert seen[0]["checkpoint_dir"] == str(checkpoint.resolve())
 
 
 def test_signed_ship_ineligible_alias_is_not_advertised(

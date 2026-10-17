@@ -158,13 +158,14 @@ measurement from the target venue, reviewed independently. Modeled values
 
 | # | Requirement | Owner | Pass criterion |
 |---|---|---|---|
-| 5.1 | A **signed promotion receipt** whose immutable verifier passes | Quant + Independent reviewer | `dipcatcher verify-research` accepts it; the hash sidecar verifies |
+| 5.1 | A **signed live promotion receipt** whose immutable verifier passes | Quant + Independent reviewer | A dedicated live verifier binds accepted conditions 1–4, the exact evidence hashes, and the named written capital authorization; this schema and verifier still need implementation. Existing `promotion_receipt.v1` and `dipcatcher verify-research` are research-only and cannot pass this row. |
 | 5.2 | **Explicit, written live authorization** naming who authorized live capital | Compliance + Principal | Signed authorization on file, distinct from the promotion receipt |
 
 Condition 5 is composed only after conditions 1–4 exist and a genuine
 non-synthetic forward/shadow record (condition 3) has been collected and
 admitted by the frozen referee. See
 [FORWARD_SHADOW_POWER.md](FORWARD_SHADOW_POWER.md) for the admission rule.
+The current paper `promotion_dry_run` always sets `would_promote_live=false`.
 
 ---
 
@@ -177,6 +178,12 @@ predeclared number of eligible paired sessions (see
 [FORWARD_SHADOW_POWER.md](FORWARD_SHADOW_POWER.md) — 1,400 eligible paired
 sessions at the +5 bps/day planning effect). The 2025 window is **SPENT** and
 cannot serve as this record.
+
+The canonical paper close validator enforces `available_time == event_time`.
+If the approved licensed source releases a close later than its event time,
+the frozen zero-delay decision protocol cannot accept it. Establish a new
+decision cutoff, pre-register it, and anchor it externally **before** collecting
+against that source; do not alter the existing sealed protocol after the fact.
 
 ---
 
