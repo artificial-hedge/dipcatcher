@@ -1277,76 +1277,76 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         else:
             os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_webhook_env
 
-    # --- rate limiting: per-client-host token bucket ----------------------------
     out["rate_limit_default_off"] = all(client.get("/health").status_code == 200 for _ in range(8))
     try:
         api_mod.create_app(rate_limit_rps=-1)
         out["rate_limit_negative_rejected"] = False
     except ValueError:
         out["rate_limit_negative_rejected"] = True
-    limited = api_mod.create_app(
-        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
-        backend_resolver=lambda *a, **k: _CleanBackend(),
-        rate_limit_rps=5.0,
-    )
-    lc = _TC2(limited)
-    hits = [lc.get("/harness/version").status_code for _ in range(7)]
-    denied = lc.get("/harness/version")
-    out["rate_limit_429"] = hits[:5] == [200] * 5 and 429 in hits[5:] + [denied.status_code]
-    out["rate_limit_envelope"] = (
-        denied.status_code == 429
-        and denied.json()["code"] == "too_many_requests"
-        and denied.headers.get("retry-after") is not None
-        and int(denied.headers["retry-after"]) >= 1
-    )
-    time.sleep(0.3)
-    out["rate_limit_recovers"] = lc.get("/harness/version").status_code == 200
-    # X-RateLimit-* headers on every response while the limiter is active
-    limited3 = api_mod.create_app(
-        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
-        backend_resolver=lambda *a, **k: _CleanBackend(),
-        rate_limit_rps=10.0,
-    )
-    lc3 = _TC2(limited3)
-    spec_limited = lc3.get("/openapi.json").json()
-    first = lc3.get("/harness/version")
-    second = lc3.get("/harness/version")
-    out["rate_limit_headers_on_success"] = (
-        first.status_code == 200
-        and first.headers.get("x-ratelimit-limit") == "10"
-        and first.headers.get("x-ratelimit-remaining") == "8"
-        and int(first.headers["x-ratelimit-reset"]) >= 0
-        and int(second.headers["x-ratelimit-remaining"]) == 7
-    )
-    while lc3.get("/harness/version").status_code == 200:
-        pass
-    denied3 = lc3.get("/harness/version")
-    out["rate_limit_headers_on_429"] = (
-        denied3.status_code == 429
-        and denied3.headers.get("x-ratelimit-limit") == "10"
-        and denied3.headers.get("x-ratelimit-remaining") == "0"
-        and int(denied3.headers["x-ratelimit-reset"]) >= 1
-    )
-    out["rate_limit_headers_absent_when_off"] = (
-        "x-ratelimit-limit" not in client.get("/health").headers
-    )
-    # public paths are exempt: a health probe must not consume the budget —
-    # with a 1 rps bucket, /version takes the only token, /health still 200s
-    # (no bucket touch, no limiter headers), and the next /version 429s.
-    lim_pub = api_mod.create_app(
-        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
-        backend_resolver=lambda *a, **k: _CleanBackend(),
-        rate_limit_rps=1.0,
-    )
-    lp = _TC2(lim_pub)
-    lp.get("/harness/version")
-    h_exempt = lp.get("/health")
-    v_after = lp.get("/harness/version")
-    out["rate_limit_public_path_exempt"] = (
-        h_exempt.status_code == 200
-        and "x-ratelimit-limit" not in h_exempt.headers
-        and v_after.status_code == 429
-    )
+    _mono, _box = time.monotonic, [time.monotonic()]
+    time.monotonic = lambda: _box[0]
+    try:
+        limited = api_mod.create_app(
+            harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+            backend_resolver=lambda *a, **k: _CleanBackend(),
+            rate_limit_rps=5.0,
+        )
+        lc = _TC2(limited)
+        hits = [lc.get("/harness/version").status_code for _ in range(7)]
+        denied = lc.get("/harness/version")
+        out["rate_limit_429"] = hits[:5] == [200] * 5 and 429 in hits[5:] + [denied.status_code]
+        out["rate_limit_envelope"] = (
+            denied.status_code == 429
+            and denied.json()["code"] == "too_many_requests"
+            and denied.headers.get("retry-after") is not None
+            and int(denied.headers["retry-after"]) >= 1
+        )
+        _box[0] += 0.3
+        out["rate_limit_recovers"] = lc.get("/harness/version").status_code == 200
+        limited3 = api_mod.create_app(
+            harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+            backend_resolver=lambda *a, **k: _CleanBackend(),
+            rate_limit_rps=10.0,
+        )
+        lc3 = _TC2(limited3)
+        spec_limited = lc3.get("/openapi.json").json()
+        first = lc3.get("/harness/version")
+        second = lc3.get("/harness/version")
+        out["rate_limit_headers_on_success"] = (
+            first.status_code == 200
+            and first.headers.get("x-ratelimit-limit") == "10"
+            and first.headers.get("x-ratelimit-remaining") == "8"
+            and int(first.headers["x-ratelimit-reset"]) >= 0
+            and int(second.headers["x-ratelimit-remaining"]) == 7
+        )
+        while lc3.get("/harness/version").status_code == 200:
+            pass
+        denied3 = lc3.get("/harness/version")
+        out["rate_limit_headers_on_429"] = (
+            denied3.status_code == 429
+            and denied3.headers.get("x-ratelimit-limit") == "10"
+            and denied3.headers.get("x-ratelimit-remaining") == "0"
+            and int(denied3.headers["x-ratelimit-reset"]) >= 1
+        )
+        out["rate_limit_headers_absent_when_off"] = (
+            "x-ratelimit-limit" not in client.get("/health").headers
+        )
+        lim_pub = api_mod.create_app(
+            harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+            backend_resolver=lambda *a, **k: _CleanBackend(),
+            rate_limit_rps=1.0,
+        )
+        lp = _TC2(lim_pub)
+        lp.get("/harness/version")
+        h_exempt = lp.get("/health")
+        v_after = lp.get("/harness/version")
+        out["rate_limit_public_path_exempt"] = (
+            h_exempt.status_code == 200
+            and "x-ratelimit-limit" not in h_exempt.headers
+            and v_after.status_code == 429
+        )
+    finally:
+        time.monotonic = _mono
     # the spec declares the headers the middleware sets — generated clients
     # see them typed instead of having to know
     spec_main = client.get("/openapi.json").json()

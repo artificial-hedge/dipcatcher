@@ -15,8 +15,9 @@ third-party dependency) and emits deterministic Mermaid artifacts:
 
 ``--check`` regenerates everything in memory and exits 1 when any committed
 artifact (``.mmd``, ``manifest.json``, or an embedded atlas block) is stale.
-Determinism contract: every emitted collection is sorted, so byte-for-byte
-comparison is stable across runs and platforms.
+Determinism contract: every emitted collection is sorted, files are written
+with LF newlines, and gitignored untracked sources are not modules.
+A local ``src/src`` nest must not change the graph a clean checkout scans.
 
 Curated diagrams (data flow, paper loop) declare every displayed node as an
 anchor key. Renderers print the symbol stored under that key, and
@@ -31,6 +32,7 @@ import argparse
 import ast
 import json
 import re
+import subprocess
 import sys
 from collections import Counter
 from dataclasses import dataclass
@@ -54,12 +56,48 @@ def repo_root() -> Path:
 # ---------------------------------------------------------------------------
 
 
+def _gitignored_relpaths(root: Path, rels: list[str]) -> set[str]:
+    """Repo-relative paths ``git check-ignore`` drops.
+
+    Tracked files are never ignored. Outside a worktree, or when git is
+    unavailable, nothing is ignored — fixture trees stay a directory listing.
+    Names are POSIX even when git prints backslashes.
+    """
+    if not rels:
+        return set()
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(root), "check-ignore", "-z", "--stdin"],
+            input="\0".join(rels) + "\0",
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return set()
+    # 0 = some ignored, 1 = none, anything else = not a worktree.
+    if proc.returncode not in (0, 1):
+        return set()
+    return {name.replace("\\", "/") for name in proc.stdout.split("\0") if name}
+
+
 def iter_source_modules(src: Path) -> list[tuple[str, Path, bool]]:
-    """Return sorted ``(dotted_module, repo-relative path, is_package)``."""
+    """Return sorted ``(dotted_module, path, is_package)``.
+
+    ``src`` is ``<repo>/src``. Gitignored untracked files under it are not
+    modules: a local ``src/src`` nest must not invent ``src.quant_fund.*``
+    nodes that a clean checkout does not have.
+    """
+    root = src.parent
+    paths = sorted(src.rglob("*.py"))
+    rels = [path.relative_to(root).as_posix() for path in paths]
+    ignored = _gitignored_relpaths(root, rels)
     out: list[tuple[str, Path, bool]] = []
-    for path in sorted(src.rglob("*.py")):
-        rel = path.relative_to(src).with_suffix("")
-        parts = list(rel.parts)
+    for path, rel in zip(paths, rels, strict=True):
+        if rel in ignored:
+            continue
+        module_rel = path.relative_to(src).with_suffix("")
+        parts = list(module_rel.parts)
         is_package = parts[-1] == "__init__"
         if is_package:
             parts = parts[:-1]
@@ -638,12 +676,12 @@ def write_all(root: Path) -> list[str]:
     for rel, content in artifacts.items():
         path = root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
+        path.write_text(content, encoding="utf-8", newline="\n")
         written.append(rel)
     atlas = root / ATLAS_DOC
     if atlas.is_file():
         text = splice_blocks(atlas.read_text(encoding="utf-8"), generated_blocks(artifacts))
-        atlas.write_text(text, encoding="utf-8")
+        atlas.write_text(text, encoding="utf-8", newline="\n")
         written.append(_rel(ATLAS_DOC))
     return written
 

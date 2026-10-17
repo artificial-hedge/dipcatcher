@@ -106,6 +106,26 @@ def test_module_addition_marks_manifest_stale(tmp_path, monkeypatch) -> None:
     assert "docs/architecture/manifest.json" in gen.stale_artifacts(repo)
 
 
+def test_gitignored_nested_source_is_not_scanned(tmp_path, monkeypatch) -> None:
+    """A gitignored ``src/src`` nest must not invent modules a clean tree lacks."""
+    repo = _make_repo(tmp_path)
+    _without_curated(monkeypatch)
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True, capture_output=True)
+    (repo / ".gitignore").write_text("/src/src/\n", encoding="utf-8", newline="\n")
+    ghost = repo / "src" / "src" / "quant_fund" / "ghost.py"
+    ghost.parent.mkdir(parents=True)
+    ghost.write_text("from quant_fund.pkg import a\n", encoding="utf-8", newline="\n")
+    modules, _edges, module_edges = gen.collect_graph(repo)
+    assert "src.quant_fund.ghost" not in modules
+    assert all(not name.startswith("src.") for name in modules)
+    assert all("ghost" not in importer for importer, _imported in module_edges)
+
+    visible = repo / "src" / "quant_fund" / "pkg" / "visible.py"
+    visible.write_text("Z = 1\n", encoding="utf-8", newline="\n")
+    modules_after, _, _ = gen.collect_graph(repo)
+    assert "quant_fund.pkg.visible" in modules_after
+
+
 def test_missing_anchor_fails_closed(tmp_path, monkeypatch) -> None:
     repo = _make_repo(tmp_path)
     monkeypatch.setattr(gen, "ANCHORS", {"ghost": ("src/quant_fund/pkg/b.py", "does_not_exist")})

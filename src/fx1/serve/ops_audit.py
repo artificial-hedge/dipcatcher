@@ -84,6 +84,7 @@ import os
 import re
 import tempfile
 import threading
+import time
 from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
@@ -1426,10 +1427,16 @@ def _envelope_probes() -> dict[str, Any]:
         and _enveloped(scope_refused)
         and scope_refused.json()["code"] == "insufficient_scope"
     )
-    # 429 from the global limiter lands in the same envelope
+    # 429 from the global limiter lands in the same envelope.
+    # Capacity is 3. A slow client refills a token per call, so pin the clock.
     limited, _ = _client(rate_limit_rps=3.0)
-    codes = [limited.get("/ready", headers=h).status_code for _ in range(8)]
-    last = limited.get("/ready", headers=h)
+    _mono, _box = time.monotonic, [time.monotonic()]
+    time.monotonic = lambda: _box[0]
+    try:
+        codes = [limited.get("/ready", headers=h).status_code for _ in range(8)]
+        last = limited.get("/ready", headers=h)
+    finally:
+        time.monotonic = _mono
     out["limiter_429_enveloped"] = (
         429 in codes and _enveloped(last) and last.json()["code"] == "too_many_requests"
     )

@@ -2823,6 +2823,10 @@
       "src": "fx1.serve.auth_audit"
     },
     {
+      "dst": "fx1.serve.quota2_audit",
+      "src": "fx1.serve.auth_audit"
+    },
+    {
       "dst": "quant_fund.utils.hashing",
       "src": "fx1.serve.auth_audit"
     },
@@ -3640,6 +3644,10 @@
     },
     {
       "dst": "fx1.serve.keys",
+      "src": "fx1.serve.quota_audit"
+    },
+    {
+      "dst": "fx1.serve.quota2_audit",
       "src": "fx1.serve.quota_audit"
     },
     {
@@ -75631,7 +75639,7 @@
     },
     {
       "dst": "fx1.serve",
-      "imports": 180,
+      "imports": 182,
       "src": "fx1.serve"
     },
     {
