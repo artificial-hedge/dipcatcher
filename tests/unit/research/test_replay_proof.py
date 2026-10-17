@@ -265,7 +265,7 @@ def test_committed_serial_watch_lane_replays(tmp_path: Path) -> None:
 
     The receipt and its committed PIT fixture are mirrored into a scratch
     root so the replayed ``dipcatcher`` argv writes nowhere near the real
-    receipts dir; argv resolves to ``sys.executable -m quant_fund.cli.main``.
+    receipts dir; argv resolves to ``sys.executable -m quant_fund.cli``.
     """
     if not DECLARED_RECEIPT.is_file():
         pytest.skip("declared serial_watch receipt not committed on this branch")
@@ -342,21 +342,19 @@ def test_committed_lane_replays(tmp_path: Path, declared: Path) -> None:
     receipt = _write_receipt(tmp_path / "receipts", source, name=declared.name)
 
     body = run_replay(receipt, root=tmp_path, timeout_s=180.0)
-    if body["all_match"] is not True:
-        # One clean retry — the coverage-floors keyword sweep has seen
-        # intermittent artifact-digest misses on capacity/rankic/vol lanes
-        # under suite load even though isolation is stable.
-        body = run_replay(receipt, root=tmp_path, timeout_s=180.0)
     assert body["source_receipt_sha256"] == _file_sha256(receipt)
     assert body["source_receipt_sha256"] == _file_sha256(declared)
     assert body["source_receipt_seal"] == source["receipt_sha256"]
     assert body["argv"] == manifest["argv"]
     assert body["exit_code"] == 0, body.get("stderr_tail") or body.get("spawn_error")
-    assert body["all_match"] is True, {
-        "spawn_error": body.get("spawn_error"),
-        "artifacts": body.get("artifacts"),
-        "stderr_tail": (body.get("stderr_tail") or "")[-500:],
-    }
+    mismatches = [
+        f"{row.get('path')} note={row.get('note')} "
+        f"expected={str(row.get('expected_sha256') or '')[:16]} "
+        f"observed={str(row.get('observed_sha256') or '')[:16]}"
+        for row in body.get("artifacts") or []
+        if not row.get("match")
+    ]
+    assert body["all_match"] is True, "; ".join(mismatches) or body.get("spawn_error")
     assert body["verdict"] == "pass"
     assert replay_proof_contract_errors(body) == []
 

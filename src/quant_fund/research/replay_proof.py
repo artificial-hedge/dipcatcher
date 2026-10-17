@@ -213,7 +213,13 @@ def _resolve_argv(argv: list[str]) -> list[str]:
     script lanes also run this checkout's code. Any other argv runs verbatim.
     """
     if argv and argv[0] in _CLI_ENTRYPOINTS:
-        return [sys.executable, "-m", "quant_fund.cli.main", *argv[1:]]
+        # ``python -m quant_fund.cli.main`` warns and re-executes: importing
+        # the package loads ``cli.main`` via ``cli/__init__.py``, so runpy
+        # finds that module already in ``sys.modules``. Under a coverage
+        # tracer that pre-import is enough for the command to run against a
+        # half-initialized app and still exit 0. ``python -m quant_fund.cli``
+        # executes ``cli/__main__.py``, which was not imported by the package.
+        return [sys.executable, "-m", "quant_fund.cli", *argv[1:]]
     if argv and argv[0].endswith(".py"):
         return [sys.executable, *argv]
     return list(argv)
@@ -355,6 +361,45 @@ def _committed_artifact(
     return None
 
 
+def _replay_child_env(root_path: Path) -> dict[str, str]:
+    """Environment for the lane subprocess.
+
+    A coverage-floors sweep can leak BLAS thread caps and a coverage tracer
+    into this process. The child must execute the lane, not a traced
+    interpreter whose thread pool no longer matches the sealed artifact.
+    Coverage starts in the child only when these variables are set
+    (coverage's sitecustomize.pth).
+    """
+    env = dict(os.environ)
+    for leaked in (
+        "COVERAGE_PROCESS_START",
+        "COVERAGE_FILE",
+        "COVERAGE_RCFILE",
+        "COV_CORE_SOURCE",
+        "COV_CORE_CONFIG",
+        "COV_CORE_DATAFILE",
+    ):
+        env.pop(leaked, None)
+    for key, value in (
+        ("OMP_NUM_THREADS", "1"),
+        ("MKL_NUM_THREADS", "1"),
+        ("OPENBLAS_NUM_THREADS", "1"),
+        ("NUMEXPR_NUM_THREADS", "1"),
+        ("VECLIB_MAXIMUM_THREADS", "1"),
+        ("POLARS_MAX_THREADS", "1"),
+        ("PYTHONHASHSEED", "0"),
+    ):
+        env[key] = value
+    # Prefer the root's src/, else this process's own quant_fund source tree,
+    # so the child never imports an unrelated installed package.
+    src_dir = root_path / "src"
+    if not (src_dir / "quant_fund").is_dir():
+        src_dir = Path(__file__).resolve().parents[2]
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{existing}" if existing else str(src_dir)
+    return env
+
+
 def run_replay(
     receipt_path: Path | str,
     *,
@@ -401,15 +446,7 @@ def run_replay(
     except (OSError, UnicodeError, json.JSONDecodeError):
         source_receipt_seal = None
 
-    env = dict(os.environ)
-    # The replayed argv must run the verifier's own code, never whatever an
-    # ambient installed package resolves to — prefer the root's src/, else
-    # fall back to this process's own quant_fund source tree.
-    src_dir = root_path / "src"
-    if not (src_dir / "quant_fund").is_dir():
-        src_dir = Path(__file__).resolve().parents[2]
-    existing = env.get("PYTHONPATH")
-    env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{existing}" if existing else str(src_dir)
+    env = _replay_child_env(root_path)
 
     # Input binding: declared tapes verify BEFORE argv runs — a drifted or
     # missing input means the replay could never reproduce the receipt, so

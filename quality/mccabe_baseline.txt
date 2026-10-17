@@ -1027,7 +1027,7 @@ src/quant_fund/research/release_attestation.py:verify_release_attestation 27
 src/quant_fund/research/replay_proof.py:_resolve_input_tapes 10
 src/quant_fund/research/replay_proof.py:replay_manifest_errors 15
 src/quant_fund/research/replay_proof.py:replay_proof_contract_errors 41
-src/quant_fund/research/replay_proof.py:run_replay 31
+src/quant_fund/research/replay_proof.py:run_replay 30
 src/quant_fund/research/replay_sweep.py:replay_coverage_contract_errors 24
 src/quant_fund/research/replay_sweep.py:run_replay_sweep 10
 src/quant_fund/research/repo_integrity.py:repo_integrity_contract_errors 30
