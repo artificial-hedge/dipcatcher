@@ -315,7 +315,14 @@ def _committed_artifact(
     Replays may legitimately produce bytes identical to a committed file, but
     they must land on an untracked path; writing onto a tracked path would
     clobber the very evidence the manifest claims to reproduce.
+
+    Temp pytest roots are not git checkouts — skip the probe entirely so an
+    ambient ``GIT_DIR`` (or similar) cannot make ``git ls-files`` consult the
+    real repository from a throwaway cwd.
     """
+    git_dir = root_path / ".git"
+    if not git_dir.exists():
+        return None
     rel_paths: list[str] = []
     resolved_entries: list[tuple[str, Path]] = []
     for entry in artifacts:
