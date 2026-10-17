@@ -27,6 +27,7 @@ does not score them.
 
 - `research/reality/trials.jsonl`: absent
 - `data/metadata/real_benchmark/us_wide_20260925/manifest.json`: no candidate_count and benchmark; not a trial batch
+- `data/metadata/reports/deps_hygiene_20260928/MANIFEST.json`: no candidate_count and benchmark; not a trial batch
 - `receipts/abc_calibrate_amzn.json`: abc_calibrate.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/aftermath_flow_amzn.json`: aftermath_flow.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/alert_budget.json`: alert_budget.v1; no reality_gate, backtest_overfitting block, or candidate band search
