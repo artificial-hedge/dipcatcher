@@ -533,6 +533,11 @@ def harness_doctor(
 def harness_serve(
     host: str = typer.Option("127.0.0.1", help="Bind host."),
     port: int = typer.Option(8011, help="Bind port."),
+    public_release: bool = typer.Option(
+        False,
+        "--public-release",
+        help="Enforce public model, auth, and release gates on a loopback listener behind a proxy.",
+    ),
     max_inflight: int | None = typer.Option(
         None, help="Concurrent heavy requests (env FX1_API_MAX_INFLIGHT, default 16)."
     ),
@@ -583,7 +588,13 @@ def harness_serve(
     import uvicorn
 
     from fx1.serve.api import create_app
-    from fx1.serve.release_gate import ALLOW_TEST_FIXTURE_ENV
+    from fx1.serve.release_gate import ALLOW_TEST_FIXTURE_ENV, cli_public_release_mode
+
+    try:
+        public_release = cli_public_release_mode(host, explicit=public_release)
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
 
     if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("FX1_API_KEY"):
         typer.echo(
@@ -591,11 +602,8 @@ def harness_serve(
             err=True,
         )
         raise typer.Exit(code=2)
-    if (
-        host not in {"127.0.0.1", "::1", "localhost"}
-        and os.environ.get(ALLOW_TEST_FIXTURE_ENV) == "1"
-    ):
-        typer.echo("test fixture opt-in may bind only to loopback", err=True)
+    if public_release and os.environ.get(ALLOW_TEST_FIXTURE_ENV) == "1":
+        typer.echo("test fixture opt-in may bind only to loopback research mode", err=True)
         raise typer.Exit(code=2)
     try:
         harness_api = create_app(
@@ -611,7 +619,7 @@ def harness_serve(
             receipts_dir=receipts_dir,
             store_max=store_max,
             state_dir=state_dir,
-            public_release=host not in {"127.0.0.1", "::1", "localhost"},
+            public_release=public_release,
         )
     except ValueError as exc:
         typer.echo(str(exc), err=True)

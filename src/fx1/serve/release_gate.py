@@ -26,6 +26,7 @@ ALLOW_TEST_FIXTURE_ENV = "FX1_ALLOW_TEST_FIXTURE"
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
 PUBLIC_MODEL_IDS = ("fx1", "fx1-lite")
 IMMUTABLE_IMAGE_ENV = "FX1_RELEASE_IMMUTABLE_IMAGE"
+PUBLIC_API_MODE_ENV = "FX1_API_PUBLIC_RELEASE"
 # Only a code-reviewed release can enroll independent evaluator trust roots.
 # No held-out bank, verified preregistration anchor, or evaluator key has been
 # provided. Enrollment alone must not lift the gate without a complete verifier.
@@ -235,6 +236,16 @@ def require_public_runtime_env(enabled: bool) -> None:
             f"public inference refuses {PUBLIC_SIGNING_KEY_ENV}; "
             "keep the private signing seed on the release build host"
         )
+
+
+def cli_public_release_mode(host: str, *, explicit: bool = False) -> bool:
+    """Use public policy for exposed binds or an explicitly proxied listener."""
+    if host not in _LOOPBACK_HOSTS or explicit:
+        return True
+    configured = os.environ.get(PUBLIC_API_MODE_ENV, "").strip().lower()
+    if configured not in {"", "0", "false", "no", "off", "1", "true", "yes", "on"}:
+        raise ValueError(f"{PUBLIC_API_MODE_ENV} must be a boolean")
+    return configured in {"1", "true", "yes", "on"}
 
 
 def _public_checkpoint_alias(root: Path) -> str | None:

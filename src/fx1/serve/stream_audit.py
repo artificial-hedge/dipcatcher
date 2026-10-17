@@ -71,9 +71,11 @@ import tempfile
 import threading
 import time
 from collections.abc import Callable, Iterator
+from concurrent.futures import Future
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 from fx1.harness import Harness
 from fx1.serve.backends import ToolCompletion
@@ -1419,6 +1421,72 @@ def _probe_replay(ctx: _Ctx) -> dict[str, bool]:
     return out
 
 
+def _observe_replay_frames(
+    frames: Iterator[str], keepalive_seen: threading.Event, in_progress_seen: threading.Event
+) -> Iterator[str]:
+    """Signal on real frames while preserving the response bytes."""
+    for frame in frames:
+        if frame == ": keepalive\n\n":
+            keepalive_seen.set()
+        elif frame.startswith("event: response.in_progress\n"):
+            in_progress_seen.set()
+        yield frame
+
+
+def _follow_live_response(
+    ctx: _Ctx,
+    response_id: str,
+    worker_release: threading.Event,
+    backend_release: threading.Event,
+) -> Any:
+    """Read a buffered TestClient follow after observing each live frame."""
+    keepalive_seen = threading.Event()
+    in_progress_seen = threading.Event()
+    follow_result: Future[Any] = Future()
+
+    import fx1.serve.api as api_mod  # noqa: PLC0415
+
+    replay_frames = api_mod._responses_replay_frames
+
+    def observed_frames(*args: Any, **kwargs: Any) -> Iterator[str]:
+        # TestClient buffers the whole response, so the caller cannot observe
+        # the stream until it ends. Signal from the real frame generator while
+        # passing every frame through unchanged.
+        yield from _observe_replay_frames(
+            replay_frames(*args, **kwargs), keepalive_seen, in_progress_seen
+        )
+
+    def read_follow() -> None:
+        try:
+            follow_result.set_result(
+                ctx.client.get(
+                    f"/v1/responses/{response_id}",
+                    params={"stream": "true", "timeout_s": 20},
+                )
+            )
+        except Exception as exc:
+            follow_result.set_exception(exc)
+
+    follow_thread = threading.Thread(target=read_follow, daemon=True)
+    with patch.object(api_mod, "_responses_replay_frames", observed_frames):
+        follow_thread.start()
+        try:
+            if not keepalive_seen.wait(timeout=15.0):
+                raise TimeoutError("live replay did not emit a queued keepalive")
+            worker_release.set()  # the queued job can now start
+            if not in_progress_seen.wait(timeout=15.0):
+                raise TimeoutError("live replay did not emit an in-progress frame")
+            backend_release.set()  # complete() can now return a terminal record
+            follow_thread.join(timeout=25.0)
+            if follow_thread.is_alive():
+                raise TimeoutError("live replay did not finish after backend release")
+            return follow_result.result(timeout=0)
+        finally:
+            worker_release.set()
+            backend_release.set()
+            follow_thread.join(timeout=25.0)
+
+
 def _probe_replay_live(workdir: Path) -> dict[str, bool]:
     """A background response's live-follow stream: queued prelude →
     ``: keepalive`` comments → in_progress → completed — then the
@@ -1429,24 +1497,24 @@ def _probe_replay_live(workdir: Path) -> dict[str, bool]:
     executor = ctx.app.state.jobs_executor
     sleeper_rel = threading.Event()
     workers = int(getattr(executor, "_max_workers", 4))
-    futs = [executor.submit(lambda: sleeper_rel.wait(timeout=15.0)) for _ in range(workers)]
-    time.sleep(0.15)  # every worker slot occupied → the job stays queued
-    timers = [
-        threading.Timer(0.3, sleeper_rel.set),  # free the executor → job starts
-        threading.Timer(0.8, backend.gate.set),  # let complete() return → terminal
-    ]
+    workers_ready = threading.Barrier(workers + 1)
+
+    def occupy_worker() -> None:
+        workers_ready.wait(timeout=15.0)
+        sleeper_rel.wait(timeout=15.0)
+
+    futs = [executor.submit(occupy_worker) for _ in range(workers)]
     try:
+        # The barrier proves all worker slots are occupied before submission.
+        workers_ready.wait(timeout=15.0)
         env = ctx.client.post(
             "/v1/responses", json={"model": "fx1", "input": "live", "background": True}
         ).json()
         rid = env["id"]
         out["replay_live_submit_queued"] = env.get("status") == "queued"
-        for t in timers:
-            t.start()
-        g = ctx.client.get(f"/v1/responses/{rid}", params={"stream": "true", "timeout_s": 20})
+        g = _follow_live_response(ctx, rid, sleeper_rel, backend.gate)
     finally:
-        for t in timers:
-            t.cancel()
+        workers_ready.abort()
         sleeper_rel.set()
         backend.gate.set()
         for f in futs:

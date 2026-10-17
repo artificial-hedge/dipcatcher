@@ -405,8 +405,12 @@ def _probe_cov_harness() -> dict[str, bool]:
     )
     out["coverage.evals.once"] = evals_total == 1
 
-    before = stub.calls
-    r1, r2 = _post2(client, "/harness/complete", _complete_body(), "cov.complete")
+    # Jobs and evals above return 202 before their background work completes.
+    # Keep their backend calls out of the synchronous completion count.
+    complete_stub = _StubBackend("fx1")
+    complete_client, _ = _client(backend_map={_MODEL: lambda: complete_stub})
+    before = complete_stub.calls
+    r1, r2 = _post2(complete_client, "/harness/complete", _complete_body(), "cov.complete")
     out["coverage.complete.replay"] = (
         r1.status_code == 200
         and r2.status_code == 200
@@ -414,17 +418,17 @@ def _probe_cov_harness() -> dict[str, bool]:
         and _same(r1.json(), r2.json())
         and r1.json().get("completion_id") == r2.json().get("completion_id")
     )
-    out["coverage.complete.once"] = stub.calls == before + 1
+    out["coverage.complete.once"] = complete_stub.calls == before + 1
 
-    before = stub.calls
-    r1, r2 = _post2(client, "/harness/complete/batch", _cbatch_body(), "cov.cbatch")
+    before = complete_stub.calls
+    r1, r2 = _post2(complete_client, "/harness/complete/batch", _cbatch_body(), "cov.cbatch")
     out["coverage.complete_batch.replay"] = (
         r1.status_code == 200
         and r2.status_code == 200
         and r2.json().get("replayed") is True
         and _same(r1.json(), r2.json())
     )
-    out["coverage.complete_batch.once"] = stub.calls == before + 1
+    out["coverage.complete_batch.once"] = complete_stub.calls == before + 1
     return out
 
 

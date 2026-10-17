@@ -278,10 +278,39 @@ def test_module_cli_keeps_loopback_research_policy(monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(_api_cli, "create_app", lambda **kwargs: calls.append(kwargs) or object())
     monkeypatch.setattr("uvicorn.run", lambda *args, **kwargs: None)
     monkeypatch.setenv("FX1_API_HOST", "127.0.0.1")
+    monkeypatch.setenv("FX1_API_PUBLIC_RELEASE", "0")
     monkeypatch.delenv("FX1_API_KEY", raising=False)
     monkeypatch.delenv("FX1_ALLOW_TEST_FIXTURE", raising=False)
     assert _api_cli.main() == 0
     assert calls == [{"public_release": False}]
+
+
+def test_module_cli_public_policy_on_proxied_loopback(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fx1.serve import _api_cli
+
+    calls: list[dict[str, object]] = []
+    monkeypatch.setattr(_api_cli, "create_app", lambda **kwargs: calls.append(kwargs) or object())
+    monkeypatch.setattr("uvicorn.run", lambda *args, **kwargs: None)
+    monkeypatch.setenv("FX1_API_HOST", "127.0.0.1")
+    monkeypatch.setenv("FX1_API_PUBLIC_RELEASE", "1")
+    monkeypatch.setenv("FX1_API_KEY", "test-key")
+    monkeypatch.delenv("FX1_ALLOW_TEST_FIXTURE", raising=False)
+    assert _api_cli.main() == 0
+    assert calls == [{"public_release": True}]
+
+    monkeypatch.setenv("FX1_ALLOW_TEST_FIXTURE", "1")
+    with pytest.raises(SystemExit, match="refuses FX1_ALLOW_TEST_FIXTURE"):
+        _api_cli.main()
+    assert len(calls) == 1
+
+
+def test_module_cli_rejects_invalid_public_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fx1.serve import _api_cli
+
+    monkeypatch.setenv("FX1_API_HOST", "127.0.0.1")
+    monkeypatch.setenv("FX1_API_PUBLIC_RELEASE", "maybe")
+    with pytest.raises(SystemExit, match="FX1_API_PUBLIC_RELEASE must be a boolean"):
+        _api_cli.main()
 
 
 def test_nonloopback_cli_enables_public_release_policy(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -296,10 +325,50 @@ def test_nonloopback_cli_enables_public_release_policy(monkeypatch: pytest.Monke
     result = CliRunner().invoke(
         app,
         ["harness", "serve", "--host", "0.0.0.0"],
-        env={"FX1_API_KEY": "test-key", "FX1_ALLOW_TEST_FIXTURE": "0"},
+        env={
+            "FX1_API_KEY": "test-key",
+            "FX1_ALLOW_TEST_FIXTURE": "0",
+            "FX1_API_PUBLIC_RELEASE": "0",
+        },
     )
     assert result.exit_code == 0, result.output
     assert calls[0]["public_release"] is True
+
+    calls.clear()
+    env_result = CliRunner().invoke(
+        app,
+        ["harness", "serve", "--host", "127.0.0.1"],
+        env={"FX1_API_KEY": "test-key", "FX1_API_PUBLIC_RELEASE": "1"},
+    )
+    assert env_result.exit_code == 0, env_result.output
+    assert calls[0]["public_release"] is True
+
+
+def test_cli_public_policy_on_proxied_loopback(monkeypatch: pytest.MonkeyPatch) -> None:
+    from typer.testing import CliRunner
+
+    from fx1.cli import app
+    from fx1.serve import api
+
+    calls: list[dict[str, object]] = []
+    monkeypatch.setattr(api, "create_app", lambda **kwargs: calls.append(kwargs) or object())
+    monkeypatch.setattr("uvicorn.run", lambda *args, **kwargs: None)
+    result = CliRunner().invoke(
+        app,
+        ["harness", "serve", "--host", "127.0.0.1", "--public-release"],
+        env={"FX1_API_KEY": "test-key", "FX1_API_PUBLIC_RELEASE": "0"},
+    )
+    assert result.exit_code == 0, result.output
+    assert calls[0]["public_release"] is True
+
+    blocked = CliRunner().invoke(
+        app,
+        ["harness", "serve", "--host", "127.0.0.1", "--public-release"],
+        env={"FX1_API_KEY": "test-key", "FX1_ALLOW_TEST_FIXTURE": "1"},
+    )
+    assert blocked.exit_code == 2
+    assert "test fixture opt-in may bind only to loopback research mode" in blocked.output
+    assert len(calls) == 1
 
 
 def test_public_app_refuses_unsigned_local_backend(monkeypatch: pytest.MonkeyPatch) -> None:

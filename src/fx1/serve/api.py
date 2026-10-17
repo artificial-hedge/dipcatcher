@@ -6216,6 +6216,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 model=env_chat["model"],
                 usage=env_chat["usage"],
                 cid=cid,
+                created=env_chat["created"],
             )
 
         keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))

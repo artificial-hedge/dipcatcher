@@ -2555,6 +2555,10 @@
       "src": "fx1.sdk"
     },
     {
+      "dst": "fx1.serve.openai_request_options",
+      "src": "fx1.sdk"
+    },
+    {
       "dst": "fx1.serve.ops_receipt",
       "src": "fx1.sdk"
     },
@@ -2752,6 +2756,10 @@
     },
     {
       "dst": "fx1.serve.openai_compat",
+      "src": "fx1.serve.api"
+    },
+    {
+      "dst": "fx1.serve.openai_request_options",
       "src": "fx1.serve.api"
     },
     {
@@ -17452,6 +17460,10 @@
     },
     {
       "dst": "quant_fund.research.research_flags",
+      "src": "quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.utils.atomicio",
       "src": "quant_fund.research.agent"
     },
     {
@@ -75705,7 +75717,7 @@
     },
     {
       "dst": "fx1.serve",
-      "imports": 16,
+      "imports": 17,
       "src": "fx1.sdk"
     },
     {
@@ -75800,7 +75812,7 @@
     },
     {
       "dst": "fx1.serve",
-      "imports": 193,
+      "imports": 194,
       "src": "fx1.serve"
     },
     {
@@ -77305,7 +77317,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 153,
+      "imports": 154,
       "src": "quant_fund.research"
     },
     {

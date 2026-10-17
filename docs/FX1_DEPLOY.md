@@ -23,6 +23,18 @@ The canonical launcher is the CLI. Its non-loopback launch requires
 uv run fx1 harness serve --host 0.0.0.0 --port 8011
 ```
 
+When a reverse proxy terminates the public connection and the API binds only
+to loopback, turn on the same policy explicitly:
+
+```bash
+uv run fx1 harness serve --host 127.0.0.1 --port 8011 --public-release
+```
+
+`python -m fx1.serve.api` uses `FX1_API_PUBLIC_RELEASE=1` for this case.
+Both launchers reject fixture opt-in in public mode. Provision an API key or
+managed keys before routing traffic; the public policy refuses anonymous
+requests even from a loopback proxy.
+
 `fx1 harness serve` builds `create_app()` and hands it to
 `uvicorn.run(..., reload=False, server_header=False)`. Every knob has a
 flag and an env twin — flags win:
@@ -31,6 +43,7 @@ flag and an env twin — flags win:
 |---|---|---|---|
 | `--host` | — | `127.0.0.1` | Bind host. Non-loopback **refuses to start** without `FX1_API_KEY`. |
 | `--port` | — | `8011` | Bind port. |
+| `--public-release` | `FX1_API_PUBLIC_RELEASE` | off on loopback | Enforce public auth and checkpoint gates behind a reverse proxy; non-loopback binds always enforce them. |
 | `--max-inflight` | `FX1_API_MAX_INFLIGHT` | `16` | Concurrent heavy requests; saturation answers `503 over_capacity`. |
 | `--job-max` | `FX1_API_JOB_MAX` | `1024` | Async job-store capacity. |
 | `--idem-max` | `FX1_API_IDEM_MAX` | `1024` | Idempotency-key store capacity. |

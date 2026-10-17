@@ -1,4 +1,27 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, test } from "@playwright/test";
+
+const fixtureIndex = JSON.parse(
+  readFileSync(join(import.meta.dirname, "..", "public", "fixtures", "index.json"), "utf8"),
+) as {
+  receipts: { id: string; n_hash_matches: number; n_hashes: number }[];
+  hash_matches: Record<string, string>;
+};
+const receiptCount = fixtureIndex.receipts.length;
+const fastReplayReceipt = JSON.parse(
+  readFileSync(
+    join(
+      import.meta.dirname,
+      "..",
+      "public",
+      "fixtures",
+      "receipts",
+      "fast_replay_p42_conformance_20260928.json",
+    ),
+    "utf8",
+  ),
+) as { code_sha256: Record<string, string> };
 
 test.describe("research explorer", () => {
   test("loads the overview with strategies and receipts", async ({ page }) => {
@@ -12,7 +35,7 @@ test.describe("research explorer", () => {
     await expect(table.locator("tbody tr")).toHaveCount(9);
     await expect(
       page.getByTestId("receipt-summary-table").locator("tbody tr"),
-    ).toHaveCount(56);
+    ).toHaveCount(receiptCount);
   });
 
   test("navigates to a strategy detail and renders charts", async ({
@@ -56,7 +79,7 @@ test.describe("research explorer", () => {
   test("receipt list and verification panel render", async ({ page }) => {
     await page.goto("/#/receipts");
     const table = page.getByTestId("receipt-table");
-    await expect(table.locator("tbody tr")).toHaveCount(56);
+    await expect(table.locator("tbody tr")).toHaveCount(receiptCount);
     await table
       .getByRole("link", { name: "corpus_epoch_d479e96760271bba" })
       .click();
@@ -76,13 +99,28 @@ test.describe("research explorer", () => {
     );
     const hashPanel = page.getByTestId("hash-panel");
     await expect(hashPanel).toContainText("epoch_root_sha256");
-    // fast_replay embeds code_sha256 entries; public.py resolves at HEAD
+    // Resolve source digests against the committed export-time hash index.
     await page.goto("/#/receipt/fast_replay_p42_conformance_20260928");
     const fastHash = page.getByTestId("hash-panel");
-    await expect(fastHash).toContainText("src/quant_fund/public.py");
+    const publicPath = "src/quant_fund/public.py";
+    const publicDigest = fastReplayReceipt.code_sha256[publicPath];
+    expect(publicDigest).toMatch(/^[0-9a-f]{64}$/);
+    await expect(
+      fastHash
+        .getByRole("row")
+        .filter({ hasText: `code_sha256.${publicPath}` })
+        .getByRole("cell")
+        .nth(2),
+    ).toHaveText(fixtureIndex.hash_matches[publicDigest] ?? "unresolved");
+    const fastReplay = fixtureIndex.receipts.find(
+      (r) => r.id === "fast_replay_p42_conformance_20260928",
+    );
+    expect(fastReplay).toBeDefined();
     await expect(
       page.getByTestId("checks-panel"),
-    ).toContainText("1/6 digests match a committed file");
+    ).toContainText(
+      `${fastReplay!.n_hash_matches}/${fastReplay!.n_hashes} digests match a committed file`,
+    );
   });
 
   test("hash routing handles direct loads and bad ids", async ({ page }) => {
