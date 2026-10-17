@@ -4,7 +4,9 @@
 Reimplements ``quant_fund.research.corpus_epoch.check_epoch_chain`` from
 scratch so a third-party auditor can verify a corpus's committed epoch
 chain — seal authenticity, prev links, fork/genesis/head topology, delta
-honesty, and head-vs-live-tree consistency — without running (or trusting)
+honesty, head-vs-live-tree consistency, and the pinned head's position
+commitments (``tree_root`` / ``chain_root`` / ``n_epochs``, recomputed from
+the chain truncated at the pinned head) — without running (or trusting)
 the repository's own code. The verdict vocabulary mirrors the library so
 the two implementations can be diffed: a divergence is itself a finding.
 
@@ -191,6 +193,27 @@ def _epoch_root(members: Mapping[str, str]) -> str:
         if not _is_sha256(digest):
             raise ValueError(f"member {name} digest must be 64-hex")
     return _sha256(_canonical_json_bytes(dict(sorted(members.items()))))
+
+
+def _chain_leaf(position: int, name: str, sha256: str) -> bytes:
+    """Position-bound chain leaf — mirrors ``epoch_merkle._chain_leaf``."""
+    body = _canonical_json_bytes({"position": position, "receipt": name, "sha256": sha256})
+    return hashlib.sha256(_LEAF_PREFIX + body).digest()
+
+
+def _chain_tree_root(chain: list[tuple[str, str]]) -> str:
+    """RFC 6962-style root over the ordered ``[(receipt_name, file_sha)]``
+    chain — mirrors ``epoch_merkle.chain_tree_root`` (odd tail promoted, never
+    duplicated). Pinned to the library by a differential test."""
+    if not chain:
+        raise ValueError("empty epoch chain has no root")
+    level = [_chain_leaf(i, n, s) for i, (n, s) in enumerate(chain)]
+    while len(level) > 1:
+        nxt = [_node_hash(level[i], level[i + 1]) for i in range(0, len(level) - 1, 2)]
+        if len(level) % 2 == 1:
+            nxt.append(level[-1])
+        level = nxt
+    return level[0].hex()
 
 
 # ------------------------------------------------------------- live tree
@@ -619,12 +642,61 @@ def _resurrections(
     return found, last
 
 
+def _pin_position_errors(
+    pin: Mapping[str, Any],
+    exp_name: str,
+    by_name: Mapping[str, Mapping[str, Any]],
+    file_sha: Mapping[str, str],
+) -> list[str]:
+    """Recompute the pin's ``tree_root`` / ``chain_root`` / ``n_epochs`` from
+    the chain truncated at the pinned head (mirrors the library's "bound chain
+    fields" leg). A pin that names a real head but lies about its position
+    commitments must fail: offline position proofs anchor on those values.
+
+    A present-but-malformed field is an error, never silently skipped; ``null``
+    counts as absent, as in ``load_heads_pin``. Absence of all three is the
+    legacy pin shape and checks nothing here, exactly as in the library."""
+    errors: list[str] = []
+    tree, chain_root, n_epochs = (pin.get(f) for f in ("tree_root", "chain_root", "n_epochs"))
+    for fname, val in (("tree_root", tree), ("chain_root", chain_root)):
+        if val is not None and not _is_sha256(val):
+            errors.append(f"epoch_pin_field_malformed:{fname!a}")
+    if n_epochs is not None and (
+        not isinstance(n_epochs, int) or isinstance(n_epochs, bool) or n_epochs < 1
+    ):
+        errors.append("epoch_pin_field_malformed:'n_epochs'")
+    if errors or (tree is None and chain_root is None and n_epochs is None):
+        return errors
+    if exp_name not in by_name:
+        return errors  # head missing / mutated / invalid: already reported
+    chain: list[tuple[str, str]] = []
+    cur: str | None = exp_name
+    seen: set[str] = set()
+    while cur is not None:
+        if cur in seen or cur not in by_name:
+            return [f"epoch_pin_chain_unverifiable:{exp_name!a}"]
+        seen.add(cur)
+        chain.append((cur, file_sha[cur]))
+        prev = by_name[cur].get("prev_epoch_receipt")
+        if prev is not None and not isinstance(prev, str):
+            return [f"epoch_pin_chain_unverifiable:{exp_name!a}"]
+        cur = prev
+    chain.reverse()
+    if tree is not None and by_name[exp_name].get("member_tree_root") != tree:
+        errors.append(f"epoch_head_tree_root_mismatch:{exp_name!a}")
+    if chain_root is not None and _chain_tree_root(chain) != chain_root:
+        errors.append(f"epoch_head_chain_root_mismatch:{exp_name!a}")
+    if n_epochs is not None and len(chain) != n_epochs:
+        errors.append(f"epoch_pin_n_epochs_mismatch:{exp_name!a}")
+    return errors
+
+
 def check_chain(
     corpus_dir: Path,
     *,
     pattern: str,
     acks: list[Mapping[str, Any]],
-    expected_head: Mapping[str, str] | None,
+    expected_head: Mapping[str, Any] | None,
     require_stamped: bool,
     allow_member_updates: bool,
 ) -> dict[str, Any]:
@@ -664,12 +736,14 @@ def check_chain(
     # Seal-verify every epoch envelope before trusting its claims. The v2
     # receipt seals the *envelope*; the v1 receipt seals the flat body.
     sealed: dict[str, Mapping[str, Any]] = {}
+    file_sha: dict[str, str] = {}
     for path, body, envelope in epochs:
         errs = _seal_errors(envelope)
         if errs or _epoch_contract_errors(body) or not _strict_json_ok(path.read_bytes()):
             errors.append(f"epoch_receipt_invalid:{path.name!a}")
             continue
         sealed[path.name] = body
+        file_sha[path.name] = _sha256(path.read_bytes())
     if not sealed:
         errors.append("no_valid_epoch_receipts")
         return {
@@ -802,6 +876,8 @@ def check_chain(
             cur = prev if isinstance(prev, str) else None
         if not ancestor:
             errors.append(f"epoch_head_rollback:{exp_name!a}")
+    if exp_name is not None and expected_head is not None:
+        errors.extend(_pin_position_errors(expected_head, exp_name, by_name, file_sha))
     for member, epoch in sorted(set(ack_index) - ack_used):
         errors.append(f"epoch_ack_unmatched:{member!a}@{epoch!a}")
     return {

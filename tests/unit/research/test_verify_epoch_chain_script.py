@@ -47,13 +47,16 @@ def _chain(corpus: Path, n_stamps: int = 2) -> list[Path]:
     return out
 
 
-def _script_errors(corpus: Path, *extra: str) -> list[str]:
-    proc = _run("--corpus-dir", str(corpus), *extra)
+def _errors_of(proc: subprocess.CompletedProcess[str]) -> list[str]:
     return [
         ln[2:]
         for ln in proc.stdout.splitlines()
         if ln.startswith("  ") and not ln.startswith("  unstamped:")
     ]
+
+
+def _script_errors(corpus: Path, *extra: str) -> list[str]:
+    return _errors_of(_run("--corpus-dir", str(corpus), *extra))
 
 
 def _lib_errors(corpus: Path, **kw) -> list[str]:
@@ -285,6 +288,333 @@ def test_corpus_without_a_valid_epoch_fails_without_crashing(
     assert label in _lib_errors(corpus)
 
 
+# --- pinned-head position commitments (tree_root / chain_root / n_epochs) ---
+#
+# A pin that names the right head (receipt + sha256) but lies about its
+# position fields must fail the standalone auditor exactly as it fails the
+# library. Offline ``epoch_position.v1`` proofs anchor on these values, so an
+# auditor that only compared the head's sha256 would bless a forged anchor.
+
+POS_TREE = "epoch_head_tree_root_mismatch"
+POS_CHAIN = "epoch_head_chain_root_mismatch"
+POS_N = "epoch_pin_n_epochs_mismatch"
+POS_MALFORMED = "epoch_pin_field_malformed"
+POS_UNVERIFIABLE = "epoch_pin_chain_unverifiable"
+POSITION_LABELS = (POS_TREE, POS_CHAIN, POS_N, POS_MALFORMED, POS_UNVERIFIABLE)
+
+
+def _pinned_corpus(tmp_path: Path, n_stamps: int = 3) -> tuple[Path, list[Path], Path, str]:
+    """A stamped corpus plus the honest pin the production writer emits."""
+    from quant_fund.research.corpus_epoch import epoch_heads_key, update_heads_pin
+
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    _member(corpus, "a.json", '{"a": 1}')
+    epochs = _chain(corpus, n_stamps=n_stamps)
+    pin = tmp_path / "epoch_heads.json"
+    update_heads_pin(pin, corpus, "*.json", epochs[-1])
+    key = epoch_heads_key(corpus, "*.json")
+    entry = json.loads(pin.read_text())["heads"][key]
+    # The honest pin must carry every position field, else nothing below tests anything.
+    assert {"tree_root", "chain_root", "n_epochs"} <= set(entry), entry
+    assert entry["n_epochs"] == n_stamps
+    return corpus, epochs, pin, key
+
+
+def _variant_pin(pin: Path, key: str, name: str, **fields: object) -> Path:
+    """Copy ``pin`` with ``fields`` overwritten on ``key`` (a field set to the
+    sentinel ``DROP`` is removed). The head's receipt and sha256 are untouched."""
+    doc = json.loads(pin.read_text())
+    for fname, value in fields.items():
+        if value is DROP:
+            doc["heads"][key].pop(fname, None)
+        else:
+            doc["heads"][key][fname] = value
+    out = pin.with_name(name)
+    out.write_text(json.dumps(doc))
+    return out
+
+
+DROP = object()
+
+
+def _both_verdicts(
+    corpus: Path, pin: Path, key: str
+) -> tuple[list[str], list[str], subprocess.CompletedProcess[str]]:
+    """(library errors, script errors, script proc) for one pin — the library
+    side goes through ``load_heads_pin`` exactly as ``verify-repo`` does."""
+    from quant_fund.research.corpus_epoch import load_heads_pin
+
+    lib = _lib_errors(corpus, expected_head=load_heads_pin(pin)[key])
+    proc = _run("--corpus-dir", str(corpus), "--pin", str(pin), "--key", key)
+    return lib, _errors_of(proc), proc
+
+
+def test_honest_full_pin_agrees(tmp_path: Path) -> None:
+    """No false positive: the pin ``update_heads_pin`` writes is clean in both."""
+    corpus, _, pin, key = _pinned_corpus(tmp_path)
+    lib, script, proc = _both_verdicts(corpus, pin, key)
+    assert lib == [], lib
+    assert script == [], script
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+@pytest.mark.parametrize(
+    ("lies", "labels"),
+    [
+        (lambda honest: {"chain_root": "f" * 64}, {POS_CHAIN}),
+        (lambda honest: {"tree_root": "e" * 64}, {POS_TREE}),
+        (lambda honest: {"n_epochs": honest["n_epochs"] + 7}, {POS_N}),
+        (lambda honest: {"n_epochs": honest["n_epochs"] - 1}, {POS_N}),
+        (
+            lambda honest: {
+                "chain_root": "f" * 64,
+                "tree_root": "e" * 64,
+                "n_epochs": 999,
+            },
+            {POS_TREE, POS_CHAIN, POS_N},
+        ),
+    ],
+    ids=["chain_root", "tree_root", "n_epochs_high", "n_epochs_low", "all_three"],
+)
+def test_lying_position_fields_agree(tmp_path: Path, lies, labels: set[str]) -> None:
+    """Right head, lying position fields: library and standalone reject with
+    the identical errors. (Before the fix the standalone auditor exited 0.)"""
+    corpus, epochs, pin, key = _pinned_corpus(tmp_path)
+    honest = json.loads(pin.read_text())["heads"][key]
+    bad = _variant_pin(pin, key, "lying_pin.json", **lies(honest))
+    lib, script, proc = _both_verdicts(corpus, bad, key)
+    expected = sorted(f"{label}:{epochs[-1].name!a}" for label in labels)
+    assert sorted(lib) == expected, lib
+    assert sorted(script) == expected, script
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    assert "FAIL" in proc.stdout
+
+
+@pytest.mark.parametrize("honest_prefix", [0, 1], ids=["genesis", "second_epoch"])
+def test_ancestor_pin_is_checked_against_the_truncated_chain(
+    tmp_path: Path, honest_prefix: int
+) -> None:
+    """A pin at a non-tip ancestor commits to the chain *up to that head*:
+    ``chain_root`` / ``n_epochs`` over the prefix are clean in both
+    implementations, and the whole-chain values (a pin lying about position)
+    are flagged in both. The auditor must truncate at the pinned head."""
+    from quant_fund.research.epoch_merkle import chain_tree_root, ordered_epoch_chain
+
+    corpus, epochs, pin, key = _pinned_corpus(tmp_path)
+    full = json.loads(pin.read_text())["heads"][key]
+    ordered, order_errors = ordered_epoch_chain(corpus, pattern="*.json")
+    assert not order_errors, order_errors
+    assert [e[0] for e in ordered] == [e.name for e in epochs]
+    anc = epochs[honest_prefix]
+    prefix = [(e[0], e[1]) for e in ordered[: honest_prefix + 1]]
+    anc_body = json.loads(anc.read_text())
+    honest = {
+        "receipt": anc.name,
+        "sha256": hashlib.sha256(anc.read_bytes()).hexdigest(),
+        "tree_root": anc_body["member_tree_root"],
+        "chain_root": chain_tree_root(prefix),
+        "n_epochs": honest_prefix + 1,
+    }
+    assert honest["chain_root"] != full["chain_root"]
+
+    def pin_with(name: str, **over: object) -> Path:
+        out = tmp_path / name
+        out.write_text(json.dumps({"heads": {key: {**honest, **over}}}))
+        return out
+
+    lib, script, proc = _both_verdicts(corpus, pin_with("anc_ok.json"), key)
+    assert lib == script == [], (lib, script)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+    for field in ("chain_root", "n_epochs", "tree_root"):
+        bad = pin_with(f"anc_bad_{field}.json", **{field: full[field]})
+        lib, script, proc = _both_verdicts(corpus, bad, key)
+        label = {"chain_root": POS_CHAIN, "n_epochs": POS_N, "tree_root": POS_TREE}[field]
+        assert lib == script == [f"{label}:{anc.name!a}"], (field, lib, script)
+        assert proc.returncode == 1
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("chain_root", 123),
+        ("chain_root", "abc"),
+        ("chain_root", ["f" * 64]),
+        ("chain_root", "F" * 64),  # 64 chars but not the lowercase-hex form
+        ("tree_root", ["x"]),
+        ("tree_root", "e" * 63),
+        ("n_epochs", "3"),
+        ("n_epochs", 0),
+        ("n_epochs", -1),
+        ("n_epochs", 3.0),
+        ("n_epochs", True),  # bool is an int; it must not pass as a count of 1
+    ],
+)
+def test_malformed_pin_fields_fail_closed(tmp_path: Path, field: str, value: object) -> None:
+    """A present-but-malformed position field is an error, never skipped."""
+    from quant_fund.research.corpus_epoch import load_heads_pin
+
+    corpus, _, pin, key = _pinned_corpus(tmp_path)
+    bad = _variant_pin(pin, key, "malformed_pin.json", **{field: value})
+
+    proc = _run("--corpus-dir", str(corpus), "--pin", str(bad), "--key", key)
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    assert f"{POS_MALFORMED}:{field!a}" in _errors_of(proc), proc.stdout
+    assert "Traceback" not in proc.stderr, proc.stderr
+
+    # The library rejects the same pin too — at load (ValueError) or by check.
+    try:
+        lib = _lib_errors(corpus, expected_head=load_heads_pin(bad)[key])
+    except ValueError:
+        lib = ["rejected_at_load"]
+    assert lib, "library accepted a pin the standalone auditor rejects"
+
+
+@pytest.mark.parametrize("dropped", [("tree_root",), ("chain_root", "n_epochs")])
+def test_partially_present_position_fields_are_each_checked(
+    tmp_path: Path, dropped: tuple[str, ...]
+) -> None:
+    """Each field present is verified on its own; absent fields are not
+    invented (legacy pin shape), exactly as the library treats them."""
+    corpus, epochs, pin, key = _pinned_corpus(tmp_path)
+    all_lies = {"tree_root": "e" * 64, "chain_root": "f" * 64, "n_epochs": 999}
+    labels = {"tree_root": POS_TREE, "chain_root": POS_CHAIN, "n_epochs": POS_N}
+    over: dict[str, object] = {f: DROP for f in dropped}
+    over.update({f: v for f, v in all_lies.items() if f not in dropped})
+    bad = _variant_pin(pin, key, "partial_pin.json", **over)
+    lib, script, proc = _both_verdicts(corpus, bad, key)
+    expected = sorted(f"{labels[f]}:{epochs[-1].name!a}" for f in all_lies if f not in dropped)
+    assert sorted(lib) == sorted(script) == expected, (lib, script)
+    assert proc.returncode == 1
+
+
+def _reseal(path: Path, **changes: object) -> None:
+    """Rewrite a flat epoch receipt with ``changes`` and a fresh valid seal."""
+    doc = json.loads(path.read_text())
+    doc.update(changes)
+    body = {k: v for k, v in doc.items() if k != "receipt_sha256"}
+    canon = json.dumps(body, sort_keys=True, separators=(",", ":"), allow_nan=False)
+    doc["receipt_sha256"] = hashlib.sha256(canon.encode()).hexdigest()
+    path.write_text(json.dumps(doc))
+
+
+@pytest.mark.parametrize("shape", ["cycle", "orphan"])
+def test_pin_over_unwalkable_chain_is_unverifiable(tmp_path: Path, shape: str) -> None:
+    """Position fields cannot be recomputed over a chain whose prev links do
+    not reach genesis (a cycle, or a link to a receipt that is not there):
+    the auditor says so instead of skipping the check."""
+    corpus, epochs, _, _ = _pinned_corpus(tmp_path, n_stamps=2)
+    genesis, head = epochs
+    if shape == "cycle":
+        _reseal(genesis, verdict="advancing", prev_epoch_receipt=head.name)
+    else:
+        _reseal(head, prev_epoch_receipt="corpus_epoch_missing.json")
+    pin = tmp_path / "unwalkable_pin.json"
+    key = "receipts/*.json"
+    pin.write_text(
+        json.dumps(
+            {
+                "heads": {
+                    key: {
+                        "receipt": head.name,
+                        "sha256": hashlib.sha256(head.read_bytes()).hexdigest(),
+                        "chain_root": "f" * 64,
+                    }
+                }
+            }
+        )
+    )
+    proc = _run("--corpus-dir", str(corpus), "--pin", str(pin), "--key", key)
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    assert f"{POS_UNVERIFIABLE}:{head.name!a}" in _errors_of(proc), proc.stdout
+    assert "Traceback" not in proc.stderr, proc.stderr
+
+
+def _load_script_module():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("verify_epoch_chain_under_test", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_chain_tree_root_mirror_matches_library() -> None:
+    """The auditor carries its own copy of the chain-tree construction (it may
+    not import the repo). This pins the copy to the library's root for every
+    shape of tree, including odd tails and non-ASCII receipt names."""
+    from quant_fund.research.epoch_merkle import chain_tree_root
+
+    script = _load_script_module()
+    names = ["corpus_epoch_é中.json", "corpus_epoch_ascii.json", 'corpus_epoch_q"\\.json']
+    for n in range(1, 41):
+        chain = [
+            (f"{names[i % 3]}{i:03d}", hashlib.sha256(f"epoch-{i}".encode()).hexdigest())
+            for i in range(n)
+        ]
+        assert script._chain_tree_root(chain) == chain_tree_root(chain), n
+    # position is bound into the leaf: a reordered chain has a different root
+    chain = [(f"r{i}.json", hashlib.sha256(bytes([i])).hexdigest()) for i in range(5)]
+    assert script._chain_tree_root(chain) != script._chain_tree_root(chain[::-1])
+    with pytest.raises(ValueError):
+        script._chain_tree_root([])
+    with pytest.raises(ValueError):
+        chain_tree_root([])
+
+
+_CHEAP_REAL_KEYS = (
+    ".cursor/*",
+    "clients/*",
+    "deploy/*",
+    "docker/*",
+    "spec/*",
+    "typings/*",
+    "verifier/*.md",
+)
+
+
+def _real_pin_position_errors(keys) -> dict[str, list[str]]:
+    pin = REPO_ROOT / "quality" / "epoch_heads.json"
+    heads = json.loads(pin.read_text())["heads"]
+    out: dict[str, list[str]] = {}
+    for key in keys:
+        if key not in heads:
+            continue
+        # A pin that dropped a position field would make this check vacuous.
+        assert {"tree_root", "chain_root", "n_epochs"} <= set(heads[key]), key
+        corpus_dir, pattern = key.rsplit("/", 1)
+        proc = _run(
+            "--corpus-dir",
+            corpus_dir,
+            "--pattern",
+            pattern,
+            "--pin",
+            str(pin),
+            "--key",
+            key,
+            "--allow-member-updates",  # member drift is not what this asserts
+        )
+        out[key] = [e for e in _errors_of(proc) if e.split(":", 1)[0] in POSITION_LABELS]
+    return out
+
+
+def test_committed_pin_position_fields_verify_standalone_cheap_corpora() -> None:
+    """The repo's own committed pin satisfies the standalone position leg."""
+    found = _real_pin_position_errors(_CHEAP_REAL_KEYS)
+    assert found, "none of the cheap corpora are pinned; update _CHEAP_REAL_KEYS"
+    assert {k: v for k, v in found.items() if v} == {}
+
+
+@pytest.mark.slow
+def test_committed_pin_position_fields_verify_standalone_every_key() -> None:
+    heads = json.loads((REPO_ROOT / "quality" / "epoch_heads.json").read_text())["heads"]
+    found = _real_pin_position_errors(sorted(heads))
+    assert set(found) == set(heads)
+    assert {k: v for k, v in found.items() if v} == {}
+
+
 # --- v2 quorum checkpoints --------------------------------------------------
 
 
@@ -392,3 +722,38 @@ def test_checkpoint_v2_registry_swap_fails(tmp_path: Path) -> None:
     proc = _script_checkpoint_run(root, "--quorum", str(swapped))
     assert proc.returncode == 1
     assert "quorum_registry_drift" in proc.stdout
+
+
+def test_checkpoint_v2_signed_heads_with_lying_position_fields_fail(tmp_path: Path) -> None:
+    """The signed checkpoint's ``heads`` entry feeds the same position leg:
+    a signature over a pin that lies about its chain position is not enough."""
+    pytest.importorskip("cryptography")
+    from quant_fund.research.epoch_merkle import chain_tree_root
+    from quant_fund.research.integrity_checkpoint import write_checkpoint
+
+    root, pairs = _v2_tree(tmp_path)
+    pin_path = root / "quality" / "epoch_heads.json"
+    (head_receipt,) = sorted((root / "receipts").glob("corpus_epoch_*.json"))
+    honest_chain_root = chain_tree_root(
+        [(head_receipt.name, hashlib.sha256(head_receipt.read_bytes()).hexdigest())]
+    )
+    quorum = str(root / "quality" / "gate_quorum.json")
+
+    def sign_pin_with(**fields: object) -> subprocess.CompletedProcess[str]:
+        doc = json.loads(pin_path.read_text())
+        doc["heads"]["receipts/*.json"].update(fields)
+        pin_path.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+        write_checkpoint(root, pairs[:1])
+        return _script_checkpoint_run(root, "--quorum", quorum)
+
+    proc = sign_pin_with(chain_root=honest_chain_root, n_epochs=1)
+    assert proc.returncode == 0, proc.stdout + proc.stderr  # positive control
+
+    for lie, label in (
+        ({"chain_root": "f" * 64}, POS_CHAIN),
+        ({"n_epochs": 5}, POS_N),
+        ({"tree_root": "e" * 64}, POS_TREE),
+    ):
+        proc = sign_pin_with(**{"chain_root": honest_chain_root, "n_epochs": 1, **lie})
+        assert proc.returncode == 1, (lie, proc.stdout + proc.stderr)
+        assert f"{label}:{head_receipt.name!a}" in _errors_of(proc), (lie, proc.stdout)
