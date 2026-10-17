@@ -401,6 +401,11 @@ replay-sweep: ## CI gate: replay every replayable carrier; fail on divergence or
 		--out "$${RUNNER_TEMP:-/tmp}/replay_coverage.json"
 
 ADMISSION_BASE ?= origin/main
+# Candidates are every *.json the diff touches under receipts/ at ANY depth --
+# the stamper (corpus_epoch.member_digests) is recursive, so a narrower filter
+# lets a nested or non-ASCII receipt be stamped without passing admit-batch.
+# Over-select (case-insensitive; the Windows fleet box globs that way) and fail
+# closed on any path the shell would mangle (git-quoted, whitespace, glob chars).
 admission-gate: ## CI gate: ack-ledger vs base chains, then sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
 	@git rev-parse --verify --quiet "$(ADMISSION_BASE)^{commit}" >/dev/null \
 		|| { echo "admission-gate: ADMISSION_BASE=$(ADMISSION_BASE) is not a commit"; exit 1; }; \
@@ -412,8 +417,18 @@ admission-gate: ## CI gate: ack-ledger vs base chains, then sequentially admit e
 		--epoch-acks quality/epoch_allowed_removals.json || exit 1; \
 	uv run dipcatcher quarantine-gate --base-ref "$(ADMISSION_BASE)" --base-heads-pin "$$base_pin" || exit 1; \
 	diff="$${RUNNER_TEMP:-/tmp}/admission_diff.txt"; \
-	git diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' > "$$diff" || exit 1; \
-	changed=$$(grep '^receipts/[^/]*\.json$$' "$$diff") || [ $$? -eq 1 ] || exit 1; \
+	git -c core.quotePath=false diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' > "$$diff" || exit 1; \
+	quoted=$$(LC_ALL=C grep '^"' "$$diff") || [ $$? -eq 1 ] || exit 1; \
+	if [ -n "$$quoted" ]; then \
+		echo "admission-gate: git-quoted path under receipts/ cannot be gated; rename it:"; \
+		printf '%s\n' "$$quoted"; exit 1; \
+	fi; \
+	changed=$$(LC_ALL=C grep -i '^receipts/.*\.json$$' "$$diff") || [ $$? -eq 1 ] || exit 1; \
+	unsafe=$$(printf '%s\n' "$$changed" | LC_ALL=C grep -e '[[:space:]]' -e '[*?[]') || [ $$? -eq 1 ] || exit 1; \
+	if [ -n "$$unsafe" ]; then \
+		echo "admission-gate: receipt path with whitespace or glob characters cannot be gated safely; rename it:"; \
+		printf '%s\n' "$$unsafe"; exit 1; \
+	fi; \
 	if [ -n "$$changed" ]; then \
 		uv run dipcatcher admit-batch $$changed --corpus-dir receipts --strict \
 			--base-heads-pin "$$base_pin" \
