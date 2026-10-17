@@ -166,7 +166,8 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    # 75m cancelled test (3.12, 3) on f75dc11c3 at 99% with no failures.
+    timeout-minutes: 120
     env:
       HYPOTHESIS_PROFILE: ci
       # Makefile TEST_ENV block, mirrored (keep both sides identical).

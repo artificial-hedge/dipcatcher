@@ -283,7 +283,10 @@ def test_chain_ancestry_fails_closed(tmp_path: Path) -> None:
         chain_ancestry(corpus, {**entry, "n_epochs": 99})
     with pytest.raises(ValueError, match="missing"):
         chain_ancestry(corpus, {**entry, "receipt": "../epoch_heads.json"})
-    epochs[1].write_bytes(b"[" * 100_000 + b"]" * 100_000)
+    # Python 3.14 parses 100k nested arrays, so the walk ends early and
+    # reports chain_root instead of a parse failure. These bytes are
+    # invalid JSON on every supported version.
+    epochs[1].write_bytes(b"{not-json")
     with pytest.raises(ValueError, match="parseable"):
         chain_ancestry(corpus, entry)
     epochs[1].unlink()

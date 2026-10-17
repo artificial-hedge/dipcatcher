@@ -161,6 +161,16 @@ jobs:
   coverage-floors:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    # Pin BLAS/OpenMP like fx1-coverage — lane replays hash numeric artifacts.
+    env:
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      VECLIB_MAXIMUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      KMP_INIT_AT_FORK: "FALSE"
+      PYTHONFAULTHANDLER: "1"
+      TOKENIZERS_PARALLELISM: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
@@ -177,11 +187,11 @@ jobs:
   # (not in fx1.yml, which this wave does not edit) as a ratchet floor.
   fx1-coverage:
     runs-on: ubuntu-latest
-    # tests/fx1 plus tests/unit/fx1_serve. The serve batteries are slow;
-    # 45 minutes was the fx1-lane-only budget. Union measured 91.19% on
-    # 2026-10-16; two api_audit receipt tests flaked under suite pressure
-    # (ConnectionReset teardown) — retry in the tests + thread pinning here.
-    timeout-minutes: 90
+    # tests/fx1 plus tests/unit/fx1_serve. The serve batteries are slow.
+    # On 2157a965a the suite was still running at 93% when the 90 minute
+    # job limit killed pytest. 120 minutes covers that tail. The 80% floor
+    # is unchanged.
+    timeout-minutes: 120
     env:
       OMP_NUM_THREADS: "1"
       MKL_NUM_THREADS: "1"

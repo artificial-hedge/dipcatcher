@@ -102,6 +102,7 @@ Sealed ``eval_lifecycle_audit.v1`` (fx1-side receipt).
 from __future__ import annotations
 
 import html
+import itertools
 import json
 import os
 import tempfile
@@ -815,15 +816,20 @@ def _store_probes() -> dict[str, Any]:
     out: dict[str, Any] = {}
     from fx1.serve.evals import EvalRecord, EvalStore
 
+    # time.time_ns() repeats inside one clock tick. A repeated eval_id
+    # makes put() replace the live record, so eviction is not stable.
+    seq = itertools.count()
+
     def _rec(status: str = "queued") -> EvalRecord:
+        n = next(seq)
         return EvalRecord.model_validate(
             {
-                "eval_id": f"ev-{status}-{time.time_ns()}",
+                "eval_id": f"ev-{status}-{n}",
                 "suite": "tooluse",
                 "backend": "byok",
                 "seed": 0,
                 "status": status,
-                "created_at": time.time(),
+                "created_at": 1_700_000_000.0 + n,
             }
         )
 
