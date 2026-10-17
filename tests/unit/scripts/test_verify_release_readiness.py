@@ -199,7 +199,10 @@ def test_release_preflight_requires_complete_same_sha_success(
 ) -> None:
     evidence = _verify(monkeypatch, _responses())
     assert len(evidence) == 4
-    assert all("https://github.com/" in row for row in evidence)
+    assert evidence == [
+        f"{workflow}: https://github.com/{_REPO}/actions/runs/{index}"
+        for index, (workflow, _job, _event) in enumerate(gate._REQUIRED, start=1)
+    ]
     assert _matrix_job_names() == gate._MATRIX_JOBS
 
 

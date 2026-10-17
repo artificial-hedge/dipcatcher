@@ -340,12 +340,10 @@ def monitor(
     else:
         typer.echo(text)
     # Nagios-style exit codes so schedulers/alerting can consume status.
-    status = snap["overall_status"]
-    if status == "breach":
-        raise typer.Exit(2)
-    if status == "warn":
-        raise typer.Exit(1)
-    if status == "insufficient_data":
+    exit_code = {"breach": 2, "warn": 1, "insufficient_data": 3}.get(snap["overall_status"])
+    if exit_code is not None:
+        raise typer.Exit(exit_code)
+    if snap["overall_status"] != "ok":
         raise typer.Exit(3)
 
 

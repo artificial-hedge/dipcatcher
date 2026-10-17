@@ -147,3 +147,15 @@ condition = "AND"
 paths = ['''(?:^|/)web/public/fixtures/index\.json$''']
 regexTarget = "secret"
 regexes = ['''^[0-9a-f]{64}$''']
+
+# A historical prereg timestamp verifier reads at most 64 KiB from its token
+# file. The generic-api-key heuristic captures the numeric size bound after
+# `token =`, although this line contains no credential. Match this one source
+# statement only; other token assignments remain scanned across full history.
+[[allowlists]]
+description = "Prereg timestamp token input size bound (not a credential)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)src/quant_fund/research/prereg_timestamp\.py$''']
+regexTarget = "line"
+regexes = ['''^\+?\s*token = _read_regular\(token_path, max_bytes=64 \* 1024\)\s*$''']

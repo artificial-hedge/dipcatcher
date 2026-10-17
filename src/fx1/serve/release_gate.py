@@ -119,17 +119,24 @@ def _independent_public_eval_verified(_root: Path) -> bool:
     return False
 
 
+def _public_release_root(root: Path) -> Path | None:
+    """Resolve only a nonredirected checkpoint on a read-only volume."""
+    if os.environ.get(IMMUTABLE_IMAGE_ENV) != "1":
+        return None
+    candidate = Path(os.path.abspath(root))
+    if not _no_link_ancestors(candidate):
+        return None
+    candidate = candidate.resolve(strict=True)
+    return candidate if _read_only_mount(candidate) else None
+
+
 def _verified_public_release(root: Path) -> bool:
     """Hash once on an OS read-only volume; refuse any later metadata drift."""
     try:
-        if os.environ.get(IMMUTABLE_IMAGE_ENV) != "1":
+        resolved_root = _public_release_root(root)
+        if resolved_root is None:
             return False
-        root = Path(os.path.abspath(root))
-        if not _no_link_ancestors(root):
-            return False
-        root = root.resolve(strict=True)
-        if not _read_only_mount(root):
-            return False
+        root = resolved_root
         key = (str(root), os.environ.get(PUBLIC_VERIFY_KEY_ENV, ""))
         before = _inventory_stat(root)
         with _VERIFIED_LOCK:

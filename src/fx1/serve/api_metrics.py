@@ -14,7 +14,11 @@ class _Model(BaseModel):
 
 
 class BackendCompletionStats(_Model):
-    """Per-backend outcomes, cumulative latency, and reported token totals."""
+    """Per-backend completion accounting: outcome counts, a cumulative
+    latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``), and
+    backend-reported token sums. ``usage_calls`` counts calls that carried
+    a usage dict — a silent provider shows zero tokens AND zero calls.
+    """
 
     ok: int = 0
     error: int = 0

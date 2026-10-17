@@ -200,7 +200,6 @@ from fx1.serve.openai_compat import (
     OpenAIVectorStoreSearch,
     OpenAIVectorStoreUpdate,
     _resolve_public_release_link,
-    _resolve_timeout,
     batch_line_body,
     batch_line_shape,
     batch_object,
@@ -236,6 +235,7 @@ from fx1.serve.openai_compat import (
     validate_openai_output,
     validate_response_format,
 )
+from fx1.serve.openai_request_options import resolve_timeout as _resolve_timeout
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
 from fx1.serve.uploads import (
