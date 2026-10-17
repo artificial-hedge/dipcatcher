@@ -258,8 +258,12 @@ def _nfc_errors(members: Mapping[str, str]) -> list[str]:
 
 
 def _symlink_errors(root: Path) -> list[str]:
-    """Every entry, not only glob matches — a symlinked dir hides content."""
-    return [
+    """Every entry, not only glob matches — a symlinked dir hides content.
+
+    The root itself too: ``rglob`` follows a symlinked corpus dir, so a
+    re-rooted corpus is counted in full while none of its children is a link."""
+    errors = [f"corpus_root_is_symlink:{root.name!a}"] if root.is_symlink() else []
+    return errors + [
         f"member_is_symlink:{p.relative_to(root).as_posix()!a}"
         for p in sorted(root.rglob("*"))
         if p.is_symlink()

@@ -166,6 +166,22 @@ def test_mutation_classes_agree(tmp_path: Path) -> None:
         assert script_labels & lib_labels, (name, script, lib)
 
 
+def test_symlinked_corpus_root_agrees(tmp_path: Path) -> None:
+    """A re-rooted corpus is flagged by the library and the standalone oracle."""
+    real = tmp_path / "zz_corpus"
+    real.mkdir()
+    _member(real, "a.json", '{"a": 1}')
+    _chain(real)
+    root = tmp_path / "receipts"
+    root.symlink_to(real, target_is_directory=True)
+
+    assert _lib_errors(real) == [] == _script_errors(real)
+    lib = _lib_errors(root)
+    script = _script_errors(root)
+    assert "corpus_root_is_symlink:'receipts'" in lib, lib
+    assert "corpus_root_is_symlink:'receipts'" in script, script
+
+
 def test_pin_rollback_and_missing_agree(tmp_path: Path) -> None:
     """The committed-head pin binds both verifiers to the same head."""
     from quant_fund.research.corpus_epoch import (

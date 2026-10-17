@@ -27,7 +27,7 @@ import os
 import shutil
 import tempfile
 from collections.abc import Iterable, Mapping
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 from quant_fund.research.legacy_unsealed import (
@@ -45,23 +45,35 @@ def _honesty_errors(doc: Mapping[str, Any]) -> tuple[list[str], list[str]]:
     return honesty_stamp_errors(doc)
 
 
-def _link_or_copy(src: Path, dst: Path) -> None:
-    if dst.exists():
-        return  # already linked — e.g. the candidate lives inside the corpus
+def _link_or_copy(src: Path, dst: Path, *, replace: bool = False) -> None:
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if dst.exists() or dst.is_symlink():
+        if not replace:
+            return  # already linked -- e.g. the candidate lives inside the corpus
+        dst.unlink()
     try:
         os.link(src, dst)
     except OSError:  # cross-filesystem corpus dirs still gate correctly
         shutil.copy2(src, dst)
 
 
-def _shadow_corpus(corpus_dir: Path, extra: Path | None = None) -> Path:
-    """Link the corpus (+ optional extra receipt) into a private dir."""
+def _shadow_corpus(
+    corpus_dir: Path, extra: Path | None = None, *, extra_rel: str | None = None
+) -> Path:
+    """Link the corpus (+ optional extra receipt) into a private dir.
+
+    Mirrors the lattice's own membership -- every verifiable receipt at any
+    depth, minus quarantined subtrees -- under its corpus-relative path. The
+    extra receipt takes the slot ``extra_rel`` (default: its file name) and
+    *replaces* whatever the corpus holds there, so a candidate is always
+    judged on its own bytes and never on those of a same-named member."""
+    from quant_fund.utils.receipt import verified_corpus_files
+
     shadow = Path(tempfile.mkdtemp(prefix="admit_corpus_"))
-    for path in sorted(corpus_dir.glob("*.json")):
-        if path.is_file():
-            _link_or_copy(path, shadow / path.name)
+    for path in verified_corpus_files(corpus_dir):
+        _link_or_copy(path, shadow / path.relative_to(corpus_dir))
     if extra is not None:
-        _link_or_copy(extra, shadow / extra.name)
+        _link_or_copy(extra, shadow / (extra_rel or extra.name), replace=True)
     return shadow
 
 
@@ -82,6 +94,32 @@ def _survivors(corpus: Mapping[str, Any]) -> set[str]:
     }
 
 
+def _checked_rel(rel: str) -> str:
+    """``rel`` as a safe corpus-relative POSIX path, else ``ValueError``."""
+    pure = PurePosixPath(rel)
+    if not pure.parts or pure.is_absolute() or ".." in pure.parts:
+        raise ValueError(f"candidate_rel {rel!r} is not a corpus-relative path")
+    return pure.as_posix()
+
+
+def _tombstones_binding(
+    active: Mapping[str, Mapping[str, Any]], rel: str
+) -> list[Mapping[str, Any]]:
+    """Active retractions that bind a candidate at corpus slot ``rel``.
+
+    ``active`` is keyed by corpus-relative target path, so a candidate matches
+    its own slot exactly -- a nested target ``sub/t.json`` binds ``sub/t.json``.
+    A retraction also binds, failing closed, the same file name in another
+    directory: a retracted slot may not quietly re-fill one level up or down
+    (the pre-existing file-name lookup did exactly that for flat targets)."""
+    name = PurePosixPath(rel).name
+    return [
+        entry
+        for key, entry in sorted(active.items())
+        if key == rel or PurePosixPath(key).name == name
+    ]
+
+
 def admission_check(
     candidate: Path | str,
     corpus_dir: Path | str = Path("receipts"),
@@ -92,8 +130,15 @@ def admission_check(
     epoch_dir: Path | str | None = None,
     expected_head: Mapping[str, Any] | None = None,
     epoch_acks: list[dict[str, Any]] | None = None,
+    candidate_rel: str | None = None,
 ) -> dict[str, Any]:
     """Gate a candidate receipt against an existing corpus.
+
+    ``candidate_rel`` is the corpus-relative POSIX path the candidate claims
+    (default: its path inside ``corpus_dir`` if it lives there, else its file
+    name). Every slot-keyed lookup -- the lattice shadow, the corpus digest
+    map, retractions -- uses it, never the bare file name: a nested receipt
+    and a flat one can share a name and are different members.
 
     ``epoch_dir`` is the durable corpus whose epoch chain the admission binds
     to (default ``corpus_dir``); ``admit_batch`` passes the real corpus while
@@ -110,6 +155,11 @@ def admission_check(
         raise ValueError(f"candidate receipt {candidate} does not exist")
     if not corpus_dir.is_dir():
         raise ValueError(f"corpus dir {corpus_dir} does not exist")
+    rel = (
+        _checked_rel(candidate_rel)
+        if candidate_rel is not None
+        else _corpus_rel(candidate, corpus_dir)
+    )
 
     checks: list[dict[str, Any]] = []
     candidate_sha = hash_bytes(candidate.read_bytes())
@@ -157,7 +207,7 @@ def admission_check(
     from quant_fund.research.receipt_lattice import receipt_lattice
 
     before_shadow = _shadow_corpus(corpus_dir)
-    after_shadow = _shadow_corpus(corpus_dir, extra=candidate)
+    after_shadow = _shadow_corpus(corpus_dir, extra=candidate, extra_rel=rel)
     pins = dict(known_inconsistent or {})
     before = receipt_lattice(before_shadow, known_inconsistent=pins)
     after = receipt_lattice(after_shadow, known_inconsistent=pins)
@@ -187,13 +237,18 @@ def admission_check(
         }
     )
 
-    corpus_files = sorted(p for p in corpus_dir.glob("*.json") if p.is_file())
+    from quant_fund.utils.receipt import verified_corpus_files
+
+    corpus_files = verified_corpus_files(corpus_dir)
     inputs_sha256 = hash_bytes(
         json.dumps(
             {
-                "candidate": candidate.name,
+                "candidate": rel,
                 "candidate_sha256": candidate_sha,
-                "corpus": {p.name: hash_bytes(p.read_bytes()) for p in corpus_files},
+                "corpus": {
+                    p.relative_to(corpus_dir).as_posix(): hash_bytes(p.read_bytes())
+                    for p in corpus_files
+                },
                 "q": q,
             },
             sort_keys=True,
@@ -258,8 +313,7 @@ def admission_check(
         # shadowed) admission view — a retracted target must stay pinned to
         # real bytes even when admit_batch shadows it out mid-diff.
         tombs = load_tombstones(Path(tombstone_dir) if tombstone_dir is not None else corpus_dir)
-        entry = tombs["active"].get(candidate.name)
-        if entry is not None:
+        for entry in _tombstones_binding(tombs["active"], rel):
             if entry.get("target_sha256") == candidate_sha:
                 retract_reject.append("retracted_bytes")
             elif entry.get("scope") == "all":
@@ -274,12 +328,14 @@ def admission_check(
                 except (OSError, ValueError):  # parse already recorded above
                     cand_doc = {}
                 paths = (
-                    {f["path"] for f in harvest_findings(cand_doc, candidate.name)}
+                    {f["path"] for f in harvest_findings(cand_doc, rel)}
                     if isinstance(cand_doc, Mapping)
                     else set()
                 )
                 if paths & scoped:
                     retract_findings.append("retracted_scope_overlap")
+        retract_reject = sorted(set(retract_reject))
+        retract_findings = sorted(set(retract_findings))
         checks.append(
             {
                 "name": "tombstone",
@@ -305,7 +361,7 @@ def admission_check(
         "data_label": "CORPUS",
         "inputs_sha256": inputs_sha256,
         "params": {"q": q, "corpus_dir": str(corpus_dir), "known_inconsistent": sorted(pins)},
-        "candidate": candidate.name,
+        "candidate": rel,
         "candidate_sha256": candidate_sha,
         "n_corpus_receipts": len(corpus_files),
         "checks": checks,
@@ -376,25 +432,50 @@ def _batch_shadow(corpus_dir: Path, ordered: list[Path], gated: list[Path]) -> P
     Mirrors every verifiable receipt (recursively, minus quarantined
     subtrees — the lattice's own membership). Retained quarantined records
     are part of the merged corpus every gated candidate lands in (the
-    lattice reads them), so they enter up front."""
+    lattice reads them), so they enter up front.
+
+    The batch is removed by corpus-relative *slot*, at any depth. A flat
+    receipt that merely shares a file name with a nested candidate (or the
+    reverse) is a different member and stays; the candidate's own slot is
+    always vacated so its delta is never vacuous."""
     from quant_fund.utils.receipt import is_quarantined, verified_corpus_files
 
-    changed_names = {c.name for c in ordered}
+    changed_rels = {_corpus_rel(c, corpus_dir) for c in ordered}
     shadow = Path(tempfile.mkdtemp(prefix="admit_batch_base_"))
     for path in verified_corpus_files(corpus_dir):
         rel_path = path.relative_to(corpus_dir)
-        if len(rel_path.parts) == 1 and path.name in changed_names:
+        if rel_path.as_posix() in changed_rels:
             continue
-        (shadow / rel_path).parent.mkdir(parents=True, exist_ok=True)
         _link_or_copy(path, shadow / rel_path)
     for cand in ordered:
         rel_path = Path(_corpus_rel(cand, corpus_dir))
         # Keep the relative path: a retained legacy-unsealed/ record stays in
         # the quarantine subtree the lattice skips, exactly as in the corpus.
         if cand not in gated and not is_quarantined(corpus_dir / rel_path, corpus_dir):
-            (shadow / rel_path).parent.mkdir(parents=True, exist_ok=True)
             _link_or_copy(cand, shadow / rel_path)
     return shadow
+
+
+def _batch_order(candidates: Iterable[Path | str], corpus_dir: Path) -> list[Path]:
+    """Candidates as distinct corpus slots, sorted by slot (stable attribution).
+
+    Slots are corpus-relative paths, never bare file names: two candidates
+    that merely share a name are different members. Two *different* files
+    claiming one slot cannot both land, and silently keeping one would judge
+    the other on its sibling's bytes -- that raises."""
+    by_slot: dict[str, Path] = {}
+    for raw in candidates:
+        cand = Path(raw)
+        if not cand.is_file():
+            raise ValueError(f"candidate receipt {cand} does not exist")
+        if cand.is_symlink():
+            # The stamper refuses symlink members: the name would not own the bytes.
+            raise ValueError(f"candidate receipt {cand} is a symlink")
+        slot = _corpus_rel(cand, corpus_dir)
+        other = by_slot.setdefault(slot, cand)
+        if other != cand and other.resolve() != cand.resolve():
+            raise ValueError(f"candidates {other} and {cand} claim the same corpus slot {slot!r}")
+    return [by_slot[slot] for slot in sorted(by_slot)]
 
 
 def admit_batch(
@@ -416,7 +497,7 @@ def admit_batch(
     no delta is observable. For a diff of N changed receipts the honest gate
     is sequential — each candidate is checked against
 
-        corpus − {all changed names} ∪ {changed files processed so far}
+        corpus − {all changed slots} ∪ {changed files processed so far}
 
     which is exactly the intermediate state each file creates, so
     intra-diff contradictions are attributed to the file that introduces
@@ -453,16 +534,19 @@ def admit_batch(
     an ``admit`` verdict. Any other non-verifying candidate is gated, and
     rejected, as usual.
 
-    Fails closed: a missing candidate, a candidate inside the corpus under a
+    A *slot* is a corpus-relative path (``legacy-unsealed/x.json``), never a
+    bare file name: ordering, the shadow, the lattice and retraction lookups
+    all key on it, so a nested receipt that shares a name with a flat one can
+    neither shadow it nor be compared against its bytes.
+
+    Fails closed: a missing candidate, a symlink candidate, two different
+    files claiming one slot, a candidate inside the corpus under a
     *different* name, or an unreadable corpus dir raises.
     """
     corpus_dir = Path(corpus_dir)
     if not corpus_dir.is_dir():
         raise ValueError(f"corpus dir {corpus_dir} does not exist")
-    ordered = sorted((Path(c) for c in candidates), key=lambda p: p.name)
-    for cand in ordered:
-        if not cand.is_file():
-            raise ValueError(f"candidate receipt {cand} does not exist")
+    ordered = _batch_order(candidates, corpus_dir)
 
     stamped, fresh = _partition_base_stamped(ordered, corpus_dir, base_stamped or {})
     retained, gated = _partition_quarantined(fresh, corpus_dir, quarantine)
@@ -470,6 +554,7 @@ def admit_batch(
 
     results: list[dict[str, Any]] = []
     for cand in gated:
+        slot = _corpus_rel(cand, corpus_dir)
         result = admission_check(
             cand,
             shadow,
@@ -479,12 +564,13 @@ def admit_batch(
             epoch_dir=corpus_dir,
             expected_head=expected_head,
             epoch_acks=epoch_acks,
+            candidate_rel=slot,
         )
         results.append(result)
         # Post-merge coexistence: a merged diff lands all of its files
         # together, so each later candidate must clear a corpus that already
         # contains the earlier ones — whatever verdict they drew.
-        _link_or_copy(cand, shadow / cand.name)
+        _link_or_copy(cand, shadow / slot)
 
     ack_errors = _batch_ack_errors(epoch_acks or [], base_epochs)
     # Per-candidate checks bind the chain only when something is gated; a

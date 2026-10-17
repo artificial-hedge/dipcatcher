@@ -7,6 +7,12 @@ non-ASCII name -- is a chain member. The Makefile once selected candidates with
 nested receipt was stamped without ever passing ``admit-batch``, and git's
 C-quoting of non-ASCII paths hid even flat ones.
 
+Git paths only list the stamper's members while ``receipts/`` is a plain
+directory tree that the working tree matches. A root symlink (``git mv receipts
+zz_corpus && ln -s zz_corpus receipts``) puts new members outside the diff
+pathspec, a nested symlink or submodule hides bytes, and an untracked or edited
+file is stamped without being committed -- each must fail the gate.
+
 These tests run the REAL ``Makefile`` target and the production CLI (the same
 ``quant_fund.cli.main.app`` the ``dipcatcher`` console script runs) against the
 real committed corpus, pins and quarantine registry, in a throwaway repo that
@@ -125,7 +131,7 @@ def _gate(repo: Path, base: str, env: dict[str, str]) -> subprocess.CompletedPro
 
 
 def _verdicts(env: dict[str, str]) -> dict[str, str]:
-    """candidate basename -> verdict, from the admission receipts the run wrote."""
+    """corpus-relative candidate path -> verdict, from the admission receipts the run wrote."""
     out: dict[str, str] = {}
     for path in sorted((Path(env["RUNNER_TEMP"]) / "admission").glob("receipt_admission_*.json")):
         doc = json.loads(path.read_text())
@@ -135,7 +141,6 @@ def _verdicts(env: dict[str, str]) -> dict[str, str]:
 
 
 # Every one of these is a stamper member that no admission check may skip.
-# Basenames are unique so each candidate is attributable in the batch.
 HOSTILE = {
     "receipts/zz_flat_unsealed.json": UNSEALED,
     "receipts/zz_flat_sealed.json": _sealed(UNSTAMPED),
@@ -166,7 +171,7 @@ def test_no_stamper_member_in_the_diff_is_skipped_by_the_gate(gate_repo: Gate) -
     assert proc.returncode != 0, out
     assert "no corpus receipt changes" not in out, out
     verdicts = _verdicts(env)
-    expected = {Path(rel).name for rel in HOSTILE}
+    expected = {rel.removeprefix("receipts/") for rel in HOSTILE}
     assert set(verdicts) == expected, (sorted(set(verdicts) ^ expected), out)
     assert "admit" not in set(verdicts.values()), verdicts
 
@@ -276,3 +281,120 @@ def test_restoring_the_registered_quarantined_records_is_not_blocked(gate_repo: 
     out = proc.stdout + proc.stderr
     assert proc.returncode == 0, out
     assert f"already_stamped={len(nested)} " in out, out
+
+
+def _git_add_commit(repo: Path, *paths: str) -> None:
+    _git(repo, "add", "-f", "-A", "--", *paths)
+    _git(repo, *GIT_ID, "commit", "-qm", "case")
+
+
+def _reroot_corpus_behind_a_symlink(repo: Path) -> None:
+    """``git mv receipts zz_corpus && ln -s zz_corpus receipts``, plus new members."""
+    _git(repo, "mv", "receipts", "zz_corpus")
+    (repo / "receipts").symlink_to("zz_corpus", target_is_directory=True)
+    for rel in ("zz_corpus/zz_hostile.json", "zz_corpus/zz_sub/zz_hostile2.json"):
+        (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+        (repo / rel).write_bytes(_sealed(UNSTAMPED))
+    _git_add_commit(repo, "receipts", "zz_corpus")
+    # The divergence this closes: the stamper follows the symlinked root and
+    # counts the new members while the diff pathspec never lists them.
+    members = member_digests(repo / "receipts")
+    assert {"zz_hostile.json", "zz_sub/zz_hostile2.json"} <= set(members)
+
+
+def _link_a_directory_into_the_corpus(repo: Path) -> None:
+    (repo / "zz_outside").mkdir()
+    (repo / "zz_outside" / "zz_hostile.json").write_bytes(_sealed(UNSTAMPED))
+    (repo / "receipts" / "zz_link").symlink_to("../zz_outside", target_is_directory=True)
+    _git_add_commit(repo, "receipts", "zz_outside")
+
+
+def _link_a_file_into_the_corpus(repo: Path) -> None:
+    (repo / "zz_target.json").write_bytes(_sealed(UNSTAMPED))
+    (repo / "receipts" / "zz_link.json").symlink_to("../zz_target.json")
+    _git_add_commit(repo, "receipts", "zz_target.json")
+
+
+def _add_a_submodule_entry(repo: Path) -> None:
+    head = _git(repo, "rev-parse", "HEAD")
+    _git(repo, "update-index", "--add", "--cacheinfo", f"160000,{head},receipts/zz_mod")
+    _git(repo, *GIT_ID, "commit", "-qm", "case")
+
+
+# Each re-shapes receipts/ so that ``git diff --name-only`` no longer lists what
+# the stamper (which reads the filesystem) counts, or lists it as a non-file.
+RESHAPED = {
+    "root_symlink": _reroot_corpus_behind_a_symlink,
+    "directory_symlink": _link_a_directory_into_the_corpus,
+    "file_symlink": _link_a_file_into_the_corpus,
+    "submodule": _add_a_submodule_entry,
+}
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="symlinks need privileges on Windows")
+@pytest.mark.parametrize("case", sorted(RESHAPED))
+def test_a_corpus_that_is_not_a_plain_tree_fails_the_gate_instead_of_hiding_its_diff(
+    gate_repo: Gate, case: str
+) -> None:
+    repo, base, env = gate_repo
+    RESHAPED[case](repo)
+    proc = _gate(repo, base, env)
+    out = proc.stdout + proc.stderr
+    assert proc.returncode != 0, out
+    assert "no corpus receipt changes" not in out, out
+    assert "plain directory tree" in out, out
+
+
+@pytest.mark.parametrize("how", ["untracked", "modified"])
+def test_a_working_tree_receipt_that_head_does_not_have_fails_the_gate(
+    gate_repo: Gate, how: str
+) -> None:
+    """The stamper reads the working tree, the gate reads commits: a receipt the
+    checkout holds but HEAD lacks would be stamped without being gated."""
+    repo, base, env = gate_repo
+    if how == "untracked":
+        (repo / "receipts" / "zz_untracked.json").write_bytes(_sealed(UNSTAMPED))
+        assert "zz_untracked.json" in member_digests(repo / "receipts")
+    else:
+        victim = sorted((repo / "receipts").glob("*.json"))[0]
+        victim.write_bytes(victim.read_bytes() + b"\n")
+    proc = _gate(repo, base, env)
+    out = proc.stdout + proc.stderr
+    assert proc.returncode != 0, out
+    assert "no corpus receipt changes" not in out, out
+    assert "differs from HEAD" in out, out
+
+
+def _claim(value: float, *, inputs: str) -> bytes:
+    """Sealed, honest receipt asserting one claim on a shared (private) dataset."""
+    return _sealed(
+        {
+            **STAMPED,
+            "schema": "synthetic_fixture.v1",
+            "inputs_sha256": inputs * 32,
+            "dataset_sha256": "5a" * 32,
+            "params": {"drill": True},
+            "results": [{"head": "x", "qlike": value}],
+        }
+    )
+
+
+def test_a_nested_receipt_sharing_a_flat_name_is_still_checked_against_the_flat_one(
+    gate_repo: Gate,
+) -> None:
+    """The admission lattice used to key candidates by file name: the second of
+    ``zz_a.json`` / ``zzz/zz_a.json`` was compared against the first one's bytes,
+    so a direct contradiction drew ``admit`` for both."""
+    repo, base, env = gate_repo
+    _commit(
+        repo,
+        {
+            "receipts/zz_a.json": _claim(1.0, inputs="dd"),
+            "receipts/zzz/zz_a.json": _claim(9.9, inputs="ee"),
+        },
+    )
+    proc = _gate(repo, base, env)
+    out = proc.stdout + proc.stderr
+    assert proc.returncode != 0, out
+    assert "verdict=quarantine" in out and "verdict=admit" in out, out
+    assert _verdicts(env) == {"zz_a.json": "admit", "zzz/zz_a.json": "quarantine"}, out

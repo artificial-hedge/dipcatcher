@@ -514,6 +514,28 @@ def test_symlink_members_refused_and_flagged(tmp_path: Path) -> None:
     assert "member_is_symlink:'link.json'" in check_epoch_chain(corpus)["errors"]
 
 
+def test_symlinked_corpus_root_is_refused_and_flagged(tmp_path: Path) -> None:
+    """``rglob`` follows a symlinked corpus dir, so a re-rooted corpus is stamped
+    and verified in full while none of its children is a link -- the member scan
+    could never see it. Both the stamp and the chain check refuse the root."""
+    from quant_fund.research.corpus_epoch import _symlink_errors
+
+    real = tmp_path / "zz_corpus"
+    real.mkdir()
+    _receipt(real, "a.json", "1")
+    root = tmp_path / "receipts"
+    root.symlink_to(real, target_is_directory=True)
+    assert member_digests(root) == member_digests(real)  # the divergence being closed
+    with pytest.raises(ValueError, match="symlink"):
+        corpus_epoch(root)
+    assert _symlink_errors(root, "*.json") == ["corpus_root_is_symlink:'receipts'"]
+    assert _symlink_errors(real, "*.json") == []
+    # Live-tree leg: a chain stamped in the real dir fails once read through the link.
+    _stamp(real)
+    assert check_epoch_chain(real)["errors"] == []
+    assert "corpus_root_is_symlink:'receipts'" in check_epoch_chain(root)["errors"]
+
+
 def test_nonportable_names_refused_and_repr_quoted(tmp_path: Path) -> None:
     """Control/format/separator chars in member names are refused — a raw
     ``\\n`` in a label would inject a fake 'all gates intact' line into

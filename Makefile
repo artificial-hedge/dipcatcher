@@ -406,11 +406,29 @@ ADMISSION_BASE ?= origin/main
 # lets a nested or non-ASCII receipt be stamped without passing admit-batch.
 # Over-select (case-insensitive; the Windows fleet box globs that way) and fail
 # closed on any path the shell would mangle (git-quoted, whitespace, glob chars).
+# Git paths are only a faithful list of stamper members while receipts/ is a
+# plain directory tree that the working tree matches: a root symlink re-roots
+# the corpus outside the diff pathspec, a nested symlink/submodule hides bytes,
+# and a file the checkout holds but HEAD lacks is stamped without being gated.
+# Each of those fails the gate instead of being guessed at.
 admission-gate: ## CI gate: ack-ledger vs base chains, then sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
 	@git rev-parse --verify --quiet "$(ADMISSION_BASE)^{commit}" >/dev/null \
 		|| { echo "admission-gate: ADMISSION_BASE=$(ADMISSION_BASE) is not a commit"; exit 1; }; \
 	mkdir -p "$${RUNNER_TEMP:-/tmp}"; base_pin="$${RUNNER_TEMP:-/tmp}/admission_base_epoch_heads.json"; \
 	base_acks="$${RUNNER_TEMP:-/tmp}/admission_base_epoch_acks.json"; \
+	root_entry="$${RUNNER_TEMP:-/tmp}/admission_root_entry.txt"; entries="$${RUNNER_TEMP:-/tmp}/admission_entries.txt"; \
+	git ls-tree HEAD -- receipts > "$$root_entry" || exit 1; \
+	git ls-tree -r HEAD -- receipts > "$$entries" || exit 1; \
+	special=$$(LC_ALL=C grep -E '^(120000|160000) ' "$$entries") || [ $$? -eq 1 ] || exit 1; \
+	if [ -n "$$special" ] || ! LC_ALL=C grep -q '^040000 tree ' "$$root_entry" || [ -L receipts ] || [ ! -d receipts ]; then \
+		echo "admission-gate: receipts/ must be a plain directory tree (no root or nested symlink, no submodule): the stamper follows the filesystem, so a linked or re-rooted corpus cannot be gated from git paths:"; \
+		cat "$$root_entry"; printf '%s\n' "$$special"; exit 1; \
+	fi; \
+	dirty=$$(git status --porcelain --untracked-files=all -- receipts) || exit 1; \
+	if [ -n "$$dirty" ]; then \
+		echo "admission-gate: receipts/ in the working tree differs from HEAD; the stamper reads the working tree but this gate reads commits -- commit or remove:"; \
+		printf '%s\n' "$$dirty"; exit 1; \
+	fi; \
 	git show $(ADMISSION_BASE):quality/epoch_heads.json > "$$base_pin" || exit 1; \
 	git show $(ADMISSION_BASE):quality/epoch_allowed_removals.json > "$$base_acks" 2>/dev/null || : > "$$base_acks"; \
 	uv run dipcatcher epoch-ack-gate --base-heads-pin "$$base_pin" --base-epoch-acks "$$base_acks" \

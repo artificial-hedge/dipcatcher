@@ -238,9 +238,13 @@ def _symlink_errors(root: Path, pattern: str) -> list[str]:
     link's *target* content is hashed — retargeting is a mutation vector
     (and the target may live outside the corpus entirely). A corpus member
     must be a real file whose bytes the name unambiguously owns."""
+    # The root itself: ``rglob`` follows a symlinked corpus dir, so every member
+    # it re-roots is hashed and counted while no child is a link -- the scan
+    # below can never see it. A re-rooted corpus is refused outright.
+    errors = [f"corpus_root_is_symlink:{root.name!a}"] if root.is_symlink() else []
     # Scan every entry, not only glob matches: a symlinked *directory* never
     # matches the member pattern, but could hide content under the corpus.
-    return [
+    return errors + [
         f"member_is_symlink:{p.relative_to(root).as_posix()!a}"
         for p in sorted(root.rglob("*"))
         if p.is_symlink()
