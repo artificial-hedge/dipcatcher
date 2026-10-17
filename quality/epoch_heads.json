@@ -29,11 +29,11 @@
       "tree_root": "ebaaed39deb5d60a8cc2f9389260e290e852c7a5a533d21a92a42694716884af"
     },
     ".github/workflows/*.yml": {
-      "chain_root": "89bb25a2c86e1504a4ce03aabe666e73fa678497567f4226163f88208b72d102",
-      "n_epochs": 48,
-      "receipt": "corpus_epoch_75c12f51c56a544e.json",
-      "sha256": "73006e52fdaaf9d9360e7696740224da179480cc3d5c3a1c2fbaedba564f8d73",
-      "tree_root": "7fe0d40a5fc5d065fd51d1697b37733bb4ea66c56f4a5af37ee4d28d74bd60d7"
+      "chain_root": "d0a0c12d9e08449a2b1cf9a2eeec592c48b2a506b5965d698f7b93fc9be55f82",
+      "n_epochs": 49,
+      "receipt": "corpus_epoch_8d9a0d71c9d8eb90.json",
+      "sha256": "c3d0e47017c6d2fecf9567f551a391d6e4b6eb75fb8a4fbf501f833e4391da0b",
+      "tree_root": "6455a7ec5a8783982d4519bce963d99463de8955996b329d7ce765d3068ddecf"
     },
     "artifacts/*": {
       "chain_root": "2628429ece5cdf88360ee6ea7ba00d8bc8900fc08f5151f4fa648223fa902266",
