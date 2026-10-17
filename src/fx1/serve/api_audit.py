@@ -1513,14 +1513,18 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         and caps_brk["limits"]["breaker_cooldown_s"] == 60.0
     )
     brk = api_mod._BackendBreaker(2, 0.05)
-    brk.report("x", False)
-    brk.report("x", False)
-    opened = brk.check("x") > 0
-    time.sleep(0.06)
-    probe1 = brk.check("x")  # admits the single half-open probe
-    probe2 = brk.check("x")  # a second concurrent caller fast-fails
-    brk.report("x", True)  # probe succeeded → closed
-    closed = brk.check("x") == 0 and brk.state("x")[0] is False
+    _mono, _box = time.monotonic, [0.0]
+    time.monotonic = lambda: _box[0]
+    try:
+        brk.report("x", False)
+        brk.report("x", False)
+        opened = brk.check("x") > 0
+        _box[0] += 0.06
+        probe1, probe2 = brk.check("x"), brk.check("x")
+        brk.report("x", True)
+        closed = brk.check("x") == 0 and brk.state("x")[0] is False
+    finally:
+        time.monotonic = _mono
     out["breaker_half_open_recovers"] = opened and probe1 == 0.0 and probe2 > 0 and closed
     off_app = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
@@ -2051,37 +2055,33 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["byok_override_idem_contract"] = (
         i1.status_code == 200 and i2.json().get("replayed") is True and i3.status_code == 409
     )
-    # Freeze the bucket clock so a slow runner cannot refill tokens mid-burst.
     limited2 = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
         rate_limit_rps=20.0,
     )
     lc2 = _TC2(limited2)
+    os.environ["FX1_API_RATE_LIMIT_RPS"] = "3"
     _mono, _box = time.monotonic, [time.monotonic()]
     time.monotonic = lambda: _box[0]
     try:
         statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
         _box[0] += 1.0
         m = lc2.get("/metrics")
-    finally:
-        time.monotonic = _mono
-    n_limited = statuses.count(429)
-    out["rate_limit_metrics_counts"] = (
-        n_limited >= 2 and m.status_code == 200 and m.json()["rate_limited_total"] == n_limited
-    )
-    os.environ["FX1_API_RATE_LIMIT_RPS"] = "3"
-    try:
         env_app = api_mod.create_app(
             harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
             backend_resolver=lambda *a, **k: _CleanBackend(),
         )
         ec = _TC2(env_app)
-        out["rate_limit_env_config"] = [
-            ec.get("/harness/version").status_code for _ in range(5)
-        ].count(429) >= 1
+        env_hits = [ec.get("/harness/version").status_code for _ in range(5)]
     finally:
+        time.monotonic = _mono
         os.environ.pop("FX1_API_RATE_LIMIT_RPS", None)
+    n_limited = statuses.count(429)
+    out["rate_limit_metrics_counts"] = (
+        n_limited >= 2 and m.status_code == 200 and m.json()["rate_limited_total"] == n_limited
+    )
+    out["rate_limit_env_config"] = env_hits.count(429) >= 1
 
     # --- job event stream: SSE status feed until terminal -------------------
     ev_app = api_mod.create_app(

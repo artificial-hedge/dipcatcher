@@ -1149,23 +1149,33 @@ def _probe_v1_keepalive(wd: Path) -> dict[str, bool]:  # noqa: C901 — probe ac
     numbered = [int(f.seq) for f in fc if f.seq is not None]
     out["chat_ka_ids_contiguous"] = numbered == list(range(len(numbered)))
 
-    # Hold the backend until after the grace window. A plain sleep races the
-    # request thread: on a loaded runner the completion is already queued
-    # when ``queue.get(timeout=sse_keepalive_s)`` starts, the handler returns
-    # the finished SSE with no keepalive, and ``msg_ka_ping_unnumbered``
-    # fails closed. The CI messages call took 1.6s while the chat/responses
-    # siblings on the same app returned in ~100ms.
+    # Open the backend only once the messages body has committed to a ping.
+    # A sleep started before the request can expire on a loaded runner before
+    # ``queue.get`` runs, and the handler then returns the finished SSE with
+    # no keepalive. The first empty grace wait only selects the keepalived
+    # response; the ping is the second empty wait. Release ``complete`` there.
+    import fx1.serve.api as api_mod  # noqa: PLC0415
+
     held = _GatedBackend()
     msg_ctx = _make_ctx(wd / "msg-hold", held, sse_keepalive_s=0.05)
+    grace_misses = [0]
+    namespace = vars(api_mod)
+    previous_await = namespace["_grace_await"]
 
-    def _open_gate() -> None:
-        time.sleep(0.25)
+    def _await_then_release(pipe: Any, keepalive_s: float) -> Any:
+        outcome = previous_await(pipe, keepalive_s)
+        if outcome is None:
+            grace_misses[0] += 1
+            if grace_misses[0] >= 2:
+                held.gate.set()
+        return outcome
+
+    namespace["_grace_await"] = _await_then_release
+    try:
+        rm = msg_ctx.client.post("/v1/messages", json=_anth_body(_ECHO_PROMPT, stream=True))
+    finally:
+        namespace["_grace_await"] = previous_await
         held.gate.set()
-
-    opener = threading.Thread(target=_open_gate, daemon=True)
-    opener.start()
-    rm = msg_ctx.client.post("/v1/messages", json=_anth_body(_ECHO_PROMPT, stream=True))
-    opener.join(timeout=2.0)
     fm = _sse_frames(rm.text)
     names = [f.event for f in fm]
     ms_idx = names.index("message_start") if "message_start" in names else len(fm)
