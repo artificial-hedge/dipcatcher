@@ -76,5 +76,5 @@ def bench_ntru_toy(seed: int = _SEED) -> dict[str, float]:
     trials = 40
     for _ in range(trials):
         with contextlib.suppress(Exception):
-            ok += _ntru_roundtrip(np.random.RandomState(rng.randint(2**31)))
+            ok += _ntru_roundtrip(np.random.RandomState(rng.randint(2**31, dtype=np.int64)))
     return {"synthetic_ntru_roundtrip": ok / trials}

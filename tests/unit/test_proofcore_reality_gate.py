@@ -27,8 +27,12 @@ _HEX = "ab" * 32
 
 
 def _run_gate(db: Path, ledger: Path) -> subprocess.CompletedProcess[str]:
+    # GNU make treats backslash as an escape in a command-line variable, so
+    # a Windows tmp path is neither a file bash can see nor the default DB.
+    db_arg = db.as_posix()
+    ledger_arg = ledger.as_posix()
     return subprocess.run(
-        ["make", "reality-gate", f"PROOFCORE_DB={db}", f"PROOFCORE_LEDGER={ledger}"],
+        ["make", "reality-gate", f"PROOFCORE_DB={db_arg}", f"PROOFCORE_LEDGER={ledger_arg}"],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,

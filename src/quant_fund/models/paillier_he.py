@@ -34,8 +34,10 @@ def bench_paillier_he(seed: int = _SEED) -> dict[str, float]:
     for _ in range(trials):
         m1 = int(rng.randint(1, 10_000))
         m2 = int(rng.randint(1, 10_000))
-        r1 = int(rng.randint(1, _N - 1))
-        r2 = int(rng.randint(1, _N - 1))
+        # int64 matches the Linux RandomState stream. The default dtype is
+        # C long, which is int32 on Windows, and _N does not fit in int32.
+        r1 = int(rng.randint(1, _N - 1, dtype=np.int64))
+        r2 = int(rng.randint(1, _N - 1, dtype=np.int64))
         c1 = paillier_enc(m1, r1)
         c2 = paillier_enc(m2, r2)
         ok += float(paillier_dec(c1, lam) == m1 % _N)

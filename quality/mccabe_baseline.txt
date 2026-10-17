@@ -765,7 +765,6 @@ src/quant_fund/portfolio/wasserstein_dro.py:solve_wasserstein_dro 13
 src/quant_fund/pretrade/kernel.py:hot_check 38
 src/quant_fund/proof/replay.py:replay_bundle 17
 src/quant_fund/proof/runner.py:_compute_feature 13
-src/quant_fund/proof/verify.py:_check_committed_sidecars 11
 src/quant_fund/proof/verify.py:verify_bundle 14
 src/quant_fund/public.py:_as_backtest_metrics 18
 src/quant_fund/public.py:_as_json 10

@@ -332,7 +332,7 @@ def _committed_artifact(
         resolved = resolved.resolve()
         if not resolved.is_relative_to(root_path):
             continue  # escapes are flagged by the artifact pass itself
-        rel = str(resolved.relative_to(root_path))
+        rel = resolved.relative_to(root_path).as_posix()
         rel_paths.append(rel)
         resolved_entries.append((declared, resolved))
     if not rel_paths:
@@ -350,7 +350,7 @@ def _committed_artifact(
         return None  # not a git checkout — nothing to clobber
     tracked = set(proc.stdout.split())
     for declared, resolved in resolved_entries:
-        if str(resolved.relative_to(root_path)) in tracked:
+        if resolved.relative_to(root_path).as_posix() in tracked:
             return declared
     return None
 

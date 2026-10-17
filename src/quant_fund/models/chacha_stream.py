@@ -45,7 +45,7 @@ def bench_chacha_stream(seed: int = _SEED) -> dict[str, float]:
     ok = 0.0
     trials = 30
     for _ in range(trials):
-        key = rng.randint(0, 2**32 - 1, 8).astype(np.uint32)
+        key = rng.randint(0, 2**32 - 1, 8, dtype=np.int64).astype(np.uint32)
         b1 = block(key, 0, 7)
         b2 = block(key, 0, 7)
         b3 = block(key, 1, 7)

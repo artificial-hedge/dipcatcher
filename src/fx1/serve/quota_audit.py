@@ -89,6 +89,7 @@ from contextvars import ContextVar
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from fx1.serve.quota2_audit import _bound_store_clock, _ManualClock
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -505,23 +506,28 @@ def _rpm_window_probes() -> dict[str, Any]:  # NOSONAR(S3776) — scripted traff
     out["rpm_refusal_no_slot_backfill"] = card["window_remaining"] == 0
 
     # --- window expiry re-admits ----------------------------------------------
-    client2, api_mod2 = _client(
-        {"byok": lambda: _MeterBackend("byok-model", dict(_U6))}, api_key=_ROOT
-    )
+    # A wall sleep loses to a slow client: the call that must be refused
+    # arrives after the 50 ms window and is admitted. The store clock moves
+    # only when this probe advances it.
+    clock = _ManualClock()
     keys_mod2 = _keys_mod()
     saved_window = float(getattr(keys_mod2, _RATE_WINDOW_CONST))
     try:
-        setattr(keys_mod2, _RATE_WINDOW_CONST, _TINY_WINDOW_S)
-        w_raw, _w_id = _mint(client2, root_h, rpm=1)
-        w_h = {_H_KEY: w_raw}
-        first = _complete(client2, w_h)
-        denied = _complete(client2, w_h)
-        time.sleep(_WINDOW_RECOVER_S)
-        third = _complete(client2, w_h)
-        out["rpm_window_expiry_readmits"] = (
-            first.status_code == 200 and denied.status_code == 429 and third.status_code == 200
-        )
-        out["rpm_window_restart_fresh_count"] = third.headers.get(_H_RL_REMAINING) == "0"
+        with _bound_store_clock(clock):
+            setattr(keys_mod2, _RATE_WINDOW_CONST, _TINY_WINDOW_S)
+            client2, _api_mod2 = _client(
+                {"byok": lambda: _MeterBackend("byok-model", dict(_U6))}, api_key=_ROOT
+            )
+            w_raw, _w_id = _mint(client2, root_h, rpm=1)
+            w_h = {_H_KEY: w_raw}
+            first = _complete(client2, w_h)
+            denied = _complete(client2, w_h)
+            clock.advance(_WINDOW_RECOVER_S)
+            third = _complete(client2, w_h)
+            out["rpm_window_expiry_readmits"] = (
+                first.status_code == 200 and denied.status_code == 429 and third.status_code == 200
+            )
+            out["rpm_window_restart_fresh_count"] = third.headers.get(_H_RL_REMAINING) == "0"
     finally:
         setattr(keys_mod2, _RATE_WINDOW_CONST, saved_window)
 
@@ -984,10 +990,20 @@ def _error_path_probes() -> dict[str, Any]:  # NOSONAR(S3776)
         api_key=_ROOT,
         rate_limit_rps=1.0,
     )
-    g_raw, g_id = _mint(client3, root_h)
-    denied_g = _complete(client3, {_H_KEY: g_raw})
-    time.sleep(1.05)  # let the 1 rps bucket refill so the card read admits
-    card3 = _key_card(client3, root_h, g_id)
+    # The limiter refills from time.monotonic. Hold it still across the
+    # mint and the refused call, then move it past one second so the
+    # card read is admitted. A wall sleep of 1.05 s is not that contract
+    # when the mint itself already took longer than a second.
+    mono = time.monotonic
+    clock_box = [mono()]
+    time.monotonic = lambda: clock_box[0]
+    try:
+        g_raw, g_id = _mint(client3, root_h)
+        denied_g = _complete(client3, {_H_KEY: g_raw})
+        clock_box[0] += 1.05
+        card3 = _key_card(client3, root_h, g_id)
+    finally:
+        time.monotonic = mono
     out["global_limiter_precedes_auth"] = (
         denied_g.status_code == 429
         and denied_g.json().get("code") == "too_many_requests"
@@ -1088,24 +1104,33 @@ def _client_probes() -> dict[str, Any]:
 
     # retry_writes + a Retry-After hint inside the wait budget: the
     # client retries and lands once the (patched) window re-opens
+    clock = _ManualClock()
     saved_window = float(getattr(keys_mod, _RATE_WINDOW_CONST))
     try:
         setattr(keys_mod, _RATE_WINDOW_CONST, _TINY_WINDOW_S)
-        spy3 = _TransportSpy(client)
-        hc3 = HarnessClient(
-            "http://quota-audit.dev",
-            api_key=_mint(client, root_h, rpm=1)[0],
-            transport=spy3,
-            max_retries=4,
-            retry_writes=True,
-            sleep=lambda s: time.sleep(min(s, _WINDOW_RECOVER_S)),
-        )
-        hc3.complete([{"role": "user", "content": "a"}], backend="byok")
-        ok_retry = hc3.complete([{"role": "user", "content": "b"}], backend="byok")
-        posts3 = [c for c in spy3.calls if c[0] == "POST" and c[1] == _COMPLETE_PATH]
-        out["client_retries_rate_limited_to_admit"] = (
-            ok_retry.content == "ok:b" and len(posts3) == 3
-        )
+        with _bound_store_clock(clock):
+            timed, _ = _client(
+                {"byok": lambda: _MeterBackend("byok-model", dict(_U6))}, api_key=_ROOT
+            )
+            spy3 = _TransportSpy(timed)
+
+            def _advance_window(wait_s: float) -> None:
+                clock.advance(min(float(wait_s), _WINDOW_RECOVER_S))
+
+            hc3 = HarnessClient(
+                "http://quota-audit.dev",
+                api_key=_mint(timed, root_h, rpm=1)[0],
+                transport=spy3,
+                max_retries=4,
+                retry_writes=True,
+                sleep=_advance_window,
+            )
+            hc3.complete([{"role": "user", "content": "a"}], backend="byok")
+            ok_retry = hc3.complete([{"role": "user", "content": "b"}], backend="byok")
+            posts3 = [c for c in spy3.calls if c[0] == "POST" and c[1] == _COMPLETE_PATH]
+            out["client_retries_rate_limited_to_admit"] = (
+                ok_retry.content == "ok:b" and len(posts3) == 3
+            )
     finally:
         setattr(keys_mod, _RATE_WINDOW_CONST, saved_window)
 

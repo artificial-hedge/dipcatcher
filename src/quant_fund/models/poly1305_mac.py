@@ -22,8 +22,12 @@ def bench_poly1305_mac(seed: int = _SEED) -> dict[str, float]:
     trials = 30
     for _ in range(trials):
         msg = bytes(rng.randint(0, 256, int(rng.randint(1, 64))))
-        r = int(rng.randint(1, (1 << 60) - 1)) | (int(rng.randint(1, (1 << 60))) << 62)
-        s = int(rng.randint(1, (1 << 60) - 1)) | (int(rng.randint(1, (1 << 60))) << 62)
+        r = int(rng.randint(1, (1 << 60) - 1, dtype=np.int64)) | (
+            int(rng.randint(1, 1 << 60, dtype=np.int64)) << 62
+        )
+        s = int(rng.randint(1, (1 << 60) - 1, dtype=np.int64)) | (
+            int(rng.randint(1, 1 << 60, dtype=np.int64)) << 62
+        )
         t1 = poly1305(msg, r, s)
         ok += float(t1 == poly1305(msg, r, s))
         # tampered message should give different tag (w.h.p.)

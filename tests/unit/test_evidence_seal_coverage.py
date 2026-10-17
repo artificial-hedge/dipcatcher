@@ -119,7 +119,7 @@ def _writer_files() -> dict[str, list[int]]:
             continue
         hits = json_writer_lines(tree)
         if hits:
-            writers[str(path.relative_to(SRC))] = hits
+            writers[path.relative_to(SRC).as_posix()] = hits
     return writers
 
 

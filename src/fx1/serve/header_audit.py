@@ -107,7 +107,8 @@ import re
 import socket
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -1538,6 +1539,23 @@ def _anthropic_probes() -> dict[str, bool]:
 # ---------------------------------------------------------------------------
 
 
+@contextmanager
+def _frozen_monotonic() -> Iterator[None]:
+    """Hold ``time.monotonic`` still for one token-bucket burst.
+
+    ``_RateLimiter`` refills ``rps * (now - ts)``. A client call that
+    takes longer than ``1 / rps`` admits the next call. The limiter
+    reads ``time.monotonic`` at call time, so the pin is the time module.
+    """
+    original = time.monotonic
+    frozen = original()
+    time.monotonic = lambda: frozen
+    try:
+        yield
+    finally:
+        time.monotonic = original
+
+
 def _rate_limit_probes() -> dict[str, bool]:
     results: dict[str, bool] = {}
     client, _api = _client(_SpyResolver(), api_key=_ROOT, rate_limit_rps=100.0)
@@ -1560,8 +1578,9 @@ def _rate_limit_probes() -> dict[str, bool]:
     # second is refused while still reporting the armed headers
     c1rps, _ = _client(_SpyResolver(), api_key=_ROOT, rate_limit_rps=1.0)
     h1 = {"X-API-Key": _ROOT}
-    r1 = c1rps.get("/harness/commands", headers=h1)
-    r2 = c1rps.get("/harness/commands", headers=h1)
+    with _frozen_monotonic():
+        r1 = c1rps.get("/harness/commands", headers=h1)
+        r2 = c1rps.get("/harness/commands", headers=h1)
     results["rl_remaining_decrements"] = (
         r1.status_code == 200
         and rl(r1).get("x-ratelimit-remaining") == "0"
@@ -1600,28 +1619,26 @@ def _rate_limit_probes() -> dict[str, bool]:
     )
     # global window refusal — limiter saturated
     tight, _api2 = _client(_SpyResolver(), api_key=_ROOT, rate_limit_rps=1.0)
-    tight.get("/harness/commands", headers={"X-API-Key": _ROOT})
-    r = tight.get("/harness/commands", headers={"X-API-Key": _ROOT})
-    got = rl(r)
-    results["rl_headers_on_global_429"] = (
-        r.status_code == 429
-        and r.headers.get("retry-after") is not None
-        and {"x-ratelimit-limit", "x-ratelimit-remaining", "x-ratelimit-reset"} <= set(got)
-    )
-    results["rl_enveloped_openai_shape"] = (
-        _openai_err(
-            tight.post(
-                _CHAT_PATH,
-                json={
-                    "model": "hosted_k3",
-                    "messages": [{"role": "user", "content": "hi"}],
-                },
-                headers={"X-API-Key": _ROOT},
-            )
+    with _frozen_monotonic():
+        tight.get("/harness/commands", headers={"X-API-Key": _ROOT})
+        r = tight.get("/harness/commands", headers={"X-API-Key": _ROOT})
+        got = rl(r)
+        results["rl_headers_on_global_429"] = (
+            r.status_code == 429
+            and r.headers.get("retry-after") is not None
+            and {"x-ratelimit-limit", "x-ratelimit-remaining", "x-ratelimit-reset"} <= set(got)
         )
-        is not None
-        or tight.get("/health").status_code == 200  # health is exempt
-    )
+        refused = tight.post(
+            _CHAT_PATH,
+            json={
+                "model": "hosted_k3",
+                "messages": [{"role": "user", "content": "hi"}],
+            },
+            headers={"X-API-Key": _ROOT},
+        )
+        results["rl_enveloped_openai_shape"] = (
+            _openai_err(refused) is not None or tight.get("/health").status_code == 200
+        )
     # limiter off — no headers at all
     quiet, _api3 = _client(_SpyResolver(), api_key=_ROOT)
     r = quiet.get("/harness/commands", headers={"X-API-Key": _ROOT})
