@@ -58,8 +58,21 @@ def test_physical_memory_positive() -> None:
 
 
 def test_ram_plan_shape() -> None:
+    """Headroom is the lab floor, clamped so a small runner still fits.
+
+    ``ram_plan`` asks for 8 GiB, then clamps to ``total - 512 MiB``. A 7 GiB
+    macOS runner therefore reports 6.5 GiB of headroom. The contract is that
+    clamp, not a demand that every host have 8 GiB free.
+    """
     plan = resources.ram_plan()
-    assert plan["headroom_bytes"] >= 8 * 1024**3
+    total = int(plan["total_bytes"])
+    min_workspace = 512 * 1024**2
+    expected = min(
+        resources.RAM_HEADROOM_BYTES,
+        max(total // 5, 8 * 1024**3),
+        max(total - min_workspace, 0),
+    )
+    assert plan["headroom_bytes"] == expected
     assert 0 < plan["workspace_bytes"] <= plan["total_bytes"]
     assert plan["workspace_gib"] > 0
 
