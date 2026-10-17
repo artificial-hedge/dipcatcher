@@ -8,7 +8,9 @@ under a per-test ``FX1_CONFIG_DIR``.
 from __future__ import annotations
 
 import json
+import os
 import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -144,7 +146,11 @@ class NoResearcher:
 
 @pytest.fixture()
 def env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
-    monkeypatch.setenv("FX1_CONFIG_DIR", str(tmp_path / "fx1-config"))
+    config_dir = tmp_path / "fx1-config"
+    if os.name == "nt":
+        config_dir.mkdir()
+        profiles._restrict_windows_acl(config_dir, directory=True)
+    monkeypatch.setenv("FX1_CONFIG_DIR", str(config_dir))
     monkeypatch.delenv("MOONSHOT_API_KEY", raising=False)
     monkeypatch.delenv("FX1_BASE_URL", raising=False)
     for name in (
@@ -348,6 +354,166 @@ def test_budget_limits_harness_steps_in_a_superpower_run(env: Path, tmp_path: Pa
     assert all(isinstance(k["timeout_s"], int) for k in harness.kwargs[1:])
 
 
+def test_superpower_counts_each_model_request_once(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+
+    class Backend:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            self.calls += 1
+            if self.calls == 1:
+                return '{"capabilities": ["doctor"], "rationale": "check readiness"}'
+            return "Doctor check complete."
+
+    backend = Backend()
+    concierge, out = make(
+        tmp_path,
+        backend=backend,
+        run_budget=RunBudget(max_model_calls=2),
+    )
+    concierge.handle_line("/superpower doctor readiness --sync")
+
+    assert backend.calls == 2  # planner refinement and synthesis
+    assert concierge.job is not None
+    result = concierge.job.result
+    assert result.budget_snapshot["model_calls"] == {"used": 2, "limit": 2}
+    assert result.runs[-1].id == "synthesize"
+    assert result.runs[-1].status == "ran"
+    assert "Doctor check complete." in joined(out)
+
+
+def test_background_superpower_planner_can_be_cancelled(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    started = threading.Event()
+    release = threading.Event()
+
+    class Backend:
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            started.set()
+            release.wait(5)
+            return '{"capabilities": ["doctor"]}'
+
+    harness = CatalogHarness()
+    concierge, _ = make(tmp_path, backend=Backend(), harness=harness)
+    try:
+        beginning = time.monotonic()
+        concierge.handle_line("/superpower doctor readiness")
+        assert started.wait(1)
+        assert time.monotonic() - beginning < 1.0
+        assert concierge.cancel_job()
+        concierge.join_job(timeout_s=1)
+        assert concierge.job is not None and not concierge.job.running
+        assert concierge.job.result.cancelled is True
+        assert [name for name, _ in harness.calls] == []
+    finally:
+        release.set()
+
+
+def test_superpower_planner_stops_at_wall_deadline(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    release = threading.Event()
+    timeouts: list[float] = []
+
+    class Backend:
+        def complete(self, messages: list[dict[str, str]], *, timeout_s: float) -> str:
+            timeouts.append(timeout_s)
+            release.wait(5)
+            return '{"capabilities": ["doctor"]}'
+
+    harness = CatalogHarness()
+    concierge, _ = make(
+        tmp_path,
+        backend=Backend(),
+        harness=harness,
+        run_budget=RunBudget(max_wall_s=0.5),
+    )
+    try:
+        beginning = time.monotonic()
+        concierge.handle_line("/superpower doctor readiness --sync")
+        assert time.monotonic() - beginning < 2.0
+        assert concierge.job is not None
+        assert concierge.job.result.partial is True
+        assert all(run.status == "budget-exceeded" for run in concierge.job.result.runs)
+        assert not harness.calls
+        assert len(timeouts) == 1 and 0 < timeouts[0] <= 0.5
+    finally:
+        release.set()
+
+
+def test_background_superpower_synthesis_can_be_cancelled(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    started = threading.Event()
+    release = threading.Event()
+
+    class Backend:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            self.calls += 1
+            if self.calls == 1:
+                return '{"capabilities": ["doctor"]}'
+            started.set()
+            release.wait(5)
+            return "late model answer"
+
+    concierge, _ = make(tmp_path, backend=Backend())
+    try:
+        concierge.handle_line("/superpower doctor readiness")
+        assert started.wait(1)
+        assert concierge.cancel_job()
+        concierge.join_job(timeout_s=1)
+        assert concierge.job is not None and not concierge.job.running
+        result = concierge.job.result
+        assert result.cancelled is True
+        assert result.runs[-1].status == "cancelled"
+        assert "late model answer" not in result.summary
+    finally:
+        release.set()
+
+
+def test_superpower_synthesis_stops_at_wall_deadline(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    release = threading.Event()
+
+    class Backend:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            self.calls += 1
+            if self.calls == 1:
+                return '{"capabilities": ["doctor"]}'
+            release.wait(5)
+            return "late model answer"
+
+    backend = Backend()
+    concierge, _ = make(tmp_path, backend=backend, run_budget=RunBudget(max_wall_s=0.5))
+    try:
+        beginning = time.monotonic()
+        concierge.handle_line("/superpower doctor readiness --sync")
+        assert time.monotonic() - beginning < 2.0
+        assert backend.calls == 2
+        assert concierge.job is not None
+        result = concierge.job.result
+        assert result.runs[-1].status == "budget-exceeded"
+        assert "late model answer" not in result.summary
+    finally:
+        release.set()
+
+
 def test_status_reports_elapsed_and_budget(env: Path, tmp_path: Path) -> None:
     concierge, out = make(tmp_path)
     concierge.handle_line("/status")
@@ -401,9 +567,9 @@ def test_keys_test_reports_served_identity(
     concierge, out = make(tmp_path, backend=ProbeBackend({"model": "kimi-k3-0905"}))
     concierge.handle_line("/keys test fx1")
     text = joined(out)
-    assert "fx1 @ api.moonshot.ai: OK" in text
+    assert "fx1 @ api.moonshot.ai: FAILED (identity_mismatch)" in text
     assert "kimi-k3-0905" in text
-    assert "served identity differs" in text
+    assert "requested model 'fx1'; served model" in text
     assert "identity_probe" in journal_kinds(concierge)
 
 
@@ -522,11 +688,34 @@ def test_plan_keeps_research_for_eligible_goal_and_explains_constraint() -> None
     assert "not the benches executed" in text
 
 
-def test_plan_with_unavailable_catalog_runs_research_but_says_so() -> None:
+def test_plan_with_unavailable_catalog_blocks_research_and_explains_why() -> None:
     catalog = FamilyCatalog.unavailable("harness exploded")
     plan = plan_goal("run the conformal volatility benchmark", catalog=catalog)
-    assert "research" in plan.ids()
+    assert "research" not in plan.ids()
+    assert plan.blocked == ["research"]
+    assert "excluded: research:" in plan.describe()
     assert "family catalog unavailable (harness exploded)" in plan.describe()
+
+
+def test_unavailable_catalog_keeps_unrelated_goal_without_research_exclusion() -> None:
+    plan = plan_goal("check readiness", catalog=FamilyCatalog.unavailable("harness exploded"))
+    assert plan.blocked == ["research"]
+    assert "doctor" in plan.ids()
+    assert plan.exclusions == []
+
+
+def test_unavailable_catalog_preserves_other_capabilities_under_model_refinement() -> None:
+    catalog = FamilyCatalog.unavailable("harness exploded")
+
+    def model_fn(prompt: str) -> str:
+        assert "- research:" not in prompt
+        return json.dumps({"capabilities": ["research", "doctor", "web_research"]})
+
+    plan = plan_goal("benchmark health check", catalog=catalog, model_fn=model_fn)
+    assert plan.source == "model+validated"
+    assert "research" not in plan.ids()
+    assert "doctor" in plan.ids()
+    assert "web_research" in plan.ids()
 
 
 def test_model_refinement_cannot_reinstate_a_blocked_capability() -> None:
@@ -553,6 +742,131 @@ def test_superpower_run_with_live_catalog_reports_eligibility(env: Path, tmp_pat
     out.clear()
     concierge.handle_line("/superpower help")
     assert "family catalog v2" in joined(out)  # cached catalog shown in the help listing
+
+
+def test_superpower_run_with_unavailable_catalog_excludes_research(
+    env: Path, tmp_path: Path
+) -> None:
+    class BrokenCatalog(CatalogHarness):
+        def run(
+            self,
+            name: str,
+            extra_args: list[str] | None = None,
+            **kwargs: Any,
+        ) -> Result:
+            if name == "research-families":
+                self.calls.append((name, extra_args))
+                return Result(1, "", "catalog offline")
+            return super().run(name, extra_args, **kwargs)
+
+    harness = BrokenCatalog()
+    concierge, out = make(tmp_path, harness=harness)
+    concierge.handle_line("/superpower run the conformal volatility benchmark --sync")
+    text = joined(out)
+    assert "excluded: research: family catalog unavailable (catalog offline)" in text
+    assert "result: partial" in text
+    assert harness.calls == [("research-families", None)]
+
+
+def test_background_superpower_catalog_lookup_can_be_cancelled(env: Path, tmp_path: Path) -> None:
+    started = threading.Event()
+    stopped = threading.Event()
+
+    class BlockingCatalog(CatalogHarness):
+        def run(
+            self,
+            name: str,
+            extra_args: list[str] | None = None,
+            *,
+            cancel_event: threading.Event | None = None,
+            timeout_s: int | None = None,
+        ) -> Result:
+            if name == "research-families":
+                self.calls.append((name, extra_args))
+                started.set()
+                assert cancel_event is not None
+                cancel_event.wait(5)
+                stopped.set()
+                return Result(-15, "", "catalog cancelled", cancelled=True)
+            return super().run(name, extra_args, cancel_event=cancel_event, timeout_s=timeout_s)
+
+    harness = BlockingCatalog()
+    concierge, _ = make(tmp_path, harness=harness)
+    beginning = time.monotonic()
+    concierge.handle_line("/superpower run the conformal volatility benchmark")
+    assert started.wait(1)
+    assert time.monotonic() - beginning < 1.0
+    assert concierge.cancel_job()
+    concierge.join_job(timeout_s=1)
+
+    assert stopped.wait(1)
+    assert concierge.job is not None and not concierge.job.running
+    assert concierge.job.result.cancelled is True
+    assert harness.calls == [("research-families", None)]
+
+
+def test_background_catalog_legacy_runner_does_not_hold_cancel(env: Path, tmp_path: Path) -> None:
+    started = threading.Event()
+    release = threading.Event()
+
+    class BlockingLegacyCatalog:
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def run(self, name: str) -> Result:
+            self.calls.append(name)
+            started.set()
+            release.wait(5)
+            return Result(0, CATALOG_JSON)
+
+    harness = BlockingLegacyCatalog()
+    concierge, _ = make(tmp_path, harness=harness)
+    try:
+        concierge.handle_line("/superpower run the conformal volatility benchmark")
+        assert started.wait(1)
+        assert concierge.cancel_job()
+        concierge.join_job(timeout_s=1)
+        assert concierge.job is not None and not concierge.job.running
+        assert concierge.job.result.cancelled is True
+        assert harness.calls == ["research-families"]
+    finally:
+        release.set()
+
+
+def test_superpower_catalog_lookup_stops_at_wall_deadline(env: Path, tmp_path: Path) -> None:
+    stopped = threading.Event()
+    forwarded: list[int] = []
+
+    class BlockingCatalog(CatalogHarness):
+        def run(
+            self,
+            name: str,
+            extra_args: list[str] | None = None,
+            *,
+            cancel_event: threading.Event | None = None,
+            timeout_s: int | None = None,
+        ) -> Result:
+            if name == "research-families":
+                self.calls.append((name, extra_args))
+                assert cancel_event is not None and timeout_s is not None
+                forwarded.append(timeout_s)
+                cancel_event.wait(5)
+                stopped.set()
+                return Result(-15, "", "catalog deadline", cancelled=True)
+            return super().run(name, extra_args, cancel_event=cancel_event, timeout_s=timeout_s)
+
+    harness = BlockingCatalog()
+    concierge, _ = make(tmp_path, harness=harness, run_budget=RunBudget(max_wall_s=1.0))
+    beginning = time.monotonic()
+    concierge.handle_line("/superpower run the conformal volatility benchmark --sync")
+
+    assert time.monotonic() - beginning < 2.0
+    assert stopped.wait(1)
+    assert forwarded == [1]
+    assert concierge.job is not None
+    assert concierge.job.result.partial is True
+    assert all(run.status == "budget-exceeded" for run in concierge.job.result.runs)
+    assert harness.calls == [("research-families", None)]
 
 
 # ---------------------------------------------------------------------------
@@ -611,7 +925,7 @@ def test_run_plan_keeps_working_with_legacy_two_argument_fakes(tmp_path: Path) -
     result = run_plan(plan, ctx)
     assert harness.calls == ["verify-research"]
     assert result.runs[0].status == "ran"
-    assert result.runs[0].evidence == "verified-receipt"  # verifier exit 0, no SYNTHETIC label
+    assert result.runs[0].evidence == "harness-output-unverified"
 
 
 def test_evidence_classes_separate_synthetic_from_verified(tmp_path: Path) -> None:
@@ -619,7 +933,7 @@ def test_evidence_classes_separate_synthetic_from_verified(tmp_path: Path) -> No
         def run(self, name: str, extra_args: list[str] | None = None, **kwargs: Any) -> Result:
             if name == "research":
                 return Result(0, "DATA_LABEL=SYNTHETIC\nSYNTHETIC\nbench ok\n")
-            return Result(0, "receipt verified\n")
+            return Result(0, json.dumps({"valid": True, "path": "receipts/run.json", "errors": []}))
 
     plan = SuperpowerPlan(
         goal="g",
@@ -629,13 +943,53 @@ def test_evidence_classes_separate_synthetic_from_verified(tmp_path: Path) -> No
             PlannedCapability("synthesize", "t"),
         ],
     )
-    result = run_plan(plan, SuperpowerContext(harness=Mixed(), approvals=ApprovalGate()))
+    result = run_plan(
+        plan,
+        SuperpowerContext(
+            harness=Mixed(),
+            approvals=ApprovalGate(),
+            catalog=FamilyCatalog.from_json(CATALOG_JSON),
+        ),
+    )
     evidence = {r.id: r.evidence for r in result.runs}
     assert evidence["research"] == "synthetic-correctness"
-    assert evidence["verify-research"] == "verified-receipt"
+    assert evidence["verify-research"] == "verified-research-artifact"
     assert evidence["synthesize"] == "deterministic-summary"
     assert "<synthetic-correctness>" in result.summary
     assert result.partial is False
+
+
+def test_diagnostics_and_unstructured_verifier_output_do_not_claim_verified_artifact() -> None:
+    class Diagnostics:
+        def run(self, name: str, extra_args: list[str] | None = None, **kwargs: Any) -> Result:
+            if name == "doctor":
+                return Result(0, "research_receipt: ok\n")
+            if name == "monitor":
+                return Result(0, json.dumps({"ok": True, "model_id": "candidate"}))
+            return Result(0, "receipt verified\n")
+
+    plan = SuperpowerPlan(
+        goal="g",
+        capabilities=[
+            PlannedCapability(name, "t") for name in ("doctor", "monitor", "verify-research")
+        ],
+    )
+    result = run_plan(plan, SuperpowerContext(harness=Diagnostics(), approvals=ApprovalGate()))
+    assert {run.id: run.evidence for run in result.runs} == {
+        "doctor": "harness-output-unverified",
+        "monitor": "harness-output-unverified",
+        "verify-research": "harness-output-unverified",
+    }
+
+
+def test_invalid_verifier_verdict_cannot_claim_verified_artifact() -> None:
+    class InvalidVerdict:
+        def run(self, name: str, extra_args: list[str] | None = None, **kwargs: Any) -> Result:
+            return Result(0, json.dumps({"valid": False, "path": "receipts/run.json"}))
+
+    plan = SuperpowerPlan(goal="g", capabilities=[PlannedCapability("verify-research", "t")])
+    result = run_plan(plan, SuperpowerContext(harness=InvalidVerdict(), approvals=ApprovalGate()))
+    assert result.runs[0].evidence == "harness-output-unverified"
 
 
 # ---------------------------------------------------------------------------

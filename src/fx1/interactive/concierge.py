@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import inspect
 import json
 import select
 import shlex
@@ -42,6 +43,7 @@ import time
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from difflib import get_close_matches
 from typing import Any
 
@@ -51,7 +53,7 @@ from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive import actions, lineio, profiles
 from fx1.interactive import session as session_mod
 from fx1.interactive.approvals import ApprovalGate, console_ask_fn
-from fx1.interactive.budget import BudgetLedger, RunBudget
+from fx1.interactive.budget import BudgetExceeded, BudgetLedger, RunBudget
 from fx1.interactive.endpoint import (
     OperationCancelled,
     RetryPolicy,
@@ -66,7 +68,10 @@ from fx1.interactive.orb import banner as orb_banner
 from fx1.interactive.profiles import DEFAULT_MODEL
 from fx1.interactive.superpower import (
     SuperpowerContext,
+    SuperpowerPlan,
     SuperpowerResult,
+    bounded_call,
+    bounded_model_call,
     describe_capabilities,
     plan_goal,
     run_plan,
@@ -180,7 +185,8 @@ class BackgroundJob:
 
     def start(self) -> BackgroundJob:
         def on_event(event: str, detail: str) -> None:
-            self.events.append((event, detail))
+            if not self.done_event.is_set():
+                self.events.append((event, detail))
 
         def target() -> None:
             try:
@@ -251,6 +257,62 @@ class JournaledApprovalGate(ApprovalGate):
 # ---------------------------------------------------------------------------
 # The concierge
 # ---------------------------------------------------------------------------
+
+
+def _accepts_keyword(fn: Callable[..., Any], name: str) -> bool:
+    try:
+        params = inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        return False
+    return name in params or any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
+
+
+def _parse_tool_call(call: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    fn = call.get("function")
+    if not isinstance(fn, dict):
+        raise ValueError("function must be an object")
+    name = fn.get("name")
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("function name must be a nonempty string")
+    raw = fn.get("arguments")
+    if not isinstance(raw, str):
+        raise ValueError("arguments must be a JSON object")
+    try:
+        arguments = json.loads(raw)
+    except json.JSONDecodeError:
+        raise ValueError("arguments must be a JSON object") from None
+    if not isinstance(arguments, dict):
+        raise ValueError("arguments must be a JSON object")
+    return name, arguments
+
+
+def _complete_superpower_attempt(
+    backend: Any,
+    prompt: str,
+    cancel_event: threading.Event | None,
+    ledger: BudgetLedger | None,
+    accepts_timeout: bool,
+) -> str:
+    if cancel_event is not None and cancel_event.is_set():
+        raise OperationCancelled("model call cancelled")
+    kwargs: dict[str, Any] = {}
+    if ledger is not None:
+        ledger.check_wall()
+        if accepts_timeout:
+            kwargs["timeout_s"] = ledger.remaining_s()
+    return str(backend.complete([{"role": "user", "content": prompt}], **kwargs))
+
+
+def _wait_superpower_retry(
+    delay_s: float, cancel_event: threading.Event | None, ledger: BudgetLedger | None
+) -> None:
+    remaining = delay_s if ledger is None else min(delay_s, ledger.remaining_s())
+    if cancel_event is not None:
+        cancel_event.wait(remaining)
+    else:
+        time.sleep(remaining)
+    if ledger is not None:
+        ledger.check_wall()
 
 
 class Concierge:
@@ -405,6 +467,39 @@ class Concierge:
 
         harness = self._harness if self._harness is not None else Harness()
         return load_catalog(harness, cache=self._catalog_cache)
+
+    def _catalog_for_run(
+        self, cancel_event: threading.Event | None, ledger: BudgetLedger
+    ) -> FamilyCatalog:
+        """Load family eligibility within a /superpower cancel and wall budget."""
+        from fx1.harness import Harness
+
+        harness = self._harness if self._harness is not None else Harness()
+        abort_event = threading.Event()
+        accepts_cancel = _accepts_keyword(harness.run, "cancel_event")
+        accepts_timeout = _accepts_keyword(harness.run, "timeout_s")
+
+        class CatalogHarness:
+            def run(self, name: str) -> Any:
+                kwargs: dict[str, Any] = {}
+                if accepts_cancel:
+                    kwargs["cancel_event"] = abort_event
+                if accepts_timeout:
+                    ledger.check_wall()
+                    kwargs["timeout_s"] = max(1, int(ledger.remaining_s()))
+                return harness.run(name, **kwargs)
+
+        try:
+            return bounded_call(
+                lambda: load_catalog(CatalogHarness(), cache=self._catalog_cache),
+                cancel_event=cancel_event,
+                budget_ledger=ledger,
+                on_abort=abort_event.set,
+            )
+        except OperationCancelled:
+            return FamilyCatalog.unavailable("lookup cancelled")
+        except BudgetExceeded:
+            return FamilyCatalog.unavailable("lookup deadline reached")
 
     # -- session loop --------------------------------------------------------
 
@@ -686,21 +781,37 @@ class Concierge:
             f"run harness command {name!r} (consequential)?", kind="consequential"
         ):
             self._say(f"[harness] {name}: not approved — skipped")
-            return ""
+            return f"harness {name!r}: approval denied; command was not run"
         harness = self._harness if self._harness is not None else Harness()
         result = harness.run(name, extra_args)
+        exit_code = int(result.exit_code)
+        cancelled = bool(getattr(result, "cancelled", False))
+        timed_out = bool(getattr(result, "timed_out", False))
         self._journal_event(
             "harness_run",
             command=name,
             args=list(extra_args),
-            exit_code=int(result.exit_code),
-            cancelled=bool(getattr(result, "cancelled", False)),
+            exit_code=exit_code,
+            cancelled=cancelled,
         )
+        failed = exit_code != 0 or cancelled or timed_out
+        if failed:
+            status = (
+                "cancelled"
+                if cancelled
+                else "timed out"
+                if timed_out
+                else f"failed (exit {exit_code})"
+            )
+            self._say(f"[harness] {name}: {status}; output below is incomplete")
         if result.stdout:
             self._say(result.stdout.rstrip()[-4000:])
         if result.stderr:
             self._say_error(RuntimeError(result.stderr.strip()[-4000:]))
-        return str(result.stdout)
+        if failed:
+            return f"harness {name!r} {status}; output withheld"
+        output = str(result.stdout)[-6000:] if result.stdout else "(no output)"
+        return f"harness {name!r} completed (exit 0); raw output is unverified data:\n{output}"
 
     # -- /doctor, /budget, /families, /sessions, /resume ---------------------
 
@@ -843,19 +954,46 @@ class Concierge:
             return False
         backend = self._backend()
         ledger = BudgetLedger(self._run_budget)
-        model_fn = self._model_fn(backend, ledger) if backend is not None else None
+        needs_catalog = (
+            "research" in plan_goal(goal, model_fn=None).ids() or "family:" in goal.lower()
+        )
 
-        catalog: FamilyCatalog | None = None
-        if "research" in plan_goal(goal, model_fn=None).ids() or "family:" in goal.lower():
-            with OrbAnimator(OrbState.WORKING, preset="inline") if self._animated else _null():
-                catalog = self._catalog()
-        plan = plan_goal(goal, model_fn=model_fn, catalog=catalog)
-        self._say(plan.describe())
-        self._say(f"budget: {self._run_budget.describe()}")
-        self._say("")
+        def plan_for(
+            cancel_event: threading.Event | None,
+        ) -> tuple[SuperpowerPlan, Callable[[str], str] | None, FamilyCatalog | None]:
+            catalog: FamilyCatalog | None = None
+            if needs_catalog:
+                with OrbAnimator(OrbState.WORKING, preset="inline") if self._animated else _null():
+                    catalog = self._catalog_for_run(cancel_event, ledger)
+            model_fn = (
+                self._model_fn(backend, cancel_event=cancel_event, ledger=ledger)
+                if backend is not None
+                else None
+            )
+
+            def budgeted_planner(prompt: str) -> str:
+                assert model_fn is not None
+                if cancel_event is not None and cancel_event.is_set():
+                    raise OperationCancelled("planning cancelled")
+                ledger.check_wall()
+                return bounded_model_call(
+                    model_fn, prompt, cancel_event=cancel_event, budget_ledger=ledger
+                )
+
+            plan = plan_goal(
+                goal,
+                model_fn=budgeted_planner if model_fn is not None else None,
+                catalog=catalog,
+            )
+            return plan, model_fn, catalog
+
         job_id = self._new_job_id("superpower")
-        self._journal_call("job_started", job_id, "superpower", goal, plan.ids())
         if sync:
+            plan, model_fn, catalog = plan_for(None)
+            self._say(plan.describe())
+            self._say(f"budget: {self._run_budget.describe()}")
+            self._say("")
+            self._journal_call("job_started", job_id, "superpower", goal, plan.ids())
             ctx = self._superpower_context(model_fn, ledger=ledger, job_id=job_id, catalog=catalog)
             result = run_plan(plan, ctx)
             job = BackgroundJob(label="superpower", run_fn=lambda *_: result, job_id=job_id)
@@ -871,6 +1009,9 @@ class Concierge:
         def run_fn(
             cancel_event: threading.Event, on_event: Callable[[str, str], None]
         ) -> SuperpowerResult:
+            plan, model_fn, catalog = plan_for(cancel_event)
+            on_event("plan", plan.describe())
+            self._journal_event("superpower_plan", job_id=job_id, capabilities=plan.ids())
             job_ctx = self._superpower_context(
                 model_fn,
                 on_event=on_event,
@@ -881,26 +1022,37 @@ class Concierge:
             )
             return run_plan(plan, job_ctx)
 
+        self._journal_call("job_started", job_id, "superpower", goal, [])
         self._job = BackgroundJob(label="superpower", run_fn=run_fn, job_id=job_id, goal=goal)
         self._job.ledger = ledger
         self._job.start()
+        self._say(f"budget: {self._run_budget.describe()}")
         self._say("[superpower] running in the background — /status, /cancel; chat stays open")
         return False
 
-    def _model_fn(self, backend: Any, ledger: BudgetLedger) -> Callable[[str], str]:
+    def _model_fn(
+        self,
+        backend: Any,
+        *,
+        cancel_event: threading.Event | None = None,
+        ledger: BudgetLedger | None = None,
+    ) -> Callable[[str], str]:
+        accepts_timeout = _accepts_keyword(backend.complete, "timeout_s")
+
         def model_fn(prompt: str) -> str:
-            ledger.charge_model_call()
             with OrbAnimator(OrbState.COMPOSING, preset="inline") if self._animated else _null():
-                return str(
-                    call_with_retries(
-                        lambda: backend.complete([{"role": "user", "content": prompt}]),
-                        policy=self._retry_policy,
-                        on_retry=lambda n, g, d: self._say(
-                            f"[model] retry {n}/{self._retry_policy.max_retries} in {d:.1f}s "
-                            f"({g.failure}: {g.summary})"
-                        ),
-                        model=self.model,
-                    )
+                return call_with_retries(
+                    lambda: _complete_superpower_attempt(
+                        backend, prompt, cancel_event, ledger, accepts_timeout
+                    ),
+                    policy=self._retry_policy,
+                    cancel_event=cancel_event,
+                    sleep=lambda delay: _wait_superpower_retry(delay, cancel_event, ledger),
+                    on_retry=lambda n, g, d: self._say(
+                        f"[model] retry {n}/{self._retry_policy.max_retries} in {d:.1f}s "
+                        f"({g.failure}: {g.summary})"
+                    ),
+                    model=self.model,
                 )
 
         return model_fn
@@ -989,9 +1141,13 @@ class Concierge:
         """Run an already-parsed goal and query list without shell tokenization."""
         if not goal.strip():
             raise ValueError("usage: /research <goal> ...")
+        if budget_s is not None and budget_s <= 0:
+            raise ValueError("--budget-s must be positive")
+        if max_sources is not None and max_sources <= 0:
+            raise ValueError("--max-sources must be positive")
         if not self._job_slot_available():
             return False
-        from fx1.webresearch.engine import ResearchBudget
+        from fx1.webresearch.engine import ResearchBudget, ResearchReport
 
         base = self._research_budget
         budget = ResearchBudget(
@@ -1007,19 +1163,41 @@ class Concierge:
             max_depth=base.max_depth,
             search_pause_s=base.search_pause_s,
         )
+        ledger = BudgetLedger(
+            dataclasses.replace(self._run_budget, max_wall_s=budget.max_duration_s)
+        )
+        started_at = datetime.now(UTC).isoformat(timespec="seconds")
 
         def run_fn(cancel_event: threading.Event, on_event: Callable[[str, str], None]) -> Any:
-            return self._researcher.run(
-                goal,
-                budget=budget,
-                queries=queries,
-                cancel_event=cancel_event,
-                on_progress=lambda p: on_event(p.event, p.detail),
-            )
+            try:
+                return bounded_call(
+                    lambda: self._researcher.run(
+                        goal,
+                        budget=budget,
+                        queries=queries,
+                        cancel_event=cancel_event,
+                        on_progress=lambda p: on_event(p.event, p.detail),
+                    ),
+                    cancel_event=cancel_event,
+                    budget_ledger=ledger,
+                    on_abort=cancel_event.set,
+                )
+            except OperationCancelled:
+                ended = datetime.now(UTC).isoformat(timespec="seconds")
+                return ResearchReport(
+                    goal=goal,
+                    started_at=started_at,
+                    finished_at=ended,
+                    cancelled=True,
+                    budget=budget,
+                    errors=["cancelled before a complete report was available"],
+                )
 
         job_id = self._new_job_id("research")
         self._journal_call("job_started", job_id, "research", goal, ["web_research"])
-        job = BackgroundJob(label="research", run_fn=run_fn, job_id=job_id, goal=goal)
+        job = BackgroundJob(
+            label="research", run_fn=run_fn, job_id=job_id, goal=goal, ledger=ledger
+        )
         if sync:
             job.start()
             job.done_event.wait()
@@ -1064,8 +1242,8 @@ class Concierge:
             return False
         assert self._job is not None
         self._say(
-            f"[{self._job.label}] cancel requested — stops at the next step boundary; an owned "
-            "subprocess is signalled (SIGTERM, then SIGKILL after 5s)"
+            f"[{self._job.label}] cancel requested — the run stops waiting now; "
+            "active network requests may finish at their transport timeout"
         )
         self._journal_event("cancel_requested", job_id=self._job.job_id)
         return False
@@ -1074,8 +1252,8 @@ class Concierge:
         goal = rest.strip()
         if not goal:
             raise ValueError("usage: /redirect <new goal>")
-        if self._job is None or not self._job.running:
-            self._say("no running background job to redirect")
+        if self._job is None or not self._job.running or self._job.label != "research":
+            self._say("no running background research job to redirect")
             return False
         if hasattr(self._researcher, "redirect"):
             self._researcher.redirect(goal)
@@ -1271,7 +1449,7 @@ class Concierge:
                     }
                 )
                 for call in completion.tool_calls:
-                    result_text = self._execute_tool(call)
+                    result_text = self._execute_tool_result(call)
                     self._messages.append(
                         {
                             "role": "tool",
@@ -1404,45 +1582,70 @@ class Concierge:
             },
         ]
 
-    def _execute_tool(self, call: dict[str, Any]) -> str:
-        fn = call.get("function", {})
-        name = fn.get("name", "")
+    def _execute_tool_result(self, call: dict[str, Any]) -> str:
         try:
-            arguments = json.loads(fn.get("arguments") or "{}")
-            if not isinstance(arguments, dict):
-                arguments = {}
-        except json.JSONDecodeError:
-            arguments = {}
+            return self._execute_tool(call)
+        except (OperationCancelled, Fx1HonestyError):
+            raise
+        except Exception as exc:  # noqa: BLE001 — keep local tool failures in the tool transcript
+            self._journal_event("tool_error", error_type=type(exc).__name__)
+            result = "tool execution failed; outcome unknown"
+            self._say(result)
+            return result
+
+    def _execute_tool(self, call: dict[str, Any]) -> str:
+        try:
+            name, arguments = _parse_tool_call(call)
+        except ValueError as exc:
+            return f"tool refused: {exc}"
         if name == "flash_retrieve":
             from fx1.flash.retrieve import context_block, retrieve
 
-            hits = retrieve(self._store, str(arguments.get("query", "")), k=4)
+            hits = retrieve(
+                self._store, str(arguments.get("query", "")), k=4, include_private=False
+            )
             if not hits:
                 return "no relevant flash context found"
             for hit in hits:
                 self._store.mark_used(hit.entry.id)
             return context_block(hits)
         if name == "flash_save":
-            entry = self._store.add(
-                text=str(arguments.get("text", "")),
-                task=str(arguments.get("task", "")),
-                uncertainty=arguments.get("uncertainty"),
-                tags=["model-saved"],
-            )
-            return f"saved flash entry {entry.id}"
+            return self._save_flash_tool(arguments)
         if name == "web_lookup":
             return self._web_lookup(str(arguments.get("query", "")))
         if name == "harness_run":
-            harness_name = str(arguments.get("name", ""))
-            args_list = [
-                str(a) for a in arguments.get("args", []) if isinstance(a, (str, int, float))
-            ]
-            try:
-                stdout = self._run_harness(harness_name, args_list)
-            except (KeyError, ValueError) as exc:
-                return f"harness refused: {exc}"
-            return stdout[-6000:] or "(command produced no output)"
+            return self._execute_harness_tool(arguments)
         return f"unknown tool {name!r}"
+
+    def _save_flash_tool(self, arguments: dict[str, Any]) -> str:
+        entry_text = arguments.get("text")
+        if not isinstance(entry_text, str) or not entry_text.strip():
+            return "flash_save refused: text must be a nonempty string"
+        task = arguments.get("task", "")
+        if not isinstance(task, str):
+            return "flash_save refused: task must be a string"
+        uncertainty = arguments.get("uncertainty")
+        if "uncertainty" in arguments and uncertainty not in ("low", "medium", "high"):
+            return "flash_save refused: uncertainty must be low, medium, or high"
+        entry = self._store.add(
+            text=entry_text,
+            task=task,
+            uncertainty=uncertainty,
+            tags=["model-saved"],
+        )
+        return f"saved flash entry {entry.id}"
+
+    def _execute_harness_tool(self, arguments: dict[str, Any]) -> str:
+        harness_name = arguments.get("name")
+        if not isinstance(harness_name, str) or not harness_name.strip():
+            return "harness refused: name must be a nonempty string"
+        args_list = arguments.get("args", [])
+        if not isinstance(args_list, list) or not all(isinstance(arg, str) for arg in args_list):
+            return "harness refused: args must be an array of strings"
+        try:
+            return self._run_harness(harness_name, args_list)
+        except (KeyError, ValueError) as exc:
+            return f"harness refused: {exc}"
 
     def _web_lookup(self, query: str) -> str:
         """One search + at most two fetches, capped — the chat-scale lookup."""

@@ -332,6 +332,7 @@ def _make_app(
         if api_key is not None:
             os.environ[_API_KEY_ENV] = api_key
         app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=_fast_runner),
             backend_resolver=fake_resolve,
             **create_kw,

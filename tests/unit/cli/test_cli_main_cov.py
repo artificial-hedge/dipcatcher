@@ -1220,7 +1220,10 @@ def test_monitor_missing_broker_state_fails(
     assert "no broker_state.json" in _plain(result.output)
 
 
-@pytest.mark.parametrize(("status", "code"), [("ok", 0), ("warn", 1), ("breach", 2)])
+@pytest.mark.parametrize(
+    ("status", "code"),
+    [("ok", 0), ("warn", 1), ("breach", 2), ("insufficient_data", 3)],
+)
 def test_monitor_status_exit_codes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: str, code: int
 ) -> None:

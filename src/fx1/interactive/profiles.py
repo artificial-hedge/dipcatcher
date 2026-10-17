@@ -1,14 +1,17 @@
 """Model-endpoint store for ``fxi``.
 
-fx-1 ships two hosted model names; each profile here is one model's
-endpoint — the API key and base URL used to talk to it:
+fx-1 recognizes two planned model identifiers; a profile supplies the API
+key and base URL used to talk to a configured endpoint:
 
-- ``fx1``      — the full fx-1 model.
-- ``fx1-lite`` — the light fx-1 model.
+- ``fx1``      — intended full model identifier.
+- ``fx1-lite`` — intended light model identifier.
+
+These identifiers do not establish released weights or a hosted deployment.
 
 Values live in ``$FX1_CONFIG_DIR/credentials.json`` (default
-``~/.fx1/credentials.json``), mode 0600, written atomically. Reporting is
-presence-only: raw keys never leave this module except as injected
+``~/.fx1/credentials.json``), with POSIX mode 0600 or a protected Windows
+current-user ACL, written atomically. Reporting is presence-only: raw keys
+never leave this module except as injected
 environment values (mirrors ``fx1.doctor`` and the harness conventions).
 
 Injection: applying a profile sets ``MOONSHOT_API_KEY`` and
@@ -20,6 +23,7 @@ from __future__ import annotations
 import json
 import os
 import stat
+import subprocess
 import tempfile
 from collections.abc import Mapping, MutableMapping
 from datetime import UTC, datetime
@@ -35,6 +39,110 @@ ENV_BASE_URL = "FX1_BASE_URL"
 
 STORE_NAME = "credentials.json"
 _MODE_0600 = stat.S_IRUSR | stat.S_IWUSR
+
+# The target path is passed through an environment variable, not inserted into
+# PowerShell source or command arguments. The API key never enters this child.
+_WINDOWS_PRIVATE_ACL = r"""
+$ErrorActionPreference = 'Stop'
+$target = [Environment]::GetEnvironmentVariable('FX1_ACL_TARGET', 'Process')
+$sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
+$directory = [Environment]::GetEnvironmentVariable('FX1_ACL_IS_DIR', 'Process') -eq '1'
+$verifyOnly = [Environment]::GetEnvironmentVariable('FX1_ACL_VERIFY_ONLY', 'Process') -eq '1'
+if (-not $verifyOnly) {
+    if ($directory) {
+        $acl = [System.Security.AccessControl.DirectorySecurity]::new()
+    } else {
+        $acl = [System.Security.AccessControl.FileSecurity]::new()
+    }
+    $acl.SetAccessRuleProtection($true, $false)
+    if ($directory) {
+        $inherit = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+            [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+        $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
+            $sid, [System.Security.AccessControl.FileSystemRights]::FullControl,
+            $inherit, [System.Security.AccessControl.PropagationFlags]::None,
+            [System.Security.AccessControl.AccessControlType]::Allow
+        )
+    } else {
+        $rule = [System.Security.AccessControl.FileSystemAccessRule]::new(
+            $sid, [System.Security.AccessControl.FileSystemRights]::FullControl,
+            [System.Security.AccessControl.AccessControlType]::Allow
+        )
+    }
+    $acl.AddAccessRule($rule)
+    if ($directory) {
+        [System.IO.Directory]::SetAccessControl($target, $acl)
+    } else {
+        [System.IO.File]::SetAccessControl($target, $acl)
+    }
+}
+if ($directory) {
+    $effective = [System.IO.Directory]::GetAccessControl($target)
+} else {
+    $effective = [System.IO.File]::GetAccessControl($target)
+}
+$rules = $effective.GetAccessRules(
+    $true, $true, [System.Security.Principal.SecurityIdentifier]
+)
+$owner = $effective.GetOwner([System.Security.Principal.SecurityIdentifier])
+$full = [System.Security.AccessControl.FileSystemRights]::FullControl
+if (-not $effective.AreAccessRulesProtected -or $rules.Count -ne 1 -or
+    $owner.Value -ne $sid.Value -or
+    $rules[0].IdentityReference.Value -ne $sid.Value -or
+    $rules[0].AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow -or
+    $rules[0].IsInherited -or
+    ($rules[0].FileSystemRights -band $full) -ne $full) {
+    throw 'credential ACL verification failed'
+}
+"""
+
+
+def _restrict_windows_acl(
+    path: Path, *, directory: bool = False, verify_only: bool = False
+) -> None:
+    """Set or verify a protected, current-user-only DACL before secrets are written."""
+    system_root = os.environ.get("SYSTEMROOT") or os.environ.get("WINDIR")
+    if not system_root:
+        raise RuntimeError("cannot secure Windows credentials: SystemRoot is unavailable")
+    powershell = Path(system_root) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
+    env = {
+        "SYSTEMROOT": system_root,
+        "WINDIR": system_root,
+        "PATH": os.environ.get("PATH", ""),
+        "FX1_ACL_TARGET": str(path),
+        "FX1_ACL_IS_DIR": "1" if directory else "0",
+        "FX1_ACL_VERIFY_ONLY": "1" if verify_only else "0",
+    }
+    try:
+        result = subprocess.run(
+            [str(powershell), "-NoProfile", "-NonInteractive", "-Command", _WINDOWS_PRIVATE_ACL],
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError(
+            "cannot secure Windows credentials; use MOONSHOT_API_KEY in the environment"
+        ) from exc
+    if result.returncode != 0:
+        if verify_only:
+            raise RuntimeError(
+                "existing Windows credential path has an unsafe ACL; "
+                "use a new dedicated FX1_CONFIG_DIR or secure it manually"
+            )
+        raise RuntimeError(
+            "cannot verify a private Windows credential ACL; "
+            "use MOONSHOT_API_KEY in the environment"
+        )
+
+
+def _windows_config_parent(path: Path) -> Path:
+    parent = path.parent.resolve()
+    if parent == Path(parent.anchor) or parent == Path.home().resolve():
+        raise RuntimeError("store credentials in a dedicated configuration directory")
+    return parent
 
 
 def config_dir() -> Path:
@@ -79,7 +187,18 @@ def _normalize(entry: Mapping[str, str]) -> dict[str, str]:
 
 def _load(path: Path | None = None) -> dict[str, dict[str, str]]:
     path = path or store_path()
-    if not path.is_file():
+    if os.name == "nt":
+        try:
+            mode = path.stat().st_mode
+        except FileNotFoundError:
+            return {}
+        except OSError as exc:
+            raise RuntimeError("cannot inspect Windows credential path") from exc
+        if not stat.S_ISREG(mode):
+            raise RuntimeError("Windows credential path is not a regular file")
+        _restrict_windows_acl(_windows_config_parent(path), directory=True, verify_only=True)
+        _restrict_windows_acl(path, verify_only=True)
+    elif not path.is_file():
         return {}
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
@@ -91,19 +210,48 @@ def _load(path: Path | None = None) -> dict[str, dict[str, str]]:
     return {}
 
 
+def _prepare_store_directory(path: Path) -> None:
+    if os.name != "nt":
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return
+    parent = _windows_config_parent(path)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=False)
+    except FileExistsError:
+        _restrict_windows_acl(parent, directory=True, verify_only=True)
+    else:
+        _restrict_windows_acl(parent, directory=True)
+
+
 def _save(payload: dict[str, dict[str, str]], path: Path | None = None) -> Path:
     path = path or store_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
+    _prepare_store_directory(path)
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".credentials-", suffix=".tmp")
     try:
+        if os.name == "nt":
+            if path.is_file():
+                _restrict_windows_acl(path, verify_only=True)
+            _restrict_windows_acl(Path(tmp))
+        else:
+            os.chmod(tmp, _MODE_0600)
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fd = -1  # fdopen owns and closes the descriptor from here onward.
             json.dump({"profiles": payload}, fh, indent=2, sort_keys=True)
             fh.write("\n")
         os.replace(tmp, path)
+        if os.name == "nt":
+            try:
+                _restrict_windows_acl(path, verify_only=True)
+            except RuntimeError:
+                path.unlink(missing_ok=True)
+                raise
+        else:
+            os.chmod(path, _MODE_0600)
     finally:
+        if fd >= 0:
+            os.close(fd)
         if os.path.exists(tmp):
             os.unlink(tmp)
-    os.chmod(path, _MODE_0600)
     return path
 
 

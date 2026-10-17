@@ -711,6 +711,27 @@ def test_verify_research_artifact_rejects_non_hex_digests(tmp_path: Path) -> Non
     assert "invalid_config_sha256" in result["errors"]
 
 
+@pytest.mark.parametrize("fingerprint", [None, "g" * 64, "a" * 63])
+def test_verify_research_artifact_rejects_invalid_optional_input_fingerprint(
+    tmp_path: Path, fingerprint: str | None
+) -> None:
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["provenance"]["input_fingerprint_sha256"] = fingerprint
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert "invalid_input_fingerprint_sha256" in result["errors"]
+
+
+def test_verify_research_artifact_rejects_wrong_valid_hex_input_fingerprint(tmp_path: Path) -> None:
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["provenance"]["input_fingerprint_sha256"] = "f" * 64
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert "input_fingerprint_mismatch" in result["errors"]
+
+
 def test_verify_research_artifact_rejects_external_artifacts(tmp_path: Path) -> None:
     path = _receipt(tmp_path)
     payload = json.loads(path.read_text())

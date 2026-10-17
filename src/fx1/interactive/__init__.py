@@ -1,9 +1,11 @@
 """fxi — the interactive front door for fx-1.
 
-fx-1 ships two hosted model names (``fx1`` and ``fx1-lite``); each has one
-endpoint (API key + base URL) managed by ``fx1.interactive.profiles`` and
-injected into the dipcatcher harness. See ``fx1.interactive.app`` for the
-CLI entry point and ``fx1.interactive.wizard`` for first-run onboarding.
+fx-1 recognizes the planned model identifiers ``fx1`` and ``fx1-lite``.
+Each can use a configured endpoint (API key + base URL) managed by
+``fx1.interactive.profiles`` and injected into the dipcatcher harness.
+Neither identifier implies released weights or a hosted deployment. See
+``fx1.interactive.app`` for the CLI entry point and
+``fx1.interactive.wizard`` for first-run onboarding.
 
 The orchestration surface lives alongside the classic shell:
 

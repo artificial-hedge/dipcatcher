@@ -1,8 +1,8 @@
 name: Release
 
-# Tag push (v1.2.3, v1.2.3-rc1, …) builds the sdist and wheel, writes a
-# CycloneDX SBOM, signs the distributions with Sigstore, and emits SLSA
-# build provenance. This workflow does not publish to PyPI and does not
+# Tag push (v1.2.3, v1.2.3-rc1, …) first requires same-commit CI and platform
+# evidence, then builds the sdist and wheel, writes a CycloneDX SBOM, signs the
+# distributions with Sigstore, and emits SLSA build provenance. It does not publish to PyPI or
 # create a GitHub Release. Artifacts are uploaded as workflow artifacts
 # only. Verify downloaded bundles with:
 #   uv run python scripts/verify_release_artifacts.py <dist-dir>
@@ -25,8 +25,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  preflight:
+    name: Tag version and same-commit evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require tag version, green same-commit gates, and full platform matrix
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/verify_release_readiness.py
+
   build:
     name: Build, SBOM, sign, attest
+    needs: preflight
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -52,8 +69,7 @@ jobs:
           set -euo pipefail
           uv sync --frozen --all-groups --no-install-project --no-build
           uv pip install --python .venv/bin/python --no-deps dist/*.whl
-          .venv/bin/fx1 --help
-          .venv/bin/dipcatcher --help
+          .venv/bin/python scripts/smoke_installed_wheel.py
 
       - name: CycloneDX SBOM from the locked runtime set
         run: |

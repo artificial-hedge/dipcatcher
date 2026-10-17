@@ -1,8 +1,10 @@
 # dipcatcher CLI — chat-first orchestration for fx1 and fx1-lite
 
-dipcatcher is Artificial Hedge's state-of-the-art harness for orchestrating
-its **fx1** and **fx1-lite** models ([artificialhedge.co](https://artificialhedge.co))
-from the command line. The CLI is designed like Codex CLI: you open it, you
+dipcatcher is Artificial Hedge's harness for orchestrating research and its
+planned **fx1** and **fx1-lite** model interfaces
+([artificialhedge.co](https://artificialhedge.co)) from the command line.
+Neither model has verified public release weights or deployment evidence in
+this checkout. The CLI is designed like Codex CLI: you open it, you
 talk to it, and it does the work. Plain text is a conversation with the
 active model; everything else is a slash command. `/superpower` is how the
 conversation reaches dipcatcher's research families — it picks the
@@ -201,10 +203,14 @@ together with web research, flash retrieve/save, and synthesis.
    `family:<name>` token — are classified *required*, *optional*, *retired*
    or *unknown*. A goal that names only retired or unknown families cannot
    select `research`: the plan prints `excluded: research … no suitable
-   family`. An unavailable catalog never blocks, but the plan says that no
-   family-level claim will be made. Because `dipcatcher research` still
-   executes its configured scorecard, the plan also says that selection
+   family`. If the catalog is unavailable, `research` is excluded and the
+   plan explains that eligibility could not be checked. Because `dipcatcher
+   research` still executes its configured scorecard, the plan also says that selection
    narrows eligibility and reporting, not the benches executed.
+   Commands that require explicit CLI inputs (`validate`, `collect`, and
+   `tearsheet`) stay available through `/harness run` and are excluded from
+   automatic plans until those inputs are supplied. Exclusions make the run
+   partial and are shown in the result.
 2. **Recall.** Flash context is retrieved first (cheap, local) so prior
    findings feed everything downstream.
 3. **Execute.** Web research (budgeted, cancellable) runs before harness
@@ -227,10 +233,11 @@ together with web research, flash retrieve/save, and synthesis.
    with its goal and capability list.
 
 The plan is printed with a per-capability rationale, the family verdicts and
-the budget before anything runs. Every result carries an explain block
+the budget before any selected capability runs. Every result carries an explain block
 (`capabilities used and why`) in which each capability names its **evidence
-class** — `verified-receipt` (a verifier such as `verify-research`/`doctor`/
-`validate` exited 0), `synthetic-correctness` (output labelled SYNTHETIC),
+class** — `verified-research-artifact` (`verify-research` returned a valid JSON
+verdict naming the checked path), `synthetic-correctness` (output labelled
+SYNTHETIC),
 `harness-output-unverified`, `heuristic-web`, `memory`,
 `model-interpretation`, or `deterministic-summary` — followed by a
 `result: complete|partial — N/M capabilities ran` verdict. A run with any

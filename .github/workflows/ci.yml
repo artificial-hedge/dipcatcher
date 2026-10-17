@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main, p1/historical-receipts-20260925]
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
   schedule:
     # Full offline suite, including tests marked slow. PR runs stay on the fast subset.
     - cron: "17 6 * * *"
@@ -120,8 +123,7 @@ jobs:
       - name: Install wheel and smoke-test the installed console scripts
         run: |
           uv pip install --python .venv/bin/python --no-deps dist/*.whl
-          .venv/bin/fx1 --help
-          .venv/bin/dipcatcher --help
+          .venv/bin/python scripts/smoke_installed_wheel.py
       - name: Attest build provenance (SLSA)
         # Main pushes only: fork PRs cannot mint id-tokens, and provenance
         # matters at release boundaries, not per-PR.
@@ -716,20 +718,31 @@ jobs:
         run: |
           make evidence-bundle BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
           make bundle-verify BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
-      # The base a change must extend: the PR's base branch or, for a direct
-      # push to main (this repo's normal path), the tip main had before the
-      # push. Without a push base the rules below would never run here.
+      # The base a change must extend: the PR event's exact base SHA, the merge
+      # queue's exact base SHA, or (for a direct push) main before the push.
+      # Without a base the rules below would never run on that event.
       - name: Resolve the base this change must extend
         id: base
-        if: ${{ !cancelled() && steps.sync.outcome == 'success' && (github.event_name == 'pull_request' || github.event_name == 'push') }}
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' && (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'merge_group') }}
         env:
           EVENT: ${{ github.event_name }}
-          PR_BASE: ${{ github.base_ref }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
           PUSH_BEFORE: ${{ github.event.before }}
+          MERGE_BASE: ${{ github.event.merge_group.base_sha }}
         run: |
-          if [ "$EVENT" = pull_request ]; then ref="$PR_BASE"; else ref="$PUSH_BEFORE"; fi
+          if [ "$EVENT" = pull_request ]; then
+            ref="$PR_BASE"
+          elif [ "$EVENT" = merge_group ]; then
+            ref="$MERGE_BASE"
+          else
+            ref="$PUSH_BEFORE"
+          fi
           case "$ref" in
             "" | 0000000000000000000000000000000000000000)
+              if [ "$EVENT" = merge_group ] || [ "$EVENT" = pull_request ]; then
+                echo "::error::$EVENT has no base SHA; cannot skip base-comparison gates"
+                exit 1
+              fi
               echo "no base commit for this $EVENT event; base-comparison gates skipped"
               exit 0 ;;
           esac
@@ -808,4 +821,26 @@ jobs:
             echo "stress report contains a forbidden headline key"
             exit 1
           fi
+
+  required-gate:
+    name: ci-required
+    needs: [lint, audit, package, container, test, coverage, perf, smoke, mc-engine-smoke, rust-accel, market-sim, parity-smoke, examples, audit-observability, diffbacktest, robustness-smoke, formal, evidence-audit, pretrade-risk, stress-smoke]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every CI job to succeed
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+
+          jobs = json.loads(os.environ["NEEDS_JSON"])
+          failures = {name: row.get("result") for name, row in jobs.items() if row.get("result") != "success"}
+          if not jobs or failures:
+              raise SystemExit(f"required CI jobs did not all pass: {failures or 'no dependencies'}")
+          print(f"all {len(jobs)} required CI job groups passed")
+          PY
 

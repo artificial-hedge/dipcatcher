@@ -115,7 +115,6 @@ from fx1.serve.openai_compat import (
     OpenAIVectorStoreFileBatchCreate,
     OpenAIVectorStoreSearch,
     _resolve_openai_link,
-    _resolve_timeout,
     batch_line_body,
     batch_line_shape,
     batch_output_line,
@@ -147,6 +146,7 @@ from fx1.serve.openai_compat import (
     validate_openai_output,
     validate_response_format,
 )
+from fx1.serve.openai_request_options import resolve_timeout as _resolve_timeout
 from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
 from fx1.serve.uploads import (
     UploadMeta,

@@ -438,6 +438,16 @@ def test_call_with_retries_reraises_last_exception_when_exhausted() -> None:
     assert calls["n"] == 3
 
 
+def test_call_with_retries_rejects_pre_cancelled_call() -> None:
+    cancel = threading.Event()
+    cancel.set()
+    calls: list[str] = []
+
+    with pytest.raises(OperationCancelled, match="cancelled before attempt 1"):
+        call_with_retries(lambda: calls.append("invoked"), cancel_event=cancel)
+    assert calls == []
+
+
 def test_call_with_retries_cancel_in_on_retry() -> None:
     cancel = threading.Event()
     calls = {"n": 0}
@@ -576,11 +586,13 @@ def test_probe_identity_match_uses_injected_clock() -> None:
     assert report.render() == "fx1 @ api.example.test: OK — served model 'fx1' in 500 ms"
 
 
-def test_probe_identity_prefix_matches_without_a_note() -> None:
-    report = _probe(_Backend({"model": "fx1-0905"}))
-    assert report.ok is True
-    assert report.identity_matches is True
-    assert "note:" not in report.render()
+@pytest.mark.parametrize("served_model", ["fx1-0905", "fx1-lite"])
+def test_probe_identity_requires_exact_model_id(served_model: str) -> None:
+    report = _probe(_Backend({"model": served_model}))
+    assert report.ok is False
+    assert report.failure is FailureClass.IDENTITY_MISMATCH
+    assert report.identity_matches is False
+    assert f"requested model 'fx1'; served model {served_model!r}" in report.render()
 
 
 def test_probe_identity_mismatch_records_a_note() -> None:
@@ -589,15 +601,15 @@ def test_probe_identity_mismatch_records_a_note() -> None:
         host="api.moonshot.ai",
         ticks=(0.0, 0.812),
     )
-    assert report.ok is True
+    assert report.ok is False
+    assert report.failure is FailureClass.IDENTITY_MISMATCH
     assert report.identity_matches is False
     rendered = report.render()
-    assert rendered.startswith("fx1 @ api.moonshot.ai: OK — served model 'kimi-k3-0905' in ")
-    assert rendered.endswith(
-        "\n  note: served identity differs from the requested model id "
-        "(provider routing); recorded, not an error"
+    assert rendered == (
+        "fx1 @ api.moonshot.ai: FAILED (identity_mismatch) — "
+        "requested model 'fx1'; served model 'kimi-k3-0905' "
+        "→ fix: check provider routing and the model deployment"
     )
-    assert "FAILED" not in rendered
 
 
 def test_probe_identity_auth_failure_renders_fix() -> None:
@@ -623,10 +635,15 @@ def test_probe_identity_auth_failure_renders_fix() -> None:
 
 def test_probe_identity_omits_unreported_model_id() -> None:
     report = _probe(_Backend({"id": "cmpl-1", "usage": {"total_tokens": 1}}))
-    assert report.ok is True
+    assert report.ok is False
+    assert report.failure is FailureClass.IDENTITY_UNVERIFIED
     assert report.served_model is None
     assert report.identity_matches is None
-    assert report.render() == "fx1 @ api.example.test: OK — provider did not report a model id"
+    assert report.render() == (
+        "fx1 @ api.example.test: FAILED (identity_unverified) — "
+        "provider did not report a model id; requested 'fx1' remains unverified "
+        "→ fix: use an endpoint that reports its served model id"
+    )
 
 
 def test_probe_identity_non_dict_is_malformed_and_does_not_raise() -> None:
@@ -712,6 +729,25 @@ def test_identity_probe_posts_ping_and_returns_envelope(monkeypatch: pytest.Monk
         "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
     }
     assert backend.last_usage == {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2}
+
+
+def test_hosted_completion_clamps_timeout_to_run_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    import fx1.serve.backends as backends_module
+    from fx1.serve.backends import HostedK3Backend
+
+    observed: list[float] = []
+
+    def fake_urlopen(request: Any, *, timeout_s: float) -> _Resp:
+        observed.append(timeout_s)
+        return _Resp(b'{"model": "kimi-k3", "choices": [{"message": {"content": "answer"}}]}')
+
+    monkeypatch.setattr(backends_module, "_openai_urlopen", fake_urlopen)
+    backend = HostedK3Backend(api_key="test-key", api_url="https://api.example/v1/chat/completions")
+
+    assert backend.complete([{"role": "user", "content": "hello"}], timeout_s=0.25) == "answer"
+    assert observed == [0.25]
+    with pytest.raises(ValueError, match="timeout_s must be positive"):
+        backend.complete([{"role": "user", "content": "hello"}], timeout_s=0)
 
 
 def test_identity_probe_overrides_sampling_max_tokens(monkeypatch: pytest.MonkeyPatch) -> None:

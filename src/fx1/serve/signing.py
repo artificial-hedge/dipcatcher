@@ -3,11 +3,13 @@
 A release signs the complete regular-file inventory beneath a checkpoint,
 except its two root-level signature metadata files. Artifacts are hashed
 incrementally, so verification does not allocate an entire weights file.
-The signing key comes from ``FX1_SIGNING_KEY`` only.
+Internal HMAC signing uses ``FX1_SIGNING_KEY``. Public releases use a detached
+Ed25519 signature created with ``FX1_RELEASE_SIGNING_KEY`` on the build host;
+inference needs only the trusted ``FX1_RELEASE_VERIFY_KEY`` public key.
 
-This is detached HMAC verification, not a Sigstore signature or a TEE
-attestation. The checkpoint must not be mutated concurrently with signing,
-verification, or loading; this module does not lock the deployment tree.
+These are detached signatures, not Sigstore signatures or TEE attestations.
+The checkpoint must not be mutated concurrently with signing, verification,
+or loading; this module does not lock the deployment tree.
 """
 
 from __future__ import annotations
@@ -24,10 +26,13 @@ from typing import Any, BinaryIO, cast
 from pydantic import BaseModel, Field
 
 SIGNING_KEY_ENV = "FX1_SIGNING_KEY"
+PUBLIC_SIGNING_KEY_ENV = "FX1_RELEASE_SIGNING_KEY"
+PUBLIC_VERIFY_KEY_ENV = "FX1_RELEASE_VERIFY_KEY"
 SIGNATURE_FILENAME = "release.sig"
+PUBLIC_SIGNATURE_FILENAME = "release.ed25519.sig"
 MANIFEST_FILENAME = "release.manifest.json"
 
-_METADATA_FILENAMES = frozenset({SIGNATURE_FILENAME, MANIFEST_FILENAME})
+_METADATA_FILENAMES = frozenset({SIGNATURE_FILENAME, PUBLIC_SIGNATURE_FILENAME, MANIFEST_FILENAME})
 _MAX_MANIFEST_BYTES = 16 * 1024 * 1024
 _MAX_SIGNATURE_BYTES = 4096
 
@@ -124,6 +129,38 @@ def sign_release(checkpoint_dir: str | Path) -> Path:
     return sig_path
 
 
+def sign_release_ed25519(checkpoint_dir: str | Path) -> Path:
+    """Sign the exact checkpoint inventory with a build-host private seed."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    seed_hex = os.environ.get(PUBLIC_SIGNING_KEY_ENV, "").strip()
+    if not seed_hex:
+        raise RuntimeError(f"{PUBLIC_SIGNING_KEY_ENV} is not set")
+    try:
+        seed = bytes.fromhex(seed_hex)
+        key = Ed25519PrivateKey.from_private_bytes(seed)
+    except ValueError as exc:
+        raise ValueError(f"{PUBLIC_SIGNING_KEY_ENV} must be a 32-byte hex seed") from exc
+    root = Path(checkpoint_dir)
+    manifest_bytes = build_manifest(root).model_dump_json().encode()
+    if len(manifest_bytes) > _MAX_MANIFEST_BYTES:
+        raise ValueError("release manifest exceeds its byte limit")
+    signature = key.sign(manifest_bytes)
+    (root / MANIFEST_FILENAME).write_bytes(manifest_bytes)
+    sig_path = root / PUBLIC_SIGNATURE_FILENAME
+    sig_path.write_text(signature.hex(), encoding="ascii")
+    return sig_path
+
+
+def _verify_inventory(root: Path, manifest_bytes: bytes) -> bool:
+    manifest = ReleaseManifest.model_validate_json(manifest_bytes)
+    paths = {str(path.relative_to(root)): path for path in _artifact_paths(root)}
+    if paths.keys() != manifest.artifacts.keys():
+        return False
+    # Reject cheap inventory mismatches before reading potentially huge weights.
+    return all(_hash_file(path) == manifest.artifacts[name] for name, path in paths.items())
+
+
 def verify_release(checkpoint_dir: str | Path) -> bool:
     """Verify the HMAC and exact inventory; malformed/unreadable releases fail closed.
 
@@ -142,12 +179,34 @@ def verify_release(checkpoint_dir: str | Path) -> bool:
         signature = _read_metadata(sig_path, _MAX_SIGNATURE_BYTES).strip()
         if not hmac.compare_digest(expected, signature):
             return False
-        manifest = ReleaseManifest.model_validate_json(manifest_bytes)
-        paths = {str(path.relative_to(root)): path for path in _artifact_paths(root)}
-        if paths.keys() != manifest.artifacts.keys():
-            return False
-        # Reject cheap inventory mismatches before reading potentially huge weights.
-        # Hash every matching artifact afresh; metadata is not a digest cache.
-        return all(_hash_file(path) == manifest.artifacts[name] for name, path in paths.items())
+        return _verify_inventory(root, manifest_bytes)
     except (OSError, ValueError):
+        return False
+
+
+def verify_release_ed25519(checkpoint_dir: str | Path) -> bool:
+    """Verify a public release using only a trusted public key and artifact bytes."""
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    from quant_fund.utils.ed25519_public import is_canonical_prime_order_public_key
+
+    root = Path(checkpoint_dir)
+    manifest_path = root / MANIFEST_FILENAME
+    sig_path = root / PUBLIC_SIGNATURE_FILENAME
+    if not manifest_path.exists() or not sig_path.exists():
+        return False
+    public_hex = os.environ.get(PUBLIC_VERIFY_KEY_ENV, "").strip()
+    if not public_hex:
+        raise RuntimeError(f"{PUBLIC_VERIFY_KEY_ENV} is not set")
+    try:
+        public_bytes = bytes.fromhex(public_hex)
+        if not is_canonical_prime_order_public_key(public_bytes):
+            return False
+        public_key = Ed25519PublicKey.from_public_bytes(public_bytes)
+        manifest_bytes = _read_metadata(manifest_path, _MAX_MANIFEST_BYTES)
+        signature = bytes.fromhex(_read_metadata(sig_path, _MAX_SIGNATURE_BYTES).decode("ascii"))
+        public_key.verify(signature, manifest_bytes)
+        return _verify_inventory(root, manifest_bytes)
+    except (InvalidSignature, OSError, UnicodeError, ValueError):
         return False

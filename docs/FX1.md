@@ -73,8 +73,10 @@ Backends (the model side of `complete`/eval lanes):
 - `local_fx1` — weights-direct: attaches to a running engine
   (`FX1_LOCAL_SERVE_URL`) or spawns one (`FX1_LOCAL_SERVE_CMD`, with
   `$checkpoint_dir`/`$python` template vars); a card'd checkpoint dir
-  (`--checkpoint-dir` or `FX1_CHECKPOINT_DIR`) is required and
-  signature-gated before any spawn.
+  (`--checkpoint-dir` on the harness CLI or `FX1_CHECKPOINT_DIR`) is required
+  and signature-gated before any spawn. The in-repo local weights engine
+  receives that verified directory only through `FX1_CHECKPOINT_DIR`; it
+  does not accept a CLI path override.
 - `byok` — bring-your-own-key to any OpenAI-compatible endpoint:
   `FX1_BYOK_BASE_URL` + `FX1_BYOK_API_KEY` + `FX1_BYOK_MODEL` (kwargs
   beat env). Construction fails closed on missing credentials; the URL

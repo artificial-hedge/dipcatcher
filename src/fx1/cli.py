@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import typer
 
+from fx1.cli_sign import attestation_status, sign_checkpoint
+
 if TYPE_CHECKING:
     from fx1.eval.suite import ModelFn
     from fx1.harness import HarnessRole
@@ -531,6 +533,11 @@ def harness_doctor(
 def harness_serve(
     host: str = typer.Option("127.0.0.1", help="Bind host."),
     port: int = typer.Option(8011, help="Bind port."),
+    public_release: bool = typer.Option(
+        False,
+        "--public-release",
+        help="Enforce public model, auth, and release gates on a loopback listener behind a proxy.",
+    ),
     max_inflight: int | None = typer.Option(
         None, help="Concurrent heavy requests (env FX1_API_MAX_INFLIGHT, default 16)."
     ),
@@ -581,12 +588,22 @@ def harness_serve(
     import uvicorn
 
     from fx1.serve.api import create_app
+    from fx1.serve.release_gate import ALLOW_TEST_FIXTURE_ENV, cli_public_release_mode
+
+    try:
+        public_release = cli_public_release_mode(host, explicit=public_release)
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
 
     if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("FX1_API_KEY"):
         typer.echo(
             "non-loopback binding requires FX1_API_KEY; refusing unauthenticated exposure",
             err=True,
         )
+        raise typer.Exit(code=2)
+    if public_release and os.environ.get(ALLOW_TEST_FIXTURE_ENV) == "1":
+        typer.echo("test fixture opt-in may bind only to loopback research mode", err=True)
         raise typer.Exit(code=2)
     try:
         harness_api = create_app(
@@ -602,6 +619,7 @@ def harness_serve(
             receipts_dir=receipts_dir,
             store_max=store_max,
             state_dir=state_dir,
+            public_release=public_release,
         )
     except ValueError as exc:
         typer.echo(str(exc), err=True)
@@ -5232,25 +5250,10 @@ def contamination_audit(
     raise typer.Exit(code=1 if report.overall_flagged else 0)
 
 
-@app.command("sign")
-def sign_checkpoint(
-    checkpoint_dir: Path = typer.Argument(...),
-) -> None:
-    """Sign an fx-1 release (attestation ladder tier 1)."""
-    from fx1.serve import sign_release
-
-    sig = sign_release(checkpoint_dir)
-    typer.echo(f"signed: {sig}")
+app.command("sign")(sign_checkpoint)
 
 
-@app.command("attestation")
-def attestation_status(
-    checkpoint_dir: Path = typer.Argument(...),
-) -> None:
-    """Report which attestation tiers a checkpoint satisfies."""
-    from fx1.serve import attestation_ladder_status
-
-    typer.echo(json.dumps(attestation_ladder_status(checkpoint_dir), indent=2))
+app.command("attestation")(attestation_status)
 
 
 @app.command("sbom")

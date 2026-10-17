@@ -39,6 +39,7 @@ def probe(
         return backend
 
     app = api.create_app(
+        public_release=False,
         harness=Harness(runner=lambda argv, timeout_s: (0, "ok", "")),
         backend_resolver=resolve,
         max_inflight=1,

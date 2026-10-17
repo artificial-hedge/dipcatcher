@@ -204,6 +204,7 @@ def _make_app(
             return backends[name]()
 
         app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=runner or _fast_runner),
             backend_resolver=_resolve,
             state_dir=create_kw.pop("state_dir", isolated / "state"),

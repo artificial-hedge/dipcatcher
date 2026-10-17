@@ -6,8 +6,11 @@ approval gating, and message bookkeeping are all observable.
 """
 
 import io
+import json
+import os
 import threading
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 import pytest
@@ -63,6 +66,24 @@ class FakeHarness:
 
     def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
         self.calls.append((name, extra_args))
+        if name == "research-families":
+            return FakeHarnessResult(
+                0,
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "catalog_version": 2,
+                        "receipt_schema_version": 2,
+                        "required": ["conformal", "volatility"],
+                        "live_optional": [],
+                        "retired_count": 0,
+                        "retired_sample": [],
+                        "order": ["conformal", "volatility"],
+                        "generated_at": "2026-10-16T00:00:00Z",
+                        "runner": {"execution_constraint": False, "note": "configured scorecard"},
+                    }
+                ),
+            )
         return FakeHarnessResult(0, f"DATA_LABEL=SYNTHETIC\n{name} ran\n", "")
 
 
@@ -105,7 +126,11 @@ class FakeResearcher:
 
 @pytest.fixture()
 def env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
-    monkeypatch.setenv("FX1_CONFIG_DIR", str(tmp_path / "fx1-config"))
+    config_dir = tmp_path / "fx1-config"
+    if os.name == "nt":
+        config_dir.mkdir()
+        profiles._restrict_windows_acl(config_dir, directory=True)
+    monkeypatch.setenv("FX1_CONFIG_DIR", str(config_dir))
     monkeypatch.delenv("MOONSHOT_API_KEY", raising=False)
     monkeypatch.delenv("FX1_BASE_URL", raising=False)
     monkeypatch.setenv("NO_COLOR", "1")
@@ -372,6 +397,40 @@ def test_chat_tool_loop_executes_flash_retrieve(
     assert store.get(entry.id).uses == 1
 
 
+def test_chat_flash_retrieve_never_sends_private_findings_to_backend(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    store = FlashStore(tmp_path / "flash" / "entries.jsonl")
+    for i in range(4):
+        store.add(text=f"inflation PRIVATE_SENTINEL_{i}", task="inflation", private=True)
+    public = store.add(text="inflation public summary", task="inflation")
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "flash_retrieve", {"query": "inflation"}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="Found public context.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge = Concierge(
+        store=store,
+        researcher=FakeResearcher(),
+        harness=FakeHarness(),
+        backend_factory=lambda **kwargs: backend,
+        output_fn=lambda *args: None,
+        animated=False,
+    )
+    concierge.handle_line("what do we know about inflation?")
+    second_call_messages = backend.tool_calls_seen[1]
+    assert "PRIVATE_SENTINEL" not in str(backend.tool_calls_seen)
+    tool_msg = [message for message in second_call_messages if message.get("role") == "tool"][0]
+    assert "inflation public summary" in tool_msg["content"]
+    assert store.get(public.id).uses == 1
+
+
 def test_chat_harness_tool_denied_without_approval(
     env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -395,6 +454,9 @@ def test_chat_harness_tool_denied_without_approval(
     concierge.handle_line("train the ranking family")
     assert harness.calls == []  # consequential command never ran
     assert "not approved" in joined(out)
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "approval denied" in tool_msg["content"]
+    assert "command was not run" in tool_msg["content"]
 
 
 def test_chat_harness_tool_runs_registered_command(
@@ -416,6 +478,251 @@ def test_chat_harness_tool_runs_registered_command(
     concierge.handle_line("check lab health")
     assert harness.calls == [("doctor", [])]
     assert "DATA_LABEL=SYNTHETIC" in joined(out)
+
+
+def test_chat_harness_tool_withholds_stdout_after_nonzero_exit(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+
+    class FailedHarness(FakeHarness):
+        def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
+            self.calls.append((name, extra_args))
+            return FakeHarnessResult(2, "DATA_LABEL=SYNTHETIC\npartial score", "")
+
+    harness = FailedHarness()
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "harness_run", {"name": "doctor"}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="The command failed.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend, harness=harness)
+    concierge.handle_line("check lab health")
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "failed (exit 2)" in tool_msg["content"]
+    assert "output withheld" in tool_msg["content"]
+    assert "partial score" not in tool_msg["content"]
+    assert "failed (exit 2)" in joined(out)
+
+
+@pytest.mark.parametrize(
+    ("interrupted_flag", "expected_status"),
+    [("cancelled", "cancelled"), ("timed_out", "timed out")],
+)
+def test_chat_harness_tool_withholds_stdout_after_interruption(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    interrupted_flag: str,
+    expected_status: str,
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+
+    class InterruptedHarness(FakeHarness):
+        def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
+            self.calls.append((name, extra_args))
+            result = FakeHarnessResult(0, "partial score", "")
+            setattr(result, interrupted_flag, True)
+            return result
+
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "harness_run", {"name": "doctor"}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(
+                content="The check was interrupted.", tool_calls=None, finish_reason="stop"
+            ),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend, harness=InterruptedHarness())
+    concierge.handle_line("check lab health")
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert expected_status in tool_msg["content"]
+    assert "output withheld" in tool_msg["content"]
+    assert "partial score" not in tool_msg["content"]
+    assert expected_status in joined(out)
+
+
+def test_chat_harness_tool_reports_success_with_empty_output(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+
+    class EmptyHarness(FakeHarness):
+        def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
+            self.calls.append((name, extra_args))
+            return FakeHarnessResult(0, "", "")
+
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "harness_run", {"name": "doctor"}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="The check completed.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, _ = make_concierge(tmp_path, backend=backend, harness=EmptyHarness())
+    concierge.handle_line("check lab health")
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "completed (exit 0)" in tool_msg["content"]
+    assert "no output" in tool_msg["content"]
+
+
+@pytest.mark.parametrize("args", [None, 2, ["--flag", 2], {"option": "value"}])
+def test_chat_harness_tool_refuses_malformed_args(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, args: Any
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    harness = FakeHarness()
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "harness_run", {"name": "doctor", "args": args}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="Invalid arguments.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, _ = make_concierge(tmp_path, backend=backend, harness=harness)
+    concierge.handle_line("check lab health")
+    assert harness.calls == []
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "args must be an array of strings" in tool_msg["content"]
+
+
+@pytest.mark.parametrize("raw_args", ["{", "[]"])
+def test_chat_tool_refuses_malformed_json_before_flash_write(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, raw_args: str
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    call = {
+        "id": "c1",
+        "type": "function",
+        "function": {"name": "flash_save", "arguments": raw_args},
+    }
+    backend = FakeBackend(
+        [
+            ToolCompletion(content=None, tool_calls=(call,), finish_reason="tool_calls"),
+            ToolCompletion(content="Invalid arguments.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, _ = make_concierge(tmp_path, backend=backend)
+    concierge.handle_line("save this finding")
+    assert concierge._store.all() == []  # noqa: SLF001
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "arguments must be a JSON object" in tool_msg["content"]
+
+
+@pytest.mark.parametrize(
+    ("arguments", "reason"),
+    [
+        ({"text": "valid note", "task": {"unexpected": "object"}}, "task must be a string"),
+        ({"text": "valid note", "uncertainty": "critical"}, "uncertainty must be"),
+    ],
+)
+def test_chat_flash_save_refuses_invalid_optional_fields(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    arguments: dict[str, Any],
+    reason: str,
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "flash_save", arguments),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="Invalid arguments.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend)
+    concierge.handle_line("save this finding")
+    assert concierge._store.all() == []  # noqa: SLF001
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert reason in tool_msg["content"]
+    assert "Invalid arguments." in joined(out)
+
+
+def test_chat_tool_store_failure_reports_unknown_outcome_without_model_error(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "flash_save", {"text": "a finding"}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(
+                content="Save failed; I will retry later.", tool_calls=None, finish_reason="stop"
+            ),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend)
+
+    def fail_write(**fields: Any) -> None:
+        del fields
+        raise OSError("private storage path details")
+
+    monkeypatch.setattr(concierge._store, "add", fail_write)  # noqa: SLF001
+    concierge.handle_line("save this finding")
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "tool execution failed" in tool_msg["content"]
+    assert "outcome unknown" in tool_msg["content"]
+    assert "private storage path details" not in tool_msg["content"]
+    assert "Save failed; I will retry later." in joined(out)
+    assert "model endpoint error" not in joined(out)
+
+
+@pytest.mark.parametrize(
+    ("error_name", "expected_phrase"),
+    [
+        ("Fx1HonestyError", "withheld by the fx-1 honesty gate"),
+        ("OperationCancelled", "model turn cancelled before completion"),
+    ],
+)
+def test_chat_tool_boundary_preserves_honesty_and_cancellation(
+    env: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    error_name: str,
+    expected_phrase: str,
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "flash_save", {"text": "a finding"}),),
+                finish_reason="tool_calls",
+            )
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend)
+
+    def abort_tool(call: dict[str, Any]) -> str:
+        del call
+        raise getattr(concierge_module, error_name)("tool interrupted")
+
+    monkeypatch.setattr(concierge, "_execute_tool", abort_tool)
+    concierge.handle_line("save this finding")
+    assert expected_phrase in joined(out)
+    assert len(backend.tool_calls_seen) == 1
 
 
 def test_chat_harness_tool_refuses_unregistered(
@@ -739,6 +1046,21 @@ def test_redirect_retargets_running_research(env: Path, tmp_path: Path) -> None:
     concierge.join_job(timeout_s=5)
 
 
+def test_redirect_refuses_other_background_jobs(env: Path, tmp_path: Path) -> None:
+    researcher = FakeResearcher()
+    concierge, out = make_concierge(tmp_path, researcher=researcher)
+    release = threading.Event()
+    job = BackgroundJob(label="superpower", run_fn=lambda *_: release.wait(5)).start()
+    concierge._job = job  # noqa: SLF001
+    try:
+        concierge.handle_line("/redirect another goal")
+        assert researcher.redirects == []
+        assert "no running background research job to redirect" in joined(out)
+    finally:
+        release.set()
+        assert job.join(1)
+
+
 def test_status_without_job(env: Path, tmp_path: Path) -> None:
     concierge, out = make_concierge(tmp_path)
     concierge.handle_line("/status")
@@ -754,6 +1076,71 @@ def test_background_job_error_announced(env: Path, tmp_path: Path) -> None:
     concierge.handle_line("/research anything --sync")
     assert "failed" in joined(out)
     assert "exploded" in joined(out)
+
+
+class StalledResearcher:
+    """A transport that does not observe the job's cancellation event."""
+
+    def __init__(self) -> None:
+        self.started = threading.Event()
+        self.release = threading.Event()
+        self.stopped = threading.Event()
+
+    def run(self, goal: str, **kwargs: Any) -> ResearchReport:
+        from fx1.webresearch.engine import ResearchProgress
+
+        self.started.set()
+        self.release.wait(5)
+        callback = kwargs.get("on_progress")
+        if callback is not None:
+            callback(ResearchProgress(event="late", detail="late event"))
+        self.stopped.set()
+        return ResearchReport(goal=goal)
+
+
+def test_research_sync_wall_budget_bounds_stalled_transport(env: Path, tmp_path: Path) -> None:
+    from fx1.interactive.budget import RunBudget
+
+    researcher = StalledResearcher()
+    concierge, out = make_concierge(tmp_path, researcher=researcher)
+    concierge._run_budget = RunBudget(max_wall_s=0.1)  # noqa: SLF001
+    try:
+        concierge.handle_line("/research slow search --sync")
+        assert researcher.started.is_set()
+        assert concierge.job is not None and not concierge.job.running
+        assert concierge.job.cancel_event.is_set()
+        assert "[research] failed: BudgetExceeded: budget exceeded: wall" in joined(out)
+    finally:
+        researcher.release.set()
+        assert researcher.stopped.wait(1)
+    concierge.tick()
+    assert "late event" not in joined(out)
+
+
+def test_research_cancel_returns_while_transport_is_stalled(env: Path, tmp_path: Path) -> None:
+    researcher = StalledResearcher()
+    concierge, out = make_concierge(tmp_path, researcher=researcher)
+    try:
+        concierge.handle_line("/research slow search")
+        assert researcher.started.wait(1)
+        concierge.handle_line("/cancel")
+        concierge.join_job(timeout_s=1)
+        assert concierge.job is not None and not concierge.job.running
+        assert concierge.job.result.cancelled is True
+        assert "cancelled before a complete report was available" in joined(out)
+    finally:
+        researcher.release.set()
+        assert researcher.stopped.wait(1)
+    concierge.tick()
+    assert "late event" not in joined(out)
+
+
+@pytest.mark.parametrize("option", ["budget_s", "max_sources"])
+def test_research_rejects_nonpositive_limits(env: Path, tmp_path: Path, option: str) -> None:
+    concierge, _ = make_concierge(tmp_path)
+    with pytest.raises(ValueError, match="must be positive"):
+        concierge.start_research("goal", **{option: 0})
+    assert concierge.job is None
 
 
 # ---------------------------------------------------------------------------
@@ -785,10 +1172,9 @@ def test_superpower_sync_offline_pipeline(env: Path, tmp_path: Path) -> None:
     assert "plan for: run the conformal volatility benchmark" in text
     assert "planner: deterministic" in text
     assert "[ran] research" in text  # harness ran and was explained
-    # the family catalog is consulted (read-only) before the research bench runs;
-    # the fake harness cannot serve it, so eligibility is reported fail-closed
+    # The family catalog is consulted before the research bench runs.
     assert harness.calls == [("research-families", None), ("research", None)]
-    assert "family catalog unavailable" in text
+    assert "family catalog unavailable" not in text
     # planner coordinated: a pure lab-benchmark goal does not trigger web research
     assert researcher.goals == []
     # offline synthesis is honest about the missing model
@@ -936,11 +1322,12 @@ def test_run_console_prints_one_prompt_per_line_across_idle_polls(
     assert "active model: fx1" in joined(out)
 
 
-def test_run_console_windows_uses_blocking_input_without_select(
+def test_run_console_windows_without_msvcrt_uses_blocking_input_without_select(
     env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(concierge_module.sys, "platform", "win32")
     monkeypatch.setattr(concierge_module.sys.stdin, "isatty", lambda: True)
+    monkeypatch.setitem(concierge_module.sys.modules, "msvcrt", None)
 
     def unexpected_select(*args: Any) -> Any:
         pytest.fail("Windows console stdin cannot be polled with select")
@@ -961,6 +1348,32 @@ def test_run_console_windows_uses_blocking_input_without_select(
     assert prompts == ["dip › ", "dip › "]
     assert "active model: fx1" in joined(out)
     assert "background progress updates after you submit a line" in joined(startup)
+
+
+def test_run_console_windows_tty_polls_msvcrt(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(concierge_module.sys, "platform", "win32")
+    monkeypatch.setattr(concierge_module.sys.stdin, "isatty", lambda: True)
+    pending = list("/model\r/exit\r")
+    msvcrt = ModuleType("msvcrt")
+    msvcrt.kbhit = lambda: bool(pending)  # type: ignore[attr-defined]
+    msvcrt.getwch = lambda: pending.pop(0)  # type: ignore[attr-defined]
+    monkeypatch.setitem(concierge_module.sys.modules, "msvcrt", msvcrt)
+
+    def unexpected_input(prompt: str) -> str:
+        pytest.fail(f"Windows TTY should poll msvcrt, not call input({prompt!r})")
+
+    concierge, out = make_concierge(tmp_path)
+    startup: list[str] = []
+    run_console(
+        concierge_factory=lambda: concierge,
+        input_fn=unexpected_input,
+        output_fn=startup.append,
+    )
+
+    assert "active model: fx1" in joined(out)
+    assert "background progress updates while you type" in joined(startup)
 
 
 @pytest.mark.parametrize("configured", [False, True])

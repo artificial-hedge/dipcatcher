@@ -114,7 +114,9 @@ def _serve_audit_body() -> dict[str, Any]:
 
         class _Resp:
             def read(self) -> bytes:
-                return json.dumps({"choices": [{"message": {"content": "answer"}}]}).encode()
+                return json.dumps(
+                    {"model": "kimi-k3", "choices": [{"message": {"content": "answer"}}]}
+                ).encode()
 
             def __enter__(self) -> _Resp:
                 return self
@@ -207,7 +209,9 @@ def _serve_audit_body() -> dict[str, Any]:
 
             class _Resp2:
                 def read(self) -> bytes:
-                    return json.dumps({"choices": [{"message": {"content": "answer"}}]}).encode()
+                    return json.dumps(
+                        {"model": "fx-1.v0.1", "choices": [{"message": {"content": "answer"}}]}
+                    ).encode()
 
                 def __enter__(self) -> _Resp2:
                     return self

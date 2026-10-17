@@ -406,7 +406,7 @@ def test_overlay_redirects_import_in_real_subprocess(tmp_path: Path) -> None:
     overlay_dir = tmp_path / "overlay"
     mutant_file = mt.write_overlay(overlay_dir, "VALUE = 2\n")
     env = mt.overlay_env(overlay_dir, "pkg.mod", mutant_file, base_env=dict())
-    env["PYTHONPATH"] = f"{overlay_dir}{':'}{repo / 'src'}"
+    env["PYTHONPATH"] = os.pathsep.join((str(overlay_dir), str(repo / "src")))
     env["MUTATION_TARGET_MODULE"] = "pkg.mod"
     env["MUTATION_TARGET_FILE"] = str(mutant_file)
     completed = subprocess.run(

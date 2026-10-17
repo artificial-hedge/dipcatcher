@@ -281,6 +281,8 @@ def _spawn(executable: str, argv: list[str]) -> subprocess.Popen[str]:
             encoding="utf-8",
             start_new_session=True,
         )
+    if shutil.which("taskkill") is None:
+        raise RuntimeError("taskkill is required to stop owned Windows subprocess trees")
     return subprocess.Popen(  # noqa: S603 - executable is injected or the dipcatcher CLI
         command,
         stdin=subprocess.DEVNULL,
@@ -327,11 +329,32 @@ def _signal_posix(proc: subprocess.Popen[str], *, kill: bool) -> None:
         _signal_direct(proc, kill=kill)
 
 
+def _signal_windows_tree(proc: subprocess.Popen[str]) -> None:
+    """Stop the owned child and its descendants by PID, without a shell."""
+    try:
+        outcome = subprocess.run(  # noqa: S603 - fixed Windows system command, numeric PID
+            ["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5.0,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        _signal_direct(proc, kill=True)
+        raise RuntimeError("Windows process-tree termination could not run") from exc
+    if outcome.returncode != 0:
+        _signal_direct(proc, kill=True)
+        raise RuntimeError(
+            f"Windows process-tree termination failed (taskkill exit {outcome.returncode})"
+        )
+
+
 def _signal_process(proc: subprocess.Popen[str], *, kill: bool) -> None:
     if os.name == "posix":
         _signal_posix(proc, kill=kill)
         return
-    _signal_direct(proc, kill=kill)
+    _signal_windows_tree(proc)
 
 
 def _wait_for_exit(proc: subprocess.Popen[str], grace_s: float) -> None:
@@ -345,7 +368,7 @@ def _wait_for_exit(proc: subprocess.Popen[str], grace_s: float) -> None:
 
 
 def _escalate(proc: subprocess.Popen[str], grace_s: float) -> None:
-    """SIGTERM the child, then SIGKILL after ``grace_s``. Never raises if it is already gone."""
+    """Stop owned work, escalating POSIX signals after ``grace_s``."""
     try:
         if proc.poll() is not None:
             return
@@ -473,9 +496,11 @@ def _run_subprocess(
             started=started,
         )
     finally:
-        if proc.poll() is None:
-            _escalate(proc, grace_s)
-        _join_readers(threads, proc)
+        try:
+            if proc.poll() is None:
+                _escalate(proc, grace_s)
+        finally:
+            _join_readers(threads, proc)
     code = proc.returncode if proc.returncode is not None else proc.poll()
     if code is None:
         code = 1
@@ -498,7 +523,7 @@ def make_subprocess_runner(
     """Subprocess runner that polls for cancel and enforces ``timeout_s``.
 
     POSIX children are started in a new session so the whole process group can
-    be signalled. Windows children are stopped with ``terminate`` / ``kill``.
+    be signalled. Windows uses ``taskkill /T /F /PID`` to stop descendants.
     """
 
     def _run(

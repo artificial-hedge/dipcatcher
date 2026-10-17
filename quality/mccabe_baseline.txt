@@ -27,7 +27,6 @@ src/fx1/forecast/features.py:resample_ohlcv 15
 src/fx1/forecast/runner.py:_predict_walk_forward 10
 src/fx1/forecast/schema.py:validate_forecast_schema 17
 src/fx1/harness_bench.py:run_bench 14
-src/fx1/interactive/concierge.py:Concierge._execute_tool 10
 src/fx1/interactive/wizard.py:enter 10
 src/fx1/operations/audit_bar_integrity.py:execute 16
 src/fx1/operations/audit_cross_field_contracts.py:execute 15
@@ -83,12 +82,11 @@ src/fx1/serve/api.py:_mount_key_lifecycle 23
 src/fx1/serve/api.py:_mount_receipt_routes 16
 src/fx1/serve/api.py:_resolve_auth 12
 src/fx1/serve/api.py:_submit_job 14
-src/fx1/serve/api.py:create_app 71
-src/fx1/serve/api.py:create_app._resolve_request_backend 11
+src/fx1/serve/api.py:create_app 70
+src/fx1/serve/api.py:create_app._resolve_request_backend 10
 src/fx1/serve/api.py:create_app.harness_api_auth 12
 src/fx1/serve/api_audit.py:_probe_backend_probes 115
-src/fx1/serve/api_audit.py:_probe_finetune 46
-src/fx1/serve/backends.py:LocalFx1Backend.__init__ 12
+src/fx1/serve/api_audit_finetune.py:probe_finetune 46
 src/fx1/serve/backends.py:SamplingParams.body_fields 14
 src/fx1/serve/backends.py:_openai_chat_complete 10
 src/fx1/serve/backends.py:_openai_chat_complete_tools 19

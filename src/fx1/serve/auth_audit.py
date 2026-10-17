@@ -324,6 +324,7 @@ def _client(
         else:
             os.environ[_API_KEY_ENV] = api_key
         app = api_mod.create_app(
+            public_release=False,
             harness=Harness(runner=fake_runner),
             backend_resolver=lambda name, *a, **k: backend or _OkBackend(),
             state_dir=state_dir if state_dir is not None else isolated / "state",

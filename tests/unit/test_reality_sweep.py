@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -202,10 +203,12 @@ def test_committed_ledger_branch_scores_when_default_db_is_absent(tmp_path: Path
     )
     proc = subprocess.run(
         [
-            "make",
-            "reality-gate",
-            "PROOFCORE_DB=data/metadata/proofcore.duckdb",
-            f"COMMITTED_TRIAL_LEDGER={ledger}",
+            sys.executable,
+            str(REPO_ROOT / "scripts" / "reality_gate.py"),
+            "--db",
+            "data/metadata/proofcore.duckdb",
+            "--committed-ledger",
+            str(ledger),
         ],
         cwd=REPO_ROOT,
         capture_output=True,
@@ -214,7 +217,7 @@ def test_committed_ledger_branch_scores_when_default_db_is_absent(tmp_path: Path
         timeout=180,
     )
     combined = proc.stdout + proc.stderr
-    assert proc.returncode == 2, combined
+    assert proc.returncode == 1, combined
     assert "verdict=insufficient_evidence" in proc.stdout
     assert "REALITY_FILTER_SKIP:" not in proc.stdout
     assert not db.exists()

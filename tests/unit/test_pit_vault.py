@@ -185,7 +185,12 @@ def test_manifest_part_paths_cannot_escape_dataset(vault: PitVault, tmp_path) ->
         manifest_mod.part_path(vault.root, manifest, "other/parts/r0000001.parquet")
     outside = tmp_path / "outside.parquet"
     outside.write_bytes(b"outside")
-    (vault.root / "silver/bars/parts/r0000001.parquet").symlink_to(outside)
+    try:
+        (vault.root / "silver/bars/parts/r0000001.parquet").symlink_to(outside)
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 1314:
+            pytest.skip("Windows symlink privilege unavailable")
+        raise
     with pytest.raises(ManifestError, match="escapes dataset"):
         manifest_mod.part_path(vault.root, manifest, "silver/bars/parts/r0000001.parquet")
 

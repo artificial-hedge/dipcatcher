@@ -12,6 +12,7 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, cast
+from uuid import uuid4
 
 import numpy as np
 import polars as pl
@@ -2354,6 +2355,7 @@ from quant_fund.research.catalog import (
     tail_var_battery_keys_present,
 )
 from quant_fund.research.research_flags import research_required_only
+from quant_fund.utils.atomicio import publish_text_once
 from quant_fund.utils.hashing import canonical_frame_fingerprint, hash_bytes, hash_file
 from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
 from quant_fund.utils.seeds import set_global_seed
@@ -2368,18 +2370,46 @@ def _atomic_write_text(path: Path, content: str) -> None:
             dir=path.parent,
             prefix=f".{path.name}.",
             suffix=".tmp",
-            mode="w",
-            encoding="utf-8",
+            mode="wb",
             delete=False,
         ) as temporary:
             temporary_path = Path(temporary.name)
-            temporary.write(content)
+            temporary.write(content.encode("utf-8"))
             temporary.flush()
             os.fsync(temporary.fileno())
         os.replace(temporary_path, path)
     finally:
         if temporary_path is not None:
             temporary_path.unlink(missing_ok=True)
+
+
+def _render_research_report(
+    directory: Path, title: str, sections: dict[str, Any], *, synthetic: bool
+) -> str:
+    """Render with the shared report writer before publishing immutable bytes."""
+    with NamedTemporaryFile(
+        dir=directory, prefix=".research-report.", suffix=".tmp", delete=False
+    ) as temporary:
+        temporary_path = Path(temporary.name)
+    try:
+        write_report(temporary_path, title, sections, synthetic=synthetic)
+        return temporary_path.read_text(encoding="utf-8")
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
+def _publish_research_run_once(
+    json_path: Path, serialized: str, markdown_path: Path, markdown: str
+) -> None:
+    """Keep a repeated run ID from replacing either immutable artifact."""
+    artifacts = ((markdown_path, markdown), (json_path, serialized))
+    for path, content in artifacts:
+        if path.is_symlink() or (path.exists() and path.read_bytes() != content.encode("utf-8")):
+            raise FileExistsError(
+                f"research run artifact already exists with different bytes: {path}"
+            )
+    for path, content in artifacts:
+        publish_text_once(path, content)
 
 
 @dataclass
@@ -2824,13 +2854,16 @@ def _provenance(
         "byteorder": sys.byteorder,
         "packages": runtime_packages,
     }
+    input_fingerprint = hash_bytes(
+        (
+            f"{revision}:{worktree_hash}:{config_hash}:{data_hash}:{content_hash}:{northset_hash}"
+        ).encode()
+    )
     return {
-        "run_id": hash_bytes(
-            (
-                f"{revision}:{worktree_hash}:{config_hash}:{data_hash}:"
-                f"{content_hash}:{northset_hash}"
-            ).encode()
-        ),
+        # A new execution gets a new immutable artifact path, even when its
+        # inputs match an earlier run. Keep the input identity separately.
+        "run_id": hash_bytes(f"{input_fingerprint}:{uuid4().hex}".encode()),
+        "input_fingerprint_sha256": input_fingerprint,
         "git_revision": revision,
         "git_worktree_sha256": worktree_hash,
         "config_sha256": config_hash,
@@ -5796,24 +5829,8 @@ def run_research(config: AppConfig) -> ResearchNotebook:
     run_id = str(provenance["run_id"])
     run_md_path = run_dir / f"{run_id}.md"
     run_json_path = run_dir / f"{run_id}.json"
-    write_report(
-        md_path,
-        f"Dipcatcher — {__firm__}'s proprietary research lab notebook",
-        sections,
-        synthetic=synthetic,
-    )
-    write_report(
-        run_md_path,
-        f"Dipcatcher — {__firm__}'s proprietary research lab notebook",
-        sections,
-        synthetic=synthetic,
-    )
-    write_report(
-        latest_report_dir(Path(config.data.root)) / "latest.md",
-        f"Dipcatcher — {__firm__}'s proprietary research lab notebook",
-        sections,
-        synthetic=synthetic,
-    )
+    report_title = f"Dipcatcher — {__firm__}'s proprietary research lab notebook"
+    markdown = _render_research_report(run_dir, report_title, sections, synthetic=synthetic)
     notebook.artifacts = {
         # Persist paths relative to the receipt root.  The verifier resolves
         # relative artifacts from the receipt itself, so workspace-relative
@@ -5822,7 +5839,7 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "markdown": "latest.md",
         "immutable_json": f"runs/{run_id}.json",
         "immutable_markdown": f"runs/{run_id}.md",
-        "immutable_markdown_sha256": hash_file(run_md_path),
+        "immutable_markdown_sha256": hash_bytes(markdown.encode("utf-8")),
     }
     # Bind the JSON receipt without creating a self-referential hash: the
     # digest covers the canonical payload before this digest field is added.
@@ -5831,6 +5848,8 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         json.dumps(digest_payload, sort_keys=True, separators=(",", ":")).encode()
     )
     serialized = json.dumps(notebook.to_dict(), indent=2)
-    _atomic_write_text(run_json_path, serialized)
+    _publish_research_run_once(run_json_path, serialized, run_md_path, markdown)
+    _atomic_write_text(md_path, markdown)
+    _atomic_write_text(latest_report_dir(Path(config.data.root)) / "latest.md", markdown)
     _atomic_write_text(dest_dir / "latest.json", serialized)
     return notebook

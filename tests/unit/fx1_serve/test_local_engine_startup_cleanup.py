@@ -71,6 +71,8 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
         self.backend._root = Path("SYNTHETIC-unused-checkpoint")
         self.backend._url = "http://engine.invalid/v1/chat/completions"
         self.backend._expected_weights_sha = "a" * 64
+        self.backend._model = "fx1"
+        self.backend._api_key = ""
         self.backend._start_timeout_s = 1.0
         self.proc = _SyntheticProcess(self.lock)
         self.spawn = self.enterContext(
@@ -81,17 +83,14 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
         self.enterContext(patch.object(backends.time, "monotonic", return_value=0.0))
         # Any unexpected network access fails without opening a socket.
         self.urlopen = self.enterContext(
-            patch.object(
-                backends.urllib.request, "urlopen", side_effect=AssertionError("unexpected I/O")
-            )
+            patch.object(backends, "_openai_urlopen", side_effect=AssertionError("unexpected I/O"))
         )
         self.addCleanup(self.backend.close)
 
-    def _served_weights(self, sha: str) -> None:
+    def _served_weights(self, sha: str, *, model: str = "fx1") -> None:
         self.urlopen.side_effect = None
-        self.urlopen.return_value = io.BytesIO(
-            json.dumps({"data": [{"fx1": {"weights_sha256": sha}}]}).encode()
-        )
+        payload = json.dumps({"data": [{"id": model, "fx1": {"weights_sha256": sha}}]}).encode()
+        self.urlopen.return_value.__enter__.side_effect = lambda: io.BytesIO(payload)
 
     def _assert_cleaned(self) -> None:
         self.assertIsNone(self.backend._proc)
@@ -110,9 +109,7 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
     def test_spawned_weight_mismatch_refuses_and_reaps_outside_lock(self) -> None:
         self.up.side_effect = [False, False, True]
         self._served_weights("b" * 64)
-        with self.assertRaisesRegex(
-            RuntimeError, "refusing to attach to weights it did not verify"
-        ):
+        with self.assertRaisesRegex(RuntimeError, "did not prove the checkpoint weights SHA-256"):
             self.backend._ensure_engine()
         self._assert_cleaned()
         self.assertEqual(self.proc.calls, [("terminate", None), ("wait", 5)])
@@ -178,13 +175,19 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
     def test_attach_mismatch_does_not_stop_external_engine(self) -> None:
         self.up.return_value = True
         self._served_weights("b" * 64)
-        with self.assertRaisesRegex(
-            RuntimeError, "refusing to attach to weights it did not verify"
-        ):
+        with self.assertRaisesRegex(RuntimeError, "did not prove the checkpoint weights SHA-256"):
             self.backend._ensure_engine()
         self.spawn.assert_not_called()
         self._assert_cleaned()
         self.assertEqual(self.proc.calls, [])
+
+    def test_attach_same_sha_under_other_model_is_refused(self) -> None:
+        self.up.return_value = True
+        self._served_weights("a" * 64, model="other-model")
+        with self.assertRaisesRegex(RuntimeError, "did not identify the requested model"):
+            self.backend._ensure_engine()
+        self.spawn.assert_not_called()
+        self._assert_cleaned()
 
     def test_failed_startup_can_retry_with_a_new_child(self) -> None:
         self.proc.returncode = 23
@@ -225,7 +228,7 @@ class TestLocalEngineStartupCleanup(unittest.TestCase):
         with (
             patch.object(self.proc, "terminate", side_effect=OSError("SYNTHETIC cleanup failure")),
             self.assertRaisesRegex(
-                RuntimeError, "refusing to attach to weights it did not verify"
+                RuntimeError, "did not prove the checkpoint weights SHA-256"
             ) as caught,
         ):
             self.backend._ensure_engine()

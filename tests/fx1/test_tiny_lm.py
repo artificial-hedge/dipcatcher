@@ -38,6 +38,29 @@ _BASE_CKPT = _ROOT / "artifacts" / "fx1_tiny_lm"
 _TEXT = "the journal replays every record; non-terminal means failed. " * 20
 
 
+def test_unmeasured_fixture_card_is_marked_non_release(tmp_path: Path) -> None:
+    from fx1.modelcard import EvalDelta, ModelCard
+    from fx1.train.tiny_lm import write_modelcard
+
+    common = {
+        "corpus_sha256": "a" * 64,
+        "corpus_receipt_range": "test",
+        "training_manifest_sha256": "b" * 64,
+        "known_limits": [],
+    }
+    fixture = ModelCard.load(write_modelcard(tmp_path, **common))
+    assert fixture.fixture_only
+    measured = EvalDelta(
+        domain_pass_rate_base=0.5,
+        domain_pass_rate_candidate=0.75,
+        general_pass_rate_base=0.9,
+        general_pass_rate_candidate=0.9,
+        honesty_gate_candidate=True,
+    )
+    candidate = ModelCard.load(write_modelcard(tmp_path, eval_delta=measured, **common))
+    assert not candidate.fixture_only
+
+
 def test_plan_steps_clamps():
     assert plan_steps(1, 1) == MIN_FT_STEPS
     assert plan_steps(1_000_000, 2) == MAX_FT_STEPS

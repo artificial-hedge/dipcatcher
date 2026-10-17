@@ -7,7 +7,7 @@ two properties that matter:
    describe its content is a failure, not a warning.
 2. It does **not** manufacture failures — a schema that carries its own seal
    (no ``receipt_sha256``) is reported as ``no_selfseal``, not as a mismatch.
-   The 20-minute ``make receipts-reverify`` gate mixed those two together;
+   An earlier 20-minute subprocess gate mixed those two together;
    separating them is the point of this tool.
 """
 
@@ -139,11 +139,40 @@ def test_unparseable_is_fail_closed(tmp_path: Path) -> None:
     assert scan_mod.scan(tmp_path)["verdict"] == "FAIL"
 
 
+@pytest.mark.parametrize(
+    ("template", "parsed_body"),
+    [
+        (
+            '{"schema":"x.v1","kind":"k","kind":"other","receipt_sha256":"{seal}"}',
+            {"schema": "x.v1", "kind": "other"},
+        ),
+        (
+            '{"schema":"x.v1","kind":"k","value":NaN,"receipt_sha256":"{seal}"}',
+            {"schema": "x.v1", "kind": "k", "value": None},
+        ),
+        (
+            '{"schema":"x.v1","kind":"k","value":1e400,"receipt_sha256":"{seal}"}',
+            {"schema": "x.v1", "kind": "k", "value": None},
+        ),
+    ],
+)
+def test_ambiguous_or_nonfinite_json_fails_closed(
+    tmp_path: Path, template: str, parsed_body: dict[str, Any]
+) -> None:
+    """The seal matches Python's permissive parse; the raw JSON must still fail."""
+    seal = hash_bytes(canonical_json_bytes(parsed_body))
+    (tmp_path / "bad.json").write_text(template.replace("{seal}", seal), encoding="utf-8")
+    report = scan_mod.scan(tmp_path)
+    assert report["verdict"] == "FAIL"
+    assert report["counts"]["unparseable"] == 1
+
+
 def test_empty_directory_does_not_pass_silently(tmp_path: Path) -> None:
     """No receipts scanned must not read as a clean bill of health."""
     report = scan_mod.scan(tmp_path)
     assert report["scanned"] == 0
-    assert report["verdict"] in {"PASS", "FAIL"}
+    assert report["verdict"] == "FAIL"
+    assert scan_mod.main([str(tmp_path), "--json"]) == 1
 
 
 @pytest.mark.parametrize("name", ["receipts"])

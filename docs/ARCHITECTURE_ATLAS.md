@@ -130,6 +130,7 @@ flowchart LR
     fx1_capabilities["fx1.capabilities"]
     fx1_cli["fx1.cli"]
     fx1_cli_audit["fx1.cli_audit"]
+    fx1_cli_sign["fx1.cli_sign"]
     fx1_data["fx1.data"]
     fx1_doctor["fx1.doctor"]
     fx1_doctor_audit["fx1.doctor_audit"]
@@ -172,6 +173,7 @@ flowchart LR
   fx1_bench -->|5| quant_fund_utils
   fx1_cli -->|1| fx1
   fx1_cli -->|2| fx1_bench
+  fx1_cli -->|1| fx1_cli_sign
   fx1_cli -->|7| fx1_data
   fx1_cli -->|1| fx1_doctor
   fx1_cli -->|5| fx1_eval
@@ -184,7 +186,7 @@ flowchart LR
   fx1_cli -->|1| fx1_sbom
   fx1_cli -->|1| fx1_sdk
   fx1_cli -->|1| fx1_selftest
-  fx1_cli -->|8| fx1_serve
+  fx1_cli -->|9| fx1_serve
   fx1_cli -->|3| fx1_train
   fx1_cli_audit -->|1| fx1_bench
   fx1_cli_audit -->|1| fx1_cli
@@ -192,6 +194,7 @@ flowchart LR
   fx1_cli_audit -->|1| fx1_sdk
   fx1_cli_audit -->|3| fx1_serve
   fx1_cli_audit -->|2| quant_fund_utils
+  fx1_cli_sign -->|2| fx1_serve
   fx1_data -->|3| fx1_honesty
   fx1_data -->|13| quant_fund_utils
   fx1_doctor -->|1| fx1
@@ -205,9 +208,10 @@ flowchart LR
   fx1_eval -->|1| fx1_data
   fx1_eval -->|1| fx1_harness
   fx1_eval -->|10| fx1_honesty
+  fx1_eval -->|1| fx1_modelcard
   fx1_eval -->|4| quant_fund_metrics
   fx1_eval -->|2| quant_fund_models
-  fx1_eval -->|18| quant_fund_utils
+  fx1_eval -->|19| quant_fund_utils
   fx1_ext_bench_audit -->|2| fx1_eval
   fx1_ext_bench_audit -->|2| quant_fund_utils
   fx1_extensions -->|87| fx1_capabilities
@@ -235,7 +239,7 @@ flowchart LR
   fx1_interactive -->|5| fx1_harness
   fx1_interactive -->|2| fx1_honesty
   fx1_interactive -->|4| fx1_serve
-  fx1_interactive -->|1| fx1_webresearch
+  fx1_interactive -->|2| fx1_webresearch
   fx1_interactive -->|1| quant_fund_utils
   fx1_modelcard_audit -->|1| fx1_modelcard
   fx1_modelcard_audit -->|2| quant_fund_utils
@@ -259,7 +263,7 @@ flowchart LR
   fx1_sdk -->|1| fx1_harness
   fx1_sdk -->|1| fx1_honesty
   fx1_sdk -->|1| fx1_reward
-  fx1_sdk -->|16| fx1_serve
+  fx1_sdk -->|17| fx1_serve
   fx1_sdk -->|1| quant_fund_schemas
   fx1_sdk_audit -->|1| fx1_harness
   fx1_sdk_audit -->|1| fx1_harness_bench
@@ -275,12 +279,12 @@ flowchart LR
   fx1_serve -->|3| fx1_eval
   fx1_serve -->|32| fx1_harness
   fx1_serve -->|3| fx1_honesty
-  fx1_serve -->|6| fx1_modelcard
+  fx1_serve -->|7| fx1_modelcard
   fx1_serve -->|1| fx1_reward
   fx1_serve -->|14| fx1_sdk
   fx1_serve -->|4| fx1_train
   fx1_serve -->|5| quant_fund_schemas
-  fx1_serve -->|76| quant_fund_utils
+  fx1_serve -->|77| quant_fund_utils
   fx1_tail_audit -->|2| fx1_data
   fx1_tail_audit -->|1| fx1_eval
   fx1_tail_audit -->|1| fx1_honesty
@@ -305,7 +309,7 @@ flowchart LR
   quant_fund_api -->|2| quant_fund_schemas
   quant_fund_api -->|8| quant_fund_utils
   quant_fund_audit -->|2| quant_fund_research
-  quant_fund_audit -->|4| quant_fund_utils
+  quant_fund_audit -->|5| quant_fund_utils
   quant_fund_backtest -->|1| quant_fund_compute
   quant_fund_backtest -->|8| quant_fund_config
   quant_fund_backtest -->|8| quant_fund_execution
@@ -338,7 +342,7 @@ flowchart LR
   quant_fund_cli -->|1| quant_fund_quant_models
   quant_fund_cli -->|1| quant_fund_reality
   quant_fund_cli -->|3| quant_fund_reporting
-  quant_fund_cli -->|73| quant_fund_research
+  quant_fund_cli -->|74| quant_fund_research
   quant_fund_cli -->|3| quant_fund_schemas
   quant_fund_cli -->|1| quant_fund_stress
   quant_fund_cli -->|13| quant_fund_utils
@@ -452,7 +456,7 @@ flowchart LR
   quant_fund_paper -->|2| quant_fund_portfolio
   quant_fund_paper -->|4| quant_fund_research
   quant_fund_paper -->|1| quant_fund_schemas
-  quant_fund_paper -->|7| quant_fund_utils
+  quant_fund_paper -->|8| quant_fund_utils
   quant_fund_parity -->|4| quant_fund_config
   quant_fund_parity -->|2| quant_fund_execution
   quant_fund_parity -->|1| quant_fund_schemas
@@ -534,7 +538,7 @@ flowchart LR
   quant_fund_research -->|1| quant_fund_reporting
   quant_fund_research -->|1| quant_fund_robustness
   quant_fund_research -->|3| quant_fund_schemas
-  quant_fund_research -->|147| quant_fund_utils
+  quant_fund_research -->|154| quant_fund_utils
   quant_fund_research -->|11| quant_fund_validation
   quant_fund_risk -->|6| quant_fund_metrics
   quant_fund_risk -->|2| quant_fund_models
@@ -753,10 +757,11 @@ sequenceDiagram
 | `fx1.capabilities` | 1 |
 | `fx1.cli` | 1 |
 | `fx1.cli_audit` | 1 |
+| `fx1.cli_sign` | 1 |
 | `fx1.data` | 20 |
 | `fx1.doctor` | 1 |
 | `fx1.doctor_audit` | 1 |
-| `fx1.eval` | 28 |
+| `fx1.eval` | 29 |
 | `fx1.ext_bench_audit` | 1 |
 | `fx1.extensions` | 94 |
 | `fx1.flash` | 4 |
@@ -783,7 +788,7 @@ sequenceDiagram
 | `fx1.sdk` | 1 |
 | `fx1.sdk_audit` | 1 |
 | `fx1.selftest` | 1 |
-| `fx1.serve` | 60 |
+| `fx1.serve` | 65 |
 | `fx1.tail_audit` | 1 |
 | `fx1.train` | 14 |
 | `fx1.webresearch` | 4 |
@@ -792,7 +797,7 @@ sequenceDiagram
 | `quant_fund.audit` | 12 |
 | `quant_fund.backtest` | 16 |
 | `quant_fund.calendars` | 8 |
-| `quant_fund.cli` | 20 |
+| `quant_fund.cli` | 21 |
 | `quant_fund.combination` | 18 |
 | `quant_fund.compute` | 8 |
 | `quant_fund.config` | 7 |
@@ -833,18 +838,18 @@ sequenceDiagram
 | `quant_fund.realized` | 2 |
 | `quant_fund.registry` | 7 |
 | `quant_fund.reporting` | 6 |
-| `quant_fund.research` | 1863 |
+| `quant_fund.research` | 1864 |
 | `quant_fund.risk` | 7 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 9 |
 | `quant_fund.simtest` | 10 |
 | `quant_fund.stress` | 14 |
-| `quant_fund.utils` | 10 |
+| `quant_fund.utils` | 11 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13426**
-- Packages: **94**
-- Cross-package import edges: **398**
+- Modules scanned: **13436**
+- Packages: **95**
+- Cross-package import edges: **401**
 
 <!-- END GENERATED: coverage -->
 

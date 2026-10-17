@@ -40,7 +40,7 @@ def _interactive() -> bool:
 def _version_line() -> str:
     import fx1
 
-    return f"dipcatcher {fx1.__version__} (fx-1 harness; models fx1, fx1-lite)"
+    return f"dipcatcher {fx1.__version__} (fx-1 harness; model IDs fx1, fx1-lite)"
 
 
 def _split_leading_model(args: Sequence[str]) -> tuple[str | None, list[str]]:
@@ -53,7 +53,9 @@ def _split_leading_model(args: Sequence[str]) -> tuple[str | None, list[str]]:
 def _chat(args: Sequence[str]) -> None:
     parser = argparse.ArgumentParser(
         prog="dipcatcher chat",
-        description="Chat with fx1 or fx1-lite; /help lists research and session controls.",
+        description=(
+            "Chat with a configured fx1 or fx1-lite endpoint; no model endpoint is bundled."
+        ),
         epilog=(
             "In chat: /superpower <goal>, /research, /status, /keys, /doctor, /exit.\n"
             "Session journal: $FX1_CONFIG_DIR/sessions/*.jsonl · "
@@ -61,7 +63,12 @@ def _chat(args: Sequence[str]) -> None:
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--model", choices=_CHAT_MODELS, default=_DEFAULT_CHAT_MODEL)
+    parser.add_argument(
+        "--model",
+        choices=_CHAT_MODELS,
+        default=_DEFAULT_CHAT_MODEL,
+        help="model identifier; model turns require a configured endpoint",
+    )
     parser.add_argument(
         "--resume",
         metavar="SESSION",
@@ -85,6 +92,7 @@ def _print_launcher_help() -> None:
     """Short chat-first banner before the lab Typer help tree."""
     print("Start a conversation: dipcatcher (interactive terminal)")
     print("Choose a model: dipcatcher chat --model fx1-lite")
+    print("Model turns need a configured endpoint; model names do not imply released weights.")
     print("Resume a session: dipcatcher chat --resume <id>")
     print('One-shot research: dipcatcher superpower "<goal>" --sync')
     print("Sessions: dipcatcher sessions   |  dipcatcher resume <id>")

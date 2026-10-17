@@ -44,7 +44,7 @@ def _file_sha256(path: Path) -> str:
 def _write_receipt(root: Path, body: dict[str, Any], *, name: str = "receipt.json") -> Path:
     path = root / name
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n")
+    path.write_bytes((json.dumps(body, indent=2, sort_keys=True) + "\n").encode("utf-8"))
     return path
 
 
@@ -326,6 +326,35 @@ def _mirror_lane_run_inputs(root: Path) -> None:
             (dst_dir / src.name).write_bytes(src.read_bytes())
 
 
+def _replay_mismatch_details(root: Path, artifacts: list[dict[str, Any]]) -> str:
+    """Show hashes of generated siblings when a digest-named pin does not replay."""
+    generated: list[dict[str, str]] = []
+    for row in artifacts:
+        declared = Path(row["path"])
+        directory = (root / declared.parent).resolve()
+        if not directory.is_relative_to(root.resolve()) or not directory.is_dir():
+            continue
+        prefix, separator, digest = declared.stem.rpartition("_")
+        stem_prefix = (
+            prefix + "_"
+            if separator and len(digest) == 16 and all(c in "0123456789abcdef" for c in digest)
+            else declared.stem
+        )
+        for candidate in sorted(directory.iterdir()):
+            if (
+                candidate.is_file()
+                and candidate.suffix == declared.suffix
+                and candidate.stem.startswith(stem_prefix)
+            ):
+                generated.append(
+                    {
+                        "path": candidate.relative_to(root).as_posix(),
+                        "sha256": _file_sha256(candidate),
+                    }
+                )
+    return f"declared/observed={artifacts!r}; generated siblings={generated!r}"
+
+
 @pytest.mark.parametrize(
     "declared",
     _committed_lane_receipts(),
@@ -355,6 +384,7 @@ def test_committed_lane_replays(tmp_path: Path, declared: Path) -> None:
     assert body["all_match"] is True, {
         "spawn_error": body.get("spawn_error"),
         "artifacts": body.get("artifacts"),
+        "generated_siblings": _replay_mismatch_details(tmp_path, body["artifacts"]),
         "stderr_tail": (body.get("stderr_tail") or "")[-500:],
     }
     assert body["verdict"] == "pass"

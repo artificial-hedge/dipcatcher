@@ -5,17 +5,35 @@ process launch, durable state, managed-key bootstrap and rotation,
 webhook verification, graceful shutdown, the deploy gates, usage
 accounting, and the failure-mode table. The wire contract itself lives in
 `docs/FX1_HARNESS_API.md`; the client-side legs in `docs/FX1_CLIENTS.md`;
-the BYOK provider details in `docs/FX1_BYOK_RUNBOOK.md`. A zero-config
-walkthrough of every step below runs in `examples/fx1_quickstart_http.py`.
+the BYOK provider details in `docs/FX1_BYOK_RUNBOOK.md`. A loopback API
+walkthrough runs in `examples/fx1_quickstart_http.py`.
+
+**Release status (2026-10-16):** This is an operator procedure, not a record
+of a public model deployment. This checkout has no verified release checkpoint
+for either `fx1` or `fx1-lite`; its tracked tiny LM is a synthetic correctness
+fixture. The selftest below uses a stub engine on loopback and does not clear
+the model evaluation, license, signed checkpoint, or deployment gates.
 
 ## Process launch
 
-The canonical launcher is the CLI — it is the only path that enforces the
-non-loopback auth precondition:
+The canonical launcher is the CLI. Its non-loopback launch requires
+`FX1_API_KEY` and the signed public release policy:
 
 ```bash
 uv run fx1 harness serve --host 0.0.0.0 --port 8011
 ```
+
+When a reverse proxy terminates the public connection and the API binds only
+to loopback, turn on the same policy explicitly:
+
+```bash
+uv run fx1 harness serve --host 127.0.0.1 --port 8011 --public-release
+```
+
+`python -m fx1.serve.api` uses `FX1_API_PUBLIC_RELEASE=1` for this case.
+Both launchers reject fixture opt-in in public mode. Provision an API key or
+managed keys before routing traffic; the public policy refuses anonymous
+requests even from a loopback proxy.
 
 `fx1 harness serve` builds `create_app()` and hands it to
 `uvicorn.run(..., reload=False, server_header=False)`. Every knob has a
@@ -25,6 +43,7 @@ flag and an env twin — flags win:
 |---|---|---|---|
 | `--host` | — | `127.0.0.1` | Bind host. Non-loopback **refuses to start** without `FX1_API_KEY`. |
 | `--port` | — | `8011` | Bind port. |
+| `--public-release` | `FX1_API_PUBLIC_RELEASE` | off on loopback | Enforce public auth and checkpoint gates behind a reverse proxy; non-loopback binds always enforce them. |
 | `--max-inflight` | `FX1_API_MAX_INFLIGHT` | `16` | Concurrent heavy requests; saturation answers `503 over_capacity`. |
 | `--job-max` | `FX1_API_JOB_MAX` | `1024` | Async job-store capacity. |
 | `--idem-max` | `FX1_API_IDEM_MAX` | `1024` | Idempotency-key store capacity. |
@@ -43,12 +62,87 @@ Plus `FX1_API_FILE_MAX` / `FX1_API_FILE_BYTES` / `FX1_API_BATCH_MAX` /
 and `FX1_API_BYOK_OVERRIDE` (`1` default) to allow/disallow per-request
 BYOK overrides — see `docs/FX1_BYOK_RUNBOOK.md`.
 
-Embedding the app instead of the CLI: `create_app()` is a plain FastAPI
-app — `uvicorn fx1.serve.api:create_app` does **not** work (the factory
-takes kwargs), but `create_app(state_dir=..., rate_limit_rps=...)` under
-any ASGI server does. You lose the non-loopback refusal guard, so enforce
-`FX1_API_KEY` yourself — the app accepts it, it just won't refuse to
-start without it.
+`uvicorn fx1.serve.api:app --host 0.0.0.0` and
+`uvicorn fx1.serve.api:create_app --factory --host 0.0.0.0` both use the
+public release policy. Protected routes refuse anonymous requests even when
+the ASGI peer is loopback (as with a reverse proxy). Set `FX1_API_KEY` or
+provision managed keys before accepting traffic. An embedded caller should
+pass `public_release=True`; `public_release=False` is only for a controlled
+loopback research server. Injecting a custom harness or backend requires an
+explicit `public_release` choice; an omitted mode raises at construction.
+
+For `local_fx1`, a checkpoint with `weights.manifest.json` attaches only
+to an engine whose `/v1/models` entry for the requested model advertises
+the same `weights_sha256` value under `fx1`. A missing model entry, missing pin, malformed
+response, or mismatched pin refuses the request; the backend rechecks the
+pin before subsequent requests. Raw third-party checkpoint layouts without
+a weights manifest retain a liveness-only attach path and do not establish
+model identity. A public fx-1 release therefore needs a pinned checkpoint,
+measured ship-gate evidence, and a detached Ed25519 checkpoint signature.
+The canonical CLI enables this signed-local policy on non-loopback binds.
+
+**Public-evaluation stop:** The fixed evaluator trust registry is empty and
+the serving gate refuses both public model listing and direct backend
+resolution, even with an otherwise valid signed checkpoint and ship-eligible
+card. `ModelCard.eval_delta` contains asserted numbers; the runtime does not
+independently recompute them from measured, case-level evidence. A
+`known_limits` sentence is not evidence. The existing `fx1_ft_eval.v1` receipt
+is explicitly `SYNTHETIC` and lacks candidate-weight binding and raw paired
+responses. The public `DEFAULT_BANK` is an honesty smoke test, not an
+independent held-out capability evaluation.
+
+To lift this stop, an independent custodian must hold a preregistered bank
+outside the model-development inputs, with a chain-verified timestamped bank
+commitment preceding an independently anchored evaluation-start challenge.
+The evaluator must sign complete ordered
+base and candidate case responses, exact checkpoint hashes, inference
+configuration and tokenizer identity under a key distinct from the release
+signer. A future verifier must check the trusted bank and chronology, release
+inventory binding, full case coverage, scores and paired significance, and
+exact equality with the card's `eval_delta`. Merely enrolling a bank digest or
+signing the card cannot enable public serving.
+
+Bind `FX1_CHECKPOINT_DIR_FX1` and `FX1_CHECKPOINT_DIR_FX1_LITE` separately,
+along with `FX1_LOCAL_SERVE_URL_FX1` and `FX1_LOCAL_SERVE_URL_FX1_LITE`.
+Each URL must target a persistent engine at `http://127.0.0.1:<port>/v1`
+or `http://[::1]:<port>/v1`; public serving never auto-spawns a fresh engine
+per request. The engine and API must share a trusted host. Its advertised
+weights SHA is a consistency check from that local engine, not a remote
+cryptographic attestation. Protect the engine's loopback port from other
+local users and processes. Each checkpoint's signed model card must name
+its exact public alias, permit `maas` or `commercial` serving, and include
+a `weights.safetensors` digest equal to its weights manifest.
+An unconfigured alias is neither advertised
+by `/v1/models` nor served; public eval runs carry the same alias binding.
+The build host signs with `FX1_RELEASE_SIGNING_KEY` (a 32-byte private seed
+in hex) via `fx1 sign --public <checkpoint-dir>`. The serving host receives
+only `FX1_RELEASE_VERIFY_KEY` and the signed checkpoint. Public inference
+refuses to start with `FX1_RELEASE_SIGNING_KEY` in its environment and strips
+signing secrets from a spawned engine child. The internal HMAC
+`FX1_SIGNING_KEY` remains for loopback research.
+
+Public checkpoint roots must be on an OS read-only volume and the operator
+must set `FX1_RELEASE_IMMUTABLE_IMAGE=1` only for an image that cannot change
+through another writable mount or network peer. Symlink/junction ancestors
+and mutable nested mounts are refused. The process verifies the complete
+Ed25519 inventory once, checks every inventory member's metadata on later
+requests, and refuses drift until restart. The metadata check catches normal
+changes; it cannot detect a privileged writer who restores metadata.
+Deploy an immutable image, keep the serving identity without write access,
+and replace the image only through a new process. The live engine must still
+advertise the signed weights SHA under the exact alias on every attach.
+
+The committed `artifacts/fx1_tiny_lm` model card has `fixture_only: true`:
+its gate numbers are synthetic correctness placeholders. Both the local
+backend and weights engine refuse to serve fixture cards by default.
+`FX1_ALLOW_TEST_FIXTURE=1` enables the isolated goldenpath test on loopback;
+the canonical CLI and local engine refuse public binds while that opt-in is
+set. Never carry this test setting into a deployment.
+
+Hosted completions (text, tools, and streaming) require the provider's
+response `model` to equal the requested model. A provider alias that returns
+a different identifier needs a documented mapping before it can serve as
+`fx1` or `fx1-lite`; otherwise the call fails closed.
 
 Liveness/readiness probes:
 

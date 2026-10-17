@@ -1,4 +1,4 @@
-"""`make reality-gate` on the provenance trial ledger.
+"""Cross-platform reality gate on the provenance trial ledger.
 
 ``data/metadata/proofcore.duckdb`` is not in the git tree. A missing DB file
 must skip (exit 0) before export creates an empty database. A DB that has a
@@ -8,6 +8,7 @@ row must still be scored with the unchanged filter.
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 from quant_fund.proofcore.contracts import (
@@ -28,7 +29,14 @@ _HEX = "ab" * 32
 
 def _run_gate(db: Path, ledger: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        ["make", "reality-gate", f"PROOFCORE_DB={db}", f"PROOFCORE_LEDGER={ledger}"],
+        [
+            sys.executable,
+            str(REPO_ROOT / "scripts" / "reality_gate.py"),
+            "--db",
+            str(db),
+            "--ledger",
+            str(ledger),
+        ],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
@@ -144,9 +152,7 @@ def test_reality_gate_scores_a_recorded_trial(tmp_path: Path) -> None:
 
     proc = _run_gate(db, ledger)
     combined = proc.stdout + proc.stderr
-    # ledger-gate exits 1. GNU make then exits 2 and prints "Error 1".
-    assert proc.returncode == 2, combined
-    assert "Error 1" in combined
+    assert proc.returncode == 1, combined
     assert "REALITY_FILTER_READY: n_rows=1" in proc.stdout
     assert "verdict=insufficient_evidence" in proc.stdout
     assert "REALITY_FILTER_SKIP:" not in proc.stdout

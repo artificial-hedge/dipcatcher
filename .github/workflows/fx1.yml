@@ -4,6 +4,9 @@ on:
   push:
     branches: [main, 'fx-1/**']
   pull_request:
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
 
 # Least privilege. This workflow only reads the repo and runs tests.
 permissions:
@@ -80,4 +83,26 @@ jobs:
               assert {"messages", "negative", "receipt_sha256", "source_path"} <= row.keys(), row.keys()
               assert re.fullmatch(r"[0-9a-f]{64}", row["receipt_sha256"]), row["receipt_sha256"]
           print(f"corpus contract OK: {len(rows)} provenance-hashed lines")
+          PY
+
+  required-gate:
+    name: fx1-required
+    needs: [test]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require fx1 tests to succeed
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+
+          jobs = json.loads(os.environ["NEEDS_JSON"])
+          failures = {name: row.get("result") for name, row in jobs.items() if row.get("result") != "success"}
+          if not jobs or failures:
+              raise SystemExit(f"required fx1 jobs did not all pass: {failures or 'no dependencies'}")
+          print(f"all {len(jobs)} required fx1 job groups passed")
           PY

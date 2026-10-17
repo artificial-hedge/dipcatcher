@@ -42,7 +42,10 @@ class _Dead:
 def _app() -> TestClient:
     ok = _Backend()
     return TestClient(
-        api_mod.create_app(backend_resolver=lambda name, *a, **k: ok if name == "byok" else _Dead())
+        api_mod.create_app(
+            public_release=False,
+            backend_resolver=lambda name, *a, **k: ok if name == "byok" else _Dead(),
+        )
     )
 
 

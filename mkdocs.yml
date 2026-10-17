@@ -230,6 +230,7 @@ nav:
       - Platform matrix: PLATFORM_MATRIX.md
       - Runbook: OPERATIONS_RUNBOOK.md
       - Ultra plan — production readiness: ULTRA_PROD_READINESS.md
+      - Proposed main CI ruleset: CI_ENFORCEMENT_PROPOSAL.md
       - Audit ledger and observability: AUDIT_OBSERVABILITY.md
       - Paper and shadow: PAPER_SHADOW.md
       - Backtest-to-live parity: BACKTEST_LIVE_PARITY.md
@@ -245,6 +246,7 @@ nav:
       - Forecast harness: fx1_harness.md
       - Architecture: FX1_ARCHITECTURE.md
       - Training: FX1_TRAINING.md
+      - Public evaluation evidence: FX1_PUBLIC_EVAL_EVIDENCE.md
       - Data: FX1_DATA.md
       - Datasources: FX1_DATASOURCES.md
       - API stability: FX1_API_STABILITY.md

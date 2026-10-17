@@ -343,6 +343,32 @@ def _hypothesis_record_errors(notebook: dict[str, Any]) -> list[str]:
     return errors
 
 
+def _optional_input_fingerprint_errors(provenance: dict[str, Any]) -> list[str]:
+    """Recompute newer input identity while accepting historical receipts."""
+    if "input_fingerprint_sha256" not in provenance:
+        return []
+    claimed = provenance["input_fingerprint_sha256"]
+    if not _is_sha256(claimed):
+        return ["invalid_input_fingerprint_sha256"]
+    components = tuple(
+        provenance.get(key)
+        for key in (
+            "git_revision",
+            "git_worktree_sha256",
+            "config_sha256",
+            "dataset_sha256",
+            "dataset_content_sha256",
+            "northset_inputs_sha256",
+        )
+    )
+    if not all(isinstance(component, str) for component in components):
+        return ["input_fingerprint_unverifiable"]
+    expected = hash_bytes(":".join(cast(str, component) for component in components).encode())
+    if claimed != expected:
+        return ["input_fingerprint_mismatch"]
+    return []
+
+
 def _provenance_state(notebook: dict[str, Any]) -> tuple[dict[str, Any], object, list[str]]:
     errors: list[str] = []
     provenance = notebook.get("provenance")
@@ -368,6 +394,7 @@ def _provenance_state(notebook: dict[str, Any]) -> tuple[dict[str, Any], object,
         value = provenance.get(key)
         if not _is_sha256(value):
             errors.append(f"invalid_{key}")
+    errors.extend(_optional_input_fingerprint_errors(provenance))
     # Optional. Existing receipts omit it. When a lake snapshot is cited, the
     # id must be the content hash of that immutable manifest.
     snapshot_id = provenance.get("data_snapshot_id")

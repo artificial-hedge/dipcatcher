@@ -12,7 +12,7 @@
     },
     "eval": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 28,
+      "n_modules": 29,
       "status": "audited"
     },
     "extensions": {
@@ -36,7 +36,7 @@
     },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 60,
+      "n_modules": 65,
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
       "status": "partial"
     },
@@ -65,12 +65,18 @@
     "cli_audit.py": {
       "status": "audited"
     },
+    "cli_sign.py": {
+      "status": "pending"
+    },
     "doctor.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
     "doctor_audit.py": {
       "status": "audited"
+    },
+    "eval/evidence_contract.py": {
+      "status": "pending"
     },
     "ext_bench_audit.py": {
       "status": "audited"
@@ -196,6 +202,12 @@
     "selftest.py": {
       "status": "pending"
     },
+    "serve/api_audit_finetune.py": {
+      "status": "pending"
+    },
+    "serve/api_metrics.py": {
+      "status": "pending"
+    },
     "serve/anthropic_compat.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
@@ -208,9 +220,18 @@
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
+    "serve/local_engine_process.py": {
+      "status": "pending"
+    },
     "serve/openai_compat.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
+    },
+    "serve/openai_request_options.py": {
+      "status": "pending"
+    },
+    "serve/release_gate.py": {
+      "status": "pending"
     },
     "tail_audit.py": {
       "status": "audited"

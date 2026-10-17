@@ -30,7 +30,7 @@ def _client(tmp_path: Path) -> tuple[TestClient, Path, str]:
     sha = str(receipt["receipt_sha256"])
     path = tmp_path / "receipt.json"
     path.write_text(json.dumps(receipt), encoding="utf-8")
-    return TestClient(create_app(receipts_dir=tmp_path)), path, sha
+    return TestClient(create_app(public_release=False, receipts_dir=tmp_path)), path, sha
 
 
 def test_valid_receipt_is_served_and_conditionally_cached(tmp_path: Path) -> None:

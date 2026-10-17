@@ -286,17 +286,26 @@ def combine(root: Path, parts: Path, output: Path) -> int:
             cov.combine(data_paths=[str(path) for path in inputs], strict=True, keep=True)
             # Explicit zero-hit entries keep never-imported tracked modules in
             # the denominator even if a producer omitted discovery metadata.
-            cov.get_data().touch_files(sorted(tracked_sources(root)))
+            # CoverageData uses native separators on Windows; Git paths use /.
+            sources = tracked_sources(root)
+            cov.get_data().touch_files(sorted(os.path.normpath(path) for path in sources))
             cov.save()
             cov.json_report(outfile=str(output / "coverage.json"))
             cov.xml_report(outfile=str(output / "coverage.xml"))
             cov.html_report(directory=str(output / "html"))
             report = json.loads((output / "coverage.json").read_text(encoding="utf-8"))
+            if os.name == "nt":
+                files = report["files"]
+                portable = {name.replace("\\", "/"): entry for name, entry in files.items()}
+                if len(portable) != len(files):
+                    raise CoverageGateError("coverage paths collide after normalization")
+                report["files"] = portable
+                _write_json(output / "coverage.json", report)
         finally:
             if cov is not None:
                 cov.get_data().close()
             os.chdir(previous)
-        summary = summarize(parts, report, tracked_sources(root))
+        summary = summarize(parts, report, sources)
         # The CLI applies coverage.py's exact precision/100%-floor semantics.
         threshold = subprocess.run(
             [

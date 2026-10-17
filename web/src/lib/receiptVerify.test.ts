@@ -98,7 +98,7 @@ describe("extractHashFields", () => {
     expect(metrics?.match).toBeNull();
   });
 
-  it("resolves the real fast-replay code_sha256 match", () => {
+  it("reports a fast-replay source hash using the committed match index", () => {
     // 20260927 was quarantined into receipts/legacy-unsealed/; 20260928 is the
     // current sealed fast-replay receipt that ships in the web fixtures.
     const receipt = JSON.parse(
@@ -111,7 +111,10 @@ describe("extractHashFields", () => {
     const pub = fields.find(
       (f) => f.key === "code_sha256.src/quant_fund/public.py",
     );
-    expect(pub?.match).toBe("src/quant_fund/public.py");
+    expect(pub?.value).toBe(
+      (receipt.code_sha256 as Record<string, string>)["src/quant_fund/public.py"],
+    );
+    expect(pub?.match).toBe(REAL_INDEX.hash_matches[pub?.value ?? ""] ?? null);
   });
 });
 

@@ -20,11 +20,11 @@ evidence. NAV is a simulated mark-to-model accounting identity, not live P&L.
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from datetime import datetime
+from math import isfinite
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, NoReturn, cast
 
 from quant_fund.execution.order_recon import (
     Fill,
@@ -34,6 +34,7 @@ from quant_fund.execution.order_recon import (
     OrderLedgerError,
     refuse_live_endpoint,
 )
+from quant_fund.utils.atomicio import atomic_write_text
 
 
 def _fill_to_dict(fill: Fill) -> dict[str, Any]:
@@ -49,14 +50,17 @@ def _fill_to_dict(fill: Fill) -> dict[str, Any]:
 
 
 def _fill_from_dict(raw: dict[str, Any]) -> Fill:
+    raw = _required_fields(
+        raw, "fill", ("fill_id", "order_id", "security_id", "quantity", "price", "fill_time")
+    )
     return Fill(
-        fill_id=str(raw["fill_id"]),
-        order_id=str(raw["order_id"]),
-        security_id=str(raw["security_id"]),
-        quantity=float(raw["quantity"]),
-        price=float(raw["price"]),
-        fill_time=datetime.fromisoformat(str(raw["fill_time"])),
-        seq=None if raw.get("seq") is None else int(raw["seq"]),
+        fill_id=raw["fill_id"],
+        order_id=raw["order_id"],
+        security_id=raw["security_id"],
+        quantity=raw["quantity"],
+        price=raw["price"],
+        fill_time=_parse_time(raw["fill_time"], "fill_time"),
+        seq=raw.get("seq"),
     )
 
 
@@ -72,15 +76,54 @@ def _order_to_dict(order: Order) -> dict[str, Any]:
 
 
 def _order_from_dict(raw: dict[str, Any]) -> Order:
+    raw = _required_fields(raw, "order", ("order_id", "security_id", "side", "quantity"))
     submitted = raw.get("submitted_time")
     return Order(
-        order_id=str(raw["order_id"]),
-        security_id=str(raw["security_id"]),
+        order_id=raw["order_id"],
+        security_id=raw["security_id"],
         side=raw["side"],
-        quantity=float(raw["quantity"]),
-        submitted_time=datetime.fromisoformat(str(submitted)) if submitted else None,
-        expects_fill=bool(raw.get("expects_fill", True)),
+        quantity=raw["quantity"],
+        submitted_time=_parse_time(submitted, "submitted_time") if submitted is not None else None,
+        expects_fill=raw.get("expects_fill", True),
     )
+
+
+def _required_fields(raw: object, kind: str, fields: tuple[str, ...]) -> dict[str, Any]:
+    if not isinstance(raw, dict) or any(field not in raw for field in fields):
+        raise OrderLedgerError(f"checkpoint {kind} is not an object with required fields")
+    return cast(dict[str, Any], raw)
+
+
+def _parse_time(value: object, name: str) -> datetime:
+    if not isinstance(value, str):
+        raise OrderLedgerError(f"checkpoint {name} must be an ISO datetime string")
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise OrderLedgerError(f"checkpoint {name} is not an ISO datetime") from exc
+
+
+def _finite_number(value: object, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise OrderLedgerError(f"{name} must be a finite number")
+    try:
+        number = float(value)
+    except OverflowError as exc:
+        raise OrderLedgerError(f"{name} must be a finite number") from exc
+    if not isfinite(number):
+        raise OrderLedgerError(f"{name} must be a finite number")
+    return number
+
+
+def _nonnegative_finite(value: object, name: str) -> float:
+    number = _finite_number(value, name)
+    if number < 0:
+        raise OrderLedgerError(f"{name} must be nonnegative")
+    return number
+
+
+def _reject_nonfinite_json(value: str) -> NoReturn:
+    raise OrderLedgerError(f"non-finite broker state number: {value}")
 
 
 @dataclass
@@ -122,11 +165,11 @@ class PaperBrokerAdapter:
     ) -> None:
         self.endpoint_kind = refuse_live_endpoint(endpoint_kind)
         self.state_path = Path(state_path)
-        self._nav_tolerance = float(nav_tolerance)
-        self._starting_cash = float(starting_cash)
+        self._nav_tolerance = _nonnegative_finite(nav_tolerance, "nav_tolerance")
         self._ledger = OrderFillLedger(
             endpoint_kind=self.endpoint_kind, starting_cash=starting_cash
         )
+        self._starting_cash = float(starting_cash)
         self._orders: dict[str, Order] = {}
         self._order_sequence: list[str] = []
         self._fills: dict[str, Fill] = {}
@@ -140,10 +183,25 @@ class PaperBrokerAdapter:
         state = self._ledger.reconcile()
         cash = float(state["computed_cash"])
         positions = state["computed_positions"]
-        return cash + sum(float(positions[sec]) * self._marks.get(sec, 0.0) for sec in positions)
+        value = cash + sum(float(positions[sec]) * self._marks.get(sec, 0.0) for sec in positions)
+        if not isfinite(value):
+            raise OrderLedgerError("computed paper NAV must be finite")
+        return value
 
     def mark(self, security_id: str, price: float) -> None:
-        self._marks[str(security_id)] = float(price)
+        if not isinstance(security_id, str) or not security_id.strip():
+            raise OrderLedgerError("mark security_id must be a non-empty string")
+        validated_price = _nonnegative_finite(price, "mark price")
+        previous = self._marks.get(security_id)
+        self._marks[security_id] = validated_price
+        try:
+            _ = self.nav
+        except OrderLedgerError:
+            if previous is None:
+                del self._marks[security_id]
+            else:
+                self._marks[security_id] = previous
+            raise
 
     # -- intake (idempotent) --
 
@@ -156,7 +214,7 @@ class PaperBrokerAdapter:
 
     def apply_fill(self, fill: Fill) -> str:
         verdict = self._ledger.record_fill(fill)
-        if verdict in ("accepted", "out_of_order_fill"):
+        if verdict in ("accepted", "out_of_order_fill", "orphan_fill"):
             self._fills[fill.fill_id] = fill
         return verdict
 
@@ -187,12 +245,9 @@ class PaperBrokerAdapter:
     def checkpoint(self) -> dict[str, Any]:
         """Persist full state atomically; returns the seam report."""
         state = self._state_dict()
+        payload = json.dumps(state, sort_keys=True, allow_nan=False) + "\n"
+        atomic_write_text(self.state_path, payload)
         self._persisted_nav = float(state["nav"])
-        payload = json.dumps(state, sort_keys=True, default=str) + "\n"
-        self.state_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = self.state_path.with_name(f".{self.state_path.name}.tmp")
-        tmp.write_text(payload, encoding="utf-8")
-        os.replace(tmp, self.state_path)
         return self.seam_report()
 
     def seam_report(self) -> dict[str, Any]:
@@ -211,6 +266,10 @@ class PaperBrokerAdapter:
             errors.append("nav_seam_mismatch")
         if duplicate_orders:
             errors.append("duplicate_orders")
+        counters = replayed["ledger"]["counters"]
+        for anomaly in ("duplicate_fills", "orphan_fills", "out_of_order_fills"):
+            if counters[anomaly]:
+                errors.append(anomaly)
         report = SeamReport(
             ok=not errors,
             nav_seam_parity=parity,
@@ -225,9 +284,30 @@ class PaperBrokerAdapter:
     def _read_state(self) -> dict[str, Any]:
         if not self.state_path.is_file():
             raise OrderLedgerError(f"no broker state at {self.state_path}")
-        data = json.loads(self.state_path.read_text(encoding="utf-8"))
+        data = json.loads(
+            self.state_path.read_text(encoding="utf-8"),
+            parse_constant=_reject_nonfinite_json,
+        )
         if not isinstance(data, dict):
             raise OrderLedgerError(f"broker state at {self.state_path} is not an object")
+        if (
+            data.get("schema") != "paper_broker_state.v1"
+            or data.get("research_only") is not True
+            or data.get("live_pnl_claim") is not False
+            or data.get("kill_state") not in ("ENABLED", "HALT_NEW_ORDERS")
+            or data.get("endpoint_kind") not in ("paper", "simulated")
+            or not isinstance(data.get("orders"), list)
+            or not isinstance(data.get("fills"), list)
+            or not isinstance(data.get("marks"), dict)
+        ):
+            raise OrderLedgerError("invalid or non-research paper broker checkpoint")
+        for name in ("starting_cash", "nav_tolerance", "nav"):
+            _finite_number(data.get(name), f"checkpoint {name}")
+        _nonnegative_finite(data["nav_tolerance"], "checkpoint nav_tolerance")
+        for security_id, price in data["marks"].items():
+            if not isinstance(security_id, str) or not security_id.strip():
+                raise OrderLedgerError("checkpoint mark security_id must be non-empty")
+            _nonnegative_finite(price, "checkpoint mark price")
         return cast(dict[str, Any], data)
 
     def _replay(self, persisted: dict[str, Any]) -> dict[str, Any]:
@@ -245,13 +325,15 @@ class PaperBrokerAdapter:
             ledger.record_fill(_fill_from_dict(raw))
         if persisted.get("kill_state") == "HALT_NEW_ORDERS":
             ledger.trip_kill("resumed_halt")
-        marks = {str(k): float(v) for k, v in dict(persisted.get("marks", {})).items()}
+        marks = persisted["marks"]
         state = ledger.reconcile()
         cash = float(state["computed_cash"])
         nav = cash + sum(
             float(state["computed_positions"][sec]) * marks.get(sec, 0.0)
             for sec in state["computed_positions"]
         )
+        if not isfinite(nav):
+            raise OrderLedgerError("replayed paper NAV must be finite")
         return {"nav": nav, "duplicate_orders": duplicate_orders, "ledger": state}
 
     @classmethod
@@ -271,6 +353,8 @@ class PaperBrokerAdapter:
         persisted_path = Path(state_path)
         probe = cls(state_path=persisted_path, endpoint_kind=endpoint_kind)
         persisted = probe._read_state()
+        if persisted["endpoint_kind"] != probe.endpoint_kind:
+            raise OrderLedgerError("checkpoint endpoint_kind differs from requested endpoint")
         adapter = cls(
             state_path=persisted_path,
             endpoint_kind=str(persisted.get("endpoint_kind", endpoint_kind)),
@@ -282,12 +366,23 @@ class PaperBrokerAdapter:
             adapter.submit(order)
         for raw in persisted.get("fills", []):
             adapter.apply_fill(_fill_from_dict(raw))
-        for sec, price in dict(persisted.get("marks", {})).items():
-            adapter.mark(str(sec), float(price))
-        if persisted.get("kill_state") == "HALT_NEW_ORDERS":
-            adapter.trip_kill("resumed_halt")
+        for sec, price in persisted["marks"].items():
+            adapter.mark(sec, price)
+        # A checkpoint is locally editable, so a resumed adapter always starts
+        # halted. An operator must explicitly clear it after reviewing the seam.
+        reason = (
+            "resumed_halt"
+            if persisted.get("kill_state") == "HALT_NEW_ORDERS"
+            else "resume_requires_explicit_clear"
+        )
+        adapter.trip_kill(reason)
         adapter._persisted_nav = float(persisted.get("nav", 0.0))
-        return adapter, adapter.seam_report()
+        report = adapter.seam_report()
+        if not report["ok"]:
+            raise OrderLedgerError(
+                f"paper broker checkpoint failed seam verification: {report['errors']}"
+            )
+        return adapter, report
 
 
 __all__ = [

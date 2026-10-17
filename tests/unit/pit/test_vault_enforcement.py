@@ -208,7 +208,12 @@ def test_symlinked_dataset_dir_outside_root_rejected(tmp_path) -> None:
     outside = tmp_path / "outside"
     outside.mkdir()
     vault.root.mkdir(parents=True)
-    (vault.root / "escape").symlink_to(outside)
+    try:
+        (vault.root / "escape").symlink_to(outside, target_is_directory=True)
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 1314:
+            pytest.skip("Windows symlink privilege unavailable")
+        raise
     with pytest.raises(VaultError, match="escapes vault root"):
         vault.create_dataset("escape")
     with pytest.raises(VaultError, match="escapes vault root"):
@@ -235,7 +240,12 @@ def test_dangling_symlink_wedges_append_and_fails_loud_on_recover(
 ) -> None:
     vault.append("silver/bars", _frame([("A", 0, 0, 1.0)]))
     orphan = tmp_path / "pit" / "silver" / "bars" / "parts" / "r0000002.parquet"
-    orphan.symlink_to(tmp_path / "nonexistent-target")
+    try:
+        orphan.symlink_to(tmp_path / "nonexistent-target")
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 1314:
+            pytest.skip("Windows symlink privilege unavailable")
+        raise
     with pytest.raises(VaultError, match="write-once violation"):
         vault.append("silver/bars", _frame([("B", 0, 0, 2.0)]))
     with pytest.raises(VaultError, match="unsafe uncommitted part"):

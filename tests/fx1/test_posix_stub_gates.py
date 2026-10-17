@@ -41,6 +41,11 @@ def test_posix_signal_falls_back_without_process_group(monkeypatch: pytest.Monke
 def test_windows_signal_path_does_not_need_posix(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(harness.os, "name", "nt")
     proc = Mock()
+    proc.pid = 42
+    taskkill = Mock(return_value=Mock(returncode=0))
+    monkeypatch.setattr(harness.subprocess, "run", taskkill)
     harness._signal_process(proc, kill=False)
-    proc.terminate.assert_called_once_with()
+    taskkill.assert_called_once()
+    assert taskkill.call_args.args[0] == ["taskkill", "/PID", "42", "/T", "/F"]
+    proc.terminate.assert_not_called()
     proc.kill.assert_not_called()

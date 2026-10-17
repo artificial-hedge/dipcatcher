@@ -13,6 +13,7 @@ from typing import Any
 import typer
 
 from .app import app
+from .research_quorum_key_cmd import _load_signer_pairs
 from .support import _cfg, format_data_label, format_fdr_families
 
 
@@ -3058,21 +3059,12 @@ def sign_pins_cmd(
                 f"{committed_pub.as_posix()} — use rotate-key to change the trust root"
             )
             raise typer.Exit(code=2)
-    sig_path = sign_pins(root, priv, pub)
+    try:
+        sig_path = sign_pins(root, priv, pub)
+    except ValueError as exc:
+        typer.echo(f"sign-pins: {exc}")
+        raise typer.Exit(code=2) from exc
     typer.echo(f"signature={sig_path} key_id={key_id(pub)}")
-
-
-def _load_signer_pairs(raw: str) -> list[tuple[str, str]]:
-    """Parse 'PRIV:PUB' or two-line material; comma/newline separates signers."""
-    fields = [
-        f.strip()
-        for line in raw.replace(",", "\n").splitlines()
-        for f in line.replace(":", "\n").splitlines()
-        if f.strip()
-    ]
-    if not fields or len(fields) % 2 != 0:
-        raise ValueError("signer material must be '<priv_hex>:<pub_hex>' pairs")
-    return [(fields[i], fields[i + 1]) for i in range(0, len(fields), 2)]
 
 
 @app.command("quorum-init")
