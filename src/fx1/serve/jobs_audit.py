@@ -51,6 +51,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import itertools
 import json
 import os
 import threading
@@ -1342,12 +1343,18 @@ def _store_probes() -> dict[str, bool]:
     out: dict[str, bool] = {}
     import fx1.serve.api as api_mod  # noqa: PLC0415
 
+    # time.time_ns() repeats inside one clock tick. put() treats a repeated
+    # id as the same record, so the eviction probe sometimes replaces the
+    # live job instead of dropping it and the sealed receipt moves.
+    seq = itertools.count()
+
     def _job(status: str = "queued") -> Any:
+        n = next(seq)
         return api_mod.JobStatusResponse.model_validate(
             {
-                "job_id": f"job-{status}-{time.time_ns()}",
+                "job_id": f"job-{status}-{n}",
                 "status": status,
-                "created_at": time.time(),
+                "created_at": 1_700_000_000.0 + n,
                 "finished_at": None,
                 "result": None,
                 "error": None,

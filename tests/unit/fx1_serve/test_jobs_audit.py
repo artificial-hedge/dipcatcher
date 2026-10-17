@@ -50,6 +50,14 @@ def test_receipt_deterministic() -> None:
     assert a["receipt_sha256"] == b["receipt_sha256"]
 
 
+def test_store_probes_stay_true_across_a_coarse_clock() -> None:
+    from fx1.serve.jobs_audit import _store_probes
+
+    for _ in range(40):
+        failed = [name for name, ok in _store_probes().items() if ok is not True]
+        assert failed == []
+
+
 def test_committed_receipt_still_verifies() -> None:
     path = Path("receipts/fx1_jobs_audit.json")
     assert path.exists()
