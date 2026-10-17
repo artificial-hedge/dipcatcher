@@ -150,9 +150,11 @@ jobs:
     name: ${{ matrix.os }} / py${{ matrix.python }} / shard${{ matrix.shard }}
     needs: inventory
     runs-on: ${{ matrix.os }}
-    # 45m cancelled pytest mid-shard on 39a052e47 (macos py3.12 shard1
-    # ran 16:48:46Z–17:34:18Z). Match the ci.yml test job budget.
-    timeout-minutes: 75
+    # 45m cancelled pytest mid-shard on 39a052e47. 75m cancelled
+    # ubuntu py3.13 shard2 on 1aa40981d: six of about nine 150-file
+    # pytest runs had finished and the next was at 45%. 120 covers
+    # that tail. ci.yml shards stay at 75.
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
