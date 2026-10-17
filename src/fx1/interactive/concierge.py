@@ -462,14 +462,14 @@ class Concierge:
             self._say_error(RuntimeError(format_guidance(explain_backend_error(exc, model=target))))
             return None
 
-    def _catalog(self) -> FamilyCatalog:
+    def _catalog(self, goal: str | None = None) -> FamilyCatalog:
         from fx1.harness import Harness
 
         harness = self._harness if self._harness is not None else Harness()
-        return load_catalog(harness, cache=self._catalog_cache)
+        return load_catalog(harness, cache=self._catalog_cache, goal=goal)
 
     def _catalog_for_run(
-        self, cancel_event: threading.Event | None, ledger: BudgetLedger
+        self, goal: str, cancel_event: threading.Event | None, ledger: BudgetLedger
     ) -> FamilyCatalog:
         """Load family eligibility within a /superpower cancel and wall budget."""
         from fx1.harness import Harness
@@ -478,10 +478,13 @@ class Concierge:
         abort_event = threading.Event()
         accepts_cancel = _accepts_keyword(harness.run, "cancel_event")
         accepts_timeout = _accepts_keyword(harness.run, "timeout_s")
+        accepts_extra_args = _accepts_keyword(harness.run, "extra_args")
 
         class CatalogHarness:
-            def run(self, name: str) -> Any:
+            def run(self, name: str, extra_args: list[str] | None = None) -> Any:
                 kwargs: dict[str, Any] = {}
+                if accepts_extra_args:
+                    kwargs["extra_args"] = extra_args
                 if accepts_cancel:
                     kwargs["cancel_event"] = abort_event
                 if accepts_timeout:
@@ -491,7 +494,7 @@ class Concierge:
 
         try:
             return bounded_call(
-                lambda: load_catalog(CatalogHarness(), cache=self._catalog_cache),
+                lambda: load_catalog(CatalogHarness(), cache=self._catalog_cache, goal=goal),
                 cancel_event=cancel_event,
                 budget_ledger=ledger,
                 on_abort=abort_event.set,
@@ -868,7 +871,7 @@ class Concierge:
     def _cmd_families(self, rest: str) -> bool:
         goal = rest.strip()
         with OrbAnimator(OrbState.WORKING, preset="inline") if self._animated else _null():
-            catalog = self._catalog()
+            catalog = self._catalog(goal or None)
         self._say(catalog.describe())
         if goal:
             selection = resolve_families(goal, catalog)
@@ -879,10 +882,11 @@ class Concierge:
                 )
             for line in selection.explain():
                 self._say(line)
-            if not catalog.execution_constraint and catalog.available:
+            if catalog.available:
                 self._say(
-                    "note: `research` runs its configured scorecard; family selection narrows "
-                    "eligibility and reporting, not the benches executed"
+                    "note: the research runner has no per-family selector; automatic research "
+                    "is excluded when a goal names a family. /harness run research requests "
+                    "the configured full scorecard"
                 )
         return False
 
@@ -964,7 +968,7 @@ class Concierge:
             catalog: FamilyCatalog | None = None
             if needs_catalog:
                 with OrbAnimator(OrbState.WORKING, preset="inline") if self._animated else _null():
-                    catalog = self._catalog_for_run(cancel_event, ledger)
+                    catalog = self._catalog_for_run(goal, cancel_event, ledger)
             model_fn = (
                 self._model_fn(backend, cancel_event=cancel_event, ledger=ledger)
                 if backend is not None
@@ -1566,9 +1570,11 @@ class Concierge:
                     "name": "harness_run",
                     "description": (
                         "Run one registered dipcatcher harness command "
-                        "(e.g. doctor, verify-research, research). Consequential "
-                        "commands require operator approval. Fail-closed on "
-                        "unknown names."
+                        "(e.g. doctor, verify-research). Research cannot be run "
+                        "through this model tool: use /superpower <goal> for "
+                        "automatic planning or ask the operator to enter "
+                        "/harness run research explicitly. Consequential commands "
+                        "require operator approval. Fail-closed on unknown names."
                     ),
                     "parameters": {
                         "type": "object",
@@ -1642,6 +1648,13 @@ class Concierge:
         args_list = arguments.get("args", [])
         if not isinstance(args_list, list) or not all(isinstance(arg, str) for arg in args_list):
             return "harness refused: args must be an array of strings"
+        if harness_name == "research":
+            refusal = (
+                "harness refused: research requires goal-bound /superpower planning "
+                "or an explicit operator /harness run research request; command was not run"
+            )
+            self._say(refusal)
+            return refusal
         try:
             return self._run_harness(harness_name, args_list)
         except (KeyError, ValueError) as exc:

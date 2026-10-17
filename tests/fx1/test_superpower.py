@@ -9,6 +9,7 @@ are exactly the ones gated behind approval.
 import json
 import threading
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -17,7 +18,7 @@ from fx1.flash.store import FlashStore
 from fx1.harness import HARNESS_REGISTRY
 from fx1.interactive.approvals import ApprovalGate, console_ask_fn
 from fx1.interactive.budget import BudgetLedger, RunBudget
-from fx1.interactive.families import FamilyCatalog
+from fx1.interactive.families import FamilyCatalog, goal_sha256
 from fx1.interactive.superpower import (
     _REQUIRED_HARNESS_INPUTS,
     CAPABILITIES,
@@ -415,6 +416,78 @@ def test_handcrafted_research_plan_skips_unavailable_family_catalog() -> None:
     assert harness.calls == [("doctor", None)]
 
 
+def test_handcrafted_named_family_plan_cannot_bypass_selector_gate() -> None:
+    harness = FakeHarness()
+    catalog = FamilyCatalog(
+        schema_version=2,
+        catalog_version=1,
+        receipt_schema_version=1,
+        required=frozenset({"conformal"}),
+        live_optional=frozenset({"quantile_bandit"}),
+        live_optional_total=1,
+        exploratory_count=0,
+        retired_count=1,
+        retired_sample=frozenset(),
+        order=("conformal", "quantile_bandit"),
+        generated_at="2026-10-16T00:00:00Z",
+        execution_constraint=True,
+    )
+    for goal, reason in (
+        ("run the conformal benchmark", "named-family execution unavailable"),
+        ("run the bandit benchmark", "named-family execution unavailable"),
+        ("benchmark family:legacy_template_family", "no suitable family"),
+    ):
+        result = run_plan(
+            _plan(goal, ["research", "synthesize"]),
+            SuperpowerContext(
+                harness=harness,
+                catalog=replace(catalog, lookup_goal_sha256=goal_sha256(goal)),
+            ),
+        )
+        assert result.runs[0].status == "skipped"
+        assert reason in result.runs[0].detail
+        assert result.partial
+    assert harness.calls == []
+
+
+def test_handcrafted_unscoped_research_requires_exact_goal_lookup() -> None:
+    goal = "run the research benchmark"
+    catalog = FamilyCatalog(
+        schema_version=2,
+        catalog_version=2,
+        receipt_schema_version=2,
+        required=frozenset({"conformal"}),
+        live_optional=frozenset(),
+        retired_count=0,
+        retired_sample=frozenset(),
+        order=("conformal",),
+        generated_at="2026-10-17T00:00:00Z",
+    )
+    for candidate in (catalog, replace(catalog, lookup_goal_sha256=goal_sha256("other goal"))):
+        harness = FakeHarness()
+        result = run_plan(
+            _plan(goal, ["research", "synthesize"]),
+            SuperpowerContext(harness=harness, catalog=candidate),
+        )
+        assert result.runs[0].status == "skipped"
+        assert "lookup missing or stale" in result.runs[0].detail
+        assert result.partial
+        assert harness.calls == []
+    plan = plan_goal(goal, catalog=catalog)
+    assert "research" not in plan.ids()
+    assert "lookup missing or stale" in plan.describe()
+
+
+def test_model_cannot_add_research_when_bare_name_did_not_load_catalog() -> None:
+    def model_fn(prompt: str) -> str:
+        assert "- research:" not in prompt
+        return json.dumps({"capabilities": ["research", "web_research"]})
+
+    plan = plan_goal("a1 homotopy", model_fn=model_fn)
+    assert "research" not in plan.ids()
+    assert "web_research" in plan.ids()
+
+
 def test_planned_exclusion_makes_result_partial_and_visible_in_summary() -> None:
     harness = FakeHarness()
     plan = plan_goal("validate a model")
@@ -439,7 +512,7 @@ def test_fully_served_plan_remains_complete() -> None:
 def test_run_plan_coordinates_memory_web_harness_synthesis(store: FlashStore) -> None:
     store.add(
         text="prior finding: conformal coverage held at 90% on synthetic panels",
-        task="conformal volatility benchmark",
+        task="research benchmark",
         tags=["conformal"],
     )
     harness = FakeHarness()
@@ -451,7 +524,7 @@ def test_run_plan_coordinates_memory_web_harness_synthesis(store: FlashStore) ->
         return "Coverage held at the nominal 90% level (SYNTHETIC panel). Sources listed above."
 
     plan = _plan(
-        "run the conformal volatility benchmark",
+        "run the research benchmark",
         ["flash_retrieve", "research", "web_research", "flash_save", "synthesize"],
     )
     ctx = SuperpowerContext(
@@ -461,15 +534,18 @@ def test_run_plan_coordinates_memory_web_harness_synthesis(store: FlashStore) ->
         researcher=researcher,
         flash_store=store,
         catalog=FamilyCatalog(
-            schema_version=1,
+            schema_version=2,
             catalog_version=1,
             receipt_schema_version=1,
             required=frozenset({"conformal", "volatility"}),
             live_optional=frozenset(),
+            live_optional_total=0,
+            exploratory_count=0,
             retired_count=0,
             retired_sample=frozenset(),
             order=("conformal", "volatility"),
             generated_at="2026-10-16T00:00:00Z",
+            lookup_goal_sha256=goal_sha256(plan.goal),
         ),
     )
     result = run_plan(plan, ctx)
@@ -487,13 +563,13 @@ def test_run_plan_coordinates_memory_web_harness_synthesis(store: FlashStore) ->
     assert result.honesty_violation is None
     assert "Coverage held" in result.summary
     # synthesis prompt carried goal + evidence + capability explanations
-    assert "conformal volatility benchmark" in prompts[0]
+    assert "research benchmark" in prompts[0]
     assert "HEURISTIC WEB VERIFICATION" in prompts[0]
     assert "prior finding" in prompts[0]
     # the run was persisted to flash with provenance tags
     saved = [e for e in store.all() if "superpower" in e.tags]
     assert len(saved) == 1
-    assert "conformal volatility benchmark" in saved[0].task
+    assert "research benchmark" in saved[0].task
     # explain() lists what ran and why
     explanation = result.explain()
     assert "capabilities used and why" in explanation

@@ -531,7 +531,7 @@ EXC_BAD_ACCESS (SIGSEGV)  KERN_INVALID_ADDRESS at 0x0000000000000580
 
 ### Phase 3 — the catalog surface is now measurable, and the number is damning
 
-The justify-or-flag classification is implemented in `src/quant_fund/research/catalog/optional_classification.py` and **derived from the audit's own evidence file** (`quality/canon_qualification_summary.json`) rather than hand-listed — so re-running `scripts/canon_qualify.py` and the classifier cannot disagree without the difference surfacing as an unclassified family.
+The justify-or-flag classification was first implemented in `src/quant_fund/research/catalog/optional_classification.py` using the audit evidence file (`quality/canon_qualification_summary.json`). The 2026-10-17 packaging update below pins a compact six-name snapshot to that file and to the exact live-optional name set, so installed wheels retain the audit classification when the repository-level evidence file is absent.
 
 **Measured result:**
 
@@ -545,7 +545,7 @@ The justify-or-flag classification is implemented in `src/quant_fund/research/ca
 
 **Six.** Of 2,693 families the research surface can still emit, **6 have a real mechanism and 2,687 are template stubs** the same audit already flagged as retirement candidates. This is the §2.5 suspicion, now quantified: the "live optional" surface is 99.8% generated bulk, and presenting it as a live research surface overstates what exists.
 
-Deliberately conservative:
+At that initial audit stage, the change was deliberately conservative:
 - `exploratory` is a **label, not a retirement.** Nothing removes a family from `OPTIONAL_BENCHMARK_FAMILIES`, changes `verify.py`'s allow-list, or weakens fail-closed verification — **an archived receipt naming an exploratory family still verifies exactly as before.**
 - The `agent.py` change is **docstring-only** (recording that `_retired_optional_families()` must keep enumerating the full optional set, since narrowing it would let a retired family back into a live receipt).
 - `LIVE_OPTIONAL_BENCHMARK_FAMILIES_CEILING = 2693` is a ratchet that may fall, never rise without an audit receipt. *(A `FAMILES` typo in that export name was corrected to `FAMILIES` for consistency; everything re-validated after.)*
@@ -553,6 +553,8 @@ Deliberately conservative:
 **Validated:** 17 tests pass (new classification tests plus the pre-existing retired-families guard); `ruff check` clean; `ruff format --check` clean; `mypy --strict` → *no issues in 23 source files*.
 
 **The decision this forces (owner):** 2,687 exploratory families are now explicitly labelled rather than quietly presented as research breadth. The honest follow-up is to either retire them or stop describing the live-optional set as a research surface — the classification makes either choice cheap and visible.
+
+**Audit packaging and planner surface (2026-10-17):** Installed wheels lack the repo-level `quality/` tree. The classifier now carries the audit-derived six-name justified snapshot, pinned to the summary file SHA-256 and exact live-optional name-set SHA-256. A wheel without the summary keeps the same classification; a source checkout with changed audit evidence or live names fails closed until the snapshot is reviewed and updated. This closes the missing-summary path that previously called every live optional family "justified." The default `research-families` schema v2 exposes only 23 required and six justified optional names, plus counts for 2,687 exploratory and 2,693 live optional families. For each planner goal, a bounded, goal-bound hash lookup identifies bare names of omitted families without listing the full set in the default catalog or putting the raw goal on the subprocess command line; failed, cancelled, or timed-out lookups exclude automatic `research`. Named-family goals also exclude it because the runner has no per-family selector. The plain-chat model tool refuses `research`, while an operator can explicitly request the full scorecard. Live template family blobs carry `provenance: template`; scorecard checks ignore that label as evidence and the verifier rejects a conflicting label while accepting older receipts without it. The live-optional ratchet test pins its historical 2,693 ceiling independently of the production constant. Phase 3 remains open because explicit `research` still executes the optional battery by default and the runner has no per-family selector.
 
 **Phase 4 step 1 — forward prereg externally anchored.** ✅
 

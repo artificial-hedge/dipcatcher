@@ -5087,6 +5087,10 @@
       "src": "quant_fund.cli.families_cmds"
     },
     {
+      "dst": "quant_fund.research.catalog.optional_classification",
+      "src": "quant_fund.cli.families_cmds"
+    },
+    {
       "dst": "quant_fund.research.catalog.registry",
       "src": "quant_fund.cli.families_cmds"
     },
@@ -17452,6 +17456,10 @@
     },
     {
       "dst": "quant_fund.research.catalog",
+      "src": "quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.research.catalog.optional_classification",
       "src": "quant_fund.research.agent"
     },
     {
@@ -60995,6 +61003,10 @@
       "src": "quant_fund.research.verify"
     },
     {
+      "dst": "quant_fund.research.catalog.optional_classification",
+      "src": "quant_fund.research.verify"
+    },
+    {
       "dst": "quant_fund.research.receipt_schema",
       "src": "quant_fund.research.verify"
     },
@@ -76152,7 +76164,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 74,
+      "imports": 75,
       "src": "quant_fund.cli"
     },
     {
@@ -77302,7 +77314,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 606,
+      "imports": 608,
       "src": "quant_fund.research"
     },
     {

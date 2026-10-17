@@ -14,6 +14,7 @@ from quant_fund.northset.benches import (
 )
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
+    LIVE_OPTIONAL_BENCHMARK_FAMILIES,
     OPTIONAL_BENCHMARK_FAMILIES,
     REQUIRED_BENCHMARK_FAMILIES,
     RESEARCH_RECEIPT_SCHEMA_VERSIONS_ACCEPTED,
@@ -111,6 +112,7 @@ from quant_fund.research.catalog import (
     tail_var_battery_keys_present,
     tail_var_battery_missing_keys,
 )
+from quant_fund.research.catalog.optional_classification import exploratory_families
 from quant_fund.research.receipt_schema import overfitting_block_errors
 from quant_fund.robustness.schema import robustness_extension_errors
 from quant_fund.utils.hashing import (
@@ -450,6 +452,20 @@ def _family_shape_errors(families: dict[str, Any]) -> list[str]:
     for fam_name, blob in families.items():
         if not family_blob_forbidden_metrics_absent(blob):
             errors.append(f"families_forbidden_metrics:{fam_name}")
+    # Archived optional receipts predate this annotation. Validate any marker
+    # that is present while leaving an absent marker backward compatible.
+    marked_live = {
+        name: blob
+        for name, blob in families.items()
+        if name in LIVE_OPTIONAL_BENCHMARK_FAMILIES
+        and isinstance(blob, dict)
+        and "provenance" in blob
+    }
+    if marked_live:
+        templates = exploratory_families()
+        for name, blob in marked_live.items():
+            if name in templates and blob["provenance"] != "template":
+                errors.append(f"family_template_provenance_invalid:{name}")
     return errors
 
 

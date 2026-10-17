@@ -20,9 +20,10 @@ Three contracts never bend here:
 Research-family selection is checked against the lab's read-only family
 catalog (``dipcatcher research-families`` through the harness): retired or
 unknown families fail closed, and the plan says when no suitable family
-exists. The ``research`` command still runs its configured scorecard —
-family selection narrows eligibility and reporting, not the benches
-executed; the plan and the synthesis prompt both say so.
+exists. The ``research`` command runs its configured scorecard and this
+coordinator cannot pass a family selector. Named-family goals therefore
+exclude automatic ``research`` execution; an unscoped research goal can
+still run the full configured scorecard.
 """
 
 from __future__ import annotations
@@ -153,6 +154,12 @@ _TRIGGERS: dict[str, tuple[str, ...]] = {
 }
 
 _CONSEQUENTIAL = frozenset({"train", "optimize", "paper"})
+
+_FAMILY_SCOPING_REASON = (
+    "named-family execution unavailable: /superpower cannot pass a family selector "
+    "to the research runner, so its configured full scorecard would run; "
+    "use /harness run research to request that full scorecard explicitly"
+)
 
 _WEB_TRIGGERS = (
     "web",
@@ -303,9 +310,9 @@ def plan_goal(
     removed, and the same harness limit applies after refinement. Malformed
     or failed model replies fall back to the bounded deterministic plan.
 
-    With a family *catalog*, families named in the goal are classified;
-    a goal that names only retired or unknown families cannot select the
-    ``research`` bench — "no suitable family" is a valid, explained result.
+    With a family *catalog*, families named in the goal are classified.
+    Retired or unknown families, and eligible named families without a
+    selector handoff, cannot select the automatic ``research`` bench.
     """
     if max_harness < 0:
         raise ValueError("max_harness must be nonnegative")
@@ -322,7 +329,10 @@ def plan_goal(
     plan = SuperpowerPlan(
         goal=goal,
         capabilities=_deterministic_selection(
-            fold, registry, harness_ids, manual_requested=bool(manual_requests)
+            fold,
+            registry,
+            harness_ids,
+            suppress_web_fallback=bool(manual_requests or gate.exclusions),
         ),
         source="deterministic",
         families=gate.families,
@@ -381,16 +391,24 @@ class _FamilyGate:
                     f"({catalog.note or 'no reason given'}); family eligibility cannot be "
                     "checked, so the research bench will not run"
                 )
+        elif not catalog.covers_goal(goal):
+            gate.blocked.append("research")
+            if research_planned or gate.families.mentioned:
+                gate.exclusions.append(
+                    "research: goal-specific family lookup missing or stale; research will not run"
+                )
         elif gate.families.refused:
             gate.blocked.append("research")
             gate.exclusions.append(
                 "research: the goal names only retired or unknown research families — "
                 "no suitable family; nothing scientific will be claimed for them"
             )
-        elif research_planned and not catalog.execution_constraint:
+        elif gate.families.mentioned:
+            gate.blocked.append("research")
+            gate.exclusions.append(f"research: {_FAMILY_SCOPING_REASON}")
+        elif research_planned:
             gate.notes.append(
-                "research runs its configured scorecard; family selection narrows eligibility "
-                "and reporting, not the benches executed"
+                "research runs its configured full scorecard; no family selector is passed"
             )
         return gate
 
@@ -400,7 +418,7 @@ def _deterministic_selection(
     registry: dict[str, dict[str, Any]],
     harness_ids: list[str],
     *,
-    manual_requested: bool = False,
+    suppress_web_fallback: bool = False,
 ) -> list[PlannedCapability]:
     selected: list[PlannedCapability] = [
         PlannedCapability("flash_retrieve", "memory is cheap and may already hold this research"),
@@ -417,7 +435,7 @@ def _deterministic_selection(
             )
         )
     if _TRIGGER_LEXICON.any_web_trigger_folded(fold, _WEB_TRIGGERS) or (
-        not harness_ids and not manual_requested
+        not harness_ids and not suppress_web_fallback
     ):
         selected.append(
             PlannedCapability(
@@ -730,6 +748,35 @@ def _harness_evidence(cap_id: str, code: int, labels: str, stdout: str) -> str:
             ):
                 return EvidenceClass.VERIFIED_RESEARCH_ARTIFACT.value
     return EvidenceClass.HARNESS_OUTPUT.value
+
+
+def _research_runtime_block_reason(goal: str, catalog: FamilyCatalog | None) -> str | None:
+    """Enforce the family gate even for a handcrafted or stale plan."""
+    if catalog is None or not catalog.available:
+        return "family catalog unavailable; family eligibility cannot be checked"
+    if not catalog.covers_goal(goal):
+        return "goal-specific family lookup missing or stale; research will not run"
+    selection = resolve_families(goal, catalog)
+    if selection.refused:
+        return "the goal names only retired or unknown research families; no suitable family"
+    if selection.mentioned:
+        return _FAMILY_SCOPING_REASON
+    return None
+
+
+def _skip_blocked_research(
+    cap_id: str,
+    ctx: SuperpowerContext,
+    result: SuperpowerResult,
+    runs_lock: threading.Lock | None,
+) -> bool:
+    if cap_id != "research":
+        return False
+    reason = _research_runtime_block_reason(result.goal, ctx.catalog)
+    if reason is None:
+        return False
+    _record_locked(result, ctx, CapabilityRun(cap_id, cap_id, "skipped", reason), runs_lock)
+    return True
 
 
 def _check_budget(ctx: SuperpowerContext, result: SuperpowerResult) -> str | None:
@@ -1135,18 +1182,7 @@ def _stage_harness(
             runs_lock,
         )
         return
-    if cap_id == "research" and (ctx.catalog is None or not ctx.catalog.available):
-        _record_locked(
-            result,
-            ctx,
-            CapabilityRun(
-                cap_id,
-                cap_id,
-                "skipped",
-                "family catalog unavailable; family eligibility cannot be checked",
-            ),
-            runs_lock,
-        )
+    if _skip_blocked_research(cap_id, ctx, result, runs_lock):
         return
     if not _harness_admitted(cap_id, meta, ctx, result):
         return

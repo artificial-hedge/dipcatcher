@@ -10,7 +10,7 @@ immediately below records what the second slice closed and what remains.
 | Durable sessions | Append-only session journal (schema v1, 0600) with turns, model switches, job transitions, approvals, redaction; `/sessions`, `/resume`, `dipcatcher chat --resume`, `fxi sessions|resume`; interrupted-job reconciliation at startup (nothing re-run). | `src/fx1/interactive/session.py`, `concierge.py`, `tests/fx1/test_session.py`, `tests/fx1/test_concierge_production.py` |
 | Cancellation + deadlines | `Harness.run(cancel_event=, timeout_s=)`; default runner drains output on threads, escalates SIGTERM → SIGKILL on cancel/deadline, caps output, fails closed without the executable; `/superpower` forwards the cancel event and remaining wall budget; cancelled/timed-out steps are reported as such. | `src/fx1/harness.py`, `superpower.py`, `tests/fx1/test_harness.py` |
 | Budgets | `RunBudget` (env `FX1_BUDGET_*`) + thread-safe `BudgetLedger`; `/budget`; budget-exceeded steps and partial-run verdicts; deterministic summary when a model call is not affordable. | `src/fx1/interactive/budget.py`, `tests/fx1/test_budget.py` |
-| Family eligibility | `dipcatcher research-families` (read-only JSON) + `fx1.interactive.families` (aliases, `family:` tokens, retired/unknown refusal, unavailable-catalog fail-closed); planner excludes `research` for retired-only goals and the model cannot reinstate it; `/families`. | `src/quant_fund/cli/families_cmds.py`, `src/fx1/interactive/families.py`, `tests/fx1/test_families.py`, `tests/unit/cli/test_research_families_cmd.py` |
+| Family eligibility | `dipcatcher research-families` schema v2 exposes only 23 required and six audit-justified optional names; exploratory/live/retired bulk is counted without enumerating it. `fx1.interactive.families` validates the counts and uses a bounded, goal-bound hash lookup to catch bare omitted names. Named-family goals cannot automatically launch the full research scorecard; failed lookups close the gate, the plain-chat model tool refuses `research`, and the model cannot reinstate it; `/families`. | `src/quant_fund/cli/families_cmds.py`, `src/fx1/interactive/families.py`, `tests/fx1/test_families.py`, `tests/unit/cli/test_research_families_cmd.py` |
 | Endpoint behaviour | Failure classes with next actions (auth/not-found/rate-limited/server/timeout/unreachable/malformed/unconfigured/bad-url), bounded retries for transient classes only, `HostedK3Backend.identity_probe` + `/keys test` (requested vs served identity, latency). | `src/fx1/interactive/endpoint.py`, `src/fx1/serve/backends.py`, `tests/fx1/test_endpoint.py` |
 | Console | `LineReader` (POSIX select / Windows msvcrt / blocking), `InterruptPolicy` (Ctrl-C once cancels, twice exits), secret-filtered `History`; `/use` continuity with an attribution note; `/doctor`; untrusted framing of web content; `--version`. | `src/fx1/interactive/lineio.py`, `concierge.py`, `src/dipcatcher_cli/app.py`, `tests/fx1/test_lineio.py` |
 | Evidence classes | Every capability run names its evidence class (verified-research-artifact, synthetic-correctness, harness-output-unverified, heuristic-web, memory, model-interpretation, deterministic-summary); `result: complete|partial`. | `superpower.py`, `tests/fx1/test_superpower.py` |
@@ -104,11 +104,11 @@ These temporary files are diagnostic artifacts, not immutable research receipts.
 
 ## Claude — next quarter: qualified research orchestration
 
-Start here. `/superpower` still selects coarse registered commands, not research
-families or typed dataset/config arguments. The bounded planner fix does not
-solve this. Expose qualified family metadata through a registered read-only
-harness interface; avoid importing research internals into `fx1`. Make selection
-constrain the benches actually executed, not just the final report.
+Start here. `/superpower` can identify eligible family names through a
+registered read-only harness interface, but the research runner still cannot
+execute a selected family subset or accept typed dataset/config arguments.
+Build per-family execution before restoring automatic research for goals that
+name a family; keep research internals out of `fx1`.
 
 Implement stable family/version IDs, scientific relevance, required input and
 point-in-time checks, typed runner arguments, dependencies, qualification

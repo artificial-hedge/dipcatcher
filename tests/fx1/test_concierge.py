@@ -9,6 +9,7 @@ import io
 import json
 import os
 import threading
+from hashlib import sha256
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -20,6 +21,7 @@ from fx1.interactive import concierge as concierge_module
 from fx1.interactive import profiles
 from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.concierge import BackgroundJob, Concierge, run_console
+from fx1.interactive.families import goal_lookup_hashes
 from fx1.serve.backends import ToolCompletion
 from fx1.webresearch.engine import ResearchReport, SourceDoc
 
@@ -67,22 +69,31 @@ class FakeHarness:
     def run(self, name: str, extra_args: list[str] | None = None) -> FakeHarnessResult:
         self.calls.append((name, extra_args))
         if name == "research-families":
+            lookup = None
+            if extra_args is not None:
+                assert extra_args[0] == "--lookup-hashes" and len(extra_args) == 2
+                lookup = {
+                    "request_sha256": sha256(extra_args[1].encode("ascii")).hexdigest(),
+                    "omitted_matches": [],
+                }
+            document = {
+                "schema_version": 2,
+                "catalog_version": 2,
+                "receipt_schema_version": 2,
+                "required": ["conformal", "volatility"],
+                "live_optional": [],
+                "live_optional_total": 0,
+                "exploratory_count": 0,
+                "retired_count": 0,
+                "order": ["conformal", "volatility"],
+                "generated_at": "2026-10-16T00:00:00Z",
+                "runner": {"execution_constraint": False, "note": "configured scorecard"},
+            }
+            if lookup is not None:
+                document["lookup"] = lookup
             return FakeHarnessResult(
                 0,
-                json.dumps(
-                    {
-                        "schema_version": 1,
-                        "catalog_version": 2,
-                        "receipt_schema_version": 2,
-                        "required": ["conformal", "volatility"],
-                        "live_optional": [],
-                        "retired_count": 0,
-                        "retired_sample": [],
-                        "order": ["conformal", "volatility"],
-                        "generated_at": "2026-10-16T00:00:00Z",
-                        "runner": {"execution_constraint": False, "note": "configured scorecard"},
-                    }
-                ),
+                json.dumps(document),
             )
         return FakeHarnessResult(0, f"DATA_LABEL=SYNTHETIC\n{name} ran\n", "")
 
@@ -220,6 +231,16 @@ def test_harness_unknown_command_is_a_usage_error(
     err = capsys.readouterr().err
     assert "not a registered harness command" in err
     assert "/harness list" in err
+
+
+def test_explicit_harness_research_remains_available(env: Path, tmp_path: Path) -> None:
+    harness = FakeHarness()
+    concierge, out = make_concierge(tmp_path, harness=harness)
+
+    assert concierge.handle_line("/harness run research --config configs/research.yaml") is False
+
+    assert harness.calls == [("research", ["--config", "configs/research.yaml"])]
+    assert "DATA_LABEL=SYNTHETIC" in joined(out)
 
 
 def test_unknown_command_suggests_a_close_slash_name(
@@ -457,6 +478,47 @@ def test_chat_harness_tool_denied_without_approval(
     tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
     assert "approval denied" in tool_msg["content"]
     assert "command was not run" in tool_msg["content"]
+
+
+def test_chat_harness_tool_refuses_unscoped_research(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    harness = FakeHarness()
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(
+                    _tool_call(
+                        "c1",
+                        "harness_run",
+                        {"name": "research", "args": ["--config", "configs/research.yaml"]},
+                    ),
+                ),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(
+                content="No research command ran.", tool_calls=None, finish_reason="stop"
+            ),
+        ]
+    )
+    concierge, out = make_concierge(tmp_path, backend=backend, harness=harness)
+
+    concierge.handle_line("run the research benchmark")
+
+    assert harness.calls == []
+    assert "harness refused: research" in joined(out)
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "goal-bound /superpower" in tool_msg["content"]
+    assert "explicit operator /harness run research" in tool_msg["content"]
+    assert "command was not run" in tool_msg["content"]
+    tool_description = next(
+        tool["function"]["description"]
+        for tool in concierge._chat_tools()  # noqa: SLF001
+        if tool["function"]["name"] == "harness_run"
+    )
+    assert "Research cannot be run through this model tool" in tool_description
 
 
 def test_chat_harness_tool_runs_registered_command(
@@ -725,8 +787,9 @@ def test_chat_tool_boundary_preserves_honesty_and_cancellation(
     assert len(backend.tool_calls_seen) == 1
 
 
+@pytest.mark.parametrize("name", ["rm -rf /", "lab"])
 def test_chat_harness_tool_refuses_unregistered(
-    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, name: str
 ) -> None:
     monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
     harness = FakeHarness()
@@ -734,7 +797,7 @@ def test_chat_harness_tool_refuses_unregistered(
         [
             ToolCompletion(
                 content=None,
-                tool_calls=(_tool_call("c1", "harness_run", {"name": "rm -rf /"}),),
+                tool_calls=(_tool_call("c1", "harness_run", {"name": name}),),
                 finish_reason="tool_calls",
             ),
             ToolCompletion(content="Refused.", tool_calls=None, finish_reason="stop"),
@@ -745,6 +808,30 @@ def test_chat_harness_tool_refuses_unregistered(
     assert harness.calls == []
     tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
     assert "not a registered harness command" in tool_msg["content"]
+
+
+def test_chat_research_tool_name_is_unknown(
+    env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MOONSHOT_API_KEY", "test-key")
+    harness = FakeHarness()
+    backend = FakeBackend(
+        [
+            ToolCompletion(
+                content=None,
+                tool_calls=(_tool_call("c1", "research", {}),),
+                finish_reason="tool_calls",
+            ),
+            ToolCompletion(content="No command ran.", tool_calls=None, finish_reason="stop"),
+        ]
+    )
+    concierge, _ = make_concierge(tmp_path, backend=backend, harness=harness)
+
+    concierge.handle_line("run the research benchmark")
+
+    assert harness.calls == []
+    tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]
+    assert "unknown tool 'research'" in tool_msg["content"]
 
 
 def test_chat_flash_save_tool(env: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1162,18 +1249,24 @@ def test_superpower_sync_offline_pipeline(env: Path, tmp_path: Path) -> None:
     store = FlashStore(tmp_path / "flash" / "entries.jsonl")
     store.add(
         text="prior conformal benchmark findings on record",
-        task="conformal volatility benchmark",
+        task="research benchmark",
         tags=["conformal"],
     )
     concierge, out = make_concierge(tmp_path, researcher=researcher, harness=harness)
     concierge._store = store  # noqa: SLF001
-    concierge.handle_line("/superpower run the conformal volatility benchmark --sync")
+    concierge.handle_line("/superpower run the research benchmark --sync")
     text = joined(out)
-    assert "plan for: run the conformal volatility benchmark" in text
+    assert "plan for: run the research benchmark" in text
     assert "planner: deterministic" in text
     assert "[ran] research" in text  # harness ran and was explained
     # The family catalog is consulted before the research bench runs.
-    assert harness.calls == [("research-families", None), ("research", None)]
+    assert harness.calls == [
+        (
+            "research-families",
+            ["--lookup-hashes", goal_lookup_hashes("run the research benchmark")],
+        ),
+        ("research", None),
+    ]
     assert "family catalog unavailable" not in text
     # planner coordinated: a pure lab-benchmark goal does not trigger web research
     assert researcher.goals == []
@@ -1181,6 +1274,22 @@ def test_superpower_sync_offline_pipeline(env: Path, tmp_path: Path) -> None:
     assert "no model endpoint" in text
     # run persisted to flash
     assert any("superpower" in e.tags for e in store.all())
+
+
+def test_superpower_named_family_does_not_run_full_scorecard(env: Path, tmp_path: Path) -> None:
+    harness = FakeHarness()
+    concierge, out = make_concierge(tmp_path, harness=harness)
+    concierge.handle_line("/superpower run the conformal volatility benchmark --sync")
+    text = joined(out)
+    assert "family 'conformal' — eligible (required)" in text
+    assert "excluded: research: named-family execution unavailable" in text
+    assert "result: partial" in text
+    assert harness.calls == [
+        (
+            "research-families",
+            ["--lookup-hashes", goal_lookup_hashes("run the conformal volatility benchmark")],
+        )
+    ]
 
 
 def test_superpower_background_job(env: Path, tmp_path: Path) -> None:

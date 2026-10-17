@@ -86,7 +86,7 @@ HARNESS_REGISTRY: tuple[HarnessCommand, ...] = (
     _cmd(
         "research-families",
         HarnessRole.VERIFICATION,
-        "Read-only benchmark family catalog (required / live optional / retired) as JSON.",
+        "Read-only selectable family catalog with exploratory and retired counts as JSON.",
         timeout_s=120,
     ),
     # --- Data engine ---

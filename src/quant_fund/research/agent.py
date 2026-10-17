@@ -4228,11 +4228,26 @@ def _retired_optional_families() -> frozenset[str]:
 
 
 def _emit_live_families(families: dict[str, Any]) -> dict[str, Any]:
-    """Keep every REQUIRED family emitted; drop only retired optional ones."""
+    """Keep required families, drop retired optionals, and label template blobs."""
     from quant_fund.research.catalog import registry
+    from quant_fund.research.catalog.optional_classification import exploratory_families
 
     retired = _retired_optional_families() - frozenset(registry.REQUIRED_BENCHMARK_FAMILIES)
-    return {name: payload for name, payload in families.items() if name not in retired}
+    templates = exploratory_families()
+    emitted: dict[str, Any] = {}
+    for name, payload in families.items():
+        if name in retired:
+            continue
+        if name in templates:
+            if not isinstance(payload, dict):
+                raise TypeError(f"template family {name} must emit a dict")
+            if "provenance" in payload and payload["provenance"] != "template":
+                raise ValueError(f"conflicting provenance for template family {name}")
+            # Do not mutate the bench result: the receipt owns this audit label.
+            emitted[name] = {**payload, "provenance": "template"}
+        else:
+            emitted[name] = payload
+    return emitted
 
 
 def run_research(config: AppConfig) -> ResearchNotebook:
@@ -5724,6 +5739,7 @@ def run_research(config: AppConfig) -> ResearchNotebook:
             }
         )
 
+    families = _emit_live_families(families)
     hyps = _build_hypotheses(families, rankers)
     scorecard = _benchmark_scorecard(families)
     n_trials, trial_names, trial_scores = _aligned_ranker_scores(rankers)
@@ -5755,7 +5771,7 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         disclaimer=disclaimer,
         ranking_target=label,
         claim="research_only",
-        families=_emit_live_families(families),
+        families=families,
         rankers=rankers,
         hypotheses=hyps,
         scorecard=scorecard,

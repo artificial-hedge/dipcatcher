@@ -11,6 +11,7 @@ import json
 import os
 import threading
 import time
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +24,7 @@ from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.budget import RunBudget
 from fx1.interactive.concierge import Concierge, JournaledApprovalGate, run_console
 from fx1.interactive.endpoint import RetryPolicy
-from fx1.interactive.families import FamilyCatalog
+from fx1.interactive.families import FamilyCatalog, goal_lookup_hashes
 from fx1.interactive.superpower import (
     PlannedCapability,
     SuperpowerContext,
@@ -39,13 +40,14 @@ from fx1.serve.backends import ToolCompletion
 
 CATALOG_JSON = json.dumps(
     {
-        "schema_version": 1,
+        "schema_version": 2,
         "catalog_version": 2,
         "receipt_schema_version": 2,
         "required": ["conformal", "volatility", "tail", "ranking"],
         "live_optional": ["candle_order_book"],
+        "live_optional_total": 1,
+        "exploratory_count": 0,
         "retired_count": 7529,
-        "retired_sample": ["legacy_template_family"],
         "order": ["ranking", "volatility", "conformal", "tail"],
         "forbidden_metric_keys": ["sharpe"],
         "runner": {
@@ -57,6 +59,36 @@ CATALOG_JSON = json.dumps(
         "generated_at": "2026-10-12T03:00:00Z",
     }
 )
+
+
+def _catalog_response(
+    extra_args: list[str] | None, *, document: dict[str, Any] | None = None
+) -> str:
+    payload = json.loads(CATALOG_JSON) if document is None else dict(document)
+    if extra_args is None:
+        return json.dumps(payload)
+    assert extra_args[0] == "--lookup-hashes" and len(extra_args) == 2
+    request = extra_args[1]
+    omitted = ("a1_homotopy",)
+    requested = set(request.split(","))
+    payload["lookup"] = {
+        "request_sha256": sha256(request.encode("ascii")).hexdigest(),
+        "omitted_matches": [
+            name for name in omitted if sha256(name.encode("ascii")).hexdigest() in requested
+        ],
+    }
+    return json.dumps(payload)
+
+
+def _bound_catalog(goal: str, *, document: dict[str, Any] | None = None) -> FamilyCatalog:
+    return FamilyCatalog.from_json(
+        _catalog_response(["--lookup-hashes", goal_lookup_hashes(goal)], document=document),
+        goal=goal,
+    )
+
+
+def _lookup_call(goal: str) -> tuple[str, list[str]]:
+    return ("research-families", ["--lookup-hashes", goal_lookup_hashes(goal)])
 
 
 class Result:
@@ -96,7 +128,7 @@ class CatalogHarness:
         self.calls.append((name, extra_args))
         self.kwargs.append({"cancel_event": cancel_event, "timeout_s": timeout_s})
         if name == "research-families":
-            return Result(0, CATALOG_JSON)
+            return Result(0, _catalog_response(extra_args))
         if cancel_event is not None and cancel_event.is_set():
             return Result(-15, "partial\n", "", cancelled=True)
         return Result(0, f"DATA_LABEL=SYNTHETIC\n{name} ran\n")
@@ -665,13 +697,14 @@ def test_families_command_lists_catalog_and_classifies_a_goal(env: Path, tmp_pat
     text = joined(out)
     assert "family catalog v2" in text
     assert "family 'conformal' — eligible (required)" in text
-    assert "retired; new selection blocked" in text
-    assert "not the benches executed" in text
+    assert "not a planner-selectable family; no suitable family" in text
+    assert "automatic research is excluded when a goal names a family" in text
 
 
 def test_plan_refuses_research_for_retired_only_goal() -> None:
-    catalog = FamilyCatalog.from_json(CATALOG_JSON)
-    plan = plan_goal("run the benchmark for family:legacy_template_family", catalog=catalog)
+    goal = "run the benchmark for family:legacy_template_family"
+    catalog = _bound_catalog(goal)
+    plan = plan_goal(goal, catalog=catalog)
     assert "research" not in plan.ids()
     assert plan.blocked == ["research"]
     text = plan.describe()
@@ -679,13 +712,63 @@ def test_plan_refuses_research_for_retired_only_goal() -> None:
     assert "no suitable family" in text
 
 
-def test_plan_keeps_research_for_eligible_goal_and_explains_constraint() -> None:
-    catalog = FamilyCatalog.from_json(CATALOG_JSON)
-    plan = plan_goal("run the conformal volatility benchmark", catalog=catalog)
-    assert "research" in plan.ids()
+def test_plan_excludes_named_family_without_selector_handoff() -> None:
+    goal = "run the conformal volatility benchmark"
+    catalog = _bound_catalog(goal)
+    plan = plan_goal(goal, catalog=catalog)
+    assert "research" not in plan.ids()
+    assert "web_research" not in plan.ids()
     text = plan.describe()
     assert "family 'conformal' — eligible (required)" in text
-    assert "not the benches executed" in text
+    assert "excluded: research: named-family execution unavailable" in text
+    assert "/harness run research" in text
+
+
+def test_plan_excludes_default_optional_family_alias_without_selector_handoff() -> None:
+    payload = json.loads(CATALOG_JSON)
+    payload["live_optional"].append("quantile_bandit")
+    payload["live_optional_total"] += 1
+    goal = "run the bandit benchmark"
+    catalog = _bound_catalog(goal, document=payload)
+    plan = plan_goal(goal, catalog=catalog)
+    assert "research" not in plan.ids()
+    assert "web_research" not in plan.ids()
+    assert "family 'quantile_bandit' — eligible (optional)" in plan.describe()
+    assert "named-family execution unavailable" in plan.describe()
+
+
+def test_plan_refuses_alias_for_exploratory_family_omitted_from_v2_catalog() -> None:
+    goal = "run the bandit benchmark"
+    catalog = _bound_catalog(goal)
+    plan = plan_goal(goal, catalog=catalog)
+    assert "research" not in plan.ids()
+    assert "web_research" not in plan.ids()
+    assert "no suitable family" in plan.describe()
+
+
+@pytest.mark.parametrize("execution_constraint", [False, True])
+def test_plan_keeps_unscoped_full_scorecard_research(execution_constraint: bool) -> None:
+    payload = json.loads(CATALOG_JSON)
+    payload["runner"]["execution_constraint"] = execution_constraint
+    goal = "run the research benchmark"
+    catalog = _bound_catalog(goal, document=payload)
+    plan = plan_goal(goal, catalog=catalog)
+    assert "research" in plan.ids()
+    assert "configured full scorecard" in plan.describe()
+
+
+def test_model_cannot_reinstate_named_family_research() -> None:
+    goal = "run the conformal benchmark"
+    catalog = _bound_catalog(goal)
+
+    def model_fn(prompt: str) -> str:
+        assert "- research:" not in prompt
+        return json.dumps({"capabilities": ["research", "doctor"]})
+
+    plan = plan_goal(goal, catalog=catalog, model_fn=model_fn)
+    assert "research" not in plan.ids()
+    assert "doctor" in plan.ids()
+    assert plan.exclusions
 
 
 def test_plan_with_unavailable_catalog_blocks_research_and_explains_why() -> None:
@@ -731,17 +814,83 @@ def test_model_refinement_cannot_reinstate_a_blocked_capability() -> None:
     assert "doctor" in plan.ids()
 
 
-def test_superpower_run_with_live_catalog_reports_eligibility(env: Path, tmp_path: Path) -> None:
+def test_superpower_named_family_reports_eligibility_without_running_bench(
+    env: Path, tmp_path: Path
+) -> None:
     harness = CatalogHarness()
     concierge, out = make(tmp_path, harness=harness)
     concierge.handle_line("/superpower run the conformal volatility benchmark --sync")
     text = joined(out)
     assert "family 'conformal' — eligible (required)" in text
-    assert "[ran] research <synthetic-correctness>" in text
-    assert harness.calls[0] == ("research-families", None)
+    assert "excluded: research: named-family execution unavailable" in text
+    assert "result: partial" in text
+    assert harness.calls == [_lookup_call("run the conformal volatility benchmark")]
     out.clear()
     concierge.handle_line("/superpower help")
     assert "family catalog v2" in joined(out)  # cached catalog shown in the help listing
+
+
+def test_superpower_bare_exploratory_name_does_not_launch_full_scorecard(
+    env: Path, tmp_path: Path
+) -> None:
+    goal = "run the a1 homotopy benchmark"
+    harness = CatalogHarness()
+    concierge, out = make(tmp_path, harness=harness)
+    concierge.handle_line(f"/superpower {goal} --sync")
+    text = joined(out)
+    assert "'a1_homotopy' — not a planner-selectable family" in text
+    assert "excluded: research:" in text
+    assert "result: partial" in text
+    assert harness.calls[0] == _lookup_call(goal)
+    assert all(name != "research" for name, _ in harness.calls)
+    assert goal not in harness.calls[0][1][1]
+
+
+@pytest.mark.parametrize(
+    ("goal", "explanation"),
+    [
+        ("benchmark a1/homotopy", "'a1_homotopy' — not a planner-selectable family"),
+        ("benchmark a1\nhomotopy", "'a1_homotopy' — not a planner-selectable family"),
+        ("benchmark candle/order/book", "family 'candle_order_book' — eligible (optional)"),
+    ],
+)
+def test_goal_lookup_blocks_punctuation_separated_family_names(
+    env: Path, tmp_path: Path, goal: str, explanation: str
+) -> None:
+    harness = CatalogHarness()
+    concierge, out = make(tmp_path, harness=harness)
+    concierge.start_superpower(goal, sync=True)
+    text = joined(out)
+    assert explanation in text
+    assert "excluded: research:" in text
+    assert "result: partial" in text
+    assert harness.calls[0] == _lookup_call(goal)
+    assert all(name != "research" for name, _ in harness.calls)
+
+
+def test_superpower_unscoped_research_runs_full_scorecard(env: Path, tmp_path: Path) -> None:
+    harness = CatalogHarness()
+    concierge, out = make(tmp_path, harness=harness)
+    concierge.handle_line("/superpower run the research benchmark --sync")
+    assert "[ran] research <synthetic-correctness>" in joined(out)
+    assert harness.calls == [_lookup_call("run the research benchmark"), ("research", None)]
+
+
+def test_legacy_catalog_without_lookup_args_fails_closed(env: Path, tmp_path: Path) -> None:
+    class LegacyCatalog:
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def run(self, name: str) -> Result:
+            self.calls.append(name)
+            return Result(0, CATALOG_JSON)
+
+    harness = LegacyCatalog()
+    concierge, out = make(tmp_path, harness=harness)
+    concierge.handle_line("/superpower run the research benchmark --sync")
+    assert "goal-specific family lookup missing" in joined(out)
+    assert "result: partial" in joined(out)
+    assert harness.calls == ["research-families"]
 
 
 def test_superpower_run_with_unavailable_catalog_excludes_research(
@@ -765,7 +914,7 @@ def test_superpower_run_with_unavailable_catalog_excludes_research(
     text = joined(out)
     assert "excluded: research: family catalog unavailable (catalog offline)" in text
     assert "result: partial" in text
-    assert harness.calls == [("research-families", None)]
+    assert harness.calls == [_lookup_call("run the conformal volatility benchmark")]
 
 
 def test_background_superpower_catalog_lookup_can_be_cancelled(env: Path, tmp_path: Path) -> None:
@@ -802,7 +951,7 @@ def test_background_superpower_catalog_lookup_can_be_cancelled(env: Path, tmp_pa
     assert stopped.wait(1)
     assert concierge.job is not None and not concierge.job.running
     assert concierge.job.result.cancelled is True
-    assert harness.calls == [("research-families", None)]
+    assert harness.calls == [_lookup_call("run the conformal volatility benchmark")]
 
 
 def test_background_catalog_legacy_runner_does_not_hold_cancel(env: Path, tmp_path: Path) -> None:
@@ -866,7 +1015,7 @@ def test_superpower_catalog_lookup_stops_at_wall_deadline(env: Path, tmp_path: P
     assert concierge.job is not None
     assert concierge.job.result.partial is True
     assert all(run.status == "budget-exceeded" for run in concierge.job.result.runs)
-    assert harness.calls == [("research-families", None)]
+    assert harness.calls == [_lookup_call("run the conformal volatility benchmark")]
 
 
 # ---------------------------------------------------------------------------
@@ -948,7 +1097,7 @@ def test_evidence_classes_separate_synthetic_from_verified(tmp_path: Path) -> No
         SuperpowerContext(
             harness=Mixed(),
             approvals=ApprovalGate(),
-            catalog=FamilyCatalog.from_json(CATALOG_JSON),
+            catalog=_bound_catalog("g"),
         ),
     )
     evidence = {r.id: r.evidence for r in result.runs}
