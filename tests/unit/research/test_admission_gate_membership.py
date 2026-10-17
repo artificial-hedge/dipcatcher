@@ -11,7 +11,9 @@ Git paths only list the stamper's members while ``receipts/`` is a plain
 directory tree that the working tree matches. A root symlink (``git mv receipts
 zz_corpus && ln -s zz_corpus receipts``) puts new members outside the diff
 pathspec, a nested symlink or submodule hides bytes, and an untracked or edited
-file is stamped without being committed -- each must fail the gate.
+file is stamped without being committed -- each must fail the gate. So must the
+way ``git status`` itself goes blind locally: an assume-unchanged or
+skip-worktree index flag.
 
 These tests run the REAL ``Makefile`` target and the production CLI (the same
 ``quant_fund.cli.main.app`` the ``dipcatcher`` console script runs) against the
@@ -137,6 +139,16 @@ def _verdicts(env: dict[str, str]) -> dict[str, str]:
         doc = json.loads(path.read_text())
         body = doc.get("payload", doc)
         out[str(body["candidate"])] = str(body["verdict"])
+    return out
+
+
+def _bodies(env: dict[str, str]) -> dict[str, dict[str, object]]:
+    """corpus-relative candidate path -> admission receipt body."""
+    out: dict[str, dict[str, object]] = {}
+    for path in sorted((Path(env["RUNNER_TEMP"]) / "admission").glob("receipt_admission_*.json")):
+        doc = json.loads(path.read_text())
+        body = doc.get("payload", doc)
+        out[str(body["candidate"])] = body
     return out
 
 
@@ -398,3 +410,88 @@ def test_a_nested_receipt_sharing_a_flat_name_is_still_checked_against_the_flat_
     assert proc.returncode != 0, out
     assert "verdict=quarantine" in out and "verdict=admit" in out, out
     assert _verdicts(env) == {"zz_a.json": "admit", "zzz/zz_a.json": "quarantine"}, out
+
+
+def _porcelain(repo: Path) -> str:
+    return _git(repo, "status", "--porcelain", "--untracked-files=all", "--", "receipts")
+
+
+def _assume_unchanged_edit(repo: Path) -> None:
+    """``git update-index --assume-unchanged`` on a member, then overwrite its bytes."""
+    victim = sorted((repo / "receipts").glob("*.json"))[0]
+    before = member_digests(repo / "receipts")[victim.name]
+    _git(repo, "update-index", "--assume-unchanged", "--", victim.relative_to(repo).as_posix())
+    victim.write_bytes(victim.read_bytes() + b"\n")
+    # The divergence: the stamper counts new bytes while git status shows nothing.
+    assert member_digests(repo / "receipts")[victim.name] != before
+    assert _porcelain(repo) == ""
+
+
+def _skip_worktree_intent_to_add(repo: Path) -> None:
+    """``git add -N`` + ``--skip-worktree`` hides a brand-new member from git status."""
+    hidden = repo / "receipts" / "zz_hidden_new.json"
+    hidden.write_bytes(_sealed(UNSTAMPED))
+    _git(repo, "add", "-N", "-f", "--", "receipts/zz_hidden_new.json")
+    _git(repo, "update-index", "--skip-worktree", "--", "receipts/zz_hidden_new.json")
+    assert "zz_hidden_new.json" in member_digests(repo / "receipts")
+    assert _porcelain(repo) == ""
+
+
+def _skip_worktree_edit(repo: Path) -> None:
+    victim = sorted((repo / "receipts").glob("*.json"))[0]
+    _git(repo, "update-index", "--skip-worktree", "--", victim.relative_to(repo).as_posix())
+    victim.write_bytes(victim.read_bytes() + b"\n")
+    assert _porcelain(repo) == ""
+
+
+# Each leaves a stamper member that ``git status`` and the BASE..HEAD diff never list.
+STATUS_BLIND = {
+    "assume_unchanged_edit": (_assume_unchanged_edit, "cannot vouch for the working tree"),
+    "skip_worktree_intent_to_add": (_skip_worktree_intent_to_add, "cannot vouch"),
+    "skip_worktree_edit": (_skip_worktree_edit, "cannot vouch"),
+}
+
+
+@pytest.mark.parametrize("case", sorted(STATUS_BLIND))
+def test_a_working_tree_git_status_cannot_see_fails_the_gate(gate_repo: Gate, case: str) -> None:
+    """``git status --porcelain`` is blind to an assume-unchanged or skip-worktree
+    flag, yet the stamper counts the file (it skips only untracked ignored ones):
+    the gate once exited 0 ("no corpus receipt changes") over a changed or
+    brand-new member."""
+    repo, base, env = gate_repo
+    setup, needle = STATUS_BLIND[case]
+    setup(repo)
+    proc = _gate(repo, base, env)
+    out = proc.stdout + proc.stderr
+    assert proc.returncode != 0, out
+    assert "no corpus receipt changes" not in out, out
+    assert needle in out, out
+
+
+@pytest.mark.parametrize(
+    ("slot", "verdict"),
+    [
+        ("receipts/legacy-unsealed/zz_claim_b.json", "reject"),
+        ("receipts/legacy-unsealed/deep/zz_claim_b.json", "reject"),
+        ("receipts/zz_vis/zz_claim_b.json", "quarantine"),
+    ],
+)
+def test_a_contradicting_receipt_is_never_admitted_wherever_it_sits(
+    gate_repo: Gate, slot: str, verdict: str
+) -> None:
+    """A sealed, honest receipt contradicting a corpus claim drew ``quarantine``
+    when flat or in a subdirectory but ``admit`` under ``legacy-unsealed/``: the
+    lattice skips that subtree, so its delta was measured against nothing. The
+    gate must refuse it (outright, as ``suite-health`` does) and still report the
+    contradiction the visible placements report."""
+    repo, _head, env = gate_repo
+    _commit(repo, {"receipts/zz_claim_a.json": _claim(1.0, inputs="dd")})
+    base = _git(repo, "rev-parse", "HEAD")
+    _commit(repo, {slot: _claim(9.9, inputs="ee")})
+    proc = _gate(repo, base, env)
+    out = proc.stdout + proc.stderr
+    assert proc.returncode != 0, out
+    candidate = slot.removeprefix("receipts/")
+    assert _verdicts(env) == {candidate: verdict}, out
+    body = _bodies(env)[candidate]
+    assert body["lattice_new_inconsistent"], body

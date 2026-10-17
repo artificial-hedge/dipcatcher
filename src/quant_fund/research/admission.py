@@ -16,17 +16,25 @@ Checks, in order:
 4. ``corpus``     — corpus_audit on both corpora; the survivor-set delta is
    recorded as evidence (BH families legitimately shift as members arrive).
 
+A candidate AT a registry-governed slot (``legacy-unsealed/...``) is never
+admissible: the lattice and the corpus audit skip that subtree by design, so
+no delta there is observable. ``admit_batch`` routes registry-matched records
+away before this check; whatever reaches it is rejected outright
+(``quarantine_slot``) and its lattice/corpus delta is still measured from a
+visible probe slot, so the record shows what the file would have claimed.
+
 Verdicts: ``admit`` | ``quarantine`` | ``reject``. ``--strict`` exits
 nonzero on anything but ``admit``.
 """
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import shutil
 import tempfile
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -34,6 +42,7 @@ from quant_fund.research.legacy_unsealed import (
     EMPTY_QUARANTINE,
     Quarantine,
     honesty_stamp_errors,
+    in_quarantined_subdir,
 )
 from quant_fund.utils.hashing import hash_bytes
 
@@ -57,10 +66,24 @@ def _link_or_copy(src: Path, dst: Path, *, replace: bool = False) -> None:
         shutil.copy2(src, dst)
 
 
-def _shadow_corpus(
-    corpus_dir: Path, extra: Path | None = None, *, extra_rel: str | None = None
-) -> Path:
-    """Link the corpus (+ optional extra receipt) into a private dir.
+@contextlib.contextmanager
+def _scratch_dir(prefix: str) -> Iterator[Path]:
+    """A private temp dir that is always removed on exit, error paths included.
+
+    Every shadow mirrors the whole recursive corpus (hard links, or copies
+    across filesystems) and a gated candidate builds three of them: leaving
+    them behind filled /tmp with thousands of mirrors."""
+    path = Path(tempfile.mkdtemp(prefix=prefix))
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
+
+
+def _mirror_corpus(
+    shadow: Path, corpus_dir: Path, extra: Path | None = None, *, extra_rel: str | None = None
+) -> None:
+    """Link the corpus (+ optional extra receipt) into the private dir ``shadow``.
 
     Mirrors the lattice's own membership -- every verifiable receipt at any
     depth, minus quarantined subtrees -- under its corpus-relative path. The
@@ -69,12 +92,38 @@ def _shadow_corpus(
     judged on its own bytes and never on those of a same-named member."""
     from quant_fund.utils.receipt import verified_corpus_files
 
-    shadow = Path(tempfile.mkdtemp(prefix="admit_corpus_"))
     for path in verified_corpus_files(corpus_dir):
         _link_or_copy(path, shadow / path.relative_to(corpus_dir))
     if extra is not None:
         _link_or_copy(extra, shadow / (extra_rel or extra.name), replace=True)
-    return shadow
+
+
+_PROBE_DIR = "zz-admission-quarantined-slot-probe"
+
+
+def _lattice_slot(rel: str) -> str:
+    """The slot at which the lattice can actually see a candidate claiming ``rel``.
+
+    The lattice skips quarantined subtrees, so a candidate placed AT such a slot
+    would be measured against nothing and its delta would read as a clean
+    ``ok``. It is probed at a visible slot instead (the slot itself stays
+    rejected by ``_quarantine_slot_checks``)."""
+    return f"{_PROBE_DIR}/{rel.replace('/', '__')}" if in_quarantined_subdir(rel) else rel
+
+
+def _quarantine_slot_checks(rel: str) -> list[dict[str, Any]]:
+    """A reject-class check when ``rel`` lies in a registry-governed subtree.
+
+    ``suite-health`` fails such a file as ``quarantine_unregistered`` unless the
+    quarantine registry retains exactly these bytes, and ``admit_batch`` has
+    already split registry-matched records off before gating: a candidate that
+    still arrives here is not retained, and ``admit`` would carry no
+    information (the lattice never reads that subtree)."""
+    if not in_quarantined_subdir(rel):
+        return []
+    return [
+        {"name": "quarantine_slot", "ok": False, "reject_errors": ["quarantined_slot_not_retained"]}
+    ]
 
 
 def _inconsistent_groups(lattice: Mapping[str, Any]) -> set[str]:
@@ -103,20 +152,24 @@ def _checked_rel(rel: str) -> str:
 
 
 def _tombstones_binding(
-    active: Mapping[str, Mapping[str, Any]], rel: str
+    active: Mapping[str, Mapping[str, Any]], rel: str, candidate_sha: str
 ) -> list[Mapping[str, Any]]:
     """Active retractions that bind a candidate at corpus slot ``rel``.
 
     ``active`` is keyed by corpus-relative target path, so a candidate matches
     its own slot exactly -- a nested target ``sub/t.json`` binds ``sub/t.json``.
     A retraction also binds, failing closed, the same file name in another
-    directory: a retracted slot may not quietly re-fill one level up or down
-    (the pre-existing file-name lookup did exactly that for flat targets)."""
+    directory (a retracted slot may not quietly re-fill one level up or down)
+    and *the retracted bytes under any name*: a byte-identical copy at
+    ``other_name.json`` is the retracted receipt re-entering, whatever it is
+    called (the lookup used to bind by slot or file name only)."""
     name = PurePosixPath(rel).name
     return [
         entry
         for key, entry in sorted(active.items())
-        if key == rel or PurePosixPath(key).name == name
+        if key == rel
+        or PurePosixPath(key).name == name
+        or entry.get("target_sha256") == candidate_sha
     ]
 
 
@@ -203,29 +256,33 @@ def admission_check(
         }
     )
 
-    # -- 3. lattice delta -------------------------------------------------------
+    # -- 3/4. lattice delta + corpus FDR delta ------------------------------------
+    # The shadows live only for these two measurements and are removed on exit.
+    from quant_fund.research.corpus_inference import corpus_audit
     from quant_fund.research.receipt_lattice import receipt_lattice
 
-    before_shadow = _shadow_corpus(corpus_dir)
-    after_shadow = _shadow_corpus(corpus_dir, extra=candidate, extra_rel=rel)
     pins = dict(known_inconsistent or {})
-    before = receipt_lattice(before_shadow, known_inconsistent=pins)
-    after = receipt_lattice(after_shadow, known_inconsistent=pins)
-    new_inconsistent = _inconsistent_groups(after) - _inconsistent_groups(before)
-    checks.append(
-        {
-            "name": "lattice",
-            "ok": not new_inconsistent,
-            "new_inconsistent_groups": len(new_inconsistent),
-            "groups_after": after.get("n_claim_groups"),
-        }
-    )
+    with (
+        _scratch_dir("admit_corpus_") as before_shadow,
+        _scratch_dir("admit_corpus_") as after_shadow,
+    ):
+        _mirror_corpus(before_shadow, corpus_dir)
+        _mirror_corpus(after_shadow, corpus_dir, extra=candidate, extra_rel=_lattice_slot(rel))
+        before = receipt_lattice(before_shadow, known_inconsistent=pins)
+        after = receipt_lattice(after_shadow, known_inconsistent=pins)
+        new_inconsistent = _inconsistent_groups(after) - _inconsistent_groups(before)
+        checks.append(
+            {
+                "name": "lattice",
+                "ok": not new_inconsistent,
+                "new_inconsistent_groups": len(new_inconsistent),
+                "groups_after": after.get("n_claim_groups"),
+            }
+        )
 
-    # -- 4. corpus FDR delta (evidence — never gate-driving on its own) ---------
-    from quant_fund.research.corpus_inference import corpus_audit
-
-    corpus_before = corpus_audit(before_shadow, q=q)
-    corpus_after = corpus_audit(after_shadow, q=q)
+        # The corpus FDR delta is evidence -- never gate-driving on its own.
+        corpus_before = corpus_audit(before_shadow, q=q)
+        corpus_after = corpus_audit(after_shadow, q=q)
     added = sorted(_survivors(corpus_after) - _survivors(corpus_before))
     removed = sorted(_survivors(corpus_before) - _survivors(corpus_after))
     checks.append(
@@ -236,6 +293,8 @@ def admission_check(
             "survivors_removed": len(removed),
         }
     )
+    slot_checks = _quarantine_slot_checks(rel)
+    checks.extend(slot_checks)
 
     from quant_fund.utils.receipt import verified_corpus_files
 
@@ -313,7 +372,7 @@ def admission_check(
         # shadowed) admission view — a retracted target must stay pinned to
         # real bytes even when admit_batch shadows it out mid-diff.
         tombs = load_tombstones(Path(tombstone_dir) if tombstone_dir is not None else corpus_dir)
-        for entry in _tombstones_binding(tombs["active"], rel):
+        for entry in _tombstones_binding(tombs["active"], rel, candidate_sha):
             if entry.get("target_sha256") == candidate_sha:
                 retract_reject.append("retracted_bytes")
             elif entry.get("scope") == "all":
@@ -345,7 +404,7 @@ def admission_check(
             }
         )
 
-    if not seal_ok or reject_errors or retract_reject:
+    if not seal_ok or reject_errors or retract_reject or slot_checks:
         verdict = "reject"
     elif quarantine_errors or new_inconsistent or hard_chain_errors or retract_findings:
         verdict = "quarantine"
@@ -426,8 +485,9 @@ def _partition_quarantined(
     return retained, gated
 
 
-def _batch_shadow(corpus_dir: Path, ordered: list[Path], gated: list[Path]) -> Path:
-    """Corpus minus the batch, plus the batch's retained quarantined records.
+def _batch_shadow(shadow: Path, corpus_dir: Path, ordered: list[Path], gated: list[Path]) -> None:
+    """Fill ``shadow`` with the corpus minus the batch, plus the batch's retained
+    quarantined records.
 
     Mirrors every verifiable receipt (recursively, minus quarantined
     subtrees — the lattice's own membership). Retained quarantined records
@@ -441,7 +501,6 @@ def _batch_shadow(corpus_dir: Path, ordered: list[Path], gated: list[Path]) -> P
     from quant_fund.utils.receipt import is_quarantined, verified_corpus_files
 
     changed_rels = {_corpus_rel(c, corpus_dir) for c in ordered}
-    shadow = Path(tempfile.mkdtemp(prefix="admit_batch_base_"))
     for path in verified_corpus_files(corpus_dir):
         rel_path = path.relative_to(corpus_dir)
         if rel_path.as_posix() in changed_rels:
@@ -453,7 +512,6 @@ def _batch_shadow(corpus_dir: Path, ordered: list[Path], gated: list[Path]) -> P
         # the quarantine subtree the lattice skips, exactly as in the corpus.
         if cand not in gated and not is_quarantined(corpus_dir / rel_path, corpus_dir):
             _link_or_copy(cand, shadow / rel_path)
-    return shadow
 
 
 def _batch_order(candidates: Iterable[Path | str], corpus_dir: Path) -> list[Path]:
@@ -550,27 +608,28 @@ def admit_batch(
 
     stamped, fresh = _partition_base_stamped(ordered, corpus_dir, base_stamped or {})
     retained, gated = _partition_quarantined(fresh, corpus_dir, quarantine)
-    shadow = _batch_shadow(corpus_dir, ordered, gated)
 
     results: list[dict[str, Any]] = []
-    for cand in gated:
-        slot = _corpus_rel(cand, corpus_dir)
-        result = admission_check(
-            cand,
-            shadow,
-            q=q,
-            known_inconsistent=known_inconsistent,
-            tombstone_dir=corpus_dir,
-            epoch_dir=corpus_dir,
-            expected_head=expected_head,
-            epoch_acks=epoch_acks,
-            candidate_rel=slot,
-        )
-        results.append(result)
-        # Post-merge coexistence: a merged diff lands all of its files
-        # together, so each later candidate must clear a corpus that already
-        # contains the earlier ones — whatever verdict they drew.
-        _link_or_copy(cand, shadow / slot)
+    with _scratch_dir("admit_batch_base_") as shadow:
+        _batch_shadow(shadow, corpus_dir, ordered, gated)
+        for cand in gated:
+            slot = _corpus_rel(cand, corpus_dir)
+            result = admission_check(
+                cand,
+                shadow,
+                q=q,
+                known_inconsistent=known_inconsistent,
+                tombstone_dir=corpus_dir,
+                epoch_dir=corpus_dir,
+                expected_head=expected_head,
+                epoch_acks=epoch_acks,
+                candidate_rel=slot,
+            )
+            results.append(result)
+            # Post-merge coexistence: a merged diff lands all of its files
+            # together, so each later candidate must clear a corpus that already
+            # contains the earlier ones — whatever verdict they drew.
+            _link_or_copy(cand, shadow / slot)
 
     ack_errors = _batch_ack_errors(epoch_acks or [], base_epochs)
     # Per-candidate checks bind the chain only when something is gated; a
@@ -666,6 +725,7 @@ def admission_contract_errors(payload: Mapping[str, Any]) -> list[str]:
             not seal_check.get("ok", True)
             or bool(honesty.get("reject_errors"))
             or bool(tombstone.get("reject_errors"))
+            or _slot_rejects(checks)
         )
         quarantinable = (
             bool(honesty.get("quarantine_errors"))
@@ -679,7 +739,31 @@ def admission_contract_errors(payload: Mapping[str, Any]) -> list[str]:
             errors.append("verdict_quarantine_mismatch")
         elif verdict == "admit" and (rejectable or quarantinable):
             errors.append("verdict_admit_with_findings")
+    errors.extend(_slot_contract_errors(payload))
     return errors
+
+
+def _slot_rejects(checks: Iterable[Any]) -> bool:
+    """True iff a ``quarantine_slot`` check carries a reject-class error."""
+    return any(
+        isinstance(c, Mapping)
+        and c.get("name") == "quarantine_slot"
+        and bool(c.get("reject_errors"))
+        for c in checks
+    )
+
+
+def _slot_contract_errors(payload: Mapping[str, Any]) -> list[str]:
+    """A candidate AT a quarantined slot must carry the reject, whatever else the
+    receipt claims: ``admit``/``quarantine`` there is a forgery or a regression
+    (the lattice never reads that subtree, so such a verdict is uninformative)."""
+    candidate = payload.get("candidate")
+    checks = payload.get("checks")
+    if not (isinstance(candidate, str) and in_quarantined_subdir(candidate)):
+        return []
+    if payload.get("verdict") == "reject" and isinstance(checks, list) and _slot_rejects(checks):
+        return []
+    return ["quarantined_slot_not_rejected"]
 
 
 def write_admission_receipt(

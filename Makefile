@@ -410,7 +410,11 @@ ADMISSION_BASE ?= origin/main
 # plain directory tree that the working tree matches: a root symlink re-roots
 # the corpus outside the diff pathspec, a nested symlink/submodule hides bytes,
 # and a file the checkout holds but HEAD lacks is stamped without being gated.
-# Each of those fails the gate instead of being guessed at.
+# `git status` alone cannot vouch for that: an assume-unchanged or skip-worktree
+# index flag (`git ls-files -v` tag other than H) makes it blind to an edited or
+# intent-to-add file the stamper still counts (it skips only *untracked* ignored
+# files). Each of those fails the gate instead of being guessed at. (CI's fresh
+# checkout carries no index flags; this guards local runs.)
 admission-gate: ## CI gate: ack-ledger vs base chains, then sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
 	@git rev-parse --verify --quiet "$(ADMISSION_BASE)^{commit}" >/dev/null \
 		|| { echo "admission-gate: ADMISSION_BASE=$(ADMISSION_BASE) is not a commit"; exit 1; }; \
@@ -428,6 +432,13 @@ admission-gate: ## CI gate: ack-ledger vs base chains, then sequentially admit e
 	if [ -n "$$dirty" ]; then \
 		echo "admission-gate: receipts/ in the working tree differs from HEAD; the stamper reads the working tree but this gate reads commits -- commit or remove:"; \
 		printf '%s\n' "$$dirty"; exit 1; \
+	fi; \
+	tags="$${RUNNER_TEMP:-/tmp}/admission_index_tags.txt"; \
+	git ls-files -v -- receipts > "$$tags" || exit 1; \
+	flagged=$$(LC_ALL=C grep -v '^H ' "$$tags") || [ $$? -eq 1 ] || exit 1; \
+	if [ -n "$$flagged" ]; then \
+		echo "admission-gate: receipts/ index entries carry an assume-unchanged/skip-worktree/other non-H flag, so git status cannot vouch for the working tree (clear it with git update-index --no-assume-unchanged --no-skip-worktree):"; \
+		printf '%s\n' "$$flagged"; exit 1; \
 	fi; \
 	git show $(ADMISSION_BASE):quality/epoch_heads.json > "$$base_pin" || exit 1; \
 	git show $(ADMISSION_BASE):quality/epoch_allowed_removals.json > "$$base_acks" 2>/dev/null || : > "$$base_acks"; \

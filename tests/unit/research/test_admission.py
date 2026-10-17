@@ -384,9 +384,13 @@ def test_retracted_bytes_rejected_end_to_end(tmp_path: Path) -> None:
     candidate = tmp_path / "reissue.json"
     candidate.write_text(bad.read_bytes().decode())
     res = admission_check(candidate, corpus)
-    # name differs → not the same slot; the *bytes* are what is retracted
+    # The name differs, but the *bytes* are what is retracted: the exact
+    # retracted artifact re-entering under a new name is still the retracted
+    # artifact (this once asserted ``ok is True`` -- "byte-identity is
+    # name-keyed" -- which let a rename walk a retracted receipt back in).
     tomb = next(c for c in res["checks"] if c["name"] == "tombstone")
-    assert tomb["ok"] is True  # byte-identity is name-keyed in the corpus
+    assert tomb["reject_errors"] == ["retracted_bytes"]
+    assert res["verdict"] == "reject"
 
     res2 = admission_check(bad, corpus)
     tomb2 = next(c for c in res2["checks"] if c["name"] == "tombstone")

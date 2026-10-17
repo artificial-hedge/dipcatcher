@@ -13,13 +13,18 @@ real sealed receipts and the real lattice.
 from __future__ import annotations
 
 import json
+import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from quant_fund.research.admission import admission_check, admit_batch
+from quant_fund.research.admission import (
+    admission_check,
+    admission_contract_errors,
+    admit_batch,
+)
 from quant_fund.research.receipt_tombstone import tombstone_body
 from quant_fund.research.receipt_v2 import seal_receipt
 from quant_fund.utils.hashing import hash_bytes
@@ -230,3 +235,193 @@ def test_an_unrelated_name_is_not_bound_by_a_retraction(corpus: Path) -> None:
         "reject_errors": [],
         "findings": [],
     }
+
+
+# -- a candidate AT a registry-governed slot is rejected, never "admitted" ---------
+
+QUARANTINED_SLOTS = ["legacy-unsealed/c.json", "legacy-unsealed/deep/c.json"]
+
+
+def _slot_check(result: Mapping[str, Any]) -> Mapping[str, Any]:
+    return next(c for c in result["checks"] if c["name"] == "quarantine_slot")
+
+
+@pytest.mark.parametrize("slot", QUARANTINED_SLOTS)
+def test_an_unretained_candidate_in_a_quarantined_subtree_is_rejected(
+    corpus: Path, slot: str
+) -> None:
+    """The lattice and corpus audit skip ``legacy-unsealed/`` by design, so a
+    candidate placed there was measured against nothing and drew ``admit`` --
+    while ``suite-health`` fails the same file as ``quarantine_unregistered``.
+    It must be rejected outright, even when it contradicts nothing."""
+    _write(corpus, "a.json", _body(1.0, dataset="11" * 32))
+    cand = _write(corpus, slot, _body(1.0, dataset="22" * 32))
+
+    batch = admit_batch([cand], corpus)
+
+    (result,) = batch["results"]
+    assert result["candidate"] == slot
+    assert result["verdict"] == "reject" and batch["verdict"] == "reject"
+    assert batch["failures"] == [slot]
+    assert _slot_check(result) == {
+        "name": "quarantine_slot",
+        "ok": False,
+        "reject_errors": ["quarantined_slot_not_retained"],
+    }
+    assert admission_contract_errors(result) == []
+
+
+@pytest.mark.parametrize("slot", QUARANTINED_SLOTS)
+def test_a_contradiction_at_a_quarantined_slot_is_still_measured(corpus: Path, slot: str) -> None:
+    """Rejection must not hide what the file claims: the lattice delta is taken
+    from a visible probe slot, so it matches the same bytes at a visible slot
+    (a sealed, honest receipt contradicting a corpus claim)."""
+    _write(corpus, "zz_sub/n.json", _body(1.0))
+    hidden = _write(corpus, slot, _body(9.9, inputs="ee"))
+    (at_slot,) = admit_batch([hidden], corpus)["results"]
+    # Same bytes at a visible slot (written only now, so it was not in the view above).
+    visible = _write(corpus, "zz_vis/c.json", _body(9.9, inputs="ee"))
+    (at_visible,) = admit_batch([visible], corpus)["results"]
+
+    assert at_visible["verdict"] == "quarantine"
+    assert at_visible["lattice_new_inconsistent"]
+    assert at_slot["verdict"] == "reject"
+    assert at_slot["lattice_new_inconsistent"] == at_visible["lattice_new_inconsistent"]
+    lattice = next(c for c in at_slot["checks"] if c["name"] == "lattice")
+    assert lattice["ok"] is False
+
+
+def test_a_quarantined_candidate_stays_out_of_later_candidates_view(corpus: Path) -> None:
+    """The merged corpus never shows ``legacy-unsealed/`` to the lattice, so a
+    later candidate is judged against exactly that -- not against the rejected
+    record -- and the shadow dir probe slot does not leak into the accounting."""
+    _write(corpus, "a.json", _body(1.0, dataset="11" * 32))
+    quarantined = _write(corpus, "legacy-unsealed/c.json", _body(9.9, inputs="ee"))
+    later = _write(corpus, "zz_later.json", _body(8.8, inputs="ff", dataset="33" * 32))
+
+    batch = admit_batch([quarantined, later], corpus)
+
+    assert _verdicts(batch) == {"legacy-unsealed/c.json": "reject", "zz_later.json": "admit"}
+    assert all(r["n_corpus_receipts"] == 1 for r in batch["results"])
+
+
+def test_the_contract_refuses_an_admit_for_a_quarantined_slot(corpus: Path) -> None:
+    cand = _write(corpus, "legacy-unsealed/c.json", _body(1.0))
+    (result,) = admit_batch([cand], corpus)["results"]
+    assert admission_contract_errors(result) == []
+
+    forged = {**result, "verdict": "admit"}
+    errors = admission_contract_errors(forged)
+    assert "quarantined_slot_not_rejected" in errors
+    assert "verdict_admit_with_findings" in errors
+    # Stripping the check does not help: the candidate path alone demands a reject.
+    stripped = {
+        **forged,
+        "checks": [c for c in result["checks"] if c["name"] != "quarantine_slot"],
+    }
+    assert "quarantined_slot_not_rejected" in admission_contract_errors(stripped)
+    # A rejection that names no cause is still incoherent for a visible slot.
+    visible = _write(corpus, "v.json", _body(1.0, dataset="44" * 32))
+    (clean,) = admit_batch([visible], corpus)["results"]
+    assert admission_contract_errors(clean) == []
+
+
+# -- retracted bytes stay retracted under any file name ----------------------------
+
+
+@pytest.mark.parametrize("renamed", ["other_name.json", "sub/other_name.json", "t2.json"])
+def test_retracted_bytes_re_added_under_a_different_name_are_rejected(
+    corpus: Path, renamed: str
+) -> None:
+    """``_tombstones_binding`` bound by slot or file name only, so an exact copy
+    of the retracted bytes at ``other_name.json`` drew ``admit``."""
+    original = _write(corpus, "t.json", _body(1.0))
+    _tombstone(corpus, "t.json")
+    copy = corpus / renamed
+    copy.parent.mkdir(parents=True, exist_ok=True)
+    copy.write_bytes(original.read_bytes())
+
+    batch = admit_batch([copy], corpus)
+
+    assert batch["verdict"] == "reject"
+    assert _retraction(batch)["reject_errors"] == ["retracted_bytes"]
+
+
+def test_retracted_bytes_are_rejected_in_a_quarantined_subtree_too(corpus: Path) -> None:
+    original = _write(corpus, "t.json", _body(1.0))
+    _tombstone(corpus, "t.json")
+    copy = corpus / "legacy-unsealed" / "other.json"
+    copy.parent.mkdir()
+    copy.write_bytes(original.read_bytes())
+
+    (result,) = admit_batch([copy], corpus)["results"]
+
+    assert result["verdict"] == "reject"
+    tomb = next(c for c in result["checks"] if c["name"] == "tombstone")
+    assert tomb["reject_errors"] == ["retracted_bytes"]
+
+
+def test_different_bytes_under_a_new_name_are_not_bound_by_a_byte_retraction(
+    corpus: Path,
+) -> None:
+    """The control: only the retracted *bytes* bind across names, not the claim
+    they carry -- a different receipt under an unrelated name is untouched."""
+    _write(corpus, "t.json", _body(1.0, dataset="11" * 32))
+    _tombstone(corpus, "t.json")
+    other = _write(corpus, "sub/other_name.json", _body(1.0000001, dataset="22" * 32))
+
+    batch = admit_batch([other], corpus)
+
+    assert _retraction(batch)["reject_errors"] == []
+    assert _retraction(batch)["findings"] == []
+
+
+# -- admission removes every shadow it builds ---------------------------------------
+
+
+@pytest.fixture()
+def scratch_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Point the interpreter's temp dir (the documented ``tempfile.tempdir``
+    override) at an empty dir so leaked shadows are countable."""
+    root = tmp_path / "scratch"
+    root.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(root))
+    return root
+
+
+def test_admission_check_leaves_no_shadow_dirs(corpus: Path, scratch_root: Path) -> None:
+    _write(corpus, "zz_sub/n.json", _body(1.0))
+    outside = _write(corpus.parent / "inbox", "c.json", _body(9.9, inputs="ee"))
+
+    assert admission_check(outside, corpus)["verdict"] == "quarantine"
+
+    assert list(scratch_root.iterdir()) == []
+
+
+def test_admit_batch_leaves_no_shadow_dirs(corpus: Path, scratch_root: Path) -> None:
+    _write(corpus, "a.json", _body(1.0, dataset="11" * 32))
+    batch = [
+        _write(corpus, "b.json", _body(2.0, dataset="22" * 32)),
+        _write(corpus, "zz_sub/c.json", _body(3.0, dataset="33" * 32)),
+        _write(corpus, "legacy-unsealed/d.json", _body(4.0, dataset="44" * 32)),
+    ]
+
+    result = admit_batch(batch, corpus)
+
+    assert result["n_gated"] == 3
+    assert list(scratch_root.iterdir()) == []
+
+
+def test_shadow_dirs_are_removed_when_the_check_fails_midway(
+    corpus: Path, scratch_root: Path
+) -> None:
+    """``q`` outside (0, 1) makes ``corpus_audit`` raise after both shadows exist."""
+    _write(corpus, "a.json", _body(1.0, dataset="11" * 32))
+    cand = _write(corpus, "b.json", _body(2.0, dataset="22" * 32))
+
+    with pytest.raises(ValueError, match="q must lie in"):
+        admission_check(cand, corpus, q=2.0)
+    with pytest.raises(ValueError, match="q must lie in"):
+        admit_batch([cand], corpus, q=2.0)
+
+    assert list(scratch_root.iterdir()) == []
