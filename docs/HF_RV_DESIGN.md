@@ -86,10 +86,21 @@ estimate; the function returns both `rv_5min` (with jumps) and `rv_5min_jump_cle
 
 ### Tick subsampling
 
-For sources with multi-tick bars (CLS FX is mid-frequency), apply
-5-tick sub-sampling with a deterministic seed derived from `asof` to avoid
-microstructure-noise inflation. This is opt-in via the
-`apply_tick_subsample=True` parameter (default).
+For sources with multi-tick bars (CLS FX is mid-frequency),
+`apply_tick_subsample=True` (the default) reports a Zhang–Mykland–Aït-Sahalia
+sparse-scale realized variance. `stride` phase-offset grids (default 5) each
+sum every `stride` consecutive log-returns into complete blocks. Each grid's
+sum of squares estimates integrated variance; `rv_5min` is their average, so
+microstructure-noise variance falls by about `stride` while the estimator
+stays on the integrated-variance scale. Random deletion of fine returns is
+not this estimator: it scales realized variance by about `1/stride`.
+
+`n_obs` on that path is the longest grid's block count. Jump detection still
+runs on the fine 5-min grid (Lee–Mykland, α = 0.99); flagged fine returns
+are zeroed before `rv_5min_jump_clean` is aggregated on the same grids.
+Bipower variation stays on the fine grid. `rng_seed` remains on the frozen
+signature and does not reshuffle the sample — an integer seed cannot change
+the grids, and a non-integer seed fails closed.
 
 ## 4. PIT gate (parallel to Wave 119)
 

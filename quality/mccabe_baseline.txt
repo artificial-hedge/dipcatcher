@@ -769,7 +769,7 @@ src/quant_fund/proof/verify.py:verify_bundle 14
 src/quant_fund/public.py:_as_backtest_metrics 18
 src/quant_fund/public.py:_as_json 10
 src/quant_fund/realized/hf_rv.py:_detect_holes 10
-src/quant_fund/realized/hf_rv.py:compute_hf_rv 14
+src/quant_fund/realized/hf_rv.py:compute_hf_rv 10
 src/quant_fund/registry/artifact_store.py:ArtifactStore.verify 14
 src/quant_fund/registry/lineage_dag.py:lineage_dag 12
 src/quant_fund/registry/mlflow_store.py:promotion_decision 18

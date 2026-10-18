@@ -46,7 +46,9 @@ class HFRVResult:
     rv_5min_jump_clean
         Realized variance excluding the flagged bars.
     n_obs
-        Number of 5-min bars used in the estimate.
+        On the fine grid, the number of finite 5-min log-returns. When
+        tick subsampling is on, the longest complete sparse grid's block
+        count (strictly fewer blocks than fine returns for stride > 1).
     asof
         Decision origin timestamp (PIT).
     available_time
@@ -241,25 +243,134 @@ def _detect_holes(sorted_bars: pd.DataFrame, *, window_bars: int) -> tuple[pd.Da
     return interpolated, interp_count, False
 
 
-def _subsample(bars: pd.DataFrame, *, stride: int, seed: int) -> pd.DataFrame:
-    """Apply deterministic tick subsampling.
+def _seed_ok(rng_seed: int | None) -> bool:
+    """Frozen ``rng_seed`` slot: None or an integer, never a draw."""
+    if rng_seed is None:
+        return True
+    if isinstance(rng_seed, bool):
+        return False
+    return isinstance(rng_seed, (int, np.integer))
 
-    Drops rows using a deterministic permutation keyed by ``seed`` to keep
-    microstructure-noise reduction reproducible across runs. The bar
-    closest to asof is always retained via the trailing-window selection
-    that happens in :func:`compute_hf_rv` before this is called.
+
+def _normalize_stride(stride: int) -> int | None:
+    """Positive subsample stride. Booleans are not strides."""
+    if isinstance(stride, bool) or not isinstance(stride, int):
+        return None
+    if stride < 1:
+        return None
+    return stride
+
+
+def _jump_summary(log_ret: np.ndarray) -> tuple[np.ndarray, float, int]:
+    """Lee–Mykland flags on the fine 5-min return grid (α = 0.99)."""
+    lm = lee_mykland_jumps(log_ret, alpha=0.99)
+    is_jump = np.asarray(lm["is_jump"], dtype=bool)
+    stat_series = np.asarray(lm["stat"], dtype=float)
+    n_jumps = int(is_jump.sum())
+    jump_stat = float(np.nanmax(stat_series)) if stat_series.size else 0.0
+    return is_jump, jump_stat, n_jumps
+
+
+def _phase_averaged_rv(log_ret: np.ndarray, stride: int) -> tuple[float, int]:
+    """Zhang sparse-scale RV: mean of ``stride`` non-overlapping price grids.
+
+    Grid ``phase`` sums every ``stride`` consecutive log-returns into
+    complete blocks only (no partial tail). Each grid's sum of squared
+    block returns estimates integrated variance; the average cuts
+    microstructure-noise variance by about ``stride`` and stays on that
+    scale. Random deletion of fine returns does not: it estimates
+    integrated variance over ``stride``. The second value is the longest
+    grid's block count.
     """
-    n = len(bars)
-    if n <= 2 or stride <= 1:
-        return bars
-    keep_mask = np.ones(n, dtype=bool)
-    perm = np.random.default_rng(seed).permutation(n)
-    # Drop the largest-step entries until the kept density matches 1/stride.
-    target = max(1, n // stride)
-    drop_count = n - target
-    for idx in perm[:drop_count]:
-        keep_mask[int(idx)] = False
-    return bars.loc[keep_mask].reset_index(drop=True)
+    if stride <= 1:
+        return float(np.sum(log_ret * log_ret)), int(log_ret.size)
+    n = int(log_ret.shape[0])
+    if stride >= n:
+        return float("nan"), 0
+    prefix = np.empty(n + 1, dtype=float)
+    prefix[0] = 0.0
+    np.cumsum(log_ret, out=prefix[1:])
+    grid_rv = np.empty(stride, dtype=float)
+    lengths = np.empty(stride, dtype=np.int64)
+    filled = 0
+    for phase in range(stride):
+        ends = np.arange(phase + stride - 1, n, stride, dtype=np.int64)
+        if ends.size == 0:
+            continue
+        starts = ends - (stride - 1)
+        block = prefix[ends + 1] - prefix[starts]
+        grid_rv[filled] = float(block @ block)
+        lengths[filled] = int(block.size)
+        filled += 1
+    if filled == 0:
+        return float("nan"), 0
+    return float(np.mean(grid_rv[:filled])), int(np.max(lengths[:filled]))
+
+
+def _fine_scores(log_ret: np.ndarray) -> tuple[float, float, float, int, float, int] | None:
+    """Fine-grid RV, bipower, and jump-cleaned RV."""
+    n_obs = int(log_ret.size)
+    if n_obs < 4:
+        return None
+    rv = float(np.sum(log_ret * log_ret))
+    bv = bipower_variation(log_ret)
+    if not math.isfinite(bv) or bv <= 0.0:
+        return None
+    is_jump, jump_stat, n_jumps = _jump_summary(log_ret)
+    if n_jumps < n_obs:
+        clean = log_ret[~is_jump]
+    else:
+        clean = np.array([], dtype=float)
+    rv_clean = float(np.sum(clean * clean)) if clean.size > 0 else 0.0
+    return rv, bv, jump_stat, n_jumps, rv_clean, n_obs
+
+
+def _sparse_scores(
+    log_ret: np.ndarray, stride: int
+) -> tuple[float, float, float, int, float, int] | None:
+    """Phase-averaged RV. Jumps are detected on the fine grid, then zeroed."""
+    if log_ret.size < 20:
+        return None
+    bv = bipower_variation(log_ret)
+    if not math.isfinite(bv) or bv <= 0.0:
+        return None
+    is_jump, jump_stat, n_jumps = _jump_summary(log_ret)
+    rv, n_grid = _phase_averaged_rv(log_ret, stride)
+    cleaned = log_ret
+    if n_jumps:
+        cleaned = log_ret.copy()
+        cleaned[is_jump] = 0.0
+    rv_clean, _grid_n = _phase_averaged_rv(cleaned, stride)
+    if n_grid < 4 or not math.isfinite(rv) or not math.isfinite(rv_clean):
+        return None
+    return rv, bv, jump_stat, n_jumps, rv_clean, n_grid
+
+
+def _score_window(
+    bars: pd.DataFrame,
+    *,
+    apply_tick_subsample: bool,
+    subsample_stride: int,
+    rng_seed: int | None,
+) -> tuple[float, float, float, int, float, int] | None:
+    """RV, bipower, max |Lee–Mykland|, jump count, jump-clean RV, n_obs."""
+    if not _seed_ok(rng_seed):
+        return None
+    close = pd.to_numeric(bars["close"], errors="coerce").to_numpy(dtype=float)
+    if close.size < 4 or not np.isfinite(close).all():
+        return None
+    with np.errstate(divide="ignore", invalid="ignore"):
+        raw = np.diff(np.log(close))
+    if apply_tick_subsample:
+        stride = _normalize_stride(subsample_stride)
+        if stride is None:
+            return None
+        if stride > 1:
+            if raw.size < 4 or not np.isfinite(raw).all():
+                return None
+            return _sparse_scores(raw, stride)
+    finite = raw[np.isfinite(raw)]
+    return _fine_scores(finite)
 
 
 def compute_hf_rv(
@@ -292,13 +403,15 @@ def compute_hf_rv(
     window_bars
         Number of 5-min bars in the trailing window. Default 288 (1 day).
     apply_tick_subsample
-        If ``True``, apply deterministic tick subsampling to reduce
-        microstructure noise. Default ``True``.
+        If ``True`` and ``subsample_stride > 1``, report the phase-averaged
+        Zhang sparse-grid realized variance (integrated-variance scale,
+        noise variance cut by about the stride). Default ``True``.
     subsample_stride
-        Stride for tick subsampling. Default 5.
+        Sparse-grid stride. Default 5. ``1`` is the fine grid.
     rng_seed
-        Optional seed for tick subsampling; defaults to a deterministic
-        seed derived from ``asof``.
+        Retained on the frozen signature. The estimator does not draw:
+        an integer seed cannot reshuffle the grids, and a non-integer
+        seed fails closed.
 
     Returns
     -------
@@ -373,18 +486,14 @@ def compute_hf_rv(
             holes_count=holes_count,
         )
 
-    # --- 7. Tick subsampling ---------------------------------------------
-    if apply_tick_subsample and len(bars_clean) > 2:
-        if rng_seed is None:
-            # Deterministic seed derived from asof.
-            seed = int(pd.Timestamp(asof).value // 10**9)
-        else:
-            seed = int(rng_seed)
-        bars_clean = _subsample(bars_clean, stride=subsample_stride, seed=seed)
-
-    # --- 8. Compute log returns on close --------------------------------
-    close = pd.to_numeric(bars_clean["close"], errors="coerce").to_numpy(dtype=float)
-    if np.isnan(close).any() or len(close) < 4:
+    # --- 7. RV, bipower, jumps; optional Zhang sparse-grid subsample -----
+    scored = _score_window(
+        bars_clean,
+        apply_tick_subsample=apply_tick_subsample,
+        subsample_stride=subsample_stride,
+        rng_seed=rng_seed,
+    )
+    if scored is None:
         return _fail_closed(
             asof,
             latest_at,
@@ -394,45 +503,7 @@ def compute_hf_rv(
             clock_drift_seconds=drift,
             holes_count=holes_count,
         )
-    # Pad with the first close to anchor the first return at zero — only
-    # the n-1 returns are summed.
-    with np.errstate(divide="ignore", invalid="ignore"):
-        log_ret = np.diff(np.log(close))
-    log_ret = log_ret[np.isfinite(log_ret)]
-    n_obs = int(log_ret.size)
-
-    if n_obs < 4:
-        return _fail_closed(
-            asof,
-            latest_at,
-            reason="too_few_returns",
-            source=source,
-            source_secondary=source_secondary,
-            clock_drift_seconds=drift,
-            holes_count=holes_count,
-        )
-
-    # --- 9. RV, BPV, jump test -------------------------------------------
-    rv = float(np.sum(log_ret * log_ret))
-    bv = bipower_variation(log_ret)
-    if not math.isfinite(bv) or bv <= 0.0:
-        return _fail_closed(
-            asof,
-            latest_at,
-            reason="non_positive_bpv",
-            source=source,
-            source_secondary=source_secondary,
-            clock_drift_seconds=drift,
-            holes_count=holes_count,
-        )
-    lm = lee_mykland_jumps(log_ret, alpha=0.99)
-    is_jump = np.asarray(lm["is_jump"], dtype=bool)
-    stat_series = np.asarray(lm["stat"], dtype=float)
-    n_jumps = int(is_jump.sum())
-    jump_stat = float(np.nanmax(stat_series)) if stat_series.size else 0.0
-
-    clean_ret = log_ret[~is_jump] if n_jumps < n_obs else np.array([], dtype=float)
-    rv_clean = float(np.sum(clean_ret * clean_ret)) if clean_ret.size > 0 else 0.0
+    rv, bv, jump_stat, n_jumps, rv_clean, n_obs = scored
 
     return HFRVResult(
         rv_5min=rv,
