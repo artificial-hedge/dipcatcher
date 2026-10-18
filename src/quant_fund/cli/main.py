@@ -102,6 +102,9 @@ from quant_fund.cli.ops_cmds import (
     sim_live,
     trade,
 )
+from quant_fund.cli.live_cmds import (
+    live_app as live_app,
+)
 from quant_fund.cli.train_cmds import (
     _train as _train,
     train_callback,
@@ -231,6 +234,7 @@ __all__ = [
     "paper",
     "monitor",
     "sim_live",
+    "live_app",
     "trade",
     "Path",
     "typer",
