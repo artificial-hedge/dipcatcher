@@ -15,7 +15,9 @@ def test_version_flag_reports_package_version():
 
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
-    assert result.stdout.strip() == f"fx1 {fx1.__version__}"
+    assert result.stdout.strip() == (
+        f"fx1 {fx1.__version__} (fx-1 harness API; chat ids fx1, fx1-lite; no released weights)"
+    )
 
 
 def _receipt(path: Path) -> None:

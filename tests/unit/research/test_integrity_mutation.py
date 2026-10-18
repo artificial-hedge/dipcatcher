@@ -390,7 +390,11 @@ def test_repinned_unsigned_drift_is_what_signature_exists_for(tmp_path: Path) ->
 def test_forged_signature_bytes_fail(tmp_path: Path) -> None:
     root = _signed_repo(tmp_path)
     sig = json.loads((root / "gate_pins.sig").read_text())
-    sig["signature"] = "00" + sig["signature"][2:]
+    raw = str(sig["signature"])
+    # Prefixing "00" is a no-op when the signature already starts with that byte.
+    flipped = f"{int(raw[:2], 16) ^ 0x01:02x}{raw[2:]}"
+    assert flipped != raw
+    sig["signature"] = flipped
     (root / "gate_pins.sig").write_text(json.dumps(sig, indent=2, sort_keys=True))
     res = verify_pin_signatures(root)
     assert res["ok"] is False and "signature_invalid" in res["errors"]

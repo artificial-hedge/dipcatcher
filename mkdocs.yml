@@ -1,5 +1,5 @@
 site_name: dipcatcher
-site_description: State-of-the-art harness for orchestrating fx1 and fx1-lite. Chat-first CLI, research families via /superpower, receipt verification.
+site_description: State-of-the-art harness for the fx1 and fx1-lite chat ids. No released weights. Chat-first CLI, research families via /superpower, receipt verification.
 site_url: https://artificial-hedge.github.io/dipcatcher/
 repo_url: https://github.com/artificial-hedge/dipcatcher
 repo_name: artificial-hedge/dipcatcher

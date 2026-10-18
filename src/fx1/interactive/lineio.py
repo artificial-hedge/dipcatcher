@@ -197,8 +197,13 @@ class History:
         _chmod_quiet(parent, _DIR_MODE)
         fd, temporary = tempfile.mkstemp(dir=parent, prefix=".history-", suffix=".tmp")
         try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                _write_entries(handle, self._entries)
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                    fd = -1
+                    _write_entries(handle, self._entries)
+            finally:
+                if fd >= 0:
+                    os.close(fd)
         except OSError:
             _unlink_quiet(temporary)
             raise

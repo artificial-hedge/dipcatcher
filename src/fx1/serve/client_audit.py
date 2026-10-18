@@ -884,10 +884,16 @@ def _transport_fault_probes() -> dict[str, bool]:  # NOSONAR(S3776)
 
     from fx1.serve.client import HarnessClient, _urllib_transport  # noqa: PLC0415
 
+    # The client may use its whole timeout before a refused port returns.
+    # The bound sits above that timeout so a full wait still counts, and
+    # a call that ignores the timeout still fails.
+    timeout_s = 2.0
     t0 = time.monotonic()
-    exc = _exc(lambda: HarnessClient(f"http://127.0.0.1:{_closed_port()}", timeout_s=5).commands())
+    exc = _exc(
+        lambda: HarnessClient(f"http://127.0.0.1:{_closed_port()}", timeout_s=timeout_s).commands()
+    )
     out["conn_refused_transport_error"] = (
-        type(exc).__name__ == "HarnessTransportError" and time.monotonic() - t0 < 5
+        type(exc).__name__ == "HarnessTransportError" and time.monotonic() - t0 < timeout_s + 2.0
     )
     with mock.patch("urllib.request.urlopen", side_effect=urllib.error.URLError("no dns")):
         exc = _exc(lambda: _urllib_transport("GET", "http://dead.invalid/x", None, {}, 1.0))

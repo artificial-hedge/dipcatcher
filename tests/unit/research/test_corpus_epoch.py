@@ -524,11 +524,17 @@ def test_nonportable_names_refused_and_repr_quoted(tmp_path: Path) -> None:
     corpus = tmp_path / "receipts"
     corpus.mkdir()
     _receipt(corpus, "real.json", "1")
+    quoted = _portable_name_errors({"x\ny.json": "ab" * 32})
+    assert quoted == ["member_name_not_portable:'x\\ny.json'"]
+    assert all("\n" not in error for error in quoted)
     bad = "evil\nverify-repo: all gates intact.json"
-    (corpus / bad).write_text("{}")
-    assert _portable_name_errors({"x\ny.json": "ab" * 32}) == [
-        "member_name_not_portable:'x\\ny.json'"
-    ]
+    try:
+        (corpus / bad).write_text("{}", encoding="utf-8", newline="\n")
+    except OSError:
+        # Windows rejects a newline in the filename, so that attack cannot
+        # be stored. U+202E is a format character NTFS will store.
+        bad = "evil\u202e.json"
+        (corpus / bad).write_text("{}", encoding="utf-8", newline="\n")
     with pytest.raises(ValueError, match="non-portable"):
         corpus_epoch(corpus)
     (corpus / bad).unlink()

@@ -1,6 +1,6 @@
 # dipcatcher
 
-**dipcatcher** is Artificial Hedge's state-of-the-art harness for orchestrating its **fx1** and **fx1-lite** models from a chat-first, Codex-style CLI: plain text is a conversation with the active model, and `/superpower` plans and runs the research families that fit your goal. Type `dipcatcher` in a terminal to open the chat; see [the dipcatcher CLI](DIP_CONCIERGE.md) for the design and its current status.
+**dipcatcher** is Artificial Hedge's state-of-the-art harness for the **fx1** and **fx1-lite** chat ids (no released weights) from a chat-first, Codex-style CLI: plain text is a conversation with whichever endpoint you configured, and `/superpower` plans and runs the research families that fit your goal. Type `dipcatcher` in a terminal to open the chat; see [the dipcatcher CLI](DIP_CONCIERGE.md) for the design and its current status.
 
 Underneath the chat, `quant_fund` is the research harness: the data engine, the evaluation bench, and the receipt verifier. **fx-1** (`src/fx1`) is a sub-project in this repository. It contains the corpus builder, the eval bank, and training plumbing, plus a training plan. No release checkpoint is in the tree. The only tracked weights are the fixture at `artifacts/fx1_tiny_lm/`, and its card says it is not a release candidate. The declared base constant is `moonshotai/Kimi-K3`. This site documents the harness and that plan.
 

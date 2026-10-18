@@ -43,6 +43,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import subprocess
 import tempfile
 import threading
 import time
@@ -598,6 +599,42 @@ def _probe_drain() -> dict[str, bool]:
     return out
 
 
+def _windows_dir_user() -> str:
+    user = os.environ.get("USERNAME")
+    if user:
+        return user
+    return os.getlogin()
+
+
+def _deny_directory_write(path: Path) -> None:
+    """Stop new files in ``path``.
+
+    ``chmod(0o555)`` clears the Unix write bit. On Windows it only sets the
+    read-only attribute, which does not stop creating a file in a directory.
+    """
+    if os.name != "nt":
+        path.chmod(0o555)
+        return
+    user = _windows_dir_user()
+    subprocess.run(
+        ["icacls", os.fspath(path), "/inheritance:r", "/grant:r", f"{user}:(OI)(CI)(RX)"],
+        check=True,
+        capture_output=True,
+    )
+
+
+def _allow_directory_write(path: Path) -> None:
+    if os.name != "nt":
+        path.chmod(0o755)
+        return
+    user = _windows_dir_user()
+    subprocess.run(
+        ["icacls", os.fspath(path), "/grant:r", f"{user}:(OI)(CI)(F)"],
+        check=True,
+        capture_output=True,
+    )
+
+
 def _probe_state_dir() -> dict[str, bool]:
     """readonly/missing state dirs must fail loudly — never go in-memory."""
     out: dict[str, bool] = {}
@@ -607,7 +644,7 @@ def _probe_state_dir() -> dict[str, bool]:
     with tempfile.TemporaryDirectory() as td:
         ro = Path(td) / "ro"
         ro.mkdir()
-        ro.chmod(0o555)
+        _deny_directory_write(ro)
         try:
             try:
                 api_mod.create_app(harness=Harness(runner=_fast_runner), state_dir=ro)
@@ -620,7 +657,7 @@ def _probe_state_dir() -> dict[str, bool]:
             except OSError:
                 out["sdk_readonly_state_dir_fails_loud"] = True
         finally:
-            ro.chmod(0o755)
+            _allow_directory_write(ro)
 
         missing = Path(td) / "no" / "such" / "dir"
         try:
@@ -636,14 +673,14 @@ def _probe_state_dir() -> dict[str, bool]:
             from fastapi.testclient import TestClient
 
             client = TestClient(app, raise_server_exceptions=False)
-            sd.chmod(0o555)
+            _deny_directory_write(sd)
             try:
                 r = client.post("/harness/keys", json={}, headers={"X-API-Key": _ROOT_KEY})
                 # a mint over a now-readonly journal must not report
                 # success while the record never persisted
                 out["mint_after_state_dir_readonly_fails_loud"] = r.status_code >= 500
             finally:
-                sd.chmod(0o755)
+                _allow_directory_write(sd)
     return out
 
 

@@ -1542,7 +1542,7 @@ def _print_startup(
     host = profiles.host_of(endpoint[1]) if endpoint else "unconfigured"
     output_fn(orb_banner(model, host, color=orbs_enabled()))
     output_fn(
-        f"dipcatcher concierge — model {model}. Plain text chats; "
+        f"dipcatcher concierge — chat id {model} (no released weights). Plain text chats; "
         "/superpower, /research, /flash, /help. Ctrl-D or /exit to leave."
     )
     output_fn(

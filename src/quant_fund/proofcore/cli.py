@@ -64,12 +64,17 @@ def _atomic_write_text(path: Path, text: str) -> None:
     temporary_path = Path(temporary)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            # Failed fdopen does not close the descriptor. Close it before
+            # unlink or Windows reports a sharing violation instead.
+            fd = -1
             handle.write(text)
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary_path, path)
         _fsync_directory(path.parent)
     finally:
+        if fd >= 0:
+            os.close(fd)
         temporary_path.unlink(missing_ok=True)
 
 

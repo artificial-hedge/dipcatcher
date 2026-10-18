@@ -253,7 +253,10 @@ def _emit_anthropic_deltas(events: Iterable[Any]) -> None:
 
 app = typer.Typer(
     name="fx1",
-    help="fx-1 — the quant LLM. dipcatcher is the harness that builds, evaluates, and verifies it.",
+    help=(
+        "fx-1 harness API. No released weights. dipcatcher builds, evaluates, "
+        "and verifies the program. Chat ids are fx1 and fx1-lite."
+    ),
     add_completion=False,
 )
 
@@ -268,7 +271,9 @@ def _main(
     if version:
         from fx1 import __version__
 
-        typer.echo(f"fx1 {__version__}")
+        typer.echo(
+            f"fx1 {__version__} (fx-1 harness API; chat ids fx1, fx1-lite; no released weights)"
+        )
         raise typer.Exit()
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())

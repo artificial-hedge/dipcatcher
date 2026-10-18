@@ -1,10 +1,10 @@
 """Model-endpoint store for ``fxi``.
 
-fx-1 ships two hosted model names; each profile here is one model's
-endpoint — the API key and base URL used to talk to it:
+fx-1 publishes no weights. Each profile here is one chat id's endpoint —
+the API key and base URL an operator configured:
 
-- ``fx1``      — the full fx-1 model.
-- ``fx1-lite`` — the light fx-1 model.
+- ``fx1``      — the fx1 chat id.
+- ``fx1-lite`` — the fx1-lite chat id.
 
 Values live in ``$FX1_CONFIG_DIR/credentials.json`` (default
 ``~/.fx1/credentials.json``), mode 0600, written atomically. Reporting is
@@ -97,10 +97,13 @@ def _save(payload: dict[str, dict[str, str]], path: Path | None = None) -> Path:
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".credentials-", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fd = -1
             json.dump({"profiles": payload}, fh, indent=2, sort_keys=True)
             fh.write("\n")
         os.replace(tmp, path)
     finally:
+        if fd >= 0:
+            os.close(fd)
         if os.path.exists(tmp):
             os.unlink(tmp)
     os.chmod(path, _MODE_0600)

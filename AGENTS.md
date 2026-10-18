@@ -2,9 +2,11 @@
 
 ## What this is
 
-**fx-1** is the product: a quant research LLM fine-tuned from Kimi K3 open
-weights, served as two models, **fx1** and **fx1-lite**
-([artificialhedge.co](https://artificialhedge.co)). **dipcatcher** is the
+**fx-1** is the product program: a quant research LLM planned as a fine-tune
+of Kimi K3 open weights, with chat ids **fx1** and **fx1-lite**
+([artificialhedge.co](https://artificialhedge.co)). No fine-tuned weights
+are published, and `fx1.__version__` is the harness API, not a model
+release. **dipcatcher** is the
 state-of-the-art harness that orchestrates them from a chat-first,
 Codex-style CLI: plain text is a conversation with the active model, and
 `/superpower` plans and runs the research families that fit the goal (design

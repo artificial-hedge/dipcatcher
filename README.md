@@ -11,7 +11,7 @@
 [![Redistribution: Prohibited](https://img.shields.io/badge/redistribution-prohibited-critical.svg)](LICENSE)
 [![Owner: Advaith Vaithianathan](https://img.shields.io/badge/owner-Advaith%20Vaithianathan-blueviolet.svg)](LICENSE)
 
-> **All rights reserved.** dipcatcher and the fx-1 model line are proprietary,
+> **All rights reserved.** dipcatcher and the fx-1 harness (no released weights) are proprietary,
 > closed research software owned exclusively by **Advaith Vaithianathan**,
 > founder of **Artificial Hedge**. This checkout is made visible for
 > authorized review only. No one may fork, copy, mirror, redistribute, or

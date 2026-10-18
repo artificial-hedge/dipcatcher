@@ -49,7 +49,9 @@ def test_model_map_and_injected_env_names() -> None:
 def test_set_endpoint_roundtrip_and_mode(isolated_store: Path) -> None:
     path = profiles.set_endpoint("fx1", SECRET_FX1)
     assert path == isolated_store / "credentials.json"
-    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    # Windows has no POSIX mode bits; chmod(0o600) only toggles read-only.
+    if os.name != "nt":
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
     assert profiles.resolve_endpoint("fx1") == (SECRET_FX1, MOONSHOT_API_URL)
     loaded = json.loads(path.read_text(encoding="utf-8"))
     assert loaded["profiles"]["fx1"]["base_url"] == MOONSHOT_API_URL

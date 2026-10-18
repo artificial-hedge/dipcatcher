@@ -527,6 +527,16 @@ class TestIndex:
             lambda i: i["runs"][0].update(config_path="/abs/cfg"),
         )
         assert any("config path must be relative" in e for e in _errors(verify_phase1_index(path)))
+        self._rewrite_index(
+            path,
+            lambda i: i["runs"][0].update(path="C:/abs/run"),
+        )
+        assert any("run path must be relative" in e for e in _errors(verify_phase1_index(path)))
+        self._rewrite_index(
+            path,
+            lambda i: i["runs"][0].update(path="\\abs\\run"),
+        )
+        assert any("run path must be relative" in e for e in _errors(verify_phase1_index(path)))
 
     def test_receipt_fields_missing(self, fresh) -> None:
         path = fresh / "research/index.json"

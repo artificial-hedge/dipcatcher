@@ -1,6 +1,6 @@
 """``fxi`` — the interactive front door for fx-1.
 
-fx-1 ships two hosted model names — ``fx1`` and ``fx1-lite`` — and each has
+fx-1 publishes no weights. The chat ids are ``fx1`` and ``fx1-lite``; each has
 one endpoint here: an API key plus a base URL, stored in
 ``~/.fx1/credentials.json`` (mode 0600) and injected into the harness as
 ``MOONSHOT_API_KEY`` + ``FX1_BASE_URL``.
@@ -49,7 +49,10 @@ state: dict[str, str] = {"model": profiles.DEFAULT_MODEL}
 
 def _version_callback(value: bool) -> None:
     if value:
-        typer.echo(f"fxi {fx1.__version__}")
+        typer.echo(
+            f"fxi {fx1.__version__} "
+            "(fx-1 harness API; chat ids fx1, fx1-lite; no released weights)"
+        )
         raise typer.Exit()
 
 

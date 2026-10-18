@@ -7,7 +7,9 @@
 #   1. finds a Python >= 3.12 (FXI_PYTHON to override)
 #   2. creates (or reuses) a venv at ${FXI_HOME:-~/.local/share/fxi}
 #   3. pip-installs the fx-1 wheel — from $FXI_INSTALL_URL, --wheel, or the
-#      default GitHub release asset for $FXI_VERSION
+#      default GitHub release asset for $FXI_VERSION.
+#      No v* release asset is published. The supported install is a clone
+#      plus `uv sync --frozen --all-groups --all-extras`.
 #   4. symlinks fxi/fx1/dipcatcher/quant/verify-ledger/mc-engine into
 #      ${FXI_BIN_DIR:-~/.local/bin}
 #   5. smoke-runs `fxi --version`
@@ -41,7 +43,9 @@ What it does, in order:
   1. finds a Python >= 3.12 (FXI_PYTHON to override)
   2. creates (or reuses) a venv at ${FXI_HOME:-~/.local/share/fxi}
   3. pip-installs the fx-1 wheel — from $FXI_INSTALL_URL, --wheel, or the
-     default GitHub release asset for $FXI_VERSION
+     default GitHub release asset for $FXI_VERSION.
+     No v* release asset is published. The supported install is a clone
+     plus `uv sync --frozen --all-groups --all-extras`.
   4. symlinks fxi/fx1/dipcatcher/quant/verify-ledger/mc-engine into
      ${FXI_BIN_DIR:-~/.local/bin}
   5. smoke-runs `fxi --version`

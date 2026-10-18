@@ -40,7 +40,10 @@ def _interactive() -> bool:
 def _version_line() -> str:
     import fx1
 
-    return f"dipcatcher {fx1.__version__} (fx-1 harness; models fx1, fx1-lite)"
+    return (
+        f"dipcatcher {fx1.__version__} "
+        "(fx-1 harness API; chat ids fx1, fx1-lite; no released weights)"
+    )
 
 
 def _split_leading_model(args: Sequence[str]) -> tuple[str | None, list[str]]:
@@ -53,7 +56,10 @@ def _split_leading_model(args: Sequence[str]) -> tuple[str | None, list[str]]:
 def _chat(args: Sequence[str]) -> None:
     parser = argparse.ArgumentParser(
         prog="dipcatcher chat",
-        description="Chat with fx1 or fx1-lite; /help lists research and session controls.",
+        description=(
+            "Chat using the fx1 or fx1-lite chat id. No released weights. "
+            "/help lists research and session controls."
+        ),
         epilog=(
             "In chat: /superpower <goal>, /research, /status, /keys, /doctor, /exit.\n"
             "Session journal: $FX1_CONFIG_DIR/sessions/*.jsonl · "
@@ -84,7 +90,7 @@ def _chat(args: Sequence[str]) -> None:
 def _print_launcher_help() -> None:
     """Short chat-first banner before the lab Typer help tree."""
     print("Start a conversation: dipcatcher (interactive terminal)")
-    print("Choose a model: dipcatcher chat --model fx1-lite")
+    print("Choose a chat id: dipcatcher chat --model fx1-lite (no released weights)")
     print("Resume a session: dipcatcher chat --resume <id>")
     print('One-shot research: dipcatcher superpower "<goal>" --sync')
     print("Sessions: dipcatcher sessions   |  dipcatcher resume <id>")

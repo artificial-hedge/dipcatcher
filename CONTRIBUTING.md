@@ -1,8 +1,10 @@
 # Contributing
 
-**fx-1** is the model; **dipcatcher** (`src/quant_fund`) is the harness that
-builds, evaluates, and verifies it. Read `AGENTS.md` first — it documents the
-gates, the honesty contract, and the lab's work-tracking conventions.
+**fx-1** is the model program; **dipcatcher** (`src/quant_fund`) is the harness
+that builds, evaluates, and verifies it. No fine-tuned fx-1 weights are
+published, and `fx1.__version__` is the harness API. Read `AGENTS.md` first —
+it documents the gates, the honesty contract, and the lab's work-tracking
+conventions.
 
 > **Proprietary repository.** This codebase is licensed under the
 > [`LICENSE`](LICENSE) at the repository root, not an open-source license.

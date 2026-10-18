@@ -1,8 +1,13 @@
 # Homebrew formula for fxi — the fx-1 interactive CLI.
 #
+# NOT INSTALLABLE. There is no v* GitHub release. The url below is a
+# placeholder and sha256 is the literal FILL_AT_RELEASE. brew install of
+# this file fails. The supported path is a clone plus
+# `uv sync --frozen --all-groups --all-extras`.
+#
 # This file is the canonical formula source. It is meant to live in a
 # private tap (the distribution is proprietary — Homebrew/core would reject
-# it), e.g.:
+# it) only after the release checklist below is filled, e.g.:
 #
 #   brew tap artificial-hedge/tap https://github.com/artificial-hedge/homebrew-tap
 #   brew install fxi

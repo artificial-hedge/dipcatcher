@@ -44,7 +44,11 @@ def _file_sha256(path: Path) -> str:
 def _write_receipt(root: Path, body: dict[str, Any], *, name: str = "receipt.json") -> Path:
     path = root / name
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n")
+    path.write_text(
+        json.dumps(body, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     return path
 
 
@@ -495,7 +499,11 @@ def test_input_tapes_manifest_invalid_fails(tmp_path: Path) -> None:
     # Corrupt the committed manifest AFTER sealing.
     doc = json.loads(path.read_text())
     doc["n_rows"] = 999
-    path.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+    path.write_text(
+        json.dumps(doc, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     receipt = _with_tapes(tmp_path, [{"manifest": "data/manifests/t.json"}])
     body = run_replay(receipt, root=tmp_path)
     assert body["inputs_ok"] is False

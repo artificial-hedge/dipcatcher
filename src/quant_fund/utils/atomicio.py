@@ -42,12 +42,17 @@ def atomic_write_bytes(path: Path | str, data: bytes) -> Path:
     temporary_path = Path(temporary)
     try:
         with os.fdopen(fd, "wb") as handle:
+            # A failed fdopen leaves this descriptor open. Windows then
+            # refuses the unlink and masks the original error.
+            fd = -1
             handle.write(data)
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary_path, dest)
         _fsync_directory(dest.parent)
     finally:
+        if fd >= 0:
+            os.close(fd)
         temporary_path.unlink(missing_ok=True)
     return dest
 
@@ -65,12 +70,15 @@ def atomic_write_parquet(frame: pl.DataFrame, path: Path | str) -> Path:
     temporary_path = Path(temporary)
     try:
         with os.fdopen(fd, "wb") as handle:
+            fd = -1
             frame.write_parquet(handle)
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary_path, dest)
         _fsync_directory(dest.parent)
     finally:
+        if fd >= 0:
+            os.close(fd)
         temporary_path.unlink(missing_ok=True)
     return dest
 
