@@ -4,10 +4,10 @@ The dipcatcher chat planner (``fx1.interactive.superpower``) must select only
 known, qualified, non-retired research families, but ``fx1`` may not import
 ``quant_fund.research``. This command publishes the catalog state through the
 registered harness surface instead: required and live optional families,
-the retired count with a sample, the family order, the forbidden headline
-metric keys, and an explicit statement that ``dipcatcher research`` still
-executes its configured scorecard — family selection narrows eligibility and
-reporting, not the benches executed.
+every retired name (sorted) plus the first 20 as ``retired_sample``, the
+family order, the forbidden headline metric keys, and an explicit statement
+that ``dipcatcher research`` still executes its configured scorecard — family
+selection narrows eligibility and reporting, not the benches executed.
 """
 
 from __future__ import annotations
@@ -68,6 +68,7 @@ def research_families(
         "receipt_schema_version": RESEARCH_RECEIPT_SCHEMA_VERSION,
         "required": required,
         "live_optional": live_optional,
+        "retired": retired,
         "retired_count": len(retired),
         "retired_sample": retired[:20],
         "order": list(BENCHMARK_FAMILY_ORDER),

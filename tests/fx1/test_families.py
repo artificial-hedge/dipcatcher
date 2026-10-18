@@ -352,3 +352,56 @@ def test_families_prompt_block_empty_and_populated() -> None:
     locked_block = families_prompt_block(resolve_families("conformal", catalog), locked)
     assert "family 'conformal' — eligible (required)" in locked_block
     assert "not the benches executed" not in locked_block
+
+
+def test_missing_retired_list_keeps_sample_only_classification() -> None:
+    catalog = FamilyCatalog.from_json(json.dumps(_document()))
+    assert catalog.retired == frozenset()
+    assert catalog.state_of("old_family") is FamilyState.RETIRED
+    assert catalog.state_of("not_in_sample_family") is FamilyState.UNKNOWN
+    found = resolve_families("family:not_in_sample_family", catalog)
+    assert found.unknown[0].state is FamilyState.UNKNOWN
+
+
+def test_full_retired_list_classifies_names_outside_the_sample() -> None:
+    outside = "zz_not_in_sample_family"
+    retired = sorted([*(f"retired_{index:04d}" for index in range(4000)), outside])
+    assert outside not in retired[:20]
+    document = _document()
+    document["retired"] = retired
+    document["retired_count"] = len(retired)
+    document["retired_sample"] = retired[:20]
+    catalog = FamilyCatalog.from_json(json.dumps(document))
+    assert catalog.state_of(outside) is FamilyState.RETIRED
+    started = time.perf_counter()
+    found = resolve_families(f"please score {outside} today", catalog)
+    elapsed = time.perf_counter() - started
+    budget = 1.0 if "coverage" in sys.modules else 0.05
+    assert elapsed < budget
+    assert [mention.name for mention in found.retired] == [outside]
+    explicit = resolve_families(f"family:{outside}", catalog)
+    assert explicit.retired[0].state is FamilyState.RETIRED
+    block = families_prompt_block(found, catalog)
+    assert outside in block
+    assert "retired_0000" not in block
+    assert "retired_3999" not in block
+
+
+def test_retired_list_must_match_count_sample_and_order() -> None:
+    document = _document()
+    document["retired"] = ["dead_bench", "old_family"]
+    document["retired_count"] = 1
+    with pytest.raises(ValueError, match="retired_count"):
+        FamilyCatalog.from_json(json.dumps(document))
+    document["retired_count"] = 2
+    document["retired_sample"] = ["old_family", "dead_bench"]
+    with pytest.raises(ValueError, match="retired_sample"):
+        FamilyCatalog.from_json(json.dumps(document))
+    document["retired"] = ["old_family", "dead_bench"]
+    document["retired_sample"] = ["old_family", "dead_bench"]
+    with pytest.raises(ValueError, match="sorted"):
+        FamilyCatalog.from_json(json.dumps(document))
+    document["retired"] = ["dead_bench", "dead_bench"]
+    document["retired_sample"] = ["dead_bench", "dead_bench"]
+    with pytest.raises(ValueError, match="duplicates"):
+        FamilyCatalog.from_json(json.dumps(document))

@@ -415,8 +415,11 @@ verifiable with the stored credentials — see Known limitations.
   may be *selected and claimed*; `dipcatcher research` still executes its
   configured scorecard. Constraining the benches actually executed needs a
   family filter inside `quant_fund.research.agent.run_research` — not done.
-  The retired set on the wire is a 20-name sample, so a retired family
-  outside the sample classifies as *unknown* (still fail-closed).
+  `research-families` lists every retired name. A name in that set
+  classifies as retired (new selection blocked; historical receipts still
+  verify). A name in none of required, live optional, or retired classifies
+  as unknown. Both refuse. A payload that omits `retired` still classifies
+  only its 20-name sample, and unknown stays fail-closed.
 - **Cost budgets**: wall clock, harness steps, model calls, retries and web
   sources are hard ceilings; a prompt-token cap applies only when
   `FX1_BUDGET_PROMPT_TOKENS` is set, and provider prices are unknown, so no

@@ -39,8 +39,12 @@ def test_research_families_json_lists_the_catalog() -> None:
     assert set(payload["live_optional"]).isdisjoint(RETIRED_BENCHMARK_FAMILIES)
     for name in payload["retired_sample"]:
         assert name not in payload["live_optional"]
-    assert payload["retired_sample"] == sorted(RETIRED_BENCHMARK_FAMILIES)[:20]
-    assert payload["retired_count"] == len(RETIRED_BENCHMARK_FAMILIES)
+    retired = sorted(RETIRED_BENCHMARK_FAMILIES)
+    assert payload["retired"] == retired
+    assert payload["retired_sample"] == retired[:20]
+    assert payload["retired_count"] == len(retired)
+    assert set(payload["retired"]).isdisjoint(payload["required"])
+    assert set(payload["retired"]).isdisjoint(payload["live_optional"])
     names = set(payload["required"]) | set(payload["live_optional"])
     assert names.isdisjoint(FORBIDDEN_RESEARCH_METRIC_KEYS)
     assert payload["order"] == list(BENCHMARK_FAMILY_ORDER)

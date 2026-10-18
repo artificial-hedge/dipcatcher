@@ -1,9 +1,10 @@
 """Planner-facing research-family catalog.
 
 Loaded from the harness command ``research-families``. Goals are classified
-against required families, live optional families, and a retired sample.
-The sample is partial: a name outside those three sets is UNKNOWN and may
-still be retired. UNKNOWN and RETIRED both fail closed for new selection.
+against required families, live optional families, and the full retired set
+when the document includes ``retired``. A document that only carries
+``retired_sample`` classifies that sample; every other name is UNKNOWN.
+UNKNOWN and RETIRED both fail closed for new selection.
 
 ``execution_constraint`` reports whether the research runner can execute a
 chosen subset. It is false today: selection narrows eligibility and reporting.
@@ -32,8 +33,9 @@ _EXECUTION_NOTE = (
     "narrows eligibility and reporting, not the benches executed."
 )
 
+_WORD = re.compile(r"[a-z0-9_]+")
 _CacheKey = tuple[frozenset[str], frozenset[str], frozenset[str], tuple[tuple[str, str], ...]]
-_Matcher = tuple[re.Pattern[str] | None, dict[str, str]]
+_Matcher = tuple[dict[str, str], int]
 _MATCHER_CACHE: dict[_CacheKey, _Matcher] = {}
 
 
@@ -60,6 +62,8 @@ class FamilyCatalog:
     source: str = "harness"
     execution_constraint: bool = False
     note: str = ""
+    # Empty means the document omitted ``retired`` and only the sample classifies.
+    retired: frozenset[str] = frozenset()
 
     @classmethod
     def from_json(cls, text: str) -> FamilyCatalog:
@@ -71,6 +75,8 @@ class FamilyCatalog:
         """
         payload = _as_object(text)
         constrained, note = _runner_fields(payload)
+        sample = _require_str_list(payload.get("retired_sample"), "retired_sample")
+        count = _require_int(payload.get("retired_count"), "retired_count")
         return cls(
             schema_version=_require_schema(payload),
             catalog_version=_require_int(payload.get("catalog_version"), "catalog_version"),
@@ -81,15 +87,14 @@ class FamilyCatalog:
             live_optional=frozenset(
                 _require_str_list(payload.get("live_optional"), "live_optional")
             ),
-            retired_count=_require_int(payload.get("retired_count"), "retired_count"),
-            retired_sample=frozenset(
-                _require_str_list(payload.get("retired_sample"), "retired_sample")
-            ),
+            retired_count=count,
+            retired_sample=frozenset(sample),
             order=tuple(_require_str_list(payload.get("order"), "order")),
             generated_at=_require_str(payload.get("generated_at"), "generated_at"),
             source="harness",
             execution_constraint=constrained,
             note=note,
+            retired=_retired_membership(payload, sample, count),
         )
 
     @classmethod
@@ -117,15 +122,15 @@ class FamilyCatalog:
     def state_of(self, family: str) -> FamilyState:
         """Classify ``family``.
 
-        ``retired_sample`` is only the first slice of the retired set, so a
-        name that misses required, live optional, and the sample is UNKNOWN.
-        That name may still be retired. UNKNOWN and RETIRED both fail closed.
+        ``retired`` is the full set when the document carried one. Otherwise
+        only ``retired_sample`` is retired. A name in none of the sets is
+        UNKNOWN. UNKNOWN and RETIRED both fail closed.
         """
         if family in self.required:
             return FamilyState.REQUIRED
         if family in self.live_optional:
             return FamilyState.OPTIONAL
-        if family in self.retired_sample:
+        if family in self.retired or family in self.retired_sample:
             return FamilyState.RETIRED
         return FamilyState.UNKNOWN
 
@@ -342,6 +347,28 @@ def _require_bool(value: object, field_name: str) -> bool:
     return value
 
 
+def _retired_membership(
+    payload: Mapping[str, Any], sample: list[str], count: int
+) -> frozenset[str]:
+    """Return the full retired set, or empty when the document omitted it.
+
+    A present ``retired`` list must be sorted, unique, the same length as
+    ``retired_count``, and prefixed by ``retired_sample`` (at most 20 names).
+    """
+    if "retired" not in payload:
+        return frozenset()
+    retired = _require_str_list(payload.get("retired"), "retired")
+    if len(retired) != count:
+        raise ValueError("family catalog field retired_count must equal len(retired)")
+    if sample != retired[:20]:
+        raise ValueError("family catalog field retired_sample must be the first 20 retired names")
+    if len(set(retired)) != len(retired):
+        raise ValueError("family catalog field retired must not contain duplicates")
+    if retired != sorted(retired):
+        raise ValueError("family catalog field retired must be sorted")
+    return frozenset(retired)
+
+
 def _require_str_list(value: object, field_name: str) -> list[str]:
     if not isinstance(value, list):
         raise ValueError(f"family catalog field {field_name} must be a list of strings")
@@ -421,10 +448,13 @@ def _forms(name: str) -> tuple[str, ...]:
     return (lowered, lowered.replace("_", " "), lowered.replace("_", "-"))
 
 
+def _classification_names(catalog: FamilyCatalog) -> frozenset[str]:
+    return catalog.required | catalog.live_optional | catalog.retired | catalog.retired_sample
+
+
 def _surface_map(catalog: FamilyCatalog, aliases: Mapping[str, str]) -> dict[str, str]:
     surfaces: dict[str, str] = {}
-    names = catalog.required | catalog.live_optional | catalog.retired_sample
-    for name in sorted(names):
+    for name in sorted(_classification_names(catalog)):
         for form in _forms(name):
             surfaces.setdefault(form, name)
     for phrase, target in aliases.items():
@@ -436,25 +466,24 @@ def _alias_key(aliases: Mapping[str, str]) -> tuple[tuple[str, str], ...]:
     return tuple(sorted((phrase.lower(), target) for phrase, target in aliases.items()))
 
 
-def _compile(surfaces: dict[str, str]) -> _Matcher:
+def _max_tokens(surfaces: dict[str, str]) -> int:
     if not surfaces:
-        return None, surfaces
-    ordered = sorted(surfaces, key=lambda phrase: (-len(phrase), phrase))
-    pattern = re.compile(r"\b(?:" + "|".join(re.escape(phrase) for phrase in ordered) + r")\b")
-    return pattern, surfaces
+        return 1
+    return max(len(_WORD.findall(phrase)) for phrase in surfaces)
 
 
 def _matcher(catalog: FamilyCatalog, aliases: Mapping[str, str]) -> _Matcher:
     key: _CacheKey = (
         catalog.required,
         catalog.live_optional,
-        catalog.retired_sample,
+        _classification_names(catalog),
         _alias_key(aliases),
     )
     cached = _MATCHER_CACHE.get(key)
     if cached is not None:
         return cached
-    compiled = _compile(_surface_map(catalog, aliases))
+    surfaces = _surface_map(catalog, aliases)
+    compiled = (surfaces, _max_tokens(surfaces))
     _MATCHER_CACHE[key] = compiled
     return compiled
 
@@ -476,28 +505,71 @@ def _blocked(start: int, end: int, spans: tuple[tuple[int, int], ...]) -> bool:
     return any(start < right and end > left for left, right in spans)
 
 
+def _contiguous_surface(
+    goal: str, tokens: list[tuple[int, int, str]], start: int, end: int
+) -> str | None:
+    parts = [tokens[start][2]]
+    for index in range(start, end):
+        gap = goal[tokens[index][1] : tokens[index + 1][0]]
+        if gap not in {" ", "-"}:
+            return None
+        parts.append(gap)
+        parts.append(tokens[index + 1][2])
+    return "".join(parts)
+
+
+def _longest_phrase(
+    goal: str,
+    tokens: list[tuple[int, int, str]],
+    index: int,
+    surfaces: dict[str, str],
+    max_tokens: int,
+) -> tuple[int, int, str, str, int] | None:
+    """Longest catalog surface starting at ``tokens[index]``.
+
+    The tuple is ``(start, end, name, surface, next_index)``. A longer window
+    replaces a shorter one so ``weighted conformal`` wins over ``conformal``.
+    """
+    last = min(len(tokens), index + max_tokens)
+    found: tuple[int, int, str, str, int] | None = None
+    for end in range(index, last):
+        surface = _contiguous_surface(goal, tokens, index, end)
+        if surface is None:
+            break
+        name = surfaces.get(surface)
+        if name is not None:
+            found = (tokens[index][0], tokens[end][1], name, surface, end + 1)
+    return found
+
+
 def _phrase_hits(
     goal: str,
-    pattern: re.Pattern[str] | None,
     surfaces: dict[str, str],
+    max_tokens: int,
     spans: tuple[tuple[int, int], ...],
 ) -> tuple[_Hit, ...]:
-    if pattern is None:
+    if not surfaces:
         return ()
+    tokens = [(match.start(), match.end(), match.group()) for match in _WORD.finditer(goal)]
     hits: list[_Hit] = []
-    for match in pattern.finditer(goal):
-        if _blocked(match.start(), match.end(), spans):
+    index = 0
+    while index < len(tokens):
+        found = _longest_phrase(goal, tokens, index, surfaces, max_tokens)
+        if found is None:
+            index += 1
             continue
-        surface = match.group(0)
-        hits.append(
-            _Hit(
-                start=match.start(),
-                end=match.end(),
-                name=surfaces[surface],
-                matched_text=surface,
-                explicit=False,
+        start, end, name, surface, next_index = found
+        if not _blocked(start, end, spans):
+            hits.append(
+                _Hit(
+                    start=start,
+                    end=end,
+                    name=name,
+                    matched_text=surface,
+                    explicit=False,
+                )
             )
-        )
+        index = next_index
     return tuple(hits)
 
 
@@ -506,8 +578,8 @@ def _ordered_hits(
 ) -> tuple[_Hit, ...]:
     explicit = _explicit_hits(goal)
     spans = tuple((hit.start, hit.end) for hit in explicit)
-    pattern, surfaces = _matcher(catalog, aliases)
-    phrases = _phrase_hits(goal, pattern, surfaces, spans)
+    surfaces, max_tokens = _matcher(catalog, aliases)
+    phrases = _phrase_hits(goal, surfaces, max_tokens, spans)
     ordered = sorted((*explicit, *phrases), key=lambda hit: (hit.start, hit.end))
     seen: set[str] = set()
     unique: list[_Hit] = []
