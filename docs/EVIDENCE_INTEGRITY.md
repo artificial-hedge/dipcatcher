@@ -159,22 +159,21 @@ not assumed):
   and fails. Making it reproducible needs a producer change and a new
   manifest pin, which rewrites pinned evidence and is left to the lane
   owner.
-- **Crown-jewel enforcement is partial.** `main` re-pinned the jewels at
-  88d7b3a3d, leaving `day_grind_progress.md` drifted, then changed three
-  more at b0e48dd60 without re-pinning them. This repair re-pins only the
-  jewels it changed. One of them, `crown_jewels.py`, also carries
-  `main`'s `distribution_lineage_digest`, a function that only reads and
-  hashes the pin, the heads pin and the integrity attestation; it was
-  read before it was pinned. `dipcatcher crown-jewels --check` then
-  reports three drifted entries, all `main`'s: `day_grind_progress.md`,
-  `src/fx1/interactive/concierge.py` and
-  `src/fx1/interactive/superpower.py`. `make evidence-audit` still stops
-  at the workflows chain before it reaches that command, and the
-  signature over the pins (`gate_pins.sig`) is stale: `verify-repo`'s
-  `pin_signatures` gate reports `pin_drift` on `crown_jewels.json` and
-  `epoch_heads.json`. It cannot be refreshed without `GATE_SIGNING_KEY`.
-  Until the key holder re-signs, the pins are checked only when
-  `crown-jewels --check` or `verify-repo` is run directly.
+- **Crown-jewel pins are current; the pin signature is not.** The admission
+  and auditor hardening changes four jewels (`Makefile`,
+  `scripts/verify_epoch_chain.py`, `src/quant_fund/research/admission.py`,
+  `src/quant_fund/research/corpus_epoch.py`), re-pinned with
+  `dipcatcher crown-jewels --write` in the same commit, so
+  `crown-jewels --check` reports no drift on this tree. The signature over
+  the pins (`gate_pins.sig`) is still stale: it was last signed on
+  2026-09-30, and `verify-repo`'s `pin_signatures` gate reports `pin_drift`
+  on `crown_jewels.json` and `epoch_heads.json`. This was already true on
+  `main` before this change. It cannot be refreshed without
+  `GATE_SIGNING_KEY`; until the key holder runs `make sign-pins` (then
+  `make checkpoint` and the witness/anchor steps), the pins are checked only
+  when `crown-jewels --check` or `verify-repo` is run directly, and
+  `evidence-audit`, `tamper-drill` and `fuzz-drill` stay red on
+  `baseline_dirty`.
 - **Admission's honesty bar covers arrivals, not stamped history.** The
   receipts head (`corpus_epoch_588a35edec9d3f5b`) stamps 382 members that
   verify and are not in the registry: 44 epoch receipts and 338 claim
