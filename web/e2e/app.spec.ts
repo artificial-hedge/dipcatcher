@@ -1,7 +1,14 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-// web/public/fixtures/index.json receipts.length. The old literal 56 lagged the index.
-const receiptCount = 397;
+/** Rows the static app renders: one per receipt in the served fixture index. */
+async function publishedReceiptRows(page: Page): Promise<number> {
+  const response = await page.request.get("/fixtures/index.json");
+  expect(response.ok()).toBeTruthy();
+  const index = (await response.json()) as { receipts?: unknown[] };
+  const rows = index.receipts?.length ?? 0;
+  expect(rows).toBeGreaterThan(0);
+  return rows;
+}
 
 test.describe("research explorer", () => {
   test("loads the overview with strategies and receipts", async ({ page }) => {
@@ -15,7 +22,7 @@ test.describe("research explorer", () => {
     await expect(table.locator("tbody tr")).toHaveCount(9);
     await expect(
       page.getByTestId("receipt-summary-table").locator("tbody tr"),
-    ).toHaveCount(receiptCount);
+    ).toHaveCount(await publishedReceiptRows(page));
   });
 
   test("navigates to a strategy detail and renders charts", async ({
@@ -59,7 +66,9 @@ test.describe("research explorer", () => {
   test("receipt list and verification panel render", async ({ page }) => {
     await page.goto("/#/receipts");
     const table = page.getByTestId("receipt-table");
-    await expect(table.locator("tbody tr")).toHaveCount(receiptCount);
+    await expect(table.locator("tbody tr")).toHaveCount(
+      await publishedReceiptRows(page),
+    );
     await table
       .getByRole("link", { name: "corpus_epoch_d479e96760271bba" })
       .click();

@@ -190,11 +190,11 @@
       "tree_root": "3ecbdb04fad8c2660a3bc3b21cd6748b235db33c04905c08c28e62b26932c59d"
     },
     "web/*": {
-      "chain_root": "51d511c8397c7888a7b337754b676a1a99562d41047a5fd80b2a5570dc478b8d",
-      "n_epochs": 11,
-      "receipt": "corpus_epoch_8e624d501a2d3f3d.json",
-      "sha256": "e9a442ce029022800ff4f4a7f5b840f8febf3a760309147ec9cb54a3a623bf20",
-      "tree_root": "131decd725095d6b95a81fe95fea03de12ecc287198a6a1848746772de77c495"
+      "chain_root": "3a59c4938885746ea1fdd26e6802031cec00489b040d9b1a9f15124d36b9f9dc",
+      "n_epochs": 12,
+      "receipt": "corpus_epoch_261cc481ffe6c12b.json",
+      "sha256": "166f84d864132a3a0289700513a6fc87f59d2bed68addd7e15cd0a210c658072",
+      "tree_root": "44b11f9abaa9256597cce73b4127a9b51a04ff88f684029f0959dfb3f6a33aa6"
     }
   },
   "schema": "epoch_heads.v1"
