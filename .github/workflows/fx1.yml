@@ -43,7 +43,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
-        run: uv sync --frozen --all-groups
+        run: uv sync --frozen --all-groups --extra nn
       # Gates are invoked through their Make targets so the CI gate and
       # `make fx1-test` / `make fx1-lint` cannot drift (same commands, same
       # flags, same testpaths).

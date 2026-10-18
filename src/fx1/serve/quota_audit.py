@@ -843,15 +843,34 @@ def _surface_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     # the seventh refuses on whichever surface it lands on
     u_raw, u_id = _mint(client, root_h, rpm=6)
     u_h = {_H_KEY: u_raw}
-    surface_calls = [
-        lambda: _complete(client, u_h),
-        lambda: _chat(client, u_h),
-        lambda: _responses(client, u_h),
-        lambda: _messages(client, u_h),
-        lambda: _legacy(client, u_h),
-        lambda: _job(client, u_h),
-    ]
-    statuses = [c().status_code for c in surface_calls]
+
+    def call_complete() -> Any:
+        return _complete(client, u_h)
+
+    def call_chat() -> Any:
+        return _chat(client, u_h)
+
+    def call_responses() -> Any:
+        return _responses(client, u_h)
+
+    def call_messages() -> Any:
+        return _messages(client, u_h)
+
+    def call_legacy() -> Any:
+        return _legacy(client, u_h)
+
+    def call_job() -> Any:
+        return _job(client, u_h)
+
+    surface_calls: tuple[Callable[[], Any], ...] = (
+        call_complete,
+        call_chat,
+        call_responses,
+        call_messages,
+        call_legacy,
+        call_job,
+    )
+    statuses = [call().status_code for call in surface_calls]
     out["surface_all_paths_admit"] = all(s in (200, 202) for s in statuses)
     seventh = _complete(client, u_h)
     out["surface_shared_window_refuses_seventh"] = (
