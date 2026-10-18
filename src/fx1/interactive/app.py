@@ -50,8 +50,7 @@ state: dict[str, str] = {"model": profiles.DEFAULT_MODEL}
 def _version_callback(value: bool) -> None:
     if value:
         typer.echo(
-            f"fxi {fx1.__version__} "
-            "(fx-1 harness API; chat ids fx1, fx1-lite; no released weights)"
+            f"fxi {fx1.__version__} (fx-1 harness API; chat ids fx1, fx1-lite; no released weights)"
         )
         raise typer.Exit()
 

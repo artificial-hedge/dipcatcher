@@ -98,9 +98,10 @@ describe("extractHashFields", () => {
     expect(metrics?.match).toBeNull();
   });
 
-  it("resolves the real fast-replay code_sha256 match", () => {
-    // 20260927 was quarantined into receipts/legacy-unsealed/; 20260928 is the
-    // current sealed fast-replay receipt that ships in the web fixtures.
+  it("leaves the fast-replay public.py digest unresolved", () => {
+    // 20260928 sealed code_sha256 against public.py bytes that are no longer
+    // at HEAD. The fixture index only maps digests that still match a
+    // committed file, so this one must stay unresolved rather than be faked.
     const receipt = JSON.parse(
       readFileSync(
         join(FIXTURES, "receipts", "fast_replay_p42_conformance_20260928.json"),
@@ -111,7 +112,8 @@ describe("extractHashFields", () => {
     const pub = fields.find(
       (f) => f.key === "code_sha256.src/quant_fund/public.py",
     );
-    expect(pub?.match).toBe("src/quant_fund/public.py");
+    expect(pub).toBeDefined();
+    expect(pub?.match).toBeNull();
   });
 });
 
