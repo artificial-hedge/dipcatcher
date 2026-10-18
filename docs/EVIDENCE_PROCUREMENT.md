@@ -108,8 +108,8 @@ verdict is `QUALIFYING` — every field present and consistent, nothing rejected
 | 2.2 | A reconciliation entitlement: historical execution drop-copy or a fills export to reconcile against | Same broker | Trading | Fills can be independently re-pulled and matched. |
 
 > Until 2.1 is authorized and a real drop-copy passes §2b, condition 2 is
-> **BLOCKED**. The paper/simulated surface still sends no live orders
-> (configuring a live endpoint there raises `LiveEndpointRefused`).
+> **BLOCKED**. `dipcatcher trade session` is a simulated book with no broker
+> client. The paper adapter raises `LiveEndpointRefused` for a live endpoint.
 > `quant_fund.live` is a separate armed gateway
 > ([LIVE_TRADING.md](LIVE_TRADING.md)). It can submit when an operator arms it
 > and supplies broker credentials. That gateway is not condition-2 evidence,
@@ -134,6 +134,10 @@ matrix against real broker drop-copy. Owner: Engineering; reviewer: independent.
 | 2.b.7 | Kill switch | Trips and blocks new orders | Trading |
 | 2.b.8 | **Live-endpoint refusal** | Configuring a live endpoint **raises** | Engineering |
 | 2.b.9 | Crash/resume mid-run | NAV seam parity, **no duplicate orders** | Engineering |
+| 2.b.10 | Overfill (fill quantity above the residual) | Detected and **not applied** to position or cash | Engineering |
+| 2.b.11 | Fill security differs from the order | Detected and **not applied** | Engineering |
+| 2.b.12 | Cancel, then a late fill | Cancel is durable across resume; the late fill is **not applied**. A halt does not block cancel | Engineering |
+| 2.b.13 | Paper session pre-trade | Short sales, missing marks, cash, and size caps refuse before the book moves. No network client | Engineering |
 
 ---
 
