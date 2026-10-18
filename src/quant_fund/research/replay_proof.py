@@ -537,12 +537,9 @@ def run_replay(
         if not resolved.is_relative_to(root_path):
             note = "path_escapes_root"
         elif not resolved.is_file():
-            siblings = (
-                sorted(p.name for p in resolved.parent.glob("*.json"))
-                if resolved.parent.is_dir()
-                else []
-            )
-            note = "artifact_missing" + (":" + ",".join(siblings) if siblings else ":empty")
+            # Exact token. Callers and contract tests compare this string;
+            # a suffix (sibling names, ":empty") fails those checks.
+            note = "artifact_missing"
         else:
             observed = _file_sha256(resolved)
             match = observed == expected
