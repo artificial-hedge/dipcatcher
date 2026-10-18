@@ -98,6 +98,7 @@ packages = [
     "hedge_lab",   # hedge-lab books racing lightspeed/pipeline/research
     "market_sim",  # market simulator over backtest
     "paper",       # paper-trading loop (order-path; deny rule below)
+    "live",        # armed order gateway; same order-path rank as paper
 ]
 
 [[layers]]
@@ -138,6 +139,7 @@ except_importers = [
     "quant_fund.simtest.**",
     "quant_fund.pretrade.**",
     "quant_fund.formal.**",
+    "quant_fund.live.**",
     # parity drives the simulated broker to measure backtest/live divergence —
     # same simulation-boundary role as simtest/pretrade/formal (kept in sync
     # with BROKER_ALLOWED_PREFIXES in tests/unit/test_architecture.py).

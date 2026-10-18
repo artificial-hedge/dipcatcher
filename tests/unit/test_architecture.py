@@ -28,6 +28,7 @@ BROKER_ALLOWED_PREFIXES = (
     "quant_fund.pretrade",
     "quant_fund.formal",
     "quant_fund.parity",
+    "quant_fund.live",
 )
 
 

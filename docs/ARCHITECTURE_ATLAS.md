@@ -91,6 +91,7 @@ flowchart LR
     quant_fund_labels["quant_fund.labels"]
     quant_fund_leakage["quant_fund.leakage"]
     quant_fund_lightspeed["quant_fund.lightspeed"]
+    quant_fund_live["quant_fund.live"]
     quant_fund_market_sim["quant_fund.market_sim"]
     quant_fund_mc_engine["quant_fund.mc_engine"]
     quant_fund_metrics["quant_fund.metrics"]
@@ -232,6 +233,7 @@ flowchart LR
   fx1_interactive -->|2| fx1_honesty
   fx1_interactive -->|3| fx1_serve
   fx1_interactive -->|1| fx1_webresearch
+  fx1_interactive -->|1| quant_fund_schemas
   fx1_modelcard_audit -->|1| fx1_modelcard
   fx1_modelcard_audit -->|2| quant_fund_utils
   fx1_mrm -->|1| fx1_modelcard
@@ -317,10 +319,12 @@ flowchart LR
   quant_fund_cli -->|3| quant_fund_backtest
   quant_fund_cli -->|3| quant_fund_config
   quant_fund_cli -->|12| quant_fund_data
+  quant_fund_cli -->|1| quant_fund_execution
   quant_fund_cli -->|3| quant_fund_features
   quant_fund_cli -->|1| quant_fund_hmm
   quant_fund_cli -->|1| quant_fund_leakage
   quant_fund_cli -->|1| quant_fund_lightspeed
+  quant_fund_cli -->|3| quant_fund_live
   quant_fund_cli -->|7| quant_fund_microstructure
   quant_fund_cli -->|1| quant_fund_monitoring
   quant_fund_cli -->|3| quant_fund_northset
@@ -352,8 +356,9 @@ flowchart LR
   quant_fund_execution -->|1| quant_fund_microstructure
   quant_fund_execution -->|2| quant_fund_models
   quant_fund_execution -->|1| quant_fund_monitoring
+  quant_fund_execution -->|1| quant_fund_paper
   quant_fund_execution -->|1| quant_fund_portfolio
-  quant_fund_execution -->|3| quant_fund_schemas
+  quant_fund_execution -->|5| quant_fund_schemas
   quant_fund_execution -->|2| quant_fund_utils
   quant_fund_features -->|1| quant_fund_config
   quant_fund_features -->|2| quant_fund_data
@@ -392,6 +397,7 @@ flowchart LR
   quant_fund_leakage -->|1| quant_fund_utils
   quant_fund_lightspeed -->|3| quant_fund_hedge_lab
   quant_fund_lightspeed -->|1| quant_fund_models
+  quant_fund_live -->|5| quant_fund_pretrade
   quant_fund_market_sim -->|1| quant_fund_backtest
   quant_fund_market_sim -->|2| quant_fund_config
   quant_fund_market_sim -->|1| quant_fund_lightspeed
@@ -784,14 +790,14 @@ sequenceDiagram
 | `quant_fund.audit` | 11 |
 | `quant_fund.backtest` | 16 |
 | `quant_fund.calendars` | 8 |
-| `quant_fund.cli` | 17 |
+| `quant_fund.cli` | 18 |
 | `quant_fund.combination` | 8 |
 | `quant_fund.compute` | 7 |
 | `quant_fund.config` | 7 |
 | `quant_fund.data` | 45 |
 | `quant_fund.decay` | 7 |
 | `quant_fund.diffbacktest` | 8 |
-| `quant_fund.execution` | 15 |
+| `quant_fund.execution` | 16 |
 | `quant_fund.features` | 9 |
 | `quant_fund.flowbars` | 9 |
 | `quant_fund.formal` | 8 |
@@ -801,6 +807,7 @@ sequenceDiagram
 | `quant_fund.labels` | 7 |
 | `quant_fund.leakage` | 8 |
 | `quant_fund.lightspeed` | 8 |
+| `quant_fund.live` | 7 |
 | `quant_fund.market_sim` | 13 |
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 107 |
@@ -828,15 +835,15 @@ sequenceDiagram
 | `quant_fund.research` | 1861 |
 | `quant_fund.risk` | 7 |
 | `quant_fund.robustness` | 13 |
-| `quant_fund.schemas` | 9 |
+| `quant_fund.schemas` | 10 |
 | `quant_fund.simtest` | 10 |
 | `quant_fund.stress` | 14 |
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **13382**
-- Packages: **94**
-- Cross-package import edges: **389**
+- Modules scanned: **13392**
+- Packages: **95**
+- Cross-package import edges: **394**
 
 <!-- END GENERATED: coverage -->
 

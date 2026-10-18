@@ -362,7 +362,7 @@ class Concierge:
                 "Armed broker orders are `dipcatcher live`."
             )
             return False
-        from quant_fund.execution.trading_session import format_readiness, live_readiness_report
+        from quant_fund.schemas.live_readiness import format_readiness, live_readiness_report
 
         self._say(format_readiness(live_readiness_report()))
         return False

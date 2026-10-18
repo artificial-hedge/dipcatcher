@@ -128,7 +128,7 @@ from fx1.serve.backends import (
     truncate_chunks,
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
-from fx1.serve.contract import API_VERSION
+from fx1.serve.contract import API_VERSION as API_VERSION
 from fx1.serve.evals import (
     EVAL_SAMPLING,
     EVAL_SUITES,
