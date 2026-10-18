@@ -3,6 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/corpus_real_drill.py",
+  "receipt_sha256": "9b75243aa062a35b2c2d23de921e16ce103d4a18024f1fce26040bb5f76e6c77",
   "replay": {
     "argv": [
       "scripts/corpus_real_drill.py",
@@ -16,7 +17,7 @@
     "artifacts": [
       {
         "path": "data/metadata/replay/corpus_real_drill.json",
-        "sha256": "1a748b1c79e276734b03b38927d02e09f57487371dd61e1ac4f35bad1e724274"
+        "sha256": "96a383acbd50e692fbab06384468b89a1a4e6ff1550b30eab56a8d517e9cd4ca"
       }
     ],
     "input_tapes": [
@@ -25,8 +26,8 @@
         "sha256": "667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c"
       },
       {
-        "path": "receipts/capacity_eval_3622d0c059d42009.json",
-        "sha256": "4f9f7af188507dc602ae782b2743ee62a992f5d99eede4b4478e8101493df128"
+        "path": "receipts/capacity_eval_5cf0042e91c7953c.json",
+        "sha256": "b867f73565dd828e6ae2c2f7091b04915126622b11e5ae7854e7675cce9b048f"
       },
       {
         "path": "receipts/capacity_eval_cd0854242ed8a9ec.json",
@@ -105,16 +106,16 @@
         "sha256": "67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98"
       },
       {
-        "path": "receipts/fleet_eval_5e907be710811a44.json",
-        "sha256": "b5444f12bf0e774c547dc6720517453bce98aa6c2ac2dbb84731bc0f6ad664af"
+        "path": "receipts/fleet_eval_ab613c423b36627d.json",
+        "sha256": "adbe15a247e23fd26cc874a509d3448881536aef586be335bbad7b44ba97812f"
       },
       {
         "path": "receipts/fleet_race_real_drill.json",
         "sha256": "0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def"
       },
       {
-        "path": "receipts/honest_verdict_b133e8b3992af893.json",
-        "sha256": "70c391cb69796d05353b9c03c53bf8aa05c14465f919be9d790b08aa0c265ce7"
+        "path": "receipts/honest_verdict_9d631fa6aace437a.json",
+        "sha256": "ed1736ed83c33d0c44775292c3e4979aaf11bb5bd2d18cfeb7df3baa78575a84"
       },
       {
         "path": "receipts/honest_verdict_real_drill.json",
@@ -153,16 +154,16 @@
         "sha256": "9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0"
       },
       {
-        "path": "receipts/monitor_run_13d20aef00774027.json",
-        "sha256": "2d804ee35deee30e8e14a35d3c2361bbfe6e0482967fdf8e88a2a322132f2f03"
-      },
-      {
         "path": "receipts/monitor_run_drill_clean.json",
         "sha256": "6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c"
       },
       {
         "path": "receipts/monitor_run_drill_defect.json",
         "sha256": "e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df"
+      },
+      {
+        "path": "receipts/monitor_run_e69a3aed9568e30d.json",
+        "sha256": "82c474e25984e9418b6709f81dd34e55457c512c6eef7d3b3275c249e2e82b38"
       },
       {
         "path": "receipts/monitor_run_real_drill.json",
@@ -181,12 +182,12 @@
         "sha256": "0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de"
       },
       {
-        "path": "receipts/rankic_eval_8d740c0ddf6d5c54.json",
-        "sha256": "bb6859f2b8f4d18dcf90fd388bc2f804c911210fdefafe9d58466154a67636a6"
-      },
-      {
         "path": "receipts/rankic_eval_9ebdad7da83e7348.json",
         "sha256": "ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4"
+      },
+      {
+        "path": "receipts/rankic_eval_addd924f107eedd8.json",
+        "sha256": "3f1aba6b04d9b7757852334f213059ef971bffe5100e2bbda807eeba28014f06"
       },
       {
         "path": "receipts/real_benchmark_us_wide_manifest.json",
@@ -301,24 +302,46 @@
         "sha256": "63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7"
       },
       {
-        "path": "receipts/vol_bench_f3bf2afc2f159ace.json",
-        "sha256": "6bbb8b5ec1745ef5dcd186c5037211374c29dcd3078214e5b86a4a4682740241"
+        "path": "receipts/vol_bench_dc16af46c3f2975b.json",
+        "sha256": "dfca0a6263a360b3b89cb8588bbb3e03224f37e069cf2764f4caa24b6a2cd453"
       },
       {
         "path": "data/manifests/replay_corpus_members.json",
-        "sha256": "781f4c5b0944ce5ecdfbdaffd92bc643bd7ad46d1de2ff706c7d36627bb2dc96"
+        "sha256": "110338bed96240d3f39afdaf9c3d3f91e05349891535864a1c6eb9c4ef86ad07"
       }
     ]
   },
   "reproduces": [
     {
-      "claim_diff_keys": [],
-      "claims_equal": true,
+      "claim_diff_keys": [
+        "n_retracted",
+        "params",
+        "retracted"
+      ],
+      "claims_equal": false,
       "committed_sha256": "25230923d07164342facbe10ec0520975ee04c0ef690b3661f5daaf9d69f250e",
+      "drift_reason": "input_set_changed_with_contract_field_addition",
+      "input_set_delta": {
+        "added": [
+          "capacity_eval_5cf0042e91c7953c.json",
+          "fleet_eval_ab613c423b36627d.json",
+          "honest_verdict_9d631fa6aace437a.json",
+          "monitor_run_e69a3aed9568e30d.json",
+          "rankic_eval_addd924f107eedd8.json",
+          "vol_bench_dc16af46c3f2975b.json"
+        ],
+        "removed": [
+          "capacity_eval_3622d0c059d42009.json",
+          "fleet_eval_5e907be710811a44.json",
+          "honest_verdict_b133e8b3992af893.json",
+          "monitor_run_13d20aef00774027.json",
+          "rankic_eval_8d740c0ddf6d5c54.json",
+          "vol_bench_f3bf2afc2f159ace.json"
+        ]
+      },
       "receipt": "receipts/corpus_real_drill.json"
     }
   ],
   "research_only": true,
-  "schema": "replay_manifest.v1",
-  "receipt_sha256": "e21ffbad756a04f8490b4a07f5971645ef230476184f3115bf9aab9c467cbedb"
+  "schema": "replay_manifest.v1"
 }

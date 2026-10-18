@@ -641,6 +641,104 @@ def test_carrier_input_tapes_resolve_to_committed_manifest() -> None:
                 assert mbody.get("schema") == "tape_manifest.v1"
 
 
+def _git_ignored(rels: list[str]) -> set[str]:
+    """Paths git ignores (private or derived data). No git: none (fail closed)."""
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            ["git", "check-ignore", "-z", "--stdin"],
+            cwd=REPO_ROOT,
+            input="\0".join(rels).encode(),
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return set()
+    if proc.returncode not in (0, 1):
+        return set()
+    return {p for p in proc.stdout.decode().split("\0") if p}
+
+
+def test_carrier_literal_pins_match_live_bytes_unless_git_ignored() -> None:
+    """A literal input pin names repo bytes: it must exist and match.
+
+    The sweep skips a carrier whose input tape is absent or drifted (honest
+    for a private tape on CI), so a pin left on a renamed or resealed
+    committed receipt would skip silently forever. Only a path git ignores
+    (private or derived data) may be absent here; any other stale pin fails.
+    """
+    pins = [
+        (carrier.name, str(tape["path"]), tape.get("sha256"))
+        for carrier in _carrier_dir()
+        for tape in json.loads(carrier.read_text())["replay"].get("input_tapes", [])
+        if "path" in tape
+    ]
+    assert pins, "no literal input pins found; the corpus carrier pins 72"
+    ignored = _git_ignored([rel for _, rel, _ in pins])
+    stale: list[tuple[str, str, str]] = []
+    for name, rel, pinned in pins:
+        if rel in ignored:
+            continue
+        path = REPO_ROOT / rel
+        if not path.is_file():
+            stale.append((name, rel, "missing"))
+        elif _file_sha256(path) != pinned:
+            stale.append((name, rel, "drift"))
+    assert not stale, f"carrier pins on non-ignored inputs are stale: {stale}"
+
+
+def test_corpus_carrier_input_set_delta_matches_committed_bytes() -> None:
+    """The corpus carrier's drift label re-derives from committed files: the
+    members it audits versus the members the committed receipt read."""
+    carrier = json.loads((CARRIER_DIR / "corpus.json").read_text())
+    members = set(json.loads((REPO_ROOT / "data/manifests/replay_corpus_members.json").read_text()))
+    (entry,) = carrier["reproduces"]
+    committed = json.loads((REPO_ROOT / entry["receipt"]).read_text())
+    read = set(committed["params"]["input_labels"])
+    delta = {"added": sorted(members - read), "removed": sorted(read - members)}
+    if delta["added"] or delta["removed"]:
+        assert entry["claims_equal"] is False
+        assert entry["drift_reason"].startswith("input_set_changed")
+        assert entry["input_set_delta"] == delta
+    else:
+        assert "input_set_delta" not in entry
+
+
+def _load_carrier_generator() -> Any:
+    import importlib.util
+
+    script = REPO_ROOT / "scripts" / "gen_drill_replay_manifests.py"
+    spec = importlib.util.spec_from_file_location("gen_drill_replay_manifests_t", script)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_generator_labels_a_changed_corpus_input_set(tmp_path: Path) -> None:
+    """Renamed audit members are an input change, never a bare contract addition."""
+    gen = _load_carrier_generator()
+    committed = tmp_path / "committed.json"
+    produced = tmp_path / "produced.json"
+    committed.write_text(json.dumps({"n": 1, "params": {"input_labels": {"a.json": "X"}}}))
+    produced.write_text(
+        json.dumps({"n": 1, "n_retracted": 0, "params": {"input_labels": {"b.json": "X"}}})
+    )
+    entry = gen._reproduces_entry("receipts/c.json", committed, produced)
+    assert entry["claims_equal"] is False
+    assert entry["claim_diff_keys"] == ["n_retracted", "params"]
+    assert entry["drift_reason"] == "input_set_changed_with_contract_field_addition"
+    assert entry["input_set_delta"] == {"added": ["b.json"], "removed": ["a.json"]}
+
+    produced.write_text(
+        json.dumps({"n": 1, "n_retracted": 0, "params": {"input_labels": {"a.json": "X"}}})
+    )
+    entry = gen._reproduces_entry("receipts/c.json", committed, produced)
+    assert entry["drift_reason"] == "contract_field_addition"
+    assert "input_set_delta" not in entry
+
+
 def test_artifact_overwrites_committed_is_blocked(tmp_path: Path) -> None:
     """A manifest declaring a git-tracked artifact path must not execute —
     replay must never clobber committed evidence."""
