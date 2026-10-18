@@ -12,9 +12,9 @@ and tests do not substitute for it; see the dated
 
 ## Product definition
 
-**dipcatcher is Artificial Hedge's research orchestration harness, built to
-make artificialhedge.co's `fx1` and `fx1-lite` models useful through a
-conversation in the terminal.** The primary experience is chat. The
+**dipcatcher is Artificial Hedge's research orchestration harness.** The
+chat ids are `fx1` and `fx1-lite`. No fine-tuned weights are published. The
+conversation in the terminal uses whatever endpoint the operator configured. The primary experience is chat. The
 `/superpower` command selects suitable research capabilities, executes them
 through the harness, and explains the verified evidence in the same chat.
 

@@ -1,8 +1,8 @@
 # fxi — interactive CLI for fx-1
 
 `dipcatcher` now opens the **concierge console** in an interactive terminal;
-`fxi` remains a compatible launcher for the same conversation with **fx1** or
-**fx1-lite**. The console includes `/superpower` command planning, background
+`fxi` remains a compatible launcher for the same conversation with the **fx1** or
+**fx1-lite** chat ids. No fine-tuned weights are published. The console includes `/superpower` command planning, background
 web research, and persistent flash-context memory. Research-family suitability
 and durable session/job recovery remain open. See [the CLI guide](DIP_CONCIERGE.md)
 for the working-tree status and full workflow; this page covers endpoints,
@@ -90,7 +90,10 @@ unpinned. The installer refuses destructive `FXI_HOME` values (empty, `/`, or
 
 ### Homebrew (tap)
 
-The distribution is proprietary, so the formula lives in a private tap:
+Not installable. There is no `v*` release, and the formula `sha256` is still
+`FILL_AT_RELEASE`. The supported install is a clone plus
+`uv sync --frozen --all-groups --all-extras`. The formula source below is the
+private-tap text for a future release, not a command that works today:
 
 ```sh
 brew tap artificial-hedge/tap
@@ -105,12 +108,12 @@ release checklist below.
 
 ```sh
 dipcatcher              # chat; /keys set fx1 configures the endpoint inside it
-dipcatcher chat --model fx1-lite  # choose the starting model
+dipcatcher chat --model fx1-lite  # fx1-lite chat id; no released weights
 fxi setup               # optional standalone setup wizard → the chat
 fxi                     # compatibility entry for the same chat
 fxi keys list           # presence-only endpoint table
 fxi doctor              # fx-1 state, endpoints, store, API reachability
-fxi chat                # multi-turn chat with the active model (orb while it thinks)
+fxi chat                # multi-turn chat on the active chat id (orb while it thinks)
 fxi eval                # the fx-1 eval bank (proper scores, honesty gate)
 ```
 
