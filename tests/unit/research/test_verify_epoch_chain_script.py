@@ -8,6 +8,7 @@ its verdict and the library's is itself a finding.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import subprocess
@@ -189,6 +190,8 @@ def test_pin_rollback_and_missing_agree(tmp_path: Path) -> None:
     """The committed-head pin binds both verifiers to the same head."""
     from quant_fund.research.corpus_epoch import (
         epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
     )
 
     corpus = tmp_path / "receipts"
@@ -196,23 +199,11 @@ def test_pin_rollback_and_missing_agree(tmp_path: Path) -> None:
     _member(corpus, "a.json", '{"a": 1}')
     epochs = _chain(corpus)
 
+    # The full pin the production writer emits (position fields included).
     pin_file = tmp_path / "epoch_heads.json"
-    pin_file.write_text(
-        json.dumps(
-            {
-                "heads": {
-                    epoch_heads_key("receipts", "*.json"): {
-                        "receipt": epochs[-1].name,
-                        "sha256": hashlib.sha256(epochs[-1].read_bytes()).hexdigest(),
-                    }
-                }
-            }
-        )
-    )
-    expected = {
-        "receipt": epochs[-1].name,
-        "sha256": hashlib.sha256(epochs[-1].read_bytes()).hexdigest(),
-    }
+    with contextlib.chdir(tmp_path):
+        update_heads_pin(pin_file, "receipts", "*.json", epochs[-1])
+    expected = load_heads_pin(pin_file)[epoch_heads_key("receipts", "*.json")]
     lib = _lib_errors(corpus, expected_head=expected)
     script = _script_errors(corpus, "--pin", str(pin_file), "--key", "receipts/*.json")
     assert lib == script == []
@@ -300,7 +291,8 @@ POS_CHAIN = "epoch_head_chain_root_mismatch"
 POS_N = "epoch_pin_n_epochs_mismatch"
 POS_MALFORMED = "epoch_pin_field_malformed"
 POS_UNVERIFIABLE = "epoch_pin_chain_unverifiable"
-POSITION_LABELS = (POS_TREE, POS_CHAIN, POS_N, POS_MALFORMED, POS_UNVERIFIABLE)
+POS_MISSING = "epoch_pin_field_missing"
+POSITION_LABELS = (POS_TREE, POS_CHAIN, POS_N, POS_MALFORMED, POS_UNVERIFIABLE, POS_MISSING)
 
 
 def _pinned_corpus(tmp_path: Path, n_stamps: int = 3) -> tuple[Path, list[Path], Path, str]:
@@ -475,8 +467,8 @@ def test_malformed_pin_fields_fail_closed(tmp_path: Path, field: str, value: obj
 def test_partially_present_position_fields_are_each_checked(
     tmp_path: Path, dropped: tuple[str, ...]
 ) -> None:
-    """Each field present is verified on its own; absent fields are not
-    invented (legacy pin shape), exactly as the library treats them."""
+    """Each field present is verified on its own, and each absent field is
+    its own ``epoch_pin_field_missing`` error — identically in both."""
     corpus, epochs, pin, key = _pinned_corpus(tmp_path)
     all_lies = {"tree_root": "e" * 64, "chain_root": "f" * 64, "n_epochs": 999}
     labels = {"tree_root": POS_TREE, "chain_root": POS_CHAIN, "n_epochs": POS_N}
@@ -484,9 +476,42 @@ def test_partially_present_position_fields_are_each_checked(
     over.update({f: v for f, v in all_lies.items() if f not in dropped})
     bad = _variant_pin(pin, key, "partial_pin.json", **over)
     lib, script, proc = _both_verdicts(corpus, bad, key)
-    expected = sorted(f"{labels[f]}:{epochs[-1].name!a}" for f in all_lies if f not in dropped)
+    expected = sorted(
+        [f"{labels[f]}:{epochs[-1].name!a}" for f in all_lies if f not in dropped]
+        + [f"{POS_MISSING}:{f!a}" for f in dropped]
+    )
     assert sorted(lib) == sorted(script) == expected, (lib, script)
     assert proc.returncode == 1
+
+
+@pytest.mark.parametrize("absent", ["drop", "null"])
+@pytest.mark.parametrize(
+    "fields",
+    [("tree_root",), ("chain_root",), ("n_epochs",), ("tree_root", "chain_root", "n_epochs")],
+    ids=["tree_root", "chain_root", "n_epochs", "all_three"],
+)
+def test_omitting_a_lying_position_field_fails_closed(
+    tmp_path: Path, fields: tuple[str, ...], absent: str
+) -> None:
+    """Omission downgrade: a pin whose lie is *deleted* (or nulled) rather
+    than corrected must fail where the lie fails — in both verifiers, with
+    the identical ``epoch_pin_field_missing`` errors. Before the fix both
+    exited clean on the stripped pin."""
+    corpus, epochs, pin, key = _pinned_corpus(tmp_path)
+    honest = json.loads(pin.read_text())["heads"][key]
+    lies = {"tree_root": "e" * 64, "chain_root": "f" * 64, "n_epochs": honest["n_epochs"] + 7}
+    lying = _variant_pin(pin, key, "lying_pin.json", **{f: lies[f] for f in fields})
+    lib, script, _ = _both_verdicts(corpus, lying, key)
+    assert lib and sorted(lib) == sorted(script), (lib, script)  # the lie is caught
+
+    gone: object = DROP if absent == "drop" else None
+    stripped = _variant_pin(pin, key, "stripped_pin.json", **{f: gone for f in fields})
+    lib, script, proc = _both_verdicts(corpus, stripped, key)
+    expected = sorted(f"{POS_MISSING}:{f!a}" for f in fields)
+    assert sorted(lib) == expected, lib
+    assert sorted(script) == expected, script
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    assert "FAIL" in proc.stdout
 
 
 def _reseal(path: Path, **changes: object) -> None:
@@ -635,7 +660,8 @@ def _v2_tree(tmp_path: Path, *, threshold: int = 1, n_keys: int = 1):
     _member(corpus, "a.json", '{"a": 1}')
     pin = root / "quality" / "epoch_heads.json"
     ep = write_epoch_receipt(corpus_epoch(corpus), corpus)
-    update_heads_pin(pin, "receipts", "*.json", ep)
+    with contextlib.chdir(root):
+        update_heads_pin(pin, "receipts", "*.json", ep)
     pairs = [generate_keypair() for _ in range(n_keys)]
     init_quorum(root, [pub for _, pub in pairs], threshold=threshold)
     (root / "quality" / "gate_signing.pub").write_text(pairs[0][1] + "\n")
@@ -757,3 +783,20 @@ def test_checkpoint_v2_signed_heads_with_lying_position_fields_fail(tmp_path: Pa
         proc = sign_pin_with(**{"chain_root": honest_chain_root, "n_epochs": 1, **lie})
         assert proc.returncode == 1, (lie, proc.stdout + proc.stderr)
         assert f"{label}:{head_receipt.name!a}" in _errors_of(proc), (lie, proc.stdout)
+
+    # A signature over a pin that *omits* the fields is not enough either:
+    # the signed heads entry carries no position commitment to check.
+    honest = {
+        "chain_root": honest_chain_root,
+        "n_epochs": 1,
+        "tree_root": json.loads(head_receipt.read_text())["member_tree_root"],
+    }
+    for field in ("chain_root", "n_epochs", "tree_root"):
+        doc = json.loads(pin_path.read_text())
+        doc["heads"]["receipts/*.json"].update(honest)
+        doc["heads"]["receipts/*.json"].pop(field)
+        pin_path.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+        write_checkpoint(root, pairs[:1])
+        proc = _script_checkpoint_run(root, "--quorum", quorum)
+        assert proc.returncode == 1, (field, proc.stdout + proc.stderr)
+        assert _errors_of(proc) == [f"{POS_MISSING}:{field!a}"], (field, proc.stdout)

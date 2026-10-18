@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 from pathlib import Path
 
@@ -54,11 +55,13 @@ def _git_repo(tmp_path: Path) -> Path:
         body = json.dumps({"kind": "seed.v1"}) if corpus_dir == "receipts" else "seed"
         (d / seed).write_text(body)
         ep = write_epoch_receipt(corpus_epoch(d, pattern=pattern), d)
-        update_heads_pin(pin, corpus_dir, pattern, ep)
+        with contextlib.chdir(root):
+            update_heads_pin(pin, corpus_dir, pattern, ep)
     write_crown_jewels_pin(root)
     # Re-stamp quality: the pin and jewels file now exist as members.
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-    update_heads_pin(pin, "quality", "*.json", ep)
+    with contextlib.chdir(root):
+        update_heads_pin(pin, "quality", "*.json", ep)
     # The committed pubkey is a crown jewel — sign the pins for real so the
     # gate isn't testing a stub. Priv key is test-local only.
     from quant_fund.research.gate_signatures import generate_keypair, sign_pins
@@ -67,7 +70,8 @@ def _git_repo(tmp_path: Path) -> Path:
     sign_pins(root, priv, pub)
     write_crown_jewels_pin(root)
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-    update_heads_pin(pin, "quality", "*.json", ep)
+    with contextlib.chdir(root):
+        update_heads_pin(pin, "quality", "*.json", ep)
     sign_pins(root, priv, pub)
     return root
 

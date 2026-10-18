@@ -11,6 +11,7 @@ the chain check plus heads pin own that surface.
 
 from __future__ import annotations
 
+import contextlib
 import json
 from pathlib import Path
 
@@ -175,18 +176,21 @@ def _mini_repo(tmp_path: Path, *, sign: bool = True) -> tuple[Path, str | None]:
         # JSON corpora feed the lattice gate — seeds must parse.
         (d / seed).write_text('{"seed": true}' if seed.endswith(".json") else "seed")
         ep = write_epoch_receipt(corpus_epoch(d, pattern=pattern), d)
-        update_heads_pin(pin, corpus_dir, pattern, ep)
+        with contextlib.chdir(root):
+            update_heads_pin(pin, corpus_dir, pattern, ep)
     write_crown_jewels_pin(root)
     # Re-stamp quality so the pin + jewels file land as members.
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-    update_heads_pin(pin, "quality", "*.json", ep)
+    with contextlib.chdir(root):
+        update_heads_pin(pin, "quality", "*.json", ep)
     priv = None
     if sign:
         priv, pub = generate_keypair()
         sign_pins(root, priv, pub)
         write_crown_jewels_pin(root)  # pubkey is a jewel — repin after signing
         ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-        update_heads_pin(pin, "quality", "*.json", ep)
+        with contextlib.chdir(root):
+            update_heads_pin(pin, "quality", "*.json", ep)
         sign_pins(root, priv, pub)  # re-sign over final pin bytes
     return root, priv
 
@@ -261,7 +265,9 @@ def test_stale_pin_accepts_descendant_heads(tmp_path: Path) -> None:
     descendant; pin staleness is a pending-stamp state, not tamper."""
     corpus = _corpus(tmp_path)
     first = _stamp(corpus)
-    exp = {"receipt": first.name, "sha256": hash_bytes(first.read_bytes())}
+    pin = tmp_path / "epoch_heads.json"
+    update_heads_pin(pin, corpus, "*.json", first)
+    exp = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
     _member(corpus, "late.json", "x")
     second = _stamp(corpus)
     res = check_epoch_chain(corpus, expected_head=exp)
@@ -894,6 +900,20 @@ def test_verify_repo_malformed_heads_pin_fails_not_crashes(tmp_path: Path) -> No
     assert res["gates"]["crown_jewels"]["ok"]
 
 
+@pytest.mark.parametrize("field", ["tree_root", "chain_root", "n_epochs"])
+def test_verify_repo_heads_pin_omitting_position_field_fails(tmp_path: Path, field: str) -> None:
+    """Production gate: a committed pin entry with a position field deleted
+    fails ``epoch:<corpus>`` with exactly ``epoch_pin_field_missing``."""
+    root, _ = _mini_repo(tmp_path, sign=False)
+    assert verify_repo(root)["gates"]["epoch:receipts"]["errors"] == []
+    pin = root / "quality" / "epoch_heads.json"
+    doc = json.loads(pin.read_text())
+    del doc["heads"]["receipts/*.json"][field]
+    pin.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+    errs = verify_repo(root)["gates"]["epoch:receipts"]["errors"]
+    assert errs == [f"epoch_pin_field_missing:{field!a}"], errs
+
+
 def test_verify_repo_rolled_back_chain_fails(tmp_path: Path) -> None:
     root, priv = _mini_repo(tmp_path, sign=True)
     assert priv is not None
@@ -902,7 +922,8 @@ def test_verify_repo_rolled_back_chain_fails(tmp_path: Path) -> None:
     # signed file, so re-sign after it legitimately advances.
     _member(root / "receipts", "late.json", "x")
     ep = write_epoch_receipt(corpus_epoch(root / "receipts"), root / "receipts")
-    update_heads_pin(pin, "receipts", "*.json", ep)
+    with contextlib.chdir(root):
+        update_heads_pin(pin, "receipts", "*.json", ep)
     sign_pins(root, priv, (root / "quality" / "gate_signing.pub").read_text().strip())
     assert verify_repo(root)["ok"]
     ep.unlink()
@@ -929,7 +950,8 @@ def test_full_unsigned_launder_is_the_documented_boundary(tmp_path: Path) -> Non
     write_crown_jewels_pin(root)  # re-pin over the mutated jewel
     pin = root / "quality" / "epoch_heads.json"
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-    update_heads_pin(pin, "quality", "*.json", ep)
+    with contextlib.chdir(root):
+        update_heads_pin(pin, "quality", "*.json", ep)
     res = verify_repo(root)
     assert res["gates"]["pin_signatures"]["errors"] == ["signature_file_missing"]
     for name, gate in res["gates"].items():
@@ -942,7 +964,8 @@ def test_full_unsigned_launder_is_the_documented_boundary(tmp_path: Path) -> Non
     write_crown_jewels_pin(root2)
     pin2 = root2 / "quality" / "epoch_heads.json"
     ep2 = write_epoch_receipt(corpus_epoch(root2 / "quality"), root2 / "quality")
-    update_heads_pin(pin2, "quality", "*.json", ep2)
+    with contextlib.chdir(root2):
+        update_heads_pin(pin2, "quality", "*.json", ep2)
     res2 = verify_repo(root2)
     assert not res2["ok"]
     sig_errs = res2["gates"]["pin_signatures"]["errors"]

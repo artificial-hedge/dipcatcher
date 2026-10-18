@@ -8,6 +8,7 @@ fails its own gates.
 
 from __future__ import annotations
 
+import contextlib
 import subprocess
 from pathlib import Path
 
@@ -51,7 +52,8 @@ def _minimal_evidence_tree(tmp_path: Path) -> Path:
         ext = pattern.lstrip("*") or ".json"
         (d / f"evidence_0{ext}").write_text('{"n": 0}\n', encoding="utf-8")
         ep = write_epoch_receipt(corpus_epoch(d, pattern=pattern), d)
-        update_heads_pin(pin, corpus_dir, pattern, ep)
+        with contextlib.chdir(root):
+            update_heads_pin(pin, corpus_dir, pattern, ep)
     (root / "gate_pins.sig").write_text("sig-bytes\n", encoding="utf-8")
     return root
 
@@ -261,3 +263,9 @@ def test_standalone_auditor_rejects_pin_lying_about_chain_position(tmp_path: Pat
         proc = audit(**lie)
         assert proc.returncode == 1, (lie, proc.stdout + proc.stderr)
         assert f"receipts: {label}:{head.name!a}" in proc.stdout, (lie, proc.stdout)
+
+    # Omission downgrade: nulling a field is not a way past the check.
+    for field in ("chain_root", "n_epochs", "tree_root"):
+        proc = audit(**{field: None})
+        assert proc.returncode == 1, (field, proc.stdout + proc.stderr)
+        assert f"receipts: epoch_pin_field_missing:{field!a}" in proc.stdout, proc.stdout

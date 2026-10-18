@@ -1498,7 +1498,15 @@ def test_pin_naming_an_unwritten_head_is_missing(tmp_path: Path) -> None:
     _put(corpus, "c.json", "c1")
     staging = tmp_path / "staging"  # where the lost atomic write lived
     lost = write_epoch_receipt(corpus_epoch(corpus), staging)
-    exp = _pin(pin, corpus, lost)
+    # The writer cannot be pointed at a head the chain does not contain...
+    with pytest.raises(ValueError, match="refusing to pin"):
+        update_heads_pin(pin, corpus, "*.json", lost)
+    # ...so model the crash order: the head landed, the pin advanced, then
+    # the head write was lost.
+    landed = corpus / lost.name
+    landed.write_bytes(lost.read_bytes())
+    exp = _pin(pin, corpus, landed)
+    landed.unlink()
     assert exp["receipt"] == lost.name and not (corpus / lost.name).exists()
     errors = check_epoch_chain(corpus, expected_head=exp)["errors"]
     assert f"epoch_head_missing:{lost.name!a}" in errors

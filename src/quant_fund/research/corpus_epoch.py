@@ -575,6 +575,18 @@ def epoch_heads_key(corpus_dir: Path | str, pattern: str) -> str:
     return f"{Path(corpus_dir).as_posix()}/{pattern}"
 
 
+# Position commitments every heads-pin entry must carry (``update_heads_pin``
+# writes all three). Absence is not a legacy shape a verifier may skip: a pin
+# whose lying field is deleted, rather than corrected, must not pass where the
+# lie itself fails. ``null`` counts as absent, as in ``load_heads_pin``.
+PIN_POSITION_FIELDS: tuple[str, ...] = ("tree_root", "chain_root", "n_epochs")
+
+
+def pin_position_missing_errors(entry: Mapping[str, Any]) -> list[str]:
+    """``epoch_pin_field_missing:<field>`` for each absent/null position field."""
+    return [f"epoch_pin_field_missing:{f!a}" for f in PIN_POSITION_FIELDS if entry.get(f) is None]
+
+
 def load_heads_pin(pin_path: Path | str) -> dict[str, dict[str, str]]:
     """Load ``quality/epoch_heads.json`` → ``{key: {"receipt", "sha256"}}``."""
     path = Path(pin_path)
@@ -939,6 +951,23 @@ def ack_ledger_base_errors(
     ]
 
 
+def _chain_prefix_to(
+    corpus_dir: Path | str, pattern: str, head_name: str
+) -> tuple[list[tuple[str, str]] | None, list[str]]:
+    """``(name, file_sha)`` of the ordered epoch chain truncated at
+    ``head_name`` — the prefix a heads pin naming that head commits to — or
+    ``None`` (with the ordering errors) when the chain does not order or does
+    not contain it. The pin writer and the checker share it, so both compute
+    the identical position commitment."""
+    from quant_fund.research.epoch_merkle import ordered_epoch_chain
+
+    ordered, order_errors = ordered_epoch_chain(corpus_dir, pattern=pattern)
+    tip = next((i for i, e in enumerate(ordered) if e[0] == head_name), None)
+    if order_errors or tip is None:
+        return None, list(order_errors)
+    return [(e[0], e[1]) for e in ordered[: tip + 1]], []
+
+
 def update_heads_pin(
     pin_path: Path | str,
     corpus_dir: Path | str,
@@ -950,6 +979,11 @@ def update_heads_pin(
     Called by the stamping path so the pin and the epoch receipt land in the
     same commit — the committed pin is then the authoritative statement of
     which epoch is the newest, making head deletion a detectable rollback.
+
+    Fails closed (``ValueError``, pin left untouched) when it cannot compute
+    every position field — a head without ``member_tree_root``, or an epoch
+    chain under ``corpus_dir`` that does not contain ``head_receipt`` —
+    rather than writing a weaker entry the verifiers reject.
     """
     path = Path(pin_path)
     key = epoch_heads_key(corpus_dir, pattern)
@@ -972,16 +1006,23 @@ def update_heads_pin(
     # Position-tree commitment: a Merkle root over the ordered epoch chain
     # (leaves bind (position, name, file-sha)) so `epoch_position.v1`
     # proofs verify offline against this pin in O(log n).
-    from quant_fund.research.epoch_merkle import chain_tree_root, ordered_epoch_chain
+    from quant_fund.research.epoch_merkle import chain_tree_root
 
     try:
-        ordered, chain_errors = ordered_epoch_chain(corpus_dir, pattern=pattern)
+        names_sha, chain_errors = _chain_prefix_to(corpus_dir, pattern, head_receipt.name)
     except (OSError, ValueError):
-        ordered, chain_errors = [], ["chain_compute_failed"]
-    if not chain_errors and ordered and ordered[-1][0] == head_receipt.name:
-        names_sha = [(name, file_sha) for name, file_sha, _, _, _ in ordered]
+        names_sha, chain_errors = None, ["chain_compute_failed"]
+    if names_sha is not None:
+        # Truncated at the pinned head, exactly as ``check_epoch_chain``
+        # recomputes it: an ancestor pin commits to its own prefix.
         heads[key]["chain_root"] = chain_tree_root(names_sha)
         heads[key]["n_epochs"] = len(names_sha)
+    missing = pin_position_missing_errors(heads[key])
+    if missing:
+        raise ValueError(
+            f"refusing to pin {head_receipt.name!a} under {key!a}: {missing}; the epoch "
+            f"chain under {Path(corpus_dir).as_posix()!a} must contain it ({chain_errors})"
+        )
     from quant_fund.utils.atomicio import atomic_write_text
 
     payload = {"schema": "epoch_heads.v1", "heads": heads}
@@ -1185,35 +1226,30 @@ def check_epoch_chain(
             cur = prev if isinstance(prev, str) else None
         if not ancestor:
             errors.append(f"epoch_head_rollback:{exp_name!a}")
+    if exp_name is not None and expected_head is not None:
+        errors += pin_position_missing_errors(expected_head)
 
-    # Bound chain fields: when the pin carries the position-commitment
-    # fields written by ``update_heads_pin`` (member ``tree_root``, ordered
-    # ``chain_root``, ``n_epochs``), recompute them against the observed
-    # chain truncated at the pinned head — a pin naming a live head while
-    # lying about its committed position root must fail closed, since
-    # offline position proofs anchor on these values.
+    # Bound chain fields: the pin's position commitments written by
+    # ``update_heads_pin`` (member ``tree_root``, ordered ``chain_root``,
+    # ``n_epochs``) are required above and recomputed here against the
+    # observed chain truncated at the pinned head — a pin naming a live head
+    # while lying about (or omitting) its committed position root must fail
+    # closed, since offline position proofs anchor on these values.
     if exp_name is not None and ancestor and expected_head is not None:
-        from quant_fund.research.epoch_merkle import (
-            chain_tree_root,
-            ordered_epoch_chain,
-        )
+        from quant_fund.research.epoch_merkle import chain_tree_root
 
-        ordered, order_errors = ordered_epoch_chain(root, pattern=pattern)
-        if not order_errors:
-            tip_idx = next((i for i, e in enumerate(ordered) if e[0] == exp_name), None)
-            if tip_idx is not None:
-                sub = ordered[: tip_idx + 1]
-                names_sha = [(e[0], e[1]) for e in sub]
-                pinned_head = by_name[exp_name]
-                exp_tree = expected_head.get("tree_root")
-                if isinstance(exp_tree, str) and pinned_head.get("member_tree_root") != exp_tree:
-                    errors.append(f"epoch_head_tree_root_mismatch:{exp_name!a}")
-                exp_chain = expected_head.get("chain_root")
-                if isinstance(exp_chain, str) and chain_tree_root(names_sha) != exp_chain:
-                    errors.append(f"epoch_head_chain_root_mismatch:{exp_name!a}")
-                exp_n = expected_head.get("n_epochs")
-                if isinstance(exp_n, int) and len(names_sha) != exp_n:
-                    errors.append(f"epoch_pin_n_epochs_mismatch:{exp_name!a}")
+        names_sha, _ = _chain_prefix_to(root, pattern, exp_name)
+        if names_sha is not None:
+            pinned_head = by_name[exp_name]
+            exp_tree = expected_head.get("tree_root")
+            if isinstance(exp_tree, str) and pinned_head.get("member_tree_root") != exp_tree:
+                errors.append(f"epoch_head_tree_root_mismatch:{exp_name!a}")
+            exp_chain = expected_head.get("chain_root")
+            if isinstance(exp_chain, str) and chain_tree_root(names_sha) != exp_chain:
+                errors.append(f"epoch_head_chain_root_mismatch:{exp_name!a}")
+            exp_n = expected_head.get("n_epochs")
+            if isinstance(exp_n, int) and len(names_sha) != exp_n:
+                errors.append(f"epoch_pin_n_epochs_mismatch:{exp_name!a}")
     errors += _unmatched_ack_errors(ack_index, ack_used)
     return {
         "errors": errors,

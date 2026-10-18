@@ -47,6 +47,9 @@ from typing import Any
 EPOCH_SCHEMA = "corpus_epoch.v1"
 GENESIS_PREV = "0" * 64
 HEADS_PIN_BASENAME = "epoch_heads.json"
+# Position commitments every heads-pin entry must carry (mirrors
+# ``corpus_epoch.PIN_POSITION_FIELDS``); absence is an error, not legacy.
+PIN_POSITION_FIELDS = ("tree_root", "chain_root", "n_epochs")
 
 # Mirrors corpus_epoch.py — chain bookkeeping, never members.
 EXEMPT_BASENAMES = frozenset({HEADS_PIN_BASENAME, ".epoch_stamp.lock"})
@@ -653,11 +656,13 @@ def _pin_position_errors(
     fields" leg). A pin that names a real head but lies about its position
     commitments must fail: offline position proofs anchor on those values.
 
-    A present-but-malformed field is an error, never silently skipped; ``null``
-    counts as absent, as in ``load_heads_pin``. Absence of all three is the
-    legacy pin shape and checks nothing here, exactly as in the library."""
+    All three fields are required: an absent (or ``null``) field is
+    ``epoch_pin_field_missing`` — deleting a lying field must not pass where
+    the lie fails — and a present-but-malformed field is an error, never
+    silently skipped. Mirrors the library's ``pin_position_missing_errors``."""
+    tree, chain_root, n_epochs = (pin.get(f) for f in PIN_POSITION_FIELDS)
+    missing = [f"epoch_pin_field_missing:{f!a}" for f in PIN_POSITION_FIELDS if pin.get(f) is None]
     errors: list[str] = []
-    tree, chain_root, n_epochs = (pin.get(f) for f in ("tree_root", "chain_root", "n_epochs"))
     for fname, val in (("tree_root", tree), ("chain_root", chain_root)):
         if val is not None and not _is_sha256(val):
             errors.append(f"epoch_pin_field_malformed:{fname!a}")
@@ -665,8 +670,9 @@ def _pin_position_errors(
         not isinstance(n_epochs, int) or isinstance(n_epochs, bool) or n_epochs < 1
     ):
         errors.append("epoch_pin_field_malformed:'n_epochs'")
-    if errors or (tree is None and chain_root is None and n_epochs is None):
-        return errors
+    if errors or len(missing) == len(PIN_POSITION_FIELDS):
+        return missing + errors
+    errors = missing
     if exp_name not in by_name:
         return errors  # head missing / mutated / invalid: already reported
     chain: list[tuple[str, str]] = []
@@ -674,12 +680,12 @@ def _pin_position_errors(
     seen: set[str] = set()
     while cur is not None:
         if cur in seen or cur not in by_name:
-            return [f"epoch_pin_chain_unverifiable:{exp_name!a}"]
+            return [*errors, f"epoch_pin_chain_unverifiable:{exp_name!a}"]
         seen.add(cur)
         chain.append((cur, file_sha[cur]))
         prev = by_name[cur].get("prev_epoch_receipt")
         if prev is not None and not isinstance(prev, str):
-            return [f"epoch_pin_chain_unverifiable:{exp_name!a}"]
+            return [*errors, f"epoch_pin_chain_unverifiable:{exp_name!a}"]
         cur = prev
     chain.reverse()
     if tree is not None and by_name[exp_name].get("member_tree_root") != tree:

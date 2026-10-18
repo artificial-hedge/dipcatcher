@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import subprocess
 from pathlib import Path
@@ -71,10 +72,12 @@ def _fixture(tmp_path: Path) -> Path:
     for name, val in (("a.json", 1.0), ("b.json", 2.0), ("c.json", 3.0)):
         _receipt(name, val)
         ep = write_epoch_receipt(corpus_epoch(root / "receipts"), root / "receipts")
-        update_heads_pin(pin, "receipts", "*.json", ep)
+        with contextlib.chdir(root):
+            update_heads_pin(pin, "receipts", "*.json", ep)
     write_crown_jewels_pin(root)
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
-    update_heads_pin(pin, "quality", "*.json", ep)
+    with contextlib.chdir(root):
+        update_heads_pin(pin, "quality", "*.json", ep)
     sign_pins(root, priv, pub)
     write_checkpoint(root, [(priv, pub)])
     return root
@@ -165,7 +168,8 @@ def test_member_timeline_tracks_byte_evolution(tmp_path: Path) -> None:
     (root / "receipts/b.json").write_text(json.dumps(seal_receipt(doc)))
     pin = root / "quality/epoch_heads.json"
     ep = write_epoch_receipt(corpus_epoch(root / "receipts"), root / "receipts")
-    update_heads_pin(pin, "receipts", "*.json", ep)
+    with contextlib.chdir(root):
+        update_heads_pin(pin, "receipts", "*.json", ep)
 
     # The pin file just changed — re-sign and re-checkpoint before custody.
     from quant_fund.research.gate_signatures import sign_pins

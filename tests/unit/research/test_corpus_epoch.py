@@ -301,9 +301,15 @@ def test_heads_pin_rollback_detected(tmp_path: Path) -> None:
     first = write_epoch_receipt(corpus_epoch(corpus), corpus)
     _receipt(corpus, "b.json", "2")
     second = write_epoch_receipt(corpus_epoch(corpus), corpus)
-    from quant_fund.utils.hashing import hash_bytes
+    from quant_fund.research.corpus_epoch import (
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
+    )
 
-    exp = {"receipt": second.name, "sha256": hash_bytes(second.read_bytes())}
+    pin = tmp_path / "epoch_heads.json"
+    update_heads_pin(pin, corpus, "*.json", second)
+    exp = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
     assert check_epoch_chain(corpus, expected_head=exp)["errors"] == []
     # Attack: delete the head epoch — without the pin this rewinds silently.
     second.unlink()
@@ -313,6 +319,75 @@ def test_heads_pin_rollback_detected(tmp_path: Path) -> None:
     # And unpinned, the same rollback is silent — documenting why the pin exists.
     unpinned = check_epoch_chain(corpus)
     assert unpinned["head"] == first.name and unpinned["errors"] == []
+
+
+@pytest.mark.parametrize("absent", ["drop", "null"])
+@pytest.mark.parametrize("field", ["tree_root", "chain_root", "n_epochs"])
+def test_heads_pin_omitted_position_field_fails_closed(
+    tmp_path: Path, field: str, absent: str
+) -> None:
+    """Omission is not a legacy shape: every position field is required, so
+    deleting (or nulling) one fails closed — via ``load_heads_pin`` exactly as
+    ``verify-repo`` reads the pin, and for a caller-built entry alike."""
+    from quant_fund.research.corpus_epoch import (
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
+    )
+
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "a.json", "1")
+    write_epoch_receipt(corpus_epoch(corpus), corpus)
+    _receipt(corpus, "b.json", "2")
+    second = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    pin = tmp_path / "epoch_heads.json"
+    update_heads_pin(pin, corpus, "*.json", second)
+    key = epoch_heads_key(corpus, "*.json")
+    doc = json.loads(pin.read_text())
+    if absent == "drop":
+        del doc["heads"][key][field]
+    else:
+        doc["heads"][key][field] = None
+    pin.write_text(json.dumps(doc))
+    want = [f"epoch_pin_field_missing:{field!a}"]
+    assert check_epoch_chain(corpus, expected_head=load_heads_pin(pin)[key])["errors"] == want
+    assert check_epoch_chain(corpus, expected_head=doc["heads"][key])["errors"] == want
+
+
+def test_update_heads_pin_refuses_a_head_outside_the_chain(tmp_path: Path) -> None:
+    """The writer fails closed instead of emitting an entry without
+    ``chain_root``/``n_epochs`` (which the verifiers now reject): a head the
+    chain under ``corpus_dir`` does not contain is refused and the pin is
+    left untouched. A stale ancestor head is still pinnable — it commits to
+    its own prefix, exactly as the verifier recomputes it."""
+    from quant_fund.research.corpus_epoch import (
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
+    )
+
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "a.json", "1")
+    first = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    _receipt(corpus, "b.json", "2")
+    second = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    pin = tmp_path / "epoch_heads.json"
+    update_heads_pin(pin, corpus, "*.json", second)
+    before = pin.read_bytes()
+    elsewhere = tmp_path / "elsewhere"  # a corpus whose chain lacks the head
+    elsewhere.mkdir()
+    _receipt(elsewhere, "z.json", "9")
+    write_epoch_receipt(corpus_epoch(elsewhere), elsewhere)
+    with pytest.raises(ValueError, match="refusing to pin"):
+        update_heads_pin(pin, elsewhere, "*.json", second)
+    assert pin.read_bytes() == before
+
+    update_heads_pin(pin, corpus, "*.json", first)
+    entry = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
+    assert entry["receipt"] == first.name and entry["n_epochs"] == 1
+    assert check_epoch_chain(corpus, expected_head=entry)["errors"] == []
 
 
 def test_heads_pin_bound_chain_fields(tmp_path: Path) -> None:
