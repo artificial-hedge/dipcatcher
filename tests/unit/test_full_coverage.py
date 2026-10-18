@@ -82,7 +82,7 @@ def parts(project: Path) -> Path:
         directory = root / lane
         directory.mkdir()
         config = directory / "coverage.ini"
-        config.write_text(gate.coverage_config(project))
+        config.write_text(gate.coverage_config(project), encoding="utf-8", newline="\n")
         coverage = directory / ".coverage"
         data = CoverageData(basename=str(coverage))
         data.add_arcs({"src/sample.py": [(-1, 1), (1, -1), (-1, 2), (2, 3), (3, -1)]})
