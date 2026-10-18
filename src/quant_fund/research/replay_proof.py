@@ -365,43 +365,65 @@ def _committed_artifact(
     return None
 
 
+# The coverage job's process environment is not part of the sealed lane.
+# GitHub Actions, Hypothesis, and a prior test can leave variables that change
+# what the child imports or how it reduces floats. Keep only what the
+# interpreter and a local git need, then set the lane pins explicitly.
+_REPLAY_ENV_KEEP = (
+    "PATH",
+    "HOME",
+    "USERPROFILE",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "SYSTEMROOT",
+    "WINDIR",
+    "COMSPEC",
+    "PATHEXT",
+    "TEMP",
+    "TMP",
+    "TMPDIR",
+    "LANG",
+    "LC_ALL",
+    "LC_CTYPE",
+    "TZ",
+    "SSL_CERT_FILE",
+    "SSL_CERT_DIR",
+    "REQUESTS_CA_BUNDLE",
+    "CURL_CA_BUNDLE",
+    "LD_LIBRARY_PATH",
+    "DYLD_LIBRARY_PATH",
+    "DYLD_FALLBACK_LIBRARY_PATH",
+)
+
+
 def _replay_child_env(root_path: Path) -> dict[str, str]:
     """Environment for the lane subprocess.
 
-    A coverage-floors sweep can leak BLAS thread caps and a coverage tracer
-    into this process. The child must execute the lane, not a traced
-    interpreter whose thread pool no longer matches the sealed artifact.
-    Coverage starts in the child only when these variables are set
-    (coverage's sitecustomize.pth).
+    Start from an allowlist instead of the parent environment. A denylist
+    leaves ``CI``, ``GITHUB_*``, Hypothesis, and whatever a previous test
+    exported, and those are enough to make a content-addressed artifact
+    miss the pinned filename while the process still exits 0.
     """
-    env = dict(os.environ)
-    for leaked in (
-        "COVERAGE_PROCESS_START",
-        "COVERAGE_PROCESS_CONFIG",
-        "COVERAGE_FILE",
-        "COVERAGE_RCFILE",
-        "COV_CORE_SOURCE",
-        "COV_CORE_CONFIG",
-        "COV_CORE_DATAFILE",
-    ):
-        env.pop(leaked, None)
-    for key, value in (
-        ("OMP_NUM_THREADS", "1"),
-        ("MKL_NUM_THREADS", "1"),
-        ("OPENBLAS_NUM_THREADS", "1"),
-        ("NUMEXPR_NUM_THREADS", "1"),
-        ("VECLIB_MAXIMUM_THREADS", "1"),
-        ("POLARS_MAX_THREADS", "1"),
-        ("PYTHONHASHSEED", "0"),
-    ):
-        env[key] = value
+    env = {key: os.environ[key] for key in _REPLAY_ENV_KEEP if key in os.environ}
+    env.update(
+        {
+            "OMP_NUM_THREADS": "1",
+            "MKL_NUM_THREADS": "1",
+            "OPENBLAS_NUM_THREADS": "1",
+            "NUMEXPR_NUM_THREADS": "1",
+            "VECLIB_MAXIMUM_THREADS": "1",
+            "POLARS_MAX_THREADS": "1",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "PYTHONSAFEPATH": "1",
+        }
+    )
     # Prefer the root's src/, else this process's own quant_fund source tree,
     # so the child never imports an unrelated installed package.
     src_dir = root_path / "src"
     if not (src_dir / "quant_fund").is_dir():
         src_dir = Path(__file__).resolve().parents[2]
-    existing = env.get("PYTHONPATH")
-    env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{existing}" if existing else str(src_dir)
+    env["PYTHONPATH"] = str(src_dir)
     return env
 
 

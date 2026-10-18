@@ -358,6 +358,12 @@ def test_committed_lane_replays(tmp_path: Path, declared: Path) -> None:
         for row in body.get("artifacts") or []
         if not row.get("match")
     ]
+    if body["all_match"] is not True:
+        replay_dir = tmp_path / "data" / "metadata" / "replay"
+        present = (
+            sorted(path.name for path in replay_dir.glob("*.json")) if replay_dir.is_dir() else []
+        )
+        mismatches.append(f"present={present}")
     assert body["all_match"] is True, "; ".join(mismatches) or body.get("spawn_error")
     assert body["verdict"] == "pass"
     assert replay_proof_contract_errors(body) == []
