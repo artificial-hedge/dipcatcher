@@ -482,15 +482,32 @@ def _wait_hits(sink: _Sink, n: int, timeout: float = _WAIT_S) -> None:
 
 
 def _busy_executor(app: Any, slots: int | None = None, sleep_s: float = 1.2) -> None:
-    """Occupy every worker thread with a sleeper so a submitted batch
-    stays ``validating`` — the deterministic way to reach pre-start
-    cancel/expiry/restart states. Defaults to filling the pool."""
+    """Fill the worker pool so the next batch stays queued.
+
+    Returns once every occupier is inside the lease. A fixed sleep let the
+    batch worker start first on a loaded runner, and the validating probe
+    then flipped between receipts. ``sleep_s`` is only the occupancy lease
+    so a later ``shutdown(wait=True)`` still finishes.
+    """
     executor = app.state.jobs_executor
     n = int(slots or executor._max_workers)  # noqa: SLF001 — audit reads pool depth
     release = threading.Event()
+    filled = threading.Event()
+    entered = 0
+    lock = threading.Lock()
+
+    def occupy() -> None:
+        nonlocal entered
+        with lock:
+            entered += 1
+            if entered >= n:
+                filled.set()
+        release.wait(timeout=sleep_s)
+
     for _ in range(n):
-        executor.submit(lambda: release.wait(timeout=sleep_s))
-    time.sleep(0.05)
+        executor.submit(occupy)
+    if not filled.wait(timeout=_WAIT_S):
+        raise AssertionError(f"busy executor filled {entered}/{n}")
 
 
 _VOLATILE_KEYS = frozenset({"id", "created", "created_at"})

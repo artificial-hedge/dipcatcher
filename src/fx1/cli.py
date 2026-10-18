@@ -1,8 +1,7 @@
 """``fx1`` command-line interface — the model project's front door.
 
-dipcatcher remains available as the harness CLI (``dipcatcher``/``quant``
-aliases); this CLI drives the fx-1 lifecycle: corpus, eval, training
-manifests, and harness inspection.
+dipcatcher remains the harness CLI (``dipcatcher``/``quant`` aliases).
+This CLI drives corpus, eval, training manifests, and inspection.
 """
 
 from __future__ import annotations
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
     from fx1.sdk import Fx1Harness
     from fx1.serve.client import HarnessClient
 
+_NO_WEIGHTS = "fx-1 harness API; chat ids fx1, fx1-lite; no released weights"
 _REMOTE_HELP = (
     "Drive a remote harness API at this base URL (HarnessClient) instead of the in-process SDK."
 )
@@ -253,10 +253,7 @@ def _emit_anthropic_deltas(events: Iterable[Any]) -> None:
 
 app = typer.Typer(
     name="fx1",
-    help=(
-        "fx-1 harness API. No released weights. dipcatcher builds, evaluates, "
-        "and verifies the program. Chat ids are fx1 and fx1-lite."
-    ),
+    help=f"{_NO_WEIGHTS}. dipcatcher builds, evaluates, and verifies the program.",
     add_completion=False,
 )
 
@@ -271,9 +268,7 @@ def _main(
     if version:
         from fx1 import __version__
 
-        typer.echo(
-            f"fx1 {__version__} (fx-1 harness API; chat ids fx1, fx1-lite; no released weights)"
-        )
+        typer.echo(f"fx1 {__version__} ({_NO_WEIGHTS})")
         raise typer.Exit()
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())
