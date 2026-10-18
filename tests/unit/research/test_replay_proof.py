@@ -265,7 +265,7 @@ def test_committed_serial_watch_lane_replays(tmp_path: Path) -> None:
 
     The receipt and its committed PIT fixture are mirrored into a scratch
     root so the replayed ``dipcatcher`` argv writes nowhere near the real
-    receipts dir; argv resolves to ``sys.executable -m quant_fund.cli``.
+    receipts dir; argv resolves to ``sys.executable -c`` calling ``app()``.
     """
     if not DECLARED_RECEIPT.is_file():
         pytest.skip("declared serial_watch receipt not committed on this branch")

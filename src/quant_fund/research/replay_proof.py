@@ -213,13 +213,17 @@ def _resolve_argv(argv: list[str]) -> list[str]:
     script lanes also run this checkout's code. Any other argv runs verbatim.
     """
     if argv and argv[0] in _CLI_ENTRYPOINTS:
-        # ``python -m quant_fund.cli.main`` warns and re-executes: importing
-        # the package loads ``cli.main`` via ``cli/__init__.py``, so runpy
-        # finds that module already in ``sys.modules``. Under a coverage
-        # tracer that pre-import is enough for the command to run against a
-        # half-initialized app and still exit 0. ``python -m quant_fund.cli``
-        # executes ``cli/__main__.py``, which was not imported by the package.
-        return [sys.executable, "-m", "quant_fund.cli", *argv[1:]]
+        # ``python -m quant_fund.cli.main`` (and ``-m quant_fund.cli``) can
+        # exit 0 without running the command: importing the package loads
+        # ``cli.main``, and a coverage tracer may import ``__main__`` before
+        # runpy executes it. ``-c`` calls ``app()`` with the lane argv in
+        # ``sys.argv[1:]`` exactly once.
+        return [
+            sys.executable,
+            "-c",
+            "import sys; from quant_fund.cli.main import app; app()",
+            *argv[1:],
+        ]
     if argv and argv[0].endswith(".py"):
         return [sys.executable, *argv]
     return list(argv)
@@ -373,6 +377,7 @@ def _replay_child_env(root_path: Path) -> dict[str, str]:
     env = dict(os.environ)
     for leaked in (
         "COVERAGE_PROCESS_START",
+        "COVERAGE_PROCESS_CONFIG",
         "COVERAGE_FILE",
         "COVERAGE_RCFILE",
         "COV_CORE_SOURCE",
@@ -532,7 +537,12 @@ def run_replay(
         if not resolved.is_relative_to(root_path):
             note = "path_escapes_root"
         elif not resolved.is_file():
-            note = "artifact_missing"
+            siblings = (
+                sorted(p.name for p in resolved.parent.glob("*.json"))
+                if resolved.parent.is_dir()
+                else []
+            )
+            note = "artifact_missing" + (":" + ",".join(siblings) if siblings else ":empty")
         else:
             observed = _file_sha256(resolved)
             match = observed == expected
