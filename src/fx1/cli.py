@@ -5105,16 +5105,22 @@ def options_reasoning_eval(
 
 
 @app.command("modelcard")
-def modelcard_validate(path: Path = typer.Argument(...)) -> None:
+def modelcard_validate(
+    path: Path = typer.Argument(...),
+    fixture: str | None = typer.Option(
+        None,
+        "--fixture",
+        help="Explicit fixture marker (only SYNTHETIC is accepted); refuses ship eligibility.",
+    ),
+) -> None:
     """Validate an fx-1 model card and report ship-gate status."""
     from fx1.modelcard import ModelCard
 
+    if fixture is not None and fixture.upper() != "SYNTHETIC":
+        raise typer.BadParameter("only --fixture SYNTHETIC is supported")
     card = ModelCard.load(path)
-    typer.echo(
-        json.dumps(
-            {"version": card.version, "ship_eligible": card.eval_delta.ship_eligible}, indent=2
-        )
-    )
+    ship_eligible = card.ship_eligible and fixture is None
+    typer.echo(json.dumps({"version": card.version, "ship_eligible": ship_eligible}, indent=2))
 
 
 @app.command("redteam")

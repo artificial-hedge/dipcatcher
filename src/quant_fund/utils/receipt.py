@@ -25,6 +25,39 @@ ALWAYS_EXCLUDED = ("receipt_sha256",)
 QUARANTINED_SUBDIRS = frozenset({"legacy-unsealed"})
 
 
+def corpus_training_refused(
+    path: Path,
+    receipts_root: Path,
+    payload: Mapping[str, Any],
+    file_sha256: str,
+    *,
+    repo_root: Path | None = None,
+) -> bool:
+    """True when a parseable receipt must never enter fx-1 corpus loading."""
+    from quant_fund.research.legacy_unsealed import (
+        honesty_stamp_errors,
+        in_quarantined_subdir,
+        load_quarantine_or_empty,
+    )
+
+    reject, _gaps = honesty_stamp_errors(payload)
+    if reject:
+        return True
+    try:
+        rel = path.relative_to(receipts_root).as_posix()
+    except ValueError:
+        return True
+    if in_quarantined_subdir(rel):
+        return True
+    if repo_root is None:
+        return False
+    registry = load_quarantine_or_empty(repo_root / "quality" / "legacy_quarantine.json")
+    entry = registry.files.get(rel)
+    if entry is None:
+        return False
+    return entry.sha256 == file_sha256
+
+
 def is_quarantined(path: Path, root: Path) -> bool:
     """True iff ``path`` sits under a quarantined top-level subdir of ``root``."""
     try:

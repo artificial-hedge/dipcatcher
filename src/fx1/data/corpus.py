@@ -104,6 +104,8 @@ def _negative_example(record: ReceiptRecord, system: str) -> SFTExample:
 def build_corpus(
     receipts_dir: str | Path | Iterable[str | Path],
     out_jsonl: str | Path,
+    *,
+    repo_root: Path | None = None,
 ) -> dict[str, int]:
     """Build the SFT corpus and write it as JSONL.
 
@@ -113,8 +115,21 @@ def build_corpus(
     ``receipt_sha256`` provenance field.
     """
     system = _system_prompt()
-    records = load_receipts(receipts_dir)
-    stats = {"loaded": len(records), "positive": 0, "negative": 0, "skipped": 0}
+    if repo_root is None:
+        try:
+            from quant_fund.utils.repo import repo_root as _repo_root
+
+            repo_root = _repo_root()
+        except Exception:
+            repo_root = None
+    records, refused = load_receipts(receipts_dir, repo_root=repo_root)
+    stats = {
+        "loaded": len(records),
+        "refused": refused,
+        "positive": 0,
+        "negative": 0,
+        "skipped": 0,
+    }
     out_path = Path(out_jsonl)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as fh:
@@ -143,6 +158,7 @@ def build_full_corpus(
     receipts_dir: str | Path | Iterable[str | Path],
     out_jsonl: str | Path,
     *,
+    repo_root: Path | None = None,
     notebooks: list[str | Path] | None = None,
     artifacts_dir: str | Path | None = None,
 ) -> dict[str, int]:

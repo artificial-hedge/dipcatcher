@@ -59,7 +59,7 @@ _FUSION_BREAK = re.compile(
 # "s h a r p e" → "sharpe", "N A V" → "NAV". Letters only — a trailing
 # space before a number ("nav's 1.9") must survive or the token fuses with
 # the claim. Ordinary text ("the cat sat", "I said") is unaffected.
-_SPACED_LETTERS = re.compile(r"(?<=\b[A-Za-z])\s+(?=[A-Za-z]\b)")
+_SPACED_LETTERS = re.compile(r"(?<=\b[A-Za-z])\s+(?=[A-Za-z]\b(?!/))")
 _CAMEL_BOUNDARY = re.compile(r"(?<=[a-z])(?=[A-Z])")
 
 # Cyrillic/Greek letters that NFKC does not fold to Latin but that render
@@ -134,7 +134,7 @@ def _normalize(text: str) -> str:
 # a writer actually uses: p&l, p+l, p and l, profit and loss, p/l.
 # "nav" admits dotted / spelled net-asset-value forms.
 _TOKEN_SPELLINGS: dict[str, str] = {
-    "pnl": r"(?:p\s*(?:n|&|\+|and|/)\s*l|profit\s+and\s+loss)",
+    "pnl": r"(?:p\s*(?:n|&|\+|and|/)\s*l|p/l|profit\s+and\s+loss)",
     "nav": r"(?:n\.?\s*a\.?\s*v\.?|net\s+asset\s+value)",
 }
 
