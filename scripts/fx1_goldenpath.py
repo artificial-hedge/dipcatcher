@@ -577,6 +577,7 @@ def run_goldenpath(
         engine_sock.listen(1)
         engine_port = int(engine_sock.getsockname()[1])
         server_env["FX1_CHECKPOINT_DIR"] = str(ckpt_dir)
+        server_env["FX1_ENFORCE_SHIP_GATE"] = "0"
         server_env["FX1_LOCAL_SERVE_URL"] = f"http://127.0.0.1:{engine_port}/v1"
         server_env["FX1_LOCAL_SERVE_CMD"] = (
             "$python -m fx1.serve.local_engine "

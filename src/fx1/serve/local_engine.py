@@ -565,7 +565,9 @@ def main(argv: list[str] | None = None) -> int:
     root = args.checkpoint_dir if args.checkpoint_dir is not None else Path(env_dir)
     if args.checkpoint_dir is None and not env_dir:
         parser.error("a checkpoint dir is required (--checkpoint-dir or FX1_CHECKPOINT_DIR)")
-    engine = LocalWeightsEngine(root)
+    from fx1.serve.ship_gate_env import enforce_ship_gate_from_env
+
+    engine = LocalWeightsEngine(root, enforce_ship_gate=enforce_ship_gate_from_env())
     print(
         f"fx1 local weights engine: serving {engine.served_model} "
         f"({engine.model.n_params} params, sha256 {engine.weights_sha256[:16]}…) "

@@ -158,7 +158,7 @@ def test_weights_direct_checkpoint_loads_and_serves(tmp_path: Path) -> None:
     blob[-1] ^= 0xFF
     (bad / "weights.safetensors").write_bytes(bytes(blob))
     with pytest.raises(RuntimeError, match="integrity pin"):
-        LocalWeightsEngine(bad)
+        LocalWeightsEngine(bad, enforce_ship_gate=False)
 
     # a card-only checkpoint dir (the pre-artifact state) refuses too
     cardless = tmp_path / "cardless"

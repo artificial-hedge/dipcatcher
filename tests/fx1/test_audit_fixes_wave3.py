@@ -383,16 +383,14 @@ def _fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
 
 def test_extra_args_config_contained(tmp_path: Path, monkeypatch):
     harness = Harness(runner=_fake_runner)
+    repo = Path(__file__).resolve().parents[2]
     monkeypatch.chdir(tmp_path)
     with pytest.raises(ValueError, match="allowlist"):
         harness.run("doctor", extra_args=["--config", "/etc/passwd"])
     with pytest.raises(ValueError, match="allowlist"):
         harness.run("doctor", extra_args=["--config=/etc/passwd"])
-    configs = tmp_path / "configs"
-    configs.mkdir()
-    inside = configs / "ok.yaml"
-    inside.write_text("x: 1\n", encoding="utf-8")
-    result = harness.run("doctor", extra_args=["--config", "configs/ok.yaml"])
+    monkeypatch.chdir(repo)
+    result = harness.run("doctor", extra_args=["--config", "configs/paper.yaml"])
     assert result.ok
 
 

@@ -1588,6 +1588,7 @@ class LocalFx1Backend(_UsageTracker):
         self,
         checkpoint_dir: str | Path,
         *,
+        enforce_ship_gate: bool | None = None,
         require_signature: bool | None = None,
         serve_url: str | None = None,
         serve_cmd: str | None = None,
@@ -1596,6 +1597,8 @@ class LocalFx1Backend(_UsageTracker):
         timeout_s: float | None = None,
         start_timeout_s: float | None = None,
     ) -> None:
+        from fx1.serve.ship_gate_env import enforce_ship_gate_from_env
+
         root = Path(checkpoint_dir)
         card_path = root / "modelcard.json"
         if not card_path.exists():
@@ -1603,7 +1606,12 @@ class LocalFx1Backend(_UsageTracker):
                 f"no model card at {card_path}; an fx-1 checkpoint without a card is not servable"
             )
         self.card = ModelCard.load(card_path)
-        if not self.card.ship_eligible:
+        gate = (
+            enforce_ship_gate
+            if enforce_ship_gate is not None
+            else enforce_ship_gate_from_env()
+        )
+        if gate and not self.card.ship_eligible:
             raise RuntimeError(
                 f"{self.card.version} failed the ship gate "
                 "(honesty/domain/general deltas); refusing to serve"
