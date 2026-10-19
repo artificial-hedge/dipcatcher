@@ -73,6 +73,8 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | `cf6b3613b` | RL-4C Shipwright | Release preflight, checkout `persist-credentials: false`, `make ci` parity |
 | `0febe4d69` | VT-2M | Replay lane TMPDIR isolation + CI evidence artifacts |
 | `f6f061f79` | FX-1A | Corpus quarantine refuse, honesty lexical holes, ship fixture CLI |
+| `ef717fc99` | HX-5D | Formal Hypothesis collection, env isolation tests, webhook injected clock |
+| `b42a31864` | HX-5D | Formal repo-root `paper.yaml`; TZ/LC_ALL (superseded by formal `conftest` fixture) |
 | `ce6cfe32c` | QA-0K | Initial `PROD_READINESS_STATUS.md` ledger |
 
 Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher`), #3006/#3004 harness drafts — none merge the KX-7Q/PD-8S agent branches directly.
@@ -87,4 +89,4 @@ Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher
 | 2026-10-19 | `ce6cfe32c` | QA-0K status ledger on `main`. |
 | 2026-10-19 | `0febe4d69` | **VT-2M** replay TMPDIR + CI evidence artifacts; criterion 5 pending CI replay-sweep. |
 | 2026-10-19 | `f6f061f79` | **FX-1A** honesty/corpus fixes; CI run 39201259280 queued. |
-| 2026-10-19 | (follow-up) | QA-0K refresh + HX-5D `test_stateful` env isolation (await push). |
+| 2026-10-19 | `b42a31864` | QA-0K refresh + HX-5D formal locale/repo-root follow-up on `main`. |

@@ -2,12 +2,8 @@
 
 from __future__ import annotations
 
-import os
 from datetime import UTC, datetime
 from pathlib import Path
-
-os.environ.setdefault("TZ", "UTC")
-os.environ.setdefault("LC_ALL", "C")
 
 from hypothesis import settings
 from hypothesis import strategies as st
