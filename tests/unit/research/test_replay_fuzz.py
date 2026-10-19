@@ -167,17 +167,19 @@ def test_replay_lane_tmpdir_is_under_run_cwd(
     monkeypatch.setenv("TMPDIR", str(foreign_tmp))
     lane = tmp_path / "lane_cwd"
     lane.mkdir()
-    (lane / "emit_tmp.py").write_text(
+    _tracked(
+        tmp_path,
+        "lane_cwd/emit_tmp.py",
         "import json, os\n"
         "from pathlib import Path\n"
         "p = Path('out')\n"
         "p.mkdir(parents=True, exist_ok=True)\n"
-        "(p / 'artifact.json').write_text(json.dumps({'tmpdir': os.environ['TMPDIR']}), encoding='utf-8')\n"
+        "(p / 'artifact.json').write_text(json.dumps({'tmpdir': os.environ['TMPDIR']}), encoding='utf-8')\n",
     )
     artifact_path = lane / "out" / "artifact.json"
     body = _replay(
         tmp_path,
-        argv=[sys.executable, "emit_tmp.py"],
+        argv=["emit_tmp.py"],
         cwd="lane_cwd",
         artifacts=[{"path": "out/artifact.json", "sha256": "00" * 32}],
     )
@@ -203,7 +205,9 @@ def test_inherited_home_cache_does_not_enter_lane_artifact(
     monkeypatch.setenv("USERPROFILE", str(poison_home))
     lane = tmp_path / "lane_cwd"
     lane.mkdir()
-    (lane / "emit_home.py").write_text(
+    _tracked(
+        tmp_path,
+        "lane_cwd/emit_home.py",
         "import json, os\n"
         "from pathlib import Path\n"
         "p = Path('out')\n"
@@ -214,12 +218,12 @@ def test_inherited_home_cache_does_not_enter_lane_artifact(
         "    json.dumps({'home': str(home), 'leak': seed.exists(), "
         "'ceiling': os.environ.get('GIT_CEILING_DIRECTORIES')}),\n"
         "    encoding='utf-8',\n"
-        ")\n"
+        ")\n",
     )
     artifact_path = lane / "out" / "artifact.json"
     body = _replay(
         tmp_path,
-        argv=[sys.executable, "emit_home.py"],
+        argv=["emit_home.py"],
         cwd="lane_cwd",
         artifacts=[{"path": "out/artifact.json", "sha256": "00" * 32}],
     )
@@ -233,12 +237,12 @@ def test_inherited_home_cache_does_not_enter_lane_artifact(
 
 def test_git_ceiling_hides_parent_repo_from_lane_child(tmp_path: Path) -> None:
     """``git rev-parse`` from the lane cwd must not see a neighbour's repo."""
-    import subprocess
-
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     lane = tmp_path / "lane_cwd"
     lane.mkdir()
-    (lane / "emit_git.py").write_text(
+    _tracked(
+        tmp_path,
+        "lane_cwd/emit_git.py",
         "import json, subprocess\n"
         "from pathlib import Path\n"
         "p = Path('out')\n"
@@ -250,12 +254,12 @@ def test_git_ceiling_hides_parent_repo_from_lane_child(tmp_path: Path) -> None:
         "(p / 'artifact.json').write_text(\n"
         "    json.dumps({'inside': proc.returncode == 0, 'out': proc.stdout.strip()}),\n"
         "    encoding='utf-8',\n"
-        ")\n"
+        ")\n",
     )
     artifact_path = lane / "out" / "artifact.json"
     body = _replay(
         tmp_path,
-        argv=[sys.executable, "emit_git.py"],
+        argv=["emit_git.py"],
         cwd="lane_cwd",
         artifacts=[{"path": "out/artifact.json", "sha256": "00" * 32}],
     )
@@ -270,3 +274,15 @@ def test_clean_replay_passes_control(tmp_path: Path) -> None:
     assert body["verdict"] == "pass"
     assert body["all_match"] is True
     assert body["exit_code"] == 0
+
+
+@pytest.mark.parametrize("cwd", ["no_such_dir", "../replay_escape_probe"])
+def test_refused_cwd_creates_no_directories(tmp_path: Path, cwd: str) -> None:
+    """A receipt refused on its cwd must not choose where replay creates dirs."""
+    root = tmp_path / "root"
+    root.mkdir()
+    body = _replay(root, cwd=cwd)
+    assert body["verdict"] == "fail"
+    assert str(body["spawn_error"]).startswith(("cwd_missing", "cwd_escapes_root"))
+    assert not (root / "no_such_dir").exists()
+    assert not (tmp_path / "replay_escape_probe").exists()

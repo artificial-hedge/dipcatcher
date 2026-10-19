@@ -622,8 +622,6 @@ def run_replay(
     except (OSError, UnicodeError, json.JSONDecodeError):
         source_receipt_seal = None
 
-    env = _replay_child_env(root_path, run_cwd=run_cwd)
-
     # Input binding: declared tapes verify BEFORE argv runs — a drifted or
     # missing input means the replay could never reproduce the receipt, so
     # executing would only burn time (and feed a tampered tape to the lane's
@@ -672,6 +670,10 @@ def run_replay(
         if refusal is not None:
             spawn_error = refusal
         else:
+            # Built only after cwd, argv and artifacts are vetted: it creates
+            # the lane tmp/home under run_cwd, and a refused receipt must not
+            # choose where replay creates directories.
+            env = _replay_child_env(root_path, run_cwd=run_cwd)
             try:
                 proc = subprocess.run(
                     resolved_argv,
