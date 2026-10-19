@@ -59,7 +59,7 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | **ZR-9V** | parallel | evidence-audit masks; base-ref gating; anchor staleness reporting. |
 | **VT-2M** | done (`0febe4d69`) | Lane TMPDIR isolation, CI replay/bundle artifacts, runbook budget note; await evidence-audit on 39201259280+. |
 | **HX-5D** | done (this pass) | `test_stateful.py` TZ/LC_ALL + repo-root config path on `main`. |
-| **FX-1A** | done (`f6f061f79`) | corpus quarantine refuse, honesty lexical holes, ship fixture CLI. |
+| **FX-1A** | done (`d73d8d090`) | Corpus/honesty (`f6f061f79`+); goldenpath measurement via `FX1_ENFORCE_SHIP_GATE=0`; harness config test uses repo `configs/`. |
 | **PD-8S** | done (`f8ec9e649`) | Key scrub, repo-root paths, sim-live honesty, superpower partial exit, lab doctor, env/README parity (`test_pd8s_frontdoor.py`). |
 | **RL-4C** | **landed** (`cf6b3613b`) | release preflight, checkout creds, `make ci` parity (`test_workflow_security.py` guards `ci.yml` / `release.yml`). |
 | **QA-0K** | continuous | **No stamping** this pass unless `needs-stamp:` commits land and pin holder signs (H1). Reconcile this doc after each green CI candidate. |
