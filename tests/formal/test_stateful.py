@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from hypothesis import settings
 from hypothesis import strategies as st
-from hypothesis.stateful import RuleBasedStateMachine, invariant, rule, run_state_machine_as_test
+from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
 from quant_fund.config.loader import load_config
 from quant_fund.execution.simulated_broker import SimulatedBroker
@@ -205,11 +205,9 @@ class LifecycleMachine(RuleBasedStateMachine):
             assert order.filled <= order.qty + 1e-8
 
 
-test_accounting_state_machine = run_state_machine_as_test(
-    AccountingMachine,
-    settings=settings(max_examples=12, stateful_step_count=8, deadline=None),
-)
-test_lifecycle_state_machine = run_state_machine_as_test(
-    LifecycleMachine,
-    settings=settings(max_examples=10, stateful_step_count=8, deadline=None),
-)
+class TestAccountingStateMachine(AccountingMachine.TestCase):
+    settings = settings(max_examples=12, stateful_step_count=8, deadline=None)
+
+
+class TestLifecycleStateMachine(LifecycleMachine.TestCase):
+    settings = settings(max_examples=10, stateful_step_count=8, deadline=None)

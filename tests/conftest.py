@@ -15,6 +15,10 @@ os.environ["MLFLOW_DISABLE_TELEMETRY"] = "true"
 
 import pytest
 
+GUARDED_ENV_BASELINE: dict[str, str | None] = {
+    key: os.environ.get(key) for key in ("TZ", "LC_ALL", "NUMBA_DISABLE_JIT")
+}
+
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))

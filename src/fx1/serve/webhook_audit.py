@@ -77,6 +77,13 @@ if TYPE_CHECKING:
 __all__ = ["webhook_audit", "webhook_audit_bench"]
 
 _SECRET = "whsec-audit"  # NOSONAR — loopback-only test key, not a real credential
+_WALL_CLOCK: Callable[[], float] = time.time
+
+
+def _wall_time() -> float:
+    return _WALL_CLOCK()
+
+
 _JOB_TERMINAL = ("succeeded", "failed", "cancelled")
 _WAIT_S = 15.0
 
@@ -429,7 +436,7 @@ def _probe_signature(ctx: _Ctx) -> dict[str, bool]:
 
     out["sig_header_shape"] = isinstance(sig, str) and sig.startswith("sha256=")
     out["sig_timestamp_present_fresh"] = (
-        isinstance(ts, str) and ts.isdigit() and abs(time.time() - float(ts)) < 60
+        isinstance(ts, str) and ts.isdigit() and abs(_wall_time() - float(ts)) < 60
     )
     recomputed = sign_webhook(_SECRET, ts or "", hit.body)
     out["sig_recomputed_matches"] = bool(sig) and hmac_mod.compare_digest(recomputed, sig or "")
@@ -444,10 +451,10 @@ def _probe_signature(ctx: _Ctx) -> dict[str, bool]:
         ts,
         sig,
         hit.body,
-        now=time.time() + 600.0,  # 10 min past delivery > 300s tolerance
+        now=_wall_time() + 600.0,  # 10 min past delivery > 300s tolerance
     )
     out["sig_freshness_explicit_disable"] = verify_webhook(
-        _SECRET, ts, sig, hit.body, tolerance_s=-1.0, now=time.time() + 10**9
+        _SECRET, ts, sig, hit.body, tolerance_s=-1.0, now=_wall_time() + 10**9
     )
     out["sig_malformed_inputs_fail"] = (
         not verify_webhook(_SECRET, ts, "nonsense", hit.body)
