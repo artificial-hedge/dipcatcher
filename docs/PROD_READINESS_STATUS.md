@@ -1,7 +1,7 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `f6f061f79` (2026-10-19 UTC)  
-**Work-order base:** `cb4f2c52f` is an ancestor of `main` (+16 commits through `f6f061f79`).  
+**Measured at:** `origin/main` `3e603bd03` (2026-10-19 UTC)  
+**Work-order base:** `cb4f2c52f` is an ancestor of `main` (+integrator stamp `219f6c4bb` and fleet landings through `3e603bd03`).  
 **Owner:** QA-0K maintains this file; other agents do not edit unless coordinating a criterion flip.
 
 Do not call the repo production-ready until every exit criterion below is **green** on a completed CI run of `main`, or explicitly **parked** in [Human-only parked items](#human-only-parked-items).
@@ -14,7 +14,7 @@ Do not call the repo production-ready until every exit criterion below is **gree
 |---|--------|-----------------|---------------------------|
 | 1 | **RED** — no completed all-jobs-green CI on current `main` tip | Full push workflow set: lint, typecheck, test shards, coverage, evidence-audit, proofcore, fx1, arch-guards, platform matrix | In flight: https://github.com/artificial-hedge/dipcatcher/actions/runs/39201259280 (CI, `f6f061f79`, pending). Prior pushes cancelled mid-queue (`39201252179` `cfa8d1961`, `39201184002` `0febe4d69`, `39200925380` `ce6cfe32c`). Last **completed** CI: https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`, **failure**). |
 | 2 | **RED** (local `make lint` on `cf6b3613b`, 4 vCPU) | `make lint && make typecheck && uv run mypy src/fx1` | CI lint job **green** on https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`). Local `make lint` failed `check_mypy_strict_allowlist.py` (regressions in `hedge_lab/resources.py`, `models/deep_rl.py`, `models/nbeats.py`, `utils/seeds.py`). Log: `/opt/cursor/artifacts/qa0k_make_lint.log`. |
-| 3 | **RED** (expected until human pin re-sign) | `uv run dipcatcher crown-jewels --check` and `uv run dipcatcher verify-repo` | evidence-audit on https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510: `pin_signatures: FAIL pin_drift:quality/crown_jewels.json,pin_drift:quality/epoch_heads.json`. Local `crown-jewels --check`: **intact**; `verify-repo` still reports `pin_drift` on those pins. |
+| 3 | **RED** (pin re-sign only; epochs repaired) | `uv run dipcatcher crown-jewels --check` and `uv run dipcatcher verify-repo` | `pin_signatures: FAIL pin_drift` until **H1** (`GATE_SIGNING_KEY`). QA-0K restored `epoch_heads` from `219f6c4bb`, re-stamped drift through `3e603bd03`, and acked `formal/_test_sm_probe.py` + `test_hf_rv_scaffolding.py` removals. `crown-jewels --check`: **intact** after repair commit. |
 | 4 | **RED** (gates unmasked; drills still blocked by H1) | `make evidence-audit` (all 7 gates reported; drills calibrated) | **ZR-9V-1** on `main`: seven integrity steps always run; suite fails once at end (`ea_fail`). Still **red** on inherited `pin_drift` / epoch jewel drift until **H1**; tamper/fuzz verdicts need a green pin pass to trust. |
 | 5 | **PENDING CI** | `make replay-sweep` (executed vs skipped carriers separated) | **VT-2M** landed `0febe4d69`: lane TMPDIR under run cwd, `evidence-replay-sweep` + bundle artifacts on `evidence-audit`. Subagent log: local `make replay-sweep` pass (~91–109s); confirm on next green `evidence-audit` (run 39201259280+). `mcs_vol` budget documented in `docs/OPERATIONS_RUNBOOK.md` (no manifest re-pin). |
 | 6 | **UNKNOWN** | `make admission-gate ADMISSION_BASE=<last green>` and `make epoch-consistency EPOCH_BASE=<last green>` | No **last green** CI SHA recorded yet; use post-green run URL once criterion 1 flips. |
@@ -62,7 +62,7 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | **FX-1A** | done (`d73d8d090`) | Corpus/honesty (`f6f061f79`+); goldenpath measurement via `FX1_ENFORCE_SHIP_GATE=0`; harness config test uses repo `configs/`. |
 | **PD-8S** | done (`f8ec9e649`) | Key scrub, repo-root paths, sim-live honesty, superpower partial exit, lab doctor, env/README parity (`test_pd8s_frontdoor.py`). |
 | **RL-4C** | **landed** (`cf6b3613b`) | release preflight, checkout creds, `make ci` parity (`test_workflow_security.py` guards `ci.yml` / `release.yml`). |
-| **QA-0K** | continuous | **No stamping** this pass unless `needs-stamp:` commits land and pin holder signs (H1). Reconcile this doc after each green CI candidate. |
+| **QA-0K** | continuous | Owns `epoch_heads.json`, `crown_jewels.json`, `epoch_allowed_removals.json`, `evidence_migrations/`. Process `needs-stamp:` bodies; run `crown-jewels --write` + per-chain `corpus-epoch` only (never `sign-pins` without H1). |
 
 ### Parallel landings on `main` (inventory)
 
@@ -103,4 +103,6 @@ Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher
 | 2026-10-19 | `b42a31864` | QA-0K refresh + HX-5D formal locale/repo-root follow-up on `main`. |
 | 2026-10-19 | `f8ec9e649` | **PD-8S** front-door lane landed; `test_pd8s_frontdoor.py` 10/10 locally. |
 | 2026-10-19 | `e6222f455` | **KX-7Q** CLI line-budget split + ruff cleanup on `main`. |
+| 2026-10-19 | `219f6c4bb` | Integrator bulk stamp through `6d15a409c` (workflows…typings). |
+| 2026-10-19 | `3e603bd03` | Repair pass: fix orphan `epoch_heads` receipts from `65080a71e`, ack test removals, re-stamp chains. |
 | 2026-10-19 | `06cf40e73` | **ZR-9V** evidence gates unmasked + anchor staleness; `test_replay_sweep` + `test_timestamp_anchor` 16/16 locally. |

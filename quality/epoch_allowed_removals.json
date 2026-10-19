@@ -395,6 +395,24 @@
       "reason": "Fixture copy of a lane receipt renamed onto its seal prefix. Removed at corpus_epoch_12bce57f7c47989b.json; the new fixture name is the seal-prefixed receipt.",
       "to_sha256": null,
       "transition": "removed"
+    },
+    {
+      "corpus": "tests/*",
+      "epoch": "corpus_epoch_46d2bddbbb636e99.json",
+      "from_sha256": "a6d832b8bc571ba9b621df31e843491d5ae62de847f46274727021c2bf5a9385",
+      "member": "formal/_test_sm_probe.py",
+      "reason": "HX-5D removed the formal state-machine probe; collection hygiene lives in tests/formal/conftest.py (integrator stamp 219f6c4bb).",
+      "to_sha256": null,
+      "transition": "removed"
+    },
+    {
+      "corpus": "tests/*",
+      "epoch": "corpus_epoch_fcc60804cbd6a56b.json",
+      "from_sha256": "a21cb2510407493925bdfc151566ec7959a8889f2016027c5afe95700729dc85",
+      "member": "test_hf_rv_scaffolding.py",
+      "reason": "de56f5a9e moved HF-RV scaffolding tests to tests/unit/test_hf_rv_scaffolding.py; root-level name dropped at this epoch.",
+      "to_sha256": null,
+      "transition": "removed"
     }
   ],
   "schema": "epoch_acknowledgments.v1"
