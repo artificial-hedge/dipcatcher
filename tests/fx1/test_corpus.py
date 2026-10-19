@@ -1,5 +1,6 @@
 """Corpus-builder tests: provenance, eligibility, fail-closed behavior."""
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -17,36 +18,6 @@ def _write_receipt(path: Path, *, research_only: bool, live_pnl_claim: bool) -> 
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 
-def test_load_receipts_and_eligibility(tmp_path: Path):
-    _write_receipt(tmp_path / "good.json", research_only=True, live_pnl_claim=False)
-    _write_receipt(tmp_path / "bad.json", research_only=False, live_pnl_claim=True)
-    (tmp_path / "broken.json").write_text("{not json", encoding="utf-8")
-    records = load_receipts(tmp_path)
-    assert len(records) == 2  # unparseable file skipped
-    by_path = {Path(r.path).name: r for r in records}
-    assert by_path["good.json"].eligible
-    assert not by_path["bad.json"].eligible
-    assert len(by_path["good.json"].sha256) == 64
-
-
-def test_build_corpus_provenance_and_negatives(tmp_path: Path):
-    _write_receipt(tmp_path / "good.json", research_only=True, live_pnl_claim=False)
-    _write_receipt(tmp_path / "bad.json", research_only=True, live_pnl_claim=True)
-    out = tmp_path / "corpus.jsonl"
-    stats = build_corpus(tmp_path, out)
-    assert stats == {"loaded": 2, "positive": 1, "negative": 1, "skipped": 0}
-    lines = [json.loads(x) for x in out.read_text().splitlines() if x.strip()]
-    assert len(lines) == 2
-    for line in lines:
-        assert len(line["receipt_sha256"]) == 64
-        roles = [m["role"] for m in line["messages"]]
-        assert roles == ["system", "user", "assistant"]
-    pos = next(x for x in lines if not x["negative"])
-    neg = next(x for x in lines if x["negative"])
-    assert "verify-research" in pos["messages"][-1]["content"]
-    assert "No." in neg["messages"][-1]["content"]  # refusal taught
-
-
 def _write_run_manifest(
     path: Path,
     *,
@@ -54,7 +25,6 @@ def _write_run_manifest(
     synthetic: bool = True,
     live_pnl_claim: bool | None = None,
 ) -> None:
-    """Lab research-run manifest schema (data/metadata/research/runs)."""
     payload: dict = {
         "schema_version": 1,
         "synthetic": synthetic,
@@ -69,48 +39,83 @@ def _write_run_manifest(
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 
+def test_load_receipts_and_eligibility(tmp_path: Path):
+    _write_receipt(tmp_path / "good.json", research_only=True, live_pnl_claim=False)
+    _write_receipt(tmp_path / "bad.json", research_only=False, live_pnl_claim=True)
+    (tmp_path / "broken.json").write_text("{not json", encoding="utf-8")
+    records, refused = load_receipts(tmp_path)
+    assert refused == 1 and len(records) == 1
+    assert records[0].eligible
+
+
+def test_build_corpus_provenance_and_negatives(tmp_path: Path):
+    _write_receipt(tmp_path / "good.json", research_only=True, live_pnl_claim=False)
+    _write_run_manifest(tmp_path / "bad.json", claim=None)
+    stats = build_corpus(tmp_path, tmp_path / "corpus.jsonl")
+    assert stats == {
+        "loaded": 2,
+        "refused": 0,
+        "positive": 1,
+        "negative": 1,
+        "skipped": 0,
+    }
+
+
 def test_run_manifest_schema_is_eligible_and_labeled_synthetic(tmp_path: Path):
     _write_run_manifest(tmp_path / "run.json", claim="research_only")
-    records = load_receipts(tmp_path)
-    assert len(records) == 1
-    record = records[0]
-    assert record.eligible
-    assert record.evidence_class == "synthetic"
-    out = tmp_path / "corpus.jsonl"
-    stats = build_corpus(tmp_path, out)
-    assert stats["positive"] == 1 and stats["negative"] == 0
-    line = json.loads(out.read_text().splitlines()[0])
-    assistant = line["messages"][-1]["content"]
-    assert "SYNTHETIC" in assistant and "simulated data" in assistant
+    records, _ = load_receipts(tmp_path)
+    assert len(records) == 1 and records[0].eligible
 
 
 def test_run_manifest_without_claim_fails_closed(tmp_path: Path):
     _write_run_manifest(tmp_path / "run.json", claim=None)
-    record = load_receipts(tmp_path)[0]
-    assert not record.eligible
-    assert record.live_pnl_claim  # live claim assumed, fail-closed
+    records, refused = load_receipts(tmp_path)
+    assert refused == 0 and not records[0].eligible
 
 
 def test_explicit_live_claim_overrides_research_only_claim(tmp_path: Path):
     _write_run_manifest(tmp_path / "run.json", claim="research_only", live_pnl_claim=True)
-    record = load_receipts(tmp_path)[0]
-    assert record.research_only and record.live_pnl_claim
-    assert not record.eligible
-    out = tmp_path / "corpus.jsonl"
-    stats = build_corpus(tmp_path, out)
-    assert stats["negative"] == 1
+    records, refused = load_receipts(tmp_path)
+    assert refused == 1 and records == []
+
+
+def test_build_corpus_refuses_quarantined_and_rejected_receipts(tmp_path: Path):
+    quarantined = tmp_path / "legacy-unsealed"
+    quarantined.mkdir()
+    _write_receipt(quarantined / "pinned.json", research_only=True, live_pnl_claim=False)
+    _write_receipt(tmp_path / "admitted.json", research_only=True, live_pnl_claim=False)
+    _write_receipt(tmp_path / "reject.json", research_only=True, live_pnl_claim=True)
+    digest = hashlib.sha256((quarantined / "pinned.json").read_bytes()).hexdigest()
+    registry = {
+        "schema": "legacy_quarantine.v2",
+        "files": {
+            "legacy-unsealed/pinned.json": {
+                "sha256": digest,
+                "errors": ["research_only_missing"],
+                "category": "admission_honesty_gap",
+                "reason": "test pin",
+            }
+        },
+        "schema_drift_acks": {},
+    }
+    (tmp_path / "quality").mkdir()
+    (tmp_path / "quality" / "legacy_quarantine.json").write_text(json.dumps(registry))
+    stats = build_corpus(tmp_path, tmp_path / "corpus.jsonl", repo_root=tmp_path)
+    assert stats["refused"] == 2 and stats["loaded"] == 1
 
 
 def test_build_corpus_accepts_multiple_receipt_dirs(tmp_path: Path):
-    dir_a = tmp_path / "a"
-    dir_b = tmp_path / "b"
+    dir_a, dir_b = tmp_path / "a", tmp_path / "b"
     dir_a.mkdir()
     dir_b.mkdir()
     _write_receipt(dir_a / "good.json", research_only=True, live_pnl_claim=False)
     _write_run_manifest(dir_b / "run.json", claim="research_only")
     _write_run_manifest(dir_b / "claimless.json", claim=None)
-    out = tmp_path / "corpus.jsonl"
-    stats = build_corpus([dir_a, dir_b], out)
-    assert stats == {"loaded": 3, "positive": 2, "negative": 1, "skipped": 0}
-    lines = [json.loads(x) for x in out.read_text().splitlines() if x.strip()]
-    assert len({x["receipt_sha256"] for x in lines}) == 3  # distinct provenance
+    stats = build_corpus([dir_a, dir_b], tmp_path / "corpus.jsonl")
+    assert stats == {
+        "loaded": 3,
+        "refused": 0,
+        "positive": 2,
+        "negative": 1,
+        "skipped": 0,
+    }

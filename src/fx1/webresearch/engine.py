@@ -19,7 +19,9 @@ sealed lab receipt and must never be presented as one.
 
 from __future__ import annotations
 
+import os
 import re
+from collections.abc import Mapping
 import threading
 import time
 import urllib.parse
@@ -30,6 +32,15 @@ from decimal import Decimal, InvalidOperation
 
 from fx1.webresearch.fetch import FetchResult, fetch_page, robots_allowed
 from fx1.webresearch.search import DEFAULT_MAX_RESULTS, DEFAULT_TIMEOUT_S, Searcher, SearchHit
+
+WEB_RESEARCH_ENV = "FX1_WEB_RESEARCH"
+
+
+def web_research_opted_in(environ: Mapping[str, str] | None = None) -> bool:
+    """Public web search is opt-in via ``FX1_WEB_RESEARCH=1`` (or true/yes)."""
+    env = os.environ if environ is None else environ
+    return env.get(WEB_RESEARCH_ENV, "").strip().lower() in {"1", "true", "yes"}
+
 
 # Do not split after abbreviation dots ("U.S.", "e.g."): a claim that loses
 # its subject groups and reads worse. Under-splitting is the safer error.
@@ -438,6 +449,17 @@ class Researcher:
         budget = budget or ResearchBudget()
         cancel_event = cancel_event or threading.Event()
         report = ResearchReport(goal=goal, started_at=_now_iso(), budget=budget)
+        if self._searcher is None and not web_research_opted_in():
+            report.finished_at = _now_iso()
+            report.errors.append(
+                f"skipped: set {WEB_RESEARCH_ENV}=1 to enable DuckDuckGo web research"
+            )
+            self._emit(
+                on_progress,
+                "skipped",
+                f"{WEB_RESEARCH_ENV} unset — no public web search",
+            )
+            return report
         queries_used = list(queries) if queries else default_queries(goal)
         deadline = self._now() + budget.max_duration_s
         seen_urls: set[str] = set()
