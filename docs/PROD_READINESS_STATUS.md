@@ -1,7 +1,7 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `0febe4d69` (2026-10-19 UTC)  
-**Work-order base:** `cb4f2c52f` is an ancestor of `main` (+14 commits through `0febe4d69`).  
+**Measured at:** `origin/main` `f6f061f79` (2026-10-19 UTC)  
+**Work-order base:** `cb4f2c52f` is an ancestor of `main` (+16 commits through `f6f061f79`).  
 **Owner:** QA-0K maintains this file; other agents do not edit unless coordinating a criterion flip.
 
 Do not call the repo production-ready until every exit criterion below is **green** on a completed CI run of `main`, or explicitly **parked** in [Human-only parked items](#human-only-parked-items).
@@ -12,11 +12,11 @@ Do not call the repo production-ready until every exit criterion below is **gree
 
 | # | Status | Command / check | Last CI run (placeholder) |
 |---|--------|-----------------|---------------------------|
-| 1 | **RED** — no completed all-jobs-green CI on current `main` tip | Full push workflow set: lint, typecheck, test shards, coverage, evidence-audit, proofcore, fx1, arch-guards, platform matrix | In flight: https://github.com/artificial-hedge/dipcatcher/actions/runs/39201184052 (CI, `0febe4d69`, pending). Last **completed** CI: https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`, **failure**). |
+| 1 | **RED** — no completed all-jobs-green CI on current `main` tip | Full push workflow set: lint, typecheck, test shards, coverage, evidence-audit, proofcore, fx1, arch-guards, platform matrix | In flight: https://github.com/artificial-hedge/dipcatcher/actions/runs/39201259280 (CI, `f6f061f79`, pending). Prior pushes cancelled mid-queue (`39201252179` `cfa8d1961`, `39201184002` `0febe4d69`, `39200925380` `ce6cfe32c`). Last **completed** CI: https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`, **failure**). |
 | 2 | **RED** (local `make lint` on `cf6b3613b`, 4 vCPU) | `make lint && make typecheck && uv run mypy src/fx1` | CI lint job **green** on https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`). Local `make lint` failed `check_mypy_strict_allowlist.py` (regressions in `hedge_lab/resources.py`, `models/deep_rl.py`, `models/nbeats.py`, `utils/seeds.py`). Log: `/opt/cursor/artifacts/qa0k_make_lint.log`. |
 | 3 | **RED** (expected until human pin re-sign) | `uv run dipcatcher crown-jewels --check` and `uv run dipcatcher verify-repo` | evidence-audit on https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510: `pin_signatures: FAIL pin_drift:quality/crown_jewels.json,pin_drift:quality/epoch_heads.json`. Local `crown-jewels --check`: **intact**; `verify-repo` still reports `pin_drift` on those pins. |
 | 4 | **RED** | `make evidence-audit` (all 7 gates reported; drills calibrated) | Same run as row 3 — job failed at `verify-repo` / pin drift; downstream drills not a reliable green signal until item H1. |
-| 5 | **PENDING CI** | `make replay-sweep` (executed vs skipped carriers separated) | **VT-2M** landed `0febe4d69`: lane TMPDIR under run cwd, `evidence-replay-sweep` + bundle artifacts on `evidence-audit`. Subagent log: local `make replay-sweep` pass (~91–109s); confirm on next green `evidence-audit` (run 39201184052+). `mcs_vol` budget documented in `docs/OPERATIONS_RUNBOOK.md` (no manifest re-pin). |
+| 5 | **PENDING CI** | `make replay-sweep` (executed vs skipped carriers separated) | **VT-2M** landed `0febe4d69`: lane TMPDIR under run cwd, `evidence-replay-sweep` + bundle artifacts on `evidence-audit`. Subagent log: local `make replay-sweep` pass (~91–109s); confirm on next green `evidence-audit` (run 39201259280+). `mcs_vol` budget documented in `docs/OPERATIONS_RUNBOOK.md` (no manifest re-pin). |
 | 6 | **UNKNOWN** | `make admission-gate ADMISSION_BASE=<last green>` and `make epoch-consistency EPOCH_BASE=<last green>` | No **last green** CI SHA recorded yet; use post-green run URL once criterion 1 flips. |
 | 7 | **PASS** (spot-check) | `git diff cb4f2c52f..origin/main -- quality/ pyproject.toml tests \| grep -E 'skip\|xfail\|baseline\|deselect\|fail_under'` — review every hit | No integrator-driven baseline loosening in this audit; parallel agents must keep it that way. |
 | 8 | **IN PROGRESS** | This file matches reality line by line | Updated by QA-0K integrator pass 2026-10-19. |
@@ -54,15 +54,28 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 
 | Agent | Start when | Current signal on `main` |
 |-------|------------|---------------------------|
-| **WP-3J** | immediately | CI test shards still fail/cancel; full-catalog tests and shard hangs per work order. |
-| **KX-7Q** | immediately | `test_modules_stay_under_max_lines` / `fx1/cli.py` budget; mccabe / line-budget pressure on `main`. |
+| **WP-3J** | immediately | `6172922c8` bounded research benches; CI shards still fail/cancel; **WP-3J-2** `pytest-timeout` in `pyproject.toml` not landed. |
+| **KX-7Q** | immediately | `test_modules_stay_under_max_lines` / `fx1/cli.py` budget; CLI split open on agent branches (not merged). |
 | **ZR-9V** | parallel | evidence-audit masks; base-ref gating; anchor staleness reporting. |
-| **VT-2M** | done (`0febe4d69`) | Lane TMPDIR isolation, CI replay/bundle artifacts, runbook budget note; await evidence-audit on 39201184052+. |
-| **HX-5D** | parallel | `test_stateful.py`, env isolation, marker hygiene. |
-| **FX-1A** | after WP/KX unblock | corpus quarantine, honesty lexical holes, doctor crown-jewel check. |
-| **PD-8S** | after WP/KX unblock | `/use` key leakage, cwd-relative lab paths, sim-live honesty. |
-| **RL-4C** | in progress | `cf6b3613b` — release preflight, checkout creds, `make ci` parity (verify in CI run 39200406699+). |
+| **VT-2M** | done (`0febe4d69`) | Lane TMPDIR isolation, CI replay/bundle artifacts, runbook budget note; await evidence-audit on 39201259280+. |
+| **HX-5D** | done (this pass) | `test_stateful.py` TZ/LC_ALL + repo-root config path on `main`. |
+| **FX-1A** | done (`f6f061f79`) | corpus quarantine refuse, honesty lexical holes, ship fixture CLI. |
+| **PD-8S** | parallel | `/use` key leakage, cwd-relative lab paths, sim-live honesty (agent branch in flight; not on `main`). |
+| **RL-4C** | **landed** (`cf6b3613b`) | release preflight, checkout creds, `make ci` parity (`test_workflow_security.py` guards `ci.yml` / `release.yml`). |
 | **QA-0K** | continuous | **No stamping** this pass unless `needs-stamp:` commits land and pin holder signs (H1). Reconcile this doc after each green CI candidate. |
+
+### Parallel landings on `main` (inventory)
+
+| SHA | Agent / theme | Summary |
+|-----|----------------|---------|
+| `6172922c8` | WP-3J | Bound research oracle/CLI to required benches |
+| `802d170c0` | honesty | Tighten honesty corpus ship gate and doctor jewels |
+| `cf6b3613b` | RL-4C Shipwright | Release preflight, checkout `persist-credentials: false`, `make ci` parity |
+| `0febe4d69` | VT-2M | Replay lane TMPDIR isolation + CI evidence artifacts |
+| `f6f061f79` | FX-1A | Corpus quarantine refuse, honesty lexical holes, ship fixture CLI |
+| `ce6cfe32c` | QA-0K | Initial `PROD_READINESS_STATUS.md` ledger |
+
+Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher`), #3006/#3004 harness drafts — none merge the KX-7Q/PD-8S agent branches directly.
 
 ---
 
@@ -71,4 +84,7 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | When (UTC) | SHA | Note |
 |------------|-----|------|
 | 2026-10-19 | `cf6b3613b` | Initial status file; `cb4f2c52f` verified ancestor; local `make lint` mypy-allowlist red; `crown-jewels --check` intact; `verify-repo` pin_drift expected pending H1. |
-| 2026-10-19 | `0febe4d69` | **VT-2M** replay TMPDIR + CI evidence artifacts on `main`; criterion 5 pending CI replay-sweep; tip CI run 39201184052 queued. |
+| 2026-10-19 | `ce6cfe32c` | QA-0K status ledger on `main`. |
+| 2026-10-19 | `0febe4d69` | **VT-2M** replay TMPDIR + CI evidence artifacts; criterion 5 pending CI replay-sweep. |
+| 2026-10-19 | `f6f061f79` | **FX-1A** honesty/corpus fixes; CI run 39201259280 queued. |
+| 2026-10-19 | (follow-up) | QA-0K refresh + HX-5D `test_stateful` env isolation (await push). |

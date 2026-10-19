@@ -1,6 +1,13 @@
 """Hypothesis stateful tests: broker cash versus the reference account."""
 
+from __future__ import annotations
+
+import os
 from datetime import UTC, datetime
+from pathlib import Path
+
+os.environ.setdefault("TZ", "UTC")
+os.environ.setdefault("LC_ALL", "C")
 
 from hypothesis import settings
 from hypothesis import strategies as st
@@ -13,9 +20,11 @@ from quant_fund.formal.order_lifecycle import check_trace
 from quant_fund.formal.traces import TraceSession
 from quant_fund.schemas.orders import Order, OrderSide, OrderStatus
 
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
 
 def _permissive(tmp_name: str = "stateful"):
-    cfg = load_config("configs/paper.yaml")
+    cfg = load_config(_REPO_ROOT / "configs" / "paper.yaml")
     cfg.costs.frictionless = False
     cfg.costs.commission_bps = 1.0
     cfg.costs.half_spread_bps = 2.0
