@@ -31,6 +31,8 @@ from quant_fund.utils.atomicio import atomic_write_text
 
 if TYPE_CHECKING:
     import torch
+    from torch import Tensor as TorchTensor
+    from torch.nn import Module as TorchModule
 
     from fx1.modelcard import EvalDelta
 
@@ -101,7 +103,7 @@ def plan_steps(n_positions: int, n_epochs: int) -> int:
     return min(MAX_FT_STEPS, max(MIN_FT_STEPS, n_epochs * per_epoch))
 
 
-def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Module:
+def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> TorchModule:
     """The torch twin of ``fx1.serve.local_engine._TinyLM`` — identical math."""
     import torch
     from torch import nn
@@ -119,7 +121,7 @@ def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Modu
                 }
             )
 
-        def forward(self, x: torch.Tensor) -> torch.Tensor:
+        def forward(self, x: TorchTensor) -> TorchTensor:
             n = x.shape[1]
             dh = dim // n_heads
             a = self.ln1(x)
@@ -146,16 +148,16 @@ def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Modu
             self.ln_f = nn.LayerNorm(dim)
             self.lm_head = nn.Linear(dim, vocab, bias=False)
 
-        def forward(self, ids: torch.Tensor) -> torch.Tensor:
+        def forward(self, ids: TorchTensor) -> TorchTensor:
             x = self.tok_emb(ids) + self.pos_emb.weight[: ids.shape[1]]
             for blk in self.blocks:
                 x = blk(x)
-            return cast("torch.Tensor", self.lm_head(self.ln_f(x)))
+            return cast(TorchTensor, self.lm_head(self.ln_f(x)))
 
     return _TinyLM()
 
 
-def load_base_tensors(model: torch.nn.Module, checkpoint_dir: Path) -> str:
+def load_base_tensors(model: TorchModule, checkpoint_dir: Path) -> str:
     """Load ``checkpoint_dir``'s safetensors weights into the torch model.
 
     Real fine-tuning starts from the base weights, not a fresh init.
@@ -196,7 +198,7 @@ def train_tiny_lm(
     base_checkpoint: Path | None = None,
     val_text: str | None = None,
     should_continue: Callable[[], bool] | None = None,
-) -> tuple[torch.nn.Module, float, int, float | None]:
+) -> tuple[TorchModule, float, int, float | None]:
     """Seeded AdamW over random ctx-windows of the byte-encoded corpus.
 
     Returns ``(model, final_loss, trained_tokens, val_loss)``; the token
@@ -234,7 +236,7 @@ def train_tiny_lm(
     return model, final_loss, done * DEFAULT_CTX, val_loss_of(model, val_text, seed)
 
 
-def val_loss_of(model: torch.nn.Module, val_text: str | None, seed: int) -> float | None:
+def val_loss_of(model: TorchModule, val_text: str | None, seed: int) -> float | None:
     """Mean CE over a fixed seeded window sample of the val text."""
     if not val_text:
         return None
@@ -256,7 +258,7 @@ def val_loss_of(model: torch.nn.Module, val_text: str | None, seed: int) -> floa
     return sum(losses) / len(losses) if losses else None
 
 
-def save_weights(out_dir: Path, model: torch.nn.Module) -> tuple[str, int]:
+def save_weights(out_dir: Path, model: TorchModule) -> tuple[str, int]:
     """Write ``weights.safetensors``; return (sha256, n_params)."""
     import numpy as np
     from safetensors.numpy import save_file
@@ -336,9 +338,7 @@ def write_modelcard(
         corpus_sha256=corpus_sha256,
         corpus_receipt_range=corpus_receipt_range,
         training_manifest_sha256=training_manifest_sha256,
-        eval_delta=eval_delta
-        if eval_delta is not None
-        else eval_fixture_placeholder_delta(),
+        eval_delta=eval_delta if eval_delta is not None else eval_fixture_placeholder_delta(),
         known_limits=known_limits,
     ).save(card_path)
     return card_path
