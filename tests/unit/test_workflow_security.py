@@ -49,7 +49,7 @@ def test_codeql_covers_supported_source_languages() -> None:
 def test_ci_and_release_workflows_parse() -> None:
     """Workflow edits must remain valid YAML (catches indentation and anchor drift)."""
 
-    for name in ("ci.yml", "release.yml"):
+    for name in ("ci.yml", "release.yml", "proofcore.yml", "simtest.yml", "matrix.yml"):
         doc = yaml.safe_load(_workflow(name))
         assert isinstance(doc, dict)
         assert doc.get("jobs")
