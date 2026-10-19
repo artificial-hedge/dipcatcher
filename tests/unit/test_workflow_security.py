@@ -103,6 +103,7 @@ CI_JOB_MAKE_TARGETS: dict[str, tuple[str, ...]] = {
     "evidence-audit": ("evidence-audit",),
     "pretrade-risk": ("pretrade-bench",),
     "stress-smoke": ("stress-smoke",),
+    "refresh-test-durations": ("test-durations",),
 }
 
 MAKE_CI_DEPS = ("lint", "typecheck", "security", "coverage")
