@@ -29,8 +29,10 @@
       "ok": true
     },
     "epoch:.github/workflows": {
-      "errors": [],
-      "ok": true
+      "errors": [
+        "head_member_digest_drift:'ci.yml'"
+      ],
+      "ok": false
     },
     "epoch:artifacts": {
       "errors": [],
@@ -101,12 +103,23 @@
       "ok": true
     },
     "epoch:src": {
-      "errors": [],
-      "ok": true
+      "errors": [
+        "head_member_digest_drift:'fx1/serve/backends.py'",
+        "head_member_digest_drift:'fx1/serve/local_engine.py'",
+        "head_member_digest_drift:'quant_fund/research/replay_sweep.py'",
+        "unstamped_member:'fx1/serve/ship_gate_env.py'"
+      ],
+      "ok": false
     },
     "epoch:tests": {
-      "errors": [],
-      "ok": true
+      "errors": [
+        "head_member_digest_drift:'formal/test_stateful.py'",
+        "head_member_digest_drift:'unit/test_test_env_isolation.py'",
+        "head_member_missing_live:'test_hf_rv_scaffolding.py'",
+        "member_removed:'formal/_test_sm_probe.py'@'corpus_epoch_46d2bddbbb636e99.json'",
+        "unstamped_member:'unit/test_hf_rv_scaffolding.py'"
+      ],
+      "ok": false
     },
     "epoch:third_party": {
       "errors": [],
@@ -133,8 +146,11 @@
       "ok": true
     },
     "pin_signatures": {
-      "errors": [],
-      "ok": true,
+      "errors": [
+        "pin_drift:quality/crown_jewels.json",
+        "pin_drift:quality/epoch_heads.json"
+      ],
+      "ok": false,
       "signed": true
     },
     "quorum_rotations": {
@@ -152,9 +168,28 @@
       "fresh": {
         "quality/checkpoint.json": false,
         "quality/crown_jewels.json": false,
-        "quality/epoch_heads.json": false
+        "quality/epoch_heads.json": false,
+        "receipts/forward_record_preregistration_v1.json.seal.json": true
       },
-      "ok": true
+      "ok": true,
+      "staleness": {
+        "quality/checkpoint.json": {
+          "age_s": 1666012,
+          "stale": true
+        },
+        "quality/crown_jewels.json": {
+          "age_s": 1666137,
+          "stale": true
+        },
+        "quality/epoch_heads.json": {
+          "age_s": 1666029,
+          "stale": true
+        },
+        "receipts/forward_record_preregistration_v1.json.seal.json": {
+          "age_s": 930104,
+          "stale": false
+        }
+      }
     },
     "witness": {
       "errors": [],
@@ -163,7 +198,7 @@
   },
   "kind": "repo_integrity",
   "mode": "full",
-  "ok": true,
+  "ok": false,
   "params": {
     "corpora": [
       "receipts",
@@ -197,11 +232,11 @@
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "20913a2277d00745a2c3515a30cd0d3ab4c5b1c987dca926c99ce7b1e1f65e5d",
-    "epoch_heads_sha256": "a0b2dba883bd4316803649ae30fad0d7f01b47b3ab80984f06e8a8d063153ef8",
+    "crown_jewels_sha256": "1dd38dbb61754a3f3c6a2b98dbe7864417009028f16342857e50209ffa7feb12",
+    "epoch_heads_sha256": "04deb25fd500d06a8ae07f6d1a836e9f8a34dc7364e41c6577763a6c15844bd8",
     "gate_pins_signed": true,
     "timestamps_anchored": true
   },
-  "receipt_sha256": "45b1f3bcbb089962458a74904bf610750849c90a4d583cd1e8c39fda5138ef92",
+  "receipt_sha256": "1af5b068b3378916f15e58576ea9846c2dbc77a2c1ef2651166452cd4e0a7cc6",
   "schema": "repo_integrity.v1"
 }
