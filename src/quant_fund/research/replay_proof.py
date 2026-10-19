@@ -369,19 +369,15 @@ def _committed_artifact(
 # GitHub Actions, Hypothesis, and a prior test can leave variables that change
 # what the child imports or how it reduces floats. Keep only what the
 # interpreter and a local git need, then set the lane pins explicitly.
+# HOME / USERPROFILE / TMP* are *not* inherited: CI caches ~/.cache/dipcatcher
+# and pytest-xdist workers share a runner TMPDIR. Those paths are pinned
+# under ``run_cwd/.replay_lane_tmp`` below.
 _REPLAY_ENV_KEEP = (
     "PATH",
-    "HOME",
-    "USERPROFILE",
-    "HOMEDRIVE",
-    "HOMEPATH",
     "SYSTEMROOT",
     "WINDIR",
     "COMSPEC",
     "PATHEXT",
-    "TEMP",
-    "TMP",
-    "TMPDIR",
     "LANG",
     "LC_ALL",
     "LC_CTYPE",
@@ -404,8 +400,10 @@ def _replay_child_env(root_path: Path, *, run_cwd: Path) -> dict[str, str]:
     exported, and those are enough to make a content-addressed artifact
     miss the pinned filename while the process still exits 0.
 
-    Temp files are pinned under ``run_cwd/.replay_lane_tmp`` so a shared
-    runner ``TMPDIR`` cannot leak state between lanes or tests.
+    Temp files and ``HOME`` are pinned under ``run_cwd/.replay_lane_tmp``
+    so a shared runner ``TMPDIR`` or CI ``~/.cache/dipcatcher`` cannot leak
+    state between lanes or tests. ``GIT_CEILING_DIRECTORIES`` is the lane
+    root so ``git rev-parse`` cannot walk into a neighbour pytest tmp.
     """
     env = {key: os.environ[key] for key in _REPLAY_ENV_KEEP if key in os.environ}
     env.update(
@@ -422,11 +420,23 @@ def _replay_child_env(root_path: Path, *, run_cwd: Path) -> dict[str, str]:
         }
     )
     lane_tmp = run_cwd / ".replay_lane_tmp"
-    lane_tmp.mkdir(parents=True, exist_ok=True)
+    lane_home = lane_tmp / "home"
+    lane_home.mkdir(parents=True, exist_ok=True)
     lane_tmp_s = str(lane_tmp)
+    lane_home_s = str(lane_home)
     env["TMPDIR"] = lane_tmp_s
     env["TEMP"] = lane_tmp_s
     env["TMP"] = lane_tmp_s
+    env["HOME"] = lane_home_s
+    env["USERPROFILE"] = lane_home_s
+    env["XDG_CACHE_HOME"] = str(lane_home / ".cache")
+    env["XDG_CONFIG_HOME"] = str(lane_home / ".config")
+    env["XDG_DATA_HOME"] = str(lane_home / ".local" / "share")
+    env["XDG_STATE_HOME"] = str(lane_home / ".local" / "state")
+    # Stop git walking past the lane root. pytest tmp lives under
+    # /tmp/pytest-of-*/popen-gwN/; a neighbour that ran ``git init`` in a
+    # parent of that tree would otherwise become HEAD for this child.
+    env["GIT_CEILING_DIRECTORIES"] = str(root_path)
     # Prefer the root's src/, else this process's own quant_fund source tree,
     # so the child never imports an unrelated installed package.
     src_dir = root_path / "src"

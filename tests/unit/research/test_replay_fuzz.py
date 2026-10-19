@@ -175,6 +175,83 @@ def test_replay_lane_tmpdir_is_under_run_cwd(
     assert observed["tmpdir"] != str(foreign_tmp)
 
 
+def test_inherited_home_cache_does_not_enter_lane_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A poisoned parent HOME (CI ``~/.cache/dipcatcher``) must not be
+    visible to the lane child. Passing-alone vs with-neighbours: the same
+    SHA wrote the pinned name in isolation and a sibling hash after a
+    neighbour had populated HOME / a parent ``.git``.
+    """
+    poison_home = tmp_path / "poison_home"
+    cache = poison_home / ".cache" / "dipcatcher"
+    cache.mkdir(parents=True)
+    (cache / "seed").write_text("LEAK")
+    monkeypatch.setenv("HOME", str(poison_home))
+    monkeypatch.setenv("USERPROFILE", str(poison_home))
+    lane = tmp_path / "lane_cwd"
+    lane.mkdir()
+    (lane / "emit_home.py").write_text(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        "p = Path('out')\n"
+        "p.mkdir(parents=True, exist_ok=True)\n"
+        "home = Path.home()\n"
+        "seed = home / '.cache' / 'dipcatcher' / 'seed'\n"
+        "(p / 'artifact.json').write_text(\n"
+        "    json.dumps({'home': str(home), 'leak': seed.exists(), "
+        "'ceiling': os.environ.get('GIT_CEILING_DIRECTORIES')}),\n"
+        "    encoding='utf-8',\n"
+        ")\n"
+    )
+    artifact_path = lane / "out" / "artifact.json"
+    body = _replay(
+        tmp_path,
+        argv=[sys.executable, "emit_home.py"],
+        cwd="lane_cwd",
+        artifacts=[{"path": "out/artifact.json", "sha256": "00" * 32}],
+    )
+    assert body["exit_code"] == 0
+    observed = json.loads(artifact_path.read_text())
+    assert observed["leak"] is False
+    assert observed["home"].endswith("lane_cwd/.replay_lane_tmp/home")
+    assert observed["home"] != str(poison_home)
+    assert Path(observed["ceiling"]) == tmp_path
+
+
+def test_git_ceiling_hides_parent_repo_from_lane_child(tmp_path: Path) -> None:
+    """``git rev-parse`` from the lane cwd must not see a neighbour's repo."""
+    import subprocess
+
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    lane = tmp_path / "lane_cwd"
+    lane.mkdir()
+    (lane / "emit_git.py").write_text(
+        "import json, subprocess\n"
+        "from pathlib import Path\n"
+        "p = Path('out')\n"
+        "p.mkdir(parents=True, exist_ok=True)\n"
+        "proc = subprocess.run(\n"
+        "    ['git', 'rev-parse', '--is-inside-work-tree'],\n"
+        "    capture_output=True, text=True, check=False,\n"
+        ")\n"
+        "(p / 'artifact.json').write_text(\n"
+        "    json.dumps({'inside': proc.returncode == 0, 'out': proc.stdout.strip()}),\n"
+        "    encoding='utf-8',\n"
+        ")\n"
+    )
+    artifact_path = lane / "out" / "artifact.json"
+    body = _replay(
+        tmp_path,
+        argv=[sys.executable, "emit_git.py"],
+        cwd="lane_cwd",
+        artifacts=[{"path": "out/artifact.json", "sha256": "00" * 32}],
+    )
+    assert body["exit_code"] == 0
+    observed = json.loads(artifact_path.read_text())
+    assert observed["inside"] is False
+
+
 def test_clean_replay_passes_control(tmp_path: Path) -> None:
     # control: unmutated carrier must pass — guards above are meaningful
     body = _replay(tmp_path)

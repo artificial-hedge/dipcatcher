@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -318,16 +319,16 @@ def _committed_lane_receipts() -> list[Path]:
 
 def _mirror_lane_run_inputs(root: Path) -> None:
     """Mirror the repo inputs every lane argv reads: ``configs/`` wholesale
-    (research.yaml composes base.yaml; fleet/vol-bench/verdict/fleet-monitor
-    resolve it relative to cwd) — lanes that do not read it are unaffected."""
+    (research.yaml composes base.yaml, including the nested ``configs/configs/``
+    tree; fleet/vol-bench/verdict/fleet-monitor resolve it relative to cwd) —
+    lanes that do not read it are unaffected."""
     src_dir = REPO_ROOT / "configs"
     if not src_dir.is_dir():
         return
     dst_dir = root / "configs"
-    dst_dir.mkdir(parents=True, exist_ok=True)
-    for src in src_dir.iterdir():
-        if src.is_file():
-            (dst_dir / src.name).write_bytes(src.read_bytes())
+    if dst_dir.exists():
+        return
+    shutil.copytree(src_dir, dst_dir)
 
 
 @pytest.mark.parametrize(
@@ -392,6 +393,56 @@ def test_committed_lane_forged_digest_fails(tmp_path: Path, declared: Path) -> N
     assert body["all_match"] is False
     assert body["verdict"] == "fail"
     assert replay_proof_contract_errors(body) == []
+
+
+def _vol_bench_replay_receipt() -> Path:
+    matches = [path for path in _committed_lane_receipts() if path.name.startswith("vol_bench_")]
+    assert matches, "no committed vol_bench replay receipt"
+    return matches[0]
+
+
+def test_committed_vol_bench_replay_isolated_from_shared_tmp_cwd_and_home(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """vol_bench committed-lane replay must not read a neighbour's HOME cache,
+    runner TMPDIR, or a git repo sitting above the pytest tmp tree.
+
+    CI failed this lane with ``artifact_missing`` (exit 0, sibling hash name)
+    in shard order and passed it alone at the same SHA — the leak is shared
+    process state, not the portable_fp kernels.
+    """
+    import os
+    import subprocess
+
+    declared = _vol_bench_replay_receipt()
+    source = json.loads(declared.read_text())
+    poison_home = tmp_path / "poison_home"
+    (poison_home / ".cache" / "dipcatcher").mkdir(parents=True)
+    (poison_home / ".cache" / "dipcatcher" / "seed").write_text("not-a-lane-input")
+    foreign_tmp = tmp_path / "foreign_tmp"
+    foreign_tmp.mkdir()
+    (foreign_tmp / "stale.json").write_text("{}")
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    monkeypatch.setenv("HOME", str(poison_home))
+    monkeypatch.setenv("USERPROFILE", str(poison_home))
+    monkeypatch.setenv("TMPDIR", str(foreign_tmp))
+    monkeypatch.setenv("TMP", str(foreign_tmp))
+    monkeypatch.setenv("TEMP", str(foreign_tmp))
+    monkeypatch.chdir(tmp_path)
+
+    lane_root = tmp_path / "lane"
+    lane_root.mkdir()
+    _mirror_lane_run_inputs(lane_root)
+    receipt = _write_receipt(lane_root / "receipts", source, name=declared.name)
+
+    body = run_replay(receipt, root=lane_root, timeout_s=180.0)
+    assert body["exit_code"] == 0, body.get("stderr_tail") or body.get("spawn_error")
+    assert body["all_match"] is True, body.get("artifacts")
+    assert body["verdict"] == "pass"
+    assert os.environ.get("HOME") == str(poison_home)
+    lane_home = lane_root / ".replay_lane_tmp" / "home"
+    assert lane_home.is_dir()
+    assert not (lane_home / ".cache" / "dipcatcher" / "seed").exists()
 
 
 def _tape_manifest(root: Path, tapes: list[dict[str, Any]], name: str = "tape.json") -> Path:

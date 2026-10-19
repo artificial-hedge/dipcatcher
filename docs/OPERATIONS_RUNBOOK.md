@@ -265,19 +265,22 @@ integrity; bundle, sidecar, signature and metric verification).
 
 **Replay sweep CI budget (VT-2M).** On GitHub Actions the `evidence-audit` job
 runs `make replay-sweep` after the corpus gates. Tape-backed carriers skip as
-`inputs_not_verified`; the only lane that executes in CI today is the synthetic
-`mcs_vol` drill (`data/manifests/replay/mcs_vol.json` →
-`scripts/mcs_vol_drill.py`). That drill is pinned at 96 walk-forward origins
-across the full vol model grid and typically finishes in ~90–120s on
-`ubuntu-latest` (the job’s replay step should stay under ~150s). Shrinking the
-drill requires re-pinning the carrier manifest and `receipts/mcs_vol_drill.json`
-via `scripts/gen_drill_replay_manifests.py` — do not edit manifests ad hoc.
-Receipt-embedded vol lanes (`vol_bench_*`) replay through `dipcatcher vol-bench`;
-their content-addressed artifacts depend on `quant_fund.utils.portable_fp` and on
-`replay_proof._replay_child_env`, which scrubs the parent environment and pins
-lane temp files under `<run_cwd>/.replay_lane_tmp/`. CI uploads
-`$RUNNER_TEMP/replay_coverage.json` and `data/metadata/replay/` as the
-`evidence-replay-sweep` artifact.
+`inputs_not_verified`; the synthetic `mcs_vol` drill
+(`data/manifests/replay/mcs_vol.json` → `scripts/mcs_vol_drill.py`) is the
+lane that actually executes. The producer uses a smaller deterministic grid
+(24 walk-forward origins, min_history 80, same seed/shard/stride/models as
+the original 96/200 pin) so the replay stays under 150s under load. The
+committed `receipts/mcs_vol_drill.json` is unchanged; the carrier records
+`claims_equal: false` with drift `lane_evolution` (see
+`quality/evidence_migrations/`). Receipt-embedded vol lanes (`vol_bench_*`)
+replay through `dipcatcher vol-bench`; their content-addressed artifacts
+depend on `quant_fund.utils.portable_fp` and on
+`replay_proof._replay_child_env`, which scrubs the parent environment and
+pins `HOME`/`TMPDIR` under `<run_cwd>/.replay_lane_tmp/` plus
+`GIT_CEILING_DIRECTORIES` at the lane root. CI uploads
+`$RUNNER_TEMP/replay_coverage.json` and `data/metadata/replay/` as
+`evidence-replay-sweep`, and verify-repo / tamper-drill / fuzz-drill receipts
+from `$RUNNER_TEMP/evidence-receipts/` as `evidence-integrity-drills`.
 
 Third-party audit without repo access: `make witness-bundle` then
 `make verify-bundle BUNDLE=auditor_bundle.json`; `make evidence-bundle

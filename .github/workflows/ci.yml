@@ -773,6 +773,13 @@ jobs:
             ${{ runner.temp }}/replay_coverage.json
             data/metadata/replay/
           if-no-files-found: error
+      - name: Upload verify-repo / tamper-drill / fuzz-drill receipts
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: evidence-integrity-drills
+          path: ${{ runner.temp }}/evidence-receipts/
+          if-no-files-found: warn
       - name: Upload evidence bundle manifest (audit trail)
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

@@ -312,11 +312,12 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	done; \
 	_ea crown-jewels uv run dipcatcher crown-jewels --check; \
 	_ea verify-witness uv run dipcatcher verify-witness; \
-	_ea verify-repo uv run dipcatcher verify-repo; \
+	mkdir -p "$${RUNNER_TEMP:-/tmp}/evidence-receipts"; \
+	_ea verify-repo uv run dipcatcher verify-repo --out "$${RUNNER_TEMP:-/tmp}/evidence-receipts/verify-repo.json"; \
 	_ea checkpoint-chain uv run dipcatcher checkpoint-chain; \
 	_ea verify-rotations uv run dipcatcher verify-rotations; \
-	_ea tamper-drill uv run dipcatcher tamper-drill; \
-	_ea fuzz-drill uv run dipcatcher fuzz-drill --seed 7; \
+	_ea tamper-drill uv run dipcatcher tamper-drill --out "$${RUNNER_TEMP:-/tmp}/evidence-receipts"; \
+	_ea fuzz-drill uv run dipcatcher fuzz-drill --seed 7 --out "$${RUNNER_TEMP:-/tmp}/evidence-receipts/fuzz-drill.json"; \
 	if [ "$$ea_fail" -ne 0 ]; then echo "evidence-audit: one or more gates failed"; exit 1; fi
 
 checkpoint-chain: ## Walk the full checkpoint spine — every archived link verifies, no forks/orphans, Rekor order holds

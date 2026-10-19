@@ -3,7 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/mcs_vol_drill.py",
-  "receipt_sha256": "7ce8dd6c4b0ba953bf459899cfd93b7f02c9bf23d9aa4742ccb84e0966e8fe3b",
+  "receipt_sha256": "3086e0b5046438e281defc4594b12d831003781ca9ae268eeb9ff1fd88ca7d51",
   "replay": {
     "argv": [
       "scripts/mcs_vol_drill.py",
@@ -13,15 +13,19 @@
     "artifacts": [
       {
         "path": "data/metadata/replay/mcs_vol_drill.json",
-        "sha256": "9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0"
+        "sha256": "bfdc5c66f95c1537b18af06c3cad7d164a20ddbc5f3536f34b55995e8a147eab"
       }
     ]
   },
   "reproduces": [
     {
-      "claim_diff_keys": [],
-      "claims_equal": true,
+      "claim_diff_keys": [
+        "drill",
+        "n_origins"
+      ],
+      "claims_equal": false,
       "committed_sha256": "9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0",
+      "drift_reason": "lane_evolution",
       "receipt": "receipts/mcs_vol_drill.json"
     }
   ],

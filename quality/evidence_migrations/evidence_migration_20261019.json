@@ -1,0 +1,49 @@
+{
+  "base_revision": "06cf40e73",
+  "date": "2026-10-19",
+  "mcs_vol_smaller_inputs": {
+    "carrier": "data/manifests/replay/mcs_vol.json",
+    "cause": "CI replay-sweep spent ~95% of the 300s timeout on mcs_vol under load (~285s observed; ~140s independent). The producer scripts/mcs_vol_drill.py still uses the same SYNTHETIC garch_vol shard, seed 7, stride 4, and five-model grid; only the walk-forward schedule shrank so the lane does less work rather than raising the timeout.",
+    "committed_receipt_unchanged": "receipts/mcs_vol_drill.json remains the 96-origin / min_history-200 pin (file sha256 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0). It is not regenerated. The carrier no longer claims claim-equality with it.",
+    "generator_not_run": "scripts/gen_drill_replay_manifests.py was in-flight on other agents and was not invoked. The carrier was resealed with the same argv/artifact layout the generator emits for SYNTHETIC_DRILLS['mcs_vol_drill.py'].",
+    "measured_after": {
+      "artifact_sha256": "bfdc5c66f95c1537b18af06c3cad7d164a20ddbc5f3536f34b55995e8a147eab",
+      "n_eliminated": 0,
+      "producer_elapsed_s": 19.644,
+      "producer_min_history": 80,
+      "producer_n_bars": 185,
+      "producer_n_origins": 24,
+      "survivors_unchanged": [
+        "dip_garch_t",
+        "har",
+        "realized_garch",
+        "rv_ewma",
+        "rv_roll"
+      ]
+    },
+    "measured_before": {
+      "artifact_sha256": "9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0",
+      "ci_under_load_note": "replay-sweep consumed ~285s of the 300s budget on this lane",
+      "independent_confirmation_elapsed_s": 139.7,
+      "min_history": 200,
+      "n_bars": 593,
+      "n_origins": 96
+    },
+    "not_done_here": "epoch_heads.json was not stamped. QA-0K owns applying stamps. receipts/mcs_vol_drill.json was not edited. Tape-backed carriers were not stubbed.",
+    "producer_change": "scripts/mcs_vol_drill.py MIN_HISTORY 200 -> 80, N_ORIGINS 96 -> 24. N_BARS follows MIN_HISTORY + N_ORIGINS * STRIDE + HORIZON + 8.",
+    "reproduces": {
+      "claim_diff_keys": [
+        "drill",
+        "n_origins"
+      ],
+      "claims_equal_after": false,
+      "claims_equal_before": true,
+      "committed_sha256": "9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0",
+      "drift_reason": "lane_evolution",
+      "receipt": "receipts/mcs_vol_drill.json",
+      "unchanged_claims": "survivors (all five heads), eliminated {}, champion null, alpha 0.05, data_label SYNTHETIC, n_heads 5"
+    }
+  },
+  "policy": "No committed receipt was re-sealed, regenerated, renamed or edited. Only the mcs_vol replay carrier moved onto the smaller producer output, recorded as not claim-equal to receipts/mcs_vol_drill.json. Timeout stays 300s; the work was cut.",
+  "schema": "evidence_migration.v1"
+}
