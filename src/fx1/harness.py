@@ -398,7 +398,11 @@ def _adapt_legacy_runner(runner: Runner) -> CancellableRunner:
 
 
 def _spawn(
-    executable: str, argv: list[str], *, env: dict[str, str] | None = None
+    executable: str,
+    argv: list[str],
+    *,
+    env: dict[str, str] | None = None,
+    cwd: str | None = None,
 ) -> subprocess.Popen[str]:
     command = [executable, *argv]
     if os.name == "posix":
@@ -411,6 +415,7 @@ def _spawn(
             encoding="utf-8",
             start_new_session=True,
             env=env,
+            cwd=cwd,
         )
     if shutil.which("taskkill") is None:
         raise RuntimeError("taskkill is required to stop owned Windows subprocess trees")
@@ -422,6 +427,7 @@ def _spawn(
         text=True,
         encoding="utf-8",
         env=env,
+        cwd=cwd,
     )
 
 
@@ -610,8 +616,9 @@ def _run_subprocess(
     poll_s: float,
     max_output_chars: int,
     env: dict[str, str] | None = None,
+    cwd: str | None = None,
 ) -> RunnerOutcome:
-    proc = _spawn(executable, argv, env=env)
+    proc = _spawn(executable, argv, env=env, cwd=cwd)
     stdout_buf = _OutputBuffer(max_output_chars)
     stderr_buf = _OutputBuffer(max_output_chars)
     started = time.monotonic()
@@ -691,7 +698,12 @@ def make_subprocess_runner(
         cancel_event: threading.Event | None,
     ) -> RunnerOutcome:
         from fx1.interactive.profiles import scrub_credentials
+        from quant_fund.utils.lab_paths import discover_repo_root
 
+        root = str(discover_repo_root())
+        env = scrub_credentials()
+        env["DIPCATCHER_ROOT"] = root
+        env.setdefault("QUANT_REPO_ROOT", root)
         return _run_subprocess(
             executable,
             argv,
@@ -700,7 +712,8 @@ def make_subprocess_runner(
             grace_s=grace_s,
             poll_s=poll_s,
             max_output_chars=max_output_chars,
-            env=scrub_credentials(),
+            env=env,
+            cwd=root,
         )
 
     return _run
@@ -774,9 +787,9 @@ class Harness:
         command = self.get(name)
         effective_timeout = _resolve_timeout(command.timeout_s, timeout_s)
         argv = list(command.argv)
-        from quant_fund.audit.kernel_lineage import default_repo_root
+        from quant_fund.utils.lab_paths import configs_dir as lab_configs_dir
 
-        configs_dir = (default_repo_root() / "configs").resolve()
+        configs_dir = lab_configs_dir().resolve()
 
         def check_contained(path: str) -> Path:
             resolved = Path(path).resolve()

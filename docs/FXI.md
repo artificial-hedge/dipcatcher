@@ -8,10 +8,10 @@ and durable session/job recovery remain open. See [the CLI guide](DIP_CONCIERGE.
 for the working-tree status and full workflow; this page covers endpoints,
 security, and the classic shell.
 **fx1 and fx1-lite are model names** — each has one *endpoint* here: an API
-key plus a base URL, stored locally. The chat client reads them from the
-store; lab harness subprocesses inherit a scrubbed environment (no API keys
-in `os.environ`). Use `fxi eval` / hosted chat with `/use` or `fxi setup`
-without exporting env vars by hand.
+key plus a base URL, stored locally. Hosted chat and `fx1 eval` receive the
+credential via an explicit child `env=` mapping. Lab harness subprocesses
+(`dipcatcher`, `quant`) inherit a scrubbed environment (no API keys in
+`os.environ`). Use `/use` or `fxi setup` without exporting env vars by hand.
 
 No live model was authenticated while this page was checked. Calls that
 needed a model used a loopback HTTP stub. The only built-in endpoint
@@ -51,9 +51,11 @@ shared URL.
 The `model` field sent to the API is `fx1` or `fx1-lite`.
 
 The classic shell's `use` command injects `MOONSHOT_API_KEY` and
-`FX1_BASE_URL` into that shell process. Owned concierge harness children
-do not inherit those variables; they get the scrubbed environment
-described in the CLI guide. A shell child was not launched in this check.
+`FX1_BASE_URL` into that shell process. Hosted chat and `fx1 eval`
+receive the credential via an explicit child `env=` mapping. Owned
+concierge harness children do not inherit those variables; they get the
+scrubbed environment described in the CLI guide. A shell child was not
+launched in this check.
 
 ## Security model
 

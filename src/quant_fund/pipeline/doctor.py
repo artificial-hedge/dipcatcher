@@ -17,8 +17,10 @@ from quant_fund.config.models import AppConfig, RuntimeMode
 from quant_fund.research.catalog import BENCHMARK_CATALOG_VERSION, BENCHMARK_FAMILY_ORDER
 from quant_fund.research.verify import verify_research_artifact
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.lab_paths import data_dir_status, resolve_data_root
 
 _REQUIRED_ARTIFACTS = frozenset({"bars", "actions", "master", "silver", "universe"})
+_DATA_DIR_PARTS = ("raw", "bronze", "silver", "gold", "metadata")
 _SHA256: re.Pattern[str] | None = None
 
 
@@ -41,18 +43,13 @@ def _core_import_status() -> str:
     return "ok"
 
 
-def _dir_flags(root: Path) -> dict[str, str]:
-    status: dict[str, str] = {}
-    for part in ("raw", "bronze", "silver", "gold", "metadata"):
+def _stamp_data_dirs(status: dict[str, object], root: Path) -> None:
+    """Record each lake dir as ``ok`` (already present) or ``created``."""
+    for part in _DATA_DIR_PARTS:
         path = root / part
-        if path.is_dir():
-            status[f"dir_{part}"] = "ok"
-            status[f"dir_{part}_created"] = "no"
-            continue
-        path.mkdir(parents=True, exist_ok=True)
-        status[f"dir_{part}_created"] = "yes"
-        status[f"dir_{part}"] = "created" if path.is_dir() else "missing"
-    return status
+        state = data_dir_status(path)
+        status[f"dir_{part}"] = state
+        status[f"dir_{part}_created"] = "yes" if state == "created" else "no"
 
 
 def _record_runtime_flags(status: dict[str, object], cfg: AppConfig) -> None:
@@ -86,8 +83,8 @@ def doctor(config_path: str | None = None) -> dict[str, object]:
     status["live_allowed"] = str(cfg.runtime.allow_live)
     if cfg.runtime.mode is RuntimeMode.LIVE and not cfg.runtime.allow_live:
         status["live"] = "REJECTED"
-    root = Path(cfg.data.root)
-    status.update(_dir_flags(root))
+    root = resolve_data_root(cfg.data.root)
+    _stamp_data_dirs(status, root)
     manifest = root / "metadata" / "data_manifest.json"
     if not manifest.is_file():
         status["data_manifest"] = "missing"

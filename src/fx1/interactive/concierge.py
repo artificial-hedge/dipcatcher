@@ -136,7 +136,7 @@ from fx1.interactive.usage_budget import UsageTracker
 
 HELP_TEXT = """\
 conversation          plain text chats with the active model (tools: flash, web, harness)
-/superpower <goal>    plan + run the relevant research capabilities (--sync inline; --web opts into search)
+/superpower <goal>    plan + run the relevant research capabilities (--sync inline; --web or FX1_WEB_RESEARCH=1 opts into search)
 /superpower help      list every capability the planner may select
 /families [goal]      research-family catalog; with a goal, show which families are eligible
 /research <goal>      deep web research in the background (--budget-s, --max-sources, --queries)
@@ -1301,11 +1301,15 @@ class Concierge(DataCommands):
 
     def start_superpower(self, goal: str, *, sync: bool = False, allow_web: bool = False) -> bool:
         """Run an already-parsed goal without interpreting it as slash-command syntax."""
+        from fx1.webresearch.engine import web_research_opted_in
+
         if not goal.strip():
             raise ValueError("usage: /superpower <goal> [--sync] [--web]")
         if not self._job_slot_available():
             return False
-        self._superpower_allow_web = allow_web
+        # --web is an explicit opt-in. FX1_WEB_RESEARCH=1 is the other opt-in.
+        web_ok = bool(allow_web) or web_research_opted_in()
+        self._superpower_allow_web = web_ok
         return self._launch_superpower(goal, sync=sync)
 
     def _launch_superpower(self, goal: str, *, sync: bool) -> bool:
@@ -1335,6 +1339,7 @@ class Concierge(DataCommands):
             family_selector=self._family_selector(),
             max_harness=self._planner_step_cap(),
             budget_s=self._planner_budget_s(),
+            allow_web=bool(getattr(self, "_superpower_allow_web", False)),
         )
         self._say_superpower_plan(plan)
         if cancel.is_set():

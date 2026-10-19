@@ -2,7 +2,8 @@
 
 fx-1 recognizes the planned model identifiers ``fx1`` and ``fx1-lite``.
 Each can use a configured endpoint (API key + base URL) managed by
-``fx1.interactive.profiles`` and injected into the dipcatcher harness.
+``fx1.interactive.profiles``. Hosted-model children receive that endpoint
+on an explicit env mapping; lab harness subprocesses do not inherit it.
 Neither identifier implies released weights or a hosted deployment. See
 ``fx1.interactive.app`` for the CLI entry point and
 ``fx1.interactive.wizard`` for first-run onboarding.

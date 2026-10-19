@@ -436,8 +436,9 @@ class Researcher:
         if on_progress is not None:
             on_progress(ResearchProgress(event=event, detail=detail))
 
-    def _search_disabled(self) -> bool:
-        return self._searcher is None and not web_research_opted_in()
+    def _search_disabled(self, allow_network: bool | None = None) -> bool:
+        network_ok = web_research_opted_in() if allow_network is None else allow_network
+        return self._searcher is None and not network_ok
 
     def _skip_without_opt_in(
         self, report: ResearchReport, on_progress: ProgressFn | None
@@ -531,11 +532,12 @@ class Researcher:
         queries: list[str] | None = None,
         cancel_event: threading.Event | None = None,
         on_progress: ProgressFn | None = None,
+        allow_network: bool | None = None,
     ) -> ResearchReport:
         budget = budget or ResearchBudget()
         cancel_event = cancel_event or threading.Event()
         report = ResearchReport(goal=goal, started_at=_now_iso(), budget=budget)
-        if self._search_disabled():
+        if self._search_disabled(allow_network):
             return self._skip_without_opt_in(report, on_progress)
         queries_used = list(queries) if queries else default_queries(goal)
         deadline = self._now() + budget.max_duration_s

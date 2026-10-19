@@ -2,8 +2,8 @@
 
 fx-1 publishes no weights. The chat ids are ``fx1`` and ``fx1-lite``; each has
 one endpoint here: an API key plus a base URL, stored in
-``~/.fx1/credentials.json`` (mode 0600) and injected into the harness as
-``MOONSHOT_API_KEY`` + ``FX1_BASE_URL``.
+``~/.fx1/credentials.json`` (mode 0600) and passed to hosted-model children as
+``MOONSHOT_API_KEY`` + ``FX1_BASE_URL`` (lab subprocesses stay scrubbed).
 
 Bare ``fxi`` opens the interactive shell; every command is also available
 one-shot for scripting. First-time setup lives in ``fx1.interactive.wizard``
@@ -283,7 +283,10 @@ def superpower_cmd(
     web: bool = typer.Option(
         False,
         "--web",
-        help="Opt in to sending the goal text to public web search (DuckDuckGo).",
+        help=(
+            "Opt in to sending the goal text to public web search (DuckDuckGo). "
+            "Also enabled when FX1_WEB_RESEARCH=1."
+        ),
     ),
 ) -> None:
     """Plan, select, coordinate, and explain research capabilities for a goal."""

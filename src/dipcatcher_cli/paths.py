@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from quant_fund.audit.kernel_lineage import default_repo_root
+from quant_fund.utils.lab_paths import discover_repo_root, resolve_config_path
 
 
 def repo_root() -> Path:
     """Absolute path to the dipcatcher checkout (directory with ``pyproject.toml``)."""
-    return default_repo_root()
+    return discover_repo_root()
 
 
 def resolve_repo_path(path: str | Path) -> Path:
@@ -20,4 +20,4 @@ def resolve_repo_path(path: str | Path) -> Path:
     return (repo_root() / candidate).resolve()
 
 
-__all__ = ["repo_root", "resolve_repo_path"]
+__all__ = ["discover_repo_root", "repo_root", "resolve_config_path", "resolve_repo_path"]

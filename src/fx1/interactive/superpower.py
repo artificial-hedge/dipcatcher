@@ -352,6 +352,7 @@ def plan_goal(
     roots: Mapping[str, Sequence[Path]] | None = None,
     catalog_unavailable: str | None = None,
     budget_s: float | None = None,
+    allow_web: bool = True,
 ) -> SuperpowerPlan:
     """Select the relevant capability subset for *goal*.
 
@@ -393,6 +394,7 @@ def plan_goal(
         max_harness=max_harness,
         family_selector=family_selector,
         catalog=family_catalog,
+        allow_web=allow_web,
     )
 
 
@@ -404,7 +406,9 @@ def _plan_keyword(
     max_harness: int,
     family_selector: Selector | None,
     catalog: FamilyCatalog | None,
+    allow_web: bool = True,
 ) -> SuperpowerPlan:
+    del family_selector
     registry = capabilities or CAPABILITIES
     fold = _TRIGGER_LEXICON.fold(goal)
     manual_requests = [
@@ -422,6 +426,7 @@ def _plan_keyword(
             registry,
             harness_ids,
             suppress_web_fallback=bool(manual_requests or gate.exclusions),
+            allow_web=allow_web,
         ),
         source="deterministic",
         family_selection=gate.families,
@@ -438,6 +443,14 @@ def _plan_keyword(
     )
     if model_fn is not None:
         plan = _model_refine(plan, goal, registry, model_fn, max_harness=max_harness)
+    if not allow_web:
+        plan.capabilities = [cap for cap in plan.capabilities if cap.id != "web_research"]
+        web_wanted = _TRIGGER_LEXICON.any_web_trigger_folded(fold, _WEB_TRIGGERS) or not harness_ids
+        if web_wanted:
+            plan.notes.append(
+                "web_research omitted; explicit opt-in required "
+                "(--web or FX1_WEB_RESEARCH=1) before the goal is sent"
+            )
     if family_selector is not None and "research" in plan.ids():
         return _attach_families(plan, family_selector)
     return plan
@@ -549,6 +562,7 @@ def _deterministic_selection(
     harness_ids: list[str],
     *,
     suppress_web_fallback: bool = False,
+    allow_web: bool = True,
 ) -> list[PlannedCapability]:
     selected: list[PlannedCapability] = [
         PlannedCapability("flash_retrieve", "memory is cheap and may already hold this research"),
@@ -564,8 +578,9 @@ def _deterministic_selection(
                 f"{meta.get('description', '')}",
             )
         )
-    if _TRIGGER_LEXICON.any_web_trigger_folded(fold, _WEB_TRIGGERS) or (
-        not harness_ids and not suppress_web_fallback
+    if allow_web and (
+        _TRIGGER_LEXICON.any_web_trigger_folded(fold, _WEB_TRIGGERS)
+        or (not harness_ids and not suppress_web_fallback)
     ):
         selected.append(
             PlannedCapability(

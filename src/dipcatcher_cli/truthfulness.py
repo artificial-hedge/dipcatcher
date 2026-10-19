@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import re
 import subprocess
 from pathlib import Path
@@ -51,6 +52,163 @@ def env_example_variables(path: Path | None = None) -> frozenset[str]:
         match = _ENV_LINE.match(body)
         if match:
             names.add(match.group(1))
+    return frozenset(names)
+
+
+def env_example_all_variables(path: Path | None = None) -> frozenset[str]:
+    """Every ``NAME=`` in ``.env.example``, including the test-only section."""
+    example = path or (repo_root() / ".env.example")
+    names: set[str] = set()
+    for line in example.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        body = stripped.lstrip("#").strip() if stripped.startswith("#") else stripped
+        match = _ENV_LINE.match(body)
+        if match:
+            names.add(match.group(1))
+    return frozenset(names)
+
+
+RUNTIME_ENV_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        "PATH",
+        "HOME",
+        "USER",
+        "USERNAME",
+        "USERPROFILE",
+        "SHELL",
+        "PWD",
+        "OLDPWD",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "TERM",
+        "COLORTERM",
+        "NO_COLOR",
+        "FORCE_COLOR",
+        "CLICOLOR",
+        "CLICOLOR_FORCE",
+        "CI",
+        "GITHUB_ACTIONS",
+        "GITHUB_WORKSPACE",
+        "GITHUB_OUTPUT",
+        "GITHUB_ENV",
+        "GITHUB_PATH",
+        "GITHUB_STEP_SUMMARY",
+        "RUNNER_OS",
+        "RUNNER_TEMP",
+        "RUNNER_TOOL_CACHE",
+        "APPDATA",
+        "LOCALAPPDATA",
+        "PROGRAMDATA",
+        "PROGRAMFILES",
+        "WINDIR",
+        "SYSTEMROOT",
+        "COMSPEC",
+        "PATHEXT",
+        "NUMBER_OF_PROCESSORS",
+        "PROCESSOR_ARCHITECTURE",
+        "VIRTUAL_ENV",
+        "CONDA_PREFIX",
+        "UV_PROJECT_ENVIRONMENT",
+        "PYTHONPATH",
+        "PYTHONHOME",
+        "PYTHONUNBUFFERED",
+        "PYTHONHASHSEED",
+        "PYTEST_CURRENT_TEST",
+        "PYTEST_ADDOPTS",
+        "COVERAGE_FILE",
+        "COLUMNS",
+        "LINES",
+        "DISPLAY",
+        "WAYLAND_DISPLAY",
+        "XDG_CACHE_HOME",
+        "XDG_CONFIG_HOME",
+        "XDG_DATA_HOME",
+        "XDG_RUNTIME_DIR",
+        "XDG_STATE_HOME",
+        "SSH_AUTH_SOCK",
+        "EDITOR",
+        "VISUAL",
+        "PAGER",
+        "HOSTNAME",
+        "HOST",
+        "LOGNAME",
+        "OS",
+        "SHLVL",
+        "TERM_PROGRAM",
+        "CURSOR_AGENT",
+        "FXI_ORBS",
+        "COLORFGBG",
+        "OMP_NUM_THREADS",
+        "MKL_NUM_THREADS",
+        "OPENBLAS_NUM_THREADS",
+        "NUMEXPR_NUM_THREADS",
+        "TOKENIZERS_PARALLELISM",
+        "CUDA_VISIBLE_DEVICES",
+        "NVIDIA_VISIBLE_DEVICES",
+    }
+)
+
+
+def _const_str(node: ast.AST) -> str | None:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    return None
+
+
+def source_environ_names(root: Path | None = None) -> frozenset[str]:
+    """AST-scan ``src/`` for ``os.environ`` / ``os.getenv`` constant keys."""
+    checkout = root or repo_root()
+    names: set[str] = set()
+    src = checkout / "src"
+    for path in src.rglob("*.py"):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (OSError, SyntaxError, UnicodeDecodeError):
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                func = node.func
+                attr = func.attr if isinstance(func, ast.Attribute) else None
+                name = func.id if isinstance(func, ast.Name) else None
+                key = _const_str(node.args[0]) if node.args else None
+                if not key or not key.isupper() or not key.replace("_", "").isalnum():
+                    continue
+                os_getenv = name == "getenv"
+                environ_get = (
+                    attr == "get"
+                    and isinstance(func, ast.Attribute)
+                    and (
+                        (isinstance(func.value, ast.Name) and func.value.id in {"os", "environ"})
+                        or (
+                            isinstance(func.value, ast.Attribute)
+                            and isinstance(func.value.value, ast.Name)
+                            and func.value.value.id == "os"
+                            and func.value.attr == "environ"
+                        )
+                    )
+                )
+                if os_getenv or environ_get:
+                    names.add(key)
+            elif isinstance(node, ast.Subscript):
+                key = _const_str(node.slice)
+                if not key or not key.isupper():
+                    continue
+                target = node.value
+                if (
+                    isinstance(target, ast.Attribute)
+                    and isinstance(target.value, ast.Name)
+                    and target.value.id == "os"
+                    and target.attr == "environ"
+                ):
+                    names.add(key)
+                elif isinstance(target, ast.Name) and target.id == "environ":
+                    names.add(key)
     return frozenset(names)
 
 

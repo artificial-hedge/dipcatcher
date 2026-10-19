@@ -28,6 +28,7 @@ from fx1.serve.backends import HostedK3Backend
 
 # Console scripts shipped in the fx-1 distribution that fxi may launch.
 TOOLS: tuple[str, ...] = ("fxi", "fx1", "dipcatcher", "quant", "verify-ledger", "mc-engine")
+_CLIENT_TOOLS: frozenset[str] = frozenset({"fxi", "fx1"})
 
 BackendFactory = Callable[..., HostedK3Backend]
 
@@ -54,10 +55,14 @@ def run_eval(out: Path | None, model: str = DEFAULT_MODEL) -> int:
 
 
 def run_tool(tool: str, args: list[str], model: str = DEFAULT_MODEL) -> int:
-    """Run a shipped console script with the model's key in its environment."""
+    """Run a shipped console script.
+
+    ``fx1`` / ``fxi`` receive the model endpoint via ``env=``. Lab tools
+    (``dipcatcher``, ``quant``, …) inherit a credential-scrubbed environment.
+    """
     if tool not in TOOLS:
         raise KeyError(f"unknown tool {tool!r}; choose from {sorted(TOOLS)}")
-    env = profiles.subprocess_env_for_model(model)
+    env = profiles.subprocess_env_for_model(model, inject_credentials=tool in _CLIENT_TOOLS)
     proc = subprocess.run([_which(tool), *args], check=False, env=env)  # noqa: S603
     return proc.returncode
 

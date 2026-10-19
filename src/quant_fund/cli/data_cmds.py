@@ -44,7 +44,9 @@ def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
 
 
 def _lake_healthy(info: dict[str, object]) -> bool:
-    required = [info.get(f"dir_{part}") == "ok" for part in _LAKE_PARTS]
+    # A doctor run creates missing lake dirs. Those fresh dirs are healthy;
+    # only a missing or rejected layout fails the command.
+    required = [info.get(f"dir_{part}") in {"ok", "created"} for part in _LAKE_PARTS]
     return bool(
         all(required)
         and info.get("data_manifest") == "ok"

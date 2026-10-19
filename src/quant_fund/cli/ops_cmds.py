@@ -517,11 +517,11 @@ def sim_live(
     import json
     import subprocess
 
-    from quant_fund.audit.kernel_lineage import default_repo_root
     from quant_fund.paper.quantile_signals import QuantilePolicy
     from quant_fund.paper.sim_live import StrategySlot, run_sim_live
+    from quant_fund.utils.lab_paths import discover_repo_root
 
-    repo = default_repo_root()
+    repo = discover_repo_root()
 
     cfg = _cfg(config)
     try:

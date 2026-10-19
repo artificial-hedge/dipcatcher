@@ -178,20 +178,20 @@ def _existing_config(config: Path) -> Path:
 
 
 def _resolve_config_path(config: Path) -> Path:
-    if config.is_absolute():
-        return config.resolve()
-    from quant_fund.audit.kernel_lineage import default_repo_root
+    from quant_fund.utils.lab_paths import resolve_config_path
 
-    return (default_repo_root() / config).resolve()
+    return resolve_config_path(config)
 
 
 def _cfg(config: Path) -> AppConfig:
     from quant_fund.config import dump_resolved, load_config
+    from quant_fund.utils.lab_paths import resolve_data_root
     from quant_fund.utils.logging import configure_logging
 
     cfg = load_config(_resolve_config_path(config))
     configure_logging()
-    dump_resolved(cfg, Path(cfg.data.root) / "metadata" / "resolved_config.json")
+    cfg.data.root = resolve_data_root(cfg.data.root)
+    dump_resolved(cfg, cfg.data.root / "metadata" / "resolved_config.json")
     return cfg
 
 

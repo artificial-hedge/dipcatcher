@@ -131,6 +131,7 @@ def make_plan(
     max_harness: int,
     budget_s: float | None = None,
     datasets: Sequence[DatasetRef] = (),
+    allow_web: bool = True,
 ) -> SuperpowerPlan:
     """Plan *goal*. A missing catalog is passed as ``catalog_unavailable``.
 
@@ -148,6 +149,7 @@ def make_plan(
         roots=prepared.roots,
         catalog_unavailable=prepared.unavailable,
         budget_s=budget_s,
+        allow_web=allow_web,
     )
 
 

@@ -93,9 +93,10 @@ uv sync --frozen --all-groups --all-extras
 
 Without an endpoint the console still works: slash commands run and flash
 context runs. Public web search does not run unless the goal is started with
-`--web` (`/superpower --web …` or `dipcatcher superpower --web --sync …`).
-Model turns (chat replies, plan refinement, synthesis) report honestly that
-no endpoint is configured and fall back to a deterministic summary.
+`--web` (`/superpower --web …` or `dipcatcher superpower --web --sync …`)
+or `FX1_WEB_RESEARCH=1`. `/research` is an explicit web command. Model turns
+(chat replies, plan refinement, synthesis) report honestly that no endpoint
+is configured and fall back to a deterministic summary.
 
 ## The session
 
@@ -117,7 +118,7 @@ configured scorecard explicitly.
 Slash commands:
 
 ```text
-/superpower <goal> [--sync] [--web]  plan + coordinate; --web opts into public search
+/superpower <goal> [--sync] [--web]  plan + coordinate; --web or FX1_WEB_RESEARCH=1 opts into public search
 /superpower help                list the capability catalog (+ family catalog once loaded)
 /families [goal]                research-family catalog; classify the families a goal names
 /research <goal> [--budget-s N] [--max-sources N] [--queries a|b] [--sync]

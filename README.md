@@ -885,26 +885,26 @@ flowchart LR
 
 ### Repository composition
 
-Counted directly from `git ls-files` at commit `c2d360b` (2026-09-30),
-excluding dotfiles and dotdirectories: **3,012** tracked, non-hidden files.
+Counted directly from `git ls-files` at commit `b5f1f6d11` (2026-10-19),
+excluding paths that start with `.`: **21,933** tracked, non-hidden files.
 
 ```mermaid
 pie showData
-    title Tracked files by top-level area (3,012 total)
-    "tests" : 1271
-    "src" : 893
-    "scripts" : 192
-    "docs" : 182
-    "web" : 102
-    "third_party" : 93
-    "receipts" : 63
-    "data" : 30
-    "configs" : 30
-    "artifacts" : 30
-    "other (25 areas)" : 126
+    title Tracked files by top-level area (21,933 total)
+    "tests" : 5797
+    "src" : 13524
+    "scripts" : 320
+    "docs" : 263
+    "web" : 457
+    "third_party" : 96
+    "receipts" : 406
+    "data" : 51
+    "configs" : 63
+    "artifacts" : 56
+    "other" : 900
 ```
 
-`tests/` alone (1,271 files) is larger than the entire `src/` tree (893
+`tests/` alone (5,797 files) is smaller than the `src/` tree (13,524
 files) — a ratio that is itself a small piece of evidence for how seriously
 this repository takes verification over volume of production code. The
 "other" wedge folds together 25 smaller top-level areas, the largest of
@@ -1453,7 +1453,7 @@ Sortino, Calmar, P&L, or NAV as a standalone result (see
 
 ## Repository layout
 
-File counts below are exact, from `git ls-files` at commit `c2d360b`;
+File counts below are exact, from `git ls-files` at commit `b5f1f6d11`;
 directories not shown here hold a single tracked file each (governance docs,
 lockfiles, and root configuration — 25 of them, folded into the "other"
 wedge of the [repository composition](#repository-composition) chart above).
@@ -1461,26 +1461,26 @@ wedge of the [repository composition](#repository-composition) chart above).
 ```text
 dipcatcher/
 ├── src/
-│   ├── quant_fund/  # 823 files -- the research harness (see Visual tour)
-│   └── fx1/         # 70 files -- corpus, eval, training-manifest tooling
-├── tests/           # 1,271 files -- 1,168 test_*.py across 9 lanes + fixtures
-├── docs/            # 182 tracked files -- 111 top-level .md + 10 subdirs
-├── scripts/         # 192 utility, generator, and CI-support scripts
-├── web/             # 102 files -- read-only receipt/evidence explorer UI
-├── third_party/     # 93 files -- vendored Kronos, MIT-licensed (see Acknowledgements)
-├── receipts/        # 63 committed, hash-sealed research artifacts
-├── configs/         # 30 YAML/JSON run presets (research, paper, backtest, ...)
-├── data/            # 30 tracked files; generated data/* subtrees are gitignored
-├── artifacts/       # 30 committed artifacts (equity parquets, champion JSON)
-├── verifier/        # 24 files -- acceptance-history ledger (v1..v8)
-├── replay/          # 20 files -- deterministic replay + visualization tooling
-├── research/        # 18 files -- reality-filter trial ledgers
-├── rust/            # 10 files -- optional quant_core native extension (maturin)
-├── quality/         # 7 files -- mypy/audit ratchet baselines
-├── examples/        # 7 files -- runnable, offline examples gallery
-├── deploy/          # 7 files -- observability stack config (otel, prometheus, slo)
-├── clients/         # 5 files -- generated TypeScript API client
-├── spec/            # 3 files -- TLA+ formal specification (order lifecycle)
+│   ├── quant_fund/  # 13,099 files -- the research harness (see Visual tour)
+│   └── fx1/         # 343 files -- corpus, eval, training-manifest tooling
+├── tests/           # 5,797 files -- 5,612 test_*.py across lanes + fixtures
+├── docs/            # 263 tracked files -- 202 top-level .md + subdirs
+├── scripts/         # 320 utility, generator, and CI-support scripts
+├── web/             # 457 files -- read-only receipt/evidence explorer UI
+├── third_party/     # 96 files -- vendored Kronos, MIT-licensed (see Acknowledgements)
+├── receipts/        # 406 tracked files (404 JSON: 397 top-level + 7 legacy-unsealed)
+├── configs/         # 63 YAML/JSON run presets (research, paper, backtest, ...)
+├── data/            # 51 tracked files; generated data/* subtrees are gitignored
+├── artifacts/       # 56 committed artifacts (equity parquets, champion JSON)
+├── verifier/        # 54 files -- acceptance-history ledger
+├── replay/          # 23 files -- deterministic replay + visualization tooling
+├── research/        # 87 files -- reality-filter trial ledgers
+├── rust/            # 13 files -- optional quant_core native extension (maturin)
+├── quality/         # 623 files -- mypy/audit ratchet baselines
+├── examples/        # 13 files -- runnable, offline examples gallery
+├── deploy/          # 10 files -- observability stack config (otel, prometheus, slo)
+├── clients/         # 15 files -- generated TypeScript API client
+├── spec/            # 7 files -- TLA+ formal specification (order lifecycle)
 ├── notebooks/       # placeholder (.gitkeep) -- reserved for interactive analysis
 ├── reports/         # generated markdown reports (e.g. cost calibration)
 ├── LICENSE          # proprietary, all-rights-reserved
@@ -1513,8 +1513,8 @@ uv run dipcatcher exec --data vol.csv "ping"  # ./data/vol.csv; same resolver as
 
 `dipcatcher chat --model fx1-lite` picks the starting model. Without an
 endpoint the chat still runs slash commands. Public web search does not run
-unless you pass `--web`. Redirected (non-terminal) `dipcatcher` prints help
-instead of opening the chat. Details and current status:
+unless you pass `--web` or set `FX1_WEB_RESEARCH=1`. Redirected (non-terminal)
+`dipcatcher` prints help instead of opening the chat. Details and current status:
 [`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md).
 
 `make sync` installs the full locked environment (every dependency group and
@@ -3145,8 +3145,9 @@ From [`.env.example`](.env.example); secrets are never committed and
 
 ### Receipts census
 
-All 63 tracked files under [`receipts/`](receipts/) at `e00ab310c`,
-generated from `git ls-files receipts`:
+All 406 tracked files under [`receipts/`](receipts/) at `b5f1f6d11`
+(404 JSON: 397 top-level + 7 `legacy-unsealed`), generated from
+`git ls-files receipts`:
 
 <details>
 <summary><strong>Expand the full receipts listing — 55 sealed + 7 legacy-unsealed + 1 README</strong></summary>
