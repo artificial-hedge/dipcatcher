@@ -255,3 +255,11 @@ The owner decides how to remediate the acks.
 - `zone_stability.json`
 - `zone_ttl.json`
 The owner decides register vs re-admit vs grandfather.
+
+## Integrator follow-up (post QA-0K `97ce87e5a`)
+
+**Tip at ping:** `b5f1f6d11` (`fix(replay): isolate HOME/git from vol_bench lanes; shrink mcs_vol`). CI pending: https://github.com/artificial-hedge/dipcatcher/actions/runs/39203555277.
+
+**QA-0K stamps landed on `main`:** `219f6c4bb` (bulk through `6d15a409c`), `43602dd9d` (epoch_heads repair + acks), `8249426e0` (workflows/configs epoch receipts), `97ce87e5a` (docs epoch for this ledger). At `8249426e0`, integrator reported `crown-jewels --check` intact, `admission-gate` ok, `epoch-consistency` ok; `pin_signatures` still **FAIL** (**H1**).
+
+**Re-check at `b5f1f6d11` (coordinator, 2026-10-19):** `crown-jewels --check` → `jewel_mutated:AGENTS.md,Makefile`. `verify-repo` → `pin_drift` (**H1**); `timestamp_anchors` **ok** with stale ages; epoch drift on `quality`, `.github/workflows`, `src`, `tests`, `scripts`, `docs` (fleet velocity after stamps). Log: `/opt/cursor/artifacts/qa0k-followup-verify-repo.log`. **No new stamps this ping** — next QA-0K pass should pull, stamp only failing chains, push in one tight loop; avoid heads referencing uncommitted `corpus_epoch_*.json`.
