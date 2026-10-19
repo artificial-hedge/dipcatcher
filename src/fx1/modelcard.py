@@ -1,15 +1,18 @@
-"""fx-1 model cards — versioned, evidence-bound checkpoint metadata.
-
-A checkpoint without a model card does not exist as far as the project is
-concerned. Cards record the base checkpoint, the corpus receipt range, eval
-deltas versus the base, and the applicable Kimi K3 License tier.
-"""
+"""fx-1 model cards — versioned, evidence-bound checkpoint metadata."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 from pydantic import BaseModel, Field, model_validator
+
+_FIXTURE_PLACEHOLDER_EVAL: dict[str, object] = {
+    "domain_pass_rate_base": 0.5,
+    "domain_pass_rate_candidate": 0.51,
+    "general_pass_rate_base": 0.9,
+    "general_pass_rate_candidate": 0.9,
+    "honesty_gate_candidate": True,
+}
 
 
 class EvalDelta(BaseModel):
@@ -24,11 +27,18 @@ class EvalDelta(BaseModel):
     @property
     def ship_eligible(self) -> bool:
         """Ship gate: honesty native, domain better, general not regressed."""
+        if self.model_dump() == _FIXTURE_PLACEHOLDER_EVAL:
+            return False
         return (
             self.honesty_gate_candidate
             and self.domain_pass_rate_candidate > self.domain_pass_rate_base
             and self.general_pass_rate_candidate >= self.general_pass_rate_base
         )
+
+
+def eval_fixture_placeholder_delta() -> EvalDelta:
+    """Synthetic pass-rate placeholders on the committed tiny-LM fixture card."""
+    return EvalDelta.model_validate(_FIXTURE_PLACEHOLDER_EVAL)
 
 
 class ModelCard(BaseModel):
@@ -56,6 +66,12 @@ class ModelCard(BaseModel):
                 "live_pnl_claim must be false and research_only true"
             )
         return self
+
+    @property
+    def ship_eligible(self) -> bool:
+        if any("synthetic ship-gate placeholders" in lim.lower() for lim in self.known_limits):
+            return False
+        return self.eval_delta.ship_eligible
 
     def save(self, path: str | Path) -> None:
         out = Path(path)

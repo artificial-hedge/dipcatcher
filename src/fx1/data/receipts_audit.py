@@ -88,7 +88,7 @@ def receipts_audit() -> dict[str, Any]:
         _w(root, "broken.json", "{not json")
         _w(root, "listy.json", ["not", "a", "dict"])
 
-        recs = {Path(r.path).name: r for r in load_receipts(root)}
+        recs = {Path(r.path).name: r for r in load_receipts(root)[0]}
         out["all_parseable_loaded"] = {
             "good.json",
             "implicit.json",
@@ -116,7 +116,7 @@ def receipts_audit() -> dict[str, Any]:
         # multi-dir iterable
         root2 = Path(tmp) / "second"
         _w(root2, "other.json", {"research_only": True, "live_pnl_claim": False})
-        multi = load_receipts([root, root2])
+        multi, _ = load_receipts([root, root2])
         out["multi_dir"] = any(r.path.endswith("other.json") for r in multi)
     return out
 

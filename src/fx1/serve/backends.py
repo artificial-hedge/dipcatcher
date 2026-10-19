@@ -1603,7 +1603,7 @@ class LocalFx1Backend(_UsageTracker):
                 f"no model card at {card_path}; an fx-1 checkpoint without a card is not servable"
             )
         self.card = ModelCard.load(card_path)
-        if not self.card.eval_delta.ship_eligible:
+        if not self.card.ship_eligible:
             raise RuntimeError(
                 f"{self.card.version} failed the ship gate "
                 "(honesty/domain/general deltas); refusing to serve"

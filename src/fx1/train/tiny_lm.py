@@ -340,7 +340,7 @@ def write_modelcard(
     :func:`stamp_measured_eval_delta`, so a produced ft card's gate
     verdict is always computed from measured pass rates.
     """
-    from fx1.modelcard import EvalDelta, ModelCard
+    from fx1.modelcard import EvalDelta, ModelCard, eval_fixture_placeholder_delta
 
     card_path = out_dir / "modelcard.json"
     ModelCard(
@@ -350,13 +350,7 @@ def write_modelcard(
         training_manifest_sha256=training_manifest_sha256,
         eval_delta=eval_delta
         if eval_delta is not None
-        else EvalDelta(
-            domain_pass_rate_base=0.5,
-            domain_pass_rate_candidate=0.51,
-            general_pass_rate_base=0.9,
-            general_pass_rate_candidate=0.9,
-            honesty_gate_candidate=True,
-        ),
+        else eval_fixture_placeholder_delta(),
         known_limits=known_limits,
     ).save(card_path)
     return card_path

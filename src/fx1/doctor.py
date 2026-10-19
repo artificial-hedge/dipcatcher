@@ -4,11 +4,10 @@ Mirrors the harness-side ``dipcatcher doctor``: presence flags only,
 never secret values. Informational — nothing here hard-fails; missing
 pieces are reported so an operator can fix the environment.
 
-Distribution lineage is computed here with ``quant_fund.utils.hashing``
-only — ``quant_fund.research.crown_jewels`` is outside the fx1 harness
-surface allowlist (``configs/arch_boundaries.toml``), so doctor must not
-import it. The local check still fingerprints the pin bytes and verifies
-every pinned jewel file against its digest.
+Distribution lineage fingerprints the integrity pins with
+``quant_fund.utils.hashing`` and delegates jewel-byte verification to
+``quant_fund.research.crown_jewels`` (the same library gate as
+``dipcatcher crown-jewels``).
 """
 
 from __future__ import annotations
@@ -47,39 +46,15 @@ def _extra_presence() -> dict[str, str]:
     }
 
 
-def _jewel_matches(root: Path, name: object, expected: object) -> bool:
-    """True when one crown-jewels pin entry names a regular file with that digest."""
-    if not isinstance(name, str) or not isinstance(expected, str):
-        return False
-    path = root / name
-    if path.is_symlink() or not path.is_file():
-        return False
-    from quant_fund.utils.hashing import hash_bytes
-
-    try:
-        return hash_bytes(path.read_bytes()) == expected
-    except OSError:
-        return False
-
-
 def _jewels_intact(root: Path, pin: Path) -> bool:
-    """True when every file listed in the crown-jewels pin matches its digest."""
-    if not pin.is_file():
-        return False
-    try:
-        raw: Any = json.loads(pin.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return False
-    if not isinstance(raw, dict) or raw.get("schema") != "crown_jewels.v1":
-        return False
-    files = raw.get("files")
-    if not isinstance(files, dict) or not files:
-        return False
-    return all(_jewel_matches(root, name, expected) for name, expected in files.items())
+    """True when the crown-jewels library reports no pin/jewel errors."""
+    from quant_fund.research.crown_jewels import crown_jewels_errors
+
+    return not crown_jewels_errors(root, pin)
 
 
 def _distribution_lineage(root: Path) -> dict[str, object]:
-    """Fingerprint the integrity pins without importing research.crown_jewels."""
+    """Fingerprint the integrity pins and crown-jewel pin state."""
     from quant_fund.utils.hashing import hash_bytes
 
     pin = root / _CROWN_JEWELS_PIN

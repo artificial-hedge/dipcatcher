@@ -255,7 +255,7 @@ class LocalWeightsEngine:
         if not card_path.is_file():
             raise FileNotFoundError(f"no model card at {card_path}")
         card = ModelCard.load(card_path)
-        if enforce_ship_gate and not card.eval_delta.ship_eligible:
+        if enforce_ship_gate and not card.ship_eligible:
             raise RuntimeError(
                 f"{card.version} failed the ship gate; refusing to serve its weights"
             )

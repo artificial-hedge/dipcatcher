@@ -154,7 +154,7 @@ def build_full_corpus(
     from fx1.data.ledgers import ledger_corpus
     from fx1.data.notebooks import notebook_examples
 
-    stats = build_corpus(receipts_dir, out_jsonl)
+    stats = build_corpus(receipts_dir, out_jsonl, repo_root=repo_root)
     system = _system_prompt()
     extra: list[SFTExample] = []
     for doc in notebooks or []:
