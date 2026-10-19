@@ -362,7 +362,7 @@ warn_unused_ignores = true
 # Canonical discovery: the fx-1 suite runs via `make fx1-test` (tests/fx1 is
 # intentionally outside testpaths; the dead tests/tests mirror was removed).
 testpaths = ["tests/unit", "tests/property", "tests/regression", "tests/end_to_end", "tests/formal"]
-addopts = "-q --strict-markers"
+addopts = "-q --strict-markers --timeout=900 --import-mode=importlib"
 # WP-3J-2: per-test ceiling so CI shards fail fast instead of hanging to job timeout.
 timeout = 900
 timeout_method = "thread"

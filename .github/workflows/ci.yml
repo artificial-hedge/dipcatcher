@@ -842,3 +842,38 @@ jobs:
             exit 1
           fi
 
+  refresh-test-durations:
+    # Regenerates .test_durations offline; download the artifact and commit manually.
+    # Full ``make test-durations`` exceeds the 4-vCPU cloud-agent budget.
+    if: github.event_name == 'workflow_dispatch' && inputs.suite == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      VECLIB_MAXIMUM_THREADS: "1"
+      KMP_INIT_AT_FORK: "FALSE"
+      PYTHONFAULTHANDLER: "1"
+      TOKENIZERS_PARALLELISM: "false"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Sync
+        run: uv sync --frozen --all-groups --all-extras --no-build
+      - name: Regenerate shard durations
+        run: make test-durations
+      - name: Upload .test_durations
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dipcatcher-test-durations
+          path: .test_durations
+          if-no-files-found: error
+

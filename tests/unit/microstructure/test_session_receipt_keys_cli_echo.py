@@ -28,12 +28,28 @@ def test_northset_cli_echoes_every_session_receipt_key() -> None:
     assert not missing, f"northset CLI missing echo for: {missing}"
 
 
-def test_research_cli_echoes_every_session_receipt_key() -> None:
+def test_research_cli_echoes_every_session_receipt_key(monkeypatch: pytest.MonkeyPatch) -> None:
     config = Path("configs/research.yaml")
     if not config.exists():
         pytest.skip("configs/research.yaml missing")
+    monkeypatch.setenv("DIPCATCHER_RESEARCH_REQUIRED_ONLY", "1")
     result = CliRunner().invoke(app, ["research", "--config", str(config)])
     # research may be slower / exit non-zero on soft fails — require session keys if northset family printed
+    if "northset " not in result.output and "mean_session_" not in result.output:
+        pytest.skip(f"research CLI did not print northset family: exit={result.exit_code}")
+    missing = [k for k in sorted(SESSION_RECEIPT_KEYS_CLI_ECHO) if f"{k}=" not in result.output]
+    assert not missing, f"research CLI missing echo for: {missing}\n---\n{result.output[-2000:]}"
+
+
+@pytest.mark.slow
+def test_research_cli_echoes_every_session_receipt_key_full_catalog(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = Path("configs/research.yaml")
+    if not config.exists():
+        pytest.skip("configs/research.yaml missing")
+    monkeypatch.delenv("DIPCATCHER_RESEARCH_REQUIRED_ONLY", raising=False)
+    result = CliRunner().invoke(app, ["research", "--config", str(config)])
     if "northset " not in result.output and "mean_session_" not in result.output:
         pytest.skip(f"research CLI did not print northset family: exit={result.exit_code}")
     missing = [k for k in sorted(SESSION_RECEIPT_KEYS_CLI_ECHO) if f"{k}=" not in result.output]

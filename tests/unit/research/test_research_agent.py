@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import polars as pl
+import pytest
 
 from quant_fund.config import load_config
 from quant_fund.research.agent import (
@@ -73,7 +74,7 @@ def test_worktree_fingerprint_is_a_real_sha256() -> None:
     assert all(char in "0123456789abcdef" for char in fingerprint)
 
 
-def test_research_recovers_synthetic_oracle(tmp_path: Path) -> None:
+def _synthetic_oracle_config(tmp_path: Path):
     cfg = load_config("configs/research.yaml")
     cfg.data.root = tmp_path
     cfg.data.synthetic_n_assets = 36
@@ -81,7 +82,10 @@ def test_research_recovers_synthetic_oracle(tmp_path: Path) -> None:
     cfg.validation.train_bars = 80
     cfg.validation.val_bars = 20
     cfg.validation.test_bars = 20
-    nb = run_research(cfg)
+    return cfg
+
+
+def _assert_research_recovers_synthetic_oracle(nb, tmp_path: Path) -> None:
     assert nb.synthetic is True
     assert nb.data_source == "SYNTHETIC"
     assert len(nb.provenance["run_id"]) == 64
@@ -267,6 +271,25 @@ def test_research_recovers_synthetic_oracle(tmp_path: Path) -> None:
         "H14_quantile_thompson",
     ):
         next(h for h in nb.hypotheses if h.id == hid)
+
+
+def test_research_recovers_synthetic_oracle(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Required benchmark families only — PR gate stays near ~36s."""
+    monkeypatch.setenv("DIPCATCHER_RESEARCH_REQUIRED_ONLY", "1")
+    nb = run_research(_synthetic_oracle_config(tmp_path))
+    _assert_research_recovers_synthetic_oracle(nb, tmp_path)
+
+
+@pytest.mark.slow
+def test_research_recovers_synthetic_oracle_full_catalog(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Full optional catalog — ``make test-full`` / scheduled CI only."""
+    monkeypatch.delenv("DIPCATCHER_RESEARCH_REQUIRED_ONLY", raising=False)
+    nb = run_research(_synthetic_oracle_config(tmp_path))
+    _assert_research_recovers_synthetic_oracle(nb, tmp_path)
 
 
 def test_research_receipt_records_runtime_fingerprint(tmp_path: Path) -> None:
