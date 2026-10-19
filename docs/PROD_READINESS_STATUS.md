@@ -1,7 +1,7 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `cf6b3613b` (2026-10-19 UTC)  
-**Work-order base:** `cb4f2c52f` is an ancestor of `main` (+10 commits through `cf6b3613b`).  
+**Measured at:** `origin/main` `0febe4d69` (2026-10-19 UTC)  
+**Work-order base:** `cb4f2c52f` is an ancestor of `main` (+14 commits through `0febe4d69`).  
 **Owner:** QA-0K maintains this file; other agents do not edit unless coordinating a criterion flip.
 
 Do not call the repo production-ready until every exit criterion below is **green** on a completed CI run of `main`, or explicitly **parked** in [Human-only parked items](#human-only-parked-items).
@@ -12,11 +12,11 @@ Do not call the repo production-ready until every exit criterion below is **gree
 
 | # | Status | Command / check | Last CI run (placeholder) |
 |---|--------|-----------------|---------------------------|
-| 1 | **RED** — no completed all-jobs-green CI on current `main` tip | Full push workflow set: lint, typecheck, test shards, coverage, evidence-audit, proofcore, fx1, arch-guards, platform matrix | In flight: https://github.com/artificial-hedge/dipcatcher/actions/runs/39200406699 (CI, `cf6b3613b`, pending). Last **completed** CI: https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`, **failure**). |
+| 1 | **RED** — no completed all-jobs-green CI on current `main` tip | Full push workflow set: lint, typecheck, test shards, coverage, evidence-audit, proofcore, fx1, arch-guards, platform matrix | In flight: https://github.com/artificial-hedge/dipcatcher/actions/runs/39201184052 (CI, `0febe4d69`, pending). Last **completed** CI: https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`, **failure**). |
 | 2 | **RED** (local `make lint` on `cf6b3613b`, 4 vCPU) | `make lint && make typecheck && uv run mypy src/fx1` | CI lint job **green** on https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`). Local `make lint` failed `check_mypy_strict_allowlist.py` (regressions in `hedge_lab/resources.py`, `models/deep_rl.py`, `models/nbeats.py`, `utils/seeds.py`). Log: `/opt/cursor/artifacts/qa0k_make_lint.log`. |
 | 3 | **RED** (expected until human pin re-sign) | `uv run dipcatcher crown-jewels --check` and `uv run dipcatcher verify-repo` | evidence-audit on https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510: `pin_signatures: FAIL pin_drift:quality/crown_jewels.json,pin_drift:quality/epoch_heads.json`. Local `crown-jewels --check`: **intact**; `verify-repo` still reports `pin_drift` on those pins. |
 | 4 | **RED** | `make evidence-audit` (all 7 gates reported; drills calibrated) | Same run as row 3 — job failed at `verify-repo` / pin drift; downstream drills not a reliable green signal until item H1. |
-| 5 | **UNKNOWN** | `make replay-sweep` (executed vs skipped carriers separated) | Not verified on `cf6b3613b` in this session (too heavy for 4 vCPU integrator pass). WP VT-2M / replay lane fixes in flight on `main`. |
+| 5 | **PENDING CI** | `make replay-sweep` (executed vs skipped carriers separated) | **VT-2M** landed `0febe4d69`: lane TMPDIR under run cwd, `evidence-replay-sweep` + bundle artifacts on `evidence-audit`. Subagent log: local `make replay-sweep` pass (~91–109s); confirm on next green `evidence-audit` (run 39201184052+). `mcs_vol` budget documented in `docs/OPERATIONS_RUNBOOK.md` (no manifest re-pin). |
 | 6 | **UNKNOWN** | `make admission-gate ADMISSION_BASE=<last green>` and `make epoch-consistency EPOCH_BASE=<last green>` | No **last green** CI SHA recorded yet; use post-green run URL once criterion 1 flips. |
 | 7 | **PASS** (spot-check) | `git diff cb4f2c52f..origin/main -- quality/ pyproject.toml tests \| grep -E 'skip\|xfail\|baseline\|deselect\|fail_under'` — review every hit | No integrator-driven baseline loosening in this audit; parallel agents must keep it that way. |
 | 8 | **IN PROGRESS** | This file matches reality line by line | Updated by QA-0K integrator pass 2026-10-19. |
@@ -57,7 +57,7 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | **WP-3J** | immediately | CI test shards still fail/cancel; full-catalog tests and shard hangs per work order. |
 | **KX-7Q** | immediately | `test_modules_stay_under_max_lines` / `fx1/cli.py` budget; mccabe / line-budget pressure on `main`. |
 | **ZR-9V** | parallel | evidence-audit masks; base-ref gating; anchor staleness reporting. |
-| **VT-2M** | parallel | vol_bench / mcs_vol CI isolation; artifact uploads. |
+| **VT-2M** | done (`0febe4d69`) | Lane TMPDIR isolation, CI replay/bundle artifacts, runbook budget note; await evidence-audit on 39201184052+. |
 | **HX-5D** | parallel | `test_stateful.py`, env isolation, marker hygiene. |
 | **FX-1A** | after WP/KX unblock | corpus quarantine, honesty lexical holes, doctor crown-jewel check. |
 | **PD-8S** | after WP/KX unblock | `/use` key leakage, cwd-relative lab paths, sim-live honesty. |
@@ -71,3 +71,4 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | When (UTC) | SHA | Note |
 |------------|-----|------|
 | 2026-10-19 | `cf6b3613b` | Initial status file; `cb4f2c52f` verified ancestor; local `make lint` mypy-allowlist red; `crown-jewels --check` intact; `verify-repo` pin_drift expected pending H1. |
+| 2026-10-19 | `0febe4d69` | **VT-2M** replay TMPDIR + CI evidence artifacts on `main`; criterion 5 pending CI replay-sweep; tip CI run 39201184052 queued. |
