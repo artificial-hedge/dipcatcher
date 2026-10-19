@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
 from hypothesis import HealthCheck, settings
 from hypothesis import strategies as st
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
@@ -17,6 +18,13 @@ from quant_fund.formal.traces import TraceSession
 from quant_fund.schemas.orders import Order, OrderSide, OrderStatus
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+@pytest.fixture(autouse=True)
+def _determinism_locale(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep locale/TZ local to this module; do not leak into the suite."""
+    monkeypatch.setenv("TZ", "UTC")
+    monkeypatch.setenv("LC_ALL", "C")
 
 
 def _permissive(tmp_name: str = "stateful"):

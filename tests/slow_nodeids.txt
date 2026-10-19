@@ -1,5 +1,44 @@
 # Node ids excluded from the PR gate (`-m "not network and not slow"`).
 # The scheduled CI workflow and `make test-full` still run them.
-# One node id per line. Empty (comments only) means the PR gate runs the
-# full offline suite. Populate from a measured `--durations` run, and only
-# keep a node id here when coverage of the fast subset does not fall.
+# One node id per line. This list mirrors tests already decorated
+# @pytest.mark.slow / pytestmark = pytest.mark.slow so the auto-mark
+# file is not empty while slow tests exist. Do not add unmarked tests.
+tests/unit/diffbacktest/test_study.py::test_small_case_is_labeled_and_finite
+tests/unit/execution/test_arl_mm.py::test_arl_mm_bench_headline_diagnostics
+tests/unit/market_sim/test_slow_validation.py::test_stylized_validation_reports_every_fact
+tests/unit/market_sim/test_slow_validation.py::test_mean_reversion_stress_covers_the_scenario_library
+tests/unit/mc_engine/test_engine.py::test_one_hundred_thousand_paths_match_across_worker_counts
+tests/unit/microstructure/test_crown_behind_bench.py::test_bench_smoke
+tests/unit/microstructure/test_crown_density_bench.py::test_bench_sim_only
+tests/unit/microstructure/test_crown_join_bench.py::test_bench_smoke
+tests/unit/microstructure/test_crown_size_bench.py::test_bench_smoke
+tests/unit/microstructure/test_deep_book_bench.py::test_bench_seals_and_deep_beats_thin
+tests/unit/microstructure/test_flee_wide_bench.py::test_bench_smoke
+tests/unit/microstructure/test_hidden_depth_bench.py::test_bench_seals
+tests/unit/microstructure/test_ice_budget_bench.py::test_bench_smoke
+tests/unit/microstructure/test_ice_crown_bench.py::test_bench_smoke
+tests/unit/microstructure/test_improve_flow.py::TestBench::test_bench_seals
+tests/unit/microstructure/test_initiative_fade.py::TestBench::test_bench_seals
+tests/unit/microstructure/test_joint_stability_bench.py::test_bench_smoke
+tests/unit/microstructure/test_maker_age.py::TestBench::test_bench_seals
+tests/unit/microstructure/test_queue_class.py::test_bench_seal_and_contract
+tests/unit/microstructure/test_reload_gate_bench.py::test_bench_smoke
+tests/unit/microstructure/test_reseed_hazard_bench.py::test_bench_sim_only
+tests/unit/microstructure/test_rl_market_maker.py::test_rl_mm_benchmark_scaled_plumbing
+tests/unit/microstructure/test_session_receipt_keys_cli_echo.py::test_research_cli_echoes_every_session_receipt_key_full_catalog
+tests/unit/microstructure/test_sweep_crown_bench.py::test_bench_smoke
+tests/unit/microstructure/test_sweep_width_bench.py::TestSweepWidthBench::test_bench_seals_and_claims
+tests/unit/microstructure/test_touch_empty_bench.py::test_bench_smoke
+tests/unit/models/test_w126_deep.py::TestTft::test_bench
+tests/unit/models/test_w127_deep.py::TestHypernet::test_bench
+tests/unit/research/test_admission_gate_membership.py::test_gate_ignores_a_non_json_file_the_stamper_does_not_count
+tests/unit/research/test_admission_gate_membership.py::test_honest_stamped_members_flat_nested_and_non_ascii_all_reach_admission
+tests/unit/research/test_admission_gate_membership.py::test_restoring_the_registered_quarantined_records_is_not_blocked
+tests/unit/research/test_research_agent.py::test_research_recovers_synthetic_oracle_full_catalog
+tests/unit/research/test_tamper_drill.py::test_tamper_drill_fail_closed_on_committed_tree
+tests/unit/research/test_verify_epoch_chain_script.py::test_committed_pin_position_fields_verify_standalone_every_key
+tests/unit/simtest/test_swarm_slow.py::test_slow_swarm_of_sixteen_seeds_holds_invariants
+tests/unit/stress/test_generators_slow.py::test_empirical_t_copula_tail_dependence
+tests/unit/stress/test_generators_slow.py::test_long_garch_variance
+tests/unit/stress/test_generators_slow.py::test_hmm_moments_tighter_sample
+tests/unit/stress/test_generators_slow.py::test_merton_skew_matches_analytic

@@ -11,7 +11,7 @@ forecast / risk pipeline without changing the public surface of
 ``forecast_asof``, ``optimize_asof``, or ``/risk/portfolio``.
 
 The public surface (signature + dataclass) was frozen by the
-scaffolding tests in :mod:`tests.test_hf_rv_scaffolding`; this
+scaffolding tests in :mod:`tests.unit.test_hf_rv_scaffolding`; this
 implementation lands the body without changing the contract.
 """
 

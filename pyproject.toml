@@ -383,6 +383,7 @@ markers = [
     "native: quant_core parity tests selected by the rust-accel CI job",
     "synthetic: uses synthetic market data",
     "perf_full: larger synthetic performance benchmarks (not the CI fast subset)",
+    "anyio: async tests executed by the anyio pytest plugin",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",

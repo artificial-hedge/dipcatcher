@@ -140,7 +140,7 @@ sigma, fail-closed on missing intraday.
 ### Synthetic / PIT / fail-closed / authority
 
 Landed coverage lives in `tests/unit/test_hf_rv.py` (plus scaffolding in
-`tests/test_hf_rv_scaffolding.py`). The intended cases remain:
+`tests/unit/test_hf_rv_scaffolding.py`). The intended cases remain:
 
 - Synthetic intraday: Brownian motion + sparse jumps; expect
   `rv_5min ≈ σ^2 * window` and `n_jumps` matching the injected count.

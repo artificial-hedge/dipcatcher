@@ -17,6 +17,7 @@ _MUTATING_MODULES = (
     "tests.property.test_replay_determinism",
     "tests.unit.fx1_serve.test_idem_audit",
     "tests.unit.fx1_serve.test_batch_audit",
+    "tests.formal.test_stateful",
 )
 
 
@@ -68,11 +69,10 @@ def test_seeded_threshold_probes_stable_across_openblas_kernels() -> None:
 
 def test_strict_markers_collect_is_clean_on_isolation_modules() -> None:
     targets = [
-        "tests/formal/test_stateful.py",
-        "tests/property/test_replay_determinism.py",
-        "tests/unit/fx1_serve/test_idem_audit.py",
-        "tests/unit/fx1_serve/test_batch_audit.py",
+        "tests/formal",
+        "tests/fx1",
         "tests/unit/test_hf_rv_scaffolding.py",
+        "tests/unit/fx1_serve/test_request_ingress.py",
     ]
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "--strict-markers", "--collect-only", "-q", *targets],
@@ -81,3 +81,47 @@ def test_strict_markers_collect_is_clean_on_isolation_modules() -> None:
         text=True,
     )
     assert result.returncode == 0, result.stdout[-4000:] + result.stderr[-4000:]
+
+
+def test_numba_unset_and_tz_unchanged_after_collection() -> None:
+    """Child collection of former leak modules must not set NUMBA or TZ."""
+    env = os.environ.copy()
+    env.pop("NUMBA_DISABLE_JIT", None)
+    env.pop("TZ", None)
+    env["PYTHONHASHSEED"] = "0"
+    script = r"""
+import os
+import sys
+import pytest
+
+assert "NUMBA_DISABLE_JIT" not in os.environ, os.environ.get("NUMBA_DISABLE_JIT")
+assert os.environ.get("TZ") is None, os.environ.get("TZ")
+tz_before = os.environ.get("TZ")
+
+class _IsolationPlugin:
+    def pytest_collection_finish(self, session: object) -> None:
+        del session
+        if "NUMBA_DISABLE_JIT" in os.environ:
+            raise AssertionError("NUMBA_DISABLE_JIT leaked during collection")
+        if os.environ.get("TZ") != tz_before:
+            raise AssertionError("TZ changed during collection")
+
+raise SystemExit(pytest.main(["--collect-only", "-q", *sys.argv[1:]], plugins=[_IsolationPlugin()]))
+"""
+    targets = [
+        "tests/property/test_replay_determinism.py",
+        "tests/unit/fx1_serve/test_idem_audit.py",
+        "tests/unit/fx1_serve/test_batch_audit.py",
+        "tests/formal/test_stateful.py",
+    ]
+    proc = subprocess.run(
+        [sys.executable, "-c", script, *targets],
+        cwd=_REPO,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stdout + "\n" + proc.stderr
+    assert os.environ.get("NUMBA_DISABLE_JIT") == GUARDED_ENV_BASELINE.get("NUMBA_DISABLE_JIT")
+    assert os.environ.get("TZ") == GUARDED_ENV_BASELINE.get("TZ")

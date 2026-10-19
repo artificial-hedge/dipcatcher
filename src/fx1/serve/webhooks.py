@@ -23,6 +23,7 @@ import os
 import socket
 import ssl
 import urllib.parse
+from collections.abc import Callable
 
 __all__ = [
     "WEBHOOK_BACKOFF_S",
@@ -39,6 +40,8 @@ WEBHOOK_TIMESTAMP_HEADER = "X-Fx1-Webhook-Timestamp"
 WEBHOOK_SIGNATURE_HEADER = "X-Fx1-Webhook-Signature"
 WEBHOOK_MAX_ATTEMPTS = 3
 WEBHOOK_BACKOFF_S = 0.5
+
+_DELIVERY_CLOCK: Callable[[], float] | None = None
 
 _DEFAULT_TOLERANCE_S = 300.0  # 5 min — rejects replayed stale deliveries
 _ALLOW_PRIVATE_NETWORKS_ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
@@ -262,6 +265,7 @@ def deliver_signed(
     max_attempts: int = WEBHOOK_MAX_ATTEMPTS,
     backoff_s: float = WEBHOOK_BACKOFF_S,
     timeout_s: float = 10.0,
+    clock: Callable[[], float] | None = None,
 ) -> tuple[bool, str | None, int]:
     """POST ``body`` to a webhook ``url`` — HMAC-signed when ``secret`` is
     set. Returns ``(delivered, error, attempts)``.
@@ -269,8 +273,14 @@ def deliver_signed(
     Transient faults (network errors, 5xx) retry ``max_attempts`` times
     with capped exponential backoff; a 4xx is a definitive rejection and
     is never retried. Delivery faults return as the error string — this
-    helper never raises into its caller's worker."""
+    helper never raises into its caller's worker.
+
+    ``clock`` (or module-level ``_DELIVERY_CLOCK``) supplies the HMAC
+    timestamp so audit batteries can freeze wall time.
+    """
     import time  # noqa: PLC0415 — local import keeps the module leaf
+
+    now_fn = clock if clock is not None else (_DELIVERY_CLOCK or time.time)
 
     error: str | None = None
     try:
@@ -291,7 +301,7 @@ def deliver_signed(
         try:
             headers = {"Content-Type": "application/json"}
             if secret:
-                ts = str(int(time.time()))
+                ts = str(int(now_fn()))
                 headers[WEBHOOK_TIMESTAMP_HEADER] = ts
                 headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(secret, ts, body)
             addresses = _resolved_addresses(host, port)
