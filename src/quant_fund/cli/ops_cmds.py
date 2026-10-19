@@ -441,6 +441,8 @@ def sim_live(
     from quant_fund.paper.quantile_signals import QuantilePolicy
     from quant_fund.paper.sim_live import StrategySlot, run_sim_live
 
+    repo = default_repo_root()
+
     cfg = _cfg(config)
     try:
         git_sha = (
