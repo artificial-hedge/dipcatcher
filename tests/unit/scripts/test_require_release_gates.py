@@ -46,7 +46,13 @@ def _run(
 def test_dry_run_red_sha_fails_release_gate() -> None:
     ok, reason = evaluate_release_gates(
         RED_SHA,
-        [_run(sha=RED_SHA, conclusion="failure", jobs=[_job("evidence-audit", conclusion="failure")])],
+        [
+            _run(
+                sha=RED_SHA,
+                conclusion="failure",
+                jobs=[_job("evidence-audit", conclusion="failure")],
+            )
+        ],
     )
     assert ok is False
     assert RED_SHA in reason
@@ -70,7 +76,13 @@ def test_green_ci_without_evidence_audit_fails_closed() -> None:
 def test_skipped_evidence_audit_fails_closed() -> None:
     ok, reason = evaluate_release_gates(
         GREEN_SHA,
-        [_run(sha=GREEN_SHA, conclusion="success", jobs=[_job("evidence-audit", conclusion="skipped")])],
+        [
+            _run(
+                sha=GREEN_SHA,
+                conclusion="success",
+                jobs=[_job("evidence-audit", conclusion="skipped")],
+            )
+        ],
     )
     assert ok is False
     assert "evidence-audit" in reason
@@ -104,7 +116,11 @@ def test_one_green_run_among_red_runs_is_signable() -> None:
     ok, _reason = evaluate_release_gates(
         GREEN_SHA,
         [
-            _run(sha=GREEN_SHA, conclusion="failure", jobs=[_job("evidence-audit", conclusion="failure")]),
+            _run(
+                sha=GREEN_SHA,
+                conclusion="failure",
+                jobs=[_job("evidence-audit", conclusion="failure")],
+            ),
             _run(sha=GREEN_SHA, conclusion="success", jobs=[_job("evidence-audit")]),
         ],
     )
@@ -121,7 +137,13 @@ def test_cli_dry_run_red_sha_exits_nonzero(tmp_path: Path) -> None:
     fixture = tmp_path / "runs.json"
     fixture.write_text(
         json.dumps(
-            [_run(sha=RED_SHA, conclusion="failure", jobs=[_job("evidence-audit", conclusion="failure")])]
+            [
+                _run(
+                    sha=RED_SHA,
+                    conclusion="failure",
+                    jobs=[_job("evidence-audit", conclusion="failure")],
+                )
+            ]
         ),
         encoding="utf-8",
     )
@@ -138,14 +160,18 @@ def test_cli_dry_run_red_sha_exits_nonzero(tmp_path: Path) -> None:
 def test_cli_dry_run_green_sha_exits_zero(tmp_path: Path) -> None:
     fixture = tmp_path / "runs.json"
     fixture.write_text(
-        json.dumps({"runs": [_run(sha=GREEN_SHA, conclusion="success", jobs=[_job("evidence-audit")])]}),
+        json.dumps(
+            {"runs": [_run(sha=GREEN_SHA, conclusion="success", jobs=[_job("evidence-audit")])]}
+        ),
         encoding="utf-8",
     )
     assert main(["--sha", GREEN_SHA, "--runs-json", str(fixture)]) == 0
 
 
 def test_load_runs_from_github_uses_same_predicate() -> None:
-    def getter(url: str, token: str, params: dict[str, str] | None = None) -> tuple[dict[str, Any], None]:
+    def getter(
+        url: str, token: str, params: dict[str, str] | None = None
+    ) -> tuple[dict[str, Any], None]:
         assert token == "tok"
         if "workflows/ci.yml/runs" in url:
             assert params is not None and params["head_sha"] == GREEN_SHA

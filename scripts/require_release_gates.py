@@ -103,7 +103,9 @@ def _link_next(headers: Mapping[str, str]) -> str | None:
     return None
 
 
-def github_get_json(url: str, token: str, params: Mapping[str, str] | None = None) -> tuple[Any, str | None]:
+def github_get_json(
+    url: str, token: str, params: Mapping[str, str] | None = None
+) -> tuple[Any, str | None]:
     if params:
         url = f"{url}?{urllib.parse.urlencode(params)}"
     request = urllib.request.Request(
@@ -128,7 +130,9 @@ def github_get_json(url: str, token: str, params: Mapping[str, str] | None = Non
     return payload, _link_next(headers)
 
 
-def _paginate(url: str, token: str, params: Mapping[str, str] | None, item_key: str, getter: Any) -> list[Any]:
+def _paginate(
+    url: str, token: str, params: Mapping[str, str] | None, item_key: str, getter: Any
+) -> list[Any]:
     items: list[Any] = []
     next_url: str | None = url
     query: Mapping[str, str] | None = params
@@ -148,7 +152,9 @@ def _paginate(url: str, token: str, params: Mapping[str, str] | None, item_key: 
     return items
 
 
-def load_runs_from_github(repo: str, sha: str, token: str, *, getter: Any = github_get_json) -> list[dict[str, Any]]:
+def load_runs_from_github(
+    repo: str, sha: str, token: str, *, getter: Any = github_get_json
+) -> list[dict[str, Any]]:
     digest = normalize_sha(sha)
     owner_repo = repo.strip()
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", owner_repo):
