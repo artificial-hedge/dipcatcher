@@ -136,15 +136,22 @@ class FxiShell(cmd.Cmd):
             self._say_error(ValueError("usage: use <model>"))
             return
         try:
-            profiles.apply_profile(model)
-        except (KeyError, RuntimeError) as exc:
+            profiles.check_model(model)
+        except KeyError as exc:
             self._say_error(exc)
+            return
+        if profiles.resolve_endpoint(model) is None:
+            self._say_error(
+                RuntimeError(
+                    f"no endpoint for model {model!r}; run `fxi setup` or `/keys set {model}`"
+                )
+            )
             return
         self.model = model
         self._refresh_prompt()
         typer.echo(
-            f"active model {model!r}; {profiles.ENV_API_KEY} + {profiles.ENV_BASE_URL} "
-            "injected into this session"
+            f"active model {model!r}; credentials are passed to the chat client only "
+            "(lab harness subprocesses do not inherit API keys)"
         )
 
     def complete_use(self, text: str, line: str, begidx: int, endidx: int) -> list[str]:

@@ -298,6 +298,9 @@ def superpower_cmd(
     job = operator.job
     if job is not None and job.error:
         raise typer.Exit(code=1)
+    result = job.result if job is not None else None
+    if result is not None and getattr(result, "partial", False):
+        raise typer.Exit(code=1)
 
 
 @app.command("sessions")

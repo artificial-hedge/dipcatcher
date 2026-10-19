@@ -16,9 +16,11 @@ from .support import _cfg, _collect_param_value
 
 @app.command()
 def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
+    from quant_fund.cli._app import _resolve_config_path
     from quant_fund.pipeline.doctor import doctor as run_doctor
 
-    info = run_doctor(str(config))
+    resolved = _resolve_config_path(config)
+    info = run_doctor(str(resolved))
     for k, v in info.items():
         typer.echo(f"{k}: {v}")
     # Research-only Kyle/OFI dump path (CLI hint; not a live gate).

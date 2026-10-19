@@ -11,8 +11,10 @@ Values live in ``$FX1_CONFIG_DIR/credentials.json`` (default
 presence-only: raw keys never leave this module except as injected
 environment values (mirrors ``fx1.doctor`` and the harness conventions).
 
-Injection: applying a profile sets ``MOONSHOT_API_KEY`` and
-``FX1_BASE_URL`` for child processes and in-process backends.
+Session chat backends receive credentials explicitly. Lab harness
+subprocesses inherit a scrubbed environment; optional
+:func:`subprocess_env_for_model` adds credentials only to children that
+require them.
 """
 
 from __future__ import annotations
@@ -32,6 +34,16 @@ DEFAULT_MODEL = "fx1"
 
 ENV_API_KEY = "MOONSHOT_API_KEY"
 ENV_BASE_URL = "FX1_BASE_URL"
+
+CREDENTIAL_ENV_VARS: frozenset[str] = frozenset(
+    {
+        ENV_API_KEY,
+        ENV_BASE_URL,
+        "FX1_API_KEY",
+        "FX1_BYOK_API_KEY",
+        "FX1_LOCAL_API_KEY",
+    }
+)
 
 STORE_NAME = "credentials.json"
 _MODE_0600 = stat.S_IRUSR | stat.S_IWUSR
@@ -199,6 +211,34 @@ def resolve_endpoint(
             raise ValueError(f"invalid {ENV_BASE_URL}: {problem}")
         return api_key, base_url
     return None
+
+
+def scrub_credentials(environ: Mapping[str, str] | None = None) -> dict[str, str]:
+    source = os.environ if environ is None else environ
+    return {key: value for key, value in source.items() if key not in CREDENTIAL_ENV_VARS}
+
+
+def subprocess_env_for_model(
+    model: str,
+    *,
+    path: Path | None = None,
+    inject_credentials: bool = True,
+    environ: Mapping[str, str] | None = None,
+) -> dict[str, str]:
+    env = scrub_credentials(environ)
+    if not inject_credentials:
+        return env
+    resolved = resolve_endpoint(model, path=path)
+    if not resolved:
+        raise RuntimeError(
+            f"no endpoint for model {model!r}; run `dipcatcher` or `fxi setup` "
+            f"to enter your API key and base URL, or export {ENV_API_KEY}"
+        )
+    api_key, base_url = resolved
+    env = dict(env)
+    env[ENV_API_KEY] = api_key
+    env[ENV_BASE_URL] = base_url
+    return env
 
 
 def apply_profile(

@@ -269,7 +269,9 @@ def _adapt_legacy_runner(runner: Runner) -> CancellableRunner:
     return _run
 
 
-def _spawn(executable: str, argv: list[str]) -> subprocess.Popen[str]:
+def _spawn(
+    executable: str, argv: list[str], *, env: dict[str, str] | None = None
+) -> subprocess.Popen[str]:
     command = [executable, *argv]
     if os.name == "posix":
         return subprocess.Popen(  # noqa: S603 - executable is injected or the dipcatcher CLI
@@ -280,6 +282,7 @@ def _spawn(executable: str, argv: list[str]) -> subprocess.Popen[str]:
             text=True,
             encoding="utf-8",
             start_new_session=True,
+            env=env,
         )
     return subprocess.Popen(  # noqa: S603 - executable is injected or the dipcatcher CLI
         command,
@@ -288,6 +291,7 @@ def _spawn(executable: str, argv: list[str]) -> subprocess.Popen[str]:
         stderr=subprocess.PIPE,
         text=True,
         encoding="utf-8",
+        env=env,
     )
 
 
@@ -454,8 +458,9 @@ def _run_subprocess(
     grace_s: float,
     poll_s: float,
     max_output_chars: int,
+    env: dict[str, str] | None = None,
 ) -> RunnerOutcome:
-    proc = _spawn(executable, argv)
+    proc = _spawn(executable, argv, env=env)
     stdout_buf = _OutputBuffer(max_output_chars)
     stderr_buf = _OutputBuffer(max_output_chars)
     started = time.monotonic()
@@ -506,6 +511,8 @@ def make_subprocess_runner(
         timeout_s: int,
         cancel_event: threading.Event | None,
     ) -> RunnerOutcome:
+        from fx1.interactive.profiles import scrub_credentials
+
         return _run_subprocess(
             executable,
             argv,
@@ -514,6 +521,7 @@ def make_subprocess_runner(
             grace_s=grace_s,
             poll_s=poll_s,
             max_output_chars=max_output_chars,
+            env=scrub_credentials(),
         )
 
     return _run
@@ -585,7 +593,9 @@ class Harness:
         command = self.get(name)
         effective_timeout = _resolve_timeout(command.timeout_s, timeout_s)
         argv = list(command.argv)
-        configs_dir = (Path.cwd() / "configs").resolve()
+        from quant_fund.audit.kernel_lineage import default_repo_root
+
+        configs_dir = (default_repo_root() / "configs").resolve()
 
         def check_contained(raw: str) -> Path:
             resolved = Path(raw).resolve()

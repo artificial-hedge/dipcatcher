@@ -185,6 +185,7 @@ def paper(
     from quant_fund.pipeline.dataset import ensure_silver
     from quant_fund.pipeline.forecast import build_causal_weight_panel, decision_dates
 
+    repo = default_repo_root()
     cfg = _cfg(config)
     _reject_halt_flags(halt, clear_halt)
     if halt:
@@ -283,6 +284,7 @@ def monitor(
     from quant_fund.monitoring.dashboard import ops_snapshot, render_markdown
     from quant_fund.paper.ledger import latest_run_id, load_broker_state, paper_root
 
+    repo = default_repo_root()
     cfg = _cfg(config)
     rid = run_id or latest_run_id(cfg.data.root, cfg.paper.ledger_subdir)
     if not rid:
@@ -424,14 +426,24 @@ def sim_live(
         help="Clip all assets to the common span (off: each trades its own history)",
     ),
     out: Path = typer.Option(Path(".dsh-24x7/lane-simlive"), "--out"),
+    diagnostic: bool = typer.Option(
+        False,
+        "--diagnostic",
+        help=(
+            "DIAGNOSTIC: print simulated total_return and Sharpe in the book table "
+            "(not proper research scores; default output omits them)."
+        ),
+    ),
 ) -> None:
     """Simulated-live PnL: proven quantile forecasters trade the paper loop on real bars."""
     import json
     import subprocess
 
+    from quant_fund.audit.kernel_lineage import default_repo_root
     from quant_fund.paper.quantile_signals import QuantilePolicy
     from quant_fund.paper.sim_live import StrategySlot, run_sim_live
 
+    repo = default_repo_root()
     cfg = _cfg(config)
     try:
         git_sha = (
@@ -520,8 +532,10 @@ def sim_live(
                 ),
             )
         )
+    bars_root = (repo / "data/raw/sources").resolve()
+    out_dir = out if out.is_absolute() else (repo / out).resolve()
     result = run_sim_live(
-        bars_root=Path("data/raw/sources"),
+        bars_root=bars_root,
         symbols=[s.strip().upper() for s in symbols.split(",") if s.strip()],
         interval=interval,
         config=cfg,
@@ -530,7 +544,7 @@ def sim_live(
         window=window,
         tail_bars=tail_bars,
         eval_tail_bars=eval_tail,
-        out_dir=out,
+        out_dir=out_dir,
         run_id=run_id,
         max_steps=max_steps,
         git_sha=git_sha,
@@ -543,26 +557,49 @@ def sim_live(
     )
     typer.echo(f"DATA_LABEL={result.receipt['data_label']}")
     typer.echo(f"run_id={result.run_id}")
-    typer.echo(json.dumps(result.receipt["champion_equity_stats"], indent=2, default=str))
     typer.echo(json.dumps(result.receipt["loop_metrics"], indent=2, default=str))
+    forecaster = result.receipt.get("forecaster_stats")
+    if forecaster:
+        typer.echo("forecaster panel stats (emitted/failed/warmup rows):")
+        typer.echo(json.dumps(forecaster, indent=2, default=str))
+    if diagnostic:
+        typer.echo("DIAGNOSTIC — simulated equity metrics (not headline research scores):")
+        typer.echo(
+            json.dumps(result.receipt.get("champion_equity_stats", {}), indent=2, default=str)
+        )
     if result.receipt.get("book_stats"):
-        typer.echo("book leaderboard (same bars/costs/gates, simulated):")
+        label = (
+            "book leaderboard DIAGNOSTIC (simulated return/Sharpe — not proper scores):"
+            if diagnostic
+            else "book leaderboard (proper diagnostics: max drawdown, vol, fills):"
+        )
+        typer.echo(label)
         rows = sorted(
             result.receipt["book_stats"].items(),
-            key=lambda kv: kv[1].get("total_return", float("-inf")),
-            reverse=True,
+            key=lambda kv: (
+                kv[1].get("total_return", float("-inf"))
+                if diagnostic
+                else kv[1].get("max_drawdown", float("-inf"))
+            ),
+            reverse=diagnostic,
         )
         for name, st in rows:
             if st.get("status") == "ok":
-                typer.echo(
-                    f"  {name:<18} ret={st['total_return']:+.4%} "
-                    f"sharpe={st['sharpe_simulated']:+.3f} maxDD={st['max_drawdown']:+.3%} "
-                    f"vol={st['ann_vol']:.3%} fills={st.get('n_fills')}"
-                )
+                if diagnostic:
+                    typer.echo(
+                        f"  {name:<18} ret={st['total_return']:+.4%} "
+                        f"sharpe={st['sharpe_simulated']:+.3f} maxDD={st['max_drawdown']:+.3%} "
+                        f"vol={st['ann_vol']:.3%} fills={st.get('n_fills')}"
+                    )
+                else:
+                    typer.echo(
+                        f"  {name:<18} maxDD={st['max_drawdown']:+.3%} "
+                        f"vol={st['ann_vol']:.3%} fills={st.get('n_fills')}"
+                    )
             else:
                 typer.echo(f"  {name:<18} {st.get('status', 'failed')}")
     typer.echo(f"receipt: {result.receipt_path}")
-    typer.echo("SIMULATED — no live-PnL claim.")
+    typer.echo("SYNTHETIC simulated book — research_only; receipt live_pnl_claim=false.")
 
 
 __all__ = [

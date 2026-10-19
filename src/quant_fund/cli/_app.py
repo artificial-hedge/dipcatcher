@@ -126,11 +126,19 @@ app.add_typer(net_tournament_app, name="net-tournament")
 app.add_typer(ranker_probability_app, name="ranker-probability")
 
 
+def _resolve_config_path(config: Path) -> Path:
+    if config.is_absolute():
+        return config.resolve()
+    from quant_fund.audit.kernel_lineage import default_repo_root
+
+    return (default_repo_root() / config).resolve()
+
+
 def _cfg(config: Path) -> AppConfig:
     from quant_fund.config import dump_resolved, load_config
     from quant_fund.utils.logging import configure_logging
 
-    cfg = load_config(config)
+    cfg = load_config(_resolve_config_path(config))
     configure_logging()
     dump_resolved(cfg, Path(cfg.data.root) / "metadata" / "resolved_config.json")
     return cfg

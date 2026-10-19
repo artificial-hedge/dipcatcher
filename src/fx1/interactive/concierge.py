@@ -551,12 +551,6 @@ class Concierge:
         previous = self.model
         host = self._endpoint_host(model)
         configured = host not in {"unconfigured", "invalid-url"}
-        if configured:
-            try:
-                profiles.apply_profile(model)
-            except RuntimeError as exc:
-                self._say_error(exc)
-                configured = False
         self.model = model
         if self._messages and previous != model:
             self._messages.append(
