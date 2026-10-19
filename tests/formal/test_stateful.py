@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
-from hypothesis import settings
+from hypothesis import HealthCheck, settings
 from hypothesis import strategies as st
 from hypothesis.stateful import RuleBasedStateMachine, invariant, rule
 
@@ -211,8 +211,18 @@ class LifecycleMachine(RuleBasedStateMachine):
 
 
 class TestAccountingStateMachine(AccountingMachine.TestCase):
-    settings = settings(max_examples=12, stateful_step_count=8, deadline=None)
+    settings = settings(
+        max_examples=12,
+        stateful_step_count=8,
+        deadline=None,
+        suppress_health_check=[HealthCheck.too_slow],
+    )
 
 
 class TestLifecycleStateMachine(LifecycleMachine.TestCase):
-    settings = settings(max_examples=10, stateful_step_count=8, deadline=None)
+    settings = settings(
+        max_examples=10,
+        stateful_step_count=8,
+        deadline=None,
+        suppress_health_check=[HealthCheck.too_slow],
+    )

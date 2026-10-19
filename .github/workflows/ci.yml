@@ -378,7 +378,7 @@ jobs:
         # ARL MM paths that need the optional torch `nn` extra.
         run: uv sync --frozen --all-groups --all-extras --no-build
       - name: Collect paper and analytics tests
-        run: uv run pytest --collect-only -q -m smoke
+        run: uv run pytest --collect-only -q -m smoke --strict-markers
       - name: Synthetic research smoke
         # Required families alone exercise the seal/verify path; the live-optional
         # catalog is thousands of benches and starves the smoke budget.
