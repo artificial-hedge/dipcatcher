@@ -25,6 +25,72 @@ ALWAYS_EXCLUDED = ("receipt_sha256",)
 QUARANTINED_SUBDIRS = frozenset({"legacy-unsealed"})
 
 
+def discover_repo_root(*starts: Path | str | None) -> Path | None:
+    """Walk up from *starts* looking for a dipcatcher checkout."""
+    seen: set[Path] = set()
+    for start in starts:
+        if start is None:
+            continue
+        cur = Path(start).resolve()
+        if cur.is_file():
+            cur = cur.parent
+        for candidate in (cur, *cur.parents):
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            if (candidate / "pyproject.toml").is_file() and (
+                candidate / "quality" / "legacy_quarantine.json"
+            ).is_file():
+                return candidate
+    return None
+
+
+def _in_real_checkout(path: Path, repo_root: Path | None) -> bool:
+    """True when *path* sits inside a checkout that has crown-jewel pins."""
+    if repo_root is None:
+        return False
+    if not (repo_root / "quality" / "crown_jewels.json").is_file():
+        return False
+    try:
+        path.resolve().relative_to(repo_root.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _quarantine_blocks(path: Path, rel: str, file_sha256: str, repo_root: Path | None) -> bool:
+    if repo_root is None:
+        return False
+    from quant_fund.research.legacy_unsealed import load_quarantine_or_empty
+
+    registry = load_quarantine_or_empty(repo_root / "quality" / "legacy_quarantine.json")
+    if rel in registry.files:
+        return True
+    if not _in_real_checkout(path, repo_root):
+        return False
+    return any(entry.sha256 == file_sha256 for entry in registry.files.values())
+
+
+def _verifier_rejected_real_receipt(path: Path, repo_root: Path | None) -> bool:
+    """Production verifier, only on real ``receipts/`` members of a checkout.
+
+    Synthetic tmp_path stubs used by unit tests are not under the pinned
+    receipts tree and must remain loadable as admitted examples.
+    """
+    if not _in_real_checkout(path, repo_root) or repo_root is None:
+        return False
+    receipts_home = repo_root / "receipts"
+    if not receipts_home.is_dir():
+        return False
+    try:
+        path.resolve().relative_to(receipts_home.resolve())
+    except ValueError:
+        return False
+    from quant_fund.schemas.receipt_v2_leaf import verify_receipt_file
+
+    return not verify_receipt_file(path)["valid"]
+
+
 def corpus_training_refused(
     path: Path,
     receipts_root: Path,
@@ -37,7 +103,6 @@ def corpus_training_refused(
     from quant_fund.research.legacy_unsealed import (
         honesty_stamp_errors,
         in_quarantined_subdir,
-        load_quarantine_or_empty,
     )
 
     reject, _gaps = honesty_stamp_errors(payload)
@@ -47,15 +112,11 @@ def corpus_training_refused(
         rel = path.relative_to(receipts_root).as_posix()
     except ValueError:
         return True
-    if in_quarantined_subdir(rel):
+    if in_quarantined_subdir(rel) or any(part in QUARANTINED_SUBDIRS for part in Path(rel).parts):
         return True
-    if repo_root is None:
-        return False
-    registry = load_quarantine_or_empty(repo_root / "quality" / "legacy_quarantine.json")
-    entry = registry.files.get(rel)
-    if entry is None:
-        return False
-    return entry.sha256 == file_sha256
+    if _quarantine_blocks(path, rel, file_sha256, repo_root):
+        return True
+    return _verifier_rejected_real_receipt(path, repo_root)
 
 
 def is_quarantined(path: Path, root: Path) -> bool:

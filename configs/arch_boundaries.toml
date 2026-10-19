@@ -204,8 +204,6 @@ allowed = [
     # cli/api/paper coupling may enter through them.
     "quant_fund.models.iv_approx",
     "quant_fund.models.options",
-    "quant_fund.research.crown_jewels",
-    "quant_fund.research.legacy_unsealed",
 ]
 note = "fx1 is kept isolated: only leaf services of the harness are fair game"
 

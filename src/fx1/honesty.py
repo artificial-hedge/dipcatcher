@@ -129,6 +129,10 @@ def _normalize(text: str) -> str:
     folded = _FUSION_BREAK.sub(" ", folded)
     folded = _FORMAT_CHARS.sub("", folded)
     folded = _CAMEL_BOUNDARY.sub(" ", folded)
+    # The honesty-flag identifier is not a headline. Fuse it before
+    # underscore folding so ``live_pnl_claim`` cannot be read as "live pnl".
+    folded = re.sub(r"live_pnl_claim", "livepnlclaim", folded, flags=re.IGNORECASE)
+    folded = folded.replace("_", " ")
     return _SPACED_LETTERS.sub("", folded)
 
 

@@ -147,6 +147,48 @@ def test_build_corpus_refuses_quarantined_and_rejected_receipts(tmp_path: Path):
     assert stats["refused"] == 2 and stats["loaded"] == 1
 
 
+def test_corpus_build_excludes_real_quarantined_registry_receipts(tmp_path: Path) -> None:
+    """Would fail before refuse-by-registry-sha / discovered repo_root:
+
+    the 9 eligible quarantined receipts (4 with forbidden_metric_keys)
+    trained as positives because ``fx1 corpus build`` never consulted the
+    production verifier or ``quality/legacy_quarantine.json``.
+    """
+    from quant_fund.research.legacy_unsealed import load_quarantine
+
+    repo = Path(__file__).resolve().parents[2]
+    registry = load_quarantine(repo / "quality" / "legacy_quarantine.json")
+    eligible: list[tuple[str, str, tuple[str, ...]]] = []
+    for rel, entry in registry.files.items():
+        path = repo / "receipts" / rel
+        if not path.is_file():
+            continue
+        if hashlib.sha256(path.read_bytes()).hexdigest() != entry.sha256:
+            continue
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(payload, dict):
+            continue
+        research_only = (payload.get("research_only") is True) or (
+            payload.get("claim") == "research_only"
+        )
+        if "live_pnl_claim" in payload:
+            live = bool(payload["live_pnl_claim"])
+        else:
+            live = payload.get("claim") != "research_only"
+        if research_only and not live:
+            eligible.append((rel, entry.sha256, entry.errors))
+    assert len(eligible) == 9
+    forbidden = [item for item in eligible if "forbidden_metric_keys" in item[2]]
+    assert len(forbidden) == 4
+    out = tmp_path / "corpus.jsonl"
+    stats = build_corpus(repo / "receipts", out)
+    lines = [json.loads(ln) for ln in out.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    trained = {row["receipt_sha256"] for row in lines}
+    blocked = {digest for _rel, digest, _errors in eligible}
+    assert blocked.isdisjoint(trained)
+    assert stats["refused"] >= 9
+
+
 def test_build_corpus_accepts_multiple_receipt_dirs(tmp_path: Path):
     dir_a, dir_b = tmp_path / "a", tmp_path / "b"
     dir_a.mkdir()

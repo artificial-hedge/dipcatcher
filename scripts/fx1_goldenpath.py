@@ -426,8 +426,8 @@ def _weights_direct_leg(legs: _Legs, ckpt_dir: Path | None, weight_hits: list[st
 
         engine = LocalWeightsEngine(
             ckpt_dir,
-            enforce_ship_gate=False,
-        )  # fixture tiny-LM card uses placeholder eval_delta
+            allow_synthetic_fixture=True,
+        )  # SYNTHETIC fixture; placeholder eval_delta is not ship-eligible
         prompt = [{"role": "user", "content": "weights-direct-ping"}]
         first = engine.complete_messages(prompt)
         second = engine.complete_messages(prompt)
@@ -587,7 +587,7 @@ def run_goldenpath(
         engine_sock.listen(1)
         engine_port = int(engine_sock.getsockname()[1])
         server_env["FX1_CHECKPOINT_DIR"] = str(ckpt_dir)
-        server_env["FX1_ENFORCE_SHIP_GATE"] = "0"
+        server_env["FX1_ALLOW_SYNTHETIC_FIXTURE"] = "SYNTHETIC"
         server_env["FX1_LOCAL_SERVE_URL"] = f"http://127.0.0.1:{engine_port}/v1"
         server_env["FX1_LOCAL_SERVE_CMD"] = (
             f"$python -m fx1.serve.local_engine --port {engine_port}"

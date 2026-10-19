@@ -54,6 +54,30 @@ def test_doctor_json_roundtrip(tmp_path: Path) -> None:
     assert parsed["fx1_version"] == status["fx1_version"]
 
 
+def test_doctor_dropped_jewel_not_intact_matches_library(tmp_path: Path) -> None:
+    """A pin that silently drops a jewel is not intact; digest equals the library."""
+    from quant_fund.research.crown_jewels import (
+        DEFAULT_JEWELS,
+        distribution_lineage_digest,
+        write_crown_jewels_pin,
+    )
+
+    for rel in DEFAULT_JEWELS:
+        path = tmp_path / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("jewel\n", encoding="utf-8")
+    pin = write_crown_jewels_pin(tmp_path)
+    payload = json.loads(pin.read_text(encoding="utf-8"))
+    dropped = next(iter(payload["files"]))
+    del payload["files"][dropped]
+    pin.write_text(json.dumps(payload), encoding="utf-8")
+    status = collect_status(tmp_path)
+    library = distribution_lineage_digest(tmp_path)
+    assert library["jewels_intact"] is False
+    assert status["distribution_jewels_intact"] is False
+    assert status["distribution_lineage"] == library["digest"]
+
+
 def test_doctor_reports_ledger_chain_state(tmp_path: Path) -> None:
     assert collect_status(tmp_path)["corpus_ledger_chain"] == "missing"
     (tmp_path / "data" / "fx1").mkdir(parents=True)

@@ -231,7 +231,7 @@ jobs:
         # safetensors). The fx1 workflow syncs --all-extras for the same reason.
         run: uv sync --frozen --all-groups --all-extras --no-build
       - name: fx1 coverage ratchet
-        # Floor stays 80. `--cov=fx1` counts every module in the package.
+        # Floor 90. `--cov=fx1` counts every module in the package.
         # tests/fx1 alone measured 36.76% on 2026-10-15: *_audit.py and the
         # serve surface it never imports are about half the statements and
         # sat near 0%. tests/unit/fx1_serve executes those modules. The

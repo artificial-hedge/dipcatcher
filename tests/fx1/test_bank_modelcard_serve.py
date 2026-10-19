@@ -164,6 +164,24 @@ def test_local_fx1_complete_without_engine_is_not_configured(
         backend.complete([{"role": "user", "content": "hi"}])
 
 
+def test_placeholder_card_refused_when_ship_gate_enforced(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Would serve artifacts/fx1_tiny_lm under enforce_ship_gate=True."""
+    from fx1.serve.local_engine import LocalWeightsEngine
+
+    ckpt = Path(__file__).resolve().parents[2] / "artifacts" / "fx1_tiny_lm"
+    monkeypatch.delenv("FX1_ALLOW_SYNTHETIC_FIXTURE", raising=False)
+    monkeypatch.delenv("FX1_ENFORCE_SHIP_GATE", raising=False)
+    card = ModelCard.load(ckpt / "modelcard.json")
+    assert card.is_synthetic_placeholder
+    assert not card.ship_eligible
+    with pytest.raises(RuntimeError, match="ship gate"):
+        LocalWeightsEngine(ckpt, enforce_ship_gate=True)
+    with pytest.raises(RuntimeError, match="ship gate"):
+        LocalFx1Backend(ckpt, enforce_ship_gate=True)
+
+
 def test_local_backend_fail_closed(tmp_path: Path):
     with pytest.raises(FileNotFoundError, match="model card"):
         LocalFx1Backend(tmp_path)

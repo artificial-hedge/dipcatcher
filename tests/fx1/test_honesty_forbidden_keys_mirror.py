@@ -25,9 +25,25 @@ from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
         {"outer": {"inner_sortino": 0.2}},
         {"live_pnl_claim": True},
         {"nested": {"live_pnl_claim": True}},
+        {"P&L": 100.0},
+        {"profit_and_loss": 100.0},
+        {"netAssetValue": 1.9},
+        {"net_asset_value": 1.9},
+        {"ProfitAndLoss": 100.0},
     ],
 )
 def test_forbidden_key_gates_match_lab_catalog(payload: object) -> None:
     lab = family_blob_forbidden_metrics_absent(payload)
     fx1 = _forbidden_metric_keys_absent(payload)
     assert lab == fx1
+
+
+@pytest.mark.parametrize(
+    "key",
+    ["P&L", "profit_and_loss", "netAssetValue", "net_asset_value", "ProfitAndLoss"],
+)
+def test_lab_key_gate_rejects_camel_and_spelled_out_forms(key: str) -> None:
+    """Would pass the lab mapping-key gate before compact/sequence aliases."""
+    payload = {key: 1.0}
+    assert family_blob_forbidden_metrics_absent(payload) is False
+    assert _forbidden_metric_keys_absent(payload) is False

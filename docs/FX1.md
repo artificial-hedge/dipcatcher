@@ -20,8 +20,8 @@ the shipped status below.
 Three facts, because each of them is routinely misread in the other direction:
 
 - **fx-1 is a harness, an eval program, and a training pipeline. No fine-tuned
-  fx-1 weights are published.** As of 2026-10-16, `src/fx1` is 332 Python
-  modules with 84 `test_*.py` files under `tests/fx1/`.
+  fx-1 weights are published.** As of 2026-10-19, `src/fx1` is 342 Python
+  modules with 86 `test_*.py` files under `tests/fx1/`.
 - **`fx1.__version__` (`0.4.0`) tracks the harness API, not a model release.**
   See [FX1_API_STABILITY.md](FX1_API_STABILITY.md). `git tag -l 'v*' | wc -l`
   → **0**: no release tag has ever been cut, so the version names an API

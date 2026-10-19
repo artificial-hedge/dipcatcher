@@ -176,7 +176,7 @@ perf-check: ## Compare current timings against the stored local baseline (1.5x g
 
 # --- fx-1 (the model) lifecycle — dipcatcher is the harness ---------------
 fx1-test: ## fx-1 test suite
-	PYTHONPATH=src uv run pytest tests/fx1 -q
+	PYTHONPATH=src uv run pytest tests/fx1 -q -ra
 
 fx1-lint: ## fx-1 lint
 	uv run ruff check src/fx1 tests/fx1
@@ -200,12 +200,12 @@ fx1-gate: fx1-lint ## Full fx-1 CI gate locally: lint + types + tests + honesty 
 	# CI's fx1 "Types" step also runs --strict (fx1.yml); the local full gate
 	# keeps parity with the CI gate — raise code to strict, never drop this.
 	uv run mypy --strict src/fx1
-	PYTHONPATH=src uv run pytest tests/fx1 -q
-	PYTHONPATH=src uv run pytest tests/fx1 -q -k honesty
+	PYTHONPATH=src uv run pytest tests/fx1 -q -ra
+	PYTHONPATH=src uv run pytest tests/fx1 -q -ra -k honesty
 	uv run fx1 corpus build --receipts-dir receipts --out data/fx1/corpus_ci_smoke.jsonl
 
 fx1-coverage: ## fx-1 coverage ratchet ([tool.fx1.coverage] in pyproject.toml)
-	uv run pytest tests/fx1 tests/unit/fx1_serve -q --cov=fx1 --cov-fail-under=90 --cov-report=term-missing
+	uv run pytest tests/fx1 tests/unit/fx1_serve -q --cov=fx1 --cov-fail-under=90 --cov-report=term-missing -ra
 
 # --- PROOFCORE gates (DESIGN.md §9.3; additive — no existing target changed) -
 # Merge order: W5 lands last; the W1-W4 CLIs below exist once those waves merge.
