@@ -54,13 +54,13 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 
 | Agent | Start when | Current signal on `main` |
 |-------|------------|---------------------------|
-| **WP-3J** | immediately | `6172922c8` bounded research benches; CI shards still fail/cancel; **WP-3J-2** `pytest-timeout` in `pyproject.toml` not landed. |
+| **WP-3J** | in progress | `6172922c8` bounded benches; `be9f8639a` pytest-timeout 900s; shard balance / `.test_durations` still open. |
 | **KX-7Q** | immediately | `test_modules_stay_under_max_lines` / `fx1/cli.py` budget; CLI split open on agent branches (not merged). |
 | **ZR-9V** | parallel | evidence-audit masks; base-ref gating; anchor staleness reporting. |
 | **VT-2M** | done (`0febe4d69`) | Lane TMPDIR isolation, CI replay/bundle artifacts, runbook budget note; await evidence-audit on 39201259280+. |
 | **HX-5D** | done (this pass) | `test_stateful.py` TZ/LC_ALL + repo-root config path on `main`. |
 | **FX-1A** | done (`f6f061f79`) | corpus quarantine refuse, honesty lexical holes, ship fixture CLI. |
-| **PD-8S** | parallel | `/use` key leakage, cwd-relative lab paths, sim-live honesty (agent branch in flight; not on `main`). |
+| **PD-8S** | done (`f8ec9e649`) | Key scrub, repo-root paths, sim-live honesty, superpower partial exit, lab doctor, env/README parity (`test_pd8s_frontdoor.py`). |
 | **RL-4C** | **landed** (`cf6b3613b`) | release preflight, checkout creds, `make ci` parity (`test_workflow_security.py` guards `ci.yml` / `release.yml`). |
 | **QA-0K** | continuous | **No stamping** this pass unless `needs-stamp:` commits land and pin holder signs (H1). Reconcile this doc after each green CI candidate. |
 
@@ -75,9 +75,12 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | `f6f061f79` | FX-1A | Corpus quarantine refuse, honesty lexical holes, ship fixture CLI |
 | `ef717fc99` | HX-5D | Formal Hypothesis collection, env isolation tests, webhook injected clock |
 | `b42a31864` | HX-5D | Formal repo-root `paper.yaml`; TZ/LC_ALL (superseded by formal `conftest` fixture) |
+| `7fcf09a10` | HX-5D | Formal locale via `tests/formal/conftest.py` (env baseline guard) |
+| `f8ec9e649` | PD-8S | Receipt census, `.env` parity, fx1 doctor repo root |
+| `be9f8639a` | WP-3J | `pytest-timeout` 900s default (shard hang visibility) |
 | `ce6cfe32c` | QA-0K | Initial `PROD_READINESS_STATUS.md` ledger |
 
-Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher`), #3006/#3004 harness drafts — none merge the KX-7Q/PD-8S agent branches directly.
+Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher`), #3006/#3004 harness drafts — KX-7Q CLI split may still be open off `main`.
 
 ---
 
@@ -90,3 +93,4 @@ Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher
 | 2026-10-19 | `0febe4d69` | **VT-2M** replay TMPDIR + CI evidence artifacts; criterion 5 pending CI replay-sweep. |
 | 2026-10-19 | `f6f061f79` | **FX-1A** honesty/corpus fixes; CI run 39201259280 queued. |
 | 2026-10-19 | `b42a31864` | QA-0K refresh + HX-5D formal locale/repo-root follow-up on `main`. |
+| 2026-10-19 | `f8ec9e649` | **PD-8S** front-door lane landed; `test_pd8s_frontdoor.py` 10/10 locally. |
