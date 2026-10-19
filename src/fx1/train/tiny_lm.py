@@ -106,19 +106,7 @@ def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Modu
     import torch
     from torch import nn
 
-    # torch ships as an optional extra. Under TYPE_CHECKING, subclass a real
-    # ``nn.Module`` so ``ModuleList`` / return annotations stay sound; at
-    # runtime still subclass the live ``nn.Module``.
-    if TYPE_CHECKING:
-
-        class _TorchModule(torch.nn.Module):
-            def __init__(self, *args: object, **kwargs: object) -> None:
-                super().__init__(*args, **kwargs)
-
-    else:
-        _TorchModule = nn.Module
-
-    class _Block(_TorchModule):
+    class _Block(nn.Module):
         def __init__(self) -> None:
             super().__init__()
             self.ln1 = nn.LayerNorm(dim)
@@ -149,7 +137,7 @@ def build_tiny_lm(vocab: int, dim: int, ctx: int, n_heads: int) -> torch.nn.Modu
             x = x + self.mlp["fc2"](nn.functional.gelu(self.mlp["fc1"](m), approximate="tanh"))
             return x
 
-    class _TinyLM(_TorchModule):
+    class _TinyLM(nn.Module):
         def __init__(self) -> None:
             super().__init__()
             self.tok_emb = nn.Embedding(vocab, dim)
@@ -340,7 +328,7 @@ def write_modelcard(
     :func:`stamp_measured_eval_delta`, so a produced ft card's gate
     verdict is always computed from measured pass rates.
     """
-    from fx1.modelcard import EvalDelta, ModelCard, eval_fixture_placeholder_delta
+    from fx1.modelcard import ModelCard, eval_fixture_placeholder_delta
 
     card_path = out_dir / "modelcard.json"
     ModelCard(

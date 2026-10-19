@@ -208,6 +208,13 @@ def test_modelcard_cli_reports_ship_gate(tmp_path: Path):
     assert json.loads(result.stdout)["ship_eligible"] is True
 
 
+def test_modelcard_cli_fixture_syn_refuses_ship(tmp_path: Path):
+    card = _ship_eligible_card(tmp_path)
+    result = runner.invoke(app, ["modelcard", str(card), "--fixture", "SYNTHETIC"])
+    assert result.exit_code == 0
+    assert json.loads(result.stdout)["ship_eligible"] is False
+
+
 def test_sbom_cli_from_repo_lockfile(tmp_path: Path):
     lockfile = Path(__file__).resolve().parents[2] / "uv.lock"
     out = tmp_path / "sbom.json"

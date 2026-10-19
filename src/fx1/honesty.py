@@ -60,6 +60,7 @@ _FUSION_BREAK = re.compile(
 # space before a number ("nav's 1.9") must survive or the token fuses with
 # the claim. Ordinary text ("the cat sat", "I said") is unaffected.
 _SPACED_LETTERS = re.compile(r"(?<=\b[A-Za-z])\s+(?=[A-Za-z]\b)")
+_CAMEL_BOUNDARY = re.compile(r"(?<=[a-z])(?=[A-Z])")
 
 # Cyrillic/Greek letters that NFKC does not fold to Latin but that render
 # identically. Mapped to their Latin lookalike before matching; legitimate
@@ -124,13 +125,17 @@ def _normalize(text: str) -> str:
     # a Cyrillic final e must preserve the same boundary as a Latin e.
     folded = unicodedata.normalize("NFKC", text).translate(_HOMOGLYPHS)
     folded = _FUSION_BREAK.sub(" ", folded)
-    return _SPACED_LETTERS.sub("", _FORMAT_CHARS.sub("", folded))
+    folded = _FORMAT_CHARS.sub("", folded)
+    folded = _CAMEL_BOUNDARY.sub(" ", folded)
+    return _SPACED_LETTERS.sub("", folded)
 
 
 # Token spellings beyond the literal token. "pnl" admits the spelled forms
-# a writer actually uses: p&l, p+l, p and l.
+# a writer actually uses: p&l, p+l, p and l, profit and loss, p/l.
+# "nav" admits dotted / spelled net-asset-value forms.
 _TOKEN_SPELLINGS: dict[str, str] = {
-    "pnl": r"p\s*(?:n|&|\+|and)\s*l",
+    "pnl": r"(?:p\s*(?:n|&|\+|and|/)\s*l|profit\s+and\s+loss)",
+    "nav": r"(?:n\.?\s*a\.?\s*v\.?|net\s+asset\s+value)",
 }
 
 # Connective phrasing allowed between the token and the numeric claim —
@@ -154,7 +159,7 @@ _BRIDGE = (
     r"(?:ratio|score|value|reading|measure|level|figure|number|metric|multiple|"
     r"returns?|performance|results?|strategy|model|fund|portfolio|position|"
     r"trade|run|series|grid|bench|backtest|quarter|month|year|week|period|"
-    r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel)\b"
+    r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel|total)\b"
 )
 
 
