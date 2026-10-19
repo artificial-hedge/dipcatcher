@@ -81,8 +81,13 @@ def _distribution_lineage(root: Path) -> dict[str, object]:
 
 
 def collect_status(root: Path | None = None) -> dict[str, object]:
-    """Return fx-1 readiness signals rooted at *root* (default: cwd)."""
-    root = root or Path.cwd()
+    """Return fx-1 readiness signals rooted at *root* (default: repo root)."""
+    if root is None:
+        from dipcatcher_cli.paths import repo_root
+
+        root = repo_root()
+    else:
+        root = Path(root)
     status: dict[str, object] = {
         "fx1_version": fx1.__version__,
         "base_model": fx1.BASE_MODEL,

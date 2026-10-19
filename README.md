@@ -1140,14 +1140,15 @@ xychart-beta
 
 ### Receipt census
 
-63 committed JSON artifacts under [`receipts/`](receipts/): 55 sealed
-receipts at the top level, 7 legacy-unsealed receipts kept for history,
-plus one README (full listing in the [Appendix](#receipts-census)).
+404 committed JSON artifacts under [`receipts/`](receipts/) (397 at the
+top level, 7 legacy-unsealed kept for history), plus one README (full
+listing in the [Appendix](#receipts-census); parity checked in
+`tests/unit/frontdoor/test_pd8s_frontdoor.py`).
 
 ```mermaid
 pie showData
-  title Committed receipt files (62 JSON + 1 README @ e00ab310c)
-  "sealed receipts/" : 55
+  title Committed receipt JSON (404 @ HEAD)
+  "top-level receipts/" : 397
   "legacy-unsealed" : 7
 ```
 

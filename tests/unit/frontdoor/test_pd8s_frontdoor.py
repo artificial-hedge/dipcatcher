@@ -10,6 +10,11 @@ import pytest
 from typer.testing import CliRunner
 
 from dipcatcher_cli.paths import repo_root, resolve_repo_path
+from dipcatcher_cli.truthfulness import (
+    env_documentation_surfaces,
+    env_example_variables,
+    receipt_census,
+)
 from fx1.harness import Harness
 from fx1.honesty import validate_fx1_output
 from fx1.interactive import profiles
@@ -157,6 +162,24 @@ def test_superpower_sync_partial_exits_nonzero(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr("fx1.interactive.app.concierge.Concierge", lambda **k: _Op())
     result = CliRunner().invoke(fxi_app.app, ["superpower", "--sync", "probe goal"])
     assert result.exit_code == 1
+
+
+def test_readme_receipt_census_matches_git() -> None:
+    census = receipt_census()
+    assert census["json_total"] == 404
+    assert census["json_top_level"] == 397
+    assert census["legacy_unsealed_json"] == 7
+    readme = (repo_root() / "README.md").read_text(encoding="utf-8")
+    assert "404" in readme and "397" in readme
+
+
+
+def test_env_example_vars_documented_in_operator_surfaces() -> None:
+    declared = env_example_variables()
+    documented = env_documentation_surfaces()
+    undocumented = sorted(declared - documented)
+    assert not undocumented, f".env.example vars missing from README/AGENTS: {undocumented[:10]}"
+
 
 
 def test_lab_doctor_reports_created_dirs_separately(tmp_path: Path) -> None:
