@@ -87,9 +87,17 @@ set is pinned (root files sit above every corpus dir).
 
 After touching a covered file: `make stamp-epochs` (advances all chains +
 pin) and `dipcatcher crown-jewels --write` if a jewel changed. Both must land
-in the same commit as the change. If `GATE_SIGNING_KEY` is provisioned,
+in the same commit as the change. If signing keys are provisioned,
 finish with `make sign-pins` — the signature must cover the final pin bytes
-(sign last, since stamping updates `epoch_heads.json`), then
+(sign last, since stamping updates `epoch_heads.json`). With
+`quality/gate_quorum.json` committed (as on `main`), `make sign-pins` runs
+`dipcatcher quorum-sign`, which reads `GATE_QUORUM_KEYS` (comma-separated
+`<priv_hex>:<pub_hex>` pairs, at least `threshold` registered signers; under
+the current 1-of-1 registry that is the `gate_signing.pub` key) and writes
+`gate_signatures.v2`; run directly it also takes one `--key-file` per signer.
+Bare `dipcatcher sign-pins` only writes lone-key `gate_signatures.v1`, which
+the verifier rejects under a registry (`quorum_sig_missing`); there it
+refuses with exit 2 and leaves `gate_pins.sig` untouched. Then
 `make checkpoint` + `dipcatcher witness-checkpoint` to extend the spine and
 anchor the new pin-state in Rekor.
 

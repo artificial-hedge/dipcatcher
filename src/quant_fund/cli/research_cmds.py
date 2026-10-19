@@ -3029,6 +3029,24 @@ def evidence_export_cmd(
     typer.echo("verify: dipcatcher verify-repo --root <bundle> --evidence-only")
 
 
+def _refuse_lone_key_under_quorum(root: Path) -> None:
+    """Exit 2 when a quorum registry is committed: ``verify_pin_signatures``
+    rejects a lone-key ``gate_signatures.v1`` file there (``quorum_sig_missing``),
+    so writing one would replace the quorum signature with a guaranteed fail.
+    """
+    from quant_fund.research.gate_signatures import DEFAULT_QUORUM_PATH
+
+    registry = root / DEFAULT_QUORUM_PATH
+    if registry.exists():
+        typer.echo(
+            f"sign-pins: {registry.as_posix()} is committed — a lone-key "
+            "gate_signatures.v1 file fails verification there (quorum_sig_missing); "
+            "refusing to overwrite the quorum signature. Use `dipcatcher quorum-sign` "
+            "(--key-file per signer, or GATE_QUORUM_KEYS)."
+        )
+        raise typer.Exit(code=2)
+
+
 @app.command("sign-pins")
 def sign_pins_cmd(
     root: Path = typer.Option(Path("."), "--root"),
@@ -3039,11 +3057,16 @@ def sign_pins_cmd(
         "(two lines, or `PRIV\\nPUB`). Falls back to GATE_SIGNING_KEY env.",
     ),
 ) -> None:
-    """Ed25519-sign integrity pins; require GATE_SIGNING_KEY or --key-file."""
+    """Ed25519-sign integrity pins; require GATE_SIGNING_KEY or --key-file.
+
+    Lone-key (``gate_signatures.v1``) only: refuses (exit 2) when
+    ``quality/gate_quorum.json`` is committed — use ``quorum-sign`` there.
+    """
     import os
 
     from quant_fund.research.gate_signatures import key_id, sign_pins
 
+    _refuse_lone_key_under_quorum(root)
     raw: str | None = None
     if key_file is not None:
         raw = key_file.read_text().strip()

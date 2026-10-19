@@ -295,8 +295,10 @@ touching any covered directory:
 
 1. `make stamp-epochs` — re-stamp every corpus-epoch chain + the head pin
    (`quality/epoch_heads.json`).
-2. `make sign-pins` — Ed25519-sign the pins (needs `GATE_SIGNING_KEY` or
-   `--key-file`).
+2. `make sign-pins` — Ed25519-sign the pins. With `quality/gate_quorum.json`
+   committed it runs `dipcatcher quorum-sign` (needs `GATE_QUORUM_KEYS`);
+   otherwise lone-key `dipcatcher sign-pins` (needs `GATE_SIGNING_KEY` or
+   `--key-file`), which refuses (exit 2) under a quorum registry.
 3. `make anchor-pins` — RFC 3161-anchor both pin files (network; quiet
    points).
 4. `make checkpoint` — sign the pin state into `quality/checkpoint.json`
