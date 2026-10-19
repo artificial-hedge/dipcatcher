@@ -1,0 +1,73 @@
+# Production readiness status (QA-0K integrator)
+
+**Measured at:** `origin/main` `cf6b3613b` (2026-10-19 UTC)  
+**Work-order base:** `cb4f2c52f` is an ancestor of `main` (+10 commits through `cf6b3613b`).  
+**Owner:** QA-0K maintains this file; other agents do not edit unless coordinating a criterion flip.
+
+Do not call the repo production-ready until every exit criterion below is **green** on a completed CI run of `main`, or explicitly **parked** in [Human-only parked items](#human-only-parked-items).
+
+---
+
+## Exit criteria
+
+| # | Status | Command / check | Last CI run (placeholder) |
+|---|--------|-----------------|---------------------------|
+| 1 | **RED** — no completed all-jobs-green CI on current `main` tip | Full push workflow set: lint, typecheck, test shards, coverage, evidence-audit, proofcore, fx1, arch-guards, platform matrix | In flight: https://github.com/artificial-hedge/dipcatcher/actions/runs/39200406699 (CI, `cf6b3613b`, pending). Last **completed** CI: https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`, **failure**). |
+| 2 | **RED** (local `make lint` on `cf6b3613b`, 4 vCPU) | `make lint && make typecheck && uv run mypy src/fx1` | CI lint job **green** on https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`). Local `make lint` failed `check_mypy_strict_allowlist.py` (regressions in `hedge_lab/resources.py`, `models/deep_rl.py`, `models/nbeats.py`, `utils/seeds.py`). Log: `/opt/cursor/artifacts/qa0k_make_lint.log`. |
+| 3 | **RED** (expected until human pin re-sign) | `uv run dipcatcher crown-jewels --check` and `uv run dipcatcher verify-repo` | evidence-audit on https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510: `pin_signatures: FAIL pin_drift:quality/crown_jewels.json,pin_drift:quality/epoch_heads.json`. Local `crown-jewels --check`: **intact**; `verify-repo` still reports `pin_drift` on those pins. |
+| 4 | **RED** | `make evidence-audit` (all 7 gates reported; drills calibrated) | Same run as row 3 — job failed at `verify-repo` / pin drift; downstream drills not a reliable green signal until item H1. |
+| 5 | **UNKNOWN** | `make replay-sweep` (executed vs skipped carriers separated) | Not verified on `cf6b3613b` in this session (too heavy for 4 vCPU integrator pass). WP VT-2M / replay lane fixes in flight on `main`. |
+| 6 | **UNKNOWN** | `make admission-gate ADMISSION_BASE=<last green>` and `make epoch-consistency EPOCH_BASE=<last green>` | No **last green** CI SHA recorded yet; use post-green run URL once criterion 1 flips. |
+| 7 | **PASS** (spot-check) | `git diff cb4f2c52f..origin/main -- quality/ pyproject.toml tests \| grep -E 'skip\|xfail\|baseline\|deselect\|fail_under'` — review every hit | No integrator-driven baseline loosening in this audit; parallel agents must keep it that way. |
+| 8 | **IN PROGRESS** | This file matches reality line by line | Updated by QA-0K integrator pass 2026-10-19. |
+
+### Recent CI failures (last completed CI `39157190510`, SHA `5c474b6d3`)
+
+| Job | Result | Notes |
+|-----|--------|--------|
+| `lint` | success | |
+| `test (3.12\|3.13, *)` | failure / cancelled | e.g. `pin_drift` in `test_auditor_bundle.py`, `test_bundle_differential.py`, canon qualification drift |
+| `coverage` | failure | (log not fully mined this pass) |
+| `evidence-audit` | failure | `verify-repo pin_signatures: pin_drift` on crown jewels + epoch heads |
+| `pretrade-risk` | failure | |
+| `atlas` (`0350d4346`) | failure | stale `docs/ARCHITECTURE_ATLAS.md` / `docs/architecture/*` — regenerate with `scripts/gen_arch_diagrams.py` |
+
+---
+
+## Human-only parked items
+
+Parked items are **not** fixable in-agent. Each line is the exact action required.
+
+| ID | Status | Action |
+|----|--------|--------|
+| **H1 — Re-sign pins** (D1-03/D2-02/D3-04) | **BLOCKING** | `gate_pins.sig` stale since 2026-09-30. Holder of `GATE_SIGNING_KEY` (Ed25519, `key_id` `bc3bcff676056adf`) runs `make sign-pins`, then `make checkpoint`, `make witness-checkpoint`, and anchor steps. Until then: `verify-repo`, `make evidence-audit`, tamper/fuzz drills, and several unit tests stay red. Do not mint a new key or weaken the signature check. |
+| **H2 — Branch protection** (D1-01/D2-10) | **BLOCKING** for “production” governance | Repo admin defines required checks / merge queue / revert bot for `main` (currently advisory CI). |
+| **H3 — Epoch ack remediation** (D1-02) | **OWNER DECISION** | 13 self-excused epoch acks (12 in-place receipt mutations) plus 39 ungated acks from `84d3d31b7`. Agents list only; owner chooses remediate vs grandfather. |
+| **H4 — Private tapes & Windows fleet** (D1-06, D5-11) | **BLOCKING** for full replay | 14/16 replay carriers need private tapes; NTFS/ACL behaviour needs `D:\dipcatcher`. |
+| **H5 — fx1 model endpoint** (D5-01/D5-02) | **BLOCKING** for live chat | No production `fx1` / `fx1-lite` weights endpoint; do not substitute another vendor as “fx1”. |
+| **H6 — Release tag & versioning** (D4-06/D5-06) | **OWNER DECISION** | `fx1.__version__` frozen at 0.4.0; install/Homebrew assets may not exist until owner tags. |
+| **H7 — Admission honesty for stamped history** (D1-08) | **OWNER DECISION** | 176/346 stamped non-legacy receipts lack stamp admission would require today; 6 registered. Owner: register, re-admit, or document grandfathering. |
+
+---
+
+## Agent queue hints (for parallel workers)
+
+| Agent | Start when | Current signal on `main` |
+|-------|------------|---------------------------|
+| **WP-3J** | immediately | CI test shards still fail/cancel; full-catalog tests and shard hangs per work order. |
+| **KX-7Q** | immediately | `test_modules_stay_under_max_lines` / `fx1/cli.py` budget; mccabe / line-budget pressure on `main`. |
+| **ZR-9V** | parallel | evidence-audit masks; base-ref gating; anchor staleness reporting. |
+| **VT-2M** | parallel | vol_bench / mcs_vol CI isolation; artifact uploads. |
+| **HX-5D** | parallel | `test_stateful.py`, env isolation, marker hygiene. |
+| **FX-1A** | after WP/KX unblock | corpus quarantine, honesty lexical holes, doctor crown-jewel check. |
+| **PD-8S** | after WP/KX unblock | `/use` key leakage, cwd-relative lab paths, sim-live honesty. |
+| **RL-4C** | in progress | `cf6b3613b` — release preflight, checkout creds, `make ci` parity (verify in CI run 39200406699+). |
+| **QA-0K** | continuous | **No stamping** this pass unless `needs-stamp:` commits land and pin holder signs (H1). Reconcile this doc after each green CI candidate. |
+
+---
+
+## Integrator log
+
+| When (UTC) | SHA | Note |
+|------------|-----|------|
+| 2026-10-19 | `cf6b3613b` | Initial status file; `cb4f2c52f` verified ancestor; local `make lint` mypy-allowlist red; `crown-jewels --check` intact; `verify-repo` pin_drift expected pending H1. |
