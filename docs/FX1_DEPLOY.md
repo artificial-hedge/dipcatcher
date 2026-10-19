@@ -355,14 +355,25 @@ sh install.sh --help
 
 Hardening properties (all present in `install.sh`):
 
-- **Checksum pin — recommended release practice.** Set
-  `FXI_WHEEL_SHA256=<hex>` to require the wheel's SHA-256 to match **before**
-  pip install runs (works for `--wheel` and remote URLs). A mismatch aborts
-  fail-closed (`sha256 mismatch …`); a download without the pin is installed
-  but warned (`fxi warn> unpinned download; set FXI_WHEEL_SHA256=<hex> to
-  verify the wheel`). Release procedure: compute the wheel digest at release
-  time and publish it beside the asset (the Homebrew formula's `url`/`sha256`
-  pair is filled the same way), then install with the pin set.
+- **Checksum pin — required for remote wheels.** A remote (`http://` /
+  `https://`, including the default release URL) wheel installs only with
+  `FXI_WHEEL_SHA256=<hex>`; without it the installer refuses before any
+  download or write (`refusing unverified download …`). The SHA-256 is
+  checked **before** pip install runs, and a mismatch aborts fail-closed
+  (`sha256 mismatch …`). A local `--wheel` may be pinned the same way.
+  Release procedure: compute the wheel digest at release time and publish it
+  beside the asset (the Homebrew formula's `url`/`sha256` pair is filled the
+  same way), then install with the pin set.
+- **Dependency lock (optional).** `--requirements FILE` (or
+  `FXI_REQUIREMENTS`) names a local requirements file with a `--hash` on
+  every entry, e.g. from
+  `uv export --frozen --no-dev --no-emit-project -o requirements.lock.txt`.
+  The installer then rebuilds the venv (`venv --clear`), installs that file
+  with `pip install --require-hashes --no-deps -r`, adds the verified wheel
+  with `--no-deps`, and skips the unpinned pip upgrade; `pip check` refuses
+  (and removes the venv) when the file leaves out one of the wheel's
+  dependencies. Without the file, pip resolves the wheel's dependencies from
+  the index, unhashed, and the installer warns.
 - **Safe destinations.** `safe_home` refuses `FXI_HOME` values `""`, `/`, or
   `$HOME` before any `rm -rf`/`mkdir`, so `--uninstall` can never delete a
   home directory. The installer never uses sudo and writes only `FXI_HOME`,

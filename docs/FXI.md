@@ -83,10 +83,15 @@ the matching GitHub release, and symlinks `fxi` (plus `fx1`, `dipcatcher`,
 `quant`, `verify-ledger`, `mc-engine`) into `~/.local/bin`. It never uses
 sudo. Overrides: `FXI_VERSION`, `FXI_INSTALL_URL` (wheel URL), `FXI_HOME`,
 `FXI_BIN_DIR`; flags `--wheel dist/....whl` (local dev install),
-`--uninstall`. Set `FXI_WHEEL_SHA256=<hex>` to pin the wheel checksum — the
-installer verifies it **before** pip install and warns when a download is
-unpinned. The installer refuses destructive `FXI_HOME` values (empty, `/`, or
-`$HOME`), and `sh install.sh --help` works even under `curl | sh`.
+`--uninstall`. A remote wheel (`http://`/`https://`, the default included)
+installs only with `FXI_WHEEL_SHA256=<hex>`: the installer refuses an
+unpinned download and verifies the checksum **before** pip install. Pass
+`--requirements FILE` (or `FXI_REQUIREMENTS`) with a hashed requirements file
+to lock the dependencies (`--require-hashes`, wheel added `--no-deps`,
+`pip check` refuses a missing pin); without it pip resolves them from the
+index, unhashed, and the installer warns. The installer refuses destructive
+`FXI_HOME` values (empty, `/`, or `$HOME`), and `sh install.sh --help` works
+even under `curl | sh`.
 
 ### Homebrew (tap)
 

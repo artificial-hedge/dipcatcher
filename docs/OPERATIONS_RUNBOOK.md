@@ -133,10 +133,11 @@ here means three research/simulation surfaces:
    launch, `--state-dir` durability, managed keys, drain, and the
    failure-mode table live in [FX1_DEPLOY.md](FX1_DEPLOY.md). No GitHub
    Release wheel is published. `install.sh` installs a wheel only when you
-   pass `--wheel` or `FXI_INSTALL_URL`; the **recommended release practice
-   is the `FXI_WHEEL_SHA256` checksum pin** (verified before
-   pip install, fail-closed on mismatch, warn on unpinned downloads) — see
-   [FX1_DEPLOY.md](FX1_DEPLOY.md) "Installing release artifacts".
+   pass `--wheel` or `FXI_INSTALL_URL`. A remote wheel **requires the
+   `FXI_WHEEL_SHA256` checksum pin** (unpinned downloads are refused;
+   verified before pip install, fail-closed on mismatch), and
+   `--requirements FILE` locks the dependencies to a hashed requirements file
+   — see [FX1_DEPLOY.md](FX1_DEPLOY.md) "Installing release artifacts".
 3. **Windows remote research/SOTA fleet** (`D:\dipcatcher`) — see
    "Windows remote-fleet operations" below.
 

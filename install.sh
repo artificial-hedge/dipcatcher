@@ -17,8 +17,16 @@
 # It never uses sudo and never writes outside FXI_HOME, FXI_BIN_DIR, and the
 # pip cache. `--uninstall` removes what it installed.
 #
-# Optional integrity pin: set FXI_WHEEL_SHA256=<hex> to require the wheel's
-# sha256 to match before it is installed (works for --wheel and remote URLs).
+# Integrity pin: a remote (http/https) wheel installs only with
+# FXI_WHEEL_SHA256=<hex>, checked before pip runs; without it the installer
+# refuses. A local --wheel may be pinned the same way.
+#
+# Dependency lock: --requirements FILE (or FXI_REQUIREMENTS) names a local
+# requirements file with a --hash on every entry, e.g. from
+# `uv export --frozen --no-dev --no-emit-project -o requirements.lock.txt`.
+# The venv is then rebuilt from that file with --require-hashes, the wheel is
+# added with --no-deps, and `pip check` refuses a dependency the file left
+# out. Without it, pip resolves dependencies from the index, unhashed (warned).
 set -eu
 
 FXI_VERSION="${FXI_VERSION:-0.4.0}"
@@ -53,11 +61,19 @@ What it does, in order:
 It never uses sudo and never writes outside FXI_HOME, FXI_BIN_DIR, and the
 pip cache. `--uninstall` removes what it installed.
 
-Optional integrity pin: set FXI_WHEEL_SHA256=<hex> to require the wheel's
-sha256 to match before it is installed (works for --wheel and remote URLs).
+Integrity pin: a remote (http/https) wheel installs only with
+FXI_WHEEL_SHA256=<hex>, checked before pip runs; without it the installer
+refuses. A local --wheel may be pinned the same way.
 
-Usage: sh install.sh [--wheel PATH] [--version X.Y.Z] [--home DIR]
-                     [--bin-dir DIR] [--uninstall]
+Dependency lock: --requirements FILE (or FXI_REQUIREMENTS) names a local
+requirements file with a --hash on every entry, e.g. from
+`uv export --frozen --no-dev --no-emit-project -o requirements.lock.txt`.
+The venv is then rebuilt from that file with --require-hashes, the wheel is
+added with --no-deps, and `pip check` refuses a dependency the file left
+out. Without it, pip resolves dependencies from the index, unhashed (warned).
+
+Usage: sh install.sh [--wheel PATH] [--requirements FILE] [--version X.Y.Z]
+                     [--home DIR] [--bin-dir DIR] [--uninstall]
 EOF
     exit "${1:-0}"
 }
@@ -82,10 +98,12 @@ safe_home() {
 }
 
 WHEEL=""
+REQUIREMENTS="${FXI_REQUIREMENTS:-}"
 UNINSTALL=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --wheel)    WHEEL="${2:?--wheel needs a path}"; shift 2 ;;
+        --requirements) REQUIREMENTS="${2:?--requirements needs a path}"; shift 2 ;;
         --version)  FXI_VERSION="${2:?--version needs a value}"; shift 2 ;;
         --home)     FXI_HOME="${2:?--home needs a path}"; shift 2 ;;
         --bin-dir)  FXI_BIN_DIR="${2:?--bin-dir needs a path}"; shift 2 ;;
@@ -130,17 +148,24 @@ fi
 PY="$(find_python)"
 log "using $($PY --version 2>&1) at $PY"
 
+# Refuse an unverifiable source before anything is downloaded or written.
+WHEEL_SOURCE="${WHEEL:-${FXI_INSTALL_URL:-$DEFAULT_WHEEL_URL}}"
+case "$WHEEL_SOURCE" in
+    http://*|https://*)
+        [ -n "${FXI_WHEEL_SHA256:-}" ] \
+            || die "refusing unverified download $WHEEL_SOURCE: set FXI_WHEEL_SHA256=<hex> (the wheel's published sha256)"
+        log "installing fx-1 $FXI_VERSION from $WHEEL_SOURCE" ;;
+    *) [ -f "$WHEEL_SOURCE" ] || die "wheel not found: $WHEEL_SOURCE" ;
+       log "installing fx-1 from local wheel $WHEEL_SOURCE" ;;
+esac
+if [ -n "$REQUIREMENTS" ] && [ ! -f "$REQUIREMENTS" ]; then
+    die "hashed requirements file not found: $REQUIREMENTS (a local file; URLs are refused)"
+fi
+
 safe_home "$FXI_HOME"
 if ! mkdir -p "$FXI_HOME" 2>/dev/null; then
     die "cannot write FXI_HOME=$FXI_HOME (no sudo by design; pick another with --home)"
 fi
-
-WHEEL_SOURCE="${WHEEL:-${FXI_INSTALL_URL:-$DEFAULT_WHEEL_URL}}"
-case "$WHEEL_SOURCE" in
-    http://*|https://*) log "installing fx-1 $FXI_VERSION from $WHEEL_SOURCE" ;;
-    *) [ -f "$WHEEL_SOURCE" ] || die "wheel not found: $WHEEL_SOURCE" ;
-       log "installing fx-1 from local wheel $WHEEL_SOURCE" ;;
-esac
 
 INSTALL_FILE="$WHEEL_SOURCE"
 if [ -n "${FXI_WHEEL_SHA256:-}" ]; then
@@ -159,17 +184,28 @@ if [ -n "${FXI_WHEEL_SHA256:-}" ]; then
     [ "$actual" = "$FXI_WHEEL_SHA256" ] \
         || die "sha256 mismatch for $INSTALL_FILE (expected $FXI_WHEEL_SHA256, got $actual)"
     log "sha256 verified: $actual"
-else
-    case "$WHEEL_SOURCE" in
-        http://*|https://*)
-            warn "unpinned download; set FXI_WHEEL_SHA256=<hex> to verify the wheel" ;;
-    esac
 fi
 
+VPY="$FXI_HOME/venv/bin/python"
 log "venv: $FXI_HOME/venv"
-"$PY" -m venv "$FXI_HOME/venv"
-"$FXI_HOME/venv/bin/python" -m pip install --quiet --upgrade pip
-"$FXI_HOME/venv/bin/python" -m pip install --quiet "$INSTALL_FILE"
+if [ -n "$REQUIREMENTS" ]; then
+    # Locked: a fresh venv (nothing inherited unhashed), every dependency
+    # hash-checked from the file with no resolution, the verified wheel added
+    # with --no-deps, and no unpinned pip upgrade.
+    log "locked dependencies: $REQUIREMENTS (--require-hashes)"
+    "$PY" -m venv --clear "$FXI_HOME/venv"
+    "$VPY" -m pip install --quiet --require-hashes --no-deps -r "$REQUIREMENTS"
+    "$VPY" -m pip install --quiet --no-deps "$INSTALL_FILE"
+    if ! "$VPY" -m pip check; then
+        rm -rf "$FXI_HOME/venv"
+        die "pip check: $REQUIREMENTS does not cover the wheel's dependencies; add the missing pins with --hash"
+    fi
+else
+    warn "dependencies resolve from the package index, unhashed; pass --requirements FILE (hashed) to lock them"
+    "$PY" -m venv "$FXI_HOME/venv"
+    "$VPY" -m pip install --quiet --upgrade pip
+    "$VPY" -m pip install --quiet "$INSTALL_FILE"
+fi
 
 if ! mkdir -p "$FXI_BIN_DIR" 2>/dev/null; then
     die "cannot write FXI_BIN_DIR=$FXI_BIN_DIR (pick another with --bin-dir)"
