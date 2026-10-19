@@ -12,7 +12,7 @@ fx1/serve/client.py 3544
 fx1/serve/openai_compat.py 3315
 fx1/serve/parity_audit.py 4513
 fx1/serve/vs_audit.py 2291
-quant_fund/cli/research_cmds.py 4464
+quant_fund/cli/research_cmds.py 4442
 quant_fund/microstructure/multilevel_mm.py 2225
 quant_fund/microstructure/zi_lob_simulator.py 3459
 quant_fund/research/agent.py 5836
