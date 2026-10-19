@@ -55,7 +55,7 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | Agent | Start when | Current signal on `main` |
 |-------|------------|---------------------------|
 | **WP-3J** | in progress | `6172922c8` bounded benches; `be9f8639a` pytest-timeout 900s; shard balance / `.test_durations` still open. |
-| **KX-7Q** | immediately | `test_modules_stay_under_max_lines` / `fx1/cli.py` budget; CLI split open on agent branches (not merged). |
+| **KX-7Q** | done (`e6222f455`) | `fx1/cli.py` → `cli_harness` + `cli_common`; `test_modules_stay_under_max_lines` green. |
 | **ZR-9V** | parallel | evidence-audit masks; base-ref gating; anchor staleness reporting. |
 | **VT-2M** | done (`0febe4d69`) | Lane TMPDIR isolation, CI replay/bundle artifacts, runbook budget note; await evidence-audit on 39201259280+. |
 | **HX-5D** | done (this pass) | `test_stateful.py` TZ/LC_ALL + repo-root config path on `main`. |
@@ -78,9 +78,13 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | `7fcf09a10` | HX-5D | Formal locale via `tests/formal/conftest.py` (env baseline guard) |
 | `f8ec9e649` | PD-8S | Receipt census, `.env` parity, fx1 doctor repo root |
 | `be9f8639a` | WP-3J | `pytest-timeout` 900s default (shard hang visibility) |
+| `7e920fd25` | KX-7Q | Split `fx1 harness` CLI into `cli_harness` / `cli_common` |
+| `e6222f455` | KX-7Q | Remove duplicate help constants post-split (ruff F811) |
+| `ea351a1b1` | PD-8S | `/use` env scrub, repo-root paths, sim-live honesty, superpower `--sync` |
+| `779306f27` | PD-8S | Interactive tests + lab doctor `dir_*_created` reporting |
 | `ce6cfe32c` | QA-0K | Initial `PROD_READINESS_STATUS.md` ledger |
 
-Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher`), #3006/#3004 harness drafts — KX-7Q CLI split may still be open off `main`.
+Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher`), #3006/#3004 harness drafts — unrelated to KX-7Q/PD-8S (landed on `main`).
 
 ---
 
@@ -94,3 +98,4 @@ Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher
 | 2026-10-19 | `f6f061f79` | **FX-1A** honesty/corpus fixes; CI run 39201259280 queued. |
 | 2026-10-19 | `b42a31864` | QA-0K refresh + HX-5D formal locale/repo-root follow-up on `main`. |
 | 2026-10-19 | `f8ec9e649` | **PD-8S** front-door lane landed; `test_pd8s_frontdoor.py` 10/10 locally. |
+| 2026-10-19 | `e6222f455` | **KX-7Q** CLI line-budget split + ruff cleanup on `main`. |
