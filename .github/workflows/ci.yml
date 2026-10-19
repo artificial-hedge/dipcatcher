@@ -273,6 +273,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -481,6 +483,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -553,6 +557,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -672,6 +678,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
@@ -697,6 +705,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -706,6 +716,8 @@ jobs:
         id: sync
         run: uv sync --frozen --all-groups --no-build
       - name: Re-verify every committed receipt (strict)
+        # make evidence-audit runs every gate (including the seven integrity
+        # drills at the tail), reports each, and exits non-zero once at the end.
         run: make evidence-audit
       # Each evidence gate reports on its own: a red step above must not
       # skip the base-comparison rules below (chain extension, ack ledger
@@ -723,6 +735,7 @@ jobs:
         id: base
         if: ${{ !cancelled() && steps.sync.outcome == 'success' && (github.event_name == 'pull_request' || github.event_name == 'push') }}
         env:
+          GH_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
           PR_BASE: ${{ github.base_ref }}
           PUSH_BEFORE: ${{ github.event.before }}
@@ -733,8 +746,8 @@ jobs:
               echo "no base commit for this $EVENT event; base-comparison gates skipped"
               exit 0 ;;
           esac
-          git fetch --depth=1 origin "$ref"
-          echo "sha=$(git rev-parse FETCH_HEAD)" >> "$GITHUB_OUTPUT"
+          sha=$(gh api "/repos/${GITHUB_REPOSITORY}/commits/${ref}" --jq .sha)
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
       - name: Chain-consistency proofs — a change may extend, never rewrite
         if: ${{ !cancelled() && steps.base.outputs.sha != '' }}
         env:
@@ -757,6 +770,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -780,6 +795,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"

@@ -117,7 +117,7 @@ native-test: ## quant_core parity tests (ci.yml rust-accel; run `make native` fi
 evidence: ## Regenerate docs/evidence/index.md from sealed receipts
 	uv run python scripts/build_evidence_report.py
 
-ci: lint typecheck coverage ## Local mirror of the CI gate
+ci: lint typecheck security coverage ## Local mirror of ci.yml lint + PR test gate
 
 code-inventory: ## Report tracked semantic Python LOC and feature/test counts
 	uv run python scripts/code_quality_inventory.py --summary-only
@@ -290,27 +290,34 @@ audit-cli-mounts: ## Detect Typer apps defined in src/ but never mounted (droppe
 	uv run python scripts/audit_cli_mounts.py
 
 evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
-	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit" \
+	@ea_fail=0; \
+	_ea() { \
+	  gate="$$1"; shift; \
+	  printf 'evidence-audit: %s\n' "$$gate"; \
+	  if "$$@"; then printf 'evidence-audit: ok %s\n' "$$gate"; else printf 'evidence-audit: FAIL %s\n' "$$gate"; ea_fail=1; fi; \
+	}; \
+	_ea suite-health uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit" \
 		--quarantine quality/legacy_quarantine.json --heads-pin quality/epoch_heads.json \
-		--epoch-acks quality/epoch_allowed_removals.json --require-stamped
-	uv run dipcatcher corpus-epoch --corpus-dir receipts --check --heads-pin quality/epoch_heads.json --require-stamped --epoch-acks quality/epoch_allowed_removals.json
-	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --check --heads-pin quality/epoch_heads.json --require-stamped --epoch-acks quality/epoch_allowed_removals.json
-	uv run dipcatcher corpus-epoch --corpus-dir quality --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json
-	uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json
-	uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json
-	uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json
-	uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --check --heads-pin quality/epoch_heads.json --epoch-acks quality/epoch_allowed_removals.json
-	uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --epoch-acks quality/epoch_allowed_removals.json
-	for spec in "src" "tests" "scripts" "docs" "research" "replay" "reports" "notebooks" "examples" "clients" "typings" "spec" "docker" "deploy" "third_party" "rust" "web" ".box-soft-verify" ".cursor" ".github"; do \
-	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json || exit 1; \
-	done
-	uv run dipcatcher crown-jewels --check
-	uv run dipcatcher verify-witness
-	uv run dipcatcher verify-repo
-	uv run dipcatcher checkpoint-chain
-	uv run dipcatcher verify-rotations
-	uv run dipcatcher tamper-drill
-	uv run dipcatcher fuzz-drill --seed 7
+		--epoch-acks quality/epoch_allowed_removals.json --require-stamped; \
+	_ea corpus-epoch:receipts uv run dipcatcher corpus-epoch --corpus-dir receipts --check --heads-pin quality/epoch_heads.json --require-stamped --epoch-acks quality/epoch_allowed_removals.json; \
+	_ea corpus-epoch:verifier uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --check --heads-pin quality/epoch_heads.json --require-stamped --epoch-acks quality/epoch_allowed_removals.json; \
+	_ea corpus-epoch:quality uv run dipcatcher corpus-epoch --corpus-dir quality --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json; \
+	_ea corpus-epoch:workflows uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json; \
+	_ea corpus-epoch:configs uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json; \
+	_ea corpus-epoch:artifacts uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json; \
+	_ea corpus-epoch:.dsh-24x7 uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --check --heads-pin quality/epoch_heads.json --epoch-acks quality/epoch_allowed_removals.json; \
+	_ea corpus-epoch:data/metadata uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --epoch-acks quality/epoch_allowed_removals.json; \
+	for spec in src tests scripts docs research replay reports notebooks examples clients typings spec docker deploy third_party rust web .box-soft-verify .cursor .github; do \
+	  _ea "corpus-epoch:$$spec" uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates --epoch-acks quality/epoch_allowed_removals.json; \
+	done; \
+	_ea crown-jewels uv run dipcatcher crown-jewels --check; \
+	_ea verify-witness uv run dipcatcher verify-witness; \
+	_ea verify-repo uv run dipcatcher verify-repo; \
+	_ea checkpoint-chain uv run dipcatcher checkpoint-chain; \
+	_ea verify-rotations uv run dipcatcher verify-rotations; \
+	_ea tamper-drill uv run dipcatcher tamper-drill; \
+	_ea fuzz-drill uv run dipcatcher fuzz-drill --seed 7; \
+	if [ "$$ea_fail" -ne 0 ]; then echo "evidence-audit: one or more gates failed"; exit 1; fi
 
 checkpoint-chain: ## Walk the full checkpoint spine — every archived link verifies, no forks/orphans, Rekor order holds
 	uv run dipcatcher checkpoint-chain
@@ -401,6 +408,10 @@ replay-sweep: ## CI gate: replay every replayable carrier; fail on divergence or
 		--out "$${RUNNER_TEMP:-/tmp}/replay_coverage.json"
 
 ADMISSION_BASE ?= origin/main
+# Base commit for evidence-audit comparison gates in CI (epoch-consistency,
+# admission-gate, quarantine-gate). Defaults to ADMISSION_BASE; CI sets
+# EPOCH_BASE / ADMISSION_BASE from the pre-push tip via the resolved base sha.
+EVIDENCE_AUDIT_BASE ?= $(ADMISSION_BASE)
 # Candidates are every *.json the diff touches under receipts/ at ANY depth --
 # the stamper (corpus_epoch.member_digests) is recursive, so a narrower filter
 # lets a nested or non-ASCII receipt be stamped without passing admit-batch.

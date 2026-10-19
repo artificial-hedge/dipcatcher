@@ -35,9 +35,10 @@ make sync          # uv sync --frozen --all-groups --all-extras (uv.lock is
 | Lint | `make lint` (ruff check + format --check on `src`/`tests`) |
 | Types | `make typecheck` (mypy `src/quant_fund`); fx1: `uv run mypy src/fx1` |
 | Lab tests | `make test` (PR gate: not network, not slow, xdist). `make test-full` includes slow. |
+| Local CI mirror | `make ci` — lint + typecheck + security + coverage (matches `ci.yml` `lint` + PR `test`) |
 | fx1 suite | `make fx1-test` — separate lane, ~200 tests |
 | fx1 full gate | `make fx1-gate` — lint + types + tests + honesty + corpus smoke |
-| CI parity | `.github/workflows/ci.yml` + `fx1.yml` use `uv sync --frozen` |
+| CI parity | `.github/workflows/ci.yml` + `fx1.yml` use `uv sync --frozen`; tag releases require green `CI` + `evidence-audit` on the tagged SHA (`release.yml`) |
 
 ## Honesty contract (hard rules — do not weaken)
 
