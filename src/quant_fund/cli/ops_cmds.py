@@ -185,7 +185,6 @@ def paper(
     from quant_fund.pipeline.dataset import ensure_silver
     from quant_fund.pipeline.forecast import build_causal_weight_panel, decision_dates
 
-    repo = default_repo_root()
     cfg = _cfg(config)
     _reject_halt_flags(halt, clear_halt)
     if halt:
@@ -284,7 +283,6 @@ def monitor(
     from quant_fund.monitoring.dashboard import ops_snapshot, render_markdown
     from quant_fund.paper.ledger import latest_run_id, load_broker_state, paper_root
 
-    repo = default_repo_root()
     cfg = _cfg(config)
     rid = run_id or latest_run_id(cfg.data.root, cfg.paper.ledger_subdir)
     if not rid:
@@ -443,7 +441,6 @@ def sim_live(
     from quant_fund.paper.quantile_signals import QuantilePolicy
     from quant_fund.paper.sim_live import StrategySlot, run_sim_live
 
-    repo = default_repo_root()
     cfg = _cfg(config)
     try:
         git_sha = (
