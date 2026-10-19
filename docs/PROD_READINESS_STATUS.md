@@ -15,7 +15,7 @@ Do not call the repo production-ready until every exit criterion below is **gree
 | 1 | **RED** — no completed all-jobs-green CI on current `main` tip | Full push workflow set: lint, typecheck, test shards, coverage, evidence-audit, proofcore, fx1, arch-guards, platform matrix | In flight: https://github.com/artificial-hedge/dipcatcher/actions/runs/39201259280 (CI, `f6f061f79`, pending). Prior pushes cancelled mid-queue (`39201252179` `cfa8d1961`, `39201184002` `0febe4d69`, `39200925380` `ce6cfe32c`). Last **completed** CI: https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`, **failure**). |
 | 2 | **RED** (local `make lint` on `cf6b3613b`, 4 vCPU) | `make lint && make typecheck && uv run mypy src/fx1` | CI lint job **green** on https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510 (`5c474b6d3`). Local `make lint` failed `check_mypy_strict_allowlist.py` (regressions in `hedge_lab/resources.py`, `models/deep_rl.py`, `models/nbeats.py`, `utils/seeds.py`). Log: `/opt/cursor/artifacts/qa0k_make_lint.log`. |
 | 3 | **RED** (expected until human pin re-sign) | `uv run dipcatcher crown-jewels --check` and `uv run dipcatcher verify-repo` | evidence-audit on https://github.com/artificial-hedge/dipcatcher/actions/runs/39157190510: `pin_signatures: FAIL pin_drift:quality/crown_jewels.json,pin_drift:quality/epoch_heads.json`. Local `crown-jewels --check`: **intact**; `verify-repo` still reports `pin_drift` on those pins. |
-| 4 | **RED** | `make evidence-audit` (all 7 gates reported; drills calibrated) | Same run as row 3 — job failed at `verify-repo` / pin drift; downstream drills not a reliable green signal until item H1. |
+| 4 | **RED** (gates unmasked; drills still blocked by H1) | `make evidence-audit` (all 7 gates reported; drills calibrated) | **ZR-9V-1** on `main`: seven integrity steps always run; suite fails once at end (`ea_fail`). Still **red** on inherited `pin_drift` / epoch jewel drift until **H1**; tamper/fuzz verdicts need a green pin pass to trust. |
 | 5 | **PENDING CI** | `make replay-sweep` (executed vs skipped carriers separated) | **VT-2M** landed `0febe4d69`: lane TMPDIR under run cwd, `evidence-replay-sweep` + bundle artifacts on `evidence-audit`. Subagent log: local `make replay-sweep` pass (~91–109s); confirm on next green `evidence-audit` (run 39201259280+). `mcs_vol` budget documented in `docs/OPERATIONS_RUNBOOK.md` (no manifest re-pin). |
 | 6 | **UNKNOWN** | `make admission-gate ADMISSION_BASE=<last green>` and `make epoch-consistency EPOCH_BASE=<last green>` | No **last green** CI SHA recorded yet; use post-green run URL once criterion 1 flips. |
 | 7 | **PASS** (spot-check) | `git diff cb4f2c52f..origin/main -- quality/ pyproject.toml tests \| grep -E 'skip\|xfail\|baseline\|deselect\|fail_under'` — review every hit | No integrator-driven baseline loosening in this audit; parallel agents must keep it that way. |
@@ -56,7 +56,7 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 |-------|------------|---------------------------|
 | **WP-3J** | in progress | `6172922c8` bounded benches; `be9f8639a` pytest-timeout 900s; shard balance / `.test_durations` still open. |
 | **KX-7Q** | done (`6d15a409c`) | CLI split (`7e920fd25`/`e6222f455`); `typings/torch` + `tiny_lm` strict mypy without `nn`. fx1 modules under line pins; `quant_fund/cli/research_cmds.py` drift is separate. |
-| **ZR-9V** | parallel | evidence-audit masks; base-ref gating; anchor staleness reporting. |
+| **ZR-9V** | done (`06cf40e73`) | All 7 evidence-audit gates run + fail-at-end (`Makefile`); anchor `stale`+`age_s` in `verify-repo` + `repo_integrity.json`; replay sweep `n_carriers` = executed only (`f91de95e9`). ZR-9V-2/5 open. |
 | **VT-2M** | done (`0febe4d69`) | Lane TMPDIR isolation, CI replay/bundle artifacts, runbook budget note; await evidence-audit on 39201259280+. |
 | **HX-5D** | done (this pass) | `test_stateful.py` TZ/LC_ALL + repo-root config path on `main`. |
 | **FX-1A** | done (`d73d8d090`) | Corpus/honesty (`f6f061f79`+); goldenpath measurement via `FX1_ENFORCE_SHIP_GATE=0`; harness config test uses repo `configs/`. |
@@ -83,6 +83,9 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | `6d15a409c` | KX-7Q | Torch stubs + `tiny_lm` TYPE_CHECKING types; strict mypy without `nn` extra |
 | `ea351a1b1` | PD-8S | `/use` env scrub, repo-root paths, sim-live honesty, superpower `--sync` |
 | `779306f27` | PD-8S | Interactive tests + lab doctor `dir_*_created` reporting |
+| `f91de95e9` | ZR-9V | Timestamp anchor staleness, replay executed-carrier headline, verify-repo reporting |
+| `65080a71e` | QA-0K | Stamp ZR-9V research epoch drift |
+| `06cf40e73` | ZR-9V | Refresh `repo_integrity.json` with anchor staleness fields |
 | `ce6cfe32c` | QA-0K | Initial `PROD_READINESS_STATUS.md` ledger |
 
 Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher`), #3006/#3004 harness drafts — unrelated to KX-7Q/PD-8S (landed on `main`).
@@ -100,3 +103,4 @@ Open PRs (2026-10-19): #3008 release hardening (`sesori/goal-shipping-dipcatcher
 | 2026-10-19 | `b42a31864` | QA-0K refresh + HX-5D formal locale/repo-root follow-up on `main`. |
 | 2026-10-19 | `f8ec9e649` | **PD-8S** front-door lane landed; `test_pd8s_frontdoor.py` 10/10 locally. |
 | 2026-10-19 | `e6222f455` | **KX-7Q** CLI line-budget split + ruff cleanup on `main`. |
+| 2026-10-19 | `06cf40e73` | **ZR-9V** evidence gates unmasked + anchor staleness; `test_replay_sweep` + `test_timestamp_anchor` 16/16 locally. |
