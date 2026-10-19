@@ -38,7 +38,7 @@ def test_evidence_audit_runs_all_seven_tail_gates_then_fails_closed() -> None:
     assert recipe.find("_ea crown-jewels") < recipe.find("_ea fuzz-drill")
     assert "ea_fail=1" in recipe
     assert "one or more gates failed" in recipe
-    assert "if [ \"$$ea_fail\" -ne 0 ]" in recipe or "if [ \"$ea_fail\" -ne 0 ]" in recipe
+    assert 'if [ "$$ea_fail" -ne 0 ]' in recipe or 'if [ "$ea_fail" -ne 0 ]' in recipe
 
 
 def test_ci_evidence_base_prefers_last_green_artifact() -> None:

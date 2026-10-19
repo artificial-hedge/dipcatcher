@@ -143,12 +143,11 @@ def test_contract_rejects_forged_counts(tmp_path: Path) -> None:
         forged[field] = bad
         assert replay_coverage_contract_errors(forged) != []
 
+
 def _skip_carrier(tmp_path: Path, receipt: Path, name: str) -> Path:
     path = _carrier(tmp_path, receipt, name, claims_equal=True)
     body = json.loads(path.read_text())
-    body["replay"]["input_tapes"] = [
-        {"path": f"data/raw/{name}.parquet", "sha256": "a" * 64}
-    ]
+    body["replay"]["input_tapes"] = [{"path": f"data/raw/{name}.parquet", "sha256": "a" * 64}]
     del body["receipt_sha256"]
     body["receipt_sha256"] = hash_bytes(
         canonical_json_bytes({k: v for k, v in body.items() if k != "receipt_sha256"})
@@ -171,4 +170,3 @@ def test_sweep_skipped_carriers_not_counted_as_claims_equal(tmp_path: Path) -> N
     assert body["n_claims_byte_equal"] == 1
     assert body["n_claims_skipped"] == 14
     assert replay_coverage_contract_errors(body) == []
-
