@@ -32,6 +32,7 @@ from numpy.typing import NDArray
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
 from quant_fund.research.fleet_eval import _atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.portable_fp import stable_exp_array
 from quant_fund.utils.reproducibility import git_revision
 
 Array = NDArray[np.float64]
@@ -126,8 +127,8 @@ class SyntheticBook:
 
 def _prices_and_adv(n_dates: int, n_names: int, seed: int) -> tuple[Array, Array]:
     rng = np.random.default_rng(seed)
-    adv_shares = np.exp(rng.normal(np.log(1e6), 0.8, size=(n_dates, n_names)))
-    prices = np.exp(rng.normal(np.log(50.0), 0.5, size=n_names))
+    adv_shares = stable_exp_array(rng.normal(np.log(1e6), 0.8, size=(n_dates, n_names)))
+    prices = stable_exp_array(rng.normal(np.log(50.0), 0.5, size=n_names))
     return prices, adv_shares * prices[None, :]
 
 

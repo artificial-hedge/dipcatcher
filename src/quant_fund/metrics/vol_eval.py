@@ -22,6 +22,7 @@ from numpy.typing import NDArray
 from scipy import stats
 
 from quant_fund.metrics.scoring import pinball_loss
+from quant_fund.utils.portable_fp import stable_dot
 
 Array = NDArray[np.float64]
 
@@ -123,10 +124,10 @@ def vol_loss_diff(
     if max_lag is None:
         max_lag = int(np.floor(4.0 * (n / 100.0) ** (2.0 / 9.0)))
     dc = d - d.mean()
-    s = float(dc @ dc) / n
+    s = stable_dot(dc, dc) / n
     for lag in range(1, max_lag + 1):
         w = 1.0 - lag / (max_lag + 1.0)
-        s += 2.0 * w * float(dc[lag:] @ dc[:-lag]) / n
+        s += 2.0 * w * stable_dot(dc[lag:], dc[:-lag]) / n
     se = np.sqrt(max(s / n, 0.0))
     return {
         "mean_diff": float(d.mean()),

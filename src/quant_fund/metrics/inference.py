@@ -13,6 +13,8 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import stats
 
+from quant_fund.utils.portable_fp import stable_dot
+
 Array = NDArray[np.float64]
 
 
@@ -31,11 +33,11 @@ def newey_west_variance(x: Array, lags: int | None = None) -> float:
     if lags is None:
         lags = max(1, int(np.floor(1.5 * n ** (1.0 / 3.0))))
     lags = min(lags, n - 2)
-    gamma0 = float(np.dot(xc, xc) / n)
+    gamma0 = stable_dot(xc, xc) / n
     omega = gamma0
     for lag in range(1, lags + 1):
         weight = 1.0 - lag / (lags + 1.0)
-        gamma = float(np.dot(xc[lag:], xc[:-lag]) / n)
+        gamma = stable_dot(xc[lag:], xc[:-lag]) / n
         omega += 2.0 * weight * gamma
     # Clamp the kernel HAC estimate at 0 (it can be slightly negative with
     # negative autocovariances), but never floor it above 0: a constant series
