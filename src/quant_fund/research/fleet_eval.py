@@ -577,6 +577,23 @@ def _central_interval_index(taus: Array, level: float) -> tuple[int, int] | None
     return int(i[0]), int(j[0])
 
 
+def _meta_revision(meta: Any) -> str | None:
+    """The pinned Hub commit a pretrained head declares, if any.
+
+    Recorded in ``model_versions`` from this change on; earlier fleet
+    receipts carry no revision for any head.
+    """
+    extra = getattr(meta, "extra", None)
+    revision = extra.get("model_revision") if isinstance(extra, Mapping) else None
+    return revision if isinstance(revision, str) and revision else None
+
+
+def _with_revision(blob: dict[str, str], revision: str | None) -> dict[str, str]:
+    if revision:
+        blob["revision"] = revision
+    return blob
+
+
 def _score_row(
     shard: SyntheticShard,
     shard_seed: int,
@@ -609,6 +626,7 @@ def _score_row(
         row["family"] = str(meta.family)
         row["model_version"] = str(getattr(meta, "version", "unknown") or "unknown")
         row["model_head"] = str(getattr(meta, "name", "") or "")
+        row["model_revision"] = _meta_revision(meta)
         if getattr(model, "fleet_lagged_predict", False):
             # One-step series heads consume the observed lag-1 return as the
             # predict matrix: row i's features are y[n_train+i-1], already
@@ -731,13 +749,12 @@ def run_distribution_fleet(
     for row in rows:
         version = row.pop("model_version", None)
         head = row.pop("model_head", None)
-        model_versions.setdefault(
-            str(row["model"]),
-            {
-                "head": str(head) if head else str(row["model"]),
-                "version": str(version) if version else "unknown",
-            },
-        )
+        revision = row.pop("model_revision", None)
+        blob = {
+            "head": str(head) if head else str(row["model"]),
+            "version": str(version) if version else "unknown",
+        }
+        model_versions.setdefault(str(row["model"]), _with_revision(blob, revision))
     for model_name, blob in model_versions.items():
         if blob["version"] == "unknown":
             try:
@@ -748,6 +765,7 @@ def run_distribution_fleet(
                     blob["head"] = str(head)
                 if version:
                     blob["version"] = str(version)
+                _with_revision(blob, _meta_revision(meta))
             except (AttributeError, ImportError, KeyError, RuntimeError, TypeError, ValueError):
                 # Metadata is a label. A missing or unreadable head stays
                 # "unknown"; scoring errors are recorded on the row above.

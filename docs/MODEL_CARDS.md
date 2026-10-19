@@ -123,7 +123,10 @@ A robinhood+ artifact must record `family=kline_foundation`, `backend`
 (arXiv:2508.02739, MIT). The NumPy path is a hierarchical BSQ tokenizer plus
 s1-then-s2 autoregression — not a claim that Hub weights were loaded. Torch
 weights require the `[nn]` extra and local checkpoints unless
-`allow_network=true`. Default `blend_weight` is 0 until robinhood+ beats
+`allow_network=true`; a Hub fetch is limited to the `VARIANT_HUB` repo ids at
+their pinned 40-hex commits, and torch forecasts record `tokenizer_revision` /
+`model_revision` (`local` for a local directory). Runs before that pin was
+enforced recorded no revision. Default `blend_weight` is 0 until robinhood+ beats
 **public-feature** ridge (oracle columns dropped) on a **non-synthetic** PIT
 tape, Diebold–Mariano does not prefer ridge on CRPS, and the calibration
 gate is green (Jackknife+ ≥ 1−2α, CQR/ACI Kupiec recorded, PIT KS recorded).

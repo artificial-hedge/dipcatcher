@@ -279,3 +279,76 @@ class TestCrossSection:
             ["AAA", "ZZZ"],
         )
         assert set(out) == {"AAA", "ZZZ"}
+
+
+# Offline Hub cache holding tiny real Kronos weights ONLY under the pinned
+# VARIANT_HUB commits (no refs/main): a loader that resolves a moving branch
+# cannot find them, and HF_HUB_OFFLINE=1 keeps the run off the network.
+_PINNED_HUB_LOAD = """
+import json, os, sys
+from pathlib import Path
+from quant_fund.models.robinhood_plus import torch_backend
+from quant_fund.models.robinhood_plus.constants import VARIANT_HUB
+torch_backend._ensure_kronos_on_path()
+from model.kronos import Kronos, KronosTokenizer
+cache = Path(os.environ["HF_HUB_CACHE"])
+spec = VARIANT_HUB["mini"]
+tok = KronosTokenizer(6, 8, 2, 16, 1, 1, 0.0, 0.0, 0.0, 2, 2, 0.05, 1.0, 1.1, 0.05, 2)
+mdl = Kronos(2, 2, 1, 8, 2, 16, 0.0, 0.0, 0.0, 0.0, True)
+for obj, repo, rev in ((tok, spec["tokenizer"], spec["tokenizer_rev"]),
+                       (mdl, spec["model"], spec["model_rev"])):
+    obj.save_pretrained(str(cache / ("models--" + repo.replace("/", "--")) / "snapshots" / rev))
+pred = torch_backend.load_pretrained_predictor("mini", allow_network=True, device="cpu")
+print(json.dumps([type(pred.tokenizer).__name__, type(pred.model).__name__]))
+"""
+
+
+class TestHubRevisionPins:
+    def test_hub_fetch_loads_the_pinned_commit(self, tmp_path: Path) -> None:
+        pytest.importorskip("torch")
+        import json
+        import os
+        import subprocess
+
+        cache = tmp_path / "hub"
+        cache.mkdir()
+        env = {**os.environ, "HF_HUB_OFFLINE": "1", "HF_HUB_CACHE": str(cache)}
+        proc = subprocess.run(
+            [sys.executable, "-c", _PINNED_HUB_LOAD],
+            capture_output=True,
+            text=True,
+            env=env,
+            cwd=str(tmp_path),
+            timeout=300,
+            check=False,
+        )
+        assert proc.returncode == 0, proc.stderr[-2000:]
+        assert json.loads(proc.stdout.strip().splitlines()[-1]) == ["KronosTokenizer", "Kronos"]
+
+    def test_unpinned_hub_id_refused(self) -> None:
+        with pytest.raises(torch_backend.RobinhoodPlusTorchError, match="unpinned Hub fetch"):
+            torch_backend.load_pretrained_predictor(
+                "mini", tokenizer_path="someone/unpinned-fork", allow_network=True
+            )
+        with pytest.raises(torch_backend.RobinhoodPlusTorchError, match="unpinned Hub fetch"):
+            torch_backend.load_pretrained_predictor(
+                "mini", model_path="someone/unpinned-fork", allow_network=True
+            )
+
+    def test_forecast_diagnostics_record_revisions(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from quant_fund.models.robinhood_plus.constants import VARIANT_HUB
+
+        monkeypatch.setattr(torch_backend, "_cached_predictor", lambda _c: _StubPredictor(3))
+        asof = datetime(2025, 1, 1, tzinfo=UTC)
+        hub = torch_backend.forecast_cross_section_torch(_frame(12), asof, _config(), ["AAA"])
+        diag = hub["AAA"].forecast.diagnostics
+        assert diag["tokenizer_revision"] == VARIANT_HUB["mini"]["tokenizer_rev"]
+        assert diag["model_revision"] == VARIANT_HUB["mini"]["model_rev"]
+        local_cfg = _config(
+            robinhood_plus={"tokenizer_path": str(tmp_path), "model_path": str(tmp_path)}
+        )
+        local = torch_backend.forecast_cross_section_torch(_frame(12), asof, local_cfg, ["AAA"])
+        assert local["AAA"].forecast.diagnostics["model_revision"] == "local"
+        assert local["AAA"].forecast.diagnostics["tokenizer_revision"] == "local"
