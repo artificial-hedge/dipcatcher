@@ -38,6 +38,7 @@ def test_sign_pins_refuses_pubkey_mismatch(tmp_path: Path) -> None:
     assert pub != committed
     key_file = tmp_path / "key.txt"
     key_file.write_text(f"{priv}\n{pub}\n")
+    key_file.chmod(0o600)  # key files must be owner-only
     result = runner.invoke(app, ["sign-pins", "--root", str(tmp_path), "--key-file", str(key_file)])
     assert result.exit_code == 2
     assert "does not match" in result.output
@@ -60,6 +61,7 @@ def _quorum_tree(tmp_path: Path) -> tuple[Path, Path]:
     sign_pins_quorum(root, [(priv, pub)])
     key_file = tmp_path / "key.txt"
     key_file.write_text(f"{priv}\n{pub}\n")
+    key_file.chmod(0o600)  # key files must be owner-only
     return root, key_file
 
 
@@ -123,6 +125,7 @@ def test_sign_pins_lone_key_path_still_signs_without_registry(tmp_path: Path) ->
     (tmp_path / "quality" / "gate_signing.pub").write_text(pub + "\n")
     key_file = tmp_path / "key.txt"
     key_file.write_text(f"{priv}:{pub}\n")
+    key_file.chmod(0o600)  # key files must be owner-only
 
     result = runner.invoke(app, ["sign-pins", "--root", str(tmp_path), "--key-file", str(key_file)])
 

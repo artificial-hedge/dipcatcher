@@ -307,6 +307,13 @@ touching any covered directory:
    `make witness-checkpoint` (public Rekor witness; needs
    `WITNESS_SIGNING_KEY`), verified offline by `make verify-witness`.
 
+Key hygiene: signing keys reach these commands (and `attest-release`) only
+through a key file (`--key-file`, `attest-release --key`) or the env vars
+above, inline or naming a key file. A raw seed is never accepted as a
+command-line value (it leaks via `ps` and shell history). On POSIX a key file
+with any group/other mode bit is refused (exit 2): `chmod 600` it, and rotate
+the key if anyone else could have read it.
+
 Verification sequence — any failure is an integrity alarm, not a formatting
 problem:
 

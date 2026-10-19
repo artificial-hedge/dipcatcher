@@ -2707,6 +2707,87 @@ def custody_cmd(
     )
 
 
+def _read_key_file(path: Path, *, cmd: str, label: str | None = None) -> bytes:
+    """Read private key material from ``path``; exit 2 unless owner-only.
+
+    On POSIX a key file whose mode grants any group/other bit
+    (``st_mode & 0o077``) is refused before its bytes are read — another
+    local account may already hold a copy. The mode comes from the open
+    descriptor, so the file checked is the file read. ``label`` replaces the
+    path in messages when the value may itself be a secret (never echoed).
+    """
+    import os
+    import stat
+
+    shown = label or f"key file {path}"
+    try:
+        handle = path.open("rb")
+    except OSError as exc:
+        typer.echo(
+            f"{cmd}: {shown} is not a readable key file ({exc.strerror}) — key "
+            "material is accepted only from a file or the environment, never as "
+            "a command-line value"
+        )
+        raise typer.Exit(code=2) from exc
+    with handle:
+        mode = os.fstat(handle.fileno()).st_mode
+        if os.name == "posix" and mode & 0o077:
+            typer.echo(
+                f"{cmd}: refusing {shown}: mode {stat.S_IMODE(mode):04o} grants "
+                "group/other access — `chmod 600` it (and rotate the key if anyone "
+                "else could have read it)"
+            )
+            raise typer.Exit(code=2)
+        return handle.read()
+
+
+def _env_key_material(var: str, *, cmd: str) -> bytes | None:
+    """Key material from env ``var``: inline value, or a permission-checked
+    file when the value names one. ``None`` when unset or blank."""
+    import os
+
+    env = os.environ.get(var, "").strip()
+    if not env:
+        return None
+    if Path(env).is_file():
+        return _read_key_file(Path(env), cmd=cmd)
+    return env.encode()
+
+
+def _attest_signing_pair(key: Path | None, root: Path) -> tuple[str, str]:
+    """(priv_hex, committed pub_hex) for ``attest-release``; fail closed."""
+    if key is not None:
+        material: bytes | None = _read_key_file(key, cmd="attest-release", label="--key")
+    else:
+        material = _env_key_material("GATE_SIGNING_KEY", cmd="attest-release")
+    if material is None:
+        raise typer.BadParameter(
+            "no key material — pass --key <key file> or set GATE_SIGNING_KEY; "
+            "cannot sign a release attestation"
+        )
+    raw = material.decode().strip()
+    fields = [s.strip() for s in raw.replace(":", "\n").splitlines() if s.strip()]
+    pub_path = root / "quality/gate_signing.pub"
+    if not pub_path.is_file():
+        raise typer.BadParameter(f"no committed pubkey at {pub_path}")
+    pub = pub_path.read_text().strip()
+    if len(fields) == 2 and fields[1] != pub:
+        raise typer.BadParameter(
+            "supplied pubkey != committed quality/gate_signing.pub — refusing to sign"
+        )
+    return fields[0], pub
+
+
+def _attest_witness_pem(witness_key_file: Path | None) -> bytes:
+    """Witness ECDSA PEM for ``attest-release --witness``; fail closed."""
+    if witness_key_file is not None:
+        return _read_key_file(witness_key_file, cmd="attest-release")
+    pem = _env_key_material("WITNESS_SIGNING_KEY", cmd="attest-release")
+    if pem is None:
+        raise typer.BadParameter("--witness needs WITNESS_SIGNING_KEY env or --witness-key-file")
+    return pem
+
+
 @app.command("attest-release")
 def attest_release_cmd(
     artifacts: list[Path] = typer.Option(
@@ -2714,12 +2795,12 @@ def attest_release_cmd(
     ),
     out: Path | None = typer.Option(None, "--out", help="Attestation output path."),
     root: Path = typer.Option(Path("."), "--root", help="Repo root."),
-    key: str | None = typer.Option(
+    key: Path | None = typer.Option(
         None,
         "--key",
-        envvar="GATE_SIGNING_KEY",
-        help="Ed25519 key material: '<priv_hex>:<pub_hex>', a key file path, "
-        "or bare priv hex (env GATE_SIGNING_KEY).",
+        help="Ed25519 key FILE ('<priv_hex>:<pub_hex>' or two lines; owner-only, "
+        "chmod 600). Raw key material is refused on the command line. Falls "
+        "back to GATE_SIGNING_KEY env (inline material or a key file path).",
     ),
     witness: bool = typer.Option(
         False,
@@ -2744,37 +2825,14 @@ def attest_release_cmd(
 
     from quant_fund.research.release_attestation import release_attestation
 
-    if not key or not key.strip():
-        raise typer.BadParameter("GATE_SIGNING_KEY unset — cannot sign a release attestation")
-    raw = Path(key).read_text().strip() if Path(key).is_file() else key.strip()
-    fields = [s.strip() for s in raw.replace(":", "\n").splitlines() if s.strip()]
-    priv = fields[0]
-    pub_path = root / "quality/gate_signing.pub"
-    if not pub_path.is_file():
-        raise typer.BadParameter(f"no committed pubkey at {pub_path}")
-    pub = pub_path.read_text().strip()
-    if len(fields) == 2 and fields[1] != pub:
-        raise typer.BadParameter(
-            "supplied pubkey != committed quality/gate_signing.pub — refusing to sign"
-        )
+    priv, pub = _attest_signing_pair(key, root)
+    # Resolve the witness key before signing: a refused key aborts with nothing made.
+    pem = _attest_witness_pem(witness_key_file) if witness else None
     blob = {p.name: p.read_bytes() for p in artifacts}
     att = release_attestation(blob, root=root, private_seed_hex=priv, pubkey_hex=pub)
-    if witness:
+    if pem is not None:
         from quant_fund.research.release_attestation import witness_release
 
-        pem: bytes | None = None
-        if witness_key_file is not None:
-            pem = witness_key_file.read_bytes()
-        else:
-            import os
-
-            env_key = os.environ.get("WITNESS_SIGNING_KEY", "").strip()
-            if env_key:
-                pem = Path(env_key).read_bytes() if Path(env_key).is_file() else env_key.encode()
-        if pem is None:
-            raise typer.BadParameter(
-                "--witness needs WITNESS_SIGNING_KEY env or --witness-key-file"
-            )
         r_pub = root / "quality/rekor_pubkey.pem"
         att = witness_release(
             att,
@@ -3062,25 +3120,22 @@ def sign_pins_cmd(
     Lone-key (``gate_signatures.v1``) only: refuses (exit 2) when
     ``quality/gate_quorum.json`` is committed — use ``quorum-sign`` there.
     """
-    import os
-
     from quant_fund.research.gate_signatures import key_id, sign_pins
 
     _refuse_lone_key_under_quorum(root)
-    raw: str | None = None
-    if key_file is not None:
-        raw = key_file.read_text().strip()
-    else:
-        env = os.environ.get("GATE_SIGNING_KEY", "").strip()
-        if env:
-            raw = Path(env).read_text().strip() if Path(env).is_file() else env
+    material = (
+        _read_key_file(key_file, cmd="sign-pins")
+        if key_file is not None
+        else _env_key_material("GATE_SIGNING_KEY", cmd="sign-pins")
+    )
     # Fail closed: never mint an ephemeral key over quality/gate_signing.pub.
-    if raw is None:
+    if material is None:
         typer.echo(
             "sign-pins: no key material — supply --key-file or GATE_SIGNING_KEY "
             "(refusing to mint an ephemeral key over the committed trust root)"
         )
         raise typer.Exit(code=2)
+    raw = material.decode().strip()
     fields = [line.strip() for line in raw.replace(":", "\n").splitlines() if line.strip()]
     if len(fields) != 2:
         typer.echo("sign-pins: key material must be '<priv_hex>:<pub_hex>' or two lines")
@@ -3163,7 +3218,7 @@ def quorum_rotate_cmd(
 
     from quant_fund.research.quorum_rotation import rotate_quorum
 
-    raws = [f.read_text().strip() for f in key_file]
+    raws = [_read_key_file(f, cmd="quorum-rotate").decode().strip() for f in key_file]
     if not raws:
         typer.echo("quorum-rotate: supply --key-file(s) of current quorum members")
         raise typer.Exit(code=2)
@@ -3192,15 +3247,12 @@ def quorum_sign_cmd(
     quorums refuse to write (a partial signature file would be a brick).
     ``GATE_QUORUM_KEYS`` supplies pairs comma-separated when no files given.
     """
-    import os
-
     from quant_fund.research.gate_signatures import sign_pins_quorum
 
-    raws = [f.read_text().strip() for f in key_file]
+    raws = [_read_key_file(f, cmd="quorum-sign").decode().strip() for f in key_file]
     if not raws:
-        env = os.environ.get("GATE_QUORUM_KEYS", "").strip()
-        if env:
-            raws = [env] if not Path(env).is_file() else [Path(env).read_text().strip()]
+        env = _env_key_material("GATE_QUORUM_KEYS", cmd="quorum-sign")
+        raws = [] if env is None else [env.decode().strip()]
     if not raws:
         typer.echo("quorum-sign: supply --key-file(s) or GATE_QUORUM_KEYS")
         raise typer.Exit(code=2)
@@ -3357,18 +3409,15 @@ def checkpoint_cmd(
     checkpoint binds the current signature. ``--anchor`` time-binds the
     checkpoint itself.
     """
-    import os
-
     from quant_fund.research.integrity_checkpoint import (
         anchor_checkpoint,
         write_checkpoint,
     )
 
-    raws = [f.read_text().strip() for f in key_file]
+    raws = [_read_key_file(f, cmd="checkpoint").decode().strip() for f in key_file]
     if not raws:
-        env = os.environ.get("GATE_SIGNING_KEY", "").strip()
-        if env:
-            raws = [env] if not Path(env).is_file() else [Path(env).read_text().strip()]
+        env = _env_key_material("GATE_SIGNING_KEY", cmd="checkpoint")
+        raws = [] if env is None else [env.decode().strip()]
     if not raws:
         typer.echo("checkpoint: no key material — supply --key-file or GATE_SIGNING_KEY")
         raise typer.Exit(code=2)
@@ -3429,17 +3478,13 @@ def witness_checkpoint_cmd(
     Rekor's signed entry timestamp and checkpoint note under the pinned
     Rekor pubkey). Requires network on submit; none on verify.
     """
-    import os
-
     from quant_fund.research.integrity_witness import submit_witness
 
-    pem: bytes | None = None
-    if key_file is not None:
-        pem = key_file.read_bytes()
-    else:
-        env = os.environ.get("WITNESS_SIGNING_KEY", "").strip()
-        if env:
-            pem = Path(env).read_bytes() if Path(env).is_file() else env.encode()
+    pem = (
+        _read_key_file(key_file, cmd="witness-checkpoint")
+        if key_file is not None
+        else _env_key_material("WITNESS_SIGNING_KEY", cmd="witness-checkpoint")
+    )
     if pem is None:
         typer.echo("witness-checkpoint: no key material — supply --key-file or WITNESS_SIGNING_KEY")
         raise typer.Exit(code=2)
