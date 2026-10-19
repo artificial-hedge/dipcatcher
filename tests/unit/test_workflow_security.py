@@ -52,7 +52,7 @@ def test_codeql_covers_supported_source_languages() -> None:
 def test_ci_and_release_workflows_parse() -> None:
     """Workflow edits must remain valid YAML (catches indentation and anchor drift)."""
 
-    for name in ("ci.yml", "release.yml"):
+    for name in ("ci.yml", "release.yml", "proofcore.yml", "simtest.yml", "matrix.yml"):
         doc = yaml.safe_load(_workflow(name))
         assert isinstance(doc, dict)
         assert doc.get("jobs")
@@ -63,10 +63,8 @@ def _job_pushes_to_origin(job: dict) -> bool:
     return "git push" in script
 
 
-def test_ci_checkouts_disable_credential_persistence_unless_pushing() -> None:
-    """Checkout must not leave a writable origin credential unless the job pushes."""
-
-    workflow = yaml.safe_load(_workflow("ci.yml"))
+def _assert_checkouts_disable_credential_persistence(workflow_name: str) -> None:
+    workflow = yaml.safe_load(_workflow(workflow_name))
     for job_id, job in workflow["jobs"].items():
         pushes = _job_pushes_to_origin(job)
         for step in job.get("steps", []):
@@ -76,7 +74,14 @@ def test_ci_checkouts_disable_credential_persistence_unless_pushing() -> None:
             with_block = step.get("with") or {}
             if pushes:
                 continue
-            assert with_block.get("persist-credentials") is False, job_id
+            assert with_block.get("persist-credentials") is False, f"{workflow_name}:{job_id}"
+
+
+def test_workflow_checkouts_disable_credential_persistence_unless_pushing() -> None:
+    """Checkout must not leave a writable origin credential unless the job pushes."""
+
+    for path in sorted(WORKFLOWS.glob("*.yml")):
+        _assert_checkouts_disable_credential_persistence(path.name)
 
 
 def test_make_ci_target_matches_ci_yml_lint_and_pr_test_gate() -> None:
