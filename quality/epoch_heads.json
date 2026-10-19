@@ -78,11 +78,11 @@
       "tree_root": "3a78090acc2b055eb172a28e9c0e8b0e04398ed7bc97f5c5447d5059370e8236"
     },
     "docs/*": {
-      "chain_root": "e6b383e6ef80436ee0342f6000097d040e7010e1d180cb1363308546cecc9dda",
-      "n_epochs": 31,
-      "receipt": "corpus_epoch_cf8dfffe94c37698.json",
-      "sha256": "5b8806da6e28d59cef002aa2233451fa0ca0446dc773daf246767973f4874661",
-      "tree_root": "19a1695ae5da66cc12a5aaab68c78e608017ae413aa52fe128c9fdae6930cc09"
+      "chain_root": "1e622918a326a70ba97ef95b43afabb9c925e98d14033c2ef087ab0f73de3b0f",
+      "n_epochs": 34,
+      "receipt": "corpus_epoch_f33a849ce9bea7e1.json",
+      "sha256": "0d8d593accdd1755936d8f103d895ac4c139c5b7d2e3d6dd3ea3626518a7c593",
+      "tree_root": "4d22698fd4b3707a0ca9dd0d4acfeba8ea21cf36d2f130de128df4524e494935"
     },
     "examples/*": {
       "chain_root": "2d6ff5b3801acb9eb1b8f4f50e068405d9bb0c97c355f7d0871e371df0717df0",
@@ -99,11 +99,11 @@
       "tree_root": "aa1f221f69eb955f4062b63c66569ae5d0366fddfa012cff2ebf09b6406edfef"
     },
     "quality/*.json": {
-      "chain_root": "bf96211c90efaf9fe3b753b436e08817b14d6a50692ef42b54b369f636530dfd",
-      "n_epochs": 300,
-      "receipt": "corpus_epoch_720908580548a514.json",
-      "sha256": "dd9f7dadeb752d0d7da66337bd696a6d1d3d9da1a7793863fbb1bf46d9b42819",
-      "tree_root": "d299bfa8388995e229656e9c92825395a2ba11f7dd71fa950ecbaf55edf8bb95"
+      "chain_root": "80bd06dd357d44a18ff4ecf32a33d0a0ec746976d3c4882d55c7c75272e604e0",
+      "n_epochs": 301,
+      "receipt": "corpus_epoch_003e6637c0ee4b7f.json",
+      "sha256": "4344d7ecdf368fe4636af6b0744250ac6e977719d1e4be84d13604410f980c61",
+      "tree_root": "18f3518f08a20cccef91480d3fc3675bb82c57453ff6027a80caaf25e69656e0"
     },
     "receipts/*.json": {
       "chain_root": "be4352a4825be2da0806135b9fc24bcdbc87de920d5f39cc5e0418997b8c43ed",
