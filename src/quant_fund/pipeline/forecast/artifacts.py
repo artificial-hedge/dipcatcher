@@ -13,7 +13,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from quant_fund.config.models import AppConfig
-from quant_fund.models.base import JoblibMixin, load_joblib_artifact
+from quant_fund.models.base import ArtifactIntegrityError, JoblibMixin, load_joblib_artifact
 from quant_fund.models.calibration import ProbabilityCalibrator
 from quant_fund.utils.hashing import hash_file
 
@@ -167,6 +167,31 @@ def _load_probability_calibrator(
     return calibrator
 
 
+def _paper_ranker_scores(
+    path: Path,
+    name: str,
+    x: NDArray[np.float64],
+    dates: NDArray[np.float64] | None,
+    ids: NDArray[np.float64] | None,
+) -> NDArray[np.float64] | None:
+    """Score one paper ranker artifact; None when it cannot score this panel.
+
+    The artifact goes through :func:`load_joblib_artifact`, so its bytes are
+    unpickled only after the ``.sha256`` sidecar verifies. An integrity
+    failure is not "cannot score": it raises rather than silently dropping
+    the challenger from the stamp.
+    """
+    from quant_fund.pipeline.train import _predict_ranker
+
+    try:
+        model = load_joblib_artifact(path)
+        return np.asarray(_predict_ranker(model, name, x, dates, ids), dtype=float)
+    except ArtifactIntegrityError:
+        raise
+    except (TypeError, ValueError, OSError, AttributeError):
+        return None
+
+
 def _paper_challenger_stamp(
     config: AppConfig,
     x: NDArray[np.float64],
@@ -175,10 +200,7 @@ def _paper_challenger_stamp(
     ids: NDArray[np.float64] | None = None,
 ) -> tuple[str, dict[str, float | str]]:
     """List fitted paper rankers. Spearman vs ridge only. Never blended into alpha."""
-    import joblib
     from scipy.stats import spearmanr
-
-    from quant_fund.pipeline.train import _predict_ranker
 
     present: list[str] = []
     extra: dict[str, float | str] = {"paper_challengers_blend": 0.0}
@@ -187,10 +209,8 @@ def _paper_challenger_stamp(
         path = root / f"ranker_{name}.joblib"
         if not path.is_file():
             continue
-        try:
-            model = joblib.load(path)
-            pred = np.asarray(_predict_ranker(model, name, x, dates, ids), dtype=float)
-        except (TypeError, ValueError, OSError, AttributeError):
+        pred = _paper_ranker_scores(path, name, x, dates, ids)
+        if pred is None:
             continue
         present.append(name)
         if pred.shape[0] == ridge_scores.shape[0] and pred.size >= 4:

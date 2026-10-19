@@ -32,14 +32,13 @@ from quant_fund.schemas.forecast import AssetForecast
     ],
 )
 def test_rl_artifact_identity_is_preserved(tmp_path: Path, filename: str, expected: str) -> None:
-    import joblib
-
+    from quant_fund.models.base import save_joblib_artifact
     from quant_fund.models.rl import LinUCBRanker
     from quant_fund.pipeline import forecast as forecast_module
 
     root = tmp_path / "metadata"
     root.mkdir()
-    joblib.dump({"policy": LinUCBRanker(1), "features": ["ret_1"]}, root / filename)
+    save_joblib_artifact({"policy": LinUCBRanker(1), "features": ["ret_1"]}, root / filename)
     cfg = AppConfig()
     cfg.data.root = tmp_path
     forecast_module._RANKER_CACHE.clear()
@@ -55,15 +54,14 @@ def test_rl_artifact_mtime_preserving_rewrite_reloads(tmp_path: Path) -> None:
     must not keep serving the stale policy — ranker/GARCH loaders already
     key on content digest; the RL loader now matches them.
     """
-    import joblib
-
+    from quant_fund.models.base import save_joblib_artifact
     from quant_fund.models.rl import LinUCBRanker
     from quant_fund.pipeline import forecast as forecast_module
 
     root = tmp_path / "metadata"
     root.mkdir()
     artifact = root / "rl_linucb.joblib"
-    joblib.dump(
+    save_joblib_artifact(
         {"policy": LinUCBRanker(2, alpha=1.0), "features": ["ret_1"], "policy_name": "linucb"},
         artifact,
     )
@@ -77,7 +75,7 @@ def test_rl_artifact_mtime_preserving_rewrite_reloads(tmp_path: Path) -> None:
     assert first[0].n_features == 2
     assert first[0].alpha == 1.0
 
-    joblib.dump(
+    save_joblib_artifact(
         {"policy": LinUCBRanker(2, alpha=3.5), "features": ["ret_1"], "policy_name": "linucb"},
         artifact,
     )

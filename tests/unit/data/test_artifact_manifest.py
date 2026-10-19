@@ -30,9 +30,18 @@ def test_manifest_round_trip_binds_payload_class_and_features(tmp_path: Path) ->
 def test_legacy_artifact_without_manifest_remains_readable(tmp_path: Path) -> None:
     artifact = tmp_path / "legacy.joblib"
     payload = {"features": ["close"], "value": 1}
-    joblib.dump(payload, artifact)
+    save_joblib_artifact(payload, artifact)
+    (tmp_path / "legacy.joblib.manifest.json").unlink()
 
     assert load_joblib_artifact(artifact) == payload
+
+
+def test_artifact_without_checksum_sidecar_is_refused(tmp_path: Path) -> None:
+    artifact = tmp_path / "bare.joblib"
+    joblib.dump({"features": ["close"], "value": 1}, artifact)
+
+    with pytest.raises(ValueError, match="checksum sidecar is missing"):
+        load_joblib_artifact(artifact)
 
 
 def test_manifest_tampering_fails_closed(tmp_path: Path) -> None:

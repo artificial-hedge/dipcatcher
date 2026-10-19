@@ -86,14 +86,16 @@ temporary file, flushes it, and atomically replaces the final `.joblib` path onl
 the write succeeds. An interrupted or failed retrain therefore leaves the previously
 published artifact intact. The existing joblib format remains compatible, but artifacts
 must still come only from a trusted model directory because `joblib.load()` is
-pickle-based and is not a safe deserializer for attacker-controlled files. A
-published artifact may also have a sibling `<artifact>.sha256` sidecar. When
-present, loading verifies the SHA-256 digest before deserialization and rejects
-malformed or mismatched sidecars; a missing sidecar remains supported for legacy
-artifacts. The sidecar detects corruption or replacement relative to a trusted
-sidecar, but it does **not** authenticate artifact origin and must not be treated
-as a substitute for trusted-directory controls, signed provenance, or access
-control.
+pickle-based and is not a safe deserializer for attacker-controlled files. Every
+published artifact carries a sibling `<artifact>.sha256` sidecar, and it is
+required: `load_joblib_artifact` and `JoblibMixin.load` verify the SHA-256 digest
+over the exact bytes before deserialization and raise `ArtifactIntegrityError` on
+a missing, malformed, or mismatched sidecar (legacy sidecar-less artifacts must
+be retrained, not re-hashed). `explain report` takes no sidecar; it requires the
+operator's own `--trusted-sha256` pin. The sidecar detects corruption or
+replacement relative to a trusted sidecar, but it does **not** authenticate
+artifact origin and must not be treated as a substitute for trusted-directory
+controls, signed provenance, or access control.
 
 ### HAR-RV card requirements
 
