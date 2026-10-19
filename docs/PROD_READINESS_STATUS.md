@@ -55,7 +55,7 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | Agent | Start when | Current signal on `main` |
 |-------|------------|---------------------------|
 | **WP-3J** | in progress | `6172922c8` bounded benches; `be9f8639a` pytest-timeout 900s; shard balance / `.test_durations` still open. |
-| **KX-7Q** | done (`e6222f455`) | `fx1/cli.py` → `cli_harness` + `cli_common`; `test_modules_stay_under_max_lines` green. |
+| **KX-7Q** | done (`6d15a409c`) | CLI split (`7e920fd25`/`e6222f455`); `typings/torch` + `tiny_lm` strict mypy without `nn`. fx1 modules under line pins; `quant_fund/cli/research_cmds.py` drift is separate. |
 | **ZR-9V** | parallel | evidence-audit masks; base-ref gating; anchor staleness reporting. |
 | **VT-2M** | done (`0febe4d69`) | Lane TMPDIR isolation, CI replay/bundle artifacts, runbook budget note; await evidence-audit on 39201259280+. |
 | **HX-5D** | done (this pass) | `test_stateful.py` TZ/LC_ALL + repo-root config path on `main`. |
@@ -80,6 +80,7 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 | `be9f8639a` | WP-3J | `pytest-timeout` 900s default (shard hang visibility) |
 | `7e920fd25` | KX-7Q | Split `fx1 harness` CLI into `cli_harness` / `cli_common` |
 | `e6222f455` | KX-7Q | Remove duplicate help constants post-split (ruff F811) |
+| `6d15a409c` | KX-7Q | Torch stubs + `tiny_lm` TYPE_CHECKING types; strict mypy without `nn` extra |
 | `ea351a1b1` | PD-8S | `/use` env scrub, repo-root paths, sim-live honesty, superpower `--sync` |
 | `779306f27` | PD-8S | Interactive tests + lab doctor `dir_*_created` reporting |
 | `ce6cfe32c` | QA-0K | Initial `PROD_READINESS_STATUS.md` ledger |
