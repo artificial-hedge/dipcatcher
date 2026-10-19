@@ -29,9 +29,9 @@ from fx1.cli_common import (
     _EVAL_ID_HELP,
     _EVAL_ID_REMOTE_HELP,
     _EVALRUN_ID_HELP,
+    _FALLBACK_HELP,
     _FILE_ID_HELP,
     _FTJOB_ID_HELP,
-    _FALLBACK_HELP,
     _ITEM_CURSOR_HELP,
     _ITEMS_JSON_ERR,
     _LIMIT_HELP,
@@ -44,8 +44,8 @@ from fx1.cli_common import (
     _RESPONSE_ID_HELP,
     _TIMEOUT_HELP,
     _TOP_P_OPT_HELP,
-    _VSFB_ID_HELP,
     _VS_ID_HELP,
+    _VSFB_ID_HELP,
     _bad_arg,
     _byok_opts,
     _emit_anthropic_deltas,
@@ -339,13 +339,6 @@ def harness_serve(
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=2) from exc
     uvicorn.run(harness_api, host=host, port=port, reload=False, server_header=False)
-
-
-_BACKEND_HELP = (
-    "hosted_k3 | local_fx1 | byok (BYOK reads FX1_BYOK_BASE_URL / "
-    "FX1_BYOK_API_KEY / FX1_BYOK_MODEL)"
-)
-
 
 @harness_app.command("complete")
 def harness_complete(

@@ -8,13 +8,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
 
 from fx1.cli_common import _BACKEND_HELP, _JUDGE_BACKEND_HELP, _NO_WEIGHTS
 from fx1.cli_harness import harness_app
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fx1.eval.suite import ModelFn
@@ -144,13 +143,6 @@ def _resolve_model_backend(
         return get_backend(backend, **kwargs).complete
     typer.echo(f"unknown --backend {backend!r}; choose hosted_k3 | local_fx1 | byok", err=True)
     raise typer.Exit(code=2)
-
-
-_JUDGE_BACKEND_HELP = (
-    "Optional 'hosted_k3' LLM judge for MT-Bench-style grading (needs "
-    "MOONSHOT_API_KEY); omit for the deterministic rule-based judge."
-)
-
 
 def _resolve_judge(judge_backend: str | None) -> ModelFn | None:
     """Build the optional ext-bench judge ModelFn. Fail-closed on usage.
