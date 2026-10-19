@@ -289,9 +289,11 @@ def test_run_tool_passes_endpoint_via_env_not_argv(
     assert isinstance(argv, list)
     assert argv[:2] == ["/usr/bin/fx1", "doctor"]
     assert SECRET_FX1 not in " ".join(str(a) for a in argv)  # env only, never argv
-    # The endpoint reaches the child via os.environ mutation (inherited), not env=.
-    assert os.environ["MOONSHOT_API_KEY"] == SECRET_FX1
-    assert os.environ["FX1_BASE_URL"] == ALT_BASE
+    env = call.get("env")
+    assert isinstance(env, dict)
+    assert env["MOONSHOT_API_KEY"] == SECRET_FX1
+    assert env["FX1_BASE_URL"] == ALT_BASE
+    assert os.environ.get("MOONSHOT_API_KEY") != SECRET_FX1
 
 
 def test_run_tool_rejects_unknown_tool() -> None:
@@ -502,7 +504,7 @@ def test_shell_keys_table(isolated_store: Path, capsys: pytest.CaptureFixture[st
     assert SECRET_FX1 not in out
 
 
-def test_shell_use_injects_session_env(isolated_store: Path) -> None:
+def test_shell_use_does_not_inject_session_env(isolated_store: Path) -> None:
     profiles.set_endpoint("fx1-lite", SECRET_LITE, ALT_BASE)
     sh = shell.FxiShell()
     old_key = os.environ.get("MOONSHOT_API_KEY")
@@ -510,8 +512,7 @@ def test_shell_use_injects_session_env(isolated_store: Path) -> None:
     try:
         sh.do_use("fx1-lite")
         assert sh.model == "fx1-lite"
-        assert os.environ["MOONSHOT_API_KEY"] == SECRET_LITE
-        assert os.environ["FX1_BASE_URL"] == ALT_BASE
+        assert os.environ.get("MOONSHOT_API_KEY") != SECRET_LITE
         assert "fx1-lite@fx-lite.example.test" in sh.prompt
     finally:
         for var, old in (("MOONSHOT_API_KEY", old_key), ("FX1_BASE_URL", old_url)):

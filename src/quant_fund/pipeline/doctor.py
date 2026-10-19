@@ -63,8 +63,13 @@ def doctor(config_path: str | None = None) -> dict[str, object]:
     root = Path(cfg.data.root)
     for part in ("raw", "bronze", "silver", "gold", "metadata"):
         p = root / part
-        p.mkdir(parents=True, exist_ok=True)
-        status[f"dir_{part}"] = "ok" if p.is_dir() else "missing"
+        if p.is_dir():
+            status[f"dir_{part}"] = "ok"
+            status[f"dir_{part}_created"] = "no"
+        else:
+            p.mkdir(parents=True, exist_ok=True)
+            status[f"dir_{part}_created"] = "yes"
+            status[f"dir_{part}"] = "created" if p.is_dir() else "missing"
     manifest = root / "metadata" / "data_manifest.json"
     if not manifest.is_file():
         status["data_manifest"] = "missing"
