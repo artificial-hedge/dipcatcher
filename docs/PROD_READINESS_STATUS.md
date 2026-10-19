@@ -54,7 +54,7 @@ Parked items are **not** fixable in-agent. Each line is the exact action require
 
 | Agent | Start when | Current signal on `main` |
 |-------|------------|---------------------------|
-| **WP-3J** | in progress | `6172922c8` bounded benches; `be9f8639a` pytest-timeout 900s; shard balance / `.test_durations` still open. |
+| **WP-3J** | done (`e0cd82717`) | Required-only oracle/CLI + slow twins; `pytest-timeout` 900s + `importlib` collect; `.test_durations` retime + `refresh-test-durations` CI job. **WP-3J-2** `process_map` spawn/fork not changed (timeout-only). `needs-stamp` on `.test_durations` → QA-0K/H1. |
 | **KX-7Q** | done (`6d15a409c`) | CLI split (`7e920fd25`/`e6222f455`); `typings/torch` + `tiny_lm` strict mypy without `nn`. fx1 modules under line pins; `quant_fund/cli/research_cmds.py` drift is separate. |
 | **ZR-9V** | done (`06cf40e73`) | All 7 evidence-audit gates run + fail-at-end (`Makefile`); anchor `stale`+`age_s` in `verify-repo` + `repo_integrity.json`; replay sweep `n_carriers` = executed only (`f91de95e9`). ZR-9V-2/5 open. |
 | **VT-2M** | done (`0febe4d69`) | Lane TMPDIR isolation, CI replay/bundle artifacts, runbook budget note; await evidence-audit on 39201259280+. |
