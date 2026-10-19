@@ -98,6 +98,7 @@ dev = [
     "pytest-cov>=6.0",
     "pytest-xdist>=3.6",
     "pytest-split>=0.10",
+    "pytest-timeout>=2.3",
     "hypothesis>=6.115",
     "z3-solver>=4.13",
     "ruff>=0.8",
@@ -362,6 +363,9 @@ warn_unused_ignores = true
 # intentionally outside testpaths; the dead tests/tests mirror was removed).
 testpaths = ["tests/unit", "tests/property", "tests/regression", "tests/end_to_end", "tests/formal"]
 addopts = "-q --strict-markers"
+# WP-3J-2: per-test ceiling so CI shards fail fast instead of hanging to job timeout.
+timeout = 900
+timeout_method = "thread"
 markers = [
     "network: tests that require internet (disabled by default)",
     "slow: long tests; full suite on schedule/workflow_dispatch, excluded from the PR gate",
