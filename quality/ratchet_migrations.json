@@ -33,6 +33,13 @@
       "rationale": "Two growths recorded: c8bff364d (5516\u21925588) and the user's PRs #2997 (Flash usage accounting), #3000/#3001 (Flash security hardening), and #3002 (concierge ownership) bringing the file to 5597. Each growth landed as a reviewable PR; the ceiling tracks the resulting size. Owed a split of the audit/serve subcommand groups out of the single CLI module."
     },
     {
+      "path": "fx1/cli_harness.py",
+      "from": 0,
+      "to": 4606,
+      "issue": 2991,
+      "rationale": "KX-7Q split: harness Typer subcommands moved out of fx1/cli.py so the front door stays under MAX_MODULE_LINES. The harness surface remains oversized debt; this pin records the post-split size and prevents silent regrowth while further splits are planned."
+    },
+    {
       "path": "fx1/sdk.py",
       "from": 4469,
       "to": 4532,

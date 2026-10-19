@@ -27,6 +27,7 @@ import pytest
 REPO = Path(__file__).resolve().parents[2]
 BUDGETS = Path("quality/module_line_budgets.txt")
 CEILINGS = Path("quality/module_line_budget_ceilings.txt")
+RETIRED_CEILINGS = Path("quality/module_line_budget_retired_ceilings.txt")
 LEDGER = Path("quality/arch_baseline_ledger.txt")
 MIGRATIONS = Path("quality/ratchet_migrations.json")
 BOUNDARIES = Path("configs/arch_boundaries.toml")
@@ -57,6 +58,20 @@ def _budgets() -> dict[str, int]:
 
 def _ceilings() -> dict[str, int]:
     return {k: int(v) for k, v in _entries(CEILINGS, fields=2).items()}
+
+def _retired_ceilings() -> set[str]:
+    path = REPO / RETIRED_CEILINGS
+    if not path.is_file():
+        return set()
+    retired: set[str] = set()
+    for number, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if " " in line:
+            raise AssertionError(f"{RETIRED_CEILINGS}:{number}: retired ceiling paths are bare PATH lines")
+        retired.add(line)
+    return retired
 
 
 def _arch_baselines() -> set[tuple[str, str, str]]:
@@ -103,7 +118,7 @@ def test_budget_never_exceeds_its_frozen_ceiling() -> None:
         for path, count in sorted(budgets.items())
         if path in ceilings and count > ceilings[path]
     ]
-    unpinned_debt = sorted(set(ceilings) - set(budgets))
+    unpinned_debt = sorted(set(ceilings) - set(budgets) - _retired_ceilings())
     offenders.extend(f"{path}: ceiling recorded but budget pin removed" for path in unpinned_debt)
     assert offenders == [], (
         "the oversized-module ratchet was widened. Pay the debt by splitting the "

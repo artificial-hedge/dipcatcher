@@ -2,8 +2,8 @@
 # Format: <path>:<qualified_name> <max_complexity>
 # Soft threshold for unlisted functions: 10
 # Regenerate after reductions: uv run python scripts/check_mccabe_ratchet.py --write
-src/fx1/cli.py:harness_message 14
-src/fx1/cli.py:harness_respond 17
+src/fx1/cli_harness.py:harness_message 14
+src/fx1/cli_harness.py:harness_respond 17
 src/fx1/cli_audit.py:cli_audit 182
 src/fx1/data/sources/adapters.py:FinanceFetchAdapter.fetch 10
 src/fx1/data/sources/ds_audit.py:ds_audit 13
