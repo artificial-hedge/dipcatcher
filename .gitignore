@@ -161,6 +161,19 @@ research/*/qpanel_cache/
 !data/metadata/research/PHASE1_PROVENANCE_CORRECTION.md
 !data/metadata/research/phase1_20260925.md
 !data/metadata/research/phase1_evidence_index.json
+# Same rule for the corpus-epoch heads `make stamp-epochs` writes into the
+# ignored corpora above (.dsh-24x7, .cursor, .box-soft-verify): a plain
+# `git add -A` must stage every head quality/epoch_heads.json pins, or a clean
+# checkout fails epoch_head_missing. A dir rule hides all beneath it, so the two dir rules are
+# reopened at the root and re-ignored per entry (nested copies stay ignored).
+# The stamper refuses to write a head that is still ignored and untracked.
+!/.dsh-24x7/corpus_epoch_*.json
+!/.cursor/
+/.cursor/*
+!/.cursor/corpus_epoch_*.json
+!/.box-soft-verify/
+/.box-soft-verify/*
+!/.box-soft-verify/corpus_epoch_*.json
 # Tracked stream-validation run record predates the *.log rule. Keep it
 # reviewable while tracked; if the Lead classifies it as generated, the
 # untracking commit must drop BOTH this line and the file.

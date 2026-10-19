@@ -1292,5 +1292,23 @@ def write_epoch_receipt(
     else:
         raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
     path = dirpath / f"corpus_epoch_{digest[:16]}.json"
+    _refuse_ignored_head(path)
     _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return path
+
+
+def _refuse_ignored_head(path: Path) -> None:
+    """Fail closed before writing an epoch head that ``git add -A`` skips.
+
+    ``make stamp-epochs`` pins every head it writes in
+    ``quality/epoch_heads.json``. A head that lands git-ignored and untracked
+    is left out of the commit the pin rides in, so a clean checkout fails
+    ``epoch_head_missing``. Same predicate as ``member_digests``: tracked
+    files are never ignored, and outside a worktree nothing is.
+    """
+    if path.name in gitignored_relpaths(path.parent, [path.name]):
+        raise ValueError(
+            f"refusing to write epoch head {path.as_posix()!a}: git ignores it and it "
+            "is untracked, so `git add -A` would commit the heads pin without it — "
+            f"add a .gitignore negation for {path.parent.as_posix()}/corpus_epoch_*.json"
+        )

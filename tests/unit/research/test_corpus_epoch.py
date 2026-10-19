@@ -738,3 +738,106 @@ def test_member_digests_skip_gitignored_untracked_files(tmp_path: Path) -> None:
     (corpus / "local.json").write_text("{}\n")
     assert set(member_digests(corpus)) == {"kept.json"}
     assert sv._member_digests(corpus, "*.json") == member_digests(corpus)
+
+
+# --- D7-06: a pinned head must reach the commit the pin rides in -------------
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+# Stamp corpora whose dirs the committed .gitignore otherwise hides.
+IGNORED_CORPORA = (".dsh-24x7", ".cursor", ".box-soft-verify")
+
+
+def _ignore_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, gitignore: str) -> Path:
+    """A worktree with ``gitignore`` at its root, a tracked member per
+    corpus and an empty heads pin; cwd is the repo. Global/system git
+    config and excludes are isolated so only ``gitignore`` decides."""
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(tmp_path / "no-gitconfig"))
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg"))
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", str(repo)], check=True, capture_output=True)
+    (repo / ".gitignore").write_text(gitignore)
+    for name in (*IGNORED_CORPORA, "scratch"):
+        (repo / name).mkdir()
+        (repo / name / "member.txt").write_text(f"{name}\n")
+    pin = repo / "quality" / "epoch_heads.json"
+    pin.parent.mkdir()
+    pin.write_text(json.dumps({"schema": "epoch_heads.v1", "heads": {}}))
+    # Force-added: the real repo tracks members under these ignored dirs.
+    subprocess.run(["git", "-C", str(repo), "add", "-f", "--", "."], check=True)
+    monkeypatch.chdir(repo)
+    return repo
+
+
+def _stamp_cli(corpus: str) -> Any:
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+
+    args = ["corpus-epoch", "--corpus-dir", corpus, "--glob", "*", "--out-dir", corpus]
+    return CliRunner().invoke(app, [*args, "--heads-pin", "quality/epoch_heads.json"])
+
+
+def test_stamp_refuses_a_gitignored_untracked_head(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A head written where git ignores it is left out by ``git add -A``,
+    so the commit carries a pin naming a file a clean checkout lacks
+    (``epoch_head_missing``). The stamper refuses before writing the epoch
+    or touching the pin; the library writer refuses the same way."""
+    repo = _ignore_repo(tmp_path, monkeypatch, "scratch/\n")
+    pin = repo / "quality" / "epoch_heads.json"
+    pin_bytes = pin.read_bytes()
+    res = _stamp_cli("scratch")
+    assert res.exit_code == 2, res.output
+    assert "ignores" in res.output and "negation" in res.output
+    assert not list((repo / "scratch").glob("corpus_epoch_*.json"))
+    assert pin.read_bytes() == pin_bytes
+    corpus = repo / "scratch"
+    with pytest.raises(ValueError, match="git ignores it and it is untracked"):
+        write_epoch_receipt(corpus_epoch(corpus, pattern="*"), corpus)
+    assert not list(corpus.glob("corpus_epoch_*.json"))
+
+
+@pytest.mark.parametrize("corpus", IGNORED_CORPORA)
+def test_repo_gitignore_stages_heads_of_ignored_corpora(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, corpus: str
+) -> None:
+    """Under the committed .gitignore, ``make stamp-epochs``'s write into each
+    ignored corpus succeeds and a plain ``git add -A`` stages the head the pin
+    names; the corpus's other host-local scratch stays ignored."""
+    repo = _ignore_repo(tmp_path, monkeypatch, (REPO_ROOT / ".gitignore").read_text())
+    (repo / corpus / "host_local.txt").write_text("scratch\n")
+    res = _stamp_cli(corpus)
+    assert res.exit_code == 0, res.output
+    from quant_fund.research.corpus_epoch import load_heads_pin
+
+    head = load_heads_pin(repo / "quality" / "epoch_heads.json")[f"{corpus}/*"]["receipt"]
+    subprocess.run(["git", "add", "-A"], check=True)
+    staged = subprocess.run(
+        ["git", "diff", "--cached", "--name-only"], check=True, capture_output=True, text=True
+    ).stdout.splitlines()
+    assert f"{corpus}/{head}" in staged
+    assert "quality/epoch_heads.json" in staged
+    assert f"{corpus}/host_local.txt" not in staged
+
+
+def test_no_stamped_corpus_head_is_gitignored(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Closed world: no chain ``verify-repo`` checks may keep its epoch heads
+    behind the committed .gitignore (path probe; tracked state not consulted)."""
+    from quant_fund.research.repo_integrity import CORPORA
+
+    _ignore_repo(tmp_path, monkeypatch, (REPO_ROOT / ".gitignore").read_text())
+    probes = [f"{c[0]}/corpus_epoch_0123456789abcdef.json" for c in CORPORA]
+    proc = subprocess.run(
+        ["git", "check-ignore", "--no-index", "--stdin"],
+        input="\n".join(probes) + "\n",
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode in (0, 1), proc.stderr
+    assert proc.stdout.splitlines() == []
