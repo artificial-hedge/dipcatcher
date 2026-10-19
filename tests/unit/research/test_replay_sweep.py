@@ -142,3 +142,33 @@ def test_contract_rejects_forged_counts(tmp_path: Path) -> None:
         forged = dict(body)
         forged[field] = bad
         assert replay_coverage_contract_errors(forged) != []
+
+def _skip_carrier(tmp_path: Path, receipt: Path, name: str) -> Path:
+    path = _carrier(tmp_path, receipt, name, claims_equal=True)
+    body = json.loads(path.read_text())
+    body["replay"]["input_tapes"] = [
+        {"path": f"data/raw/{name}.parquet", "sha256": "a" * 64}
+    ]
+    del body["receipt_sha256"]
+    body["receipt_sha256"] = hash_bytes(
+        canonical_json_bytes({k: v for k, v in body.items() if k != "receipt_sha256"})
+    )
+    path.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+def test_sweep_skipped_carriers_not_counted_as_claims_equal(tmp_path: Path) -> None:
+    """14 skipped carriers with claims_equal True must show as skipped, not equal."""
+    receipt = _write_self_receipt(tmp_path)
+    carriers = tmp_path / "carriers"
+    _carrier(tmp_path, receipt, "executed")
+    for i in range(14):
+        _skip_carrier(tmp_path, receipt, f"skip_{i:02d}")
+    body = run_replay_sweep(carriers, root=tmp_path, timeout_s=60)
+    assert body["n_skipped"] == 14
+    assert body["n_pass"] == 1
+    assert body["n_claims_total"] == 1
+    assert body["n_claims_byte_equal"] == 1
+    assert body["n_claims_skipped"] == 14
+    assert replay_coverage_contract_errors(body) == []
+
