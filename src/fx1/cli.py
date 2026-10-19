@@ -144,6 +144,7 @@ def _resolve_model_backend(
     typer.echo(f"unknown --backend {backend!r}; choose hosted_k3 | local_fx1 | byok", err=True)
     raise typer.Exit(code=2)
 
+
 def _resolve_judge(judge_backend: str | None) -> ModelFn | None:
     """Build the optional ext-bench judge ModelFn. Fail-closed on usage.
 

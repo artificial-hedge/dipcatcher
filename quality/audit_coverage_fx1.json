@@ -5,6 +5,9 @@
       "n_modules": 5,
       "status": "audited"
     },
+    "cli": {
+      "status": "pending"
+    },
     "data": {
       "doc": "docs/AUDIT_LEDGER.md",
       "n_modules": 20,
@@ -64,6 +67,27 @@
     },
     "cli_audit.py": {
       "status": "audited"
+    },
+    "cli_common.py": {
+      "status": "pending"
+    },
+    "cli_harness.py": {
+      "status": "pending"
+    },
+    "cli_harness_chat.py": {
+      "status": "pending"
+    },
+    "cli_harness_ft.py": {
+      "status": "pending"
+    },
+    "cli_harness_jobs.py": {
+      "status": "pending"
+    },
+    "cli_harness_ops.py": {
+      "status": "pending"
+    },
+    "cli_harness_vs.py": {
+      "status": "pending"
     },
     "doctor.py": {
       "doc": "docs/AUDIT_LEDGER.md",

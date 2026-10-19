@@ -4,7 +4,6 @@
 # Pinned by tests/unit/test_architecture.py::test_modules_stay_under_max_lines.
 # Raising a pin requires a recorded migration in quality/ratchet_migrations.json
 # (see test_budget_never_exceeds_its_frozen_ceiling).
-fx1/cli_harness.py 4606
 fx1/cli_audit.py 4942
 fx1/sdk.py 4532
 fx1/serve/api.py 11333

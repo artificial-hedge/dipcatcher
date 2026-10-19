@@ -2,4 +2,5 @@
 # A retired path has no budget pin; its successor module carries the pin.
 # Format: PATH   (one per line, sorted)
 fx1/cli.py
+fx1/cli_harness.py
 

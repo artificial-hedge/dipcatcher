@@ -6,7 +6,7 @@ import json
 import os
 from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import typer
 
@@ -247,5 +247,72 @@ def _emit_anthropic_deltas(events: Iterable[Any]) -> None:
                 else delta.get("partial_json")
             )
             if text:
+                typer.echo(text, nl=False)
+    typer.echo()
+
+
+harness_app = typer.Typer(help="Inspect/run the dipcatcher harness.")
+
+
+_OPERATION_ARGUMENT_MAX_BYTES = 2_000_000
+
+
+def _load_prompts(path: Path) -> list[str]:
+    """JSON array of strings or JSONL of str / ``{\"prompt\": ...}`` lines."""
+    text = path.read_text(encoding="utf-8").strip()
+    if not text:
+        raise ValueError(f"{path}: empty prompts file")
+    if text.startswith("["):
+        items = json.loads(text)
+    else:
+        items = [json.loads(line) for line in text.splitlines() if line.strip()]
+    prompts = [it["prompt"] if isinstance(it, dict) else it for it in items]
+    if not all(isinstance(p, str) and p for p in prompts):
+        raise ValueError(f"{path}: every prompt must be a non-empty string")
+    return prompts
+
+
+def _record_json(rec: Any) -> dict[str, Any]:
+    return {
+        "completion_id": rec.completion_id,
+        "backend": rec.backend,
+        "model": rec.model,
+        "ok": rec.ok,
+        "latency_ms": rec.latency_ms,
+        "at": rec.at,
+        "usage": rec.usage,
+        "error": rec.error,
+        "error_class": rec.error_class,
+        "prompt_sha256": rec.prompt_sha256,
+        "output_sha256": rec.output_sha256,
+    }
+
+
+def _remote_client(remote: str, api_key: str | None, timeout_s: float) -> HarnessClient:
+    from fx1.serve.client import HarnessClient
+
+    return HarnessClient(
+        remote,
+        api_key=api_key or os.environ.get("FX1_API_KEY") or None,
+        timeout_s=timeout_s,
+    )
+
+
+def _need_remote(remote: str | None) -> None:
+    if remote is None:
+        typer.echo(
+            "error: async jobs are a wire surface; pass --remote",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+
+
+def _emit_completion_deltas(chunks: list[dict[str, Any]]) -> None:
+    """Print the legacy text deltas — the terminal frame carries no text,
+    so ordering is by frame emission, not ``choices[i].index``."""
+    for chunk in chunks:
+        for choice in cast(list[dict[str, Any]], chunk.get("choices") or []):
+            text = choice.get("text")
+            if isinstance(text, str) and text:
                 typer.echo(text, nl=False)
     typer.echo()
