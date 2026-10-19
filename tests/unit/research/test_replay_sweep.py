@@ -82,6 +82,7 @@ def test_sweep_all_pass(tmp_path: Path) -> None:
     body = run_replay_sweep(carriers, root=tmp_path, timeout_s=60)
     assert body["schema"] == REPLAY_COVERAGE_SCHEMA
     assert body["n_carriers"] == 2
+    assert body["n_declared"] == 2
     assert body["n_pass"] == 2
     assert body["n_fail"] == 0
     assert body["verdict"] == "pass"

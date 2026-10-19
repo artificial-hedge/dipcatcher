@@ -267,7 +267,8 @@ def run_replay_sweep(
     n_pass = sum(1 for row in rows if row["verdict"] == "pass")
     n_fail = sum(1 for row in rows if row["verdict"] == "fail")
     n_skipped = sum(1 for row in rows if row["verdict"] == "skipped")
-    coverage = n_pass / len(rows)
+    n_executed = n_pass + n_fail
+    coverage = (n_pass / n_executed) if n_executed else 0.0
     verdict = "pass" if n_fail == 0 and n_pass > 0 else "fail"
 
     return {
@@ -278,10 +279,11 @@ def run_replay_sweep(
         "data_label": "CORPUS",
         "carriers_dir": str(carriers_path),
         "rows": rows,
-        "n_carriers": len(rows),
+        "n_carriers": n_executed,
         "n_pass": n_pass,
         "n_fail": n_fail,
         "n_skipped": n_skipped,
+        "n_declared": len(rows),
         "coverage": coverage,
         "n_claims_total": n_claims_total,
         "n_claims_byte_equal": n_claims_byte_equal,
@@ -483,6 +485,9 @@ def replay_coverage_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         value = payload.get(field)
         if not _is_count(value):
             errors.append(field)
+    n_declared = payload.get("n_declared")
+    if n_declared is not None and not _is_count(n_declared):
+        errors.append("n_declared")
     errors.extend(
         _binding_total_errors(payload, binding_declared, total_binding_errors, total_bound)
     )
@@ -491,8 +496,13 @@ def replay_coverage_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         n_pass = row_verdicts.count("pass")
         n_fail = row_verdicts.count("fail")
         n_skipped = row_verdicts.count("skipped")
-        if payload.get("n_carriers") != n_rows:
+        n_executed = n_pass + n_fail
+        headline_is_executed = n_declared is not None
+        expected_carriers = n_executed if headline_is_executed else n_rows
+        if payload.get("n_carriers") != expected_carriers:
             errors.append("n_carriers")
+        if headline_is_executed and n_declared != n_rows:
+            errors.append("n_declared")
         if payload.get("n_pass") != n_pass:
             errors.append("n_pass")
         if payload.get("n_fail") != n_fail:
@@ -500,10 +510,14 @@ def replay_coverage_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         if payload.get("n_skipped") != n_skipped:
             errors.append("n_skipped")
         coverage = payload.get("coverage")
+        if headline_is_executed:
+            expected_coverage = (n_pass / n_executed) if n_executed else 0.0
+        else:
+            expected_coverage = n_pass / n_rows
         if (
             not isinstance(coverage, (int, float))
             or isinstance(coverage, bool)
-            or not math.isclose(float(coverage), n_pass / n_rows, rel_tol=0, abs_tol=1e-12)
+            or not math.isclose(float(coverage), expected_coverage, rel_tol=0, abs_tol=1e-12)
         ):
             errors.append("coverage")
         expected = "pass" if n_fail == 0 and n_pass > 0 else "fail"

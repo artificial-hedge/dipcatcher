@@ -607,9 +607,11 @@ def replay_all_cmd(
     atomic_write_text(out_path, json.dumps(document, indent=2, sort_keys=True) + "\n")
     for row in body["rows"]:
         typer.echo(f"carrier {row['carrier']}: verdict={row['verdict']}")
+    declared = body.get("n_declared", len(body["rows"]))
     typer.echo(
         f"carriers={body['n_carriers']} pass={body['n_pass']} "
         f"fail={body['n_fail']} skipped={body['n_skipped']} "
+        f"declared={declared} "
         f"coverage={body['coverage']:.4f} "
         f"claims_byte_equal={body['n_claims_byte_equal']}/{body['n_claims_total']}"
     )
@@ -2905,6 +2907,18 @@ def verify_repo_cmd(
             state = "unsigned"
         if gate.get("skipped"):
             state = f"skipped({gate['skipped']})"
+        if name == "timestamp_anchors":
+            stale_notes: list[str] = []
+            for target, info in sorted(gate.get("staleness", {}).items()):
+                if not isinstance(info, Mapping) or not info.get("stale"):
+                    continue
+                age = info.get("age_s")
+                if isinstance(age, int) and age >= 0:
+                    stale_notes.append(f"{target}:stale age={age}s")
+                else:
+                    stale_notes.append(f"{target}:stale")
+            if stale_notes:
+                state = f"{state} ({'; '.join(stale_notes)})"
         typer.echo(f"verify-repo {name}: {state}")
     if not result["ok"]:
         raise typer.Exit(code=1)

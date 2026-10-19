@@ -205,6 +205,7 @@ def verify_repo(
         "ok": bool(ts["ok"] and ots["ok"]),
         "anchored": bool(ts["anchored"] or ots["anchored"]),
         "fresh": ts.get("fresh", {}),
+        "staleness": ts.get("staleness", {}),
         "ots": ots.get("attestations", {}),
         "errors": [*ts["errors"], *ots["errors"]],
     }
@@ -798,7 +799,14 @@ def repo_integrity_receipt(
                 "errors": sorted(g["errors"]),
                 **{
                     k: g[k]
-                    for k in ("signed", "anchored", "fresh", "skipped", "revision_ancestor")
+                    for k in (
+                        "signed",
+                        "anchored",
+                        "fresh",
+                        "staleness",
+                        "skipped",
+                        "revision_ancestor",
+                    )
                     if k in g
                 },
             }

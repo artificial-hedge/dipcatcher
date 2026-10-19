@@ -101,6 +101,9 @@ def test_verify_stale_anchor_is_valid_not_fresh(tmp_path: Path) -> None:
     res = verify_timestamps(root)
     assert res["ok"] is True  # stale anchor = proof of earlier state
     assert res["fresh"]["quality/epoch_heads.json"] is False
+    stale = res["staleness"]["quality/epoch_heads.json"]
+    assert stale["stale"] is True
+    assert stale["age_s"] is None
 
 
 def test_verify_manifest_token_mismatch_fails(tmp_path: Path) -> None:
