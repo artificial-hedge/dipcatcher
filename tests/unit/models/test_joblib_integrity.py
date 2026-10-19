@@ -73,11 +73,26 @@ def test_model_load_refuses_missing_sidecar_without_unpickling(tmp_path: Path) -
     _assert_integrity_refusal(excinfo, marker)
 
 
-@pytest.mark.parametrize("content", ["", "not-hex\n", "0x" + "a" * 62 + "\n", "A" * 64 + "\n"])
-def test_malformed_sidecar_is_refused_without_unpickling(tmp_path: Path, content: str) -> None:
+_TRUE_DIGEST = b"<sha256 of the artifact bytes>"
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        b"",
+        b"not-hex\n",
+        b"0x" + b"a" * 62 + b"\n",
+        b"A" * 64 + b"\n",
+        # Non-ASCII bytes around the artifact's *true* digest: a lenient decode
+        # (utf-8-sig, errors="ignore") would accept the pin and unpickle.
+        pytest.param(b"\xef\xbb\xbf" + _TRUE_DIGEST + b"\n", id="utf8-bom-before-true-digest"),
+    ],
+)
+def test_malformed_sidecar_is_refused_without_unpickling(tmp_path: Path, content: bytes) -> None:
     marker = tmp_path / "ran"
     artifact = _gadget(tmp_path / "payload.joblib", marker)
-    _sidecar(artifact).write_text(content, encoding="ascii")
+    digest = hashlib.sha256(artifact.read_bytes()).hexdigest().encode("ascii")
+    _sidecar(artifact).write_bytes(content.replace(_TRUE_DIGEST, digest))
 
     with pytest.raises(ValueError, match="checksum sidecar is malformed") as excinfo:
         load_joblib_artifact(artifact)
