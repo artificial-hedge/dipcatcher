@@ -302,28 +302,104 @@ pred = torch_backend.load_pretrained_predictor("mini", allow_network=True, devic
 print(json.dumps([type(pred.tokenizer).__name__, type(pred.model).__name__]))
 """
 
+# A regular FILE at a repo-id-shaped relative path is not a local source:
+# huggingface_hub's ModelHubMixin reads only os.path.isdir() sources from disk
+# and fetches anything else as a Hub repo id. The offline cache serves a
+# d_model=16 pair under refs/main (a moving branch, commit "b"*40) and a
+# d_model=8 pair only at the pinned VARIANT_HUB commits; the cwd holds empty
+# regular files at every repo-id path.
+_FILE_SHADOW_LOAD = """
+import json, os, sys
+from pathlib import Path
+from quant_fund.models.robinhood_plus import torch_backend as tb
+from quant_fund.models.robinhood_plus.constants import VARIANT_HUB
+tb._ensure_kronos_on_path()
+from model.kronos import Kronos, KronosTokenizer
+cache, spec = Path(os.environ["HF_HUB_CACHE"]), VARIANT_HUB["mini"]
+def put(repo, rev, d_model, main=False):
+    if "Tokenizer" in repo or repo.endswith("-tok"):
+        obj = KronosTokenizer(6, d_model, 2, 16, 1, 1, 0.0, 0.0, 0.0, 2, 2, 0.05, 1.0, 1.1, 0.05, 2)
+    else:
+        obj = Kronos(2, 2, 1, d_model, 2, 16, 0.0, 0.0, 0.0, 0.0, True)
+    base = cache / ("models--" + repo.replace("/", "--"))
+    obj.save_pretrained(str(base / "snapshots" / rev))
+    if main:
+        (base / "refs").mkdir(parents=True, exist_ok=True)
+        (base / "refs" / "main").write_text(rev)
+    Path(repo).parent.mkdir(parents=True, exist_ok=True)
+    Path(repo).write_text("")
+put(spec["tokenizer"], spec["tokenizer_rev"], 8)
+put(spec["model"], spec["model_rev"], 8)
+for repo in (spec["tokenizer"], spec["model"], "someone/fork-tok", "someone/fork-model"):
+    put(repo, "b" * 40, 16, main=True)
+def outcome(fn, **kw):
+    try:
+        out = fn("mini", **kw)
+    except tb.RobinhoodPlusTorchError as exc:
+        return "refused: " + str(exc)
+    if isinstance(out, dict):
+        return out
+    return ["loaded", out.tokenizer.d_model, out.model.d_model]
+fork = {"tokenizer_path": "someone/fork-tok", "model_path": "someone/fork-model"}
+print(json.dumps({
+    "pinned_revisions": outcome(tb.kronos_weight_revisions),
+    "pinned_load": outcome(tb.load_pretrained_predictor, allow_network=True, device="cpu"),
+    "pinned_offline": outcome(tb.load_pretrained_predictor, allow_network=False),
+    "fork_revisions": outcome(tb.kronos_weight_revisions, **fork),
+    "fork_load": outcome(tb.load_pretrained_predictor, allow_network=True, **fork),
+    "fork_offline": outcome(tb.load_pretrained_predictor, allow_network=False, **fork),
+}))
+"""
+
+
+def _offline_hub_run(tmp_path: Path, script: str) -> Any:
+    """Run ``script`` in a scratch cwd against an empty offline Hub cache."""
+    import json
+    import os
+    import subprocess
+
+    cache = tmp_path / "hub"
+    cache.mkdir()
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    env = {**os.environ, "HF_HUB_OFFLINE": "1", "HF_HUB_CACHE": str(cache)}
+    proc = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(cwd),
+        timeout=300,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    return json.loads(proc.stdout.strip().splitlines()[-1])
+
 
 class TestHubRevisionPins:
     def test_hub_fetch_loads_the_pinned_commit(self, tmp_path: Path) -> None:
         pytest.importorskip("torch")
-        import json
-        import os
-        import subprocess
+        assert _offline_hub_run(tmp_path, _PINNED_HUB_LOAD) == ["KronosTokenizer", "Kronos"]
 
-        cache = tmp_path / "hub"
-        cache.mkdir()
-        env = {**os.environ, "HF_HUB_OFFLINE": "1", "HF_HUB_CACHE": str(cache)}
-        proc = subprocess.run(
-            [sys.executable, "-c", _PINNED_HUB_LOAD],
-            capture_output=True,
-            text=True,
-            env=env,
-            cwd=str(tmp_path),
-            timeout=300,
-            check=False,
-        )
-        assert proc.returncode == 0, proc.stderr[-2000:]
-        assert json.loads(proc.stdout.strip().splitlines()[-1]) == ["KronosTokenizer", "Kronos"]
+    def test_regular_file_at_hub_id_path_is_not_local(self, tmp_path: Path) -> None:
+        # A stray file at the repo-id path must neither drop the pin (load
+        # refs/main) nor be recorded as "local", and must not get a foreign
+        # id or an allow_network=false run past the guards.
+        pytest.importorskip("torch")
+        from quant_fund.models.robinhood_plus.constants import VARIANT_HUB
+
+        spec = VARIANT_HUB["mini"]
+        out = _offline_hub_run(tmp_path, _FILE_SHADOW_LOAD)
+        assert out["pinned_revisions"] == {
+            "tokenizer_revision": spec["tokenizer_rev"],
+            "model_revision": spec["model_rev"],
+        }
+        assert out["pinned_load"] == ["loaded", 8, 8]  # the pinned pair, not refs/main
+        for key in ("pinned_offline", "fork_offline"):
+            assert str(out[key]).startswith("refused: torch backend refused Hub download"), out
+        unpinned = "refused: refusing unpinned Hub fetch of 'someone/"
+        for key in ("fork_revisions", "fork_load"):
+            assert str(out[key]).startswith(unpinned), out
 
     def test_unpinned_hub_id_refused(self) -> None:
         with pytest.raises(torch_backend.RobinhoodPlusTorchError, match="unpinned Hub fetch"):
@@ -352,3 +428,11 @@ class TestHubRevisionPins:
         local = torch_backend.forecast_cross_section_torch(_frame(12), asof, local_cfg, ["AAA"])
         assert local["AAA"].forecast.diagnostics["model_revision"] == "local"
         assert local["AAA"].forecast.diagnostics["tokenizer_revision"] == "local"
+        # A regular file is a Hub id to huggingface_hub, never "local".
+        weights = tmp_path / "kronos.safetensors"
+        weights.write_bytes(b"")
+        file_cfg = _config(
+            robinhood_plus={"tokenizer_path": str(weights), "model_path": str(weights)}
+        )
+        with pytest.raises(torch_backend.RobinhoodPlusTorchError, match="unpinned Hub fetch"):
+            torch_backend.forecast_cross_section_torch(_frame(12), asof, file_cfg, ["AAA"])

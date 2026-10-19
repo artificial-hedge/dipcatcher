@@ -10,6 +10,7 @@ numpy.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from datetime import UTC, datetime, timedelta
@@ -47,13 +48,24 @@ class RobinhoodPlusTorchError(RuntimeError):
     """Torch / pretrained-weight failures. Callers must not swallow these."""
 
 
+def _is_local_dir(source: str) -> bool:
+    """The local-source test ``ModelHubMixin.from_pretrained`` itself applies.
+
+    huggingface_hub reads ``source`` from disk only when ``os.path.isdir``;
+    any other string, an existing regular file included, is a Hub repo id.
+    A looser test (``exists``) would let a stray file at a repo-id-shaped
+    path skip the pin and be labeled ``local``.
+    """
+    return os.path.isdir(source)
+
+
 def _hub_kwargs(source: str, hub_id: str, hub_rev: str) -> dict[str, str]:
     """``from_pretrained`` kwargs for one weight source. Fails closed.
 
     A local directory loads as-is. Anything else is a Hub fetch, allowed only
     for the pinned ``VARIANT_HUB`` id at its 40-hex commit.
     """
-    if Path(source).exists():
+    if _is_local_dir(source):
         return {}
     if source != hub_id or not _COMMIT_SHA.fullmatch(hub_rev):
         raise RobinhoodPlusTorchError(
@@ -166,7 +178,7 @@ def load_pretrained_predictor(
     model_id = model_path or str(spec["model"])
     default_context = {"mini": 2048, "small": 512, "base": 512}[variant]
     context = int(max_context if max_context is not None else default_context)
-    if not allow_network and (not Path(tok_id).exists() or not Path(model_id).exists()):
+    if not allow_network and not (_is_local_dir(tok_id) and _is_local_dir(model_id)):
         raise RobinhoodPlusTorchError(
             "torch backend refused Hub download (allow_network=false); "
             f"pass local tokenizer/model directories (got {tok_id!r}, {model_id!r})"

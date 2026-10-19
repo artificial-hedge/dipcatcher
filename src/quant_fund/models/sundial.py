@@ -15,7 +15,8 @@ uv.lock:
   *executes model-repo code* on import; per supply-chain policy that
   stays an explicit manual step, never an implicit install. The load is
   pinned to an immutable 40-hex Hub commit (weights *and* remote code),
-  never a moving branch; a model id without a pinned commit is refused.
+  never a moving branch; a model id without a pinned commit, or one that a
+  local path shadows, is refused.
 
 Fleet contract (mirrors ``models/distribution.py``): ``fit`` validates
 the series and resolves the predictor (the dep check); ``predict`` tiles
@@ -26,6 +27,7 @@ is empirical over ``num_samples`` paths per window.
 
 from __future__ import annotations
 
+import os
 import re
 from collections.abc import Sequence
 from typing import Any
@@ -77,8 +79,19 @@ def _pinned_revision(model_id: str, revision: str | None) -> str:
 
 
 def _pinned_from_pretrained(model_cls: Any, model_id: str, revision: str) -> Any:
-    """Hub load with weights and remote code both fixed at ``revision``."""
+    """Hub load with weights and remote code both fixed at ``revision``.
+
+    transformers reads ``model_id`` from disk when that path exists (a
+    directory for config, weights and remote code; a file for config) and
+    then ignores ``revision``/``code_revision``, so a local path shadowing
+    the id would run unpinned code under the pinned label. Refused.
+    """
     rev = _pinned_revision(model_id, revision)
+    if os.path.lexists(model_id):
+        raise ValueError(
+            f"{model_id!r} exists on local disk and would shadow the pinned Hub "
+            f"commit {rev}; trust_remote_code loads only from the Hub at that commit"
+        )
     return model_cls.from_pretrained(
         model_id, revision=rev, code_revision=rev, trust_remote_code=True
     )

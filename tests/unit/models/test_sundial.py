@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -137,6 +138,27 @@ def test_trust_remote_code_load_carries_pinned_revision() -> None:
     with pytest.raises(ValueError, match="40-hex"):
         _pinned_from_pretrained(_RecordingAutoModel, "thuml/sundial-base-128m", "main")
     assert len(_RecordingAutoModel.calls) == 1
+
+
+@pytest.mark.parametrize("kind", ["dir", "file"])
+def test_local_path_shadowing_the_hub_id_refused(
+    kind: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # transformers loads an existing local path in place of the Hub id and
+    # ignores revision/code_revision; the pinned label would then be false.
+    from quant_fund.models.sundial import _pinned_from_pretrained
+
+    monkeypatch.chdir(tmp_path)
+    shadow = tmp_path / "thuml" / "sundial-base-128m"
+    if kind == "dir":
+        shadow.mkdir(parents=True)
+    else:
+        shadow.parent.mkdir()
+        shadow.write_text("")
+    _RecordingAutoModel.calls = []
+    with pytest.raises(ValueError, match="shadow the pinned Hub commit"):
+        _pinned_from_pretrained(_RecordingAutoModel, "thuml/sundial-base-128m", _PINNED)
+    assert _RecordingAutoModel.calls == []
 
 
 def test_fleet_receipt_records_sundial_revision() -> None:
