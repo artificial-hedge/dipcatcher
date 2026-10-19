@@ -51,6 +51,17 @@ exercises the code under audit, not whatever happens to be on ``PATH``
 (pyproject maps both names to ``quant_fund.cli.main:app``). The declared
 argv is recorded verbatim next to the resolved form for audit.
 
+Execution discipline: a receipt is data, so it may only name code the
+checkout already trusts. ``argv[0]`` must be one of those entry points or a
+relative ``*.py`` that resolves inside ``root`` and is git-tracked there;
+absolute paths, ``..``, option-shaped heads, symlinks out of the root,
+untracked scripts and every other executable are refused before spawn
+(``spawn_error="argv_rejected:<reason>:<argv0>"``). Stale declared artifacts
+are deleted only when they are regular, non-symlink files under
+``REPLAY_OUTPUT_DIRS``; any other pre-existing artifact path is refused
+before anything is deleted (``spawn_error="artifact_preexists_*"``), so a
+receipt cannot choose what the replay deletes.
+
 A receipt cannot declare itself among ``artifacts`` — a file cannot embed
 its own digest — so lanes emitting replay manifests declare the sibling
 artifacts argv produces (e.g. the digest-named receipt files), which are
@@ -67,7 +78,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Mapping
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
 REPLAY_PROOF_SCHEMA = "replay_proof.v1"
@@ -75,14 +86,20 @@ REPLAY_MANIFEST_KEY = "replay"
 REPLAY_PROOF_VERDICTS = ("pass", "fail")
 DEFAULT_TIMEOUT_S = 120.0
 _MAX_STDERR_TAIL = 2048
+_GIT_PROBE_TIMEOUT_S = 30
 
 #: Console-script names pyproject maps to ``quant_fund.cli.main:app``.
 _CLI_ENTRYPOINTS = frozenset({"dipcatcher", "quant"})
 _SHA256_LEN = 64
 
+#: Root-relative directories replays write into (gitignored scratch). Only a
+#: stale regular file under one of these may be deleted before argv runs.
+REPLAY_OUTPUT_DIRS = ("data/metadata/replay",)
+
 __all__ = [
     "DEFAULT_TIMEOUT_S",
     "REPLAY_MANIFEST_KEY",
+    "REPLAY_OUTPUT_DIRS",
     "REPLAY_PROOF_SCHEMA",
     "REPLAY_PROOF_VERDICTS",
     "replay_manifest",
@@ -210,7 +227,9 @@ def _resolve_argv(argv: list[str]) -> list[str]:
     ``quant_fund.cli.main`` module — the entry point pyproject binds them
     to — so the replay runs this checkout's code rather than depending on
     ``PATH``. A leading ``*.py`` path resolves to the same interpreter so
-    script lanes also run this checkout's code. Any other argv runs verbatim.
+    script lanes also run this checkout's code. Any other argv is returned
+    verbatim for the audit record only: ``_argv_error`` refuses it, and a
+    ``*.py`` head outside the tracked tree, before anything spawns.
     """
     if argv and argv[0] in _CLI_ENTRYPOINTS:
         # ``python -m quant_fund.cli.main`` (and ``-m quant_fund.cli``) can
@@ -227,6 +246,117 @@ def _resolve_argv(argv: list[str]) -> list[str]:
     if argv and argv[0].endswith(".py"):
         return [sys.executable, *argv]
     return list(argv)
+
+
+def _git_tracked(root_path: Path, rels: list[str]) -> bool:
+    """True iff every root-relative path in ``rels`` is in the git index at ``root``.
+
+    Literal pathspecs, so a glob-shaped name cannot match some other tracked
+    file, and an exact-name check on the ``-z`` listing. ``GIT_*`` variables
+    are dropped so an ambient ``GIT_DIR``/``GIT_INDEX_FILE`` (a hook, a test
+    runner) cannot point the probe at another repository. No git, no
+    repository, a timeout, or any probe error means not tracked.
+    """
+    env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    try:
+        proc = subprocess.run(
+            ["git", "--literal-pathspecs", "ls-files", "-z", "--", *rels],
+            cwd=root_path,
+            env=env,
+            capture_output=True,
+            timeout=_GIT_PROBE_TIMEOUT_S,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    listed = set(proc.stdout.decode("utf-8", errors="surrogateescape").split("\0"))
+    return proc.returncode == 0 and all(rel in listed for rel in rels)
+
+
+def _script_head_error(head: str, root_path: Path, run_cwd: Path) -> str | None:
+    """Why a ``*.py`` ``argv[0]`` may not run, or ``None`` when it may.
+
+    The script must be a plain relative path (no anchor, no ``..``, not an
+    interpreter option such as ``-c<code>#.py``) that resolves — symlinks
+    followed — to a file inside ``root``, and both the declared path and
+    its resolved target must be git-tracked there.
+    """
+    posix = PurePosixPath(head.replace("\\", "/"))
+    windows = PureWindowsPath(head)
+    if head.startswith("-") or "\x00" in head:
+        return "not_a_path"
+    if posix.is_absolute() or windows.drive or windows.root:
+        return "absolute_path"
+    if ".." in posix.parts:
+        return "parent_reference"
+    lexical = run_cwd / head
+    try:
+        resolved = lexical.resolve()
+    except (OSError, RuntimeError):  # symlink loop (RuntimeError before 3.13)
+        return "unresolvable"
+    if not resolved.is_relative_to(root_path):
+        return "escapes_root"
+    if not resolved.is_file():
+        return "script_missing"
+    rels = {
+        lexical.relative_to(root_path).as_posix(),
+        resolved.relative_to(root_path).as_posix(),
+    }
+    return None if _git_tracked(root_path, sorted(rels)) else "script_untracked"
+
+
+def _argv_error(argv: list[str], root_path: Path, run_cwd: Path) -> str | None:
+    """Refusal reason for the declared argv, or ``None`` when it may run.
+
+    A receipt is data: its argv may only name a console-script entry point
+    (``_CLI_ENTRYPOINTS``) or a git-tracked in-root ``*.py`` script. Every
+    other ``argv[0]`` — an interpreter, a shell, any other executable — is
+    refused before spawn.
+    """
+    head = argv[0]
+    if head in _CLI_ENTRYPOINTS:
+        return None
+    reason = (
+        _script_head_error(head, root_path, run_cwd)
+        if head.endswith(".py")
+        else "not_entrypoint_or_script"
+    )
+    return None if reason is None else f"argv_rejected:{reason}:{head}"
+
+
+def _stale_artifact_plan(
+    artifacts: list[Mapping[str, Any]], root_path: Path, run_cwd: Path
+) -> tuple[str | None, list[tuple[str, Path]]]:
+    """Vet every pre-existing declared artifact before anything is deleted.
+
+    Returns ``(refusal, deletable)``. A stale file must not satisfy a digest
+    pin, so replay clears pre-existing artifacts — but only regular,
+    non-symlink files under ``REPLAY_OUTPUT_DIRS`` (an output dir whose own
+    path holds a symlink does not count). Any other existing path is a
+    refusal and nothing at all is deleted: a receipt must not be able to
+    make replay remove ``.env``, model weights, or evidence it names.
+    """
+    output_dirs = [
+        root_path / rel
+        for rel in REPLAY_OUTPUT_DIRS
+        if (root_path / rel).resolve() == root_path / rel
+    ]
+    deletable: list[tuple[str, Path]] = []
+    for entry in artifacts:
+        declared = str(entry["path"])
+        candidate = Path(declared)
+        lexical = candidate if candidate.is_absolute() else run_cwd / candidate
+        if lexical.is_symlink():
+            return f"artifact_preexists_symlink:{declared}", []
+        if not lexical.exists():
+            continue
+        resolved = lexical.resolve()
+        if not any(resolved.is_relative_to(out) for out in output_dirs):
+            return f"artifact_preexists_outside_output_dir:{declared}", []
+        if not resolved.is_file():
+            return f"artifact_preexists_not_a_file:{declared}", []
+        deletable.append((declared, resolved))
+    return None, deletable
 
 
 def _file_sha256(path: Path) -> str:
@@ -524,21 +654,23 @@ def run_replay(
     elif not run_cwd.is_relative_to(root_path):
         spawn_error = f"cwd_escapes_root:{declared_cwd}"
     else:
-        # Delete declared artifacts first: a stale file must not satisfy a
-        # digest pin when argv never produced it. Untracked deletions only —
-        # committed paths were already refused by the overwrite guard.
-        stale_error: str | None = None
-        for entry in manifest["artifacts"]:
-            declared = Path(str(entry["path"]))
-            resolved = (declared if declared.is_absolute() else (run_cwd / declared)).resolve()
-            if resolved.is_relative_to(root_path) and resolved.is_file():
-                try:
-                    resolved.unlink()
-                except OSError as exc:
-                    stale_error = f"artifact_stale_delete_failed:{entry['path']}:{exc}"
-                    break
-        if stale_error is not None:
-            spawn_error = stale_error
+        # The receipt chooses neither the code nor the deletions: argv must
+        # name trusted code, and every pre-existing artifact is vetted before
+        # any is removed. Stale files must not satisfy a digest pin when argv
+        # never produced them, so vetted ones (regular files under
+        # REPLAY_OUTPUT_DIRS; committed paths were refused above) are deleted.
+        refusal = _argv_error(argv, root_path, run_cwd)
+        stale_files: list[tuple[str, Path]] = []
+        if refusal is None:
+            refusal, stale_files = _stale_artifact_plan(manifest["artifacts"], root_path, run_cwd)
+        for declared, stale in stale_files:
+            try:
+                stale.unlink()
+            except OSError as exc:
+                refusal = f"artifact_stale_delete_failed:{declared}:{exc}"
+                break
+        if refusal is not None:
+            spawn_error = refusal
         else:
             try:
                 proc = subprocess.run(

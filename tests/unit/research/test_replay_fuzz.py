@@ -10,29 +10,39 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
-import sys
 from pathlib import Path
 
 import pytest
 
 from quant_fund.research.replay_proof import run_replay
 
+# Replays write under the replay output dir, the only place replay may clear
+# a stale artifact before argv runs.
+_ART = "data/metadata/replay/artifact.json"
+
+
+def _tracked(root: Path, name: str, source: str) -> None:
+    """Write a lane script and ``git add`` it: replay runs tracked code only."""
+    (root / name).write_text(source)
+    if not (root / ".git").exists():
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "add", "--", name], cwd=root, check=True)
+
 
 def _emit_script(root: Path) -> None:
-    (root / "out").mkdir(parents=True, exist_ok=True)
-    (root / "emit.py").write_text(
-        "import json, pathlib\n"
-        "pathlib.Path('out/artifact.json').write_text(json.dumps({'fixed': True}))\n"
+    (root / _ART).parent.mkdir(parents=True, exist_ok=True)
+    _tracked(
+        root,
+        "emit.py",
+        f"import json, pathlib\npathlib.Path({_ART!r}).write_text(json.dumps({{'fixed': True}}))\n",
     )
 
 
 def _carrier(root: Path, **replay_overrides: object) -> Path:
     artifact = b'{"fixed": true}'
     replay: dict[str, object] = {
-        "argv": [sys.executable, "emit.py"],
-        "artifacts": [
-            {"path": "out/artifact.json", "sha256": hashlib.sha256(artifact).hexdigest()}
-        ],
+        "argv": ["emit.py"],
+        "artifacts": [{"path": _ART, "sha256": hashlib.sha256(artifact).hexdigest()}],
     }
     replay.update(replay_overrides)
     body: dict[str, object] = {
@@ -55,7 +65,7 @@ def _replay(tmp_path: Path, **overrides: object) -> dict[str, object]:
 def test_sha_mutation_fails(tmp_path: Path) -> None:
     body = _replay(
         tmp_path,
-        artifacts=[{"path": "out/artifact.json", "sha256": "00" * 32}],
+        artifacts=[{"path": _ART, "sha256": "00" * 32}],
     )
     assert body["verdict"] == "fail"
     assert body["artifacts"][0]["match"] is False
@@ -72,8 +82,8 @@ def test_artifact_path_escape_fails(tmp_path: Path) -> None:
 
 def test_argv_mutation_leaves_artifact_missing(tmp_path: Path) -> None:
     # argv now runs a no-op script; the pinned artifact must not appear
-    (tmp_path / "noop.py").write_text("pass\n")
-    body = _replay(tmp_path, argv=[sys.executable, "noop.py"])
+    _tracked(tmp_path, "noop.py", "pass\n")
+    body = _replay(tmp_path, argv=["noop.py"])
     assert body["verdict"] == "fail"
     assert body["artifacts"][0]["note"] == "artifact_missing"
 
@@ -81,10 +91,10 @@ def test_argv_mutation_leaves_artifact_missing(tmp_path: Path) -> None:
 def test_stale_preplaced_artifact_does_not_satisfy(tmp_path: Path) -> None:
     # pre-place the pinned bytes; argv writes nothing -> stale copy must be
     # deleted pre-spawn, so the artifact is missing, not satisfied
-    (tmp_path / "noop.py").write_text("pass\n")
-    (tmp_path / "out").mkdir(parents=True, exist_ok=True)
-    (tmp_path / "out" / "artifact.json").write_bytes(b'{"fixed": true}')
-    body = _replay(tmp_path, argv=[sys.executable, "noop.py"])
+    _tracked(tmp_path, "noop.py", "pass\n")
+    (tmp_path / _ART).parent.mkdir(parents=True, exist_ok=True)
+    (tmp_path / _ART).write_bytes(b'{"fixed": true}')
+    body = _replay(tmp_path, argv=["noop.py"])
     assert body["verdict"] == "fail"
     assert body["artifacts"][0]["note"] == "artifact_missing"
 
@@ -125,10 +135,10 @@ def test_input_tape_missing_manifest_skips_execution(tmp_path: Path) -> None:
 
 def test_committed_artifact_overwrite_blocked(tmp_path: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
-    (tmp_path / "out").mkdir(parents=True, exist_ok=True)
-    tracked = tmp_path / "out" / "artifact.json"
+    tracked = tmp_path / _ART
+    tracked.parent.mkdir(parents=True, exist_ok=True)
     tracked.write_text("old committed bytes")
-    subprocess.run(["git", "add", "out/artifact.json"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", _ART], cwd=tmp_path, check=True)
     body = _replay(tmp_path)
     assert body["verdict"] == "fail"
     assert str(body["spawn_error"]).startswith("artifact_overwrites_committed")
@@ -136,12 +146,14 @@ def test_committed_artifact_overwrite_blocked(tmp_path: Path) -> None:
 
 
 def test_nonzero_exit_fails(tmp_path: Path) -> None:
-    (tmp_path / "die.py").write_text(
+    _tracked(
+        tmp_path,
+        "die.py",
         "import json, pathlib, sys\n"
-        "pathlib.Path('out/artifact.json').write_text(json.dumps({'fixed': True}))\n"
-        "sys.exit(3)\n"
+        f"pathlib.Path({_ART!r}).write_text(json.dumps({{'fixed': True}}))\n"
+        "sys.exit(3)\n",
     )
-    body = _replay(tmp_path, argv=[sys.executable, "die.py"])
+    body = _replay(tmp_path, argv=["die.py"])
     assert body["verdict"] == "fail"
     assert body["exit_code"] == 3
 

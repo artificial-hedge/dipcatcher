@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-import sys
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -17,24 +17,32 @@ from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 
 def _write_self_receipt(tmp_path: Path) -> Path:
-    """A lane receipt whose replay writes a deterministic artifact."""
-    out_dir = tmp_path / "out"
+    """A lane receipt whose replay writes a deterministic artifact.
+
+    The artifact lives in the replay output dir (the only place replay may
+    clear a stale copy) and the lane script is git-tracked (replay runs
+    tracked code only).
+    """
+    out_dir = tmp_path / "data" / "metadata" / "replay"
     out_dir.mkdir(parents=True, exist_ok=True)
     artifact = out_dir / "artifact.json"
     artifact.write_text('{"fixed": true}')
     script = tmp_path / "emit.py"
     script.write_text(
         "import json, pathlib\n"
-        "pathlib.Path('out/artifact.json').write_text(json.dumps({'fixed': True}))\n"
+        "pathlib.Path('data/metadata/replay/artifact.json')"
+        ".write_text(json.dumps({'fixed': True}))\n"
     )
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "emit.py"], cwd=tmp_path, check=True)
     receipt = {
         "schema": "synthetic_lane.v1",
         "kind": "synthetic_lane",
         "replay": {
-            "argv": [sys.executable, "emit.py"],
+            "argv": ["emit.py"],
             "artifacts": [
                 {
-                    "path": "out/artifact.json",
+                    "path": "data/metadata/replay/artifact.json",
                     "sha256": hash_bytes(artifact.read_bytes()),
                 }
             ],

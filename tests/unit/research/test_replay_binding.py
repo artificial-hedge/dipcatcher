@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import sys
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -95,14 +95,23 @@ def _write_carrier(
     return path
 
 
+def _track(root: Path, name: str, source: str) -> None:
+    """Write a lane script and ``git add`` it: replay runs tracked code only."""
+    (root / name).write_text(source, encoding="utf-8")
+    if not (root / ".git").exists():
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "add", "--", name], cwd=root, check=True)
+
+
 def _scratch_repo(root: Path) -> str:
     """Write the lane script and a sealed receipt; return the receipt's live digest."""
-    (root / "emit.py").write_text(
+    _track(
+        root,
+        "emit.py",
         "import pathlib\n"
         "out = pathlib.Path('out')\n"
         "out.mkdir(parents=True, exist_ok=True)\n"
         f"(out / 'artifact.json').write_bytes({_ARTIFACT_BYTES!r})\n",
-        encoding="utf-8",
     )
     data = _dump(root / _RECEIPT_REL, _lane_receipt())
     assert verify_receipt_file(root / _RECEIPT_REL)["valid"], "fixture receipt must verify"
@@ -283,13 +292,14 @@ def test_unsealed_carrier_never_executes(tmp_path: Path) -> None:
 
 
 def _failing_proof(root: Path) -> dict[str, Any]:
+    _track(root, "exit3.py", "import sys; sys.exit(3)\n")
     lane = {
         "kind": "demo.v1",
         "research_only": True,
         "live_pnl_claim": False,
         "data_label": "SYNTHETIC",
         "replay": {
-            "argv": [sys.executable, "-c", "import sys; sys.exit(3)"],
+            "argv": ["exit3.py"],
             "artifacts": [{"path": _ARTIFACT_REL, "sha256": _sha(_ARTIFACT_BYTES)}],
         },
     }

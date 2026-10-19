@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import subprocess
 import tempfile
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -249,6 +250,10 @@ def _write_lane(lab: Lab, data: bytes) -> Path:
     """A deterministic lane script regenerating r3 + a sealed carrier binding it."""
     script = _EMIT_TEMPLATE.replace("BODY", repr(json.dumps(_lane_body("r3.json"))))
     (lab.root / "emit_r3.py").write_text(script, encoding="utf-8")
+    # Replay runs tracked code only: index the lane script as a checkout would.
+    if not (lab.root / ".git").exists():
+        subprocess.run(["git", "init", "-q"], cwd=lab.root, check=True)
+    subprocess.run(["git", "add", "--", "emit_r3.py"], cwd=lab.root, check=True)
     carrier = seal_receipt(
         {
             "schema": "replay_manifest.v1",
