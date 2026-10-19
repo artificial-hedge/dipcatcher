@@ -8,6 +8,7 @@ Sortino, Calmar, and NAV tokens are rejected everywhere.
 from __future__ import annotations
 
 from quant_fund.research.catalog.constants import FORBIDDEN_RESEARCH_METRIC_KEYS
+from quant_fund.utils.forbidden_research_keys import mapping_key_forbidden
 
 
 def _keys(obj: object) -> list[str]:
@@ -27,7 +28,6 @@ def diagnostic_keys_ok(payload: object) -> bool:
     for key in _keys(payload):
         if key == "live_pnl_claim":
             continue
-        parts = key.lower().replace("-", "_").split("_")
-        if any(part in FORBIDDEN_RESEARCH_METRIC_KEYS for part in parts if part):
+        if mapping_key_forbidden(key, FORBIDDEN_RESEARCH_METRIC_KEYS):
             return False
     return True

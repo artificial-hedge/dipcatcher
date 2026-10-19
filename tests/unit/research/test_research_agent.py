@@ -305,6 +305,9 @@ def test_family_blob_rejects_forbidden_metric_keys() -> None:
     assert family_blob_forbidden_metrics_absent({"calmar_diagnostic": 0.5}) is False
     assert family_blob_forbidden_metrics_absent({"mean_nav": 1e6}) is False
     assert family_blob_forbidden_metrics_absent({"outer": {"inner_sortino": 0.2}}) is False
+    assert family_blob_forbidden_metrics_absent({"sharpeRatio": 1.0}) is False
+    assert family_blob_forbidden_metrics_absent({"totalPnl": 100.0}) is False
+    assert family_blob_forbidden_metrics_absent({"unrealizedpnl": -1.0}) is False
     # value text alone must not trip key scanner (keys only)
     assert family_blob_forbidden_metrics_absent({"note": "sharpe is forbidden"}) is True
 

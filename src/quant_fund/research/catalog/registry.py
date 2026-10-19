@@ -13196,14 +13196,15 @@ def family_blob_forbidden_metrics_absent(payload: object) -> bool:
     other receipts carry it nested (e.g. a tournament manifest quoting its
     benchmark manifest); a true or malformed nested flag must fail closed too.
     """
+    from quant_fund.utils.forbidden_research_keys import mapping_key_forbidden
+
     if isinstance(payload, dict):
         for key, value in payload.items():
             if key == "live_pnl_claim":
                 if value is not False:
                     return False
                 continue
-            parts = str(key).lower().replace("-", "_").split("_")
-            if any(tok in FORBIDDEN_RESEARCH_METRIC_KEYS for tok in parts if tok):
+            if mapping_key_forbidden(str(key), FORBIDDEN_RESEARCH_METRIC_KEYS):
                 return False
             if not family_blob_forbidden_metrics_absent(value):
                 return False
