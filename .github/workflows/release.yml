@@ -34,29 +34,16 @@ jobs:
       actions: read
       contents: read
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Fail closed unless CI and evidence-audit succeeded on this commit
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          sha="${GITHUB_SHA}"
-          repo="${GITHUB_REPOSITORY}"
-          success_runs=$(gh api "/repos/${repo}/actions/workflows/ci.yml/runs" \
-            -f "head_sha=${sha}" -f per_page=20 -f status=completed \
-            --jq '[.workflow_runs[] | select(.conclusion == "success")]')
-          count=$(printf '%s' "${success_runs}" | jq 'length')
-          if [ "${count}" -lt 1 ]; then
-            echo "no successful CI workflow run for tagged commit ${sha}" >&2
-            exit 1
-          fi
-          run_id=$(printf '%s' "${success_runs}" | jq -r 'sort_by(.created_at) | reverse | .[0].id')
-          evidence_ok=$(gh api "/repos/${repo}/actions/runs/${run_id}/jobs" --paginate \
-            --jq '[.jobs[] | select(.name == "evidence-audit" and .conclusion == "success")] | length')
-          if [ "${evidence_ok}" -lt 1 ]; then
-            echo "evidence-audit did not succeed on CI run ${run_id} for ${sha}" >&2
-            exit 1
-          fi
-          echo "CI run ${run_id} is green with evidence-audit on ${sha}"
+          python3 scripts/require_release_gates.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --sha "${GITHUB_SHA}"
 
   build:
     needs: preflight
