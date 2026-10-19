@@ -80,11 +80,13 @@ def test_explicit_live_claim_overrides_research_only_claim(tmp_path: Path):
 
 
 def test_build_corpus_refuses_quarantined_and_rejected_receipts(tmp_path: Path):
-    quarantined = tmp_path / "legacy-unsealed"
+    receipts = tmp_path / "receipts"
+    receipts.mkdir()
+    quarantined = receipts / "legacy-unsealed"
     quarantined.mkdir()
     _write_receipt(quarantined / "pinned.json", research_only=True, live_pnl_claim=False)
-    _write_receipt(tmp_path / "admitted.json", research_only=True, live_pnl_claim=False)
-    _write_receipt(tmp_path / "reject.json", research_only=True, live_pnl_claim=True)
+    _write_receipt(receipts / "admitted.json", research_only=True, live_pnl_claim=False)
+    _write_receipt(receipts / "reject.json", research_only=True, live_pnl_claim=True)
     digest = hashlib.sha256((quarantined / "pinned.json").read_bytes()).hexdigest()
     registry = {
         "schema": "legacy_quarantine.v2",
@@ -100,7 +102,7 @@ def test_build_corpus_refuses_quarantined_and_rejected_receipts(tmp_path: Path):
     }
     (tmp_path / "quality").mkdir()
     (tmp_path / "quality" / "legacy_quarantine.json").write_text(json.dumps(registry))
-    stats = build_corpus(tmp_path, tmp_path / "corpus.jsonl", repo_root=tmp_path)
+    stats = build_corpus(receipts, tmp_path / "corpus.jsonl", repo_root=tmp_path)
     assert stats["refused"] == 2 and stats["loaded"] == 1
 
 

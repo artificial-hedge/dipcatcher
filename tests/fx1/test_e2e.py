@@ -53,7 +53,14 @@ def test_full_lifecycle(tmp_path: Path, monkeypatch):
         )
     )
     (receipts / "r2.json").write_text(
-        json.dumps({"schema": "bench/v1", "research_only": False, "live_pnl_claim": True})
+        json.dumps(
+            {
+                "schema_version": 1,
+                "synthetic": True,
+                "disclaimer": "SYNTHETIC",
+                "correctness": {"crps": 0.5},
+            }
+        )
     )
     corpus_path = tmp_path / "corpus.jsonl"
     stats = build_corpus(receipts, corpus_path)

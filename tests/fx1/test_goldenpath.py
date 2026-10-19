@@ -104,7 +104,7 @@ def test_weights_direct_checkpoint_loads_and_serves(tmp_path: Path) -> None:
     from fx1.honesty import validate_fx1_output
     from fx1.serve.local_engine import LocalWeightsEngine
 
-    engine = LocalWeightsEngine(_CKPT)
+    engine = LocalWeightsEngine(_CKPT, enforce_ship_gate=False)
     assert engine.served_model == "fx-1.v0.1"
     msgs = [{"role": "user", "content": "weights-direct-ping"}]
     a = engine.complete_messages(msgs)

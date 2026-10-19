@@ -423,7 +423,10 @@ def _weights_direct_leg(legs: _Legs, ckpt_dir: Path | None, weight_hits: list[st
     try:
         from fx1.serve.local_engine import LocalWeightsEngine  # noqa: PLC0415
 
-        engine = LocalWeightsEngine(ckpt_dir)
+        engine = LocalWeightsEngine(
+            ckpt_dir,
+            enforce_ship_gate=False,
+        )  # fixture tiny-LM card uses placeholder eval_delta
         prompt = [{"role": "user", "content": "weights-direct-ping"}]
         first = engine.complete_messages(prompt)
         second = engine.complete_messages(prompt)
