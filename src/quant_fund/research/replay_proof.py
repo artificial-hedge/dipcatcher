@@ -396,13 +396,16 @@ _REPLAY_ENV_KEEP = (
 )
 
 
-def _replay_child_env(root_path: Path) -> dict[str, str]:
+def _replay_child_env(root_path: Path, *, run_cwd: Path) -> dict[str, str]:
     """Environment for the lane subprocess.
 
     Start from an allowlist instead of the parent environment. A denylist
     leaves ``CI``, ``GITHUB_*``, Hypothesis, and whatever a previous test
     exported, and those are enough to make a content-addressed artifact
     miss the pinned filename while the process still exits 0.
+
+    Temp files are pinned under ``run_cwd/.replay_lane_tmp`` so a shared
+    runner ``TMPDIR`` cannot leak state between lanes or tests.
     """
     env = {key: os.environ[key] for key in _REPLAY_ENV_KEEP if key in os.environ}
     env.update(
@@ -418,6 +421,12 @@ def _replay_child_env(root_path: Path) -> dict[str, str]:
             "PYTHONSAFEPATH": "1",
         }
     )
+    lane_tmp = run_cwd / ".replay_lane_tmp"
+    lane_tmp.mkdir(parents=True, exist_ok=True)
+    lane_tmp_s = str(lane_tmp)
+    env["TMPDIR"] = lane_tmp_s
+    env["TEMP"] = lane_tmp_s
+    env["TMP"] = lane_tmp_s
     # Prefer the root's src/, else this process's own quant_fund source tree,
     # so the child never imports an unrelated installed package.
     src_dir = root_path / "src"
@@ -473,7 +482,7 @@ def run_replay(
     except (OSError, UnicodeError, json.JSONDecodeError):
         source_receipt_seal = None
 
-    env = _replay_child_env(root_path)
+    env = _replay_child_env(root_path, run_cwd=run_cwd)
 
     # Input binding: declared tapes verify BEFORE argv runs — a drifted or
     # missing input means the replay could never reproduce the receipt, so

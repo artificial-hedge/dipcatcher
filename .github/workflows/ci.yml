@@ -764,6 +764,22 @@ jobs:
       - name: Replay carriers (byte-exact artifact reproduction)
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: make replay-sweep
+      - name: Upload replay sweep evidence
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: evidence-replay-sweep
+          path: |
+            ${{ runner.temp }}/replay_coverage.json
+            data/metadata/replay/
+          if-no-files-found: error
+      - name: Upload evidence bundle manifest (audit trail)
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: evidence-bundle-manifest
+          path: ${{ runner.temp }}/evidence-bundle/BUNDLE.json
+          if-no-files-found: warn
 
   pretrade-risk:
     runs-on: ubuntu-latest

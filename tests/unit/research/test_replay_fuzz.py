@@ -13,6 +13,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from quant_fund.research.replay_proof import run_replay
 
 
@@ -142,6 +144,35 @@ def test_nonzero_exit_fails(tmp_path: Path) -> None:
     body = _replay(tmp_path, argv=[sys.executable, "die.py"])
     assert body["verdict"] == "fail"
     assert body["exit_code"] == 3
+
+
+def test_replay_lane_tmpdir_is_under_run_cwd(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Lane children must not inherit the runner-global TMPDIR."""
+    foreign_tmp = tmp_path / "foreign_tmp"
+    foreign_tmp.mkdir()
+    monkeypatch.setenv("TMPDIR", str(foreign_tmp))
+    lane = tmp_path / "lane_cwd"
+    lane.mkdir()
+    (lane / "emit_tmp.py").write_text(
+        "import json, os\n"
+        "from pathlib import Path\n"
+        "p = Path('out')\n"
+        "p.mkdir(parents=True, exist_ok=True)\n"
+        "(p / 'artifact.json').write_text(json.dumps({'tmpdir': os.environ['TMPDIR']}), encoding='utf-8')\n"
+    )
+    artifact_path = lane / "out" / "artifact.json"
+    body = _replay(
+        tmp_path,
+        argv=[sys.executable, "emit_tmp.py"],
+        cwd="lane_cwd",
+        artifacts=[{"path": "out/artifact.json", "sha256": "00" * 32}],
+    )
+    assert body["exit_code"] == 0
+    observed = json.loads(artifact_path.read_text())
+    assert observed["tmpdir"].endswith("lane_cwd/.replay_lane_tmp")
+    assert observed["tmpdir"] != str(foreign_tmp)
 
 
 def test_clean_replay_passes_control(tmp_path: Path) -> None:
