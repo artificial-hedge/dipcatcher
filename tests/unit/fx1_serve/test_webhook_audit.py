@@ -41,9 +41,7 @@ def test_receipt_deterministic() -> None:
     if a["receipt_sha256"] != b["receipt_sha256"]:
         flipped = {
             k: (a["claim"]["results"].get(k), b["claim"]["results"].get(k))
-            for k in sorted(
-                set(a["claim"]["results"]) | set(b["claim"]["results"])
-            )
+            for k in sorted(set(a["claim"]["results"]) | set(b["claim"]["results"]))
             if a["claim"]["results"].get(k) != b["claim"]["results"].get(k)
         }
         a = webhook_audit_bench(clock=_frozen_clock)

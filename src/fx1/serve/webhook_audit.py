@@ -461,12 +461,8 @@ def _probe_signature(ctx: _Ctx) -> dict[str, bool]:
     out["sig_recomputed_matches"] = bool(sig) and hmac_mod.compare_digest(recomputed, sig or "")
     now = _wall_time()
     out["sig_verifies_at_sink"] = verify_webhook(_SECRET, ts, sig, hit.body, now=now)
-    out["sig_wrong_secret_fails"] = not verify_webhook(
-        "whsec-other", ts, sig, hit.body, now=now
-    )
-    out["sig_covers_body"] = not verify_webhook(
-        _SECRET, ts, sig, hit.body + b" ", now=now
-    )
+    out["sig_wrong_secret_fails"] = not verify_webhook("whsec-other", ts, sig, hit.body, now=now)
+    out["sig_covers_body"] = not verify_webhook(_SECRET, ts, sig, hit.body + b" ", now=now)
     out["sig_covers_timestamp"] = not verify_webhook(
         _SECRET, str(int(ts or "0") + 1) if ts else None, sig, hit.body, now=now
     )
