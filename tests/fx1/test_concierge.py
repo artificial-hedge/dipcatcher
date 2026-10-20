@@ -109,7 +109,9 @@ class FakeResearcher:
         queries: Any = None,
         cancel_event: threading.Event | None = None,
         on_progress: Any = None,
+        **kwargs: Any,
     ) -> ResearchReport:
+        del kwargs
         self.goals.append(goal)
         if on_progress is not None:
             from fx1.webresearch.engine import ResearchProgress
