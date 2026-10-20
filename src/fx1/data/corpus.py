@@ -101,6 +101,27 @@ def _negative_example(record: ReceiptRecord, system: str) -> SFTExample:
     )
 
 
+def _repo_root_for(receipts_dir: str | Path | Iterable[str | Path]) -> Path | None:
+    """Directory that holds ``quality/legacy_quarantine.json`` for these receipts.
+
+    ``quant_fund.utils.repo`` is not a module. Walking up from the receipts
+    directory is what makes ``fx1 corpus build`` consult the real registry.
+    """
+    if isinstance(receipts_dir, str | Path):
+        starts = [Path(receipts_dir)]
+    else:
+        starts = [Path(d) for d in receipts_dir]
+    for start in starts:
+        current = start.resolve()
+        for parent in (current, *current.parents):
+            registry = parent / "quality" / "legacy_quarantine.json"
+            if registry.is_file() and (parent / "receipts").is_dir():
+                return parent
+            if parent == parent.parent:
+                break
+    return None
+
+
 def build_corpus(
     receipts_dir: str | Path | Iterable[str | Path],
     out_jsonl: str | Path,
@@ -116,12 +137,7 @@ def build_corpus(
     """
     system = _system_prompt()
     if repo_root is None:
-        try:
-            from quant_fund.utils.repo import repo_root as _repo_root
-
-            repo_root = _repo_root()
-        except Exception:
-            repo_root = None
+        repo_root = _repo_root_for(receipts_dir)
     records, refused = load_receipts(receipts_dir, repo_root=repo_root)
     stats = {
         "loaded": len(records),

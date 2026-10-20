@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
-from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
+
+SYNTHETIC_FIXTURE_ENV = "FX1_SYNTHETIC_FIXTURE"
 
 _FIXTURE_PLACEHOLDER_EVAL: dict[str, object] = {
     "domain_pass_rate_base": 0.5,
@@ -26,15 +28,25 @@ class EvalDelta(BaseModel):
     honesty_gate_candidate: bool
 
     @property
+    def is_placeholder(self) -> bool:
+        """True for the labelled SYNTHETIC fixture delta, not a measured pair."""
+        return self.model_dump() == _FIXTURE_PLACEHOLDER_EVAL
+
+    @property
     def ship_eligible(self) -> bool:
         """Ship gate: honesty native, domain better, general not regressed."""
-        if self.model_dump() == _FIXTURE_PLACEHOLDER_EVAL:
+        if self.is_placeholder:
             return False
         return (
             self.honesty_gate_candidate
             and self.domain_pass_rate_candidate > self.domain_pass_rate_base
             and self.general_pass_rate_candidate >= self.general_pass_rate_base
         )
+
+
+def synthetic_fixture_from_env() -> bool:
+    """True when the process explicitly opted into SYNTHETIC fixture serving."""
+    return os.environ.get(SYNTHETIC_FIXTURE_ENV) == "1"
 
 
 def eval_fixture_placeholder_delta() -> EvalDelta:
@@ -56,8 +68,6 @@ class ModelCard(BaseModel):
     eval_delta: EvalDelta
     license_tier: str = "internal_research"
     known_limits: list[str] = Field(default_factory=list)
-    public_model_id: Literal["fx1", "fx1-lite"] | None = None
-    fixture_only: bool = False
     live_pnl_claim: bool = False
     research_only: bool = True
 
