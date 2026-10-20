@@ -5,7 +5,6 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from fx1.cli import app
 from fx1.doctor import collect_status
 
 
@@ -51,6 +50,8 @@ def test_doctor_never_echoes_secret_values(monkeypatch, tmp_path: Path) -> None:
 
 
 def test_doctor_cli_json(tmp_path: Path) -> None:
+    from fx1.cli import app
+
     result = CliRunner().invoke(app, ["doctor", "--root", str(tmp_path)])
     assert result.exit_code == 0
     status = json.loads(result.stdout)
