@@ -46,6 +46,7 @@ from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.budget import BudgetExceeded
 from fx1.interactive.contracts import CapabilityCatalog
 from fx1.interactive.endpoint import OperationCancelled
+from fx1.interactive.evidence_ledger import EvidenceLedger, Verdict, extract_receipt_paths
 from fx1.interactive.families import (
     FamilyCatalog,
     FamilySelection,
@@ -53,6 +54,7 @@ from fx1.interactive.families import (
     resolve_families,
 )
 from fx1.interactive.planner import DatasetRef, PlanStep
+from fx1.interactive.run_report import answer_notes, compose_run_answer
 from fx1.interactive.surface_seal import build_surface_seal
 from fx1.interactive.trigger_lexicon import GoalFold, TriggerLexicon
 from fx1.interactive.workflow import (
@@ -700,6 +702,9 @@ class SuperpowerResult:
     errors: list[str] = field(default_factory=list)
     cancelled: bool = False
     budget_snapshot: dict[str, Any] | None = None
+    evidence: dict[str, Any] | None = None
+    status: str = ""
+    run_id: str = ""
 
     @property
     def partial(self) -> bool:
@@ -764,6 +769,58 @@ class SuperpowerContext:
     journal: Any | None = None
     job_id: str = ""
     catalog: FamilyCatalog | None = None
+    evidence: EvidenceLedger | None = field(default=None, repr=False, compare=False)
+    run_dir: Path | None = None
+    _run_evidence: _RunEvidence | None = field(default=None, repr=False, compare=False)
+
+
+@dataclass
+class _RunEvidence:
+    ledger: EvidenceLedger
+    verified_paths: set[str] = field(default_factory=set)
+    artifact_paths: set[str] = field(default_factory=set)
+
+
+def _ledger_roots(ctx: SuperpowerContext) -> list[Path]:
+    if ctx.run_dir is not None:
+        return [ctx.run_dir]
+    from quant_fund.audit.kernel_lineage import default_repo_root
+
+    return [default_repo_root()]
+
+
+def _capture_harness_ledger(
+    ctx: SuperpowerContext,
+    sink: _RunEvidence,
+    cap_id: str,
+    stdout: str,
+) -> None:
+    roots = _ledger_roots(ctx)
+    for token in extract_receipt_paths(stdout):
+        item = sink.ledger.add_receipt(token, roots=roots, step=cap_id)
+        sink.artifact_paths.add(token)
+        if item.verdict is Verdict.VERIFIED:
+            sink.verified_paths.add(token)
+
+
+def _compose_user_answer(
+    result: SuperpowerResult,
+    plan: SuperpowerPlan,
+    sink: _RunEvidence,
+    draft: str,
+) -> None:
+    notes = answer_notes(plan.notes, plan.orchestration_exclusions)
+    composed = compose_run_answer(
+        draft,
+        sink.ledger,
+        notes=notes,
+        verified_paths=set(sink.verified_paths),
+        artifact_paths=set(sink.artifact_paths),
+    )
+    result.summary = composed.summary
+    result.honesty_violation = composed.honesty_violation
+    result.status = "withheld" if composed.honesty_violation else composed.status
+    result.evidence = sink.ledger.to_dict()
 
 
 def _evidence_count(evidence: Mapping[str, Any]) -> int | None:
@@ -1023,6 +1080,12 @@ def _dispatch_stage(
 
 def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
     """Coordinate the plan in dependency order: memory → web → harness → save → synthesis."""
+    if plan.typed_steps:
+        from fx1.interactive.orchestration import execute_superpower
+
+        return execute_superpower(plan, ctx)
+    ledger = ctx.evidence if ctx.evidence is not None else EvidenceLedger()
+    ctx._run_evidence = _RunEvidence(ledger)
     result = SuperpowerResult(goal=plan.goal, plan=plan)
     selected = list(dict.fromkeys(plan.ids()))
     cancelled = _cancelled(ctx)
@@ -1334,6 +1397,38 @@ def _harness_admitted(
     return True
 
 
+def _harness_status_line(
+    outcome: _HarnessOutcome,
+    cap_id: str,
+    result: SuperpowerResult,
+    code: int,
+    detail: str,
+) -> tuple[str, str]:
+    if outcome.cancelled:
+        result.cancelled = True
+        return "cancelled", f"stopped by operator (exit {code}); {detail}"
+    if outcome.timed_out:
+        result.errors.append(f"{cap_id}: timed out")
+        return "failed", f"deadline reached before completion (exit {code}); {detail}"
+    return ("ran" if code == 0 else "failed"), detail
+
+
+def _append_harness_chunk(
+    cap_id: str,
+    code: int,
+    stdout: str,
+    ctx: SuperpowerContext,
+    parts: list[str],
+    parts_lock: threading.Lock | None,
+) -> None:
+    chunk = f"# harness {cap_id} (exit {code})\n{stdout[-ctx.max_stdout_chars :]}"
+    if parts_lock is None:
+        parts.append(chunk)
+        return
+    with parts_lock:
+        parts.append(chunk)
+
+
 def _stage_harness(
     cap_id: str,
     meta: dict[str, Any],
@@ -1379,20 +1474,8 @@ def _stage_harness(
     detail = _harness_detail(stdout, outcome.stderr)
     if labels:
         detail = f"{labels}; {detail}"
-    if outcome.cancelled:
-        result.cancelled = True
-        status, detail = "cancelled", f"stopped by operator (exit {code}); {detail}"
-    elif outcome.timed_out:
-        status, detail = "failed", f"deadline reached before completion (exit {code}); {detail}"
-        result.errors.append(f"{cap_id}: timed out")
-    else:
-        status = "ran" if code == 0 else "failed"
-    chunk = f"# harness {cap_id} (exit {code})\n{stdout[-ctx.max_stdout_chars :]}"
-    if parts_lock is None:
-        parts.append(chunk)
-    else:
-        with parts_lock:
-            parts.append(chunk)
+    status, detail = _harness_status_line(outcome, cap_id, result, code, detail)
+    _append_harness_chunk(cap_id, code, stdout, ctx, parts, parts_lock)
     evidence = (
         _harness_evidence(cap_id, code, labels, stdout) if status == "ran" else EvidenceClass.NONE
     )
@@ -1405,6 +1488,9 @@ def _stage_harness(
         exit_code=code,
         duration_s=outcome.duration_s,
     )
+    sink = ctx._run_evidence
+    if status == "ran" and sink is not None:
+        _capture_harness_ledger(ctx, sink, cap_id, stdout)
     _record_locked(result, ctx, run, runs_lock)
 
 
@@ -1451,9 +1537,18 @@ def _stage_flash_save(
 
 
 def _deterministic_synthesis(
-    result: SuperpowerResult, ctx: SuperpowerContext, status: str, detail: str
+    result: SuperpowerResult,
+    ctx: SuperpowerContext,
+    plan: SuperpowerPlan,
+    status: str,
+    detail: str,
 ) -> None:
-    result.summary = _offline_summary(result)
+    draft = _offline_summary(result)
+    sink = ctx._run_evidence
+    if sink is not None:
+        _compose_user_answer(result, plan, sink, draft)
+    else:
+        result.summary = draft
     _record(
         result,
         ctx,
@@ -1476,16 +1571,24 @@ def _prepare_synthesis(
             parts.append(block)
     if _cancelled(ctx):
         result.cancelled = True
-        _deterministic_synthesis(result, ctx, "cancelled", "model synthesis cancelled")
+        _deterministic_synthesis(result, ctx, plan, "cancelled", "model synthesis cancelled")
         return False
     if ctx.model_fn is None:
         _deterministic_synthesis(
-            result, ctx, "ran", "no model endpoint available — offline summary of collected results"
+            result,
+            ctx,
+            plan,
+            "ran",
+            "no model endpoint available — offline summary of collected results",
         )
         return False
     if (reason := _check_budget(ctx, result)) is not None:
         _deterministic_synthesis(
-            result, ctx, "budget-exceeded", f"{reason}; deterministic summary emitted instead"
+            result,
+            ctx,
+            plan,
+            "budget-exceeded",
+            f"{reason}; deterministic summary emitted instead",
         )
         return False
     return True
@@ -1508,15 +1611,20 @@ def _stage_synthesis(
         validate_fx1_output(answer)
     except OperationCancelled:
         result.cancelled = True
-        _deterministic_synthesis(result, ctx, "cancelled", "model synthesis cancelled")
+        _deterministic_synthesis(result, ctx, plan, "cancelled", "model synthesis cancelled")
         return
     except Fx1HonestyError as exc:
         result.honesty_violation = str(exc)
-        result.summary = (
+        draft = (
             "synthesis withheld by the fx-1 honesty gate "
             f"({result.honesty_violation}). Raw capability outputs are "
             "reported above; no violating text was emitted."
         )
+        sink = ctx._run_evidence
+        if sink is not None:
+            _compose_user_answer(result, plan, sink, draft)
+        else:
+            result.summary = draft
         _record(
             result,
             ctx,
@@ -1526,15 +1634,28 @@ def _stage_synthesis(
     except BudgetExceeded as exc:
         result.errors.append(str(exc))
         _deterministic_synthesis(
-            result, ctx, "budget-exceeded", f"{exc}; deterministic summary emitted instead"
+            result,
+            ctx,
+            plan,
+            "budget-exceeded",
+            f"{exc}; deterministic summary emitted instead",
         )
         return
     except Exception as exc:  # noqa: BLE001
         result.errors.append(f"synthesize: {exc}")
-        result.summary = _offline_summary(result)
+        draft = _offline_summary(result)
+        sink = ctx._run_evidence
+        if sink is not None:
+            _compose_user_answer(result, plan, sink, draft)
+        else:
+            result.summary = draft
         _record(result, ctx, CapabilityRun("synthesize", "synthesis", "failed", str(exc)))
         return
-    result.summary = answer
+    sink = ctx._run_evidence
+    if sink is not None:
+        _compose_user_answer(result, plan, sink, answer)
+    else:
+        result.summary = answer
     _record(
         result,
         ctx,

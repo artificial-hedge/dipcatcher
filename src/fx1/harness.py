@@ -646,6 +646,32 @@ def _run_subprocess(
     )
 
 
+def popen_cancellable(
+    argv: list[str],
+    timeout_s: int,
+    cancel_event: threading.Event | None = None,
+) -> tuple[int, str, str]:
+    """Run a full argv until exit, timeout, or cancel (compatibility wrapper).
+
+    Backed by the owned runner: own process group, bounded output, whole-tree
+    termination. Cancel returns ``(130, stdout, stderr + "cancelled")``; a
+    deadline raises ``subprocess.TimeoutExpired`` like ``subprocess.run``.
+    """
+    from fx1.interactive.procs import ProcLimits, run_owned, scrub_env
+
+    result = run_owned(
+        [str(part) for part in argv],
+        ProcLimits(timeout_s=float(timeout_s)),
+        env=scrub_env(os.environ),
+        cancel_event=cancel_event,
+    )
+    if result.timed_out:
+        raise subprocess.TimeoutExpired(argv, timeout_s, output=result.stdout, stderr=result.stderr)
+    if result.cancelled:
+        return 130, result.stdout, f"{result.stderr}\ncancelled".strip()
+    return result.exit_code, result.stdout, result.stderr
+
+
 def make_subprocess_runner(
     executable: str = "dipcatcher",
     *,
