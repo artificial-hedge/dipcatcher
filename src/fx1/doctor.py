@@ -4,7 +4,8 @@ Mirrors the harness-side ``dipcatcher doctor``: presence flags only,
 never secret values. Informational — nothing here hard-fails; missing
 pieces are reported so an operator can fix the environment.
 
-Distribution lineage delegates to ``quant_fund.research.crown_jewels``
+Distribution lineage calls ``quant_fund.utils.distribution_lineage``,
+which runs ``quant_fund.research.crown_jewels.distribution_lineage_digest``
 (the same library gate as ``dipcatcher crown-jewels``).
 """
 
@@ -79,7 +80,7 @@ def collect_status(root: Path | None = None) -> dict[str, object]:
     except Exception:  # noqa: BLE001 — doctor reports, never hard-fails
         status["eval_bank_tasks"] = "unavailable"
     try:
-        from quant_fund.research.crown_jewels import distribution_lineage_digest
+        from quant_fund.utils.distribution_lineage import distribution_lineage_digest
 
         lineage = distribution_lineage_digest(root)
         status["distribution_lineage"] = lineage["digest"]

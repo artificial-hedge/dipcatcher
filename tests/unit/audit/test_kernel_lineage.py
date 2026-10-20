@@ -104,6 +104,18 @@ def test_symlink_member_is_refused(tmp_path: Path) -> None:
         seal_kernel_lineage(root)
 
 
+def test_utils_default_repo_root_delegates_to_the_audit_library(monkeypatch) -> None:
+    sentinel = Path("/tmp/kernel-lineage-root")
+
+    def _fake() -> Path:
+        return sentinel
+
+    monkeypatch.setattr("quant_fund.audit.kernel_lineage.default_repo_root", _fake)
+    from quant_fund.utils.kernel_lineage import default_repo_root
+
+    assert default_repo_root() == sentinel
+
+
 def test_receipt_hash_catches_a_rewritten_interpretation(tmp_path: Path) -> None:
     root = _stage(tmp_path)
     seal = seal_kernel_lineage(root)

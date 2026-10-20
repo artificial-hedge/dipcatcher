@@ -821,7 +821,7 @@ class _RunEvidence:
 def _ledger_roots(ctx: SuperpowerContext) -> list[Path]:
     if ctx.run_dir is not None:
         return [ctx.run_dir]
-    from quant_fund.audit.kernel_lineage import default_repo_root
+    from quant_fund.utils.kernel_lineage import default_repo_root
 
     return [default_repo_root()]
 

@@ -27,6 +27,7 @@ from fx1.interactive.superpower import (
     SuperpowerContext,
     SuperpowerPlan,
     SuperpowerResult,
+    _ledger_roots,
     describe_capabilities,
     parse_family_selection,
     plan_goal,
@@ -1022,6 +1023,16 @@ def test_family_surface_failure_does_not_run_the_full_catalog(store: FlashStore)
     assert plan.families == []
     assert harness.calls == []
     assert any(run.id == "research" and run.status == "skipped" for run in result.runs)
+
+
+def test_ledger_roots_without_run_dir_use_kernel_lineage_root(monkeypatch) -> None:
+    sentinel = Path("/tmp/superpower-kernel-root")
+
+    def _fake() -> Path:
+        return sentinel
+
+    monkeypatch.setattr("quant_fund.audit.kernel_lineage.default_repo_root", _fake)
+    assert _ledger_roots(SuperpowerContext()) == [sentinel]
 
 
 def test_ineligible_family_payload_is_refused() -> None:

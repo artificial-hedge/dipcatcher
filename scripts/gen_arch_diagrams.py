@@ -805,6 +805,9 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.doctor", "quant_fund.utils.hashing"),
         ("fx1.doctor_audit", "quant_fund.utils.hashing"),
         ("fx1.interactive.surface_seal", "quant_fund.utils.hashing"),
+        # /superpower receipt roots: kernel_lineage.default_repo_root via the
+        # utils leaf so fx1 stays inside the harness-surface allowlist.
+        ("fx1.interactive.superpower", "quant_fund.utils.kernel_lineage"),
         ("fx1.doctor_audit", "quant_fund.utils.reproducibility"),
         ("fx1.eval.bank_audit", "quant_fund.utils.hashing"),
         ("fx1.eval.bank_audit", "quant_fund.utils.reproducibility"),
