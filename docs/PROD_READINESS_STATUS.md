@@ -1,6 +1,6 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `48c79ce44` (2026-10-20 UTC). Prior integrator close-out: `a1e266414`.  
+**Measured at:** `origin/main` `8a59e26d8` (2026-10-20 UTC). Prior doc: `9af260100`. Harness/superpower fix: `46a3fb91e`.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. **Not production-ready** until every exit line is **green** on a completed CI run of `main`, or **parked** under human-only items below.
 
@@ -17,6 +17,8 @@
 | FX-1A | `9a76eb4af` | Corpus quarantine refuse (9 SFT pins); lexical P&L/NAV guards; doctor crown-jewels; ship gate / `--fixture` SYNTHETIC; fx1 coverage floor **90** (91.19% − 1pp documented) — **`make fx1-coverage` not re-run** at land. **130** targeted honesty tests passed. |
 | HX-5D | `e7ebe13d9` | **HX-5D-1** stateful Hypothesis collects/passes `-n 4`. **HX-5D-2** Numba / TZ / `LC_ALL` isolation + guarded env test. **HX-5D-3** `OPENBLAS_CORETYPE` pin + cross-kernel threshold test. **HX-5D-4** webhook audit injected clock; wall-clock timing gates removed from probes — **park:** occasional `receipt_sha256` mismatch on executor races. **HX-5D-5** `slow` marker registered; `pytest --strict-markers --collect-only` exit 0. |
 | Leftovers | `48c79ce44` | Interactive import/planning repair: `ruff check src/fx1/interactive` **clean**; `test_research_banner` collects/passes (`_echo_synthetic_marker` export restored). |
+| Leftovers | `46a3fb91e` | `popen_cancellable` restored on `fx1.harness`; `test_harness_cancel` collects/passes. Family selector summary includes **Evidence (harness-verified)**; superpower test **passed**. |
+| Leftovers | `8a59e26d8` | `quant_fund/research/` McCabe **clean** (refactor splits); `quality/mccabe_baseline.txt` entries **lowered/removed only** — not raised. |
 
 **mcs_vol epoch stamp:** satisfied in `d0b9d45cd` (`scripts/*` through `b5f1f6d11`). **No restamp** this pass. `needs-stamp:` on `b34527e55` for `docs/UNGATED_EPOCH_ACKS.md` / `docs/PROPOSED_EVIDENCE_CHAINS.md` — **not stamped** (do-not-stamp guidance; manifests chain remains proposal).
 
@@ -24,13 +26,13 @@ Supporting lists: [`D1_02_EPOCH_ACK_INVENTORY.md`](D1_02_EPOCH_ACK_INVENTORY.md)
 
 ## Remaining code follow-ups (agent-owned, not H1–H7)
 
-These are real on clean `main` at `48c79ce44`; fixing them is engineering work, not owner key ceremony.
+These are real on clean `main` at `8a59e26d8`; fixing them is engineering work, not owner key ceremony.
 
 | Area | Status | Command / note |
 |---|---|---|
-| **Lint** | **RED** | `make lint` still fails **McCabe baseline drift** under `quant_fund/research/` — **do not raise baseline**. Interactive **F821 cleared** (`ruff check src/fx1/interactive` clean at `48c79ce44`). |
-| **Pytest collection** | **PARTIAL** | `test_research_banner` **fixed** at `48c79ce44`. Full `pytest tests -k …` still has **other** collection errors (e.g. `tests/fx1/test_harness_cancel.py`: missing `popen_cancellable` on `fx1.harness`). |
-| **Superpower tests** | **RED** | `test_superpower` family selector: summary missing **Evidence (harness-verified)** (harness-verified expectation). |
+| **Lint (McCabe)** | **RED** | `quant_fund/research/` **clean** at `8a59e26d8`. Repo-wide `make lint` still **RED**: `superpower._stage_web_research` **+10** new complexity; `webresearch.Researcher.run` **15>14**; `ops_cmds` `sim_live` **13>10**; `pipeline.doctor` **16>15**; plus canonical-form nag / stale pins in `fx1/flash`, `fx1/serve`. **Do not raise baseline** — refactor or lower pins only. |
+| **Pytest** | **PARTIAL** | `test_harness_cancel` + superpower Evidence summary **green** (`46a3fb91e`). **Pre-existing fail:** `tests/unit/research/test_replay_binding.py::test_contract_still_accepts_legacy_bodies`. |
+| **Interactive ruff** | **GREEN** | `ruff check src/fx1/interactive` clean (since `48c79ce44`). |
 | **Crown jewels** | **RED** | `uv run quant crown-jewels --check` → `jewel_mutated` (e.g. `AGENTS.md`, `Makefile`, `pyproject.toml`, `corpus_epoch.py`, `repo_integrity.py`, `tests/conftest.py`, …) + `jewel_unpinned` ed25519 helpers. |
 | **Epoch chains** | **RED** | `verify-repo` epoch forks/multiple heads on `src`/`tests`/`docs`; digest drift on `scripts`, `quality`, `.github/workflows`; unstamped scripts/docs members. Needs integrator stamp pass **after** H1 or coordinated re-pin — **not done here**. |
 | **Coverage closure** | **RED (honest)** | ZR-9V-5: all `data/manifests/**` + `packaging/homebrew/fxi.rb` `uncovered_member` until manifests chain lands. |
@@ -40,7 +42,7 @@ These are real on clean `main` at `48c79ce44`; fixing them is engineering work, 
 ## Exit criteria
 
 1. **RED** — No completed all-green CI on `main`. Command: `gh run list --repo artificial-hedge/dipcatcher --branch main --workflow CI --limit 10`. Latest at measure: **pending** https://github.com/artificial-hedge/dipcatcher/actions/runs/39407250669 (`3cab21659`). Prior pushes mostly **cancelled** mid-queue; last old completed run still **failure** https://github.com/artificial-hedge/dipcatcher/actions/runs/39257948317.
-2. **RED** — `make lint` at `48c79ce44` **fails** (McCabe ratchet drift in `quant_fund/research/`; interactive ruff **green**). `make typecheck` not re-run. `test_modules_stay_under_max_lines` **passes** (KX-7Q-1). Full pytest collect still blocked on harness-cancel import and other modules.
+2. **RED** — `make lint` at `8a59e26d8` **fails** (repo-wide McCabe drift listed above; `quant_fund/research/` fixed). Interactive ruff **green**. `test_modules_stay_under_max_lines` **passes**. `test_replay_binding` legacy-body contract **fails** (pre-existing).
 3. **RED** — `uv run quant verify-repo` at `48c79ce44` (not re-run this micro-pass; prior at `3cab21659`): `crown_jewels` **FAIL**; `pin_signatures` **FAIL** `pin_drift` (expected until **H1**); `coverage_closure` **FAIL**; `timestamp_anchors` **stale age=20d** (ZR-9V-3 honest); epoch **FAIL** on multiple chains; `lattice` **ok**; `checkpoint`/`witness`/`spine` **ok**.
 4. **RED until H1** — `make evidence-audit` (seven trailing gates via `_ea`) blocked by jewel/pin/epoch redness. CI evidence-audit not green on latest runs.
 5. **PARTIAL** — Replay sweep policy (executed vs skipped headlines) landed (ZR-9V-4); tape-backed carriers skip without private bars; `mcs_vol` synthetic lane documented. No fresh all-green CI replay artifact at measure.
@@ -65,4 +67,5 @@ Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not g
 | When (UTC) | SHA | Note |
 |---|---|---|
 | 2026-10-20 | `a1e266414` | **Close-out:** all lanes recorded; HX-5D; no stamp. |
-| 2026-10-20 | `48c79ce44` | Leftover interactive lint + `test_research_banner`; McCabe / harness-cancel / superpower evidence still red. |
+| 2026-10-20 | `48c79ce44` | Leftover interactive lint + `test_research_banner`. |
+| 2026-10-20 | `46a3fb91e` / `8a59e26d8` | Harness cancel + superpower Evidence; research McCabe clean; repo-wide McCabe still red. |
