@@ -39,7 +39,7 @@ from __future__ import annotations
 import json
 import subprocess
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -170,10 +170,10 @@ def _parse_generalized_time_utc(data: bytes) -> int:
         text = text[:-1]
     if "." in text:
         base, frac = text.split(".", 1)
-        dt = datetime.strptime(base, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+        dt = datetime.strptime(base, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
         micro = int(frac.ljust(6, "0")[:6])
         return int((dt + timedelta(microseconds=micro)).timestamp())
-    dt = datetime.strptime(text, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+    dt = datetime.strptime(text, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
     return int(dt.timestamp())
 
 

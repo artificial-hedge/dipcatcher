@@ -39,6 +39,7 @@ def _replay_determinism_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TZ", "UTC")
     monkeypatch.setenv("LC_ALL", "C")
 
+
 _SETTINGS = settings(
     max_examples=25,
     derandomize=True,

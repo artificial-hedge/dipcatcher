@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 
 import typer
-
 from fx1.cli._app import corpus_app, sources_app, train_app
+
 
 @corpus_app.command("build")
 def corpus_build(
@@ -215,5 +215,3 @@ def sources_scenarios() -> None:
     else:
         typer.echo(f"unavailable: {result.error}", err=True)
         raise typer.Exit(code=1)
-
-

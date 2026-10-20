@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import typer
-
 from fx1.cli._app import app
 from fx1.cli.support import _BACKEND_HELP, _JUDGE_BACKEND_HELP
 
 if TYPE_CHECKING:
     from fx1.eval.suite import ModelFn
+
 
 def _resolve_model_backend(
     backend: str, checkpoint_dir: Path | None, model: str | None = None
@@ -254,9 +254,7 @@ def modelcard_validate(
         raise typer.BadParameter("only --fixture SYNTHETIC is supported")
     card = ModelCard.load(path)
     ship_eligible = card.ship_eligible and fixture is None
-    typer.echo(
-        json.dumps({"version": card.version, "ship_eligible": ship_eligible}, indent=2)
-    )
+    typer.echo(json.dumps({"version": card.version, "ship_eligible": ship_eligible}, indent=2))
 
 
 @app.command("redteam")
@@ -452,5 +450,3 @@ def mrm_dossier(
             indent=2,
         )
     )
-
-

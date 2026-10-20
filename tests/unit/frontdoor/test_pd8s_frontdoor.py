@@ -175,13 +175,11 @@ def test_readme_receipt_census_matches_git() -> None:
     assert "404" in readme and "397" in readme
 
 
-
 def test_env_example_vars_documented_in_operator_surfaces() -> None:
     declared = env_example_variables()
     documented = env_documentation_surfaces()
     undocumented = sorted(declared - documented)
     assert not undocumented, f".env.example vars missing from README/AGENTS: {undocumented[:10]}"
-
 
 
 def test_lab_doctor_reports_created_dirs_separately(tmp_path: Path) -> None:

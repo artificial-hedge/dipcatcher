@@ -30,7 +30,6 @@ from fx1.train.config import TrainConfig
 from quant_fund.utils.atomicio import atomic_write_text
 
 if TYPE_CHECKING:
-    import torch
     from torch import Tensor as TorchTensor
     from torch.nn import Module as TorchModule
 

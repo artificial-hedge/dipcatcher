@@ -1651,11 +1651,7 @@ class LocalFx1Backend(_UsageTracker):
                 f"no model card at {card_path}; an fx-1 checkpoint without a card is not servable"
             )
         self.card = ModelCard.load(card_path)
-        gate = (
-            enforce_ship_gate
-            if enforce_ship_gate is not None
-            else enforce_ship_gate_from_env()
-        )
+        gate = enforce_ship_gate if enforce_ship_gate is not None else enforce_ship_gate_from_env()
         if gate and not self.card.ship_eligible:
             raise RuntimeError(
                 f"{self.card.version} failed the ship gate "

@@ -59,6 +59,7 @@ def _budgets() -> dict[str, int]:
 def _ceilings() -> dict[str, int]:
     return {k: int(v) for k, v in _entries(CEILINGS, fields=2).items()}
 
+
 def _retired_ceilings() -> set[str]:
     path = REPO / RETIRED_CEILINGS
     if not path.is_file():
@@ -69,7 +70,9 @@ def _retired_ceilings() -> set[str]:
         if not line or line.startswith("#"):
             continue
         if " " in line:
-            raise AssertionError(f"{RETIRED_CEILINGS}:{number}: retired ceiling paths are bare PATH lines")
+            raise AssertionError(
+                f"{RETIRED_CEILINGS}:{number}: retired ceiling paths are bare PATH lines"
+            )
         retired.add(line)
     return retired
 
