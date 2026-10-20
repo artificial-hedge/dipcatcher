@@ -36,6 +36,10 @@ def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
     typer.echo(
         "ls: dipcatcher ls hunt|book|race|confirm (frozen Lightspeed engines; research_only)"
     )
+    healthy = _lake_healthy(info)
+    _echo_northset(resolved, healthy=healthy)
+    if not healthy:
+        raise typer.Exit(code=1)
 
 
 def _lake_healthy(info: dict[str, object]) -> bool:
@@ -66,17 +70,6 @@ def _load_only(config: Path) -> Any:
     from quant_fund.config import load_config
 
     return load_config(config)
-
-
-@app.command()
-def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
-    resolved = _require_config(config)
-    info = _run_doctor(resolved)
-    _echo_doctor(info)
-    healthy = _lake_healthy(info)
-    _echo_northset(resolved, healthy=healthy)
-    if not healthy:
-        raise typer.Exit(code=1)
 
 
 def get_logger(**binds: Any) -> Any:

@@ -18,7 +18,7 @@ from collections.abc import Mapping
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any
+from typing import Any, TypeGuard
 
 from quant_fund.metrics import inference, snooping
 from quant_fund.research import cost_allocation, net_replay, net_tournament, real_benchmark

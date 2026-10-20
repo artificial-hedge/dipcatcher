@@ -18,6 +18,7 @@ from quant_fund.cli.benchmark_cmds import (
     ranker_probability_app,
     real_benchmark_app,
 )
+from quant_fund.cli.capability_cmds import capabilities_app
 from quant_fund.cli.option_highlight import install_stable_option_highlighting
 
 # SOTA / forward-evidence operator surface. Restored on this branch after the
