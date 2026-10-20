@@ -1,10 +1,10 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `c5b40ff00` (2026-10-20 UTC), then this integrator stamp of the KX-7Q-1 split.  
+**Measured at:** `origin/main` `ac4e3d3df` (2026-10-20 UTC), then this integrator stamp.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. **Not production-ready** until every exit line is **green** on a completed CI run of `main`, or **parked** under human-only items below.
 
-**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`: `research_cmds.py` **4305** (pin lowered to 4305), `research_score_cmds.py` **137**, `concierge.py` **1938** (under 2000), `concierge_chat.py` **232**.
+**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`. **Docs strict PASS** at `58907c62c` (`mkdocs build --strict` exit 0; eleven inventory files stay in `docs/` and `exclude_docs`; DIP_CONCIERGE heading restored). Arch-guards lineage import fix landed at `ac4e3d3df`.
 
 **Landed sibling work (on `main`):**
 
@@ -24,6 +24,8 @@
 | Leftovers | `348f4e850` | Repo-wide **`make lint` GREEN** (ruff + format + mypy strict allowlist + McCabe ratchet ok, **1082** baselined functions). Baseline entries **lowered/removed only** (`5e2b039b6` / `348f4e850` splits). |
 | Leftovers | `7c6338549` | Test regression cleanup: sim-live **`--config`** restored (`@command` on `sim_live`); `test_cli_main_cov -k sim_live` **5 passed**. `tests/fx1/test_superpower.py` **68 passed** (`score_cmds` import, `FamilyCatalog`, `allow_web` opt-in). `test_contract_still_accepts_legacy_bodies` **passed** (legacy headline trust; skipped rows not counted equal). |
 | Recovered | `c4b8fe993` | Interrupted Ledger / tiny_lm / frontdoor / isolation stack rewritten onto `main` (needs-stamp on recovered SHAs). |
+| Docs strict | `58907c62c` | **PASS.** `exclude_docs` omits eleven inventory pages; `DIP_CONCIERGE.md` Known limitations heading restored; `mkdocs.yml` jewel mutated. Sibling report: `mkdocs build --strict` exit 0. |
+| Arch-guards | `ac4e3d3df` | Lineage imports via `quant_fund.utils`; `superpower.py` jewel mutated; `doctor.py` / `gen_arch_diagrams.py` / tests touched. |
 
 **mcs_vol epoch stamp:** satisfied in `d0b9d45cd` (`scripts/*` through `b5f1f6d11`). **No restamp** this pass. `needs-stamp:` on `b34527e55` for `docs/UNGATED_EPOCH_ACKS.md` / `docs/PROPOSED_EVIDENCE_CHAINS.md` — **not stamped** (do-not-stamp guidance; manifests chain remains proposal).
 
@@ -39,8 +41,9 @@ These are real on clean `main` at `7c6338549`; fixing them is engineering work, 
 | **Targeted pytest** | **GREEN** | sim-live, superpower (68), replay_binding legacy contract — fixed at `7c6338549`. **Full** `make test` / all CI shards **not** verified green locally. |
 | **Interactive ruff** | **GREEN** | `ruff check src/fx1/interactive` clean. |
 | **KX-7Q-1 line budget** | **PASS** | At `c5b40ff00`: `research_cmds.py` 4305=pin; `concierge.py` 1938<2000. |
-| **Crown jewels** | **re-pin this stamp** | `concierge.py` mutated at `c5b40ff00` (KX-7Q-1 split). Re-pinned here. |
-| **Epoch chains** | **stamp this pass** | `src` (concierge + research_cmds splits), `docs` (this file), `quality` (jewels + heads). Tests intact. `data/manifests` **not** chained (`mcs_vol` stays unchained until H1). |
+| **Docs strict** | **PASS** | At `58907c62c`: inventories excluded from published site; heading restored. |
+| **Crown jewels** | **re-pin this stamp** | `mkdocs.yml` at `58907c62c`; `superpower.py` at `ac4e3d3df`. Re-pinned here. |
+| **Epoch chains** | **stamp this pass** | `src`, `tests`, `scripts` (arch-guards), `docs` (strict + this file), `quality` (jewels + heads). `data/manifests` **not** chained. |
 | **Coverage closure** | **RED (honest)** | ZR-9V-5: all `data/manifests/**` + `packaging/homebrew/fxi.rb` `uncovered_member` until manifests chain lands. |
 | **HX-5D webhook load proof** | **PARK (flake)** | Occasional `receipt_sha256` mismatch under executor races — watch CI / harden, not a gate weaken. |
 | **FX-1A coverage** | **NOT VERIFIED** | Floor 90 in ratchet; end-to-end `make fx1-coverage` not re-run this pass. |
@@ -79,3 +82,4 @@ Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not g
 | 2026-10-20 | `7c6338549` | Test-regression cleanup; CI pending on `39412018652`. |
 | 2026-10-20 | `c4b8fe993` | Recovered stack landed; KX-7Q-1 still over line budget; this pass stamps jewels + drifted chains only. |
 | 2026-10-20 | `c5b40ff00` | **KX-7Q-1 PASS.** Integrator re-pins `concierge.py` jewel and stamps src/docs/quality. |
+| 2026-10-20 | `58907c62c` / `ac4e3d3df` | **Docs strict PASS.** Re-pin `mkdocs.yml` + `superpower.py`; stamp drifted chains. |
