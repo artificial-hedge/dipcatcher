@@ -1727,7 +1727,7 @@ matches the secret filter. Sessions, jobs, logs, and history show `ok` or
 ### Evidence commands
 
 These write local JSON. They do not close gates P1–P7. Read
-[the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md) before quoting
+`DIPCATCHER_RELEASE_EVIDENCE.md` before quoting
 a number. `EVIDENCE_DIR` defaults to `data/dipcatcher-evidence`.
 
 | Target | What it runs | How to read the file |

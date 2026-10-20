@@ -57,7 +57,7 @@ why.
 > smoke for both models, a five-user trial, a 24-hour soak, the
 > macOS/Windows matrix, and signed release artifacts are open. See
 > [the product contract](DIPCATCHER_PRODUCT_CONTRACT.md) and
-> [the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md).
+> the release evidence table (`DIPCATCHER_RELEASE_EVIDENCE.md`).
 
 ## Honesty contract
 
@@ -436,7 +436,7 @@ tests/fx1/test_families.py tests/fx1/test_lineio.py tests/fx1/test_harness.py`):
 | `quant` | Lab CLI only. No chat preface. |
 | `fxi` | Same concierge. `fxi shell` is the older one-line shell. `fxi setup` is the endpoint wizard. |
 
-The preface printed by redirected `dipcatcher` is:
+## Known limitations (honest gaps)
 
 - **Search provider**: keyless DDG HTML parsing breaks if DDG changes markup;
   the failure mode is an explicit error plus zero hits, never fabricated

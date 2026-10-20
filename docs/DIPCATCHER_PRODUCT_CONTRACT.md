@@ -198,7 +198,7 @@ incremental approach exists. Never trade the honesty gate for typing effects.
 
 All rows are **OPEN**. Numeric limits below are proposed initial release
 targets, not a service promise. The measurements in
-[the release evidence table](DIPCATCHER_RELEASE_EVIDENCE.md) do not close
+`DIPCATCHER_RELEASE_EVIDENCE.md` do not close
 any row. Freeze the supported OS/Python/terminal matrix and reference
 hardware before treating a number as the gate. Record sample sizes and
 failures.
@@ -214,7 +214,7 @@ failures.
 | P7 — Repeatable release | Repository gates and required CI pass at the candidate revision; clean install/upgrade/uninstall, supported-platform smoke tests, dependency/security checks, signed artifacts, checksums, rollback drill, and support/runbooks are evidenced. Existing production-audit blockers are explicitly closed or the release remains blocked. |
 
 The release evidence table is
-[DIPCATCHER_RELEASE_EVIDENCE.md](DIPCATCHER_RELEASE_EVIDENCE.md). Columns are
+`DIPCATCHER_RELEASE_EVIDENCE.md`. Columns are
 gate ID, owner, candidate SHA, exact command/scenario, platform, artifact
 path/hash, timestamp, result, and remaining blocker. Owner is unassigned
 in that table. Docs or a merged implementation never substitute for passing
