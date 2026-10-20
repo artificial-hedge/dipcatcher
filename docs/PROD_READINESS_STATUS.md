@@ -1,10 +1,10 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `dfdc384fd` (2026-10-20 UTC), then this integrator stamp.  
+**Measured at:** `origin/main` `3297b2c80` (2026-10-20 UTC), then this integrator stamp.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. **Not production-ready** until every exit line is **green** on a completed CI run of `main`, or **parked** under human-only items below.
 
-**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`. **Docs strict PASS** at `58907c62c`. **Diagrams PASS** at `dfdc384fd`. **mypy `src/fx1` clean** at `73885abc8`/`dfdc384fd`. **gitleaks PARKED** (historical). **SonarCloud PARKED** (leak-period backlog). **fx1-required / fx1-coverage / test still REMAINING.**
+**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`. **Docs strict PASS** at `58907c62c`. **Diagrams PASS** at `dfdc384fd`. **mypy `src/fx1` clean** at `73885abc8`/`dfdc384fd`. **McCabe PASS** at `3297b2c80` (`source_environ_names` 10→1; `mccabe_baseline.txt` unchanged). **gitleaks PARKED** (historical). **SonarCloud PARKED** (leak-period backlog). **fx1-required / fx1-coverage / test still REMAINING** (fx1-tests sibling not on origin).
 
 **Landed sibling work (on `main`):**
 
@@ -28,6 +28,7 @@
 | Arch-guards | `ac4e3d3df` | Lineage imports via `quant_fund.utils`; `superpower.py` jewel mutated; `doctor.py` / `gen_arch_diagrams.py` / tests touched. |
 | fx1 mypy | `73885abc8` | **PASS (mypy `src/fx1`).** Strict types + public-serve fixture refusal. Jewels: `harness.py`, `concierge.py`, `superpower.py`. |
 | Diagrams | `dfdc384fd` | **PASS.** Atlas/manifest/module_deps bound to split modules; `gen_arch_diagrams.py` updated. |
+| McCabe | `3297b2c80` | **PASS.** `source_environ_names` complexity 10→1 in `truthfulness.py`; `mccabe_baseline.txt` unchanged. |
 
 **mcs_vol epoch stamp:** satisfied in `d0b9d45cd` (`scripts/*` through `b5f1f6d11`). **No restamp** this pass. `needs-stamp:` on `b34527e55` for `docs/UNGATED_EPOCH_ACKS.md` / `docs/PROPOSED_EVIDENCE_CHAINS.md` — **not stamped** (do-not-stamp guidance; manifests chain remains proposal).
 
@@ -48,9 +49,10 @@ These are real on clean `main` at `7c6338549`; fixing them is engineering work, 
 | **mypy `src/fx1`** | **PASS** | Clean on `73885abc8` / `dfdc384fd`. |
 | **gitleaks** | **PARKED** | Historical findings; not a current-tree gate fail. |
 | **SonarCloud** | **PARKED** | Leak-period backlog; not a production-readiness flip. |
-| **fx1-required / fx1-coverage / test** | **REMAINING** | Not verified green on a completed CI run of this SHA. |
-| **Crown jewels** | **re-pin this stamp** | `harness.py`, `concierge.py`, `superpower.py` at `73885abc8`. Re-pinned here. |
-| **Epoch chains** | **stamp this pass** | `src` (mypy), `docs` (atlas + this file), `scripts` (diagrams), `quality` (jewels + heads). `data/manifests` **not** chained. |
+| **fx1-required / fx1-coverage / test** | **REMAINING** | fx1-tests sibling not on origin at this SHA. |
+| **McCabe** | **PASS** | At `3297b2c80`: `source_environ_names` 10→1; baseline unchanged. |
+| **Crown jewels** | **intact** | No jewel mutated. Did not `--write`. |
+| **Epoch chains** | **stamp this pass** | `src` (`truthfulness.py`), `tests` (frontdoor helper), `docs` (this file), `quality` (heads). `data/manifests` **not** chained. |
 | **Coverage closure** | **RED (honest)** | ZR-9V-5: all `data/manifests/**` + `packaging/homebrew/fxi.rb` `uncovered_member` until manifests chain lands. |
 | **HX-5D webhook load proof** | **PARK (flake)** | Occasional `receipt_sha256` mismatch under executor races — watch CI / harden, not a gate weaken. |
 | **FX-1A coverage** | **NOT VERIFIED** | Floor 90 in ratchet; end-to-end `make fx1-coverage` not re-run this pass. |
@@ -91,3 +93,4 @@ Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not g
 | 2026-10-20 | `c5b40ff00` | **KX-7Q-1 PASS.** Integrator re-pins `concierge.py` jewel and stamps src/docs/quality. |
 | 2026-10-20 | `58907c62c` / `ac4e3d3df` | **Docs strict PASS.** Re-pin `mkdocs.yml` + `superpower.py`; stamp drifted chains. |
 | 2026-10-20 | `dfdc384fd` | **Diagrams PASS.** Re-pin harness/concierge/superpower; stamp src/docs/scripts/quality. mypy `src/fx1` clean. gitleaks/SonarCloud parked. fx1 jobs remaining. |
+| 2026-10-20 | `3297b2c80` | **McCabe PASS.** Stamp src/tests/docs/quality. Jewels intact. fx1 jobs remaining. |
