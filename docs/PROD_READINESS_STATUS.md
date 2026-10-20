@@ -1,6 +1,6 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `3cab21659` (2026-10-20 UTC). Integrator close-out after all implementation lanes reported.  
+**Measured at:** `origin/main` `48c79ce44` (2026-10-20 UTC). Prior integrator close-out: `a1e266414`.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. **Not production-ready** until every exit line is **green** on a completed CI run of `main`, or **parked** under human-only items below.
 
@@ -16,6 +16,7 @@
 | KX-7Q | `f4f817d11`, `59b9c4533` | `fx1/cli/*` split; **KX-7Q-1** line-budget **green** (`api_request_ingress.py`; shrink-only pins + `evidence_migration_20261020.json`). |
 | FX-1A | `9a76eb4af` | Corpus quarantine refuse (9 SFT pins); lexical P&L/NAV guards; doctor crown-jewels; ship gate / `--fixture` SYNTHETIC; fx1 coverage floor **90** (91.19% − 1pp documented) — **`make fx1-coverage` not re-run** at land. **130** targeted honesty tests passed. |
 | HX-5D | `e7ebe13d9` | **HX-5D-1** stateful Hypothesis collects/passes `-n 4`. **HX-5D-2** Numba / TZ / `LC_ALL` isolation + guarded env test. **HX-5D-3** `OPENBLAS_CORETYPE` pin + cross-kernel threshold test. **HX-5D-4** webhook audit injected clock; wall-clock timing gates removed from probes — **park:** occasional `receipt_sha256` mismatch on executor races. **HX-5D-5** `slow` marker registered; `pytest --strict-markers --collect-only` exit 0. |
+| Leftovers | `48c79ce44` | Interactive import/planning repair: `ruff check src/fx1/interactive` **clean**; `test_research_banner` collects/passes (`_echo_synthetic_marker` export restored). |
 
 **mcs_vol epoch stamp:** satisfied in `d0b9d45cd` (`scripts/*` through `b5f1f6d11`). **No restamp** this pass. `needs-stamp:` on `b34527e55` for `docs/UNGATED_EPOCH_ACKS.md` / `docs/PROPOSED_EVIDENCE_CHAINS.md` — **not stamped** (do-not-stamp guidance; manifests chain remains proposal).
 
@@ -23,12 +24,13 @@ Supporting lists: [`D1_02_EPOCH_ACK_INVENTORY.md`](D1_02_EPOCH_ACK_INVENTORY.md)
 
 ## Remaining code follow-ups (agent-owned, not H1–H7)
 
-These are real on clean `main` at `3cab21659`; fixing them is engineering work, not owner key ceremony.
+These are real on clean `main` at `48c79ce44`; fixing them is engineering work, not owner key ceremony.
 
 | Area | Status | Command / note |
 |---|---|---|
-| **Lint** | **RED** | `make lint` → **82** ruff issues (e.g. `F821` `Fx1HonestyError` in `superpower.py`; `concierge.py` still has many **F821** on unhit interactive paths). |
-| **Pytest collection** | **RED** | `uv run pytest --collect-only` → `ImportError` in `tests/unit/cli/test_research_banner.py` (`_echo_synthetic_marker` missing from `research_cmds`). Blocks full-tree collect / `make fx1-coverage` rerun. |
+| **Lint** | **RED** | `make lint` still fails **McCabe baseline drift** under `quant_fund/research/` — **do not raise baseline**. Interactive **F821 cleared** (`ruff check src/fx1/interactive` clean at `48c79ce44`). |
+| **Pytest collection** | **PARTIAL** | `test_research_banner` **fixed** at `48c79ce44`. Full `pytest tests -k …` still has **other** collection errors (e.g. `tests/fx1/test_harness_cancel.py`: missing `popen_cancellable` on `fx1.harness`). |
+| **Superpower tests** | **RED** | `test_superpower` family selector: summary missing **Evidence (harness-verified)** (harness-verified expectation). |
 | **Crown jewels** | **RED** | `uv run quant crown-jewels --check` → `jewel_mutated` (e.g. `AGENTS.md`, `Makefile`, `pyproject.toml`, `corpus_epoch.py`, `repo_integrity.py`, `tests/conftest.py`, …) + `jewel_unpinned` ed25519 helpers. |
 | **Epoch chains** | **RED** | `verify-repo` epoch forks/multiple heads on `src`/`tests`/`docs`; digest drift on `scripts`, `quality`, `.github/workflows`; unstamped scripts/docs members. Needs integrator stamp pass **after** H1 or coordinated re-pin — **not done here**. |
 | **Coverage closure** | **RED (honest)** | ZR-9V-5: all `data/manifests/**` + `packaging/homebrew/fxi.rb` `uncovered_member` until manifests chain lands. |
@@ -38,8 +40,8 @@ These are real on clean `main` at `3cab21659`; fixing them is engineering work, 
 ## Exit criteria
 
 1. **RED** — No completed all-green CI on `main`. Command: `gh run list --repo artificial-hedge/dipcatcher --branch main --workflow CI --limit 10`. Latest at measure: **pending** https://github.com/artificial-hedge/dipcatcher/actions/runs/39407250669 (`3cab21659`). Prior pushes mostly **cancelled** mid-queue; last old completed run still **failure** https://github.com/artificial-hedge/dipcatcher/actions/runs/39257948317.
-2. **RED** — `make lint` at `3cab21659` **fails** (82 ruff errors). `make typecheck` / full `mypy` not run this pass. `test_modules_stay_under_max_lines` **passes** (KX-7Q-1). WP-3J shards + `check-test-durations` on CI — outcome tied to run above.
-3. **RED** — `uv run quant verify-repo` at `3cab21659`: `crown_jewels` **FAIL**; `pin_signatures` **FAIL** `pin_drift` (expected until **H1**); `coverage_closure` **FAIL**; `timestamp_anchors` **stale age=20d** (ZR-9V-3 honest); epoch **FAIL** on multiple chains; `lattice` **ok**; `checkpoint`/`witness`/`spine` **ok**.
+2. **RED** — `make lint` at `48c79ce44` **fails** (McCabe ratchet drift in `quant_fund/research/`; interactive ruff **green**). `make typecheck` not re-run. `test_modules_stay_under_max_lines` **passes** (KX-7Q-1). Full pytest collect still blocked on harness-cancel import and other modules.
+3. **RED** — `uv run quant verify-repo` at `48c79ce44` (not re-run this micro-pass; prior at `3cab21659`): `crown_jewels` **FAIL**; `pin_signatures` **FAIL** `pin_drift` (expected until **H1**); `coverage_closure` **FAIL**; `timestamp_anchors` **stale age=20d** (ZR-9V-3 honest); epoch **FAIL** on multiple chains; `lattice` **ok**; `checkpoint`/`witness`/`spine` **ok**.
 4. **RED until H1** — `make evidence-audit` (seven trailing gates via `_ea`) blocked by jewel/pin/epoch redness. CI evidence-audit not green on latest runs.
 5. **PARTIAL** — Replay sweep policy (executed vs skipped headlines) landed (ZR-9V-4); tape-backed carriers skip without private bars; `mcs_vol` synthetic lane documented. No fresh all-green CI replay artifact at measure.
 6. **POLICY GREEN, no green CI SHA** — `evidence-base-ref` / `ADMISSION_BASE` policy (ZR-9V-2). **No** all-jobs-green `main` commit for production admission. `ADMISSION_BASE=b5f1f6d11 make admission-gate` not re-run this pass.
@@ -62,4 +64,5 @@ Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not g
 
 | When (UTC) | SHA | Note |
 |---|---|---|
-| 2026-10-20 | `3cab21659` | **Close-out:** all lanes recorded; `verify-repo`/`lint`/`gh` measured; HX-5D added; no stamp. |
+| 2026-10-20 | `a1e266414` | **Close-out:** all lanes recorded; HX-5D; no stamp. |
+| 2026-10-20 | `48c79ce44` | Leftover interactive lint + `test_research_banner`; McCabe / harness-cancel / superpower evidence still red. |
