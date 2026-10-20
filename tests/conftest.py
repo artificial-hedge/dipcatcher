@@ -12,6 +12,8 @@ from pathlib import Path
 # Disable that optional telemetry before test modules import MLflow so the
 # ``not network`` gate cannot disclose environment metadata or depend on egress.
 os.environ["MLFLOW_DISABLE_TELEMETRY"] = "true"
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_CORETYPE", "HASWELL")
 
 import pytest
 

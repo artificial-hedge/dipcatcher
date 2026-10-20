@@ -45,6 +45,27 @@ def test_slow_marker_is_registered_in_pyproject() -> None:
     assert any(str(entry).startswith("slow:") for entry in markers)
 
 
+def test_seeded_threshold_probes_stable_across_openblas_kernels() -> None:
+    targets = [
+        "tests/unit/core/test_rank_confidence_sequences.py::test_bb_edge_margin_tau_shifts_null",
+        "tests/unit/core/test_sliced_wasserstein.py::test_size_under_null_is_near_alpha",
+    ]
+    for coretype in ("HASWELL", "SKYLAKEX", "NEHALEM"):
+        env = {**os.environ, "OPENBLAS_CORETYPE": coretype, "OPENBLAS_NUM_THREADS": "1"}
+        for nodeid in targets:
+            result = subprocess.run(
+                [sys.executable, "-m", "pytest", "-q", nodeid],
+                cwd=_REPO,
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+            assert result.returncode == 0, (
+                f"OPENBLAS_CORETYPE={coretype} {nodeid} failed:\n"
+                f"{result.stdout[-2000:]}\n{result.stderr[-2000:]}"
+            )
+
+
 def test_strict_markers_collect_is_clean_on_isolation_modules() -> None:
     targets = [
         "tests/formal/test_stateful.py",
