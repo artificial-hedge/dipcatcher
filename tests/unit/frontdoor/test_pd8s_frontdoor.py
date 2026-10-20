@@ -148,7 +148,9 @@ def test_superpower_sync_partial_exits_nonzero(monkeypatch: pytest.MonkeyPatch) 
         def __init__(self) -> None:
             self.job = SimpleNamespace(error=None, result=partial)
 
-        def start_superpower(self, goal: str, *, sync: bool = False) -> bool:
+        def start_superpower(
+            self, goal: str, *, sync: bool = False, allow_web: bool = False
+        ) -> bool:
             return False
 
         def join_job(self, timeout_s: float | None = None) -> None:

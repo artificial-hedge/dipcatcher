@@ -74,7 +74,7 @@ from fx1.interactive.superpower import (
 
 HELP_TEXT = """\
 conversation          plain text chats with the active model (tools: flash, web, harness)
-/superpower <goal>    plan + run the relevant research capabilities (--sync to run inline)
+/superpower <goal>    plan + run the relevant research capabilities (--sync inline; --web opts into search)
 /superpower help      list every capability the planner may select
 /families [goal]      research-family catalog; with a goal, show which families are eligible
 /research <goal>      deep web research in the background (--budget-s, --max-sources, --queries)
@@ -567,8 +567,8 @@ class Concierge:
         if configured:
             self._say(
                 f"active model {model!r} @ {host}; conversation continues "
-                f"({len(self._messages)} messages kept); {profiles.ENV_API_KEY} + "
-                f"{profiles.ENV_BASE_URL} injected into this session"
+                f"({len(self._messages)} messages kept); credentials stay in the store "
+                f"(chat client only — lab subprocesses do not inherit {profiles.ENV_API_KEY})"
             )
         else:
             self._say(
@@ -821,18 +821,19 @@ class Concierge:
     def _cmd_superpower(self, rest: str) -> bool:
         tokens = shlex.split(rest)
         if not tokens:
-            raise ValueError("usage: /superpower <goal> [--sync]")
+            raise ValueError("usage: /superpower <goal> [--sync] [--web]")
         if tokens[0] == "help":
             self._say(describe_capabilities(self._catalog_cache.get("catalog")))
             return False
         sync = "--sync" in tokens
-        goal = " ".join(t for t in tokens if t != "--sync")
-        return self.start_superpower(goal, sync=sync)
+        allow_web = "--web" in tokens
+        goal = " ".join(t for t in tokens if t not in {"--sync", "--web"})
+        return self.start_superpower(goal, sync=sync, allow_web=allow_web)
 
-    def start_superpower(self, goal: str, *, sync: bool = False) -> bool:
+    def start_superpower(self, goal: str, *, sync: bool = False, allow_web: bool = False) -> bool:
         """Run an already-parsed goal without interpreting it as slash-command syntax."""
         if not goal.strip():
-            raise ValueError("usage: /superpower <goal> [--sync]")
+            raise ValueError("usage: /superpower <goal> [--sync] [--web]")
         if not self._job_slot_available():
             return False
         backend = self._backend()
@@ -850,7 +851,9 @@ class Concierge:
         job_id = self._new_job_id("superpower")
         self._journal_call("job_started", job_id, "superpower", goal, plan.ids())
         if sync:
-            ctx = self._superpower_context(model_fn, ledger=ledger, job_id=job_id, catalog=catalog)
+            ctx = self._superpower_context(
+                model_fn, ledger=ledger, job_id=job_id, catalog=catalog, allow_web=allow_web
+            )
             result = run_plan(plan, ctx)
             job = BackgroundJob(label="superpower", run_fn=lambda *_: result, job_id=job_id)
             job.result = result
@@ -872,6 +875,7 @@ class Concierge:
                 ledger=ledger,
                 job_id=job_id,
                 catalog=catalog,
+                allow_web=allow_web,
             )
             return run_plan(plan, job_ctx)
 
@@ -908,6 +912,7 @@ class Concierge:
         ledger: BudgetLedger | None = None,
         job_id: str = "",
         catalog: FamilyCatalog | None = None,
+        allow_web: bool = False,
     ) -> SuperpowerContext:
         return SuperpowerContext(
             model_fn=model_fn,
@@ -922,6 +927,7 @@ class Concierge:
             journal=self._journal,
             job_id=job_id,
             catalog=catalog,
+            allow_web=allow_web,
         )
 
     # -- /research -----------------------------------------------------------

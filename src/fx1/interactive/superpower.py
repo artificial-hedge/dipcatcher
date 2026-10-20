@@ -563,6 +563,9 @@ class SuperpowerContext:
     cancel_event: threading.Event | None = None
     max_stdout_chars: int = 12000
     save_to_flash: bool = True
+    # Public web search sends the raw goal to a third party. Off until the
+    # operator passes --web / ``/superpower --web``.
+    allow_web: bool = False
     budget_ledger: Any | None = None
     journal: Any | None = None
     job_id: str = ""
@@ -827,6 +830,18 @@ def _stage_web_research(
         return
     if (reason := _check_budget(ctx, result)) is not None:
         _record(result, ctx, CapabilityRun("web_research", name, "budget-exceeded", reason))
+        return
+    if not ctx.allow_web:
+        _record(
+            result,
+            ctx,
+            CapabilityRun(
+                "web_research",
+                name,
+                "skipped",
+                "web search requires explicit opt-in (--web); the goal was not sent",
+            ),
+        )
         return
     try:
         report = researcher.run(

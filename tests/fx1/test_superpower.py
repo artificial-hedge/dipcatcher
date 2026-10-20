@@ -288,6 +288,7 @@ def test_run_plan_coordinates_memory_web_harness_synthesis(store: FlashStore) ->
         approvals=ApprovalGate(),
         researcher=researcher,
         flash_store=store,
+        allow_web=True,
     )
     result = run_plan(plan, ctx)
 
@@ -315,6 +316,33 @@ def test_run_plan_coordinates_memory_web_harness_synthesis(store: FlashStore) ->
     explanation = result.explain()
     assert "capabilities used and why" in explanation
     assert "[ran] research" in explanation
+
+
+def test_web_research_without_opt_in_does_not_call_the_search_client(store: FlashStore) -> None:
+    from fx1.webresearch.engine import Researcher
+
+    class _SpySearcher:
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def search(self, query: str, **kwargs: object) -> None:
+            self.calls.append(query)
+            raise AssertionError("search client must not be called without --web")
+
+    spy = _SpySearcher()
+    researcher = Researcher(searcher=spy)  # type: ignore[arg-type]
+    plan = _plan(
+        "search the latest pinball literature",
+        ["flash_retrieve", "web_research", "synthesize"],
+    )
+    result = run_plan(
+        plan,
+        SuperpowerContext(researcher=researcher, flash_store=store, approvals=ApprovalGate()),
+    )
+    assert spy.calls == []
+    web = {run.id: run for run in result.runs}["web_research"]
+    assert web.status == "skipped"
+    assert "opt-in" in web.detail
 
 
 def test_run_plan_denies_consequential_without_approval(store: FlashStore) -> None:

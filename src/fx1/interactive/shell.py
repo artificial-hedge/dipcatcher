@@ -1,10 +1,9 @@
 """Interactive REPL for ``fxi`` — stdlib ``cmd.Cmd``, no new dependencies.
 
-Session state is just the active model: ``use fx1-lite`` injects that
-model's endpoint (``MOONSHOT_API_KEY`` + ``FX1_BASE_URL``) into
-``os.environ``, so every harness command launched from the shell
-(directly or via ``run``/``!``) inherits the credential. The prompt shows
-``model @ host``; a static listening-orb banner opens the session.
+Session state is just the active model: ``use fx1-lite`` selects that chat
+id's endpoint from the local store. Credentials are passed to the chat
+client only — lab harness subprocesses inherit a scrubbed environment. The
+prompt shows ``model @ host``; a static listening-orb banner opens the session.
 """
 
 from __future__ import annotations
@@ -27,7 +26,7 @@ _HELP = """\
 keys                              list model endpoints (presence-only)
 keys set <model>                  store an API key + base URL (prompted, not echoed)
 keys remove <model>               delete a stored endpoint
-use <model>                       activate a model and inject its endpoint
+use <model>                       activate a model (credentials for chat only)
 model                             show the active model and host
 doctor                            readiness: endpoints, store, API reachability
 eval [--out PATH]                 run the fx-1 eval bank via the active model

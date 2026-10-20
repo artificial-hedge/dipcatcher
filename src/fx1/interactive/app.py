@@ -280,6 +280,11 @@ def superpower_cmd(
             "waiting for approval."
         ),
     ),
+    web: bool = typer.Option(
+        False,
+        "--web",
+        help="Opt in to sending the goal text to public web search (DuckDuckGo).",
+    ),
 ) -> None:
     """Plan, select, coordinate, and explain research capabilities for a goal."""
     from fx1.interactive.superpower import describe_capabilities
@@ -292,14 +297,15 @@ def superpower_cmd(
     goal_text = " ".join(goal)
     gate = ApprovalGate(ask_fn=(lambda question: True) if approve_consequential else None)
     operator = concierge.Concierge(model=state["model"], approvals=gate)
-    operator.start_superpower(goal_text, sync=sync)
+    operator.start_superpower(goal_text, sync=sync, allow_web=web)
     operator.join_job(timeout_s=operator.run_budget.max_wall_s + 60)
     operator.close("one-shot")
     job = operator.job
     if job is not None and job.error:
         raise typer.Exit(code=1)
     result = job.result if job is not None else None
-    if result is not None and getattr(result, "partial", False):
+    # PARTIAL includes failed capabilities. A sync script must not exit 0.
+    if sync and result is not None and getattr(result, "partial", False):
         raise typer.Exit(code=1)
 
 

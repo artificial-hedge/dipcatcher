@@ -732,6 +732,52 @@ def test_cli_superpower_capabilities_catalog(isolated_store: Path) -> None:
     assert "approval-required" in result.output
 
 
+def test_cli_superpower_sync_exits_nonzero_when_partial_with_failures(
+    isolated_store: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from types import SimpleNamespace
+
+    class _Op:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            failed = kwargs.pop("_failed", True)
+            self.run_budget = SimpleNamespace(max_wall_s=1)
+            self.job = SimpleNamespace(
+                error="",
+                result=SimpleNamespace(
+                    partial=True,
+                    runs=[
+                        SimpleNamespace(status="failed" if failed else "skipped"),
+                        SimpleNamespace(status="ran"),
+                    ],
+                ),
+            )
+
+        def start_superpower(
+            self, goal: str, *, sync: bool = False, allow_web: bool = False
+        ) -> bool:
+            assert sync is True
+            assert allow_web is False
+            return False
+
+        def join_job(self, timeout_s: float | None = None) -> None:
+            return None
+
+        def close(self, reason: str = "") -> None:
+            return None
+
+    monkeypatch.setattr("fx1.interactive.app.concierge.Concierge", lambda **kw: _Op(**kw))
+    failed = RUNNER.invoke(fxi_app, ["superpower", "--sync", "check the manifest"])
+    assert failed.exit_code == 1
+
+    monkeypatch.setattr(
+        "fx1.interactive.app.concierge.Concierge",
+        lambda **kw: _Op(_failed=False, **kw),
+    )
+    skipped = RUNNER.invoke(fxi_app, ["superpower", "--sync", "check the manifest"])
+    # Skipped steps also make the run PARTIAL, so --sync exits non-zero.
+    assert skipped.exit_code == 1
+
+
 def test_cli_superpower_requires_goal(isolated_store: Path) -> None:
     result = RUNNER.invoke(fxi_app, ["superpower"])
     assert result.exit_code == 2
@@ -824,7 +870,9 @@ def test_cli_superpower_one_shot_denies_consequential_by_default(
             kwargs.setdefault("persist", False)
             super().__init__(*args, **kwargs)  # type: ignore[arg-type]
 
-        def start_superpower(self, goal: str, *, sync: bool = False) -> bool:
+        def start_superpower(
+            self, goal: str, *, sync: bool = False, allow_web: bool = False
+        ) -> bool:
             return False
 
     monkeypatch.setattr(concierge_module, "Concierge", Recorder)
@@ -852,7 +900,9 @@ def test_cli_one_shot_preserves_goal_and_seed_query_arguments(
             self.run_budget = type("Budget", (), {"max_wall_s": 300})()
             self.job = None
 
-        def start_superpower(self, goal: str, *, sync: bool = False) -> bool:
+        def start_superpower(
+            self, goal: str, *, sync: bool = False, allow_web: bool = False
+        ) -> bool:
             seen.append(("superpower", (goal, sync)))
             return False
 
