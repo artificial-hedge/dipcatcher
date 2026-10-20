@@ -168,50 +168,97 @@ def _const_str(node: ast.AST) -> str | None:
 def source_environ_names(root: Path | None = None) -> frozenset[str]:
     """AST-scan ``src/`` for ``os.environ`` / ``os.getenv`` constant keys."""
     checkout = root or repo_root()
-    names: set[str] = set()
-    src = checkout / "src"
+    collected = _collect_environ_names(checkout / "src")
+    filtered = _filter_environ_names(collected)
+    return frozenset(_sorted_environ_names(filtered))
+
+
+def _sorted_environ_names(names: set[str]) -> list[str]:
+    return sorted(names)
+
+
+def _filter_environ_names(found: set[tuple[str, bool]]) -> set[str]:
+    """Keep uppercase keys. Call-site hits must also be alphanumeric."""
+    kept: set[str] = set()
+    for key, require_alnum in found:
+        if not key.isupper():
+            continue
+        if require_alnum and not key.replace("_", "").isalnum():
+            continue
+        kept.add(key)
+    return kept
+
+
+def _collect_environ_names(src: Path) -> set[tuple[str, bool]]:
+    """``(key, require_alnum)`` hits. Calls require an alphanumeric key; subscripts do not."""
+    found: set[tuple[str, bool]] = set()
     for path in src.rglob("*.py"):
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-        except (OSError, SyntaxError, UnicodeDecodeError):
+        tree = _parse_module(path)
+        if tree is None:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, ast.Call):
-                func = node.func
-                attr = func.attr if isinstance(func, ast.Attribute) else None
-                name = func.id if isinstance(func, ast.Name) else None
-                key = _const_str(node.args[0]) if node.args else None
-                if not key or not key.isupper() or not key.replace("_", "").isalnum():
-                    continue
-                os_getenv = name == "getenv"
-                environ_get = (
-                    attr == "get"
-                    and isinstance(func, ast.Attribute)
-                    and (
-                        (isinstance(func.value, ast.Name) and func.value.id in {"os", "environ"})
-                        or (
-                            isinstance(func.value, ast.Attribute)
-                            and isinstance(func.value.value, ast.Name)
-                            and func.value.value.id == "os"
-                            and func.value.attr == "environ"
-                        )
-                    )
-                )
-                if os_getenv or environ_get:
-                    names.add(key)
-            elif isinstance(node, ast.Subscript):
-                key = _const_str(node.slice)
-                if not key or not key.isupper():
-                    continue
-                target = node.value
-                if (
-                    isinstance(target, ast.Attribute)
-                    and isinstance(target.value, ast.Name)
-                    and target.value.id == "os"
-                    and target.attr == "environ"
-                ) or (isinstance(target, ast.Name) and target.id == "environ"):
-                    names.add(key)
-    return frozenset(names)
+            hit = _environ_hit(node)
+            if hit is not None:
+                found.add(hit)
+    return found
+
+
+def _parse_module(path: Path) -> ast.AST | None:
+    try:
+        return ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    except (OSError, SyntaxError, UnicodeDecodeError):
+        return None
+
+
+def _environ_hit(node: ast.AST) -> tuple[str, bool] | None:
+    if isinstance(node, ast.Call):
+        return _call_environ_hit(node)
+    if isinstance(node, ast.Subscript):
+        return _subscript_environ_hit(node)
+    return None
+
+
+def _call_environ_hit(node: ast.Call) -> tuple[str, bool] | None:
+    if not node.args:
+        return None
+    key = _const_str(node.args[0])
+    if key is None or not _is_environ_call(node):
+        return None
+    return (key, True)
+
+
+def _is_environ_call(node: ast.Call) -> bool:
+    func = node.func
+    if isinstance(func, ast.Name):
+        return func.id == "getenv"
+    if not isinstance(func, ast.Attribute) or func.attr != "get":
+        return False
+    return _receiver_is_environ(func.value)
+
+
+def _receiver_is_environ(value: ast.expr) -> bool:
+    if isinstance(value, ast.Name):
+        return value.id in {"os", "environ"}
+    if not isinstance(value, ast.Attribute):
+        return False
+    owner = value.value
+    return isinstance(owner, ast.Name) and owner.id == "os" and value.attr == "environ"
+
+
+def _subscript_environ_hit(node: ast.Subscript) -> tuple[str, bool] | None:
+    key = _const_str(node.slice)
+    if key is None or not _subscript_is_environ(node.value):
+        return None
+    return (key, False)
+
+
+def _subscript_is_environ(target: ast.expr) -> bool:
+    if isinstance(target, ast.Name):
+        return target.id == "environ"
+    if not isinstance(target, ast.Attribute):
+        return False
+    owner = target.value
+    return isinstance(owner, ast.Name) and owner.id == "os" and target.attr == "environ"
 
 
 def env_documentation_surfaces(root: Path | None = None) -> frozenset[str]:

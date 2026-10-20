@@ -274,6 +274,7 @@ def test_readme_receipt_census_matches_git() -> None:
     assert str(census["json_top_level"]) in readme
     assert census["legacy_unsealed_json"] == 7
 
+
 def test_env_example_vars_documented_in_operator_surfaces() -> None:
     declared = env_example_variables()
     documented = env_documentation_surfaces()
@@ -314,6 +315,46 @@ def test_superpower_capabilities_from_tmp_cwd(monkeypatch: pytest.MonkeyPatch) -
 def test_env_example_covers_source_environ_reads() -> None:
     missing = sorted(source_environ_names() - env_example_all_variables() - RUNTIME_ENV_ALLOWLIST)
     assert not missing, f"src os.environ/getenv keys missing from .env.example: {missing[:20]}"
+
+
+def test_source_environ_names_keeps_call_and_subscript_rules(tmp_path: Path) -> None:
+    """PD-8S env-parity: call keys are alphanumeric; subscript keys only need uppercase."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "reads.py").write_text(
+        "\n".join(
+            [
+                "import os",
+                "def read(name, environ):",
+                "    os.environ['FOO']",
+                "    os.environ.get('BAR')",
+                "    os.environ.get('FOO_BAR')",
+                "    environ['BAZ']",
+                "    environ.get('QUX')",
+                "    os.get('OSGET')",
+                "    getenv('GETENV')",
+                "    os.environ['HAS-DASH']",
+                "    os.environ.get('HAS-DASH')",
+                "    os.environ['lower']",
+                "    os.environ.get('lower')",
+                "    os.environ['']",
+                "    os.environ.get('')",
+                "    os.environ[name]",
+                "    getenv()",
+                "    other.get('NOPE')",
+                "    os.path.get('NOPE')",
+                "    other['NOPE']",
+                "    os['NOPE']",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (src / "broken.py").write_text("def (\n", encoding="utf-8")
+    (src / "note.txt").write_text("os.environ['TEXT']\n", encoding="utf-8")
+    assert source_environ_names(tmp_path) == frozenset(
+        {"FOO", "BAR", "FOO_BAR", "BAZ", "QUX", "OSGET", "GETENV", "HAS-DASH"}
+    )
 
 
 def test_lab_doctor_reports_created_dirs_separately(tmp_path: Path) -> None:
