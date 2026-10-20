@@ -727,6 +727,17 @@ class SuperpowerResult:
     run_id: str = ""
 
     @property
+    def status(self) -> str:
+        """Operator status: withheld, cancelled, error, or ok. Derived, never attested."""
+        if self.honesty_violation:
+            return "withheld"
+        if self.cancelled or any(run.status == "cancelled" for run in self.runs):
+            return "cancelled"
+        if self.errors or any(run.status == "failed" for run in self.runs):
+            return "error"
+        return "ok"
+
+    @property
     def partial(self) -> bool:
         return (
             self.cancelled
@@ -1096,6 +1107,17 @@ def _dispatch_stage(
                 _stage_flash_save(plan, selected, ctx, ctx.flash_store, result)
         case StageKind.SYNTHESIZE:
             _stage_synthesis(plan, ctx, result, parts)
+
+
+def _emit(ctx: SuperpowerContext, event: str, detail: str) -> None:
+    """Forward a progress event. A broken listener must not abort the run."""
+    callback = ctx.on_event
+    if callback is None:
+        return
+    try:
+        callback(event, detail)
+    except Exception:  # noqa: BLE001 — progress is advisory
+        return
 
 
 def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:

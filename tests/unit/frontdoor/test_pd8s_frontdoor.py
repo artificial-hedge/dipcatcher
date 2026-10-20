@@ -115,34 +115,39 @@ def test_run_tool_lab_binary_scrubs_credentials(
 
 
 def test_harness_subprocess_env_is_scrubbed(monkeypatch: pytest.MonkeyPatch) -> None:
-    from fx1.interactive.procs import ProcResult
+    from fx1.harness import RunnerOutcome
 
     monkeypatch.setenv(ENV_API_KEY, SECRET)
-    captured: list[dict[str, object]] = []
+    captured: dict[str, object] = {}
 
-    def fake_run_owned(argv: list[str], limits: object, **kwargs: object) -> ProcResult:
-        captured.append(kwargs)
-        return ProcResult(
-            argv_summary=[],
-            exit_code=0,
-            stdout="",
-            stderr="",
-            timed_out=False,
-            cancelled=False,
-            truncated=False,
-            spawn_error=None,
-            duration_s=0.0,
-            pid=None,
-            pgid=None,
-        )
+    def fake_run_subprocess(
+        executable: str,
+        argv: list[str],
+        timeout_s: int,
+        cancel_event: object,
+        *,
+        grace_s: float,
+        poll_s: float,
+        max_output_chars: int,
+        env: dict[str, str] | None = None,
+        cwd: str | None = None,
+    ) -> RunnerOutcome:
+        del executable, argv, timeout_s, cancel_event, grace_s, poll_s, max_output_chars
+        captured["env"] = env
+        captured["cwd"] = cwd
+        return RunnerOutcome(exit_code=0, stdout="{}", stderr="")
 
-    monkeypatch.setattr("fx1.interactive.procs.run_owned", fake_run_owned)
-    Harness().run("doctor")
-    assert captured
-    env = captured[0].get("env")
+    monkeypatch.setattr("fx1.harness.shutil.which", lambda name: f"/usr/bin/{name}")
+    monkeypatch.setattr("fx1.harness._run_subprocess", fake_run_subprocess)
+    result = Harness().run("doctor")
+    assert result.exit_code == 0
+    env = captured.get("env")
     assert isinstance(env, dict)
     assert env.get(ENV_API_KEY) is None
-    assert popens[0].get("cwd")
+    assert SECRET not in env.values()
+    cwd = captured.get("cwd")
+    assert isinstance(cwd, str) and cwd
+    assert Path(cwd) == discover_repo_root()
 
 
 def test_repo_root_doctor_from_tmp(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

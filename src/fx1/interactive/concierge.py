@@ -547,6 +547,34 @@ class Concierge(DataCommands):
             self._job.announced = True
             self._announce_job(self._job)
 
+    def _publish_superpower(self, result: SuperpowerResult) -> None:
+        with self._state_lock:
+            self._last_result = result
+            self._last_answer = result.summary or ""
+            self._last_status = operator_status(result)
+        self._status_explicit = True
+
+    def _record_superpower_answer(self, result: SuperpowerResult) -> None:
+        text = _superpower_memory(result)
+        if not text:
+            return
+        self._append_if_new("assistant", text)
+        self._persist_session()
+
+    def _append_if_new(self, role: str, content: str) -> None:
+        cleaned = content.strip()
+        if not cleaned:
+            return
+        with self._state_lock:
+            last = self._messages[-1] if self._messages else None
+            if (
+                isinstance(last, dict)
+                and last.get("role") == role
+                and last.get("content") == cleaned
+            ):
+                return
+            self._messages.append({"role": role, "content": cleaned})
+
     def _announce_job(self, job: BackgroundJob) -> None:
         if job.error:
             self._say(f"[{job.label}] failed: {job.error}")
@@ -1612,7 +1640,6 @@ class Concierge(DataCommands):
         ledger = BudgetLedger(
             dataclasses.replace(self._run_budget, max_wall_s=budget.max_duration_s)
         )
-        started_at = datetime.now(UTC).isoformat(timespec="seconds")
 
         def run_fn(cancel_event: threading.Event, on_event: Callable[[str, str], None]) -> Any:
             from fx1.webresearch.engine import ResearchReport

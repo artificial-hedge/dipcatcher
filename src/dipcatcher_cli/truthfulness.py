@@ -94,6 +94,7 @@ RUNTIME_ENV_ALLOWLIST: frozenset[str] = frozenset(
         "CLICOLOR_FORCE",
         "CI",
         "GITHUB_ACTIONS",
+        "GITHUB_REPOSITORY",
         "GITHUB_TOKEN",
         "GH_TOKEN",
         "GITHUB_WORKSPACE",
@@ -207,9 +208,7 @@ def source_environ_names(root: Path | None = None) -> frozenset[str]:
                     and isinstance(target.value, ast.Name)
                     and target.value.id == "os"
                     and target.attr == "environ"
-                ):
-                    names.add(key)
-                elif isinstance(target, ast.Name) and target.id == "environ":
+                ) or (isinstance(target, ast.Name) and target.id == "environ"):
                     names.add(key)
     return frozenset(names)
 

@@ -49,7 +49,7 @@ def test_ci_evidence_base_prefers_last_green_artifact() -> None:
         end = len(text)
     job = text[start:end]
     assert "github.event.before" in job
-    assert "LAST_GREEN" in job
-    assert "evidence-base-sha" in job
+    assert "evidence-green-sha.txt" in job
+    assert "--push-before" in job
     assert "quant_fund.research.evidence_base" in job
     assert "persist-credentials: false" in job
