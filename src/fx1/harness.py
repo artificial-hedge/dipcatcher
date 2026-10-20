@@ -34,6 +34,9 @@ from typing import IO, TYPE_CHECKING, Any, Protocol
 
 from pydantic import BaseModel, Field
 
+if TYPE_CHECKING:
+    from fx1.interactive.procs import ProcessRegistry, ProcResult
+
 
 class HarnessRole(StrEnum):
     DATA_ENGINE = "data_engine"

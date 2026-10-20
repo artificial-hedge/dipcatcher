@@ -58,7 +58,10 @@ from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.budget import BudgetExceeded, BudgetLedger, RunBudget
 from fx1.interactive.chat_tools import parse_tool_call as _parse_tool_call
 from fx1.interactive.chat_turn import cancel_chat_keyboard
-from fx1.interactive.concierge_console import _null
+from fx1.interactive.concierge_console import (
+    _null,
+    run_console,  # noqa: F401
+)
 from fx1.interactive.concierge_data import DataCommands
 from fx1.interactive.concierge_display import (
     for_display as _for_display,
@@ -131,6 +134,7 @@ from fx1.interactive.superpower_glue import (
     evidence_report,
     evidence_status_line,
     make_plan,
+    operator_status,
 )
 from fx1.interactive.usage_budget import UsageTracker
 
@@ -227,6 +231,23 @@ def _export_args(rest: str) -> tuple[str, Path | None]:
     raise ValueError("usage: /export [json|markdown] [PATH]")
 
 
+def _superpower_memory(result: SuperpowerResult) -> str:
+    """Session memory for a superpower result. Honesty failures are withheld."""
+    parts = (
+        result.summary or "",
+        evidence_status_line(result),
+        result.explain(),
+    )
+    text = "\n\n".join(part for part in parts if part.strip())
+    if not text.strip():
+        return ""
+    try:
+        validate_fx1_output(text)
+    except Fx1HonestyError:
+        return scrub_model_text(text)
+    return text
+
+
 def _bundle_path(rest: str) -> Path | None:
     tokens = shlex.split(rest)
     if not tokens:
@@ -282,13 +303,14 @@ class Concierge(DataCommands):
         self._context_budget = ContextBudget.from_env()
         self._context_trim_said = False
         self._job: BackgroundJob | None = None
+        self._jobs: JobLedger | None = None
         self._job_counter = 0
         self._catalog_cache: dict[str, FamilyCatalog] = {}
         if catalog is not None:
             self._catalog_cache["catalog"] = catalog
         self._retry_policy = retry_policy or RetryPolicy()
         self.startup_notes: list[str] = []
-        self._run_budget = self._resolve_budget(run_budget)
+        self._wall_budget = self._resolve_budget(run_budget)
         self._journal: Any | None = journal
         if self._journal is None and persist:
             self._journal = session_mod.SessionJournal(
@@ -378,7 +400,7 @@ class Concierge(DataCommands):
 
     @property
     def run_budget(self) -> RunBudget:
-        return self._run_budget
+        return self._wall_budget
 
     @property
     def job(self) -> BackgroundJob | None:
@@ -1201,7 +1223,7 @@ class Concierge(DataCommands):
         status["session_journal"] = (
             str(self._journal.path) if self._journal is not None else "disabled"
         )
-        status["run_budget"] = self._run_budget.describe()
+        status["run_budget"] = self._wall_budget.describe()
         job = self._job
         status["background_job"] = (
             f"{job.label} ({'running' if job.running else 'finished'})" if job else "none"
@@ -1215,7 +1237,7 @@ class Concierge(DataCommands):
     def _cmd_budget(self, rest: str) -> bool:
         tokens = shlex.split(rest)
         if not tokens or tokens[0] in {"show", "list"}:
-            self._say(f"run budget: {self._run_budget.describe()}")
+            self._say(f"run budget: {self._wall_budget.describe()}")
             self._say(
                 "tighten with /budget <wall|harness|calls|retries|sources|tokens> <value>; "
                 "environment defaults: FX1_BUDGET_WALL_S, FX1_BUDGET_HARNESS_STEPS, "
@@ -1230,18 +1252,18 @@ class Concierge(DataCommands):
         dimension = tokens[0]
         try:
             if dimension == "wall":
-                candidate = dataclasses.replace(self._run_budget, max_wall_s=float(tokens[1]))
+                candidate = dataclasses.replace(self._wall_budget, max_wall_s=float(tokens[1]))
             else:
                 amount = int(tokens[1])
                 candidate = dataclasses.replace(
-                    self._run_budget, **{_BUDGET_DIMENSIONS[dimension]: amount}
+                    self._wall_budget, **{_BUDGET_DIMENSIONS[dimension]: amount}
                 )
         except ValueError:
             raise ValueError(f"/budget {dimension} needs a number") from None
         candidate.validate()
-        self._run_budget = candidate
+        self._wall_budget = candidate
         self._journal_event("budget_set", dimension=dimension, value=tokens[1])
-        self._say(f"run budget: {self._run_budget.describe()}")
+        self._say(f"run budget: {self._wall_budget.describe()}")
         return False
 
     def _cmd_families(self, rest: str) -> bool:
@@ -1389,7 +1411,7 @@ class Concierge(DataCommands):
 
         def bound(prompt: str) -> str:
             return self._model_fn(
-                backend, cancel_event=holder["cancel"], ledger=BudgetLedger(self._run_budget)
+                backend, cancel_event=holder["cancel"], ledger=BudgetLedger(self._wall_budget)
             )(prompt)
 
         return bound
@@ -1448,6 +1470,24 @@ class Concierge(DataCommands):
             allow_web=allow_web,
         )
 
+    def _arm_turn(self, event: threading.Event) -> None:
+        with self._state_lock:
+            self._turn_cancel = event
+
+    def _disarm_turn(self) -> None:
+        with self._state_lock:
+            self._turn_cancel = None
+
+    def _current_cancel(self) -> threading.Event | None:
+        with self._state_lock:
+            return self._turn_cancel
+
+    def _set_status(self, status: str) -> None:
+        with self._state_lock:
+            self._last_status = status
+        self._status_explicit = True
+        self._emit("concierge.status", {"status": status, "model": self.model})
+
     def _arm_superpower_cancel(self, cancel: threading.Event | None) -> None:
         carry = self._carry_superpower_cancel(cancel)
         if cancel is not None and carry:
@@ -1485,10 +1525,10 @@ class Concierge(DataCommands):
                 cancel_event=cancel_event,
                 budget=self._run_budget(),
                 job_ledger=self._job_ledger(),
-                session_id=self._corr_session,
-                telemetry_emit=self._telemetry,
+                session_id=getattr(self, "_corr_session", self.session_id),
+                telemetry_emit=getattr(self, "_telemetry", None),
             ),
-            datasets=tuple(self._datasets),
+            datasets=tuple(getattr(self, "_datasets", ())),
         )
         ctx.allow_web = getattr(self, "_superpower_allow_web", False)
         return ctx
@@ -1627,19 +1667,20 @@ class Concierge(DataCommands):
         budget = ResearchBudget(
             max_duration_s=min(
                 budget_s if budget_s is not None else base.max_duration_s,
-                self._run_budget.max_wall_s,
+                self._wall_budget.max_wall_s,
             ),
             max_sources=min(
                 max_sources if max_sources is not None else base.max_sources,
-                self._run_budget.max_web_sources,
+                self._wall_budget.max_web_sources,
             ),
             max_searches=base.max_searches,
             max_depth=base.max_depth,
             search_pause_s=base.search_pause_s,
         )
         ledger = BudgetLedger(
-            dataclasses.replace(self._run_budget, max_wall_s=budget.max_duration_s)
+            dataclasses.replace(self._wall_budget, max_wall_s=budget.max_duration_s)
         )
+        started_at = datetime.now(UTC).isoformat(timespec="seconds")
 
         def run_fn(cancel_event: threading.Event, on_event: Callable[[str, str], None]) -> Any:
             from fx1.webresearch.engine import ResearchReport

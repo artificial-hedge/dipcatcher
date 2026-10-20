@@ -93,6 +93,7 @@ RUNTIME_ENV_ALLOWLIST: frozenset[str] = frozenset(
         "CLICOLOR",
         "CLICOLOR_FORCE",
         "CI",
+        "DIPCATCHER_CHILD",
         "GITHUB_ACTIONS",
         "GITHUB_REPOSITORY",
         "GITHUB_TOKEN",

@@ -340,6 +340,14 @@ def _append_family_lines(lines: list[str], plan: SuperpowerPlan) -> None:
         lines.append(f"  excluded {item.get('id', '?')}: {item.get('reason', '')}")
 
 
+def _without_web(plan: SuperpowerPlan, allow_web: bool) -> SuperpowerPlan:
+    """Drop public web search unless the caller opted in."""
+    if allow_web:
+        return plan
+    plan.capabilities = [cap for cap in plan.capabilities if cap.id != "web_research"]
+    return plan
+
+
 def plan_goal(
     goal: str,
     *,
@@ -372,19 +380,23 @@ def plan_goal(
     if catalog is None and catalog_unavailable:
         from fx1.interactive.orchestration import plan_catalog_unavailable
 
-        return plan_catalog_unavailable(goal, catalog_unavailable)
+        plan = plan_catalog_unavailable(goal, catalog_unavailable)
+        return _without_web(plan, allow_web)
     if isinstance(catalog, CapabilityCatalog):
         from fx1.interactive.orchestration import plan_with_catalog
 
-        return plan_with_catalog(
-            goal,
-            catalog,
-            datasets=datasets,
-            roots=roots,
-            model_fn=model_fn,
-            max_harness=max_harness,
-            family_selector=family_selector,
-            budget_s=budget_s,
+        return _without_web(
+            plan_with_catalog(
+                goal,
+                catalog,
+                datasets=datasets,
+                roots=roots,
+                model_fn=model_fn,
+                max_harness=max_harness,
+                family_selector=family_selector,
+                budget_s=budget_s,
+            ),
+            allow_web,
         )
     family_catalog = catalog if isinstance(catalog, FamilyCatalog) else None
     return _plan_keyword(
@@ -408,7 +420,6 @@ def _plan_keyword(
     catalog: FamilyCatalog | None,
     allow_web: bool = True,
 ) -> SuperpowerPlan:
-    del family_selector
     registry = capabilities or CAPABILITIES
     fold = _TRIGGER_LEXICON.fold(goal)
     manual_requests = [
@@ -443,10 +454,10 @@ def _plan_keyword(
     )
     if model_fn is not None:
         plan = _model_refine(plan, goal, registry, model_fn, max_harness=max_harness)
+    plan = _without_web(plan, allow_web)
     if not allow_web:
-        plan.capabilities = [cap for cap in plan.capabilities if cap.id != "web_research"]
         web_wanted = _TRIGGER_LEXICON.any_web_trigger_folded(fold, _WEB_TRIGGERS) or not harness_ids
-        if web_wanted:
+        if web_wanted and not any("opt-in" in note for note in plan.notes):
             plan.notes.append(
                 "web_research omitted; explicit opt-in required "
                 "(--web or FX1_WEB_RESEARCH=1) before the goal is sent"
@@ -727,17 +738,6 @@ class SuperpowerResult:
     run_id: str = ""
 
     @property
-    def status(self) -> str:
-        """Operator status: withheld, cancelled, error, or ok. Derived, never attested."""
-        if self.honesty_violation:
-            return "withheld"
-        if self.cancelled or any(run.status == "cancelled" for run in self.runs):
-            return "cancelled"
-        if self.errors or any(run.status == "failed" for run in self.runs):
-            return "error"
-        return "ok"
-
-    @property
     def partial(self) -> bool:
         return (
             self.cancelled
@@ -800,6 +800,12 @@ class SuperpowerContext:
     journal: Any | None = None
     job_id: str = ""
     catalog: FamilyCatalog | None = None
+    datasets: tuple[Any, ...] = ()
+    roots: Mapping[str, Any] | None = None
+    job_ledger: Any | None = None
+    session_id: str = ""
+    run_id: str = ""
+    telemetry_emit: Any | None = None
     evidence: EvidenceLedger | None = field(default=None, repr=False, compare=False)
     run_dir: Path | None = None
     _run_evidence: _RunEvidence | None = field(default=None, repr=False, compare=False)
@@ -1107,17 +1113,6 @@ def _dispatch_stage(
                 _stage_flash_save(plan, selected, ctx, ctx.flash_store, result)
         case StageKind.SYNTHESIZE:
             _stage_synthesis(plan, ctx, result, parts)
-
-
-def _emit(ctx: SuperpowerContext, event: str, detail: str) -> None:
-    """Forward a progress event. A broken listener must not abort the run."""
-    callback = ctx.on_event
-    if callback is None:
-        return
-    try:
-        callback(event, detail)
-    except Exception:  # noqa: BLE001 — progress is advisory
-        return
 
 
 def run_plan(plan: SuperpowerPlan, ctx: SuperpowerContext) -> SuperpowerResult:
