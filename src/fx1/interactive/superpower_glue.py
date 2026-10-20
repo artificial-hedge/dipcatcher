@@ -15,6 +15,7 @@ from typing import Any
 
 from fx1.interactive.chat_tools import ensure_output_roots, policy_roots
 from fx1.interactive.evidence_ledger import EvidenceLedger
+from fx1.interactive.families import load_catalog
 from fx1.interactive.jobs import JobState, ReconcileReport
 from fx1.interactive.planner import DatasetRef
 from fx1.interactive.runctx import new_run_id, require_id
@@ -22,7 +23,6 @@ from fx1.interactive.superpower import (
     SuperpowerContext,
     SuperpowerPlan,
     SuperpowerResult,
-    load_catalog,
     plan_goal,
 )
 

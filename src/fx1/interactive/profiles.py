@@ -23,10 +23,12 @@ require them.
 
 from __future__ import annotations
 
+import json
 import os
 import stat
 import subprocess
 import sys
+import tempfile
 import threading
 import unicodedata
 import urllib.parse
@@ -35,7 +37,20 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from getpass import getuser
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
+
+from fx1.interactive.atomicstore import (
+    FileLock,
+    StoreCorruptError,
+    permission_problem,
+    quarantine,
+    read_json,
+    update_json,
+)
+from fx1.interactive.endpoint import EndpointError, EndpointSpec, normalize_endpoint
+from fx1.interactive.redact import fingerprint as _secret_fingerprint
+from fx1.interactive.redact import redact_text, register_secret
+from fx1.serve.backends import MOONSHOT_API_URL
 
 MODELS: tuple[str, ...] = ("fx1", "fx1-lite")
 DEFAULT_MODEL = "fx1"
@@ -59,6 +74,7 @@ CREDENTIAL_ENV_VARS: frozenset[str] = frozenset(
 
 STORE_NAME = "credentials.json"
 SCHEMA_VERSION = 2
+_MODE_0600 = stat.S_IRUSR | stat.S_IWUSR
 
 _LOCK_TIMEOUT_S = 10.0
 _ACL_FAILURE = "Windows ACL was not applied to the credentials store"
@@ -216,6 +232,12 @@ def config_dir() -> Path:
 
 def store_path() -> Path:
     return config_dir() / STORE_NAME
+
+
+def _resolve_path(path: Path | None) -> Path:
+    if path is None:
+        return store_path()
+    return path
 
 
 def default_base_url() -> str:

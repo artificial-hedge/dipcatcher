@@ -56,32 +56,31 @@ def test_use_does_not_leak_api_key_to_lab_subprocess(
 
 
 def test_harness_subprocess_env_is_scrubbed(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fx1.interactive.procs import ProcResult
+
     monkeypatch.setenv(ENV_API_KEY, SECRET)
-    popens: list[dict[str, object]] = []
+    captured: list[dict[str, object]] = []
 
-    class _Proc:
-        returncode = 0
+    def fake_run_owned(argv: list[str], limits: object, **kwargs: object) -> ProcResult:
+        captured.append(kwargs)
+        return ProcResult(
+            argv_summary=[],
+            exit_code=0,
+            stdout="",
+            stderr="",
+            timed_out=False,
+            cancelled=False,
+            truncated=False,
+            spawn_error=None,
+            duration_s=0.0,
+            pid=None,
+            pgid=None,
+        )
 
-        def poll(self) -> int:
-            return 0
-
-        @property
-        def stdout(self) -> None:
-            return None
-
-        @property
-        def stderr(self) -> None:
-            return None
-
-    def fake_popen(command: list[str], **kwargs: object) -> _Proc:
-        popens.append(kwargs)
-        return _Proc()
-
-    monkeypatch.setattr("fx1.harness.subprocess.Popen", fake_popen)
-    monkeypatch.setattr("fx1.harness.shutil.which", lambda _: "/usr/bin/dipcatcher")
+    monkeypatch.setattr("fx1.interactive.procs.run_owned", fake_run_owned)
     Harness().run("doctor")
-    assert popens
-    env = popens[0].get("env")
+    assert captured
+    env = captured[0].get("env")
     assert isinstance(env, dict)
     assert env.get(ENV_API_KEY) is None
 
@@ -180,6 +179,36 @@ def test_env_example_vars_documented_in_operator_surfaces() -> None:
     documented = env_documentation_surfaces()
     undocumented = sorted(declared - documented)
     assert not undocumented, f".env.example vars missing from README/AGENTS: {undocumented[:10]}"
+
+
+def test_superpower_web_search_requires_explicit_opt_in() -> None:
+    from unittest.mock import MagicMock
+
+    from fx1.interactive.superpower import (
+        SuperpowerContext,
+        SuperpowerPlan,
+        SuperpowerResult,
+        _stage_web_research,
+    )
+
+    plan = SuperpowerPlan(goal="public macro question", capabilities=[], source="test")
+    ctx = SuperpowerContext(allow_web=False)
+    result = SuperpowerResult(goal=plan.goal, plan=plan, summary="")
+    researcher = MagicMock()
+    _stage_web_research(plan, ctx, researcher, result, [])
+    researcher.run.assert_not_called()
+    web = next(run for run in result.runs if run.id == "web_research")
+    assert web.status == "skipped"
+    assert "opt-in" in web.detail.lower()
+
+
+def test_superpower_capabilities_from_tmp_cwd(monkeypatch: pytest.MonkeyPatch) -> None:
+    from fx1.interactive.superpower import describe_capabilities
+
+    monkeypatch.chdir("/tmp")
+    text = describe_capabilities()
+    assert "web_research" in text
+    assert "Traceback" not in text
 
 
 def test_lab_doctor_reports_created_dirs_separately(tmp_path: Path) -> None:

@@ -39,6 +39,9 @@ _OS_VARS = frozenset(
         "TZ",
         "USER",
         "USERNAME",
+        "USERPROFILE",
+        "WINDIR",
+        "GITHUB_REPOSITORY",
     }
 )
 

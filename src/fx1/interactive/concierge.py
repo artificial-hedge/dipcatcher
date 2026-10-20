@@ -54,6 +54,8 @@ from fx1.interactive import actions, lineio, profiles
 from fx1.interactive import session as session_mod
 from fx1.interactive.approvals import ApprovalGate, console_ask_fn
 from fx1.interactive.budget import BudgetExceeded, BudgetLedger, RunBudget
+from fx1.interactive.concierge_data import DataCommands
+from fx1.interactive.context_window import ContextBudget
 from fx1.interactive.endpoint import (
     OperationCancelled,
     RetryPolicy,
@@ -430,6 +432,53 @@ class Concierge(DataCommands):
         self._approvals: ApprovalGate = (
             JournaledApprovalGate.wrap(gate, self._journal) if self._journal is not None else gate
         )
+        self._state_lock = threading.Lock()
+        self._attachments: list[Any] = []
+        self._model_stats: dict[str, dict[str, Any]] = {}
+        self._prepared = None
+        self._evidence = None
+        self._cancel_scope = False
+        self._cancel_requested = False
+        self._turn_cancel: threading.Event | None = None
+        self._status_explicit = False
+        self._last_status = "ok"
+        self._session_store = None
+        self._session = None
+        self._skip_turn_record = False
+        self._turn_label = "turn"
+        self._budget_overrides: dict[str, Any] = {}
+        self._emit: Callable[[str, Mapping[str, Any]], None] = lambda *_a, **_k: None
+
+    @property
+    def last_status(self) -> str:
+        return self._last_status
+
+    @property
+    def last_usage(self) -> dict[str, Any]:
+        return {}
+
+    @property
+    def last_latency_s(self) -> float:
+        return 0.0
+
+    @property
+    def last_identity(self) -> Any:
+        return None
+
+    def _assign_status(self, status: str) -> None:
+        self._last_status = status
+        self._status_explicit = True
+
+    def _open_cancel_scope(self) -> None:
+        with self._state_lock:
+            self._cancel_scope = True
+            self._cancel_requested = False
+
+    def _close_cancel_scope(self) -> None:
+        with self._state_lock:
+            self._cancel_scope = False
+            self._cancel_requested = False
+            self._turn_cancel = None
 
     # -- construction helpers ------------------------------------------------
 
@@ -1529,15 +1578,6 @@ class Concierge(DataCommands):
             catalog=catalog,
             allow_web=allow_web,
         )
-        kwargs = completion_kwargs(
-            tracker, backend, cancel, pass_deadline=self._pass_deadline, tools=None
-        )
-        tracker.charge_model_call()
-        with self._orb():
-            text = str(backend.complete(messages, **kwargs))
-        _refuse_cancelled(cancel)
-        charge_reported_usage(tracker, backend)
-        return text
 
     def _arm_superpower_cancel(self, cancel: threading.Event | None) -> None:
         carry = self._carry_superpower_cancel(cancel)
