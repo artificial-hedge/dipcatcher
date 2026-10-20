@@ -38,7 +38,6 @@ import contextvars
 import hashlib
 import hmac
 import inspect
-import io
 import json
 import logging
 import math
@@ -114,6 +113,15 @@ from fx1.serve.anthropic_compat import (
 )
 from fx1.serve.api_metrics import BackendCompletionStats as BackendCompletionStats
 from fx1.serve.api_metrics import MetricsResponse, _Metrics
+from fx1.serve.api_request_ingress import (
+    MAX_BODY_BYTES as _MAX_BODY_BYTES,
+)
+from fx1.serve.api_request_ingress import (
+    buffer_request_body as _buffer_request_body,  # noqa: F401 — stable test imports
+)
+from fx1.serve.api_request_ingress import (
+    request_ingress_refusal as _request_ingress_refusal,
+)
 from fx1.serve.backends import (
     BYOK_API_KEY_ENV,
     BYOK_BASE_URL_ENV,
@@ -513,125 +521,7 @@ def _v1_error_body(path: str, message: str, status: int, code: str) -> dict[str,
     return openai_error_body(message, status, code)
 
 
-def _bad_content_length_body(path: str) -> dict[str, Any]:
-    """The unparseable ``Content-Length`` refusal body in the path's own
-    grammar — ``{error}`` under ``/v1``, flat ``{detail, code}`` on the
-    ``/harness`` dialect."""
-    if is_openai_path(path):
-        return _v1_error_body(path, "invalid content-length", 400, "bad_request")
-    return {"detail": "invalid content-length", "code": "bad_request"}
-
-
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
-_MAX_BODY_BYTES = 1 << 20
-_SINGLETON_REQUEST_HEADERS = frozenset(
-    {
-        b"authorization",
-        b"content-length",
-        b"content-type",
-        b"host",
-        b"idempotency-key",
-        b"last-event-id",
-        b"transfer-encoding",
-        b"x-api-key",
-        b"x-request-id",
-        b"anthropic-version",
-    }
-)
-
-
-def _ambiguous_request_headers(request: Request) -> str | None:
-    """Reject security-sensitive duplicates before any API collapses them.
-
-    Starlette's ``Headers.get`` selects the first duplicate while the
-    OpenAI translator's dict comprehension selects the last.  Accepting
-    both creates a proxy/application interpretation gap.  These headers
-    are singletons in this API; list-valued standard headers remain
-    untouched.
-    """
-    seen: set[bytes] = set()
-    for raw_name, _raw_value in request.scope.get("headers", []):
-        name = bytes(raw_name).lower()
-        singleton = name in _SINGLETON_REQUEST_HEADERS or name.startswith(b"x-fx1-")
-        if singleton and name in seen:
-            return f"duplicate {name.decode('latin-1')} header"
-        seen.add(name)
-    if b"content-length" in seen and b"transfer-encoding" in seen:
-        return "content-length and transfer-encoding must not be combined"
-    if b"authorization" in seen and b"x-api-key" in seen:
-        return "send exactly one authentication header"
-    return None
-
-
-def _request_header_error_body(path: str, message: str) -> dict[str, Any]:
-    if is_openai_path(path):
-        return _v1_error_body(path, message, 400, "bad_request")
-    return {"detail": message, "code": "bad_request"}
-
-
-async def _buffer_request_body(request: Request) -> tuple[int, bytes]:
-    """Read the ASGI entity once without buffering beyond the body cap.
-
-    ``Request.stream()`` can yield arbitrarily small chunks.  Keeping each
-    chunk in a list therefore lets a one-megabyte request consume tens of
-    megabytes of Python object overhead.  A bounded in-memory stream keeps the
-    allocation proportional to the advertised cap, and an over-cap entity
-    is refused as soon as the first excess bytes arrive instead of draining
-    an attacker-controlled stream before answering.
-    """
-    size = 0
-    body = io.BytesIO()
-    async for chunk in request.stream():
-        size += len(chunk)
-        if size > _MAX_BODY_BYTES:
-            request._body = b""  # noqa: SLF001 — no downstream consumer on refusal
-            return size, b""
-        body.write(chunk)
-    buffered = body.getvalue()
-    request._body = buffered  # noqa: SLF001 — preserve entity for downstream parsing
-    return size, buffered
-
-
-def _too_large_body(path: str) -> dict[str, Any]:
-    detail = f"body exceeds {_MAX_BODY_BYTES}-byte cap"
-    if is_openai_path(path):
-        return _v1_error_body(path, detail, 413, "too_large")
-    return {"detail": detail, "code": "too_large"}
-
-
-async def _request_ingress_refusal(request: Request) -> JSONResponse | None:
-    """Validate singleton/framing headers and cap the actual ASGI entity."""
-    ambiguous = _ambiguous_request_headers(request)
-    if ambiguous is not None:
-        return JSONResponse(
-            status_code=400,
-            content=_request_header_error_body(request.url.path, ambiguous),
-        )
-    if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
-        return None
-    declared = request.headers.get("content-length")
-    length: int | None = None
-    if declared is not None:
-        if re.fullmatch(r"[0-9]+", declared) is None:
-            return JSONResponse(
-                status_code=400,
-                content=_bad_content_length_body(request.url.path),
-            )
-        length = int(declared)
-        if length > _MAX_BODY_BYTES:
-            return JSONResponse(status_code=413, content=_too_large_body(request.url.path))
-    actual_length, _body = await _buffer_request_body(request)
-    if actual_length > _MAX_BODY_BYTES:
-        return JSONResponse(status_code=413, content=_too_large_body(request.url.path))
-    if length is not None and actual_length != length:
-        return JSONResponse(
-            status_code=400,
-            content=_request_header_error_body(
-                request.url.path, "content-length does not match request body"
-            ),
-        )
-    return None
-
 
 # Async job results persist in the store until eviction — stdout/stderr
 # are capped per field so one chatty command can't pin unbounded memory.
