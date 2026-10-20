@@ -471,7 +471,9 @@ def test_real_catalog_full_scorecard_goal_is_refused_under_the_family_selector(
         family_selector=lambda text: runner.select(text, max_families=4),
     )
     assert "research" not in [step.capability_id for step in plan.typed_steps]
-    refused = [item for item in plan.exclusions if item["capability_id"] == "research"]
+    refused = [
+        item for item in plan.orchestration_exclusions if item["capability_id"] == "research"
+    ]
     assert refused and refused[0]["code"] == "not_executable"
     assert refused[0]["detail"]
     assert plan.research_constrained is True and plan.families == []
@@ -553,5 +555,8 @@ def test_qualified_capability_outside_harness_registry_is_excluded(tmp_path: Pat
     _hermetic_config(tmp_path, run_dir)
     plan = plan_goal("run ghost bench", catalog=catalog, roots=_roots(tmp_path, run_dir))
     assert "ghost-bench" not in [step.capability_id for step in plan.typed_steps]
-    assert any("not registered in HARNESS_REGISTRY" in item["detail"] for item in plan.exclusions)
+    assert any(
+        "not registered in HARNESS_REGISTRY" in item["detail"]
+        for item in plan.orchestration_exclusions
+    )
     assert "not registered in HARNESS_REGISTRY" in plan.describe()

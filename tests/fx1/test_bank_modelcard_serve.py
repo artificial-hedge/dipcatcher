@@ -176,9 +176,9 @@ def test_placeholder_card_refused_when_ship_gate_enforced(
     card = ModelCard.load(ckpt / "modelcard.json")
     assert card.is_synthetic_placeholder
     assert not card.ship_eligible
-    with pytest.raises(RuntimeError, match="ship gate"):
+    with pytest.raises(RuntimeError, match="not a release candidate"):
         LocalWeightsEngine(ckpt, enforce_ship_gate=True)
-    with pytest.raises(RuntimeError, match="ship gate"):
+    with pytest.raises(RuntimeError, match="not a release candidate"):
         LocalFx1Backend(ckpt, enforce_ship_gate=True)
 
 
@@ -1010,7 +1010,7 @@ def test_local_engine_gets_checkpoint_only_from_parent_env(
         weights_sha256 = "a" * 64
         model = StubModel()
 
-        def __init__(self, root: Path) -> None:
+        def __init__(self, root: Path, **_kwargs: object) -> None:
             opened.append(root)
 
     monkeypatch.setenv("FX1_CHECKPOINT_DIR", str(tmp_path))

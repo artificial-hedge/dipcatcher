@@ -771,7 +771,7 @@ def _stderr_snippet(stderr: str) -> str:
 def _parse_json(stdout: str) -> Any:
     try:
         return json.loads(stdout)
-    except json.JSONDecodeError as exc:
+    except (json.JSONDecodeError, RecursionError, ValueError) as exc:
         raise FamilyClientError(f"family surface returned invalid JSON: {exc}") from exc
 
 

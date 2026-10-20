@@ -109,6 +109,7 @@ from fx1.interactive.endpoint import (
     probe_identity,
 )
 from fx1.interactive.families import FamilyCatalog, load_catalog, resolve_families
+from fx1.interactive.intent import looks_like_orchestration
 from fx1.interactive.jobs import JobLedger
 from fx1.interactive.model_ux import endpoint_stored_line, public_error, render_approvals
 from fx1.interactive.orb import OrbAnimator, OrbState
@@ -142,7 +143,7 @@ from fx1.interactive.superpower_glue import (
     operator_status,
     reconcile_lines,
 )
-from fx1.interactive.usage_budget import UsageLimits, UsageTracker
+from fx1.interactive.usage_budget import PRESET_CHAT_TURN, UsageLimits, UsageTracker
 
 HELP_TEXT = """\
 Chat                  plain text with the active model (tools: flash, web, harness)
@@ -253,6 +254,7 @@ def _export_args(rest: str) -> tuple[str, Path | None]:
 def _superpower_memory(result: SuperpowerResult) -> str:
     """Session memory for a superpower result. Honesty failures are withheld."""
     parts = (
+        f"goal: {result.goal}",
         result.summary or "",
         evidence_status_line(result),
         result.explain(),
@@ -376,7 +378,12 @@ class Concierge(ChatCommands, DataCommands):
         if telemetry_emit is None and hasattr(telemetry, "as_emit"):
             telemetry_emit = telemetry.as_emit()
         self._telemetry = telemetry_emit
-        self._usage_preset = usage_preset if usage_preset is not None else UsageLimits()
+        self._usage_preset = usage_preset if usage_preset is not None else PRESET_CHAT_TURN
+        self._turn_mark: int | None = None
+        self._pending_snapshot: Any | None = None
+        self._last_snapshot: Any | None = None
+        self._active_tracker: Any | None = None
+        self._pass_deadline = True
 
         def _forward_emit(event: str, fields: Mapping[str, Any]) -> None:
             sink = self._telemetry
@@ -406,6 +413,10 @@ class Concierge(ChatCommands, DataCommands):
 
     @property
     def last_usage(self) -> dict[str, Any]:
+        snap = self._last_snapshot
+        usage = None if snap is None else getattr(snap, "usage", None)
+        if isinstance(usage, dict):
+            return dict(usage)
         return {}
 
     def cancel_turn(self) -> None:
@@ -420,7 +431,13 @@ class Concierge(ChatCommands, DataCommands):
 
     @property
     def last_latency_s(self) -> float:
-        return 0.0
+        snap = self._last_snapshot
+        if snap is None:
+            return 0.0
+        latency = getattr(snap, "latency_s", 0.0)
+        if isinstance(latency, bool) or not isinstance(latency, (int, float)):
+            return 0.0
+        return float(latency)
 
     def startup_checks(self) -> list[str]:
         """Store warnings and jobs left by a previous process. Nothing is restarted."""
@@ -438,6 +455,10 @@ class Concierge(ChatCommands, DataCommands):
 
     @property
     def last_identity(self) -> Any:
+        snap = self._last_snapshot
+        identity = None if snap is None else getattr(snap, "identity", None)
+        if identity is not None:
+            return identity
         backend = self._last_backend
         if backend is None:
             return None
@@ -643,6 +664,12 @@ class Concierge(ChatCommands, DataCommands):
             self._persist_session()
             return True
         self._journal_turn("user", text)
+        if looks_like_orchestration(text):
+            self._say("routing this to research orchestration")
+            self._append_if_new("user", text)
+            self.start_superpower(text, sync=False)
+            self._persist_session()
+            return False
         self._chat_turn(text)
         self._persist_session()
         return False
@@ -683,9 +710,11 @@ class Concierge(ChatCommands, DataCommands):
         from fx1.interactive.redact import redact_text
 
         text = redact_text(_superpower_memory(result))
-        if not text:
-            return
-        self._append_if_new("assistant", text)
+        if text:
+            self._append_if_new("assistant", text)
+        goal = redact_text(result.goal).strip()
+        if goal:
+            self._append_if_new("system", f"superpower goal: {goal}")
         self._persist_session()
 
     def _append_if_new(self, role: str, content: str) -> None:
@@ -835,9 +864,9 @@ class Concierge(ChatCommands, DataCommands):
                 {
                     "role": "system",
                     "content": (
-                        f"Model switched from {previous} to {model}. Earlier assistant turns "
-                        f"in this conversation were produced by {previous}; attribute them "
-                        "accordingly and do not claim them as your own."
+                        f"active model changed from {previous} to {model}. Earlier assistant "
+                        f"turns in this conversation were produced by {previous}; attribute "
+                        "them accordingly and do not claim them as your own."
                     ),
                 }
             )
@@ -849,9 +878,9 @@ class Concierge(ChatCommands, DataCommands):
                 f"(chat client only — lab subprocesses do not inherit {profiles.ENV_API_KEY})"
             )
         else:
+            self._say(f"active model {model!r}; conversation kept")
             self._say(
-                f"active model {model!r} is unconfigured — slash commands work; set an "
-                f"endpoint with /keys set {model} before model turns"
+                f"{model} is unconfigured; {model} has no endpoint configured — /keys set {model}"
             )
         return False
 
@@ -1395,6 +1424,8 @@ class Concierge(ChatCommands, DataCommands):
 
         command = next((c for c in HARNESS_REGISTRY if c.name == name), None)
         if command is None:
+            self._set_status("error")
+            self._say("unknown_command")
             raise ValueError(f"{name!r} is not a registered harness command; /harness list")
         consequential = command.role.value == "model_training" or command.name in {
             "train",
@@ -1437,6 +1468,7 @@ class Concierge(ChatCommands, DataCommands):
             if truncated:
                 status = f"{status}; truncated"
             self._say(f"[harness] {name}: {status}; output below is incomplete")
+            self._set_status("cancelled" if cancelled else "error")
         if result.stdout:
             self._say(result.stdout.rstrip()[-4000:])
         if result.stderr:
@@ -1649,7 +1681,7 @@ class Concierge(ChatCommands, DataCommands):
             budget_s=self._planner_budget_s(),
             allow_web=bool(getattr(self, "_superpower_allow_web", False)),
         )
-        if not family_catalog.available:
+        if not family_catalog.available and not plan.catalog_unavailable:
             plan.catalog_unavailable = family_catalog.note or "catalog unavailable"
         self._planned_family_catalog = family_catalog
         self._planned_budget_ledger = ledger
@@ -1681,14 +1713,14 @@ class Concierge(ChatCommands, DataCommands):
         if backend is None:
             self._superpower_cancel = None
             return None
-        holder: dict[str, threading.Event | None] = {"cancel": None}
+        holder: dict[str, Any] = {"cancel": None}
         self._superpower_cancel = holder
 
         def bound(prompt: str) -> str:
             from fx1.interactive.budget import BudgetLedger
 
             active = holder.get("ledger")
-            ledger = active if active is not None else BudgetLedger(self._wall_budget)
+            ledger = active if isinstance(active, BudgetLedger) else BudgetLedger(self._wall_budget)
             return self._model_fn(backend, cancel_event=holder["cancel"], ledger=ledger)(prompt)
 
         return bound
@@ -1758,6 +1790,62 @@ class Concierge(ChatCommands, DataCommands):
     def _current_cancel(self) -> threading.Event | None:
         with self._state_lock:
             return self._turn_cancel
+
+    def _clock(self) -> float:
+        return time.monotonic()
+
+    def _append_message(self, message: dict[str, Any]) -> None:
+        self._messages.append(message)
+
+    def _truncate_messages(self, start: int) -> None:
+        del self._messages[start:]
+
+    def _transcript(self) -> list[dict[str, Any]]:
+        return list(self._messages)
+
+    def _orb(self) -> Any:
+        if self._animated:
+            return OrbAnimator(OrbState.COMPOSING, preset="inline")
+        return contextlib.nullcontext()
+
+    def _note_call(self, snapshot: Any) -> None:
+        self._last_snapshot = snapshot
+
+    def _remember_answer(self, text: str) -> None:
+        self._last_answer = text
+        self._journal_turn("assistant", text)
+
+    def _remember_withheld(self, text: str) -> None:
+        self._last_answer = text
+        self._journal_turn("system", text)
+
+    def _tool_superpower(self, goal: str) -> str:
+        self.start_superpower(goal, sync=True)
+        result = self.last_result
+        summary = getattr(result, "summary", "") if result is not None else ""
+        return str(summary or "superpower finished")
+
+    def _tool_env(self, cancel: threading.Event | None) -> Any:
+        from pathlib import Path
+
+        from fx1.interactive import profiles
+        from fx1.interactive.chat_tools import ToolEnv
+
+        return ToolEnv(
+            store=self._store,
+            researcher=self._researcher,
+            harness=self._harness_obj(),
+            approvals=self._approvals,
+            validator=self._harness_validator,
+            cancel_event=cancel,
+            session_id=self._corr_session,
+            say=self._say,
+            say_error=self._say_error,
+            run_superpower=self._tool_superpower,
+            cwd=Path.cwd(),
+            config_dir=profiles.config_dir(),
+            emit=self._emit,
+        )
 
     def _set_status(self, status: str) -> None:
         with self._state_lock:

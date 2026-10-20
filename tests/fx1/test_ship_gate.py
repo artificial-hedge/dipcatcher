@@ -22,7 +22,7 @@ def test_enforce_ship_gate_refuses_placeholder_card(tmp_path: Path) -> None:
     ckpt = tmp_path / "ckpt"
     ckpt.mkdir()
     (ckpt / "modelcard.json").write_text(_CARD.read_text(encoding="utf-8"), encoding="utf-8")
-    with pytest.raises(RuntimeError, match="ship gate"):
+    with pytest.raises(RuntimeError, match="not a release candidate"):
         LocalWeightsEngine(ckpt, enforce_ship_gate=True)
 
 

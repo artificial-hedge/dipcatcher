@@ -79,7 +79,7 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setenv("FX1_SESSION_DIR", str(tmp_path / "sessions"))
     for name in ("FX1_API_KEY", "MOONSHOT_API_KEY", "FX1_CHECKPOINT_DIR"):
         monkeypatch.delenv(name, raising=False)
-    return TestClient(api_mod.create_app(receipts_dir=tmp_path / "receipts"))
+    return TestClient(api_mod.create_app(receipts_dir=tmp_path / "receipts", public_release=False))
 
 
 def test_verify_routes_map_verdicts_byte_identically(

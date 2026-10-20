@@ -19,6 +19,7 @@ from fx1.honesty import (
     validate_fx1_output,
 )
 from fx1.interactive.chat_tools import CHAT_TOOL_NAMES, chat_tool_schemas, execute_tool_call
+from fx1.interactive.endpoint import OperationCancelled, call_with_retries
 from fx1.interactive.evidence import EvidenceError
 from fx1.interactive.evidence import ground_summary as ground_summary
 from fx1.interactive.model_client import ErrorKind, ModelError
@@ -44,6 +45,7 @@ class _CancelledTurn(Exception):
 def run_chat_turn(host: Any, text: str) -> None:
     """Append the user line and run tool rounds when a backend is open."""
     opened = open_backend(host.model, host._backend_factory)
+    host._last_backend = opened.backend
     if opened.backend is None:
         host._say(opened.detail)
         host._set_status(opened.status)
@@ -75,6 +77,8 @@ def _run_turn(host: Any, backend: Any) -> None:
         _cancel_marked(host, start)
     except _CancelledTurn:
         _cancel_marked(host, start)
+    except OperationCancelled:
+        _cancel_tool(host)
     except Fx1HonestyError as exc:
         _withhold(host, start, exc)
     except BudgetExceeded:
@@ -150,7 +154,7 @@ def _call_backend(
         started = host._clock()
         try:
             with host._orb():
-                completion = backend.complete_with_tools(outbound.messages, **kwargs)
+                completion = _complete_retried(host, backend, outbound.messages, kwargs, cancel)
         except ModelError as exc:
             retries += 1
             if retries > _CONTEXT_RETRIES or not _shrunk_for_retry(host, exc, outbound):
@@ -158,6 +162,45 @@ def _call_backend(
             continue
         host._pending_snapshot = read_snapshot(backend, started, host._clock)
         return completion
+
+
+def _complete_retried(
+    host: Any,
+    backend: Any,
+    messages: list[dict[str, Any]],
+    kwargs: dict[str, Any],
+    cancel: threading.Event,
+) -> Any:
+    """Retry raw transport faults. A ``ModelError`` already used the client policy."""
+    policy = getattr(host, "_retry_policy", None)
+
+    def once() -> Any:
+        return backend.complete_with_tools(messages, **kwargs)
+
+    if policy is None:
+        return once()
+    settled: list[ModelError] = []
+
+    def guarded() -> Any:
+        try:
+            return once()
+        except ModelError as exc:
+            settled.append(exc)
+            return None
+
+    result = call_with_retries(
+        guarded,
+        policy=policy,
+        cancel_event=cancel,
+        on_retry=lambda n, guidance, delay: host._say(
+            f"[model] retry {n}/{policy.max_retries} in {delay:.1f}s "
+            f"({guidance.failure}: {guidance.summary})"
+        ),
+        model=host.model,
+    )
+    if settled:
+        raise settled[0]
+    return result
 
 
 _CONTEXT_RETRIES = 3
@@ -318,10 +361,42 @@ def _apply_tool_calls(host: Any, completion: Any) -> None:
 
 
 def _tool_result(host: Any, call: Any, env: Any, block: _GateBlock) -> str:
-    result_text = scrub_transcript(execute_tool_call(call, env))
+    try:
+        result_text = scrub_transcript(_run_tool(host, call, env, block))
+    except (Fx1HonestyError, OperationCancelled):
+        raise
+    except Exception as exc:  # noqa: BLE001 — a tool fault must not leak its message
+        host._say("tool execution failed; outcome unknown")
+        journal = getattr(host, "_journal_event", None)
+        if callable(journal):
+            journal("tool_error", error_type=type(exc).__name__)
+        return "tool execution failed; outcome unknown"
     if block.flag or screen_piece(_visible_contents(host), result_text) != result_text:
         return MODEL_TEXT_WITHHELD
     return result_text
+
+
+def _run_tool(host: Any, call: Any, env: Any, block: _GateBlock) -> str:
+    """Prefer the host runner so tests can intercept it. Screen what it prints."""
+    runner = getattr(host, "_execute_tool", None)
+    say = host._say
+
+    def screened(text: str = "") -> None:
+        say(_shown(host, str(text), block))
+
+    host._say = screened
+    try:
+        if callable(runner):
+            return str(runner(call))
+        return execute_tool_call(call, env)
+    finally:
+        host._say = say
+
+
+def _cancel_tool(host: Any) -> None:
+    host.cancel_turn()
+    host._say("model turn cancelled before completion")
+    host._set_status("cancelled")
 
 
 def _guard_says(host: Any, env: Any, block: _GateBlock) -> None:
@@ -343,9 +418,15 @@ def _guard_says(host: Any, env: Any, block: _GateBlock) -> None:
 
 
 def _shown(host: Any, text: str, block: _GateBlock) -> str:
-    cleaned = screen_piece(_visible_contents(host), text)
+    prior = _visible_contents(host)
+    cleaned = screen_piece(prior, text)
     if cleaned != text:
         block.flag = True
+        return cleaned
+    for line in text.splitlines():
+        if line and screen_piece(prior, line) != line:
+            block.flag = True
+            return MODEL_TEXT_WITHHELD
     return cleaned
 
 
@@ -397,9 +478,15 @@ def _fail_model(host: Any, start: int, exc: ModelError) -> None:
 
 
 def _fail_generic(host: Any, start: int, exc: Exception) -> None:
+    from fx1.interactive.endpoint import explain_backend_error, format_guidance
+
+    guidance = explain_backend_error(exc, model=host.model)
     host._truncate_messages(start)
-    host._say_error(RuntimeError(scrub_model_text(str(exc))))
+    host._say_error(RuntimeError(format_guidance(guidance)))
     host._set_status("error")
+    journal = getattr(host, "_journal_event", None)
+    if callable(journal):
+        journal("model_error", failure=str(guidance.failure), http_status=guidance.http_status)
 
 
 def _stop_for_budget(host: Any) -> None:

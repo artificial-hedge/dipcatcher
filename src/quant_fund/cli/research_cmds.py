@@ -27,8 +27,20 @@ from .support import _cfg, format_data_label, format_fdr_families
 
 
 @app.command()
-def research(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
+def research(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    only: str | None = typer.Option(
+        None,
+        "--only",
+        help="Qualified family ids. Runs those families only and refuses the full scorecard.",
+    ),
+) -> None:
     """Run Dipcatcher's proprietary research benches and write a labeled notebook."""
+    if only:
+        from quant_fund.cli.family_cmds import emit_selected_run
+
+        emit_selected_run(config, only)
+        return
     from quant_fund.research.agent import format_p_value, run_research
 
     cfg = _cfg(config)

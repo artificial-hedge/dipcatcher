@@ -27,6 +27,7 @@ from fx1.interactive.superpower import (
     plan_goal,
     run_plan,
 )
+from fx1.interactive.superpower_glue import evidence_status_line
 from tests.fx1.capabilities_fixture import capability_entry, sample_catalog, sample_catalog_document
 
 HASH = "ab" * 32
@@ -149,7 +150,7 @@ def test_not_executable_is_excluded_with_catalog_reason() -> None:
     assert "vol-bench" not in _ids(plan)
     assert any(
         item["capability_id"] == "vol-bench" and item["detail"] == "runner not installed"
-        for item in plan.exclusions
+        for item in plan.orchestration_exclusions
     )
     assert "runner not installed" in plan.describe()
 
@@ -158,7 +159,10 @@ def test_qualified_but_unregistered_capability_is_excluded() -> None:
     plan = plan_goal("run ghost bench", catalog=_catalog_with(_ghost))
     assert "ghost-bench" not in _ids(plan)
     assert "ghost-bench" not in {command.name for command in HARNESS_REGISTRY}
-    assert any("not registered in HARNESS_REGISTRY" in item["detail"] for item in plan.exclusions)
+    assert any(
+        "not registered in HARNESS_REGISTRY" in item["detail"]
+        for item in plan.orchestration_exclusions
+    )
     assert "not registered in HARNESS_REGISTRY" in plan.describe()
 
 
@@ -205,9 +209,9 @@ def test_keyword_planner_still_pads_web_when_no_catalog() -> None:
 def test_user_data_synthetic_only_plan_records_the_mandatory_note() -> None:
     plan = plan_goal("please run qlike scoring on my data", catalog=sample_catalog())
     assert any("SYNTHETIC" in note and "does not evaluate your data" in note for note in plan.notes)
-    assert any(item["code"] == "needs_dataset" for item in plan.exclusions)
+    assert any(item["code"] == "needs_dataset" for item in plan.orchestration_exclusions)
     assert "needs_dataset" in plan.describe() or any(
-        item["code"] == "needs_dataset" for item in plan.exclusions
+        item["code"] == "needs_dataset" for item in plan.orchestration_exclusions
     )
 
 
@@ -229,7 +233,7 @@ def test_refinement_rejects_unknown_id() -> None:
         model_fn=_steps([{"capability": "no-such-cap", "args": {}, "why": "nope"}]),
     )
     assert "no-such-cap" not in plan.ids()
-    assert any(item["code"] == "unknown_id" for item in plan.exclusions)
+    assert any(item["code"] == "unknown_id" for item in plan.orchestration_exclusions)
 
 
 def test_refinement_rejects_invalid_arg() -> None:
@@ -239,7 +243,7 @@ def test_refinement_rejects_invalid_arg() -> None:
         model_fn=_steps([{"capability": "vol-bench", "args": {"--not-a-flag": 1}, "why": "bad"}]),
     )
     assert "vol-bench" not in _ids(plan)
-    assert any(item["code"] == "invalid_args" for item in plan.exclusions)
+    assert any(item["code"] == "invalid_args" for item in plan.orchestration_exclusions)
 
 
 def test_refinement_rejects_over_cap_arg() -> None:
@@ -249,7 +253,7 @@ def test_refinement_rejects_over_cap_arg() -> None:
         model_fn=_steps([{"capability": "vol-bench", "args": {"--n-origins": 100}, "why": "big"}]),
     )
     assert "vol-bench" not in _ids(plan)
-    assert any("out_of_range" in item["detail"] for item in plan.exclusions)
+    assert any("out_of_range" in item["detail"] for item in plan.orchestration_exclusions)
 
 
 def test_refinement_rejects_shell_string() -> None:
@@ -262,7 +266,8 @@ def test_refinement_rejects_shell_string() -> None:
     )
     assert "vol-bench" not in _ids(plan)
     assert any(
-        "shell" in item["detail"] or item["code"] == "invalid_args" for item in plan.exclusions
+        "shell" in item["detail"] or item["code"] == "invalid_args"
+        for item in plan.orchestration_exclusions
     )
 
 
@@ -294,7 +299,7 @@ def test_family_surface_exception_excludes_research() -> None:
 
     plan = plan_goal("run the full scorecard", catalog=sample_catalog(), family_selector=boom)
     assert "research" not in _ids(plan)
-    assert any("family surface refused" in item["detail"] for item in plan.exclusions)
+    assert any("family surface refused" in item["detail"] for item in plan.orchestration_exclusions)
 
 
 def test_families_without_only_argument_do_not_run_the_full_scorecard() -> None:
@@ -306,7 +311,7 @@ def test_families_without_only_argument_do_not_run_the_full_scorecard() -> None:
         ),
     )
     assert "research" not in _ids(plan)
-    assert any("no --only" in item["detail"] for item in plan.exclusions)
+    assert any("no --only" in item["detail"] for item in plan.orchestration_exclusions)
 
 
 def test_families_bind_typed_only_argument() -> None:
@@ -331,7 +336,7 @@ def test_family_choice_outside_schema_is_excluded() -> None:
         ),
     )
     assert "research" not in _ids(plan)
-    assert any("only" in item["detail"] for item in plan.exclusions)
+    assert any("only" in item["detail"] for item in plan.orchestration_exclusions)
 
 
 def test_load_catalog_success_and_redacted_failure(tmp_path: Path) -> None:
@@ -731,7 +736,7 @@ def test_in_run_dir_receipt_verifies_and_grounds_language(tmp_path: Path) -> Non
     item = EvidenceLedger.from_dict(result.evidence).verified_receipts()[0]
     assert item.verdict is Verdict.VERIFIED
     assert item.data_label == "SYNTHETIC"
-    assert "evidence status: verified" in result.explain()
+    assert evidence_status_line(result) == "evidence status: verified"
 
 
 def test_receipt_outside_run_dir_is_unverifiable(tmp_path: Path) -> None:
@@ -848,7 +853,7 @@ def test_verified_language_without_a_receipt_is_downgraded(tmp_path: Path) -> No
     )
     assert result.status != "verified"
     assert "unverified and partial" in result.summary
-    assert "evidence status:" in result.explain()
+    assert evidence_status_line(result).startswith("evidence status:")
 
 
 def test_offline_summary_is_grounded_once(tmp_path: Path) -> None:
@@ -959,7 +964,10 @@ def test_registry_gate_uses_argv_zero_not_the_capability_id() -> None:
     assert "vol-alias" in _ids(aliased)
     ghost = plan_goal("run vol bench on realized variance", catalog=_catalog_with(ghost_argv))
     assert "vol-bench" not in _ids(ghost)
-    assert any("not registered in HARNESS_REGISTRY" in item["detail"] for item in ghost.exclusions)
+    assert any(
+        "not registered in HARNESS_REGISTRY" in item["detail"]
+        for item in ghost.orchestration_exclusions
+    )
 
 
 def test_confined_absolute_out_dir_survives_argv_rebuild(tmp_path: Path) -> None:

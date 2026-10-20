@@ -7,13 +7,13 @@
 from __future__ import annotations
 
 import json
+import threading
 from collections.abc import Callable, Mapping
 from typing import Any
 
 from fx1.harness import HARNESS_REGISTRY
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive.chat_tools import CHAT_TOOL_NAMES, chat_tool_schemas
-from fx1.interactive.chat_tools import parse_tool_call as _parse_tool_call
 from fx1.interactive.chat_turn import cancel_chat_keyboard
 from fx1.interactive.concierge_console import _null
 from fx1.interactive.endpoint import (
@@ -89,6 +89,13 @@ class ChatCommands:
     _retry_policy: Any
     _store: Any
     _researcher: Any
+    _turn_cancel: threading.Event | None
+
+    def _current_cancel(self) -> threading.Event | None:
+        raise NotImplementedError
+
+    def _tool_env(self, cancel: threading.Event | None) -> Any:
+        raise NotImplementedError
 
     def _backend(self, model: str | None = None) -> Any | None:
         raise NotImplementedError
@@ -144,30 +151,9 @@ class ChatCommands:
         return event is not None and event.is_set()
 
     def _chat_turn(self, text: str) -> None:
-        backend = self._backend()
-        if backend is None:
-            self._say(
-                f"no model endpoint configured — set one with `/keys set {self.model}`, or export "
-                "MOONSHOT_API_KEY / FX1_BASE_URL. Slash commands still work."
-            )
-            self._assign_status("no_endpoint")
-            return
-        if self._turn_cancelled():
-            self._assign_status("cancelled")
-            self._say("model turn cancelled before completion")
-            return
-        start = len(self._messages)
-        self._messages.append({"role": "user", "content": scrub_transcript(text)})
-        try:
-            self._run_chat_rounds(backend)
-        except Fx1HonestyError as exc:
-            self._withhold_chat(start, exc)
-        except OperationCancelled:
-            self._cancel_chat(start)
-        except _ModelTurnError as exc:
-            self._fail_model_turn(start, exc.model_error)
-        except Exception as exc:  # noqa: BLE001 — a dead network must not kill the shell
-            self._fail_chat_transport(start, exc)
+        from fx1.interactive.chat_turn import run_chat_turn
+
+        run_chat_turn(self, text)
 
     def _run_chat_rounds(self, backend: Any) -> None:
         tools = self._chat_tools()
@@ -338,31 +324,9 @@ class ChatCommands:
             return result
 
     def _execute_tool(self, call: dict[str, Any]) -> str:
-        refused = _refuse_non_object_arguments(call)
-        if refused is not None:
-            return refused
-        try:
-            name, arguments = _parse_tool_call(call)
-        except ValueError as exc:
-            return f"tool refused: {exc}"
-        if name == "flash_retrieve":
-            from fx1.flash.retrieve import context_block, retrieve
+        from fx1.interactive.chat_tools import execute_tool_call
 
-            hits = retrieve(
-                self._store, str(arguments.get("query", "")), k=4, include_private=False
-            )
-            if not hits:
-                return "no relevant flash context found"
-            for hit in hits:
-                self._store.mark_used(hit.entry.id)
-            return context_block(hits)
-        if name == "flash_save":
-            return self._save_flash_tool(arguments)
-        if name == "web_lookup":
-            return self._web_lookup(str(arguments.get("query", "")))
-        if name == "harness_run":
-            return self._execute_harness_tool(arguments)
-        return f"unknown tool {name!r}"
+        return execute_tool_call(call, self._tool_env(self._current_cancel()))
 
     def _save_flash_tool(self, arguments: dict[str, Any]) -> str:
         entry_text = arguments.get("text")

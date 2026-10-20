@@ -30,7 +30,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Protocol
+from typing import IO, TYPE_CHECKING, Any, Protocol, cast
 
 from pydantic import BaseModel, Field
 
@@ -710,6 +710,8 @@ def make_subprocess_runner(
         timeout_s: int,
         cancel_event: threading.Event | None,
     ) -> RunnerOutcome:
+        if shutil.which(executable) is None:
+            raise RuntimeError(_MISSING_EXECUTABLE)
         from fx1.interactive.profiles import scrub_credentials
         from quant_fund.utils.lab_paths import discover_repo_root
 
@@ -789,13 +791,15 @@ class Harness:
         cancellable_runner: CancellableRunner | None = None,
     ) -> None:
         self._use_default_runner = runner is None and cancellable_runner is None
-        extended = runner if getattr(runner, "supports_extended", False) else None
+        extended: ExtendedRunner | None = None
         chosen: CancellableRunner
         if isinstance(runner, OwnedRunner):
             chosen = _adapt_owned_runner(runner)
             extended = runner
         elif runner is not None:
             chosen = _adapt_legacy_runner(runner)
+            if getattr(runner, "supports_extended", False):
+                extended = cast(ExtendedRunner, runner)
         elif cancellable_runner is not None:
             chosen = cancellable_runner
         else:

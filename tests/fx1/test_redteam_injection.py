@@ -252,7 +252,8 @@ def test_train_asks_the_operator_on_every_request(tmp_path: Path) -> None:
     harness = FakeHarness()
     env = _tool_env(tmp_path, harness, ApprovalGate(decide_fn=decide))
     for _ in range(3):
-        assert run_registered_harness("train", [], env) == "not approved"
+        denied = run_registered_harness("train", [], env)
+        assert denied == "harness 'train': approval denied; command was not run"
     assert seen == ["harness:train", "harness:train", "harness:train"]
     assert harness.calls == []
 
@@ -269,9 +270,15 @@ def test_session_grant_for_a_different_key_does_not_approve_train(tmp_path: Path
     gate.decide_fn = decide
     harness = FakeHarness()
     env = _tool_env(tmp_path, harness, gate)
-    assert run_registered_harness("train", [], env) == "not approved"
-    assert run_registered_harness("optimize", [], env) == "not approved"
-    assert run_registered_harness("paper", [], env) == "not approved"
+    assert run_registered_harness("train", [], env) == (
+        "harness 'train': approval denied; command was not run"
+    )
+    assert run_registered_harness("optimize", [], env) == (
+        "harness 'optimize': approval denied; command was not run"
+    )
+    assert run_registered_harness("paper", [], env) == (
+        "harness 'paper': approval denied; command was not run"
+    )
     assert seen == ["harness:train", "harness:optimize", "harness:paper"]
     assert harness.calls == []
 
@@ -288,7 +295,9 @@ def test_revoked_session_grant_is_asked_again(tmp_path: Path) -> None:
 
     gate.decide_fn = decide
     harness = FakeHarness()
-    assert run_registered_harness("train", [], _tool_env(tmp_path, harness, gate)) == "not approved"
+    assert run_registered_harness("train", [], _tool_env(tmp_path, harness, gate)) == (
+        "harness 'train': approval denied; command was not run"
+    )
     assert seen == ["harness:train"]
     assert harness.calls == []
 
@@ -527,7 +536,9 @@ def test_non_string_tool_args_do_not_reach_the_harness(tmp_path: Path) -> None:
         {"name": "tearsheet", "args": ["--equity", {"path": "/etc/passwd"}]},
     ]
     for arguments in cases:
-        assert execute_tool_call(_call("harness_run", arguments), env) == "bad_arg"
+        assert execute_tool_call(_call("harness_run", arguments), env) == (
+            "harness refused: args must be an array of strings"
+        )
     assert harness.calls == []
 
 
@@ -590,7 +601,7 @@ def test_nan_json_does_not_become_an_argument(tmp_path: Path) -> None:
         env,
     )
     assert result == "unknown_command"
-    assert direct == "bad_arg"
+    assert direct == "harness refused: args must be an array of strings"
     assert harness.calls == []
 
 

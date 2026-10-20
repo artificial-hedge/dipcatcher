@@ -546,6 +546,7 @@ def _selective_only_arg(ident: str, hint: object, problems: list[str]) -> dict[s
         "kind": "option",
         "type": "str",
         "required": False,
+        "default": None,
         "repeatable": False,
         "help": "Qualified family ids to run.",
     }

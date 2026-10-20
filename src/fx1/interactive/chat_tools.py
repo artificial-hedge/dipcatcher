@@ -141,6 +141,9 @@ class ToolEnv:
 
 def execute_tool_call(call: Mapping[str, Any], env: ToolEnv) -> str:
     """Run one tool call. Policy violations return the code and nothing else."""
+    refused = _non_object_arguments(call)
+    if refused is not None:
+        return refused
     limited = _call_budget(env)
     if limited is not None:
         return limited
@@ -149,6 +152,23 @@ def execute_tool_call(call: Mapping[str, Any], env: ToolEnv) -> str:
     except PolicyViolation as exc:
         _emit_policy(env, exc.code)
         return exc.code
+
+
+def _non_object_arguments(call: Mapping[str, Any]) -> str | None:
+    """Refuse argument blobs that are not a JSON object before any tool runs."""
+    function = call.get("function")
+    if not isinstance(function, dict):
+        return None
+    raw = function.get("arguments")
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return "tool refused: arguments must be a JSON object"
+    if not isinstance(parsed, dict):
+        return "tool refused: arguments must be a JSON object"
+    return None
 
 
 def _dispatch_tool(call: Mapping[str, Any], env: ToolEnv) -> str:
@@ -246,9 +266,16 @@ def run_registered_harness(name: str, extra_args: Sequence[str], env: ToolEnv) -
         _emit_policy(env, exc.code)
         env.say(exc.code)
         return exc.code
+    if name == "research":
+        refusal = (
+            "harness refused: research requires goal-bound /superpower planning "
+            "or an explicit operator /harness run research request; command was not run"
+        )
+        env.say(refusal)
+        return refusal
     if not _approved(name, argv, env):
         env.say(f"[harness] {name}: not approved — skipped")
-        return "not approved"
+        return f"harness {name!r}: approval denied; command was not run"
     result = _invoke(name, argv, env)
     env.last_failed = _command_failed(result)
     return _present_harness(name, result, env)
@@ -297,8 +324,16 @@ def _flash_retrieve(arguments: Mapping[str, Any], env: ToolEnv) -> str:
 
 
 def _flash_save(arguments: Mapping[str, Any], env: ToolEnv) -> str:
+    entry_text = arguments.get("text", "")
+    if not isinstance(entry_text, str) or not entry_text.strip():
+        return "flash_save refused: text must be a nonempty string"
+    task = arguments.get("task", "")
+    if not isinstance(task, str):
+        return "flash_save refused: task must be a string"
+    if "uncertainty" in arguments and arguments.get("uncertainty") not in ("low", "medium", "high"):
+        return "flash_save refused: uncertainty must be low, medium, or high"
     try:
-        text = check_flash_save(str(arguments.get("text", "")))
+        text = check_flash_save(entry_text)
     except PolicyViolation as exc:
         return exc.code
     try:
@@ -335,14 +370,25 @@ def _superpower_run(arguments: Mapping[str, Any], env: ToolEnv) -> str:
 def _harness_run(arguments: Mapping[str, Any], env: ToolEnv) -> str:
     raw_name = arguments.get("name", "")
     name = raw_name if isinstance(raw_name, str) else ""
-    return run_registered_harness(name, _string_args(arguments.get("args")), env)
+    try:
+        args = _declared_args(arguments)
+    except PolicyViolation as exc:
+        if exc.code == "bad_arg":
+            return "harness refused: args must be an array of strings"
+        return exc.code
+    return run_registered_harness(name, args, env)
+
+
+def _declared_args(arguments: Mapping[str, Any]) -> list[str]:
+    """Omitted ``args`` is an empty argv. A present non-string array is refused."""
+    if "args" not in arguments:
+        return []
+    return _string_args(arguments.get("args"))
 
 
 def _string_args(raw: object) -> list[str]:
-    if raw is None:
-        return []
     if not isinstance(raw, list):
-        raise PolicyViolation("bad_arg", "arguments must be strings")
+        raise PolicyViolation("bad_arg", "args must be an array of strings")
     return [_string_arg(item) for item in raw]
 
 
@@ -414,7 +460,8 @@ def _consequential(name: str) -> bool:
 def _approved(name: str, argv: Sequence[str], env: ToolEnv) -> bool:
     if not _consequential(name):
         return True
-    return _ask_harness(name, argv, env)
+    allowed = _ask_harness(name, argv, env)
+    return bool(allowed)
 
 
 def _ask_harness(name: str, argv: Sequence[str], env: ToolEnv) -> bool:
@@ -465,19 +512,43 @@ def _visible_output(raw: object) -> str:
 
 
 def _present_harness(name: str, result: Any, env: ToolEnv) -> str:
+    flags = _flag_line(result)
+    if _command_failed(result) or flags:
+        _say_data_label(_visible_output(getattr(result, "stdout", "") or ""), env)
+        status = flags or f"failed (exit {_result_exit(result)})"
+        if _command_failed(result) and "failed (exit" not in status:
+            status = f"failed (exit {_result_exit(result)}); {status}" if flags else status
+        line = f"harness '{name}' {status}; output withheld"
+        env.say(line)
+        return line
     stdout = _visible_output(getattr(result, "stdout", "") or "")
     stderr = _visible_output(getattr(result, "stderr", "") or "")
-    if stdout:
-        env.say(stdout)
+    if not stdout.strip():
+        line = f"harness '{name}' completed (exit 0); no output"
+        env.say(line)
+        return line
+    env.say(stdout)
     if stderr:
         env.say_error(RuntimeError(stderr))
-    flags = _flag_line(result)
-    if flags:
-        env.say(f"[harness] {name}: {flags}")
-    body = stdout if stdout.strip() else "(command produced no output)"
-    if flags:
-        body = f"{body}\n{flags}"
-    return present_untrusted("harness", name, body, env.say)
+    return present_untrusted("harness", name, stdout, env.say)
+
+
+def _say_data_label(stdout: str, env: ToolEnv) -> None:
+    """Operator-visible SYNTHETIC marker. The model still does not receive the body."""
+    labels = [
+        line
+        for line in stdout.splitlines()
+        if line.startswith("DATA_LABEL=") or line.strip() == "SYNTHETIC"
+    ]
+    if labels:
+        env.say("\n".join(labels))
+
+
+def _result_exit(result: Any) -> int:
+    code = getattr(result, "exit_code", 1)
+    if isinstance(code, bool) or not isinstance(code, int):
+        return 1
+    return code
 
 
 def _emit_policy(env: ToolEnv, code: str) -> None:

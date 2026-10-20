@@ -233,7 +233,7 @@ def test_group_claims_keeps_cross_source_pairs_in_walk_order() -> None:
 
 
 def test_receipt_fetch_rejects_a_non_hex_digest(tmp_path: Path) -> None:
-    client = TestClient(create_app(receipts_dir=tmp_path / "receipts"))
+    client = TestClient(create_app(receipts_dir=tmp_path / "receipts", public_release=False))
     response = client.get("/receipts/not-a-sha")
     assert response.status_code == 422
     assert response.json() == {

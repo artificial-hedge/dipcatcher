@@ -39,7 +39,7 @@ _TEXT = "the journal replays every record; non-terminal means failed. " * 20
 
 
 def test_ship_gate_refuses_fixture_placeholder_eval_delta() -> None:
-    with pytest.raises(RuntimeError, match="ship gate"):
+    with pytest.raises(RuntimeError, match="not a release candidate"):
         LocalWeightsEngine(_BASE_CKPT, enforce_ship_gate=True)
 
 

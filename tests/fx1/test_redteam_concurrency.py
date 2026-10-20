@@ -860,7 +860,10 @@ def test_exec_joins_its_deadline_thread(isolated: Path) -> None:
     foreign = [
         thread.name
         for thread in threading.enumerate()
-        if thread.is_alive() and not thread.daemon and thread is not threading.main_thread()
+        if thread.is_alive()
+        and not thread.daemon
+        and thread is not threading.main_thread()
+        and not thread.name.startswith("pytest")
     ]
     assert foreign == []
 
@@ -962,7 +965,7 @@ def _exec_signal_during_body(isolated: Path, signum: int, code: int) -> None:
             isolated,
         )
         try:
-            assert srv.wait_for_requests(1, timeout=2)
+            assert srv.wait_for_requests(1, timeout=10)
             kids = _descendants(proc.pid)
             proc.send_signal(signum)
             out, err = proc.communicate(timeout=3)

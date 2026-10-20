@@ -1574,11 +1574,22 @@ def _load_local_fx1_card(
     return card, synthetic_fixture
 
 
+def _release_signature_ok(root: Path) -> bool:
+    """HMAC when a signing key is set; ed25519 when a public verify key is set."""
+    from fx1.serve.signing import verify_release, verify_release_ed25519
+
+    if os.environ.get("FX1_RELEASE_VERIFY_KEY"):
+        return verify_release_ed25519(root)
+    if os.environ.get("FX1_SIGNING_KEY"):
+        return verify_release(root)
+    return verify_release(root) or verify_release_ed25519(root)
+
+
 def _dedicated_local_engine_cmd(root: Path, synthetic_fixture: bool) -> tuple[str, str]:
     port = _free_tcp_port()
     url = _chat_completions_url(f"http://127.0.0.1:{port}/v1")
     cmd = (
-        "$python -m fx1.serve.local_engine --checkpoint-dir $checkpoint_dir "
+        "$python -m fx1.serve.local_engine "
         f"--port {port}{' --synthetic-fixture' if synthetic_fixture else ''}"
     )
     return url, cmd
@@ -1633,16 +1644,15 @@ class LocalFx1Backend(_UsageTracker):
         )
         self._synthetic_fixture = synthetic_fixture
         if require_signature is None:
-            require_signature = bool(os.environ.get("FX1_SIGNING_KEY"))
-        if require_signature:
-            from fx1.serve.signing import verify_release
-
-            if not verify_release(root):
-                raise RuntimeError(
-                    "checkpoint release signature missing or invalid; "
-                    "fx-1 serves only signed releases when FX1_SIGNING_KEY "
-                    "is configured"
-                )
+            require_signature = bool(
+                os.environ.get("FX1_SIGNING_KEY") or os.environ.get("FX1_RELEASE_VERIFY_KEY")
+            )
+        if require_signature and not _release_signature_ok(root):
+            raise RuntimeError(
+                "checkpoint release signature missing or invalid; "
+                "fx-1 serves only signed releases when FX1_SIGNING_KEY "
+                "or FX1_RELEASE_VERIFY_KEY is configured"
+            )
         self._root = root
         self._expected_weights_sha = _expected_weights_sha_from_manifest(root)
         self._verified_attach = False

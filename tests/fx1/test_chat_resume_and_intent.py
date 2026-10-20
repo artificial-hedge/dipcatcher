@@ -134,10 +134,10 @@ def test_plain_text_uses_the_superpower_planner(
         session_store=SessionStore(tmp_path / "sessions"),
     )
     concierge.handle_line("Check whether my volatility forecasts are calibrated.")
-    text = "\n".join(out)
-    assert "routing this to research orchestration" in text
-    assert harness.calls[0][0] == "capabilities"
+    assert "routing this to research orchestration" in "\n".join(out)
     concierge.join_job(timeout_s=10)
+    text = "\n".join(out)
+    assert harness.calls[0][0] == "capabilities"
     assert "catalog unavailable" in text
     assert all(name != "research" for name, _args in harness.calls)
 

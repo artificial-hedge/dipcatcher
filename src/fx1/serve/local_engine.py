@@ -255,7 +255,9 @@ class LocalWeightsEngine:
         *,
         enforce_ship_gate: bool = True,
         synthetic_fixture: bool = False,
+        allow_synthetic_fixture: bool = False,
     ) -> None:
+        synthetic_fixture = synthetic_fixture or allow_synthetic_fixture
         root = Path(checkpoint_dir)
         card_path = root / CARD_FILENAME
         if not card_path.is_file():
@@ -268,7 +270,12 @@ class LocalWeightsEngine:
             from fx1.serve.release_gate import require_nonfixture_or_test_opt_in
 
             require_nonfixture_or_test_opt_in(card)
-        if enforce_ship_gate and not card.ship_eligible and not synthetic_fixture and not card.fixture_only:
+        if (
+            enforce_ship_gate
+            and not card.ship_eligible
+            and not synthetic_fixture
+            and not card.fixture_only
+        ):
             detail = " (placeholder eval_delta is not measured evidence)" if placeholder else ""
             raise RuntimeError(
                 f"{card.version} failed the ship gate{detail}; refusing to serve its weights"
@@ -302,7 +309,8 @@ class LocalWeightsEngine:
                 f"weights vocab {self.model.vocab} does not match the byte tokenizer "
                 f"({VOCAB_SIZE}); this engine serves byte-level fx-1 checkpoints only"
             )
-        self.served_model = card.version
+        public_id = getattr(card, "public_model_id", None)
+        self.served_model = public_id if isinstance(public_id, str) and public_id else card.version
         self.weights_sha256 = sha
 
     @staticmethod
@@ -572,7 +580,6 @@ def serve(engine: LocalWeightsEngine, host: str, port: int, *, watch_orphan: boo
 def main(argv: list[str] | None = None) -> int:
     """``python -m fx1.serve.local_engine`` — the FX1_LOCAL_SERVE_CMD target."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--checkpoint-dir", type=Path, default=None)
     parser.add_argument("--host", default=_DEFAULT_HOST)
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument(
@@ -593,10 +600,10 @@ def main(argv: list[str] | None = None) -> int:
         from fx1.serve.release_gate import require_loopback_engine_bind
 
         require_loopback_engine_bind(args.host)
-    env_dir = os.environ.get("FX1_CHECKPOINT_DIR", "")
-    root = args.checkpoint_dir if args.checkpoint_dir is not None else Path(env_dir)
-    if args.checkpoint_dir is None and not env_dir:
-        parser.error("a checkpoint dir is required (--checkpoint-dir or FX1_CHECKPOINT_DIR)")
+    env_dir = os.environ.get("FX1_CHECKPOINT_DIR", "").strip()
+    if not env_dir:
+        parser.error("FX1_CHECKPOINT_DIR is required")
+    root = Path(env_dir)
     from fx1.serve.ship_gate_env import enforce_ship_gate_from_env
 
     engine = LocalWeightsEngine(

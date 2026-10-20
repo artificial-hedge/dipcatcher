@@ -121,6 +121,13 @@ def _print_launcher_help() -> None:
     print("Lab / scripts: dipcatcher <command> --help\n")
 
 
+def _exec(args: Sequence[str]) -> None:
+    """One prompt, no interactive read. ``exec_cmd`` raises ``SystemExit``."""
+    from dipcatcher_cli.exec_cmd import main as exec_main
+
+    exec_main(list(args))
+
+
 def _oneshot(args: Sequence[str]) -> None:
     """Run a concierge one-shot through the fxi Typer app under this prog name."""
     from fx1.interactive.app import app as fxi_app
@@ -162,6 +169,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         return
     if not rest and _interactive():
         _chat([] if model is None else ["--model", model])
+        return
+    if rest[:1] == ["exec"]:
+        _exec(rest[1:])
         return
     if rest and rest[0] in ONESHOT_COMMANDS:
         _oneshot(args)

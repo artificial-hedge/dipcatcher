@@ -42,7 +42,7 @@ from typing import Any, cast
 
 from fx1.harness import HARNESS_REGISTRY, Harness, HarnessRole
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
-from fx1.interactive.approvals import ApprovalGate
+from fx1.interactive.approvals import ActionBounds, ApprovalGate
 from fx1.interactive.budget import BudgetExceeded
 from fx1.interactive.contracts import CapabilityCatalog
 from fx1.interactive.endpoint import OperationCancelled
@@ -86,6 +86,7 @@ _REQUIRED_HARNESS_INPUTS: dict[str, tuple[tuple[str, ...], str]] = {
         ("task", "data"),
         "/harness run score-forecasts --task TASK --data PATH",
     ),
+    "verify-receipt": (("path",), "/harness run verify-receipt PATH"),
 }
 
 
@@ -1464,6 +1465,8 @@ def _harness_admitted(
     if meta.get("consequential") and not gate.ask(
         f"run harness command {cap_id!r} (consequential: {meta.get('description', '')})?",
         kind="consequential",
+        key=f"harness:{cap_id}",
+        bounds=ActionBounds(argv=(), writes=True),
     ):
         _record(
             result,

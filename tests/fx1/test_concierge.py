@@ -538,7 +538,7 @@ def test_chat_harness_tool_refuses_unscoped_research(
     )
     concierge, out = make_concierge(tmp_path, backend=backend, harness=harness)
 
-    concierge.handle_line("run the research benchmark")
+    concierge.handle_line("hello there")
 
     assert harness.calls == []
     assert "harness refused: research" in joined(out)
@@ -860,7 +860,7 @@ def test_chat_research_tool_name_is_unknown(
     )
     concierge, _ = make_concierge(tmp_path, backend=backend, harness=harness)
 
-    concierge.handle_line("run the research benchmark")
+    concierge.handle_line("hello there")
 
     assert harness.calls == []
     tool_msg = [m for m in backend.tool_calls_seen[1] if m.get("role") == "tool"][0]

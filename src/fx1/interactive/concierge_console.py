@@ -88,6 +88,13 @@ def _print_startup(
         endpoint_problem = format_guidance(explain_backend_error(exc, model=model))
     host = profiles.host_of(endpoint[1]) if endpoint else "unconfigured"
     output_fn(orb_banner(model, host, color=orbs_enabled()))
+    if endpoint is not None:
+        from fx1.interactive.model_ux import _endpoint_banner
+
+        _banner_host, extra = _endpoint_banner(model)
+        del _banner_host
+        for line in extra:
+            output_fn(line)
     output_fn(
         f"dipcatcher concierge — chat id {model} (no released weights). Plain text chats; "
         "/superpower, /research, /flash, /help. Ctrl-D or /exit to leave."

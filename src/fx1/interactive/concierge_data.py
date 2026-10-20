@@ -108,6 +108,7 @@ class DataCommands:
 
     def _record_block(self, reason: str) -> None:
         self._say(reason)
+        self._last_answer = reason
         self._set_status("error")
 
     def _set_status(self, status: str) -> None:

@@ -44,10 +44,10 @@ def _core_import_status() -> str:
 
 
 def _stamp_data_dirs(status: dict[str, object], root: Path) -> None:
-    """Record each lake dir as ``ok`` (already present) or ``created``."""
+    """Record each lake dir. Doctor never creates directories."""
     for part in _DATA_DIR_PARTS:
         path = root / part
-        state = data_dir_status(path)
+        state = data_dir_status(path, create=False)
         status[f"dir_{part}"] = state
         status[f"dir_{part}_created"] = "yes" if state == "created" else "no"
 
@@ -62,6 +62,27 @@ def _record_runtime_flags(status: dict[str, object], cfg: AppConfig) -> None:
     status["fx1_package"] = "ok" if importlib.util.find_spec("fx1") else "missing"
     status["fx1_moonshot_key"] = "set" if os.environ.get("MOONSHOT_API_KEY") else "unset"
     status["fx1_signing_key"] = "set" if os.environ.get("FX1_SIGNING_KEY") else "unset"
+
+
+def _doctor_data_root(configured: str | Path) -> Path:
+    """Lake root for a diagnosis.
+
+    Inside the checkout, relative roots stay checkout-rooted. An empty working
+    directory outside the checkout is diagnosed as itself and is not attached
+    to the checkout lake.
+    """
+    from quant_fund.utils.lab_paths import discover_repo_root
+
+    path = Path(configured).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+    cwd = Path.cwd().resolve()
+    checkout = discover_repo_root().resolve()
+    try:
+        cwd.relative_to(checkout)
+    except ValueError:
+        return (cwd / path).resolve()
+    return resolve_data_root(configured)
 
 
 def doctor(config_path: str | None = None) -> dict[str, object]:
@@ -83,7 +104,7 @@ def doctor(config_path: str | None = None) -> dict[str, object]:
     status["live_allowed"] = str(cfg.runtime.allow_live)
     if cfg.runtime.mode is RuntimeMode.LIVE and not cfg.runtime.allow_live:
         status["live"] = "REJECTED"
-    root = resolve_data_root(cfg.data.root)
+    root = _doctor_data_root(cfg.data.root)
     _stamp_data_dirs(status, root)
     manifest = root / "metadata" / "data_manifest.json"
     if not manifest.is_file():

@@ -46,6 +46,7 @@ from fx1.interactive.terminal import (
 _LEGACY_PROMPT = "dip › "
 _HINT = "/help, /superpower, /exit"
 _WINDOWS_NOTICE = "On Windows, background progress updates after you submit a line."
+_WINDOWS_POLL_NOTICE = "On Windows, background progress updates while you type (console polling)."
 _SLASH_COMMANDS: tuple[str, ...] = (
     "/use",
     "/model",
@@ -433,11 +434,10 @@ def _legacy_loop(
     pending = True
     policy = InterruptPolicy()
     history = History()
+    reader = _LegacyReader(input_fn)
     try:
         while True:
-            nxt = _legacy_step(
-                concierge, input_fn, output, poll_timeout_s, pending, policy, history
-            )
+            nxt = _legacy_step(concierge, reader, output, poll_timeout_s, pending, policy, history)
             if nxt is None:
                 return
             pending = nxt
@@ -445,9 +445,61 @@ def _legacy_loop(
         history.save()
 
 
+class _LegacyReader:
+    """One Windows console reader for the session; POSIX stays per-read."""
+
+    def __init__(self, input_fn: Callable[[str], str]) -> None:
+        self._input_fn = input_fn
+        self._windows = _windows_reader(input_fn)
+
+    def read(self, prompt: str, timeout_s: float) -> str | None:
+        if self._windows is not None:
+            line = self._windows.read(prompt, timeout_s)
+            return None if line is None else str(line)
+        return _tty_polling_read(self._input_fn, prompt, timeout_s)
+
+
+def _windows_reader(input_fn: Callable[[str], str]) -> Any:
+    """``msvcrt`` poller when this is a Windows TTY; otherwise ``None``."""
+    if not _windows_polling():
+        return None
+    import msvcrt
+
+    from fx1.interactive.lineio import LineReader
+
+    kbhit = getattr(msvcrt, "kbhit", None)
+    getwch = getattr(msvcrt, "getwch", None)
+    if not callable(kbhit) or not callable(getwch):
+        return None
+    return LineReader(
+        input_fn=input_fn,
+        platform="win32",
+        kbhit=kbhit,
+        getwch=getwch,
+    )
+
+
+def _windows_polling() -> bool:
+    if sys.platform != "win32" or not sys.stdin.isatty():
+        return False
+    try:
+        import msvcrt
+    except ImportError:
+        return False
+    return callable(getattr(msvcrt, "kbhit", None)) and callable(getattr(msvcrt, "getwch", None))
+
+
+def _windows_notice() -> str | None:
+    if sys.platform != "win32":
+        return None
+    if _windows_polling():
+        return _WINDOWS_POLL_NOTICE
+    return _WINDOWS_NOTICE
+
+
 def _legacy_step(
     concierge: Any,
-    input_fn: Callable[[str], str],
+    reader: _LegacyReader,
     output: Callable[..., None],
     poll_timeout_s: float,
     pending: bool,
@@ -456,7 +508,7 @@ def _legacy_step(
 ) -> bool | None:
     """Next prompt flag, or None when the session ended."""
     try:
-        line = _tty_polling_read(input_fn, _legacy_prompt(pending), poll_timeout_s)
+        line = reader.read(_legacy_prompt(pending), poll_timeout_s)
     except EOFError:
         _blank(output)
         return None
@@ -552,8 +604,9 @@ def _legacy_banner(
         if resume_id and hasattr(concierge, "handle_line"):
             concierge.handle_line(f"/resume {resume_id}")
     _emit_notice(concierge, output)
-    if sys.platform == "win32":
-        output(_WINDOWS_NOTICE)
+    notice = _windows_notice()
+    if notice is not None:
+        output(notice)
 
 
 def _header_lines(model: str, caps: TermCaps) -> list[str]:

@@ -349,7 +349,7 @@ def _validate_problems(
 
 def _code_problems(case_id: str, plan: SuperpowerPlan) -> list[str]:
     problems: list[str] = []
-    for row in plan.exclusions:
+    for row in _typed_exclusions(plan):
         code = str(row.get("code", ""))
         if code not in EXCLUSION_CODES:
             problems.append(f"{case_id}: exclusion code {code!r} is not stable")
@@ -393,6 +393,7 @@ def _spine_ok(plan: SuperpowerPlan) -> bool:
 def _canonical(plan: SuperpowerPlan) -> str:
     payload = {
         "exclusions": plan.exclusions,
+        "orchestration_exclusions": _typed_exclusions(plan),
         "families": list(plan.families),
         "family_exclusions": plan.family_exclusions,
         "notes": list(plan.notes),
@@ -422,15 +423,22 @@ def _observed(plan: SuperpowerPlan) -> dict[str, Any]:
     }
 
 
+def _typed_exclusions(plan: SuperpowerPlan) -> list[dict[str, str]]:
+    rows = getattr(plan, "orchestration_exclusions", None)
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if isinstance(row, dict)]
+
+
 def _codes(plan: SuperpowerPlan) -> set[str]:
-    found = {str(row.get("code", "")) for row in plan.exclusions}
+    found = {str(row.get("code", "")) for row in _typed_exclusions(plan)}
     found.update(str(row.get("code", "")) for row in plan.family_exclusions if row.get("code"))
     found.discard("")
     return found
 
 
 def _reason_blob(plan: SuperpowerPlan) -> str:
-    parts = [str(row.get("detail", "")) for row in plan.exclusions]
+    parts = [str(row.get("detail", "")) for row in _typed_exclusions(plan)]
     parts.extend(str(row.get("reason", "")) for row in plan.family_exclusions)
     return "\n".join(parts).casefold()
 
