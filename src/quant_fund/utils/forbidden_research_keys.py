@@ -40,14 +40,13 @@ def expand_mapping_key_segments(key: str) -> list[str]:
 _SUBSTRING_TOKENS = frozenset({"pnl", "nav"})
 
 
-def _substring_token_in_segment(segment: str, token: str) -> bool:
-    """Match ``pnl`` / ``nav`` in a segment without ``unavailable``-style false positives."""
-    if segment == token:
-        return True
-    if segment.endswith(token):
-        return True
-    needle = f"_{token}"
-    return needle in f"_{segment}_"
+def _embedded_token(segment: str, token: str) -> bool:
+    """Suffix embedding (``unrealizedpnl``) without banning ``navigate``."""
+    if not segment.endswith(token) or segment == token:
+        return False
+    if token == "nav" and segment.startswith("nav"):
+        return False
+    return token in _SUBSTRING_TOKENS
 
 
 def mapping_key_forbidden(key: str, forbidden: frozenset[str]) -> bool:
@@ -56,6 +55,6 @@ def mapping_key_forbidden(key: str, forbidden: frozenset[str]) -> bool:
         if segment in forbidden:
             return True
         for token in _SUBSTRING_TOKENS:
-            if token in forbidden and _substring_token_in_segment(segment, token):
+            if token in forbidden and _embedded_token(segment, token):
                 return True
     return False
