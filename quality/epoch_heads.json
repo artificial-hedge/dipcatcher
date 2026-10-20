@@ -78,11 +78,11 @@
       "tree_root": "3a78090acc2b055eb172a28e9c0e8b0e04398ed7bc97f5c5447d5059370e8236"
     },
     "docs/*": {
-      "chain_root": "2c5c1d63e64ddf066ef37b8138ae76c041e54ffc429047c00449a019569f45e3",
-      "n_epochs": 37,
-      "receipt": "corpus_epoch_8fa6680cd254c74b.json",
-      "sha256": "7ecd6a096dccae85099d51665670f5b9e7894aa3ad9fe94b6f19a6d557923526",
-      "tree_root": "f98d0b7dacc6af3f139d305b8ab82734d3f9e9cd0a35b13cca290830c2912a34"
+      "chain_root": "719350cee927cab5e03d947735308da2c758558a7c690416cfa44cb0ff53f1cd",
+      "n_epochs": 39,
+      "receipt": "corpus_epoch_b461a825f5b88962.json",
+      "sha256": "01ca575de5f977e442bd13f132be68f5a23d8d1435c6cb9ca49e9698aa410aca",
+      "tree_root": "450a888c042f32a0cf5d362041ec6ec0b5c43dbd0a77e1895a5a72281959115c"
     },
     "examples/*": {
       "chain_root": "ba365acc739a067440349ddd8930a47071421cc50ba3a68e6492009a815f89ef",
@@ -99,11 +99,11 @@
       "tree_root": "aa1f221f69eb955f4062b63c66569ae5d0366fddfa012cff2ebf09b6406edfef"
     },
     "quality/*.json": {
-      "chain_root": "02270a1eefadbc647324c43f1ebff24e51f88aa15425e1a7d880338582626efb",
-      "n_epochs": 305,
-      "receipt": "corpus_epoch_d2499dcb0beb8e32.json",
-      "sha256": "3d79c34d8214e08f2c95197dd8fa1ac5fbec69c49293389cae5ea9cc4a81a3c7",
-      "tree_root": "2409c74e7558889d88a44e5c9cfce8700d898eb9d749a325c83fbac21c96ba0c"
+      "chain_root": "10b6ae92947a5cc8b4fade0c83a1263870521b9e09ac3dccf4b3cd72f60a424f",
+      "n_epochs": 307,
+      "receipt": "corpus_epoch_15afbad686451867.json",
+      "sha256": "795db6c8f6327bcc3ac9ee1947b1bfe2bcc2a4da262296122ed57131340e1269",
+      "tree_root": "63ced02355f093696945ea7903fc7016c80d80e3d2c9735bb7fa7a6b37cbc733"
     },
     "receipts/*.json": {
       "chain_root": "be4352a4825be2da0806135b9fc24bcdbc87de920d5f39cc5e0418997b8c43ed",
@@ -155,11 +155,11 @@
       "tree_root": "b9063fca3758a88d89d48ba3a22424471027c1b3dfc7db69eba03912ea0c5bb6"
     },
     "src/*": {
-      "chain_root": "8248cae1909d61bcf55a73a9b45060c5630c9a2a94b3b48e2f0f6bf72d193dd1",
-      "n_epochs": 79,
-      "receipt": "corpus_epoch_2185d3d67c2b26f4.json",
-      "sha256": "2b8989763c30f95b773712e466ba82618a804a79ec8aec02eca56c9be406b66f",
-      "tree_root": "2cce1bbd967c352c23da8a213cf70a32c6b98d2f28f50c8c5bbbfc4e37cc2dc2"
+      "chain_root": "eeac0e7ea019137735c25f0b7f3698807ab1fe171da714db4c1eb1e611a65bdf",
+      "n_epochs": 80,
+      "receipt": "corpus_epoch_f07c993e42ce496e.json",
+      "sha256": "3dcb98d242be456852842cf0660b9301e5b8ab20d0f757537b49697e86581a83",
+      "tree_root": "aac9bb25b58d5e84c73ff11cb6aef26979d009471b49368cab1f62589f514e5c"
     },
     "tests/*": {
       "chain_root": "bcd3ec1b6bad7099785465966e9257698db1deec8f25fe2a1ed7cfbd86e981e3",

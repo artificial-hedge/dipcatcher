@@ -1,10 +1,10 @@
 # Production readiness status (QA-0K integrator)
 
-**Measured at:** `origin/main` `c4b8fe993` (2026-10-20 UTC), then this integrator stamp of recovered-stack drift.  
+**Measured at:** `origin/main` `c5b40ff00` (2026-10-20 UTC), then this integrator stamp of the KX-7Q-1 split.  
 **Work-order base:** `cb4f2c52f` is an ancestor of `main`.  
 **Owner:** QA-0K. **Not production-ready** until every exit line is **green** on a completed CI run of `main`, or **parked** under human-only items below.
 
-**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs mostly **PASS**. **KX-7Q-1 still remaining:** `src/quant_fund/cli/research_cmds.py` **4423 > 4422** (`quality/module_line_budgets.txt`); `src/fx1/interactive/concierge.py` **2124 > 2000** (default `MAX_MODULE_LINES`). Not split here (stamp-only pass).
+**Recovered stack LANDED** on `main` (newest-first at landing): `c4b8fe993`, `ab74271d7`, `9df91d9a7`, `b942531ce`, `75f6c984b`, `c4d7deb22`, `5218af98a`, `5dd49dd81`, `1003ee427`, `e10c70e5a`, `a893e96ee`, `30f70df98`. Campaign IDs from the work order are otherwise **PASS** or parked human-only. **KX-7Q-1 PASS** at `c5b40ff00`: `research_cmds.py` **4305** (pin lowered to 4305), `research_score_cmds.py` **137**, `concierge.py` **1938** (under 2000), `concierge_chat.py` **232**.
 
 **Landed sibling work (on `main`):**
 
@@ -15,7 +15,7 @@
 | ZR-9V | `b34527e55` | Fail-closed `evidence-audit` (`_ea`); `evidence-base-ref` admission; stale `timestamp_anchors` with age; replay executed/skipped headlines; `coverage_closure` red on unchained `data/manifests/*` (proposal only — **do not stamp** here). |
 | PD-8S | `7e5fbc655` | FrontDoor credentials, paths, honesty, superpower opt-in; `tests/unit/frontdoor/test_pd8s_frontdoor.py`. |
 | WP-3J | `34818a153` | PR required-only tests; slow full catalog `timeout(5400)`; `pytest-timeout` 900s; `check-test-durations` CI job; path inventory shards. |
-| KX-7Q | `f4f817d11`, `59b9c4533` | `fx1/cli/*` split and serve ingress extract landed. **KX-7Q-1 remaining** at `c4b8fe993`: `research_cmds.py` 4423>4422, `concierge.py` 2124>2000. |
+| KX-7Q | `c5b40ff00` | **KX-7Q-1 PASS.** `research_cmds.py` 4305 (pin 4305, tightening); `research_score_cmds.py` 137; `concierge.py` 1938; `concierge_chat.py` 232. `_chat_tools` defined; `_ApprovalTap` re-exported. `test_modules_stay_under_max_lines` passed (sibling report). |
 | FX-1A | `9a76eb4af` | Corpus quarantine refuse (9 SFT pins); lexical P&L/NAV guards; doctor crown-jewels; ship gate / `--fixture` SYNTHETIC; fx1 coverage floor **90** (91.19% − 1pp documented) — **`make fx1-coverage` not re-run** at land. **130** targeted honesty tests passed. |
 | HX-5D | `e7ebe13d9` | **HX-5D-1** stateful Hypothesis collects/passes `-n 4`. **HX-5D-2** Numba / TZ / `LC_ALL` isolation + guarded env test. **HX-5D-3** `OPENBLAS_CORETYPE` pin + cross-kernel threshold test. **HX-5D-4** webhook audit injected clock; wall-clock timing gates removed from probes — **park:** occasional `receipt_sha256` mismatch on executor races. **HX-5D-5** `slow` marker registered; `pytest --strict-markers --collect-only` exit 0. |
 | Leftovers | `48c79ce44` | Interactive import/planning repair: `ruff check src/fx1/interactive` **clean**; `test_research_banner` collects/passes (`_echo_synthetic_marker` export restored). |
@@ -38,16 +38,16 @@ These are real on clean `main` at `7c6338549`; fixing them is engineering work, 
 | **Lint** | **GREEN** | `make lint` at `7c6338549` exit **0** (re-checked this pass). |
 | **Targeted pytest** | **GREEN** | sim-live, superpower (68), replay_binding legacy contract — fixed at `7c6338549`. **Full** `make test` / all CI shards **not** verified green locally. |
 | **Interactive ruff** | **GREEN** | `ruff check src/fx1/interactive` clean. |
-| **KX-7Q-1 line budget** | **RED** | `research_cmds.py` 4423>4422; `concierge.py` 2124>2000. Sibling split remaining; not product work this pass. |
-| **Crown jewels** | **re-pin this stamp** | Mutated at `c4b8fe993` (AGENTS.md, Makefile, pyproject.toml, research integrity modules, … + unpinned ed25519 helpers). Re-pinned in this integrator commit. |
-| **Epoch chains** | **stamp this pass** | Live drift after recovered stack; unpinned fork heads on src/tests/docs dropped with acks so stamp extends the pinned line. `data/manifests` **not** chained (`mcs_vol` stays unchained until H1). |
+| **KX-7Q-1 line budget** | **PASS** | At `c5b40ff00`: `research_cmds.py` 4305=pin; `concierge.py` 1938<2000. |
+| **Crown jewels** | **re-pin this stamp** | `concierge.py` mutated at `c5b40ff00` (KX-7Q-1 split). Re-pinned here. |
+| **Epoch chains** | **stamp this pass** | `src` (concierge + research_cmds splits), `docs` (this file), `quality` (jewels + heads). Tests intact. `data/manifests` **not** chained (`mcs_vol` stays unchained until H1). |
 | **Coverage closure** | **RED (honest)** | ZR-9V-5: all `data/manifests/**` + `packaging/homebrew/fxi.rb` `uncovered_member` until manifests chain lands. |
 | **HX-5D webhook load proof** | **PARK (flake)** | Occasional `receipt_sha256` mismatch under executor races — watch CI / harden, not a gate weaken. |
 | **FX-1A coverage** | **NOT VERIFIED** | Floor 90 in ratchet; end-to-end `make fx1-coverage` not re-run this pass. |
 
 ## Exit criteria
 
-1. **RED** — No completed all-green CI on `main`. Command: `gh run list --repo artificial-hedge/dipcatcher --branch main --workflow CI --limit 10`. Latest at measure: **queued** https://github.com/artificial-hedge/dipcatcher/actions/runs/39418006640 (`c4b8fe993`). Prior recovered-stack pushes **cancelled** mid-queue (e.g. https://github.com/artificial-hedge/dipcatcher/actions/runs/39417502254 `ab74271d7`). Older completed failure: https://github.com/artificial-hedge/dipcatcher/actions/runs/39257948317.
+1. **RED** — No completed all-green CI on `main`. Command: `gh run list --repo artificial-hedge/dipcatcher --branch main --workflow CI --limit 10`. Latest at measure: **pending** https://github.com/artificial-hedge/dipcatcher/actions/runs/39420863722 (`c5b40ff00`). Prior integrator/recovered pushes **cancelled** mid-queue. Older completed failure: https://github.com/artificial-hedge/dipcatcher/actions/runs/39257948317.
 2. **GREEN (lint + targeted tests)** — `make lint` **passes** at `7c6338549`. Documented regression tests **pass** (sim-live, superpower, replay_binding). **Not** a claim that full CI / entire catalog is green.
 3. **RED** — `uv run quant verify-repo` at `48c79ce44` (not re-run this micro-pass; prior at `3cab21659`): `crown_jewels` **FAIL**; `pin_signatures` **FAIL** `pin_drift` (expected until **H1**); `coverage_closure` **FAIL**; `timestamp_anchors` **stale age=20d** (ZR-9V-3 honest); epoch **FAIL** on multiple chains; `lattice` **ok**; `checkpoint`/`witness`/`spine` **ok**.
 4. **RED until H1** — `make evidence-audit` (seven trailing gates via `_ea`) blocked by jewel/pin/epoch redness. CI evidence-audit not green on latest runs.
@@ -78,3 +78,4 @@ Agents do not generate `GATE_SIGNING_KEY`, do not run `make sign-pins`, do not g
 | 2026-10-20 | `348f4e850` | Repo-wide `make lint` green. |
 | 2026-10-20 | `7c6338549` | Test-regression cleanup; CI pending on `39412018652`. |
 | 2026-10-20 | `c4b8fe993` | Recovered stack landed; KX-7Q-1 still over line budget; this pass stamps jewels + drifted chains only. |
+| 2026-10-20 | `c5b40ff00` | **KX-7Q-1 PASS.** Integrator re-pins `concierge.py` jewel and stamps src/docs/quality. |
