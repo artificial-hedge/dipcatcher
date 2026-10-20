@@ -33,6 +33,9 @@ test-durations: ## Refresh checked-in .test_durations for pytest-split CI shards
 	$(TEST_ENV) uv run pytest -n auto --dist loadfile -m "slow and not network" \
 		--store-durations --durations-path .test_durations
 
+check-test-durations: ## Verify .test_durations covers the pytest-split inventory
+	uv run python scripts/check_test_durations.py
+
 parity-smoke: ## SYNTHETIC backtest/shadow parity smoke (simulated broker only)
 	uv run pytest -q tests/unit/parity
 	uv run python -m quant_fund.parity smoke --out data/metadata/parity-smoke
