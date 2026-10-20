@@ -82,7 +82,7 @@ QUALIFICATION_SUMMARY_PATH: Final = _REPO_ROOT / "quality" / "canon_qualificatio
 #: names to the tracked summary. A source checkout with changed audit evidence
 #: must update both values after review; it cannot silently reclassify families.
 QUALIFICATION_SUMMARY_SHA256: Final = (
-    "416bbd56e45c011620c571e79cc4c0666f45b30ba04552d542527ef035897960"
+    "ecae0148718ccca1b1e5985afe4b27492af824c1b755c0ed659863d344de1d6d"
 )
 _AUDITED_JUSTIFIED_FAMILIES: Final = frozenset(
     {

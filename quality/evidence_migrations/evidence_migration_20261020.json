@@ -1,0 +1,22 @@
+{
+  "base_revision": "2c3c651c1",
+  "canon_qualification_summary_pin": {
+    "artifact": {
+      "from_sha256": "416bbd56e45c011620c571e79cc4c0666f45b30ba04552d542527ef035897960",
+      "path": "quality/canon_qualification_summary.json",
+      "to_sha256": "ecae0148718ccca1b1e5985afe4b27492af824c1b755c0ed659863d344de1d6d"
+    },
+    "cause": "PR #3008 merge (0e3defd8e) integrated f48d39633's optional-classification pin against the pre-portability summary while keeping 72debaa68's rebound summary on disk. The tracked file already matched corpus epochs at ecae0148…; only QUALIFICATION_SUMMARY_SHA256 in optional_classification.py was stale.",
+    "classification_unchanged": {
+      "drift_reason": "merge_integration_pin_lag",
+      "live_candidate_families_equal": true,
+      "retired_families_equal": true
+    },
+    "content_delta": "counts.nonblank_lines/physical_lines (+14 each), models_tree_sha256, full_dump.sha256 — same rebound documented in 72debaa68 (portability / models-tree digest). live_candidate_families and retired_families byte-identical to the pinned-era summary.",
+    "pin_site": "src/quant_fund/research/catalog/optional_classification.py QUALIFICATION_SUMMARY_SHA256",
+    "reproduces": "sha256(quality/canon_qualification_summary.json) on origin/main at 2c3c651c1"
+  },
+  "date": "2026-10-20",
+  "policy": "Re-pin only; summary JSON not edited. No epoch stamp, no crown-jewels write.",
+  "schema": "evidence_migration.v1"
+}
