@@ -33,8 +33,12 @@ def _run(
     jobs: list[dict[str, Any]],
     path: str = CI_WORKFLOW_PATH,
     status: str = "completed",
+    created_at: str = "2026-10-19T00:00:00Z",
+    run_id: int = 1,
 ) -> dict[str, Any]:
     return {
+        "id": run_id,
+        "created_at": created_at,
         "path": path,
         "head_sha": sha,
         "status": status,
@@ -112,19 +116,30 @@ def test_green_ci_and_evidence_audit_is_signable() -> None:
     assert GREEN_SHA in reason
 
 
-def test_one_green_run_among_red_runs_is_signable() -> None:
-    ok, _reason = evaluate_release_gates(
-        GREEN_SHA,
+def test_older_green_run_does_not_excuse_a_later_red_run() -> None:
+    """The latest completed CI run is the verdict, not any historical success."""
+
+    ok, reason = evaluate_release_gates(
+        RED_SHA,
         [
             _run(
-                sha=GREEN_SHA,
+                sha=RED_SHA,
+                conclusion="success",
+                jobs=[_job("evidence-audit")],
+                created_at="2026-10-18T00:00:00Z",
+                run_id=1,
+            ),
+            _run(
+                sha=RED_SHA,
                 conclusion="failure",
                 jobs=[_job("evidence-audit", conclusion="failure")],
+                created_at="2026-10-20T00:00:00Z",
+                run_id=2,
             ),
-            _run(sha=GREEN_SHA, conclusion="success", jobs=[_job("evidence-audit")]),
         ],
     )
-    assert ok is True
+    assert ok is False
+    assert "latest completed CI" in reason
 
 
 def test_invalid_sha_fails_closed() -> None:

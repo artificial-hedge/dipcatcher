@@ -58,7 +58,24 @@ def _job_succeeded(job: Mapping[str, Any]) -> bool:
     return str(job.get("status") or "") == COMPLETED and str(job.get("conclusion") or "") == SUCCESS
 
 
+def _run_recency(run: Mapping[str, Any]) -> tuple[str, int]:
+    """Newest completed run wins. Missing timestamps sort as oldest."""
+
+    created = str(run.get("created_at") or "")
+    try:
+        run_id = int(run.get("id") or 0)
+    except (TypeError, ValueError):
+        run_id = 0
+    return created, run_id
+
+
 def evaluate_release_gates(sha: str, runs: Sequence[Mapping[str, Any]]) -> tuple[bool, str]:
+    """The latest completed CI run is the verdict.
+
+    An older green run does not authorize a tag whose newest completed CI
+    run failed, was cancelled, or lacks a successful evidence-audit job.
+    """
+
     try:
         digest = normalize_sha(sha)
     except ReleaseGateError as exc:
@@ -66,27 +83,29 @@ def evaluate_release_gates(sha: str, runs: Sequence[Mapping[str, Any]]) -> tuple
     ci_runs = [run for run in runs if _is_ci_run(run, digest)]
     if not ci_runs:
         return False, f"no completed CI run for {digest}"
-    reasons: list[str] = []
-    for run in ci_runs:
-        conclusion = str(run.get("conclusion") or "")
-        if conclusion != SUCCESS:
-            reasons.append(f"CI conclusion={conclusion or 'none'}")
-            continue
-        jobs = list(run.get("jobs") or [])
-        audit = next((job for job in jobs if _is_evidence_audit_job(job)), None)
-        if audit is None:
-            reasons.append("evidence-audit job missing")
-            continue
-        if not _job_succeeded(audit):
-            reasons.append(
-                "evidence-audit "
-                f"conclusion={audit.get('conclusion') or 'none'} "
-                f"status={audit.get('status') or 'none'}"
-            )
-            continue
-        return True, f"CI and evidence-audit succeeded on {digest}"
-    detail = "; ".join(reasons) if reasons else "no green CI + evidence-audit"
-    return False, f"tagged commit {digest} is not signable: {detail}"
+    latest = max(ci_runs, key=_run_recency)
+    run_id = latest.get("id")
+    label = f"run {run_id}" if run_id is not None else "latest CI run"
+    conclusion = str(latest.get("conclusion") or "")
+    if conclusion != SUCCESS:
+        return False, (
+            f"tagged commit {digest} is not signable: "
+            f"latest completed CI {label} conclusion={conclusion or 'none'}"
+        )
+    jobs = list(latest.get("jobs") or [])
+    audit = next((job for job in jobs if _is_evidence_audit_job(job)), None)
+    if audit is None:
+        return False, (
+            f"tagged commit {digest} is not signable: "
+            f"latest completed CI {label} has no evidence-audit job"
+        )
+    if not _job_succeeded(audit):
+        return False, (
+            f"tagged commit {digest} is not signable: evidence-audit on {label} "
+            f"conclusion={audit.get('conclusion') or 'none'} "
+            f"status={audit.get('status') or 'none'}"
+        )
+    return True, f"CI and evidence-audit succeeded on {digest} ({label})"
 
 
 def _link_next(headers: Mapping[str, str]) -> str | None:
