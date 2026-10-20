@@ -52,8 +52,10 @@ def test_fast_gates_report_merge_queue_checks() -> None:
     assert "github.event_name == 'merge_group'" in base_step["if"]
     assert base_step["env"]["PR_BASE"] == "${{ github.event.pull_request.base.sha }}"
     assert base_step["env"]["MERGE_BASE"] == "${{ github.event.merge_group.base_sha }}"
-    assert 'if [ "$EVENT" = merge_group ]' in base_step["run"]
-    assert 'if [ "$EVENT" = merge_group ] || [ "$EVENT" = pull_request ]' in base_step["run"]
+    run = base_step["run"]
+    assert 'if [ "$EVENT" = push ]' in run
+    assert 'if [ "$EVENT" = pull_request ]' in run
+    assert 'ref="$MERGE_BASE"' in run
 
 
 def test_platform_matrix_is_nightly_or_manual() -> None:
@@ -176,6 +178,7 @@ CI_JOB_MAKE_TARGETS: dict[str, tuple[str, ...]] = {
     "audit": ("audit",),
     "package": (),
     "container": (),
+    "test-inventory": (),
     "test": ("test",),
     "coverage": ("coverage",),
     "perf": (),

@@ -1103,6 +1103,7 @@ jobs:
         audit,
         package,
         container,
+        test-inventory,
         test,
         coverage,
         perf,

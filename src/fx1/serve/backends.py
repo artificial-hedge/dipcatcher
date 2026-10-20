@@ -42,8 +42,6 @@ from fx1.serve.backends_stop import (
 from fx1.serve.backends_stop import (
     openai_sibling_url as _openai_sibling_url,
 )
-from fx1.serve.local_engine_process import checkpoint_weights_sha as _checkpoint_weights_sha
-from fx1.serve.local_engine_process import spawn_local_engine
 
 MOONSHOT_API_URL = "https://api.moonshot.ai/v1/chat/completions"
 
