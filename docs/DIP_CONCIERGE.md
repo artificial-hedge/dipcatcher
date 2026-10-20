@@ -71,10 +71,11 @@ dipcatcher              # opens chat in an interactive terminal
 dipcatcher chat --model fx1-lite
 ```
 
-Without an endpoint the console still works: slash commands run, web research
-runs, flash context runs — only model turns (chat replies, plan refinement,
-synthesis) report honestly that no endpoint is configured and fall back to a
-deterministic summary.
+Without an endpoint the console still works: slash commands run and flash
+context runs. Public web search does not run unless the goal is started with
+`--web` (`/superpower --web …` or `dipcatcher superpower --web --sync …`).
+Model turns (chat replies, plan refinement, synthesis) report honestly that
+no endpoint is configured and fall back to a deterministic summary.
 
 ## The session
 
@@ -92,7 +93,7 @@ fail-closed posture:
 Slash commands:
 
 ```text
-/superpower <goal> [--sync]     plan + coordinate research capabilities
+/superpower <goal> [--sync] [--web]  plan + coordinate; --web opts into public search
 /superpower help                list the capability catalog (+ family catalog once loaded)
 /families [goal]                research-family catalog; classify the families a goal names
 /research <goal> [--budget-s N] [--max-sources N] [--queries a|b] [--sync]

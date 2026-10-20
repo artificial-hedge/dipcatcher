@@ -8,8 +8,9 @@ and durable session/job recovery remain open. See [the CLI guide](DIP_CONCIERGE.
 for the working-tree status and full workflow; this page covers endpoints,
 security, and the classic shell.
 **fx1 and fx1-lite are model names** — each has one *endpoint* here: an API
-key plus a base URL, stored locally and injected into harness commands, so
-`fx1 eval`, hosted chat, and verification runs pick up your credentials
+key plus a base URL, stored locally. The chat client reads them from the
+store; lab harness subprocesses inherit a scrubbed environment (no API keys
+in `os.environ`). Use `fxi eval` / hosted chat with `/use` or `fxi setup`
 without exporting env vars by hand.
 
 `fxi setup` runs the onboarding wizard: enter your API key (not echoed), a

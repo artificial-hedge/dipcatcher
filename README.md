@@ -30,9 +30,11 @@ a released model, and no fine-tuned fx-1 weights are published anywhere.** This
 block exists because a version string, a badge, and a `model` name are all easy
 to misread as a shipped artifact. Read it before the [fx-1](#fx-1) section.
 
-- **What exists.** `src/fx1` is **323 Python modules**, strictly typed, with
-  **73 `test_*.py` files** under `tests/fx1/` (78 `.py` files including
-  `conftest.py`). It is the corpus builder, the eval task bank, the training
+- **What exists.** `src/fx1` is **342 Python modules**, strictly typed, with
+  **86 `test_*.py` files** under `tests/fx1/` (91 `.py` files including
+  `conftest.py`). Counted 2026-10-20 with `find src/fx1 -name '*.py' | wc -l`,
+  `find tests/fx1 -name 'test_*.py' | wc -l`, and `find tests/fx1 -name '*.py' | wc -l`.
+  It is the corpus builder, the eval task bank, the training
   ladder and manifest gate, the ship gate, the model-card writer, the SBOM and
   attestation ladder, and the `fx1` CLI. It is the machinery *around* a model.
 - **What does not exist.** **No fine-tuned fx-1 checkpoint is published.** No
@@ -180,12 +182,17 @@ The dip question, in `fx1.bench.dip` and
 drawdown recovers within 1, 3, 6, or 12 months. That committed receipt scores
 an in-sample climatology baseline on 11 historical crypto series. Disclaimer
 from the file:
+
+> Research/backtest evidence on historical data, not live performance. The
+> climatology forecaster is an in-sample descriptive baseline; it is not a
+> tradeable signal and authorizes nothing.
+
 The distribution name on PyPI-style metadata is `fx-1`; the main console
 entry points installed by this project are `dipcatcher` (the chat-first CLI;
 explicit subcommands run the lab), `quant` (the lab CLI without the chat
 launcher), `fxi` (a compatible chat launcher), and `fx1` (the
 model-facing corpus/eval/training-manifest tooling). All live in one
-checkout, at version `0.4.0` (`fx1.__version__`), and both are governed by
+checkout, at version `0.4.0` (`fx1.__version__`), and all four are governed by
 the same receipt-and-verification discipline described throughout this
 document.
 
@@ -1492,14 +1499,24 @@ uv run dipcatcher           # opens the chat in an interactive terminal
 #   /keys set fx1           masked API key + endpoint URL (or /keys set fx1-lite)
 #   /use fx1-lite           switch model
 #   /superpower <goal>      plan and run the research families that fit
+#   /superpower --web ...   opt in before any public web search
 #   /help, /exit
 ```
 
 `dipcatcher chat --model fx1-lite` picks the starting model. Without an
-endpoint the chat still runs slash commands and web research. Redirected
-(non-terminal) `dipcatcher` prints help instead of opening the chat. Details
-and current status: [`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md). The
-typed subcommands below are the non-interactive path, used by scripts and CI:
+endpoint the chat still runs slash commands. Public web search does not run
+unless you pass `--web`. Redirected (non-terminal) `dipcatcher` prints help
+instead of opening the chat. Details and current status:
+[`docs/DIP_CONCIERGE.md`](docs/DIP_CONCIERGE.md).
+
+`make sync` installs the full locked environment (every dependency group and
+extra), the same set CI uses. It is not a minimal chat install.
+
+The unbounded `dipcatcher research` command runs the full wired scorecard.
+The non-interactive smoke below is the bounded SYNTHETIC path: the example
+sets `DIPCATCHER_RESEARCH_REQUIRED_ONLY=1`, seals a required-family receipt,
+and verifies it. Typed subcommands are the non-interactive path for scripts
+and CI:
 
 ```bash
 uv run dipcatcher research --config configs/research.yaml
