@@ -144,7 +144,7 @@ def plan_catalog_unavailable(goal: str, reason: str) -> SuperpowerPlan:
         capabilities=_qualified_capabilities(goal, ()),
         source="catalog-unavailable",
         notes=[f"catalog unavailable: {cleaned}", "No suitable capability"],
-        exclusions=[
+        orchestration_exclusions=[
             {"capability_id": "", "code": "not_executable", "detail": cleaned},
         ],
         catalog_unavailable=cleaned,
@@ -421,7 +421,7 @@ def _wrap_plan(
         families=list(family_ids),
         family_exclusions=family_exclusions,
         research_constrained=constrained,
-        exclusions=_dedupe_rows(exclusions),
+        orchestration_exclusions=_dedupe_rows(exclusions),
         notes=list(execution.notes),
         typed_steps=tuple(execution.steps),
         catalog_digest=execution.catalog_digest,
@@ -930,7 +930,7 @@ def _save_flash(state: RunState) -> None:
 
 
 def _finish_answer(state: RunState) -> None:
-    notes = answer_notes(state.plan.notes, state.plan.exclusions)
+    notes = answer_notes(state.plan.notes, state.plan.orchestration_exclusions)
     if "synthesize" not in state.plan.ids():
         _store_evidence(state, _ledger_status(state.ledger))
         return

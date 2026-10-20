@@ -37,11 +37,14 @@ import threading
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
+from pathlib import Path
 from typing import Any, cast
 
 from fx1.harness import HARNESS_REGISTRY, Harness, HarnessRole
+from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.interactive.approvals import ApprovalGate
 from fx1.interactive.budget import BudgetExceeded
+from fx1.interactive.contracts import CapabilityCatalog
 from fx1.interactive.endpoint import OperationCancelled
 from fx1.interactive.families import (
     FamilyCatalog,
@@ -49,6 +52,7 @@ from fx1.interactive.families import (
     families_prompt_block,
     resolve_families,
 )
+from fx1.interactive.planner import DatasetRef, PlanStep
 from fx1.interactive.surface_seal import build_surface_seal
 from fx1.interactive.trigger_lexicon import GoalFold, TriggerLexicon
 from fx1.interactive.workflow import (
@@ -276,29 +280,39 @@ class SuperpowerPlan:
     goal: str
     capabilities: list[PlannedCapability] = field(default_factory=list)
     source: str = "deterministic"
-    families: FamilySelection | None = None
+    families: list[str] = field(default_factory=list)
+    family_exclusions: list[dict[str, str]] = field(default_factory=list)
+    research_constrained: bool = False
+    family_selection: FamilySelection | None = None
     exclusions: list[str] = field(default_factory=list)
+    orchestration_exclusions: list[dict[str, str]] = field(default_factory=list)
     blocked: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    typed_steps: tuple[PlanStep, ...] = ()
+    catalog_digest: str = ""
+    catalog_unavailable: str = ""
+    bound_catalog: CapabilityCatalog | None = field(default=None, repr=False, compare=False)
 
     def ids(self) -> list[str]:
         return [cap.id for cap in self.capabilities]
 
     def describe(self) -> str:
         lines = [f"plan for: {self.goal}", f"planner: {self.source}"]
-        for cap in self.capabilities:
-            meta = CAPABILITIES.get(cap.id, {})
-            flags = [str(meta.get("kind", "?")), str(meta.get("cost", "?"))]
-            if meta.get("consequential"):
-                flags.append("approval-required")
-            lines.append(f"- {cap.id} ({', '.join(flags)}): {cap.rationale}")
-        if self.families is not None and self.families.mentioned:
+        _append_capability_lines(lines, self.capabilities)
+        if self.research_constrained:
+            _append_family_lines(lines, self)
+        elif self.family_selection is not None and self.family_selection.mentioned:
             lines.append("research families:")
-            lines.extend(f"  {line}" for line in self.families.explain())
+            lines.extend(f"  {line}" for line in self.family_selection.explain())
         for exclusion in self.exclusions:
             lines.append(f"excluded: {exclusion}")
+        for item in self.orchestration_exclusions:
+            cap = item.get("capability_id") or "-"
+            lines.append(f"excluded {cap}: {item.get('code', '')}: {item.get('detail', '')}")
         for note in self.notes:
             lines.append(f"note: {note}")
+        if self.catalog_unavailable:
+            lines.append(f"catalog unavailable: {self.catalog_unavailable}")
         return "\n".join(lines)
 
 
@@ -319,23 +333,18 @@ def _append_family_lines(lines: list[str], plan: SuperpowerPlan) -> None:
         lines.append(f"  excluded {item.get('id', '?')}: {item.get('reason', '')}")
 
 
-def _append_plan_notes(lines: list[str], plan: SuperpowerPlan) -> None:
-    for item in plan.exclusions:
-        cap = item.get("capability_id") or "-"
-        lines.append(f"excluded {cap}: {item.get('code', '')}: {item.get('detail', '')}")
-    for note in plan.notes:
-        lines.append(f"note: {note}")
-    if plan.catalog_unavailable:
-        lines.append(f"catalog unavailable: {plan.catalog_unavailable}")
-
-
 def plan_goal(
     goal: str,
     *,
     capabilities: dict[str, dict[str, Any]] | None = None,
     model_fn: ModelFn | None = None,
     max_harness: int = 4,
-    catalog: FamilyCatalog | None = None,
+    family_selector: Selector | None = None,
+    catalog: FamilyCatalog | CapabilityCatalog | None = None,
+    datasets: Sequence[DatasetRef] = (),
+    roots: Mapping[str, Sequence[Path]] | None = None,
+    catalog_unavailable: str | None = None,
+    budget_s: float | None = None,
 ) -> SuperpowerPlan:
     """Select the relevant capability subset for *goal*.
 
@@ -356,7 +365,7 @@ def plan_goal(
         from fx1.interactive.orchestration import plan_catalog_unavailable
 
         return plan_catalog_unavailable(goal, catalog_unavailable)
-    if catalog is not None:
+    if isinstance(catalog, CapabilityCatalog):
         from fx1.interactive.orchestration import plan_with_catalog
 
         return plan_with_catalog(
@@ -369,12 +378,14 @@ def plan_goal(
             family_selector=family_selector,
             budget_s=budget_s,
         )
+    family_catalog = catalog if isinstance(catalog, FamilyCatalog) else None
     return _plan_keyword(
         goal,
         capabilities=capabilities,
         model_fn=model_fn,
         max_harness=max_harness,
         family_selector=family_selector,
+        catalog=family_catalog,
     )
 
 
@@ -385,6 +396,7 @@ def _plan_keyword(
     model_fn: ModelFn | None,
     max_harness: int,
     family_selector: Selector | None,
+    catalog: FamilyCatalog | None,
 ) -> SuperpowerPlan:
     registry = capabilities or CAPABILITIES
     fold = _TRIGGER_LEXICON.fold(goal)
@@ -405,7 +417,7 @@ def _plan_keyword(
             suppress_web_fallback=bool(manual_requests or gate.exclusions),
         ),
         source="deterministic",
-        families=gate.families,
+        family_selection=gate.families,
         exclusions=[
             *gate.exclusions,
             *(
@@ -419,6 +431,47 @@ def _plan_keyword(
     )
     if model_fn is not None:
         plan = _model_refine(plan, goal, registry, model_fn, max_harness=max_harness)
+    if family_selector is not None and "research" in plan.ids():
+        return _attach_families(plan, family_selector)
+    return plan
+
+
+def parse_family_selection(payload: dict[str, Any]) -> tuple[list[str], list[dict[str, str]]]:
+    """Fail closed unless every selected family is an executable required id."""
+    if not isinstance(payload, dict) or payload.get("schema") != "dipcatcher.family_surface.v1":
+        raise ValueError("family surface schema mismatch")
+    ids: list[str] = []
+    for row in payload.get("selected") or []:
+        if not isinstance(row, dict):
+            raise ValueError("selected entries must be objects")
+        family_id = row.get("id")
+        eligible = row.get("executable") is True and row.get("qualification") == "required"
+        if (
+            not eligible
+            or not isinstance(family_id, str)
+            or re.fullmatch(r"[a-z][a-z0-9_]*", family_id) is None
+        ):
+            raise ValueError(f"ineligible family in selection: {family_id!r}")
+        if family_id not in ids:
+            ids.append(family_id)
+    exclusions = [item for item in payload.get("exclusions") or [] if isinstance(item, dict)]
+    return ids, exclusions
+
+
+def _attach_families(
+    plan: SuperpowerPlan, selector: Callable[[str], dict[str, Any]]
+) -> SuperpowerPlan:
+    """Constrain research to the selector's eligible ids. A failure does not run the catalog."""
+    try:
+        family_ids, exclusions = parse_family_selection(selector(plan.goal))
+    except Exception as exc:  # noqa: BLE001 — fail closed, never fall through to a full catalog run
+        plan.research_constrained = True
+        plan.families = []
+        plan.family_exclusions = [{"id": "research", "reason": f"family surface refused: {exc}"}]
+        return plan
+    plan.research_constrained = True
+    plan.families = family_ids
+    plan.family_exclusions = exclusions
     return plan
 
 
@@ -492,7 +545,6 @@ def _deterministic_selection(
 ) -> list[PlannedCapability]:
     selected: list[PlannedCapability] = [
         PlannedCapability("flash_retrieve", "memory is cheap and may already hold this research"),
-        *_harness_plans(goal, registry, harness_ids),
     ]
     for cap_id in harness_ids:
         meta = registry[cap_id]
@@ -543,7 +595,11 @@ def _model_refine(
     # The production concierge loads a catalog when deterministic planning
     # selects research. If it did not, no eligibility snapshot was loaded;
     # model refinement may not introduce research after that decision.
-    if fallback.families is None and "research" not in fallback.ids():
+    if (
+        fallback.family_selection is None
+        and not fallback.research_constrained
+        and "research" not in fallback.ids()
+    ):
         blocked.add("research")
     listing = "\n".join(
         f"- {cap_id}: {meta.get('description', '')}"
@@ -572,8 +628,12 @@ def _model_refine(
         goal=goal,
         capabilities=capabilities,
         source="model+validated",
-        families=fallback.families,
+        family_selection=fallback.family_selection,
+        families=list(fallback.families),
+        family_exclusions=list(fallback.family_exclusions),
+        research_constrained=fallback.research_constrained,
         exclusions=list(fallback.exclusions),
+        orchestration_exclusions=list(fallback.orchestration_exclusions),
         blocked=list(fallback.blocked),
         notes=list(fallback.notes),
     )
@@ -713,6 +773,11 @@ def _evidence_count(evidence: Mapping[str, Any]) -> int | None:
     return None
 
 
+def _emit(ctx: SuperpowerContext, event: str, detail: str) -> None:
+    if ctx.on_event is not None:
+        ctx.on_event(event, detail)
+
+
 def _journal_step(ctx: SuperpowerContext, run: CapabilityRun) -> None:
     if ctx.journal is None:
         return
@@ -850,6 +915,25 @@ def _skip_blocked_research(
 ) -> bool:
     if cap_id != "research":
         return False
+    plan = result.plan
+    if plan.research_constrained:
+        if plan.families:
+            return False
+        reason = "; ".join(
+            f"{item.get('id', '?')}: {item.get('reason', '')}" for item in plan.family_exclusions
+        )
+        _record_locked(
+            result,
+            ctx,
+            CapabilityRun(
+                cap_id,
+                cap_id,
+                "skipped",
+                reason or "no suitable qualified family",
+            ),
+            runs_lock,
+        )
+        return True
     reason = _research_runtime_block_reason(result.goal, ctx.catalog)
     if reason is None:
         return False
@@ -1044,6 +1128,7 @@ def _stage_web_research(
             ),
         )
         return
+    transport_cancel = threading.Event()
     try:
         report = bounded_call(
             lambda: researcher.run(
@@ -1279,8 +1364,11 @@ def _stage_harness(
     if not _harness_admitted(cap_id, meta, ctx, result):
         return
     _emit(ctx, "harness", f"running {cap_id} (registered command)")
+    extra_args: list[str] | None = None
+    if cap_id == "research" and result.plan.research_constrained and result.plan.families:
+        extra_args = ["--only", ",".join(result.plan.families)]
     try:
-        outcome = _harness_run(cap_id, ctx)
+        outcome = _harness_run(cap_id, ctx, extra_args)
     except Exception as exc:  # noqa: BLE001
         run = CapabilityRun(cap_id, cap_id, "failed", str(exc))
         _record_locked(result, ctx, run, runs_lock)
@@ -1382,8 +1470,8 @@ def _deterministic_synthesis(
 def _prepare_synthesis(
     plan: SuperpowerPlan, ctx: SuperpowerContext, result: SuperpowerResult, parts: list[str]
 ) -> bool:
-    if plan.families is not None and ctx.catalog is not None:
-        block = families_prompt_block(plan.families, ctx.catalog)
+    if plan.family_selection is not None and ctx.catalog is not None:
+        block = families_prompt_block(plan.family_selection, ctx.catalog)
         if block:
             parts.append(block)
     if _cancelled(ctx):

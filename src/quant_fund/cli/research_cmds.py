@@ -21,6 +21,7 @@ from .key_material import (
     _read_key_file,
     _refuse_lone_key_under_quorum,
 )
+from .research_banner import _echo_synthetic_marker  # noqa: F401 — re-exported for tests
 from .research_pvalues import _harvest_p_values
 from .support import _cfg, format_data_label, format_fdr_families
 
