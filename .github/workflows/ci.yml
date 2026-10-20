@@ -716,18 +716,41 @@ jobs:
         id: sync
         run: uv sync --frozen --all-groups --no-build
       - name: Re-verify every committed receipt (strict)
+        id: evidence-audit
         # make evidence-audit runs every gate (including the seven integrity
         # drills at the tail), reports each, and exits non-zero once at the end.
-        run: make evidence-audit
+        # Stage drill receipts under evidence-ci/ so a red gate still uploads the
+        # JSON that explains it; upload steps fail closed when this step is green.
+        run: |
+          set +e
+          make evidence-audit
+          status=$?
+          set -e
+          mkdir -p evidence-ci/tamper-drill evidence-ci/fuzz-drill
+          tmp="${RUNNER_TEMP:-/tmp}"
+          cp -f "$tmp/evidence-receipts/verify-repo.json" evidence-ci/verify-repo.json 2>/dev/null || true
+          cp -f "$tmp/evidence-receipts/"tamper*.json evidence-ci/tamper-drill/ 2>/dev/null || true
+          cp -f "$tmp/evidence-receipts/fuzz-drill.json" evidence-ci/fuzz-drill/ 2>/dev/null || true
+          exit "$status"
       # Each evidence gate reports on its own: a red step above must not
       # skip the base-comparison rules below (chain extension, ack ledger
       # and quarantine registry vs base, admission), or they silently stop
       # running while main is red. They still need a successful sync.
       - name: Evidence bundle round-trip — export, then audit with the standalone script
+        id: evidence-bundle
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         run: |
+          set +e
           make evidence-bundle BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
+          bundle_status=$?
           make bundle-verify BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
+          verify_status=$?
+          set -e
+          mkdir -p evidence-ci
+          cp -f "$RUNNER_TEMP/evidence-bundle/BUNDLE.json" evidence-ci/BUNDLE.json 2>/dev/null || true
+          if [ "$bundle_status" -ne 0 ] || [ "$verify_status" -ne 0 ]; then
+            exit 1
+          fi
       # The base a change must extend: the PR's base branch or, for a direct
       # push to main (this repo's normal path), the tip main had before the
       # push. Without a push base the rules below would never run here.
@@ -762,31 +785,58 @@ jobs:
           BASE_SHA: ${{ steps.base.outputs.sha }}
         run: make admission-gate ADMISSION_BASE="$BASE_SHA"
       - name: Replay carriers (byte-exact artifact reproduction)
+        id: replay-sweep
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
-        run: make replay-sweep
-      - name: Upload replay sweep evidence
+        run: |
+          set +e
+          make replay-sweep
+          status=$?
+          set -e
+          mkdir -p evidence-ci
+          cp -f "${RUNNER_TEMP:-/tmp}/replay_coverage.json" evidence-ci/replay_coverage.json 2>/dev/null || true
+          exit "$status"
+      - name: Upload replay coverage
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: evidence-replay-sweep
-          path: |
-            ${{ runner.temp }}/replay_coverage.json
-            data/metadata/replay/
-          if-no-files-found: error
-      - name: Upload verify-repo / tamper-drill / fuzz-drill receipts
+          name: dipcatcher-replay-coverage
+          path: evidence-ci/replay_coverage.json
+          if-no-files-found: ${{ steps.replay-sweep.outcome == 'success' && 'error' || 'warn' }}
+      - name: Upload replay lane artifacts
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: evidence-integrity-drills
-          path: ${{ runner.temp }}/evidence-receipts/
-          if-no-files-found: warn
+          name: dipcatcher-replay-lane-artifacts
+          path: data/metadata/replay/
+          if-no-files-found: ${{ steps.replay-sweep.outcome == 'success' && 'error' || 'warn' }}
+      - name: Upload verify-repo receipt
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dipcatcher-verify-repo
+          path: evidence-ci/verify-repo.json
+          if-no-files-found: ${{ steps.evidence-audit.outcome == 'success' && 'error' || 'warn' }}
+      - name: Upload tamper-drill receipts
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dipcatcher-tamper-drill
+          path: evidence-ci/tamper-drill/
+          if-no-files-found: ${{ steps.evidence-audit.outcome == 'success' && 'error' || 'warn' }}
+      - name: Upload fuzz-drill receipt
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dipcatcher-fuzz-drill
+          path: evidence-ci/fuzz-drill/
+          if-no-files-found: ${{ steps.evidence-audit.outcome == 'success' && 'error' || 'warn' }}
       - name: Upload evidence bundle manifest (audit trail)
         if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: evidence-bundle-manifest
-          path: ${{ runner.temp }}/evidence-bundle/BUNDLE.json
-          if-no-files-found: warn
+          path: evidence-ci/BUNDLE.json
+          if-no-files-found: ${{ steps.evidence-bundle.outcome == 'success' && 'error' || 'warn' }}
 
   pretrade-risk:
     runs-on: ubuntu-latest
