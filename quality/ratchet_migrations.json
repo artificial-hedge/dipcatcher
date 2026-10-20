@@ -84,9 +84,16 @@
     {
       "path": "quant_fund/research/catalog/registry.py",
       "from": 13253,
-      "to": 13283,
+      "to": 13284,
       "issue": 2991,
-      "rationale": "30 lines added by the user's recent catalog work (family blob registration). The module is 11283 lines over MAX_MODULE_LINES and is owed a complete split into per-family subregistries; the current ceiling is the smallest honest acknowledgement of the debt while the split is pending."
+      "rationale": "31 net lines: catalog family-blob registration plus 1b525f2a7 wiring mapping_key_forbidden into family_blob_forbidden_metrics_absent. The module remains far over MAX_MODULE_LINES and is owed a split into per-family subregistries."
+    },
+    {
+      "path": "quant_fund/research/catalog/registry.py",
+      "from": 13283,
+      "to": 13284,
+      "issue": 2991,
+      "rationale": "1b525f2a7 wired mapping_key_forbidden into family_blob_forbidden_metrics_absent (+1 net line). Owed the same registry split as the prior ceiling entry."
     },
     {
       "path": "quant_fund/research/catalog/retired_families.py",
