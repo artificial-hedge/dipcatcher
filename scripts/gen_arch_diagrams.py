@@ -294,11 +294,11 @@ ANCHORS: dict[str, tuple[str, str]] = {
     "verify_research": ("src/quant_fund/research/verify.py", "verify_research_artifact"),
     "validate_candidate": ("src/quant_fund/validation/gates.py", "validate_candidate"),
     "sim_live": ("src/quant_fund/paper/sim_live.py", "run_sim_live"),
-    "fx1_cli": ("src/fx1/cli.py", "app"),
+    "fx1_cli": ("src/fx1/cli/_app.py", "app"),
     "fx1_corpus": ("src/fx1/data/corpus.py", "*"),
     "fx1_honesty": ("src/fx1/honesty.py", "FORBIDDEN_HEADLINE_TOKENS"),
     "catalog": (
-        "src/quant_fund/research/catalog/registry.py",
+        "src/quant_fund/research/catalog/registry_blob_checks.py",
         "FORBIDDEN_RESEARCH_METRIC_KEYS",
     ),
 }

@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 13427,
+  "module_count": 13525,
   "module_edges": [
     {
       "dst": "fx1",
@@ -41,6 +41,10 @@
     {
       "dst": "fx1.interactive.redact",
       "src": "dipcatcher_cli.models_cmd"
+    },
+    {
+      "dst": "quant_fund.utils.lab_paths",
+      "src": "dipcatcher_cli.paths"
     },
     {
       "dst": "fx1.interactive.approvals",
@@ -107,164 +111,156 @@
       "src": "fx1.bench.run_audit"
     },
     {
+      "dst": "fx1.cli._app",
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.cli.data_cmds",
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.cli.eval_cmds",
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.cli.forecast_cmds",
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.cli",
+      "src": "fx1.cli.__main__"
+    },
+    {
       "dst": "fx1",
-      "src": "fx1.cli"
+      "src": "fx1.cli._app"
     },
     {
-      "dst": "fx1.bench.dip",
-      "src": "fx1.cli"
+      "dst": "fx1.cli.support",
+      "src": "fx1.cli._app"
     },
     {
-      "dst": "fx1.bench.run",
-      "src": "fx1.cli"
+      "dst": "fx1.cli_harness",
+      "src": "fx1.cli._app"
     },
     {
-      "dst": "fx1.cli_sign",
-      "src": "fx1.cli"
+      "dst": "fx1.cli._app",
+      "src": "fx1.cli.data_cmds"
     },
     {
       "dst": "fx1.data",
-      "src": "fx1.cli"
+      "src": "fx1.cli.data_cmds"
     },
     {
       "dst": "fx1.data.corpus",
-      "src": "fx1.cli"
+      "src": "fx1.cli.data_cmds"
     },
     {
       "dst": "fx1.data.sources.adapters",
-      "src": "fx1.cli"
+      "src": "fx1.cli.data_cmds"
     },
     {
       "dst": "fx1.data.sources.base",
-      "src": "fx1.cli"
+      "src": "fx1.cli.data_cmds"
     },
     {
       "dst": "fx1.data.sources.ingest",
-      "src": "fx1.cli"
+      "src": "fx1.cli.data_cmds"
     },
     {
       "dst": "fx1.data.sources.registry",
-      "src": "fx1.cli"
+      "src": "fx1.cli.data_cmds"
     },
     {
       "dst": "fx1.data.sources.router",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.doctor",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.eval",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.eval.ext_bench",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.eval.options_reasoning_eval",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.eval.redteam",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.eval.suite",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.forecast.config",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.forecast.runner",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.harness",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.harness_bench",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.modelcard",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.mrm",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.operations.base",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.operations.registry",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.sbom",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.sdk",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.selftest",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.serve",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.serve.api",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.serve.backends",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.serve.client",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.serve.contract",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.serve.finetune",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.serve.harness_doctor",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.serve.ops_receipt",
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.serve.release_gate",
-      "src": "fx1.cli"
+      "src": "fx1.cli.data_cmds"
     },
     {
       "dst": "fx1.train",
-      "src": "fx1.cli"
+      "src": "fx1.cli.data_cmds"
+    },
+    {
+      "dst": "fx1.cli._app",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.cli.support",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.cli_sign",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.eval",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.eval.ext_bench",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.eval.options_reasoning_eval",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.eval.redteam",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.eval.suite",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.modelcard",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.mrm",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.sbom",
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.serve",
+      "src": "fx1.cli.eval_cmds"
     },
     {
       "dst": "fx1.train.curriculum",
-      "src": "fx1.cli"
+      "src": "fx1.cli.eval_cmds"
     },
     {
       "dst": "fx1.train.dpo",
-      "src": "fx1.cli"
+      "src": "fx1.cli.eval_cmds"
+    },
+    {
+      "dst": "fx1.bench.dip",
+      "src": "fx1.cli.forecast_cmds"
+    },
+    {
+      "dst": "fx1.bench.run",
+      "src": "fx1.cli.forecast_cmds"
+    },
+    {
+      "dst": "fx1.cli._app",
+      "src": "fx1.cli.forecast_cmds"
+    },
+    {
+      "dst": "fx1.doctor",
+      "src": "fx1.cli.forecast_cmds"
+    },
+    {
+      "dst": "fx1.forecast.config",
+      "src": "fx1.cli.forecast_cmds"
+    },
+    {
+      "dst": "fx1.forecast.runner",
+      "src": "fx1.cli.forecast_cmds"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "src": "fx1.cli.support"
     },
     {
       "dst": "fx1.bench.dip_audit",
@@ -301,6 +297,138 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "fx1.cli_audit"
+    },
+    {
+      "dst": "fx1.sdk",
+      "src": "fx1.cli_common"
+    },
+    {
+      "dst": "fx1.serve.client",
+      "src": "fx1.cli_common"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_harness_chat",
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_harness_ft",
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_harness_jobs",
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_harness_ops",
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_harness_vs",
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "src": "fx1.cli_harness_chat"
+    },
+    {
+      "dst": "fx1.sdk",
+      "src": "fx1.cli_harness_chat"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "src": "fx1.cli_harness_ft"
+    },
+    {
+      "dst": "fx1.sdk",
+      "src": "fx1.cli_harness_ft"
+    },
+    {
+      "dst": "fx1.serve.finetune",
+      "src": "fx1.cli_harness_ft"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "src": "fx1.cli_harness_jobs"
+    },
+    {
+      "dst": "fx1.sdk",
+      "src": "fx1.cli_harness_jobs"
+    },
+    {
+      "dst": "fx1.serve.client",
+      "src": "fx1.cli_harness_jobs"
+    },
+    {
+      "dst": "fx1",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.harness_bench",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.operations.registry",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.sdk",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.selftest",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.serve.api",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.serve.backends",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.serve.client",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.serve.contract",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.serve.harness_doctor",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.serve.ops_receipt",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.serve.release_gate",
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "src": "fx1.cli_harness_vs"
+    },
+    {
+      "dst": "fx1.sdk",
+      "src": "fx1.cli_harness_vs"
     },
     {
       "dst": "fx1.serve",
@@ -405,6 +533,10 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "fx1.data.quality_audit"
+    },
+    {
+      "dst": "quant_fund.utils.receipt",
+      "src": "fx1.data.receipts"
     },
     {
       "dst": "fx1.data.receipts",
@@ -560,6 +692,10 @@
     },
     {
       "dst": "fx1.interactive.superpower",
+      "src": "fx1.doctor"
+    },
+    {
+      "dst": "quant_fund.utils.distribution_lineage",
       "src": "fx1.doctor"
     },
     {
@@ -1811,6 +1947,10 @@
       "src": "fx1.forecast.core_audit"
     },
     {
+      "dst": "quant_fund.utils.forbidden_research_keys",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
       "dst": "quant_fund.utils.hashing",
       "src": "fx1.forecast.core_audit"
     },
@@ -1995,7 +2135,11 @@
       "src": "fx1.harness"
     },
     {
-      "dst": "fx1.interactive.redact",
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.harness"
+    },
+    {
+      "dst": "quant_fund.utils.lab_paths",
       "src": "fx1.harness"
     },
     {
@@ -2127,6 +2271,70 @@
       "src": "fx1.interactive.app"
     },
     {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.approvals"
+    },
+    {
+      "dst": "fx1.flash.retrieve",
+      "src": "fx1.interactive.chat_tools"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.chat_tools"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.chat_tools"
+    },
+    {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.chat_tools"
+    },
+    {
+      "dst": "fx1.interactive.model_ux",
+      "src": "fx1.interactive.chat_tools"
+    },
+    {
+      "dst": "fx1.interactive.policy",
+      "src": "fx1.interactive.chat_tools"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.chat_tools"
+    },
+    {
+      "dst": "fx1.interactive.runctx",
+      "src": "fx1.interactive.chat_tools"
+    },
+    {
+      "dst": "fx1.webresearch.engine",
+      "src": "fx1.interactive.chat_tools"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.chat_turn"
+    },
+    {
+      "dst": "fx1.interactive.chat_tools",
+      "src": "fx1.interactive.chat_turn"
+    },
+    {
+      "dst": "fx1.interactive.evidence",
+      "src": "fx1.interactive.chat_turn"
+    },
+    {
+      "dst": "fx1.interactive.model_client",
+      "src": "fx1.interactive.chat_turn"
+    },
+    {
+      "dst": "fx1.interactive.model_ux",
+      "src": "fx1.interactive.chat_turn"
+    },
+    {
+      "dst": "fx1.interactive.usage_budget",
+      "src": "fx1.interactive.chat_turn"
+    },
+    {
       "dst": "fx1.flash.refresh",
       "src": "fx1.interactive.concierge"
     },
@@ -2159,6 +2367,46 @@
       "src": "fx1.interactive.concierge"
     },
     {
+      "dst": "fx1.interactive.budgets",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.concierge_chat",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.concierge_console",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.concierge_data",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.concierge_display",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.concierge_jobs",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.concierge_slash",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.context_window",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.data_ux",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.diagnostics_ux",
+      "src": "fx1.interactive.concierge"
+    },
+    {
       "dst": "fx1.interactive.endpoint",
       "src": "fx1.interactive.concierge"
     },
@@ -2167,7 +2415,11 @@
       "src": "fx1.interactive.concierge"
     },
     {
-      "dst": "fx1.interactive.lineio",
+      "dst": "fx1.interactive.jobs",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.model_ux",
       "src": "fx1.interactive.concierge"
     },
     {
@@ -2179,7 +2431,19 @@
       "src": "fx1.interactive.concierge"
     },
     {
+      "dst": "fx1.interactive.runctx",
+      "src": "fx1.interactive.concierge"
+    },
+    {
       "dst": "fx1.interactive.session",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.session_ux",
+      "src": "fx1.interactive.concierge"
+    },
+    {
+      "dst": "fx1.interactive.sessions",
       "src": "fx1.interactive.concierge"
     },
     {
@@ -2191,11 +2455,11 @@
       "src": "fx1.interactive.concierge"
     },
     {
-      "dst": "fx1.interactive.terminal",
+      "dst": "fx1.interactive.usage_budget",
       "src": "fx1.interactive.concierge"
     },
     {
-      "dst": "fx1.interactive.usage_budget",
+      "dst": "fx1.serve.backends",
       "src": "fx1.interactive.concierge"
     },
     {
@@ -2203,16 +2467,620 @@
       "src": "fx1.interactive.concierge"
     },
     {
+      "dst": "fx1.flash.retrieve",
+      "src": "fx1.interactive.concierge_chat"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.concierge_chat"
+    },
+    {
+      "dst": "fx1.interactive.chat_tools",
+      "src": "fx1.interactive.concierge_chat"
+    },
+    {
+      "dst": "fx1.interactive.chat_turn",
+      "src": "fx1.interactive.concierge_chat"
+    },
+    {
+      "dst": "fx1.interactive.concierge_console",
+      "src": "fx1.interactive.concierge_chat"
+    },
+    {
+      "dst": "fx1.interactive.endpoint",
+      "src": "fx1.interactive.concierge_chat"
+    },
+    {
+      "dst": "fx1.interactive.orb",
+      "src": "fx1.interactive.concierge_chat"
+    },
+    {
+      "dst": "fx1.webresearch.engine",
+      "src": "fx1.interactive.concierge_chat"
+    },
+    {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.concierge_console"
+    },
+    {
+      "dst": "fx1.interactive.concierge",
+      "src": "fx1.interactive.concierge_console"
+    },
+    {
+      "dst": "fx1.interactive.concierge_slash",
+      "src": "fx1.interactive.concierge_console"
+    },
+    {
+      "dst": "fx1.interactive.endpoint",
+      "src": "fx1.interactive.concierge_console"
+    },
+    {
+      "dst": "fx1.interactive.lineio",
+      "src": "fx1.interactive.concierge_console"
+    },
+    {
+      "dst": "fx1.interactive.orb",
+      "src": "fx1.interactive.concierge_console"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.concierge_console"
+    },
+    {
+      "dst": "fx1.interactive.session",
+      "src": "fx1.interactive.concierge_console"
+    },
+    {
+      "dst": "fx1.interactive.concierge",
+      "src": "fx1.interactive.concierge_data"
+    },
+    {
+      "dst": "fx1.interactive.data_ux",
+      "src": "fx1.interactive.concierge_data"
+    },
+    {
+      "dst": "fx1.interactive.datasets",
+      "src": "fx1.interactive.concierge_data"
+    },
+    {
+      "dst": "fx1.interactive.model_ux",
+      "src": "fx1.interactive.concierge_data"
+    },
+    {
+      "dst": "fx1.interactive.planner",
+      "src": "fx1.interactive.concierge_data"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.concierge_data"
+    },
+    {
+      "dst": "fx1.interactive.runs_ux",
+      "src": "fx1.interactive.concierge_data"
+    },
+    {
+      "dst": "fx1.interactive.superpower",
+      "src": "fx1.interactive.concierge_data"
+    },
+    {
+      "dst": "fx1.interactive.superpower_glue",
+      "src": "fx1.interactive.concierge_data"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.concierge_display"
+    },
+    {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.concierge_display"
+    },
+    {
+      "dst": "fx1.interactive.model_ux",
+      "src": "fx1.interactive.concierge_display"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.concierge_display"
+    },
+    {
+      "dst": "fx1.interactive.superpower",
+      "src": "fx1.interactive.concierge_display"
+    },
+    {
+      "dst": "fx1.interactive.superpower_glue",
+      "src": "fx1.interactive.concierge_display"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.concierge_display"
+    },
+    {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.concierge_jobs"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.concierge_jobs"
+    },
+    {
+      "dst": "fx1.interactive.concierge",
+      "src": "fx1.interactive.concierge_slash"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.concierge",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.model_ux",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.orb",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.procs",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.runctx",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.sessions",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.telemetry",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.console"
+    },
+    {
+      "dst": "fx1",
+      "src": "fx1.interactive.contracts"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.contracts"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.contracts"
+    },
+    {
+      "dst": "fx1.interactive.datasets",
+      "src": "fx1.interactive.data_ux"
+    },
+    {
+      "dst": "fx1.interactive.planner",
+      "src": "fx1.interactive.data_ux"
+    },
+    {
+      "dst": "fx1.interactive.policy",
+      "src": "fx1.interactive.data_ux"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.data_ux"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.data_ux"
+    },
+    {
+      "dst": "fx1.interactive.planner",
+      "src": "fx1.interactive.datasets"
+    },
+    {
+      "dst": "fx1.interactive.policy",
+      "src": "fx1.interactive.datasets"
+    },
+    {
+      "dst": "fx1",
+      "src": "fx1.interactive.diagnostics"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.diagnostics"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.diagnostics"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.diagnostics"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.diagnostics"
+    },
+    {
+      "dst": "fx1.interactive.runctx",
+      "src": "fx1.interactive.diagnostics"
+    },
+    {
+      "dst": "fx1.interactive.telemetry",
+      "src": "fx1.interactive.diagnostics"
+    },
+    {
+      "dst": "fx1.interactive.diagnostics",
+      "src": "fx1.interactive.diagnostics_ux"
+    },
+    {
+      "dst": "fx1.interactive.jobs",
+      "src": "fx1.interactive.diagnostics_ux"
+    },
+    {
+      "dst": "fx1.interactive.superpower_glue",
+      "src": "fx1.interactive.diagnostics_ux"
+    },
+    {
+      "dst": "fx1.interactive.telemetry",
+      "src": "fx1.interactive.diagnostics_ux"
+    },
+    {
+      "dst": "fx1.serve.backends",
+      "src": "fx1.interactive.endpoint"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.evidence"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.evidence_ledger"
+    },
+    {
+      "dst": "fx1.interactive.evidence",
+      "src": "fx1.interactive.evidence_ledger"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.evidence_ledger"
+    },
+    {
+      "dst": "quant_fund.schemas.receipt_v2_leaf",
+      "src": "fx1.interactive.evidence_ledger"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.interactive.concierge",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.interactive.data_ux",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.interactive.model_client",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.interactive.procs",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.interactive.sessions",
+      "src": "fx1.interactive.headless"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.intent"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.jobs"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.jobs"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.jobs"
+    },
+    {
+      "dst": "fx1.interactive.runctx",
+      "src": "fx1.interactive.jobs"
+    },
+    {
       "dst": "fx1.interactive.profiles",
       "src": "fx1.interactive.lineio"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.model_client"
+    },
+    {
+      "dst": "fx1.interactive.endpoint",
+      "src": "fx1.interactive.model_client"
+    },
+    {
+      "dst": "fx1.interactive.model_dial",
+      "src": "fx1.interactive.model_client"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.model_client"
+    },
+    {
+      "dst": "fx1.serve.backends",
+      "src": "fx1.interactive.model_client"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.context_window",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.model_client",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.models_check",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.orb",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.sessions",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.system_prompt",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.interactive.usage_budget",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1.serve.backends",
+      "src": "fx1.interactive.model_ux"
+    },
+    {
+      "dst": "fx1",
+      "src": "fx1.interactive.models_check"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.models_check"
+    },
+    {
+      "dst": "fx1.interactive.model_client",
+      "src": "fx1.interactive.models_check"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.models_check"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.models_check"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.models_check"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.orb"
+    },
+    {
+      "dst": "fx1.flash.retrieve",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.approvals",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.contracts",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.evidence_ledger",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.jobs",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.planner",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.procs",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.run_report",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.runctx",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.interactive.superpower",
+      "src": "fx1.interactive.orchestration"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.planner"
+    },
+    {
+      "dst": "fx1.interactive.contracts",
+      "src": "fx1.interactive.planner"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.policy"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.policy"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.procs"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.profiles"
+    },
+    {
+      "dst": "fx1.interactive.endpoint",
+      "src": "fx1.interactive.profiles"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.profiles"
     },
     {
       "dst": "fx1.serve.backends",
       "src": "fx1.interactive.profiles"
     },
     {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.run_report"
+    },
+    {
+      "dst": "fx1.interactive.evidence",
+      "src": "fx1.interactive.run_report"
+    },
+    {
+      "dst": "fx1.interactive.evidence_ledger",
+      "src": "fx1.interactive.run_report"
+    },
+    {
+      "dst": "fx1.interactive.policy",
+      "src": "fx1.interactive.run_report"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.runs_ux"
+    },
+    {
+      "dst": "fx1.interactive.jobs",
+      "src": "fx1.interactive.runs_ux"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.runs_ux"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.runs_ux"
+    },
+    {
       "dst": "fx1",
       "src": "fx1.interactive.session"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.session_ux"
+    },
+    {
+      "dst": "fx1.interactive.model_ux",
+      "src": "fx1.interactive.session_ux"
+    },
+    {
+      "dst": "fx1.interactive.sessions",
+      "src": "fx1.interactive.session_ux"
+    },
+    {
+      "dst": "fx1.interactive.terminal",
+      "src": "fx1.interactive.session_ux"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.sessions"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.sessions"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.sessions"
+    },
+    {
+      "dst": "fx1.interactive.runctx",
+      "src": "fx1.interactive.sessions"
     },
     {
       "dst": "fx1.interactive.actions",
@@ -2231,7 +3099,15 @@
       "src": "fx1.interactive.shell"
     },
     {
+      "dst": "fx1.flash.retrieve",
+      "src": "fx1.interactive.superpower"
+    },
+    {
       "dst": "fx1.harness",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.honesty",
       "src": "fx1.interactive.superpower"
     },
     {
@@ -2239,11 +3115,11 @@
       "src": "fx1.interactive.superpower"
     },
     {
-      "dst": "fx1.interactive.contracts",
+      "dst": "fx1.interactive.budget",
       "src": "fx1.interactive.superpower"
     },
     {
-      "dst": "fx1.interactive.budget",
+      "dst": "fx1.interactive.contracts",
       "src": "fx1.interactive.superpower"
     },
     {
@@ -2251,7 +3127,23 @@
       "src": "fx1.interactive.superpower"
     },
     {
+      "dst": "fx1.interactive.evidence_ledger",
+      "src": "fx1.interactive.superpower"
+    },
+    {
       "dst": "fx1.interactive.families",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.interactive.orchestration",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.interactive.planner",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.interactive.run_report",
       "src": "fx1.interactive.superpower"
     },
     {
@@ -2267,6 +3159,38 @@
       "src": "fx1.interactive.superpower"
     },
     {
+      "dst": "quant_fund.utils.kernel_lineage",
+      "src": "fx1.interactive.superpower"
+    },
+    {
+      "dst": "fx1.interactive.chat_tools",
+      "src": "fx1.interactive.superpower_glue"
+    },
+    {
+      "dst": "fx1.interactive.evidence_ledger",
+      "src": "fx1.interactive.superpower_glue"
+    },
+    {
+      "dst": "fx1.interactive.jobs",
+      "src": "fx1.interactive.superpower_glue"
+    },
+    {
+      "dst": "fx1.interactive.orchestration",
+      "src": "fx1.interactive.superpower_glue"
+    },
+    {
+      "dst": "fx1.interactive.planner",
+      "src": "fx1.interactive.superpower_glue"
+    },
+    {
+      "dst": "fx1.interactive.runctx",
+      "src": "fx1.interactive.superpower_glue"
+    },
+    {
+      "dst": "fx1.interactive.superpower",
+      "src": "fx1.interactive.superpower_glue"
+    },
+    {
       "dst": "fx1.harness",
       "src": "fx1.interactive.surface_seal"
     },
@@ -2277,6 +3201,38 @@
     {
       "dst": "quant_fund.utils.hashing",
       "src": "fx1.interactive.surface_seal"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.interactive.system_prompt"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.system_prompt"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.telemetry"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.telemetry"
+    },
+    {
+      "dst": "fx1.interactive.runctx",
+      "src": "fx1.interactive.telemetry"
+    },
+    {
+      "dst": "fx1.interactive.atomicstore",
+      "src": "fx1.interactive.terminal"
+    },
+    {
+      "dst": "fx1.interactive.redact",
+      "src": "fx1.interactive.terminal"
+    },
+    {
+      "dst": "fx1.interactive.tty_guard",
+      "src": "fx1.interactive.terminal"
     },
     {
       "dst": "fx1.interactive.actions",
@@ -2795,6 +3751,10 @@
       "src": "fx1.serve.api"
     },
     {
+      "dst": "fx1.serve.api_request_ingress",
+      "src": "fx1.serve.api"
+    },
+    {
       "dst": "fx1.serve.backends",
       "src": "fx1.serve.api"
     },
@@ -2919,6 +3879,14 @@
       "src": "fx1.serve.api_audit_finetune"
     },
     {
+      "dst": "fx1.serve.anthropic_compat",
+      "src": "fx1.serve.api_request_ingress"
+    },
+    {
+      "dst": "fx1.serve.openai_compat",
+      "src": "fx1.serve.api_request_ingress"
+    },
+    {
       "dst": "fx1.serve.signing",
       "src": "fx1.serve.attestation"
     },
@@ -2975,11 +3943,11 @@
       "src": "fx1.serve.backends"
     },
     {
-      "dst": "fx1.serve.local_engine_process",
+      "dst": "fx1.serve.backends_stop",
       "src": "fx1.serve.backends"
     },
     {
-      "dst": "fx1.serve.release_gate",
+      "dst": "fx1.serve.ship_gate_env",
       "src": "fx1.serve.backends"
     },
     {
@@ -3535,11 +4503,7 @@
       "src": "fx1.serve.local_engine"
     },
     {
-      "dst": "fx1.serve.release_gate",
-      "src": "fx1.serve.local_engine"
-    },
-    {
-      "dst": "fx1.serve.signing",
+      "dst": "fx1.serve.ship_gate_env",
       "src": "fx1.serve.local_engine"
     },
     {
@@ -4291,6 +5255,10 @@
       "src": "fx1.train.run"
     },
     {
+      "dst": "quant_fund.utils.receipt",
+      "src": "fx1.train.run"
+    },
+    {
       "dst": "fx1.train.config",
       "src": "fx1.train.run_audit"
     },
@@ -4308,6 +5276,10 @@
     },
     {
       "dst": "fx1.modelcard",
+      "src": "fx1.train.tiny_lm"
+    },
+    {
+      "dst": "fx1.models.tiny_lm",
       "src": "fx1.train.tiny_lm"
     },
     {
@@ -4955,7 +5927,15 @@
       "src": "quant_fund.cli.__main__"
     },
     {
+      "dst": "quant_fund",
+      "src": "quant_fund.cli._app"
+    },
+    {
       "dst": "quant_fund.cli.benchmark_cmds",
+      "src": "quant_fund.cli._app"
+    },
+    {
+      "dst": "quant_fund.cli.capability_cmds",
       "src": "quant_fund.cli._app"
     },
     {
@@ -5024,6 +6004,10 @@
     },
     {
       "dst": "quant_fund.utils.bundled_configs",
+      "src": "quant_fund.cli._app"
+    },
+    {
+      "dst": "quant_fund.utils.lab_paths",
       "src": "quant_fund.cli._app"
     },
     {
@@ -5239,6 +6223,18 @@
       "src": "quant_fund.cli.families_cmds"
     },
     {
+      "dst": "quant_fund.cli.app",
+      "src": "quant_fund.cli.family_cmds"
+    },
+    {
+      "dst": "quant_fund.cli.support",
+      "src": "quant_fund.cli.family_cmds"
+    },
+    {
+      "dst": "quant_fund.research.family_surface",
+      "src": "quant_fund.cli.family_cmds"
+    },
+    {
       "dst": "quant_fund.backtest.engine",
       "src": "quant_fund.cli.forecast_cmds"
     },
@@ -5273,6 +6269,10 @@
     {
       "dst": "quant_fund.validation.gates",
       "src": "quant_fund.cli.forecast_cmds"
+    },
+    {
+      "dst": "quant_fund.research.gate_signatures",
+      "src": "quant_fund.cli.key_material"
     },
     {
       "dst": "quant_fund.cli._app",
@@ -5319,6 +6319,10 @@
       "src": "quant_fund.cli.main"
     },
     {
+      "dst": "quant_fund.cli.family_cmds",
+      "src": "quant_fund.cli.main"
+    },
+    {
       "dst": "quant_fund.cli.forecast_cmds",
       "src": "quant_fund.cli.main"
     },
@@ -5344,6 +6348,10 @@
     },
     {
       "dst": "quant_fund.cli.research_eval_cmds",
+      "src": "quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.cli.score_cmds",
       "src": "quant_fund.cli.main"
     },
     {
@@ -5451,6 +6459,10 @@
       "src": "quant_fund.cli.ops_cmds"
     },
     {
+      "dst": "quant_fund.utils.lab_paths",
+      "src": "quant_fund.cli.ops_cmds"
+    },
+    {
       "dst": "quant_fund.cli.app",
       "src": "quant_fund.cli.report_cmds"
     },
@@ -5499,7 +6511,7 @@
       "src": "quant_fund.cli.research_cmds"
     },
     {
-      "dst": "quant_fund.cli.family_cmds",
+      "dst": "quant_fund.cli.key_material",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -5508,6 +6520,10 @@
     },
     {
       "dst": "quant_fund.cli.research_pvalues",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.cli.research_score_cmds",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -5556,14 +6572,6 @@
     },
     {
       "dst": "quant_fund.research.checkpoint_chain",
-      "src": "quant_fund.cli.research_cmds"
-    },
-    {
-      "dst": "quant_fund.research.coherence",
-      "src": "quant_fund.cli.research_cmds"
-    },
-    {
-      "dst": "quant_fund.research.concordance",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -5789,6 +6797,34 @@
     {
       "dst": "quant_fund.research.gate_signatures",
       "src": "quant_fund.cli.research_quorum_key_cmd"
+    },
+    {
+      "dst": "quant_fund.cli.app",
+      "src": "quant_fund.cli.research_score_cmds"
+    },
+    {
+      "dst": "quant_fund.cli.support",
+      "src": "quant_fund.cli.research_score_cmds"
+    },
+    {
+      "dst": "quant_fund.research.coherence",
+      "src": "quant_fund.cli.research_score_cmds"
+    },
+    {
+      "dst": "quant_fund.research.concordance",
+      "src": "quant_fund.cli.research_score_cmds"
+    },
+    {
+      "dst": "quant_fund.cli.app",
+      "src": "quant_fund.cli.score_cmds"
+    },
+    {
+      "dst": "quant_fund.cli.support",
+      "src": "quant_fund.cli.score_cmds"
+    },
+    {
+      "dst": "quant_fund.research.forecast_scoring",
+      "src": "quant_fund.cli.score_cmds"
     },
     {
       "dst": "quant_fund.cli.support",
@@ -7579,6 +8615,10 @@
       "src": "quant_fund.market_sim.honesty"
     },
     {
+      "dst": "quant_fund.utils.forbidden_research_keys",
+      "src": "quant_fund.market_sim.honesty"
+    },
+    {
       "dst": "quant_fund.market_sim.config",
       "src": "quant_fund.market_sim.impact"
     },
@@ -7895,6 +8935,10 @@
       "src": "quant_fund.metrics.inference"
     },
     {
+      "dst": "quant_fund.utils.portable_fp",
+      "src": "quant_fund.metrics.inference"
+    },
+    {
       "dst": "quant_fund.validation.cpcv",
       "src": "quant_fund.metrics.overfitting"
     },
@@ -8004,6 +9048,10 @@
     },
     {
       "dst": "quant_fund.metrics.scoring",
+      "src": "quant_fund.metrics.vol_eval"
+    },
+    {
+      "dst": "quant_fund.utils.portable_fp",
       "src": "quant_fund.metrics.vol_eval"
     },
     {
@@ -12135,6 +13183,10 @@
       "src": "quant_fund.models.gwnet_lite"
     },
     {
+      "dst": "quant_fund.utils.portable_fp",
+      "src": "quant_fund.models.har"
+    },
+    {
       "dst": "quant_fund.models.continual_learning",
       "src": "quant_fund.models.hat_cl"
     },
@@ -13479,6 +14531,10 @@
       "src": "quant_fund.models.rope_attn"
     },
     {
+      "dst": "quant_fund.utils.portable_fp",
+      "src": "quant_fund.models.rough_vol"
+    },
+    {
       "dst": "quant_fund.utils.series",
       "src": "quant_fund.models.rough_vol"
     },
@@ -14756,6 +15812,10 @@
     },
     {
       "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.pipeline.doctor"
+    },
+    {
+      "dst": "quant_fund.utils.lab_paths",
       "src": "quant_fund.pipeline.doctor"
     },
     {
@@ -16463,6 +17523,10 @@
       "src": "quant_fund.research.agent"
     },
     {
+      "dst": "quant_fund.research.agent_report_io",
+      "src": "quant_fund.research.agent"
+    },
+    {
       "dst": "quant_fund.research.benches",
       "src": "quant_fund.research.agent"
     },
@@ -17623,10 +18687,6 @@
       "src": "quant_fund.research.agent"
     },
     {
-      "dst": "quant_fund.utils.atomicio",
-      "src": "quant_fund.research.agent"
-    },
-    {
       "dst": "quant_fund.utils.hashing",
       "src": "quant_fund.research.agent"
     },
@@ -17641,6 +18701,14 @@
     {
       "dst": "quant_fund.validation.walk_forward",
       "src": "quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.reporting.report",
+      "src": "quant_fund.research.agent_report_io"
+    },
+    {
+      "dst": "quant_fund.utils.atomicio",
+      "src": "quant_fund.research.agent_report_io"
     },
     {
       "dst": "quant_fund.research.allocation.constraints",
@@ -59131,6 +60199,10 @@
       "src": "quant_fund.research.capacity_overlay"
     },
     {
+      "dst": "quant_fund.utils.portable_fp",
+      "src": "quant_fund.research.capacity_overlay"
+    },
+    {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.research.capacity_overlay"
     },
@@ -59307,8 +60379,16 @@
       "src": "quant_fund.research.catalog.receipt"
     },
     {
+      "dst": "quant_fund.research.catalog.registry_blob_checks",
+      "src": "quant_fund.research.catalog.registry"
+    },
+    {
       "dst": "quant_fund.research.catalog.retired_families",
       "src": "quant_fund.research.catalog.registry"
+    },
+    {
+      "dst": "quant_fund.utils.forbidden_research_keys",
+      "src": "quant_fund.research.catalog.registry_blob_checks"
     },
     {
       "dst": "quant_fund.research.catalog.primitives",
@@ -59785,6 +60865,10 @@
     {
       "dst": "quant_fund.metrics.scoring",
       "src": "quant_fund.research.explainability.scoring"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "quant_fund.research.explainability_cli"
     },
     {
       "dst": "quant_fund.research.explainability",
@@ -61283,6 +62367,10 @@
       "src": "quant_fund.research.vol_bench"
     },
     {
+      "dst": "quant_fund.utils.portable_fp",
+      "src": "quant_fund.research.vol_bench"
+    },
+    {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.research.vol_bench"
     },
@@ -61871,8 +62959,24 @@
       "src": "quant_fund.utils"
     },
     {
+      "dst": "quant_fund.research.crown_jewels",
+      "src": "quant_fund.utils.distribution_lineage"
+    },
+    {
       "dst": "quant_fund.native",
       "src": "quant_fund.utils.hashing"
+    },
+    {
+      "dst": "quant_fund.audit.kernel_lineage",
+      "src": "quant_fund.utils.kernel_lineage"
+    },
+    {
+      "dst": "quant_fund.research.legacy_unsealed",
+      "src": "quant_fund.utils.receipt"
+    },
+    {
+      "dst": "quant_fund.schemas.receipt_v2_leaf",
+      "src": "quant_fund.utils.receipt"
     },
     {
       "dst": "quant_fund.utils.hashing",
@@ -61961,7 +63065,9 @@
     "dipcatcher_cli.app",
     "dipcatcher_cli.exec_cmd",
     "dipcatcher_cli.models_cmd",
+    "dipcatcher_cli.paths",
     "dipcatcher_cli.sessions_cmd",
+    "dipcatcher_cli.truthfulness",
     "fx1",
     "fx1.bench",
     "fx1.bench.dip",
@@ -61970,7 +63076,20 @@
     "fx1.bench.run_audit",
     "fx1.capabilities",
     "fx1.cli",
+    "fx1.cli.__main__",
+    "fx1.cli._app",
+    "fx1.cli.data_cmds",
+    "fx1.cli.eval_cmds",
+    "fx1.cli.forecast_cmds",
+    "fx1.cli.support",
     "fx1.cli_audit",
+    "fx1.cli_common",
+    "fx1.cli_harness",
+    "fx1.cli_harness_chat",
+    "fx1.cli_harness_ft",
+    "fx1.cli_harness_jobs",
+    "fx1.cli_harness_ops",
+    "fx1.cli_harness_vs",
     "fx1.cli_sign",
     "fx1.data",
     "fx1.data.corpus",
@@ -62147,26 +63266,66 @@
     "fx1.interactive.actions",
     "fx1.interactive.app",
     "fx1.interactive.approvals",
+    "fx1.interactive.atomicstore",
     "fx1.interactive.budget",
+    "fx1.interactive.budgets",
+    "fx1.interactive.chat_tools",
+    "fx1.interactive.chat_turn",
     "fx1.interactive.concierge",
+    "fx1.interactive.concierge_chat",
+    "fx1.interactive.concierge_console",
+    "fx1.interactive.concierge_data",
+    "fx1.interactive.concierge_display",
+    "fx1.interactive.concierge_jobs",
+    "fx1.interactive.concierge_slash",
+    "fx1.interactive.console",
+    "fx1.interactive.context_window",
+    "fx1.interactive.contracts",
+    "fx1.interactive.data_ux",
+    "fx1.interactive.datasets",
+    "fx1.interactive.diagnostics",
+    "fx1.interactive.diagnostics_ux",
     "fx1.interactive.endpoint",
+    "fx1.interactive.evidence",
+    "fx1.interactive.evidence_ledger",
     "fx1.interactive.families",
+    "fx1.interactive.headless",
+    "fx1.interactive.intent",
+    "fx1.interactive.jobs",
     "fx1.interactive.lineio",
+    "fx1.interactive.model_client",
+    "fx1.interactive.model_dial",
+    "fx1.interactive.model_ux",
+    "fx1.interactive.models_check",
     "fx1.interactive.orb",
     "fx1.interactive.orchestration",
     "fx1.interactive.planner",
     "fx1.interactive.policy",
     "fx1.interactive.procs",
     "fx1.interactive.profiles",
+    "fx1.interactive.redact",
+    "fx1.interactive.run_report",
+    "fx1.interactive.runctx",
+    "fx1.interactive.runs_ux",
     "fx1.interactive.session",
+    "fx1.interactive.session_ux",
+    "fx1.interactive.sessions",
     "fx1.interactive.shell",
     "fx1.interactive.superpower",
+    "fx1.interactive.superpower_glue",
     "fx1.interactive.surface_seal",
+    "fx1.interactive.system_prompt",
+    "fx1.interactive.telemetry",
+    "fx1.interactive.terminal",
     "fx1.interactive.trigger_lexicon",
+    "fx1.interactive.tty_guard",
+    "fx1.interactive.usage_budget",
     "fx1.interactive.wizard",
     "fx1.interactive.workflow",
     "fx1.modelcard",
     "fx1.modelcard_audit",
+    "fx1.models",
+    "fx1.models.tiny_lm",
     "fx1.mrm",
     "fx1.mrm_audit",
     "fx1.operations",
@@ -62229,10 +63388,12 @@
     "fx1.serve.api_audit",
     "fx1.serve.api_audit_finetune",
     "fx1.serve.api_metrics",
+    "fx1.serve.api_request_ingress",
     "fx1.serve.attestation",
     "fx1.serve.attestation_audit",
     "fx1.serve.auth_audit",
     "fx1.serve.backends",
+    "fx1.serve.backends_stop",
     "fx1.serve.batch_audit",
     "fx1.serve.byok_audit",
     "fx1.serve.cap_audit",
@@ -62274,6 +63435,7 @@
     "fx1.serve.replay_audit",
     "fx1.serve.retrieval_audit",
     "fx1.serve.serve_audit",
+    "fx1.serve.ship_gate_env",
     "fx1.serve.signing",
     "fx1.serve.spec_audit",
     "fx1.serve.stream_audit",
@@ -62364,7 +63526,9 @@
     "quant_fund.cli.capability_overlay",
     "quant_fund.cli.data_cmds",
     "quant_fund.cli.families_cmds",
+    "quant_fund.cli.family_cmds",
     "quant_fund.cli.forecast_cmds",
+    "quant_fund.cli.key_material",
     "quant_fund.cli.lake_cmds",
     "quant_fund.cli.main",
     "quant_fund.cli.micro_cmds",
@@ -62374,7 +63538,10 @@
     "quant_fund.cli.research_banner",
     "quant_fund.cli.research_cmds",
     "quant_fund.cli.research_eval_cmds",
+    "quant_fund.cli.research_pvalues",
     "quant_fund.cli.research_quorum_key_cmd",
+    "quant_fund.cli.research_score_cmds",
+    "quant_fund.cli.score_cmds",
     "quant_fund.cli.sota_cmds",
     "quant_fund.cli.support",
     "quant_fund.cli.train_cmds",
@@ -73470,6 +74637,7 @@
     "quant_fund.research.adaptive_conformal",
     "quant_fund.research.admission",
     "quant_fund.research.agent",
+    "quant_fund.research.agent_report_io",
     "quant_fund.research.allocation",
     "quant_fund.research.allocation.constraints",
     "quant_fund.research.allocation.engines",
@@ -75210,6 +76378,7 @@
     "quant_fund.research.catalog.rates",
     "quant_fund.research.catalog.receipt",
     "quant_fund.research.catalog.registry",
+    "quant_fund.research.catalog.registry_blob_checks",
     "quant_fund.research.catalog.retired_families",
     "quant_fund.research.catalog.session",
     "quant_fund.research.catalog.sweep",
@@ -75239,6 +76408,7 @@
     "quant_fund.research.evalue_contracts",
     "quant_fund.research.evalues",
     "quant_fund.research.evidence_audit",
+    "quant_fund.research.evidence_base",
     "quant_fund.research.evidence_export",
     "quant_fund.research.expert_mixture",
     "quant_fund.research.explainability",
@@ -75389,9 +76559,15 @@
     "quant_fund.utils.absdiff",
     "quant_fund.utils.atomicio",
     "quant_fund.utils.bundled_configs",
+    "quant_fund.utils.distribution_lineage",
+    "quant_fund.utils.ed25519_public",
+    "quant_fund.utils.forbidden_research_keys",
     "quant_fund.utils.hashing",
+    "quant_fund.utils.kernel_lineage",
+    "quant_fund.utils.lab_paths",
     "quant_fund.utils.logging",
     "quant_fund.utils.numeric",
+    "quant_fund.utils.portable_fp",
     "quant_fund.utils.receipt",
     "quant_fund.utils.reproducibility",
     "quant_fund.utils.seeds",
@@ -75427,6 +76603,11 @@
       "src": "dipcatcher_cli"
     },
     {
+      "dst": "quant_fund.utils",
+      "imports": 1,
+      "src": "dipcatcher_cli"
+    },
+    {
       "dst": "fx1.bench",
       "imports": 4,
       "src": "fx1.bench"
@@ -75449,6 +76630,21 @@
     {
       "dst": "fx1.bench",
       "imports": 2,
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.cli",
+      "imports": 10,
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "imports": 1,
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.cli_harness",
+      "imports": 1,
       "src": "fx1.cli"
     },
     {
@@ -75477,16 +76673,6 @@
       "src": "fx1.cli"
     },
     {
-      "dst": "fx1.harness",
-      "imports": 1,
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.harness_bench",
-      "imports": 1,
-      "src": "fx1.cli"
-    },
-    {
       "dst": "fx1.modelcard",
       "imports": 1,
       "src": "fx1.cli"
@@ -75497,28 +76683,13 @@
       "src": "fx1.cli"
     },
     {
-      "dst": "fx1.operations",
-      "imports": 2,
-      "src": "fx1.cli"
-    },
-    {
       "dst": "fx1.sbom",
       "imports": 1,
       "src": "fx1.cli"
     },
     {
-      "dst": "fx1.sdk",
-      "imports": 1,
-      "src": "fx1.cli"
-    },
-    {
-      "dst": "fx1.selftest",
-      "imports": 1,
-      "src": "fx1.cli"
-    },
-    {
       "dst": "fx1.serve",
-      "imports": 9,
+      "imports": 1,
       "src": "fx1.cli"
     },
     {
@@ -75557,6 +76728,136 @@
       "src": "fx1.cli_audit"
     },
     {
+      "dst": "fx1.sdk",
+      "imports": 1,
+      "src": "fx1.cli_common"
+    },
+    {
+      "dst": "fx1.serve",
+      "imports": 1,
+      "src": "fx1.cli_common"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "imports": 1,
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_harness_chat",
+      "imports": 1,
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_harness_ft",
+      "imports": 1,
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_harness_jobs",
+      "imports": 1,
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_harness_ops",
+      "imports": 1,
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_harness_vs",
+      "imports": 1,
+      "src": "fx1.cli_harness"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "imports": 1,
+      "src": "fx1.cli_harness_chat"
+    },
+    {
+      "dst": "fx1.sdk",
+      "imports": 1,
+      "src": "fx1.cli_harness_chat"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "imports": 1,
+      "src": "fx1.cli_harness_ft"
+    },
+    {
+      "dst": "fx1.sdk",
+      "imports": 1,
+      "src": "fx1.cli_harness_ft"
+    },
+    {
+      "dst": "fx1.serve",
+      "imports": 1,
+      "src": "fx1.cli_harness_ft"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "imports": 1,
+      "src": "fx1.cli_harness_jobs"
+    },
+    {
+      "dst": "fx1.sdk",
+      "imports": 1,
+      "src": "fx1.cli_harness_jobs"
+    },
+    {
+      "dst": "fx1.serve",
+      "imports": 1,
+      "src": "fx1.cli_harness_jobs"
+    },
+    {
+      "dst": "fx1",
+      "imports": 1,
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "imports": 1,
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.harness",
+      "imports": 1,
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.harness_bench",
+      "imports": 1,
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.operations",
+      "imports": 2,
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.sdk",
+      "imports": 1,
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.selftest",
+      "imports": 1,
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.serve",
+      "imports": 7,
+      "src": "fx1.cli_harness_ops"
+    },
+    {
+      "dst": "fx1.cli_common",
+      "imports": 1,
+      "src": "fx1.cli_harness_vs"
+    },
+    {
+      "dst": "fx1.sdk",
+      "imports": 1,
+      "src": "fx1.cli_harness_vs"
+    },
+    {
       "dst": "fx1.serve",
       "imports": 2,
       "src": "fx1.cli_sign"
@@ -75573,7 +76874,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 13,
+      "imports": 14,
       "src": "fx1.data"
     },
     {
@@ -75603,7 +76904,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 1,
+      "imports": 2,
       "src": "fx1.doctor"
     },
     {
@@ -75733,7 +77034,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 9,
+      "imports": 10,
       "src": "fx1.forecast"
     },
     {
@@ -75744,6 +77045,11 @@
     {
       "dst": "fx1.interactive",
       "imports": 2,
+      "src": "fx1.harness"
+    },
+    {
+      "dst": "quant_fund.utils",
+      "imports": 1,
       "src": "fx1.harness"
     },
     {
@@ -75783,7 +77089,7 @@
     },
     {
       "dst": "fx1",
-      "imports": 2,
+      "imports": 5,
       "src": "fx1.interactive"
     },
     {
@@ -75793,32 +77099,32 @@
     },
     {
       "dst": "fx1.flash",
-      "imports": 8,
+      "imports": 10,
       "src": "fx1.interactive"
     },
     {
       "dst": "fx1.harness",
-      "imports": 5,
+      "imports": 10,
       "src": "fx1.interactive"
     },
     {
       "dst": "fx1.honesty",
-      "imports": 16,
+      "imports": 19,
       "src": "fx1.interactive"
     },
     {
       "dst": "fx1.interactive",
-      "imports": 38,
+      "imports": 209,
       "src": "fx1.interactive"
     },
     {
       "dst": "fx1.serve",
-      "imports": 4,
+      "imports": 7,
       "src": "fx1.interactive"
     },
     {
       "dst": "fx1.webresearch",
-      "imports": 2,
+      "imports": 4,
       "src": "fx1.interactive"
     },
     {
@@ -75828,7 +77134,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 1,
+      "imports": 2,
       "src": "fx1.interactive"
     },
     {
@@ -76043,7 +77349,7 @@
     },
     {
       "dst": "fx1.serve",
-      "imports": 182,
+      "imports": 198,
       "src": "fx1.serve"
     },
     {
@@ -76107,13 +77413,18 @@
       "src": "fx1.train"
     },
     {
+      "dst": "fx1.models",
+      "imports": 1,
+      "src": "fx1.train"
+    },
+    {
       "dst": "fx1.train",
       "imports": 20,
       "src": "fx1.train"
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 12,
+      "imports": 13,
       "src": "fx1.train"
     },
     {
@@ -76293,7 +77604,7 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 45,
+      "imports": 71,
       "src": "quant_fund.cli"
     },
     {
@@ -76388,7 +77699,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 75,
+      "imports": 80,
       "src": "quant_fund.cli"
     },
     {
@@ -76403,7 +77714,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 14,
+      "imports": 16,
       "src": "quant_fund.cli"
     },
     {
@@ -76793,7 +78104,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 1,
+      "imports": 2,
       "src": "quant_fund.market_sim"
     },
     {
@@ -76828,7 +78139,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 26,
+      "imports": 28,
       "src": "quant_fund.metrics"
     },
     {
@@ -76933,7 +78244,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 21,
+      "imports": 23,
       "src": "quant_fund.models"
     },
     {
@@ -77208,7 +78519,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 23,
+      "imports": 24,
       "src": "quant_fund.pipeline"
     },
     {
@@ -77488,7 +78799,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 10226,
+      "imports": 10227,
       "src": "quant_fund.research"
     },
     {
@@ -77498,7 +78809,7 @@
     },
     {
       "dst": "quant_fund.pipeline",
-      "imports": 14,
+      "imports": 15,
       "src": "quant_fund.research"
     },
     {
@@ -77533,12 +78844,12 @@
     },
     {
       "dst": "quant_fund.reporting",
-      "imports": 1,
+      "imports": 2,
       "src": "quant_fund.research"
     },
     {
       "dst": "quant_fund.research",
-      "imports": 608,
+      "imports": 612,
       "src": "quant_fund.research"
     },
     {
@@ -77553,7 +78864,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 154,
+      "imports": 160,
       "src": "quant_fund.research"
     },
     {
@@ -77692,7 +79003,22 @@
       "src": "quant_fund.stress"
     },
     {
+      "dst": "quant_fund.audit",
+      "imports": 1,
+      "src": "quant_fund.utils"
+    },
+    {
       "dst": "quant_fund.native",
+      "imports": 1,
+      "src": "quant_fund.utils"
+    },
+    {
+      "dst": "quant_fund.research",
+      "imports": 2,
+      "src": "quant_fund.utils"
+    },
+    {
+      "dst": "quant_fund.schemas",
       "imports": 1,
       "src": "quant_fund.utils"
     },
